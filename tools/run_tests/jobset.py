@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -151,7 +151,8 @@ class JobSpec(object):
 
   def __init__(self, cmdline, shortname=None, environ=None, hash_targets=None,
                cwd=None, shell=False, timeout_seconds=5*60, flake_retries=0,
-               timeout_retries=0, kill_handler=None, cpu_cost=1.0):
+               timeout_retries=0, kill_handler=None, cpu_cost=1.0,
+               verbose_success=False):
     """
     Arguments:
       cmdline: a list of arguments to pass as the command line
@@ -176,6 +177,7 @@ class JobSpec(object):
     self.timeout_retries = timeout_retries
     self.kill_handler = kill_handler
     self.cpu_cost = cpu_cost
+    self.verbose_success = verbose_success
 
   def identity(self):
     return '%r %r %r' % (self.cmdline, self.environ, self.hash_targets)
@@ -287,7 +289,8 @@ class Job(object):
             cores = (user + sys) / real
             measurement = '; cpu_cost=%.01f; estimated=%.01f' % (cores, self._spec.cpu_cost)
         message('PASSED', '%s [time=%.1fsec; retries=%d:%d%s]' % (
-                    self._spec.shortname, elapsed, self._retries, self._timeout_retries, measurement),
+            self._spec.shortname, elapsed, self._retries, self._timeout_retries, measurement),
+            stdout() if self._spec.verbose_success else None,
             do_newline=self._newline_on_success or self._travis)
         self.result.state = 'PASSED'
         if self._bin_hash:

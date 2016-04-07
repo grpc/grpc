@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -42,7 +42,22 @@ def excluded(filename, exclude_res):
   return False
 
 
-FILEGROUP_LISTS = ['src', 'headers', 'public_headers']
+def uniquify(lst):
+  out = []
+  for el in lst:
+    if el not in out:
+      out.append(el)
+  return out
+
+
+FILEGROUP_LISTS = ['src', 'headers', 'public_headers', 'deps']
+
+
+FILEGROUP_DEFAULTS = {
+  'language': 'c',
+  'boringssl': False,
+  'zlib': False,
+}
 
 
 def mako_plugin(dictionary):
@@ -54,10 +69,19 @@ def mako_plugin(dictionary):
 
   """
   libs = dictionary.get('libs')
+  targets = dictionary.get('targets')
   filegroups_list = dictionary.get('filegroups')
   filegroups = {}
 
-  todo = filegroups_list[:]
+  for fg in filegroups_list:
+    for lst in FILEGROUP_LISTS:
+      fg[lst] = fg.get(lst, [])
+      fg['own_%s' % lst] = list(fg[lst])
+    for attr, val in FILEGROUP_DEFAULTS.iteritems():
+      if attr not in fg:
+        fg[attr] = val
+
+  todo = list(filegroups_list)
   skips = 0
 
   while todo:
@@ -75,26 +99,51 @@ def mako_plugin(dictionary):
       todo.append(cur)
     else:
       skips = 0
+      assert 'plugins' not in cur
+      plugins = []
       for uses in cur.get('uses', []):
+        for plugin in filegroups[uses]['plugins']:
+          if plugin not in plugins:
+            plugins.append(plugin)
         for lst in FILEGROUP_LISTS:
           vals = cur.get(lst, [])
           vals.extend(filegroups[uses].get(lst, []))
           cur[lst] = vals
+      cur_plugin_name = cur.get('plugin')
+      if cur_plugin_name:
+        plugins.append(cur_plugin_name)
+      cur['plugins'] = plugins
       filegroups[cur['name']] = cur
 
   # the above expansion can introduce duplicate filenames: contract them here
   for fg in filegroups.itervalues():
     for lst in FILEGROUP_LISTS:
-      fg[lst] = sorted(list(set(fg.get(lst, []))))
+      fg[lst] = uniquify(fg.get(lst, []))
 
-  for lib in libs:
+  for tgt in dictionary['targets']:
+    for lst in FILEGROUP_LISTS:
+      tgt[lst] = tgt.get(lst, [])
+      tgt['own_%s' % lst] = list(tgt[lst])
+
+  for lib in libs + targets:
+    assert 'plugins' not in lib
+    plugins = []
+    for lst in FILEGROUP_LISTS:
+      vals = lib.get(lst, [])
+      lib[lst] = list(vals)
+      lib['own_%s' % lst] = list(vals)
     for fg_name in lib.get('filegroups', []):
       fg = filegroups[fg_name]
-
+      for plugin in fg['plugins']:
+        if plugin not in plugins:
+          plugins.append(plugin)
       for lst in FILEGROUP_LISTS:
         vals = lib.get(lst, [])
         vals.extend(fg.get(lst, []))
         lib[lst] = vals
-
+      lib['plugins'] = plugins
+    if lib.get('generate_plugin_registry', False):
+      lib['src'].append('src/core/plugin_registry/%s_plugin_registry.c' %
+                        lib['name'])
     for lst in FILEGROUP_LISTS:
-      lib[lst] = sorted(list(set(lib.get(lst, []))))
+      lib[lst] = uniquify(lib.get(lst, []))

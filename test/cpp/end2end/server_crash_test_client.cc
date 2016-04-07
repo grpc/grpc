@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -63,6 +63,7 @@ int main(int argc, char** argv) {
   EchoRequest request;
   EchoResponse response;
   grpc::ClientContext context;
+  context.set_fail_fast(false);
 
   if (FLAGS_mode == "bidi") {
     auto stream = stub->BidiStream(&context);

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,6 +41,7 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/byte_stream.h"
+#include "src/core/lib/transport/transport.h"
 
 typedef enum {
   GRPC_CHTTP2_DATA_FH_0,
@@ -48,7 +49,8 @@ typedef enum {
   GRPC_CHTTP2_DATA_FH_2,
   GRPC_CHTTP2_DATA_FH_3,
   GRPC_CHTTP2_DATA_FH_4,
-  GRPC_CHTTP2_DATA_FRAME
+  GRPC_CHTTP2_DATA_FRAME,
+  GRPC_CHTTP2_DATA_ERROR
 } grpc_chttp2_stream_state;
 
 typedef struct grpc_chttp2_incoming_byte_stream
@@ -96,6 +98,7 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
 
 void grpc_chttp2_encode_data(uint32_t id, gpr_slice_buffer *inbuf,
                              uint32_t write_bytes, int is_eof,
+                             grpc_transport_one_way_stats *stats,
                              gpr_slice_buffer *outbuf);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_DATA_H */

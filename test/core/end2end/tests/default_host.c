@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -232,3 +232,5 @@ void default_host(grpc_end2end_test_config config) {
     return;
   test_invoke_simple_request(config);
 }
+
+void default_host_pre_init(void) {}

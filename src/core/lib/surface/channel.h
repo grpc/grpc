@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,6 @@
 #define GRPC_CORE_LIB_SURFACE_CHANNEL_H
 
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/client_config/subchannel_factory.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 
 grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,

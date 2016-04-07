@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,6 +49,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_table.h"
 #include "src/core/ext/transport/chttp2/transport/timeout_encoding.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
+#include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 #define HASH_FRAGMENT_1(x) ((x)&255)
@@ -74,6 +75,7 @@ typedef struct {
   /* output stream id */
   uint32_t stream_id;
   gpr_slice_buffer *output;
+  grpc_transport_one_way_stats *stats;
 } framer_state;
 
 /* fills p (which is expected to be 9 bytes long) with a data frame header */
@@ -102,6 +104,7 @@ static void finish_frame(framer_state *st, int is_header_boundary,
       st->stream_id, st->output->length - st->output_length_at_start_of_frame,
       (uint8_t)((is_last_in_stream ? GRPC_CHTTP2_DATA_FLAG_END_STREAM : 0) |
                 (is_header_boundary ? GRPC_CHTTP2_DATA_FLAG_END_HEADERS : 0)));
+  st->stats->framing_bytes += 9;
   st->is_first_frame = 0;
 }
 
@@ -147,8 +150,10 @@ static void add_header_data(framer_state *st, gpr_slice slice) {
   remaining = GRPC_CHTTP2_MAX_PAYLOAD_LENGTH +
               st->output_length_at_start_of_frame - st->output->length;
   if (len <= remaining) {
+    st->stats->header_bytes += len;
     gpr_slice_buffer_add(st->output, slice);
   } else {
+    st->stats->header_bytes += remaining;
     gpr_slice_buffer_add(st->output, gpr_slice_split_head(&slice, remaining));
     finish_frame(st, 0, 0);
     begin_frame(st);
@@ -178,8 +183,7 @@ static void add_elem(grpc_chttp2_hpack_compressor *c, grpc_mdelem *elem) {
   uint32_t key_hash = elem->key->hash;
   uint32_t elem_hash = GRPC_MDSTR_KV_HASH(key_hash, elem->value->hash);
   uint32_t new_index = c->tail_remote_index + c->table_elems + 1;
-  size_t elem_size = 32 + GPR_SLICE_LENGTH(elem->key->slice) +
-                     GPR_SLICE_LENGTH(elem->value->slice);
+  size_t elem_size = grpc_mdelem_get_size_in_hpack_table(elem);
 
   GPR_ASSERT(elem_size < 65536);
 
@@ -395,8 +399,7 @@ static void hpack_enc(grpc_chttp2_hpack_compressor *c, grpc_mdelem *elem,
   }
 
   /* should this elem be in the table? */
-  decoder_space_usage = 32 + GPR_SLICE_LENGTH(elem->key->slice) +
-                        GPR_SLICE_LENGTH(elem->value->slice);
+  decoder_space_usage = grpc_mdelem_get_size_in_hpack_table(elem);
   should_add_elem = decoder_space_usage < MAX_DECODER_SPACE_USAGE &&
                     c->filter_elems[HASH_FRAGMENT_1(elem_hash)] >=
                         c->filter_elems_sum / ONE_ON_ADD_PROBABILITY;
@@ -535,6 +538,7 @@ void grpc_chttp2_hpack_compressor_set_max_table_size(
 void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor *c,
                                uint32_t stream_id,
                                grpc_metadata_batch *metadata, int is_eof,
+                               grpc_transport_one_way_stats *stats,
                                gpr_slice_buffer *outbuf) {
   framer_state st;
   grpc_linked_mdelem *l;
@@ -546,6 +550,7 @@ void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor *c,
   st.stream_id = stream_id;
   st.output = outbuf;
   st.is_first_frame = 1;
+  st.stats = stats;
 
   /* Encode a metadata batch; store the returned values, representing
      a metadata element that needs to be unreffed back into the metadata

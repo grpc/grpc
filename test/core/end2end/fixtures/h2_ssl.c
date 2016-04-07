@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -165,6 +165,7 @@ int main(int argc, char **argv) {
   char *roots_filename;
 
   grpc_test_init(argc, argv);
+  grpc_end2end_tests_pre_init();
 
   /* Set the SSL roots env var. */
   roots_file = gpr_tmpfile("chttp2_simple_ssl_fullstack_test", &roots_filename);

@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
@@ -136,7 +136,7 @@ namespace Grpc.Core.Internal
             lock (myLock)
             {
                 GrpcPreconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
-                CheckSendingAllowed();
+                CheckSendingAllowed(allowFinished: false);
 
                 call.StartSendMessage(HandleSendFinished, payload, writeFlags, !initialMetadataSent);
 
@@ -202,14 +202,14 @@ namespace Grpc.Core.Internal
         {
         }
 
-        protected void CheckSendingAllowed()
+        protected void CheckSendingAllowed(bool allowFinished)
         {
             GrpcPreconditions.CheckState(started);
             CheckNotCancelled();
-            GrpcPreconditions.CheckState(!disposed);
+            GrpcPreconditions.CheckState(!disposed || allowFinished);
 
             GrpcPreconditions.CheckState(!halfcloseRequested, "Already halfclosed.");
-            GrpcPreconditions.CheckState(!finished, "Already finished.");
+            GrpcPreconditions.CheckState(!finished || allowFinished, "Already finished.");
             GrpcPreconditions.CheckState(sendCompletionDelegate == null, "Only one write can be pending at a time");
         }
 
@@ -294,9 +294,9 @@ namespace Grpc.Core.Internal
         }
 
         /// <summary>
-        /// Handles halfclose completion.
+        /// Handles halfclose (send close from client) completion.
         /// </summary>
-        protected void HandleHalfclosed(bool success)
+        protected void HandleSendCloseFromClientFinished(bool success)
         {
             AsyncCompletionDelegate<object> origCompletionDelegate = null;
             lock (myLock)
@@ -309,7 +309,31 @@ namespace Grpc.Core.Internal
 
             if (!success)
             {
-                FireCompletion(origCompletionDelegate, null, new InvalidOperationException("Halfclose failed"));
+                FireCompletion(origCompletionDelegate, null, new InvalidOperationException("Sending close from client has failed."));
+            }
+            else
+            {
+                FireCompletion(origCompletionDelegate, null, null);
+            }
+        }
+
+        /// <summary>
+        /// Handles send status from server completion.
+        /// </summary>
+        protected void HandleSendStatusFromServerFinished(bool success)
+        {
+            AsyncCompletionDelegate<object> origCompletionDelegate = null;
+            lock (myLock)
+            {
+                origCompletionDelegate = sendCompletionDelegate;
+                sendCompletionDelegate = null;
+
+                ReleaseResourcesIfPossible();
+            }
+
+            if (!success)
+            {
+                FireCompletion(origCompletionDelegate, null, new InvalidOperationException("Error sending status from server."));
             }
             else
             {

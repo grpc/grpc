@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -1426,6 +1426,9 @@ grpc_chttp2_parse_error grpc_chttp2_header_parser_parse(
     grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
   grpc_chttp2_hpack_parser *parser = hpack_parser;
   GPR_TIMER_BEGIN("grpc_chttp2_hpack_parser_parse", 0);
+  if (stream_parsing != NULL) {
+    stream_parsing->stats.incoming.header_bytes += GPR_SLICE_LENGTH(slice);
+  }
   if (!grpc_chttp2_hpack_parser_parse(parser, GPR_SLICE_START_PTR(slice),
                                       GPR_SLICE_END_PTR(slice))) {
     GPR_TIMER_END("grpc_chttp2_hpack_parser_parse", 0);

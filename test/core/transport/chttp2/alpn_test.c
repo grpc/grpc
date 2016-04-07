@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/ext/transport/chttp2/transport/alpn.h"
+#include "src/core/ext/transport/chttp2/alpn/alpn.h"
 
 #include <grpc/support/log.h>
 #include "test/core/util/test_config.h"
