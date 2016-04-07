@@ -41,7 +41,7 @@
 #include "test/core/util/test_config.h"
 
 static void noop(load_reporting_data *lr_data) {
-  uintptr_t *d = (uintptr_t *)(lr_data->data);
+  uint32_t *d = (uint32_t *)(lr_data->data);
   *d = 0xdeadbeef;
 }
 
@@ -58,7 +58,7 @@ static void test_load_reporter_registration(void) {
   lr_data.data = gpr_malloc(sizeof(uint32_t));
   grpc_load_reporting_call(&lr_data);
 
-  GPR_ASSERT(*((uintptr_t *)lr_data.data) == 0xdeadbeef);
+  GPR_ASSERT(*((uint32_t *)lr_data.data) == 0xdeadbeef);
 
   gpr_free(lr_data.data);
 }
