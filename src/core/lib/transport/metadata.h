@@ -110,6 +110,8 @@ grpc_mdelem *grpc_mdelem_from_string_and_buffer(const char *key,
                                                 const uint8_t *value,
                                                 size_t value_length);
 
+size_t grpc_mdelem_get_size_in_hpack_table(grpc_mdelem *elem);
+
 /* Mutator and accessor for grpc_mdelem user data. The destructor function
    is used as a type tag and is checked during user_data fetch. */
 void *grpc_mdelem_get_user_data(grpc_mdelem *md,
@@ -152,5 +154,9 @@ int grpc_mdstr_is_bin_suffixed(grpc_mdstr *s);
 
 void grpc_mdctx_global_init(void);
 void grpc_mdctx_global_shutdown(void);
+
+/* Implementation provided by chttp2_transport */
+extern gpr_slice (*grpc_chttp2_base64_encode_and_huffman_compress)(
+    gpr_slice input);
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_METADATA_H */

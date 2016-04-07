@@ -38,7 +38,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
 
-#include "src/core/lib/client_config/initial_connect_string.h"
+#include "src/core/ext/client_config/initial_connect_string.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/security/credentials.h"
 #include "src/core/lib/support/string.h"

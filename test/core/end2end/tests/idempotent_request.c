@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -246,3 +246,5 @@ void idempotent_request(grpc_end2end_test_config config) {
   }
   test_invoke_10_simple_requests(config);
 }
+
+void idempotent_request_pre_init(void) {}

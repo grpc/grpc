@@ -41,9 +41,9 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
+#include "src/core/ext/client_config/client_channel.h"
+#include "src/core/ext/client_config/lb_policy_registry.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/client_channel.h"
-#include "src/core/lib/client_config/lb_policy_registry.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"

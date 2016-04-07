@@ -127,3 +127,5 @@ void cancel_in_a_vacuum(grpc_end2end_test_config config) {
     test_cancel_in_a_vacuum(config, cancellation_modes[i]);
   }
 }
+
+void cancel_in_a_vacuum_pre_init(void) {}
