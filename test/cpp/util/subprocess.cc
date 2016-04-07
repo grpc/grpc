@@ -39,15 +39,15 @@
 
 namespace grpc {
 
-static gpr_subprocess *MakeProcess(std::initializer_list<std::string> args) {
-  std::vector<const char *> vargs;
+static gpr_subprocess* MakeProcess(const std::vector<std::string>& args) {
+  std::vector<const char*> vargs;
   for (auto it = args.begin(); it != args.end(); ++it) {
     vargs.push_back(it->c_str());
   }
   return gpr_subprocess_create(vargs.size(), &vargs[0]);
 }
 
-SubProcess::SubProcess(std::initializer_list<std::string> args)
+SubProcess::SubProcess(const std::vector<std::string>& args)
     : subprocess_(MakeProcess(args)) {}
 
 SubProcess::~SubProcess() { gpr_subprocess_destroy(subprocess_); }

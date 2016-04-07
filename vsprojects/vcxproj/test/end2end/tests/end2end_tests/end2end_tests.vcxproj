@@ -147,8 +147,8 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\end2end_tests.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\tests\cancel_test_helpers.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\end2end_tests.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\end2end_tests.c">
@@ -180,6 +180,8 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\disappearing_server.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\empty_batch.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\filter_causes_close.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\graceful_server_shutdown.c">
     </ClCompile>

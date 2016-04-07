@@ -49,7 +49,7 @@ namespace Grpc.HealthCheck.Tests
         const string Host = "localhost";
         Server server;
         Channel channel;
-        Grpc.Health.V1.Health.IHealthClient client;
+        Grpc.Health.V1.Health.HealthClient client;
         Grpc.HealthCheck.HealthServiceImpl serviceImpl;
 
         [TestFixtureSetUp]

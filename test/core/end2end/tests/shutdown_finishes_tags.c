@@ -119,3 +119,5 @@ static void test_early_server_shutdown_finishes_tags(
 void shutdown_finishes_tags(grpc_end2end_test_config config) {
   test_early_server_shutdown_finishes_tags(config);
 }
+
+void shutdown_finishes_tags_pre_init(void) {}

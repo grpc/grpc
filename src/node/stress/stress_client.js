@@ -102,7 +102,7 @@ function main() {
   var argv = parseArgs(process.argv, {
     string: ['server_addresses', 'test_cases', 'metrics_port'],
     default: {'server_addresses': 'localhost:8080',
-              'test_duration-secs': -1,
+              'test_duration_secs': -1,
               'num_channels_per_server': 1,
               'num_stubs_per_channel': 1,
               'metrics_port': '8081'}
@@ -118,8 +118,8 @@ function main() {
   }));
   start(server_addresses, test_cases, argv.num_channels_per_server,
         argv.num_stubs_per_channel, argv.metrics_port);
-  if (argv['test_duration-secs'] > -1) {
-    setTimeout(stop, argv['test_duration-secs'] * 1000);
+  if (argv.test_duration_secs > -1) {
+    setTimeout(stop, argv.test_duration_secs * 1000);
   }
 }
 

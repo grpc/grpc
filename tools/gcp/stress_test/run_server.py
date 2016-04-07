@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -62,7 +62,7 @@ def run_server():
 
   run_id = env['RUN_ID']  # The unique run id for this test
   image_type = env['STRESS_TEST_IMAGE_TYPE']
-  image_name = env['STRESS_TEST_IMAGE']
+  stress_server_cmd = env['STRESS_TEST_CMD'].split()
   args_str = env['STRESS_TEST_ARGS_STR']
   pod_name = env['POD_NAME']
   project_id = env['GCP_PROJECT_ID']
@@ -98,7 +98,7 @@ def run_server():
   # Update status that the test is starting (in the status table)
   bq_helper.insert_summary_row(EventType.STARTING, details)
 
-  stress_cmd = [image_name] + [x for x in args_str.split()]
+  stress_cmd = stress_server_cmd + [x for x in args_str.split()]
 
   print 'Launching process %s ...' % stress_cmd
   stress_p = subprocess.Popen(args=stress_cmd,

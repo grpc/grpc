@@ -122,25 +122,19 @@ static const char *name_for_type(grpc_channel_stack_type type) {
   GPR_UNREACHABLE_CODE(return "UNKNOWN");
 }
 
-void *grpc_channel_init_create_stack(
-    grpc_exec_ctx *exec_ctx, grpc_channel_stack_type type, size_t prefix_bytes,
-    const grpc_channel_args *args, int initial_refs, grpc_iomgr_cb_func destroy,
-    void *destroy_arg, grpc_transport *transport) {
+bool grpc_channel_init_create_stack(grpc_exec_ctx *exec_ctx,
+                                    grpc_channel_stack_builder *builder,
+                                    grpc_channel_stack_type type) {
   GPR_ASSERT(g_finalized);
 
-  grpc_channel_stack_builder *builder = grpc_channel_stack_builder_create();
   grpc_channel_stack_builder_set_name(builder, name_for_type(type));
-  grpc_channel_stack_builder_set_channel_arguments(builder, args);
-  grpc_channel_stack_builder_set_transport(builder, transport);
 
   for (size_t i = 0; i < g_slots[type].num_slots; i++) {
     const stage_slot *slot = &g_slots[type].slots[i];
     if (!slot->fn(builder, slot->arg)) {
-      grpc_channel_stack_builder_destroy(builder);
-      return NULL;
+      return false;
     }
   }
 
-  return grpc_channel_stack_builder_finish(exec_ctx, builder, prefix_bytes,
-                                           initial_refs, destroy, destroy_arg);
+  return true;
 }

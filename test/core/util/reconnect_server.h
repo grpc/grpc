@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -52,6 +52,7 @@ typedef struct reconnect_server {
   timestamp_list *head;
   timestamp_list *tail;
   char *peer;
+  int max_reconnect_backoff_ms;
 } reconnect_server;
 
 void reconnect_server_init(reconnect_server *server);

@@ -120,7 +120,7 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
+  op->flags = GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY;
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
@@ -221,3 +221,5 @@ void simple_delayed_request(grpc_end2end_test_config config) {
   test_simple_delayed_request_short(config);
   test_simple_delayed_request_long(config);
 }
+
+void simple_delayed_request_pre_init(void) {}

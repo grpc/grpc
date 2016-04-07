@@ -34,12 +34,15 @@
 #include "test/core/bad_client/bad_client.h"
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
+#include <stdio.h>
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/http_server_filter.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
+#include "src/core/lib/support/murmur_hash.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
@@ -109,7 +112,8 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
   grpc_server_register_completion_queue(a.server, a.cq, NULL);
   a.registered_method =
       grpc_server_register_method(a.server, GRPC_BAD_CLIENT_REGISTERED_METHOD,
-                                  GRPC_BAD_CLIENT_REGISTERED_HOST, 0);
+                                  GRPC_BAD_CLIENT_REGISTERED_HOST,
+                                  GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER, 0);
   grpc_server_start(a.server);
   transport = grpc_create_chttp2_transport(&exec_ctx, NULL, sfd.server, 0);
   server_setup_transport(&a, transport);
