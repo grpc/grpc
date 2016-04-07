@@ -162,7 +162,7 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
     case GRPC_CHTTP2_DATA_ERROR:
       p->state = GRPC_CHTTP2_DATA_ERROR;
       return GRPC_CHTTP2_STREAM_ERROR;
-  fh_0:
+    fh_0:
     case GRPC_CHTTP2_DATA_FH_0:
       stream_parsing->stats.incoming.framing_bytes++;
       p->frame_type = *cur;
