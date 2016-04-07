@@ -41,6 +41,7 @@
 #include <sys/un.h>
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 void grpc_create_socketpair_if_unix(int sv[2]) {
   GPR_ASSERT(socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == 0);
@@ -73,21 +74,6 @@ void grpc_unlink_if_unix_domain_socket(const struct sockaddr *addr) {
   if (stat(un->sun_path, &st) == 0 && (st.st_mode & S_IFMT) == S_IFSOCK) {
     unlink(un->sun_path);
   }
-}
-
-int grpc_parse_unix(grpc_uri *uri, struct sockaddr_storage *addr, size_t *len) {
-  struct sockaddr_un *un = (struct sockaddr_un *)addr;
-
-  un->sun_family = AF_UNIX;
-  strcpy(un->sun_path, uri->path);
-  *len = strlen(un->sun_path) + sizeof(un->sun_family) + 1;
-
-  return 1;
-}
-
-char *grpc_unix_get_default_authority(grpc_resolver_factory *factory,
-                                      grpc_uri *uri) {
-  return gpr_strdup("localhost");
 }
 
 char *grpc_sockaddr_to_uri_unix_if_possible(const struct sockaddr *addr) {

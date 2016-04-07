@@ -32,6 +32,7 @@
  */
 
 #include <limits.h>
+#include <string.h>
 
 #include <grpc/census.h>
 
@@ -39,13 +40,24 @@
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/surface/channel_init.h"
 
+static bool is_census_enabled(const grpc_channel_args *a) {
+  size_t i;
+  if (a == NULL) return 0;
+  for (i = 0; i < a->num_args; i++) {
+    if (0 == strcmp(a->args[i].key, GRPC_ARG_ENABLE_CENSUS)) {
+      return a->args[i].value.integer != 0 && census_enabled();
+    }
+  }
+  return census_enabled();
+}
+
 static bool maybe_add_census_filter(grpc_channel_stack_builder *builder,
-                                    void *arg_must_be_null) {
+                                    void *arg) {
   const grpc_channel_args *args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
-  if (grpc_channel_args_is_census_enabled(args)) {
+  if (is_census_enabled(args)) {
     return grpc_channel_stack_builder_prepend_filter(
-        builder, &grpc_client_census_filter, NULL, NULL);
+        builder, (const grpc_channel_filter *)arg, NULL, NULL);
   }
   return true;
 }
@@ -60,9 +72,11 @@ void census_grpc_plugin_init(void) {
     }
   }
   grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX,
-                                   maybe_add_census_filter, NULL);
+                                   maybe_add_census_filter,
+                                   (void *)&grpc_client_census_filter);
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
-                                   maybe_add_census_filter, NULL);
+                                   maybe_add_census_filter,
+                                   (void *)&grpc_server_census_filter);
 }
 
 void census_grpc_plugin_shutdown(void) { census_shutdown(); }

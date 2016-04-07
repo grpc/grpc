@@ -45,12 +45,13 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/murmur_hash.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/static_metadata.h"
+
+gpr_slice (*grpc_chttp2_base64_encode_and_huffman_compress)(gpr_slice input);
 
 /* There are two kinds of mdelem and mdstr instances.
  * Static instances are declared in static_metadata.{h,c} and

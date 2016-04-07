@@ -18,56 +18,20 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\alloc.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_atomic.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_sync.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_win32.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\log.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice_buffer.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_generic.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_win32.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\config.h">
       <Filter>include\grpc++\support</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\config_protobuf.h">
       <Filter>include\grpc++\support</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config_protobuf.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\src\compiler\config.h">
       <Filter>src\compiler</Filter>
     </ClInclude>
@@ -113,20 +77,17 @@
     <Filter Include="include">
       <UniqueIdentifier>{93ed419d-4540-7fa4-814d-3392745b77ff}</UniqueIdentifier>
     </Filter>
-    <Filter Include="include\grpc">
-      <UniqueIdentifier>{ae5560ea-77fe-ab95-c7a3-4538c66591a8}</UniqueIdentifier>
-    </Filter>
     <Filter Include="include\grpc++">
       <UniqueIdentifier>{893c09ee-e315-e763-9d9d-37522ba2f51c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="include\grpc++\impl">
+      <UniqueIdentifier>{3e8c71a4-8a06-a577-2799-2224a1ad1f1b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc++\impl\codegen">
+      <UniqueIdentifier>{ec2a6e26-915b-ba1b-4f59-f361dc01105c}</UniqueIdentifier>
+    </Filter>
     <Filter Include="include\grpc++\support">
       <UniqueIdentifier>{1c34d005-1ffb-8a31-881a-c6bb431cda69}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="include\grpc\impl">
-      <UniqueIdentifier>{3c047248-00c2-4c59-fffd-9e313353e390}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="include\grpc\impl\codegen">
-      <UniqueIdentifier>{749ae941-63f0-c623-8b4b-a3114ec81bb7}</UniqueIdentifier>
     </Filter>
     <Filter Include="src">
       <UniqueIdentifier>{94c9769a-a6cd-49fd-2b30-e52d2d02ed91}</UniqueIdentifier>
