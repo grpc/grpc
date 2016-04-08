@@ -756,9 +756,14 @@ static void pollset_kick_ext(grpc_pollset *p,
     specific_worker = pop_front_worker(p);
     if (specific_worker != NULL) {
       if (gpr_tls_get(&g_current_thread_worker) == (intptr_t)specific_worker) {
+        /* Prefer not to kick self. Push the worker to the end of the list and
+         * pop the one from front */
         GPR_TIMER_MARK("kick_anonymous_not_self", 0);
         push_back_worker(p, specific_worker);
         specific_worker = pop_front_worker(p);
+        /* If there was only one worker on the pollset, we would get the same
+         * worker we pushed (the one set on current thread local) back. If so,
+         * kick it only if GRPC_POLLSET_CAN_KICK_SELF flag is set */
         if ((flags & GRPC_POLLSET_CAN_KICK_SELF) == 0 &&
             gpr_tls_get(&g_current_thread_worker) ==
                 (intptr_t)specific_worker) {
