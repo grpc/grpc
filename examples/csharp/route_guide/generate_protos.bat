@@ -5,6 +5,8 @@ setlocal
 @rem enter this directory
 cd /d %~dp0
 
-packages\Google.Protobuf.3.0.0-beta2\tools\protoc.exe -I../../protos --csharp_out RouteGuide  ../../protos/route_guide.proto --grpc_out RouteGuide --plugin=protoc-gen-grpc=packages\Grpc.Tools.0.13.0\tools\grpc_csharp_plugin.exe
+set TOOLS_PATH=packages\Grpc.Tools.0.13.1\tools\windows_x86
+
+%TOOLS_PATH%\protoc.exe -I../../protos --csharp_out RouteGuide  ../../protos/route_guide.proto --grpc_out RouteGuide --plugin=protoc-gen-grpc=%TOOLS_PATH%\grpc_csharp_plugin.exe
 
 endlocal
