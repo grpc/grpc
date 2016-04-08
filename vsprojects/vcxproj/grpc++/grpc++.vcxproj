@@ -275,6 +275,8 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\rpc_service_method.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\serialization_traits.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\server_builder_option.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\server_builder_plugin.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\server_initializer.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\service_type.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\sync.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\sync_cxx11.h" />
@@ -361,6 +363,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\secure_server_credentials.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\client\create_channel_internal.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\common\create_auth_context.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\cpp\plugin\proto_server_reflection_plugin.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\cpp\plugin\reflection\reflection.grpc.pb.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\cpp\plugin\reflection\reflection.pb.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\dynamic_thread_pool.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\thread_pool_interface.h" />
   </ItemGroup>
@@ -398,6 +403,14 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\core_codegen.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\rpc_method.cc">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\plugin\proto_server_reflection_plugin.cc">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\plugin\reflection\proto_server_reflection.cc">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\plugin\reflection\reflection.grpc.pb.cc">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\plugin\reflection\reflection.pb.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\async_generic_service.cc">
     </ClCompile>
