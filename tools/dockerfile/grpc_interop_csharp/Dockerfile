@@ -80,13 +80,9 @@ RUN echo "deb http://download.mono-project.com/repo/debian wheezy-libtiff-compat
 # Install dependencies
 RUN apt-get update && apt-get -y dist-upgrade && apt-get install -y \
     mono-devel \
-    nunit \
-    nunit-console \
-    monodevelop
-
-# Download NuGet
-RUN cd /var/local && wget www.nuget.org/NuGet.exe
-ENV NUGET mono /var/local/NuGet.exe
+    ca-certificates-mono \
+    nuget \
+    && apt-get clean
 
 # Define the default command.
 CMD ["bash"]
