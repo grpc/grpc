@@ -1018,7 +1018,6 @@ void grpc_server_start(grpc_server *server) {
 void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
                                  grpc_transport *transport,
                                  const grpc_channel_args *args) {
-  size_t i;
   size_t num_registered_methods;
   size_t alloc;
   registered_method *rm;
@@ -1033,11 +1032,15 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
   uint32_t max_probes = 0;
   grpc_transport_op op;
 
+  /* TODO(sreek): Delete this commented block once issue #5470 is resolved */
+  /*
+  size_t i;
   for (i = 0; i < s->cq_count; i++) {
     memset(&op, 0, sizeof(op));
     op.bind_pollset = grpc_cq_pollset(s->cqs[i]);
     grpc_transport_perform_op(exec_ctx, transport, &op);
   }
+  */
 
   channel =
       grpc_channel_create(exec_ctx, NULL, args, GRPC_SERVER_CHANNEL, transport);
