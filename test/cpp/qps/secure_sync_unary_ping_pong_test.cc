@@ -43,7 +43,7 @@ namespace grpc {
 namespace testing {
 
 static const int WARMUP = 5;
-static const int BENCHMARK = 10;
+static const int BENCHMARK = 5;
 
 static void RunSynchronousUnaryPingPong() {
   gpr_log(GPR_INFO, "Running Synchronous Unary Ping Pong");
@@ -57,7 +57,6 @@ static void RunSynchronousUnaryPingPong() {
 
   ServerConfig server_config;
   server_config.set_server_type(SYNC_SERVER);
-  server_config.set_host("localhost");
 
   // Set up security params
   SecurityParams security;

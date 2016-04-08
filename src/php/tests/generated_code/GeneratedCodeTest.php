@@ -38,10 +38,12 @@ class GeneratedCodeTest extends AbstractGeneratedCodeTest
     public function setUp()
     {
         self::$client = new math\MathClient(
-        getenv('GRPC_TEST_HOST'), []);
+            getenv('GRPC_TEST_HOST'), [
+                'credentials' => Grpc\ChannelCredentials::createInsecure(),
+            ]);
     }
 
-    public static function tearDownAfterClass()
+    public function tearDown()
     {
         self::$client->close();
     }

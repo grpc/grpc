@@ -63,13 +63,17 @@ grpc_byte_buffer *BufferToByteBuffer(Local<Value> buffer) {
   return byte_buffer;
 }
 
+namespace {
+void delete_buffer(char *data, void *hint) { delete[] data; }
+}
+
 Local<Value> ByteBufferToBuffer(grpc_byte_buffer *buffer) {
   Nan::EscapableHandleScope scope;
   if (buffer == NULL) {
     return scope.Escape(Nan::Null());
   }
   size_t length = grpc_byte_buffer_length(buffer);
-  char *result = reinterpret_cast<char *>(calloc(length, sizeof(char)));
+  char *result = new char[length];
   size_t offset = 0;
   grpc_byte_buffer_reader reader;
   grpc_byte_buffer_reader_init(&reader, buffer);
@@ -77,9 +81,10 @@ Local<Value> ByteBufferToBuffer(grpc_byte_buffer *buffer) {
   while (grpc_byte_buffer_reader_next(&reader, &next) != 0) {
     memcpy(result + offset, GPR_SLICE_START_PTR(next), GPR_SLICE_LENGTH(next));
     offset += GPR_SLICE_LENGTH(next);
+    gpr_slice_unref(next);
   }
   return scope.Escape(MakeFastBuffer(
-      Nan::NewBuffer(result, length).ToLocalChecked()));
+      Nan::NewBuffer(result, length, delete_buffer, NULL).ToLocalChecked()));
 }
 
 Local<Value> MakeFastBuffer(Local<Value> slowBuffer) {

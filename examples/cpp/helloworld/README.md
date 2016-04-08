@@ -2,7 +2,7 @@
 
 ### Install gRPC
 Make sure you have installed gRPC on your system. Follow the instructions here:
-[https://github.com/grpc/grpc/blob/master/INSTALL](../../../INSTALL).
+[https://github.com/grpc/grpc/blob/master/INSTALL](../../../INSTALL.md).
 
 ### Get the tutorial source code
 
@@ -41,7 +41,7 @@ message from the remote client containing the user's name, then send back
 a greeting in a single `HelloReply`. This is the simplest type of RPC you
 can specify in gRPC - we'll look at some other types later in this document.
 
-```
+```protobuf
 syntax = "proto3";
 
 option java_package = "ex.grpc";
@@ -93,20 +93,20 @@ $ protoc -I ../../protos/ --cpp_out=. ../../protos/helloworld.proto
   channel can be created with the target address, credentials to use and
   arguments as follows
 
-    ```
+    ```cpp
     auto channel = CreateChannel("localhost:50051", InsecureChannelCredentials());
     ```
 
 - Create a stub. A stub implements the rpc methods of a service and in the
   generated code, a method is provided to created a stub with a channel:
 
-    ```
+    ```cpp
     auto stub = helloworld::Greeter::NewStub(channel);
     ```
 
 - Make a unary rpc, with `ClientContext` and request/response proto messages.
 
-    ```
+    ```cpp
     ClientContext context;
     HelloRequest request;
     request.set_name("hello");
@@ -116,7 +116,7 @@ $ protoc -I ../../protos/ --cpp_out=. ../../protos/helloworld.proto
 
 - Check returned status and response.
 
-    ```
+    ```cpp
     if (status.ok()) {
       // check reply.message()
     } else {
@@ -130,7 +130,7 @@ For a working example, refer to [greeter_client.cc](greeter_client.cc).
 
 - Implement the service interface
 
-    ```
+    ```cpp
     class GreeterServiceImpl final : public Greeter::Service {
       Status SayHello(ServerContext* context, const HelloRequest* request,
           HelloReply* reply) override {
@@ -144,7 +144,7 @@ For a working example, refer to [greeter_client.cc](greeter_client.cc).
 
 - Build a server exporting the service
 
-    ```
+    ```cpp
     GreeterServiceImpl service;
     ServerBuilder builder;
     builder.AddListeningPort("0.0.0.0:50051", grpc::InsecureServerCredentials());
@@ -170,14 +170,14 @@ The channel and stub creation code is the same as the sync client.
 - Initiate the rpc and create a handle for the rpc. Bind the rpc to a
   `CompletionQueue`.
 
-    ```
+    ```cpp
     CompletionQueue cq;
     auto rpc = stub->AsyncSayHello(&context, request, &cq);
     ```
 
 - Ask for reply and final status, with a unique tag
 
-    ```
+    ```cpp
     Status status;
     rpc->Finish(&reply, &status, (void*)1);
     ```
@@ -185,7 +185,7 @@ The channel and stub creation code is the same as the sync client.
 - Wait for the completion queue to return the next tag. The reply and status are
   ready once the tag passed into the corresponding `Finish()` call is returned.
 
-    ```
+    ```cpp
     void* got_tag;
     bool ok = false;
     cq.Next(&got_tag, &ok);
@@ -203,18 +203,18 @@ completion queue to return the tag. The basic flow is
 
 - Build a server exporting the async service
 
-    ```
+    ```cpp
     helloworld::Greeter::AsyncService service;
     ServerBuilder builder;
     builder.AddListeningPort("0.0.0.0:50051", InsecureServerCredentials());
-    builder.RegisterAsyncService(&service);
+    builder.RegisterService(&service);
     auto cq = builder.AddCompletionQueue();
     auto server = builder.BuildAndStart();
     ```
 
 - Request one rpc
 
-    ```
+    ```cpp
     ServerContext context;
     HelloRequest request;
     ServerAsyncResponseWriter<HelloReply> responder;
@@ -224,7 +224,7 @@ completion queue to return the tag. The basic flow is
 - Wait for the completion queue to return the tag. The context, request and
   responder are ready once the tag is retrieved.
 
-    ```
+    ```cpp
     HelloReply reply;
     Status status;
     void* got_tag;
@@ -239,7 +239,7 @@ completion queue to return the tag. The basic flow is
 - Wait for the completion queue to return the tag. The rpc is finished when the
   tag is back.
 
-    ```
+    ```cpp
     void* got_tag;
     bool ok = false;
     cq.Next(&got_tag, &ok);

@@ -58,7 +58,11 @@ func (fh *FrameHeader) MarshalBinary() ([]byte, error) {
 	buf[0], buf[1], buf[2] = byte(fh.Length>>16), byte(fh.Length>>8), byte(fh.Length)
 	buf[3] = byte(fh.Type)
 	buf[4] = fh.Flags
-	binary.BigEndian.PutUint32(buf[5:], uint32(fh.StreamID))
+	var res uint32
+	if fh.Reserved {
+		res = 0x80000000
+	}
+	binary.BigEndian.PutUint32(buf[5:], uint32(fh.StreamID)|res)
 
 	return buf, nil
 }
@@ -89,6 +93,8 @@ func (ft FrameType) String() string {
 		return "WINDOW_UPDATE"
 	case ContinuationFrameType:
 		return "CONTINUATION"
+	case HTTP1FrameType:
+		return "HTTP/1.? (Bad)"
 	default:
 		return fmt.Sprintf("UNKNOWN(%d)", byte(ft))
 	}
@@ -106,4 +112,9 @@ const (
 	GoAwayFrameType       FrameType = 7
 	WindowUpdateFrameType FrameType = 8
 	ContinuationFrameType FrameType = 9
+
+	// HTTP1FrameType is not a real type, but rather a convenient way to check if the response
+	// is an http response.  The type of a frame header is the 4th byte, which in an http1
+	// response will be "HTTP/1.1 200 OK" or something like that.  The character for "P" is 80.
+	HTTP1FrameType FrameType = 80
 )

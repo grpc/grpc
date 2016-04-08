@@ -31,11 +31,10 @@
  *
  */
 
-#include "src/core/iomgr/timer.h"
+#include "src/core/lib/iomgr/timer.h"
 
 #include <string.h>
 
-#include "src/core/iomgr/timer_internal.h"
 #include <grpc/support/log.h>
 #include "test/core/util/test_config.h"
 
@@ -43,8 +42,8 @@
 
 static int cb_called[MAX_CB][2];
 
-static void cb(grpc_exec_ctx *exec_ctx, void *arg, int success) {
-  cb_called[(gpr_intptr)arg][success]++;
+static void cb(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+  cb_called[(intptr_t)arg][success]++;
 }
 
 static void add_test(void) {
@@ -60,7 +59,7 @@ static void add_test(void) {
   for (i = 0; i < 10; i++) {
     grpc_timer_init(&exec_ctx, &timers[i],
                     gpr_time_add(start, gpr_time_from_millis(10, GPR_TIMESPAN)),
-                    cb, (void *)(gpr_intptr)i, start);
+                    cb, (void *)(intptr_t)i, start);
   }
 
   /* 1010 ms timers.  will expire in the next epoch */
@@ -68,24 +67,22 @@ static void add_test(void) {
     grpc_timer_init(
         &exec_ctx, &timers[i],
         gpr_time_add(start, gpr_time_from_millis(1010, GPR_TIMESPAN)), cb,
-        (void *)(gpr_intptr)i, start);
+        (void *)(intptr_t)i, start);
   }
 
   /* collect timers.  Only the first batch should be ready. */
-  GPR_ASSERT(10 == grpc_timer_check(&exec_ctx,
-                                    gpr_time_add(start, gpr_time_from_millis(
-                                                            500, GPR_TIMESPAN)),
-                                    NULL));
+  GPR_ASSERT(grpc_timer_check(
+      &exec_ctx, gpr_time_add(start, gpr_time_from_millis(500, GPR_TIMESPAN)),
+      NULL));
   grpc_exec_ctx_finish(&exec_ctx);
   for (i = 0; i < 20; i++) {
     GPR_ASSERT(cb_called[i][1] == (i < 10));
     GPR_ASSERT(cb_called[i][0] == 0);
   }
 
-  GPR_ASSERT(0 == grpc_timer_check(&exec_ctx,
-                                   gpr_time_add(start, gpr_time_from_millis(
-                                                           600, GPR_TIMESPAN)),
-                                   NULL));
+  GPR_ASSERT(!grpc_timer_check(
+      &exec_ctx, gpr_time_add(start, gpr_time_from_millis(600, GPR_TIMESPAN)),
+      NULL));
   grpc_exec_ctx_finish(&exec_ctx);
   for (i = 0; i < 30; i++) {
     GPR_ASSERT(cb_called[i][1] == (i < 10));
@@ -93,20 +90,18 @@ static void add_test(void) {
   }
 
   /* collect the rest of the timers */
-  GPR_ASSERT(10 == grpc_timer_check(
-                       &exec_ctx, gpr_time_add(start, gpr_time_from_millis(
-                                                          1500, GPR_TIMESPAN)),
-                       NULL));
+  GPR_ASSERT(grpc_timer_check(
+      &exec_ctx, gpr_time_add(start, gpr_time_from_millis(1500, GPR_TIMESPAN)),
+      NULL));
   grpc_exec_ctx_finish(&exec_ctx);
   for (i = 0; i < 30; i++) {
     GPR_ASSERT(cb_called[i][1] == (i < 20));
     GPR_ASSERT(cb_called[i][0] == 0);
   }
 
-  GPR_ASSERT(0 == grpc_timer_check(&exec_ctx,
-                                   gpr_time_add(start, gpr_time_from_millis(
-                                                           1600, GPR_TIMESPAN)),
-                                   NULL));
+  GPR_ASSERT(!grpc_timer_check(
+      &exec_ctx, gpr_time_add(start, gpr_time_from_millis(1600, GPR_TIMESPAN)),
+      NULL));
   for (i = 0; i < 30; i++) {
     GPR_ASSERT(cb_called[i][1] == (i < 20));
     GPR_ASSERT(cb_called[i][0] == 0);
@@ -130,15 +125,15 @@ void destruction_test(void) {
   grpc_timer_list_init(gpr_time_0(GPR_CLOCK_REALTIME));
   memset(cb_called, 0, sizeof(cb_called));
 
-  grpc_timer_init(&exec_ctx, &timers[0], tfm(100), cb, (void *)(gpr_intptr)0,
+  grpc_timer_init(&exec_ctx, &timers[0], tfm(100), cb, (void *)(intptr_t)0,
                   gpr_time_0(GPR_CLOCK_REALTIME));
-  grpc_timer_init(&exec_ctx, &timers[1], tfm(3), cb, (void *)(gpr_intptr)1,
+  grpc_timer_init(&exec_ctx, &timers[1], tfm(3), cb, (void *)(intptr_t)1,
                   gpr_time_0(GPR_CLOCK_REALTIME));
-  grpc_timer_init(&exec_ctx, &timers[2], tfm(100), cb, (void *)(gpr_intptr)2,
+  grpc_timer_init(&exec_ctx, &timers[2], tfm(100), cb, (void *)(intptr_t)2,
                   gpr_time_0(GPR_CLOCK_REALTIME));
-  grpc_timer_init(&exec_ctx, &timers[3], tfm(3), cb, (void *)(gpr_intptr)3,
+  grpc_timer_init(&exec_ctx, &timers[3], tfm(3), cb, (void *)(intptr_t)3,
                   gpr_time_0(GPR_CLOCK_REALTIME));
-  grpc_timer_init(&exec_ctx, &timers[4], tfm(1), cb, (void *)(gpr_intptr)4,
+  grpc_timer_init(&exec_ctx, &timers[4], tfm(1), cb, (void *)(intptr_t)4,
                   gpr_time_0(GPR_CLOCK_REALTIME));
   GPR_ASSERT(1 == grpc_timer_check(&exec_ctx, tfm(2), NULL));
   grpc_exec_ctx_finish(&exec_ctx);

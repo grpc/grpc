@@ -31,6 +31,10 @@ import abc
 import collections
 import enum
 
+import six
+
+from grpc._cython import cygrpc
+
 
 class GrpcChannelArgumentKeys(enum.Enum):
   """Mirrors keys used in grpc_channel_args for GRPC-specific arguments."""
@@ -40,77 +44,77 @@ class GrpcChannelArgumentKeys(enum.Enum):
 @enum.unique
 class CallError(enum.IntEnum):
   """Mirrors grpc_call_error in the C core."""
-  OK                        = 0
-  ERROR                     = 1
-  ERROR_NOT_ON_SERVER       = 2
-  ERROR_NOT_ON_CLIENT       = 3
-  ERROR_ALREADY_ACCEPTED    = 4
-  ERROR_ALREADY_INVOKED     = 5
-  ERROR_NOT_INVOKED         = 6
-  ERROR_ALREADY_FINISHED    = 7
-  ERROR_TOO_MANY_OPERATIONS = 8
-  ERROR_INVALID_FLAGS       = 9
-  ERROR_INVALID_METADATA    = 10
+  OK                        = cygrpc.CallError.ok
+  ERROR                     = cygrpc.CallError.error
+  ERROR_NOT_ON_SERVER       = cygrpc.CallError.not_on_server
+  ERROR_NOT_ON_CLIENT       = cygrpc.CallError.not_on_client
+  ERROR_ALREADY_ACCEPTED    = cygrpc.CallError.already_accepted
+  ERROR_ALREADY_INVOKED     = cygrpc.CallError.already_invoked
+  ERROR_NOT_INVOKED         = cygrpc.CallError.not_invoked
+  ERROR_ALREADY_FINISHED    = cygrpc.CallError.already_finished
+  ERROR_TOO_MANY_OPERATIONS = cygrpc.CallError.too_many_operations
+  ERROR_INVALID_FLAGS       = cygrpc.CallError.invalid_flags
+  ERROR_INVALID_METADATA    = cygrpc.CallError.invalid_metadata
 
 
 @enum.unique
 class StatusCode(enum.IntEnum):
   """Mirrors grpc_status_code in the C core."""
-  OK                  = 0
-  CANCELLED           = 1
-  UNKNOWN             = 2
-  INVALID_ARGUMENT    = 3
-  DEADLINE_EXCEEDED   = 4
-  NOT_FOUND           = 5
-  ALREADY_EXISTS      = 6
-  PERMISSION_DENIED   = 7
-  RESOURCE_EXHAUSTED  = 8
-  FAILED_PRECONDITION = 9
-  ABORTED             = 10
-  OUT_OF_RANGE        = 11
-  UNIMPLEMENTED       = 12
-  INTERNAL            = 13
-  UNAVAILABLE         = 14
-  DATA_LOSS           = 15
-  UNAUTHENTICATED     = 16
+  OK                  = cygrpc.StatusCode.ok
+  CANCELLED           = cygrpc.StatusCode.cancelled
+  UNKNOWN             = cygrpc.StatusCode.unknown
+  INVALID_ARGUMENT    = cygrpc.StatusCode.invalid_argument
+  DEADLINE_EXCEEDED   = cygrpc.StatusCode.deadline_exceeded
+  NOT_FOUND           = cygrpc.StatusCode.not_found
+  ALREADY_EXISTS      = cygrpc.StatusCode.already_exists
+  PERMISSION_DENIED   = cygrpc.StatusCode.permission_denied
+  RESOURCE_EXHAUSTED  = cygrpc.StatusCode.resource_exhausted
+  FAILED_PRECONDITION = cygrpc.StatusCode.failed_precondition
+  ABORTED             = cygrpc.StatusCode.aborted
+  OUT_OF_RANGE        = cygrpc.StatusCode.out_of_range
+  UNIMPLEMENTED       = cygrpc.StatusCode.unimplemented
+  INTERNAL            = cygrpc.StatusCode.internal
+  UNAVAILABLE         = cygrpc.StatusCode.unavailable
+  DATA_LOSS           = cygrpc.StatusCode.data_loss
+  UNAUTHENTICATED     = cygrpc.StatusCode.unauthenticated
 
 
 @enum.unique
 class OpWriteFlags(enum.IntEnum):
   """Mirrors defined write-flag constants in the C core."""
-  WRITE_BUFFER_HINT = 1
-  WRITE_NO_COMPRESS = 2
+  WRITE_BUFFER_HINT = cygrpc.WriteFlag.buffer_hint
+  WRITE_NO_COMPRESS = cygrpc.WriteFlag.no_compress
 
 
 @enum.unique
 class OpType(enum.IntEnum):
   """Mirrors grpc_op_type in the C core."""
-  SEND_INITIAL_METADATA   = 0
-  SEND_MESSAGE            = 1
-  SEND_CLOSE_FROM_CLIENT  = 2
-  SEND_STATUS_FROM_SERVER = 3
-  RECV_INITIAL_METADATA   = 4
-  RECV_MESSAGE            = 5
-  RECV_STATUS_ON_CLIENT   = 6
-  RECV_CLOSE_ON_SERVER    = 7
+  SEND_INITIAL_METADATA   = cygrpc.OperationType.send_initial_metadata
+  SEND_MESSAGE            = cygrpc.OperationType.send_message
+  SEND_CLOSE_FROM_CLIENT  = cygrpc.OperationType.send_close_from_client
+  SEND_STATUS_FROM_SERVER = cygrpc.OperationType.send_status_from_server
+  RECV_INITIAL_METADATA   = cygrpc.OperationType.receive_initial_metadata
+  RECV_MESSAGE            = cygrpc.OperationType.receive_message
+  RECV_STATUS_ON_CLIENT   = cygrpc.OperationType.receive_status_on_client
+  RECV_CLOSE_ON_SERVER    = cygrpc.OperationType.receive_close_on_server
 
 
 @enum.unique
 class EventType(enum.IntEnum):
   """Mirrors grpc_completion_type in the C core."""
-  QUEUE_SHUTDOWN = 0
-  QUEUE_TIMEOUT  = 1  # if seen on the Python side, something went horridly wrong
-  OP_COMPLETE    = 2
+  QUEUE_SHUTDOWN = cygrpc.CompletionType.queue_shutdown
+  QUEUE_TIMEOUT  = cygrpc.CompletionType.queue_timeout
+  OP_COMPLETE    = cygrpc.CompletionType.operation_complete
 
 
 @enum.unique
 class ConnectivityState(enum.IntEnum):
   """Mirrors grpc_connectivity_state in the C core."""
-  IDLE              = 0
-  CONNECTING        = 1
-  READY             = 2
-  TRANSIENT_FAILURE = 3
-  FATAL_FAILURE     = 4
+  IDLE              = cygrpc.ConnectivityState.idle
+  CONNECTING        = cygrpc.ConnectivityState.connecting
+  READY             = cygrpc.ConnectivityState.ready
+  TRANSIENT_FAILURE = cygrpc.ConnectivityState.transient_failure
+  FATAL_FAILURE     = cygrpc.ConnectivityState.fatal_failure
 
 
 class Status(collections.namedtuple(
@@ -245,8 +249,7 @@ class Event(collections.namedtuple(
   """
 
 
-class CompletionQueue:
-  __metaclass__ = abc.ABCMeta
+class CompletionQueue(six.with_metaclass(abc.ABCMeta)):
 
   @abc.abstractmethod
   def __init__(self):
@@ -259,6 +262,9 @@ class CompletionQueue:
     deadline of None (i.e. no deadline).
     """
     return self
+
+  def __next__(self):
+    return self.next()
 
   @abc.abstractmethod
   def next(self, deadline=float('+inf')):
@@ -283,8 +289,7 @@ class CompletionQueue:
     return None
 
 
-class Call:
-  __metaclass__ = abc.ABCMeta
+class Call(six.with_metaclass(abc.ABCMeta)):
 
   @abc.abstractmethod
   def start_batch(self, ops, tag):
@@ -332,8 +337,7 @@ class Call:
     return None
 
 
-class Channel:
-  __metaclass__ = abc.ABCMeta
+class Channel(six.with_metaclass(abc.ABCMeta)):
 
   @abc.abstractmethod
   def __init__(self, target, args, credentials=None):
@@ -397,8 +401,7 @@ class Channel:
     return None
 
 
-class Server:
-  __metaclass__ = abc.ABCMeta
+class Server(six.with_metaclass(abc.ABCMeta)):
 
   @abc.abstractmethod
   def __init__(self, completion_queue, args):

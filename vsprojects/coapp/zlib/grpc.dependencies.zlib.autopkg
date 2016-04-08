@@ -1,7 +1,14 @@
 @import @"version.inc";
 
-configurations {
-};
+configurations
+{
+    // See https://github.com/coapp/coapp.powershell/issues/112
+    Toolset
+    {
+        key : "PlatformToolset"; // this is CoApp pre-defined key
+        choices: { v140, v120, v110, v100 };
+    };
+}
 
 #define { 
       package-id = "grpc.dependencies.zlib";
@@ -36,8 +43,7 @@ nuget {
 		  #output {
               package = redist;
           };
-		  #destination = "\build\portable-net45";
-		  "managed_targets\${package-id}.redist.props";
+		  #destination = "\build\portable-net45+netcore45+wpa81+wp8";
 		  "managed_targets\${package-id}.redist.targets";
 		};
 	
@@ -74,14 +80,14 @@ nuget {
             "..\..\..\third_party\zlib\zutil.h",
             "..\..\..\third_party\zlib\contrib\masmx64\inffas8664.c",
         };
-		("v100,v120", "Win32,x64", "Release,Debug", "Dynamic", "cdecl,stdcall", "MultiByte") => {
+		("v100,v120,v140", "Win32,x64", "Release,Debug", "Dynamic", "cdecl,stdcall", "MultiByte") => {
 			[${0},${1},${2},${3},${4}] {
 				lib:     { .\output\${0}\${1}\${2}\${3}\${4}\${5}\*.lib };
 				bin:     { .\output\${0}\${1}\${2}\${3}\${4}\${5}\*.dll };
 				symbols: { .\output\${0}\${1}\${2}\${3}\${4}\${5}\*.pdb };
 			};
 		};
-		("v100,v120", "Win32,x64", "Release,Debug", "Static,ltcg", "cdecl,stdcall", "MultiByte") => {
+		("v100,v120,v140", "Win32,x64", "Release,Debug", "Static,ltcg", "cdecl,stdcall", "MultiByte") => {
 			[${0},${1},${2},${3},${4}] {
 				lib:     { .\output\${0}\${1}\${2}\${3}\${4}\${5}\*.lib };
 			};

@@ -177,7 +177,7 @@ class _Kernel(object):
     call = service_acceptance.call
     call.accept(self._completion_queue, call)
     try:
-      group, method = service_acceptance.method.split('/')[1:3]
+      group, method = service_acceptance.method.split(b'/')[1:3]
     except ValueError:
       logging.info('Illegal path "%s"!', service_acceptance.method)
       return
@@ -254,12 +254,12 @@ class _Kernel(object):
     rpc_state = self._rpc_states[call]
     _no_longer_due(_FINISH, rpc_state, call, self._rpc_states)
     code = event.status.code
-    if code is _intermediary_low.Code.OK:
+    if code == _intermediary_low.Code.OK:
       return
 
-    if code is _intermediary_low.Code.CANCELLED:
+    if code == _intermediary_low.Code.CANCELLED:
       termination = links.Ticket.Termination.CANCELLATION
-    elif code is _intermediary_low.Code.DEADLINE_EXCEEDED:
+    elif code == _intermediary_low.Code.DEADLINE_EXCEEDED:
       termination = links.Ticket.Termination.EXPIRATION
     else:
       termination = links.Ticket.Termination.TRANSMISSION_FAILURE

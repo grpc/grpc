@@ -31,6 +31,8 @@
  *
  */
 
+#include <ruby/ruby.h>
+#include "rb_grpc_imports.generated.h"
 #include "rb_server.h"
 
 #include <ruby/ruby.h>

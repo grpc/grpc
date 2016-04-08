@@ -35,7 +35,7 @@ cd $(dirname $0)/../../src/csharp
 
 root=`pwd`
 
-if [ -n "$NUGET" ]
+if [ -x "$(command -v nuget)" ]
 then
-  $NUGET restore Grpc.sln
+  nuget restore Grpc.sln
 fi

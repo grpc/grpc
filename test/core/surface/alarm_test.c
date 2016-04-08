@@ -41,7 +41,7 @@
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
 
 static void *create_test_tag(void) {
-  static gpr_intptr i = 0;
+  static intptr_t i = 0;
   return (void *)(++i);
 }
 

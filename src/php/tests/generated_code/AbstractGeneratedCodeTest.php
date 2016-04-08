@@ -41,7 +41,6 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
      * running on $GRPC_TEST_HOST.
      */
     protected static $client;
-    protected static $timeout;
 
     public function testWaitForNotReady()
     {
@@ -93,7 +92,7 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
     public function testTimeout()
     {
         $div_arg = new math\DivArgs();
-        $call = self::$client->Div($div_arg, ['timeout' => 100]);
+        $call = self::$client->Div($div_arg, [], ['timeout' => 100]);
         list($response, $status) = $call->wait();
         $this->assertSame(\Grpc\STATUS_DEADLINE_EXCEEDED, $status->code);
     }
@@ -107,14 +106,61 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
         $this->assertSame(\Grpc\STATUS_CANCELLED, $status->code);
     }
 
+    public function testCallCredentialsCallback()
+    {
+        $div_arg = new math\DivArgs();
+        $call = self::$client->Div($div_arg, array(), array(
+            'call_credentials_callback' => function ($context) {
+                return array();
+            },
+        ));
+        $call->cancel();
+        list($response, $status) = $call->wait();
+        $this->assertSame(\Grpc\STATUS_CANCELLED, $status->code);
+    }
+
+    public function testCallCredentialsCallback2()
+    {
+        $div_arg = new math\DivArgs();
+        $call = self::$client->Div($div_arg);
+        $call_credentials = Grpc\CallCredentials::createFromPlugin(
+            function ($context) {
+                return array();
+            }
+        );
+        $call->setCallCredentials($call_credentials);
+        $call->cancel();
+        list($response, $status) = $call->wait();
+        $this->assertSame(\Grpc\STATUS_CANCELLED, $status->code);
+    }
+
     /**
      * @expectedException InvalidArgumentException
      */
     public function testInvalidMethodName()
     {
-        $invalid_client = new DummyInvalidClient('host', []);
+        $invalid_client = new DummyInvalidClient('host', [
+            'credentials' => Grpc\ChannelCredentials::createInsecure(),
+        ]);
         $div_arg = new math\DivArgs();
         $invalid_client->InvalidUnaryCall($div_arg);
+    }
+
+    /**
+     * @expectedException Exception
+     */
+    public function testMissingCredentials()
+    {
+        $invalid_client = new DummyInvalidClient('host', [
+        ]);
+    }
+
+    public function testPrimaryUserAgentString()
+    {
+        $invalid_client = new DummyInvalidClient('host', [
+            'credentials' => Grpc\ChannelCredentials::createInsecure(),
+            'grpc.primary_user_agent' => 'testUserAgent',
+        ]);
     }
 
     public function testWriteFlags()

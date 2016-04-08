@@ -1,6 +1,44 @@
 ﻿<%namespace file="packages.include" import="gen_package_props,gen_package_targets,gen_package_ensure"/>\
 <%def name="to_windows_path(path)">${path.replace('/','\\')}</%def>\
 <%def name="get_subsystem(is_library)">${'Windows' if is_library else 'Console'}</%def>\
+<%def name="item_definition_group(project, target, debug, dll, _64bit)">\
+<%
+  repo_root = '$(SolutionDir)\..'
+%>\
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='${'%s%s|%s' % ('Debug' if debug else 'Release', '-DLL' if dll else '', 'x64' if _64bit else 'Win32')}'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>${'Disabled' if debug else 'MaxSpeed'}</Optimization>
+      <PreprocessorDefinitions>WIN32;${'_DEBUG' if debug else 'NDEBUG'};_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+% if not debug:
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+% endif
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>${'MultiThreadedDebug' if debug else 'MultiThreaded'}</RuntimeLibrary>
+      <TreatWarningAsError>${'false' if target.boringssl else 'true'}</TreatWarningAsError>
+      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+## Silence D9007 warning. See #4508
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
+    </ClCompile>
+    <Link>
+      <SubSystem>${get_subsystem(project.is_library)}</SubSystem>
+      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
+% if project.get("noentry", False):
+      <NoEntryPoint>true</NoEntryPoint>
+% endif
+% if project.get("dll_def", None):
+      <ModuleDefinitionFile>${repo_root}\${to_windows_path(project.dll_def)}</ModuleDefinitionFile>
+% endif
+% if not debug:
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+% endif
+    </Link>
+  </ItemDefinitionGroup>
+</%def>\
 <%def name="gen_project(name, collection)">\
 <%
   target = None
@@ -21,19 +59,19 @@
       props.extend(['protoc', 'protobuf'])
     else:
       if target.language == 'c++':
-      	props.extend(['protobuf'])
+        props.extend(['protobuf'])
       props.extend(['winsock', 'zlib'])
       packages.extend(['grpc.dependencies.zlib'])
       if target.get('secure', 'check'):
         props.extend(['openssl'])
-	packages.extend(['grpc.dependencies.openssl'])
+        packages.extend(['grpc.dependencies.openssl'])
   else:
     props.extend(['winsock'])
   props.extend(['global'])
   props = sorted(list(set(props)))
   packages = sorted(list(set(packages)))
   dll = project.get('dll', False)
-  repo_root = '..\..\..' + ('\..' if project.vs_proj_dir != '.' else '')
+  repo_root = '$(SolutionDir)\..'
 %>\
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -76,6 +114,10 @@ ${gen_package_props(packages, repo_root)}\
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>${project_guid if project_guid else project.vs_project_guid}</ProjectGuid>
+## Silence MSB8029 warning. See #4506
+    <IgnoreWarnIntDirInTempDetected>true</IgnoreWarnIntDirInTempDetected>
+## Use different location for intermediate directory to make path shorter than 260 characters.
+    <IntDir>$(SolutionDir)IntDir\$(MSBuildProjectName)\</IntDir>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(VisualStudioVersion)' == '10.0'" Label="Configuration">
@@ -86,6 +128,9 @@ ${gen_package_props(packages, repo_root)}\
   </PropertyGroup>
   <PropertyGroup Condition="'$(VisualStudioVersion)' == '12.0'" Label="Configuration">
     <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '14.0'" Label="Configuration">
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
     <ConfigurationType>${configuration_type}</ConfigurationType>
@@ -129,165 +174,21 @@ ${gen_package_props(packages, repo_root)}\
     %   if package.get('linkage', None) is not None:
     <Linkage-${package.name.replace('.', '_')}>${package.linkage}</Linkage-${package.name.replace('.', '_')}>
     %   endif
-    <Configuration-${package.name.replace('.', '_')}>Debug</Configuration-${package.name.replace('.', '_')}>
+    <Configuration-${package.name.replace('.', '_')}>${config}</Configuration-${package.name.replace('.', '_')}>
     %  endif
     % endfor
   </PropertyGroup>
 % endfor
-  % if dll and dll != 'only':
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-DLL|Win32'">
-    <ClCompile>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;_USE_32BIT_TIME_T;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <TreatWarningAsError>true</TreatWarningAsError>
-      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
-    </ClCompile>
-    <Link>
-      <SubSystem>${get_subsystem(project.is_library)}</SubSystem>
-      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
-      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-DLL|x64'">
-    <ClCompile>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <TreatWarningAsError>true</TreatWarningAsError>
-      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
-    </ClCompile>
-    <Link>
-      <SubSystem>${get_subsystem(project.is_library)}</SubSystem>
-      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
-      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-DLL|Win32'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;_USE_32BIT_TIME_T;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <TreatWarningAsError>true</TreatWarningAsError>
-      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
-    </ClCompile>
-    <Link>
-      <SubSystem>${get_subsystem(project.is_library)}</SubSystem>
-      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
-      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-DLL|x64'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <TreatWarningAsError>true</TreatWarningAsError>
-      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
-    </ClCompile>
-    <Link>
-      <SubSystem>${get_subsystem(project.is_library)}</SubSystem>
-      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
-      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-    </Link>
-  </ItemDefinitionGroup>
-  % endif
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <ClCompile>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;_USE_32BIT_TIME_T;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <TreatWarningAsError>true</TreatWarningAsError>
-      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
-    </ClCompile>
-    <Link>
-      <SubSystem>${get_subsystem(project.is_library)}</SubSystem>
-      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
-      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <ClCompile>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <TreatWarningAsError>true</TreatWarningAsError>
-      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
-    </ClCompile>
-    <Link>
-      <SubSystem>${get_subsystem(project.is_library)}</SubSystem>
-      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
-      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;_USE_32BIT_TIME_T;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <TreatWarningAsError>true</TreatWarningAsError>
-      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
-    </ClCompile>
-    <Link>
-      <SubSystem>${get_subsystem(project.is_library)}</SubSystem>
-      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
-      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <TreatWarningAsError>true</TreatWarningAsError>
-      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
-    </ClCompile>
-    <Link>
-      <SubSystem>${get_subsystem(project.is_library)}</SubSystem>
-      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
-      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-    </Link>
-  </ItemDefinitionGroup>
+% if dll and dll != 'only':
+  ${item_definition_group(project, target, True, True, False)}
+  ${item_definition_group(project, target, True, True, True)}
+  ${item_definition_group(project, target, False, True, False)}
+  ${item_definition_group(project, target, False, True, True)}
+% endif
+  ${item_definition_group(project, target, True, False, False)}
+  ${item_definition_group(project, target, True, False, True)}
+  ${item_definition_group(project, target, False, False, False)}
+  ${item_definition_group(project, target, False, False, True)}
   % if project.get('public_headers',[]):
   <ItemGroup>
     % for public_header in project.public_headers:
@@ -300,6 +201,11 @@ ${gen_package_props(packages, repo_root)}\
     % for header in project.headers:
     <ClInclude Include="${repo_root}\${to_windows_path(header)}" />
     % endfor
+  </ItemGroup>
+  % endif
+  % if project.get('dll_def', None):
+  <ItemGroup>
+    <None Include="${repo_root}\${to_windows_path(project.dll_def)}" />
   </ItemGroup>
   % endif
   % if project.get('src',[]):
@@ -321,7 +227,7 @@ ${gen_package_props(packages, repo_root)}\
       % endif
     % endfor
   </ItemGroup>
-  % elif configuration_type != 'StaticLibrary':
+  % else:
   <ItemGroup>
     <ClCompile Include="${repo_root}\${to_windows_path('vsprojects/dummy.c')}">
     </ClCompile>

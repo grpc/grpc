@@ -31,6 +31,8 @@
  *
  */
 
+#include <ruby/ruby.h>
+#include "rb_grpc_imports.generated.h"
 #include "rb_channel.h"
 
 #include <ruby/ruby.h>
@@ -59,17 +61,19 @@ static ID id_target;
  * GCed before the channel */
 static ID id_cqueue;
 
+/* id_insecure_channel is used to indicate that a channel is insecure */
+static VALUE id_insecure_channel;
+
 /* grpc_rb_cChannel is the ruby class that proxies grpc_channel. */
 static VALUE grpc_rb_cChannel = Qnil;
 
 /* Used during the conversion of a hash to channel args during channel setup */
 static VALUE grpc_rb_cChannelArgs;
 
-/* grpc_rb_channel wraps a grpc_channel.  It provides a peer ruby object,
- * 'mark' to minimize copying when a channel is created from ruby. */
+/* grpc_rb_channel wraps a grpc_channel. */
 typedef struct grpc_rb_channel {
-  /* Holder of ruby objects involved in constructing the channel */
-  VALUE mark;
+  VALUE credentials;
+
   /* The actual channel */
   grpc_channel *wrapped;
 } grpc_rb_channel;
@@ -82,13 +86,8 @@ static void grpc_rb_channel_free(void *p) {
   };
   ch = (grpc_rb_channel *)p;
 
-  /* Deletes the wrapped object if the mark object is Qnil, which indicates
-   * that no other object is the actual owner. */
-  if (ch->wrapped != NULL && ch->mark == Qnil) {
+  if (ch->wrapped != NULL) {
     grpc_channel_destroy(ch->wrapped);
-    rb_warning("channel gc: destroyed the c channel");
-  } else {
-    rb_warning("channel gc: did not destroy the c channel");
   }
 
   xfree(p);
@@ -101,8 +100,8 @@ static void grpc_rb_channel_mark(void *p) {
     return;
   }
   channel = (grpc_rb_channel *)p;
-  if (channel->mark != Qnil) {
-    rb_gc_mark(channel->mark);
+  if (channel->credentials != Qnil) {
+    rb_gc_mark(channel->credentials);
   }
 }
 
@@ -120,13 +119,14 @@ static rb_data_type_t grpc_channel_data_type = {
 static VALUE grpc_rb_channel_alloc(VALUE cls) {
   grpc_rb_channel *wrapper = ALLOC(grpc_rb_channel);
   wrapper->wrapped = NULL;
-  wrapper->mark = Qnil;
+  wrapper->credentials = Qnil;
   return TypedData_Wrap_Struct(cls, &grpc_channel_data_type, wrapper);
 }
 
 /*
   call-seq:
-    insecure_channel = Channel:new("myhost:8080", {'arg1': 'value1'})
+    insecure_channel = Channel:new("myhost:8080", {'arg1': 'value1'},
+                                   :this_channel_is_insecure)
     creds = ...
     secure_channel = Channel:new("myhost:443", {'arg1': 'value1'}, creds)
 
@@ -142,15 +142,21 @@ static VALUE grpc_rb_channel_init(int argc, VALUE *argv, VALUE self) {
   grpc_channel_args args;
   MEMZERO(&args, grpc_channel_args, 1);
 
-  /* "21" == 2 mandatory args, 1 (credentials) is optional */
-  rb_scan_args(argc, argv, "21", &target, &channel_args, &credentials);
+  /* "3" == 3 mandatory args */
+  rb_scan_args(argc, argv, "3", &target, &channel_args, &credentials);
 
   TypedData_Get_Struct(self, grpc_rb_channel, &grpc_channel_data_type, wrapper);
   target_chars = StringValueCStr(target);
   grpc_rb_hash_convert_to_channel_args(channel_args, &args);
-  if (credentials == Qnil) {
+  if (TYPE(credentials) == T_SYMBOL) {
+    if (id_insecure_channel != SYM2ID(credentials)) {
+      rb_raise(rb_eTypeError,
+               "bad creds symbol, want :this_channel_is_insecure");
+      return Qnil;
+    }
     ch = grpc_insecure_channel_create(target_chars, &args, NULL);
   } else {
+    wrapper->credentials = credentials;
     creds = grpc_rb_get_wrapped_channel_credentials(credentials);
     ch = grpc_secure_channel_create(creds, target_chars, &args, NULL);
   }
@@ -218,7 +224,7 @@ static VALUE grpc_rb_channel_watch_connectivity_state(VALUE self,
   }
   grpc_channel_watch_connectivity_state(
       ch,
-      NUM2LONG(last_state),
+      (grpc_connectivity_state)NUM2LONG(last_state),
       grpc_rb_time_timeval(deadline, /* absolute time */ 0),
       cq,
       ROBJECT(tag));
@@ -319,7 +325,6 @@ static VALUE grpc_rb_channel_destroy(VALUE self) {
   if (ch != NULL) {
     grpc_channel_destroy(ch);
     wrapper->wrapped = NULL;
-    wrapper->mark = Qnil;
   }
 
   return Qnil;
@@ -408,6 +413,7 @@ void Init_grpc_channel() {
                   ID2SYM(rb_intern(GRPC_ARG_MAX_CONCURRENT_STREAMS)));
   rb_define_const(grpc_rb_cChannel, "MAX_MESSAGE_LENGTH",
                   ID2SYM(rb_intern(GRPC_ARG_MAX_MESSAGE_LENGTH)));
+  id_insecure_channel = rb_intern("this_channel_is_insecure");
   Init_grpc_propagate_masks();
   Init_grpc_connectivity_states();
 }

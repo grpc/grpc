@@ -37,20 +37,19 @@
 #include <memory>
 #include <vector>
 
-#include <grpc/compression.h>
+#include <grpc++/impl/server_builder_option.h>
 #include <grpc++/support/config.h>
+#include <grpc/compression.h>
 
 namespace grpc {
 
 class AsyncGenericService;
-class AsynchronousService;
 class CompletionQueue;
 class RpcService;
 class Server;
 class ServerCompletionQueue;
 class ServerCredentials;
-class SynchronousService;
-class ThreadPoolInterface;
+class Service;
 
 /// A builder class for the creation and startup of \a grpc::Server instances.
 class ServerBuilder {
@@ -61,14 +60,7 @@ class ServerBuilder {
   /// The service must exist for the lifetime of the \a Server instance returned
   /// by \a BuildAndStart().
   /// Matches requests with any :authority
-  void RegisterService(SynchronousService* service);
-
-  /// Register an asynchronous service.
-  /// This call does not take ownership of the service or completion queue.
-  /// The service and completion queuemust exist for the lifetime of the \a
-  /// Server instance returned by \a BuildAndStart().
-  /// Matches requests with any :authority
-  void RegisterAsyncService(AsynchronousService* service);
+  void RegisterService(Service* service);
 
   /// Register a generic service.
   /// Matches requests with any :authority
@@ -78,15 +70,7 @@ class ServerBuilder {
   /// The service must exist for the lifetime of the \a Server instance returned
   /// by BuildAndStart().
   /// Only matches requests with :authority \a host
-  void RegisterService(const grpc::string& host, SynchronousService* service);
-
-  /// Register an asynchronous service.
-  /// This call does not take ownership of the service or completion queue.
-  /// The service and completion queuemust exist for the lifetime of the \a
-  /// Server instance returned by \a BuildAndStart().
-  /// Only matches requests with :authority equal to \a host
-  void RegisterAsyncService(const grpc::string& host,
-                            AsynchronousService* service);
+  void RegisterService(const grpc::string& host, Service* service);
 
   /// Set max message size in bytes.
   void SetMaxMessageSize(int max_message_size) {
@@ -97,6 +81,8 @@ class ServerBuilder {
   void SetCompressionOptions(const grpc_compression_options& options) {
     compression_options_ = options;
   }
+
+  void SetOption(std::unique_ptr<ServerBuilderOption> option);
 
   /// Tries to bind \a server to the given \a addr.
   ///
@@ -129,25 +115,22 @@ class ServerBuilder {
   };
 
   typedef std::unique_ptr<grpc::string> HostString;
-  template <class T>
   struct NamedService {
-    explicit NamedService(T* s) : service(s) {}
-    NamedService(const grpc::string& h, T* s)
+    explicit NamedService(Service* s) : service(s) {}
+    NamedService(const grpc::string& h, Service* s)
         : host(new grpc::string(h)), service(s) {}
     HostString host;
-    T* service;
+    Service* service;
   };
 
   int max_message_size_;
   grpc_compression_options compression_options_;
-  std::vector<std::unique_ptr<NamedService<RpcService>>> services_;
-  std::vector<std::unique_ptr<NamedService<AsynchronousService>>>
-      async_services_;
+  std::vector<std::unique_ptr<ServerBuilderOption>> options_;
+  std::vector<std::unique_ptr<NamedService>> services_;
   std::vector<Port> ports_;
   std::vector<ServerCompletionQueue*> cqs_;
   std::shared_ptr<ServerCredentials> creds_;
   AsyncGenericService* generic_service_;
-  ThreadPoolInterface* thread_pool_;
 };
 
 }  // namespace grpc

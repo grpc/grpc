@@ -36,7 +36,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Grpc.Core;
-using Grpc.Health.V1Alpha;
+using Grpc.Health.V1;
 using NUnit.Framework;
 
 namespace Grpc.HealthCheck.Tests
@@ -50,58 +50,56 @@ namespace Grpc.HealthCheck.Tests
         public void SetStatus()
         {
             var impl = new HealthServiceImpl();
-            impl.SetStatus("", "", HealthCheckResponse.Types.ServingStatus.SERVING);
-            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.SERVING, GetStatusHelper(impl, "", ""));
+            impl.SetStatus("", HealthCheckResponse.Types.ServingStatus.SERVING);
+            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.SERVING, GetStatusHelper(impl, ""));
 
-            impl.SetStatus("", "", HealthCheckResponse.Types.ServingStatus.NOT_SERVING);
-            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.NOT_SERVING, GetStatusHelper(impl, "", ""));
+            impl.SetStatus("", HealthCheckResponse.Types.ServingStatus.NOT_SERVING);
+            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.NOT_SERVING, GetStatusHelper(impl, ""));
 
-            impl.SetStatus("virtual-host", "", HealthCheckResponse.Types.ServingStatus.UNKNOWN);
-            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.UNKNOWN, GetStatusHelper(impl, "virtual-host", ""));
+            impl.SetStatus("", HealthCheckResponse.Types.ServingStatus.UNKNOWN);
+            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.UNKNOWN, GetStatusHelper(impl, ""));
 
-            impl.SetStatus("virtual-host", "grpc.test.TestService", HealthCheckResponse.Types.ServingStatus.SERVING);
-            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.SERVING, GetStatusHelper(impl, "virtual-host", "grpc.test.TestService"));
+            impl.SetStatus("grpc.test.TestService", HealthCheckResponse.Types.ServingStatus.SERVING);
+            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.SERVING, GetStatusHelper(impl, "grpc.test.TestService"));
         }
 
         [Test]
         public void ClearStatus()
         {
             var impl = new HealthServiceImpl();
-            impl.SetStatus("", "", HealthCheckResponse.Types.ServingStatus.SERVING);
-            impl.SetStatus("virtual-host", "", HealthCheckResponse.Types.ServingStatus.UNKNOWN);
+            impl.SetStatus("", HealthCheckResponse.Types.ServingStatus.SERVING);
+            impl.SetStatus("grpc.test.TestService", HealthCheckResponse.Types.ServingStatus.UNKNOWN);
 
-            impl.ClearStatus("", "");
+            impl.ClearStatus("");
 
-            Assert.Throws(Is.TypeOf(typeof(RpcException)).And.Property("Status").Property("StatusCode").EqualTo(StatusCode.NotFound), () => GetStatusHelper(impl, "", ""));
-            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.UNKNOWN, GetStatusHelper(impl, "virtual-host", ""));
+            Assert.Throws(Is.TypeOf(typeof(RpcException)).And.Property("Status").Property("StatusCode").EqualTo(StatusCode.NotFound), () => GetStatusHelper(impl, ""));
+            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.UNKNOWN, GetStatusHelper(impl, "grpc.test.TestService"));
         }
 
         [Test]
         public void ClearAll()
         {
             var impl = new HealthServiceImpl();
-            impl.SetStatus("", "", HealthCheckResponse.Types.ServingStatus.SERVING);
-            impl.SetStatus("virtual-host", "", HealthCheckResponse.Types.ServingStatus.UNKNOWN);
+            impl.SetStatus("", HealthCheckResponse.Types.ServingStatus.SERVING);
+            impl.SetStatus("grpc.test.TestService", HealthCheckResponse.Types.ServingStatus.UNKNOWN);
 
             impl.ClearAll();
-            Assert.Throws(typeof(RpcException), () => GetStatusHelper(impl, "", ""));
-            Assert.Throws(typeof(RpcException), () => GetStatusHelper(impl, "virtual-host", ""));
+            Assert.Throws(typeof(RpcException), () => GetStatusHelper(impl, ""));
+            Assert.Throws(typeof(RpcException), () => GetStatusHelper(impl, "grpc.test.TestService"));
         }
 
         [Test]
         public void NullsRejected()
         {
             var impl = new HealthServiceImpl();
-            Assert.Throws(typeof(ArgumentNullException), () => impl.SetStatus(null, "", HealthCheckResponse.Types.ServingStatus.SERVING));
-            Assert.Throws(typeof(ArgumentNullException), () => impl.SetStatus("", null, HealthCheckResponse.Types.ServingStatus.SERVING));
+            Assert.Throws(typeof(ArgumentNullException), () => impl.SetStatus(null, HealthCheckResponse.Types.ServingStatus.SERVING));
 
-            Assert.Throws(typeof(ArgumentNullException), () => impl.ClearStatus(null, ""));
-            Assert.Throws(typeof(ArgumentNullException), () => impl.ClearStatus("", null));
+            Assert.Throws(typeof(ArgumentNullException), () => impl.ClearStatus(null));
         }
 
-        private static HealthCheckResponse.Types.ServingStatus GetStatusHelper(HealthServiceImpl impl, string host, string service)
+        private static HealthCheckResponse.Types.ServingStatus GetStatusHelper(HealthServiceImpl impl, string service)
         {
-            return impl.Check(new HealthCheckRequest { Host = host, Service = service }, null).Result.Status;
+            return impl.Check(new HealthCheckRequest { Service = service }, null).Result.Status;
         }
     }
 }

@@ -1,92 +1,110 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\..\..\test\proto\messages.proto">
-      <Filter>test\proto</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\messages.proto">
+      <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\test\proto\benchmarks\control.proto">
-      <Filter>test\proto\benchmarks</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\payloads.proto">
+      <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\test\proto\benchmarks\payloads.proto">
-      <Filter>test\proto\benchmarks</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\stats.proto">
+      <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\test\proto\benchmarks\services.proto">
-      <Filter>test\proto\benchmarks</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\control.proto">
+      <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\test\proto\benchmarks\stats.proto">
-      <Filter>test\proto\benchmarks</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\services.proto">
+      <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\test\cpp\qps\perf_db.proto">
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.proto">
+      <Filter>src\proto\grpc\testing</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\client_async.cc">
       <Filter>test\cpp\qps</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\test\cpp\qps\client_async.cc">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\client_sync.cc">
       <Filter>test\cpp\qps</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\test\cpp\qps\client_sync.cc">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\driver.cc">
       <Filter>test\cpp\qps</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\test\cpp\qps\driver.cc">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\limit_cores.cc">
       <Filter>test\cpp\qps</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\test\cpp\qps\perf_db_client.cc">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\perf_db_client.cc">
       <Filter>test\cpp\qps</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\test\cpp\qps\qps_worker.cc">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\qps_worker.cc">
       <Filter>test\cpp\qps</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\test\cpp\qps\report.cc">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\report.cc">
       <Filter>test\cpp\qps</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\test\cpp\qps\server_async.cc">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\server_async.cc">
       <Filter>test\cpp\qps</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\test\cpp\qps\server_sync.cc">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\server_sync.cc">
       <Filter>test\cpp\qps</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\test\cpp\qps\timer.cc">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\usage_timer.cc">
       <Filter>test\cpp\qps</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\test\cpp\util\benchmark_config.cc">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\benchmark_config.cc">
       <Filter>test\cpp\util</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\test\cpp\qps\client.h">
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\client.h">
       <Filter>test\cpp\qps</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\test\cpp\qps\driver.h">
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\driver.h">
       <Filter>test\cpp\qps</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\test\cpp\qps\histogram.h">
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\histogram.h">
       <Filter>test\cpp\qps</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\test\cpp\qps\interarrival.h">
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\interarrival.h">
       <Filter>test\cpp\qps</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\test\cpp\qps\perf_db_client.h">
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\limit_cores.h">
       <Filter>test\cpp\qps</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\test\cpp\qps\qps_worker.h">
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\perf_db_client.h">
       <Filter>test\cpp\qps</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\test\cpp\qps\report.h">
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\qps_worker.h">
       <Filter>test\cpp\qps</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\test\cpp\qps\server.h">
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\report.h">
       <Filter>test\cpp\qps</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\test\cpp\qps\stats.h">
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\server.h">
       <Filter>test\cpp\qps</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\test\cpp\qps\timer.h">
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\stats.h">
       <Filter>test\cpp\qps</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\test\cpp\util\benchmark_config.h">
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\usage_timer.h">
+      <Filter>test\cpp\qps</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\benchmark_config.h">
       <Filter>test\cpp\util</Filter>
     </ClInclude>
   </ItemGroup>
 
   <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{0a68b7ce-1b1a-8927-e173-5e8d7ebecf8a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto">
+      <UniqueIdentifier>{7e654fb3-2440-c5ad-9cc1-c6c425cd91bd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc">
+      <UniqueIdentifier>{d95c9d8c-ad29-576f-c974-aafa292a361e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\proto\grpc\testing">
+      <UniqueIdentifier>{0878a4bc-7ae5-7cad-e2e1-3a91cc0e7b59}</UniqueIdentifier>
+    </Filter>
     <Filter Include="test">
       <UniqueIdentifier>{2d898a55-573b-f256-2336-bddd04eb7c70}</UniqueIdentifier>
     </Filter>
@@ -98,12 +116,6 @@
     </Filter>
     <Filter Include="test\cpp\util">
       <UniqueIdentifier>{9042d134-6d5a-a907-799e-01768a475055}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="test\proto">
-      <UniqueIdentifier>{44e63a33-67f4-0575-e87a-711a7c9111e2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="test\proto\benchmarks">
-      <UniqueIdentifier>{4180a094-39b4-e46c-1576-940bfe87d284}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

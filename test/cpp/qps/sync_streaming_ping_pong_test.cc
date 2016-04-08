@@ -43,7 +43,7 @@ namespace grpc {
 namespace testing {
 
 static const int WARMUP = 5;
-static const int BENCHMARK = 10;
+static const int BENCHMARK = 5;
 
 static void RunSynchronousStreamingPingPong() {
   gpr_log(GPR_INFO, "Running Synchronous Streaming Ping Pong");
@@ -57,7 +57,6 @@ static void RunSynchronousStreamingPingPong() {
 
   ServerConfig server_config;
   server_config.set_server_type(SYNC_SERVER);
-  server_config.set_host("localhost");
 
   const auto result =
       RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);

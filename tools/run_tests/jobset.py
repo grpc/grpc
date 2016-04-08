@@ -33,6 +33,7 @@ import hashlib
 import multiprocessing
 import os
 import platform
+import re
 import signal
 import subprocess
 import sys
@@ -40,14 +41,30 @@ import tempfile
 import time
 
 
+# cpu cost measurement
+measure_cpu_costs = False
+
+
 _DEFAULT_MAX_JOBS = 16 * multiprocessing.cpu_count()
 _MAX_RESULT_SIZE = 8192
+
+def platform_string():
+  if platform.system() == 'Windows':
+    return 'windows'
+  elif platform.system()[:7] == 'MSYS_NT':
+    return 'windows'
+  elif platform.system() == 'Darwin':
+    return 'mac'
+  elif platform.system() == 'Linux':
+    return 'linux'
+  else:
+    return 'posix'
 
 
 # setup a signal handler so that signal.pause registers 'something'
 # when a child finishes
 # not using futures and threading to avoid a dependency on subprocess32
-if platform.system() == 'Windows':
+if platform_string() == 'windows':
   pass
 else:
   have_alarm = False
@@ -99,7 +116,7 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
   message.old_tag = tag
   message.old_msg = msg
   try:
-    if platform.system() == 'Windows' or not sys.stdout.isatty():
+    if platform_string() == 'windows' or not sys.stdout.isatty():
       if explanatory_text:
         print explanatory_text
       print '%s: %s' % (tag, msg)
@@ -134,7 +151,8 @@ class JobSpec(object):
 
   def __init__(self, cmdline, shortname=None, environ=None, hash_targets=None,
                cwd=None, shell=False, timeout_seconds=5*60, flake_retries=0,
-               timeout_retries=0, kill_handler=None):
+               timeout_retries=0, kill_handler=None, cpu_cost=1.0,
+               verbose_success=False):
     """
     Arguments:
       cmdline: a list of arguments to pass as the command line
@@ -142,6 +160,7 @@ class JobSpec(object):
       hash_targets: which files to include in the hash representing the jobs version
                     (or empty, indicating the job should not be hashed)
       kill_handler: a handler that will be called whenever job.kill() is invoked
+      cpu_cost: number of cores per second this job needs
     """
     if environ is None:
       environ = {}
@@ -157,6 +176,8 @@ class JobSpec(object):
     self.flake_retries = flake_retries
     self.timeout_retries = timeout_retries
     self.kill_handler = kill_handler
+    self.cpu_cost = cpu_cost
+    self.verbose_success = verbose_success
 
   def identity(self):
     return '%r %r %r' % (self.cmdline, self.environ, self.hash_targets)
@@ -167,6 +188,9 @@ class JobSpec(object):
   def __cmp__(self, other):
     return self.identity() == other.identity()
 
+  def __repr__(self):
+    return 'JobSpec(shortname=%s, cmdline=%s)' % (self.shortname, self.cmdline)
+
 
 class JobResult(object):
   def __init__(self):
@@ -176,7 +200,7 @@ class JobResult(object):
     self.num_failures = 0
     self.retries = 0
     self.message = ''
-    
+
 
 class Job(object):
   """Manages one job."""
@@ -203,7 +227,10 @@ class Job(object):
     env.update(self._spec.environ)
     env.update(self._add_env)
     self._start = time.time()
-    try_start = lambda: subprocess.Popen(args=self._spec.cmdline,
+    cmdline = self._spec.cmdline
+    if measure_cpu_costs:
+      cmdline = ['time', '--portability'] + cmdline
+    try_start = lambda: subprocess.Popen(args=cmdline,
                                          stderr=subprocess.STDOUT,
                                          stdout=self._tempfile,
                                          cwd=self._spec.cwd,
@@ -224,9 +251,11 @@ class Job(object):
 
   def state(self, update_cache):
     """Poll current state of the job. Prints messages at completion."""
-    self._tempfile.seek(0)
-    stdout = self._tempfile.read()
-    self.result.message = stdout[-_MAX_RESULT_SIZE:]
+    def stdout(self=self):
+      self._tempfile.seek(0)
+      stdout = self._tempfile.read()
+      self.result.message = stdout[-_MAX_RESULT_SIZE:]
+      return stdout
     if self._state == _RUNNING and self._process.poll() is not None:
       elapsed = time.time() - self._start
       self.result.elapsed_time = elapsed
@@ -234,7 +263,7 @@ class Job(object):
         if self._retries < self._spec.flake_retries:
           message('FLAKE', '%s [ret=%d, pid=%d]' % (
             self._spec.shortname, self._process.returncode, self._process.pid),
-            stdout, do_newline=True)
+            stdout(), do_newline=True)
           self._retries += 1
           self.result.num_failures += 1
           self.result.retries = self._timeout_retries + self._retries
@@ -244,21 +273,33 @@ class Job(object):
           if not self._suppress_failure_message:
             message('FAILED', '%s [ret=%d, pid=%d]' % (
                 self._spec.shortname, self._process.returncode, self._process.pid),
-                stdout, do_newline=True)
+                stdout(), do_newline=True)
           self.result.state = 'FAILED'
           self.result.num_failures += 1
           self.result.returncode = self._process.returncode
       else:
         self._state = _SUCCESS
-        message('PASSED', '%s [time=%.1fsec; retries=%d;%d]' % (
-                    self._spec.shortname, elapsed, self._retries, self._timeout_retries),
+        measurement = ''
+        if measure_cpu_costs:
+          m = re.search(r'real ([0-9.]+)\nuser ([0-9.]+)\nsys ([0-9.]+)', stdout())
+          real = float(m.group(1))
+          user = float(m.group(2))
+          sys = float(m.group(3))
+          if real > 0.5:
+            cores = (user + sys) / real
+            measurement = '; cpu_cost=%.01f; estimated=%.01f' % (cores, self._spec.cpu_cost)
+        message('PASSED', '%s [time=%.1fsec; retries=%d:%d%s]' % (
+            self._spec.shortname, elapsed, self._retries, self._timeout_retries, measurement),
+            stdout() if self._spec.verbose_success else None,
             do_newline=self._newline_on_success or self._travis)
         self.result.state = 'PASSED'
         if self._bin_hash:
           update_cache.finished(self._spec.identity(), self._bin_hash)
-    elif self._state == _RUNNING and time.time() - self._start > self._spec.timeout_seconds:
+    elif (self._state == _RUNNING and
+          self._spec.timeout_seconds is not None and
+          time.time() - self._start > self._spec.timeout_seconds):
       if self._timeout_retries < self._spec.timeout_retries:
-        message('TIMEOUT_FLAKE', self._spec.shortname, stdout, do_newline=True)
+        message('TIMEOUT_FLAKE', '%s [pid=%d]' % (self._spec.shortname, self._process.pid), stdout(), do_newline=True)
         self._timeout_retries += 1
         self.result.num_failures += 1
         self.result.retries = self._timeout_retries + self._retries
@@ -267,7 +308,7 @@ class Job(object):
         self._process.terminate()
         self.start()
       else:
-        message('TIMEOUT', self._spec.shortname, stdout, do_newline=True)
+        message('TIMEOUT', '%s [pid=%d]' % (self._spec.shortname, self._process.pid), stdout(), do_newline=True)
         self.kill()
         self.result.state = 'TIMEOUT'
         self.result.num_failures += 1
@@ -282,7 +323,7 @@ class Job(object):
 
   def suppress_failure_message(self):
     self._suppress_failure_message = True
-    
+
 
 class Jobset(object):
   """Manages one run of jobs."""
@@ -302,14 +343,27 @@ class Jobset(object):
     self._hashes = {}
     self._add_env = add_env
     self.resultset = {}
-    
+    self._remaining = None
+
+  def set_remaining(self, remaining):
+    self._remaining = remaining
+
   def get_num_failures(self):
-    return self._failures  
+    return self._failures
+
+  def cpu_cost(self):
+    c = 0
+    for job in self._running:
+      c += job._spec.cpu_cost
+    return c
 
   def start(self, spec):
     """Start a job. Return True on success, False on failure."""
-    while len(self._running) >= self._maxjobs:
+    while True:
       if self.cancelled(): return False
+      current_cpu_cost = self.cpu_cost()
+      if current_cpu_cost == 0: break
+      if current_cpu_cost + spec.cpu_cost <= self._maxjobs: break
       self.reap()
     if self.cancelled(): return False
     if spec.hash_targets:
@@ -333,7 +387,8 @@ class Jobset(object):
                 self._travis,
                 self._add_env)
       self._running.add(job)
-      self.resultset[job.GetSpec().shortname] = []
+      if not self.resultset.has_key(job.GetSpec().shortname):
+        self.resultset[job.GetSpec().shortname] = []
     return True
 
   def reap(self):
@@ -357,9 +412,10 @@ class Jobset(object):
         self._running.remove(job)
       if dead: return
       if (not self._travis):
-        message('WAITING', '%d jobs running, %d complete, %d failed' % (
-            len(self._running), self._completed, self._failures))
-      if platform.system() == 'Windows':
+        rstr = '' if self._remaining is None else '%d queued, ' % self._remaining
+        message('WAITING', '%s%d jobs running, %d complete, %d failed' % (
+            rstr, len(self._running), self._completed, self._failures))
+      if platform_string() == 'windows':
         time.sleep(0.1)
       else:
         global have_alarm
@@ -397,6 +453,17 @@ class NoCache(object):
     pass
 
 
+def tag_remaining(xs):
+  staging = []
+  for x in xs:
+    staging.append(x)
+    if len(staging) > 1000:
+      yield (staging.pop(0), None)
+  n = len(staging)
+  for i, x in enumerate(staging):
+    yield (x, n - i - 1)
+
+
 def run(cmdlines,
         check_cancelled=_never_cancelled,
         maxjobs=None,
@@ -410,8 +477,10 @@ def run(cmdlines,
               maxjobs if maxjobs is not None else _DEFAULT_MAX_JOBS,
               newline_on_success, travis, stop_on_failure, add_env,
               cache if cache is not None else NoCache())
-  for cmdline in cmdlines:
+  for cmdline, remaining in tag_remaining(cmdlines):
     if not js.start(cmdline):
       break
-  js.finish()  
+    if remaining is not None:
+      js.set_remaining(remaining)
+  js.finish()
   return js.get_num_failures(), js.resultset

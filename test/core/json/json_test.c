@@ -34,11 +34,11 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/useful.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include "src/core/json/json.h"
-#include "src/core/support/string.h"
+#include <grpc/support/useful.h>
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/support/string.h"
 
 #include "test/core/util/test_config.h"
 
@@ -49,10 +49,10 @@ typedef struct testing_pair {
 
 static testing_pair testing_pairs[] = {
     /* Testing valid parsing. */
-
     /* Testing trivial parses, with de-indentation. */
     {" 0 ", "0"},
     {" 1 ", "1"},
+    {" \"    \" ", "\"    \""},
     {" \"a\" ", "\"a\""},
     {" true ", "true"},
     /* Testing the parser's ability to decode trivial UTF-16. */
@@ -64,13 +64,14 @@ static testing_pair testing_pairs[] = {
     /* Testing UTF-8 character "𝄞", U+11D1E. */
     {"\"\xf0\x9d\x84\x9e\"", "\"\\ud834\\udd1e\""},
     {"\"\\ud834\\udd1e\"", "\"\\ud834\\udd1e\""},
+    {"{\"\\ud834\\udd1e\":0}", "{\"\\ud834\\udd1e\":0}"},
     /* Testing nested empty containers. */
     {
-     " [ [ ] , { } , [ ] ] ", "[[],{},[]]",
+        " [ [ ] , { } , [ ] ] ", "[[],{},[]]",
     },
     /* Testing escapes and control chars in key strings. */
-    {" { \"\x7f\\n\\\\a , b\": 1, \"\": 0 } ",
-     "{\"\\u007f\\n\\\\a , b\":1,\"\":0}"},
+    {" { \"\\u007f\x7f\\n\\r\\\"\\f\\b\\\\a , b\": 1, \"\": 0 } ",
+     "{\"\\u007f\\u007f\\n\\r\\\"\\f\\b\\\\a , b\":1,\"\":0}"},
     /* Testing the writer's ability to cut off invalid UTF-8 sequences. */
     {"\"abc\xf0\x9d\x24\"", "\"abc\""},
     {"\"\xff\"", "\"\""},
@@ -85,17 +86,33 @@ static testing_pair testing_pairs[] = {
     /* Testing plain invalid things, exercising the state machine. */
     {"\\", NULL},
     {"nu ll", NULL},
+    {"{\"foo\": bar}", NULL},
+    {"{\"foo\": bar\"x\"}", NULL},
     {"fals", NULL},
+    {"0,0 ", NULL},
+    {"\"foo\",[]", NULL},
     /* Testing unterminated string. */
     {"\"\\x", NULL},
     /* Testing invalid UTF-16 number. */
     {"\"\\u123x", NULL},
+    {"{\"\\u123x", NULL},
     /* Testing imbalanced surrogate pairs. */
     {"\"\\ud834f", NULL},
+    {"{\"\\ud834f\":0}", NULL},
     {"\"\\ud834\\n", NULL},
+    {"{\"\\ud834\\n\":0}", NULL},
     {"\"\\udd1ef", NULL},
+    {"{\"\\udd1ef\":0}", NULL},
     {"\"\\ud834\\ud834\"", NULL},
+    {"{\"\\ud834\\ud834\"\":0}", NULL},
     {"\"\\ud834\\u1234\"", NULL},
+    {"{\"\\ud834\\u1234\"\":0}", NULL},
+    {"\"\\ud834]\"", NULL},
+    {"{\"\\ud834]\"\":0}", NULL},
+    {"\"\\ud834 \"", NULL},
+    {"{\"\\ud834 \"\":0}", NULL},
+    {"\"\\ud834\\\\\"", NULL},
+    {"{\"\\ud834\\\\\"\":0}", NULL},
     /* Testing embedded invalid whitechars. */
     {"\"\n\"", NULL},
     {"\"\t\"", NULL},
@@ -110,9 +127,15 @@ static testing_pair testing_pairs[] = {
     {"[[]", NULL},
     {"[}", NULL},
     {"{]", NULL},
-    /*Testing trailing comma. */
+    /* Testing bad containers. */
+    {"{x}", NULL},
+    {"{x=0,y}", NULL},
+    /* Testing trailing comma. */
     {"{,}", NULL},
     {"[1,2,3,4,]", NULL},
+    {"{\"a\": 1, }", NULL},
+    /* Testing after-ending characters. */
+    {"{}x", NULL},
     /* Testing having a key syntax in an array. */
     {"[\"x\":0]", NULL},
     /* Testing invalid numbers. */
@@ -160,7 +183,7 @@ static void test_pairs() {
 }
 
 static void test_atypical() {
-  char *scratchpad = gpr_strdup("[[],[]]");
+  char *scratchpad = gpr_strdup("[[],[],[]]");
   grpc_json *json = grpc_json_parse_string(scratchpad);
   grpc_json *brother;
 
@@ -168,7 +191,8 @@ static void test_atypical() {
   GPR_ASSERT(json->child);
   brother = json->child->next;
   grpc_json_destroy(json->child);
-  json->child = brother;
+  GPR_ASSERT(json->child == brother);
+  grpc_json_destroy(json->child->next);
   grpc_json_destroy(json);
   gpr_free(scratchpad);
 }

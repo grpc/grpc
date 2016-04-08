@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\surface\server_test.c">
+      <Filter>test\core\surface</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{a7353dbc-848c-4320-25c9-84cbf09838a0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{06c16169-257f-e57d-debf-c36fdec3e88f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\surface">
+      <UniqueIdentifier>{78f1b1a8-86e0-9445-4bc0-a183da5deb2e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

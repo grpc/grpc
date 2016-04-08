@@ -1,49 +1,51 @@
 /*
-*
-*Copyright 2015, Google Inc.
-*All rights reserved.
-*
-*Redistribution and use in source and binary forms, with or without
-*modification, are permitted provided that the following conditions are
-*met:
-*
-*    * Redistributions of source code must retain the above copyright
-*notice, this list of conditions and the following disclaimer.
-*    * Redistributions in binary form must reproduce the above
-*copyright notice, this list of conditions and the following disclaimer
-*in the documentation and/or other materials provided with the
-*distribution.
-*    * Neither the name of Google Inc. nor the names of its
-*contributors may be used to endorse or promote products derived from
-*this software without specific prior written permission.
-*
-*THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-*"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-*LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-*A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-*OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-*SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-*LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-*DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-*THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-*(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-*OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*
-*/
+ *
+ * Copyright 2015, Google Inc.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following disclaimer
+ * in the documentation and/or other materials provided with the
+ * distribution.
+ *     * Neither the name of Google Inc. nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
 
-#include "src/core/security/jwt_verifier.h"
+#include "src/core/lib/security/jwt_verifier.h"
 
 #include <string.h>
 
-#include "src/core/httpcli/httpcli.h"
-#include "src/core/security/base64.h"
-#include "src/core/security/json_token.h"
-#include "test/core/util/test_config.h"
+#include <grpc/grpc.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
 #include <grpc/support/string_util.h>
+
+#include "src/core/lib/http/httpcli.h"
+#include "src/core/lib/security/b64.h"
+#include "src/core/lib/security/json_token.h"
+#include "test/core/util/test_config.h"
 
 /* This JSON key was generated with the GCE console and revoked immediately.
    The identifiers have been changed as well.
@@ -288,7 +290,7 @@ static int httpcli_get_google_keys_for_email(
   grpc_httpcli_response response = http_response(200, good_google_email_keys());
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, "www.googleapis.com") == 0);
-  GPR_ASSERT(strcmp(request->path,
+  GPR_ASSERT(strcmp(request->http.path,
                     "/robot/v1/metadata/x509/"
                     "777-abaslkan11hlb6nmim3bpspl31ud@developer."
                     "gserviceaccount.com") == 0);
@@ -336,7 +338,7 @@ static int httpcli_get_custom_keys_for_email(
   grpc_httpcli_response response = http_response(200, gpr_strdup(good_jwk_set));
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, "keys.bar.com") == 0);
-  GPR_ASSERT(strcmp(request->path, "/jwk/foo@bar.com") == 0);
+  GPR_ASSERT(strcmp(request->http.path, "/jwk/foo@bar.com") == 0);
   on_response(exec_ctx, user_data, &response);
   gpr_free(response.body);
   return 1;
@@ -372,7 +374,7 @@ static int httpcli_get_jwk_set(grpc_exec_ctx *exec_ctx,
   grpc_httpcli_response response = http_response(200, gpr_strdup(good_jwk_set));
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, "www.googleapis.com") == 0);
-  GPR_ASSERT(strcmp(request->path, "/oauth2/v3/certs") == 0);
+  GPR_ASSERT(strcmp(request->http.path, "/oauth2/v3/certs") == 0);
   on_response(exec_ctx, user_data, &response);
   gpr_free(response.body);
   return 1;
@@ -387,7 +389,7 @@ static int httpcli_get_openid_config(grpc_exec_ctx *exec_ctx,
       http_response(200, gpr_strdup(good_openid_config));
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, "accounts.google.com") == 0);
-  GPR_ASSERT(strcmp(request->path, GRPC_OPENID_CONFIG_URL_SUFFIX) == 0);
+  GPR_ASSERT(strcmp(request->http.path, GRPC_OPENID_CONFIG_URL_SUFFIX) == 0);
   grpc_httpcli_set_override(httpcli_get_jwk_set,
                             httpcli_post_should_not_be_called);
   on_response(exec_ctx, user_data, &response);
@@ -487,7 +489,7 @@ static void test_jwt_verifier_bad_json_key(void) {
 static void corrupt_jwt_sig(char *jwt) {
   gpr_slice sig;
   char *bad_b64_sig;
-  gpr_uint8 *sig_bytes;
+  uint8_t *sig_bytes;
   char *last_dot = strrchr(jwt, '.');
   GPR_ASSERT(last_dot != NULL);
   sig = grpc_base64_decode(last_dot + 1, 1);
@@ -568,6 +570,7 @@ static void test_jwt_verifier_bad_format(void) {
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
+  grpc_init();
   test_claims_success();
   test_expired_claims_failure();
   test_invalid_claims_failure();
@@ -579,5 +582,6 @@ int main(int argc, char **argv) {
   test_jwt_verifier_bad_json_key();
   test_jwt_verifier_bad_signature();
   test_jwt_verifier_bad_format();
+  grpc_shutdown();
   return 0;
 }

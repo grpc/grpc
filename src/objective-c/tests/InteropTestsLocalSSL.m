@@ -57,4 +57,15 @@ static NSString * const kLocalSSLHost = @"localhost:5051";
   [super setUp];
 }
 
+- (void)testExceptions {
+  // Try to set userAgentPrefix for host that is nil. This should cause
+  // an exception.
+  @try {
+    [GRPCCall useTestCertsPath:nil testName:nil forHost:nil];
+    XCTFail(@"Did not receive an exception when parameters are nil");
+  } @catch(NSException *theException) {
+    NSLog(@"Received exception as expected: %@", theException.name);
+  }
+}
+
 @end

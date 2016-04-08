@@ -32,43 +32,50 @@
  */
 
 #include <memory>
+#include <thread>
 
-#include <grpc/grpc.h>
-#include <grpc/support/thd.h>
-#include <grpc/support/time.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
+#include <grpc/grpc.h>
+#include <grpc/support/thd.h>
+#include <grpc/support/time.h>
+#include <grpc/support/tls.h>
 #include <gtest/gtest.h>
 
+#include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
+#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "test/cpp/util/echo_duplicate.grpc.pb.h"
-#include "test/cpp/util/echo.grpc.pb.h"
 #include "test/cpp/util/string_ref_helper.h"
 
 #ifdef GPR_POSIX_SOCKET
-#include "src/core/iomgr/pollset_posix.h"
+#include "src/core/lib/iomgr/ev_posix.h"
 #endif
 
-using grpc::cpp::test::util::EchoRequest;
-using grpc::cpp::test::util::EchoResponse;
+using grpc::testing::EchoRequest;
+using grpc::testing::EchoResponse;
 using std::chrono::system_clock;
+
+GPR_TLS_DECL(g_is_async_end2end_test);
 
 namespace grpc {
 namespace testing {
 
 namespace {
 
-void* tag(int i) { return (void*)(gpr_intptr)i; }
+void* tag(int i) { return (void*)(intptr_t)i; }
+int detag(void* p) { return static_cast<int>(reinterpret_cast<intptr_t>(p)); }
 
 #ifdef GPR_POSIX_SOCKET
-static int assert_non_blocking_poll(struct pollfd* pfds, nfds_t nfds,
-                                    int timeout) {
-  GPR_ASSERT(timeout == 0);
+static int maybe_assert_non_blocking_poll(struct pollfd* pfds, nfds_t nfds,
+                                          int timeout) {
+  if (gpr_tls_get(&g_is_async_end2end_test)) {
+    GPR_ASSERT(timeout == 0);
+  }
   return poll(pfds, nfds, timeout);
 }
 
@@ -85,47 +92,65 @@ class PollOverride {
   grpc_poll_function_type prev_;
 };
 
-class PollingCheckRegion : public PollOverride {
+class PollingOverrider : public PollOverride {
  public:
-  explicit PollingCheckRegion(bool allow_blocking)
-      : PollOverride(allow_blocking ? poll : assert_non_blocking_poll) {}
+  explicit PollingOverrider(bool allow_blocking)
+      : PollOverride(allow_blocking ? poll : maybe_assert_non_blocking_poll) {}
 };
 #else
-class PollingCheckRegion {
+class PollingOverrider {
  public:
-  explicit PollingCheckRegion(bool allow_blocking) {}
+  explicit PollingOverrider(bool allow_blocking) {}
 };
 #endif
 
-class Verifier : public PollingCheckRegion {
+class Verifier {
  public:
-  explicit Verifier(bool spin) : PollingCheckRegion(!spin), spin_(spin) {}
+  explicit Verifier(bool spin) : spin_(spin) {}
+  // Expect sets the expected ok value for a specific tag
   Verifier& Expect(int i, bool expect_ok) {
     expectations_[tag(i)] = expect_ok;
     return *this;
   }
-  void Verify(CompletionQueue* cq) {
+
+  // Next waits for 1 async tag to complete, checks its
+  // expectations, and returns the tag
+  int Next(CompletionQueue* cq, bool ignore_ok) {
+    bool ok;
+    void* got_tag;
+    if (spin_) {
+      for (;;) {
+        auto r = cq->AsyncNext(&got_tag, &ok, gpr_time_0(GPR_CLOCK_REALTIME));
+        if (r == CompletionQueue::TIMEOUT) continue;
+        if (r == CompletionQueue::GOT_EVENT) break;
+        gpr_log(GPR_ERROR, "unexpected result from AsyncNext");
+        abort();
+      }
+    } else {
+      EXPECT_TRUE(cq->Next(&got_tag, &ok));
+    }
+    auto it = expectations_.find(got_tag);
+    EXPECT_TRUE(it != expectations_.end());
+    if (!ignore_ok) {
+      EXPECT_EQ(it->second, ok);
+    }
+    expectations_.erase(it);
+    return detag(got_tag);
+  }
+
+  // Verify keeps calling Next until all currently set
+  // expected tags are complete
+  void Verify(CompletionQueue* cq) { Verify(cq, false); }
+
+  // This version of Verify allows optionally ignoring the
+  // outcome of the expectation
+  void Verify(CompletionQueue* cq, bool ignore_ok) {
     GPR_ASSERT(!expectations_.empty());
     while (!expectations_.empty()) {
-      bool ok;
-      void* got_tag;
-      if (spin_) {
-        for (;;) {
-          auto r = cq->AsyncNext(&got_tag, &ok, gpr_time_0(GPR_CLOCK_REALTIME));
-          if (r == CompletionQueue::TIMEOUT) continue;
-          if (r == CompletionQueue::GOT_EVENT) break;
-          gpr_log(GPR_ERROR, "unexpected result from AsyncNext");
-          abort();
-        }
-      } else {
-        EXPECT_TRUE(cq->Next(&got_tag, &ok));
-      }
-      auto it = expectations_.find(got_tag);
-      EXPECT_TRUE(it != expectations_.end());
-      EXPECT_EQ(it->second, ok);
-      expectations_.erase(it);
+      Next(cq, ignore_ok);
     }
   }
+  // This version of Verify stops after a certain deadline
   void Verify(CompletionQueue* cq,
               std::chrono::system_clock::time_point deadline) {
     if (expectations_.empty()) {
@@ -177,15 +202,20 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<bool> {
   AsyncEnd2endTest() {}
 
   void SetUp() GRPC_OVERRIDE {
+    poll_overrider_.reset(new PollingOverrider(!GetParam()));
+
     int port = grpc_pick_unused_port_or_die();
     server_address_ << "localhost:" << port;
+
     // Setup server
     ServerBuilder builder;
     builder.AddListeningPort(server_address_.str(),
                              grpc::InsecureServerCredentials());
-    builder.RegisterAsyncService(&service_);
+    builder.RegisterService(&service_);
     cq_ = builder.AddCompletionQueue();
     server_ = builder.BuildAndStart();
+
+    gpr_tls_set(&g_is_async_end2end_test, 1);
   }
 
   void TearDown() GRPC_OVERRIDE {
@@ -195,12 +225,14 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<bool> {
     cq_->Shutdown();
     while (cq_->Next(&ignored_tag, &ignored_ok))
       ;
+    poll_overrider_.reset();
+    gpr_tls_set(&g_is_async_end2end_test, 0);
   }
 
   void ResetStub() {
     std::shared_ptr<Channel> channel =
         CreateChannel(server_address_.str(), InsecureChannelCredentials());
-    stub_ = grpc::cpp::test::util::TestService::NewStub(channel);
+    stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
 
   void SendRpc(int num_rpcs) {
@@ -216,7 +248,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<bool> {
       grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
 
       send_request.set_message("Hello");
-      std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
+      std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
           stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
 
       service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
@@ -238,10 +270,12 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<bool> {
   }
 
   std::unique_ptr<ServerCompletionQueue> cq_;
-  std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
+  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<Server> server_;
-  grpc::cpp::test::util::TestService::AsyncService service_;
+  grpc::testing::EchoTestService::AsyncService service_;
   std::ostringstream server_address_;
+
+  std::unique_ptr<PollingOverrider> poll_overrider_;
 };
 
 TEST_P(AsyncEnd2endTest, SimpleRpc) {
@@ -269,7 +303,7 @@ TEST_P(AsyncEnd2endTest, AsyncNextRpc) {
   grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
 
   send_request.set_message("Hello");
-  std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
+  std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
 
   std::chrono::system_clock::time_point time_now(
@@ -314,7 +348,7 @@ TEST_P(AsyncEnd2endTest, SimpleClientStreaming) {
   ServerAsyncReader<EchoResponse, EchoRequest> srv_stream(&srv_ctx);
 
   send_request.set_message("Hello");
-  std::unique_ptr<ClientAsyncWriter<EchoRequest> > cli_stream(
+  std::unique_ptr<ClientAsyncWriter<EchoRequest>> cli_stream(
       stub_->AsyncRequestStream(&cli_ctx, &recv_response, cq_.get(), tag(1)));
 
   service_.RequestRequestStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
@@ -367,7 +401,7 @@ TEST_P(AsyncEnd2endTest, SimpleServerStreaming) {
   ServerAsyncWriter<EchoResponse> srv_stream(&srv_ctx);
 
   send_request.set_message("Hello");
-  std::unique_ptr<ClientAsyncReader<EchoResponse> > cli_stream(
+  std::unique_ptr<ClientAsyncReader<EchoResponse>> cli_stream(
       stub_->AsyncResponseStream(&cli_ctx, send_request, cq_.get(), tag(1)));
 
   service_.RequestResponseStream(&srv_ctx, &recv_request, &srv_stream,
@@ -417,7 +451,7 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreaming) {
   ServerAsyncReaderWriter<EchoResponse, EchoRequest> srv_stream(&srv_ctx);
 
   send_request.set_message("Hello");
-  std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse> >
+  std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse>>
       cli_stream(stub_->AsyncBidiStream(&cli_ctx, cq_.get(), tag(1)));
 
   service_.RequestBidiStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
@@ -472,10 +506,12 @@ TEST_P(AsyncEnd2endTest, ClientInitialMetadataRpc) {
   send_request.set_message("Hello");
   std::pair<grpc::string, grpc::string> meta1("key1", "val1");
   std::pair<grpc::string, grpc::string> meta2("key2", "val2");
+  std::pair<grpc::string, grpc::string> meta3("g.r.d-bin", "xyz");
   cli_ctx.AddMetadata(meta1.first, meta1.second);
   cli_ctx.AddMetadata(meta2.first, meta2.second);
+  cli_ctx.AddMetadata(meta3.first, meta3.second);
 
-  std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
+  std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
 
   service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
@@ -487,6 +523,8 @@ TEST_P(AsyncEnd2endTest, ClientInitialMetadataRpc) {
             ToString(client_initial_metadata.find(meta1.first)->second));
   EXPECT_EQ(meta2.second,
             ToString(client_initial_metadata.find(meta2.first)->second));
+  EXPECT_EQ(meta3.second,
+            ToString(client_initial_metadata.find(meta3.first)->second));
   EXPECT_GE(client_initial_metadata.size(), static_cast<size_t>(2));
 
   send_response.set_message(recv_request.message());
@@ -518,7 +556,7 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataRpc) {
   std::pair<grpc::string, grpc::string> meta1("key1", "val1");
   std::pair<grpc::string, grpc::string> meta2("key2", "val2");
 
-  std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
+  std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
 
   service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
@@ -567,7 +605,7 @@ TEST_P(AsyncEnd2endTest, ServerTrailingMetadataRpc) {
   std::pair<grpc::string, grpc::string> meta1("key1", "val1");
   std::pair<grpc::string, grpc::string> meta2("key2", "val2");
 
-  std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
+  std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
 
   service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
@@ -628,7 +666,7 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
   cli_ctx.AddMetadata(meta1.first, meta1.second);
   cli_ctx.AddMetadata(meta2.first, meta2.second);
 
-  std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
+  std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
 
   service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
@@ -689,7 +727,7 @@ TEST_P(AsyncEnd2endTest, ServerCheckCancellation) {
   grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
 
   send_request.set_message("Hello");
-  std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
+  std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
 
   srv_ctx.AsyncNotifyWhenDone(tag(5));
@@ -724,7 +762,7 @@ TEST_P(AsyncEnd2endTest, ServerCheckDone) {
   grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
 
   send_request.set_message("Hello");
-  std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
+  std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
 
   srv_ctx.AsyncNotifyWhenDone(tag(5));
@@ -750,15 +788,15 @@ TEST_P(AsyncEnd2endTest, ServerCheckDone) {
 TEST_P(AsyncEnd2endTest, UnimplementedRpc) {
   std::shared_ptr<Channel> channel =
       CreateChannel(server_address_.str(), InsecureChannelCredentials());
-  std::unique_ptr<grpc::cpp::test::util::UnimplementedService::Stub> stub;
-  stub = grpc::cpp::test::util::UnimplementedService::NewStub(channel);
+  std::unique_ptr<grpc::testing::UnimplementedService::Stub> stub;
+  stub = grpc::testing::UnimplementedService::NewStub(channel);
   EchoRequest send_request;
   EchoResponse recv_response;
   Status recv_status;
 
   ClientContext cli_ctx;
   send_request.set_message("Hello");
-  std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
+  std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub->AsyncUnimplemented(&cli_ctx, send_request, cq_.get()));
 
   response_reader->Finish(&recv_response, &recv_status, tag(4));
@@ -768,8 +806,494 @@ TEST_P(AsyncEnd2endTest, UnimplementedRpc) {
   EXPECT_EQ("", recv_status.error_message());
 }
 
+// This class is for testing scenarios where RPCs are cancelled on the server
+// by calling ServerContext::TryCancel(). Server uses AsyncNotifyWhenDone
+// API to check for cancellation
+class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
+ protected:
+  typedef enum {
+    DO_NOT_CANCEL = 0,
+    CANCEL_BEFORE_PROCESSING,
+    CANCEL_DURING_PROCESSING,
+    CANCEL_AFTER_PROCESSING
+  } ServerTryCancelRequestPhase;
+
+  // Helper for testing client-streaming RPCs which are cancelled on the server.
+  // Depending on the value of server_try_cancel parameter, this will test one
+  // of the following three scenarios:
+  //   CANCEL_BEFORE_PROCESSING: Rpc is cancelled by the server before reading
+  //   any messages from the client
+  //
+  //   CANCEL_DURING_PROCESSING: Rpc is cancelled by the server while reading
+  //   messages from the client
+  //
+  //   CANCEL_AFTER PROCESSING: Rpc is cancelled by server after reading all
+  //   messages from the client (but before sending any status back to the
+  //   client)
+  void TestClientStreamingServerCancel(
+      ServerTryCancelRequestPhase server_try_cancel) {
+    ResetStub();
+
+    EchoRequest send_request;
+    EchoRequest recv_request;
+    EchoResponse send_response;
+    EchoResponse recv_response;
+    Status recv_status;
+
+    ClientContext cli_ctx;
+    ServerContext srv_ctx;
+    ServerAsyncReader<EchoResponse, EchoRequest> srv_stream(&srv_ctx);
+
+    // Initiate the 'RequestStream' call on client
+    std::unique_ptr<ClientAsyncWriter<EchoRequest>> cli_stream(
+        stub_->AsyncRequestStream(&cli_ctx, &recv_response, cq_.get(), tag(1)));
+    Verifier(GetParam()).Expect(1, true).Verify(cq_.get());
+
+    // On the server, request to be notified of 'RequestStream' calls
+    // and receive the 'RequestStream' call just made by the client
+    srv_ctx.AsyncNotifyWhenDone(tag(11));
+    service_.RequestRequestStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
+                                  tag(2));
+    Verifier(GetParam()).Expect(2, true).Verify(cq_.get());
+
+    // Client sends 3 messages (tags 3, 4 and 5)
+    for (int tag_idx = 3; tag_idx <= 5; tag_idx++) {
+      send_request.set_message("Ping " + std::to_string(tag_idx));
+      cli_stream->Write(send_request, tag(tag_idx));
+      Verifier(GetParam()).Expect(tag_idx, true).Verify(cq_.get());
+    }
+    cli_stream->WritesDone(tag(6));
+    Verifier(GetParam()).Expect(6, true).Verify(cq_.get());
+
+    bool expected_server_cq_result = true;
+    bool ignore_cq_result = false;
+    bool want_done_tag = false;
+
+    if (server_try_cancel == CANCEL_BEFORE_PROCESSING) {
+      srv_ctx.TryCancel();
+      Verifier(GetParam()).Expect(11, true).Verify(cq_.get());
+      EXPECT_TRUE(srv_ctx.IsCancelled());
+
+      // Since cancellation is done before server reads any results, we know
+      // for sure that all cq results will return false from this point forward
+      expected_server_cq_result = false;
+    }
+
+    std::thread* server_try_cancel_thd = NULL;
+
+    auto verif = Verifier(GetParam());
+
+    if (server_try_cancel == CANCEL_DURING_PROCESSING) {
+      server_try_cancel_thd =
+          new std::thread(&ServerContext::TryCancel, &srv_ctx);
+      // Server will cancel the RPC in a parallel thread while reading the
+      // requests from the client. Since the cancellation can happen at anytime,
+      // some of the cq results (i.e those until cancellation) might be true but
+      // its non deterministic. So better to ignore the cq results
+      ignore_cq_result = true;
+      // Expect that we might possibly see the done tag that
+      // indicates cancellation completion in this case
+      want_done_tag = true;
+      verif.Expect(11, true);
+    }
+
+    // Server reads 3 messages (tags 6, 7 and 8)
+    // But if want_done_tag is true, we might also see tag 11
+    for (int tag_idx = 6; tag_idx <= 8; tag_idx++) {
+      srv_stream.Read(&recv_request, tag(tag_idx));
+      // Note that we'll add something to the verifier and verify that
+      // something was seen, but it might be tag 11 and not what we
+      // just added
+      int got_tag = verif.Expect(tag_idx, expected_server_cq_result)
+                        .Next(cq_.get(), ignore_cq_result);
+      GPR_ASSERT((got_tag == tag_idx) || (got_tag == 11 && want_done_tag));
+      if (got_tag == 11) {
+        EXPECT_TRUE(srv_ctx.IsCancelled());
+        want_done_tag = false;
+        // Now get the other entry that we were waiting on
+        EXPECT_EQ(verif.Next(cq_.get(), ignore_cq_result), tag_idx);
+      }
+    }
+
+    if (server_try_cancel_thd != NULL) {
+      server_try_cancel_thd->join();
+      delete server_try_cancel_thd;
+    }
+
+    if (server_try_cancel == CANCEL_AFTER_PROCESSING) {
+      srv_ctx.TryCancel();
+      want_done_tag = true;
+      verif.Expect(11, true);
+    }
+
+    if (want_done_tag) {
+      verif.Verify(cq_.get());
+      EXPECT_TRUE(srv_ctx.IsCancelled());
+      want_done_tag = false;
+    }
+
+    // The RPC has been cancelled at this point for sure (i.e irrespective of
+    // the value of `server_try_cancel` is). So, from this point forward, we
+    // know that cq results are supposed to return false on server.
+
+    // Server sends the final message and cancelled status (but the RPC is
+    // already cancelled at this point. So we expect the operation to fail)
+    srv_stream.Finish(send_response, Status::CANCELLED, tag(9));
+    Verifier(GetParam()).Expect(9, false).Verify(cq_.get());
+
+    // Client will see the cancellation
+    cli_stream->Finish(&recv_status, tag(10));
+    // TODO(sreek): The expectation here should be true. This is a bug (github
+    // issue #4972)
+    Verifier(GetParam()).Expect(10, false).Verify(cq_.get());
+    EXPECT_FALSE(recv_status.ok());
+    EXPECT_EQ(::grpc::StatusCode::CANCELLED, recv_status.error_code());
+  }
+
+  // Helper for testing server-streaming RPCs which are cancelled on the server.
+  // Depending on the value of server_try_cancel parameter, this will test one
+  // of the following three scenarios:
+  //   CANCEL_BEFORE_PROCESSING: Rpc is cancelled by the server before sending
+  //   any messages to the client
+  //
+  //   CANCEL_DURING_PROCESSING: Rpc is cancelled by the server while sending
+  //   messages to the client
+  //
+  //   CANCEL_AFTER PROCESSING: Rpc is cancelled by server after sending all
+  //   messages to the client (but before sending any status back to the
+  //   client)
+  void TestServerStreamingServerCancel(
+      ServerTryCancelRequestPhase server_try_cancel) {
+    ResetStub();
+
+    EchoRequest send_request;
+    EchoRequest recv_request;
+    EchoResponse send_response;
+    EchoResponse recv_response;
+    Status recv_status;
+    ClientContext cli_ctx;
+    ServerContext srv_ctx;
+    ServerAsyncWriter<EchoResponse> srv_stream(&srv_ctx);
+
+    send_request.set_message("Ping");
+    // Initiate the 'ResponseStream' call on the client
+    std::unique_ptr<ClientAsyncReader<EchoResponse>> cli_stream(
+        stub_->AsyncResponseStream(&cli_ctx, send_request, cq_.get(), tag(1)));
+    Verifier(GetParam()).Expect(1, true).Verify(cq_.get());
+    // On the server, request to be notified of 'ResponseStream' calls and
+    // receive the call just made by the client
+    srv_ctx.AsyncNotifyWhenDone(tag(11));
+    service_.RequestResponseStream(&srv_ctx, &recv_request, &srv_stream,
+                                   cq_.get(), cq_.get(), tag(2));
+    Verifier(GetParam()).Expect(2, true).Verify(cq_.get());
+    EXPECT_EQ(send_request.message(), recv_request.message());
+
+    bool expected_cq_result = true;
+    bool ignore_cq_result = false;
+    bool want_done_tag = false;
+
+    if (server_try_cancel == CANCEL_BEFORE_PROCESSING) {
+      srv_ctx.TryCancel();
+      Verifier(GetParam()).Expect(11, true).Verify(cq_.get());
+      EXPECT_TRUE(srv_ctx.IsCancelled());
+
+      // We know for sure that all cq results will be false from this point
+      // since the server cancelled the RPC
+      expected_cq_result = false;
+    }
+
+    std::thread* server_try_cancel_thd = NULL;
+
+    auto verif = Verifier(GetParam());
+
+    if (server_try_cancel == CANCEL_DURING_PROCESSING) {
+      server_try_cancel_thd =
+          new std::thread(&ServerContext::TryCancel, &srv_ctx);
+
+      // Server will cancel the RPC in a parallel thread while writing responses
+      // to the client. Since the cancellation can happen at anytime, some of
+      // the cq results (i.e those until cancellation) might be true but it is
+      // non deterministic. So better to ignore the cq results
+      ignore_cq_result = true;
+      // Expect that we might possibly see the done tag that
+      // indicates cancellation completion in this case
+      want_done_tag = true;
+      verif.Expect(11, true);
+    }
+
+    // Server sends three messages (tags 3, 4 and 5)
+    // But if want_done tag is true, we might also see tag 11
+    for (int tag_idx = 3; tag_idx <= 5; tag_idx++) {
+      send_response.set_message("Pong " + std::to_string(tag_idx));
+      srv_stream.Write(send_response, tag(tag_idx));
+      // Note that we'll add something to the verifier and verify that
+      // something was seen, but it might be tag 11 and not what we
+      // just added
+      int got_tag = verif.Expect(tag_idx, expected_cq_result)
+                        .Next(cq_.get(), ignore_cq_result);
+      GPR_ASSERT((got_tag == tag_idx) || (got_tag == 11 && want_done_tag));
+      if (got_tag == 11) {
+        EXPECT_TRUE(srv_ctx.IsCancelled());
+        want_done_tag = false;
+        // Now get the other entry that we were waiting on
+        EXPECT_EQ(verif.Next(cq_.get(), ignore_cq_result), tag_idx);
+      }
+    }
+
+    if (server_try_cancel_thd != NULL) {
+      server_try_cancel_thd->join();
+      delete server_try_cancel_thd;
+    }
+
+    if (server_try_cancel == CANCEL_AFTER_PROCESSING) {
+      srv_ctx.TryCancel();
+      want_done_tag = true;
+      verif.Expect(11, true);
+
+      // Client reads may fail bacause it is notified that the stream is
+      // cancelled.
+      ignore_cq_result = true;
+    }
+
+    if (want_done_tag) {
+      verif.Verify(cq_.get());
+      EXPECT_TRUE(srv_ctx.IsCancelled());
+      want_done_tag = false;
+    }
+
+    // Client attemts to read the three messages from the server
+    for (int tag_idx = 6; tag_idx <= 8; tag_idx++) {
+      cli_stream->Read(&recv_response, tag(tag_idx));
+      Verifier(GetParam())
+          .Expect(tag_idx, expected_cq_result)
+          .Verify(cq_.get(), ignore_cq_result);
+    }
+
+    // The RPC has been cancelled at this point for sure (i.e irrespective of
+    // the value of `server_try_cancel` is). So, from this point forward, we
+    // know that cq results are supposed to return false on server.
+
+    // Server finishes the stream (but the RPC is already cancelled)
+    srv_stream.Finish(Status::CANCELLED, tag(9));
+    Verifier(GetParam()).Expect(9, false).Verify(cq_.get());
+
+    // Client will see the cancellation
+    cli_stream->Finish(&recv_status, tag(10));
+    Verifier(GetParam()).Expect(10, true).Verify(cq_.get());
+    EXPECT_FALSE(recv_status.ok());
+    EXPECT_EQ(::grpc::StatusCode::CANCELLED, recv_status.error_code());
+  }
+
+  // Helper for testing bidirectinal-streaming RPCs which are cancelled on the
+  // server.
+  //
+  // Depending on the value of server_try_cancel parameter, this will
+  // test one of the following three scenarios:
+  //   CANCEL_BEFORE_PROCESSING: Rpc is cancelled by the server before reading/
+  //   writing any messages from/to the client
+  //
+  //   CANCEL_DURING_PROCESSING: Rpc is cancelled by the server while reading
+  //   messages from the client
+  //
+  //   CANCEL_AFTER PROCESSING: Rpc is cancelled by server after reading all
+  //   messages from the client (but before sending any status back to the
+  //   client)
+  void TestBidiStreamingServerCancel(
+      ServerTryCancelRequestPhase server_try_cancel) {
+    ResetStub();
+
+    EchoRequest send_request;
+    EchoRequest recv_request;
+    EchoResponse send_response;
+    EchoResponse recv_response;
+    Status recv_status;
+    ClientContext cli_ctx;
+    ServerContext srv_ctx;
+    ServerAsyncReaderWriter<EchoResponse, EchoRequest> srv_stream(&srv_ctx);
+
+    // Initiate the call from the client side
+    std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse>>
+        cli_stream(stub_->AsyncBidiStream(&cli_ctx, cq_.get(), tag(1)));
+    Verifier(GetParam()).Expect(1, true).Verify(cq_.get());
+
+    // On the server, request to be notified of the 'BidiStream' call and
+    // receive the call just made by the client
+    srv_ctx.AsyncNotifyWhenDone(tag(11));
+    service_.RequestBidiStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
+                               tag(2));
+    Verifier(GetParam()).Expect(2, true).Verify(cq_.get());
+
+    // Client sends the first and the only message
+    send_request.set_message("Ping");
+    cli_stream->Write(send_request, tag(3));
+    Verifier(GetParam()).Expect(3, true).Verify(cq_.get());
+
+    bool expected_cq_result = true;
+    bool ignore_cq_result = false;
+    bool want_done_tag = false;
+
+    if (server_try_cancel == CANCEL_BEFORE_PROCESSING) {
+      srv_ctx.TryCancel();
+      Verifier(GetParam()).Expect(11, true).Verify(cq_.get());
+      EXPECT_TRUE(srv_ctx.IsCancelled());
+
+      // We know for sure that all cq results will be false from this point
+      // since the server cancelled the RPC
+      expected_cq_result = false;
+    }
+
+    std::thread* server_try_cancel_thd = NULL;
+
+    auto verif = Verifier(GetParam());
+
+    if (server_try_cancel == CANCEL_DURING_PROCESSING) {
+      server_try_cancel_thd =
+          new std::thread(&ServerContext::TryCancel, &srv_ctx);
+
+      // Since server is going to cancel the RPC in a parallel thread, some of
+      // the cq results (i.e those until the cancellation) might be true. Since
+      // that number is non-deterministic, it is better to ignore the cq results
+      ignore_cq_result = true;
+      // Expect that we might possibly see the done tag that
+      // indicates cancellation completion in this case
+      want_done_tag = true;
+      verif.Expect(11, true);
+    }
+
+    int got_tag;
+    srv_stream.Read(&recv_request, tag(4));
+    verif.Expect(4, expected_cq_result);
+    got_tag = verif.Next(cq_.get(), ignore_cq_result);
+    GPR_ASSERT((got_tag == 4) || (got_tag == 11 && want_done_tag));
+    if (got_tag == 11) {
+      EXPECT_TRUE(srv_ctx.IsCancelled());
+      want_done_tag = false;
+      // Now get the other entry that we were waiting on
+      EXPECT_EQ(verif.Next(cq_.get(), ignore_cq_result), 4);
+    }
+
+    send_response.set_message("Pong");
+    srv_stream.Write(send_response, tag(5));
+    verif.Expect(5, expected_cq_result);
+    got_tag = verif.Next(cq_.get(), ignore_cq_result);
+    GPR_ASSERT((got_tag == 5) || (got_tag == 11 && want_done_tag));
+    if (got_tag == 11) {
+      EXPECT_TRUE(srv_ctx.IsCancelled());
+      want_done_tag = false;
+      // Now get the other entry that we were waiting on
+      EXPECT_EQ(verif.Next(cq_.get(), ignore_cq_result), 5);
+    }
+
+    cli_stream->Read(&recv_response, tag(6));
+    verif.Expect(6, expected_cq_result);
+    got_tag = verif.Next(cq_.get(), ignore_cq_result);
+    GPR_ASSERT((got_tag == 6) || (got_tag == 11 && want_done_tag));
+    if (got_tag == 11) {
+      EXPECT_TRUE(srv_ctx.IsCancelled());
+      want_done_tag = false;
+      // Now get the other entry that we were waiting on
+      EXPECT_EQ(verif.Next(cq_.get(), ignore_cq_result), 6);
+    }
+
+    // This is expected to succeed in all cases
+    cli_stream->WritesDone(tag(7));
+    verif.Expect(7, true);
+    got_tag = verif.Next(cq_.get(), ignore_cq_result);
+    GPR_ASSERT((got_tag == 7) || (got_tag == 11 && want_done_tag));
+    if (got_tag == 11) {
+      EXPECT_TRUE(srv_ctx.IsCancelled());
+      want_done_tag = false;
+      // Now get the other entry that we were waiting on
+      EXPECT_EQ(verif.Next(cq_.get(), ignore_cq_result), 7);
+    }
+
+    // This is expected to fail in all cases i.e for all values of
+    // server_try_cancel. This is because at this point, either there are no
+    // more msgs from the client (because client called WritesDone) or the RPC
+    // is cancelled on the server
+    srv_stream.Read(&recv_request, tag(8));
+    verif.Expect(8, false);
+    got_tag = verif.Next(cq_.get(), ignore_cq_result);
+    GPR_ASSERT((got_tag == 8) || (got_tag == 11 && want_done_tag));
+    if (got_tag == 11) {
+      EXPECT_TRUE(srv_ctx.IsCancelled());
+      want_done_tag = false;
+      // Now get the other entry that we were waiting on
+      EXPECT_EQ(verif.Next(cq_.get(), ignore_cq_result), 8);
+    }
+
+    if (server_try_cancel_thd != NULL) {
+      server_try_cancel_thd->join();
+      delete server_try_cancel_thd;
+    }
+
+    if (server_try_cancel == CANCEL_AFTER_PROCESSING) {
+      srv_ctx.TryCancel();
+      want_done_tag = true;
+      verif.Expect(11, true);
+    }
+
+    if (want_done_tag) {
+      verif.Verify(cq_.get());
+      EXPECT_TRUE(srv_ctx.IsCancelled());
+      want_done_tag = false;
+    }
+
+    // The RPC has been cancelled at this point for sure (i.e irrespective of
+    // the value of `server_try_cancel` is). So, from this point forward, we
+    // know that cq results are supposed to return false on server.
+
+    srv_stream.Finish(Status::CANCELLED, tag(9));
+    Verifier(GetParam()).Expect(9, false).Verify(cq_.get());
+
+    cli_stream->Finish(&recv_status, tag(10));
+    Verifier(GetParam()).Expect(10, true).Verify(cq_.get());
+    EXPECT_FALSE(recv_status.ok());
+    EXPECT_EQ(grpc::StatusCode::CANCELLED, recv_status.error_code());
+  }
+};
+
+TEST_P(AsyncEnd2endServerTryCancelTest, ClientStreamingServerTryCancelBefore) {
+  TestClientStreamingServerCancel(CANCEL_BEFORE_PROCESSING);
+}
+
+TEST_P(AsyncEnd2endServerTryCancelTest, ClientStreamingServerTryCancelDuring) {
+  TestClientStreamingServerCancel(CANCEL_DURING_PROCESSING);
+}
+
+TEST_P(AsyncEnd2endServerTryCancelTest, ClientStreamingServerTryCancelAfter) {
+  TestClientStreamingServerCancel(CANCEL_AFTER_PROCESSING);
+}
+
+TEST_P(AsyncEnd2endServerTryCancelTest, ServerStreamingServerTryCancelBefore) {
+  TestServerStreamingServerCancel(CANCEL_BEFORE_PROCESSING);
+}
+
+TEST_P(AsyncEnd2endServerTryCancelTest, ServerStreamingServerTryCancelDuring) {
+  TestServerStreamingServerCancel(CANCEL_DURING_PROCESSING);
+}
+
+TEST_P(AsyncEnd2endServerTryCancelTest, ServerStreamingServerTryCancelAfter) {
+  TestServerStreamingServerCancel(CANCEL_AFTER_PROCESSING);
+}
+
+TEST_P(AsyncEnd2endServerTryCancelTest, ServerBidiStreamingTryCancelBefore) {
+  TestBidiStreamingServerCancel(CANCEL_BEFORE_PROCESSING);
+}
+
+TEST_P(AsyncEnd2endServerTryCancelTest, ServerBidiStreamingTryCancelDuring) {
+  TestBidiStreamingServerCancel(CANCEL_DURING_PROCESSING);
+}
+
+TEST_P(AsyncEnd2endServerTryCancelTest, ServerBidiStreamingTryCancelAfter) {
+  TestBidiStreamingServerCancel(CANCEL_AFTER_PROCESSING);
+}
+
 INSTANTIATE_TEST_CASE_P(AsyncEnd2end, AsyncEnd2endTest,
                         ::testing::Values(false, true));
+INSTANTIATE_TEST_CASE_P(AsyncEnd2endServerTryCancel,
+                        AsyncEnd2endServerTryCancelTest,
+                        ::testing::Values(false));
 
 }  // namespace
 }  // namespace testing
@@ -777,6 +1301,9 @@ INSTANTIATE_TEST_CASE_P(AsyncEnd2end, AsyncEnd2endTest,
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
+  gpr_tls_init(&g_is_async_end2end_test);
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  int ret = RUN_ALL_TESTS();
+  gpr_tls_destroy(&g_is_async_end2end_test);
+  return ret;
 }

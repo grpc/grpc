@@ -48,6 +48,17 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
+        public void Constructor_RejectsDuplicateOptions()
+        {
+            var options = new ChannelOption[]
+            {
+                new ChannelOption(ChannelOptions.PrimaryUserAgentString, "ABC"),
+                new ChannelOption(ChannelOptions.PrimaryUserAgentString, "XYZ")
+            };
+            Assert.Throws(typeof(ArgumentException), () => new Channel("127.0.0.1", ChannelCredentials.Insecure, options));
+        }
+
+        [Test]
         public void State_IdleAfterCreation()
         {
             var channel = new Channel("localhost", ChannelCredentials.Insecure);

@@ -167,30 +167,18 @@ NAN_METHOD(ServerCredentials::CreateSsl) {
       return Nan::ThrowTypeError("Key/cert pairs must be objects");
     }
     Local<Object> pair_obj = Nan::To<Object>(pair_val).ToLocalChecked();
-    MaybeLocal<Value> maybe_key = Nan::Get(pair_obj, key_key);
-    if (maybe_key.IsEmpty()) {
-      delete key_cert_pairs;
-      return Nan::ThrowTypeError(
-          "Key/cert pairs must have a private_key and a cert_chain");
-    }
-    MaybeLocal<Value> maybe_cert = Nan::Get(pair_obj, cert_key);
-    if (maybe_cert.IsEmpty()) {
-      delete key_cert_pairs;
-      return Nan::ThrowTypeError(
-          "Key/cert pairs must have a private_key and a cert_chain");
-    }
-    if (!::node::Buffer::HasInstance(maybe_key.ToLocalChecked())) {
+    Local<Value> maybe_key = Nan::Get(pair_obj, key_key).ToLocalChecked();
+    Local<Value> maybe_cert = Nan::Get(pair_obj, cert_key).ToLocalChecked();
+    if (!::node::Buffer::HasInstance(maybe_key)) {
       delete key_cert_pairs;
       return Nan::ThrowTypeError("private_key must be a Buffer");
     }
-    if (!::node::Buffer::HasInstance(maybe_cert.ToLocalChecked())) {
+    if (!::node::Buffer::HasInstance(maybe_cert)) {
       delete key_cert_pairs;
       return Nan::ThrowTypeError("cert_chain must be a Buffer");
     }
-    key_cert_pairs[i].private_key = ::node::Buffer::Data(
-        maybe_key.ToLocalChecked());
-    key_cert_pairs[i].cert_chain = ::node::Buffer::Data(
-        maybe_cert.ToLocalChecked());
+    key_cert_pairs[i].private_key = ::node::Buffer::Data(maybe_key);
+    key_cert_pairs[i].cert_chain = ::node::Buffer::Data(maybe_cert);
   }
   grpc_server_credentials *creds = grpc_ssl_server_credentials_create(
       root_certs, key_cert_pairs, key_cert_pair_count, force_client_auth, NULL);

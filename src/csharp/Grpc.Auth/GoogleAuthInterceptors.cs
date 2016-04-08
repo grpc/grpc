@@ -57,9 +57,9 @@ namespace Grpc.Auth
         /// <returns>The interceptor.</returns>
         public static AsyncAuthInterceptor FromCredential(ITokenAccess credential)
         {
-            return new AsyncAuthInterceptor(async (authUri, metadata) =>
+            return new AsyncAuthInterceptor(async (context, metadata) =>
             {
-                var accessToken = await credential.GetAccessTokenForRequestAsync(authUri, CancellationToken.None).ConfigureAwait(false);
+                var accessToken = await credential.GetAccessTokenForRequestAsync(context.ServiceUrl, CancellationToken.None).ConfigureAwait(false);
                 metadata.Add(CreateBearerTokenHeader(accessToken));
             });
         }
@@ -71,8 +71,8 @@ namespace Grpc.Auth
         /// <returns>The interceptor.</returns>
         public static AsyncAuthInterceptor FromAccessToken(string accessToken)
         {
-            Preconditions.CheckNotNull(accessToken);
-            return new AsyncAuthInterceptor(async (authUri, metadata) =>
+            GrpcPreconditions.CheckNotNull(accessToken);
+            return new AsyncAuthInterceptor(async (context, metadata) =>
             {
                 metadata.Add(CreateBearerTokenHeader(accessToken));
             });

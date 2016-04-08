@@ -54,55 +54,77 @@ LIB_DIRS = [
   LIBDIR
 ]
 
-def check_grpc_root
-  grpc_root = ENV['GRPC_ROOT']
-  if grpc_root.nil?
-    r = File.expand_path(File.join(File.dirname(__FILE__), '../../../..'))
-    grpc_root = r if File.exist?(File.join(r, 'include/grpc/grpc.h'))
-  end
-  grpc_root
-end
+windows = RUBY_PLATFORM =~ /mingw|mswin/
 
-grpc_pkg_config = system('pkg-config --exists grpc')
+grpc_root = File.expand_path(File.join(File.dirname(__FILE__), '../../../..'))
 
-if grpc_pkg_config
-  $CFLAGS << ' ' + `pkg-config --static --cflags grpc`.strip + ' '
-  $LDFLAGS << ' ' + `pkg-config --static --libs grpc`.strip + ' '
+grpc_config = ENV['GRPC_CONFIG'] || 'opt'
+
+if ENV.key?('GRPC_LIB_DIR')
+  grpc_lib_dir = File.join(grpc_root, ENV['GRPC_LIB_DIR'])
 else
-  dir_config('grpc', HEADER_DIRS, LIB_DIRS)
-  fail 'libdl not found' unless have_library('dl', 'dlopen')
-  fail 'zlib not found' unless have_library('z', 'inflate')
-  begin
-    fail 'Fail' unless have_library('gpr', 'gpr_now')
-    fail 'Fail' unless have_library('grpc', 'grpc_channel_destroy')
-  rescue
-    # Check to see if GRPC_ROOT is defined or available
-    grpc_root = check_grpc_root
-
-    # Stop if there is still no grpc_root
-    exit 1 if grpc_root.nil?
-
-    grpc_config = ENV['GRPC_CONFIG'] || 'opt'
-    if ENV.key?('GRPC_LIB_DIR')
-      grpc_lib_dir = File.join(grpc_root, ENV['GRPC_LIB_DIR'])
-    else
-      grpc_lib_dir = File.join(File.join(grpc_root, 'libs'), grpc_config)
-    end
-    unless File.exist?(File.join(grpc_lib_dir, 'libgrpc.a'))
-      print "Building internal gRPC\n"
-      system("make -C #{grpc_root} static_c CONFIG=#{grpc_config}")
-    end
-    $CFLAGS << ' -I' + File.join(grpc_root, 'include')
-    $LDFLAGS << ' -L' + grpc_lib_dir
-    raise 'gpr not found' unless have_library('gpr', 'gpr_now')
-    raise 'grpc not found' unless have_library('grpc', 'grpc_channel_destroy')
-  end
+  grpc_lib_dir = File.join(grpc_root, 'libs', grpc_config)
 end
+
+ENV['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
+
+unless File.exist?(File.join(grpc_lib_dir, 'libgrpc.a')) or windows
+  ENV['AR'] = RbConfig::CONFIG['AR'] + ' rcs'
+  ENV['CC'] = RbConfig::CONFIG['CC']
+  ENV['LD'] = ENV['CC']
+
+  ENV['AR'] = 'libtool -o' if RUBY_PLATFORM =~ /darwin/
+
+  ENV['EMBED_OPENSSL'] = 'true'
+  ENV['EMBED_ZLIB'] = 'true'
+  ENV['ARCH_FLAGS'] = RbConfig::CONFIG['ARCH_FLAG']
+  ENV['ARCH_FLAGS'] = '-arch i386 -arch x86_64' if RUBY_PLATFORM =~ /darwin/
+  ENV['CFLAGS'] = '-DGPR_BACKWARDS_COMPATIBILITY_MODE'
+
+  output_dir = File.expand_path(RbConfig::CONFIG['topdir'])
+  grpc_lib_dir = File.join(output_dir, 'libs', grpc_config)
+  ENV['BUILDDIR'] = output_dir
+
+  puts 'Building internal gRPC into ' + grpc_lib_dir
+  system("make -j -C #{grpc_root} #{grpc_lib_dir}/libgrpc.a CONFIG=#{grpc_config}")
+  exit 1 unless $? == 0
+end
+
+$CFLAGS << ' -I' + File.join(grpc_root, 'include')
+$LDFLAGS << ' ' + File.join(grpc_lib_dir, 'libgrpc.a') unless windows
+if grpc_config == 'gcov'
+  $CFLAGS << ' -O0 -fprofile-arcs -ftest-coverage'
+  $LDFLAGS << ' -fprofile-arcs -ftest-coverage -rdynamic'
+end
+
+$LDFLAGS << ' -Wl,-wrap,memcpy' if RUBY_PLATFORM =~ /linux/
+$LDFLAGS << ' -static' if windows
 
 $CFLAGS << ' -std=c99 '
 $CFLAGS << ' -Wall '
 $CFLAGS << ' -Wextra '
 $CFLAGS << ' -pedantic '
 $CFLAGS << ' -Werror '
+$CFLAGS << ' -Wno-format '
 
-create_makefile('grpc/grpc')
+output = File.join('grpc', 'grpc_c')
+puts 'Generating Makefile for ' + output
+create_makefile(output)
+
+strip_tool = RbConfig::CONFIG['STRIP']
+strip_tool = 'strip -x' if RUBY_PLATFORM =~ /darwin/
+
+if grpc_config == 'opt'
+  File.open('Makefile.new', 'w') do |o|
+    o.puts 'hijack: all strip'
+    o.puts
+    File.foreach('Makefile') do |i|
+      o.puts i
+    end
+    o.puts
+    o.puts 'strip:'
+    o.puts "\t$(ECHO) Stripping $(DLLIB)"
+    o.puts "\t$(Q) #{strip_tool} $(DLLIB)"
+  end
+  File.rename('Makefile.new', 'Makefile')
+end

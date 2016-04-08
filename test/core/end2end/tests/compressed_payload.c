@@ -43,14 +43,14 @@
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/compress_filter.h"
+#include "src/core/lib/surface/call_test_only.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "src/core/channel/channel_args.h"
-#include "src/core/channel/compress_filter.h"
-#include "src/core/surface/call_test_only.h"
 
 enum { TIMEOUT = 200000 };
 
-static void *tag(gpr_intptr t) { return (void *)t; }
+static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char *test_name,
@@ -59,8 +59,8 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
-  config.init_client(&f, client_args);
   config.init_server(&f, server_args);
+  config.init_client(&f, client_args);
   return f;
 }
 
@@ -80,9 +80,9 @@ static void drain_cq(grpc_completion_queue *cq) {
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(1000),
-                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5),
-                                         NULL).type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
+                 .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
 }
@@ -104,7 +104,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
 
 static void request_with_payload_template(
     grpc_end2end_test_config config, const char *test_name,
-    gpr_uint32 send_flags_bitmask,
+    uint32_t send_flags_bitmask,
     grpc_compression_algorithm requested_compression_algorithm,
     grpc_compression_algorithm expected_compression_algorithm,
     grpc_metadata *client_metadata) {
@@ -330,9 +330,11 @@ static void test_invoke_request_with_compressed_payload_md_override(
       GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_NONE, &none_compression_override);
 }
 
-void grpc_end2end_tests(grpc_end2end_test_config config) {
+void compressed_payload(grpc_end2end_test_config config) {
   test_invoke_request_with_exceptionally_uncompressed_payload(config);
   test_invoke_request_with_uncompressed_payload(config);
   test_invoke_request_with_compressed_payload(config);
   test_invoke_request_with_compressed_payload_md_override(config);
 }
+
+void compressed_payload_pre_init(void) {}

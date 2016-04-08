@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -34,6 +34,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -130,8 +131,7 @@ namespace Grpc.IntegrationTesting
                 };
             }
             var channel = new Channel(options.ServerHost, options.ServerPort, credentials, channelOptions);
-            TestService.TestServiceClient client = new TestService.TestServiceClient(channel);
-            await RunTestCaseAsync(client, options);
+            await RunTestCaseAsync(channel, options);
             await channel.ShutdownAsync();
         }
 
@@ -159,8 +159,9 @@ namespace Grpc.IntegrationTesting
             return credentials;
         }
 
-        private async Task RunTestCaseAsync(TestService.TestServiceClient client, ClientOptions options)
+        private async Task RunTestCaseAsync(Channel channel, ClientOptions options)
         {
+            var client = new TestService.TestServiceClient(channel);
             switch (options.TestCase)
             {
                 case "empty_unary":
@@ -202,15 +203,21 @@ namespace Grpc.IntegrationTesting
                 case "timeout_on_sleeping_server":
                     await RunTimeoutOnSleepingServerAsync(client);
                     break;
-                case "benchmark_empty_unary":
-                    RunBenchmarkEmptyUnary(client);
+                case "custom_metadata":
+                    await RunCustomMetadataAsync(client);
+                    break;
+                case "status_code_and_message":
+                    await RunStatusCodeAndMessageAsync(client);
+                    break;
+                case "unimplemented_method":
+                    RunUnimplementedMethod(new UnimplementedService.UnimplementedServiceClient(channel));
                     break;
                 default:
                     throw new ArgumentException("Unknown test case " + options.TestCase);
             }
         }
 
-        public static void RunEmptyUnary(TestService.ITestServiceClient client)
+        public static void RunEmptyUnary(TestService.TestServiceClient client)
         {
             Console.WriteLine("running empty_unary");
             var response = client.EmptyCall(new Empty());
@@ -218,7 +225,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static void RunLargeUnary(TestService.ITestServiceClient client)
+        public static void RunLargeUnary(TestService.TestServiceClient client)
         {
             Console.WriteLine("running large_unary");
             var request = new SimpleRequest
@@ -227,7 +234,6 @@ namespace Grpc.IntegrationTesting
                 ResponseSize = 314159,
                 Payload = CreateZerosPayload(271828)
             };
-
             var response = client.UnaryCall(request);
 
             Assert.AreEqual(PayloadType.COMPRESSABLE, response.Payload.Type);
@@ -235,7 +241,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunClientStreamingAsync(TestService.ITestServiceClient client)
+        public static async Task RunClientStreamingAsync(TestService.TestServiceClient client)
         {
             Console.WriteLine("running client_streaming");
 
@@ -251,7 +257,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunServerStreamingAsync(TestService.ITestServiceClient client)
+        public static async Task RunServerStreamingAsync(TestService.TestServiceClient client)
         {
             Console.WriteLine("running server_streaming");
 
@@ -275,7 +281,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunPingPongAsync(TestService.ITestServiceClient client)
+        public static async Task RunPingPongAsync(TestService.TestServiceClient client)
         {
             Console.WriteLine("running ping_pong");
 
@@ -332,7 +338,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunEmptyStreamAsync(TestService.ITestServiceClient client)
+        public static async Task RunEmptyStreamAsync(TestService.TestServiceClient client)
         {
             Console.WriteLine("running empty_stream");
             using (var call = client.FullDuplexCall())
@@ -428,7 +434,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunCancelAfterBeginAsync(TestService.ITestServiceClient client)
+        public static async Task RunCancelAfterBeginAsync(TestService.TestServiceClient client)
         {
             Console.WriteLine("running cancel_after_begin");
 
@@ -445,7 +451,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunCancelAfterFirstResponseAsync(TestService.ITestServiceClient client)
+        public static async Task RunCancelAfterFirstResponseAsync(TestService.TestServiceClient client)
         {
             Console.WriteLine("running cancel_after_first_response");
 
@@ -471,7 +477,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunTimeoutOnSleepingServerAsync(TestService.ITestServiceClient client)
+        public static async Task RunTimeoutOnSleepingServerAsync(TestService.TestServiceClient client)
         {
             Console.WriteLine("running timeout_on_sleeping_server");
 
@@ -493,11 +499,95 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        // This is not an official interop test, but it's useful.
-        public static void RunBenchmarkEmptyUnary(TestService.ITestServiceClient client)
+        public static async Task RunCustomMetadataAsync(TestService.TestServiceClient client)
         {
-            BenchmarkUtil.RunBenchmark(10000, 10000,
-                                       () => { client.EmptyCall(new Empty()); });
+            Console.WriteLine("running custom_metadata");
+            {
+                // step 1: test unary call
+                var request = new SimpleRequest
+                {
+                    ResponseType = PayloadType.COMPRESSABLE,
+                    ResponseSize = 314159,
+                    Payload = CreateZerosPayload(271828)
+                };
+
+                var call = client.UnaryCallAsync(request, headers: CreateTestMetadata());
+                await call.ResponseAsync;
+
+                var responseHeaders = await call.ResponseHeadersAsync;
+                var responseTrailers = call.GetTrailers();
+
+                Assert.AreEqual("test_initial_metadata_value", responseHeaders.First((entry) => entry.Key == "x-grpc-test-echo-initial").Value);
+                CollectionAssert.AreEqual(new byte[] { 0xab, 0xab, 0xab }, responseTrailers.First((entry) => entry.Key == "x-grpc-test-echo-trailing-bin").ValueBytes);
+            }
+
+            {
+                // step 2: test full duplex call
+                var request = new StreamingOutputCallRequest
+                {
+                    ResponseType = PayloadType.COMPRESSABLE,
+                    ResponseParameters = { new ResponseParameters { Size = 31415 } },
+                    Payload = CreateZerosPayload(27182)
+                };
+
+                var call = client.FullDuplexCall(headers: CreateTestMetadata());
+                var responseHeaders = await call.ResponseHeadersAsync;
+
+                await call.RequestStream.WriteAsync(request);
+                await call.RequestStream.CompleteAsync();
+                await call.ResponseStream.ToListAsync();
+
+                var responseTrailers = call.GetTrailers();
+
+                Assert.AreEqual("test_initial_metadata_value", responseHeaders.First((entry) => entry.Key == "x-grpc-test-echo-initial").Value);
+                CollectionAssert.AreEqual(new byte[] { 0xab, 0xab, 0xab }, responseTrailers.First((entry) => entry.Key == "x-grpc-test-echo-trailing-bin").ValueBytes);
+            }
+
+            Console.WriteLine("Passed!");
+        }
+
+        public static async Task RunStatusCodeAndMessageAsync(TestService.TestServiceClient client)
+        {
+            Console.WriteLine("running status_code_and_message");
+            var echoStatus = new EchoStatus
+            {
+                Code = 2,
+                Message = "test status message"
+            };
+
+            {
+                // step 1: test unary call
+                var request = new SimpleRequest { ResponseStatus = echoStatus };
+
+                var e = Assert.Throws<RpcException>(() => client.UnaryCall(request));
+                Assert.AreEqual(StatusCode.Unknown, e.Status.StatusCode);
+                Assert.AreEqual(echoStatus.Message, e.Status.Detail);
+            }
+
+            {
+                // step 2: test full duplex call
+                var request = new StreamingOutputCallRequest { ResponseStatus = echoStatus };
+
+                var call = client.FullDuplexCall();
+                await call.RequestStream.WriteAsync(request);
+                await call.RequestStream.CompleteAsync();
+
+                var e = Assert.Throws<RpcException>(async () => await call.ResponseStream.ToListAsync());
+                Assert.AreEqual(StatusCode.Unknown, e.Status.StatusCode);
+                Assert.AreEqual(echoStatus.Message, e.Status.Detail);
+            }
+
+            Console.WriteLine("Passed!");
+        }
+
+        public static void RunUnimplementedMethod(UnimplementedService.UnimplementedServiceClient client)
+        {
+            Console.WriteLine("running unimplemented_method");
+            var e = Assert.Throws<RpcException>(() => client.UnimplementedCall(new Empty()));
+
+            Assert.AreEqual(StatusCode.Unimplemented, e.Status.StatusCode);
+            Assert.AreEqual("", e.Status.Detail);
+            Console.WriteLine("Passed!");
         }
 
         private static Payload CreateZerosPayload(int size)
@@ -515,6 +605,15 @@ namespace Grpc.IntegrationTesting
             string email = jobject.GetValue("client_email").Value<string>();
             Assert.IsTrue(email.Length > 0);  // spec requires nonempty client email.
             return email;
+        }
+
+        private static Metadata CreateTestMetadata()
+        {
+            return new Metadata
+            {
+                {"x-grpc-test-echo-initial", "test_initial_metadata_value"},
+                {"x-grpc-test-echo-trailing-bin", new byte[] {0xab, 0xab, 0xab}}
+            };
         }
     }
 }

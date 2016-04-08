@@ -112,7 +112,7 @@ void StressTestInteropClient::MainLoop(std::shared_ptr<Gauge> qps_gauge) {
          gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), test_end_time) < 0) {
     // Select the test case to execute based on the weights and execute it
     TestCaseType test_case = test_selector_.GetNextTest();
-    gpr_log(GPR_INFO, "%d - Executing the test case %d", test_id_, test_case);
+    gpr_log(GPR_DEBUG, "%d - Executing the test case %d", test_id_, test_case);
     RunTest(test_case);
 
     num_calls_per_interval++;

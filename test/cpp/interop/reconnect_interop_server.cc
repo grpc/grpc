@@ -31,6 +31,8 @@
  *
  */
 
+// Test description at doc/connection-backoff-interop-test-description.md
+
 #include <signal.h>
 #include <unistd.h>
 
@@ -40,17 +42,17 @@
 #include <sstream>
 
 #include <gflags/gflags.h>
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
 
+#include "src/proto/grpc/testing/empty.grpc.pb.h"
+#include "src/proto/grpc/testing/messages.grpc.pb.h"
+#include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/core/util/reconnect_server.h"
 #include "test/cpp/util/test_config.h"
-#include "test/proto/test.grpc.pb.h"
-#include "test/proto/empty.grpc.pb.h"
-#include "test/proto/messages.grpc.pb.h"
 
 DEFINE_int32(control_port, 0, "Server port for controlling the server.");
 DEFINE_int32(retry_port, 0,
@@ -69,25 +71,31 @@ using grpc::Status;
 using grpc::testing::Empty;
 using grpc::testing::ReconnectService;
 using grpc::testing::ReconnectInfo;
+using grpc::testing::ReconnectParams;
 
 static bool got_sigint = false;
 
 class ReconnectServiceImpl : public ReconnectService::Service {
  public:
   explicit ReconnectServiceImpl(int retry_port)
-      : retry_port_(retry_port), serving_(false), shutdown_(false) {
+      : retry_port_(retry_port),
+        serving_(false),
+        server_started_(false),
+        shutdown_(false) {
     reconnect_server_init(&tcp_server_);
   }
 
   ~ReconnectServiceImpl() {
-    if (tcp_server_.tcp_server) {
+    if (server_started_) {
       reconnect_server_destroy(&tcp_server_);
     }
   }
 
   void Poll(int seconds) { reconnect_server_poll(&tcp_server_, seconds); }
 
-  Status Start(ServerContext* context, const Empty* request, Empty* response) {
+  Status Start(ServerContext* context, const ReconnectParams* request,
+               Empty* response) {
+    bool start_server = true;
     std::unique_lock<std::mutex> lock(mu_);
     while (serving_ && !shutdown_) {
       cv_.wait(lock);
@@ -96,9 +104,16 @@ class ReconnectServiceImpl : public ReconnectService::Service {
       return Status(grpc::StatusCode::UNAVAILABLE, "shutting down");
     }
     serving_ = true;
+    if (server_started_) {
+      start_server = false;
+    } else {
+      tcp_server_.max_reconnect_backoff_ms =
+          request->max_reconnect_backoff_ms();
+      server_started_ = true;
+    }
     lock.unlock();
 
-    if (!tcp_server_.tcp_server) {
+    if (start_server) {
       reconnect_server_start(&tcp_server_, retry_port_);
     } else {
       reconnect_server_clear_timestamps(&tcp_server_);
@@ -122,7 +137,9 @@ class ReconnectServiceImpl : public ReconnectService::Service {
     const double kTransmissionDelay = 100.0;
     const double kBackoffMultiplier = 1.6;
     const double kJitterFactor = 0.2;
-    const int kMaxBackoffMs = 120 * 1000;
+    const int kMaxBackoffMs = tcp_server_.max_reconnect_backoff_ms
+                                  ? tcp_server_.max_reconnect_backoff_ms
+                                  : 120 * 1000;
     bool passed = true;
     for (timestamp_list* cur = tcp_server_.head; cur && cur->next;
          cur = cur->next) {
@@ -134,7 +151,7 @@ class ReconnectServiceImpl : public ReconnectService::Service {
           backoff > max_backoff + kTransmissionDelay) {
         passed = false;
       }
-      response->add_backoff_ms(static_cast<gpr_int32>(backoff));
+      response->add_backoff_ms(static_cast<int32_t>(backoff));
       expected_backoff *= kBackoffMultiplier;
       expected_backoff =
           expected_backoff > kMaxBackoffMs ? kMaxBackoffMs : expected_backoff;
@@ -152,6 +169,7 @@ class ReconnectServiceImpl : public ReconnectService::Service {
   int retry_port_;
   reconnect_server tcp_server_;
   bool serving_;
+  bool server_started_;
   bool shutdown_;
   std::mutex mu_;
   std::condition_variable cv_;

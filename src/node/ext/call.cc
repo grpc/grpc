@@ -95,10 +95,6 @@ Local<Value> nanErrorWithCode(const char *msg, grpc_call_error code) {
   return scope.Escape(err);
 }
 
-bool EndsWith(const char *str, const char *substr) {
-  return strcmp(str+strlen(str)-strlen(substr), substr) == 0;
-}
-
 bool CreateMetadataArray(Local<Object> metadata, grpc_metadata_array *array,
                          shared_ptr<Resources> resources) {
   HandleScope scope;
@@ -126,7 +122,7 @@ bool CreateMetadataArray(Local<Object> metadata, grpc_metadata_array *array,
       grpc_metadata *current = &array->metadata[array->count];
       current->key = **utf8_key;
       // Only allow binary headers for "-bin" keys
-      if (EndsWith(current->key, "-bin")) {
+      if (grpc_is_binary_header(current->key, strlen(current->key))) {
         if (::node::Buffer::HasInstance(value)) {
           current->value = ::node::Buffer::Data(value);
           current->value_length = ::node::Buffer::Length(value);
@@ -180,7 +176,7 @@ Local<Value> ParseMetadata(const grpc_metadata_array *metadata_array) {
     } else {
       array = Local<Array>::Cast(maybe_array.ToLocalChecked());
     }
-    if (EndsWith(elem->key, "-bin")) {
+    if (grpc_is_binary_header(elem->key, strlen(elem->key))) {
       Nan::Set(array, index_map[elem->key],
                MakeFastBuffer(
                    Nan::CopyBuffer(elem->value,
@@ -234,6 +230,14 @@ class SendMetadataOp : public Op {
 
 class SendMessageOp : public Op {
  public:
+  SendMessageOp() {
+    send_message = NULL;
+  }
+  ~SendMessageOp() {
+    if (send_message != NULL) {
+      grpc_byte_buffer_destroy(send_message);
+    }
+  }
   Local<Value> GetNodeValue() const {
     EscapableHandleScope scope;
     return scope.Escape(Nan::True());
@@ -253,7 +257,8 @@ class SendMessageOp : public Op {
         out->flags = maybe_flag.FromMaybe(0) & GRPC_WRITE_USED_MASK;
       }
     }
-    out->data.send_message = BufferToByteBuffer(value);
+    send_message = BufferToByteBuffer(value);
+    out->data.send_message = send_message;
     PersistentValue *handle = new PersistentValue(value);
     resources->handles.push_back(unique_ptr<PersistentValue>(handle));
     return true;
@@ -262,6 +267,8 @@ class SendMessageOp : public Op {
   std::string GetTypeString() const {
     return "send_message";
   }
+ private:
+  grpc_byte_buffer *send_message;
 };
 
 class SendClientCloseOp : public Op {
@@ -575,7 +582,7 @@ NAN_METHOD(Call::New) {
         return Nan::ThrowTypeError(
             "Call's fifth argument must be another call, if provided");
       }
-      gpr_uint32 propagate_flags = GRPC_PROPAGATE_DEFAULTS;
+      uint32_t propagate_flags = GRPC_PROPAGATE_DEFAULTS;
       if (info[5]->IsUint32()) {
         propagate_flags = Nan::To<uint32_t>(info[5]).FromJust();
       } else if (!(info[5]->IsUndefined() || info[5]->IsNull())) {

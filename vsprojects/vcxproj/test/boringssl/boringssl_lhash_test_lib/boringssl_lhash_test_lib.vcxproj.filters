@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\lhash\lhash_test.c">
+      <Filter>third_party\boringssl\crypto\lhash</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{7a5ebb5e-457a-31fb-061a-0afc4aec36f6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl">
+      <UniqueIdentifier>{ce31592a-1259-32b2-98ca-b23a78af66e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto">
+      <UniqueIdentifier>{3b2c8cc7-92c4-95fe-1130-bd711587d1c8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto\lhash">
+      <UniqueIdentifier>{c23fa5df-7fc2-ef95-1b9f-4b90f5335b42}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

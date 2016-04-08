@@ -36,7 +36,7 @@
 var assert = require('assert');
 
 var grpc = require('..');
-var math = grpc.load(__dirname + '/math/math.proto').math;
+var math = grpc.load(__dirname + '/../../proto/math/math.proto').math;
 
 
 /**

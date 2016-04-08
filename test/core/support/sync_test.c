@@ -33,13 +33,13 @@
 
 /* Test of gpr synchronization support. */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "test/core/util/test_config.h"
 
 /* ==================Example use of interface===================
@@ -149,10 +149,11 @@ int queue_remove(queue *q, int *head, gpr_timespec abs_deadline) {
 struct test {
   int threads; /* number of threads */
 
-  gpr_int64 iterations; /* number of iterations per thread */
-  gpr_int64 counter;
+  int64_t iterations; /* number of iterations per thread */
+  int64_t counter;
   int thread_count; /* used to allocate thread ids */
   int done;         /* threads not yet completed */
+  int incr_step;    /* how much to increment/decrement refcount each time */
 
   gpr_mu mu; /* protects iterations, counter, thread_count, done */
 
@@ -170,13 +171,14 @@ struct test {
 };
 
 /* Return pointer to a new struct test. */
-static struct test *test_new(int threads, gpr_int64 iterations) {
+static struct test *test_new(int threads, int64_t iterations, int incr_step) {
   struct test *m = gpr_malloc(sizeof(*m));
   m->threads = threads;
   m->iterations = iterations;
   m->counter = 0;
   m->thread_count = 0;
   m->done = threads;
+  m->incr_step = incr_step;
   gpr_mu_init(&m->mu);
   gpr_cv_init(&m->cv);
   gpr_cv_init(&m->done_cv);
@@ -238,20 +240,23 @@ static void mark_thread_done(struct test *m) {
 
 /* Test several threads running (*body)(struct test *m) for increasing settings
    of m->iterations, until about timeout_s to 2*timeout_s seconds have elapsed.
-   If extra!=NULL, run (*extra)(m) in an additional thread.  */
+   If extra!=NULL, run (*extra)(m) in an additional thread.
+   incr_step controls by how much m->refcount should be incremented/decremented
+   (if at all) each time in the tests.
+   */
 static void test(const char *name, void (*body)(void *m),
-                 void (*extra)(void *m), int timeout_s) {
-  gpr_int64 iterations = 1024;
+                 void (*extra)(void *m), int timeout_s, int incr_step) {
+  int64_t iterations = 1024;
   struct test *m;
   gpr_timespec start = gpr_now(GPR_CLOCK_REALTIME);
   gpr_timespec time_taken;
   gpr_timespec deadline = gpr_time_add(
-      start, gpr_time_from_micros(timeout_s * 1000000, GPR_TIMESPAN));
+      start, gpr_time_from_micros((int64_t)timeout_s * 1000000, GPR_TIMESPAN));
   fprintf(stderr, "%s:", name);
   while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0) {
     iterations <<= 1;
     fprintf(stderr, " %ld", (long)iterations);
-    m = test_new(10, iterations);
+    m = test_new(10, iterations, incr_step);
     if (extra != NULL) {
       gpr_thd_id id;
       GPR_ASSERT(gpr_thd_new(&id, extra, m, NULL));
@@ -259,7 +264,7 @@ static void test(const char *name, void (*body)(void *m),
     }
     test_create_threads(m, body);
     test_wait(m);
-    if (m->counter != m->threads * m->iterations) {
+    if (m->counter != m->threads * m->iterations * m->incr_step) {
       fprintf(stderr, "counter %ld  threads %d  iterations %ld\n",
               (long)m->counter, m->threads, (long)m->iterations);
       GPR_ASSERT(0);
@@ -267,14 +272,14 @@ static void test(const char *name, void (*body)(void *m),
     test_destroy(m);
   }
   time_taken = gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), start);
-  fprintf(stderr, " done %ld.%09d s\n", (long)time_taken.tv_sec,
+  fprintf(stderr, " done %lld.%09d s\n", (long long)time_taken.tv_sec,
           (int)time_taken.tv_nsec);
 }
 
 /* Increment m->counter on each iteration; then mark thread as done.  */
 static void inc(void *v /*=m*/) {
   struct test *m = v;
-  gpr_int64 i;
+  int64_t i;
   for (i = 0; i != m->iterations; i++) {
     gpr_mu_lock(&m->mu);
     m->counter++;
@@ -287,7 +292,7 @@ static void inc(void *v /*=m*/) {
    then mark thread as done.  */
 static void inctry(void *v /*=m*/) {
   struct test *m = v;
-  gpr_int64 i;
+  int64_t i;
   for (i = 0; i != m->iterations;) {
     if (gpr_mu_trylock(&m->mu)) {
       m->counter++;
@@ -302,7 +307,7 @@ static void inctry(void *v /*=m*/) {
    thread as done.  */
 static void inc_by_turns(void *v /*=m*/) {
   struct test *m = v;
-  gpr_int64 i;
+  int64_t i;
   int id = thread_id(m);
   for (i = 0; i != m->iterations; i++) {
     gpr_mu_lock(&m->mu);
@@ -320,7 +325,7 @@ static void inc_by_turns(void *v /*=m*/) {
    then mark thread as done. */
 static void inc_with_1ms_delay(void *v /*=m*/) {
   struct test *m = v;
-  gpr_int64 i;
+  int64_t i;
   for (i = 0; i != m->iterations; i++) {
     gpr_timespec deadline;
     gpr_mu_lock(&m->mu);
@@ -338,7 +343,7 @@ static void inc_with_1ms_delay(void *v /*=m*/) {
    for timing; then mark thread as done. */
 static void inc_with_1ms_delay_event(void *v /*=m*/) {
   struct test *m = v;
-  gpr_int64 i;
+  int64_t i;
   for (i = 0; i != m->iterations; i++) {
     gpr_timespec deadline;
     deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
@@ -356,7 +361,7 @@ static void inc_with_1ms_delay_event(void *v /*=m*/) {
    until it succeeds. */
 static void many_producers(void *v /*=m*/) {
   struct test *m = v;
-  gpr_int64 i;
+  int64_t i;
   int x = thread_id(m);
   if ((x & 1) == 0) {
     for (i = 0; i != m->iterations; i++) {
@@ -376,8 +381,8 @@ static void many_producers(void *v /*=m*/) {
    then mark thread as done. */
 static void consumer(void *v /*=m*/) {
   struct test *m = v;
-  gpr_int64 n = m->iterations * m->threads;
-  gpr_int64 i;
+  int64_t n = m->iterations * m->threads;
+  int64_t i;
   int value;
   for (i = 0; i != n; i++) {
     queue_remove(&m->q, &value, gpr_inf_future(GPR_CLOCK_REALTIME));
@@ -396,7 +401,7 @@ static void consumer(void *v /*=m*/) {
    m->counter, then mark thread as done.  */
 static void statsinc(void *v /*=m*/) {
   struct test *m = v;
-  gpr_int64 i;
+  int64_t i;
   for (i = 0; i != m->iterations; i++) {
     gpr_stats_inc(&m->stats_counter, 1);
   }
@@ -406,14 +411,18 @@ static void statsinc(void *v /*=m*/) {
   mark_thread_done(m);
 }
 
-/* Increment m->refcount m->iterations times, decrement m->thread_refcount
-   once, and if it reaches zero, set m->event to (void*)1; then mark thread as
-   done.  */
+/* Increment m->refcount by m->incr_step for m->iterations times. Decrement
+   m->thread_refcount once, and if it reaches zero, set m->event to (void*)1;
+   then mark thread as done.  */
 static void refinc(void *v /*=m*/) {
   struct test *m = v;
-  gpr_int64 i;
+  int64_t i;
   for (i = 0; i != m->iterations; i++) {
-    gpr_ref(&m->refcount);
+    if (m->incr_step == 1) {
+      gpr_ref(&m->refcount);
+    } else {
+      gpr_refn(&m->refcount, m->incr_step);
+    }
   }
   if (gpr_unref(&m->thread_refcount)) {
     gpr_event_set(&m->event, (void *)1);
@@ -421,13 +430,13 @@ static void refinc(void *v /*=m*/) {
   mark_thread_done(m);
 }
 
-/* Wait until m->event is set to (void *)1, then decrement m->refcount
-   m->stats_counter m->iterations times, and ensure that the last decrement
-   caused the counter to reach zero, then mark thread as done.  */
+/* Wait until m->event is set to (void *)1, then decrement m->refcount by 1
+   (m->threads * m->iterations * m->incr_step) times, and ensure that the last
+   decrement caused the counter to reach zero, then mark thread as done.  */
 static void refcheck(void *v /*=m*/) {
   struct test *m = v;
-  gpr_int64 n = m->iterations * m->threads;
-  gpr_int64 i;
+  int64_t n = m->iterations * m->threads * m->incr_step;
+  int64_t i;
   GPR_ASSERT(gpr_event_wait(&m->event, gpr_inf_future(GPR_CLOCK_REALTIME)) ==
              (void *)1);
   GPR_ASSERT(gpr_event_get(&m->event) == (void *)1);
@@ -444,13 +453,16 @@ static void refcheck(void *v /*=m*/) {
 
 int main(int argc, char *argv[]) {
   grpc_test_init(argc, argv);
-  test("mutex", &inc, NULL, 1);
-  test("mutex try", &inctry, NULL, 1);
-  test("cv", &inc_by_turns, NULL, 1);
-  test("timedcv", &inc_with_1ms_delay, NULL, 1);
-  test("queue", &many_producers, &consumer, 10);
-  test("stats_counter", &statsinc, NULL, 1);
-  test("refcount", &refinc, &refcheck, 1);
-  test("timedevent", &inc_with_1ms_delay_event, NULL, 1);
+  test("mutex", &inc, NULL, 1, 1);
+  test("mutex try", &inctry, NULL, 1, 1);
+  test("cv", &inc_by_turns, NULL, 1, 1);
+  test("timedcv", &inc_with_1ms_delay, NULL, 1, 1);
+  test("queue", &many_producers, &consumer, 10, 1);
+  test("stats_counter", &statsinc, NULL, 1, 1);
+  test("refcount by 1", &refinc, &refcheck, 1, 1);
+  test("refcount by 3", &refinc, &refcheck, 1, 3); /* incr_step of 3 is an
+                                                      arbitrary choice. Any
+                                                      number > 1 is okay here */
+  test("timedevent", &inc_with_1ms_delay_event, NULL, 1, 1);
   return 0;
 }

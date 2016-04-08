@@ -44,15 +44,16 @@
 #include <unistd.h>
 #endif
 
-#include "test/core/util/grpc_profiler.h"
-#include "test/core/util/test_config.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/cmdline.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include "test/core/util/port.h"
+#include "src/core/lib/profiling/timers.h"
 #include "test/core/end2end/data/ssl_test_data.h"
+#include "test/core/util/grpc_profiler.h"
+#include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
 
 static grpc_completion_queue *cq;
 static grpc_server *server;
@@ -72,7 +73,7 @@ static int was_cancelled = 2;
 static grpc_op unary_ops[6];
 static int got_sigint = 0;
 
-static void *tag(gpr_intptr t) { return (void *)t; }
+static void *tag(intptr_t t) { return (void *)t; }
 
 typedef enum {
   FLING_SERVER_NEW_REQUEST = 1,
@@ -86,7 +87,7 @@ typedef enum {
 
 typedef struct {
   gpr_refcount pending_ops;
-  gpr_uint32 flags;
+  uint32_t flags;
 } call_state;
 
 static void request_call(void) {
@@ -192,6 +193,8 @@ int main(int argc, char **argv) {
 
   char *fake_argv[1];
 
+  gpr_timers_set_log_filename("latency_trace.fling_server.txt");
+
   GPR_ASSERT(argc >= 1);
   fake_argv[0] = argv[0];
   grpc_test_init(1, fake_argv);
@@ -253,7 +256,7 @@ int main(int argc, char **argv) {
     s = ev.tag;
     switch (ev.type) {
       case GRPC_OP_COMPLETE:
-        switch ((gpr_intptr)s) {
+        switch ((intptr_t)s) {
           case FLING_SERVER_NEW_REQUEST:
             if (call != NULL) {
               if (0 ==

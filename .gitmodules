@@ -1,17 +1,19 @@
 [submodule "third_party/zlib"]
 	path = third_party/zlib
 	url = https://github.com/madler/zlib
-[submodule "third_party/openssl"]
-	path = third_party/openssl
-	url = https://github.com/openssl/openssl.git
-	branch = OpenSSL_1_0_2-stable
 [submodule "third_party/protobuf"]
 	path = third_party/protobuf
 	url = https://github.com/google/protobuf.git
-	branch = v3.0.0-alpha-4.1
+	branch = v3.0.0-beta-2
 [submodule "third_party/gflags"]
 	path = third_party/gflags
 	url = https://github.com/gflags/gflags.git
 [submodule "third_party/googletest"]
 	path = third_party/googletest
 	url = https://github.com/google/googletest.git
+[submodule "third_party/boringssl"]
+	path = third_party/boringssl
+	url = https://github.com/google/boringssl.git
+[submodule "third_party/nanopb"]
+	path = third_party/nanopb
+	url = https://github.com/nanopb/nanopb.git

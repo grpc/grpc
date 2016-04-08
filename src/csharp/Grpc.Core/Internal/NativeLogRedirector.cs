@@ -51,20 +51,17 @@ namespace Grpc.Core.Internal
         static object staticLock = new object();
         static GprLogDelegate writeCallback;
 
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_redirect_log(GprLogDelegate callback);
-
         /// <summary>
         /// Redirects logs from native gRPC C core library to a general logger.
         /// </summary>
-        public static void Redirect()
+        public static void Redirect(NativeMethods native)
         {
             lock (staticLock)
             {
                 if (writeCallback == null)
                 {
                     writeCallback = new GprLogDelegate(HandleWrite);
-                    grpcsharp_redirect_log(writeCallback);    
+                    native.grpcsharp_redirect_log(writeCallback);
                 }
             }
         }

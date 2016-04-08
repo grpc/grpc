@@ -32,8 +32,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Threading;
 using System.Threading.Tasks;
 
 using Grpc.Core.Internal;
@@ -57,7 +55,7 @@ namespace Grpc.Core
         readonly string target;
         readonly GrpcEnvironment environment;
         readonly ChannelSafeHandle handle;
-        readonly List<ChannelOption> options;
+        readonly Dictionary<string, ChannelOption> options;
 
         bool shutdownRequested;
 
@@ -70,13 +68,13 @@ namespace Grpc.Core
         /// <param name="options">Channel options.</param>
         public Channel(string target, ChannelCredentials credentials, IEnumerable<ChannelOption> options = null)
         {
-            this.target = Preconditions.CheckNotNull(target, "target");
-            this.environment = GrpcEnvironment.AddRef();
-            this.options = options != null ? new List<ChannelOption>(options) : new List<ChannelOption>();
-
+            this.target = GrpcPreconditions.CheckNotNull(target, "target");
+            this.options = CreateOptionsDictionary(options);
             EnsureUserAgentChannelOption(this.options);
+            this.environment = GrpcEnvironment.AddRef();
+
             using (var nativeCredentials = credentials.ToNativeCredentials())
-            using (var nativeChannelArgs = ChannelOptions.CreateChannelArgs(this.options))
+            using (var nativeChannelArgs = ChannelOptions.CreateChannelArgs(this.options.Values))
             {
                 if (nativeCredentials != null)
                 {
@@ -119,7 +117,7 @@ namespace Grpc.Core
         /// </summary>
         public Task WaitForStateChangedAsync(ChannelState lastObservedState, DateTime? deadline = null)
         {
-            Preconditions.CheckArgument(lastObservedState != ChannelState.FatalFailure,
+            GrpcPreconditions.CheckArgument(lastObservedState != ChannelState.FatalFailure,
                 "FatalFailure is a terminal state. No further state changes can occur.");
             var tcs = new TaskCompletionSource<object>();
             var deadlineTimespec = deadline.HasValue ? Timespec.FromDateTime(deadline.Value) : Timespec.InfFuture;
@@ -173,7 +171,7 @@ namespace Grpc.Core
                 {
                     throw new OperationCanceledException("Channel has reached FatalFailure state.");
                 }
-                await WaitForStateChangedAsync(currentState, deadline);
+                await WaitForStateChangedAsync(currentState, deadline).ConfigureAwait(false);
                 currentState = handle.CheckConnectivityState(false);
             }
         }
@@ -186,7 +184,7 @@ namespace Grpc.Core
         {
             lock (myLock)
             {
-                Preconditions.CheckState(!shutdownRequested);
+                GrpcPreconditions.CheckState(!shutdownRequested);
                 shutdownRequested = true;
             }
 
@@ -198,7 +196,7 @@ namespace Grpc.Core
 
             handle.Dispose();
 
-            await Task.Run(() => GrpcEnvironment.Release());
+            await Task.Run(() => GrpcEnvironment.Release()).ConfigureAwait(false);
         }
 
         internal ChannelSafeHandle Handle
@@ -223,7 +221,7 @@ namespace Grpc.Core
 
             bool success = false;
             handle.DangerousAddRef(ref success);
-            Preconditions.CheckState(success);
+            GrpcPreconditions.CheckState(success);
         }
 
         internal void RemoveCallReference(object call)
@@ -233,18 +231,36 @@ namespace Grpc.Core
             activeCallCounter.Decrement();
         }
 
-        private static void EnsureUserAgentChannelOption(List<ChannelOption> options)
+        private static void EnsureUserAgentChannelOption(Dictionary<string, ChannelOption> options)
         {
-            if (!options.Any((option) => option.Name == ChannelOptions.PrimaryUserAgentString))
+            var key = ChannelOptions.PrimaryUserAgentString;
+            var userAgentString = "";
+
+            ChannelOption option;
+            if (options.TryGetValue(key, out option))
             {
-                options.Add(new ChannelOption(ChannelOptions.PrimaryUserAgentString, GetUserAgentString()));
-            }
+                // user-provided userAgentString needs to be at the beginning
+                userAgentString = option.StringValue + " ";
+            };
+
+            // TODO(jtattermusch): it would be useful to also provide .NET/mono version.
+            userAgentString += string.Format("grpc-csharp/{0}", VersionInfo.CurrentVersion);
+
+            options[ChannelOptions.PrimaryUserAgentString] = new ChannelOption(key, userAgentString);
         }
 
-        private static string GetUserAgentString()
+        private static Dictionary<string, ChannelOption> CreateOptionsDictionary(IEnumerable<ChannelOption> options)
         {
-            // TODO(jtattermusch): it would be useful to also provide .NET/mono version.
-            return string.Format("grpc-csharp/{0}", VersionInfo.CurrentVersion);
+            var dict = new Dictionary<string, ChannelOption>();
+            if (options == null)
+            {
+                return dict;
+            }
+            foreach (var option in options)
+            {
+                dict.Add(option.Name, option);
+            }
+            return dict;
         }
     }
 }

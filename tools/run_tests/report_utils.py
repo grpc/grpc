@@ -32,6 +32,7 @@
 try:
   from mako.runtime import Context
   from mako.template import Template
+  from mako import exceptions
 except (ImportError):
   pass  # Mako not installed but it is ok. 
 import os
@@ -46,7 +47,7 @@ def _filter_msg(msg, output_format):
     # that make XML report unparseable.
     filtered_msg = filter(
         lambda x: x in string.printable and x != '\f' and x != '\v',
-        msg.decode(errors='ignore'))
+        msg.decode('UTF-8', 'ignore'))
     if output_format == 'HTML':
       filtered_msg = filtered_msg.replace('"', '&quot;')
     return filtered_msg
@@ -76,10 +77,9 @@ def render_junit_xml_report(resultset, xml_report):
 
 def render_interop_html_report(
   client_langs, server_langs, test_cases, auth_test_cases, http2_cases, 
-  resultset, num_failures, cloud_to_prod, http2_interop):
+  resultset, num_failures, cloud_to_prod, prod_servers, http2_interop):
   """Generate HTML report for interop tests."""
-  html_report_dir = 'reports'
-  template_file = os.path.join(html_report_dir, 'interop_html_report.template')
+  template_file = 'tools/run_tests/interop_html_report.template'
   try:
     mytemplate = Template(filename=template_file, format_exceptions=True)
   except NameError:
@@ -94,6 +94,7 @@ def render_interop_html_report(
   sorted_http2_cases = sorted(http2_cases)
   sorted_client_langs = sorted(client_langs)
   sorted_server_langs = sorted(server_langs)
+  sorted_prod_servers = sorted(prod_servers)
 
   args = {'client_langs': sorted_client_langs, 
           'server_langs': sorted_server_langs,
@@ -103,7 +104,17 @@ def render_interop_html_report(
           'resultset': resultset,
           'num_failures': num_failures,
           'cloud_to_prod': cloud_to_prod,
+          'prod_servers': sorted_prod_servers,
           'http2_interop': http2_interop}
-  html_file_path = os.path.join(html_report_dir, 'index.html')
-  with open(html_file_path, 'w') as output_file:
-    mytemplate.render_context(Context(output_file, **args))
+
+  html_report_out_dir = 'reports' 
+  if not os.path.exists(html_report_out_dir):
+    os.mkdir(html_report_out_dir) 
+  html_file_path = os.path.join(html_report_out_dir, 'index.html')
+  try:
+    with open(html_file_path, 'w') as output_file:
+      mytemplate.render_context(Context(output_file, **args))
+  except:
+    print(exceptions.text_error_template().render())
+    raise
+

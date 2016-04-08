@@ -1,0 +1,12 @@
+diff --git a/configure b/configure
+index ebe3d8c..a336b73 100755
+--- a/configure
++++ b/configure
+@@ -18943,7 +18943,6 @@ do :
+   ac_fn_c_check_func "$LINENO" "sendfile" "ac_cv_func_sendfile"
+ if test "x$ac_cv_func_sendfile" = xyes; then :
+   cat >>confdefs.h <<_ACEOF
+-#define HAVE_SENDFILE 1
+ _ACEOF
+ 
+ fi

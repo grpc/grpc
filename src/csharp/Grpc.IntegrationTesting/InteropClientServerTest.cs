@@ -51,7 +51,7 @@ namespace Grpc.IntegrationTesting
         const string Host = "localhost";
         Server server;
         Channel channel;
-        TestService.ITestServiceClient client;
+        TestService.TestServiceClient client;
 
         [TestFixtureSetUp]
         public void Init()
@@ -128,9 +128,27 @@ namespace Grpc.IntegrationTesting
         }
 
         [Test]
-        public async Task TimeoutOnSleepingServerAsync()
+        public async Task TimeoutOnSleepingServer()
         {
             await InteropClient.RunTimeoutOnSleepingServerAsync(client);
+        }
+
+        [Test]
+        public async Task CustomMetadata()
+        {
+            await InteropClient.RunCustomMetadataAsync(client);
+        }
+
+        [Test]
+        public async Task StatusCodeAndMessage()
+        {
+            await InteropClient.RunStatusCodeAndMessageAsync(client);
+        }
+
+        [Test]
+        public void UnimplementedMethod()
+        {
+            InteropClient.RunUnimplementedMethod(UnimplementedService.NewClient(channel));
         }
     }
 }

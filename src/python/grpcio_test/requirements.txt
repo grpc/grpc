@@ -1,6 +1,0 @@
-grpcio>=0.11.0b0
-oauth2client>=1.4.7
-protobuf>=3.0.0a3
-pytest>=2.6
-pytest-cov>=2.0
-pytest-xdist>=1.11

@@ -38,18 +38,13 @@ using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
-    internal delegate void NativeMetadataInterceptor(IntPtr statePtr, IntPtr serviceUrlPtr, IntPtr callbackPtr, IntPtr userDataPtr, bool isDestroy);
+    internal delegate void NativeMetadataInterceptor(IntPtr statePtr, IntPtr serviceUrlPtr, IntPtr methodNamePtr, IntPtr callbackPtr, IntPtr userDataPtr, bool isDestroy);
 
     internal class NativeMetadataCredentialsPlugin
     {
         const string GetMetadataExceptionMsg = "Exception occured in metadata credentials plugin.";
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<NativeMetadataCredentialsPlugin>();
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern CallCredentialsSafeHandle grpcsharp_metadata_credentials_create_from_plugin(NativeMetadataInterceptor interceptor);
-        
-        [DllImport("grpc_csharp_ext.dll", CharSet = CharSet.Ansi)]
-        static extern void grpcsharp_metadata_credentials_notify_from_plugin(IntPtr callbackPtr, IntPtr userData, MetadataArraySafeHandle metadataArray, StatusCode statusCode, string errorDetails);
+        static readonly NativeMethods Native = NativeMethods.Get();
 
         AsyncAuthInterceptor interceptor;
         GCHandle gcHandle;
@@ -58,12 +53,12 @@ namespace Grpc.Core.Internal
 
         public NativeMetadataCredentialsPlugin(AsyncAuthInterceptor interceptor)
         {
-            this.interceptor = Preconditions.CheckNotNull(interceptor, "interceptor");
+            this.interceptor = GrpcPreconditions.CheckNotNull(interceptor, "interceptor");
             this.nativeInterceptor = NativeMetadataInterceptorHandler;
 
             // Make sure the callback doesn't get garbage collected until it is destroyed.
             this.gcHandle = GCHandle.Alloc(this.nativeInterceptor, GCHandleType.Normal);
-            this.credentials = grpcsharp_metadata_credentials_create_from_plugin(nativeInterceptor);
+            this.credentials = Native.grpcsharp_metadata_credentials_create_from_plugin(nativeInterceptor);
         }
 
         public CallCredentialsSafeHandle Credentials
@@ -71,7 +66,7 @@ namespace Grpc.Core.Internal
             get { return credentials; }
         }
 
-        private void NativeMetadataInterceptorHandler(IntPtr statePtr, IntPtr serviceUrlPtr, IntPtr callbackPtr, IntPtr userDataPtr, bool isDestroy)
+        private void NativeMetadataInterceptorHandler(IntPtr statePtr, IntPtr serviceUrlPtr, IntPtr methodNamePtr, IntPtr callbackPtr, IntPtr userDataPtr, bool isDestroy)
         {
             if (isDestroy)
             {
@@ -81,31 +76,32 @@ namespace Grpc.Core.Internal
 
             try
             {
-                string serviceUrl = Marshal.PtrToStringAnsi(serviceUrlPtr);
-                StartGetMetadata(serviceUrl, callbackPtr, userDataPtr);
+                var context = new AuthInterceptorContext(Marshal.PtrToStringAnsi(serviceUrlPtr),
+                                                         Marshal.PtrToStringAnsi(methodNamePtr));
+                StartGetMetadata(context, callbackPtr, userDataPtr);
             }
             catch (Exception e)
             {
-                grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, MetadataArraySafeHandle.Create(Metadata.Empty), StatusCode.Unknown, GetMetadataExceptionMsg);
+                Native.grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, MetadataArraySafeHandle.Create(Metadata.Empty), StatusCode.Unknown, GetMetadataExceptionMsg);
                 Logger.Error(e, GetMetadataExceptionMsg);
             }
         }
 
-        private async void StartGetMetadata(string serviceUrl, IntPtr callbackPtr, IntPtr userDataPtr)
+        private async void StartGetMetadata(AuthInterceptorContext context, IntPtr callbackPtr, IntPtr userDataPtr)
         {
             try
             {
                 var metadata = new Metadata();
-                await interceptor(serviceUrl, metadata);
+                await interceptor(context, metadata).ConfigureAwait(false);
 
                 using (var metadataArray = MetadataArraySafeHandle.Create(metadata))
                 {
-                    grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, metadataArray, StatusCode.OK, null);
+                    Native.grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, metadataArray, StatusCode.OK, null);
                 }
             }
             catch (Exception e)
             {
-                grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, MetadataArraySafeHandle.Create(Metadata.Empty), StatusCode.Unknown, GetMetadataExceptionMsg);
+                Native.grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, MetadataArraySafeHandle.Create(Metadata.Empty), StatusCode.Unknown, GetMetadataExceptionMsg);
                 Logger.Error(e, GetMetadataExceptionMsg);
             }
         }

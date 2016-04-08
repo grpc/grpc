@@ -32,7 +32,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <SignAssembly>True</SignAssembly>
-    <AssemblyOriginatorKeyFile>C:\keys\Grpc.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>..\keys\Grpc.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="nunit.core">
@@ -55,8 +55,9 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="System.Interactive.Async">
-      <HintPath>..\packages\Ix-Async.1.2.3\lib\net45\System.Interactive.Async.dll</HintPath>
+    <Reference Include="System.Interactive.Async, Version=1.2.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Ix-Async.1.2.5\lib\net45\System.Interactive.Async.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -64,6 +65,8 @@
       <Link>Version.cs</Link>
     </Compile>
     <Compile Include="CallCredentialsTest.cs" />
+    <Compile Include="CallOptionsTest.cs" />
+    <Compile Include="UserAgentStringTest.cs" />
     <Compile Include="FakeCredentials.cs" />
     <Compile Include="MarshallingErrorsTest.cs" />
     <Compile Include="ChannelCredentialsTest.cs" />
@@ -89,6 +92,8 @@
     <Compile Include="ContextPropagationTest.cs" />
     <Compile Include="MetadataTest.cs" />
     <Compile Include="PerformanceTest.cs" />
+    <Compile Include="SanityTest.cs" />
+    <Compile Include="HalfcloseTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

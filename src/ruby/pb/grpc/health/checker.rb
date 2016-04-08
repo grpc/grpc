@@ -28,7 +28,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'grpc'
-require 'grpc/health/v1alpha/health_services'
+require 'grpc/health/v1/health_services'
 require 'thread'
 
 module Grpc
@@ -36,9 +36,9 @@ module Grpc
   # service.
   module Health
     # Checker is implementation of the schema-specified health checking service.
-    class Checker < V1alpha::Health::Service
+    class Checker < V1::Health::Service
       StatusCodes = GRPC::Core::StatusCodes
-      HealthCheckResponse = V1alpha::HealthCheckResponse
+      HealthCheckResponse = V1::HealthCheckResponse
 
       # Initializes the statuses of participating services
       def initialize
@@ -50,20 +50,20 @@ module Grpc
       def check(req, _call)
         status = nil
         @status_mutex.synchronize do
-          status = @statuses["#{req.host}/#{req.service}"]
+          status = @statuses["#{req.service}"]
         end
         fail GRPC::BadStatus, StatusCodes::NOT_FOUND if status.nil?
         HealthCheckResponse.new(status: status)
       end
 
-      # Adds the health status for a given host and service.
-      def add_status(host, service, status)
-        @status_mutex.synchronize { @statuses["#{host}/#{service}"] = status }
+      # Adds the health status for a given service.
+      def add_status(service, status)
+        @status_mutex.synchronize { @statuses["#{service}"] = status }
       end
 
-      # Clears the status for the given host or service.
-      def clear_status(host, service)
-        @status_mutex.synchronize { @statuses.delete("#{host}/#{service}") }
+      # Clears the status for the given service.
+      def clear_status(service)
+        @status_mutex.synchronize { @statuses.delete("#{service}") }
       end
 
       # Clears alls the statuses.

@@ -33,10 +33,11 @@
 
 #include "test/cpp/util/metrics_server.h"
 
+#include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 
-#include "test/proto/metrics.grpc.pb.h"
-#include "test/proto/metrics.pb.h"
+#include "src/proto/grpc/testing/metrics.grpc.pb.h"
+#include "src/proto/grpc/testing/metrics.pb.h"
 
 namespace grpc {
 namespace testing {
@@ -56,7 +57,7 @@ long Gauge::Get() {
 grpc::Status MetricsServiceImpl::GetAllGauges(
     ServerContext* context, const EmptyMessage* request,
     ServerWriter<GaugeResponse>* writer) {
-  gpr_log(GPR_INFO, "GetAllGauges called");
+  gpr_log(GPR_DEBUG, "GetAllGauges called");
 
   std::lock_guard<std::mutex> lock(mu_);
   for (auto it = gauges_.begin(); it != gauges_.end(); it++) {

@@ -68,7 +68,7 @@ namespace Grpc.Core
 
         internal ContextPropagationToken(CallSafeHandle parentCall, DateTime deadline, CancellationToken cancellationToken, ContextPropagationOptions options)
         {
-            this.parentCall = Preconditions.CheckNotNull(parentCall);
+            this.parentCall = GrpcPreconditions.CheckNotNull(parentCall);
             this.deadline = deadline;
             this.cancellationToken = cancellationToken;
             this.options = options ?? ContextPropagationOptions.Default;

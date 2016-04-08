@@ -35,12 +35,12 @@
 #include <stdlib.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/useful.h>
 #include <grpc/support/log.h>
+#include <grpc/support/useful.h>
 #include "test/core/util/test_config.h"
 
-#include "src/core/json/json_reader.h"
-#include "src/core/json/json_writer.h"
+#include "src/core/lib/json/json_reader.h"
+#include "src/core/lib/json/json_writer.h"
 
 typedef struct json_writer_userdata { FILE *cmp; } json_writer_userdata;
 
@@ -105,33 +105,33 @@ static void json_reader_string_clear(void *userdata) {
   state->string_len = 0;
 }
 
-static void json_reader_string_add_char(void *userdata, gpr_uint32 c) {
+static void json_reader_string_add_char(void *userdata, uint32_t c) {
   json_reader_userdata *state = userdata;
   check_string(state, 1);
   GPR_ASSERT(c <= 256);
   state->scratchpad[state->string_len++] = (char)c;
 }
 
-static void json_reader_string_add_utf32(void *userdata, gpr_uint32 c) {
+static void json_reader_string_add_utf32(void *userdata, uint32_t c) {
   if (c <= 0x7f) {
     json_reader_string_add_char(userdata, c);
   } else if (c <= 0x7ffu) {
-    gpr_uint32 b1 = 0xc0u | ((c >> 6u) & 0x1fu);
-    gpr_uint32 b2 = 0x80u | (c & 0x3fu);
+    uint32_t b1 = 0xc0u | ((c >> 6u) & 0x1fu);
+    uint32_t b2 = 0x80u | (c & 0x3fu);
     json_reader_string_add_char(userdata, b1);
     json_reader_string_add_char(userdata, b2);
   } else if (c <= 0xffffu) {
-    gpr_uint32 b1 = 0xe0u | ((c >> 12u) & 0x0fu);
-    gpr_uint32 b2 = 0x80u | ((c >> 6u) & 0x3fu);
-    gpr_uint32 b3 = 0x80u | (c & 0x3fu);
+    uint32_t b1 = 0xe0u | ((c >> 12u) & 0x0fu);
+    uint32_t b2 = 0x80u | ((c >> 6u) & 0x3fu);
+    uint32_t b3 = 0x80u | (c & 0x3fu);
     json_reader_string_add_char(userdata, b1);
     json_reader_string_add_char(userdata, b2);
     json_reader_string_add_char(userdata, b3);
   } else if (c <= 0x1fffffu) {
-    gpr_uint32 b1 = 0xf0u | ((c >> 18u) & 0x07u);
-    gpr_uint32 b2 = 0x80u | ((c >> 12u) & 0x3fu);
-    gpr_uint32 b3 = 0x80u | ((c >> 6u) & 0x3fu);
-    gpr_uint32 b4 = 0x80u | (c & 0x3fu);
+    uint32_t b1 = 0xf0u | ((c >> 18u) & 0x07u);
+    uint32_t b2 = 0x80u | ((c >> 12u) & 0x3fu);
+    uint32_t b3 = 0x80u | ((c >> 6u) & 0x3fu);
+    uint32_t b4 = 0x80u | (c & 0x3fu);
     json_reader_string_add_char(userdata, b1);
     json_reader_string_add_char(userdata, b2);
     json_reader_string_add_char(userdata, b3);
@@ -139,7 +139,7 @@ static void json_reader_string_add_utf32(void *userdata, gpr_uint32 c) {
   }
 }
 
-static gpr_uint32 json_reader_read_char(void *userdata) {
+static uint32_t json_reader_read_char(void *userdata) {
   int r;
   json_reader_userdata *state = userdata;
 
@@ -152,7 +152,7 @@ static gpr_uint32 json_reader_read_char(void *userdata) {
 
   r = fgetc(state->in);
   if (r == EOF) r = GRPC_JSON_READ_CHAR_EOF;
-  return (gpr_uint32)r;
+  return (uint32_t)r;
 }
 
 static void json_reader_container_begins(void *userdata, grpc_json_type type) {

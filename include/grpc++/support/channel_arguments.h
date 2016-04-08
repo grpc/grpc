@@ -34,12 +34,12 @@
 #ifndef GRPCXX_SUPPORT_CHANNEL_ARGUMENTS_H
 #define GRPCXX_SUPPORT_CHANNEL_ARGUMENTS_H
 
-#include <vector>
 #include <list>
+#include <vector>
 
+#include <grpc++/support/config.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
-#include <grpc++/support/config.h>
 
 namespace grpc {
 namespace testing {
@@ -51,7 +51,7 @@ class ChannelArgumentsTest;
 /// concrete setters are provided.
 class ChannelArguments {
  public:
-  ChannelArguments() {}
+  ChannelArguments();
   ~ChannelArguments() {}
 
   ChannelArguments(const ChannelArguments& other);
@@ -62,8 +62,8 @@ class ChannelArguments {
 
   void Swap(ChannelArguments& other);
 
-  /// Populates this instance with the arguments from \a channel_args. Does not
-  /// take ownership of \a channel_args.
+  /// Dump arguments in this instance to \a channel_args. Does not take
+  /// ownership of \a channel_args.
   ///
   /// Note that the underlying arguments are shared. Changes made to either \a
   /// channel_args or this instance would be reflected on both.
@@ -77,15 +77,34 @@ class ChannelArguments {
   /// Set the compression algorithm for the channel.
   void SetCompressionAlgorithm(grpc_compression_algorithm algorithm);
 
+  /// The given string will be sent at the front of the user agent string.
+  void SetUserAgentPrefix(const grpc::string& user_agent_prefix);
+
   // Generic channel argument setters. Only for advanced use cases.
   /// Set an integer argument \a value under \a key.
   void SetInt(const grpc::string& key, int value);
+
+  // Generic channel argument setter. Only for advanced use cases.
+  /// Set a pointer argument \a value under \a key. Owership is not transferred.
+  void SetPointer(const grpc::string& key, void* value);
+
   /// Set a textual argument \a value under \a key.
   void SetString(const grpc::string& key, const grpc::string& value);
 
  private:
   friend class SecureChannelCredentials;
   friend class testing::ChannelArgumentsTest;
+
+  /// Default pointer argument operations.
+  struct PointerVtableMembers {
+    static void* Copy(void* in) { return in; }
+    static void Destroy(void* in) {}
+    static int Compare(void* a, void* b) {
+      if (a < b) return -1;
+      if (a > b) return 1;
+      return 0;
+    }
+  };
 
   // Returns empty string when it is not set.
   grpc::string GetSslTargetNameOverride() const;

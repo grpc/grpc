@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,7 @@
 
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
-#include "src/core/iomgr/tcp_server.h"
+#include "test/core/util/test_tcp_server.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,12 +48,11 @@ typedef struct timestamp_list {
 } timestamp_list;
 
 typedef struct reconnect_server {
-  grpc_tcp_server *tcp_server;
-  grpc_pollset pollset;
-  grpc_pollset *pollsets[1];
+  test_tcp_server tcp_server;
   timestamp_list *head;
   timestamp_list *tail;
   char *peer;
+  int max_reconnect_backoff_ms;
 } reconnect_server;
 
 void reconnect_server_init(reconnect_server *server);

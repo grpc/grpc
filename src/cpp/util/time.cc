@@ -35,8 +35,8 @@
 
 #ifndef GRPC_CXX0X_NO_CHRONO
 
-#include <grpc/support/time.h>
 #include <grpc++/support/time.h>
+#include <grpc/support/time.h>
 
 using std::chrono::duration_cast;
 using std::chrono::nanoseconds;
@@ -57,8 +57,8 @@ void Timepoint2Timespec(const system_clock::time_point& from,
     return;
   }
   nanoseconds nsecs = duration_cast<nanoseconds>(deadline - secs);
-  to->tv_sec = (time_t)secs.count();
-  to->tv_nsec = (int)nsecs.count();
+  to->tv_sec = (int64_t)secs.count();
+  to->tv_nsec = (int32_t)nsecs.count();
   to->clock_type = GPR_CLOCK_REALTIME;
 }
 
@@ -73,8 +73,8 @@ void TimepointHR2Timespec(const high_resolution_clock::time_point& from,
     return;
   }
   nanoseconds nsecs = duration_cast<nanoseconds>(deadline - secs);
-  to->tv_sec = (time_t)secs.count();
-  to->tv_nsec = (int)nsecs.count();
+  to->tv_sec = (int64_t)secs.count();
+  to->tv_nsec = (int32_t)nsecs.count();
   to->clock_type = GPR_CLOCK_REALTIME;
 }
 

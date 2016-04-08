@@ -13,6 +13,10 @@
         <PreprocessorDefinitions>_WIN32_WINNT=0x600;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
         <WarningLevel>EnableAllWarnings</WarningLevel>
       </ClCompile>
+      <Link>
+        <!-- LNK4271 pollutes test output. See #4521 -->
+        <AdditionalOptions>/ignore:4217 %(AdditionalOptions)</AdditionalOptions>
+      </Link>
     </ItemDefinitionGroup>
     <ItemGroup />
   </Project>

@@ -36,3 +36,8 @@ message LongValues {
   fixed64 fixed_64 = 4;
   sfixed64 sfixed_64 = 5;
 }
+
+message SequenceValues {
+  bytes bytes_field = 1;
+  repeated int32 repeated_field = 2;
+}

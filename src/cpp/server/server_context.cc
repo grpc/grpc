@@ -33,14 +33,17 @@
 
 #include <grpc++/server_context.h>
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include <grpc++/completion_queue.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/impl/sync.h>
 #include <grpc++/support/time.h>
+#include <grpc/compression.h>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
-#include "src/core/channel/compress_filter.h"
+#include "src/core/lib/channel/compress_filter.h"
+#include "src/core/lib/surface/call.h"
 #include "src/cpp/common/create_auth_context.h"
 
 namespace grpc {
@@ -60,7 +63,11 @@ class ServerContext::CompletionOp GRPC_FINAL : public CallOpSetInterface {
   void FillOps(grpc_op* ops, size_t* nops) GRPC_OVERRIDE;
   bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE;
 
-  bool CheckCancelled(CompletionQueue* cq);
+  bool CheckCancelled(CompletionQueue* cq) {
+    cq->TryPluck(this);
+    return CheckCancelledNoPluck();
+  }
+  bool CheckCancelledAsync() { return CheckCancelledNoPluck(); }
 
   void set_tag(void* tag) {
     has_tag_ = true;
@@ -70,6 +77,11 @@ class ServerContext::CompletionOp GRPC_FINAL : public CallOpSetInterface {
   void Unref();
 
  private:
+  bool CheckCancelledNoPluck() {
+    grpc::lock_guard<grpc::mutex> g(mu_);
+    return finalized_ ? (cancelled_ != 0) : false;
+  }
+
   bool has_tag_;
   void* tag_;
   grpc::mutex mu_;
@@ -84,12 +96,6 @@ void ServerContext::CompletionOp::Unref() {
     lock.unlock();
     delete this;
   }
-}
-
-bool ServerContext::CompletionOp::CheckCancelled(CompletionQueue* cq) {
-  cq->TryPluck(this);
-  grpc::lock_guard<grpc::mutex> g(mu_);
-  return finalized_ ? cancelled_ != 0 : false;
 }
 
 void ServerContext::CompletionOp::FillOps(grpc_op* ops, size_t* nops) {
@@ -122,6 +128,7 @@ ServerContext::ServerContext()
     : completion_op_(nullptr),
       has_notify_when_done_tag_(false),
       async_notify_when_done_tag_(nullptr),
+      deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)),
       call_(nullptr),
       cq_(nullptr),
       sent_initial_metadata_(false) {}
@@ -170,13 +177,28 @@ void ServerContext::AddTrailingMetadata(const grpc::string& key,
   trailing_metadata_.insert(std::make_pair(key, value));
 }
 
+void ServerContext::TryCancel() const {
+  grpc_call_error err = grpc_call_cancel_with_status(
+      call_, GRPC_STATUS_CANCELLED, "Cancelled on the server side", NULL);
+  if (err != GRPC_CALL_OK) {
+    gpr_log(GPR_ERROR, "TryCancel failed with: %d", err);
+  }
+}
+
 bool ServerContext::IsCancelled() const {
-  return completion_op_ && completion_op_->CheckCancelled(cq_);
+  if (has_notify_when_done_tag_) {
+    // when using async API, but the result is only valid
+    // if the tag has already been delivered at the completion queue
+    return completion_op_ && completion_op_->CheckCancelledAsync();
+  } else {
+    // when using sync API
+    return completion_op_ && completion_op_->CheckCancelled(cq_);
+  }
 }
 
 void ServerContext::set_compression_level(grpc_compression_level level) {
   const grpc_compression_algorithm algorithm_for_level =
-      grpc_compression_algorithm_for_level(level);
+      grpc_call_compression_for_level(call_, level);
   set_compression_algorithm(algorithm_for_level);
 }
 

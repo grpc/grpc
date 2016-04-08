@@ -31,15 +31,15 @@
  *
  */
 
-#include <grpc/support/useful.h>
-#include <grpc/support/port_platform.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/useful.h>
 #include "test/core/util/test_config.h"
 
 int main(int argc, char **argv) {
   int four[4];
   int five[5];
-  gpr_uint32 bitset = 0;
+  uint32_t bitset = 0;
   grpc_test_init(argc, argv);
 
   GPR_ASSERT(GPR_MIN(1, 2) == 1);
@@ -51,8 +51,8 @@ int main(int argc, char **argv) {
   GPR_ASSERT(GPR_CLAMP(2, 0, 2) == 2);
   GPR_ASSERT(GPR_CLAMP(-1, 0, 2) == 0);
   GPR_ASSERT(GPR_CLAMP(3, 0, 2) == 2);
-  GPR_ASSERT(GPR_ROTL((gpr_uint32)0x80000001, 1) == 3);
-  GPR_ASSERT(GPR_ROTR((gpr_uint32)0x80000001, 1) == 0xc0000000);
+  GPR_ASSERT(GPR_ROTL((uint32_t)0x80000001, 1) == 3);
+  GPR_ASSERT(GPR_ROTR((uint32_t)0x80000001, 1) == 0xc0000000);
   GPR_ASSERT(GPR_ARRAY_SIZE(four) == 4);
   GPR_ASSERT(GPR_ARRAY_SIZE(five) == 5);
 

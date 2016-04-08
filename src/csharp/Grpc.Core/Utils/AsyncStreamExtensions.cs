@@ -48,9 +48,9 @@ namespace Grpc.Core.Utils
         public static async Task ForEachAsync<T>(this IAsyncStreamReader<T> streamReader, Func<T, Task> asyncAction)
             where T : class
         {
-            while (await streamReader.MoveNext())
+            while (await streamReader.MoveNext().ConfigureAwait(false))
             {
-                await asyncAction(streamReader.Current);
+                await asyncAction(streamReader.Current).ConfigureAwait(false);
             }
         }
 
@@ -61,7 +61,7 @@ namespace Grpc.Core.Utils
             where T : class
         {
             var result = new List<T>();
-            while (await streamReader.MoveNext())
+            while (await streamReader.MoveNext().ConfigureAwait(false))
             {
                 result.Add(streamReader.Current);
             }
@@ -77,11 +77,11 @@ namespace Grpc.Core.Utils
         {
             foreach (var element in elements)
             {
-                await streamWriter.WriteAsync(element);
+                await streamWriter.WriteAsync(element).ConfigureAwait(false);
             }
             if (complete)
             {
-                await streamWriter.CompleteAsync();
+                await streamWriter.CompleteAsync().ConfigureAwait(false);
             }
         }
 
@@ -93,7 +93,7 @@ namespace Grpc.Core.Utils
         {
             foreach (var element in elements)
             {
-                await streamWriter.WriteAsync(element);
+                await streamWriter.WriteAsync(element).ConfigureAwait(false);
             }
         }
     }

@@ -35,7 +35,7 @@
 #define TEST_QPS_HISTOGRAM_H
 
 #include <grpc/support/histogram.h>
-#include "test/proto/benchmarks/stats.grpc.pb.h"
+#include "src/proto/grpc/testing/stats.grpc.pb.h"
 
 namespace grpc {
 namespace testing {
@@ -43,8 +43,9 @@ namespace testing {
 class Histogram {
  public:
   // TODO: look into making histogram params not hardcoded for C++
-  Histogram() : impl_(gpr_histogram_create(default_resolution(),
-                                           default_max_possible())) {}
+  Histogram()
+      : impl_(gpr_histogram_create(default_resolution(),
+                                   default_max_possible())) {}
   ~Histogram() {
     if (impl_) gpr_histogram_destroy(impl_);
   }

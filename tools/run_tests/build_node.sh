@@ -29,6 +29,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+NODE_VERSION=$1
+source ~/.nvm/nvm.sh
+
+nvm use $NODE_VERSION
 set -ex
 
 CONFIG=${CONFIG:-opt}
@@ -36,4 +40,4 @@ CONFIG=${CONFIG:-opt}
 # change to grpc repo root
 cd $(dirname $0)/../..
 
-npm install --unsafe-perm
+npm install --unsafe-perm --build-from-source

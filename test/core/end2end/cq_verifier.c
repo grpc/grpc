@@ -37,8 +37,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/surface/event_string.h"
-#include "src/core/support/string.h"
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/support/alloc.h>
@@ -46,6 +44,8 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/surface/event_string.h"
 
 #define ROOT_EXPECTATION 1000
 
@@ -110,7 +110,7 @@ int contains_metadata(grpc_metadata_array *array, const char *key,
 static gpr_slice merge_slices(gpr_slice *slices, size_t nslices) {
   size_t i;
   size_t len = 0;
-  gpr_uint8 *cursor;
+  uint8_t *cursor;
   gpr_slice out;
 
   for (i = 0; i < nslices; i++) {

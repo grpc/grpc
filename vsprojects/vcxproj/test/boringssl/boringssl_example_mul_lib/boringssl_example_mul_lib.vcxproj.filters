@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\ec\example_mul.c">
+      <Filter>third_party\boringssl\crypto\ec</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{fc8158f9-5cf6-aab0-c162-7e68f7b57b6a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl">
+      <UniqueIdentifier>{a0e70edc-4e96-589e-6aa8-4ad51db6a7d8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto">
+      <UniqueIdentifier>{73510850-fff9-2472-285f-81e4e5724ce4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto\ec">
+      <UniqueIdentifier>{43f4d18f-60ea-bfe6-a7ab-085379966ae9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

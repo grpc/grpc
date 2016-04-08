@@ -84,7 +84,7 @@ namespace Grpc.Core.Tests
         {
             var coreVersion = GrpcEnvironment.GetCoreVersionString();
             var parts = coreVersion.Split('.');
-            Assert.AreEqual(4, parts.Length);
+            Assert.AreEqual(3, parts.Length);
         }
     }
 }

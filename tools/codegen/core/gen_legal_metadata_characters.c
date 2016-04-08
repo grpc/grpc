@@ -52,7 +52,7 @@ static void legal(int x) {
 static void dump(void) {
   int i;
 
-  printf("static const gpr_uint8 legal_header_bits[256/8] = ");
+  printf("static const uint8_t legal_header_bits[256/8] = ");
   for (i = 0; i < 256 / 8; i++)
     printf("%c 0x%02x", i ? ',' : '{', legal_bits[i]);
   printf(" };\n");
@@ -68,11 +68,11 @@ int main(void) {
   for (i = '0'; i <= '9'; i++) legal(i);
   legal('-');
   legal('_');
+  legal('.');
   dump();
 
   clear();
   for (i = 32; i <= 126; i++) {
-    if (i == ',') continue;
     legal(i);
   }
   dump();

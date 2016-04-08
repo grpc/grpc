@@ -36,13 +36,18 @@
 
 #include <memory>
 
-#include <grpc/grpc.h>
 #include <grpc++/channel.h>
-#include "test/proto/messages.grpc.pb.h"
-#include "test/proto/test.grpc.pb.h"
+#include <grpc/grpc.h>
+#include "src/proto/grpc/testing/messages.grpc.pb.h"
+#include "src/proto/grpc/testing/test.grpc.pb.h"
 
 namespace grpc {
 namespace testing {
+
+// Function pointer for custom checks.
+using CheckerFn =
+    std::function<void(const InteropClientContextInspector&,
+                       const SimpleRequest*, const SimpleResponse*)>;
 
 class InteropClient {
  public:
@@ -70,6 +75,7 @@ class InteropClient {
   void DoTimeoutOnSleepingServer();
   void DoEmptyStream();
   void DoStatusWithMessage();
+  void DoCustomMetadata();
   // Auth tests.
   // username is a string containing the user email
   void DoJwtTokenCreds(const grpc::string& username);
@@ -100,6 +106,10 @@ class InteropClient {
   };
 
   void PerformLargeUnary(SimpleRequest* request, SimpleResponse* response);
+
+  /// Run \a custom_check_fn as an additional check.
+  void PerformLargeUnary(SimpleRequest* request, SimpleResponse* response,
+                         CheckerFn custom_checks_fn);
   void AssertOkOrPrintErrorStatus(const Status& s);
   ServiceStub serviceStub_;
 };

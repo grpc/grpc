@@ -38,7 +38,7 @@
 
 #include <grpc++/channel.h>
 
-#include "src/core/surface/call_test_only.h"
+#include "src/core/lib/surface/call_test_only.h"
 
 namespace grpc {
 namespace testing {
@@ -60,7 +60,7 @@ class InteropClientContextInspector {
     return grpc_call_test_only_get_compression_algorithm(context_.call_);
   }
 
-  gpr_uint32 GetMessageFlags() const {
+  uint32_t GetMessageFlags() const {
     return grpc_call_test_only_get_message_flags(context_.call_);
   }
 

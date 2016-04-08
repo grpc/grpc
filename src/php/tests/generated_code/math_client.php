@@ -43,7 +43,9 @@ function p($line)
 
 $host = 'localhost:50051';
 p("Connecting to host: $host");
-$client = new math\MathClient($host, []);
+$client = new math\MathClient($host, [
+    'credentials' => Grpc\ChannelCredentials::createInsecure()
+]);
 p('Client class: '.get_class($client));
 p('');
 

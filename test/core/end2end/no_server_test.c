@@ -37,7 +37,7 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/test_config.h"
 
-static void *tag(gpr_intptr i) { return (void *)i; }
+static void *tag(intptr_t i) { return (void *)i; }
 
 int main(int argc, char **argv) {
   grpc_channel *chan;
@@ -88,8 +88,9 @@ int main(int argc, char **argv) {
   GPR_ASSERT(status == GRPC_STATUS_DEADLINE_EXCEEDED);
 
   grpc_completion_queue_shutdown(cq);
-  while (grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
-                                    NULL).type != GRPC_QUEUE_SHUTDOWN)
+  while (
+      grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL)
+          .type != GRPC_QUEUE_SHUTDOWN)
     ;
   grpc_completion_queue_destroy(cq);
   grpc_call_destroy(call);

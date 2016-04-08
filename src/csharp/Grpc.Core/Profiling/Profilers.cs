@@ -111,7 +111,7 @@ namespace Grpc.Core.Profiling
 
         public void Dump(string filepath)
         {
-            using (var stream = new StreamWriter(filepath))
+            using (var stream = File.CreateText(filepath))
             {
                 Dump(stream);
             }

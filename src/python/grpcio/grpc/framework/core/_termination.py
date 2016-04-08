@@ -31,6 +31,8 @@
 
 import abc
 
+import six
+
 from grpc.framework.core import _constants
 from grpc.framework.core import _interfaces
 from grpc.framework.core import _utilities
@@ -46,13 +48,12 @@ def _invocation_completion_predicate(
 
 def _service_completion_predicate(
     unused_emission_complete, transmission_complete, unused_reception_complete,
-    unused_ingestion_complete):
-  return transmission_complete
+    ingestion_complete):
+  return transmission_complete and ingestion_complete
 
 
-class TerminationManager(_interfaces.TerminationManager):
+class TerminationManager(six.with_metaclass(abc.ABCMeta, _interfaces.TerminationManager)):
   """A _interfaces.TransmissionManager on which another manager may be set."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def set_expiration_manager(self, expiration_manager):

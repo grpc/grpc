@@ -32,7 +32,7 @@
 CXX = g++
 CPPFLAGS += -I/usr/local/include -pthread
 CXXFLAGS += -std=c++11
-LDFLAGS += -L/usr/local/lib -lgrpc++_unsecure -lgrpc -lgpr -lprotobuf -lpthread -ldl
+LDFLAGS += -L/usr/local/lib -lgrpc++_unsecure -lgrpc -lprotobuf -lpthread -ldl
 PROTOC = protoc
 GRPC_CPP_PLUGIN = grpc_cpp_plugin
 GRPC_CPP_PLUGIN_PATH ?= `which $(GRPC_CPP_PLUGIN)`
@@ -55,9 +55,11 @@ greeter_async_client: helloworld.pb.o helloworld.grpc.pb.o greeter_async_client.
 greeter_async_server: helloworld.pb.o helloworld.grpc.pb.o greeter_async_server.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
+.PRECIOUS: %.grpc.pb.cc
 %.grpc.pb.cc: %.proto
 	$(PROTOC) -I $(PROTOS_PATH) --grpc_out=. --plugin=protoc-gen-grpc=$(GRPC_CPP_PLUGIN_PATH) $<
 
+.PRECIOUS: %.pb.cc
 %.pb.cc: %.proto
 	$(PROTOC) -I $(PROTOS_PATH) --cpp_out=. $<
 
@@ -92,7 +94,7 @@ ifneq ($(HAS_VALID_PROTOC),true)
 	@echo "Please install Google protocol buffers 3.0.0 and its compiler."
 	@echo "You can find it here:"
 	@echo
-	@echo "   https://github.com/google/protobuf/releases/tag/v3.0.0-alpha-1"
+	@echo "   https://github.com/google/protobuf/releases/tag/v3.0.0-beta-2"
 	@echo
 	@echo "Here is what I get when trying to evaluate your version of protoc:"
 	@echo

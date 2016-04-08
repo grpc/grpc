@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\h2_full.c">
+      <Filter>test\core\end2end\fixtures</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{a8cfbafe-b5ca-877d-1381-d49d35c7480e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{db6faea2-27f4-0712-5476-59619028b253}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\end2end">
+      <UniqueIdentifier>{1ec8c1dd-a50b-1bc2-8541-065978ae36cc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\end2end\fixtures">
+      <UniqueIdentifier>{9cb87542-024e-55a8-63e2-d11dde608fbf}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

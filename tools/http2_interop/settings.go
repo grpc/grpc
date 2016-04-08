@@ -26,22 +26,26 @@ const (
 	SettingsMaxHeaderListSize    SettingsIdentifier = 6
 )
 
+const (
+	SETTINGS_FLAG_ACK byte = 0x01
+)
+
 func (si SettingsIdentifier) String() string {
 	switch si {
 	case SettingsHeaderTableSize:
-		return "HEADER_TABLE_SIZE"
+		return "SETTINGS_HEADER_TABLE_SIZE"
 	case SettingsEnablePush:
-		return "ENABLE_PUSH"
+		return "SETTINGS_ENABLE_PUSH"
 	case SettingsMaxConcurrentStreams:
-		return "MAX_CONCURRENT_STREAMS"
+		return "SETTINGS_MAX_CONCURRENT_STREAMS"
 	case SettingsInitialWindowSize:
-		return "INITIAL_WINDOW_SIZE"
+		return "SETTINGS_INITIAL_WINDOW_SIZE"
 	case SettingsMaxFrameSize:
-		return "MAX_FRAME_SIZE"
+		return "SETTINGS_MAX_FRAME_SIZE"
 	case SettingsMaxHeaderListSize:
-		return "MAX_HEADER_LIST_SIZE"
+		return "SETTINGS_MAX_HEADER_LIST_SIZE"
 	default:
-		return fmt.Sprintf("UNKNOWN(%d)", uint16(si))
+		return fmt.Sprintf("SETTINGS_UNKNOWN(%d)", uint16(si))
 	}
 }
 
@@ -82,7 +86,7 @@ func (f *SettingsFrame) UnmarshalPayload(raw []byte) error {
 }
 
 func (f *SettingsFrame) MarshalPayload() ([]byte, error) {
-	raw := make([]byte, 0, len(f.Params)*6)
+	raw := make([]byte, len(f.Params)*6)
 	for i, p := range f.Params {
 		binary.BigEndian.PutUint16(raw[i*6:i*6+2], uint16(p.Identifier))
 		binary.BigEndian.PutUint32(raw[i*6+2:i*6+6], p.Value)
@@ -102,7 +106,6 @@ func (f *SettingsFrame) MarshalBinary() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	header = append(header, payload...)
 
 	return header, nil

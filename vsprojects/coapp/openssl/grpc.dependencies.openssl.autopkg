@@ -1,5 +1,15 @@
 @import @"version.inc";
 
+configurations
+{
+    // See https://github.com/coapp/coapp.powershell/issues/112
+    Toolset
+    {
+        key : "PlatformToolset"; // this is CoApp pre-defined key
+        choices: { v140, v120, v110, v100 };
+    };
+}
+
 #define { 
       package-id = "grpc.dependencies.openssl";
 }
@@ -19,7 +29,7 @@ nuget {
 		summary: "An OpenSSL library";
 		description: @"Native OpenSSL library.
 	OpenSSL homepage:  http://www.openssl.org";
-		releaseNotes: "Release of OpenSSL 1.0.2a libraries.";
+		releaseNotes: "Release of OpenSSL 1.0.2d libraries.";
 		copyright: Copyright 2015;
 		tags: { openssl, native, CoApp };
 
@@ -27,7 +37,7 @@ nuget {
 
     dependencies {
         packages : {
-            grpc.dependencies.zlib/1.2.8.9
+            grpc.dependencies.zlib/1.2.8.10
         };
     }
     
@@ -40,9 +50,8 @@ nuget {
 		  #output {
               package = redist;
           };
-		  #destination = \build\portable-net45;
+		  #destination = "\build\portable-net45+netcore45+wpa81+wp8";
 		  "managed_targets\${package-id}.redist.targets";
-		  "managed_targets\${package-id}.redist.props";
 		};
 		
 		nestedInclude: {
@@ -54,7 +63,7 @@ nuget {
 		// TODO(jtattermusch): Visual Studio 2010 and 2012 Express (v100 and v110 toolsets) don't support x64,
         // so while generating the package, you will get a warning that corresponding files are missing
 		// (and the resulting package will be somewhat incomplete).
-		("v100,v120", "Win32,x64", "release,debug", "Dynamic,Static") => {
+		("v100,v120,v140", "Win32,x64", "release,debug", "Dynamic,Static") => {
 			[${0},${1},${2},${3}] {
 				lib:         { .\output\${0}\${1}\${2}\${3}\libeay32.lib;
 				               .\output\${0}\${1}\${2}\${3}\ssleay32.lib };
@@ -65,7 +74,7 @@ nuget {
 				};
 			};
 		};
-		("v100,v120", "Win32,x64", "release,debug", "Dynamic") => {
+		("v100,v120,v140", "Win32,x64", "release,debug", "Dynamic") => {
 			[${0},${1},${2},${3}] {
 				bin:     { .\output\${0}\${1}\${2}\${3}\libeay32.dll;
                            .\output\${0}\${1}\${2}\${3}\ssleay32.dll };
@@ -90,7 +99,7 @@ nuget {
 		Includes += ${pkg_root}${d_include};
 		// Defines += HAS_ZLIB;
 		
-        ("v100,v110,v120", "Win32,x64", "release,debug", "Dynamic,Static") => {
+        ("v100,v110,v120,v140", "Win32,x64", "release,debug", "Dynamic,Static") => {
 			[${0},${1},${2},${3}] {
                 Includes += ${pkg_root}${d_include};
             };

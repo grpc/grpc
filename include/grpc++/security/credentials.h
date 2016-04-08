@@ -31,16 +31,18 @@
  *
  */
 
-#ifndef GRPCXX_CREDENTIALS_H
-#define GRPCXX_CREDENTIALS_H
+#ifndef GRPCXX_SECURITY_CREDENTIALS_H
+#define GRPCXX_SECURITY_CREDENTIALS_H
 
 #include <map>
 #include <memory>
 
-#include <grpc++/impl/grpc_library.h>
-#include <grpc++/support/config.h>
+#include <grpc++/impl/codegen/grpc_library.h>
+#include <grpc++/security/auth_context.h>
 #include <grpc++/support/status.h>
 #include <grpc++/support/string_ref.h>
+
+struct grpc_call;
 
 namespace grpc {
 class ChannelArguments;
@@ -54,10 +56,11 @@ class SecureCallCredentials;
 /// It can make various assertions, e.g., about the client’s identity, role
 /// for all the calls on that channel.
 ///
-/// \see https://github.com/grpc/grpc/blob/master/doc/grpc-auth-support.md
-class ChannelCredentials : public GrpcLibrary {
+/// \see http://www.grpc.io/docs/guides/auth.html
+class ChannelCredentials : private GrpcLibraryCodegen {
  public:
-  ~ChannelCredentials() GRPC_OVERRIDE;
+  ChannelCredentials();
+  ~ChannelCredentials();
 
  protected:
   friend std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
@@ -79,10 +82,11 @@ class ChannelCredentials : public GrpcLibrary {
 /// A call credentials object encapsulates the state needed by a client to
 /// authenticate with a server for a given call on a channel.
 ///
-/// \see https://github.com/grpc/grpc/blob/master/doc/grpc-auth-support.md
-class CallCredentials : public GrpcLibrary {
+/// \see http://www.grpc.io/docs/guides/auth.html
+class CallCredentials : private GrpcLibraryCodegen {
  public:
-  ~CallCredentials() GRPC_OVERRIDE;
+  CallCredentials();
+  ~CallCredentials();
 
   /// Apply this instance's credentials to \a call.
   virtual bool ApplyToCall(grpc_call* call) = 0;
@@ -206,9 +210,17 @@ class MetadataCredentialsPlugin {
   // a different thread from the one processing the call.
   virtual bool IsBlocking() const { return true; }
 
+  // Type of credentials this plugin is implementing.
+  virtual const char* GetType() const { return ""; }
+
   // Gets the auth metatada produced by this plugin.
+  // The fully qualified method name is:
+  // service_url + "/" + method_name.
+  // The channel_auth_context contains (among other things), the identity of
+  // the server.
   virtual Status GetMetadata(
-      grpc::string_ref service_url,
+      grpc::string_ref service_url, grpc::string_ref method_name,
+      const AuthContext& channel_auth_context,
       std::multimap<grpc::string, grpc::string>* metadata) = 0;
 };
 
@@ -217,4 +229,4 @@ std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
 
 }  // namespace grpc
 
-#endif  // GRPCXX_CREDENTIALS_H
+#endif  // GRPCXX_SECURITY_CREDENTIALS_H

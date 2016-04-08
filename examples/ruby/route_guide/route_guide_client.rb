@@ -38,6 +38,7 @@ lib_dir = File.join(File.dirname(this_dir), 'lib')
 $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
 
 require 'grpc'
+require 'multi_json'
 require 'route_guide_services'
 
 include Routeguide
@@ -115,9 +116,8 @@ def run_record_route(stub, features)
   p 'RecordRoute'
   p '-----------'
   points_on_route = 10  # arbitrary
-  deadline = points_on_route  # as delay b/w each is max 1 second
   reqs = RandomRoute.new(features, points_on_route)
-  resp = stub.record_route(reqs.each, deadline)
+  resp = stub.record_route(reqs.each)
   p "summary: #{resp.inspect}"
 end
 
@@ -147,7 +147,7 @@ def run_route_chat(stub)
 end
 
 def main
-  stub = RouteGuide::Stub.new('localhost:50051')
+  stub = RouteGuide::Stub.new('localhost:50051', :this_channel_is_insecure)
   run_get_feature(stub)
   run_list_features(stub)
   run_route_chat(stub)

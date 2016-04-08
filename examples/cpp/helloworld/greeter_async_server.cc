@@ -67,7 +67,7 @@ class ServerImpl final {
     builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
     // Register "service_" as the instance through which we'll communicate with
     // clients. In this case it corresponds to an *asynchronous* service.
-    builder.RegisterAsyncService(&service_);
+    builder.RegisterService(&service_);
     // Get hold of the completion queue used for the asynchronous communication
     // with the gRPC runtime.
     cq_ = builder.AddCompletionQueue();
@@ -94,6 +94,9 @@ class ServerImpl final {
 
     void Proceed() {
       if (status_ == CREATE) {
+        // Make this instance progress to the PROCESS state.
+        status_ = PROCESS;
+
         // As part of the initial CREATE state, we *request* that the system
         // start processing SayHello requests. In this request, "this" acts are
         // the tag uniquely identifying the request (so that different CallData
@@ -101,8 +104,6 @@ class ServerImpl final {
         // the memory address of this CallData instance.
         service_->RequestSayHello(&ctx_, &request_, &responder_, cq_, cq_,
                                   this);
-        // Make this instance progress to the PROCESS state.
-        status_ = PROCESS;
       } else if (status_ == PROCESS) {
         // Spawn a new CallData instance to serve new clients while we process
         // the one for this CallData. The instance will deallocate itself as
@@ -116,8 +117,8 @@ class ServerImpl final {
         // And we are done! Let the gRPC runtime know we've finished, using the
         // memory address of this instance as the uniquely identifying tag for
         // the event.
-        responder_.Finish(reply_, Status::OK, this);
         status_ = FINISH;
+        responder_.Finish(reply_, Status::OK, this);
       } else {
         GPR_ASSERT(status_ == FINISH);
         // Once in the FINISH state, deallocate ourselves (CallData).

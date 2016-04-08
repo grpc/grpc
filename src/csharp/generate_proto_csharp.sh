@@ -30,19 +30,19 @@
 
 # Regenerates gRPC service stubs from proto files.
 set +e
-cd $(dirname $0)
+cd $(dirname $0)/../..
 
-PROTOC=../../bins/opt/protobuf/protoc
-PLUGIN=protoc-gen-grpc=../../bins/opt/grpc_csharp_plugin
-EXAMPLES_DIR=Grpc.Examples
-TESTING_DIR=Grpc.IntegrationTesting
-HEALTHCHECK_DIR=Grpc.HealthCheck
+PROTOC=bins/opt/protobuf/protoc
+PLUGIN=protoc-gen-grpc=bins/opt/grpc_csharp_plugin
+EXAMPLES_DIR=src/csharp/Grpc.Examples
+HEALTHCHECK_DIR=src/csharp/Grpc.HealthCheck
+TESTING_DIR=src/csharp/Grpc.IntegrationTesting
 
 $PROTOC --plugin=$PLUGIN --csharp_out=$EXAMPLES_DIR --grpc_out=$EXAMPLES_DIR \
-    -I $EXAMPLES_DIR/proto $EXAMPLES_DIR/proto/math.proto
-
-$PROTOC --plugin=$PLUGIN --csharp_out=$TESTING_DIR --grpc_out=$TESTING_DIR \
-    -I ../.. ../../test/proto/*.proto ../../test/proto/benchmarks/*.proto
+    -I src/proto/math src/proto/math/math.proto
 
 $PROTOC --plugin=$PLUGIN --csharp_out=$HEALTHCHECK_DIR --grpc_out=$HEALTHCHECK_DIR \
-    -I $HEALTHCHECK_DIR/proto $HEALTHCHECK_DIR/proto/health.proto
+    -I src/proto/grpc/health/v1 src/proto/grpc/health/v1/health.proto
+
+$PROTOC --plugin=$PLUGIN --csharp_out=$TESTING_DIR --grpc_out=$TESTING_DIR \
+    -I . src/proto/grpc/testing/{control,empty,messages,payloads,services,stats,test}.proto 

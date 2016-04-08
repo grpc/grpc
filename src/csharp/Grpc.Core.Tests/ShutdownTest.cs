@@ -61,17 +61,20 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
-        public async Task AbandonedCall()
+        public async Task AbandonedCall_ServerKillAsync()
         {
+            var readyToShutdown = new TaskCompletionSource<object>();
             helper.DuplexStreamingHandler = new DuplexStreamingServerMethod<string, string>(async (requestStream, responseStream, context) =>
             {
+                readyToShutdown.SetResult(null);
                 await requestStream.ToListAsync();
             });
 
-            var call = Calls.AsyncDuplexStreamingCall(helper.CreateDuplexStreamingCall(new CallOptions(deadline: DateTime.UtcNow.AddMilliseconds(1))));
+            var call = Calls.AsyncDuplexStreamingCall(helper.CreateDuplexStreamingCall());
+            await readyToShutdown.Task;  // make sure handler is running
 
-            channel.ShutdownAsync().Wait();
-            server.ShutdownAsync().Wait();
+            await channel.ShutdownAsync();  // channel.ShutdownAsync() works even if there's a pending call.
+            await server.KillAsync();  // server.ShutdownAsync() would hang waiting for the call to finish.
         }
     }
 }

@@ -160,10 +160,12 @@ module GRPC
         route_prefix = service_name
         Class.new(ClientStub) do
           # @param host [String] the host the stub connects to
+          # @param creds [Core::ChannelCredentials|Symbol] The channel
+          #     credentials to use, or :this_channel_is_insecure otherwise
           # @param kw [KeywordArgs] the channel arguments, plus any optional
           #                         args for configuring the client's channel
-          def initialize(host, **kw)
-            super(host, Core::CompletionQueue.new, **kw)
+          def initialize(host, creds, **kw)
+            super(host, Core::CompletionQueue.new, creds, **kw)
           end
 
           # Used define_method to add a method for each rpc_desc.  Each method

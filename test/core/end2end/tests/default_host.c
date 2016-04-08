@@ -36,18 +36,18 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/support/string.h"
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+#include "src/core/lib/support/string.h"
 #include "test/core/end2end/cq_verifier.h"
 
 enum { TIMEOUT = 200000 };
 
-static void *tag(gpr_intptr t) { return (void *)t; }
+static void *tag(intptr_t t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char *test_name,
@@ -77,9 +77,9 @@ static void drain_cq(grpc_completion_queue *cq) {
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(1000),
-                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5),
-                                         NULL).type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
+                 .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
 }
@@ -225,10 +225,12 @@ static void test_invoke_simple_request(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
-void grpc_end2end_tests(grpc_end2end_test_config config) {
+void default_host(grpc_end2end_test_config config) {
   if ((config.feature_mask & FEATURE_MASK_SUPPORTS_HOSTNAME_VERIFICATION) == 0)
     return;
   if ((config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION) == 0)
     return;
   test_invoke_simple_request(config);
 }
+
+void default_host_pre_init(void) {}

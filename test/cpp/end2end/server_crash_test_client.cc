@@ -31,22 +31,22 @@
  *
  */
 
+#include <gflags/gflags.h>
 #include <iostream>
 #include <memory>
 #include <sstream>
 #include <string>
-#include <gflags/gflags.h>
 
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
-#include "test/cpp/util/echo.grpc.pb.h"
+#include "src/proto/grpc/testing/echo.grpc.pb.h"
 
 DEFINE_string(address, "", "Address to connect to");
 DEFINE_string(mode, "", "Test mode to use");
 
-using grpc::cpp::test::util::EchoRequest;
-using grpc::cpp::test::util::EchoResponse;
+using grpc::testing::EchoRequest;
+using grpc::testing::EchoResponse;
 
 // In some distros, gflags is in the namespace google, and in some others,
 // in gflags. This hack is enabling us to find both.
@@ -57,12 +57,13 @@ using namespace gflags;
 
 int main(int argc, char** argv) {
   ParseCommandLineFlags(&argc, &argv, true);
-  auto stub = grpc::cpp::test::util::TestService::NewStub(
+  auto stub = grpc::testing::EchoTestService::NewStub(
       grpc::CreateChannel(FLAGS_address, grpc::InsecureChannelCredentials()));
 
   EchoRequest request;
   EchoResponse response;
   grpc::ClientContext context;
+  context.set_fail_fast(false);
 
   if (FLAGS_mode == "bidi") {
     auto stream = stub->BidiStream(&context);

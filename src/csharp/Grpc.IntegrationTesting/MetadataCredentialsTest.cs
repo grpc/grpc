@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -40,6 +40,7 @@ using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Utils;
 using Grpc.Testing;
+using Moq;
 using NUnit.Framework;
 
 namespace Grpc.IntegrationTesting
@@ -49,38 +50,38 @@ namespace Grpc.IntegrationTesting
         const string Host = "localhost";
         Server server;
         Channel channel;
-        TestService.ITestServiceClient client;
+        TestService.TestServiceClient client;
+        List<ChannelOption> options;
+        Mock<TestService.TestServiceBase> serviceMock;
+        AsyncAuthInterceptor asyncAuthInterceptor;
 
-        [TestFixtureSetUp]
+        [SetUp]
         public void Init()
         {
-            var serverCredentials = new SslServerCredentials(new[] { new KeyCertificatePair(File.ReadAllText(TestCredentials.ServerCertChainPath), File.ReadAllText(TestCredentials.ServerPrivateKeyPath)) });
+            serviceMock = new Mock<TestService.TestServiceBase>();
+            serviceMock.Setup(m => m.UnaryCall(It.IsAny<SimpleRequest>(), It.IsAny<ServerCallContext>()))
+                .Returns(new Func<SimpleRequest, ServerCallContext, Task<SimpleResponse>>(UnaryCallHandler));
+
             server = new Server
             {
-                Services = { TestService.BindService(new TestServiceImpl()) },
-                Ports = { { Host, ServerPort.PickUnused, serverCredentials } }
+                Services = { TestService.BindService(serviceMock.Object) },
+                Ports = { { Host, ServerPort.PickUnused, TestCredentials.CreateSslServerCredentials() } }
             };
             server.Start();
 
-            var options = new List<ChannelOption>
+            options = new List<ChannelOption>
             {
                 new ChannelOption(ChannelOptions.SslTargetNameOverride, TestCredentials.DefaultHostOverride)
             };
 
-            var asyncAuthInterceptor = new AsyncAuthInterceptor(async (authUri, metadata) =>
+            asyncAuthInterceptor = new AsyncAuthInterceptor(async (context, metadata) =>
             {
-                await Task.Delay(100);  // make sure the operation is asynchronous.
+                await Task.Delay(100).ConfigureAwait(false);  // make sure the operation is asynchronous.
                 metadata.Add("authorization", "SECRET_TOKEN");
             });
-
-            var clientCredentials = ChannelCredentials.Create(
-                new SslCredentials(File.ReadAllText(TestCredentials.ClientCertAuthorityPath)),
-                CallCredentials.FromInterceptor(asyncAuthInterceptor));
-            channel = new Channel(Host, server.Ports.Single().BoundPort, clientCredentials, options);
-            client = TestService.NewClient(channel);
         }
 
-        [TestFixtureTearDown]
+        [TearDown]
         public void Cleanup()
         {
             channel.ShutdownAsync().Wait();
@@ -90,8 +91,29 @@ namespace Grpc.IntegrationTesting
         [Test]
         public void MetadataCredentials()
         {
-            var response = client.UnaryCall(new SimpleRequest { ResponseSize = 10 });
-            Assert.AreEqual(10, response.Payload.Body.Length);
+            var channelCredentials = ChannelCredentials.Create(TestCredentials.CreateSslCredentials(),
+                CallCredentials.FromInterceptor(asyncAuthInterceptor));
+            channel = new Channel(Host, server.Ports.Single().BoundPort, channelCredentials, options);
+            client = TestService.NewClient(channel);
+
+            client.UnaryCall(new SimpleRequest {});
+        }
+
+        [Test]
+        public void MetadataCredentials_PerCall()
+        {
+            channel = new Channel(Host, server.Ports.Single().BoundPort, TestCredentials.CreateSslCredentials(), options);
+            client = TestService.NewClient(channel);
+
+            var callCredentials = CallCredentials.FromInterceptor(asyncAuthInterceptor);
+            client.UnaryCall(new SimpleRequest { }, new CallOptions(credentials: callCredentials));
+        }
+
+        private Task<SimpleResponse> UnaryCallHandler(SimpleRequest request, ServerCallContext context)
+        {
+            var authToken = context.RequestHeaders.First((entry) => entry.Key == "authorization").Value;
+            Assert.AreEqual("SECRET_TOKEN", authToken);
+            return Task.FromResult(new SimpleResponse());
         }
     }
 }

@@ -34,18 +34,18 @@
 #include <thread>
 
 #include <gflags/gflags.h>
+#include <grpc++/security/server_credentials.h>
+#include <grpc++/server.h>
+#include <grpc++/server_builder.h>
+#include <grpc++/server_context.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
-#include <grpc++/server_context.h>
-#include <grpc++/security/server_credentials.h>
 
+#include "src/proto/grpc/testing/services.grpc.pb.h"
 #include "test/cpp/qps/server.h"
-#include "test/cpp/qps/timer.h"
-#include "test/proto/benchmarks/services.grpc.pb.h"
+#include "test/cpp/qps/usage_timer.h"
 
 namespace grpc {
 namespace testing {
@@ -89,7 +89,7 @@ class SynchronousServer GRPC_FINAL : public grpc::testing::Server {
 
     char* server_address = NULL;
 
-    gpr_join_host_port(&server_address, config.host().c_str(), port());
+    gpr_join_host_port(&server_address, "::", port());
     builder.AddListeningPort(server_address,
                              Server::CreateServerCredentials(config));
     gpr_free(server_address);

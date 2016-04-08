@@ -33,14 +33,14 @@
 
 /* Test of gpr time support. */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <limits.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
+#include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "test/core/util/test_config.h"
 
 static void to_fp(void *arg, const char *buf, size_t len) {
@@ -49,7 +49,7 @@ static void to_fp(void *arg, const char *buf, size_t len) {
 
 /* Convert gpr_uintmax x to ascii base b (2..16), and write with
    (*writer)(arg, ...), zero padding to "chars" digits).  */
-static void u_to_s(gpr_uintmax x, unsigned base, int chars,
+static void u_to_s(uintmax_t x, unsigned base, int chars,
                    void (*writer)(void *arg, const char *buf, size_t len),
                    void *arg) {
   char buf[64];
@@ -64,14 +64,14 @@ static void u_to_s(gpr_uintmax x, unsigned base, int chars,
 
 /* Convert gpr_intmax x to ascii base b (2..16), and write with
    (*writer)(arg, ...), zero padding to "chars" digits).  */
-static void i_to_s(gpr_intmax x, unsigned base, int chars,
+static void i_to_s(intmax_t x, unsigned base, int chars,
                    void (*writer)(void *arg, const char *buf, size_t len),
                    void *arg) {
   if (x < 0) {
     (*writer)(arg, "-", 1);
-    u_to_s((gpr_uintmax)-x, base, chars - 1, writer, arg);
+    u_to_s((uintmax_t)-x, base, chars - 1, writer, arg);
   } else {
-    u_to_s((gpr_uintmax)x, base, chars, writer, arg);
+    u_to_s((uintmax_t)x, base, chars, writer, arg);
   }
 }
 
@@ -98,7 +98,7 @@ static void test_values(void) {
   fprintf(stderr, "far future ");
   i_to_s(x.tv_sec, 16, 16, &to_fp, stderr);
   fprintf(stderr, "\n");
-  GPR_ASSERT(x.tv_sec >= INT_MAX);
+  GPR_ASSERT(x.tv_sec == INT64_MAX);
   fprintf(stderr, "far future ");
   ts_to_s(x, &to_fp, stderr);
   fprintf(stderr, "\n");
@@ -107,7 +107,7 @@ static void test_values(void) {
   fprintf(stderr, "far past   ");
   i_to_s(x.tv_sec, 16, 16, &to_fp, stderr);
   fprintf(stderr, "\n");
-  GPR_ASSERT(x.tv_sec <= INT_MIN);
+  GPR_ASSERT(x.tv_sec == INT64_MIN);
   fprintf(stderr, "far past   ");
   ts_to_s(x, &to_fp, stderr);
   fprintf(stderr, "\n");
@@ -125,15 +125,15 @@ static void test_values(void) {
   }
 
   /* Test possible overflow in conversion of -ve values. */
-  x = gpr_time_from_micros(-(LONG_MAX - 999997), GPR_TIMESPAN);
+  x = gpr_time_from_micros(-(INT64_MAX - 999997), GPR_TIMESPAN);
   GPR_ASSERT(x.tv_sec < 0);
   GPR_ASSERT(x.tv_nsec >= 0 && x.tv_nsec < GPR_NS_PER_SEC);
 
-  x = gpr_time_from_nanos(-(LONG_MAX - 999999997), GPR_TIMESPAN);
+  x = gpr_time_from_nanos(-(INT64_MAX - 999999997), GPR_TIMESPAN);
   GPR_ASSERT(x.tv_sec < 0);
   GPR_ASSERT(x.tv_nsec >= 0 && x.tv_nsec < GPR_NS_PER_SEC);
 
-  x = gpr_time_from_millis(-(LONG_MAX - 997), GPR_TIMESPAN);
+  x = gpr_time_from_millis(-(INT64_MAX - 997), GPR_TIMESPAN);
   GPR_ASSERT(x.tv_sec < 0);
   GPR_ASSERT(x.tv_nsec >= 0 && x.tv_nsec < GPR_NS_PER_SEC);
 

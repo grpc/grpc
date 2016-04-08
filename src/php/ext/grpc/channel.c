@@ -110,9 +110,11 @@ void php_grpc_read_args_array(zval *args_array, grpc_channel_args *args) {
     switch (Z_TYPE_P(*data)) {
       case IS_LONG:
         args->args[args_index].value.integer = (int)Z_LVAL_P(*data);
+        args->args[args_index].type = GRPC_ARG_INTEGER;
         break;
       case IS_STRING:
         args->args[args_index].value.string = Z_STRVAL_P(*data);
+        args->args[args_index].type = GRPC_ARG_STRING;
         break;
       default:
         zend_throw_exception(spl_ce_InvalidArgumentException,
@@ -141,40 +143,40 @@ PHP_METHOD(Channel, __construct) {
   HashTable *array_hash;
   zval **creds_obj = NULL;
   wrapped_grpc_channel_credentials *creds = NULL;
-  /* "s|a" == 1 string, 1 optional array */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|a", &target,
+  /* "sa" == 1 string, 1 array */
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sa", &target,
                             &target_length, &args_array) == FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
                          "Channel expects a string and an array", 1 TSRMLS_CC);
     return;
   }
-  if (args_array == NULL) {
-    channel->wrapped = grpc_insecure_channel_create(target, NULL, NULL);
-  } else {
-    array_hash = Z_ARRVAL_P(args_array);
-    if (zend_hash_find(array_hash, "credentials", sizeof("credentials"),
-                       (void **)&creds_obj) == SUCCESS) {
-      if (zend_get_class_entry(*creds_obj TSRMLS_CC) !=
-          grpc_ce_channel_credentials) {
-        zend_throw_exception(spl_ce_InvalidArgumentException,
-                             "credentials must be a ChannelCredentials object",
-                             1 TSRMLS_CC);
-        return;
-      }
+  array_hash = Z_ARRVAL_P(args_array);
+  if (zend_hash_find(array_hash, "credentials", sizeof("credentials"),
+                     (void **)&creds_obj) == SUCCESS) {
+    if (Z_TYPE_P(*creds_obj) == IS_NULL) {
+      creds = NULL;
+      zend_hash_del(array_hash, "credentials", 12);
+    } else if (zend_get_class_entry(*creds_obj TSRMLS_CC) !=
+        grpc_ce_channel_credentials) {
+      zend_throw_exception(spl_ce_InvalidArgumentException,
+                           "credentials must be a ChannelCredentials object",
+                           1 TSRMLS_CC);
+      return;
+    } else {
       creds = (wrapped_grpc_channel_credentials *)zend_object_store_get_object(
           *creds_obj TSRMLS_CC);
       zend_hash_del(array_hash, "credentials", 12);
     }
-    php_grpc_read_args_array(args_array, &args);
-    if (creds == NULL) {
-      channel->wrapped = grpc_insecure_channel_create(target, &args, NULL);
-    } else {
-      gpr_log(GPR_DEBUG, "Initialized secure channel");
-      channel->wrapped =
-          grpc_secure_channel_create(creds->wrapped, target, &args, NULL);
-    }
-    efree(args.args);
   }
+  php_grpc_read_args_array(args_array, &args);
+  if (creds == NULL) {
+    channel->wrapped = grpc_insecure_channel_create(target, &args, NULL);
+  } else {
+    gpr_log(GPR_DEBUG, "Initialized secure channel");
+    channel->wrapped =
+        grpc_secure_channel_create(creds->wrapped, target, &args, NULL);
+  }
+  efree(args.args);
 }
 
 /**

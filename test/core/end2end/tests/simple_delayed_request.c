@@ -45,7 +45,7 @@
 
 enum { TIMEOUT = 200000 };
 
-static void *tag(gpr_intptr t) { return (void *)t; }
+static void *tag(intptr_t t) { return (void *)t; }
 
 static gpr_timespec n_seconds_time(int n) {
   return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(n);
@@ -63,9 +63,9 @@ static void drain_cq(grpc_completion_queue *cq) {
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(1000),
-                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5),
-                                         NULL).type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
+                 .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
 }
@@ -120,7 +120,7 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
+  op->flags = GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY;
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
@@ -216,8 +216,10 @@ static void test_simple_delayed_request_long(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
-void grpc_end2end_tests(grpc_end2end_test_config config) {
+void simple_delayed_request(grpc_end2end_test_config config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
   test_simple_delayed_request_short(config);
   test_simple_delayed_request_long(config);
 }
+
+void simple_delayed_request_pre_init(void) {}

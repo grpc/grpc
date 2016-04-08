@@ -84,7 +84,7 @@ function largeUnary($stub)
  * @param $fillOauthScope boolean whether to fill result with oauth scope
  */
 function performLargeUnary($stub, $fillUsername = false, $fillOauthScope = false,
-                           $metadata = [])
+                           $callback = false)
 {
     $request_len = 271828;
     $response_len = 314159;
@@ -99,7 +99,12 @@ function performLargeUnary($stub, $fillUsername = false, $fillOauthScope = false
     $request->setFillUsername($fillUsername);
     $request->setFillOauthScope($fillOauthScope);
 
-    list($result, $status) = $stub->UnaryCall($request, $metadata)->wait();
+    $options = false;
+    if ($callback) {
+        $options['call_credentials_callback'] = $callback;
+    }
+
+    list($result, $status) = $stub->UnaryCall($request, [], $options)->wait();
     hardAssert($status->code === Grpc\STATUS_OK, 'Call did not complete successfully');
     hardAssert($result !== null, 'Call returned a null response');
     $payload = $result->getPayload();
@@ -186,6 +191,15 @@ function oauth2AuthToken($stub, $args)
              'invalid email returned');
 }
 
+function updateAuthMetadataCallback($context)
+{
+    $authUri = $context->service_url;
+    $methodName = $context->method_name;
+    $auth_credentials = ApplicationDefaultCredentials::getCredentials();
+
+    return $auth_credentials->updateMetadata($metadata = [], $authUri);
+}
+
 /**
  * Run the per_rpc_creds auth test.
  *
@@ -197,15 +211,9 @@ function perRpcCreds($stub, $args)
     $jsonKey = json_decode(
         file_get_contents(getenv(CredentialsLoader::ENV_VAR)),
         true);
-    $auth_credentials = ApplicationDefaultCredentials::getCredentials(
-        $args['oauth_scope']
-    );
-    $token = $auth_credentials->fetchAuthToken();
-    $metadata = [CredentialsLoader::AUTH_METADATA_KEY => [sprintf('%s %s',
-                          $token['token_type'],
-                          $token['access_token'])]];
+
     $result = performLargeUnary($stub, $fillUsername = true, $fillOauthScope = true,
-                              $metadata);
+                                'updateAuthMetadataCallback');
     hardAssert($result->getUsername() == $jsonKey['client_email'],
              'invalid email returned');
 }
@@ -363,7 +371,7 @@ function cancelAfterFirstResponse($stub)
 
 function timeoutOnSleepingServer($stub)
 {
-    $call = $stub->FullDuplexCall(['timeout' => 1000]);
+    $call = $stub->FullDuplexCall([], ['timeout' => 1000]);
     $request = new grpc\testing\StreamingOutputCallRequest();
     $request->setResponseType(grpc\testing\PayloadType::COMPRESSABLE);
     $response_parameters = new grpc\testing\ResponseParameters();
@@ -430,6 +438,8 @@ if ($use_tls) {
     }
     $opts['credentials'] = $ssl_credentials;
     $opts['grpc.ssl_target_name_override'] = $host_override;
+} else {
+    $opts['credentials'] = Grpc\ChannelCredentials::createInsecure();
 }
 
 if (in_array($test_case, ['service_account_creds',

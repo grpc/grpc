@@ -31,18 +31,19 @@
  *
  */
 
-#include "src/core/security/json_token.h"
+#include "src/core/lib/security/json_token.h"
 
+#include <openssl/evp.h>
 #include <string.h>
 
-#include "src/core/security/base64.h"
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
+
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/security/b64.h"
 #include "test/core/util/test_config.h"
-#include "src/core/json/json.h"
-#include <openssl/evp.h>
 
 /* This JSON key was generated with the GCE console and revoked immediately.
    The identifiers have been changed as well.
@@ -330,7 +331,7 @@ static void check_jwt_claim(grpc_json *claim, const char *expected_audience,
   issue_time.tv_sec = strtol(iat->value, NULL, 10);
 
   parsed_lifetime = gpr_time_sub(expiration, issue_time);
-  GPR_ASSERT(parsed_lifetime.tv_sec == grpc_max_auth_token_lifetime.tv_sec);
+  GPR_ASSERT(parsed_lifetime.tv_sec == grpc_max_auth_token_lifetime().tv_sec);
 }
 
 static void check_jwt_signature(const char *b64_signature, RSA *rsa_key,
@@ -361,12 +362,12 @@ static void check_jwt_signature(const char *b64_signature, RSA *rsa_key,
 static char *service_account_creds_jwt_encode_and_sign(
     const grpc_auth_json_key *key) {
   return grpc_jwt_encode_and_sign(key, GRPC_JWT_OAUTH2_AUDIENCE,
-                                  grpc_max_auth_token_lifetime, test_scope);
+                                  grpc_max_auth_token_lifetime(), test_scope);
 }
 
 static char *jwt_creds_jwt_encode_and_sign(const grpc_auth_json_key *key) {
   return grpc_jwt_encode_and_sign(key, test_service_url,
-                                  grpc_max_auth_token_lifetime, NULL);
+                                  grpc_max_auth_token_lifetime(), NULL);
 }
 
 static void service_account_creds_check_jwt_claim(grpc_json *claim) {

@@ -49,11 +49,16 @@ func parseFrame(r io.Reader) (Frame, error) {
 		f = &SettingsFrame{
 			Header: fh,
 		}
+	case HTTP1FrameType:
+		f = &HTTP1Frame{
+			Header: fh,
+		}
 	default:
 		f = &UnknownFrame{
 			Header: fh,
 		}
 	}
+
 	if err := f.ParsePayload(r); err != nil {
 		return nil, err
 	}
@@ -73,13 +78,14 @@ func streamFrame(w io.Writer, f Frame) error {
 }
 
 func testClientShortSettings(ctx *HTTP2InteropCtx, length int) error {
-	c, err := connect(ctx)
+	conn, err := connect(ctx)
 	if err != nil {
 		return err
 	}
-	defer c.Close()
+	defer conn.Close()
+	conn.SetDeadline(time.Now().Add(defaultTimeout))
 
-	if _, err := c.Write([]byte(Preface)); err != nil {
+	if _, err := conn.Write([]byte(Preface)); err != nil {
 		return err
 	}
 
@@ -90,30 +96,28 @@ func testClientShortSettings(ctx *HTTP2InteropCtx, length int) error {
 		},
 		Data: make([]byte, length),
 	}
-	if err := streamFrame(c, sf); err != nil {
+	if err := streamFrame(conn, sf); err != nil {
 		ctx.T.Log("Unable to stream frame", sf)
 		return err
 	}
 
-	for {
-		if _, err := parseFrame(c); err != nil {
-			ctx.T.Log("Unable to parse frame")
-			return err
-		}
+	if _, err := expectGoAwaySoon(conn); err != nil {
+		return err
 	}
 
 	return nil
 }
 
 func testClientPrefaceWithStreamId(ctx *HTTP2InteropCtx) error {
-	c, err := connect(ctx)
+	conn, err := connect(ctx)
 	if err != nil {
 		return err
 	}
-	defer c.Close()
+	defer conn.Close()
+	conn.SetDeadline(time.Now().Add(defaultTimeout))
 
 	// Good so far
-	if _, err := c.Write([]byte(Preface)); err != nil {
+	if _, err := conn.Write([]byte(Preface)); err != nil {
 		return err
 	}
 
@@ -123,45 +127,37 @@ func testClientPrefaceWithStreamId(ctx *HTTP2InteropCtx) error {
 			StreamID: 1,
 		},
 	}
-	if err := streamFrame(c, sf); err != nil {
+	if err := streamFrame(conn, sf); err != nil {
 		return err
 	}
 
-	for {
-		if _, err := parseFrame(c); err != nil {
-			return err
-		}
+	if _, err := expectGoAwaySoon(conn); err != nil {
+		return err
 	}
-
 	return nil
 }
 
 func testUnknownFrameType(ctx *HTTP2InteropCtx) error {
-	c, err := connect(ctx)
+	conn, err := connect(ctx)
 	if err != nil {
 		return err
 	}
-	defer c.Close()
+	defer conn.Close()
+	conn.SetDeadline(time.Now().Add(defaultTimeout))
 
-	if _, err := c.Write([]byte(Preface)); err != nil {
-		return err
-	}
-
-	// Send some settings, which are part of the client preface
-	sf := &SettingsFrame{}
-	if err := streamFrame(c, sf); err != nil {
-		ctx.T.Log("Unable to stream frame", sf)
+	if err := http2Connect(conn, nil); err != nil {
 		return err
 	}
 
 	// Write a bunch of invalid frame types.
-	for ft := ContinuationFrameType + 1; ft != 0; ft++ {
+	// Frame number 11 is the upcoming ALTSVC frame, and should not be tested.
+	for ft := ContinuationFrameType + 2; ft != 0; ft++ {
 		fh := &UnknownFrame{
 			Header: FrameHeader{
 				Type: ft,
 			},
 		}
-		if err := streamFrame(c, fh); err != nil {
+		if err := streamFrame(conn, fh); err != nil {
 			ctx.T.Log("Unable to stream frame", fh)
 			return err
 		}
@@ -170,18 +166,19 @@ func testUnknownFrameType(ctx *HTTP2InteropCtx) error {
 	pf := &PingFrame{
 		Data: []byte("01234567"),
 	}
-	if err := streamFrame(c, pf); err != nil {
-		ctx.T.Log("Unable to stream frame", sf)
+	if err := streamFrame(conn, pf); err != nil {
+		ctx.T.Log("Unable to stream frame", pf)
 		return err
 	}
 
 	for {
-		frame, err := parseFrame(c)
+		frame, err := parseFrame(conn)
 		if err != nil {
-			ctx.T.Log("Unable to parse frame")
+			ctx.T.Log("Unable to parse frame", err)
 			return err
 		}
 		if npf, ok := frame.(*PingFrame); !ok {
+			ctx.T.Log("Got frame", frame.GetHeader().Type)
 			continue
 		} else {
 			if string(npf.Data) != string(pf.Data) || npf.Header.Flags&PING_ACK == 0 {
@@ -195,21 +192,22 @@ func testUnknownFrameType(ctx *HTTP2InteropCtx) error {
 }
 
 func testShortPreface(ctx *HTTP2InteropCtx, prefacePrefix string) error {
-	c, err := connect(ctx)
+	conn, err := connect(ctx)
 	if err != nil {
 		return err
 	}
-	defer c.Close()
+	defer conn.Close()
+	conn.SetDeadline(time.Now().Add(defaultTimeout))
 
-	if _, err := c.Write([]byte(prefacePrefix)); err != nil {
+	if _, err := conn.Write([]byte(prefacePrefix)); err != nil {
 		return err
 	}
 
-	buf := make([]byte, 256)
-	for ; err == nil; _, err = c.Read(buf) {
+	if _, err := expectGoAwaySoon(conn); err != nil {
+		return err
 	}
-	// TODO: maybe check for a GOAWAY?
-	return err
+
+	return nil
 }
 
 func testTLSMaxVersion(ctx *HTTP2InteropCtx, version uint16) error {
@@ -222,12 +220,17 @@ func testTLSMaxVersion(ctx *HTTP2InteropCtx, version uint16) error {
 	defer conn.Close()
 	conn.SetDeadline(time.Now().Add(defaultTimeout))
 
-	buf := make([]byte, 256)
-	if n, err := conn.Read(buf); err != nil {
-		if n != 0 {
-			return fmt.Errorf("Expected no bytes to be read, but was %d", n)
-		}
+	if err := http2Connect(conn, nil); err != nil {
 		return err
+	}
+
+	gf, err := expectGoAway(conn)
+	if err != nil {
+		return err
+	}
+	// TODO: make an enum out of this
+	if gf.Code != 0xC {
+		return fmt.Errorf("Expected an Inadequate security code: %v", gf)
 	}
 	return nil
 }
@@ -242,12 +245,17 @@ func testTLSApplicationProtocol(ctx *HTTP2InteropCtx) error {
 	defer conn.Close()
 	conn.SetDeadline(time.Now().Add(defaultTimeout))
 
-	buf := make([]byte, 256)
-	if n, err := conn.Read(buf); err != nil {
-		if n != 0 {
-			return fmt.Errorf("Expected no bytes to be read, but was %d", n)
-		}
+	if err := http2Connect(conn, nil); err != nil {
 		return err
+	}
+
+	gf, err := expectGoAway(conn)
+	if err != nil {
+		return err
+	}
+	// TODO: make an enum out of this
+	if gf.Code != 0xC {
+		return fmt.Errorf("Expected an Inadequate security code: %v", gf)
 	}
 	return nil
 }
@@ -279,22 +287,51 @@ func testTLSBadCipherSuites(ctx *HTTP2InteropCtx) error {
 		return err
 	}
 
+	gf, err := expectGoAway(conn)
+	if err != nil {
+		return err
+	}
+	// TODO: make an enum out of this
+	if gf.Code != 0xC {
+		return fmt.Errorf("Expected an Inadequate security code: %v", gf)
+	}
+	return nil
+}
+
+func expectGoAway(conn net.Conn) (*GoAwayFrame, error) {
+	f, err := parseFrame(conn)
+	if err != nil {
+		return nil, err
+	}
+	if gf, ok := f.(*GoAwayFrame); !ok {
+		return nil, fmt.Errorf("Expected GoAway Frame %+v", f)
+	} else {
+		return gf, nil
+	}
+}
+
+// expectGoAwaySoon checks that a GOAWAY frame eventually comes.  Servers usually send
+// the initial settings frames before any data has actually arrived.  This function
+// checks that a go away shows.
+func expectGoAwaySoon(conn net.Conn) (*GoAwayFrame, error) {
 	for {
 		f, err := parseFrame(conn)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		if gf, ok := f.(*GoAwayFrame); ok {
-			return fmt.Errorf("Got goaway frame %d", gf.Code)
+		if gf, ok := f.(*GoAwayFrame); !ok {
+			continue
+		} else {
+			return gf, nil
 		}
 	}
-	return nil
 }
 
 func http2Connect(c net.Conn, sf *SettingsFrame) error {
 	if _, err := c.Write([]byte(Preface)); err != nil {
 		return err
 	}
+
 	if sf == nil {
 		sf = &SettingsFrame{}
 	}
@@ -304,8 +341,29 @@ func http2Connect(c net.Conn, sf *SettingsFrame) error {
 	return nil
 }
 
-func connect(ctx *HTTP2InteropCtx) (net.Conn, error) {
-	var conn net.Conn
+// CapConn captures connection traffic if Log is non-nil
+type CapConn struct {
+	net.Conn
+	Log func(args ...interface{})
+}
+
+func (c *CapConn) Write(data []byte) (int, error) {
+	if c.Log != nil {
+		c.Log(" SEND: ", data)
+	}
+	return c.Conn.Write(data)
+}
+
+func (c *CapConn) Read(data []byte) (int, error) {
+	n, err := c.Conn.Read(data)
+	if c.Log != nil {
+		c.Log(" RECV: ", data[:n], err)
+	}
+	return n, err
+}
+
+func connect(ctx *HTTP2InteropCtx) (*CapConn, error) {
+	var conn *CapConn
 	var err error
 	if !ctx.UseTLS {
 		conn, err = connectWithoutTls(ctx)
@@ -327,24 +385,22 @@ func buildTlsConfig(ctx *HTTP2InteropCtx) *tls.Config {
 		NextProtos: []string{"h2"},
 		ServerName: ctx.authority,
 		MinVersion: tls.VersionTLS12,
-		// TODO(carl-mastrangelo): remove this once all test certificates have been updated.
-		InsecureSkipVerify: true,
 	}
 }
 
-func connectWithoutTls(ctx *HTTP2InteropCtx) (net.Conn, error) {
+func connectWithoutTls(ctx *HTTP2InteropCtx) (*CapConn, error) {
 	conn, err := net.DialTimeout("tcp", ctx.serverSpec, defaultTimeout)
 	if err != nil {
 		return nil, err
 	}
-	return conn, nil
+	return &CapConn{Conn: conn}, nil
 }
 
-func connectWithTls(ctx *HTTP2InteropCtx, config *tls.Config) (*tls.Conn, error) {
+func connectWithTls(ctx *HTTP2InteropCtx, config *tls.Config) (*CapConn, error) {
 	conn, err := connectWithoutTls(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return tls.Client(conn, config), nil
+	return &CapConn{Conn: tls.Client(conn, config)}, nil
 }

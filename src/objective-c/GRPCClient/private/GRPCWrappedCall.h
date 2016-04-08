@@ -34,7 +34,6 @@
 #import <Foundation/Foundation.h>
 #include <grpc/grpc.h>
 
-#import "GRPCChannel.h"
 #import "GRPCRequestHeaders.h"
 
 @interface GRPCOperation : NSObject
@@ -45,7 +44,7 @@
 
 @interface GRPCOpSendMetadata : GRPCOperation
 
-- (instancetype)initWithMetadata:(GRPCRequestHeaders *)metadata
+- (instancetype)initWithMetadata:(NSDictionary *)metadata
                          handler:(void(^)())handler NS_DESIGNATED_INITIALIZER;
 
 @end
@@ -94,4 +93,5 @@
 - (void)startBatchWithOperations:(NSArray *)ops;
 
 - (void)cancel;
+
 @end

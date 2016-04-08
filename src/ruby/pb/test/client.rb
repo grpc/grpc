@@ -56,8 +56,6 @@ require 'test/proto/empty'
 require 'test/proto/messages'
 require 'test/proto/test_services'
 
-require 'signet/ssl_config'
-
 AUTH_ENV = Google::Auth::CredentialsLoader::ENV_VAR
 
 # RubyLogger defines a logger for gRPC based on the standard ruby logger.
@@ -93,13 +91,6 @@ def load_test_certs
   files.map { |f| File.open(File.join(data_dir, f)).read }
 end
 
-# loads the certificates used to access the test server securely.
-def load_prod_cert
-  fail 'could not find a production cert' if ENV['SSL_CERT_FILE'].nil?
-  GRPC.logger.info("loading prod certs from #{ENV['SSL_CERT_FILE']}")
-  File.open(ENV['SSL_CERT_FILE']).read
-end
-
 # creates SSL Credentials from the test certificates.
 def test_creds
   certs = load_test_certs
@@ -108,8 +99,7 @@ end
 
 # creates SSL Credentials from the production certificates.
 def prod_creds
-  cert_text = load_prod_cert
-  GRPC::Core::ChannelCredentials.new(cert_text)
+  GRPC::Core::ChannelCredentials.new()
 end
 
 # creates the SSL Credentials.
@@ -122,8 +112,8 @@ end
 def create_stub(opts)
   address = "#{opts.host}:#{opts.port}"
   if opts.secure
+    creds = ssl_creds(opts.use_test_ca)
     stub_opts = {
-      :creds => ssl_creds(opts.use_test_ca),
       GRPC::Core::Channel::SSL_TARGET => opts.host_override
     }
 
@@ -132,7 +122,8 @@ def create_stub(opts)
     if wants_creds.include?(opts.test_case)
       unless opts.oauth_scope.nil?
         auth_creds = Google::Auth.get_application_default(opts.oauth_scope)
-        stub_opts[:update_metadata] = auth_creds.updater_proc
+        call_creds = GRPC::Core::CallCredentials.new(auth_creds.updater_proc)
+        creds = creds.compose call_creds
       end
     end
 
@@ -141,26 +132,28 @@ def create_stub(opts)
       kw = auth_creds.updater_proc.call({})  # gives as an auth token
 
       # use a metadata update proc that just adds the auth token.
-      stub_opts[:update_metadata] = proc { |md| md.merge(kw) }
+      call_creds = GRPC::Core::CallCredentials.new(proc { |md| md.merge(kw) })
+      creds = creds.compose call_creds
     end
 
     if opts.test_case == 'jwt_token_creds'  # don't use a scope
       auth_creds = Google::Auth.get_application_default
-      stub_opts[:update_metadata] = auth_creds.updater_proc
+      call_creds = GRPC::Core::CallCredentials.new(auth_creds.updater_proc)
+      creds = creds.compose call_creds
     end
 
     GRPC.logger.info("... connecting securely to #{address}")
-    Grpc::Testing::TestService::Stub.new(address, **stub_opts)
+    Grpc::Testing::TestService::Stub.new(address, creds, **stub_opts)
   else
     GRPC.logger.info("... connecting insecurely to #{address}")
-    Grpc::Testing::TestService::Stub.new(address)
+    Grpc::Testing::TestService::Stub.new(address, :this_channel_is_insecure)
   end
 end
 
 # produces a string of null chars (\0) of length l.
 def nulls(l)
   fail 'requires #{l} to be +ve' if l < 0
-  [].pack('x' * l).force_encoding('utf-8')
+  [].pack('x' * l).force_encoding('ascii-8bit')
 end
 
 # a PingPongPlayer implements the ping pong bidi test.
@@ -271,16 +264,15 @@ class NamedTests
 
   def per_rpc_creds
     auth_creds = Google::Auth.get_application_default(@args.oauth_scope)
-    kw = auth_creds.updater_proc.call({})
+    update_metadata = proc do |md|
+      kw = auth_creds.updater_proc.call({})
+    end
 
-    # TODO(jtattermusch): downcase the metadata keys here to make sure
-    # they are not rejected by C core. This is a hotfix that should
-    # be addressed by introducing auto-downcasing logic.
-    kw = Hash[ kw.each_pair.map { |k, v|  [k.downcase, v] }]
+    call_creds = GRPC::Core::CallCredentials.new(update_metadata)
 
     resp = perform_large_unary(fill_username: true,
                                fill_oauth_scope: true,
-                               **kw)
+                               credentials: call_creds)
     json_key = File.read(ENV[AUTH_ENV])
     wanted_email = MultiJson.load(json_key)['client_email']
     assert("#{__callee__}: bad username") { wanted_email == resp.username }

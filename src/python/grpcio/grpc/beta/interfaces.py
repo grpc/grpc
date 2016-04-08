@@ -32,6 +32,8 @@
 import abc
 import enum
 
+import six
+
 from grpc._adapter import _types
 
 
@@ -100,17 +102,54 @@ def grpc_call_options(disable_compression=False, credentials=None):
     disable_compression: A boolean indicating whether or not compression should
       be disabled for the request object of the RPC. Only valid for
       request-unary RPCs.
-    credentials: Reserved for gRPC per-call credentials. The type for this does
-      not exist yet at the Python level.
+    credentials: A CallCredentials object to use for the invoked RPC.
   """
-  if credentials is not None:
-    raise ValueError('`credentials` is a reserved argument')
   return GRPCCallOptions(disable_compression, None, credentials)
 
 
-class GRPCServicerContext(object):
+class GRPCAuthMetadataContext(six.with_metaclass(abc.ABCMeta)):
+  """Provides information to call credentials metadata plugins.
+
+  Attributes:
+    service_url: A string URL of the service being called into.
+    method_name: A string of the fully qualified method name being called.
+  """
+
+
+class GRPCAuthMetadataPluginCallback(six.with_metaclass(abc.ABCMeta)):
+  """Callback object received by a metadata plugin."""
+
+  def __call__(self, metadata, error):
+    """Inform the gRPC runtime of the metadata to construct a CallCredentials.
+
+    Args:
+      metadata: An iterable of 2-sequences (e.g. tuples) of metadata key/value
+        pairs.
+      error: An Exception to indicate error or None to indicate success.
+    """
+    raise NotImplementedError()
+
+
+class GRPCAuthMetadataPlugin(six.with_metaclass(abc.ABCMeta)):
+  """
+  """
+
+  def __call__(self, context, callback):
+    """Invoke the plugin.
+
+    Must not block. Need only be called by the gRPC runtime.
+
+    Args:
+      context: A GRPCAuthMetadataContext providing information on what the
+        plugin is being used for.
+      callback: A GRPCAuthMetadataPluginCallback to be invoked either
+        synchronously or asynchronously.
+    """
+    raise NotImplementedError()
+
+
+class GRPCServicerContext(six.with_metaclass(abc.ABCMeta)):
   """Exposes gRPC-specific options and behaviors to code servicing RPCs."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def peer(self):
@@ -127,9 +166,8 @@ class GRPCServicerContext(object):
     raise NotImplementedError()
 
 
-class GRPCInvocationContext(object):
+class GRPCInvocationContext(six.with_metaclass(abc.ABCMeta)):
   """Exposes gRPC-specific options and behaviors to code invoking RPCs."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def disable_next_request_compression(self):
@@ -137,9 +175,8 @@ class GRPCInvocationContext(object):
     raise NotImplementedError()
 
 
-class Server(object):
+class Server(six.with_metaclass(abc.ABCMeta)):
   """Services RPCs."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def add_insecure_port(self, address):

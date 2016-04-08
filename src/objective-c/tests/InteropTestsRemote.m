@@ -35,7 +35,7 @@
 
 #import "InteropTests.h"
 
-static NSString * const kRemoteSSLHost = @"grpc-test.sandbox.google.com";
+static NSString * const kRemoteSSLHost = @"grpc-test.sandbox.googleapis.com";
 
 /** Tests in InteropTests.m, sending the RPCs to a remote SSL server. */
 @interface InteropTestsRemote : InteropTests

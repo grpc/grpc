@@ -31,16 +31,18 @@
  *
  */
 
-#include "src/core/compression/message_compress.h"
+#include "src/core/lib/compression/message_compress.h"
 
 #include <stdlib.h>
 #include <string.h>
 
-#include "test/core/util/test_config.h"
-#include "src/core/support/murmur_hash.h"
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
+
+#include "src/core/lib/support/murmur_hash.h"
 #include "test/core/util/slice_splitter.h"
+#include "test/core/util/test_config.h"
 
 typedef enum { ONE_A = 0, ONE_KB_A, ONE_MB_A, TEST_VALUE_COUNT } test_value;
 
@@ -146,21 +148,125 @@ static gpr_slice create_test_value(test_value id) {
   return gpr_slice_from_copied_string("bad value");
 }
 
-static void test_bad_data(void) {
+static void test_tiny_data_compress(void) {
   gpr_slice_buffer input;
   gpr_slice_buffer output;
   grpc_compression_algorithm i;
 
   gpr_slice_buffer_init(&input);
   gpr_slice_buffer_init(&output);
-  gpr_slice_buffer_add(&input, gpr_slice_from_copied_string(
-                                   "this is not valid compressed input"));
+  gpr_slice_buffer_add(&input, create_test_value(ONE_A));
 
   for (i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
     if (i == GRPC_COMPRESS_NONE) continue;
-    GPR_ASSERT(0 == grpc_msg_decompress(i, &input, &output));
-    GPR_ASSERT(0 == output.count);
+    GPR_ASSERT(0 == grpc_msg_compress(i, &input, &output));
+    GPR_ASSERT(1 == output.count);
   }
+
+  gpr_slice_buffer_destroy(&input);
+  gpr_slice_buffer_destroy(&output);
+}
+
+static void test_bad_decompression_data_crc(void) {
+  gpr_slice_buffer input;
+  gpr_slice_buffer corrupted;
+  gpr_slice_buffer output;
+  size_t idx;
+  const uint32_t bad = 0xdeadbeef;
+
+  gpr_slice_buffer_init(&input);
+  gpr_slice_buffer_init(&corrupted);
+  gpr_slice_buffer_init(&output);
+  gpr_slice_buffer_add(&input, create_test_value(ONE_MB_A));
+
+  /* compress it */
+  grpc_msg_compress(GRPC_COMPRESS_GZIP, &input, &corrupted);
+  /* corrupt the output by smashing the CRC */
+  GPR_ASSERT(corrupted.count > 1);
+  GPR_ASSERT(GPR_SLICE_LENGTH(corrupted.slices[1]) > 8);
+  idx = GPR_SLICE_LENGTH(corrupted.slices[1]) - 8;
+  memcpy(GPR_SLICE_START_PTR(corrupted.slices[1]) + idx, &bad, 4);
+
+  /* try (and fail) to decompress the corrupted compresed buffer */
+  GPR_ASSERT(0 == grpc_msg_decompress(GRPC_COMPRESS_GZIP, &corrupted, &output));
+
+  gpr_slice_buffer_destroy(&input);
+  gpr_slice_buffer_destroy(&corrupted);
+  gpr_slice_buffer_destroy(&output);
+}
+
+static void test_bad_decompression_data_trailing_garbage(void) {
+  gpr_slice_buffer input;
+  gpr_slice_buffer output;
+
+  gpr_slice_buffer_init(&input);
+  gpr_slice_buffer_init(&output);
+  /* append 0x99 to the end of an otherwise valid stream */
+  gpr_slice_buffer_add(
+      &input, gpr_slice_from_copied_buffer(
+                  "\x78\xda\x63\x60\x60\x60\x00\x00\x00\x04\x00\x01\x99", 13));
+
+  /* try (and fail) to decompress the invalid compresed buffer */
+  GPR_ASSERT(0 == grpc_msg_decompress(GRPC_COMPRESS_DEFLATE, &input, &output));
+
+  gpr_slice_buffer_destroy(&input);
+  gpr_slice_buffer_destroy(&output);
+}
+
+static void test_bad_decompression_data_stream(void) {
+  gpr_slice_buffer input;
+  gpr_slice_buffer output;
+
+  gpr_slice_buffer_init(&input);
+  gpr_slice_buffer_init(&output);
+  gpr_slice_buffer_add(&input,
+                       gpr_slice_from_copied_buffer("\x78\xda\xff\xff", 4));
+
+  /* try (and fail) to decompress the invalid compresed buffer */
+  GPR_ASSERT(0 == grpc_msg_decompress(GRPC_COMPRESS_DEFLATE, &input, &output));
+
+  gpr_slice_buffer_destroy(&input);
+  gpr_slice_buffer_destroy(&output);
+}
+
+static void test_bad_compression_algorithm(void) {
+  gpr_slice_buffer input;
+  gpr_slice_buffer output;
+  int was_compressed;
+
+  gpr_slice_buffer_init(&input);
+  gpr_slice_buffer_init(&output);
+  gpr_slice_buffer_add(&input,
+                       gpr_slice_from_copied_string("Never gonna give you up"));
+  was_compressed =
+      grpc_msg_compress(GRPC_COMPRESS_ALGORITHMS_COUNT, &input, &output);
+  GPR_ASSERT(0 == was_compressed);
+
+  was_compressed =
+      grpc_msg_compress(GRPC_COMPRESS_ALGORITHMS_COUNT + 123, &input, &output);
+  GPR_ASSERT(0 == was_compressed);
+
+  gpr_slice_buffer_destroy(&input);
+  gpr_slice_buffer_destroy(&output);
+}
+
+static void test_bad_decompression_algorithm(void) {
+  gpr_slice_buffer input;
+  gpr_slice_buffer output;
+  int was_decompressed;
+
+  gpr_slice_buffer_init(&input);
+  gpr_slice_buffer_init(&output);
+  gpr_slice_buffer_add(&input,
+                       gpr_slice_from_copied_string(
+                           "I'm not really compressed but it doesn't matter"));
+  was_decompressed =
+      grpc_msg_decompress(GRPC_COMPRESS_ALGORITHMS_COUNT, &input, &output);
+  GPR_ASSERT(0 == was_decompressed);
+
+  was_decompressed = grpc_msg_decompress(GRPC_COMPRESS_ALGORITHMS_COUNT + 123,
+                                         &input, &output);
+  GPR_ASSERT(0 == was_decompressed);
 
   gpr_slice_buffer_destroy(&input);
   gpr_slice_buffer_destroy(&output);
@@ -175,6 +281,7 @@ int main(int argc, char **argv) {
                                                     GRPC_SLICE_SPLIT_ONE_BYTE};
 
   grpc_test_init(argc, argv);
+  grpc_init();
 
   for (i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
     for (j = 0; j < GPR_ARRAY_SIZE(uncompressed_split_modes); j++) {
@@ -188,7 +295,13 @@ int main(int argc, char **argv) {
     }
   }
 
-  test_bad_data();
+  test_tiny_data_compress();
+  test_bad_decompression_data_crc();
+  test_bad_decompression_data_stream();
+  test_bad_decompression_data_trailing_garbage();
+  test_bad_compression_algorithm();
+  test_bad_decompression_algorithm();
+  grpc_shutdown();
 
   return 0;
 }

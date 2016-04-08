@@ -48,8 +48,8 @@ Pod::Spec.new do |s|
   s.version  = '0.0.1'
   s.license  = '...'
 
-  s.ios.deployment_target = '6.0'
-  s.osx.deployment_target = '10.8'
+  s.ios.deployment_target = '7.1'
+  s.osx.deployment_target = '10.9'
 
   # Run protoc with the Objective-C and gRPC plugins to generate protocol messages and gRPC clients.
   # You can run this command manually if you later change your protos and need to regenerate.
@@ -60,7 +60,7 @@ Pod::Spec.new do |s|
     ms.source_files = "*.pbobjc.{h,m}"
     ms.header_mappings_dir = "."
     ms.requires_arc = false
-    ms.dependency "Protobuf", "~> 3.0.0-alpha-3"
+    ms.dependency "Protobuf", "~> 3.0.0-alpha-4"
   end
 
   # The --objcgrpc_out plugin generates a pair of .pbrpc.h/.pbrpc.m files for each .proto file with
@@ -69,7 +69,7 @@ Pod::Spec.new do |s|
     ss.source_files = "*.pbrpc.{h,m}"
     ss.header_mappings_dir = "."
     ss.requires_arc = true
-    ss.dependency "gRPC", "~> 0.5"
+    ss.dependency "gRPC", "~> 0.12"
     ss.dependency "#{s.name}/Messages"
   end
 end
@@ -156,7 +156,7 @@ _protoc_, in which case no system modification nor renaming is necessary.
 
 You need to compile the generated `.pbobjc.*` files (the enums and messages) without ARC support,
 and the generated `.pbrpc.*` files (the services) with ARC support. The generated code depends on
-v0.5+ of the Objective-C gRPC runtime library and v3.0.0-alpha-3+ of the Objective-C Protobuf
+v0.12+ of the Objective-C gRPC runtime library and v3.0.0-alpha-4+ of the Objective-C Protobuf
 runtime library.
 
 These libraries need to be integrated into your project as described in their respective Podspec

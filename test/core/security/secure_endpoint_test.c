@@ -36,16 +36,17 @@
 #include <fcntl.h>
 #include <sys/types.h>
 
-#include "src/core/security/secure_endpoint.h"
-#include "src/core/iomgr/endpoint_pair.h"
-#include "src/core/iomgr/iomgr.h"
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include "src/core/lib/iomgr/endpoint_pair.h"
+#include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/security/secure_endpoint.h"
+#include "src/core/lib/tsi/fake_transport_security.h"
 #include "test/core/util/test_config.h"
-#include "src/core/tsi/fake_transport_security.h"
 
-static grpc_pollset g_pollset;
+static gpr_mu *g_mu;
+static grpc_pollset *g_pollset;
 
 static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
     size_t slice_size, gpr_slice *leftover_slices, size_t leftover_nslices) {
@@ -56,8 +57,8 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
   grpc_endpoint_pair tcp;
 
   tcp = grpc_iomgr_create_endpoint_pair("fixture", slice_size);
-  grpc_endpoint_add_to_pollset(&exec_ctx, tcp.client, &g_pollset);
-  grpc_endpoint_add_to_pollset(&exec_ctx, tcp.server, &g_pollset);
+  grpc_endpoint_add_to_pollset(&exec_ctx, tcp.client, g_pollset);
+  grpc_endpoint_add_to_pollset(&exec_ctx, tcp.server, g_pollset);
 
   if (leftover_nslices == 0) {
     f.client_ep =
@@ -68,12 +69,12 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
     size_t still_pending_size;
     size_t total_buffer_size = 8192;
     size_t buffer_size = total_buffer_size;
-    gpr_uint8 *encrypted_buffer = gpr_malloc(buffer_size);
-    gpr_uint8 *cur = encrypted_buffer;
+    uint8_t *encrypted_buffer = gpr_malloc(buffer_size);
+    uint8_t *cur = encrypted_buffer;
     gpr_slice encrypted_leftover;
     for (i = 0; i < leftover_nslices; i++) {
       gpr_slice plain = leftover_slices[i];
-      gpr_uint8 *message_bytes = GPR_SLICE_START_PTR(plain);
+      uint8_t *message_bytes = GPR_SLICE_START_PTR(plain);
       size_t message_size = GPR_SLICE_LENGTH(plain);
       while (message_size > 0) {
         size_t protected_buffer_size_to_send = buffer_size;
@@ -138,7 +139,7 @@ static grpc_endpoint_test_config configs[] = {
      secure_endpoint_create_fixture_tcp_socketpair_leftover, clean_up},
 };
 
-static void inc_call_ctr(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+static void inc_call_ctr(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   ++*(int *)arg;
 }
 
@@ -171,7 +172,7 @@ static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
   clean_up();
 }
 
-static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, int success) {
+static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, bool success) {
   grpc_pollset_destroy(p);
 }
 
@@ -181,13 +182,16 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
 
   grpc_init();
-  grpc_pollset_init(&g_pollset);
-  grpc_endpoint_tests(configs[0], &g_pollset);
+  g_pollset = gpr_malloc(grpc_pollset_size());
+  grpc_pollset_init(g_pollset, &g_mu);
+  grpc_endpoint_tests(configs[0], g_pollset, g_mu);
   test_leftover(configs[1], 1);
-  grpc_closure_init(&destroyed, destroy_pollset, &g_pollset);
-  grpc_pollset_shutdown(&exec_ctx, &g_pollset, &destroyed);
+  grpc_closure_init(&destroyed, destroy_pollset, g_pollset);
+  grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();
+
+  gpr_free(g_pollset);
 
   return 0;
 }

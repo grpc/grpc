@@ -34,25 +34,6 @@
 #ifndef GRPC_SUPPORT_ALLOC_H
 #define GRPC_SUPPORT_ALLOC_H
 
-#include <stddef.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/* malloc, never returns NULL */
-void *gpr_malloc(size_t size);
-/* free */
-void gpr_free(void *ptr);
-/* realloc, never returns NULL */
-void *gpr_realloc(void *p, size_t size);
-/* aligned malloc, never returns NULL, will align to 1 << alignment_log */
-void *gpr_malloc_aligned(size_t size, size_t alignment_log);
-/* free memory allocated by gpr_malloc_aligned */
-void gpr_free_aligned(void *ptr);
-
-#ifdef __cplusplus
-}
-#endif
+#include <grpc/impl/codegen/alloc.h>
 
 #endif /* GRPC_SUPPORT_ALLOC_H */
