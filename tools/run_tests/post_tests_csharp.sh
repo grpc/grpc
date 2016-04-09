@@ -30,26 +30,15 @@
 
 set -ex
 
-CONFIG=${CONFIG:-opt}
-NUNIT_CONSOLE="mono packages/NUnit.ConsoleRunner.3.2.0/tools/nunit3-console.exe"
-
-# nunit3-console fails if nunit.framework.dll is not found.
-cp -n src/csharp/packages/NUnit.3.2.0/lib/net45/nunit.framework.dll src/csharp/packages/NUnit.ConsoleRunner.3.2.0/tools/
+if [ "$CONFIG" != "gcov" ] ; then exit ; fi
 
 # change to gRPC repo root
 cd $(dirname $0)/../..
 
-(cd src/csharp; $NUNIT_CONSOLE $@)
-
-if [ "$CONFIG" = "gcov" ]
-then
-  # Generate the csharp extension coverage report
-  gcov objs/gcov/src/csharp/ext/*.o
-  lcov --base-directory . --directory . -c -o coverage.info
-  lcov -e coverage.info '**/src/csharp/ext/*' -o coverage.info
-  genhtml -o reports/csharp_ext_coverage --num-spaces 2 \
-    -t 'gRPC C# native extension test coverage' coverage.info \
-    --rc genhtml_hi_limit=95 --rc genhtml_med_limit=80 --no-prefix
-fi
-
-
+# Generate the csharp extension coverage report
+gcov objs/gcov/src/csharp/ext/*.o
+lcov --base-directory . --directory . -c -o coverage.info
+lcov -e coverage.info '**/src/csharp/ext/*' -o coverage.info
+genhtml -o reports/csharp_ext_coverage --num-spaces 2 \
+  -t 'gRPC C# native extension test coverage' coverage.info \
+  --rc genhtml_hi_limit=95 --rc genhtml_med_limit=80 --no-prefix
