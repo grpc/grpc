@@ -522,7 +522,8 @@ class CSharpLanguage(object):
         else:
           cmdline = runtime_cmd + [assembly_file] + nunit_args
 
-        specs.append(self.config.job_spec([script_name] + extra_args, None,
+        specs.append(self.config.job_spec(cmdline,
+                                          None,
                                           shortname='csharp.coverage.%s' % assembly,
                                           environ=_FORCE_ENVIRON_FOR_WRAPPERS))
     return specs
