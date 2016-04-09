@@ -43,12 +43,12 @@ namespace Grpc.IntegrationTesting
     /// </summary>
     public class NUnitMain
     {
-        public static void Main(string[] args)
+        public static int Main(string[] args)
         {
 #if DOTNET5_4
-            new AutoRun(typeof(NUnitMain).GetTypeInfo().Assembly).Execute(args, new ExtendedTextWrapper(Console.Out), Console.In);
+            return new AutoRun(typeof(NUnitMain).GetTypeInfo().Assembly).Execute(args, new ExtendedTextWrapper(Console.Out), Console.In);
 #else
-            new AutoRun().Execute(args);
+            return new AutoRun().Execute(args);
 #endif
         }
     }
