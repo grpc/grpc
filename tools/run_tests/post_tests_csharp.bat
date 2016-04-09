@@ -2,6 +2,10 @@
 
 setlocal
 
+if not "%CONFIG%" == "gcov" (
+  goto :EOF
+)
+
 @rem enter src/csharp directory
 cd /d %~dp0\..\..\src\csharp
 
