@@ -4,7 +4,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{C61154BA-DD4A-4838-8420-0162A28925E0}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <RootNamespace>Grpc.IntegrationTesting</RootNamespace>
     <AssemblyName>Grpc.IntegrationTesting</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
@@ -117,6 +117,7 @@
     <Compile Include="GeneratedServiceBaseTest.cs" />
     <Compile Include="GeneratedClientTest.cs" />
     <Compile Include="InterarrivalTimers.cs" />
+    <Compile Include="NUnitMain.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
