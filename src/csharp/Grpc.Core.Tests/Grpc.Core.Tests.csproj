@@ -45,6 +45,9 @@
     <Reference Include="nunitlite">
       <HintPath>..\packages\NUnitLite.3.2.0\lib\net45\nunitlite.dll</HintPath>
     </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\Grpc.Core\Version.cs">
