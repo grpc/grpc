@@ -512,13 +512,13 @@ class CSharpLanguage(object):
         # for test coverage, run all tests from the same assembly at once
         # on Windows, things get more complicated as we need to run the code coverage tool
         if self.platform == 'windows':
-          cmdline = ['packages\OpenCover.4.6.519\tools\OpenCover.Console.exe',
+          cmdline = ['src\\csharp\\packages\\OpenCover.4.6.519\\tools\\OpenCover.Console.exe',
                      '-target:%s' % assembly_file,
                      '-targetdir:src\\csharp',
                      '-targetargs:%s' % ' '.join(nunit_args),
                      '-filter:+[Grpc.Core]*',
                      '-register:user',
-                     '-output:coverage_csharp_%s.xml' % assembly]
+                     '-output:src\\csharp\\coverage_csharp_%s.xml' % assembly]
         else:
           cmdline = runtime_cmd + [assembly_file] + nunit_args
 
