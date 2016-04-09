@@ -486,42 +486,46 @@ class CSharpLanguage(object):
 
   def test_specs(self):
     with open('src/csharp/tests.json') as f:
-      tests_json = json.load(f)
-    assemblies = tests_json['assemblies']
-    tests = tests_json['tests']
+      tests_by_assembly = json.load(f)
 
     msbuild_config = _MSBUILD_CONFIG[self.config.build_config]
-    assembly_files = ['%s/bin/%s/%s.dll' % (a, msbuild_config, a)
-                      for a in assemblies]
-
-    # TODO(jtattermusch): use --x86 when needed
-
-    extra_args = ['--labels=All',
+    nunit_args = ['--labels=All',
                   '--noresult',
-                  '--workers=1',
-                  '--inprocess'] + assembly_files
-
+                  '--workers=1']
     if self.platform == 'windows':
-      script_name = 'tools\\run_tests\\run_csharp.bat'
-      extra_args += ['--domain=None']
+      runtime_cmd = []
     else:
-      script_name = 'tools/run_tests/run_csharp.sh'
+      runtime_cmd = ['mono']
 
-    if self.config.build_config == 'gcov':
-      # On Windows, we only collect C# code coverage.
-      # On Linux, we only collect coverage for native extension.
-      # For code coverage all tests need to run as one suite.
-      return [self.config.job_spec([script_name] + extra_args, None,
-                                    shortname='csharp.coverage',
-                                    environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
-    else:
-      specs = []
-      for test in tests:
-        cmdline = [script_name, '--test=%s' % test] + extra_args
-        specs.append(self.config.job_spec(cmdline, None,
-                                          shortname='csharp.%s' % test,
+    specs = []
+    for assembly in tests_by_assembly.iterkeys():
+      assembly_file = 'src/csharp/%s/bin/%s/%s.exe' % (assembly, msbuild_config, assembly)
+      if self.config.build_config != 'gcov':
+        # normally, run each test as a separate process
+        for test in tests_by_assembly[assembly]:
+          cmdline = runtime_cmd + [assembly_file, '--test=%s' % test] + nunit_args
+          specs.append(self.config.job_spec(cmdline,
+                                            None,
+                                            shortname='csharp.%s' % test,
+                                            environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+      else:
+        # for test coverage, run all tests from the same assembly at once
+        # on Windows, things get more complicated as we need to run the code coverage tool
+        if self.platform == 'windows':
+          cmdline = ['packages\OpenCover.4.6.519\tools\OpenCover.Console.exe',
+                     '-target:%s' % assembly_file,
+                     '-targetdir:src\\csharp',
+                     '-targetargs:%s' % ' '.join(nunit_args),
+                     '-filter:+[Grpc.Core]*',
+                     '-register:user',
+                     '-output:coverage_csharp_%s.xml' % assembly]
+        else:
+          cmdline = runtime_cmd + [assembly_file] + nunit_args
+
+        specs.append(self.config.job_spec([script_name] + extra_args, None,
+                                          shortname='csharp.coverage.%s' % assembly,
                                           environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-      return specs
+    return specs
 
   def pre_build_steps(self):
     if self.platform == 'windows':
@@ -544,7 +548,10 @@ class CSharpLanguage(object):
       return [['tools/run_tests/build_csharp.sh']]
 
   def post_tests_steps(self):
-    return []
+    if self.platform == 'windows':
+      return [['tools\\run_tests\\post_tests_csharp.bat']]
+    else:
+      return [['tools/run_tests/post_tests_csharp.sh']]
 
   def makefile_name(self):
     return 'Makefile'
