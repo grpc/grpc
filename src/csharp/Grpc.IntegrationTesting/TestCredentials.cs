@@ -35,6 +35,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -89,7 +90,8 @@ namespace Grpc.IntegrationTesting
 
         private static string GetPath(string relativePath)
         {
-            return Path.Combine(TestContext.CurrentContext.TestDirectory, relativePath);
+            var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            return Path.Combine(assemblyDir, relativePath);
         }
     }
 }
