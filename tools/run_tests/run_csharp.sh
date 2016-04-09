@@ -31,7 +31,10 @@
 set -ex
 
 CONFIG=${CONFIG:-opt}
-NUNIT_CONSOLE="mono packages/NUnit.Runners.2.6.4/tools/nunit-console.exe"
+NUNIT_CONSOLE="mono packages/NUnit.ConsoleRunner.3.2.0/tools/nunit3-console.exe"
+
+# nunit3-console fails if nunit.framework.dll is not found.
+cp -u src/csharp/packages/NUnit.3.2.0/lib/net45/nunit.framework.dll src/csharp/packages/NUnit.ConsoleRunner.3.2.0/tools/
 
 # change to gRPC repo root
 cd $(dirname $0)/../..

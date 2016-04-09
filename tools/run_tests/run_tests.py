@@ -494,11 +494,16 @@ class CSharpLanguage(object):
     assembly_files = ['%s/bin/%s/%s.dll' % (a, msbuild_config, a)
                       for a in assemblies]
 
-    extra_args = ['-labels'] + assembly_files
+    # TODO(jtattermusch): use --x86 when needed
+
+    extra_args = ['--labels=All',
+                  '--noresult',
+                  '--workers=1',
+                  '--inprocess'] + assembly_files
 
     if self.platform == 'windows':
       script_name = 'tools\\run_tests\\run_csharp.bat'
-      extra_args += ['-domain=None']
+      extra_args += ['--domain=None']
     else:
       script_name = 'tools/run_tests/run_csharp.sh'
 
@@ -512,11 +517,7 @@ class CSharpLanguage(object):
     else:
       specs = []
       for test in tests:
-        cmdline = [script_name, '-run=%s' % test] + extra_args
-        if self.platform == 'windows':
-          # use different output directory for each test to prevent
-          # TestResult.xml clash between parallel test runs.
-          cmdline += ['-work=test-result/%s' % uuid.uuid4()]
+        cmdline = [script_name, '--test=%s' % test] + extra_args
         specs.append(self.config.job_spec(cmdline, None,
                                           shortname='csharp.%s' % test,
                                           environ=_FORCE_ENVIRON_FOR_WRAPPERS))
