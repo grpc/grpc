@@ -5,7 +5,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{F8C6D937-C44B-4EE3-A431-B0FBAEACE47D}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Grpc.HealthCheck.Tests</RootNamespace>
     <AssemblyName>Grpc.HealthCheck.Tests</AssemblyName>
@@ -60,6 +60,7 @@
     <Compile Include="HealthServiceImplTest.cs" />
     <Compile Include="HealthClientServerTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="NUnitMain.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Grpc.Core\Grpc.Core.csproj">
