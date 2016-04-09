@@ -50,9 +50,29 @@ namespace Grpc.IntegrationTesting
     {
         public const string DefaultHostOverride = "foo.test.google.fr";
 
-        public const string ClientCertAuthorityPath = "data/ca.pem";
-        public const string ServerCertChainPath = "data/server1.pem";
-        public const string ServerPrivateKeyPath = "data/server1.key";
+        public static string ClientCertAuthorityPath
+        {
+            get
+            {
+                return GetPath("data/ca.pem");
+            }
+        }
+
+        public static string ServerCertChainPath
+        {
+            get
+            {
+                return GetPath("data/server1.pem");
+            }
+        }
+
+        public static string ServerPrivateKeyPath
+        {
+            get
+            {
+                return GetPath("data/server1.key");
+            }
+        }
 
         public static SslCredentials CreateSslCredentials()
         {
@@ -65,6 +85,11 @@ namespace Grpc.IntegrationTesting
                 File.ReadAllText(ServerCertChainPath),
                 File.ReadAllText(ServerPrivateKeyPath));
             return new SslServerCredentials(new[] { keyCertPair });
+        }
+
+        private static string GetPath(string relativePath)
+        {
+            return Path.Combine(TestContext.CurrentContext.TestDirectory, relativePath);
         }
     }
 }
