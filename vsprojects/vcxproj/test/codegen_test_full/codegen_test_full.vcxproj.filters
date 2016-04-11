@@ -19,7 +19,7 @@
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\stats.proto">
       <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\codegen\codegen_test.cc">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\codegen\codegen_test_full.cc">
       <Filter>test\cpp\codegen</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\codegen\codegen_init.cc">
@@ -184,55 +184,55 @@
 
   <ItemGroup>
     <Filter Include="include">
-      <UniqueIdentifier>{13c5bcf2-9f21-cea2-fe65-0fdd0d878f3b}</UniqueIdentifier>
+      <UniqueIdentifier>{906b08b6-1c67-d4e6-dfe6-16aa91be8eb4}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\grpc">
-      <UniqueIdentifier>{a07dcaf5-9cff-8966-b36e-b36212a0ae8c}</UniqueIdentifier>
+      <UniqueIdentifier>{46618609-460b-ebe5-0b02-65a6afcea03b}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\grpc++">
-      <UniqueIdentifier>{fe62c3e7-82ea-42a2-b120-48dda3b5363a}</UniqueIdentifier>
+      <UniqueIdentifier>{25436c6c-6d67-aba9-8d95-d7dd50e3a188}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\grpc++\impl">
-      <UniqueIdentifier>{09f48d38-2bf5-0a60-84c7-c1e7d40a172d}</UniqueIdentifier>
+      <UniqueIdentifier>{b0b279c5-88b4-b733-4d75-a003212c7e13}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\grpc++\impl\codegen">
-      <UniqueIdentifier>{7128d5bb-3cf6-7b16-cef6-f5da3ebe2d71}</UniqueIdentifier>
+      <UniqueIdentifier>{6b9a368a-8dba-441b-a31d-def53c3eb6cf}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\grpc++\impl\codegen\security">
-      <UniqueIdentifier>{7185b8d5-c403-7dc7-ae81-ee9094a8b370}</UniqueIdentifier>
+      <UniqueIdentifier>{12f7e55c-a6c1-b083-9017-135542012295}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\grpc\impl">
-      <UniqueIdentifier>{040206e3-3ace-35c0-f0a3-2cdccfbc4880}</UniqueIdentifier>
+      <UniqueIdentifier>{d4c65b16-f94b-557d-8cd2-b9c8c6659673}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\grpc\impl\codegen">
-      <UniqueIdentifier>{9da834d8-f637-4be5-77e2-58bc7335a804}</UniqueIdentifier>
+      <UniqueIdentifier>{f2ddfc7f-8c95-bbfe-c40d-5737f28d8311}</UniqueIdentifier>
     </Filter>
     <Filter Include="src">
-      <UniqueIdentifier>{a37f6960-8f92-51ed-9b99-d24970584bb2}</UniqueIdentifier>
+      <UniqueIdentifier>{909027fc-be54-d7d9-3e0b-b034a6f7ff8f}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\cpp">
-      <UniqueIdentifier>{9a190463-de6d-b761-2b2b-c093888f3c7a}</UniqueIdentifier>
+      <UniqueIdentifier>{0944bc3e-4288-3a9e-81df-b4eb0910e74f}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\cpp\codegen">
-      <UniqueIdentifier>{47b68e80-0053-216a-26a5-bbc63a4fef70}</UniqueIdentifier>
+      <UniqueIdentifier>{88566202-70b0-f87e-2ce8-3cd61e5a57da}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\proto">
-      <UniqueIdentifier>{dc3f4032-f0dc-f8f0-e07a-78c0f628e9f5}</UniqueIdentifier>
+      <UniqueIdentifier>{84c6b0c4-1143-abcf-cc7b-3ee6ef87f16a}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\proto\grpc">
-      <UniqueIdentifier>{250aede7-067f-590b-42d7-15939da4a59d}</UniqueIdentifier>
+      <UniqueIdentifier>{4da12131-db02-7cd7-361f-6f1c93af1d51}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\proto\grpc\testing">
-      <UniqueIdentifier>{57f4543e-acd0-a4a0-f3c3-8494e509b2b3}</UniqueIdentifier>
+      <UniqueIdentifier>{a8c9aa14-6237-2ecd-82b4-32f5f3347b35}</UniqueIdentifier>
     </Filter>
     <Filter Include="test">
-      <UniqueIdentifier>{7337b395-7e96-f49b-0a4f-b8a70be23a57}</UniqueIdentifier>
+      <UniqueIdentifier>{5807e8ad-90b9-2dc6-447f-1c5e7b8fba47}</UniqueIdentifier>
     </Filter>
     <Filter Include="test\cpp">
-      <UniqueIdentifier>{cf9e3404-0ab9-a301-9715-728febcece23}</UniqueIdentifier>
+      <UniqueIdentifier>{0eaa7a87-86be-68a6-a8cf-a9039a9d61d6}</UniqueIdentifier>
     </Filter>
     <Filter Include="test\cpp\codegen">
-      <UniqueIdentifier>{d349ac75-02e7-cb63-92f1-1785a74c0561}</UniqueIdentifier>
+      <UniqueIdentifier>{6cac9a6e-b8c8-bef0-2895-9f732ff8c7ee}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
