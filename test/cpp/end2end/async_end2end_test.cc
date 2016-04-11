@@ -234,7 +234,8 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<bool> {
 
     // TODO(zyc): make a test option to choose wheather sync plugins should be
     // deleted
-    std::unique_ptr<ServerBuilderOption> sync_plugin_disabler(new ServerBuilderSyncPluginDisabler());
+    std::unique_ptr<ServerBuilderOption> sync_plugin_disabler(
+        new ServerBuilderSyncPluginDisabler());
     builder.SetOption(move(sync_plugin_disabler));
     server_ = builder.BuildAndStart();
 
