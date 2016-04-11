@@ -1906,6 +1906,9 @@
   }, 
   {
     "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc++", 
       "grpc++_codegen"
     ], 
     "headers": [
@@ -1923,9 +1926,35 @@
       "src/proto/grpc/testing/stats.pb.h"
     ], 
     "language": "c++", 
-    "name": "codegen_test", 
+    "name": "codegen_test_full", 
     "src": [
-      "test/cpp/codegen/codegen_test.cc"
+      "test/cpp/codegen/codegen_test_full.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "grpc++_codegen"
+    ], 
+    "headers": [
+      "src/proto/grpc/testing/control.grpc.pb.h", 
+      "src/proto/grpc/testing/control.pb.h", 
+      "src/proto/grpc/testing/messages.grpc.pb.h", 
+      "src/proto/grpc/testing/messages.pb.h", 
+      "src/proto/grpc/testing/payloads.grpc.pb.h", 
+      "src/proto/grpc/testing/payloads.pb.h", 
+      "src/proto/grpc/testing/perf_db.grpc.pb.h", 
+      "src/proto/grpc/testing/perf_db.pb.h", 
+      "src/proto/grpc/testing/services.grpc.pb.h", 
+      "src/proto/grpc/testing/services.pb.h", 
+      "src/proto/grpc/testing/stats.grpc.pb.h", 
+      "src/proto/grpc/testing/stats.pb.h"
+    ], 
+    "language": "c++", 
+    "name": "codegen_test_minimal", 
+    "src": [
+      "test/cpp/codegen/codegen_test_minimal.cc"
     ], 
     "third_party": false, 
     "type": "target"
