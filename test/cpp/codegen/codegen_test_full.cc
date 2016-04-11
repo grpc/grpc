@@ -31,14 +31,21 @@
  *
  */
 
+#include <grpc++/completion_queue.h>
 #include <gtest/gtest.h>
 
 namespace grpc {
 namespace {
 
-class CodegenTest : public ::testing::Test {};
+class CodegenTestFull : public ::testing::Test {};
 
-TEST_F(CodegenTest, Build) {}
+TEST_F(CodegenTestFull, Init) {
+  grpc::CompletionQueue cq;
+  void* tag;
+  bool ok;
+  cq.AsyncNext(&tag, &ok, gpr_time_0(GPR_CLOCK_REALTIME));
+  ASSERT_FALSE(ok);
+}
 
 }  // namespace
 }  // namespace grpc
