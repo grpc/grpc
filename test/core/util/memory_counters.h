@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,28 +31,18 @@
  *
  */
 
-#include <stdint.h>
-#include <string.h>
+#ifndef GRPC_TEST_CORE_UTIL_MEMORY_COUNTERS_H
+#define GRPC_TEST_CORE_UTIL_MEMORY_COUNTERS_H
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+struct grpc_memory_counters {
+  size_t total_size_relative;
+  size_t total_size_absolute;
+  size_t total_allocs_relative;
+  size_t total_allocs_absolute;
+};
 
-#include "src/core/lib/json/json.h"
-#include "test/core/util/memory_counters.h"
+void grpc_memory_counters_init();
+void grpc_memory_counters_destroy();
+struct grpc_memory_counters grpc_memory_counters_snapshot();
 
-int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-  char *s;
-  struct grpc_memory_counters counters;
-  grpc_memory_counters_init();
-  s = gpr_malloc(size);
-  memcpy(s, data, size);
-  grpc_json *x;
-  if ((x = grpc_json_parse_string_with_len(s, size))) {
-    grpc_json_destroy(x);
-  }
-  gpr_free(s);
-  counters = grpc_memory_counters_snapshot();
-  grpc_memory_counters_destroy();
-  GPR_ASSERT(counters.total_size_relative == 0);
-  return 0;
-}
+#endif
