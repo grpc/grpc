@@ -31,28 +31,42 @@
  *
  */
 
-#ifndef GRPCXX_IMPL_SERVER_BUILDER_OPTION_H
-#define GRPCXX_IMPL_SERVER_BUILDER_OPTION_H
+#ifndef GRPC_INTERNAL_CPP_PROTO_SERVER_REFLECTION_PLUGIN_H
+#define GRPC_INTERNAL_CPP_PROTO_SERVER_REFLECTION_PLUGIN_H
 
-#include <map>
 #include <memory>
 
 #include <grpc++/impl/server_builder_plugin.h>
-#include <grpc++/support/channel_arguments.h>
+#include <grpc++/support/config.h>
 
 namespace grpc {
-
-/// Interface to pass an option to a \a ServerBuilder.
-class ServerBuilderOption {
- public:
-  virtual ~ServerBuilderOption() {}
-  /// Alter the \a ChannelArguments used to create the gRPC server.
-  virtual void UpdateArguments(ChannelArguments* args) = 0;
-  virtual void UpdatePlugins(
-      std::map<grpc::string, std::unique_ptr<ServerBuilderPlugin> >*
-          plugins) = 0;
-};
-
+class ServerInitializer;
+class ProtoServerReflection;
 }  // namespace grpc
 
-#endif  // GRPCXX_IMPL_SERVER_BUILDER_OPTION_H
+namespace grpc {
+namespace sBPProtoReflection {
+
+class ProtoServerReflectionPlugin : public ::grpc::ServerBuilderPlugin {
+ public:
+  ProtoServerReflectionPlugin();
+  ::grpc::string name() GRPC_OVERRIDE;
+  void InitServer(::grpc::ServerInitializer* si) GRPC_OVERRIDE;
+  void Finish(::grpc::ServerInitializer* si) GRPC_OVERRIDE;
+  void ChangeArguments(const ::grpc::string& name, void* value) GRPC_OVERRIDE;
+  bool has_async_methods() const GRPC_OVERRIDE;
+  bool has_synchronous_methods() const GRPC_OVERRIDE;
+
+ private:
+  std::shared_ptr<::grpc::ProtoServerReflection> reflection_service;
+};
+
+std::unique_ptr<::grpc::ServerBuilderPlugin> CreateProtoReflection() {
+  return std::unique_ptr<::grpc::ServerBuilderPlugin>(
+      new ProtoServerReflectionPlugin());
+}
+
+}  // namespace sBPProtoReflection
+}  // namespace grpc
+
+#endif  // GRPC_INTERNAL_CPP_PROTO_SERVER_REFLECTION_PLUGIN_H

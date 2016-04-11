@@ -3151,6 +3151,10 @@ LIBGRPC++_SRC = \
     src/cpp/common/completion_queue.cc \
     src/cpp/common/core_codegen.cc \
     src/cpp/common/rpc_method.cc \
+    src/cpp/plugin/proto_server_reflection_plugin.cc \
+    src/cpp/plugin/reflection/proto_server_reflection.cc \
+    src/cpp/plugin/reflection/reflection.grpc.pb.cc \
+    src/cpp/plugin/reflection/reflection.pb.cc \
     src/cpp/server/async_generic_service.cc \
     src/cpp/server/create_default_thread_pool.cc \
     src/cpp/server/dynamic_thread_pool.cc \
@@ -3184,6 +3188,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/rpc_service_method.h \
     include/grpc++/impl/serialization_traits.h \
     include/grpc++/impl/server_builder_option.h \
+    include/grpc++/impl/server_builder_plugin.h \
+    include/grpc++/impl/server_initializer.h \
     include/grpc++/impl/service_type.h \
     include/grpc++/impl/sync.h \
     include/grpc++/impl/sync_cxx11.h \
@@ -3453,6 +3459,10 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/common/completion_queue.cc \
     src/cpp/common/core_codegen.cc \
     src/cpp/common/rpc_method.cc \
+    src/cpp/plugin/proto_server_reflection_plugin.cc \
+    src/cpp/plugin/reflection/proto_server_reflection.cc \
+    src/cpp/plugin/reflection/reflection.grpc.pb.cc \
+    src/cpp/plugin/reflection/reflection.pb.cc \
     src/cpp/server/async_generic_service.cc \
     src/cpp/server/create_default_thread_pool.cc \
     src/cpp/server/dynamic_thread_pool.cc \
@@ -3486,6 +3496,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/rpc_service_method.h \
     include/grpc++/impl/serialization_traits.h \
     include/grpc++/impl/server_builder_option.h \
+    include/grpc++/impl/server_builder_plugin.h \
+    include/grpc++/impl/server_initializer.h \
     include/grpc++/impl/service_type.h \
     include/grpc++/impl/sync.h \
     include/grpc++/impl/sync_cxx11.h \
