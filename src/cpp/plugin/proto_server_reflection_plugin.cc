@@ -58,5 +58,19 @@ void ProtoServerReflectionPlugin::Finish(grpc::ServerInitializer* si) {
 void ProtoServerReflectionPlugin::ChangeArguments(const grpc::string& name,
                                                   void* value) {}
 
+bool ProtoServerReflectionPlugin::has_synchronous_methods() const {
+  if (reflection_service != nullptr) {
+    return reflection_service->has_synchronous_methods();
+  }
+  return false;
+}
+
+bool ProtoServerReflectionPlugin::has_async_methods() const {
+  if (reflection_service != nullptr) {
+    return reflection_service->has_async_methods();
+  }
+  return false;
+}
+
 }  // namespace sBPProtoReflection
 }  // namespace grpc

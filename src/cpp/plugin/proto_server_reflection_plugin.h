@@ -54,6 +54,8 @@ class ProtoServerReflectionPlugin : public ::grpc::ServerBuilderPlugin {
   void InitServer(::grpc::ServerInitializer* si) GRPC_OVERRIDE;
   void Finish(::grpc::ServerInitializer* si) GRPC_OVERRIDE;
   void ChangeArguments(const ::grpc::string& name, void* value) GRPC_OVERRIDE;
+  bool has_async_methods() const GRPC_OVERRIDE;
+  bool has_synchronous_methods() const GRPC_OVERRIDE;
 
  private:
   std::shared_ptr<::grpc::ProtoServerReflection> reflection_service;

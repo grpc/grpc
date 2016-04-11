@@ -44,11 +44,13 @@ class ServerInitializer;
 
 class ServerBuilderPlugin {
  public:
-  virtual ~ServerBuilderPlugin(){};
+  virtual ~ServerBuilderPlugin() {}
   virtual grpc::string name() = 0;
   virtual void InitServer(ServerInitializer* si) = 0;
   virtual void Finish(ServerInitializer* si) = 0;
   virtual void ChangeArguments(const grpc::string& name, void* value) = 0;
+  virtual bool has_synchronous_methods() const { return false; }
+  virtual bool has_async_methods() const { return false; }
 };
 
 }  // namespace grpc

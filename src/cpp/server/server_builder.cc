@@ -99,6 +99,14 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     (*option)->UpdateArguments(&args);
     (*option)->UpdatePlugins(&plugins_);
   }
+  if (thread_pool == nullptr) {
+    for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
+      if ((*plugin).second->has_synchronous_methods()) {
+        thread_pool.reset(CreateDefaultThreadPool());
+        break;
+      }
+    }
+  }
   if (max_message_size_ > 0) {
     args.SetInt(GRPC_ARG_MAX_MESSAGE_LENGTH, max_message_size_);
   }
