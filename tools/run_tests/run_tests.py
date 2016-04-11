@@ -500,7 +500,7 @@ class CSharpLanguage(object):
     specs = []
     for assembly in tests_by_assembly.iterkeys():
       assembly_file = 'src/csharp/%s/bin/%s/%s.exe' % (assembly, msbuild_config, assembly)
-      if self.config.build_config != 'gcov':
+      if self.config.build_config != 'gcov' or self.platform != 'windows':
         # normally, run each test as a separate process
         for test in tests_by_assembly[assembly]:
           cmdline = runtime_cmd + [assembly_file, '--test=%s' % test] + nunit_args
@@ -509,22 +509,23 @@ class CSharpLanguage(object):
                                             shortname='csharp.%s' % test,
                                             environ=_FORCE_ENVIRON_FOR_WRAPPERS))
       else:
-        # for test coverage, run all tests from the same assembly at once
-        # on Windows, things get more complicated as we need to run the code coverage tool
-        if self.platform == 'windows':
-          cmdline = ['src\\csharp\\packages\\OpenCover.4.6.519\\tools\\OpenCover.Console.exe',
-                     '-target:%s' % assembly_file,
-                     '-targetdir:src\\csharp',
-                     '-targetargs:%s' % ' '.join(nunit_args),
-                     '-filter:+[Grpc.Core]*',
-                     '-register:user',
-                     '-output:src\\csharp\\coverage_csharp_%s.xml' % assembly]
-        else:
-          cmdline = runtime_cmd + [assembly_file] + nunit_args
+        # For C# test coverage, run all tests from the same assembly at once
+        # using OpenCover.Console (only works on Windows).
+        cmdline = ['src\\csharp\\packages\\OpenCover.4.6.519\\tools\\OpenCover.Console.exe',
+                   '-target:%s' % assembly_file,
+                   '-targetdir:src\\csharp',
+                   '-targetargs:%s' % ' '.join(nunit_args),
+                   '-filter:+[Grpc.Core]*',
+                   '-register:user',
+                   '-output:src\\csharp\\coverage_csharp_%s.xml' % assembly]
 
+        # set really high cpu_cost to make sure instances of OpenCover.Console run exclusively
+        # to prevent problems with registering the profiler.
+        run_exclusive = 1000000
         specs.append(self.config.job_spec(cmdline,
                                           None,
                                           shortname='csharp.coverage.%s' % assembly,
+                                          cpu_cost=run_exclusive,
                                           environ=_FORCE_ENVIRON_FOR_WRAPPERS))
     return specs
 
