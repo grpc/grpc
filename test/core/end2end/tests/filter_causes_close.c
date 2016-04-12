@@ -102,7 +102,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-/* Request with a large amount of metadata.*/
+/* Simple request via a server filter that always closes the stream.*/
 static void test_request(grpc_end2end_test_config config) {
   grpc_call *c;
   grpc_call *s;
