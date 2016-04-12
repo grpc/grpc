@@ -93,6 +93,45 @@ class CallCredentials(object):
   def __init__(self, low_credentials):
     self._low_credentials = low_credentials
 
+class GoogleOAuth2MetadataPlugin(interfaces.GRPCAuthMetadataPlugin):
+  """ A metadata plugin supporting Google OAuth2 authentication for use with 
+  the oauth2client module.
+  """
+  
+  def __init__(self, credentials):
+    self.credentials = credentials
+
+  def __call__(self, context, callback):
+    metadata = []
+    error = None
+    try:
+      access_token = self.credentials.get_access_token().access_token
+      metadata = [('authorization', 'Bearer {}'.format(access_token))]
+    except Exception as e:
+      error = e
+
+    callback.__call__(metadata, error)
+
+class GoogleJWTAuthMetadataPlugin(interfaces.GRPCAuthMetadataPlugin):
+  """ A metadata plugin supporting self-signed JWT Google authentication for
+  use with the oauth2client module.
+  """
+
+  def __init__(self, credentials):
+    self.credentials = credentials
+
+  def __call__(self, context, callback):
+    metadata = []
+    error = None
+    try:
+      access_token = self.credentials.self_sign_jwt(context.service_url)
+      metadata = [('authorization', 'Bearer {}'.format(access_token))]
+    except Exception as e:
+      error = e
+
+    callback.__call__(metadata, error)
+
+
 
 def metadata_call_credentials(metadata_plugin, name=None):
   """Construct CallCredentials from an interfaces.GRPCAuthMetadataPlugin.
@@ -105,9 +144,34 @@ def metadata_call_credentials(metadata_plugin, name=None):
     A CallCredentials object for use in a GRPCCallOptions object.
   """
   if name is None:
-    name = metadata_plugin.__name__
+    name = metadata_plugin.__class__.__name__
   return CallCredentials(
       _low.call_credentials_metadata_plugin(metadata_plugin, name))
+
+def google_oauth_call_credentials(credentials):
+  """Construct CallCredentials from an oauth2client.client.OAuth2Credentials.
+
+  Args:
+    credentials:  A scoped oauth2client.client.OAuth2Credentials used to 
+      generate access tokens
+
+  Returns:
+    A CallCredentials object for header authentication
+  """
+  return metadata_call_credentials(GoogleOAuth2MetadataPlugin(credentials))
+
+def google_jwt_call_credentials(credentials):
+  """Construct CallCredentials from an oauth2client.service_account.ServiceAccountCredentials.
+  These credentials are self-signed and do not require a scope
+  
+  Args:
+    credentials: An oauth2client.service_account.ServiceAccountCredentials used to generate
+      jwt access tokens
+  Returns:
+    A CallCredentials object for header authentication
+  """
+  return metadata_call_credentials(GoogleJWTAuthMetadataPlugin(credentials))
+
 
 def composite_call_credentials(call_credentials, additional_call_credentials):
   """Compose two CallCredentials to make a new one.

@@ -29,10 +29,32 @@
 
 """Test-appropriate entry points into the gRPC Python Beta API."""
 
+import time
+from oauth2client import client as oauth2client_client
+from oauth2client import crypt
+
 from grpc._adapter import _intermediary_low
 from grpc.beta import implementations
 
+# TODO(kpayson) we should just add self_sign_jwt() to the 
+#ServiceAccountCredentials in the oauth2 library, this is a placeholder
+class JWTCredentials:
+  def __init__(self, creds):
+     self.creds = creds
 
+  def self_sign_jwt(self, service_url):
+    now = int(time.time())
+    payload = {
+      'aud': service_url,
+      'iat': now,
+      'exp': now + self.creds.MAX_TOKEN_LIFETIME_SECS,
+      'iss': self.creds._service_account_email,
+      'sub': self.creds._service_account_email
+    }
+
+    jwt = crypt.make_signed_jwt(self.creds._signer, payload, key_id=self.creds._private_key_id)
+    return jwt
+  
 def not_really_secure_channel(
     host, port, channel_credentials, server_host_override):
   """Creates an insecure Channel to a remote host.
