@@ -119,8 +119,8 @@ done:
   }
   grpc_server_destroy(server);
   grpc_completion_queue_destroy(cq);
-  counters = grpc_memory_counters_snapshot();
   grpc_shutdown();
+  counters = grpc_memory_counters_snapshot();
   grpc_memory_counters_destroy();
   GPR_ASSERT(counters.total_size_relative == 0);
   return 0;
