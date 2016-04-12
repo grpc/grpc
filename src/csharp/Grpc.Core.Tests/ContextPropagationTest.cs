@@ -105,7 +105,7 @@ namespace Grpc.Core.Tests
             var parentCall = Calls.AsyncClientStreamingCall(helper.CreateClientStreamingCall(new CallOptions(cancellationToken: cts.Token)));
             await readyToCancelTcs.Task;
             cts.Cancel();
-            Assert.Throws(typeof(RpcException), async () => await parentCall);
+            Assert.ThrowsAsync(typeof(RpcException), async () => await parentCall);
             Assert.AreEqual("CHILD_CALL_CANCELLED", await successTcs.Task);
         }
 

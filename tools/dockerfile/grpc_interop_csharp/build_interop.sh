@@ -40,6 +40,4 @@ cp -r /var/local/jenkins/service_account $HOME || true
 cd /var/local/git/grpc
 
 # build C# interop client & server
-make CONFIG=dbg grpc_csharp_ext
-(cd src/csharp && mono /var/local/NuGet.exe restore Grpc.sln)
-(cd src/csharp && xbuild Grpc.sln)
+tools/run_tests/run_tests.py -l csharp -c dbg --build_only
