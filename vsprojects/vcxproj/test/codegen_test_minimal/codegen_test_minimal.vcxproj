@@ -20,7 +20,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{07D92FF8-D0D1-CB1B-51D3-EBA0E5DEBDD7}</ProjectGuid>
+    <ProjectGuid>{87FCA32C-6ECF-5D95-7081-55F309EC6393}</ProjectGuid>
     <IgnoreWarnIntDirInTempDetected>true</IgnoreWarnIntDirInTempDetected>
     <IntDir>$(SolutionDir)IntDir\$(MSBuildProjectName)\</IntDir>
   </PropertyGroup>
@@ -62,14 +62,14 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
-    <TargetName>codegen_test</TargetName>
+    <TargetName>codegen_test_minimal</TargetName>
     <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
     <Configuration-grpc_dependencies_zlib>Debug</Configuration-grpc_dependencies_zlib>
     <Linkage-grpc_dependencies_openssl>static</Linkage-grpc_dependencies_openssl>
     <Configuration-grpc_dependencies_openssl>Debug</Configuration-grpc_dependencies_openssl>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
-    <TargetName>codegen_test</TargetName>
+    <TargetName>codegen_test_minimal</TargetName>
     <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
     <Configuration-grpc_dependencies_zlib>Release</Configuration-grpc_dependencies_zlib>
     <Linkage-grpc_dependencies_openssl>static</Linkage-grpc_dependencies_openssl>
@@ -262,7 +262,7 @@
     </ClCompile>
     <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\stats.grpc.pb.h">
     </ClInclude>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\codegen\codegen_test.cc">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\codegen\codegen_test_minimal.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\codegen\codegen_init.cc">
     </ClCompile>

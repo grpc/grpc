@@ -32,7 +32,6 @@
 #endregion
 
 using System;
-using System.Globalization;
 using System.IO;
 using System.Reflection;
 
@@ -46,6 +45,7 @@ namespace Grpc.Core.Internal
     internal sealed class NativeExtension
     {
         const string NativeLibrariesDir = "nativelibs";
+        const string DnxStyleNativeLibrariesDir = "../../build/native/bin/";
 
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<NativeExtension>();
         static readonly object staticLock = new object();
@@ -100,31 +100,48 @@ namespace Grpc.Core.Internal
             // TODO: allow customizing path to native extension (possibly through exposing a GrpcEnvironment property).
 
             var libraryFlavor = string.Format("{0}_{1}", GetPlatformString(), GetArchitectureString());
-            var fullPath = Path.Combine(Path.GetDirectoryName(GetAssemblyPath()),
-                NativeLibrariesDir, libraryFlavor, GetNativeLibraryFilename());
-            return new UnmanagedLibrary(fullPath);
+
+            var assemblyDirectory = Path.GetDirectoryName(GetAssemblyPath());
+
+            // With old-style VS projects, the native libraries get copied using a .targets rule to the build output folder
+            // alongside the compiled assembly.
+            var classicPath = Path.Combine(assemblyDirectory, NativeLibrariesDir, libraryFlavor, GetNativeLibraryFilename());
+
+            // DNX-style project.json projects will use Grpc.Core assembly directly in the location where it got restored
+            // by nuget. We locate the native libraries based on known structure of Grpc.Core nuget package.
+            var dnxStylePath = Path.Combine(assemblyDirectory, DnxStyleNativeLibrariesDir, libraryFlavor, GetNativeLibraryFilename());
+
+            return new UnmanagedLibrary(new string[] {classicPath, dnxStylePath});
         }
 
         private static string GetAssemblyPath()
         {
             var assembly = typeof(NativeExtension).GetTypeInfo().Assembly;
-
+#if DOTNET5_4
+            // Assembly.EscapedCodeBase does not exit under CoreCLR, but assemblies imported from a nuget package
+            // don't seem to be shadowed by DNX-based projects at all.
+            return assembly.Location;
+#else
             // If assembly is shadowed (e.g. in a webapp), EscapedCodeBase is pointing
             // to the original location of the assembly, and Location is pointing
             // to the shadow copy. We care about the original location because
             // the native dlls don't get shadowed.
+
             var escapedCodeBase = assembly.EscapedCodeBase;
             if (IsFileUri(escapedCodeBase))
             {
                 return new Uri(escapedCodeBase).LocalPath;
             }
             return assembly.Location;
+#endif
         }
 
+#if !DOTNET5_4
         private static bool IsFileUri(string uri)
         {
             return uri.ToLowerInvariant().StartsWith(Uri.UriSchemeFile);
         }
+#endif
 
         private static string GetPlatformString()
         {

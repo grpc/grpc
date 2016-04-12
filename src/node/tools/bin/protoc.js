@@ -1,6 +1,7 @@
+#!/usr/bin/env node
 /*
  *
- * Copyright 2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,19 +32,23 @@
  *
  */
 
-#include <gtest/gtest.h>
+/**
+ * This file is required because package.json cannot reference a file that
+ * is not distributed with the package, and we use node-pre-gyp to distribute
+ * the protoc binary
+ */
 
-namespace grpc {
-namespace {
+'use strict';
 
-class CodegenTest : public ::testing::Test {};
+var path = require('path');
+var execFile = require('child_process').execFile;
 
-TEST_F(CodegenTest, Build) {}
+var protoc = path.resolve(__dirname, 'protoc');
 
-}  // namespace
-}  // namespace grpc
-
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-}
+execFile(protoc, process.argv.slice(2), function(error, stdout, stderr) {
+  if (error) {
+    throw error;
+  }
+  console.log(stdout);
+  console.log(stderr);
+});
