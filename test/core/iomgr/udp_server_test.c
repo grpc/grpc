@@ -49,7 +49,7 @@
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", #x)
 
-static grpc_pollset g_pollset;
+static grpc_pollset *g_pollset;
 static gpr_mu *g_mu;
 static int g_number_of_reads = 0;
 static int g_number_of_bytes_read = 0;
@@ -60,12 +60,13 @@ static void on_read(grpc_exec_ctx *exec_ctx, grpc_fd *emfd,
   ssize_t byte_count;
 
   gpr_mu_lock(g_mu);
-  byte_count = recv(emfd->fd, read_buffer, sizeof(read_buffer), 0);
+  byte_count =
+      recv(grpc_fd_wrapped_fd(emfd), read_buffer, sizeof(read_buffer), 0);
 
   g_number_of_reads++;
   g_number_of_bytes_read += (int)byte_count;
 
-  grpc_pollset_kick(&g_pollset, NULL);
+  grpc_pollset_kick(g_pollset, NULL);
   gpr_mu_unlock(g_mu);
 }
 
@@ -142,7 +143,7 @@ static void test_receive(int number_of_clients) {
   GPR_ASSERT(getsockname(svrfd, (struct sockaddr *)&addr, &addr_len) == 0);
   GPR_ASSERT(addr_len <= sizeof(addr));
 
-  pollsets[0] = &g_pollset;
+  pollsets[0] = g_pollset;
   grpc_udp_server_start(&exec_ctx, s, pollsets, 1, NULL);
 
   gpr_mu_lock(g_mu);
@@ -159,7 +160,7 @@ static void test_receive(int number_of_clients) {
     while (g_number_of_reads == number_of_reads_before &&
            gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0) {
       grpc_pollset_worker *worker = NULL;
-      grpc_pollset_work(&exec_ctx, &g_pollset, &worker,
+      grpc_pollset_work(&exec_ctx, g_pollset, &worker,
                         gpr_now(GPR_CLOCK_MONOTONIC), deadline);
       gpr_mu_unlock(g_mu);
       grpc_exec_ctx_finish(&exec_ctx);
@@ -185,7 +186,8 @@ int main(int argc, char **argv) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init(argc, argv);
   grpc_init();
-  grpc_pollset_init(&g_pollset, &g_mu);
+  g_pollset = gpr_malloc(grpc_pollset_size());
+  grpc_pollset_init(g_pollset, &g_mu);
 
   test_no_op();
   test_no_op_with_start();
@@ -194,9 +196,10 @@ int main(int argc, char **argv) {
   test_receive(1);
   test_receive(10);
 
-  grpc_closure_init(&destroyed, destroy_pollset, &g_pollset);
-  grpc_pollset_shutdown(&exec_ctx, &g_pollset, &destroyed);
+  grpc_closure_init(&destroyed, destroy_pollset, g_pollset);
+  grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);
+  gpr_free(g_pollset);
   grpc_iomgr_shutdown();
   return 0;
 }
