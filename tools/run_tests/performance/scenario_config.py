@@ -33,6 +33,11 @@ SINGLE_MACHINE_CORES=8
 WARMUP_SECONDS=5
 BENCHMARK_SECONDS=30
 
+HISTOGRAM_PARAMS = {
+  'resolution': 0.01,
+  'max_possible': 60e9,
+}
+
 EMPTY_GENERIC_PAYLOAD = {
   'bytebuf_params': {
     'req_size': 0,
@@ -83,7 +88,7 @@ class CXXLanguage:
         secargs = None
 
       yield {
-          'name': 'generic_async_streaming_ping_pong_%s'
+          'name': 'cpp_generic_async_streaming_ping_pong_%s'
                   % secstr,
           'num_servers': 1,
           'num_clients': 1,
@@ -98,6 +103,7 @@ class CXXLanguage:
               'closed_loop': {}
             },
             'payload_config': EMPTY_GENERIC_PAYLOAD,
+            'histogram_params': HISTOGRAM_PARAMS,
           },
           'server_config': {
             'server_type': 'ASYNC_GENERIC_SERVER',
@@ -110,7 +116,7 @@ class CXXLanguage:
           'benchmark_seconds': BENCHMARK_SECONDS
       }
       yield {
-          'name': 'generic_async_streaming_qps_unconstrained_%s'
+          'name': 'cpp_generic_async_streaming_qps_unconstrained_%s'
                   % secstr,
           'num_servers': 1,
           'num_clients': 0,
@@ -125,6 +131,7 @@ class CXXLanguage:
               'closed_loop': {}
             },
             'payload_config': EMPTY_GENERIC_PAYLOAD,
+            'histogram_params': HISTOGRAM_PARAMS,
           },
           'server_config': {
             'server_type': 'ASYNC_GENERIC_SERVER',
@@ -137,7 +144,7 @@ class CXXLanguage:
           'benchmark_seconds': BENCHMARK_SECONDS
       }
       yield {
-          'name': 'generic_async_streaming_qps_one_server_core_%s'
+          'name': 'cpp_generic_async_streaming_qps_one_server_core_%s'
                   % secstr,
           'num_servers': 1,
           'num_clients': 0,
@@ -152,6 +159,7 @@ class CXXLanguage:
               'closed_loop': {}
             },
             'payload_config': EMPTY_GENERIC_PAYLOAD,
+            'histogram_params': HISTOGRAM_PARAMS,
           },
           'server_config': {
             'server_type': 'ASYNC_GENERIC_SERVER',
@@ -164,7 +172,7 @@ class CXXLanguage:
           'benchmark_seconds': BENCHMARK_SECONDS
       }
       yield {
-          'name': 'protobuf_async_qps_unconstrained_%s'
+          'name': 'cpp_generic_async_qps_unconstrained_%s'
                   % secstr,
           'num_servers': 1,
           'num_clients': 0,
@@ -179,6 +187,7 @@ class CXXLanguage:
               'closed_loop': {}
             },
             'payload_config': EMPTY_GENERIC_PAYLOAD,
+            'histogram_params': HISTOGRAM_PARAMS,
           },
           'server_config': {
             'server_type': 'ASYNC_GENERIC_SERVER',
@@ -191,7 +200,7 @@ class CXXLanguage:
           'benchmark_seconds': BENCHMARK_SECONDS
       }
       yield {
-          'name': 'single_channel_throughput_%s'
+          'name': 'cpp_single_channel_throughput_%s'
                   % secstr,
           'num_servers': 1,
           'num_clients': 1,
@@ -206,6 +215,7 @@ class CXXLanguage:
               'closed_loop': {}
             },
             'payload_config': BIG_GENERIC_PAYLOAD,
+            'histogram_params': HISTOGRAM_PARAMS,
           },
           'server_config': {
             'server_type': 'ASYNC_GENERIC_SERVER',
@@ -218,7 +228,7 @@ class CXXLanguage:
           'benchmark_seconds': BENCHMARK_SECONDS
       }
       yield {
-          'name': 'protobuf_async_ping_pong_%s'
+          'name': 'cpp_protobuf_async_ping_pong_%s'
                   % secstr,
           'num_servers': 1,
           'num_clients': 1,
@@ -233,13 +243,13 @@ class CXXLanguage:
               'closed_loop': {}
             },
             'payload_config': EMPTY_PROTO_PAYLOAD,
+            'histogram_params': HISTOGRAM_PARAMS,
           },
           'server_config': {
-            'server_type': 'ASYNC_GENERIC_SERVER',
+            'server_type': 'ASYNC_SERVER',
             'security_params': secargs,
             'core_limit': SINGLE_MACHINE_CORES/2,
             'async_server_threads': 1,
-            'payload_config': EMPTY_PROTO_PAYLOAD,
           },
           'warmup_seconds': WARMUP_SECONDS,
           'benchmark_seconds': BENCHMARK_SECONDS
@@ -262,8 +272,9 @@ class CSharpLanguage:
 
   def scenarios(self):
     # TODO(jtattermusch): add more scenarios
+    secargs = None
     yield {
-        'name': 'csharp_async_generic_streaming_ping_pong',
+        'name': 'csharp_generic_async_streaming_ping_pong',
         'num_servers': 1,
         'num_clients': 1,
         'client_config': {
@@ -277,11 +288,12 @@ class CSharpLanguage:
             'closed_loop': {}
           },
           'payload_config': EMPTY_GENERIC_PAYLOAD,
+          'histogram_params': HISTOGRAM_PARAMS,
         },
         'server_config': {
           'server_type': 'ASYNC_GENERIC_SERVER',
           'security_params': secargs,
-          'core_limit': SINGLE_MACHINE_CORES/2,
+          'core_limit': 0,
           'async_server_threads': 1,
           'payload_config': EMPTY_GENERIC_PAYLOAD,
         },
@@ -307,8 +319,9 @@ class NodeLanguage:
 
   def scenarios(self):
     # TODO(jtattermusch): add more scenarios
+    secargs = None
     yield {
-        'name': 'node_sync_unary_ping_pong_protobuf',
+        'name': 'node_protobuf_unary_ping_pong',
         'num_servers': 1,
         'num_clients': 1,
         'client_config': {
@@ -317,18 +330,18 @@ class NodeLanguage:
           'outstanding_rpcs_per_channel': 1,
           'client_channels': 1,
           'async_client_threads': 1,
-          'rpc_type': 'STREAMING',
+          'rpc_type': 'UNARY',
           'load_params': {
             'closed_loop': {}
           },
           'payload_config': EMPTY_PROTO_PAYLOAD,
+          'histogram_params': HISTOGRAM_PARAMS,
         },
         'server_config': {
-          'server_type': 'ASYNC_GENERIC_SERVER',
+          'server_type': 'ASYNC_SERVER',
           'security_params': secargs,
-          'core_limit': SINGLE_MACHINE_CORES/2,
+          'core_limit': 0,
           'async_server_threads': 1,
-          'payload_config': EMPTY_PROTO_PAYLOAD,
         },
         'warmup_seconds': WARMUP_SECONDS,
         'benchmark_seconds': BENCHMARK_SECONDS
