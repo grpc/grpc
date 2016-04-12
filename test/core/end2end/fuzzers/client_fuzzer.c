@@ -146,6 +146,7 @@ done:
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   gpr_free(details);
   grpc_channel_destroy(channel);
+  if (recv_message != NULL) grpc_byte_buffer_destroy(recv_message);
   grpc_shutdown();
   return 0;
 }
