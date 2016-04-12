@@ -516,17 +516,9 @@ static void fd_unref(grpc_fd *fd) { unref_by(fd, 2); }
 static void notify_on_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                              grpc_closure **st, grpc_closure *closure) {
   if (*st == CLOSURE_NOT_READY) {
-    /* TODO (sreek): Remove following log line */
-    gpr_log(GPR_INFO, "\t>> notify_on_locked: (fd:%d) CLOSURE_NOT_READY -> %p",
-            fd->fd, closure);
     /* not ready ==> switch to a waiting state by setting the closure */
     *st = closure;
   } else if (*st == CLOSURE_READY) {
-    /* TODO (sreek): Remove following log line */
-    gpr_log(GPR_INFO,
-            "\t>> notify_on_locked: (fd:%d) CLOSURE_READY -> CLOSURE_NOT_READY "
-            "(enqueue: %p)",
-            fd->fd, closure);
     /* already ready ==> queue the closure to run immediately */
     *st = CLOSURE_NOT_READY;
     grpc_exec_ctx_enqueue(exec_ctx, closure, !fd->shutdown, NULL);
@@ -545,26 +537,13 @@ static int set_ready_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                             grpc_closure **st) {
   if (*st == CLOSURE_READY) {
     /* duplicate ready ==> ignore */
-    /* TODO (sreek): Remove following log line */
-    gpr_log(GPR_INFO,
-            "\t>> set_ready_locked: (fd:%d) CLOSURE_READY -> CLOSURE_READY (no "
-            "change)",
-            fd->fd);
     return 0;
   } else if (*st == CLOSURE_NOT_READY) {
     /* not ready, and not waiting ==> flag ready */
-    /* TODO (sreek): Remove following log line */
-    gpr_log(GPR_INFO,
-            "\t>> set_ready_locked: (fd:%d) CLOSURE_NOT_READY -> CLOSURE_READY",
-            fd->fd);
     *st = CLOSURE_READY;
     return 0;
   } else {
     /* waiting ==> queue closure */
-    /* TODO (sreek): Remove following log line */
-    gpr_log(GPR_INFO,
-            "\t>> set_ready_locked: (fd:%d) Enqueue %p -> CLOSURE_NOT_READY",
-            fd->fd, *st);
     grpc_exec_ctx_enqueue(exec_ctx, *st, !fd->shutdown, NULL);
     *st = CLOSURE_NOT_READY;
     return 1;
@@ -573,10 +552,6 @@ static int set_ready_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 
 static void set_read_notifier_pollset_locked(
     grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_pollset *read_notifier_pollset) {
-  /* TODO(sreek): Remove the following log line */
-  gpr_log(GPR_INFO, "\t>> Set read notifier (fd:%d): %p --> %p", fd->fd,
-          fd->read_notifier_pollset, read_notifier_pollset);
-
   fd->read_notifier_pollset = read_notifier_pollset;
 }
 
@@ -701,13 +676,6 @@ static void fd_end_poll(grpc_exec_ctx *exec_ctx, grpc_fd_watcher *watcher,
     watcher->prev->next = watcher->next;
   }
   if (got_read) {
-    /*TODO(sreek): Delete this log line */
-    gpr_log(GPR_INFO,
-            "\t>> fd_end_poll(): GOT READ Calling set_ready_locked. fd: %d,  "
-            "fd->read_closure: %p, "
-            "notifier_pollset: %p",
-            fd->fd, fd->read_closure, read_notifier_pollset);
-
     if (set_ready_locked(exec_ctx, fd, &fd->read_closure)) {
       kick = 1;
     }
@@ -717,11 +685,6 @@ static void fd_end_poll(grpc_exec_ctx *exec_ctx, grpc_fd_watcher *watcher,
     }
   }
   if (got_write) {
-    /*TODO(sreek): Delete this log line */
-    gpr_log(GPR_INFO,
-            "\t>> fd_end_poll(): GOT WRITE set_ready_locked. fd: %d, "
-            "fd->write_closure: %p",
-            fd->fd, fd->write_closure);
     if (set_ready_locked(exec_ctx, fd, &fd->write_closure)) {
       kick = 1;
     }
@@ -1286,12 +1249,6 @@ static void basic_pollset_maybe_work_and_unlock(grpc_exec_ctx *exec_ctx,
       grpc_wakeup_fd_consume_wakeup(&worker->wakeup_fd->fd);
     }
     if (nfds > 2) {
-      /* TODO(sreek): delete the following comment line */
-      gpr_log(
-          GPR_INFO,
-          "\t>> basic_pollset_maybe_work_and_unlock(): fd->fd: %d, pollset: %p "
-          "is readable (calling fd_end_poll()) -------------------------------",
-          pfd[2].fd, pollset);
       fd_end_poll(exec_ctx, &fd_watcher, pfd[2].revents & POLLIN_CHECK,
                   pfd[2].revents & POLLOUT_CHECK, pollset);
     } else if (fd) {
@@ -1449,11 +1406,6 @@ static void multipoll_with_poll_pollset_maybe_work_and_unlock(
         fd_end_poll(exec_ctx, &watchers[i], 0, 0, NULL);
         continue;
       }
-      /*TODO(sree) - Delete this log line*/
-      gpr_log(GPR_INFO,
-              "multipoll_with_poll_pollset(). fd: %d became redable. Pollset: "
-              "%p (calling fd_end_poll())*************",
-              pfds[i].fd, pollset);
       fd_end_poll(exec_ctx, &watchers[i], pfds[i].revents & POLLIN_CHECK,
                   pfds[i].revents & POLLOUT_CHECK, pollset);
     }
@@ -1761,20 +1713,9 @@ static void multipoll_with_epoll_pollset_maybe_work_and_unlock(
               grpc_wakeup_fd_consume_wakeup(&grpc_global_wakeup_fd);
             } else {
               if (read_ev || cancel) {
-                /* TODO(sreek): Delete this once the issue #5470 is resolved */
-                gpr_log(
-                    GPR_INFO,
-                    "\t>> multipoll_with_epoll_pollset: Calling "
-                    "fd_become_readable(fd->fd: %d, pollset: %p) ++++++++++++",
-                    fd->fd, pollset);
                 fd_become_readable(exec_ctx, fd, pollset);
               }
               if (write_ev || cancel) {
-                /* TODO(sreek): Delete the following log line */
-                gpr_log(GPR_INFO,
-                        "\t>> multipoll_with_epoll_pollset: Calling "
-                        "fd_become_writable(fd: %d)",
-                        fd->fd);
                 fd_become_writable(exec_ctx, fd);
               }
             }
