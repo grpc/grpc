@@ -63,20 +63,14 @@
       "src/node/health_check",
       "src/proto",
       "etc",
-      % for module in node_modules:
-      % for file in module.headers + module.src + module.js:
-      "${file}",
-      % endfor
-      % for dep in module.transitive_deps:
-      % for lib in libs:
-      % if lib.name == dep:
-      % for file in lib.get('public_headers', []) + lib.headers + lib.src:
-      "${file}",
-      % endfor
-      % endif
-      % endfor
-      % endfor
-      % endfor
+      "src/node/index.js",
+      "src/node/src",
+      "src/node/ext",
+      "include/grpc",
+      "src/core",
+      "third_party/nanopb",
+      "third_party/zlib",
+      "third_party/boringssl",
       "binding.gyp"
     ],
     "main": "src/node/index.js",
