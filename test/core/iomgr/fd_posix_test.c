@@ -518,6 +518,103 @@ static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, bool success) {
   grpc_pollset_destroy(p);
 }
 
+typedef struct read_notifier_test_fd_context {
+  grpc_fd *fd;
+  bool is_cb_called;
+} read_notifier_test_fd_context;
+
+static void read_notifier_test_callback(
+    grpc_exec_ctx *exec_ctx, void *arg /* (read_notifier_test_fd_context *) */,
+    bool success) {
+  read_notifier_test_fd_context *fd_context = arg;
+  grpc_fd *fd = fd_context->fd;
+
+  /* Verify that the read notifier pollset is set */
+  GPR_ASSERT(grpc_fd_get_read_notifier_pollset(exec_ctx, fd) != NULL);
+  fd_context->is_cb_called = true;
+}
+
+/* sv MUST to be an array of size 2 */
+static void get_socket_pair(int sv[]) {
+  int flags = 0;
+  GPR_ASSERT(socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == 0);
+  flags = fcntl(sv[0], F_GETFL, 0);
+  GPR_ASSERT(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK) == 0);
+  flags = fcntl(sv[1], F_GETFL, 0);
+  GPR_ASSERT(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK) == 0);
+}
+
+static grpc_pollset *create_grpc_pollset(gpr_mu **mu) {
+  grpc_pollset *pollset = gpr_malloc(grpc_pollset_size());
+  grpc_pollset_init(pollset, mu);
+  return pollset;
+}
+
+static void free_grpc_pollset(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
+  grpc_closure destroyed;
+  grpc_closure_init(&destroyed, destroy_pollset, pollset);
+  grpc_pollset_shutdown(exec_ctx, pollset, &destroyed);
+  grpc_exec_ctx_finish(exec_ctx);
+  gpr_free(pollset);
+}
+
+static void test_grpc_fd_read_notifier_pollset(void) {
+  grpc_fd *em_fd[2];
+  read_notifier_test_fd_context fd_context;
+  int sv[2][2];
+  char data;
+  ssize_t result;
+  int i;
+  grpc_closure on_read_closure;
+  gpr_mu *mu;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+
+  grpc_pollset *pollset = create_grpc_pollset(&mu);
+
+  for (i = 0; i < 2; i++) {
+    get_socket_pair(sv[i]);
+
+    em_fd[i] = grpc_fd_create(sv[i][0], "test_grpc_fd_1_read_notifier_pollset");
+
+    grpc_pollset_add_fd(&exec_ctx, pollset, em_fd[i]);
+
+    on_read_closure.cb = read_notifier_test_callback;
+    fd_context.fd = em_fd[i];
+    fd_context.is_cb_called = false;
+    on_read_closure.cb_arg = &fd_context;
+    grpc_fd_notify_on_read(&exec_ctx, em_fd[i], &on_read_closure);
+
+    data = 0;
+    result = write(sv[i][1], &data, sizeof(data));
+    GPR_ASSERT(result == 1);
+
+    gpr_mu_lock(mu);
+    while (!fd_context.is_cb_called) {
+      grpc_pollset_worker *worker = NULL;
+      grpc_pollset_work(&exec_ctx, pollset, &worker,
+                        gpr_now(GPR_CLOCK_MONOTONIC),
+                        gpr_inf_future(GPR_CLOCK_MONOTONIC));
+      gpr_mu_unlock(mu);
+      grpc_exec_ctx_finish(&exec_ctx);
+      gpr_mu_lock(mu);
+    }
+    gpr_mu_unlock(mu);
+
+    /* Drain the socket (Not really needed for the test) */
+    result = read(sv[i][0], &data, 1);
+    GPR_ASSERT(result == 1);
+  }
+
+
+  for (i = 0; i < 2; i++) {
+    grpc_fd_orphan(&exec_ctx, em_fd[i], NULL, NULL, "");
+    close(sv[i][1]);
+  }
+
+  free_grpc_pollset(&exec_ctx, pollset);
+  grpc_exec_ctx_finish(&exec_ctx);
+}
+
 int main(int argc, char **argv) {
   grpc_closure destroyed;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -527,6 +624,7 @@ int main(int argc, char **argv) {
   grpc_pollset_init(g_pollset, &g_mu);
   test_grpc_fd();
   test_grpc_fd_change();
+  test_grpc_fd_read_notifier_pollset();
   grpc_closure_init(&destroyed, destroy_pollset, g_pollset);
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);
