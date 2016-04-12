@@ -82,7 +82,7 @@ static void QpsDriver() {
 
   // Parse into an array of scenarios
   Scenarios scenarios;
-  ParseJson(json.c_str(), "grpc.testing.Scenarios", scenarios);
+  ParseJson(json.c_str(), "grpc.testing.Scenarios", &scenarios);
 
   for (int i = 0; i < scenarios.scenarios_size(); i++) {
     const Scenario &scenario = scenarios.scenarios(i);

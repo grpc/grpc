@@ -31,19 +31,37 @@
  *
  */
 
-#ifndef TEST_QPS_PARSE_JSON_H
-#define TEST_QPS_PARSE_JSON_H
-
-#include <grpc++/support/config.h>
 #include <grpc++/support/config_protobuf.h>
+
+#include "test/cpp/qps/parse_json.h"
+
+#include <string>
+
+#include <google/protobuf/util/json_util.h>
+#include <google/protobuf/util/type_resolver_util.h>
+#include <grpc/support/log.h>
 
 namespace grpc {
 namespace testing {
 
 void ParseJson(const grpc::string& json, const grpc::string& type,
-               GRPC_CUSTOM_MESSAGE* msg);
+               GRPC_CUSTOM_MESSAGE* msg) {
+  std::unique_ptr<google::protobuf::util::TypeResolver> type_resolver(
+      google::protobuf::util::NewTypeResolverForDescriptorPool(
+          "type.googleapis.com",
+          google::protobuf::DescriptorPool::generated_pool()));
+  grpc::string binary;
+  auto status = JsonToBinaryString(
+      type_resolver.get(), "type.googleapis.com/" + type, json, &binary);
+  if (!status.ok()) {
+    grpc::string errmsg(status.error_message());
+    gpr_log(GPR_ERROR, "Failed to convert json to binary: errcode=%d msg=%s",
+            status.error_code(), errmsg.c_str());
+    gpr_log(GPR_ERROR, "JSON: ", json.c_str());
+    abort();
+  }
+  GPR_ASSERT(msg->ParseFromString(binary));
+}
 
 }  // testing
 }  // grpc
-
-#endif  // TEST_QPS_PARSE_JSON_H
