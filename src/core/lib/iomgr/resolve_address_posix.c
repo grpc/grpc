@@ -37,6 +37,7 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
+#include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
 
@@ -173,6 +174,38 @@ void grpc_resolve_address(const char *name, const char *default_port,
   r->cb = cb;
   r->arg = arg;
   grpc_executor_enqueue(&r->request_closure, 1);
+}
+
+char *grpc_resolved_address_to_string(grpc_resolved_address *address) {
+  const struct sockaddr *sa = (struct sockaddr *)address->addr;
+  const bool is_ipv6 = sa->sa_family == AF_INET6;
+  const socklen_t addr_str_len = is_ipv6 ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN;
+  char *addr_str = gpr_malloc(addr_str_len);
+  char port_str[6];
+  int err = getnameinfo(sa, (socklen_t)address->len, addr_str, addr_str_len,
+                        port_str, 6, NI_NUMERICHOST | NI_NUMERICSERV);
+  if (err != 0) {
+    gpr_log(GPR_ERROR, "Failed to convert address to string: %s",
+            gai_strerror(err));
+    return NULL;
+  }
+
+  char *hostport;
+  size_t hostport_len;
+  char *hostport_format;
+  if (is_ipv6) {
+    hostport_len = addr_str_len + 1 /* : */ + 2 /* square brackets */ +
+                   6 /* port */ + 1 /* terminator */;
+    hostport_format = "[%s]:%s";
+  } else {
+    hostport_len = addr_str_len + 1 /* : */ + 6 /* port */ + 1 /* terminator */;
+    hostport_format = "%s:%s";
+  }
+  hostport = gpr_malloc(hostport_len);
+  snprintf(hostport, hostport_len, hostport_format, addr_str, port_str);
+  gpr_free(addr_str);
+
+  return hostport;
 }
 
 #endif

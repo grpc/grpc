@@ -31,11 +31,16 @@
  *
  */
 
-#include "src/core/lib/iomgr/resolve_address.h"
+#include <string.h>
+
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
+#include <grpc/support/useful.h>
+
 #include "src/core/lib/iomgr/executor.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 #include "test/core/util/test_config.h"
 
 static gpr_timespec test_deadline(void) {
@@ -123,6 +128,29 @@ static void test_unparseable_hostports(void) {
   }
 }
 
+static void test_to_string() {
+  {
+    const char *const kCases[] = {
+        "2001:db8::1", "2001:db8::1.2.3.4", "[2001:db8::1]:31415",
+        "192.168.1.2:1234",
+    };
+    const char *const kExpected[] = {"[2001:db8::1]:80",
+                                     "[2001:db8::102:304]:80",
+                                     "[2001:db8::1]:31415", "192.168.1.2:1234"};
+
+    for (size_t i = 0; i < GPR_ARRAY_SIZE(kCases); i++) {
+      grpc_resolved_addresses *resolved =
+          grpc_blocking_resolve_address(kCases[i], "80");
+      GPR_ASSERT(resolved->naddrs == 1);
+      char *addr_str = grpc_resolved_address_to_string(&resolved->addrs[0]);
+      GPR_ASSERT(addr_str != NULL);
+      GPR_ASSERT(strcmp(addr_str, kExpected[i]) == 0);
+      gpr_free(addr_str);
+      grpc_resolved_addresses_destroy(resolved);
+    }
+  }
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_executor_init();
@@ -134,6 +162,7 @@ int main(int argc, char **argv) {
   test_ipv6_without_port();
   test_invalid_ip_addresses();
   test_unparseable_hostports();
+  test_to_string();
   grpc_iomgr_shutdown();
   grpc_executor_shutdown();
   return 0;
