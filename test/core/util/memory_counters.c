@@ -43,8 +43,13 @@ static gpr_mu g_memory_mutex;
 static struct grpc_memory_counters g_memory_counters;
 static gpr_allocation_functions g_old_allocs;
 
+static void *guard_malloc(size_t size);
+static void *guard_realloc(void *vptr, size_t size);
+static void guard_free(void *vptr);
+
 static void *guard_malloc(size_t size) {
   size_t *ptr;
+  if (!size) return NULL;
   gpr_mu_lock(&g_memory_mutex);
   g_memory_counters.total_size_absolute += size;
   g_memory_counters.total_size_relative += size;
@@ -58,6 +63,13 @@ static void *guard_malloc(size_t size) {
 
 static void *guard_realloc(void *vptr, size_t size) {
   size_t *ptr = vptr;
+  if (vptr == NULL) {
+    return guard_malloc(size);
+  }
+  if (size == 0) {
+    guard_free(vptr);
+    return NULL;
+  }
   --ptr;
   gpr_mu_lock(&g_memory_mutex);
   g_memory_counters.total_size_absolute += size;
@@ -72,6 +84,7 @@ static void *guard_realloc(void *vptr, size_t size) {
 
 static void guard_free(void *vptr) {
   size_t *ptr = vptr;
+  if (!vptr) return;
   --ptr;
   gpr_mu_lock(&g_memory_mutex);
   g_memory_counters.total_size_relative -= *ptr;
