@@ -33,6 +33,8 @@
 
 using System;
 using System.Reflection;
+using Grpc.Core;
+using Grpc.Core.Logging;
 using NUnit.Common;
 using NUnitLite;
 
@@ -45,6 +47,8 @@ namespace Grpc.IntegrationTesting
     {
         public static int Main(string[] args)
         {
+            // Make logger immune to NUnit capturing stdout and stderr to workaround https://github.com/nunit/nunit/issues/1406.
+            GrpcEnvironment.SetLogger(new TextWriterLogger(Console.Error));
 #if DOTNET5_4
             return new AutoRun(typeof(NUnitMain).GetTypeInfo().Assembly).Execute(args, new ExtendedTextWrapper(Console.Out), Console.In);
 #else
