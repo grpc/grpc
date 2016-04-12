@@ -65,8 +65,16 @@ void grpc_resolve_address(const char *addr, const char *default_port,
 void grpc_resolved_addresses_destroy(grpc_resolved_addresses *addresses);
 
 /* Resolve addr in a blocking fashion. Returns NULL on failure. On success,
-   result must be freed with grpc_resolved_addresses_destroy. */
+   result must be freed with grpc_resolved_addresses_destroy. Use default_port
+   if a port isn't designated in addr, otherwise use the port in addr. */
 extern grpc_resolved_addresses *(*grpc_blocking_resolve_address)(
     const char *name, const char *default_port);
+
+/* Return the textual representation of \a address as a "host:port" string.
+ *
+ * The caller is responsible for freeing the returned string.
+ *
+ * IPv6 addresses will be returned between square brackets, ie, as [...]:port */
+char *grpc_resolved_address_to_string(grpc_resolved_address *address);
 
 #endif /* GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H */
