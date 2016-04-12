@@ -554,64 +554,95 @@ static void free_grpc_pollset(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
   grpc_closure destroyed;
   grpc_closure_init(&destroyed, destroy_pollset, pollset);
   grpc_pollset_shutdown(exec_ctx, pollset, &destroyed);
-  grpc_exec_ctx_finish(exec_ctx);
+  grpc_exec_ctx_flush(exec_ctx);
   gpr_free(pollset);
 }
 
-static void test_grpc_fd_read_notifier_pollset(void) {
+/* This tests that the read_notifier_pollset field of a grpc_fd is properly
+   set when the grpc_fd becomes readable
+   - This tests both basic and multi pollsets
+   - The parameter register_cb_after_read_event controls whether the on-read
+     callback registration (i.e the one done by grpc_fd_notify_on_read()) is
+     done either before or after the fd becomes readable
+ */
+static void test_grpc_fd_read_notifier_pollset(
+    bool register_cb_after_read_event) {
   grpc_fd *em_fd[2];
-  read_notifier_test_fd_context fd_context;
   int sv[2][2];
+  gpr_mu *mu[2];
+  grpc_pollset *pollset[2];
   char data;
   ssize_t result;
   int i;
+  grpc_pollset_worker *worker;
+  read_notifier_test_fd_context fd_context;
   grpc_closure on_read_closure;
-  gpr_mu *mu;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
-  grpc_pollset *pollset = create_grpc_pollset(&mu);
+  for (i = 0; i < 2; i++) {
+    pollset[i] = create_grpc_pollset(&mu[i]);
+    get_socket_pair(sv[i]); /* sv[i][0] & sv[i][1] will have the socket pair */
+    em_fd[i] = grpc_fd_create(sv[i][0], "test_grpc_fd_read_notifier_pollset");
+    grpc_pollset_add_fd(&exec_ctx, pollset[i], em_fd[i]);
+  }
+
+  /* At this point pollset[0] has em_fd[0] and pollset[1] has em_fd[1] and both
+     are basic pollsets. Make pollset[1] a multi-pollset by adding em_fd[0] to
+     it */
+  grpc_pollset_add_fd(&exec_ctx, pollset[1], em_fd[0]);
+  grpc_exec_ctx_flush(&exec_ctx);
+
+  /* The following tests that the read_notifier_pollset is correctly set on the
+     grpc_fd structure in both basic pollset and multi pollset cases.
+      pollset[0] is a basic pollset containing just em_fd[0]
+      pollset[1] is a multi pollset containing em_fd[0] and em_fd[1] */
 
   for (i = 0; i < 2; i++) {
-    get_socket_pair(sv[i]);
-
-    em_fd[i] = grpc_fd_create(sv[i][0], "test_grpc_fd_1_read_notifier_pollset");
-
-    grpc_pollset_add_fd(&exec_ctx, pollset, em_fd[i]);
-
     on_read_closure.cb = read_notifier_test_callback;
     fd_context.fd = em_fd[i];
     fd_context.is_cb_called = false;
     on_read_closure.cb_arg = &fd_context;
-    grpc_fd_notify_on_read(&exec_ctx, em_fd[i], &on_read_closure);
+
+    if (!register_cb_after_read_event) {
+      /* Registering the callback BEFORE the fd is readable */
+      grpc_fd_notify_on_read(&exec_ctx, em_fd[i], &on_read_closure);
+    }
 
     data = 0;
     result = write(sv[i][1], &data, sizeof(data));
     GPR_ASSERT(result == 1);
 
-    gpr_mu_lock(mu);
-    while (!fd_context.is_cb_called) {
-      grpc_pollset_worker *worker = NULL;
-      grpc_pollset_work(&exec_ctx, pollset, &worker,
-                        gpr_now(GPR_CLOCK_MONOTONIC),
-                        gpr_inf_future(GPR_CLOCK_MONOTONIC));
-      gpr_mu_unlock(mu);
-      grpc_exec_ctx_finish(&exec_ctx);
-      gpr_mu_lock(mu);
+    /* grpc_pollset_work requires the caller to hold the pollset mutex */
+    gpr_mu_lock(mu[i]);
+    worker = NULL;
+    grpc_pollset_work(&exec_ctx, pollset[i], &worker,
+                      gpr_now(GPR_CLOCK_MONOTONIC),
+                      gpr_inf_future(GPR_CLOCK_MONOTONIC));
+    gpr_mu_unlock(mu[i]);
+    grpc_exec_ctx_flush(&exec_ctx);
+
+    if (register_cb_after_read_event) {
+      /* Registering the callback after the fd is readable. In this case, the
+         callback should be executed right away. */
+      grpc_fd_notify_on_read(&exec_ctx, em_fd[i], &on_read_closure);
+      grpc_exec_ctx_flush(&exec_ctx);
     }
-    gpr_mu_unlock(mu);
+
+    /* The callback should have been called by now */
+    GPR_ASSERT(fd_context.is_cb_called);
 
     /* Drain the socket (Not really needed for the test) */
     result = read(sv[i][0], &data, 1);
     GPR_ASSERT(result == 1);
   }
 
-
+  /* Clean up */
   for (i = 0; i < 2; i++) {
     grpc_fd_orphan(&exec_ctx, em_fd[i], NULL, NULL, "");
     close(sv[i][1]);
+    free_grpc_pollset(&exec_ctx, pollset[i]);
   }
 
-  free_grpc_pollset(&exec_ctx, pollset);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -624,7 +655,8 @@ int main(int argc, char **argv) {
   grpc_pollset_init(g_pollset, &g_mu);
   test_grpc_fd();
   test_grpc_fd_change();
-  test_grpc_fd_read_notifier_pollset();
+  test_grpc_fd_read_notifier_pollset(false);
+  test_grpc_fd_read_notifier_pollset(true);
   grpc_closure_init(&destroyed, destroy_pollset, g_pollset);
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);
