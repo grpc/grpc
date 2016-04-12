@@ -74,7 +74,8 @@ grpc_channel_args *grpc_channel_args_copy_and_add(const grpc_channel_args *src,
     return dst;
   }
   dst->num_args = src_num_args + num_to_add;
-  dst->args = gpr_malloc(sizeof(grpc_arg) * dst->num_args);
+  dst->args =
+      dst->num_args ? gpr_malloc(sizeof(grpc_arg) * dst->num_args) : NULL;
   for (i = 0; i < src_num_args; i++) {
     dst->args[i] = copy_arg(&src->args[i]);
   }
