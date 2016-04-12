@@ -251,9 +251,7 @@ static void channel_broadcaster_init(grpc_server *s, channel_broadcaster *cb) {
     count++;
   }
   cb->num_channels = count;
-  cb->channels = cb->num_channels
-                     ? gpr_malloc(sizeof(*cb->channels) * cb->num_channels)
-                     : NULL;
+  cb->channels = gpr_malloc(sizeof(*cb->channels) * cb->num_channels);
   count = 0;
   for (c = s->root_channel_data.next; c != &s->root_channel_data; c = c->next) {
     cb->channels[count++] = c->channel;
