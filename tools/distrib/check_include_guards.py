@@ -95,6 +95,8 @@ class GuardValidator(object):
     fcontents = load(fpath)
 
     match = self.ifndef_re.search(fcontents)
+    if not match:
+      print 'something drastically wrong with: %s' % fpath
     if match.lastindex is None:
       # No ifndef. Request manual addition with hints
       self.fail(fpath, match.re, match.string, '', '', False)

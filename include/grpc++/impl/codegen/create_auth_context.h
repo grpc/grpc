@@ -30,6 +30,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+
+#ifndef GRPCXX_IMPL_CODEGEN_CREATE_AUTH_CONTEXT_H
+#define GRPCXX_IMPL_CODEGEN_CREATE_AUTH_CONTEXT_H
+
 #include <memory>
 
 #include <grpc++/security/auth_context.h>
@@ -40,3 +44,5 @@ namespace grpc {
 std::shared_ptr<const AuthContext> CreateAuthContext(grpc_call* call);
 
 }  // namespace grpc
+
+#endif  // GRPCXX_IMPL_CODEGEN_CREATE_AUTH_CONTEXT_H
