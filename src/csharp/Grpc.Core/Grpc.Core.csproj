@@ -148,7 +148,7 @@
   <ItemGroup />
   <ItemGroup>
     <EmbeddedResource Include="..\..\..\etc\roots.pem">
-      <Link>Resources\roots.pem</Link>
+      <Link>roots.pem</Link>
     </EmbeddedResource>
   </ItemGroup>
 </Project>

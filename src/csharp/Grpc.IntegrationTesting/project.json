@@ -1,0 +1,21 @@
+{
+  "compile": "**/*.cs",
+  "compilationOptions": {
+    "emitEntryPoint": true
+  },
+
+  "content": "../nativelibs/**",
+
+  "dependencies": {
+    "Grpc.Auth": "0.0.1",
+    "Grpc.Core": "0.0.1",
+    "Google.Protobuf": "3.0.0-beta2",
+    "CommandLineParser": "1.9.71",
+    "Moq": "4.2.1510.2205",
+    "NUnit": "3.2.0",
+    "NUnitLite": "3.2.0-*"
+  },
+  "frameworks": {
+    "net45": { }
+  }
+}

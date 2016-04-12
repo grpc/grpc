@@ -1,0 +1,24 @@
+{
+  "compile": "**/*.cs",
+
+  "content": "../nativelibs/**",
+
+  "dependencies": {
+    "Grpc.Core": "0.0.1",
+    "Google.Protobuf": "3.0.0-beta2"
+  },
+  "frameworks": {
+    "net45": { },
+    "dotnet54": {
+      "imports": [
+        "portable-net45"
+      ],
+      "dependencies": {
+        "Microsoft.NETCore.App": {
+          "type": "platform",
+          "version": "1.0.0-rc2-23931"
+        }
+      }
+    }
+  }
+}
