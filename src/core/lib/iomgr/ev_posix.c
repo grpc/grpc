@@ -83,7 +83,8 @@ void grpc_fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
   g_event_engine->fd_notify_on_write(exec_ctx, fd, closure);
 }
 
-grpc_pollset *grpc_fd_get_read_notifier_pollset(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
+grpc_pollset *grpc_fd_get_read_notifier_pollset(grpc_exec_ctx *exec_ctx,
+                                                grpc_fd *fd) {
   return g_event_engine->fd_get_read_notifier_pollset(exec_ctx, fd);
 }
 
