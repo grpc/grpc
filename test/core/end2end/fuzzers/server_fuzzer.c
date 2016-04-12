@@ -51,8 +51,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_test_only_set_metadata_hash_seed(0);
   struct grpc_memory_counters counters;
   if (squelch) gpr_set_log_function(dont_log);
-  grpc_init();
   grpc_memory_counters_init();
+  grpc_init();
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   grpc_endpoint *mock_endpoint = grpc_mock_endpoint_create(discard_write);
@@ -120,8 +120,8 @@ done:
   grpc_server_destroy(server);
   grpc_completion_queue_destroy(cq);
   counters = grpc_memory_counters_snapshot();
-  grpc_memory_counters_destroy();
   grpc_shutdown();
+  grpc_memory_counters_destroy();
   GPR_ASSERT(counters.total_size_relative == 0);
   return 0;
 }
