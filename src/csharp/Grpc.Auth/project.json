@@ -1,0 +1,35 @@
+{
+  "version": "0.14.0-anexperiment",
+  
+  "title": "gRPC C# Auth",
+  "summary": "Auth library for C# implementation of gRPC - an RPC library and framework",
+  "description": "Auth library for C# implementation of gRPC - an RPC library and framework. See project site for more info.",
+  "authors": ["Google Inc."],
+  "owners": ["grpc-packages"],
+  "licenseUrl": "https://github.com/grpc/grpc/blob/master/LICENSE",
+  "projectUrl": "https://github.com/grpc/grpc",
+  "requireLicenseAcceptance": false,
+  "copyright": "Copyright 2015, Google Inc.",
+  "tags": ["gRPC RPC Protocol HTTP/2 Auth OAuth2"],
+  
+  "compile": "**/*.cs",
+  "resourceFiles": ["../../../etc/roots.pem"],
+
+  "dependencies": {
+    "Grpc.Core": "0.14.0-anexperiment",
+    "Google.Apis.Auth": "1.11.1"
+  },
+  "frameworks": {
+    "net45": { },
+    "dotnet54": {
+      "imports": [
+        "net45"
+      ],
+      "dependencies": {
+        "Microsoft.CSharp": "4.0.1-beta-23516",
+        "Microsoft.NETCore.Portable.Compatibility": "1.0.1-beta-23516",
+        "System.Threading.Tasks":  "4.0.11-beta-23516"
+      }
+    }
+  }
+}

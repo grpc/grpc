@@ -1,0 +1,15 @@
+{
+  "compile": "**/*.cs",
+  "compilationOptions": {
+    "emitEntryPoint": true
+  },
+
+  "content": "../nativelibs/**",
+
+  "dependencies": {
+    "Grpc.IntegrationTesting": "1.0.0"
+  },
+  "frameworks": {
+    "net45": { }
+  }
+}

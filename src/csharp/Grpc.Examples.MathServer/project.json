@@ -1,0 +1,26 @@
+{
+  "compile": "**/*.cs",
+  "compilationOptions": {
+    "emitEntryPoint": true
+  },
+
+  "content": "../nativelibs/**",
+
+  "dependencies": {
+    "Grpc.Examples": "1.0.0"
+  },
+  "frameworks": {
+    "net45": { },
+    "dotnet54": {
+      "imports": [
+        "portable-net45"
+      ],
+      "dependencies": {
+        "Microsoft.NETCore.App": {
+          "type": "platform",
+          "version": "1.0.0-rc2-23931"
+        }
+      }
+    }
+  }
+}

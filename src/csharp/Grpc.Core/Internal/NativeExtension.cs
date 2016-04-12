@@ -118,7 +118,7 @@ namespace Grpc.Core.Internal
         {
             var assembly = typeof(NativeExtension).GetTypeInfo().Assembly;
 #if DOTNET5_4
-            // Assembly.EscapedCodeBase does not exit under CoreCLR, but assemblies imported from a nuget package
+            // Assembly.EscapedCodeBase does not exist under CoreCLR, but assemblies imported from a nuget package
             // don't seem to be shadowed by DNX-based projects at all.
             return assembly.Location;
 #else
