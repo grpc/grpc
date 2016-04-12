@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
+// Copyright 2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -32,34 +32,28 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
-using System.Globalization;
+using System.Reflection;
+using Grpc.Core;
+using Grpc.Core.Logging;
+using NUnit.Common;
+using NUnitLite;
 
-namespace Grpc.Core.Logging
+namespace Grpc.Core.Tests
 {
-    /// <summary>Logger that logs to System.Console.</summary>
-    public class ConsoleLogger : TextWriterLogger
+    /// <summary>
+    /// Provides entry point for NUnitLite
+    /// </summary>
+    public class NUnitMain
     {
-        /// <summary>Creates a console logger not associated to any specific type.</summary>
-        public ConsoleLogger() : this(null)
+        public static int Main(string[] args)
         {
-        }
-
-        /// <summary>Creates a console logger that logs messsage specific for given type.</summary>
-        private ConsoleLogger(Type forType) : base(() => Console.Error, forType)
-        {
-        }
- 
-        /// <summary>
-        /// Returns a logger associated with the specified type.
-        /// </summary>
-        public override ILogger ForType<T>()
-        {
-            if (typeof(T) == AssociatedType)
-            {
-                return this;
-            }
-            return new ConsoleLogger(typeof(T));
+            // Make logger immune to NUnit capturing stdout and stderr to workaround https://github.com/nunit/nunit/issues/1406.
+            GrpcEnvironment.SetLogger(new TextWriterLogger(Console.Error));
+#if DOTNET5_4
+            return new AutoRun(typeof(NUnitMain).GetTypeInfo().Assembly).Execute(args, new ExtendedTextWrapper(Console.Out), Console.In);
+#else
+            return new AutoRun().Execute(args);
+#endif
         }
     }
 }
