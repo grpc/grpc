@@ -35,7 +35,13 @@ template: |
   # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   #
 
-  flags="-max_total_time=$runtime -jobs=$jobs -workers=$jobs -artifact_prefix=fuzzer_output/ -max_len=${selected.maxlen}"
+  flags="-max_total_time=$runtime -artifact_prefix=fuzzer_output/ -max_len=${selected.maxlen}"
+  
+  if [ "$jobs" != "1" ]
+  then
+    flags="-jobs=$jobs -workers=$jobs"
+  fi
+
   if [ "$config" == "asan-trace-cmp" ]
   then
     flags="-use_traces=1 $flags"
