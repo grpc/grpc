@@ -58,9 +58,12 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_transport *transport =
       grpc_create_chttp2_transport(&exec_ctx, NULL, mock_endpoint, 1);
   grpc_chttp2_transport_start_reading(&exec_ctx, transport, NULL, 0);
-  
-  grpc_channel *channel = grpc_channel_create(&exec_ctx, "test-target", NULL, GRPC_CLIENT_DIRECT_CHANNEL, transport);
-  grpc_call *call = grpc_channel_create_call(channel, NULL, 0, cq, "/foo", "localhost", gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+
+  grpc_channel *channel = grpc_channel_create(
+      &exec_ctx, "test-target", NULL, GRPC_CLIENT_DIRECT_CHANNEL, transport);
+  grpc_call *call =
+      grpc_channel_create_call(channel, NULL, 0, cq, "/foo", "localhost",
+                               gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
 
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -100,7 +103,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  grpc_call_error error = grpc_call_start_batch(call, ops, (size_t)(op - ops), tag(1), NULL);
+  grpc_call_error error =
+      grpc_call_start_batch(call, ops, (size_t)(op - ops), tag(1), NULL);
   int requested_calls = 1;
   GPR_ASSERT(GRPC_CALL_OK == error);
 
