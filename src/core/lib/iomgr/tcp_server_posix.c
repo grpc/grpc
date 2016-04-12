@@ -317,12 +317,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
     goto error;
   }
 
-  /* TODO(sreek): Delete the following log line */
-  gpr_log(GPR_INFO, "\t\t** tcp_server_posix.on_read(): Getting read notifier");
   read_notifier_pollset = grpc_fd_get_read_notifier_pollset(exec_ctx, sp->emfd);
- /* TODO(sreek): Delete the following log line */
-  gpr_log(GPR_INFO, "\t\t** tcp_server_posix.on_read(): Got read notifier: %p",
-          read_notifier_pollset);
 
   /* loop until accept4 returns EAGAIN, and then re-arm notification */
   for (;;) {
@@ -358,18 +353,10 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
     fdobj = grpc_fd_create(fd, name);
 
     if (read_notifier_pollset == NULL) {
-      /* TODO(sreek): Check when this would happen - Ideally this should not
-      * happen. Remove the next log-line once this is resolved */
-      gpr_log(GPR_INFO, "\t** *******!!! tcp_server_posix.on_read(): "
-              "read_notifier_pollset is NULL. !!!**********************");
-
       gpr_log(GPR_ERROR, "Read notifier pollset is not set on the fd");
       goto error;
     }
 
-    /* TODO(sreek): Delete the following log line */
-    gpr_log(GPR_INFO, "\t\t** tcp_server_posix.on_read(): Adding fd %d *only* to pollset %p",
-          fd, read_notifier_pollset);
     grpc_pollset_add_fd(exec_ctx, read_notifier_pollset, fdobj);
 
     sp->server->on_accept_cb(
