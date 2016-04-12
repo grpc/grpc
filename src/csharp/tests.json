@@ -1,11 +1,5 @@
 {
-  "assemblies": [
-    "Grpc.Core.Tests",
-    "Grpc.Examples.Tests",
-    "Grpc.HealthCheck.Tests",
-    "Grpc.IntegrationTesting"
-  ],
-  "tests": [
+  "Grpc.Core.Tests": [
     "Grpc.Core.Internal.Tests.AsyncCallTest",
     "Grpc.Core.Internal.Tests.ChannelArgsSafeHandleTest",
     "Grpc.Core.Internal.Tests.CompletionQueueEventTest",
@@ -32,13 +26,19 @@
     "Grpc.Core.Tests.ServerTest",
     "Grpc.Core.Tests.ShutdownTest",
     "Grpc.Core.Tests.TimeoutsTest",
-    "Grpc.Core.Tests.UserAgentStringTest",
-    "Math.Tests.MathClientServerTest",
+    "Grpc.Core.Tests.UserAgentStringTest"
+  ],
+  "Grpc.Examples.Tests": [
+    "Math.Tests.MathClientServerTest"
+  ],
+  "Grpc.HealthCheck.Tests": [
     "Grpc.HealthCheck.Tests.HealthClientServerTest",
-    "Grpc.HealthCheck.Tests.HealthServiceImplTest",
-    "Grpc.IntegrationTesting.HistogramTest",
+    "Grpc.HealthCheck.Tests.HealthServiceImplTest"
+  ],
+  "Grpc.IntegrationTesting": [
     "Grpc.IntegrationTesting.GeneratedClientTest",
     "Grpc.IntegrationTesting.GeneratedServiceBaseTest",
+    "Grpc.IntegrationTesting.HistogramTest",
     "Grpc.IntegrationTesting.InteropClientServerTest",
     "Grpc.IntegrationTesting.MetadataCredentialsTest",
     "Grpc.IntegrationTesting.RunnerClientServerTest",
