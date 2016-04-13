@@ -55,11 +55,11 @@ namespace {
 // Prints out the method using the ruby gRPC DSL.
 void PrintMethod(const MethodDescriptor *method, const grpc::string &package,
                  Printer *out) {
-  grpc::string input_type = RubyTypeOf(method->input_type()->name(), package);
+  grpc::string input_type = RubyTypeOf(method->input_type()->full_name(), package);
   if (method->client_streaming()) {
     input_type = "stream(" + input_type + ")";
   }
-  grpc::string output_type = RubyTypeOf(method->output_type()->name(), package);
+  grpc::string output_type = RubyTypeOf(method->output_type()->full_name(), package);
   if (method->server_streaming()) {
     output_type = "stream(" + output_type + ")";
   }

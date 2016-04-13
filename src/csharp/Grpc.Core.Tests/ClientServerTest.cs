@@ -93,7 +93,7 @@ namespace Grpc.Core.Tests
             var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));
             Assert.AreEqual(StatusCode.Unknown, ex.Status.StatusCode); 
 
-            var ex2 = Assert.Throws<RpcException>(async () => await Calls.AsyncUnaryCall(helper.CreateUnaryCall(), "abc"));
+            var ex2 = Assert.ThrowsAsync<RpcException>(async () => await Calls.AsyncUnaryCall(helper.CreateUnaryCall(), "abc"));
             Assert.AreEqual(StatusCode.Unknown, ex2.Status.StatusCode);
         }
 
@@ -108,7 +108,7 @@ namespace Grpc.Core.Tests
             var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));
             Assert.AreEqual(StatusCode.Unauthenticated, ex.Status.StatusCode);
 
-            var ex2 = Assert.Throws<RpcException>(async () => await Calls.AsyncUnaryCall(helper.CreateUnaryCall(), "abc"));
+            var ex2 = Assert.ThrowsAsync<RpcException>(async () => await Calls.AsyncUnaryCall(helper.CreateUnaryCall(), "abc"));
             Assert.AreEqual(StatusCode.Unauthenticated, ex2.Status.StatusCode);
         }
 
@@ -124,7 +124,7 @@ namespace Grpc.Core.Tests
             var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));
             Assert.AreEqual(StatusCode.Unauthenticated, ex.Status.StatusCode);
 
-            var ex2 = Assert.Throws<RpcException>(async () => await Calls.AsyncUnaryCall(helper.CreateUnaryCall(), "abc"));
+            var ex2 = Assert.ThrowsAsync<RpcException>(async () => await Calls.AsyncUnaryCall(helper.CreateUnaryCall(), "abc"));
             Assert.AreEqual(StatusCode.Unauthenticated, ex2.Status.StatusCode);
         }
 
@@ -204,7 +204,7 @@ namespace Grpc.Core.Tests
             await barrier.Task;  // make sure the handler has started.
             cts.Cancel();
 
-            var ex = Assert.Throws<RpcException>(async () => await call.ResponseAsync);
+            var ex = Assert.ThrowsAsync<RpcException>(async () => await call.ResponseAsync);
             Assert.AreEqual(StatusCode.Cancelled, ex.Status.StatusCode);
         }
 
@@ -290,7 +290,7 @@ namespace Grpc.Core.Tests
                 return request;
             });
 
-            Assert.Throws(typeof(TaskCanceledException), 
+            Assert.ThrowsAsync(typeof(TaskCanceledException), 
                 async () => await channel.WaitForStateChangedAsync(channel.State, DateTime.UtcNow.AddMilliseconds(10)));
 
             var stateChangedTask = channel.WaitForStateChangedAsync(channel.State);

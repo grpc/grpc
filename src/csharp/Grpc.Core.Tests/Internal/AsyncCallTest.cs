@@ -84,7 +84,7 @@ namespace Grpc.Core.Internal.Tests
 
             Assert.AreEqual(StatusCode.Internal, asyncCall.GetStatus().StatusCode);
             Assert.IsNull(asyncCall.GetTrailers());
-            var ex = Assert.Throws<RpcException>(() => resultTask.GetAwaiter().GetResult());
+            var ex = Assert.ThrowsAsync<RpcException>(async () => await resultTask);
             Assert.AreEqual(StatusCode.Internal, ex.Status.StatusCode);
         }
 
