@@ -182,6 +182,22 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "client_fuzzer", 
+    "src": [
+      "test/core/end2end/fuzzers/client_fuzzer.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "compression_test", 
     "src": [
       "test/core/compression/compression_test.c"
@@ -1922,6 +1938,9 @@
   }, 
   {
     "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc++", 
       "grpc++_codegen"
     ], 
     "headers": [
@@ -1939,9 +1958,35 @@
       "src/proto/grpc/testing/stats.pb.h"
     ], 
     "language": "c++", 
-    "name": "codegen_test", 
+    "name": "codegen_test_full", 
     "src": [
-      "test/cpp/codegen/codegen_test.cc"
+      "test/cpp/codegen/codegen_test_full.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "grpc++_codegen"
+    ], 
+    "headers": [
+      "src/proto/grpc/testing/control.grpc.pb.h", 
+      "src/proto/grpc/testing/control.pb.h", 
+      "src/proto/grpc/testing/messages.grpc.pb.h", 
+      "src/proto/grpc/testing/messages.pb.h", 
+      "src/proto/grpc/testing/payloads.grpc.pb.h", 
+      "src/proto/grpc/testing/payloads.pb.h", 
+      "src/proto/grpc/testing/perf_db.grpc.pb.h", 
+      "src/proto/grpc/testing/perf_db.pb.h", 
+      "src/proto/grpc/testing/services.grpc.pb.h", 
+      "src/proto/grpc/testing/services.pb.h", 
+      "src/proto/grpc/testing/stats.grpc.pb.h", 
+      "src/proto/grpc/testing/stats.pb.h"
+    ], 
+    "language": "c++", 
+    "name": "codegen_test_minimal", 
+    "src": [
+      "test/cpp/codegen/codegen_test_minimal.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -3852,6 +3897,23 @@
     "name": "h2_uds_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_uds.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util", 
+      "one_input_fuzzer"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "src": [
+      "test/core/end2end/fuzzers/client_fuzzer.c"
     ], 
     "third_party": false, 
     "type": "target"
