@@ -78,7 +78,7 @@ static const clockid_t clockid_for_gpr_clock[] = {CLOCK_MONOTONIC,
 
 void gpr_time_init(void) { gpr_precise_clock_init(); }
 
-gpr_timespec gpr_now(gpr_clock_type clock_type) {
+static gpr_timespec now_impl(gpr_clock_type clock_type) {
   struct timespec now;
   GPR_ASSERT(clock_type != GPR_TIMESPAN);
   if (clock_type == GPR_CLOCK_PRECISE) {
@@ -94,6 +94,12 @@ gpr_timespec gpr_now(gpr_clock_type clock_type) {
 #endif
     return gpr_from_timespec(now, clock_type);
   }
+}
+
+gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type) = now_impl;
+
+gpr_timespec gpr_now(gpr_clock_type clock_type) {
+  return gpr_now_impl(clock_type);
 }
 #else
 /* For some reason Apple's OSes haven't implemented clock_gettime. */

@@ -1103,6 +1103,19 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: api_fuzzer
+  build: fuzzer
+  language: c
+  src:
+  - test/core/end2end/fuzzers/api_fuzzer.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/end2end/fuzzers/api_fuzzer_corpus
+  maxlen: 2048
 - name: bin_encoder_test
   build: test
   language: c
