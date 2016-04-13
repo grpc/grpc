@@ -193,7 +193,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
             cq, gpr_inf_past(GPR_CLOCK_REALTIME), NULL);
         switch (ev.type) {
           case GRPC_OP_COMPLETE:
-            switch ((tag_name)(uintptr_t)ev.type) {
+            switch ((tag_name)(uintptr_t)ev.tag) {
               case SERVER_SHUTDOWN:
                 GPR_ASSERT(pending_server_shutdowns);
                 pending_server_shutdowns--;
