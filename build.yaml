@@ -1173,6 +1173,19 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: client_fuzzer
+  build: fuzzer
+  language: c
+  src:
+  - test/core/end2end/fuzzers/client_fuzzer.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/end2end/fuzzers/client_fuzzer_corpus
+  maxlen: 2048
 - name: compression_test
   build: test
   language: c
@@ -2375,7 +2388,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: codegen_test
+- name: codegen_test_full
   gtest: true
   build: test
   language: c++
@@ -2386,7 +2399,25 @@ targets:
   - src/proto/grpc/testing/perf_db.proto
   - src/proto/grpc/testing/services.proto
   - src/proto/grpc/testing/stats.proto
-  - test/cpp/codegen/codegen_test.cc
+  - test/cpp/codegen/codegen_test_full.cc
+  deps:
+  - grpc++
+  - grpc
+  - gpr
+  filegroups:
+  - grpc++_codegen
+- name: codegen_test_minimal
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - src/proto/grpc/testing/control.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/payloads.proto
+  - src/proto/grpc/testing/perf_db.proto
+  - src/proto/grpc/testing/services.proto
+  - src/proto/grpc/testing/stats.proto
+  - test/cpp/codegen/codegen_test_minimal.cc
   filegroups:
   - grpc++_codegen
 - name: credentials_test
