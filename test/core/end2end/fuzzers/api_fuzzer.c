@@ -151,9 +151,7 @@ typedef enum {
   SERVER_SHUTDOWN,
 } tag_name;
 
-static void *tag(tag_name name) {
-  return (void*)(uintptr_t)name;
-}
+static void *tag(tag_name name) { return (void *)(uintptr_t)name; }
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_test_only_set_metadata_hash_seed(0);
@@ -170,7 +168,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 
   grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
 
-  while (!is_eof(&inp) && channel && server) {
+  while (!is_eof(&inp) || channel != NULL || server != NULL) {
     if (is_eof(&inp)) {
       if (channel != NULL) {
         grpc_channel_destroy(channel);
@@ -180,7 +178,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         if (!server_shutdown) {
           grpc_server_shutdown_and_notify(server, cq, tag(SERVER_SHUTDOWN));
           server_shutdown = true;
-          pending_server_shutdowns ++;
+          pending_server_shutdowns++;
         } else if (pending_server_shutdowns == 0) {
           grpc_server_destroy(server);
           server = NULL;
@@ -196,12 +194,12 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         switch (ev.type) {
           case GRPC_OP_COMPLETE:
             switch ((tag_name)(uintptr_t)ev.type) {
-            case SERVER_SHUTDOWN:
-              GPR_ASSERT(pending_server_shutdowns);
-              pending_server_shutdowns--;
-              break;
-            default:
-              GPR_ASSERT(false);
+              case SERVER_SHUTDOWN:
+                GPR_ASSERT(pending_server_shutdowns);
+                pending_server_shutdowns--;
+                break;
+              default:
+                GPR_ASSERT(false);
             }
             break;
           case GRPC_QUEUE_TIMEOUT:
@@ -274,7 +272,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       }
       // destroy server
       case 7: {
-        if (server != NULL && server_shutdown && pending_server_shutdowns == 0) {
+        if (server != NULL && server_shutdown &&
+            pending_server_shutdowns == 0) {
           grpc_server_destroy(server);
           server = NULL;
         }
