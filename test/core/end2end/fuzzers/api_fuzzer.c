@@ -40,6 +40,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/transport/metadata.h"
 #include "test/core/util/mock_endpoint.h"
 
@@ -172,10 +173,21 @@ static grpc_resolved_addresses *my_resolve_address(const char *name,
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// test state
+// client connection
 
-typedef struct { grpc_channel *channel; } channel_state;
-typedef struct { grpc_server *server; } server_state;
+// defined in tcp_client_posix.c
+extern void (*grpc_tcp_client_connect_impl)(
+    grpc_exec_ctx *exec_ctx, grpc_closure *closure, grpc_endpoint **ep,
+    grpc_pollset_set *interested_parties, const struct sockaddr *addr,
+    size_t addr_len, gpr_timespec deadline);
+
+static void my_tcp_client_connect(grpc_exec_ctx *exec_ctx,
+                                  grpc_closure *closure, grpc_endpoint **ep,
+                                  grpc_pollset_set *interested_parties,
+                                  const struct sockaddr *addr, size_t addr_len,
+                                  gpr_timespec deadline) {
+  abort();
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // test driver
@@ -191,6 +203,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   if (squelch) gpr_set_log_function(dont_log);
   input_stream inp = {data, data + size};
   grpc_blocking_resolve_address = my_resolve_address;
+  grpc_tcp_client_connect_impl = my_tcp_client_connect;
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_cv);
   gpr_now_impl = now_impl;
@@ -316,6 +329,13 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
             pending_server_shutdowns == 0) {
           grpc_server_destroy(server);
           server = NULL;
+        }
+        break;
+      }
+      // check connectivity
+      case 8: {
+        if (channel != NULL) {
+          grpc_channel_check_connectivity_state(channel, next_byte(&inp) > 127);
         }
         break;
       }
