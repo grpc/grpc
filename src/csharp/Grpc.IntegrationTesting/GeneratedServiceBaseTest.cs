@@ -84,7 +84,7 @@ namespace Grpc.IntegrationTesting
         {
             var call = client.StreamingInputCall();
 
-            var ex = Assert.Throws<RpcException>(async () => await call);
+            var ex = Assert.ThrowsAsync<RpcException>(async () => await call);
             Assert.AreEqual(StatusCode.Unimplemented, ex.Status.StatusCode);
         }
 
@@ -93,7 +93,7 @@ namespace Grpc.IntegrationTesting
         {
             var call = client.StreamingOutputCall(new StreamingOutputCallRequest());
 
-            var ex = Assert.Throws<RpcException>(async () => await call.ResponseStream.MoveNext());
+            var ex = Assert.ThrowsAsync<RpcException>(async () => await call.ResponseStream.MoveNext());
             Assert.AreEqual(StatusCode.Unimplemented, ex.Status.StatusCode);
         }
 
@@ -102,7 +102,7 @@ namespace Grpc.IntegrationTesting
         {
             var call = client.FullDuplexCall();
 
-            var ex = Assert.Throws<RpcException>(async () => await call.ResponseStream.MoveNext());
+            var ex = Assert.ThrowsAsync<RpcException>(async () => await call.ResponseStream.MoveNext());
             Assert.AreEqual(StatusCode.Unimplemented, ex.Status.StatusCode);
         }
 

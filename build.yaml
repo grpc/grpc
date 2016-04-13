@@ -1180,6 +1180,19 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: client_fuzzer
+  build: fuzzer
+  language: c
+  src:
+  - test/core/end2end/fuzzers/client_fuzzer.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/end2end/fuzzers/client_fuzzer_corpus
+  maxlen: 2048
 - name: compression_test
   build: test
   language: c
