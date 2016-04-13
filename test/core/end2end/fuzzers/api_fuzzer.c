@@ -147,6 +147,14 @@ typedef struct { grpc_server *server; } server_state;
 ////////////////////////////////////////////////////////////////////////////////
 // test driver
 
+typedef enum {
+  SERVER_SHUTDOWN,
+} tag_name;
+
+static void *tag(tag_name name) {
+  return (void*)(uintptr_t)name;
+}
+
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_test_only_set_metadata_hash_seed(0);
   if (squelch) gpr_set_log_function(dont_log);
@@ -155,15 +163,31 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   gpr_now_impl = now_impl;
   grpc_init();
 
-  channel_state chans[256];
-  server_state servers[256];
-
-  memset(chans, 0, sizeof(chans));
-  memset(servers, 0, sizeof(servers));
+  grpc_channel *channel = NULL;
+  grpc_server *server = NULL;
+  bool server_shutdown = false;
+  int pending_server_shutdowns = 0;
 
   grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
 
-  while (!is_eof(&inp)) {
+  while (!is_eof(&inp) && channel && server) {
+    if (is_eof(&inp)) {
+      if (channel != NULL) {
+        grpc_channel_destroy(channel);
+        channel = NULL;
+      }
+      if (server != NULL) {
+        if (!server_shutdown) {
+          grpc_server_shutdown_and_notify(server, cq, tag(SERVER_SHUTDOWN));
+          server_shutdown = true;
+          pending_server_shutdowns ++;
+        } else if (pending_server_shutdowns == 0) {
+          grpc_server_destroy(server);
+          server = NULL;
+        }
+      }
+    }
+
     switch (next_byte(&inp)) {
       // tickle completion queue
       case 0: {
@@ -171,7 +195,14 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
             cq, gpr_inf_past(GPR_CLOCK_REALTIME), NULL);
         switch (ev.type) {
           case GRPC_OP_COMPLETE:
-            abort();
+            switch ((tag_name)(uintptr_t)ev.type) {
+            case SERVER_SHUTDOWN:
+              GPR_ASSERT(pending_server_shutdowns);
+              pending_server_shutdowns--;
+              break;
+            default:
+              GPR_ASSERT(!"known tag");
+            }
             break;
           case GRPC_QUEUE_TIMEOUT:
             break;
@@ -185,20 +216,19 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       case 1: {
         gpr_mu_lock(&g_mu);
         g_now = gpr_time_add(
-            g_now, gpr_time_from_millis(next_byte(&inp), GPR_TIMESPAN));
+            g_now, gpr_time_from_micros(read_uint32(&inp), GPR_TIMESPAN));
         gpr_mu_unlock(&g_mu);
         break;
       }
       // create an insecure channel
       case 2: {
-        channel_state *cs = &chans[next_byte(&inp)];
-        if (cs->channel == NULL) {
+        if (channel == NULL) {
           char *target = read_string(&inp);
           char *target_uri;
           gpr_asprintf(&target_uri, "fuzz-test:%s", target);
           grpc_channel_args *args = read_args(&inp);
-          cs->channel = grpc_insecure_channel_create(target_uri, args, NULL);
-          GPR_ASSERT(cs->channel != NULL);
+          channel = grpc_insecure_channel_create(target_uri, args, NULL);
+          GPR_ASSERT(channel != NULL);
           grpc_channel_args_destroy(args);
           gpr_free(target_uri);
           gpr_free(target);
@@ -207,31 +237,49 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       }
       // destroy a channel
       case 3: {
-        channel_state *cs = &chans[next_byte(&inp)];
-        if (cs->channel != NULL) {
-          grpc_channel_destroy(cs->channel);
-          cs->channel = NULL;
+        if (channel != NULL) {
+          grpc_channel_destroy(channel);
+          channel = NULL;
         }
         break;
       }
       // bring up a server
       case 4: {
-        server_state *ss = &servers[next_byte(&inp)];
-        if (ss->server == NULL) {
+        if (server == NULL) {
           grpc_channel_args *args = read_args(&inp);
-          ss->server = grpc_server_create(args, NULL);
-          GPR_ASSERT(ss->server != NULL);
+          server = grpc_server_create(args, NULL);
+          GPR_ASSERT(server != NULL);
           grpc_channel_args_destroy(args);
-          grpc_server_register_completion_queue(ss->server, cq, NULL);
-          grpc_server_start(ss->server);
+          grpc_server_register_completion_queue(server, cq, NULL);
+          grpc_server_start(server);
+          server_shutdown = false;
+          GPR_ASSERT(pending_server_shutdowns == 0);
         }
       }
-    }
-  }
-
-  for (size_t i = 0; i < GPR_ARRAY_SIZE(chans); i++) {
-    if (chans[i].channel != NULL) {
-      grpc_channel_destroy(chans[i].channel);
+      // begin server shutdown
+      case 5: {
+        if (server != NULL) {
+          grpc_server_shutdown_and_notify(server, cq, tag(SERVER_SHUTDOWN));
+          pending_server_shutdowns++;
+          server_shutdown = true;
+        }
+        break;
+      }
+      // cancel all calls if shutdown
+      case 6: {
+        if (server != NULL && server_shutdown) {
+          grpc_server_cancel_all_calls(server);
+        }
+        break;
+      }
+      // destroy server
+      case 7: {
+        if (server != NULL && server_shutdown && pending_server_shutdowns == 0) {
+          grpc_server_destroy(server);
+          server = NULL;
+        }
+        break;
+      }
     }
   }
 
