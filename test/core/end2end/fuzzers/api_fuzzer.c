@@ -201,7 +201,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
               pending_server_shutdowns--;
               break;
             default:
-              GPR_ASSERT(!"known tag");
+              GPR_ASSERT(false);
             }
             break;
           case GRPC_QUEUE_TIMEOUT:
