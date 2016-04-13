@@ -39,44 +39,43 @@ void protobuf_AddDesc_reflection_2eproto();
 void protobuf_AssignDesc_reflection_2eproto();
 void protobuf_ShutdownFile_reflection_2eproto();
 
-class GetDescriptorRequest;
-class GetEnumTypeResponse;
-class GetEnumValueResponse;
-class GetExtensionResponse;
-class GetMessageTypeResponse;
-class GetMethodResponse;
-class GetServiceResponse;
-class ListServiceRequest;
+class EmptyRequest;
+class ExtensionNumberResponse;
+class ExtensionRequest;
+class FileDescriptorProtoResponse;
+class FileNameRequest;
 class ListServiceResponse;
+class SymbolRequest;
+class TypeRequest;
 
 // ===================================================================
 
-class ListServiceRequest : public ::google::protobuf::Message {
+class EmptyRequest : public ::google::protobuf::Message {
  public:
-  ListServiceRequest();
-  virtual ~ListServiceRequest();
+  EmptyRequest();
+  virtual ~EmptyRequest();
 
-  ListServiceRequest(const ListServiceRequest& from);
+  EmptyRequest(const EmptyRequest& from);
 
-  inline ListServiceRequest& operator=(const ListServiceRequest& from) {
+  inline EmptyRequest& operator=(const EmptyRequest& from) {
     CopyFrom(from);
     return *this;
   }
 
   static const ::google::protobuf::Descriptor* descriptor();
-  static const ListServiceRequest& default_instance();
+  static const EmptyRequest& default_instance();
 
-  void Swap(ListServiceRequest* other);
+  void Swap(EmptyRequest* other);
 
   // implements Message ----------------------------------------------
 
-  inline ListServiceRequest* New() const { return New(NULL); }
+  inline EmptyRequest* New() const { return New(NULL); }
 
-  ListServiceRequest* New(::google::protobuf::Arena* arena) const;
+  EmptyRequest* New(::google::protobuf::Arena* arena) const;
   void CopyFrom(const ::google::protobuf::Message& from);
   void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const ListServiceRequest& from);
-  void MergeFrom(const ListServiceRequest& from);
+  void CopyFrom(const EmptyRequest& from);
+  void MergeFrom(const EmptyRequest& from);
   void Clear();
   bool IsInitialized() const;
 
@@ -93,7 +92,7 @@ class ListServiceRequest : public ::google::protobuf::Message {
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const;
-  void InternalSwap(ListServiceRequest* other);
+  void InternalSwap(EmptyRequest* other);
 
  private:
   inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
@@ -110,7 +109,7 @@ class ListServiceRequest : public ::google::protobuf::Message {
 
   // accessors -------------------------------------------------------
 
-  // @@protoc_insertion_point(class_scope:grpc.reflection.v1.ListServiceRequest)
+  // @@protoc_insertion_point(class_scope:grpc.reflection.v1.EmptyRequest)
  private:
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
   bool _is_default_instance_;
@@ -120,36 +119,36 @@ class ListServiceRequest : public ::google::protobuf::Message {
   friend void protobuf_ShutdownFile_reflection_2eproto();
 
   void InitAsDefaultInstance();
-  static ListServiceRequest* default_instance_;
+  static EmptyRequest* default_instance_;
 };
 // -------------------------------------------------------------------
 
-class GetDescriptorRequest : public ::google::protobuf::Message {
+class FileNameRequest : public ::google::protobuf::Message {
  public:
-  GetDescriptorRequest();
-  virtual ~GetDescriptorRequest();
+  FileNameRequest();
+  virtual ~FileNameRequest();
 
-  GetDescriptorRequest(const GetDescriptorRequest& from);
+  FileNameRequest(const FileNameRequest& from);
 
-  inline GetDescriptorRequest& operator=(const GetDescriptorRequest& from) {
+  inline FileNameRequest& operator=(const FileNameRequest& from) {
     CopyFrom(from);
     return *this;
   }
 
   static const ::google::protobuf::Descriptor* descriptor();
-  static const GetDescriptorRequest& default_instance();
+  static const FileNameRequest& default_instance();
 
-  void Swap(GetDescriptorRequest* other);
+  void Swap(FileNameRequest* other);
 
   // implements Message ----------------------------------------------
 
-  inline GetDescriptorRequest* New() const { return New(NULL); }
+  inline FileNameRequest* New() const { return New(NULL); }
 
-  GetDescriptorRequest* New(::google::protobuf::Arena* arena) const;
+  FileNameRequest* New(::google::protobuf::Arena* arena) const;
   void CopyFrom(const ::google::protobuf::Message& from);
   void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const GetDescriptorRequest& from);
-  void MergeFrom(const GetDescriptorRequest& from);
+  void CopyFrom(const FileNameRequest& from);
+  void MergeFrom(const FileNameRequest& from);
   void Clear();
   bool IsInitialized() const;
 
@@ -166,7 +165,7 @@ class GetDescriptorRequest : public ::google::protobuf::Message {
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const;
-  void InternalSwap(GetDescriptorRequest* other);
+  void InternalSwap(FileNameRequest* other);
 
  private:
   inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
@@ -183,29 +182,291 @@ class GetDescriptorRequest : public ::google::protobuf::Message {
 
   // accessors -------------------------------------------------------
 
-  // optional string name = 1;
-  void clear_name();
-  static const int kNameFieldNumber = 1;
-  const ::std::string& name() const;
-  void set_name(const ::std::string& value);
-  void set_name(const char* value);
-  void set_name(const char* value, size_t size);
-  ::std::string* mutable_name();
-  ::std::string* release_name();
-  void set_allocated_name(::std::string* name);
+  // optional string filename = 1;
+  void clear_filename();
+  static const int kFilenameFieldNumber = 1;
+  const ::std::string& filename() const;
+  void set_filename(const ::std::string& value);
+  void set_filename(const char* value);
+  void set_filename(const char* value, size_t size);
+  ::std::string* mutable_filename();
+  ::std::string* release_filename();
+  void set_allocated_filename(::std::string* filename);
 
-  // @@protoc_insertion_point(class_scope:grpc.reflection.v1.GetDescriptorRequest)
+  // @@protoc_insertion_point(class_scope:grpc.reflection.v1.FileNameRequest)
  private:
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
   bool _is_default_instance_;
-  ::google::protobuf::internal::ArenaStringPtr name_;
+  ::google::protobuf::internal::ArenaStringPtr filename_;
   mutable int _cached_size_;
   friend void protobuf_AddDesc_reflection_2eproto();
   friend void protobuf_AssignDesc_reflection_2eproto();
   friend void protobuf_ShutdownFile_reflection_2eproto();
 
   void InitAsDefaultInstance();
-  static GetDescriptorRequest* default_instance_;
+  static FileNameRequest* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class SymbolRequest : public ::google::protobuf::Message {
+ public:
+  SymbolRequest();
+  virtual ~SymbolRequest();
+
+  SymbolRequest(const SymbolRequest& from);
+
+  inline SymbolRequest& operator=(const SymbolRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const SymbolRequest& default_instance();
+
+  void Swap(SymbolRequest* other);
+
+  // implements Message ----------------------------------------------
+
+  inline SymbolRequest* New() const { return New(NULL); }
+
+  SymbolRequest* New(::google::protobuf::Arena* arena) const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const SymbolRequest& from);
+  void MergeFrom(const SymbolRequest& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(
+      ::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+
+ private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  void InternalSwap(SymbolRequest* other);
+
+ private:
+  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
+    return _internal_metadata_.arena();
+  }
+  inline void* MaybeArenaPtr() const {
+    return _internal_metadata_.raw_arena_ptr();
+  }
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // optional string symbol = 1;
+  void clear_symbol();
+  static const int kSymbolFieldNumber = 1;
+  const ::std::string& symbol() const;
+  void set_symbol(const ::std::string& value);
+  void set_symbol(const char* value);
+  void set_symbol(const char* value, size_t size);
+  ::std::string* mutable_symbol();
+  ::std::string* release_symbol();
+  void set_allocated_symbol(::std::string* symbol);
+
+  // @@protoc_insertion_point(class_scope:grpc.reflection.v1.SymbolRequest)
+ private:
+  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  bool _is_default_instance_;
+  ::google::protobuf::internal::ArenaStringPtr symbol_;
+  mutable int _cached_size_;
+  friend void protobuf_AddDesc_reflection_2eproto();
+  friend void protobuf_AssignDesc_reflection_2eproto();
+  friend void protobuf_ShutdownFile_reflection_2eproto();
+
+  void InitAsDefaultInstance();
+  static SymbolRequest* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class ExtensionRequest : public ::google::protobuf::Message {
+ public:
+  ExtensionRequest();
+  virtual ~ExtensionRequest();
+
+  ExtensionRequest(const ExtensionRequest& from);
+
+  inline ExtensionRequest& operator=(const ExtensionRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const ExtensionRequest& default_instance();
+
+  void Swap(ExtensionRequest* other);
+
+  // implements Message ----------------------------------------------
+
+  inline ExtensionRequest* New() const { return New(NULL); }
+
+  ExtensionRequest* New(::google::protobuf::Arena* arena) const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const ExtensionRequest& from);
+  void MergeFrom(const ExtensionRequest& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(
+      ::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+
+ private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  void InternalSwap(ExtensionRequest* other);
+
+ private:
+  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
+    return _internal_metadata_.arena();
+  }
+  inline void* MaybeArenaPtr() const {
+    return _internal_metadata_.raw_arena_ptr();
+  }
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // optional string containing_type = 1;
+  void clear_containing_type();
+  static const int kContainingTypeFieldNumber = 1;
+  const ::std::string& containing_type() const;
+  void set_containing_type(const ::std::string& value);
+  void set_containing_type(const char* value);
+  void set_containing_type(const char* value, size_t size);
+  ::std::string* mutable_containing_type();
+  ::std::string* release_containing_type();
+  void set_allocated_containing_type(::std::string* containing_type);
+
+  // optional int32 extension_number = 2;
+  void clear_extension_number();
+  static const int kExtensionNumberFieldNumber = 2;
+  ::google::protobuf::int32 extension_number() const;
+  void set_extension_number(::google::protobuf::int32 value);
+
+  // @@protoc_insertion_point(class_scope:grpc.reflection.v1.ExtensionRequest)
+ private:
+  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  bool _is_default_instance_;
+  ::google::protobuf::internal::ArenaStringPtr containing_type_;
+  ::google::protobuf::int32 extension_number_;
+  mutable int _cached_size_;
+  friend void protobuf_AddDesc_reflection_2eproto();
+  friend void protobuf_AssignDesc_reflection_2eproto();
+  friend void protobuf_ShutdownFile_reflection_2eproto();
+
+  void InitAsDefaultInstance();
+  static ExtensionRequest* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class TypeRequest : public ::google::protobuf::Message {
+ public:
+  TypeRequest();
+  virtual ~TypeRequest();
+
+  TypeRequest(const TypeRequest& from);
+
+  inline TypeRequest& operator=(const TypeRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const TypeRequest& default_instance();
+
+  void Swap(TypeRequest* other);
+
+  // implements Message ----------------------------------------------
+
+  inline TypeRequest* New() const { return New(NULL); }
+
+  TypeRequest* New(::google::protobuf::Arena* arena) const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const TypeRequest& from);
+  void MergeFrom(const TypeRequest& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(
+      ::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+
+ private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  void InternalSwap(TypeRequest* other);
+
+ private:
+  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
+    return _internal_metadata_.arena();
+  }
+  inline void* MaybeArenaPtr() const {
+    return _internal_metadata_.raw_arena_ptr();
+  }
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // optional string type = 1;
+  void clear_type();
+  static const int kTypeFieldNumber = 1;
+  const ::std::string& type() const;
+  void set_type(const ::std::string& value);
+  void set_type(const char* value);
+  void set_type(const char* value, size_t size);
+  ::std::string* mutable_type();
+  ::std::string* release_type();
+  void set_allocated_type(::std::string* type);
+
+  // @@protoc_insertion_point(class_scope:grpc.reflection.v1.TypeRequest)
+ private:
+  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  bool _is_default_instance_;
+  ::google::protobuf::internal::ArenaStringPtr type_;
+  mutable int _cached_size_;
+  friend void protobuf_AddDesc_reflection_2eproto();
+  friend void protobuf_AssignDesc_reflection_2eproto();
+  friend void protobuf_ShutdownFile_reflection_2eproto();
+
+  void InitAsDefaultInstance();
+  static TypeRequest* default_instance_;
 };
 // -------------------------------------------------------------------
 
@@ -299,32 +560,33 @@ class ListServiceResponse : public ::google::protobuf::Message {
 };
 // -------------------------------------------------------------------
 
-class GetMethodResponse : public ::google::protobuf::Message {
+class FileDescriptorProtoResponse : public ::google::protobuf::Message {
  public:
-  GetMethodResponse();
-  virtual ~GetMethodResponse();
+  FileDescriptorProtoResponse();
+  virtual ~FileDescriptorProtoResponse();
 
-  GetMethodResponse(const GetMethodResponse& from);
+  FileDescriptorProtoResponse(const FileDescriptorProtoResponse& from);
 
-  inline GetMethodResponse& operator=(const GetMethodResponse& from) {
+  inline FileDescriptorProtoResponse& operator=(
+      const FileDescriptorProtoResponse& from) {
     CopyFrom(from);
     return *this;
   }
 
   static const ::google::protobuf::Descriptor* descriptor();
-  static const GetMethodResponse& default_instance();
+  static const FileDescriptorProtoResponse& default_instance();
 
-  void Swap(GetMethodResponse* other);
+  void Swap(FileDescriptorProtoResponse* other);
 
   // implements Message ----------------------------------------------
 
-  inline GetMethodResponse* New() const { return New(NULL); }
+  inline FileDescriptorProtoResponse* New() const { return New(NULL); }
 
-  GetMethodResponse* New(::google::protobuf::Arena* arena) const;
+  FileDescriptorProtoResponse* New(::google::protobuf::Arena* arena) const;
   void CopyFrom(const ::google::protobuf::Message& from);
   void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const GetMethodResponse& from);
-  void MergeFrom(const GetMethodResponse& from);
+  void CopyFrom(const FileDescriptorProtoResponse& from);
+  void MergeFrom(const FileDescriptorProtoResponse& from);
   void Clear();
   bool IsInitialized() const;
 
@@ -341,7 +603,7 @@ class GetMethodResponse : public ::google::protobuf::Message {
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const;
-  void InternalSwap(GetMethodResponse* other);
+  void InternalSwap(FileDescriptorProtoResponse* other);
 
  private:
   inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
@@ -358,56 +620,58 @@ class GetMethodResponse : public ::google::protobuf::Message {
 
   // accessors -------------------------------------------------------
 
-  // optional .google.protobuf.MethodDescriptorProto method = 1;
-  bool has_method() const;
-  void clear_method();
-  static const int kMethodFieldNumber = 1;
-  const ::google::protobuf::MethodDescriptorProto& method() const;
-  ::google::protobuf::MethodDescriptorProto* mutable_method();
-  ::google::protobuf::MethodDescriptorProto* release_method();
-  void set_allocated_method(::google::protobuf::MethodDescriptorProto* method);
+  // optional .google.protobuf.FileDescriptorProto file_descriptor_proto = 1;
+  bool has_file_descriptor_proto() const;
+  void clear_file_descriptor_proto();
+  static const int kFileDescriptorProtoFieldNumber = 1;
+  const ::google::protobuf::FileDescriptorProto& file_descriptor_proto() const;
+  ::google::protobuf::FileDescriptorProto* mutable_file_descriptor_proto();
+  ::google::protobuf::FileDescriptorProto* release_file_descriptor_proto();
+  void set_allocated_file_descriptor_proto(
+      ::google::protobuf::FileDescriptorProto* file_descriptor_proto);
 
-  // @@protoc_insertion_point(class_scope:grpc.reflection.v1.GetMethodResponse)
+  // @@protoc_insertion_point(class_scope:grpc.reflection.v1.FileDescriptorProtoResponse)
  private:
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
   bool _is_default_instance_;
-  ::google::protobuf::MethodDescriptorProto* method_;
+  ::google::protobuf::FileDescriptorProto* file_descriptor_proto_;
   mutable int _cached_size_;
   friend void protobuf_AddDesc_reflection_2eproto();
   friend void protobuf_AssignDesc_reflection_2eproto();
   friend void protobuf_ShutdownFile_reflection_2eproto();
 
   void InitAsDefaultInstance();
-  static GetMethodResponse* default_instance_;
+  static FileDescriptorProtoResponse* default_instance_;
 };
 // -------------------------------------------------------------------
 
-class GetServiceResponse : public ::google::protobuf::Message {
+class ExtensionNumberResponse : public ::google::protobuf::Message {
  public:
-  GetServiceResponse();
-  virtual ~GetServiceResponse();
+  ExtensionNumberResponse();
+  virtual ~ExtensionNumberResponse();
 
-  GetServiceResponse(const GetServiceResponse& from);
+  ExtensionNumberResponse(const ExtensionNumberResponse& from);
 
-  inline GetServiceResponse& operator=(const GetServiceResponse& from) {
+  inline ExtensionNumberResponse& operator=(
+      const ExtensionNumberResponse& from) {
     CopyFrom(from);
     return *this;
   }
 
   static const ::google::protobuf::Descriptor* descriptor();
-  static const GetServiceResponse& default_instance();
+  static const ExtensionNumberResponse& default_instance();
 
-  void Swap(GetServiceResponse* other);
+  void Swap(ExtensionNumberResponse* other);
 
   // implements Message ----------------------------------------------
 
-  inline GetServiceResponse* New() const { return New(NULL); }
+  inline ExtensionNumberResponse* New() const { return New(NULL); }
 
-  GetServiceResponse* New(::google::protobuf::Arena* arena) const;
+  ExtensionNumberResponse* New(::google::protobuf::Arena* arena) const;
   void CopyFrom(const ::google::protobuf::Message& from);
   void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const GetServiceResponse& from);
-  void MergeFrom(const GetServiceResponse& from);
+  void CopyFrom(const ExtensionNumberResponse& from);
+  void MergeFrom(const ExtensionNumberResponse& from);
   void Clear();
   bool IsInitialized() const;
 
@@ -424,7 +688,7 @@ class GetServiceResponse : public ::google::protobuf::Message {
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const;
-  void InternalSwap(GetServiceResponse* other);
+  void InternalSwap(ExtensionNumberResponse* other);
 
  private:
   inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
@@ -441,417 +705,249 @@ class GetServiceResponse : public ::google::protobuf::Message {
 
   // accessors -------------------------------------------------------
 
-  // optional .google.protobuf.ServiceDescriptorProto service = 1;
-  bool has_service() const;
-  void clear_service();
-  static const int kServiceFieldNumber = 1;
-  const ::google::protobuf::ServiceDescriptorProto& service() const;
-  ::google::protobuf::ServiceDescriptorProto* mutable_service();
-  ::google::protobuf::ServiceDescriptorProto* release_service();
-  void set_allocated_service(
-      ::google::protobuf::ServiceDescriptorProto* service);
+  // repeated int32 extension_number = 1;
+  int extension_number_size() const;
+  void clear_extension_number();
+  static const int kExtensionNumberFieldNumber = 1;
+  ::google::protobuf::int32 extension_number(int index) const;
+  void set_extension_number(int index, ::google::protobuf::int32 value);
+  void add_extension_number(::google::protobuf::int32 value);
+  const ::google::protobuf::RepeatedField< ::google::protobuf::int32>&
+  extension_number() const;
+  ::google::protobuf::RepeatedField< ::google::protobuf::int32>*
+  mutable_extension_number();
 
-  // @@protoc_insertion_point(class_scope:grpc.reflection.v1.GetServiceResponse)
+  // @@protoc_insertion_point(class_scope:grpc.reflection.v1.ExtensionNumberResponse)
  private:
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
   bool _is_default_instance_;
-  ::google::protobuf::ServiceDescriptorProto* service_;
+  ::google::protobuf::RepeatedField< ::google::protobuf::int32>
+      extension_number_;
+  mutable int _extension_number_cached_byte_size_;
   mutable int _cached_size_;
   friend void protobuf_AddDesc_reflection_2eproto();
   friend void protobuf_AssignDesc_reflection_2eproto();
   friend void protobuf_ShutdownFile_reflection_2eproto();
 
   void InitAsDefaultInstance();
-  static GetServiceResponse* default_instance_;
-};
-// -------------------------------------------------------------------
-
-class GetMessageTypeResponse : public ::google::protobuf::Message {
- public:
-  GetMessageTypeResponse();
-  virtual ~GetMessageTypeResponse();
-
-  GetMessageTypeResponse(const GetMessageTypeResponse& from);
-
-  inline GetMessageTypeResponse& operator=(const GetMessageTypeResponse& from) {
-    CopyFrom(from);
-    return *this;
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const GetMessageTypeResponse& default_instance();
-
-  void Swap(GetMessageTypeResponse* other);
-
-  // implements Message ----------------------------------------------
-
-  inline GetMessageTypeResponse* New() const { return New(NULL); }
-
-  GetMessageTypeResponse* New(::google::protobuf::Arena* arena) const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const GetMessageTypeResponse& from);
-  void MergeFrom(const GetMessageTypeResponse& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(
-      ::google::protobuf::uint8* output) const;
-  int GetCachedSize() const { return _cached_size_; }
-
- private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const;
-  void InternalSwap(GetMessageTypeResponse* other);
-
- private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
-    return _internal_metadata_.arena();
-  }
-  inline void* MaybeArenaPtr() const {
-    return _internal_metadata_.raw_arena_ptr();
-  }
-
- public:
-  ::google::protobuf::Metadata GetMetadata() const;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  // optional .google.protobuf.DescriptorProto message_type = 1;
-  bool has_message_type() const;
-  void clear_message_type();
-  static const int kMessageTypeFieldNumber = 1;
-  const ::google::protobuf::DescriptorProto& message_type() const;
-  ::google::protobuf::DescriptorProto* mutable_message_type();
-  ::google::protobuf::DescriptorProto* release_message_type();
-  void set_allocated_message_type(
-      ::google::protobuf::DescriptorProto* message_type);
-
-  // @@protoc_insertion_point(class_scope:grpc.reflection.v1.GetMessageTypeResponse)
- private:
-  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-  bool _is_default_instance_;
-  ::google::protobuf::DescriptorProto* message_type_;
-  mutable int _cached_size_;
-  friend void protobuf_AddDesc_reflection_2eproto();
-  friend void protobuf_AssignDesc_reflection_2eproto();
-  friend void protobuf_ShutdownFile_reflection_2eproto();
-
-  void InitAsDefaultInstance();
-  static GetMessageTypeResponse* default_instance_;
-};
-// -------------------------------------------------------------------
-
-class GetEnumTypeResponse : public ::google::protobuf::Message {
- public:
-  GetEnumTypeResponse();
-  virtual ~GetEnumTypeResponse();
-
-  GetEnumTypeResponse(const GetEnumTypeResponse& from);
-
-  inline GetEnumTypeResponse& operator=(const GetEnumTypeResponse& from) {
-    CopyFrom(from);
-    return *this;
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const GetEnumTypeResponse& default_instance();
-
-  void Swap(GetEnumTypeResponse* other);
-
-  // implements Message ----------------------------------------------
-
-  inline GetEnumTypeResponse* New() const { return New(NULL); }
-
-  GetEnumTypeResponse* New(::google::protobuf::Arena* arena) const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const GetEnumTypeResponse& from);
-  void MergeFrom(const GetEnumTypeResponse& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(
-      ::google::protobuf::uint8* output) const;
-  int GetCachedSize() const { return _cached_size_; }
-
- private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const;
-  void InternalSwap(GetEnumTypeResponse* other);
-
- private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
-    return _internal_metadata_.arena();
-  }
-  inline void* MaybeArenaPtr() const {
-    return _internal_metadata_.raw_arena_ptr();
-  }
-
- public:
-  ::google::protobuf::Metadata GetMetadata() const;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  // optional .google.protobuf.EnumDescriptorProto enum_type = 1;
-  bool has_enum_type() const;
-  void clear_enum_type();
-  static const int kEnumTypeFieldNumber = 1;
-  const ::google::protobuf::EnumDescriptorProto& enum_type() const;
-  ::google::protobuf::EnumDescriptorProto* mutable_enum_type();
-  ::google::protobuf::EnumDescriptorProto* release_enum_type();
-  void set_allocated_enum_type(
-      ::google::protobuf::EnumDescriptorProto* enum_type);
-
-  // @@protoc_insertion_point(class_scope:grpc.reflection.v1.GetEnumTypeResponse)
- private:
-  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-  bool _is_default_instance_;
-  ::google::protobuf::EnumDescriptorProto* enum_type_;
-  mutable int _cached_size_;
-  friend void protobuf_AddDesc_reflection_2eproto();
-  friend void protobuf_AssignDesc_reflection_2eproto();
-  friend void protobuf_ShutdownFile_reflection_2eproto();
-
-  void InitAsDefaultInstance();
-  static GetEnumTypeResponse* default_instance_;
-};
-// -------------------------------------------------------------------
-
-class GetEnumValueResponse : public ::google::protobuf::Message {
- public:
-  GetEnumValueResponse();
-  virtual ~GetEnumValueResponse();
-
-  GetEnumValueResponse(const GetEnumValueResponse& from);
-
-  inline GetEnumValueResponse& operator=(const GetEnumValueResponse& from) {
-    CopyFrom(from);
-    return *this;
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const GetEnumValueResponse& default_instance();
-
-  void Swap(GetEnumValueResponse* other);
-
-  // implements Message ----------------------------------------------
-
-  inline GetEnumValueResponse* New() const { return New(NULL); }
-
-  GetEnumValueResponse* New(::google::protobuf::Arena* arena) const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const GetEnumValueResponse& from);
-  void MergeFrom(const GetEnumValueResponse& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(
-      ::google::protobuf::uint8* output) const;
-  int GetCachedSize() const { return _cached_size_; }
-
- private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const;
-  void InternalSwap(GetEnumValueResponse* other);
-
- private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
-    return _internal_metadata_.arena();
-  }
-  inline void* MaybeArenaPtr() const {
-    return _internal_metadata_.raw_arena_ptr();
-  }
-
- public:
-  ::google::protobuf::Metadata GetMetadata() const;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  // optional .google.protobuf.EnumValueDescriptorProto enum_value = 1;
-  bool has_enum_value() const;
-  void clear_enum_value();
-  static const int kEnumValueFieldNumber = 1;
-  const ::google::protobuf::EnumValueDescriptorProto& enum_value() const;
-  ::google::protobuf::EnumValueDescriptorProto* mutable_enum_value();
-  ::google::protobuf::EnumValueDescriptorProto* release_enum_value();
-  void set_allocated_enum_value(
-      ::google::protobuf::EnumValueDescriptorProto* enum_value);
-
-  // @@protoc_insertion_point(class_scope:grpc.reflection.v1.GetEnumValueResponse)
- private:
-  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-  bool _is_default_instance_;
-  ::google::protobuf::EnumValueDescriptorProto* enum_value_;
-  mutable int _cached_size_;
-  friend void protobuf_AddDesc_reflection_2eproto();
-  friend void protobuf_AssignDesc_reflection_2eproto();
-  friend void protobuf_ShutdownFile_reflection_2eproto();
-
-  void InitAsDefaultInstance();
-  static GetEnumValueResponse* default_instance_;
-};
-// -------------------------------------------------------------------
-
-class GetExtensionResponse : public ::google::protobuf::Message {
- public:
-  GetExtensionResponse();
-  virtual ~GetExtensionResponse();
-
-  GetExtensionResponse(const GetExtensionResponse& from);
-
-  inline GetExtensionResponse& operator=(const GetExtensionResponse& from) {
-    CopyFrom(from);
-    return *this;
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const GetExtensionResponse& default_instance();
-
-  void Swap(GetExtensionResponse* other);
-
-  // implements Message ----------------------------------------------
-
-  inline GetExtensionResponse* New() const { return New(NULL); }
-
-  GetExtensionResponse* New(::google::protobuf::Arena* arena) const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const GetExtensionResponse& from);
-  void MergeFrom(const GetExtensionResponse& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(
-      ::google::protobuf::uint8* output) const;
-  int GetCachedSize() const { return _cached_size_; }
-
- private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const;
-  void InternalSwap(GetExtensionResponse* other);
-
- private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
-    return _internal_metadata_.arena();
-  }
-  inline void* MaybeArenaPtr() const {
-    return _internal_metadata_.raw_arena_ptr();
-  }
-
- public:
-  ::google::protobuf::Metadata GetMetadata() const;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  // optional .google.protobuf.FieldDescriptorProto extension = 1;
-  bool has_extension() const;
-  void clear_extension();
-  static const int kExtensionFieldNumber = 1;
-  const ::google::protobuf::FieldDescriptorProto& extension() const;
-  ::google::protobuf::FieldDescriptorProto* mutable_extension();
-  ::google::protobuf::FieldDescriptorProto* release_extension();
-  void set_allocated_extension(
-      ::google::protobuf::FieldDescriptorProto* extension);
-
-  // @@protoc_insertion_point(class_scope:grpc.reflection.v1.GetExtensionResponse)
- private:
-  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-  bool _is_default_instance_;
-  ::google::protobuf::FieldDescriptorProto* extension_;
-  mutable int _cached_size_;
-  friend void protobuf_AddDesc_reflection_2eproto();
-  friend void protobuf_AssignDesc_reflection_2eproto();
-  friend void protobuf_ShutdownFile_reflection_2eproto();
-
-  void InitAsDefaultInstance();
-  static GetExtensionResponse* default_instance_;
+  static ExtensionNumberResponse* default_instance_;
 };
 // ===================================================================
 
 // ===================================================================
 
 #if !PROTOBUF_INLINE_NOT_IN_HEADERS
-// ListServiceRequest
+// EmptyRequest
 
 // -------------------------------------------------------------------
 
-// GetDescriptorRequest
+// FileNameRequest
 
-// optional string name = 1;
-inline void GetDescriptorRequest::clear_name() {
-  name_.ClearToEmptyNoArena(
+// optional string filename = 1;
+inline void FileNameRequest::clear_filename() {
+  filename_.ClearToEmptyNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline const ::std::string& GetDescriptorRequest::name() const {
-  // @@protoc_insertion_point(field_get:grpc.reflection.v1.GetDescriptorRequest.name)
-  return name_.GetNoArena(
+inline const ::std::string& FileNameRequest::filename() const {
+  // @@protoc_insertion_point(field_get:grpc.reflection.v1.FileNameRequest.filename)
+  return filename_.GetNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline void GetDescriptorRequest::set_name(const ::std::string& value) {
-  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-                   value);
-  // @@protoc_insertion_point(field_set:grpc.reflection.v1.GetDescriptorRequest.name)
+inline void FileNameRequest::set_filename(const ::std::string& value) {
+  filename_.SetNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:grpc.reflection.v1.FileNameRequest.filename)
 }
-inline void GetDescriptorRequest::set_name(const char* value) {
-  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-                   ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:grpc.reflection.v1.GetDescriptorRequest.name)
+inline void FileNameRequest::set_filename(const char* value) {
+  filename_.SetNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:grpc.reflection.v1.FileNameRequest.filename)
 }
-inline void GetDescriptorRequest::set_name(const char* value, size_t size) {
-  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-                   ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:grpc.reflection.v1.GetDescriptorRequest.name)
+inline void FileNameRequest::set_filename(const char* value, size_t size) {
+  filename_.SetNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:grpc.reflection.v1.FileNameRequest.filename)
 }
-inline ::std::string* GetDescriptorRequest::mutable_name() {
-  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1.GetDescriptorRequest.name)
-  return name_.MutableNoArena(
+inline ::std::string* FileNameRequest::mutable_filename() {
+  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1.FileNameRequest.filename)
+  return filename_.MutableNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline ::std::string* GetDescriptorRequest::release_name() {
-  return name_.ReleaseNoArena(
+inline ::std::string* FileNameRequest::release_filename() {
+  return filename_.ReleaseNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline void GetDescriptorRequest::set_allocated_name(::std::string* name) {
-  if (name != NULL) {
+inline void FileNameRequest::set_allocated_filename(::std::string* filename) {
+  if (filename != NULL) {
   } else {
   }
-  name_.SetAllocatedNoArena(
-      &::google::protobuf::internal::GetEmptyStringAlreadyInited(), name);
-  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1.GetDescriptorRequest.name)
+  filename_.SetAllocatedNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(), filename);
+  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1.FileNameRequest.filename)
+}
+
+// -------------------------------------------------------------------
+
+// SymbolRequest
+
+// optional string symbol = 1;
+inline void SymbolRequest::clear_symbol() {
+  symbol_.ClearToEmptyNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline const ::std::string& SymbolRequest::symbol() const {
+  // @@protoc_insertion_point(field_get:grpc.reflection.v1.SymbolRequest.symbol)
+  return symbol_.GetNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void SymbolRequest::set_symbol(const ::std::string& value) {
+  symbol_.SetNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:grpc.reflection.v1.SymbolRequest.symbol)
+}
+inline void SymbolRequest::set_symbol(const char* value) {
+  symbol_.SetNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:grpc.reflection.v1.SymbolRequest.symbol)
+}
+inline void SymbolRequest::set_symbol(const char* value, size_t size) {
+  symbol_.SetNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:grpc.reflection.v1.SymbolRequest.symbol)
+}
+inline ::std::string* SymbolRequest::mutable_symbol() {
+  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1.SymbolRequest.symbol)
+  return symbol_.MutableNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* SymbolRequest::release_symbol() {
+  return symbol_.ReleaseNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void SymbolRequest::set_allocated_symbol(::std::string* symbol) {
+  if (symbol != NULL) {
+  } else {
+  }
+  symbol_.SetAllocatedNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(), symbol);
+  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1.SymbolRequest.symbol)
+}
+
+// -------------------------------------------------------------------
+
+// ExtensionRequest
+
+// optional string containing_type = 1;
+inline void ExtensionRequest::clear_containing_type() {
+  containing_type_.ClearToEmptyNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline const ::std::string& ExtensionRequest::containing_type() const {
+  // @@protoc_insertion_point(field_get:grpc.reflection.v1.ExtensionRequest.containing_type)
+  return containing_type_.GetNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void ExtensionRequest::set_containing_type(const ::std::string& value) {
+  containing_type_.SetNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:grpc.reflection.v1.ExtensionRequest.containing_type)
+}
+inline void ExtensionRequest::set_containing_type(const char* value) {
+  containing_type_.SetNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:grpc.reflection.v1.ExtensionRequest.containing_type)
+}
+inline void ExtensionRequest::set_containing_type(const char* value,
+                                                  size_t size) {
+  containing_type_.SetNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:grpc.reflection.v1.ExtensionRequest.containing_type)
+}
+inline ::std::string* ExtensionRequest::mutable_containing_type() {
+  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1.ExtensionRequest.containing_type)
+  return containing_type_.MutableNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* ExtensionRequest::release_containing_type() {
+  return containing_type_.ReleaseNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void ExtensionRequest::set_allocated_containing_type(
+    ::std::string* containing_type) {
+  if (containing_type != NULL) {
+  } else {
+  }
+  containing_type_.SetAllocatedNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      containing_type);
+  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1.ExtensionRequest.containing_type)
+}
+
+// optional int32 extension_number = 2;
+inline void ExtensionRequest::clear_extension_number() {
+  extension_number_ = 0;
+}
+inline ::google::protobuf::int32 ExtensionRequest::extension_number() const {
+  // @@protoc_insertion_point(field_get:grpc.reflection.v1.ExtensionRequest.extension_number)
+  return extension_number_;
+}
+inline void ExtensionRequest::set_extension_number(
+    ::google::protobuf::int32 value) {
+  extension_number_ = value;
+  // @@protoc_insertion_point(field_set:grpc.reflection.v1.ExtensionRequest.extension_number)
+}
+
+// -------------------------------------------------------------------
+
+// TypeRequest
+
+// optional string type = 1;
+inline void TypeRequest::clear_type() {
+  type_.ClearToEmptyNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline const ::std::string& TypeRequest::type() const {
+  // @@protoc_insertion_point(field_get:grpc.reflection.v1.TypeRequest.type)
+  return type_.GetNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void TypeRequest::set_type(const ::std::string& value) {
+  type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+                   value);
+  // @@protoc_insertion_point(field_set:grpc.reflection.v1.TypeRequest.type)
+}
+inline void TypeRequest::set_type(const char* value) {
+  type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+                   ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:grpc.reflection.v1.TypeRequest.type)
+}
+inline void TypeRequest::set_type(const char* value, size_t size) {
+  type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+                   ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:grpc.reflection.v1.TypeRequest.type)
+}
+inline ::std::string* TypeRequest::mutable_type() {
+  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1.TypeRequest.type)
+  return type_.MutableNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* TypeRequest::release_type() {
+  return type_.ReleaseNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void TypeRequest::set_allocated_type(::std::string* type) {
+  if (type != NULL) {
+  } else {
+  }
+  type_.SetAllocatedNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(), type);
+  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1.TypeRequest.type)
 }
 
 // -------------------------------------------------------------------
@@ -913,250 +1009,83 @@ ListServiceResponse::mutable_services() {
 
 // -------------------------------------------------------------------
 
-// GetMethodResponse
+// FileDescriptorProtoResponse
 
-// optional .google.protobuf.MethodDescriptorProto method = 1;
-inline bool GetMethodResponse::has_method() const {
-  return !_is_default_instance_ && method_ != NULL;
+// optional .google.protobuf.FileDescriptorProto file_descriptor_proto = 1;
+inline bool FileDescriptorProtoResponse::has_file_descriptor_proto() const {
+  return !_is_default_instance_ && file_descriptor_proto_ != NULL;
 }
-inline void GetMethodResponse::clear_method() {
-  if (GetArenaNoVirtual() == NULL && method_ != NULL) delete method_;
-  method_ = NULL;
+inline void FileDescriptorProtoResponse::clear_file_descriptor_proto() {
+  if (GetArenaNoVirtual() == NULL && file_descriptor_proto_ != NULL)
+    delete file_descriptor_proto_;
+  file_descriptor_proto_ = NULL;
 }
-inline const ::google::protobuf::MethodDescriptorProto&
-GetMethodResponse::method() const {
-  // @@protoc_insertion_point(field_get:grpc.reflection.v1.GetMethodResponse.method)
-  return method_ != NULL ? *method_ : *default_instance_->method_;
+inline const ::google::protobuf::FileDescriptorProto&
+FileDescriptorProtoResponse::file_descriptor_proto() const {
+  // @@protoc_insertion_point(field_get:grpc.reflection.v1.FileDescriptorProtoResponse.file_descriptor_proto)
+  return file_descriptor_proto_ != NULL
+             ? *file_descriptor_proto_
+             : *default_instance_->file_descriptor_proto_;
 }
-inline ::google::protobuf::MethodDescriptorProto*
-GetMethodResponse::mutable_method() {
-  if (method_ == NULL) {
-    method_ = new ::google::protobuf::MethodDescriptorProto;
+inline ::google::protobuf::FileDescriptorProto*
+FileDescriptorProtoResponse::mutable_file_descriptor_proto() {
+  if (file_descriptor_proto_ == NULL) {
+    file_descriptor_proto_ = new ::google::protobuf::FileDescriptorProto;
   }
-  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1.GetMethodResponse.method)
-  return method_;
+  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1.FileDescriptorProtoResponse.file_descriptor_proto)
+  return file_descriptor_proto_;
 }
-inline ::google::protobuf::MethodDescriptorProto*
-GetMethodResponse::release_method() {
-  ::google::protobuf::MethodDescriptorProto* temp = method_;
-  method_ = NULL;
+inline ::google::protobuf::FileDescriptorProto*
+FileDescriptorProtoResponse::release_file_descriptor_proto() {
+  ::google::protobuf::FileDescriptorProto* temp = file_descriptor_proto_;
+  file_descriptor_proto_ = NULL;
   return temp;
 }
-inline void GetMethodResponse::set_allocated_method(
-    ::google::protobuf::MethodDescriptorProto* method) {
-  delete method_;
-  method_ = method;
-  if (method) {
+inline void FileDescriptorProtoResponse::set_allocated_file_descriptor_proto(
+    ::google::protobuf::FileDescriptorProto* file_descriptor_proto) {
+  delete file_descriptor_proto_;
+  file_descriptor_proto_ = file_descriptor_proto;
+  if (file_descriptor_proto) {
   } else {
   }
-  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1.GetMethodResponse.method)
+  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1.FileDescriptorProtoResponse.file_descriptor_proto)
 }
 
 // -------------------------------------------------------------------
 
-// GetServiceResponse
+// ExtensionNumberResponse
 
-// optional .google.protobuf.ServiceDescriptorProto service = 1;
-inline bool GetServiceResponse::has_service() const {
-  return !_is_default_instance_ && service_ != NULL;
+// repeated int32 extension_number = 1;
+inline int ExtensionNumberResponse::extension_number_size() const {
+  return extension_number_.size();
 }
-inline void GetServiceResponse::clear_service() {
-  if (GetArenaNoVirtual() == NULL && service_ != NULL) delete service_;
-  service_ = NULL;
+inline void ExtensionNumberResponse::clear_extension_number() {
+  extension_number_.Clear();
 }
-inline const ::google::protobuf::ServiceDescriptorProto&
-GetServiceResponse::service() const {
-  // @@protoc_insertion_point(field_get:grpc.reflection.v1.GetServiceResponse.service)
-  return service_ != NULL ? *service_ : *default_instance_->service_;
+inline ::google::protobuf::int32 ExtensionNumberResponse::extension_number(
+    int index) const {
+  // @@protoc_insertion_point(field_get:grpc.reflection.v1.ExtensionNumberResponse.extension_number)
+  return extension_number_.Get(index);
 }
-inline ::google::protobuf::ServiceDescriptorProto*
-GetServiceResponse::mutable_service() {
-  if (service_ == NULL) {
-    service_ = new ::google::protobuf::ServiceDescriptorProto;
-  }
-  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1.GetServiceResponse.service)
-  return service_;
+inline void ExtensionNumberResponse::set_extension_number(
+    int index, ::google::protobuf::int32 value) {
+  extension_number_.Set(index, value);
+  // @@protoc_insertion_point(field_set:grpc.reflection.v1.ExtensionNumberResponse.extension_number)
 }
-inline ::google::protobuf::ServiceDescriptorProto*
-GetServiceResponse::release_service() {
-  ::google::protobuf::ServiceDescriptorProto* temp = service_;
-  service_ = NULL;
-  return temp;
+inline void ExtensionNumberResponse::add_extension_number(
+    ::google::protobuf::int32 value) {
+  extension_number_.Add(value);
+  // @@protoc_insertion_point(field_add:grpc.reflection.v1.ExtensionNumberResponse.extension_number)
 }
-inline void GetServiceResponse::set_allocated_service(
-    ::google::protobuf::ServiceDescriptorProto* service) {
-  delete service_;
-  service_ = service;
-  if (service) {
-  } else {
-  }
-  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1.GetServiceResponse.service)
+inline const ::google::protobuf::RepeatedField< ::google::protobuf::int32>&
+ExtensionNumberResponse::extension_number() const {
+  // @@protoc_insertion_point(field_list:grpc.reflection.v1.ExtensionNumberResponse.extension_number)
+  return extension_number_;
 }
-
-// -------------------------------------------------------------------
-
-// GetMessageTypeResponse
-
-// optional .google.protobuf.DescriptorProto message_type = 1;
-inline bool GetMessageTypeResponse::has_message_type() const {
-  return !_is_default_instance_ && message_type_ != NULL;
-}
-inline void GetMessageTypeResponse::clear_message_type() {
-  if (GetArenaNoVirtual() == NULL && message_type_ != NULL)
-    delete message_type_;
-  message_type_ = NULL;
-}
-inline const ::google::protobuf::DescriptorProto&
-GetMessageTypeResponse::message_type() const {
-  // @@protoc_insertion_point(field_get:grpc.reflection.v1.GetMessageTypeResponse.message_type)
-  return message_type_ != NULL ? *message_type_
-                               : *default_instance_->message_type_;
-}
-inline ::google::protobuf::DescriptorProto*
-GetMessageTypeResponse::mutable_message_type() {
-  if (message_type_ == NULL) {
-    message_type_ = new ::google::protobuf::DescriptorProto;
-  }
-  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1.GetMessageTypeResponse.message_type)
-  return message_type_;
-}
-inline ::google::protobuf::DescriptorProto*
-GetMessageTypeResponse::release_message_type() {
-  ::google::protobuf::DescriptorProto* temp = message_type_;
-  message_type_ = NULL;
-  return temp;
-}
-inline void GetMessageTypeResponse::set_allocated_message_type(
-    ::google::protobuf::DescriptorProto* message_type) {
-  delete message_type_;
-  message_type_ = message_type;
-  if (message_type) {
-  } else {
-  }
-  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1.GetMessageTypeResponse.message_type)
-}
-
-// -------------------------------------------------------------------
-
-// GetEnumTypeResponse
-
-// optional .google.protobuf.EnumDescriptorProto enum_type = 1;
-inline bool GetEnumTypeResponse::has_enum_type() const {
-  return !_is_default_instance_ && enum_type_ != NULL;
-}
-inline void GetEnumTypeResponse::clear_enum_type() {
-  if (GetArenaNoVirtual() == NULL && enum_type_ != NULL) delete enum_type_;
-  enum_type_ = NULL;
-}
-inline const ::google::protobuf::EnumDescriptorProto&
-GetEnumTypeResponse::enum_type() const {
-  // @@protoc_insertion_point(field_get:grpc.reflection.v1.GetEnumTypeResponse.enum_type)
-  return enum_type_ != NULL ? *enum_type_ : *default_instance_->enum_type_;
-}
-inline ::google::protobuf::EnumDescriptorProto*
-GetEnumTypeResponse::mutable_enum_type() {
-  if (enum_type_ == NULL) {
-    enum_type_ = new ::google::protobuf::EnumDescriptorProto;
-  }
-  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1.GetEnumTypeResponse.enum_type)
-  return enum_type_;
-}
-inline ::google::protobuf::EnumDescriptorProto*
-GetEnumTypeResponse::release_enum_type() {
-  ::google::protobuf::EnumDescriptorProto* temp = enum_type_;
-  enum_type_ = NULL;
-  return temp;
-}
-inline void GetEnumTypeResponse::set_allocated_enum_type(
-    ::google::protobuf::EnumDescriptorProto* enum_type) {
-  delete enum_type_;
-  enum_type_ = enum_type;
-  if (enum_type) {
-  } else {
-  }
-  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1.GetEnumTypeResponse.enum_type)
-}
-
-// -------------------------------------------------------------------
-
-// GetEnumValueResponse
-
-// optional .google.protobuf.EnumValueDescriptorProto enum_value = 1;
-inline bool GetEnumValueResponse::has_enum_value() const {
-  return !_is_default_instance_ && enum_value_ != NULL;
-}
-inline void GetEnumValueResponse::clear_enum_value() {
-  if (GetArenaNoVirtual() == NULL && enum_value_ != NULL) delete enum_value_;
-  enum_value_ = NULL;
-}
-inline const ::google::protobuf::EnumValueDescriptorProto&
-GetEnumValueResponse::enum_value() const {
-  // @@protoc_insertion_point(field_get:grpc.reflection.v1.GetEnumValueResponse.enum_value)
-  return enum_value_ != NULL ? *enum_value_ : *default_instance_->enum_value_;
-}
-inline ::google::protobuf::EnumValueDescriptorProto*
-GetEnumValueResponse::mutable_enum_value() {
-  if (enum_value_ == NULL) {
-    enum_value_ = new ::google::protobuf::EnumValueDescriptorProto;
-  }
-  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1.GetEnumValueResponse.enum_value)
-  return enum_value_;
-}
-inline ::google::protobuf::EnumValueDescriptorProto*
-GetEnumValueResponse::release_enum_value() {
-  ::google::protobuf::EnumValueDescriptorProto* temp = enum_value_;
-  enum_value_ = NULL;
-  return temp;
-}
-inline void GetEnumValueResponse::set_allocated_enum_value(
-    ::google::protobuf::EnumValueDescriptorProto* enum_value) {
-  delete enum_value_;
-  enum_value_ = enum_value;
-  if (enum_value) {
-  } else {
-  }
-  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1.GetEnumValueResponse.enum_value)
-}
-
-// -------------------------------------------------------------------
-
-// GetExtensionResponse
-
-// optional .google.protobuf.FieldDescriptorProto extension = 1;
-inline bool GetExtensionResponse::has_extension() const {
-  return !_is_default_instance_ && extension_ != NULL;
-}
-inline void GetExtensionResponse::clear_extension() {
-  if (GetArenaNoVirtual() == NULL && extension_ != NULL) delete extension_;
-  extension_ = NULL;
-}
-inline const ::google::protobuf::FieldDescriptorProto&
-GetExtensionResponse::extension() const {
-  // @@protoc_insertion_point(field_get:grpc.reflection.v1.GetExtensionResponse.extension)
-  return extension_ != NULL ? *extension_ : *default_instance_->extension_;
-}
-inline ::google::protobuf::FieldDescriptorProto*
-GetExtensionResponse::mutable_extension() {
-  if (extension_ == NULL) {
-    extension_ = new ::google::protobuf::FieldDescriptorProto;
-  }
-  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1.GetExtensionResponse.extension)
-  return extension_;
-}
-inline ::google::protobuf::FieldDescriptorProto*
-GetExtensionResponse::release_extension() {
-  ::google::protobuf::FieldDescriptorProto* temp = extension_;
-  extension_ = NULL;
-  return temp;
-}
-inline void GetExtensionResponse::set_allocated_extension(
-    ::google::protobuf::FieldDescriptorProto* extension) {
-  delete extension_;
-  extension_ = extension;
-  if (extension) {
-  } else {
-  }
-  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1.GetExtensionResponse.extension)
+inline ::google::protobuf::RepeatedField< ::google::protobuf::int32>*
+ExtensionNumberResponse::mutable_extension_number() {
+  // @@protoc_insertion_point(field_mutable_list:grpc.reflection.v1.ExtensionNumberResponse.extension_number)
+  return &extension_number_;
 }
 
 #endif  // !PROTOBUF_INLINE_NOT_IN_HEADERS
@@ -1174,7 +1103,6 @@ inline void GetExtensionResponse::set_allocated_extension(
 
 // -------------------------------------------------------------------
 
-// -------------------------------------------------------------------
 
 // @@protoc_insertion_point(namespace_scope)
 

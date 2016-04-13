@@ -34,142 +34,102 @@ class ServerReflection GRPC_FINAL {
     virtual ~StubInterface() {}
     virtual ::grpc::Status ListService(
         ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::ListServiceRequest& request,
+        const ::grpc::reflection::v1::EmptyRequest& request,
         ::grpc::reflection::v1::ListServiceResponse* response) = 0;
     std::unique_ptr<::grpc::ClientAsyncResponseReaderInterface<
         ::grpc::reflection::v1::ListServiceResponse>>
     AsyncListService(::grpc::ClientContext* context,
-                     const ::grpc::reflection::v1::ListServiceRequest& request,
+                     const ::grpc::reflection::v1::EmptyRequest& request,
                      ::grpc::CompletionQueue* cq) {
       return std::unique_ptr<::grpc::ClientAsyncResponseReaderInterface<
           ::grpc::reflection::v1::ListServiceResponse>>(
           AsyncListServiceRaw(context, request, cq));
     }
-    virtual ::grpc::Status GetService(
+    virtual ::grpc::Status GetFileByName(
         ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest& request,
-        ::grpc::reflection::v1::GetServiceResponse* response) = 0;
+        const ::grpc::reflection::v1::FileNameRequest& request,
+        ::grpc::reflection::v1::FileDescriptorProtoResponse* response) = 0;
     std::unique_ptr<::grpc::ClientAsyncResponseReaderInterface<
-        ::grpc::reflection::v1::GetServiceResponse>>
-    AsyncGetService(::grpc::ClientContext* context,
-                    const ::grpc::reflection::v1::GetDescriptorRequest& request,
-                    ::grpc::CompletionQueue* cq) {
+        ::grpc::reflection::v1::FileDescriptorProtoResponse>>
+    AsyncGetFileByName(::grpc::ClientContext* context,
+                       const ::grpc::reflection::v1::FileNameRequest& request,
+                       ::grpc::CompletionQueue* cq) {
       return std::unique_ptr<::grpc::ClientAsyncResponseReaderInterface<
-          ::grpc::reflection::v1::GetServiceResponse>>(
-          AsyncGetServiceRaw(context, request, cq));
+          ::grpc::reflection::v1::FileDescriptorProtoResponse>>(
+          AsyncGetFileByNameRaw(context, request, cq));
     }
-    virtual ::grpc::Status GetMethod(
+    virtual ::grpc::Status GetFileContainingSymbol(
         ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest& request,
-        ::grpc::reflection::v1::GetMethodResponse* response) = 0;
+        const ::grpc::reflection::v1::SymbolRequest& request,
+        ::grpc::reflection::v1::FileDescriptorProtoResponse* response) = 0;
     std::unique_ptr<::grpc::ClientAsyncResponseReaderInterface<
-        ::grpc::reflection::v1::GetMethodResponse>>
-    AsyncGetMethod(::grpc::ClientContext* context,
-                   const ::grpc::reflection::v1::GetDescriptorRequest& request,
-                   ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr<::grpc::ClientAsyncResponseReaderInterface<
-          ::grpc::reflection::v1::GetMethodResponse>>(
-          AsyncGetMethodRaw(context, request, cq));
-    }
-    virtual ::grpc::Status GetMessageType(
+        ::grpc::reflection::v1::FileDescriptorProtoResponse>>
+    AsyncGetFileContainingSymbol(
         ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest& request,
-        ::grpc::reflection::v1::GetMessageTypeResponse* response) = 0;
-    std::unique_ptr<::grpc::ClientAsyncResponseReaderInterface<
-        ::grpc::reflection::v1::GetMessageTypeResponse>>
-    AsyncGetMessageType(
-        ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest& request,
+        const ::grpc::reflection::v1::SymbolRequest& request,
         ::grpc::CompletionQueue* cq) {
       return std::unique_ptr<::grpc::ClientAsyncResponseReaderInterface<
-          ::grpc::reflection::v1::GetMessageTypeResponse>>(
-          AsyncGetMessageTypeRaw(context, request, cq));
+          ::grpc::reflection::v1::FileDescriptorProtoResponse>>(
+          AsyncGetFileContainingSymbolRaw(context, request, cq));
     }
-    virtual ::grpc::Status GetEnumType(
+    virtual ::grpc::Status GetFileContainingExtention(
         ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest& request,
-        ::grpc::reflection::v1::GetEnumTypeResponse* response) = 0;
+        const ::grpc::reflection::v1::ExtensionRequest& request,
+        ::grpc::reflection::v1::FileDescriptorProtoResponse* response) = 0;
     std::unique_ptr<::grpc::ClientAsyncResponseReaderInterface<
-        ::grpc::reflection::v1::GetEnumTypeResponse>>
-    AsyncGetEnumType(
+        ::grpc::reflection::v1::FileDescriptorProtoResponse>>
+    AsyncGetFileContainingExtention(
         ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest& request,
+        const ::grpc::reflection::v1::ExtensionRequest& request,
         ::grpc::CompletionQueue* cq) {
       return std::unique_ptr<::grpc::ClientAsyncResponseReaderInterface<
-          ::grpc::reflection::v1::GetEnumTypeResponse>>(
-          AsyncGetEnumTypeRaw(context, request, cq));
+          ::grpc::reflection::v1::FileDescriptorProtoResponse>>(
+          AsyncGetFileContainingExtentionRaw(context, request, cq));
     }
-    virtual ::grpc::Status GetEnumValue(
+    virtual ::grpc::Status GetAllExtensionNumbers(
         ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest& request,
-        ::grpc::reflection::v1::GetEnumValueResponse* response) = 0;
+        const ::grpc::reflection::v1::TypeRequest& request,
+        ::grpc::reflection::v1::ExtensionNumberResponse* response) = 0;
     std::unique_ptr<::grpc::ClientAsyncResponseReaderInterface<
-        ::grpc::reflection::v1::GetEnumValueResponse>>
-    AsyncGetEnumValue(
+        ::grpc::reflection::v1::ExtensionNumberResponse>>
+    AsyncGetAllExtensionNumbers(
         ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest& request,
+        const ::grpc::reflection::v1::TypeRequest& request,
         ::grpc::CompletionQueue* cq) {
       return std::unique_ptr<::grpc::ClientAsyncResponseReaderInterface<
-          ::grpc::reflection::v1::GetEnumValueResponse>>(
-          AsyncGetEnumValueRaw(context, request, cq));
-    }
-    virtual ::grpc::Status GetExtension(
-        ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest& request,
-        ::grpc::reflection::v1::GetExtensionResponse* response) = 0;
-    std::unique_ptr<::grpc::ClientAsyncResponseReaderInterface<
-        ::grpc::reflection::v1::GetExtensionResponse>>
-    AsyncGetExtension(
-        ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest& request,
-        ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr<::grpc::ClientAsyncResponseReaderInterface<
-          ::grpc::reflection::v1::GetExtensionResponse>>(
-          AsyncGetExtensionRaw(context, request, cq));
+          ::grpc::reflection::v1::ExtensionNumberResponse>>(
+          AsyncGetAllExtensionNumbersRaw(context, request, cq));
     }
 
    private:
     virtual ::grpc::ClientAsyncResponseReaderInterface<
         ::grpc::reflection::v1::ListServiceResponse>*
-    AsyncListServiceRaw(
+    AsyncListServiceRaw(::grpc::ClientContext* context,
+                        const ::grpc::reflection::v1::EmptyRequest& request,
+                        ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface<
+        ::grpc::reflection::v1::FileDescriptorProtoResponse>*
+    AsyncGetFileByNameRaw(
         ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::ListServiceRequest& request,
+        const ::grpc::reflection::v1::FileNameRequest& request,
         ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface<
-        ::grpc::reflection::v1::GetServiceResponse>*
-    AsyncGetServiceRaw(
+        ::grpc::reflection::v1::FileDescriptorProtoResponse>*
+    AsyncGetFileContainingSymbolRaw(
         ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest& request,
+        const ::grpc::reflection::v1::SymbolRequest& request,
         ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface<
-        ::grpc::reflection::v1::GetMethodResponse>*
-    AsyncGetMethodRaw(
+        ::grpc::reflection::v1::FileDescriptorProtoResponse>*
+    AsyncGetFileContainingExtentionRaw(
         ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest& request,
+        const ::grpc::reflection::v1::ExtensionRequest& request,
         ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface<
-        ::grpc::reflection::v1::GetMessageTypeResponse>*
-    AsyncGetMessageTypeRaw(
+        ::grpc::reflection::v1::ExtensionNumberResponse>*
+    AsyncGetAllExtensionNumbersRaw(
         ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest& request,
-        ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface<
-        ::grpc::reflection::v1::GetEnumTypeResponse>*
-    AsyncGetEnumTypeRaw(
-        ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest& request,
-        ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface<
-        ::grpc::reflection::v1::GetEnumValueResponse>*
-    AsyncGetEnumValueRaw(
-        ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest& request,
-        ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface<
-        ::grpc::reflection::v1::GetExtensionResponse>*
-    AsyncGetExtensionRaw(
-        ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest& request,
+        const ::grpc::reflection::v1::TypeRequest& request,
         ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub GRPC_FINAL : public StubInterface {
@@ -177,151 +137,113 @@ class ServerReflection GRPC_FINAL {
     Stub(const std::shared_ptr<::grpc::ChannelInterface>& channel);
     ::grpc::Status ListService(
         ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::ListServiceRequest& request,
+        const ::grpc::reflection::v1::EmptyRequest& request,
         ::grpc::reflection::v1::ListServiceResponse* response) GRPC_OVERRIDE;
     std::unique_ptr<::grpc::ClientAsyncResponseReader<
         ::grpc::reflection::v1::ListServiceResponse>>
     AsyncListService(::grpc::ClientContext* context,
-                     const ::grpc::reflection::v1::ListServiceRequest& request,
+                     const ::grpc::reflection::v1::EmptyRequest& request,
                      ::grpc::CompletionQueue* cq) {
       return std::unique_ptr<::grpc::ClientAsyncResponseReader<
           ::grpc::reflection::v1::ListServiceResponse>>(
           AsyncListServiceRaw(context, request, cq));
     }
-    ::grpc::Status GetService(
+    ::grpc::Status GetFileByName(
         ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest& request,
-        ::grpc::reflection::v1::GetServiceResponse* response) GRPC_OVERRIDE;
+        const ::grpc::reflection::v1::FileNameRequest& request,
+        ::grpc::reflection::v1::FileDescriptorProtoResponse* response)
+        GRPC_OVERRIDE;
     std::unique_ptr<::grpc::ClientAsyncResponseReader<
-        ::grpc::reflection::v1::GetServiceResponse>>
-    AsyncGetService(::grpc::ClientContext* context,
-                    const ::grpc::reflection::v1::GetDescriptorRequest& request,
-                    ::grpc::CompletionQueue* cq) {
+        ::grpc::reflection::v1::FileDescriptorProtoResponse>>
+    AsyncGetFileByName(::grpc::ClientContext* context,
+                       const ::grpc::reflection::v1::FileNameRequest& request,
+                       ::grpc::CompletionQueue* cq) {
       return std::unique_ptr<::grpc::ClientAsyncResponseReader<
-          ::grpc::reflection::v1::GetServiceResponse>>(
-          AsyncGetServiceRaw(context, request, cq));
+          ::grpc::reflection::v1::FileDescriptorProtoResponse>>(
+          AsyncGetFileByNameRaw(context, request, cq));
     }
-    ::grpc::Status GetMethod(
+    ::grpc::Status GetFileContainingSymbol(
         ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest& request,
-        ::grpc::reflection::v1::GetMethodResponse* response) GRPC_OVERRIDE;
+        const ::grpc::reflection::v1::SymbolRequest& request,
+        ::grpc::reflection::v1::FileDescriptorProtoResponse* response)
+        GRPC_OVERRIDE;
     std::unique_ptr<::grpc::ClientAsyncResponseReader<
-        ::grpc::reflection::v1::GetMethodResponse>>
-    AsyncGetMethod(::grpc::ClientContext* context,
-                   const ::grpc::reflection::v1::GetDescriptorRequest& request,
-                   ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr<::grpc::ClientAsyncResponseReader<
-          ::grpc::reflection::v1::GetMethodResponse>>(
-          AsyncGetMethodRaw(context, request, cq));
-    }
-    ::grpc::Status GetMessageType(
+        ::grpc::reflection::v1::FileDescriptorProtoResponse>>
+    AsyncGetFileContainingSymbol(
         ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest& request,
-        ::grpc::reflection::v1::GetMessageTypeResponse* response) GRPC_OVERRIDE;
-    std::unique_ptr<::grpc::ClientAsyncResponseReader<
-        ::grpc::reflection::v1::GetMessageTypeResponse>>
-    AsyncGetMessageType(
-        ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest& request,
+        const ::grpc::reflection::v1::SymbolRequest& request,
         ::grpc::CompletionQueue* cq) {
       return std::unique_ptr<::grpc::ClientAsyncResponseReader<
-          ::grpc::reflection::v1::GetMessageTypeResponse>>(
-          AsyncGetMessageTypeRaw(context, request, cq));
+          ::grpc::reflection::v1::FileDescriptorProtoResponse>>(
+          AsyncGetFileContainingSymbolRaw(context, request, cq));
     }
-    ::grpc::Status GetEnumType(
+    ::grpc::Status GetFileContainingExtention(
         ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest& request,
-        ::grpc::reflection::v1::GetEnumTypeResponse* response) GRPC_OVERRIDE;
+        const ::grpc::reflection::v1::ExtensionRequest& request,
+        ::grpc::reflection::v1::FileDescriptorProtoResponse* response)
+        GRPC_OVERRIDE;
     std::unique_ptr<::grpc::ClientAsyncResponseReader<
-        ::grpc::reflection::v1::GetEnumTypeResponse>>
-    AsyncGetEnumType(
+        ::grpc::reflection::v1::FileDescriptorProtoResponse>>
+    AsyncGetFileContainingExtention(
         ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest& request,
+        const ::grpc::reflection::v1::ExtensionRequest& request,
         ::grpc::CompletionQueue* cq) {
       return std::unique_ptr<::grpc::ClientAsyncResponseReader<
-          ::grpc::reflection::v1::GetEnumTypeResponse>>(
-          AsyncGetEnumTypeRaw(context, request, cq));
+          ::grpc::reflection::v1::FileDescriptorProtoResponse>>(
+          AsyncGetFileContainingExtentionRaw(context, request, cq));
     }
-    ::grpc::Status GetEnumValue(
+    ::grpc::Status GetAllExtensionNumbers(
         ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest& request,
-        ::grpc::reflection::v1::GetEnumValueResponse* response) GRPC_OVERRIDE;
+        const ::grpc::reflection::v1::TypeRequest& request,
+        ::grpc::reflection::v1::ExtensionNumberResponse* response)
+        GRPC_OVERRIDE;
     std::unique_ptr<::grpc::ClientAsyncResponseReader<
-        ::grpc::reflection::v1::GetEnumValueResponse>>
-    AsyncGetEnumValue(
+        ::grpc::reflection::v1::ExtensionNumberResponse>>
+    AsyncGetAllExtensionNumbers(
         ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest& request,
+        const ::grpc::reflection::v1::TypeRequest& request,
         ::grpc::CompletionQueue* cq) {
       return std::unique_ptr<::grpc::ClientAsyncResponseReader<
-          ::grpc::reflection::v1::GetEnumValueResponse>>(
-          AsyncGetEnumValueRaw(context, request, cq));
-    }
-    ::grpc::Status GetExtension(
-        ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest& request,
-        ::grpc::reflection::v1::GetExtensionResponse* response) GRPC_OVERRIDE;
-    std::unique_ptr<::grpc::ClientAsyncResponseReader<
-        ::grpc::reflection::v1::GetExtensionResponse>>
-    AsyncGetExtension(
-        ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest& request,
-        ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr<::grpc::ClientAsyncResponseReader<
-          ::grpc::reflection::v1::GetExtensionResponse>>(
-          AsyncGetExtensionRaw(context, request, cq));
+          ::grpc::reflection::v1::ExtensionNumberResponse>>(
+          AsyncGetAllExtensionNumbersRaw(context, request, cq));
     }
 
    private:
     std::shared_ptr<::grpc::ChannelInterface> channel_;
     ::grpc::ClientAsyncResponseReader<
         ::grpc::reflection::v1::ListServiceResponse>*
-    AsyncListServiceRaw(
+    AsyncListServiceRaw(::grpc::ClientContext* context,
+                        const ::grpc::reflection::v1::EmptyRequest& request,
+                        ::grpc::CompletionQueue* cq) GRPC_OVERRIDE;
+    ::grpc::ClientAsyncResponseReader<
+        ::grpc::reflection::v1::FileDescriptorProtoResponse>*
+    AsyncGetFileByNameRaw(
         ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::ListServiceRequest& request,
+        const ::grpc::reflection::v1::FileNameRequest& request,
         ::grpc::CompletionQueue* cq) GRPC_OVERRIDE;
     ::grpc::ClientAsyncResponseReader<
-        ::grpc::reflection::v1::GetServiceResponse>*
-    AsyncGetServiceRaw(
+        ::grpc::reflection::v1::FileDescriptorProtoResponse>*
+    AsyncGetFileContainingSymbolRaw(
         ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest& request,
+        const ::grpc::reflection::v1::SymbolRequest& request,
         ::grpc::CompletionQueue* cq) GRPC_OVERRIDE;
     ::grpc::ClientAsyncResponseReader<
-        ::grpc::reflection::v1::GetMethodResponse>*
-    AsyncGetMethodRaw(
+        ::grpc::reflection::v1::FileDescriptorProtoResponse>*
+    AsyncGetFileContainingExtentionRaw(
         ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest& request,
+        const ::grpc::reflection::v1::ExtensionRequest& request,
         ::grpc::CompletionQueue* cq) GRPC_OVERRIDE;
     ::grpc::ClientAsyncResponseReader<
-        ::grpc::reflection::v1::GetMessageTypeResponse>*
-    AsyncGetMessageTypeRaw(
+        ::grpc::reflection::v1::ExtensionNumberResponse>*
+    AsyncGetAllExtensionNumbersRaw(
         ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest& request,
-        ::grpc::CompletionQueue* cq) GRPC_OVERRIDE;
-    ::grpc::ClientAsyncResponseReader<
-        ::grpc::reflection::v1::GetEnumTypeResponse>*
-    AsyncGetEnumTypeRaw(
-        ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest& request,
-        ::grpc::CompletionQueue* cq) GRPC_OVERRIDE;
-    ::grpc::ClientAsyncResponseReader<
-        ::grpc::reflection::v1::GetEnumValueResponse>*
-    AsyncGetEnumValueRaw(
-        ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest& request,
-        ::grpc::CompletionQueue* cq) GRPC_OVERRIDE;
-    ::grpc::ClientAsyncResponseReader<
-        ::grpc::reflection::v1::GetExtensionResponse>*
-    AsyncGetExtensionRaw(
-        ::grpc::ClientContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest& request,
+        const ::grpc::reflection::v1::TypeRequest& request,
         ::grpc::CompletionQueue* cq) GRPC_OVERRIDE;
     const ::grpc::RpcMethod rpcmethod_ListService_;
-    const ::grpc::RpcMethod rpcmethod_GetService_;
-    const ::grpc::RpcMethod rpcmethod_GetMethod_;
-    const ::grpc::RpcMethod rpcmethod_GetMessageType_;
-    const ::grpc::RpcMethod rpcmethod_GetEnumType_;
-    const ::grpc::RpcMethod rpcmethod_GetEnumValue_;
-    const ::grpc::RpcMethod rpcmethod_GetExtension_;
+    const ::grpc::RpcMethod rpcmethod_GetFileByName_;
+    const ::grpc::RpcMethod rpcmethod_GetFileContainingSymbol_;
+    const ::grpc::RpcMethod rpcmethod_GetFileContainingExtention_;
+    const ::grpc::RpcMethod rpcmethod_GetAllExtensionNumbers_;
   };
   static std::unique_ptr<Stub> NewStub(
       const std::shared_ptr<::grpc::ChannelInterface>& channel,
@@ -333,32 +255,24 @@ class ServerReflection GRPC_FINAL {
     virtual ~Service();
     virtual ::grpc::Status ListService(
         ::grpc::ServerContext* context,
-        const ::grpc::reflection::v1::ListServiceRequest* request,
+        const ::grpc::reflection::v1::EmptyRequest* request,
         ::grpc::reflection::v1::ListServiceResponse* response);
-    virtual ::grpc::Status GetService(
+    virtual ::grpc::Status GetFileByName(
         ::grpc::ServerContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest* request,
-        ::grpc::reflection::v1::GetServiceResponse* response);
-    virtual ::grpc::Status GetMethod(
+        const ::grpc::reflection::v1::FileNameRequest* request,
+        ::grpc::reflection::v1::FileDescriptorProtoResponse* response);
+    virtual ::grpc::Status GetFileContainingSymbol(
         ::grpc::ServerContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest* request,
-        ::grpc::reflection::v1::GetMethodResponse* response);
-    virtual ::grpc::Status GetMessageType(
+        const ::grpc::reflection::v1::SymbolRequest* request,
+        ::grpc::reflection::v1::FileDescriptorProtoResponse* response);
+    virtual ::grpc::Status GetFileContainingExtention(
         ::grpc::ServerContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest* request,
-        ::grpc::reflection::v1::GetMessageTypeResponse* response);
-    virtual ::grpc::Status GetEnumType(
+        const ::grpc::reflection::v1::ExtensionRequest* request,
+        ::grpc::reflection::v1::FileDescriptorProtoResponse* response);
+    virtual ::grpc::Status GetAllExtensionNumbers(
         ::grpc::ServerContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest* request,
-        ::grpc::reflection::v1::GetEnumTypeResponse* response);
-    virtual ::grpc::Status GetEnumValue(
-        ::grpc::ServerContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest* request,
-        ::grpc::reflection::v1::GetEnumValueResponse* response);
-    virtual ::grpc::Status GetExtension(
-        ::grpc::ServerContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest* request,
-        ::grpc::reflection::v1::GetExtensionResponse* response);
+        const ::grpc::reflection::v1::TypeRequest* request,
+        ::grpc::reflection::v1::ExtensionNumberResponse* response);
   };
   template <class BaseClass>
   class WithAsyncMethod_ListService : public BaseClass {
@@ -373,7 +287,7 @@ class ServerReflection GRPC_FINAL {
     // disable synchronous version of this method
     ::grpc::Status ListService(
         ::grpc::ServerContext* context,
-        const ::grpc::reflection::v1::ListServiceRequest* request,
+        const ::grpc::reflection::v1::EmptyRequest* request,
         ::grpc::reflection::v1::ListServiceResponse* response)
         GRPC_FINAL GRPC_OVERRIDE {
       abort();
@@ -381,7 +295,7 @@ class ServerReflection GRPC_FINAL {
     }
     void RequestListService(
         ::grpc::ServerContext* context,
-        ::grpc::reflection::v1::ListServiceRequest* request,
+        ::grpc::reflection::v1::EmptyRequest* request,
         ::grpc::ServerAsyncResponseWriter<
             ::grpc::reflection::v1::ListServiceResponse>* response,
         ::grpc::CompletionQueue* new_call_cq,
@@ -391,29 +305,29 @@ class ServerReflection GRPC_FINAL {
     }
   };
   template <class BaseClass>
-  class WithAsyncMethod_GetService : public BaseClass {
+  class WithAsyncMethod_GetFileByName : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(Service* service) {}
 
    public:
-    WithAsyncMethod_GetService() { ::grpc::Service::MarkMethodAsync(1); }
-    ~WithAsyncMethod_GetService() GRPC_OVERRIDE {
+    WithAsyncMethod_GetFileByName() { ::grpc::Service::MarkMethodAsync(1); }
+    ~WithAsyncMethod_GetFileByName() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status GetService(
+    ::grpc::Status GetFileByName(
         ::grpc::ServerContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest* request,
-        ::grpc::reflection::v1::GetServiceResponse* response)
+        const ::grpc::reflection::v1::FileNameRequest* request,
+        ::grpc::reflection::v1::FileDescriptorProtoResponse* response)
         GRPC_FINAL GRPC_OVERRIDE {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestGetService(
+    void RequestGetFileByName(
         ::grpc::ServerContext* context,
-        ::grpc::reflection::v1::GetDescriptorRequest* request,
+        ::grpc::reflection::v1::FileNameRequest* request,
         ::grpc::ServerAsyncResponseWriter<
-            ::grpc::reflection::v1::GetServiceResponse>* response,
+            ::grpc::reflection::v1::FileDescriptorProtoResponse>* response,
         ::grpc::CompletionQueue* new_call_cq,
         ::grpc::ServerCompletionQueue* notification_cq, void* tag) {
       ::grpc::Service::RequestAsyncUnary(1, context, request, response,
@@ -421,29 +335,31 @@ class ServerReflection GRPC_FINAL {
     }
   };
   template <class BaseClass>
-  class WithAsyncMethod_GetMethod : public BaseClass {
+  class WithAsyncMethod_GetFileContainingSymbol : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(Service* service) {}
 
    public:
-    WithAsyncMethod_GetMethod() { ::grpc::Service::MarkMethodAsync(2); }
-    ~WithAsyncMethod_GetMethod() GRPC_OVERRIDE {
+    WithAsyncMethod_GetFileContainingSymbol() {
+      ::grpc::Service::MarkMethodAsync(2);
+    }
+    ~WithAsyncMethod_GetFileContainingSymbol() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status GetMethod(
+    ::grpc::Status GetFileContainingSymbol(
         ::grpc::ServerContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest* request,
-        ::grpc::reflection::v1::GetMethodResponse* response)
+        const ::grpc::reflection::v1::SymbolRequest* request,
+        ::grpc::reflection::v1::FileDescriptorProtoResponse* response)
         GRPC_FINAL GRPC_OVERRIDE {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestGetMethod(
+    void RequestGetFileContainingSymbol(
         ::grpc::ServerContext* context,
-        ::grpc::reflection::v1::GetDescriptorRequest* request,
+        ::grpc::reflection::v1::SymbolRequest* request,
         ::grpc::ServerAsyncResponseWriter<
-            ::grpc::reflection::v1::GetMethodResponse>* response,
+            ::grpc::reflection::v1::FileDescriptorProtoResponse>* response,
         ::grpc::CompletionQueue* new_call_cq,
         ::grpc::ServerCompletionQueue* notification_cq, void* tag) {
       ::grpc::Service::RequestAsyncUnary(2, context, request, response,
@@ -451,29 +367,31 @@ class ServerReflection GRPC_FINAL {
     }
   };
   template <class BaseClass>
-  class WithAsyncMethod_GetMessageType : public BaseClass {
+  class WithAsyncMethod_GetFileContainingExtention : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(Service* service) {}
 
    public:
-    WithAsyncMethod_GetMessageType() { ::grpc::Service::MarkMethodAsync(3); }
-    ~WithAsyncMethod_GetMessageType() GRPC_OVERRIDE {
+    WithAsyncMethod_GetFileContainingExtention() {
+      ::grpc::Service::MarkMethodAsync(3);
+    }
+    ~WithAsyncMethod_GetFileContainingExtention() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status GetMessageType(
+    ::grpc::Status GetFileContainingExtention(
         ::grpc::ServerContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest* request,
-        ::grpc::reflection::v1::GetMessageTypeResponse* response)
+        const ::grpc::reflection::v1::ExtensionRequest* request,
+        ::grpc::reflection::v1::FileDescriptorProtoResponse* response)
         GRPC_FINAL GRPC_OVERRIDE {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestGetMessageType(
+    void RequestGetFileContainingExtention(
         ::grpc::ServerContext* context,
-        ::grpc::reflection::v1::GetDescriptorRequest* request,
+        ::grpc::reflection::v1::ExtensionRequest* request,
         ::grpc::ServerAsyncResponseWriter<
-            ::grpc::reflection::v1::GetMessageTypeResponse>* response,
+            ::grpc::reflection::v1::FileDescriptorProtoResponse>* response,
         ::grpc::CompletionQueue* new_call_cq,
         ::grpc::ServerCompletionQueue* notification_cq, void* tag) {
       ::grpc::Service::RequestAsyncUnary(3, context, request, response,
@@ -481,99 +399,41 @@ class ServerReflection GRPC_FINAL {
     }
   };
   template <class BaseClass>
-  class WithAsyncMethod_GetEnumType : public BaseClass {
+  class WithAsyncMethod_GetAllExtensionNumbers : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(Service* service) {}
 
    public:
-    WithAsyncMethod_GetEnumType() { ::grpc::Service::MarkMethodAsync(4); }
-    ~WithAsyncMethod_GetEnumType() GRPC_OVERRIDE {
+    WithAsyncMethod_GetAllExtensionNumbers() {
+      ::grpc::Service::MarkMethodAsync(4);
+    }
+    ~WithAsyncMethod_GetAllExtensionNumbers() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status GetEnumType(
+    ::grpc::Status GetAllExtensionNumbers(
         ::grpc::ServerContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest* request,
-        ::grpc::reflection::v1::GetEnumTypeResponse* response)
+        const ::grpc::reflection::v1::TypeRequest* request,
+        ::grpc::reflection::v1::ExtensionNumberResponse* response)
         GRPC_FINAL GRPC_OVERRIDE {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestGetEnumType(
+    void RequestGetAllExtensionNumbers(
         ::grpc::ServerContext* context,
-        ::grpc::reflection::v1::GetDescriptorRequest* request,
+        ::grpc::reflection::v1::TypeRequest* request,
         ::grpc::ServerAsyncResponseWriter<
-            ::grpc::reflection::v1::GetEnumTypeResponse>* response,
+            ::grpc::reflection::v1::ExtensionNumberResponse>* response,
         ::grpc::CompletionQueue* new_call_cq,
         ::grpc::ServerCompletionQueue* notification_cq, void* tag) {
       ::grpc::Service::RequestAsyncUnary(4, context, request, response,
                                          new_call_cq, notification_cq, tag);
     }
   };
-  template <class BaseClass>
-  class WithAsyncMethod_GetEnumValue : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(Service* service) {}
-
-   public:
-    WithAsyncMethod_GetEnumValue() { ::grpc::Service::MarkMethodAsync(5); }
-    ~WithAsyncMethod_GetEnumValue() GRPC_OVERRIDE {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status GetEnumValue(
-        ::grpc::ServerContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest* request,
-        ::grpc::reflection::v1::GetEnumValueResponse* response)
-        GRPC_FINAL GRPC_OVERRIDE {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    void RequestGetEnumValue(
-        ::grpc::ServerContext* context,
-        ::grpc::reflection::v1::GetDescriptorRequest* request,
-        ::grpc::ServerAsyncResponseWriter<
-            ::grpc::reflection::v1::GetEnumValueResponse>* response,
-        ::grpc::CompletionQueue* new_call_cq,
-        ::grpc::ServerCompletionQueue* notification_cq, void* tag) {
-      ::grpc::Service::RequestAsyncUnary(5, context, request, response,
-                                         new_call_cq, notification_cq, tag);
-    }
-  };
-  template <class BaseClass>
-  class WithAsyncMethod_GetExtension : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(Service* service) {}
-
-   public:
-    WithAsyncMethod_GetExtension() { ::grpc::Service::MarkMethodAsync(6); }
-    ~WithAsyncMethod_GetExtension() GRPC_OVERRIDE {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status GetExtension(
-        ::grpc::ServerContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest* request,
-        ::grpc::reflection::v1::GetExtensionResponse* response)
-        GRPC_FINAL GRPC_OVERRIDE {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    void RequestGetExtension(
-        ::grpc::ServerContext* context,
-        ::grpc::reflection::v1::GetDescriptorRequest* request,
-        ::grpc::ServerAsyncResponseWriter<
-            ::grpc::reflection::v1::GetExtensionResponse>* response,
-        ::grpc::CompletionQueue* new_call_cq,
-        ::grpc::ServerCompletionQueue* notification_cq, void* tag) {
-      ::grpc::Service::RequestAsyncUnary(6, context, request, response,
-                                         new_call_cq, notification_cq, tag);
-    }
-  };
-  typedef WithAsyncMethod_ListService<WithAsyncMethod_GetService<
-      WithAsyncMethod_GetMethod<WithAsyncMethod_GetMessageType<
-          WithAsyncMethod_GetEnumType<WithAsyncMethod_GetEnumValue<
-              WithAsyncMethod_GetExtension<Service>>>>>>>
+  typedef WithAsyncMethod_ListService<
+      WithAsyncMethod_GetFileByName<WithAsyncMethod_GetFileContainingSymbol<
+          WithAsyncMethod_GetFileContainingExtention<
+              WithAsyncMethod_GetAllExtensionNumbers<Service>>>>>
       AsyncService;
   template <class BaseClass>
   class WithGenericMethod_ListService : public BaseClass {
@@ -588,7 +448,7 @@ class ServerReflection GRPC_FINAL {
     // disable synchronous version of this method
     ::grpc::Status ListService(
         ::grpc::ServerContext* context,
-        const ::grpc::reflection::v1::ListServiceRequest* request,
+        const ::grpc::reflection::v1::EmptyRequest* request,
         ::grpc::reflection::v1::ListServiceResponse* response)
         GRPC_FINAL GRPC_OVERRIDE {
       abort();
@@ -596,122 +456,86 @@ class ServerReflection GRPC_FINAL {
     }
   };
   template <class BaseClass>
-  class WithGenericMethod_GetService : public BaseClass {
+  class WithGenericMethod_GetFileByName : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(Service* service) {}
 
    public:
-    WithGenericMethod_GetService() { ::grpc::Service::MarkMethodGeneric(1); }
-    ~WithGenericMethod_GetService() GRPC_OVERRIDE {
+    WithGenericMethod_GetFileByName() { ::grpc::Service::MarkMethodGeneric(1); }
+    ~WithGenericMethod_GetFileByName() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status GetService(
+    ::grpc::Status GetFileByName(
         ::grpc::ServerContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest* request,
-        ::grpc::reflection::v1::GetServiceResponse* response)
+        const ::grpc::reflection::v1::FileNameRequest* request,
+        ::grpc::reflection::v1::FileDescriptorProtoResponse* response)
         GRPC_FINAL GRPC_OVERRIDE {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
   };
   template <class BaseClass>
-  class WithGenericMethod_GetMethod : public BaseClass {
+  class WithGenericMethod_GetFileContainingSymbol : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(Service* service) {}
 
    public:
-    WithGenericMethod_GetMethod() { ::grpc::Service::MarkMethodGeneric(2); }
-    ~WithGenericMethod_GetMethod() GRPC_OVERRIDE {
+    WithGenericMethod_GetFileContainingSymbol() {
+      ::grpc::Service::MarkMethodGeneric(2);
+    }
+    ~WithGenericMethod_GetFileContainingSymbol() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status GetMethod(
+    ::grpc::Status GetFileContainingSymbol(
         ::grpc::ServerContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest* request,
-        ::grpc::reflection::v1::GetMethodResponse* response)
+        const ::grpc::reflection::v1::SymbolRequest* request,
+        ::grpc::reflection::v1::FileDescriptorProtoResponse* response)
         GRPC_FINAL GRPC_OVERRIDE {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
   };
   template <class BaseClass>
-  class WithGenericMethod_GetMessageType : public BaseClass {
+  class WithGenericMethod_GetFileContainingExtention : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(Service* service) {}
 
    public:
-    WithGenericMethod_GetMessageType() {
+    WithGenericMethod_GetFileContainingExtention() {
       ::grpc::Service::MarkMethodGeneric(3);
     }
-    ~WithGenericMethod_GetMessageType() GRPC_OVERRIDE {
+    ~WithGenericMethod_GetFileContainingExtention() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status GetMessageType(
+    ::grpc::Status GetFileContainingExtention(
         ::grpc::ServerContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest* request,
-        ::grpc::reflection::v1::GetMessageTypeResponse* response)
+        const ::grpc::reflection::v1::ExtensionRequest* request,
+        ::grpc::reflection::v1::FileDescriptorProtoResponse* response)
         GRPC_FINAL GRPC_OVERRIDE {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
   };
   template <class BaseClass>
-  class WithGenericMethod_GetEnumType : public BaseClass {
+  class WithGenericMethod_GetAllExtensionNumbers : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(Service* service) {}
 
    public:
-    WithGenericMethod_GetEnumType() { ::grpc::Service::MarkMethodGeneric(4); }
-    ~WithGenericMethod_GetEnumType() GRPC_OVERRIDE {
+    WithGenericMethod_GetAllExtensionNumbers() {
+      ::grpc::Service::MarkMethodGeneric(4);
+    }
+    ~WithGenericMethod_GetAllExtensionNumbers() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status GetEnumType(
+    ::grpc::Status GetAllExtensionNumbers(
         ::grpc::ServerContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest* request,
-        ::grpc::reflection::v1::GetEnumTypeResponse* response)
-        GRPC_FINAL GRPC_OVERRIDE {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-  };
-  template <class BaseClass>
-  class WithGenericMethod_GetEnumValue : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(Service* service) {}
-
-   public:
-    WithGenericMethod_GetEnumValue() { ::grpc::Service::MarkMethodGeneric(5); }
-    ~WithGenericMethod_GetEnumValue() GRPC_OVERRIDE {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status GetEnumValue(
-        ::grpc::ServerContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest* request,
-        ::grpc::reflection::v1::GetEnumValueResponse* response)
-        GRPC_FINAL GRPC_OVERRIDE {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-  };
-  template <class BaseClass>
-  class WithGenericMethod_GetExtension : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(Service* service) {}
-
-   public:
-    WithGenericMethod_GetExtension() { ::grpc::Service::MarkMethodGeneric(6); }
-    ~WithGenericMethod_GetExtension() GRPC_OVERRIDE {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status GetExtension(
-        ::grpc::ServerContext* context,
-        const ::grpc::reflection::v1::GetDescriptorRequest* request,
-        ::grpc::reflection::v1::GetExtensionResponse* response)
+        const ::grpc::reflection::v1::TypeRequest* request,
+        ::grpc::reflection::v1::ExtensionNumberResponse* response)
         GRPC_FINAL GRPC_OVERRIDE {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");

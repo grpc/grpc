@@ -19,12 +19,10 @@ namespace v1 {
 
 static const char* ServerReflection_method_names[] = {
     "/grpc.reflection.v1.ServerReflection/ListService",
-    "/grpc.reflection.v1.ServerReflection/GetService",
-    "/grpc.reflection.v1.ServerReflection/GetMethod",
-    "/grpc.reflection.v1.ServerReflection/GetMessageType",
-    "/grpc.reflection.v1.ServerReflection/GetEnumType",
-    "/grpc.reflection.v1.ServerReflection/GetEnumValue",
-    "/grpc.reflection.v1.ServerReflection/GetExtension",
+    "/grpc.reflection.v1.ServerReflection/GetFileByName",
+    "/grpc.reflection.v1.ServerReflection/GetFileContainingSymbol",
+    "/grpc.reflection.v1.ServerReflection/GetFileContainingExtention",
+    "/grpc.reflection.v1.ServerReflection/GetAllExtensionNumbers",
 };
 
 std::unique_ptr<ServerReflection::Stub> ServerReflection::NewStub(
@@ -40,22 +38,21 @@ ServerReflection::Stub::Stub(
     : channel_(channel),
       rpcmethod_ListService_(ServerReflection_method_names[0],
                              ::grpc::RpcMethod::NORMAL_RPC, channel),
-      rpcmethod_GetService_(ServerReflection_method_names[1],
-                            ::grpc::RpcMethod::NORMAL_RPC, channel),
-      rpcmethod_GetMethod_(ServerReflection_method_names[2],
-                           ::grpc::RpcMethod::NORMAL_RPC, channel),
-      rpcmethod_GetMessageType_(ServerReflection_method_names[3],
-                                ::grpc::RpcMethod::NORMAL_RPC, channel),
-      rpcmethod_GetEnumType_(ServerReflection_method_names[4],
-                             ::grpc::RpcMethod::NORMAL_RPC, channel),
-      rpcmethod_GetEnumValue_(ServerReflection_method_names[5],
-                              ::grpc::RpcMethod::NORMAL_RPC, channel),
-      rpcmethod_GetExtension_(ServerReflection_method_names[6],
-                              ::grpc::RpcMethod::NORMAL_RPC, channel) {}
+      rpcmethod_GetFileByName_(ServerReflection_method_names[1],
+                               ::grpc::RpcMethod::NORMAL_RPC, channel),
+      rpcmethod_GetFileContainingSymbol_(ServerReflection_method_names[2],
+                                         ::grpc::RpcMethod::NORMAL_RPC,
+                                         channel),
+      rpcmethod_GetFileContainingExtention_(ServerReflection_method_names[3],
+                                            ::grpc::RpcMethod::NORMAL_RPC,
+                                            channel),
+      rpcmethod_GetAllExtensionNumbers_(ServerReflection_method_names[4],
+                                        ::grpc::RpcMethod::NORMAL_RPC,
+                                        channel) {}
 
 ::grpc::Status ServerReflection::Stub::ListService(
     ::grpc::ClientContext* context,
-    const ::grpc::reflection::v1::ListServiceRequest& request,
+    const ::grpc::reflection::v1::EmptyRequest& request,
     ::grpc::reflection::v1::ListServiceResponse* response) {
   return ::grpc::BlockingUnaryCall(channel_.get(), rpcmethod_ListService_,
                                    context, request, response);
@@ -64,122 +61,91 @@ ServerReflection::Stub::Stub(
 ::grpc::ClientAsyncResponseReader< ::grpc::reflection::v1::ListServiceResponse>*
 ServerReflection::Stub::AsyncListServiceRaw(
     ::grpc::ClientContext* context,
-    const ::grpc::reflection::v1::ListServiceRequest& request,
+    const ::grpc::reflection::v1::EmptyRequest& request,
     ::grpc::CompletionQueue* cq) {
   return new ::grpc::ClientAsyncResponseReader<
       ::grpc::reflection::v1::ListServiceResponse>(
       channel_.get(), cq, rpcmethod_ListService_, context, request);
 }
 
-::grpc::Status ServerReflection::Stub::GetService(
+::grpc::Status ServerReflection::Stub::GetFileByName(
     ::grpc::ClientContext* context,
-    const ::grpc::reflection::v1::GetDescriptorRequest& request,
-    ::grpc::reflection::v1::GetServiceResponse* response) {
-  return ::grpc::BlockingUnaryCall(channel_.get(), rpcmethod_GetService_,
-                                   context, request, response);
-}
-
-::grpc::ClientAsyncResponseReader< ::grpc::reflection::v1::GetServiceResponse>*
-ServerReflection::Stub::AsyncGetServiceRaw(
-    ::grpc::ClientContext* context,
-    const ::grpc::reflection::v1::GetDescriptorRequest& request,
-    ::grpc::CompletionQueue* cq) {
-  return new ::grpc::ClientAsyncResponseReader<
-      ::grpc::reflection::v1::GetServiceResponse>(
-      channel_.get(), cq, rpcmethod_GetService_, context, request);
-}
-
-::grpc::Status ServerReflection::Stub::GetMethod(
-    ::grpc::ClientContext* context,
-    const ::grpc::reflection::v1::GetDescriptorRequest& request,
-    ::grpc::reflection::v1::GetMethodResponse* response) {
-  return ::grpc::BlockingUnaryCall(channel_.get(), rpcmethod_GetMethod_,
-                                   context, request, response);
-}
-
-::grpc::ClientAsyncResponseReader< ::grpc::reflection::v1::GetMethodResponse>*
-ServerReflection::Stub::AsyncGetMethodRaw(
-    ::grpc::ClientContext* context,
-    const ::grpc::reflection::v1::GetDescriptorRequest& request,
-    ::grpc::CompletionQueue* cq) {
-  return new ::grpc::ClientAsyncResponseReader<
-      ::grpc::reflection::v1::GetMethodResponse>(
-      channel_.get(), cq, rpcmethod_GetMethod_, context, request);
-}
-
-::grpc::Status ServerReflection::Stub::GetMessageType(
-    ::grpc::ClientContext* context,
-    const ::grpc::reflection::v1::GetDescriptorRequest& request,
-    ::grpc::reflection::v1::GetMessageTypeResponse* response) {
-  return ::grpc::BlockingUnaryCall(channel_.get(), rpcmethod_GetMessageType_,
+    const ::grpc::reflection::v1::FileNameRequest& request,
+    ::grpc::reflection::v1::FileDescriptorProtoResponse* response) {
+  return ::grpc::BlockingUnaryCall(channel_.get(), rpcmethod_GetFileByName_,
                                    context, request, response);
 }
 
 ::grpc::ClientAsyncResponseReader<
-    ::grpc::reflection::v1::GetMessageTypeResponse>*
-ServerReflection::Stub::AsyncGetMessageTypeRaw(
+    ::grpc::reflection::v1::FileDescriptorProtoResponse>*
+ServerReflection::Stub::AsyncGetFileByNameRaw(
     ::grpc::ClientContext* context,
-    const ::grpc::reflection::v1::GetDescriptorRequest& request,
+    const ::grpc::reflection::v1::FileNameRequest& request,
     ::grpc::CompletionQueue* cq) {
   return new ::grpc::ClientAsyncResponseReader<
-      ::grpc::reflection::v1::GetMessageTypeResponse>(
-      channel_.get(), cq, rpcmethod_GetMessageType_, context, request);
+      ::grpc::reflection::v1::FileDescriptorProtoResponse>(
+      channel_.get(), cq, rpcmethod_GetFileByName_, context, request);
 }
 
-::grpc::Status ServerReflection::Stub::GetEnumType(
+::grpc::Status ServerReflection::Stub::GetFileContainingSymbol(
     ::grpc::ClientContext* context,
-    const ::grpc::reflection::v1::GetDescriptorRequest& request,
-    ::grpc::reflection::v1::GetEnumTypeResponse* response) {
-  return ::grpc::BlockingUnaryCall(channel_.get(), rpcmethod_GetEnumType_,
-                                   context, request, response);
+    const ::grpc::reflection::v1::SymbolRequest& request,
+    ::grpc::reflection::v1::FileDescriptorProtoResponse* response) {
+  return ::grpc::BlockingUnaryCall(channel_.get(),
+                                   rpcmethod_GetFileContainingSymbol_, context,
+                                   request, response);
 }
 
-::grpc::ClientAsyncResponseReader< ::grpc::reflection::v1::GetEnumTypeResponse>*
-ServerReflection::Stub::AsyncGetEnumTypeRaw(
+::grpc::ClientAsyncResponseReader<
+    ::grpc::reflection::v1::FileDescriptorProtoResponse>*
+ServerReflection::Stub::AsyncGetFileContainingSymbolRaw(
     ::grpc::ClientContext* context,
-    const ::grpc::reflection::v1::GetDescriptorRequest& request,
+    const ::grpc::reflection::v1::SymbolRequest& request,
     ::grpc::CompletionQueue* cq) {
   return new ::grpc::ClientAsyncResponseReader<
-      ::grpc::reflection::v1::GetEnumTypeResponse>(
-      channel_.get(), cq, rpcmethod_GetEnumType_, context, request);
+      ::grpc::reflection::v1::FileDescriptorProtoResponse>(
+      channel_.get(), cq, rpcmethod_GetFileContainingSymbol_, context, request);
 }
 
-::grpc::Status ServerReflection::Stub::GetEnumValue(
+::grpc::Status ServerReflection::Stub::GetFileContainingExtention(
     ::grpc::ClientContext* context,
-    const ::grpc::reflection::v1::GetDescriptorRequest& request,
-    ::grpc::reflection::v1::GetEnumValueResponse* response) {
-  return ::grpc::BlockingUnaryCall(channel_.get(), rpcmethod_GetEnumValue_,
+    const ::grpc::reflection::v1::ExtensionRequest& request,
+    ::grpc::reflection::v1::FileDescriptorProtoResponse* response) {
+  return ::grpc::BlockingUnaryCall(channel_.get(),
+                                   rpcmethod_GetFileContainingExtention_,
                                    context, request, response);
 }
 
 ::grpc::ClientAsyncResponseReader<
-    ::grpc::reflection::v1::GetEnumValueResponse>*
-ServerReflection::Stub::AsyncGetEnumValueRaw(
+    ::grpc::reflection::v1::FileDescriptorProtoResponse>*
+ServerReflection::Stub::AsyncGetFileContainingExtentionRaw(
     ::grpc::ClientContext* context,
-    const ::grpc::reflection::v1::GetDescriptorRequest& request,
+    const ::grpc::reflection::v1::ExtensionRequest& request,
     ::grpc::CompletionQueue* cq) {
   return new ::grpc::ClientAsyncResponseReader<
-      ::grpc::reflection::v1::GetEnumValueResponse>(
-      channel_.get(), cq, rpcmethod_GetEnumValue_, context, request);
+      ::grpc::reflection::v1::FileDescriptorProtoResponse>(
+      channel_.get(), cq, rpcmethod_GetFileContainingExtention_, context,
+      request);
 }
 
-::grpc::Status ServerReflection::Stub::GetExtension(
+::grpc::Status ServerReflection::Stub::GetAllExtensionNumbers(
     ::grpc::ClientContext* context,
-    const ::grpc::reflection::v1::GetDescriptorRequest& request,
-    ::grpc::reflection::v1::GetExtensionResponse* response) {
-  return ::grpc::BlockingUnaryCall(channel_.get(), rpcmethod_GetExtension_,
-                                   context, request, response);
+    const ::grpc::reflection::v1::TypeRequest& request,
+    ::grpc::reflection::v1::ExtensionNumberResponse* response) {
+  return ::grpc::BlockingUnaryCall(channel_.get(),
+                                   rpcmethod_GetAllExtensionNumbers_, context,
+                                   request, response);
 }
 
 ::grpc::ClientAsyncResponseReader<
-    ::grpc::reflection::v1::GetExtensionResponse>*
-ServerReflection::Stub::AsyncGetExtensionRaw(
+    ::grpc::reflection::v1::ExtensionNumberResponse>*
+ServerReflection::Stub::AsyncGetAllExtensionNumbersRaw(
     ::grpc::ClientContext* context,
-    const ::grpc::reflection::v1::GetDescriptorRequest& request,
+    const ::grpc::reflection::v1::TypeRequest& request,
     ::grpc::CompletionQueue* cq) {
   return new ::grpc::ClientAsyncResponseReader<
-      ::grpc::reflection::v1::GetExtensionResponse>(
-      channel_.get(), cq, rpcmethod_GetExtension_, context, request);
+      ::grpc::reflection::v1::ExtensionNumberResponse>(
+      channel_.get(), cq, rpcmethod_GetAllExtensionNumbers_, context, request);
 }
 
 ServerReflection::Service::Service() {
@@ -187,55 +153,43 @@ ServerReflection::Service::Service() {
   AddMethod(new ::grpc::RpcServiceMethod(
       ServerReflection_method_names[0], ::grpc::RpcMethod::NORMAL_RPC,
       new ::grpc::RpcMethodHandler<ServerReflection::Service,
-                                   ::grpc::reflection::v1::ListServiceRequest,
+                                   ::grpc::reflection::v1::EmptyRequest,
                                    ::grpc::reflection::v1::ListServiceResponse>(
           std::mem_fn(&ServerReflection::Service::ListService), this)));
   AddMethod(new ::grpc::RpcServiceMethod(
       ServerReflection_method_names[1], ::grpc::RpcMethod::NORMAL_RPC,
-      new ::grpc::RpcMethodHandler<ServerReflection::Service,
-                                   ::grpc::reflection::v1::GetDescriptorRequest,
-                                   ::grpc::reflection::v1::GetServiceResponse>(
-          std::mem_fn(&ServerReflection::Service::GetService), this)));
+      new ::grpc::RpcMethodHandler<
+          ServerReflection::Service, ::grpc::reflection::v1::FileNameRequest,
+          ::grpc::reflection::v1::FileDescriptorProtoResponse>(
+          std::mem_fn(&ServerReflection::Service::GetFileByName), this)));
   AddMethod(new ::grpc::RpcServiceMethod(
       ServerReflection_method_names[2], ::grpc::RpcMethod::NORMAL_RPC,
-      new ::grpc::RpcMethodHandler<ServerReflection::Service,
-                                   ::grpc::reflection::v1::GetDescriptorRequest,
-                                   ::grpc::reflection::v1::GetMethodResponse>(
-          std::mem_fn(&ServerReflection::Service::GetMethod), this)));
+      new ::grpc::RpcMethodHandler<
+          ServerReflection::Service, ::grpc::reflection::v1::SymbolRequest,
+          ::grpc::reflection::v1::FileDescriptorProtoResponse>(
+          std::mem_fn(&ServerReflection::Service::GetFileContainingSymbol),
+          this)));
   AddMethod(new ::grpc::RpcServiceMethod(
       ServerReflection_method_names[3], ::grpc::RpcMethod::NORMAL_RPC,
       new ::grpc::RpcMethodHandler<
-          ServerReflection::Service,
-          ::grpc::reflection::v1::GetDescriptorRequest,
-          ::grpc::reflection::v1::GetMessageTypeResponse>(
-          std::mem_fn(&ServerReflection::Service::GetMessageType), this)));
+          ServerReflection::Service, ::grpc::reflection::v1::ExtensionRequest,
+          ::grpc::reflection::v1::FileDescriptorProtoResponse>(
+          std::mem_fn(&ServerReflection::Service::GetFileContainingExtention),
+          this)));
   AddMethod(new ::grpc::RpcServiceMethod(
       ServerReflection_method_names[4], ::grpc::RpcMethod::NORMAL_RPC,
-      new ::grpc::RpcMethodHandler<ServerReflection::Service,
-                                   ::grpc::reflection::v1::GetDescriptorRequest,
-                                   ::grpc::reflection::v1::GetEnumTypeResponse>(
-          std::mem_fn(&ServerReflection::Service::GetEnumType), this)));
-  AddMethod(new ::grpc::RpcServiceMethod(
-      ServerReflection_method_names[5], ::grpc::RpcMethod::NORMAL_RPC,
       new ::grpc::RpcMethodHandler<
-          ServerReflection::Service,
-          ::grpc::reflection::v1::GetDescriptorRequest,
-          ::grpc::reflection::v1::GetEnumValueResponse>(
-          std::mem_fn(&ServerReflection::Service::GetEnumValue), this)));
-  AddMethod(new ::grpc::RpcServiceMethod(
-      ServerReflection_method_names[6], ::grpc::RpcMethod::NORMAL_RPC,
-      new ::grpc::RpcMethodHandler<
-          ServerReflection::Service,
-          ::grpc::reflection::v1::GetDescriptorRequest,
-          ::grpc::reflection::v1::GetExtensionResponse>(
-          std::mem_fn(&ServerReflection::Service::GetExtension), this)));
+          ServerReflection::Service, ::grpc::reflection::v1::TypeRequest,
+          ::grpc::reflection::v1::ExtensionNumberResponse>(
+          std::mem_fn(&ServerReflection::Service::GetAllExtensionNumbers),
+          this)));
 }
 
 ServerReflection::Service::~Service() {}
 
 ::grpc::Status ServerReflection::Service::ListService(
     ::grpc::ServerContext* context,
-    const ::grpc::reflection::v1::ListServiceRequest* request,
+    const ::grpc::reflection::v1::EmptyRequest* request,
     ::grpc::reflection::v1::ListServiceResponse* response) {
   (void)context;
   (void)request;
@@ -243,65 +197,46 @@ ServerReflection::Service::~Service() {}
   return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
 
-::grpc::Status ServerReflection::Service::GetService(
+::grpc::Status ServerReflection::Service::GetFileByName(
     ::grpc::ServerContext* context,
-    const ::grpc::reflection::v1::GetDescriptorRequest* request,
-    ::grpc::reflection::v1::GetServiceResponse* response) {
+    const ::grpc::reflection::v1::FileNameRequest* request,
+    ::grpc::reflection::v1::FileDescriptorProtoResponse* response) {
   (void)context;
   (void)request;
   (void)response;
   return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
 
-::grpc::Status ServerReflection::Service::GetMethod(
+::grpc::Status ServerReflection::Service::GetFileContainingSymbol(
     ::grpc::ServerContext* context,
-    const ::grpc::reflection::v1::GetDescriptorRequest* request,
-    ::grpc::reflection::v1::GetMethodResponse* response) {
+    const ::grpc::reflection::v1::SymbolRequest* request,
+    ::grpc::reflection::v1::FileDescriptorProtoResponse* response) {
   (void)context;
   (void)request;
   (void)response;
   return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
 
-::grpc::Status ServerReflection::Service::GetMessageType(
+::grpc::Status ServerReflection::Service::GetFileContainingExtention(
     ::grpc::ServerContext* context,
-    const ::grpc::reflection::v1::GetDescriptorRequest* request,
-    ::grpc::reflection::v1::GetMessageTypeResponse* response) {
+    const ::grpc::reflection::v1::ExtensionRequest* request,
+    ::grpc::reflection::v1::FileDescriptorProtoResponse* response) {
   (void)context;
   (void)request;
   (void)response;
   return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
 
-::grpc::Status ServerReflection::Service::GetEnumType(
+::grpc::Status ServerReflection::Service::GetAllExtensionNumbers(
     ::grpc::ServerContext* context,
-    const ::grpc::reflection::v1::GetDescriptorRequest* request,
-    ::grpc::reflection::v1::GetEnumTypeResponse* response) {
+    const ::grpc::reflection::v1::TypeRequest* request,
+    ::grpc::reflection::v1::ExtensionNumberResponse* response) {
   (void)context;
   (void)request;
   (void)response;
   return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
 
-::grpc::Status ServerReflection::Service::GetEnumValue(
-    ::grpc::ServerContext* context,
-    const ::grpc::reflection::v1::GetDescriptorRequest* request,
-    ::grpc::reflection::v1::GetEnumValueResponse* response) {
-  (void)context;
-  (void)request;
-  (void)response;
-  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-}
-
-::grpc::Status ServerReflection::Service::GetExtension(
-    ::grpc::ServerContext* context,
-    const ::grpc::reflection::v1::GetDescriptorRequest* request,
-    ::grpc::reflection::v1::GetExtensionResponse* response) {
-  (void)context;
-  (void)request;
-  (void)response;
-  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-}
 
 }  // namespace grpc
 }  // namespace reflection

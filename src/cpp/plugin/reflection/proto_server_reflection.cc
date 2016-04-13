@@ -34,6 +34,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/descriptor.pb.h>
@@ -47,19 +48,17 @@ using grpc::StatusCode;
 using google::protobuf::MethodDescriptor;
 using google::protobuf::ServiceDescriptor;
 using google::protobuf::Descriptor;
-using google::protobuf::EnumDescriptor;
-using google::protobuf::EnumValueDescriptor;
+using google::protobuf::FileDescriptor;
 using google::protobuf::FieldDescriptor;
 using google::protobuf::DescriptorPool;
-using grpc::reflection::v1::ListServiceRequest;
+using grpc::reflection::v1::EmptyRequest;
 using grpc::reflection::v1::ListServiceResponse;
-using grpc::reflection::v1::GetDescriptorRequest;
-using grpc::reflection::v1::GetMethodResponse;
-using grpc::reflection::v1::GetServiceResponse;
-using grpc::reflection::v1::GetMessageTypeResponse;
-using grpc::reflection::v1::GetEnumTypeResponse;
-using grpc::reflection::v1::GetEnumValueResponse;
-using grpc::reflection::v1::GetExtensionResponse;
+using grpc::reflection::v1::FileNameRequest;
+using grpc::reflection::v1::SymbolRequest;
+using grpc::reflection::v1::ExtensionRequest;
+using grpc::reflection::v1::TypeRequest;
+using grpc::reflection::v1::FileDescriptorProtoResponse;
+using grpc::reflection::v1::ExtensionNumberResponse;
 
 namespace grpc {
 
@@ -79,7 +78,7 @@ void ProtoServerReflection::SetSeviceList(
 }
 
 Status ProtoServerReflection::ListService(ServerContext* context,
-                                          const ListServiceRequest* request,
+                                          const EmptyRequest* request,
                                           ListServiceResponse* response) {
   if (services_ == nullptr) {
     return Status(StatusCode::NOT_FOUND, "Services not found.");
@@ -90,81 +89,78 @@ Status ProtoServerReflection::ListService(ServerContext* context,
   return Status::OK;
 }
 
-Status ProtoServerReflection::GetMethod(ServerContext* context,
-                                        const GetDescriptorRequest* request,
-                                        GetMethodResponse* response) {
-  assert(descriptor_pool_ != nullptr);
-  const MethodDescriptor* method_descriptor =
-      descriptor_pool_->FindMethodByName(request->name());
-  if (!method_descriptor) {
-    return Status(StatusCode::NOT_FOUND, "Method not found.");
+Status ProtoServerReflection::GetFileByName(
+    ServerContext* context, const FileNameRequest* request,
+    FileDescriptorProtoResponse* response) {
+  if (descriptor_pool_ == nullptr) {
+    return Status::CANCELLED;
   }
-  method_descriptor->CopyTo(response->mutable_method());
+
+  const FileDescriptor* file_desc =
+      descriptor_pool_->FindFileByName(request->filename());
+  if (file_desc == nullptr) {
+    return Status(StatusCode::NOT_FOUND, "File not found.");
+  }
+  file_desc->CopyTo(response->mutable_file_descriptor_proto());
   return Status::OK;
 }
 
-Status ProtoServerReflection::GetService(ServerContext* context,
-                                         const GetDescriptorRequest* request,
-                                         GetServiceResponse* response) {
-  assert(descriptor_pool_ != nullptr);
-  const ServiceDescriptor* service_descriptor =
-      descriptor_pool_->FindServiceByName(request->name());
-  if (!service_descriptor) {
-    return Status(StatusCode::NOT_FOUND, "Service not found.");
+Status ProtoServerReflection::GetFileContainingSymbol(
+    ServerContext* context, const SymbolRequest* request,
+    FileDescriptorProtoResponse* response) {
+  if (descriptor_pool_ == nullptr) {
+    return Status::CANCELLED;
   }
-  service_descriptor->CopyTo(response->mutable_service());
+
+  const FileDescriptor* file_desc =
+      descriptor_pool_->FindFileContainingSymbol(request->symbol());
+  if (file_desc == nullptr) {
+    return Status(StatusCode::NOT_FOUND, "Symbol not found.");
+  }
+  file_desc->CopyTo(response->mutable_file_descriptor_proto());
   return Status::OK;
 }
 
-Status ProtoServerReflection::GetMessageType(
-    ServerContext* context, const GetDescriptorRequest* request,
-    GetMessageTypeResponse* response) {
-  assert(descriptor_pool_ != nullptr);
-  const Descriptor* message_type_descriptor =
-      descriptor_pool_->FindMessageTypeByName(request->name());
-  if (!message_type_descriptor) {
-    return Status(StatusCode::NOT_FOUND, "Message type not found.");
+Status ProtoServerReflection::GetFileContainingExtention(
+    ServerContext* context, const ExtensionRequest* request,
+    FileDescriptorProtoResponse* response) {
+  if (descriptor_pool_ == nullptr) {
+    return Status::CANCELLED;
   }
-  message_type_descriptor->CopyTo(response->mutable_message_type());
-  return Status::OK;
-}
 
-Status ProtoServerReflection::GetEnumType(ServerContext* context,
-                                          const GetDescriptorRequest* request,
-                                          GetEnumTypeResponse* response) {
-  assert(descriptor_pool_ != nullptr);
-  const EnumDescriptor* enum_type_descriptor =
-      descriptor_pool_->FindEnumTypeByName(request->name());
-  if (!enum_type_descriptor) {
-    return Status(StatusCode::NOT_FOUND, "Enum type not found.");
+  const Descriptor* desc =
+      descriptor_pool_->FindMessageTypeByName(request->containing_type());
+  if (desc == nullptr) {
+    return Status(StatusCode::NOT_FOUND, "Type not found.");
   }
-  enum_type_descriptor->CopyTo(response->mutable_enum_type());
-  return Status::OK;
-}
 
-Status ProtoServerReflection::GetEnumValue(ServerContext* context,
-                                           const GetDescriptorRequest* request,
-                                           GetEnumValueResponse* response) {
-  assert(descriptor_pool_ != nullptr);
-  const EnumValueDescriptor* enum_value_descriptor =
-      descriptor_pool_->FindEnumValueByName(request->name());
-  if (!enum_value_descriptor) {
-    return Status(StatusCode::NOT_FOUND, "Enum value not found.");
-  }
-  enum_value_descriptor->CopyTo(response->mutable_enum_value());
-  return Status::OK;
-}
-
-Status ProtoServerReflection::GetExtension(ServerContext* context,
-                                           const GetDescriptorRequest* request,
-                                           GetExtensionResponse* response) {
-  assert(descriptor_pool_ != nullptr);
-  const FieldDescriptor* extension_descriptor =
-      descriptor_pool_->FindExtensionByName(request->name());
-  if (!extension_descriptor) {
+  const FieldDescriptor* field_desc = descriptor_pool_->FindExtensionByNumber(
+      desc, request->extension_number());
+  if (field_desc == nullptr) {
     return Status(StatusCode::NOT_FOUND, "Extension not found.");
   }
-  extension_descriptor->CopyTo(response->mutable_extension());
+  field_desc->file()->CopyTo(response->mutable_file_descriptor_proto());
+  return Status::OK;
+}
+
+Status ProtoServerReflection::GetAllExtensionNumbers(
+    ServerContext* context, const TypeRequest* request,
+    ExtensionNumberResponse* response) {
+  if (descriptor_pool_ == nullptr) {
+    return Status::CANCELLED;
+  }
+
+  const Descriptor* desc =
+      descriptor_pool_->FindMessageTypeByName(request->type());
+  if (desc == nullptr) {
+    return Status(StatusCode::NOT_FOUND, "Type not found.");
+  }
+
+  std::vector<const FieldDescriptor*> extensions;
+  descriptor_pool_->FindAllExtensions(desc, &extensions);
+  for (auto extension : extensions) {
+    response->add_extension_number(extension->number());
+  }
   return Status::OK;
 }
 

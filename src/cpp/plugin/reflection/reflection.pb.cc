@@ -23,33 +23,32 @@ namespace v1 {
 
 namespace {
 
-const ::google::protobuf::Descriptor* ListServiceRequest_descriptor_ = NULL;
+const ::google::protobuf::Descriptor* EmptyRequest_descriptor_ = NULL;
 const ::google::protobuf::internal::GeneratedMessageReflection*
-    ListServiceRequest_reflection_ = NULL;
-const ::google::protobuf::Descriptor* GetDescriptorRequest_descriptor_ = NULL;
+    EmptyRequest_reflection_ = NULL;
+const ::google::protobuf::Descriptor* FileNameRequest_descriptor_ = NULL;
 const ::google::protobuf::internal::GeneratedMessageReflection*
-    GetDescriptorRequest_reflection_ = NULL;
+    FileNameRequest_reflection_ = NULL;
+const ::google::protobuf::Descriptor* SymbolRequest_descriptor_ = NULL;
+const ::google::protobuf::internal::GeneratedMessageReflection*
+    SymbolRequest_reflection_ = NULL;
+const ::google::protobuf::Descriptor* ExtensionRequest_descriptor_ = NULL;
+const ::google::protobuf::internal::GeneratedMessageReflection*
+    ExtensionRequest_reflection_ = NULL;
+const ::google::protobuf::Descriptor* TypeRequest_descriptor_ = NULL;
+const ::google::protobuf::internal::GeneratedMessageReflection*
+    TypeRequest_reflection_ = NULL;
 const ::google::protobuf::Descriptor* ListServiceResponse_descriptor_ = NULL;
 const ::google::protobuf::internal::GeneratedMessageReflection*
     ListServiceResponse_reflection_ = NULL;
-const ::google::protobuf::Descriptor* GetMethodResponse_descriptor_ = NULL;
+const ::google::protobuf::Descriptor* FileDescriptorProtoResponse_descriptor_ =
+    NULL;
 const ::google::protobuf::internal::GeneratedMessageReflection*
-    GetMethodResponse_reflection_ = NULL;
-const ::google::protobuf::Descriptor* GetServiceResponse_descriptor_ = NULL;
+    FileDescriptorProtoResponse_reflection_ = NULL;
+const ::google::protobuf::Descriptor* ExtensionNumberResponse_descriptor_ =
+    NULL;
 const ::google::protobuf::internal::GeneratedMessageReflection*
-    GetServiceResponse_reflection_ = NULL;
-const ::google::protobuf::Descriptor* GetMessageTypeResponse_descriptor_ = NULL;
-const ::google::protobuf::internal::GeneratedMessageReflection*
-    GetMessageTypeResponse_reflection_ = NULL;
-const ::google::protobuf::Descriptor* GetEnumTypeResponse_descriptor_ = NULL;
-const ::google::protobuf::internal::GeneratedMessageReflection*
-    GetEnumTypeResponse_reflection_ = NULL;
-const ::google::protobuf::Descriptor* GetEnumValueResponse_descriptor_ = NULL;
-const ::google::protobuf::internal::GeneratedMessageReflection*
-    GetEnumValueResponse_reflection_ = NULL;
-const ::google::protobuf::Descriptor* GetExtensionResponse_descriptor_ = NULL;
-const ::google::protobuf::internal::GeneratedMessageReflection*
-    GetExtensionResponse_reflection_ = NULL;
+    ExtensionNumberResponse_reflection_ = NULL;
 
 }  // namespace
 
@@ -59,32 +58,69 @@ void protobuf_AssignDesc_reflection_2eproto() {
       ::google::protobuf::DescriptorPool::generated_pool()->FindFileByName(
           "reflection.proto");
   GOOGLE_CHECK(file != NULL);
-  ListServiceRequest_descriptor_ = file->message_type(0);
-  static const int ListServiceRequest_offsets_[1] = {};
-  ListServiceRequest_reflection_ = ::google::protobuf::internal::
+  EmptyRequest_descriptor_ = file->message_type(0);
+  static const int EmptyRequest_offsets_[1] = {};
+  EmptyRequest_reflection_ = ::google::protobuf::internal::
       GeneratedMessageReflection::NewGeneratedMessageReflection(
-          ListServiceRequest_descriptor_, ListServiceRequest::default_instance_,
-          ListServiceRequest_offsets_, -1, -1, -1, sizeof(ListServiceRequest),
-          GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ListServiceRequest,
+          EmptyRequest_descriptor_, EmptyRequest::default_instance_,
+          EmptyRequest_offsets_, -1, -1, -1, sizeof(EmptyRequest),
+          GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(EmptyRequest,
                                                          _internal_metadata_),
           GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(
-              ListServiceRequest, _is_default_instance_));
-  GetDescriptorRequest_descriptor_ = file->message_type(1);
-  static const int GetDescriptorRequest_offsets_[1] = {
-      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(GetDescriptorRequest,
-                                                     name_),
+              EmptyRequest, _is_default_instance_));
+  FileNameRequest_descriptor_ = file->message_type(1);
+  static const int FileNameRequest_offsets_[1] = {
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(FileNameRequest,
+                                                     filename_),
   };
-  GetDescriptorRequest_reflection_ = ::google::protobuf::internal::
+  FileNameRequest_reflection_ = ::google::protobuf::internal::
       GeneratedMessageReflection::NewGeneratedMessageReflection(
-          GetDescriptorRequest_descriptor_,
-          GetDescriptorRequest::default_instance_,
-          GetDescriptorRequest_offsets_, -1, -1, -1,
-          sizeof(GetDescriptorRequest),
-          GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(GetDescriptorRequest,
+          FileNameRequest_descriptor_, FileNameRequest::default_instance_,
+          FileNameRequest_offsets_, -1, -1, -1, sizeof(FileNameRequest),
+          GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(FileNameRequest,
                                                          _internal_metadata_),
           GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(
-              GetDescriptorRequest, _is_default_instance_));
-  ListServiceResponse_descriptor_ = file->message_type(2);
+              FileNameRequest, _is_default_instance_));
+  SymbolRequest_descriptor_ = file->message_type(2);
+  static const int SymbolRequest_offsets_[1] = {
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(SymbolRequest, symbol_),
+  };
+  SymbolRequest_reflection_ = ::google::protobuf::internal::
+      GeneratedMessageReflection::NewGeneratedMessageReflection(
+          SymbolRequest_descriptor_, SymbolRequest::default_instance_,
+          SymbolRequest_offsets_, -1, -1, -1, sizeof(SymbolRequest),
+          GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(SymbolRequest,
+                                                         _internal_metadata_),
+          GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(
+              SymbolRequest, _is_default_instance_));
+  ExtensionRequest_descriptor_ = file->message_type(3);
+  static const int ExtensionRequest_offsets_[2] = {
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ExtensionRequest,
+                                                     containing_type_),
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ExtensionRequest,
+                                                     extension_number_),
+  };
+  ExtensionRequest_reflection_ = ::google::protobuf::internal::
+      GeneratedMessageReflection::NewGeneratedMessageReflection(
+          ExtensionRequest_descriptor_, ExtensionRequest::default_instance_,
+          ExtensionRequest_offsets_, -1, -1, -1, sizeof(ExtensionRequest),
+          GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ExtensionRequest,
+                                                         _internal_metadata_),
+          GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(
+              ExtensionRequest, _is_default_instance_));
+  TypeRequest_descriptor_ = file->message_type(4);
+  static const int TypeRequest_offsets_[1] = {
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(TypeRequest, type_),
+  };
+  TypeRequest_reflection_ = ::google::protobuf::internal::
+      GeneratedMessageReflection::NewGeneratedMessageReflection(
+          TypeRequest_descriptor_, TypeRequest::default_instance_,
+          TypeRequest_offsets_, -1, -1, -1, sizeof(TypeRequest),
+          GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(TypeRequest,
+                                                         _internal_metadata_),
+          GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(
+              TypeRequest, _is_default_instance_));
+  ListServiceResponse_descriptor_ = file->message_type(5);
   static const int ListServiceResponse_offsets_[1] = {
       GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ListServiceResponse,
                                                      services_),
@@ -98,91 +134,36 @@ void protobuf_AssignDesc_reflection_2eproto() {
                                                          _internal_metadata_),
           GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(
               ListServiceResponse, _is_default_instance_));
-  GetMethodResponse_descriptor_ = file->message_type(3);
-  static const int GetMethodResponse_offsets_[1] = {
-      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(GetMethodResponse,
-                                                     method_),
+  FileDescriptorProtoResponse_descriptor_ = file->message_type(6);
+  static const int FileDescriptorProtoResponse_offsets_[1] = {
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(
+          FileDescriptorProtoResponse, file_descriptor_proto_),
   };
-  GetMethodResponse_reflection_ = ::google::protobuf::internal::
+  FileDescriptorProtoResponse_reflection_ = ::google::protobuf::internal::
       GeneratedMessageReflection::NewGeneratedMessageReflection(
-          GetMethodResponse_descriptor_, GetMethodResponse::default_instance_,
-          GetMethodResponse_offsets_, -1, -1, -1, sizeof(GetMethodResponse),
-          GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(GetMethodResponse,
-                                                         _internal_metadata_),
+          FileDescriptorProtoResponse_descriptor_,
+          FileDescriptorProtoResponse::default_instance_,
+          FileDescriptorProtoResponse_offsets_, -1, -1, -1,
+          sizeof(FileDescriptorProtoResponse),
           GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(
-              GetMethodResponse, _is_default_instance_));
-  GetServiceResponse_descriptor_ = file->message_type(4);
-  static const int GetServiceResponse_offsets_[1] = {
-      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(GetServiceResponse,
-                                                     service_),
+              FileDescriptorProtoResponse, _internal_metadata_),
+          GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(
+              FileDescriptorProtoResponse, _is_default_instance_));
+  ExtensionNumberResponse_descriptor_ = file->message_type(7);
+  static const int ExtensionNumberResponse_offsets_[1] = {
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ExtensionNumberResponse,
+                                                     extension_number_),
   };
-  GetServiceResponse_reflection_ = ::google::protobuf::internal::
+  ExtensionNumberResponse_reflection_ = ::google::protobuf::internal::
       GeneratedMessageReflection::NewGeneratedMessageReflection(
-          GetServiceResponse_descriptor_, GetServiceResponse::default_instance_,
-          GetServiceResponse_offsets_, -1, -1, -1, sizeof(GetServiceResponse),
-          GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(GetServiceResponse,
-                                                         _internal_metadata_),
+          ExtensionNumberResponse_descriptor_,
+          ExtensionNumberResponse::default_instance_,
+          ExtensionNumberResponse_offsets_, -1, -1, -1,
+          sizeof(ExtensionNumberResponse),
           GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(
-              GetServiceResponse, _is_default_instance_));
-  GetMessageTypeResponse_descriptor_ = file->message_type(5);
-  static const int GetMessageTypeResponse_offsets_[1] = {
-      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(GetMessageTypeResponse,
-                                                     message_type_),
-  };
-  GetMessageTypeResponse_reflection_ = ::google::protobuf::internal::
-      GeneratedMessageReflection::NewGeneratedMessageReflection(
-          GetMessageTypeResponse_descriptor_,
-          GetMessageTypeResponse::default_instance_,
-          GetMessageTypeResponse_offsets_, -1, -1, -1,
-          sizeof(GetMessageTypeResponse),
-          GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(GetMessageTypeResponse,
-                                                         _internal_metadata_),
+              ExtensionNumberResponse, _internal_metadata_),
           GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(
-              GetMessageTypeResponse, _is_default_instance_));
-  GetEnumTypeResponse_descriptor_ = file->message_type(6);
-  static const int GetEnumTypeResponse_offsets_[1] = {
-      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(GetEnumTypeResponse,
-                                                     enum_type_),
-  };
-  GetEnumTypeResponse_reflection_ = ::google::protobuf::internal::
-      GeneratedMessageReflection::NewGeneratedMessageReflection(
-          GetEnumTypeResponse_descriptor_,
-          GetEnumTypeResponse::default_instance_, GetEnumTypeResponse_offsets_,
-          -1, -1, -1, sizeof(GetEnumTypeResponse),
-          GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(GetEnumTypeResponse,
-                                                         _internal_metadata_),
-          GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(
-              GetEnumTypeResponse, _is_default_instance_));
-  GetEnumValueResponse_descriptor_ = file->message_type(7);
-  static const int GetEnumValueResponse_offsets_[1] = {
-      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(GetEnumValueResponse,
-                                                     enum_value_),
-  };
-  GetEnumValueResponse_reflection_ = ::google::protobuf::internal::
-      GeneratedMessageReflection::NewGeneratedMessageReflection(
-          GetEnumValueResponse_descriptor_,
-          GetEnumValueResponse::default_instance_,
-          GetEnumValueResponse_offsets_, -1, -1, -1,
-          sizeof(GetEnumValueResponse),
-          GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(GetEnumValueResponse,
-                                                         _internal_metadata_),
-          GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(
-              GetEnumValueResponse, _is_default_instance_));
-  GetExtensionResponse_descriptor_ = file->message_type(8);
-  static const int GetExtensionResponse_offsets_[1] = {
-      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(GetExtensionResponse,
-                                                     extension_),
-  };
-  GetExtensionResponse_reflection_ = ::google::protobuf::internal::
-      GeneratedMessageReflection::NewGeneratedMessageReflection(
-          GetExtensionResponse_descriptor_,
-          GetExtensionResponse::default_instance_,
-          GetExtensionResponse_offsets_, -1, -1, -1,
-          sizeof(GetExtensionResponse),
-          GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(GetExtensionResponse,
-                                                         _internal_metadata_),
-          GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(
-              GetExtensionResponse, _is_default_instance_));
+              ExtensionNumberResponse, _is_default_instance_));
 }
 
 namespace {
@@ -196,52 +177,45 @@ inline void protobuf_AssignDescriptorsOnce() {
 void protobuf_RegisterTypes(const ::std::string&) {
   protobuf_AssignDescriptorsOnce();
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
-      ListServiceRequest_descriptor_, &ListServiceRequest::default_instance());
+      EmptyRequest_descriptor_, &EmptyRequest::default_instance());
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
-      GetDescriptorRequest_descriptor_,
-      &GetDescriptorRequest::default_instance());
+      FileNameRequest_descriptor_, &FileNameRequest::default_instance());
+  ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
+      SymbolRequest_descriptor_, &SymbolRequest::default_instance());
+  ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
+      ExtensionRequest_descriptor_, &ExtensionRequest::default_instance());
+  ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
+      TypeRequest_descriptor_, &TypeRequest::default_instance());
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
       ListServiceResponse_descriptor_,
       &ListServiceResponse::default_instance());
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
-      GetMethodResponse_descriptor_, &GetMethodResponse::default_instance());
+      FileDescriptorProtoResponse_descriptor_,
+      &FileDescriptorProtoResponse::default_instance());
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
-      GetServiceResponse_descriptor_, &GetServiceResponse::default_instance());
-  ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
-      GetMessageTypeResponse_descriptor_,
-      &GetMessageTypeResponse::default_instance());
-  ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
-      GetEnumTypeResponse_descriptor_,
-      &GetEnumTypeResponse::default_instance());
-  ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
-      GetEnumValueResponse_descriptor_,
-      &GetEnumValueResponse::default_instance());
-  ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
-      GetExtensionResponse_descriptor_,
-      &GetExtensionResponse::default_instance());
+      ExtensionNumberResponse_descriptor_,
+      &ExtensionNumberResponse::default_instance());
 }
 
 }  // namespace
 
 void protobuf_ShutdownFile_reflection_2eproto() {
-  delete ListServiceRequest::default_instance_;
-  delete ListServiceRequest_reflection_;
-  delete GetDescriptorRequest::default_instance_;
-  delete GetDescriptorRequest_reflection_;
+  delete EmptyRequest::default_instance_;
+  delete EmptyRequest_reflection_;
+  delete FileNameRequest::default_instance_;
+  delete FileNameRequest_reflection_;
+  delete SymbolRequest::default_instance_;
+  delete SymbolRequest_reflection_;
+  delete ExtensionRequest::default_instance_;
+  delete ExtensionRequest_reflection_;
+  delete TypeRequest::default_instance_;
+  delete TypeRequest_reflection_;
   delete ListServiceResponse::default_instance_;
   delete ListServiceResponse_reflection_;
-  delete GetMethodResponse::default_instance_;
-  delete GetMethodResponse_reflection_;
-  delete GetServiceResponse::default_instance_;
-  delete GetServiceResponse_reflection_;
-  delete GetMessageTypeResponse::default_instance_;
-  delete GetMessageTypeResponse_reflection_;
-  delete GetEnumTypeResponse::default_instance_;
-  delete GetEnumTypeResponse_reflection_;
-  delete GetEnumValueResponse::default_instance_;
-  delete GetEnumValueResponse_reflection_;
-  delete GetExtensionResponse::default_instance_;
-  delete GetExtensionResponse_reflection_;
+  delete FileDescriptorProtoResponse::default_instance_;
+  delete FileDescriptorProtoResponse_reflection_;
+  delete ExtensionNumberResponse::default_instance_;
+  delete ExtensionNumberResponse_reflection_;
 }
 
 void protobuf_AddDesc_reflection_2eproto() {
@@ -253,61 +227,53 @@ void protobuf_AddDesc_reflection_2eproto() {
   ::google::protobuf::protobuf_AddDesc_google_2fprotobuf_2fdescriptor_2eproto();
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
       "\n\020reflection.proto\022\022grpc.reflection.v1\032 "
-      "google/protobuf/descriptor.proto\"\024\n\022List"
-      "ServiceRequest\"$\n\024GetDescriptorRequest\022\014"
-      "\n\004name\030\001 \001(\t\"\'\n\023ListServiceResponse\022\020\n\010s"
-      "ervices\030\001 \003(\t\"K\n\021GetMethodResponse\0226\n\006me"
-      "thod\030\001 \001(\0132&.google.protobuf.MethodDescr"
-      "iptorProto\"N\n\022GetServiceResponse\0228\n\007serv"
-      "ice\030\001 \001(\0132\'.google.protobuf.ServiceDescr"
-      "iptorProto\"P\n\026GetMessageTypeResponse\0226\n\014"
-      "message_type\030\001 \001(\0132 .google.protobuf.Des"
-      "criptorProto\"N\n\023GetEnumTypeResponse\0227\n\te"
-      "num_type\030\001 \001(\0132$.google.protobuf.EnumDes"
-      "criptorProto\"U\n\024GetEnumValueResponse\022=\n\n"
-      "enum_value\030\001 \001(\0132).google.protobuf.EnumV"
-      "alueDescriptorProto\"P\n\024GetExtensionRespo"
-      "nse\0228\n\textension\030\001 \001(\0132%.google.protobuf"
-      ".FieldDescriptorProto2\320\005\n\020ServerReflecti"
-      "on\022`\n\013ListService\022&.grpc.reflection.v1.L"
-      "istServiceRequest\032\'.grpc.reflection.v1.L"
-      "istServiceResponse\"\000\022`\n\nGetService\022(.grp"
-      "c.reflection.v1.GetDescriptorRequest\032&.g"
-      "rpc.reflection.v1.GetServiceResponse\"\000\022^"
-      "\n\tGetMethod\022(.grpc.reflection.v1.GetDesc"
-      "riptorRequest\032%.grpc.reflection.v1.GetMe"
-      "thodResponse\"\000\022h\n\016GetMessageType\022(.grpc."
-      "reflection.v1.GetDescriptorRequest\032*.grp"
-      "c.reflection.v1.GetMessageTypeResponse\"\000"
-      "\022b\n\013GetEnumType\022(.grpc.reflection.v1.Get"
-      "DescriptorRequest\032\'.grpc.reflection.v1.G"
-      "etEnumTypeResponse\"\000\022d\n\014GetEnumValue\022(.g"
-      "rpc.reflection.v1.GetDescriptorRequest\032("
-      ".grpc.reflection.v1.GetEnumValueResponse"
-      "\"\000\022d\n\014GetExtension\022(.grpc.reflection.v1."
-      "GetDescriptorRequest\032(.grpc.reflection.v"
-      "1.GetExtensionResponse\"\000b\006proto3",
-      1392);
+      "google/protobuf/descriptor.proto\"\016\n\014Empt"
+      "yRequest\"#\n\017FileNameRequest\022\020\n\010filename\030"
+      "\001 \001(\t\"\037\n\rSymbolRequest\022\016\n\006symbol\030\001 "
+      "\001(\t\"E"
+      "\n\020ExtensionRequest\022\027\n\017containing_type\030\001 "
+      "\001(\t\022\030\n\020extension_number\030\002 "
+      "\001(\005\"\033\n\013TypeReq"
+      "uest\022\014\n\004type\030\001 \001(\t\"\'\n\023ListServiceRespons"
+      "e\022\020\n\010services\030\001 \003(\t\"b\n\033FileDescriptorPro"
+      "toResponse\022C\n\025file_descriptor_proto\030\001 \001("
+      "\0132$.google.protobuf.FileDescriptorProto\""
+      "3\n\027ExtensionNumberResponse\022\030\n\020extension_"
+      "number\030\001 \003(\0052\251\004\n\020ServerReflection\022Z\n\013Lis"
+      "tService\022 .grpc.reflection.v1.EmptyReque"
+      "st\032\'.grpc.reflection.v1.ListServiceRespo"
+      "nse\"\000\022g\n\rGetFileByName\022#.grpc.reflection"
+      ".v1.FileNameRequest\032/.grpc.reflection.v1"
+      ".FileDescriptorProtoResponse\"\000\022o\n\027GetFil"
+      "eContainingSymbol\022!.grpc.reflection.v1.S"
+      "ymbolRequest\032/.grpc.reflection.v1.FileDe"
+      "scriptorProtoResponse\"\000\022u\n\032GetFileContai"
+      "ningExtention\022$.grpc.reflection.v1.Exten"
+      "sionRequest\032/.grpc.reflection.v1.FileDes"
+      "criptorProtoResponse\"\000\022h\n\026GetAllExtensio"
+      "nNumbers\022\037.grpc.reflection.v1.TypeReques"
+      "t\032+.grpc.reflection.v1.ExtensionNumberRe"
+      "sponse\"\000b\006proto3",
+      1016);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
       "reflection.proto", &protobuf_RegisterTypes);
-  ListServiceRequest::default_instance_ = new ListServiceRequest();
-  GetDescriptorRequest::default_instance_ = new GetDescriptorRequest();
+  EmptyRequest::default_instance_ = new EmptyRequest();
+  FileNameRequest::default_instance_ = new FileNameRequest();
+  SymbolRequest::default_instance_ = new SymbolRequest();
+  ExtensionRequest::default_instance_ = new ExtensionRequest();
+  TypeRequest::default_instance_ = new TypeRequest();
   ListServiceResponse::default_instance_ = new ListServiceResponse();
-  GetMethodResponse::default_instance_ = new GetMethodResponse();
-  GetServiceResponse::default_instance_ = new GetServiceResponse();
-  GetMessageTypeResponse::default_instance_ = new GetMessageTypeResponse();
-  GetEnumTypeResponse::default_instance_ = new GetEnumTypeResponse();
-  GetEnumValueResponse::default_instance_ = new GetEnumValueResponse();
-  GetExtensionResponse::default_instance_ = new GetExtensionResponse();
-  ListServiceRequest::default_instance_->InitAsDefaultInstance();
-  GetDescriptorRequest::default_instance_->InitAsDefaultInstance();
+  FileDescriptorProtoResponse::default_instance_ =
+      new FileDescriptorProtoResponse();
+  ExtensionNumberResponse::default_instance_ = new ExtensionNumberResponse();
+  EmptyRequest::default_instance_->InitAsDefaultInstance();
+  FileNameRequest::default_instance_->InitAsDefaultInstance();
+  SymbolRequest::default_instance_->InitAsDefaultInstance();
+  ExtensionRequest::default_instance_->InitAsDefaultInstance();
+  TypeRequest::default_instance_->InitAsDefaultInstance();
   ListServiceResponse::default_instance_->InitAsDefaultInstance();
-  GetMethodResponse::default_instance_->InitAsDefaultInstance();
-  GetServiceResponse::default_instance_->InitAsDefaultInstance();
-  GetMessageTypeResponse::default_instance_->InitAsDefaultInstance();
-  GetEnumTypeResponse::default_instance_->InitAsDefaultInstance();
-  GetEnumValueResponse::default_instance_->InitAsDefaultInstance();
-  GetExtensionResponse::default_instance_->InitAsDefaultInstance();
+  FileDescriptorProtoResponse::default_instance_->InitAsDefaultInstance();
+  ExtensionNumberResponse::default_instance_->InitAsDefaultInstance();
   ::google::protobuf::internal::OnShutdown(
       &protobuf_ShutdownFile_reflection_2eproto);
 }
@@ -333,72 +299,69 @@ static void MergeFromFail(int line) {
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 #endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
-ListServiceRequest::ListServiceRequest()
+EmptyRequest::EmptyRequest()
     : ::google::protobuf::Message(), _internal_metadata_(NULL) {
   SharedCtor();
-  // @@protoc_insertion_point(constructor:grpc.reflection.v1.ListServiceRequest)
+  // @@protoc_insertion_point(constructor:grpc.reflection.v1.EmptyRequest)
 }
 
-void ListServiceRequest::InitAsDefaultInstance() {
-  _is_default_instance_ = true;
-}
+void EmptyRequest::InitAsDefaultInstance() { _is_default_instance_ = true; }
 
-ListServiceRequest::ListServiceRequest(const ListServiceRequest& from)
+EmptyRequest::EmptyRequest(const EmptyRequest& from)
     : ::google::protobuf::Message(), _internal_metadata_(NULL) {
   SharedCtor();
   MergeFrom(from);
-  // @@protoc_insertion_point(copy_constructor:grpc.reflection.v1.ListServiceRequest)
+  // @@protoc_insertion_point(copy_constructor:grpc.reflection.v1.EmptyRequest)
 }
 
-void ListServiceRequest::SharedCtor() {
+void EmptyRequest::SharedCtor() {
   _is_default_instance_ = false;
   _cached_size_ = 0;
 }
 
-ListServiceRequest::~ListServiceRequest() {
-  // @@protoc_insertion_point(destructor:grpc.reflection.v1.ListServiceRequest)
+EmptyRequest::~EmptyRequest() {
+  // @@protoc_insertion_point(destructor:grpc.reflection.v1.EmptyRequest)
   SharedDtor();
 }
 
-void ListServiceRequest::SharedDtor() {
+void EmptyRequest::SharedDtor() {
   if (this != default_instance_) {
   }
 }
 
-void ListServiceRequest::SetCachedSize(int size) const {
+void EmptyRequest::SetCachedSize(int size) const {
   GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
   _cached_size_ = size;
   GOOGLE_SAFE_CONCURRENT_WRITES_END();
 }
-const ::google::protobuf::Descriptor* ListServiceRequest::descriptor() {
+const ::google::protobuf::Descriptor* EmptyRequest::descriptor() {
   protobuf_AssignDescriptorsOnce();
-  return ListServiceRequest_descriptor_;
+  return EmptyRequest_descriptor_;
 }
 
-const ListServiceRequest& ListServiceRequest::default_instance() {
+const EmptyRequest& EmptyRequest::default_instance() {
   if (default_instance_ == NULL) protobuf_AddDesc_reflection_2eproto();
   return *default_instance_;
 }
 
-ListServiceRequest* ListServiceRequest::default_instance_ = NULL;
+EmptyRequest* EmptyRequest::default_instance_ = NULL;
 
-ListServiceRequest* ListServiceRequest::New(
-    ::google::protobuf::Arena* arena) const {
-  ListServiceRequest* n = new ListServiceRequest;
+EmptyRequest* EmptyRequest::New(::google::protobuf::Arena* arena) const {
+  EmptyRequest* n = new EmptyRequest;
   if (arena != NULL) {
     arena->Own(n);
   }
   return n;
 }
 
-void ListServiceRequest::Clear() {}
+void EmptyRequest::Clear() {}
 
-bool ListServiceRequest::MergePartialFromCodedStream(
+bool EmptyRequest::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream* input) {
 #define DO_(EXPRESSION) \
   if (!(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
-  // @@protoc_insertion_point(parse_start:grpc.reflection.v1.ListServiceRequest)
+  // @@protoc_insertion_point(parse_start:grpc.reflection.v1.EmptyRequest)
   for (;;) {
     ::std::pair< ::google::protobuf::uint32, bool> p =
         input->ReadTagWithCutoff(127);
@@ -413,28 +376,28 @@ bool ListServiceRequest::MergePartialFromCodedStream(
     DO_(::google::protobuf::internal::WireFormatLite::SkipField(input, tag));
   }
 success:
-  // @@protoc_insertion_point(parse_success:grpc.reflection.v1.ListServiceRequest)
+  // @@protoc_insertion_point(parse_success:grpc.reflection.v1.EmptyRequest)
   return true;
 failure:
-  // @@protoc_insertion_point(parse_failure:grpc.reflection.v1.ListServiceRequest)
+  // @@protoc_insertion_point(parse_failure:grpc.reflection.v1.EmptyRequest)
   return false;
 #undef DO_
 }
 
-void ListServiceRequest::SerializeWithCachedSizes(
+void EmptyRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:grpc.reflection.v1.ListServiceRequest)
-  // @@protoc_insertion_point(serialize_end:grpc.reflection.v1.ListServiceRequest)
+  // @@protoc_insertion_point(serialize_start:grpc.reflection.v1.EmptyRequest)
+  // @@protoc_insertion_point(serialize_end:grpc.reflection.v1.EmptyRequest)
 }
 
-::google::protobuf::uint8* ListServiceRequest::SerializeWithCachedSizesToArray(
+::google::protobuf::uint8* EmptyRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
-  // @@protoc_insertion_point(serialize_to_array_start:grpc.reflection.v1.ListServiceRequest)
-  // @@protoc_insertion_point(serialize_to_array_end:grpc.reflection.v1.ListServiceRequest)
+  // @@protoc_insertion_point(serialize_to_array_start:grpc.reflection.v1.EmptyRequest)
+  // @@protoc_insertion_point(serialize_to_array_end:grpc.reflection.v1.EmptyRequest)
   return target;
 }
 
-int ListServiceRequest::ByteSize() const {
+int EmptyRequest::ByteSize() const {
   int total_size = 0;
 
   GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
@@ -443,11 +406,11 @@ int ListServiceRequest::ByteSize() const {
   return total_size;
 }
 
-void ListServiceRequest::MergeFrom(const ::google::protobuf::Message& from) {
+void EmptyRequest::MergeFrom(const ::google::protobuf::Message& from) {
   if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
-  const ListServiceRequest* source =
-      ::google::protobuf::internal::DynamicCastToGenerated<
-          const ListServiceRequest>(&from);
+  const EmptyRequest* source =
+      ::google::protobuf::internal::DynamicCastToGenerated<const EmptyRequest>(
+          &from);
   if (source == NULL) {
     ::google::protobuf::internal::ReflectionOps::Merge(from, this);
   } else {
@@ -455,126 +418,123 @@ void ListServiceRequest::MergeFrom(const ::google::protobuf::Message& from) {
   }
 }
 
-void ListServiceRequest::MergeFrom(const ListServiceRequest& from) {
+void EmptyRequest::MergeFrom(const EmptyRequest& from) {
   if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
 }
 
-void ListServiceRequest::CopyFrom(const ::google::protobuf::Message& from) {
+void EmptyRequest::CopyFrom(const ::google::protobuf::Message& from) {
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-void ListServiceRequest::CopyFrom(const ListServiceRequest& from) {
+void EmptyRequest::CopyFrom(const EmptyRequest& from) {
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-bool ListServiceRequest::IsInitialized() const { return true; }
+bool EmptyRequest::IsInitialized() const { return true; }
 
-void ListServiceRequest::Swap(ListServiceRequest* other) {
+void EmptyRequest::Swap(EmptyRequest* other) {
   if (other == this) return;
   InternalSwap(other);
 }
-void ListServiceRequest::InternalSwap(ListServiceRequest* other) {
+void EmptyRequest::InternalSwap(EmptyRequest* other) {
   _internal_metadata_.Swap(&other->_internal_metadata_);
   std::swap(_cached_size_, other->_cached_size_);
 }
 
-::google::protobuf::Metadata ListServiceRequest::GetMetadata() const {
+::google::protobuf::Metadata EmptyRequest::GetMetadata() const {
   protobuf_AssignDescriptorsOnce();
   ::google::protobuf::Metadata metadata;
-  metadata.descriptor = ListServiceRequest_descriptor_;
-  metadata.reflection = ListServiceRequest_reflection_;
+  metadata.descriptor = EmptyRequest_descriptor_;
+  metadata.reflection = EmptyRequest_reflection_;
   return metadata;
 }
 
 #if PROTOBUF_INLINE_NOT_IN_HEADERS
-// ListServiceRequest
+// EmptyRequest
 
 #endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
 
 // ===================================================================
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
-const int GetDescriptorRequest::kNameFieldNumber;
+const int FileNameRequest::kFilenameFieldNumber;
 #endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
-GetDescriptorRequest::GetDescriptorRequest()
+FileNameRequest::FileNameRequest()
     : ::google::protobuf::Message(), _internal_metadata_(NULL) {
   SharedCtor();
-  // @@protoc_insertion_point(constructor:grpc.reflection.v1.GetDescriptorRequest)
+  // @@protoc_insertion_point(constructor:grpc.reflection.v1.FileNameRequest)
 }
 
-void GetDescriptorRequest::InitAsDefaultInstance() {
-  _is_default_instance_ = true;
-}
+void FileNameRequest::InitAsDefaultInstance() { _is_default_instance_ = true; }
 
-GetDescriptorRequest::GetDescriptorRequest(const GetDescriptorRequest& from)
+FileNameRequest::FileNameRequest(const FileNameRequest& from)
     : ::google::protobuf::Message(), _internal_metadata_(NULL) {
   SharedCtor();
   MergeFrom(from);
-  // @@protoc_insertion_point(copy_constructor:grpc.reflection.v1.GetDescriptorRequest)
+  // @@protoc_insertion_point(copy_constructor:grpc.reflection.v1.FileNameRequest)
 }
 
-void GetDescriptorRequest::SharedCtor() {
+void FileNameRequest::SharedCtor() {
   _is_default_instance_ = false;
   ::google::protobuf::internal::GetEmptyString();
   _cached_size_ = 0;
-  name_.UnsafeSetDefault(
+  filename_.UnsafeSetDefault(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 
-GetDescriptorRequest::~GetDescriptorRequest() {
-  // @@protoc_insertion_point(destructor:grpc.reflection.v1.GetDescriptorRequest)
+FileNameRequest::~FileNameRequest() {
+  // @@protoc_insertion_point(destructor:grpc.reflection.v1.FileNameRequest)
   SharedDtor();
 }
 
-void GetDescriptorRequest::SharedDtor() {
-  name_.DestroyNoArena(
+void FileNameRequest::SharedDtor() {
+  filename_.DestroyNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
   if (this != default_instance_) {
   }
 }
 
-void GetDescriptorRequest::SetCachedSize(int size) const {
+void FileNameRequest::SetCachedSize(int size) const {
   GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
   _cached_size_ = size;
   GOOGLE_SAFE_CONCURRENT_WRITES_END();
 }
-const ::google::protobuf::Descriptor* GetDescriptorRequest::descriptor() {
+const ::google::protobuf::Descriptor* FileNameRequest::descriptor() {
   protobuf_AssignDescriptorsOnce();
-  return GetDescriptorRequest_descriptor_;
+  return FileNameRequest_descriptor_;
 }
 
-const GetDescriptorRequest& GetDescriptorRequest::default_instance() {
+const FileNameRequest& FileNameRequest::default_instance() {
   if (default_instance_ == NULL) protobuf_AddDesc_reflection_2eproto();
   return *default_instance_;
 }
 
-GetDescriptorRequest* GetDescriptorRequest::default_instance_ = NULL;
+FileNameRequest* FileNameRequest::default_instance_ = NULL;
 
-GetDescriptorRequest* GetDescriptorRequest::New(
-    ::google::protobuf::Arena* arena) const {
-  GetDescriptorRequest* n = new GetDescriptorRequest;
+FileNameRequest* FileNameRequest::New(::google::protobuf::Arena* arena) const {
+  FileNameRequest* n = new FileNameRequest;
   if (arena != NULL) {
     arena->Own(n);
   }
   return n;
 }
 
-void GetDescriptorRequest::Clear() {
-  name_.ClearToEmptyNoArena(
+void FileNameRequest::Clear() {
+  filename_.ClearToEmptyNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 
-bool GetDescriptorRequest::MergePartialFromCodedStream(
+bool FileNameRequest::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream* input) {
 #define DO_(EXPRESSION) \
   if (!(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
-  // @@protoc_insertion_point(parse_start:grpc.reflection.v1.GetDescriptorRequest)
+  // @@protoc_insertion_point(parse_start:grpc.reflection.v1.FileNameRequest)
   for (;;) {
     ::std::pair< ::google::protobuf::uint32, bool> p =
         input->ReadTagWithCutoff(127);
@@ -582,15 +542,15 @@ bool GetDescriptorRequest::MergePartialFromCodedStream(
     if (!p.second) goto handle_unusual;
     switch (
         ::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // optional string name = 1;
+      // optional string filename = 1;
       case 1: {
         if (tag == 10) {
           DO_(::google::protobuf::internal::WireFormatLite::ReadString(
-              input, this->mutable_name()));
+              input, this->mutable_filename()));
           DO_(::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-              this->name().data(), this->name().length(),
+              this->filename().data(), this->filename().length(),
               ::google::protobuf::internal::WireFormatLite::PARSE,
-              "grpc.reflection.v1.GetDescriptorRequest.name"));
+              "grpc.reflection.v1.FileNameRequest.filename"));
         } else {
           goto handle_unusual;
         }
@@ -613,55 +573,54 @@ bool GetDescriptorRequest::MergePartialFromCodedStream(
     }
   }
 success:
-  // @@protoc_insertion_point(parse_success:grpc.reflection.v1.GetDescriptorRequest)
+  // @@protoc_insertion_point(parse_success:grpc.reflection.v1.FileNameRequest)
   return true;
 failure:
-  // @@protoc_insertion_point(parse_failure:grpc.reflection.v1.GetDescriptorRequest)
+  // @@protoc_insertion_point(parse_failure:grpc.reflection.v1.FileNameRequest)
   return false;
 #undef DO_
 }
 
-void GetDescriptorRequest::SerializeWithCachedSizes(
+void FileNameRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:grpc.reflection.v1.GetDescriptorRequest)
-  // optional string name = 1;
-  if (this->name().size() > 0) {
+  // @@protoc_insertion_point(serialize_start:grpc.reflection.v1.FileNameRequest)
+  // optional string filename = 1;
+  if (this->filename().size() > 0) {
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-        this->name().data(), this->name().length(),
+        this->filename().data(), this->filename().length(),
         ::google::protobuf::internal::WireFormatLite::SERIALIZE,
-        "grpc.reflection.v1.GetDescriptorRequest.name");
+        "grpc.reflection.v1.FileNameRequest.filename");
     ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
-        1, this->name(), output);
+        1, this->filename(), output);
   }
 
-  // @@protoc_insertion_point(serialize_end:grpc.reflection.v1.GetDescriptorRequest)
+  // @@protoc_insertion_point(serialize_end:grpc.reflection.v1.FileNameRequest)
 }
 
-::google::protobuf::uint8*
-GetDescriptorRequest::SerializeWithCachedSizesToArray(
+::google::protobuf::uint8* FileNameRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
-  // @@protoc_insertion_point(serialize_to_array_start:grpc.reflection.v1.GetDescriptorRequest)
-  // optional string name = 1;
-  if (this->name().size() > 0) {
+  // @@protoc_insertion_point(serialize_to_array_start:grpc.reflection.v1.FileNameRequest)
+  // optional string filename = 1;
+  if (this->filename().size() > 0) {
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-        this->name().data(), this->name().length(),
+        this->filename().data(), this->filename().length(),
         ::google::protobuf::internal::WireFormatLite::SERIALIZE,
-        "grpc.reflection.v1.GetDescriptorRequest.name");
+        "grpc.reflection.v1.FileNameRequest.filename");
     target = ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
-        1, this->name(), target);
+        1, this->filename(), target);
   }
 
-  // @@protoc_insertion_point(serialize_to_array_end:grpc.reflection.v1.GetDescriptorRequest)
+  // @@protoc_insertion_point(serialize_to_array_end:grpc.reflection.v1.FileNameRequest)
   return target;
 }
 
-int GetDescriptorRequest::ByteSize() const {
+int FileNameRequest::ByteSize() const {
   int total_size = 0;
 
-  // optional string name = 1;
-  if (this->name().size() > 0) {
+  // optional string filename = 1;
+  if (this->filename().size() > 0) {
     total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
-                          this->name());
+                          this->filename());
   }
 
   GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
@@ -670,11 +629,11 @@ int GetDescriptorRequest::ByteSize() const {
   return total_size;
 }
 
-void GetDescriptorRequest::MergeFrom(const ::google::protobuf::Message& from) {
+void FileNameRequest::MergeFrom(const ::google::protobuf::Message& from) {
   if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
-  const GetDescriptorRequest* source =
+  const FileNameRequest* source =
       ::google::protobuf::internal::DynamicCastToGenerated<
-          const GetDescriptorRequest>(&from);
+          const FileNameRequest>(&from);
   if (source == NULL) {
     ::google::protobuf::internal::ReflectionOps::Merge(from, this);
   } else {
@@ -682,91 +641,968 @@ void GetDescriptorRequest::MergeFrom(const ::google::protobuf::Message& from) {
   }
 }
 
-void GetDescriptorRequest::MergeFrom(const GetDescriptorRequest& from) {
+void FileNameRequest::MergeFrom(const FileNameRequest& from) {
   if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
-  if (from.name().size() > 0) {
-    name_.AssignWithDefault(
+  if (from.filename().size() > 0) {
+    filename_.AssignWithDefault(
         &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-        from.name_);
+        from.filename_);
   }
 }
 
-void GetDescriptorRequest::CopyFrom(const ::google::protobuf::Message& from) {
+void FileNameRequest::CopyFrom(const ::google::protobuf::Message& from) {
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-void GetDescriptorRequest::CopyFrom(const GetDescriptorRequest& from) {
+void FileNameRequest::CopyFrom(const FileNameRequest& from) {
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-bool GetDescriptorRequest::IsInitialized() const { return true; }
+bool FileNameRequest::IsInitialized() const { return true; }
 
-void GetDescriptorRequest::Swap(GetDescriptorRequest* other) {
+void FileNameRequest::Swap(FileNameRequest* other) {
   if (other == this) return;
   InternalSwap(other);
 }
-void GetDescriptorRequest::InternalSwap(GetDescriptorRequest* other) {
-  name_.Swap(&other->name_);
+void FileNameRequest::InternalSwap(FileNameRequest* other) {
+  filename_.Swap(&other->filename_);
   _internal_metadata_.Swap(&other->_internal_metadata_);
   std::swap(_cached_size_, other->_cached_size_);
 }
 
-::google::protobuf::Metadata GetDescriptorRequest::GetMetadata() const {
+::google::protobuf::Metadata FileNameRequest::GetMetadata() const {
   protobuf_AssignDescriptorsOnce();
   ::google::protobuf::Metadata metadata;
-  metadata.descriptor = GetDescriptorRequest_descriptor_;
-  metadata.reflection = GetDescriptorRequest_reflection_;
+  metadata.descriptor = FileNameRequest_descriptor_;
+  metadata.reflection = FileNameRequest_reflection_;
   return metadata;
 }
 
 #if PROTOBUF_INLINE_NOT_IN_HEADERS
-// GetDescriptorRequest
+// FileNameRequest
 
-// optional string name = 1;
-void GetDescriptorRequest::clear_name() {
-  name_.ClearToEmptyNoArena(
+// optional string filename = 1;
+void FileNameRequest::clear_filename() {
+  filename_.ClearToEmptyNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-const ::std::string& GetDescriptorRequest::name() const {
-  // @@protoc_insertion_point(field_get:grpc.reflection.v1.GetDescriptorRequest.name)
-  return name_.GetNoArena(
+const ::std::string& FileNameRequest::filename() const {
+  // @@protoc_insertion_point(field_get:grpc.reflection.v1.FileNameRequest.filename)
+  return filename_.GetNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-void GetDescriptorRequest::set_name(const ::std::string& value) {
-  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-                   value);
-  // @@protoc_insertion_point(field_set:grpc.reflection.v1.GetDescriptorRequest.name)
+void FileNameRequest::set_filename(const ::std::string& value) {
+  filename_.SetNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:grpc.reflection.v1.FileNameRequest.filename)
 }
-void GetDescriptorRequest::set_name(const char* value) {
-  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-                   ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:grpc.reflection.v1.GetDescriptorRequest.name)
+void FileNameRequest::set_filename(const char* value) {
+  filename_.SetNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:grpc.reflection.v1.FileNameRequest.filename)
 }
-void GetDescriptorRequest::set_name(const char* value, size_t size) {
-  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-                   ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:grpc.reflection.v1.GetDescriptorRequest.name)
+void FileNameRequest::set_filename(const char* value, size_t size) {
+  filename_.SetNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:grpc.reflection.v1.FileNameRequest.filename)
 }
-::std::string* GetDescriptorRequest::mutable_name() {
-  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1.GetDescriptorRequest.name)
-  return name_.MutableNoArena(
+::std::string* FileNameRequest::mutable_filename() {
+  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1.FileNameRequest.filename)
+  return filename_.MutableNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-::std::string* GetDescriptorRequest::release_name() {
-  return name_.ReleaseNoArena(
+::std::string* FileNameRequest::release_filename() {
+  return filename_.ReleaseNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-void GetDescriptorRequest::set_allocated_name(::std::string* name) {
-  if (name != NULL) {
+void FileNameRequest::set_allocated_filename(::std::string* filename) {
+  if (filename != NULL) {
   } else {
   }
-  name_.SetAllocatedNoArena(
-      &::google::protobuf::internal::GetEmptyStringAlreadyInited(), name);
-  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1.GetDescriptorRequest.name)
+  filename_.SetAllocatedNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(), filename);
+  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1.FileNameRequest.filename)
+}
+
+#endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
+
+// ===================================================================
+
+#if !defined(_MSC_VER) || _MSC_VER >= 1900
+const int SymbolRequest::kSymbolFieldNumber;
+#endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
+
+SymbolRequest::SymbolRequest()
+    : ::google::protobuf::Message(), _internal_metadata_(NULL) {
+  SharedCtor();
+  // @@protoc_insertion_point(constructor:grpc.reflection.v1.SymbolRequest)
+}
+
+void SymbolRequest::InitAsDefaultInstance() { _is_default_instance_ = true; }
+
+SymbolRequest::SymbolRequest(const SymbolRequest& from)
+    : ::google::protobuf::Message(), _internal_metadata_(NULL) {
+  SharedCtor();
+  MergeFrom(from);
+  // @@protoc_insertion_point(copy_constructor:grpc.reflection.v1.SymbolRequest)
+}
+
+void SymbolRequest::SharedCtor() {
+  _is_default_instance_ = false;
+  ::google::protobuf::internal::GetEmptyString();
+  _cached_size_ = 0;
+  symbol_.UnsafeSetDefault(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+
+SymbolRequest::~SymbolRequest() {
+  // @@protoc_insertion_point(destructor:grpc.reflection.v1.SymbolRequest)
+  SharedDtor();
+}
+
+void SymbolRequest::SharedDtor() {
+  symbol_.DestroyNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  if (this != default_instance_) {
+  }
+}
+
+void SymbolRequest::SetCachedSize(int size) const {
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+}
+const ::google::protobuf::Descriptor* SymbolRequest::descriptor() {
+  protobuf_AssignDescriptorsOnce();
+  return SymbolRequest_descriptor_;
+}
+
+const SymbolRequest& SymbolRequest::default_instance() {
+  if (default_instance_ == NULL) protobuf_AddDesc_reflection_2eproto();
+  return *default_instance_;
+}
+
+SymbolRequest* SymbolRequest::default_instance_ = NULL;
+
+SymbolRequest* SymbolRequest::New(::google::protobuf::Arena* arena) const {
+  SymbolRequest* n = new SymbolRequest;
+  if (arena != NULL) {
+    arena->Own(n);
+  }
+  return n;
+}
+
+void SymbolRequest::Clear() {
+  symbol_.ClearToEmptyNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+
+bool SymbolRequest::MergePartialFromCodedStream(
+    ::google::protobuf::io::CodedInputStream* input) {
+#define DO_(EXPRESSION) \
+  if (!(EXPRESSION)) goto failure
+  ::google::protobuf::uint32 tag;
+  // @@protoc_insertion_point(parse_start:grpc.reflection.v1.SymbolRequest)
+  for (;;) {
+    ::std::pair< ::google::protobuf::uint32, bool> p =
+        input->ReadTagWithCutoff(127);
+    tag = p.first;
+    if (!p.second) goto handle_unusual;
+    switch (
+        ::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
+      // optional string symbol = 1;
+      case 1: {
+        if (tag == 10) {
+          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+              input, this->mutable_symbol()));
+          DO_(::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+              this->symbol().data(), this->symbol().length(),
+              ::google::protobuf::internal::WireFormatLite::PARSE,
+              "grpc.reflection.v1.SymbolRequest.symbol"));
+        } else {
+          goto handle_unusual;
+        }
+        if (input->ExpectAtEnd()) goto success;
+        break;
+      }
+
+      default: {
+      handle_unusual:
+        if (tag == 0 ||
+            ::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+                ::google::protobuf::internal::WireFormatLite::
+                    WIRETYPE_END_GROUP) {
+          goto success;
+        }
+        DO_(::google::protobuf::internal::WireFormatLite::SkipField(input,
+                                                                    tag));
+        break;
+      }
+    }
+  }
+success:
+  // @@protoc_insertion_point(parse_success:grpc.reflection.v1.SymbolRequest)
+  return true;
+failure:
+  // @@protoc_insertion_point(parse_failure:grpc.reflection.v1.SymbolRequest)
+  return false;
+#undef DO_
+}
+
+void SymbolRequest::SerializeWithCachedSizes(
+    ::google::protobuf::io::CodedOutputStream* output) const {
+  // @@protoc_insertion_point(serialize_start:grpc.reflection.v1.SymbolRequest)
+  // optional string symbol = 1;
+  if (this->symbol().size() > 0) {
+    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+        this->symbol().data(), this->symbol().length(),
+        ::google::protobuf::internal::WireFormatLite::SERIALIZE,
+        "grpc.reflection.v1.SymbolRequest.symbol");
+    ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
+        1, this->symbol(), output);
+  }
+
+  // @@protoc_insertion_point(serialize_end:grpc.reflection.v1.SymbolRequest)
+}
+
+::google::protobuf::uint8* SymbolRequest::SerializeWithCachedSizesToArray(
+    ::google::protobuf::uint8* target) const {
+  // @@protoc_insertion_point(serialize_to_array_start:grpc.reflection.v1.SymbolRequest)
+  // optional string symbol = 1;
+  if (this->symbol().size() > 0) {
+    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+        this->symbol().data(), this->symbol().length(),
+        ::google::protobuf::internal::WireFormatLite::SERIALIZE,
+        "grpc.reflection.v1.SymbolRequest.symbol");
+    target = ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
+        1, this->symbol(), target);
+  }
+
+  // @@protoc_insertion_point(serialize_to_array_end:grpc.reflection.v1.SymbolRequest)
+  return target;
+}
+
+int SymbolRequest::ByteSize() const {
+  int total_size = 0;
+
+  // optional string symbol = 1;
+  if (this->symbol().size() > 0) {
+    total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                          this->symbol());
+  }
+
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = total_size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+  return total_size;
+}
+
+void SymbolRequest::MergeFrom(const ::google::protobuf::Message& from) {
+  if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
+  const SymbolRequest* source =
+      ::google::protobuf::internal::DynamicCastToGenerated<const SymbolRequest>(
+          &from);
+  if (source == NULL) {
+    ::google::protobuf::internal::ReflectionOps::Merge(from, this);
+  } else {
+    MergeFrom(*source);
+  }
+}
+
+void SymbolRequest::MergeFrom(const SymbolRequest& from) {
+  if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
+  if (from.symbol().size() > 0) {
+    symbol_.AssignWithDefault(
+        &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+        from.symbol_);
+  }
+}
+
+void SymbolRequest::CopyFrom(const ::google::protobuf::Message& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+void SymbolRequest::CopyFrom(const SymbolRequest& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool SymbolRequest::IsInitialized() const { return true; }
+
+void SymbolRequest::Swap(SymbolRequest* other) {
+  if (other == this) return;
+  InternalSwap(other);
+}
+void SymbolRequest::InternalSwap(SymbolRequest* other) {
+  symbol_.Swap(&other->symbol_);
+  _internal_metadata_.Swap(&other->_internal_metadata_);
+  std::swap(_cached_size_, other->_cached_size_);
+}
+
+::google::protobuf::Metadata SymbolRequest::GetMetadata() const {
+  protobuf_AssignDescriptorsOnce();
+  ::google::protobuf::Metadata metadata;
+  metadata.descriptor = SymbolRequest_descriptor_;
+  metadata.reflection = SymbolRequest_reflection_;
+  return metadata;
+}
+
+#if PROTOBUF_INLINE_NOT_IN_HEADERS
+// SymbolRequest
+
+// optional string symbol = 1;
+void SymbolRequest::clear_symbol() {
+  symbol_.ClearToEmptyNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+const ::std::string& SymbolRequest::symbol() const {
+  // @@protoc_insertion_point(field_get:grpc.reflection.v1.SymbolRequest.symbol)
+  return symbol_.GetNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+void SymbolRequest::set_symbol(const ::std::string& value) {
+  symbol_.SetNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:grpc.reflection.v1.SymbolRequest.symbol)
+}
+void SymbolRequest::set_symbol(const char* value) {
+  symbol_.SetNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:grpc.reflection.v1.SymbolRequest.symbol)
+}
+void SymbolRequest::set_symbol(const char* value, size_t size) {
+  symbol_.SetNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:grpc.reflection.v1.SymbolRequest.symbol)
+}
+::std::string* SymbolRequest::mutable_symbol() {
+  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1.SymbolRequest.symbol)
+  return symbol_.MutableNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+::std::string* SymbolRequest::release_symbol() {
+  return symbol_.ReleaseNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+void SymbolRequest::set_allocated_symbol(::std::string* symbol) {
+  if (symbol != NULL) {
+  } else {
+  }
+  symbol_.SetAllocatedNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(), symbol);
+  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1.SymbolRequest.symbol)
+}
+
+#endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
+
+// ===================================================================
+
+#if !defined(_MSC_VER) || _MSC_VER >= 1900
+const int ExtensionRequest::kContainingTypeFieldNumber;
+const int ExtensionRequest::kExtensionNumberFieldNumber;
+#endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
+
+ExtensionRequest::ExtensionRequest()
+    : ::google::protobuf::Message(), _internal_metadata_(NULL) {
+  SharedCtor();
+  // @@protoc_insertion_point(constructor:grpc.reflection.v1.ExtensionRequest)
+}
+
+void ExtensionRequest::InitAsDefaultInstance() { _is_default_instance_ = true; }
+
+ExtensionRequest::ExtensionRequest(const ExtensionRequest& from)
+    : ::google::protobuf::Message(), _internal_metadata_(NULL) {
+  SharedCtor();
+  MergeFrom(from);
+  // @@protoc_insertion_point(copy_constructor:grpc.reflection.v1.ExtensionRequest)
+}
+
+void ExtensionRequest::SharedCtor() {
+  _is_default_instance_ = false;
+  ::google::protobuf::internal::GetEmptyString();
+  _cached_size_ = 0;
+  containing_type_.UnsafeSetDefault(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  extension_number_ = 0;
+}
+
+ExtensionRequest::~ExtensionRequest() {
+  // @@protoc_insertion_point(destructor:grpc.reflection.v1.ExtensionRequest)
+  SharedDtor();
+}
+
+void ExtensionRequest::SharedDtor() {
+  containing_type_.DestroyNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  if (this != default_instance_) {
+  }
+}
+
+void ExtensionRequest::SetCachedSize(int size) const {
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+}
+const ::google::protobuf::Descriptor* ExtensionRequest::descriptor() {
+  protobuf_AssignDescriptorsOnce();
+  return ExtensionRequest_descriptor_;
+}
+
+const ExtensionRequest& ExtensionRequest::default_instance() {
+  if (default_instance_ == NULL) protobuf_AddDesc_reflection_2eproto();
+  return *default_instance_;
+}
+
+ExtensionRequest* ExtensionRequest::default_instance_ = NULL;
+
+ExtensionRequest* ExtensionRequest::New(
+    ::google::protobuf::Arena* arena) const {
+  ExtensionRequest* n = new ExtensionRequest;
+  if (arena != NULL) {
+    arena->Own(n);
+  }
+  return n;
+}
+
+void ExtensionRequest::Clear() {
+  containing_type_.ClearToEmptyNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  extension_number_ = 0;
+}
+
+bool ExtensionRequest::MergePartialFromCodedStream(
+    ::google::protobuf::io::CodedInputStream* input) {
+#define DO_(EXPRESSION) \
+  if (!(EXPRESSION)) goto failure
+  ::google::protobuf::uint32 tag;
+  // @@protoc_insertion_point(parse_start:grpc.reflection.v1.ExtensionRequest)
+  for (;;) {
+    ::std::pair< ::google::protobuf::uint32, bool> p =
+        input->ReadTagWithCutoff(127);
+    tag = p.first;
+    if (!p.second) goto handle_unusual;
+    switch (
+        ::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
+      // optional string containing_type = 1;
+      case 1: {
+        if (tag == 10) {
+          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+              input, this->mutable_containing_type()));
+          DO_(::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+              this->containing_type().data(), this->containing_type().length(),
+              ::google::protobuf::internal::WireFormatLite::PARSE,
+              "grpc.reflection.v1.ExtensionRequest.containing_type"));
+        } else {
+          goto handle_unusual;
+        }
+        if (input->ExpectTag(16)) goto parse_extension_number;
+        break;
+      }
+
+      // optional int32 extension_number = 2;
+      case 2: {
+        if (tag == 16) {
+        parse_extension_number:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+               ::google::protobuf::int32,
+               ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
+              input, &extension_number_)));
+
+        } else {
+          goto handle_unusual;
+        }
+        if (input->ExpectAtEnd()) goto success;
+        break;
+      }
+
+      default: {
+      handle_unusual:
+        if (tag == 0 ||
+            ::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+                ::google::protobuf::internal::WireFormatLite::
+                    WIRETYPE_END_GROUP) {
+          goto success;
+        }
+        DO_(::google::protobuf::internal::WireFormatLite::SkipField(input,
+                                                                    tag));
+        break;
+      }
+    }
+  }
+success:
+  // @@protoc_insertion_point(parse_success:grpc.reflection.v1.ExtensionRequest)
+  return true;
+failure:
+  // @@protoc_insertion_point(parse_failure:grpc.reflection.v1.ExtensionRequest)
+  return false;
+#undef DO_
+}
+
+void ExtensionRequest::SerializeWithCachedSizes(
+    ::google::protobuf::io::CodedOutputStream* output) const {
+  // @@protoc_insertion_point(serialize_start:grpc.reflection.v1.ExtensionRequest)
+  // optional string containing_type = 1;
+  if (this->containing_type().size() > 0) {
+    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+        this->containing_type().data(), this->containing_type().length(),
+        ::google::protobuf::internal::WireFormatLite::SERIALIZE,
+        "grpc.reflection.v1.ExtensionRequest.containing_type");
+    ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
+        1, this->containing_type(), output);
+  }
+
+  // optional int32 extension_number = 2;
+  if (this->extension_number() != 0) {
+    ::google::protobuf::internal::WireFormatLite::WriteInt32(
+        2, this->extension_number(), output);
+  }
+
+  // @@protoc_insertion_point(serialize_end:grpc.reflection.v1.ExtensionRequest)
+}
+
+::google::protobuf::uint8* ExtensionRequest::SerializeWithCachedSizesToArray(
+    ::google::protobuf::uint8* target) const {
+  // @@protoc_insertion_point(serialize_to_array_start:grpc.reflection.v1.ExtensionRequest)
+  // optional string containing_type = 1;
+  if (this->containing_type().size() > 0) {
+    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+        this->containing_type().data(), this->containing_type().length(),
+        ::google::protobuf::internal::WireFormatLite::SERIALIZE,
+        "grpc.reflection.v1.ExtensionRequest.containing_type");
+    target = ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
+        1, this->containing_type(), target);
+  }
+
+  // optional int32 extension_number = 2;
+  if (this->extension_number() != 0) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(
+        2, this->extension_number(), target);
+  }
+
+  // @@protoc_insertion_point(serialize_to_array_end:grpc.reflection.v1.ExtensionRequest)
+  return target;
+}
+
+int ExtensionRequest::ByteSize() const {
+  int total_size = 0;
+
+  // optional string containing_type = 1;
+  if (this->containing_type().size() > 0) {
+    total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                          this->containing_type());
+  }
+
+  // optional int32 extension_number = 2;
+  if (this->extension_number() != 0) {
+    total_size += 1 + ::google::protobuf::internal::WireFormatLite::Int32Size(
+                          this->extension_number());
+  }
+
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = total_size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+  return total_size;
+}
+
+void ExtensionRequest::MergeFrom(const ::google::protobuf::Message& from) {
+  if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
+  const ExtensionRequest* source =
+      ::google::protobuf::internal::DynamicCastToGenerated<
+          const ExtensionRequest>(&from);
+  if (source == NULL) {
+    ::google::protobuf::internal::ReflectionOps::Merge(from, this);
+  } else {
+    MergeFrom(*source);
+  }
+}
+
+void ExtensionRequest::MergeFrom(const ExtensionRequest& from) {
+  if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
+  if (from.containing_type().size() > 0) {
+    containing_type_.AssignWithDefault(
+        &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+        from.containing_type_);
+  }
+  if (from.extension_number() != 0) {
+    set_extension_number(from.extension_number());
+  }
+}
+
+void ExtensionRequest::CopyFrom(const ::google::protobuf::Message& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+void ExtensionRequest::CopyFrom(const ExtensionRequest& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool ExtensionRequest::IsInitialized() const { return true; }
+
+void ExtensionRequest::Swap(ExtensionRequest* other) {
+  if (other == this) return;
+  InternalSwap(other);
+}
+void ExtensionRequest::InternalSwap(ExtensionRequest* other) {
+  containing_type_.Swap(&other->containing_type_);
+  std::swap(extension_number_, other->extension_number_);
+  _internal_metadata_.Swap(&other->_internal_metadata_);
+  std::swap(_cached_size_, other->_cached_size_);
+}
+
+::google::protobuf::Metadata ExtensionRequest::GetMetadata() const {
+  protobuf_AssignDescriptorsOnce();
+  ::google::protobuf::Metadata metadata;
+  metadata.descriptor = ExtensionRequest_descriptor_;
+  metadata.reflection = ExtensionRequest_reflection_;
+  return metadata;
+}
+
+#if PROTOBUF_INLINE_NOT_IN_HEADERS
+// ExtensionRequest
+
+// optional string containing_type = 1;
+void ExtensionRequest::clear_containing_type() {
+  containing_type_.ClearToEmptyNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+const ::std::string& ExtensionRequest::containing_type() const {
+  // @@protoc_insertion_point(field_get:grpc.reflection.v1.ExtensionRequest.containing_type)
+  return containing_type_.GetNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+void ExtensionRequest::set_containing_type(const ::std::string& value) {
+  containing_type_.SetNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:grpc.reflection.v1.ExtensionRequest.containing_type)
+}
+void ExtensionRequest::set_containing_type(const char* value) {
+  containing_type_.SetNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:grpc.reflection.v1.ExtensionRequest.containing_type)
+}
+void ExtensionRequest::set_containing_type(const char* value, size_t size) {
+  containing_type_.SetNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:grpc.reflection.v1.ExtensionRequest.containing_type)
+}
+::std::string* ExtensionRequest::mutable_containing_type() {
+  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1.ExtensionRequest.containing_type)
+  return containing_type_.MutableNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+::std::string* ExtensionRequest::release_containing_type() {
+  return containing_type_.ReleaseNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+void ExtensionRequest::set_allocated_containing_type(
+    ::std::string* containing_type) {
+  if (containing_type != NULL) {
+  } else {
+  }
+  containing_type_.SetAllocatedNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      containing_type);
+  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1.ExtensionRequest.containing_type)
+}
+
+// optional int32 extension_number = 2;
+void ExtensionRequest::clear_extension_number() { extension_number_ = 0; }
+::google::protobuf::int32 ExtensionRequest::extension_number() const {
+  // @@protoc_insertion_point(field_get:grpc.reflection.v1.ExtensionRequest.extension_number)
+  return extension_number_;
+}
+void ExtensionRequest::set_extension_number(::google::protobuf::int32 value) {
+  extension_number_ = value;
+  // @@protoc_insertion_point(field_set:grpc.reflection.v1.ExtensionRequest.extension_number)
+}
+
+#endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
+
+// ===================================================================
+
+#if !defined(_MSC_VER) || _MSC_VER >= 1900
+const int TypeRequest::kTypeFieldNumber;
+#endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
+
+TypeRequest::TypeRequest()
+    : ::google::protobuf::Message(), _internal_metadata_(NULL) {
+  SharedCtor();
+  // @@protoc_insertion_point(constructor:grpc.reflection.v1.TypeRequest)
+}
+
+void TypeRequest::InitAsDefaultInstance() { _is_default_instance_ = true; }
+
+TypeRequest::TypeRequest(const TypeRequest& from)
+    : ::google::protobuf::Message(), _internal_metadata_(NULL) {
+  SharedCtor();
+  MergeFrom(from);
+  // @@protoc_insertion_point(copy_constructor:grpc.reflection.v1.TypeRequest)
+}
+
+void TypeRequest::SharedCtor() {
+  _is_default_instance_ = false;
+  ::google::protobuf::internal::GetEmptyString();
+  _cached_size_ = 0;
+  type_.UnsafeSetDefault(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+
+TypeRequest::~TypeRequest() {
+  // @@protoc_insertion_point(destructor:grpc.reflection.v1.TypeRequest)
+  SharedDtor();
+}
+
+void TypeRequest::SharedDtor() {
+  type_.DestroyNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  if (this != default_instance_) {
+  }
+}
+
+void TypeRequest::SetCachedSize(int size) const {
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+}
+const ::google::protobuf::Descriptor* TypeRequest::descriptor() {
+  protobuf_AssignDescriptorsOnce();
+  return TypeRequest_descriptor_;
+}
+
+const TypeRequest& TypeRequest::default_instance() {
+  if (default_instance_ == NULL) protobuf_AddDesc_reflection_2eproto();
+  return *default_instance_;
+}
+
+TypeRequest* TypeRequest::default_instance_ = NULL;
+
+TypeRequest* TypeRequest::New(::google::protobuf::Arena* arena) const {
+  TypeRequest* n = new TypeRequest;
+  if (arena != NULL) {
+    arena->Own(n);
+  }
+  return n;
+}
+
+void TypeRequest::Clear() {
+  type_.ClearToEmptyNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+
+bool TypeRequest::MergePartialFromCodedStream(
+    ::google::protobuf::io::CodedInputStream* input) {
+#define DO_(EXPRESSION) \
+  if (!(EXPRESSION)) goto failure
+  ::google::protobuf::uint32 tag;
+  // @@protoc_insertion_point(parse_start:grpc.reflection.v1.TypeRequest)
+  for (;;) {
+    ::std::pair< ::google::protobuf::uint32, bool> p =
+        input->ReadTagWithCutoff(127);
+    tag = p.first;
+    if (!p.second) goto handle_unusual;
+    switch (
+        ::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
+      // optional string type = 1;
+      case 1: {
+        if (tag == 10) {
+          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+              input, this->mutable_type()));
+          DO_(::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+              this->type().data(), this->type().length(),
+              ::google::protobuf::internal::WireFormatLite::PARSE,
+              "grpc.reflection.v1.TypeRequest.type"));
+        } else {
+          goto handle_unusual;
+        }
+        if (input->ExpectAtEnd()) goto success;
+        break;
+      }
+
+      default: {
+      handle_unusual:
+        if (tag == 0 ||
+            ::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+                ::google::protobuf::internal::WireFormatLite::
+                    WIRETYPE_END_GROUP) {
+          goto success;
+        }
+        DO_(::google::protobuf::internal::WireFormatLite::SkipField(input,
+                                                                    tag));
+        break;
+      }
+    }
+  }
+success:
+  // @@protoc_insertion_point(parse_success:grpc.reflection.v1.TypeRequest)
+  return true;
+failure:
+  // @@protoc_insertion_point(parse_failure:grpc.reflection.v1.TypeRequest)
+  return false;
+#undef DO_
+}
+
+void TypeRequest::SerializeWithCachedSizes(
+    ::google::protobuf::io::CodedOutputStream* output) const {
+  // @@protoc_insertion_point(serialize_start:grpc.reflection.v1.TypeRequest)
+  // optional string type = 1;
+  if (this->type().size() > 0) {
+    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+        this->type().data(), this->type().length(),
+        ::google::protobuf::internal::WireFormatLite::SERIALIZE,
+        "grpc.reflection.v1.TypeRequest.type");
+    ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
+        1, this->type(), output);
+  }
+
+  // @@protoc_insertion_point(serialize_end:grpc.reflection.v1.TypeRequest)
+}
+
+::google::protobuf::uint8* TypeRequest::SerializeWithCachedSizesToArray(
+    ::google::protobuf::uint8* target) const {
+  // @@protoc_insertion_point(serialize_to_array_start:grpc.reflection.v1.TypeRequest)
+  // optional string type = 1;
+  if (this->type().size() > 0) {
+    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+        this->type().data(), this->type().length(),
+        ::google::protobuf::internal::WireFormatLite::SERIALIZE,
+        "grpc.reflection.v1.TypeRequest.type");
+    target = ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
+        1, this->type(), target);
+  }
+
+  // @@protoc_insertion_point(serialize_to_array_end:grpc.reflection.v1.TypeRequest)
+  return target;
+}
+
+int TypeRequest::ByteSize() const {
+  int total_size = 0;
+
+  // optional string type = 1;
+  if (this->type().size() > 0) {
+    total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                          this->type());
+  }
+
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = total_size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+  return total_size;
+}
+
+void TypeRequest::MergeFrom(const ::google::protobuf::Message& from) {
+  if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
+  const TypeRequest* source =
+      ::google::protobuf::internal::DynamicCastToGenerated<const TypeRequest>(
+          &from);
+  if (source == NULL) {
+    ::google::protobuf::internal::ReflectionOps::Merge(from, this);
+  } else {
+    MergeFrom(*source);
+  }
+}
+
+void TypeRequest::MergeFrom(const TypeRequest& from) {
+  if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
+  if (from.type().size() > 0) {
+    type_.AssignWithDefault(
+        &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+        from.type_);
+  }
+}
+
+void TypeRequest::CopyFrom(const ::google::protobuf::Message& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+void TypeRequest::CopyFrom(const TypeRequest& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool TypeRequest::IsInitialized() const { return true; }
+
+void TypeRequest::Swap(TypeRequest* other) {
+  if (other == this) return;
+  InternalSwap(other);
+}
+void TypeRequest::InternalSwap(TypeRequest* other) {
+  type_.Swap(&other->type_);
+  _internal_metadata_.Swap(&other->_internal_metadata_);
+  std::swap(_cached_size_, other->_cached_size_);
+}
+
+::google::protobuf::Metadata TypeRequest::GetMetadata() const {
+  protobuf_AssignDescriptorsOnce();
+  ::google::protobuf::Metadata metadata;
+  metadata.descriptor = TypeRequest_descriptor_;
+  metadata.reflection = TypeRequest_reflection_;
+  return metadata;
+}
+
+#if PROTOBUF_INLINE_NOT_IN_HEADERS
+// TypeRequest
+
+// optional string type = 1;
+void TypeRequest::clear_type() {
+  type_.ClearToEmptyNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+const ::std::string& TypeRequest::type() const {
+  // @@protoc_insertion_point(field_get:grpc.reflection.v1.TypeRequest.type)
+  return type_.GetNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+void TypeRequest::set_type(const ::std::string& value) {
+  type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+                   value);
+  // @@protoc_insertion_point(field_set:grpc.reflection.v1.TypeRequest.type)
+}
+void TypeRequest::set_type(const char* value) {
+  type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+                   ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:grpc.reflection.v1.TypeRequest.type)
+}
+void TypeRequest::set_type(const char* value, size_t size) {
+  type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+                   ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:grpc.reflection.v1.TypeRequest.type)
+}
+::std::string* TypeRequest::mutable_type() {
+  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1.TypeRequest.type)
+  return type_.MutableNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+::std::string* TypeRequest::release_type() {
+  return type_.ReleaseNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+void TypeRequest::set_allocated_type(::std::string* type) {
+  if (type != NULL) {
+  } else {
+  }
+  type_.SetAllocatedNoArena(
+      &::google::protobuf::internal::GetEmptyStringAlreadyInited(), type);
+  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1.TypeRequest.type)
 }
 
 #endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
@@ -1047,82 +1883,88 @@ ListServiceResponse::mutable_services() {
 // ===================================================================
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
-const int GetMethodResponse::kMethodFieldNumber;
+const int FileDescriptorProtoResponse::kFileDescriptorProtoFieldNumber;
 #endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
-GetMethodResponse::GetMethodResponse()
+FileDescriptorProtoResponse::FileDescriptorProtoResponse()
     : ::google::protobuf::Message(), _internal_metadata_(NULL) {
   SharedCtor();
-  // @@protoc_insertion_point(constructor:grpc.reflection.v1.GetMethodResponse)
+  // @@protoc_insertion_point(constructor:grpc.reflection.v1.FileDescriptorProtoResponse)
 }
 
-void GetMethodResponse::InitAsDefaultInstance() {
+void FileDescriptorProtoResponse::InitAsDefaultInstance() {
   _is_default_instance_ = true;
-  method_ = const_cast< ::google::protobuf::MethodDescriptorProto*>(
-      &::google::protobuf::MethodDescriptorProto::default_instance());
+  file_descriptor_proto_ =
+      const_cast< ::google::protobuf::FileDescriptorProto*>(
+          &::google::protobuf::FileDescriptorProto::default_instance());
 }
 
-GetMethodResponse::GetMethodResponse(const GetMethodResponse& from)
+FileDescriptorProtoResponse::FileDescriptorProtoResponse(
+    const FileDescriptorProtoResponse& from)
     : ::google::protobuf::Message(), _internal_metadata_(NULL) {
   SharedCtor();
   MergeFrom(from);
-  // @@protoc_insertion_point(copy_constructor:grpc.reflection.v1.GetMethodResponse)
+  // @@protoc_insertion_point(copy_constructor:grpc.reflection.v1.FileDescriptorProtoResponse)
 }
 
-void GetMethodResponse::SharedCtor() {
+void FileDescriptorProtoResponse::SharedCtor() {
   _is_default_instance_ = false;
   _cached_size_ = 0;
-  method_ = NULL;
+  file_descriptor_proto_ = NULL;
 }
 
-GetMethodResponse::~GetMethodResponse() {
-  // @@protoc_insertion_point(destructor:grpc.reflection.v1.GetMethodResponse)
+FileDescriptorProtoResponse::~FileDescriptorProtoResponse() {
+  // @@protoc_insertion_point(destructor:grpc.reflection.v1.FileDescriptorProtoResponse)
   SharedDtor();
 }
 
-void GetMethodResponse::SharedDtor() {
+void FileDescriptorProtoResponse::SharedDtor() {
   if (this != default_instance_) {
-    delete method_;
+    delete file_descriptor_proto_;
   }
 }
 
-void GetMethodResponse::SetCachedSize(int size) const {
+void FileDescriptorProtoResponse::SetCachedSize(int size) const {
   GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
   _cached_size_ = size;
   GOOGLE_SAFE_CONCURRENT_WRITES_END();
 }
-const ::google::protobuf::Descriptor* GetMethodResponse::descriptor() {
+const ::google::protobuf::Descriptor*
+FileDescriptorProtoResponse::descriptor() {
   protobuf_AssignDescriptorsOnce();
-  return GetMethodResponse_descriptor_;
+  return FileDescriptorProtoResponse_descriptor_;
 }
 
-const GetMethodResponse& GetMethodResponse::default_instance() {
+const FileDescriptorProtoResponse&
+FileDescriptorProtoResponse::default_instance() {
   if (default_instance_ == NULL) protobuf_AddDesc_reflection_2eproto();
   return *default_instance_;
 }
 
-GetMethodResponse* GetMethodResponse::default_instance_ = NULL;
+FileDescriptorProtoResponse* FileDescriptorProtoResponse::default_instance_ =
+    NULL;
 
-GetMethodResponse* GetMethodResponse::New(
+FileDescriptorProtoResponse* FileDescriptorProtoResponse::New(
     ::google::protobuf::Arena* arena) const {
-  GetMethodResponse* n = new GetMethodResponse;
+  FileDescriptorProtoResponse* n = new FileDescriptorProtoResponse;
   if (arena != NULL) {
     arena->Own(n);
   }
   return n;
 }
 
-void GetMethodResponse::Clear() {
-  if (GetArenaNoVirtual() == NULL && method_ != NULL) delete method_;
-  method_ = NULL;
+void FileDescriptorProtoResponse::Clear() {
+  if (GetArenaNoVirtual() == NULL && file_descriptor_proto_ != NULL)
+    delete file_descriptor_proto_;
+  file_descriptor_proto_ = NULL;
 }
 
-bool GetMethodResponse::MergePartialFromCodedStream(
+bool FileDescriptorProtoResponse::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream* input) {
 #define DO_(EXPRESSION) \
   if (!(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
-  // @@protoc_insertion_point(parse_start:grpc.reflection.v1.GetMethodResponse)
+  // @@protoc_insertion_point(parse_start:grpc.reflection.v1.FileDescriptorProtoResponse)
   for (;;) {
     ::std::pair< ::google::protobuf::uint32, bool> p =
         input->ReadTagWithCutoff(127);
@@ -1130,11 +1972,12 @@ bool GetMethodResponse::MergePartialFromCodedStream(
     if (!p.second) goto handle_unusual;
     switch (
         ::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // optional .google.protobuf.MethodDescriptorProto method = 1;
+      // optional .google.protobuf.FileDescriptorProto file_descriptor_proto =
+      // 1;
       case 1: {
         if (tag == 10) {
           DO_(::google::protobuf::internal::WireFormatLite::
-                  ReadMessageNoVirtual(input, mutable_method()));
+                  ReadMessageNoVirtual(input, mutable_file_descriptor_proto()));
         } else {
           goto handle_unusual;
         }
@@ -1157,570 +2000,48 @@ bool GetMethodResponse::MergePartialFromCodedStream(
     }
   }
 success:
-  // @@protoc_insertion_point(parse_success:grpc.reflection.v1.GetMethodResponse)
+  // @@protoc_insertion_point(parse_success:grpc.reflection.v1.FileDescriptorProtoResponse)
   return true;
 failure:
-  // @@protoc_insertion_point(parse_failure:grpc.reflection.v1.GetMethodResponse)
+  // @@protoc_insertion_point(parse_failure:grpc.reflection.v1.FileDescriptorProtoResponse)
   return false;
 #undef DO_
 }
 
-void GetMethodResponse::SerializeWithCachedSizes(
+void FileDescriptorProtoResponse::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:grpc.reflection.v1.GetMethodResponse)
-  // optional .google.protobuf.MethodDescriptorProto method = 1;
-  if (this->has_method()) {
+  // @@protoc_insertion_point(serialize_start:grpc.reflection.v1.FileDescriptorProtoResponse)
+  // optional .google.protobuf.FileDescriptorProto file_descriptor_proto = 1;
+  if (this->has_file_descriptor_proto()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-        1, *this->method_, output);
+        1, *this->file_descriptor_proto_, output);
   }
 
-  // @@protoc_insertion_point(serialize_end:grpc.reflection.v1.GetMethodResponse)
-}
-
-::google::protobuf::uint8* GetMethodResponse::SerializeWithCachedSizesToArray(
-    ::google::protobuf::uint8* target) const {
-  // @@protoc_insertion_point(serialize_to_array_start:grpc.reflection.v1.GetMethodResponse)
-  // optional .google.protobuf.MethodDescriptorProto method = 1;
-  if (this->has_method()) {
-    target = ::google::protobuf::internal::WireFormatLite::
-        WriteMessageNoVirtualToArray(1, *this->method_, target);
-  }
-
-  // @@protoc_insertion_point(serialize_to_array_end:grpc.reflection.v1.GetMethodResponse)
-  return target;
-}
-
-int GetMethodResponse::ByteSize() const {
-  int total_size = 0;
-
-  // optional .google.protobuf.MethodDescriptorProto method = 1;
-  if (this->has_method()) {
-    total_size +=
-        1 + ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
-                *this->method_);
-  }
-
-  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
-  _cached_size_ = total_size;
-  GOOGLE_SAFE_CONCURRENT_WRITES_END();
-  return total_size;
-}
-
-void GetMethodResponse::MergeFrom(const ::google::protobuf::Message& from) {
-  if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
-  const GetMethodResponse* source =
-      ::google::protobuf::internal::DynamicCastToGenerated<
-          const GetMethodResponse>(&from);
-  if (source == NULL) {
-    ::google::protobuf::internal::ReflectionOps::Merge(from, this);
-  } else {
-    MergeFrom(*source);
-  }
-}
-
-void GetMethodResponse::MergeFrom(const GetMethodResponse& from) {
-  if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
-  if (from.has_method()) {
-    mutable_method()->::google::protobuf::MethodDescriptorProto::MergeFrom(
-        from.method());
-  }
-}
-
-void GetMethodResponse::CopyFrom(const ::google::protobuf::Message& from) {
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-void GetMethodResponse::CopyFrom(const GetMethodResponse& from) {
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-bool GetMethodResponse::IsInitialized() const {
-  if (has_method()) {
-    if (!this->method_->IsInitialized()) return false;
-  }
-  return true;
-}
-
-void GetMethodResponse::Swap(GetMethodResponse* other) {
-  if (other == this) return;
-  InternalSwap(other);
-}
-void GetMethodResponse::InternalSwap(GetMethodResponse* other) {
-  std::swap(method_, other->method_);
-  _internal_metadata_.Swap(&other->_internal_metadata_);
-  std::swap(_cached_size_, other->_cached_size_);
-}
-
-::google::protobuf::Metadata GetMethodResponse::GetMetadata() const {
-  protobuf_AssignDescriptorsOnce();
-  ::google::protobuf::Metadata metadata;
-  metadata.descriptor = GetMethodResponse_descriptor_;
-  metadata.reflection = GetMethodResponse_reflection_;
-  return metadata;
-}
-
-#if PROTOBUF_INLINE_NOT_IN_HEADERS
-// GetMethodResponse
-
-// optional .google.protobuf.MethodDescriptorProto method = 1;
-bool GetMethodResponse::has_method() const {
-  return !_is_default_instance_ && method_ != NULL;
-}
-void GetMethodResponse::clear_method() {
-  if (GetArenaNoVirtual() == NULL && method_ != NULL) delete method_;
-  method_ = NULL;
-}
-const ::google::protobuf::MethodDescriptorProto& GetMethodResponse::method()
-    const {
-  // @@protoc_insertion_point(field_get:grpc.reflection.v1.GetMethodResponse.method)
-  return method_ != NULL ? *method_ : *default_instance_->method_;
-}
-::google::protobuf::MethodDescriptorProto* GetMethodResponse::mutable_method() {
-  if (method_ == NULL) {
-    method_ = new ::google::protobuf::MethodDescriptorProto;
-  }
-  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1.GetMethodResponse.method)
-  return method_;
-}
-::google::protobuf::MethodDescriptorProto* GetMethodResponse::release_method() {
-  ::google::protobuf::MethodDescriptorProto* temp = method_;
-  method_ = NULL;
-  return temp;
-}
-void GetMethodResponse::set_allocated_method(
-    ::google::protobuf::MethodDescriptorProto* method) {
-  delete method_;
-  method_ = method;
-  if (method) {
-  } else {
-  }
-  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1.GetMethodResponse.method)
-}
-
-#endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
-
-// ===================================================================
-
-#if !defined(_MSC_VER) || _MSC_VER >= 1900
-const int GetServiceResponse::kServiceFieldNumber;
-#endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
-
-GetServiceResponse::GetServiceResponse()
-    : ::google::protobuf::Message(), _internal_metadata_(NULL) {
-  SharedCtor();
-  // @@protoc_insertion_point(constructor:grpc.reflection.v1.GetServiceResponse)
-}
-
-void GetServiceResponse::InitAsDefaultInstance() {
-  _is_default_instance_ = true;
-  service_ = const_cast< ::google::protobuf::ServiceDescriptorProto*>(
-      &::google::protobuf::ServiceDescriptorProto::default_instance());
-}
-
-GetServiceResponse::GetServiceResponse(const GetServiceResponse& from)
-    : ::google::protobuf::Message(), _internal_metadata_(NULL) {
-  SharedCtor();
-  MergeFrom(from);
-  // @@protoc_insertion_point(copy_constructor:grpc.reflection.v1.GetServiceResponse)
-}
-
-void GetServiceResponse::SharedCtor() {
-  _is_default_instance_ = false;
-  _cached_size_ = 0;
-  service_ = NULL;
-}
-
-GetServiceResponse::~GetServiceResponse() {
-  // @@protoc_insertion_point(destructor:grpc.reflection.v1.GetServiceResponse)
-  SharedDtor();
-}
-
-void GetServiceResponse::SharedDtor() {
-  if (this != default_instance_) {
-    delete service_;
-  }
-}
-
-void GetServiceResponse::SetCachedSize(int size) const {
-  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
-  _cached_size_ = size;
-  GOOGLE_SAFE_CONCURRENT_WRITES_END();
-}
-const ::google::protobuf::Descriptor* GetServiceResponse::descriptor() {
-  protobuf_AssignDescriptorsOnce();
-  return GetServiceResponse_descriptor_;
-}
-
-const GetServiceResponse& GetServiceResponse::default_instance() {
-  if (default_instance_ == NULL) protobuf_AddDesc_reflection_2eproto();
-  return *default_instance_;
-}
-
-GetServiceResponse* GetServiceResponse::default_instance_ = NULL;
-
-GetServiceResponse* GetServiceResponse::New(
-    ::google::protobuf::Arena* arena) const {
-  GetServiceResponse* n = new GetServiceResponse;
-  if (arena != NULL) {
-    arena->Own(n);
-  }
-  return n;
-}
-
-void GetServiceResponse::Clear() {
-  if (GetArenaNoVirtual() == NULL && service_ != NULL) delete service_;
-  service_ = NULL;
-}
-
-bool GetServiceResponse::MergePartialFromCodedStream(
-    ::google::protobuf::io::CodedInputStream* input) {
-#define DO_(EXPRESSION) \
-  if (!(EXPRESSION)) goto failure
-  ::google::protobuf::uint32 tag;
-  // @@protoc_insertion_point(parse_start:grpc.reflection.v1.GetServiceResponse)
-  for (;;) {
-    ::std::pair< ::google::protobuf::uint32, bool> p =
-        input->ReadTagWithCutoff(127);
-    tag = p.first;
-    if (!p.second) goto handle_unusual;
-    switch (
-        ::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // optional .google.protobuf.ServiceDescriptorProto service = 1;
-      case 1: {
-        if (tag == 10) {
-          DO_(::google::protobuf::internal::WireFormatLite::
-                  ReadMessageNoVirtual(input, mutable_service()));
-        } else {
-          goto handle_unusual;
-        }
-        if (input->ExpectAtEnd()) goto success;
-        break;
-      }
-
-      default: {
-      handle_unusual:
-        if (tag == 0 ||
-            ::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-                ::google::protobuf::internal::WireFormatLite::
-                    WIRETYPE_END_GROUP) {
-          goto success;
-        }
-        DO_(::google::protobuf::internal::WireFormatLite::SkipField(input,
-                                                                    tag));
-        break;
-      }
-    }
-  }
-success:
-  // @@protoc_insertion_point(parse_success:grpc.reflection.v1.GetServiceResponse)
-  return true;
-failure:
-  // @@protoc_insertion_point(parse_failure:grpc.reflection.v1.GetServiceResponse)
-  return false;
-#undef DO_
-}
-
-void GetServiceResponse::SerializeWithCachedSizes(
-    ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:grpc.reflection.v1.GetServiceResponse)
-  // optional .google.protobuf.ServiceDescriptorProto service = 1;
-  if (this->has_service()) {
-    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-        1, *this->service_, output);
-  }
-
-  // @@protoc_insertion_point(serialize_end:grpc.reflection.v1.GetServiceResponse)
-}
-
-::google::protobuf::uint8* GetServiceResponse::SerializeWithCachedSizesToArray(
-    ::google::protobuf::uint8* target) const {
-  // @@protoc_insertion_point(serialize_to_array_start:grpc.reflection.v1.GetServiceResponse)
-  // optional .google.protobuf.ServiceDescriptorProto service = 1;
-  if (this->has_service()) {
-    target = ::google::protobuf::internal::WireFormatLite::
-        WriteMessageNoVirtualToArray(1, *this->service_, target);
-  }
-
-  // @@protoc_insertion_point(serialize_to_array_end:grpc.reflection.v1.GetServiceResponse)
-  return target;
-}
-
-int GetServiceResponse::ByteSize() const {
-  int total_size = 0;
-
-  // optional .google.protobuf.ServiceDescriptorProto service = 1;
-  if (this->has_service()) {
-    total_size +=
-        1 + ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
-                *this->service_);
-  }
-
-  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
-  _cached_size_ = total_size;
-  GOOGLE_SAFE_CONCURRENT_WRITES_END();
-  return total_size;
-}
-
-void GetServiceResponse::MergeFrom(const ::google::protobuf::Message& from) {
-  if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
-  const GetServiceResponse* source =
-      ::google::protobuf::internal::DynamicCastToGenerated<
-          const GetServiceResponse>(&from);
-  if (source == NULL) {
-    ::google::protobuf::internal::ReflectionOps::Merge(from, this);
-  } else {
-    MergeFrom(*source);
-  }
-}
-
-void GetServiceResponse::MergeFrom(const GetServiceResponse& from) {
-  if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
-  if (from.has_service()) {
-    mutable_service()->::google::protobuf::ServiceDescriptorProto::MergeFrom(
-        from.service());
-  }
-}
-
-void GetServiceResponse::CopyFrom(const ::google::protobuf::Message& from) {
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-void GetServiceResponse::CopyFrom(const GetServiceResponse& from) {
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-bool GetServiceResponse::IsInitialized() const {
-  if (has_service()) {
-    if (!this->service_->IsInitialized()) return false;
-  }
-  return true;
-}
-
-void GetServiceResponse::Swap(GetServiceResponse* other) {
-  if (other == this) return;
-  InternalSwap(other);
-}
-void GetServiceResponse::InternalSwap(GetServiceResponse* other) {
-  std::swap(service_, other->service_);
-  _internal_metadata_.Swap(&other->_internal_metadata_);
-  std::swap(_cached_size_, other->_cached_size_);
-}
-
-::google::protobuf::Metadata GetServiceResponse::GetMetadata() const {
-  protobuf_AssignDescriptorsOnce();
-  ::google::protobuf::Metadata metadata;
-  metadata.descriptor = GetServiceResponse_descriptor_;
-  metadata.reflection = GetServiceResponse_reflection_;
-  return metadata;
-}
-
-#if PROTOBUF_INLINE_NOT_IN_HEADERS
-// GetServiceResponse
-
-// optional .google.protobuf.ServiceDescriptorProto service = 1;
-bool GetServiceResponse::has_service() const {
-  return !_is_default_instance_ && service_ != NULL;
-}
-void GetServiceResponse::clear_service() {
-  if (GetArenaNoVirtual() == NULL && service_ != NULL) delete service_;
-  service_ = NULL;
-}
-const ::google::protobuf::ServiceDescriptorProto& GetServiceResponse::service()
-    const {
-  // @@protoc_insertion_point(field_get:grpc.reflection.v1.GetServiceResponse.service)
-  return service_ != NULL ? *service_ : *default_instance_->service_;
-}
-::google::protobuf::ServiceDescriptorProto*
-GetServiceResponse::mutable_service() {
-  if (service_ == NULL) {
-    service_ = new ::google::protobuf::ServiceDescriptorProto;
-  }
-  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1.GetServiceResponse.service)
-  return service_;
-}
-::google::protobuf::ServiceDescriptorProto*
-GetServiceResponse::release_service() {
-  ::google::protobuf::ServiceDescriptorProto* temp = service_;
-  service_ = NULL;
-  return temp;
-}
-void GetServiceResponse::set_allocated_service(
-    ::google::protobuf::ServiceDescriptorProto* service) {
-  delete service_;
-  service_ = service;
-  if (service) {
-  } else {
-  }
-  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1.GetServiceResponse.service)
-}
-
-#endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
-
-// ===================================================================
-
-#if !defined(_MSC_VER) || _MSC_VER >= 1900
-const int GetMessageTypeResponse::kMessageTypeFieldNumber;
-#endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
-
-GetMessageTypeResponse::GetMessageTypeResponse()
-    : ::google::protobuf::Message(), _internal_metadata_(NULL) {
-  SharedCtor();
-  // @@protoc_insertion_point(constructor:grpc.reflection.v1.GetMessageTypeResponse)
-}
-
-void GetMessageTypeResponse::InitAsDefaultInstance() {
-  _is_default_instance_ = true;
-  message_type_ = const_cast< ::google::protobuf::DescriptorProto*>(
-      &::google::protobuf::DescriptorProto::default_instance());
-}
-
-GetMessageTypeResponse::GetMessageTypeResponse(
-    const GetMessageTypeResponse& from)
-    : ::google::protobuf::Message(), _internal_metadata_(NULL) {
-  SharedCtor();
-  MergeFrom(from);
-  // @@protoc_insertion_point(copy_constructor:grpc.reflection.v1.GetMessageTypeResponse)
-}
-
-void GetMessageTypeResponse::SharedCtor() {
-  _is_default_instance_ = false;
-  _cached_size_ = 0;
-  message_type_ = NULL;
-}
-
-GetMessageTypeResponse::~GetMessageTypeResponse() {
-  // @@protoc_insertion_point(destructor:grpc.reflection.v1.GetMessageTypeResponse)
-  SharedDtor();
-}
-
-void GetMessageTypeResponse::SharedDtor() {
-  if (this != default_instance_) {
-    delete message_type_;
-  }
-}
-
-void GetMessageTypeResponse::SetCachedSize(int size) const {
-  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
-  _cached_size_ = size;
-  GOOGLE_SAFE_CONCURRENT_WRITES_END();
-}
-const ::google::protobuf::Descriptor* GetMessageTypeResponse::descriptor() {
-  protobuf_AssignDescriptorsOnce();
-  return GetMessageTypeResponse_descriptor_;
-}
-
-const GetMessageTypeResponse& GetMessageTypeResponse::default_instance() {
-  if (default_instance_ == NULL) protobuf_AddDesc_reflection_2eproto();
-  return *default_instance_;
-}
-
-GetMessageTypeResponse* GetMessageTypeResponse::default_instance_ = NULL;
-
-GetMessageTypeResponse* GetMessageTypeResponse::New(
-    ::google::protobuf::Arena* arena) const {
-  GetMessageTypeResponse* n = new GetMessageTypeResponse;
-  if (arena != NULL) {
-    arena->Own(n);
-  }
-  return n;
-}
-
-void GetMessageTypeResponse::Clear() {
-  if (GetArenaNoVirtual() == NULL && message_type_ != NULL)
-    delete message_type_;
-  message_type_ = NULL;
-}
-
-bool GetMessageTypeResponse::MergePartialFromCodedStream(
-    ::google::protobuf::io::CodedInputStream* input) {
-#define DO_(EXPRESSION) \
-  if (!(EXPRESSION)) goto failure
-  ::google::protobuf::uint32 tag;
-  // @@protoc_insertion_point(parse_start:grpc.reflection.v1.GetMessageTypeResponse)
-  for (;;) {
-    ::std::pair< ::google::protobuf::uint32, bool> p =
-        input->ReadTagWithCutoff(127);
-    tag = p.first;
-    if (!p.second) goto handle_unusual;
-    switch (
-        ::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // optional .google.protobuf.DescriptorProto message_type = 1;
-      case 1: {
-        if (tag == 10) {
-          DO_(::google::protobuf::internal::WireFormatLite::
-                  ReadMessageNoVirtual(input, mutable_message_type()));
-        } else {
-          goto handle_unusual;
-        }
-        if (input->ExpectAtEnd()) goto success;
-        break;
-      }
-
-      default: {
-      handle_unusual:
-        if (tag == 0 ||
-            ::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-                ::google::protobuf::internal::WireFormatLite::
-                    WIRETYPE_END_GROUP) {
-          goto success;
-        }
-        DO_(::google::protobuf::internal::WireFormatLite::SkipField(input,
-                                                                    tag));
-        break;
-      }
-    }
-  }
-success:
-  // @@protoc_insertion_point(parse_success:grpc.reflection.v1.GetMessageTypeResponse)
-  return true;
-failure:
-  // @@protoc_insertion_point(parse_failure:grpc.reflection.v1.GetMessageTypeResponse)
-  return false;
-#undef DO_
-}
-
-void GetMessageTypeResponse::SerializeWithCachedSizes(
-    ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:grpc.reflection.v1.GetMessageTypeResponse)
-  // optional .google.protobuf.DescriptorProto message_type = 1;
-  if (this->has_message_type()) {
-    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-        1, *this->message_type_, output);
-  }
-
-  // @@protoc_insertion_point(serialize_end:grpc.reflection.v1.GetMessageTypeResponse)
+  // @@protoc_insertion_point(serialize_end:grpc.reflection.v1.FileDescriptorProtoResponse)
 }
 
 ::google::protobuf::uint8*
-GetMessageTypeResponse::SerializeWithCachedSizesToArray(
+FileDescriptorProtoResponse::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
-  // @@protoc_insertion_point(serialize_to_array_start:grpc.reflection.v1.GetMessageTypeResponse)
-  // optional .google.protobuf.DescriptorProto message_type = 1;
-  if (this->has_message_type()) {
+  // @@protoc_insertion_point(serialize_to_array_start:grpc.reflection.v1.FileDescriptorProtoResponse)
+  // optional .google.protobuf.FileDescriptorProto file_descriptor_proto = 1;
+  if (this->has_file_descriptor_proto()) {
     target = ::google::protobuf::internal::WireFormatLite::
-        WriteMessageNoVirtualToArray(1, *this->message_type_, target);
+        WriteMessageNoVirtualToArray(1, *this->file_descriptor_proto_, target);
   }
 
-  // @@protoc_insertion_point(serialize_to_array_end:grpc.reflection.v1.GetMessageTypeResponse)
+  // @@protoc_insertion_point(serialize_to_array_end:grpc.reflection.v1.FileDescriptorProtoResponse)
   return target;
 }
 
-int GetMessageTypeResponse::ByteSize() const {
+int FileDescriptorProtoResponse::ByteSize() const {
   int total_size = 0;
 
-  // optional .google.protobuf.DescriptorProto message_type = 1;
-  if (this->has_message_type()) {
+  // optional .google.protobuf.FileDescriptorProto file_descriptor_proto = 1;
+  if (this->has_file_descriptor_proto()) {
     total_size +=
         1 + ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
-                *this->message_type_);
+                *this->file_descriptor_proto_);
   }
 
   GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
@@ -1729,12 +2050,12 @@ int GetMessageTypeResponse::ByteSize() const {
   return total_size;
 }
 
-void GetMessageTypeResponse::MergeFrom(
+void FileDescriptorProtoResponse::MergeFrom(
     const ::google::protobuf::Message& from) {
   if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
-  const GetMessageTypeResponse* source =
+  const FileDescriptorProtoResponse* source =
       ::google::protobuf::internal::DynamicCastToGenerated<
-          const GetMessageTypeResponse>(&from);
+          const FileDescriptorProtoResponse>(&from);
   if (source == NULL) {
     ::google::protobuf::internal::ReflectionOps::Merge(from, this);
   } else {
@@ -1742,91 +2063,97 @@ void GetMessageTypeResponse::MergeFrom(
   }
 }
 
-void GetMessageTypeResponse::MergeFrom(const GetMessageTypeResponse& from) {
+void FileDescriptorProtoResponse::MergeFrom(
+    const FileDescriptorProtoResponse& from) {
   if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
-  if (from.has_message_type()) {
-    mutable_message_type()->::google::protobuf::DescriptorProto::MergeFrom(
-        from.message_type());
+  if (from.has_file_descriptor_proto()) {
+    mutable_file_descriptor_proto()
+        ->::google::protobuf::FileDescriptorProto::MergeFrom(
+            from.file_descriptor_proto());
   }
 }
 
-void GetMessageTypeResponse::CopyFrom(const ::google::protobuf::Message& from) {
+void FileDescriptorProtoResponse::CopyFrom(
+    const ::google::protobuf::Message& from) {
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-void GetMessageTypeResponse::CopyFrom(const GetMessageTypeResponse& from) {
+void FileDescriptorProtoResponse::CopyFrom(
+    const FileDescriptorProtoResponse& from) {
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-bool GetMessageTypeResponse::IsInitialized() const {
-  if (has_message_type()) {
-    if (!this->message_type_->IsInitialized()) return false;
+bool FileDescriptorProtoResponse::IsInitialized() const {
+  if (has_file_descriptor_proto()) {
+    if (!this->file_descriptor_proto_->IsInitialized()) return false;
   }
   return true;
 }
 
-void GetMessageTypeResponse::Swap(GetMessageTypeResponse* other) {
+void FileDescriptorProtoResponse::Swap(FileDescriptorProtoResponse* other) {
   if (other == this) return;
   InternalSwap(other);
 }
-void GetMessageTypeResponse::InternalSwap(GetMessageTypeResponse* other) {
-  std::swap(message_type_, other->message_type_);
+void FileDescriptorProtoResponse::InternalSwap(
+    FileDescriptorProtoResponse* other) {
+  std::swap(file_descriptor_proto_, other->file_descriptor_proto_);
   _internal_metadata_.Swap(&other->_internal_metadata_);
   std::swap(_cached_size_, other->_cached_size_);
 }
 
-::google::protobuf::Metadata GetMessageTypeResponse::GetMetadata() const {
+::google::protobuf::Metadata FileDescriptorProtoResponse::GetMetadata() const {
   protobuf_AssignDescriptorsOnce();
   ::google::protobuf::Metadata metadata;
-  metadata.descriptor = GetMessageTypeResponse_descriptor_;
-  metadata.reflection = GetMessageTypeResponse_reflection_;
+  metadata.descriptor = FileDescriptorProtoResponse_descriptor_;
+  metadata.reflection = FileDescriptorProtoResponse_reflection_;
   return metadata;
 }
 
 #if PROTOBUF_INLINE_NOT_IN_HEADERS
-// GetMessageTypeResponse
+// FileDescriptorProtoResponse
 
-// optional .google.protobuf.DescriptorProto message_type = 1;
-bool GetMessageTypeResponse::has_message_type() const {
-  return !_is_default_instance_ && message_type_ != NULL;
+// optional .google.protobuf.FileDescriptorProto file_descriptor_proto = 1;
+bool FileDescriptorProtoResponse::has_file_descriptor_proto() const {
+  return !_is_default_instance_ && file_descriptor_proto_ != NULL;
 }
-void GetMessageTypeResponse::clear_message_type() {
-  if (GetArenaNoVirtual() == NULL && message_type_ != NULL)
-    delete message_type_;
-  message_type_ = NULL;
+void FileDescriptorProtoResponse::clear_file_descriptor_proto() {
+  if (GetArenaNoVirtual() == NULL && file_descriptor_proto_ != NULL)
+    delete file_descriptor_proto_;
+  file_descriptor_proto_ = NULL;
 }
-const ::google::protobuf::DescriptorProto&
-GetMessageTypeResponse::message_type() const {
-  // @@protoc_insertion_point(field_get:grpc.reflection.v1.GetMessageTypeResponse.message_type)
-  return message_type_ != NULL ? *message_type_
-                               : *default_instance_->message_type_;
+const ::google::protobuf::FileDescriptorProto&
+FileDescriptorProtoResponse::file_descriptor_proto() const {
+  // @@protoc_insertion_point(field_get:grpc.reflection.v1.FileDescriptorProtoResponse.file_descriptor_proto)
+  return file_descriptor_proto_ != NULL
+             ? *file_descriptor_proto_
+             : *default_instance_->file_descriptor_proto_;
 }
-::google::protobuf::DescriptorProto*
-GetMessageTypeResponse::mutable_message_type() {
-  if (message_type_ == NULL) {
-    message_type_ = new ::google::protobuf::DescriptorProto;
+::google::protobuf::FileDescriptorProto*
+FileDescriptorProtoResponse::mutable_file_descriptor_proto() {
+  if (file_descriptor_proto_ == NULL) {
+    file_descriptor_proto_ = new ::google::protobuf::FileDescriptorProto;
   }
-  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1.GetMessageTypeResponse.message_type)
-  return message_type_;
+  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1.FileDescriptorProtoResponse.file_descriptor_proto)
+  return file_descriptor_proto_;
 }
-::google::protobuf::DescriptorProto*
-GetMessageTypeResponse::release_message_type() {
-  ::google::protobuf::DescriptorProto* temp = message_type_;
-  message_type_ = NULL;
+::google::protobuf::FileDescriptorProto*
+FileDescriptorProtoResponse::release_file_descriptor_proto() {
+  ::google::protobuf::FileDescriptorProto* temp = file_descriptor_proto_;
+  file_descriptor_proto_ = NULL;
   return temp;
 }
-void GetMessageTypeResponse::set_allocated_message_type(
-    ::google::protobuf::DescriptorProto* message_type) {
-  delete message_type_;
-  message_type_ = message_type;
-  if (message_type) {
+void FileDescriptorProtoResponse::set_allocated_file_descriptor_proto(
+    ::google::protobuf::FileDescriptorProto* file_descriptor_proto) {
+  delete file_descriptor_proto_;
+  file_descriptor_proto_ = file_descriptor_proto;
+  if (file_descriptor_proto) {
   } else {
   }
-  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1.GetMessageTypeResponse.message_type)
+  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1.FileDescriptorProtoResponse.file_descriptor_proto)
 }
 
 #endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
@@ -1834,82 +2161,76 @@ void GetMessageTypeResponse::set_allocated_message_type(
 // ===================================================================
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
-const int GetEnumTypeResponse::kEnumTypeFieldNumber;
+const int ExtensionNumberResponse::kExtensionNumberFieldNumber;
 #endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
-GetEnumTypeResponse::GetEnumTypeResponse()
+ExtensionNumberResponse::ExtensionNumberResponse()
     : ::google::protobuf::Message(), _internal_metadata_(NULL) {
   SharedCtor();
-  // @@protoc_insertion_point(constructor:grpc.reflection.v1.GetEnumTypeResponse)
+  // @@protoc_insertion_point(constructor:grpc.reflection.v1.ExtensionNumberResponse)
 }
 
-void GetEnumTypeResponse::InitAsDefaultInstance() {
+void ExtensionNumberResponse::InitAsDefaultInstance() {
   _is_default_instance_ = true;
-  enum_type_ = const_cast< ::google::protobuf::EnumDescriptorProto*>(
-      &::google::protobuf::EnumDescriptorProto::default_instance());
 }
 
-GetEnumTypeResponse::GetEnumTypeResponse(const GetEnumTypeResponse& from)
+ExtensionNumberResponse::ExtensionNumberResponse(
+    const ExtensionNumberResponse& from)
     : ::google::protobuf::Message(), _internal_metadata_(NULL) {
   SharedCtor();
   MergeFrom(from);
-  // @@protoc_insertion_point(copy_constructor:grpc.reflection.v1.GetEnumTypeResponse)
+  // @@protoc_insertion_point(copy_constructor:grpc.reflection.v1.ExtensionNumberResponse)
 }
 
-void GetEnumTypeResponse::SharedCtor() {
+void ExtensionNumberResponse::SharedCtor() {
   _is_default_instance_ = false;
   _cached_size_ = 0;
-  enum_type_ = NULL;
 }
 
-GetEnumTypeResponse::~GetEnumTypeResponse() {
-  // @@protoc_insertion_point(destructor:grpc.reflection.v1.GetEnumTypeResponse)
+ExtensionNumberResponse::~ExtensionNumberResponse() {
+  // @@protoc_insertion_point(destructor:grpc.reflection.v1.ExtensionNumberResponse)
   SharedDtor();
 }
 
-void GetEnumTypeResponse::SharedDtor() {
+void ExtensionNumberResponse::SharedDtor() {
   if (this != default_instance_) {
-    delete enum_type_;
   }
 }
 
-void GetEnumTypeResponse::SetCachedSize(int size) const {
+void ExtensionNumberResponse::SetCachedSize(int size) const {
   GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
   _cached_size_ = size;
   GOOGLE_SAFE_CONCURRENT_WRITES_END();
 }
-const ::google::protobuf::Descriptor* GetEnumTypeResponse::descriptor() {
+const ::google::protobuf::Descriptor* ExtensionNumberResponse::descriptor() {
   protobuf_AssignDescriptorsOnce();
-  return GetEnumTypeResponse_descriptor_;
+  return ExtensionNumberResponse_descriptor_;
 }
 
-const GetEnumTypeResponse& GetEnumTypeResponse::default_instance() {
+const ExtensionNumberResponse& ExtensionNumberResponse::default_instance() {
   if (default_instance_ == NULL) protobuf_AddDesc_reflection_2eproto();
   return *default_instance_;
 }
 
-GetEnumTypeResponse* GetEnumTypeResponse::default_instance_ = NULL;
+ExtensionNumberResponse* ExtensionNumberResponse::default_instance_ = NULL;
 
-GetEnumTypeResponse* GetEnumTypeResponse::New(
+ExtensionNumberResponse* ExtensionNumberResponse::New(
     ::google::protobuf::Arena* arena) const {
-  GetEnumTypeResponse* n = new GetEnumTypeResponse;
+  ExtensionNumberResponse* n = new ExtensionNumberResponse;
   if (arena != NULL) {
     arena->Own(n);
   }
   return n;
 }
 
-void GetEnumTypeResponse::Clear() {
-  if (GetArenaNoVirtual() == NULL && enum_type_ != NULL) delete enum_type_;
-  enum_type_ = NULL;
-}
+void ExtensionNumberResponse::Clear() { extension_number_.Clear(); }
 
-bool GetEnumTypeResponse::MergePartialFromCodedStream(
+bool ExtensionNumberResponse::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream* input) {
 #define DO_(EXPRESSION) \
   if (!(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
-  // @@protoc_insertion_point(parse_start:grpc.reflection.v1.GetEnumTypeResponse)
+  // @@protoc_insertion_point(parse_start:grpc.reflection.v1.ExtensionNumberResponse)
   for (;;) {
     ::std::pair< ::google::protobuf::uint32, bool> p =
         input->ReadTagWithCutoff(127);
@@ -1917,11 +2238,21 @@ bool GetEnumTypeResponse::MergePartialFromCodedStream(
     if (!p.second) goto handle_unusual;
     switch (
         ::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // optional .google.protobuf.EnumDescriptorProto enum_type = 1;
+      // repeated int32 extension_number = 1;
       case 1: {
         if (tag == 10) {
-          DO_(::google::protobuf::internal::WireFormatLite::
-                  ReadMessageNoVirtual(input, mutable_enum_type()));
+          DO_((
+              ::google::protobuf::internal::WireFormatLite::ReadPackedPrimitive<
+                  ::google::protobuf::int32,
+                  ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
+                  input, this->mutable_extension_number())));
+        } else if (tag == 8) {
+          DO_((
+              ::google::protobuf::internal::WireFormatLite::
+                  ReadRepeatedPrimitiveNoInline<
+                      ::google::protobuf::int32,
+                      ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
+                      1, 10, input, this->mutable_extension_number())));
         } else {
           goto handle_unusual;
         }
@@ -1944,572 +2275,74 @@ bool GetEnumTypeResponse::MergePartialFromCodedStream(
     }
   }
 success:
-  // @@protoc_insertion_point(parse_success:grpc.reflection.v1.GetEnumTypeResponse)
+  // @@protoc_insertion_point(parse_success:grpc.reflection.v1.ExtensionNumberResponse)
   return true;
 failure:
-  // @@protoc_insertion_point(parse_failure:grpc.reflection.v1.GetEnumTypeResponse)
+  // @@protoc_insertion_point(parse_failure:grpc.reflection.v1.ExtensionNumberResponse)
   return false;
 #undef DO_
 }
 
-void GetEnumTypeResponse::SerializeWithCachedSizes(
+void ExtensionNumberResponse::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:grpc.reflection.v1.GetEnumTypeResponse)
-  // optional .google.protobuf.EnumDescriptorProto enum_type = 1;
-  if (this->has_enum_type()) {
-    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-        1, *this->enum_type_, output);
+  // @@protoc_insertion_point(serialize_start:grpc.reflection.v1.ExtensionNumberResponse)
+  // repeated int32 extension_number = 1;
+  if (this->extension_number_size() > 0) {
+    ::google::protobuf::internal::WireFormatLite::WriteTag(
+        1,
+        ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED,
+        output);
+    output->WriteVarint32(_extension_number_cached_byte_size_);
+  }
+  for (int i = 0; i < this->extension_number_size(); i++) {
+    ::google::protobuf::internal::WireFormatLite::WriteInt32NoTag(
+        this->extension_number(i), output);
   }
 
-  // @@protoc_insertion_point(serialize_end:grpc.reflection.v1.GetEnumTypeResponse)
-}
-
-::google::protobuf::uint8* GetEnumTypeResponse::SerializeWithCachedSizesToArray(
-    ::google::protobuf::uint8* target) const {
-  // @@protoc_insertion_point(serialize_to_array_start:grpc.reflection.v1.GetEnumTypeResponse)
-  // optional .google.protobuf.EnumDescriptorProto enum_type = 1;
-  if (this->has_enum_type()) {
-    target = ::google::protobuf::internal::WireFormatLite::
-        WriteMessageNoVirtualToArray(1, *this->enum_type_, target);
-  }
-
-  // @@protoc_insertion_point(serialize_to_array_end:grpc.reflection.v1.GetEnumTypeResponse)
-  return target;
-}
-
-int GetEnumTypeResponse::ByteSize() const {
-  int total_size = 0;
-
-  // optional .google.protobuf.EnumDescriptorProto enum_type = 1;
-  if (this->has_enum_type()) {
-    total_size +=
-        1 + ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
-                *this->enum_type_);
-  }
-
-  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
-  _cached_size_ = total_size;
-  GOOGLE_SAFE_CONCURRENT_WRITES_END();
-  return total_size;
-}
-
-void GetEnumTypeResponse::MergeFrom(const ::google::protobuf::Message& from) {
-  if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
-  const GetEnumTypeResponse* source =
-      ::google::protobuf::internal::DynamicCastToGenerated<
-          const GetEnumTypeResponse>(&from);
-  if (source == NULL) {
-    ::google::protobuf::internal::ReflectionOps::Merge(from, this);
-  } else {
-    MergeFrom(*source);
-  }
-}
-
-void GetEnumTypeResponse::MergeFrom(const GetEnumTypeResponse& from) {
-  if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
-  if (from.has_enum_type()) {
-    mutable_enum_type()->::google::protobuf::EnumDescriptorProto::MergeFrom(
-        from.enum_type());
-  }
-}
-
-void GetEnumTypeResponse::CopyFrom(const ::google::protobuf::Message& from) {
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-void GetEnumTypeResponse::CopyFrom(const GetEnumTypeResponse& from) {
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-bool GetEnumTypeResponse::IsInitialized() const {
-  if (has_enum_type()) {
-    if (!this->enum_type_->IsInitialized()) return false;
-  }
-  return true;
-}
-
-void GetEnumTypeResponse::Swap(GetEnumTypeResponse* other) {
-  if (other == this) return;
-  InternalSwap(other);
-}
-void GetEnumTypeResponse::InternalSwap(GetEnumTypeResponse* other) {
-  std::swap(enum_type_, other->enum_type_);
-  _internal_metadata_.Swap(&other->_internal_metadata_);
-  std::swap(_cached_size_, other->_cached_size_);
-}
-
-::google::protobuf::Metadata GetEnumTypeResponse::GetMetadata() const {
-  protobuf_AssignDescriptorsOnce();
-  ::google::protobuf::Metadata metadata;
-  metadata.descriptor = GetEnumTypeResponse_descriptor_;
-  metadata.reflection = GetEnumTypeResponse_reflection_;
-  return metadata;
-}
-
-#if PROTOBUF_INLINE_NOT_IN_HEADERS
-// GetEnumTypeResponse
-
-// optional .google.protobuf.EnumDescriptorProto enum_type = 1;
-bool GetEnumTypeResponse::has_enum_type() const {
-  return !_is_default_instance_ && enum_type_ != NULL;
-}
-void GetEnumTypeResponse::clear_enum_type() {
-  if (GetArenaNoVirtual() == NULL && enum_type_ != NULL) delete enum_type_;
-  enum_type_ = NULL;
-}
-const ::google::protobuf::EnumDescriptorProto& GetEnumTypeResponse::enum_type()
-    const {
-  // @@protoc_insertion_point(field_get:grpc.reflection.v1.GetEnumTypeResponse.enum_type)
-  return enum_type_ != NULL ? *enum_type_ : *default_instance_->enum_type_;
-}
-::google::protobuf::EnumDescriptorProto*
-GetEnumTypeResponse::mutable_enum_type() {
-  if (enum_type_ == NULL) {
-    enum_type_ = new ::google::protobuf::EnumDescriptorProto;
-  }
-  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1.GetEnumTypeResponse.enum_type)
-  return enum_type_;
-}
-::google::protobuf::EnumDescriptorProto*
-GetEnumTypeResponse::release_enum_type() {
-  ::google::protobuf::EnumDescriptorProto* temp = enum_type_;
-  enum_type_ = NULL;
-  return temp;
-}
-void GetEnumTypeResponse::set_allocated_enum_type(
-    ::google::protobuf::EnumDescriptorProto* enum_type) {
-  delete enum_type_;
-  enum_type_ = enum_type;
-  if (enum_type) {
-  } else {
-  }
-  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1.GetEnumTypeResponse.enum_type)
-}
-
-#endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
-
-// ===================================================================
-
-#if !defined(_MSC_VER) || _MSC_VER >= 1900
-const int GetEnumValueResponse::kEnumValueFieldNumber;
-#endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
-
-GetEnumValueResponse::GetEnumValueResponse()
-    : ::google::protobuf::Message(), _internal_metadata_(NULL) {
-  SharedCtor();
-  // @@protoc_insertion_point(constructor:grpc.reflection.v1.GetEnumValueResponse)
-}
-
-void GetEnumValueResponse::InitAsDefaultInstance() {
-  _is_default_instance_ = true;
-  enum_value_ = const_cast< ::google::protobuf::EnumValueDescriptorProto*>(
-      &::google::protobuf::EnumValueDescriptorProto::default_instance());
-}
-
-GetEnumValueResponse::GetEnumValueResponse(const GetEnumValueResponse& from)
-    : ::google::protobuf::Message(), _internal_metadata_(NULL) {
-  SharedCtor();
-  MergeFrom(from);
-  // @@protoc_insertion_point(copy_constructor:grpc.reflection.v1.GetEnumValueResponse)
-}
-
-void GetEnumValueResponse::SharedCtor() {
-  _is_default_instance_ = false;
-  _cached_size_ = 0;
-  enum_value_ = NULL;
-}
-
-GetEnumValueResponse::~GetEnumValueResponse() {
-  // @@protoc_insertion_point(destructor:grpc.reflection.v1.GetEnumValueResponse)
-  SharedDtor();
-}
-
-void GetEnumValueResponse::SharedDtor() {
-  if (this != default_instance_) {
-    delete enum_value_;
-  }
-}
-
-void GetEnumValueResponse::SetCachedSize(int size) const {
-  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
-  _cached_size_ = size;
-  GOOGLE_SAFE_CONCURRENT_WRITES_END();
-}
-const ::google::protobuf::Descriptor* GetEnumValueResponse::descriptor() {
-  protobuf_AssignDescriptorsOnce();
-  return GetEnumValueResponse_descriptor_;
-}
-
-const GetEnumValueResponse& GetEnumValueResponse::default_instance() {
-  if (default_instance_ == NULL) protobuf_AddDesc_reflection_2eproto();
-  return *default_instance_;
-}
-
-GetEnumValueResponse* GetEnumValueResponse::default_instance_ = NULL;
-
-GetEnumValueResponse* GetEnumValueResponse::New(
-    ::google::protobuf::Arena* arena) const {
-  GetEnumValueResponse* n = new GetEnumValueResponse;
-  if (arena != NULL) {
-    arena->Own(n);
-  }
-  return n;
-}
-
-void GetEnumValueResponse::Clear() {
-  if (GetArenaNoVirtual() == NULL && enum_value_ != NULL) delete enum_value_;
-  enum_value_ = NULL;
-}
-
-bool GetEnumValueResponse::MergePartialFromCodedStream(
-    ::google::protobuf::io::CodedInputStream* input) {
-#define DO_(EXPRESSION) \
-  if (!(EXPRESSION)) goto failure
-  ::google::protobuf::uint32 tag;
-  // @@protoc_insertion_point(parse_start:grpc.reflection.v1.GetEnumValueResponse)
-  for (;;) {
-    ::std::pair< ::google::protobuf::uint32, bool> p =
-        input->ReadTagWithCutoff(127);
-    tag = p.first;
-    if (!p.second) goto handle_unusual;
-    switch (
-        ::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // optional .google.protobuf.EnumValueDescriptorProto enum_value = 1;
-      case 1: {
-        if (tag == 10) {
-          DO_(::google::protobuf::internal::WireFormatLite::
-                  ReadMessageNoVirtual(input, mutable_enum_value()));
-        } else {
-          goto handle_unusual;
-        }
-        if (input->ExpectAtEnd()) goto success;
-        break;
-      }
-
-      default: {
-      handle_unusual:
-        if (tag == 0 ||
-            ::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-                ::google::protobuf::internal::WireFormatLite::
-                    WIRETYPE_END_GROUP) {
-          goto success;
-        }
-        DO_(::google::protobuf::internal::WireFormatLite::SkipField(input,
-                                                                    tag));
-        break;
-      }
-    }
-  }
-success:
-  // @@protoc_insertion_point(parse_success:grpc.reflection.v1.GetEnumValueResponse)
-  return true;
-failure:
-  // @@protoc_insertion_point(parse_failure:grpc.reflection.v1.GetEnumValueResponse)
-  return false;
-#undef DO_
-}
-
-void GetEnumValueResponse::SerializeWithCachedSizes(
-    ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:grpc.reflection.v1.GetEnumValueResponse)
-  // optional .google.protobuf.EnumValueDescriptorProto enum_value = 1;
-  if (this->has_enum_value()) {
-    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-        1, *this->enum_value_, output);
-  }
-
-  // @@protoc_insertion_point(serialize_end:grpc.reflection.v1.GetEnumValueResponse)
+  // @@protoc_insertion_point(serialize_end:grpc.reflection.v1.ExtensionNumberResponse)
 }
 
 ::google::protobuf::uint8*
-GetEnumValueResponse::SerializeWithCachedSizesToArray(
+ExtensionNumberResponse::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
-  // @@protoc_insertion_point(serialize_to_array_start:grpc.reflection.v1.GetEnumValueResponse)
-  // optional .google.protobuf.EnumValueDescriptorProto enum_value = 1;
-  if (this->has_enum_value()) {
-    target = ::google::protobuf::internal::WireFormatLite::
-        WriteMessageNoVirtualToArray(1, *this->enum_value_, target);
+  // @@protoc_insertion_point(serialize_to_array_start:grpc.reflection.v1.ExtensionNumberResponse)
+  // repeated int32 extension_number = 1;
+  if (this->extension_number_size() > 0) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteTagToArray(
+        1,
+        ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED,
+        target);
+    target = ::google::protobuf::io::CodedOutputStream::WriteVarint32ToArray(
+        _extension_number_cached_byte_size_, target);
+  }
+  for (int i = 0; i < this->extension_number_size(); i++) {
+    target =
+        ::google::protobuf::internal::WireFormatLite::WriteInt32NoTagToArray(
+            this->extension_number(i), target);
   }
 
-  // @@protoc_insertion_point(serialize_to_array_end:grpc.reflection.v1.GetEnumValueResponse)
+  // @@protoc_insertion_point(serialize_to_array_end:grpc.reflection.v1.ExtensionNumberResponse)
   return target;
 }
 
-int GetEnumValueResponse::ByteSize() const {
+int ExtensionNumberResponse::ByteSize() const {
   int total_size = 0;
 
-  // optional .google.protobuf.EnumValueDescriptorProto enum_value = 1;
-  if (this->has_enum_value()) {
-    total_size +=
-        1 + ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
-                *this->enum_value_);
-  }
-
-  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
-  _cached_size_ = total_size;
-  GOOGLE_SAFE_CONCURRENT_WRITES_END();
-  return total_size;
-}
-
-void GetEnumValueResponse::MergeFrom(const ::google::protobuf::Message& from) {
-  if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
-  const GetEnumValueResponse* source =
-      ::google::protobuf::internal::DynamicCastToGenerated<
-          const GetEnumValueResponse>(&from);
-  if (source == NULL) {
-    ::google::protobuf::internal::ReflectionOps::Merge(from, this);
-  } else {
-    MergeFrom(*source);
-  }
-}
-
-void GetEnumValueResponse::MergeFrom(const GetEnumValueResponse& from) {
-  if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
-  if (from.has_enum_value()) {
-    mutable_enum_value()
-        ->::google::protobuf::EnumValueDescriptorProto::MergeFrom(
-            from.enum_value());
-  }
-}
-
-void GetEnumValueResponse::CopyFrom(const ::google::protobuf::Message& from) {
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-void GetEnumValueResponse::CopyFrom(const GetEnumValueResponse& from) {
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-bool GetEnumValueResponse::IsInitialized() const {
-  if (has_enum_value()) {
-    if (!this->enum_value_->IsInitialized()) return false;
-  }
-  return true;
-}
-
-void GetEnumValueResponse::Swap(GetEnumValueResponse* other) {
-  if (other == this) return;
-  InternalSwap(other);
-}
-void GetEnumValueResponse::InternalSwap(GetEnumValueResponse* other) {
-  std::swap(enum_value_, other->enum_value_);
-  _internal_metadata_.Swap(&other->_internal_metadata_);
-  std::swap(_cached_size_, other->_cached_size_);
-}
-
-::google::protobuf::Metadata GetEnumValueResponse::GetMetadata() const {
-  protobuf_AssignDescriptorsOnce();
-  ::google::protobuf::Metadata metadata;
-  metadata.descriptor = GetEnumValueResponse_descriptor_;
-  metadata.reflection = GetEnumValueResponse_reflection_;
-  return metadata;
-}
-
-#if PROTOBUF_INLINE_NOT_IN_HEADERS
-// GetEnumValueResponse
-
-// optional .google.protobuf.EnumValueDescriptorProto enum_value = 1;
-bool GetEnumValueResponse::has_enum_value() const {
-  return !_is_default_instance_ && enum_value_ != NULL;
-}
-void GetEnumValueResponse::clear_enum_value() {
-  if (GetArenaNoVirtual() == NULL && enum_value_ != NULL) delete enum_value_;
-  enum_value_ = NULL;
-}
-const ::google::protobuf::EnumValueDescriptorProto&
-GetEnumValueResponse::enum_value() const {
-  // @@protoc_insertion_point(field_get:grpc.reflection.v1.GetEnumValueResponse.enum_value)
-  return enum_value_ != NULL ? *enum_value_ : *default_instance_->enum_value_;
-}
-::google::protobuf::EnumValueDescriptorProto*
-GetEnumValueResponse::mutable_enum_value() {
-  if (enum_value_ == NULL) {
-    enum_value_ = new ::google::protobuf::EnumValueDescriptorProto;
-  }
-  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1.GetEnumValueResponse.enum_value)
-  return enum_value_;
-}
-::google::protobuf::EnumValueDescriptorProto*
-GetEnumValueResponse::release_enum_value() {
-  ::google::protobuf::EnumValueDescriptorProto* temp = enum_value_;
-  enum_value_ = NULL;
-  return temp;
-}
-void GetEnumValueResponse::set_allocated_enum_value(
-    ::google::protobuf::EnumValueDescriptorProto* enum_value) {
-  delete enum_value_;
-  enum_value_ = enum_value;
-  if (enum_value) {
-  } else {
-  }
-  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1.GetEnumValueResponse.enum_value)
-}
-
-#endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
-
-// ===================================================================
-
-#if !defined(_MSC_VER) || _MSC_VER >= 1900
-const int GetExtensionResponse::kExtensionFieldNumber;
-#endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
-
-GetExtensionResponse::GetExtensionResponse()
-    : ::google::protobuf::Message(), _internal_metadata_(NULL) {
-  SharedCtor();
-  // @@protoc_insertion_point(constructor:grpc.reflection.v1.GetExtensionResponse)
-}
-
-void GetExtensionResponse::InitAsDefaultInstance() {
-  _is_default_instance_ = true;
-  extension_ = const_cast< ::google::protobuf::FieldDescriptorProto*>(
-      &::google::protobuf::FieldDescriptorProto::default_instance());
-}
-
-GetExtensionResponse::GetExtensionResponse(const GetExtensionResponse& from)
-    : ::google::protobuf::Message(), _internal_metadata_(NULL) {
-  SharedCtor();
-  MergeFrom(from);
-  // @@protoc_insertion_point(copy_constructor:grpc.reflection.v1.GetExtensionResponse)
-}
-
-void GetExtensionResponse::SharedCtor() {
-  _is_default_instance_ = false;
-  _cached_size_ = 0;
-  extension_ = NULL;
-}
-
-GetExtensionResponse::~GetExtensionResponse() {
-  // @@protoc_insertion_point(destructor:grpc.reflection.v1.GetExtensionResponse)
-  SharedDtor();
-}
-
-void GetExtensionResponse::SharedDtor() {
-  if (this != default_instance_) {
-    delete extension_;
-  }
-}
-
-void GetExtensionResponse::SetCachedSize(int size) const {
-  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
-  _cached_size_ = size;
-  GOOGLE_SAFE_CONCURRENT_WRITES_END();
-}
-const ::google::protobuf::Descriptor* GetExtensionResponse::descriptor() {
-  protobuf_AssignDescriptorsOnce();
-  return GetExtensionResponse_descriptor_;
-}
-
-const GetExtensionResponse& GetExtensionResponse::default_instance() {
-  if (default_instance_ == NULL) protobuf_AddDesc_reflection_2eproto();
-  return *default_instance_;
-}
-
-GetExtensionResponse* GetExtensionResponse::default_instance_ = NULL;
-
-GetExtensionResponse* GetExtensionResponse::New(
-    ::google::protobuf::Arena* arena) const {
-  GetExtensionResponse* n = new GetExtensionResponse;
-  if (arena != NULL) {
-    arena->Own(n);
-  }
-  return n;
-}
-
-void GetExtensionResponse::Clear() {
-  if (GetArenaNoVirtual() == NULL && extension_ != NULL) delete extension_;
-  extension_ = NULL;
-}
-
-bool GetExtensionResponse::MergePartialFromCodedStream(
-    ::google::protobuf::io::CodedInputStream* input) {
-#define DO_(EXPRESSION) \
-  if (!(EXPRESSION)) goto failure
-  ::google::protobuf::uint32 tag;
-  // @@protoc_insertion_point(parse_start:grpc.reflection.v1.GetExtensionResponse)
-  for (;;) {
-    ::std::pair< ::google::protobuf::uint32, bool> p =
-        input->ReadTagWithCutoff(127);
-    tag = p.first;
-    if (!p.second) goto handle_unusual;
-    switch (
-        ::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // optional .google.protobuf.FieldDescriptorProto extension = 1;
-      case 1: {
-        if (tag == 10) {
-          DO_(::google::protobuf::internal::WireFormatLite::
-                  ReadMessageNoVirtual(input, mutable_extension()));
-        } else {
-          goto handle_unusual;
-        }
-        if (input->ExpectAtEnd()) goto success;
-        break;
-      }
-
-      default: {
-      handle_unusual:
-        if (tag == 0 ||
-            ::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-                ::google::protobuf::internal::WireFormatLite::
-                    WIRETYPE_END_GROUP) {
-          goto success;
-        }
-        DO_(::google::protobuf::internal::WireFormatLite::SkipField(input,
-                                                                    tag));
-        break;
-      }
+  // repeated int32 extension_number = 1;
+  {
+    int data_size = 0;
+    for (int i = 0; i < this->extension_number_size(); i++) {
+      data_size += ::google::protobuf::internal::WireFormatLite::Int32Size(
+          this->extension_number(i));
     }
-  }
-success:
-  // @@protoc_insertion_point(parse_success:grpc.reflection.v1.GetExtensionResponse)
-  return true;
-failure:
-  // @@protoc_insertion_point(parse_failure:grpc.reflection.v1.GetExtensionResponse)
-  return false;
-#undef DO_
-}
-
-void GetExtensionResponse::SerializeWithCachedSizes(
-    ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:grpc.reflection.v1.GetExtensionResponse)
-  // optional .google.protobuf.FieldDescriptorProto extension = 1;
-  if (this->has_extension()) {
-    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-        1, *this->extension_, output);
-  }
-
-  // @@protoc_insertion_point(serialize_end:grpc.reflection.v1.GetExtensionResponse)
-}
-
-::google::protobuf::uint8*
-GetExtensionResponse::SerializeWithCachedSizesToArray(
-    ::google::protobuf::uint8* target) const {
-  // @@protoc_insertion_point(serialize_to_array_start:grpc.reflection.v1.GetExtensionResponse)
-  // optional .google.protobuf.FieldDescriptorProto extension = 1;
-  if (this->has_extension()) {
-    target = ::google::protobuf::internal::WireFormatLite::
-        WriteMessageNoVirtualToArray(1, *this->extension_, target);
-  }
-
-  // @@protoc_insertion_point(serialize_to_array_end:grpc.reflection.v1.GetExtensionResponse)
-  return target;
-}
-
-int GetExtensionResponse::ByteSize() const {
-  int total_size = 0;
-
-  // optional .google.protobuf.FieldDescriptorProto extension = 1;
-  if (this->has_extension()) {
-    total_size +=
-        1 + ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
-                *this->extension_);
+    if (data_size > 0) {
+      total_size += 1 + ::google::protobuf::internal::WireFormatLite::Int32Size(
+                            data_size);
+    }
+    GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+    _extension_number_cached_byte_size_ = data_size;
+    GOOGLE_SAFE_CONCURRENT_WRITES_END();
+    total_size += data_size;
   }
 
   GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
@@ -2518,11 +2351,12 @@ int GetExtensionResponse::ByteSize() const {
   return total_size;
 }
 
-void GetExtensionResponse::MergeFrom(const ::google::protobuf::Message& from) {
+void ExtensionNumberResponse::MergeFrom(
+    const ::google::protobuf::Message& from) {
   if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
-  const GetExtensionResponse* source =
+  const ExtensionNumberResponse* source =
       ::google::protobuf::internal::DynamicCastToGenerated<
-          const GetExtensionResponse>(&from);
+          const ExtensionNumberResponse>(&from);
   if (source == NULL) {
     ::google::protobuf::internal::ReflectionOps::Merge(from, this);
   } else {
@@ -2530,89 +2364,78 @@ void GetExtensionResponse::MergeFrom(const ::google::protobuf::Message& from) {
   }
 }
 
-void GetExtensionResponse::MergeFrom(const GetExtensionResponse& from) {
+void ExtensionNumberResponse::MergeFrom(const ExtensionNumberResponse& from) {
   if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
-  if (from.has_extension()) {
-    mutable_extension()->::google::protobuf::FieldDescriptorProto::MergeFrom(
-        from.extension());
-  }
+  extension_number_.MergeFrom(from.extension_number_);
 }
 
-void GetExtensionResponse::CopyFrom(const ::google::protobuf::Message& from) {
+void ExtensionNumberResponse::CopyFrom(
+    const ::google::protobuf::Message& from) {
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-void GetExtensionResponse::CopyFrom(const GetExtensionResponse& from) {
+void ExtensionNumberResponse::CopyFrom(const ExtensionNumberResponse& from) {
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-bool GetExtensionResponse::IsInitialized() const {
-  if (has_extension()) {
-    if (!this->extension_->IsInitialized()) return false;
-  }
-  return true;
-}
+bool ExtensionNumberResponse::IsInitialized() const { return true; }
 
-void GetExtensionResponse::Swap(GetExtensionResponse* other) {
+void ExtensionNumberResponse::Swap(ExtensionNumberResponse* other) {
   if (other == this) return;
   InternalSwap(other);
 }
-void GetExtensionResponse::InternalSwap(GetExtensionResponse* other) {
-  std::swap(extension_, other->extension_);
+void ExtensionNumberResponse::InternalSwap(ExtensionNumberResponse* other) {
+  extension_number_.UnsafeArenaSwap(&other->extension_number_);
   _internal_metadata_.Swap(&other->_internal_metadata_);
   std::swap(_cached_size_, other->_cached_size_);
 }
 
-::google::protobuf::Metadata GetExtensionResponse::GetMetadata() const {
+::google::protobuf::Metadata ExtensionNumberResponse::GetMetadata() const {
   protobuf_AssignDescriptorsOnce();
   ::google::protobuf::Metadata metadata;
-  metadata.descriptor = GetExtensionResponse_descriptor_;
-  metadata.reflection = GetExtensionResponse_reflection_;
+  metadata.descriptor = ExtensionNumberResponse_descriptor_;
+  metadata.reflection = ExtensionNumberResponse_reflection_;
   return metadata;
 }
 
 #if PROTOBUF_INLINE_NOT_IN_HEADERS
-// GetExtensionResponse
+// ExtensionNumberResponse
 
-// optional .google.protobuf.FieldDescriptorProto extension = 1;
-bool GetExtensionResponse::has_extension() const {
-  return !_is_default_instance_ && extension_ != NULL;
+// repeated int32 extension_number = 1;
+int ExtensionNumberResponse::extension_number_size() const {
+  return extension_number_.size();
 }
-void GetExtensionResponse::clear_extension() {
-  if (GetArenaNoVirtual() == NULL && extension_ != NULL) delete extension_;
-  extension_ = NULL;
+void ExtensionNumberResponse::clear_extension_number() {
+  extension_number_.Clear();
 }
-const ::google::protobuf::FieldDescriptorProto&
-GetExtensionResponse::extension() const {
-  // @@protoc_insertion_point(field_get:grpc.reflection.v1.GetExtensionResponse.extension)
-  return extension_ != NULL ? *extension_ : *default_instance_->extension_;
+::google::protobuf::int32 ExtensionNumberResponse::extension_number(
+    int index) const {
+  // @@protoc_insertion_point(field_get:grpc.reflection.v1.ExtensionNumberResponse.extension_number)
+  return extension_number_.Get(index);
 }
-::google::protobuf::FieldDescriptorProto*
-GetExtensionResponse::mutable_extension() {
-  if (extension_ == NULL) {
-    extension_ = new ::google::protobuf::FieldDescriptorProto;
-  }
-  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1.GetExtensionResponse.extension)
-  return extension_;
+void ExtensionNumberResponse::set_extension_number(
+    int index, ::google::protobuf::int32 value) {
+  extension_number_.Set(index, value);
+  // @@protoc_insertion_point(field_set:grpc.reflection.v1.ExtensionNumberResponse.extension_number)
 }
-::google::protobuf::FieldDescriptorProto*
-GetExtensionResponse::release_extension() {
-  ::google::protobuf::FieldDescriptorProto* temp = extension_;
-  extension_ = NULL;
-  return temp;
+void ExtensionNumberResponse::add_extension_number(
+    ::google::protobuf::int32 value) {
+  extension_number_.Add(value);
+  // @@protoc_insertion_point(field_add:grpc.reflection.v1.ExtensionNumberResponse.extension_number)
 }
-void GetExtensionResponse::set_allocated_extension(
-    ::google::protobuf::FieldDescriptorProto* extension) {
-  delete extension_;
-  extension_ = extension;
-  if (extension) {
-  } else {
-  }
-  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1.GetExtensionResponse.extension)
+const ::google::protobuf::RepeatedField< ::google::protobuf::int32>&
+ExtensionNumberResponse::extension_number() const {
+  // @@protoc_insertion_point(field_list:grpc.reflection.v1.ExtensionNumberResponse.extension_number)
+  return extension_number_;
+}
+::google::protobuf::RepeatedField< ::google::protobuf::int32>*
+ExtensionNumberResponse::mutable_extension_number() {
+  // @@protoc_insertion_point(field_mutable_list:grpc.reflection.v1.ExtensionNumberResponse.extension_number)
+  return &extension_number_;
 }
 
 #endif  // PROTOBUF_INLINE_NOT_IN_HEADERS

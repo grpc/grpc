@@ -30,61 +30,51 @@
 syntax = "proto3";
 import "google/protobuf/descriptor.proto";
 
-// option java_multiple_files = true;
-// option java_package = "io.grpc.examples.helloworld";
-// option java_outer_classname = "HelloWorldProto";
-// option objc_class_prefix = "HLW";
-
 package grpc.reflection.v1;
 
 service ServerReflection {
-  rpc ListService(ListServiceRequest) returns (ListServiceResponse) {
+  rpc ListService(EmptyRequest) returns (ListServiceResponse) {
   }
-  rpc GetService(GetDescriptorRequest) returns (GetServiceResponse) {
+  rpc GetFileByName(FileNameRequest) returns (FileDescriptorProtoResponse) {
   }
-  rpc GetMethod(GetDescriptorRequest) returns (GetMethodResponse) {
+  rpc GetFileContainingSymbol(SymbolRequest)
+      returns (FileDescriptorProtoResponse) {
   }
-  rpc GetMessageType(GetDescriptorRequest) returns (GetMessageTypeResponse) {
+  rpc GetFileContainingExtention(ExtensionRequest)
+      returns (FileDescriptorProtoResponse) {
   }
-  rpc GetEnumType(GetDescriptorRequest) returns (GetEnumTypeResponse) {
-  }
-  rpc GetEnumValue(GetDescriptorRequest) returns (GetEnumValueResponse) {
-  }
-  rpc GetExtension(GetDescriptorRequest) returns (GetExtensionResponse) {
+  rpc GetAllExtensionNumbers(TypeRequest) returns (ExtensionNumberResponse) {
   }
 }
 
-message ListServiceRequest {
+message EmptyRequest {
 }
 
-message GetDescriptorRequest {
-  string name = 1;
+message FileNameRequest {
+  string filename = 1;
+}
+
+message SymbolRequest {
+  string symbol = 1;
+}
+
+message ExtensionRequest {
+  string containing_type = 1;
+  int32 extension_number = 2;
+}
+
+message TypeRequest {
+  string type = 1;
 }
 
 message ListServiceResponse {
   repeated string services = 1;
 }
 
-message GetMethodResponse {
-  google.protobuf.MethodDescriptorProto method = 1;
+message FileDescriptorProtoResponse {
+  google.protobuf.FileDescriptorProto file_descriptor_proto = 1;
 }
 
-message GetServiceResponse {
-  google.protobuf.ServiceDescriptorProto service = 1;
-}
-
-message GetMessageTypeResponse {
-  google.protobuf.DescriptorProto message_type = 1;
-}
-
-message GetEnumTypeResponse {
-  google.protobuf.EnumDescriptorProto enum_type = 1;
-}
-
-message GetEnumValueResponse {
-  google.protobuf.EnumValueDescriptorProto enum_value = 1;
-}
-
-message GetExtensionResponse {
-  google.protobuf.FieldDescriptorProto extension = 1;
+message ExtensionNumberResponse {
+  repeated int32 extension_number = 1;
 }

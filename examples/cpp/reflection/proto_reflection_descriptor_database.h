@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,59 +31,53 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CPP_REFLECTION_PROTO_SERVER_REFLECTION_H
-#define GRPC_INTERNAL_CPP_REFLECTION_PROTO_SERVER_REFLECTION_H
-
-#include <iostream>
 #include <memory>
-#include <string>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/descriptor.pb.h>
+#include <google/protobuf/descriptor_database.h>
 #include <grpc++/grpc++.h>
 
 #include "reflection.grpc.pb.h"
 
 namespace grpc {
 
-class ProtoServerReflection final
-    : public reflection::v1::ServerReflection::Service {
+class ProtoReflectionDescriptorDatabase
+    : public google::protobuf::DescriptorDatabase {
  public:
-  ProtoServerReflection();
+  explicit ProtoReflectionDescriptorDatabase(
+      std::unique_ptr<reflection::v1::ServerReflection::Stub> stub);
+  virtual ~ProtoReflectionDescriptorDatabase();
 
-  ProtoServerReflection(const Server* server);
+  // DescriptorDatabase methods
+  bool FindFileByName(const string& filename,
+                      google::protobuf::FileDescriptorProto* output)
+      GRPC_OVERRIDE;
 
-  void SetServer(const Server* server);
+  bool FindFileContainingSymbol(const string& symbol_name,
+                                google::protobuf::FileDescriptorProto* output)
+      GRPC_OVERRIDE;
 
-  void SetSeviceList(const std::vector<grpc::string>* services);
+  bool FindFileContainingExtension(
+      const string& containing_type, int field_number,
+      google::protobuf::FileDescriptorProto* output) GRPC_OVERRIDE;
 
-  Status ListService(
-      ServerContext* context, const reflection::v1::EmptyRequest* request,
-      reflection::v1::ListServiceResponse* response) GRPC_OVERRIDE;
+  bool FindAllExtensionNumbers(const string& extendee_type,
+                               std::vector<int>* output) GRPC_OVERRIDE;
 
-  Status GetFileByName(
-      ServerContext* context, const reflection::v1::FileNameRequest* request,
-      reflection::v1::FileDescriptorProtoResponse* response) GRPC_OVERRIDE;
-
-  Status GetFileContainingSymbol(
-      ServerContext* context, const reflection::v1::SymbolRequest* request,
-      reflection::v1::FileDescriptorProtoResponse* response) GRPC_OVERRIDE;
-
-  Status GetFileContainingExtention(
-      ServerContext* context, const reflection::v1::ExtensionRequest* request,
-      reflection::v1::FileDescriptorProtoResponse* response) GRPC_OVERRIDE;
-
-  Status GetAllExtensionNumbers(
-      ServerContext* context, const reflection::v1::TypeRequest* request,
-      reflection::v1::ExtensionNumberResponse* response) GRPC_OVERRIDE;
+  grpc::reflection::v1::ServerReflection::Stub* stub() { return stub_.get(); }
 
  private:
-  const google::protobuf::DescriptorPool* descriptor_pool_;
-  const Server* server_;
-  const std::vector<string>* services_;
+  std::unique_ptr<grpc::reflection::v1::ServerReflection::Stub> stub_;
+  std::unordered_set<string> known_files_;
+  std::unordered_set<string> missing_symbols_;
+  std::unordered_map<string, std::unordered_set<int>> missing_extensions_;
+  std::unordered_map<string, std::vector<int>> cached_extension_numbers_;
+
+  google::protobuf::SimpleDescriptorDatabase cached_db_;
 };
 
 }  // namespace grpc
-
-#endif  // GRPC_INTERNAL_CPP_REFLECTION_PROTO_SERVER_REFLECTION_H

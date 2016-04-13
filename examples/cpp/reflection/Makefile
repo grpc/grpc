@@ -43,8 +43,11 @@ vpath %.proto $(PROTOS_PATH)
 
 all: system-check reflection_client
 
-reflection_client: reflection.pb.o reflection.grpc.pb.o reflection_client.o
+reflection_client: reflection.pb.o reflection.grpc.pb.o proto_reflection_descriptor_database.o reflection_client.o
 	$(CXX) $^ $(LDFLAGS) -o $@
+
+database: reflection.pb.o reflection.grpc.pb.o proto_reflection_descriptor_database.o
+		$(CXX) $^ $(LDFLAGS) -o $@
 
 .PRECIOUS: %.grpc.pb.cc
 %.grpc.pb.cc: %.proto
