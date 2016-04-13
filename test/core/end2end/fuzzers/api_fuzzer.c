@@ -39,6 +39,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/transport/metadata.h"
 #include "test/core/util/mock_endpoint.h"
 
@@ -126,6 +127,7 @@ static bool is_eof(input_stream *inp) { return inp->cur == inp->end; }
 // global state
 
 static gpr_mu g_mu;
+static gpr_cv g_cv;
 static gpr_timespec g_now;
 
 extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
@@ -134,8 +136,39 @@ static gpr_timespec now_impl(gpr_clock_type clock_type) {
   GPR_ASSERT(clock_type != GPR_TIMESPAN);
   gpr_mu_lock(&g_mu);
   gpr_timespec now = g_now;
+  gpr_cv_broadcast(&g_cv);
   gpr_mu_unlock(&g_mu);
   return now;
+}
+
+static void wait_until(gpr_timespec when) {
+  gpr_mu_lock(&g_mu);
+  while (gpr_time_cmp(when, g_now) < 0) {
+    gpr_cv_wait(&g_cv, &g_mu, gpr_inf_future(GPR_CLOCK_REALTIME));
+  }
+  gpr_mu_unlock(&g_mu);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// dns resolution
+
+static grpc_resolved_addresses *my_resolve_address(const char *name,
+                                                   const char *default_port) {
+  if (0 == strcmp(name, "server")) {
+    wait_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                            gpr_time_from_seconds(1, GPR_TIMESPAN)));
+    grpc_resolved_addresses *addrs = gpr_malloc(sizeof(*addrs));
+    addrs->naddrs = 1;
+    addrs->addrs = gpr_malloc(sizeof(*addrs->addrs));
+    addrs->addrs[0].len = 0;
+    return addrs;
+  } else if (0 == strcmp(name, "wait")) {
+    wait_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                            gpr_time_from_seconds(1, GPR_TIMESPAN)));
+    return NULL;
+  } else {
+    return NULL;
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -157,7 +190,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_test_only_set_metadata_hash_seed(0);
   if (squelch) gpr_set_log_function(dont_log);
   input_stream inp = {data, data + size};
+  grpc_blocking_resolve_address = my_resolve_address;
   gpr_mu_init(&g_mu);
+  gpr_cv_init(&g_cv);
   gpr_now_impl = now_impl;
   grpc_init();
 
@@ -184,6 +219,11 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           server = NULL;
         }
       }
+
+      gpr_mu_lock(&g_mu);
+      g_now = gpr_time_add(g_now, gpr_time_from_seconds(1, GPR_TIMESPAN));
+      gpr_cv_broadcast(&g_cv);
+      gpr_mu_unlock(&g_mu);
     }
 
     switch (next_byte(&inp)) {
@@ -223,7 +263,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         if (channel == NULL) {
           char *target = read_string(&inp);
           char *target_uri;
-          gpr_asprintf(&target_uri, "fuzz-test:%s", target);
+          gpr_asprintf(&target_uri, "dns:%s", target);
           grpc_channel_args *args = read_args(&inp);
           channel = grpc_insecure_channel_create(target_uri, args, NULL);
           GPR_ASSERT(channel != NULL);
@@ -290,5 +330,6 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 
   grpc_shutdown();
   gpr_mu_destroy(&g_mu);
+  gpr_cv_destroy(&g_cv);
   return 0;
 }
