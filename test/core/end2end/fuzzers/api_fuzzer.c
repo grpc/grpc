@@ -150,7 +150,6 @@ typedef struct addr_req {
 } addr_req;
 
 static void finish_resolve(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
-  GPR_ASSERT(success);
   addr_req *r = arg;
 
   if (0 == strcmp(r->addr, "server")) {
