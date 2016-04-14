@@ -1,0 +1,103 @@
+[
+  {
+    "name": "scenario",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+      {
+        "name": "name",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "clientConfig",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "numClients",
+        "type": "INTEGER",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "serverConfig",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "numServers",
+        "type": "INTEGER",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "warmupSeconds",
+        "type": "INTEGER",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "benchmarkSeconds",
+        "type": "INTEGER",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "latencies",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "clientStats",
+    "type": "RECORD",
+    "mode": "REPEATED",
+    "fields": [
+      {
+        "name": "latencies",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "timeElapsed",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "timeUser",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "timeSystem",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "serverStats",
+    "type": "RECORD",
+    "mode": "REPEATED",
+    "fields": [
+      {
+        "name": "timeElapsed",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "timeUser",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "timeSystem",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "serverCores",
+    "type": "INTEGER",
+    "mode": "REPEATED"
+  }
+]
