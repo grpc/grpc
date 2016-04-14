@@ -300,6 +300,85 @@ class CSharpLanguage:
         'warmup_seconds': WARMUP_SECONDS,
         'benchmark_seconds': BENCHMARK_SECONDS
     }
+    yield {
+        'name': 'csharp_protobuf_async_unary_ping_pong',
+        'num_servers': 1,
+        'num_clients': 1,
+        'client_config': {
+          'client_type': 'ASYNC_CLIENT',
+          'security_params': secargs,
+          'outstanding_rpcs_per_channel': 1,
+          'client_channels': 1,
+          'async_client_threads': 1,
+          'rpc_type': 'UNARY',
+          'load_params': {
+            'closed_loop': {}
+          },
+          'payload_config': EMPTY_PROTO_PAYLOAD,
+          'histogram_params': HISTOGRAM_PARAMS,
+        },
+        'server_config': {
+          'server_type': 'ASYNC_SERVER',
+          'security_params': secargs,
+          'core_limit': 0,
+          'async_server_threads': 1,
+        },
+        'warmup_seconds': WARMUP_SECONDS,
+        'benchmark_seconds': BENCHMARK_SECONDS
+    }
+    yield {
+        'name': 'csharp_protobuf_sync_to_async_unary_ping_pong',
+        'num_servers': 1,
+        'num_clients': 1,
+        'client_config': {
+          'client_type': 'SYNC_CLIENT',
+          'security_params': secargs,
+          'outstanding_rpcs_per_channel': 1,
+          'client_channels': 1,
+          'async_client_threads': 1,
+          'rpc_type': 'UNARY',
+          'load_params': {
+            'closed_loop': {}
+          },
+          'payload_config': EMPTY_PROTO_PAYLOAD,
+          'histogram_params': HISTOGRAM_PARAMS,
+        },
+        'server_config': {
+          'server_type': 'ASYNC_SERVER',
+          'security_params': secargs,
+          'core_limit': 0,
+          'async_server_threads': 1,
+        },
+        'warmup_seconds': WARMUP_SECONDS,
+        'benchmark_seconds': BENCHMARK_SECONDS
+    }
+    yield {
+        'name': 'csharp_to_cpp_protobuf_sync_unary_ping_pong',
+        'num_servers': 1,
+        'num_clients': 1,
+        'client_config': {
+          'client_type': 'SYNC_CLIENT',
+          'security_params': secargs,
+          'outstanding_rpcs_per_channel': 1,
+          'client_channels': 1,
+          'async_client_threads': 1,
+          'rpc_type': 'UNARY',
+          'load_params': {
+            'closed_loop': {}
+          },
+          'payload_config': EMPTY_PROTO_PAYLOAD,
+          'histogram_params': HISTOGRAM_PARAMS,
+        },
+        'server_config': {
+          'server_type': 'SYNC_SERVER',
+          'security_params': secargs,
+          'core_limit': 0,
+          'async_server_threads': 1,
+        },
+        'warmup_seconds': WARMUP_SECONDS,
+        'benchmark_seconds': BENCHMARK_SECONDS,
+        'SERVER_LANGUAGE': 'c++'  # recognized by run_performance_tests.py
+    }
 
   def __str__(self):
     return 'csharp'
