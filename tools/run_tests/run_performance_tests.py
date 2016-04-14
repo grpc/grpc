@@ -37,6 +37,7 @@ import json
 import multiprocessing
 import os
 import pipes
+import re
 import subprocess
 import sys
 import tempfile
@@ -82,6 +83,8 @@ def create_qpsworker_job(language, shortname=None,
   else:
     host_and_port='localhost:%s' % port
 
+  # TODO(jtattermusch): with some care, we can calculate the right timeout
+  # of a worker from the sum of warmup + benchmark times for all the scenarios
   jobspec = jobset.JobSpec(
       cmdline=cmdline,
       shortname=shortname,
@@ -221,15 +224,16 @@ def start_qpsworkers(languages, worker_hosts):
           for worker_idx, worker in enumerate(workers)]
 
 
-def create_scenarios(languages, workers_by_lang, remote_host=None):
+def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*'):
   """Create jobspecs for scenarios to run."""
   scenarios = []
   for language in languages:
     for scenario_json in language.scenarios():
-      scenario = create_scenario_jobspec(scenario_json,
-                                         workers_by_lang[str(language)],
-                                         remote_host=remote_host)
-      scenarios.append(scenario)
+      if re.search(args.regex, scenario_json['name']):
+        scenario = create_scenario_jobspec(scenario_json,
+                                           workers_by_lang[str(language)],
+                                           remote_host=remote_host)
+        scenarios.append(scenario)
 
   # the very last scenario requests shutting down the workers.
   all_workers = [worker
@@ -268,6 +272,8 @@ argp.add_argument('--remote_worker_host',
                   nargs='+',
                   default=[],
                   help='Worker hosts where to start QPS workers.')
+argp.add_argument('-r', '--regex', default='.*', type=str,
+                  help='Regex to select scenarios to run.')
 
 args = argp.parse_args()
 
@@ -295,6 +301,9 @@ build_on_remote_hosts(remote_hosts, languages=[str(l) for l in languages], build
 
 qpsworker_jobs = start_qpsworkers(languages, args.remote_worker_host)
 
+# TODO(jtattermusch): see https://github.com/grpc/grpc/issues/6174
+time.sleep(5)
+
 # get list of worker addresses for each language.
 worker_addresses = dict([(str(language), []) for language in languages])
 for job in qpsworker_jobs:
@@ -303,7 +312,8 @@ for job in qpsworker_jobs:
 try:
   scenarios = create_scenarios(languages,
                                workers_by_lang=worker_addresses,
-                               remote_host=args.remote_driver_host)
+                               remote_host=args.remote_driver_host,
+                               regex=args.regex)
   if not scenarios:
     raise Exception('No scenarios to run')
 
