@@ -184,11 +184,13 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
   timer->triggered = 0;
 
   if (!g_initialized) {
+    timer->triggered = 1;
     grpc_exec_ctx_enqueue(exec_ctx, &timer->closure, false, NULL);
     return;
   }
 
   if (gpr_time_cmp(deadline, now) <= 0) {
+    timer->triggered = 1;
     grpc_exec_ctx_enqueue(exec_ctx, &timer->closure, true, NULL);
     return;
   }
