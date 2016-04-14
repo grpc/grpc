@@ -197,7 +197,8 @@ inline void GetComment(const DescriptorType *desc, CommentType type,
                                        : location.trailing_comments;
     Split(comments, '\n', out);
   } else if (type == COMMENTTYPE_LEADING_DETACHED) {
-    for (int i = 0; i < location.leading_detached_comments.size(); i++) {
+    for (unsigned int i = 0; i < location.leading_detached_comments.size();
+         i++) {
       Split(location.leading_detached_comments[i], '\n', out);
       out->push_back("");
     }
