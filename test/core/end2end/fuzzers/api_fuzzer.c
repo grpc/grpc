@@ -282,6 +282,10 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     }
 
     switch (next_byte(&inp)) {
+      // terminate on bad bytes
+      default:
+        inp.cur = inp.end;
+        break;
       // tickle completion queue
       case 0: {
         grpc_event ev = grpc_completion_queue_next(
