@@ -45,6 +45,8 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
+
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -66,6 +68,13 @@ typedef struct {
   const void *server_transport_data;
   grpc_call_context_element *context;
 } grpc_call_element_args;
+
+typedef struct {
+  uint64_t bytes_in;
+  uint64_t bytes_out;
+  gpr_timespec latency; /* TODO(dgq): per op? */
+  grpc_status_code final_status;
+} grpc_call_stats;
 
 /* Channel filters specify:
    1. the amount of memory needed in the channel & call (via the sizeof_XXX
@@ -105,7 +114,8 @@ typedef struct {
                       grpc_pollset *pollset);
   /* Destroy per call data.
      The filter does not need to do any chaining */
-  void (*destroy_call_elem)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem);
+  void (*destroy_call_elem)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                            const grpc_call_stats *stats);
 
   /* sizeof(per channel data) */
   size_t sizeof_channel_data;
@@ -164,6 +174,7 @@ struct grpc_call_stack {
      about the address of the call stack itself. */
   grpc_stream_refcount refcount;
   size_t count;
+  grpc_call_stats stats;
 };
 
 /* Get a channel element given a channel stack and its index */
