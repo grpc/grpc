@@ -70,6 +70,8 @@ static uint8_t next_byte(input_stream *inp) {
   return *inp->cur++;
 }
 
+static void end(input_stream *inp) { inp->cur = inp->end; }
+
 static char *read_string(input_stream *inp) {
   size_t len = next_byte(inp);
   char *str = gpr_malloc(len + 1);
@@ -292,6 +294,11 @@ static void validate_connectivity_watch(void *p, bool success) {
   gpr_free(w);
 }
 
+typedef struct call_state {
+  grpc_call *client;
+  grpc_call *server;
+} call_state;
+
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_test_only_set_metadata_hash_seed(0);
   if (squelch) gpr_set_log_function(dont_log);
@@ -307,6 +314,11 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   bool server_shutdown = false;
   int pending_server_shutdowns = 0;
   int pending_channel_watches = 0;
+
+#define MAX_CALLS 16
+  call_state calls[MAX_CALLS];
+  int num_calls = 0;
+  memset(calls, 0, sizeof(calls));
 
   grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
 
@@ -336,7 +348,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     switch (next_byte(&inp)) {
       // terminate on bad bytes
       default:
-        inp.cur = inp.end;
+        end(&inp);
         break;
       // tickle completion queue
       case 0: {
@@ -375,6 +387,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           grpc_channel_args_destroy(args);
           gpr_free(target_uri);
           gpr_free(target);
+        } else {
+          end(&inp);
         }
         break;
       }
@@ -383,6 +397,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         if (g_channel != NULL) {
           grpc_channel_destroy(g_channel);
           g_channel = NULL;
+        } else {
+          end(&inp);
         }
         break;
       }
@@ -397,6 +413,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           grpc_server_start(g_server);
           server_shutdown = false;
           GPR_ASSERT(pending_server_shutdowns == 0);
+        } else {
+          end(&inp);
         }
       }
       // begin server shutdown
@@ -407,6 +425,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
                                              &pending_server_shutdowns));
           pending_server_shutdowns++;
           server_shutdown = true;
+        } else {
+          end(&inp);
         }
         break;
       }
@@ -414,6 +434,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       case 6: {
         if (g_server != NULL && server_shutdown) {
           grpc_server_cancel_all_calls(g_server);
+        } else {
+          end(&inp);
         }
         break;
       }
@@ -423,14 +445,22 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
             pending_server_shutdowns == 0) {
           grpc_server_destroy(g_server);
           g_server = NULL;
+        } else {
+          end(&inp);
         }
         break;
       }
       // check connectivity
       case 8: {
         if (g_channel != NULL) {
-          grpc_channel_check_connectivity_state(g_channel,
-                                                next_byte(&inp) > 127);
+          uint8_t try_to_connect = next_byte(&inp);
+          if (try_to_connect == 0 || try_to_connect == 1) {
+            grpc_channel_check_connectivity_state(g_channel, try_to_connect);
+          } else {
+            end(&inp);
+          }
+        } else {
+          end(&inp);
         }
         break;
       }
@@ -450,7 +480,50 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
                                      deadline, &pending_channel_watches)));
             pending_channel_watches++;
           }
+        } else {
+          end(&inp);
         }
+        break;
+      }
+      // create a call
+      case 10: {
+        bool ok = true;
+        if (g_channel == NULL) ok = false;
+        if (num_calls >= MAX_CALLS) ok = false;
+        grpc_call *parent_call = NULL;
+        uint8_t pcidx = next_byte(&inp);
+        if (pcidx > MAX_CALLS)
+          ok = false;
+        else if (pcidx < MAX_CALLS) {
+          parent_call = calls[pcidx].server;
+          if (parent_call == NULL) ok = false;
+        }
+        uint32_t propagation_mask = read_uint32(&inp);
+        char *method = read_string(&inp);
+        char *host = read_string(&inp);
+        gpr_timespec deadline =
+            gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                         gpr_time_from_micros(read_uint32(&inp), GPR_TIMESPAN));
+
+        if (ok) {
+          GPR_ASSERT(calls[num_calls].client == NULL);
+          calls[num_calls].client =
+              grpc_channel_create_call(g_channel, parent_call, propagation_mask,
+                                       cq, method, host, deadline, NULL);
+        } else {
+          end(&inp);
+        }
+        break;
+      }
+      // switch the 'current' call
+      case 11: {
+        uint8_t new_current = next_byte(&inp);
+        if (new_current == 0 || new_current >= num_calls) {
+          end(&inp);
+        } else {
+          GPR_SWAP(call_state, calls[0], calls[new_current]);
+        }
+        break;
       }
     }
   }
