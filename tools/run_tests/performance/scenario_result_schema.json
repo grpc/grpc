@@ -1,5 +1,42 @@
 [
   {
+    "name": "metadata",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+      {
+        "name": "buildNumber",
+        "type": "INTEGER",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "buildUrl",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "jobName",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "gitCommit",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "gitActualCommit",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "created",
+        "type": "TIMESTAMP",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
     "name": "scenario",
     "type": "RECORD",
     "mode": "NULLABLE",
@@ -97,7 +134,69 @@
   },
   {
     "name": "serverCores",
-    "type": "INTEGER",
-    "mode": "REPEATED"
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "summary",
+    "type": "RECORD",
+    "mode": "NULLABLE",
+    "fields": [
+      {
+        "name": "qps",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "qps_per_server_core",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "server_system_time",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "server_user_time",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "client_system_time",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "client_user_time",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "latency_50",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "latency_90",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "latency_95",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "latency_99",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "latency_999",
+        "type": "FLOAT",
+        "mode": "NULLABLE"
+      }
+    ]
   }
 ]
