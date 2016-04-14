@@ -169,7 +169,6 @@ void grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
   size_t i;
 
   call_stack->count = count;
-  memset(&call_stack->stats, 0, sizeof(grpc_call_stats));
   GRPC_STREAM_REF_INIT(&call_stack->refcount, initial_refs, destroy,
                        destroy_arg, "CALL_STACK");
   call_elems = CALL_ELEMS_FROM_STACK(call_stack);
@@ -214,14 +213,15 @@ void grpc_call_stack_ignore_set_pollset(grpc_exec_ctx *exec_ctx,
                                         grpc_call_element *elem,
                                         grpc_pollset *pollset) {}
 
-void grpc_call_stack_destroy(grpc_exec_ctx *exec_ctx, grpc_call_stack *stack) {
+void grpc_call_stack_destroy(grpc_exec_ctx *exec_ctx, grpc_call_stack *stack,
+                             const grpc_call_stats *call_stats) {
   grpc_call_element *elems = CALL_ELEMS_FROM_STACK(stack);
   size_t count = stack->count;
   size_t i;
 
   /* destroy per-filter data */
   for (i = 0; i < count; i++) {
-    elems[i].filter->destroy_call_elem(exec_ctx, &elems[i], &stack->stats);
+    elems[i].filter->destroy_call_elem(exec_ctx, &elems[i], call_stats);
   }
 }
 

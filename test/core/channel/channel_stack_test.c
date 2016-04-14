@@ -87,7 +87,7 @@ static void free_channel(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
 }
 
 static void free_call(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
-  grpc_call_stack_destroy(exec_ctx, arg);
+  grpc_call_stack_destroy(exec_ctx, arg, NULL);
   gpr_free(arg);
 }
 
