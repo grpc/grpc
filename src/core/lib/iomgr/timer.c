@@ -70,6 +70,7 @@ static gpr_clock_type g_clock_type;
 static shard_type g_shards[NUM_SHARDS];
 /* Protected by g_mu */
 static shard_type *g_shard_queue[NUM_SHARDS];
+static bool g_initialized = false;
 
 static int run_some_expired_timers(grpc_exec_ctx *exec_ctx, gpr_timespec now,
                                    gpr_timespec *next, int success);
@@ -183,12 +184,12 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
   timer->triggered = 0;
 
   if (!g_initialized) {
-    grpc_exec_ctx_enqueue(exec_ctx, &timer->closure, false);
+    grpc_exec_ctx_enqueue(exec_ctx, &timer->closure, false, NULL);
     return;
   }
 
   if (gpr_time_cmp(deadline, now) <= 0) {
-    grpc_exec_ctx_enqueue(exec_ctx, &timer->closure, true);
+    grpc_exec_ctx_enqueue(exec_ctx, &timer->closure, true, NULL);
     return;
   }
 
