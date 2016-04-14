@@ -128,27 +128,13 @@ static bool is_eof(input_stream *inp) { return inp->cur == inp->end; }
 ////////////////////////////////////////////////////////////////////////////////
 // global state
 
-static gpr_mu g_mu;
-static gpr_cv g_cv;
 static gpr_timespec g_now;
 
 extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
 static gpr_timespec now_impl(gpr_clock_type clock_type) {
   GPR_ASSERT(clock_type != GPR_TIMESPAN);
-  gpr_mu_lock(&g_mu);
-  gpr_timespec now = g_now;
-  gpr_cv_broadcast(&g_cv);
-  gpr_mu_unlock(&g_mu);
-  return now;
-}
-
-static void wait_until(gpr_timespec when) {
-  gpr_mu_lock(&g_mu);
-  while (gpr_time_cmp(when, g_now) < 0) {
-    gpr_cv_wait(&g_cv, &g_mu, gpr_inf_future(GPR_CLOCK_REALTIME));
-  }
-  gpr_mu_unlock(&g_mu);
+  return g_now;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -226,8 +212,6 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   input_stream inp = {data, data + size};
   grpc_resolve_address = my_resolve_address;
   grpc_tcp_client_connect_impl = my_tcp_client_connect;
-  gpr_mu_init(&g_mu);
-  gpr_cv_init(&g_cv);
   gpr_now_impl = now_impl;
   grpc_init();
 
@@ -255,10 +239,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         }
       }
 
-      gpr_mu_lock(&g_mu);
       g_now = gpr_time_add(g_now, gpr_time_from_seconds(1, GPR_TIMESPAN));
-      gpr_cv_broadcast(&g_cv);
-      gpr_mu_unlock(&g_mu);
     }
 
     switch (next_byte(&inp)) {
@@ -287,10 +268,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       }
       // increment global time
       case 1: {
-        gpr_mu_lock(&g_mu);
         g_now = gpr_time_add(
             g_now, gpr_time_from_micros(read_uint32(&inp), GPR_TIMESPAN));
-        gpr_mu_unlock(&g_mu);
         break;
       }
       // create an insecure channel
@@ -371,7 +350,5 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_completion_queue_destroy(cq);
 
   grpc_shutdown();
-  gpr_mu_destroy(&g_mu);
-  gpr_cv_destroy(&g_cv);
   return 0;
 }
