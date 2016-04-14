@@ -173,7 +173,6 @@ struct grpc_call_stack {
      about the address of the call stack itself. */
   grpc_stream_refcount refcount;
   size_t count;
-  grpc_call_stats stats;
 };
 
 /* Get a channel element given a channel stack and its index */
@@ -233,7 +232,8 @@ void grpc_call_stack_set_pollset(grpc_exec_ctx *exec_ctx,
 #endif
 
 /* Destroy a call stack */
-void grpc_call_stack_destroy(grpc_exec_ctx *exec_ctx, grpc_call_stack *stack);
+void grpc_call_stack_destroy(grpc_exec_ctx *exec_ctx, grpc_call_stack *stack,
+                             const grpc_call_stats *call_stats);
 
 /* Ignore set pollset - used by filters to implement the set_pollset method
    if they don't care about pollsets at all. Does nothing. */

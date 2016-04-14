@@ -175,7 +175,7 @@ struct grpc_call {
   received_status status[STATUS_SOURCE_COUNT];
 
   /* Call stats: only valid after trailing metadata received */
-  grpc_transport_stream_stats stats;
+  grpc_call_stats stats;
 
   /* Compression algorithm for the call */
   grpc_compression_algorithm compression_algorithm;
@@ -375,7 +375,7 @@ static void destroy_call(grpc_exec_ctx *exec_ctx, void *call, bool success) {
   if (c->receiving_stream != NULL) {
     grpc_byte_stream_destroy(exec_ctx, c->receiving_stream);
   }
-  grpc_call_stack_destroy(exec_ctx, CALL_STACK_FROM_CALL(c));
+  grpc_call_stack_destroy(exec_ctx, CALL_STACK_FROM_CALL(c), &c->stats);
   GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, c->channel, "call");
   gpr_mu_destroy(&c->mu);
   for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
@@ -1392,7 +1392,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         bctl->recv_final_op = 1;
         stream_op.recv_trailing_metadata =
             &call->metadata_batch[1 /* is_receiving */][1 /* is_trailing */];
-        stream_op.collect_stats = &call->stats;
+        stream_op.collect_stats = &call->stats.transport_stream_stats;
         break;
       case GRPC_OP_RECV_CLOSE_ON_SERVER:
         /* Flag validation: currently allow no flags */
@@ -1414,7 +1414,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         bctl->recv_final_op = 1;
         stream_op.recv_trailing_metadata =
             &call->metadata_batch[1 /* is_receiving */][1 /* is_trailing */];
-        stream_op.collect_stats = &call->stats;
+        stream_op.collect_stats = &call->stats.transport_stream_stats;
         break;
     }
   }
