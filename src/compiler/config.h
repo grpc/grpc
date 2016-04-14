@@ -44,6 +44,7 @@
 #define GRPC_CUSTOM_FILEDESCRIPTOR ::google::protobuf::FileDescriptor
 #define GRPC_CUSTOM_METHODDESCRIPTOR ::google::protobuf::MethodDescriptor
 #define GRPC_CUSTOM_SERVICEDESCRIPTOR ::google::protobuf::ServiceDescriptor
+#define GRPC_CUSTOM_SOURCELOCATION ::google::protobuf::SourceLocation
 #endif
 
 #ifndef GRPC_CUSTOM_CODEGENERATOR
@@ -74,6 +75,7 @@ typedef GRPC_CUSTOM_DESCRIPTOR Descriptor;
 typedef GRPC_CUSTOM_FILEDESCRIPTOR FileDescriptor;
 typedef GRPC_CUSTOM_METHODDESCRIPTOR MethodDescriptor;
 typedef GRPC_CUSTOM_SERVICEDESCRIPTOR ServiceDescriptor;
+typedef GRPC_CUSTOM_SOURCELOCATION SourceLocation;
 namespace compiler {
 typedef GRPC_CUSTOM_CODEGENERATOR CodeGenerator;
 typedef GRPC_CUSTOM_GENERATORCONTEXT GeneratorContext;

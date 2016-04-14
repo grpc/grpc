@@ -35,11 +35,46 @@
 //
 
 #include <memory>
+#include <sstream>
 
 #include "src/compiler/config.h"
 
 #include "src/compiler/cpp_generator.h"
 #include "src/compiler/cpp_generator_helpers.h"
+#include "src/compiler/generator_helpers.h"
+
+grpc::string GenerateComments(const std::vector<grpc::string> &in) {
+  std::ostringstream oss;
+  for (const grpc::string &elem : in) {
+    if (elem.empty()) {
+      oss << "//\n";
+    } else if (elem[0] == ' ') {
+      oss << "//" << elem << "\n";
+    } else {
+      oss << "// " << elem << "\n";
+    }
+  }
+  return oss.str();
+}
+
+// Get leading or trailing comments in a string. Comment lines start with "// ".
+// Leading detached comments are put in in front of leading comments.
+template <typename DescriptorType>
+grpc::string GetComments(const DescriptorType *desc, bool leading) {
+  std::vector<grpc::string> out;
+  if (leading) {
+    grpc_generator::GetComment(
+        desc, grpc_generator::COMMENTTYPE_LEADING_DETACHED, &out);
+    std::vector<grpc::string> leading;
+    grpc_generator::GetComment(desc, grpc_generator::COMMENTTYPE_LEADING,
+                               &leading);
+    out.insert(out.end(), leading.begin(), leading.end());
+  } else {
+    grpc_generator::GetComment(desc, grpc_generator::COMMENTTYPE_TRAILING,
+                               &out);
+  }
+  return GenerateComments(out);
+}
 
 class ProtoBufMethod : public grpc_cpp_generator::Method {
  public:
@@ -71,6 +106,12 @@ class ProtoBufMethod : public grpc_cpp_generator::Method {
     return method_->client_streaming() && method_->server_streaming();
   }
 
+  grpc::string GetLeadingComments() const { return GetComments(method_, true); }
+
+  grpc::string GetTrailingComments() const {
+    return GetComments(method_, false);
+  }
+
  private:
   const grpc::protobuf::MethodDescriptor *method_;
 };
@@ -87,6 +128,14 @@ class ProtoBufService : public grpc_cpp_generator::Service {
     return std::unique_ptr<const grpc_cpp_generator::Method>(
           new ProtoBufMethod(service_->method(i)));
   };
+
+  grpc::string GetLeadingComments() const {
+    return GetComments(service_, true);
+  }
+
+  grpc::string GetTrailingComments() const {
+    return GetComments(service_, false);
+  }
 
  private:
   const grpc::protobuf::ServiceDescriptor *service_;
@@ -135,6 +184,10 @@ class ProtoBufFile : public grpc_cpp_generator::File {
     return std::unique_ptr<grpc_cpp_generator::Printer>(
           new ProtoBufPrinter(str));
   }
+
+  grpc::string GetLeadingComments() const { return GetComments(file_, true); }
+
+  grpc::string GetTrailingComments() const { return GetComments(file_, false); }
 
  private:
   const grpc::protobuf::FileDescriptor *file_;
