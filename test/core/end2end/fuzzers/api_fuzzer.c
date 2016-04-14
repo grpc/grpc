@@ -252,12 +252,45 @@ static void my_tcp_client_connect(grpc_exec_ctx *exec_ctx,
 ////////////////////////////////////////////////////////////////////////////////
 // test driver
 
-typedef enum {
-  SERVER_SHUTDOWN,
-  CHANNEL_WATCH,
-} tag_name;
+typedef struct validator {
+  void (*validate)(void *arg, bool success);
+  void *arg;
+} validator;
 
-static void *tag(tag_name name) { return (void *)(uintptr_t)name; }
+static validator *create_validator(void (*validate)(void *arg, bool success),
+                                   void *arg) {
+  validator *v = gpr_malloc(sizeof(*v));
+  v->validate = validate;
+  v->arg = arg;
+  return v;
+}
+
+static void assert_success_and_decrement(void *counter, bool success) {
+  GPR_ASSERT(success);
+  --*(int *)counter;
+}
+
+typedef struct connectivity_watch {
+  int *counter;
+  gpr_timespec deadline;
+} connectivity_watch;
+
+static connectivity_watch *make_connectivity_watch(gpr_timespec s,
+                                                   int *counter) {
+  connectivity_watch *o = gpr_malloc(sizeof(*o));
+  o->deadline = s;
+  o->counter = counter;
+  return o;
+}
+
+static void validate_connectivity_watch(void *p, bool success) {
+  connectivity_watch *w = p;
+  if (!success) {
+    GPR_ASSERT(gpr_time_cmp(gpr_now(w->deadline.clock_type), w->deadline) >= 0);
+  }
+  --*w->counter;
+  gpr_free(w);
+}
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_test_only_set_metadata_hash_seed(0);
@@ -286,7 +319,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       }
       if (g_server != NULL) {
         if (!server_shutdown) {
-          grpc_server_shutdown_and_notify(g_server, cq, tag(SERVER_SHUTDOWN));
+          grpc_server_shutdown_and_notify(
+              g_server, cq, create_validator(assert_success_and_decrement,
+                                             &pending_server_shutdowns));
           server_shutdown = true;
           pending_server_shutdowns++;
         } else if (pending_server_shutdowns == 0) {
@@ -308,20 +343,12 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         grpc_event ev = grpc_completion_queue_next(
             cq, gpr_inf_past(GPR_CLOCK_REALTIME), NULL);
         switch (ev.type) {
-          case GRPC_OP_COMPLETE:
-            switch ((tag_name)(uintptr_t)ev.tag) {
-              case SERVER_SHUTDOWN:
-                GPR_ASSERT(pending_server_shutdowns);
-                pending_server_shutdowns--;
-                break;
-              case CHANNEL_WATCH:
-                GPR_ASSERT(pending_channel_watches > 0);
-                pending_channel_watches--;
-                break;
-              default:
-                GPR_ASSERT(false);
-            }
+          case GRPC_OP_COMPLETE: {
+            validator *v = ev.tag;
+            v->validate(v->arg, ev.success);
+            gpr_free(v);
             break;
+          }
           case GRPC_QUEUE_TIMEOUT:
             break;
           case GRPC_QUEUE_SHUTDOWN:
@@ -375,7 +402,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       // begin server shutdown
       case 5: {
         if (g_server != NULL) {
-          grpc_server_shutdown_and_notify(g_server, cq, tag(SERVER_SHUTDOWN));
+          grpc_server_shutdown_and_notify(
+              g_server, cq, create_validator(assert_success_and_decrement,
+                                             &pending_server_shutdowns));
           pending_server_shutdowns++;
           server_shutdown = true;
         }
@@ -411,12 +440,14 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           grpc_connectivity_state st =
               grpc_channel_check_connectivity_state(g_channel, 0);
           if (st != GRPC_CHANNEL_FATAL_FAILURE) {
+            gpr_timespec deadline = gpr_time_add(
+                gpr_now(GPR_CLOCK_REALTIME),
+                gpr_time_from_micros(read_uint32(&inp), GPR_TIMESPAN));
             grpc_channel_watch_connectivity_state(
-                g_channel, st,
-                gpr_time_add(
-                    gpr_now(GPR_CLOCK_REALTIME),
-                    gpr_time_from_micros(read_uint32(&inp), GPR_TIMESPAN)), cq,
-                    tag(CHANNEL_WATCH));
+                g_channel, st, deadline, cq,
+                create_validator(validate_connectivity_watch,
+                                 make_connectivity_watch(
+                                     deadline, &pending_channel_watches)));
             pending_channel_watches++;
           }
         }
