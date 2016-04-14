@@ -62,8 +62,8 @@ static void call_init_func(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 static void channel_destroy_func(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem) {}
 
-static void call_destroy_func(grpc_exec_ctx *exec_ctx,
-                              grpc_call_element *elem) {
+static void call_destroy_func(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                              const grpc_call_stats *stats) {
   ++*(int *)(elem->channel_data);
 }
 
