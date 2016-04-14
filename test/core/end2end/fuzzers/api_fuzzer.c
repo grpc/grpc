@@ -152,7 +152,7 @@ typedef struct addr_req {
 static void finish_resolve(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   addr_req *r = arg;
 
-  if (0 == strcmp(r->addr, "server")) {
+  if (success && 0 == strcmp(r->addr, "server")) {
     grpc_resolved_addresses *addrs = gpr_malloc(sizeof(*addrs));
     addrs->naddrs = 1;
     addrs->addrs = gpr_malloc(sizeof(*addrs->addrs));
