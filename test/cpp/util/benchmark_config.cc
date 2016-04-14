@@ -37,9 +37,6 @@
 DEFINE_bool(enable_log_reporter, true,
             "Enable reporting of benchmark results through GprLog");
 
-DEFINE_bool(report_metrics_db, false,
-            "True if metrics to be reported to performance database");
-
 DEFINE_string(hashed_id, "", "Hash of the user id");
 
 DEFINE_string(test_name, "", "Name of the test being executed");
@@ -70,11 +67,6 @@ static std::shared_ptr<Reporter> InitBenchmarkReporters() {
   if (FLAGS_enable_log_reporter) {
     composite_reporter->add(
         std::unique_ptr<Reporter>(new GprLogReporter("LogReporter")));
-  }
-  if (FLAGS_report_metrics_db) {
-    composite_reporter->add(std::unique_ptr<Reporter>(
-        new PerfDbReporter("PerfDbReporter", FLAGS_hashed_id, FLAGS_test_name,
-                           FLAGS_sys_info, FLAGS_server_address, FLAGS_tag)));
   }
 
   return std::shared_ptr<Reporter>(composite_reporter);

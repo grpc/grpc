@@ -40,10 +40,13 @@
 namespace grpc {
 namespace testing {
 
-static double WallTime(ResourceUsage u) { return u.wall_time(); }
-static double UserTime(ResourceUsage u) { return u.user_time(); }
-static double SystemTime(ResourceUsage u) { return u.system_time(); }
-static int Cores(ResourceUsage u) { return u.cores(); }
+static double WallTime(ClientStats s) { return s.time_elapsed(); }
+static double SystemTime(ClientStats s) { return s.time_system(); }
+static double UserTime(ClientStats s) { return s.time_user(); }
+static double ServerWallTime(ServerStats s) { return s.time_elapsed(); }
+static double ServerSystemTime(ServerStats s) { return s.time_system(); }
+static double ServerUserTime(ServerStats s) { return s.time_user(); }
+static int Cores(int n) { return n; }
 
 void CompositeReporter::add(std::unique_ptr<Reporter> reporter) {
   reporters_.emplace_back(std::move(reporter));
@@ -74,102 +77,62 @@ void CompositeReporter::ReportTimes(const ScenarioResult& result) {
 }
 
 void GprLogReporter::ReportQPS(const ScenarioResult& result) {
-  gpr_log(
-      GPR_INFO, "QPS: %.1f",
-      result.latencies.Count() / average(result.client_resources, WallTime));
+  Histogram histogram;
+  histogram.MergeProto(result.latencies());
+  gpr_log(GPR_INFO, "QPS: %.1f",
+      histogram.Count() / average(result.client_stats(), WallTime));
 }
 
 void GprLogReporter::ReportQPSPerCore(const ScenarioResult& result) {
-  auto qps =
-      result.latencies.Count() / average(result.client_resources, WallTime);
+  Histogram histogram;
+  histogram.MergeProto(result.latencies());
+  auto qps = histogram.Count() / average(result.client_stats(), WallTime);
 
   gpr_log(GPR_INFO, "QPS: %.1f (%.1f/server core)", qps,
-          qps / sum(result.server_resources, Cores));
+          qps / sum(result.server_cores(), Cores));
 }
 
 void GprLogReporter::ReportLatency(const ScenarioResult& result) {
+  Histogram histogram;
+  histogram.MergeProto(result.latencies());
   gpr_log(GPR_INFO,
           "Latencies (50/90/95/99/99.9%%-ile): %.1f/%.1f/%.1f/%.1f/%.1f us",
-          result.latencies.Percentile(50) / 1000,
-          result.latencies.Percentile(90) / 1000,
-          result.latencies.Percentile(95) / 1000,
-          result.latencies.Percentile(99) / 1000,
-          result.latencies.Percentile(99.9) / 1000);
+          histogram.Percentile(50) / 1000,
+          histogram.Percentile(90) / 1000,
+          histogram.Percentile(95) / 1000,
+          histogram.Percentile(99) / 1000,
+          histogram.Percentile(99.9) / 1000);
 }
 
 void GprLogReporter::ReportTimes(const ScenarioResult& result) {
   gpr_log(GPR_INFO, "Server system time: %.2f%%",
-          100.0 * sum(result.server_resources, SystemTime) /
-              sum(result.server_resources, WallTime));
+          100.0 * sum(result.server_stats(), ServerSystemTime) /
+              sum(result.server_stats(), ServerWallTime));
   gpr_log(GPR_INFO, "Server user time:   %.2f%%",
-          100.0 * sum(result.server_resources, UserTime) /
-              sum(result.server_resources, WallTime));
+          100.0 * sum(result.server_stats(), ServerUserTime) /
+              sum(result.server_stats(), ServerWallTime));
   gpr_log(GPR_INFO, "Client system time: %.2f%%",
-          100.0 * sum(result.client_resources, SystemTime) /
-              sum(result.client_resources, WallTime));
+          100.0 * sum(result.client_stats(), SystemTime) /
+              sum(result.client_stats(), WallTime));
   gpr_log(GPR_INFO, "Client user time:   %.2f%%",
-          100.0 * sum(result.client_resources, UserTime) /
-              sum(result.client_resources, WallTime));
+          100.0 * sum(result.client_stats(), UserTime) /
+              sum(result.client_stats(), WallTime));
 }
 
-void PerfDbReporter::ReportQPS(const ScenarioResult& result) {
-  auto qps =
-      result.latencies.Count() / average(result.client_resources, WallTime);
+void JsonReporter::ReportQPS(const ScenarioResult& result) {
 
-  perf_db_client_.setQps(qps);
-  perf_db_client_.setConfigs(result.client_config, result.server_config);
 }
 
-void PerfDbReporter::ReportQPSPerCore(const ScenarioResult& result) {
-  auto qps =
-      result.latencies.Count() / average(result.client_resources, WallTime);
-
-  auto qps_per_core = qps / sum(result.server_resources, Cores);
-
-  perf_db_client_.setQps(qps);
-  perf_db_client_.setQpsPerCore(qps_per_core);
-  perf_db_client_.setConfigs(result.client_config, result.server_config);
+void JsonReporter::ReportQPSPerCore(const ScenarioResult& result) {
+  // NOP - all reporting is handled by ReportQPS.
 }
 
-void PerfDbReporter::ReportLatency(const ScenarioResult& result) {
-  perf_db_client_.setLatencies(result.latencies.Percentile(50) / 1000,
-                               result.latencies.Percentile(90) / 1000,
-                               result.latencies.Percentile(95) / 1000,
-                               result.latencies.Percentile(99) / 1000,
-                               result.latencies.Percentile(99.9) / 1000);
-  perf_db_client_.setConfigs(result.client_config, result.server_config);
+void JsonReporter::ReportLatency(const ScenarioResult& result) {
+  // NOP - all reporting is handled by ReportQPS.
 }
 
-void PerfDbReporter::ReportTimes(const ScenarioResult& result) {
-  const double server_system_time = 100.0 *
-                                    sum(result.server_resources, SystemTime) /
-                                    sum(result.server_resources, WallTime);
-  const double server_user_time = 100.0 *
-                                  sum(result.server_resources, UserTime) /
-                                  sum(result.server_resources, WallTime);
-  const double client_system_time = 100.0 *
-                                    sum(result.client_resources, SystemTime) /
-                                    sum(result.client_resources, WallTime);
-  const double client_user_time = 100.0 *
-                                  sum(result.client_resources, UserTime) /
-                                  sum(result.client_resources, WallTime);
-
-  perf_db_client_.setTimes(server_system_time, server_user_time,
-                           client_system_time, client_user_time);
-  perf_db_client_.setConfigs(result.client_config, result.server_config);
-}
-
-void PerfDbReporter::SendData() {
-  // send data to performance database
-  bool data_state =
-      perf_db_client_.sendData(hashed_id_, test_name_, sys_info_, tag_);
-
-  // check state of data sending
-  if (data_state) {
-    gpr_log(GPR_INFO, "Data sent to performance database successfully");
-  } else {
-    gpr_log(GPR_INFO, "Data could not be sent to performance database");
-  }
+void JsonReporter::ReportTimes(const ScenarioResult& result) {
+  // NOP - all reporting is handled by ReportQPS.
 }
 
 }  // namespace testing
