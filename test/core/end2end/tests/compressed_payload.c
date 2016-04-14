@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,9 +43,9 @@
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/compress_filter.h"
-#include "src/core/lib/surface/call_test_only.h"
+#include "src/core/channel/channel_args.h"
+#include "src/core/channel/compress_filter.h"
+#include "src/core/surface/call_test_only.h"
 #include "test/core/end2end/cq_verifier.h"
 
 enum { TIMEOUT = 200000 };
@@ -336,5 +336,3 @@ void compressed_payload(grpc_end2end_test_config config) {
   test_invoke_request_with_compressed_payload(config);
   test_invoke_request_with_compressed_payload_md_override(config);
 }
-
-void compressed_payload_pre_init(void) {}

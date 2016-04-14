@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -50,15 +50,15 @@ namespace Grpc.IntegrationTesting
         const string Host = "localhost";
         Server server;
         Channel channel;
-        TestService.TestServiceClient client;
+        TestService.ITestServiceClient client;
         List<ChannelOption> options;
-        Mock<TestService.TestServiceBase> serviceMock;
+        Mock<TestService.ITestService> serviceMock;
         AsyncAuthInterceptor asyncAuthInterceptor;
 
         [SetUp]
         public void Init()
         {
-            serviceMock = new Mock<TestService.TestServiceBase>();
+            serviceMock = new Mock<TestService.ITestService>();
             serviceMock.Setup(m => m.UnaryCall(It.IsAny<SimpleRequest>(), It.IsAny<ServerCallContext>()))
                 .Returns(new Func<SimpleRequest, ServerCallContext, Task<SimpleResponse>>(UnaryCallHandler));
 

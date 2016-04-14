@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -403,7 +403,7 @@ module GRPC
       loop_handle_server_calls
     end
 
-    # Sends RESOURCE_EXHAUSTED if there are too many unprocessed jobs
+    # Sends UNAVAILABLE if there are too many unprocessed jobs
     def available?(an_rpc)
       jobs_count, max = @pool.jobs_waiting, @max_waiting_requests
       GRPC.logger.info("waiting: #{jobs_count}, max: #{max}")
@@ -411,7 +411,7 @@ module GRPC
       GRPC.logger.warn("NOT AVAILABLE: too many jobs_waiting: #{an_rpc}")
       noop = proc { |x| x }
       c = ActiveCall.new(an_rpc.call, @cq, noop, noop, an_rpc.deadline)
-      c.send_status(StatusCodes::RESOURCE_EXHAUSTED, '')
+      c.send_status(StatusCodes::UNAVAILABLE, '')
       nil
     end
 

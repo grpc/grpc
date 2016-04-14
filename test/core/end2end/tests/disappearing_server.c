@@ -213,5 +213,3 @@ void disappearing_server(grpc_end2end_test_config config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
   disappearing_server_test(config);
 }
-
-void disappearing_server_pre_init(void) {}

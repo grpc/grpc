@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,12 +41,13 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/ext/client_config/client_channel.h"
-#include "src/core/ext/client_config/lb_policy_registry.h"
-#include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/support/string.h"
-#include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/server.h"
+#include "src/core/channel/channel_stack.h"
+#include "src/core/channel/client_channel.h"
+#include "src/core/client_config/lb_policies/round_robin.h"
+#include "src/core/client_config/lb_policy_registry.h"
+#include "src/core/support/string.h"
+#include "src/core/surface/channel.h"
+#include "src/core/surface/server.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -872,7 +873,6 @@ static void verify_rebirth_round_robin(const servers_fixture *f,
 }
 
 int main(int argc, char **argv) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   test_spec *spec;
   size_t i;
   const size_t NUM_ITERS = 10;
@@ -880,11 +880,11 @@ int main(int argc, char **argv) {
 
   grpc_test_init(argc, argv);
   grpc_init();
-  grpc_tracer_set_enabled("round_robin", 1);
+  grpc_lb_round_robin_trace = 1;
 
-  GPR_ASSERT(grpc_lb_policy_create(&exec_ctx, "this-lb-policy-does-not-exist",
-                                   NULL) == NULL);
-  GPR_ASSERT(grpc_lb_policy_create(&exec_ctx, NULL, NULL) == NULL);
+  GPR_ASSERT(grpc_lb_policy_create("this-lb-policy-does-not-exist", NULL) ==
+             NULL);
+  GPR_ASSERT(grpc_lb_policy_create(NULL, NULL) == NULL);
 
   spec = test_spec_create(NUM_ITERS, NUM_SERVERS);
   /* everything is fine, all servers stay up the whole time and life's peachy */
@@ -936,7 +936,6 @@ int main(int argc, char **argv) {
   test_pending_calls(4);
   test_ping();
 
-  grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();
   return 0;
 }

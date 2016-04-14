@@ -36,7 +36,6 @@
 
 #include <initializer_list>
 #include <string>
-#include <vector>
 
 struct gpr_subprocess;
 
@@ -44,7 +43,7 @@ namespace grpc {
 
 class SubProcess {
  public:
-  SubProcess(const std::vector<std::string>& args);
+  SubProcess(std::initializer_list<std::string> args);
   ~SubProcess();
 
   int Join();

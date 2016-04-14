@@ -36,7 +36,6 @@ namespace Grpc.Testing {
     }
 
     // client interface
-    [System.Obsolete("Client side interfaced will be removed in the next release. Use client class directly.")]
     public interface IBenchmarkServiceClient
     {
       global::Grpc.Testing.SimpleResponse UnaryCall(global::Grpc.Testing.SimpleRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
@@ -48,86 +47,52 @@ namespace Grpc.Testing {
     }
 
     // server-side interface
-    [System.Obsolete("Service implementations should inherit from the generated abstract base class instead.")]
     public interface IBenchmarkService
     {
       Task<global::Grpc.Testing.SimpleResponse> UnaryCall(global::Grpc.Testing.SimpleRequest request, ServerCallContext context);
       Task StreamingCall(IAsyncStreamReader<global::Grpc.Testing.SimpleRequest> requestStream, IServerStreamWriter<global::Grpc.Testing.SimpleResponse> responseStream, ServerCallContext context);
     }
 
-    // server-side abstract class
-    public abstract class BenchmarkServiceBase
-    {
-      public virtual Task<global::Grpc.Testing.SimpleResponse> UnaryCall(global::Grpc.Testing.SimpleRequest request, ServerCallContext context)
-      {
-        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
-      }
-
-      public virtual Task StreamingCall(IAsyncStreamReader<global::Grpc.Testing.SimpleRequest> requestStream, IServerStreamWriter<global::Grpc.Testing.SimpleResponse> responseStream, ServerCallContext context)
-      {
-        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
-      }
-
-    }
-
     // client stub
-    public class BenchmarkServiceClient : ClientBase<BenchmarkServiceClient>, IBenchmarkServiceClient
+    public class BenchmarkServiceClient : ClientBase, IBenchmarkServiceClient
     {
       public BenchmarkServiceClient(Channel channel) : base(channel)
       {
       }
-      public BenchmarkServiceClient(CallInvoker callInvoker) : base(callInvoker)
+      public global::Grpc.Testing.SimpleResponse UnaryCall(global::Grpc.Testing.SimpleRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
+        var call = CreateCall(__Method_UnaryCall, new CallOptions(headers, deadline, cancellationToken));
+        return Calls.BlockingUnaryCall(call, request);
       }
-      ///<summary>Protected parameterless constructor to allow creation of test doubles.</summary>
-      protected BenchmarkServiceClient() : base()
+      public global::Grpc.Testing.SimpleResponse UnaryCall(global::Grpc.Testing.SimpleRequest request, CallOptions options)
       {
+        var call = CreateCall(__Method_UnaryCall, options);
+        return Calls.BlockingUnaryCall(call, request);
       }
-      ///<summary>Protected constructor to allow creation of configured clients.</summary>
-      protected BenchmarkServiceClient(ClientBaseConfiguration configuration) : base(configuration)
+      public AsyncUnaryCall<global::Grpc.Testing.SimpleResponse> UnaryCallAsync(global::Grpc.Testing.SimpleRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
+        var call = CreateCall(__Method_UnaryCall, new CallOptions(headers, deadline, cancellationToken));
+        return Calls.AsyncUnaryCall(call, request);
       }
-
-      public virtual global::Grpc.Testing.SimpleResponse UnaryCall(global::Grpc.Testing.SimpleRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public AsyncUnaryCall<global::Grpc.Testing.SimpleResponse> UnaryCallAsync(global::Grpc.Testing.SimpleRequest request, CallOptions options)
       {
-        return UnaryCall(request, new CallOptions(headers, deadline, cancellationToken));
+        var call = CreateCall(__Method_UnaryCall, options);
+        return Calls.AsyncUnaryCall(call, request);
       }
-      public virtual global::Grpc.Testing.SimpleResponse UnaryCall(global::Grpc.Testing.SimpleRequest request, CallOptions options)
+      public AsyncDuplexStreamingCall<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse> StreamingCall(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        return CallInvoker.BlockingUnaryCall(__Method_UnaryCall, null, options, request);
+        var call = CreateCall(__Method_StreamingCall, new CallOptions(headers, deadline, cancellationToken));
+        return Calls.AsyncDuplexStreamingCall(call);
       }
-      public virtual AsyncUnaryCall<global::Grpc.Testing.SimpleResponse> UnaryCallAsync(global::Grpc.Testing.SimpleRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public AsyncDuplexStreamingCall<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse> StreamingCall(CallOptions options)
       {
-        return UnaryCallAsync(request, new CallOptions(headers, deadline, cancellationToken));
-      }
-      public virtual AsyncUnaryCall<global::Grpc.Testing.SimpleResponse> UnaryCallAsync(global::Grpc.Testing.SimpleRequest request, CallOptions options)
-      {
-        return CallInvoker.AsyncUnaryCall(__Method_UnaryCall, null, options, request);
-      }
-      public virtual AsyncDuplexStreamingCall<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse> StreamingCall(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
-      {
-        return StreamingCall(new CallOptions(headers, deadline, cancellationToken));
-      }
-      public virtual AsyncDuplexStreamingCall<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse> StreamingCall(CallOptions options)
-      {
-        return CallInvoker.AsyncDuplexStreamingCall(__Method_StreamingCall, null, options);
-      }
-      protected override BenchmarkServiceClient NewInstance(ClientBaseConfiguration configuration)
-      {
-        return new BenchmarkServiceClient(configuration);
+        var call = CreateCall(__Method_StreamingCall, options);
+        return Calls.AsyncDuplexStreamingCall(call);
       }
     }
 
     // creates service definition that can be registered with a server
     public static ServerServiceDefinition BindService(IBenchmarkService serviceImpl)
-    {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
-          .AddMethod(__Method_UnaryCall, serviceImpl.UnaryCall)
-          .AddMethod(__Method_StreamingCall, serviceImpl.StreamingCall).Build();
-    }
-
-    // creates service definition that can be registered with a server
-    public static ServerServiceDefinition BindService(BenchmarkServiceBase serviceImpl)
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_UnaryCall, serviceImpl.UnaryCall)
@@ -188,7 +153,6 @@ namespace Grpc.Testing {
     }
 
     // client interface
-    [System.Obsolete("Client side interfaced will be removed in the next release. Use client class directly.")]
     public interface IWorkerServiceClient
     {
       AsyncDuplexStreamingCall<global::Grpc.Testing.ServerArgs, global::Grpc.Testing.ServerStatus> RunServer(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
@@ -206,7 +170,6 @@ namespace Grpc.Testing {
     }
 
     // server-side interface
-    [System.Obsolete("Service implementations should inherit from the generated abstract base class instead.")]
     public interface IWorkerService
     {
       Task RunServer(IAsyncStreamReader<global::Grpc.Testing.ServerArgs> requestStream, IServerStreamWriter<global::Grpc.Testing.ServerStatus> responseStream, ServerCallContext context);
@@ -215,115 +178,76 @@ namespace Grpc.Testing {
       Task<global::Grpc.Testing.Void> QuitWorker(global::Grpc.Testing.Void request, ServerCallContext context);
     }
 
-    // server-side abstract class
-    public abstract class WorkerServiceBase
-    {
-      public virtual Task RunServer(IAsyncStreamReader<global::Grpc.Testing.ServerArgs> requestStream, IServerStreamWriter<global::Grpc.Testing.ServerStatus> responseStream, ServerCallContext context)
-      {
-        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
-      }
-
-      public virtual Task RunClient(IAsyncStreamReader<global::Grpc.Testing.ClientArgs> requestStream, IServerStreamWriter<global::Grpc.Testing.ClientStatus> responseStream, ServerCallContext context)
-      {
-        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
-      }
-
-      public virtual Task<global::Grpc.Testing.CoreResponse> CoreCount(global::Grpc.Testing.CoreRequest request, ServerCallContext context)
-      {
-        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
-      }
-
-      public virtual Task<global::Grpc.Testing.Void> QuitWorker(global::Grpc.Testing.Void request, ServerCallContext context)
-      {
-        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
-      }
-
-    }
-
     // client stub
-    public class WorkerServiceClient : ClientBase<WorkerServiceClient>, IWorkerServiceClient
+    public class WorkerServiceClient : ClientBase, IWorkerServiceClient
     {
       public WorkerServiceClient(Channel channel) : base(channel)
       {
       }
-      public WorkerServiceClient(CallInvoker callInvoker) : base(callInvoker)
+      public AsyncDuplexStreamingCall<global::Grpc.Testing.ServerArgs, global::Grpc.Testing.ServerStatus> RunServer(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
+        var call = CreateCall(__Method_RunServer, new CallOptions(headers, deadline, cancellationToken));
+        return Calls.AsyncDuplexStreamingCall(call);
       }
-      ///<summary>Protected parameterless constructor to allow creation of test doubles.</summary>
-      protected WorkerServiceClient() : base()
+      public AsyncDuplexStreamingCall<global::Grpc.Testing.ServerArgs, global::Grpc.Testing.ServerStatus> RunServer(CallOptions options)
       {
+        var call = CreateCall(__Method_RunServer, options);
+        return Calls.AsyncDuplexStreamingCall(call);
       }
-      ///<summary>Protected constructor to allow creation of configured clients.</summary>
-      protected WorkerServiceClient(ClientBaseConfiguration configuration) : base(configuration)
+      public AsyncDuplexStreamingCall<global::Grpc.Testing.ClientArgs, global::Grpc.Testing.ClientStatus> RunClient(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
+        var call = CreateCall(__Method_RunClient, new CallOptions(headers, deadline, cancellationToken));
+        return Calls.AsyncDuplexStreamingCall(call);
       }
-
-      public virtual AsyncDuplexStreamingCall<global::Grpc.Testing.ServerArgs, global::Grpc.Testing.ServerStatus> RunServer(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public AsyncDuplexStreamingCall<global::Grpc.Testing.ClientArgs, global::Grpc.Testing.ClientStatus> RunClient(CallOptions options)
       {
-        return RunServer(new CallOptions(headers, deadline, cancellationToken));
+        var call = CreateCall(__Method_RunClient, options);
+        return Calls.AsyncDuplexStreamingCall(call);
       }
-      public virtual AsyncDuplexStreamingCall<global::Grpc.Testing.ServerArgs, global::Grpc.Testing.ServerStatus> RunServer(CallOptions options)
+      public global::Grpc.Testing.CoreResponse CoreCount(global::Grpc.Testing.CoreRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        return CallInvoker.AsyncDuplexStreamingCall(__Method_RunServer, null, options);
+        var call = CreateCall(__Method_CoreCount, new CallOptions(headers, deadline, cancellationToken));
+        return Calls.BlockingUnaryCall(call, request);
       }
-      public virtual AsyncDuplexStreamingCall<global::Grpc.Testing.ClientArgs, global::Grpc.Testing.ClientStatus> RunClient(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public global::Grpc.Testing.CoreResponse CoreCount(global::Grpc.Testing.CoreRequest request, CallOptions options)
       {
-        return RunClient(new CallOptions(headers, deadline, cancellationToken));
+        var call = CreateCall(__Method_CoreCount, options);
+        return Calls.BlockingUnaryCall(call, request);
       }
-      public virtual AsyncDuplexStreamingCall<global::Grpc.Testing.ClientArgs, global::Grpc.Testing.ClientStatus> RunClient(CallOptions options)
+      public AsyncUnaryCall<global::Grpc.Testing.CoreResponse> CoreCountAsync(global::Grpc.Testing.CoreRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        return CallInvoker.AsyncDuplexStreamingCall(__Method_RunClient, null, options);
+        var call = CreateCall(__Method_CoreCount, new CallOptions(headers, deadline, cancellationToken));
+        return Calls.AsyncUnaryCall(call, request);
       }
-      public virtual global::Grpc.Testing.CoreResponse CoreCount(global::Grpc.Testing.CoreRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public AsyncUnaryCall<global::Grpc.Testing.CoreResponse> CoreCountAsync(global::Grpc.Testing.CoreRequest request, CallOptions options)
       {
-        return CoreCount(request, new CallOptions(headers, deadline, cancellationToken));
+        var call = CreateCall(__Method_CoreCount, options);
+        return Calls.AsyncUnaryCall(call, request);
       }
-      public virtual global::Grpc.Testing.CoreResponse CoreCount(global::Grpc.Testing.CoreRequest request, CallOptions options)
+      public global::Grpc.Testing.Void QuitWorker(global::Grpc.Testing.Void request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        return CallInvoker.BlockingUnaryCall(__Method_CoreCount, null, options, request);
+        var call = CreateCall(__Method_QuitWorker, new CallOptions(headers, deadline, cancellationToken));
+        return Calls.BlockingUnaryCall(call, request);
       }
-      public virtual AsyncUnaryCall<global::Grpc.Testing.CoreResponse> CoreCountAsync(global::Grpc.Testing.CoreRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public global::Grpc.Testing.Void QuitWorker(global::Grpc.Testing.Void request, CallOptions options)
       {
-        return CoreCountAsync(request, new CallOptions(headers, deadline, cancellationToken));
+        var call = CreateCall(__Method_QuitWorker, options);
+        return Calls.BlockingUnaryCall(call, request);
       }
-      public virtual AsyncUnaryCall<global::Grpc.Testing.CoreResponse> CoreCountAsync(global::Grpc.Testing.CoreRequest request, CallOptions options)
+      public AsyncUnaryCall<global::Grpc.Testing.Void> QuitWorkerAsync(global::Grpc.Testing.Void request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        return CallInvoker.AsyncUnaryCall(__Method_CoreCount, null, options, request);
+        var call = CreateCall(__Method_QuitWorker, new CallOptions(headers, deadline, cancellationToken));
+        return Calls.AsyncUnaryCall(call, request);
       }
-      public virtual global::Grpc.Testing.Void QuitWorker(global::Grpc.Testing.Void request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public AsyncUnaryCall<global::Grpc.Testing.Void> QuitWorkerAsync(global::Grpc.Testing.Void request, CallOptions options)
       {
-        return QuitWorker(request, new CallOptions(headers, deadline, cancellationToken));
-      }
-      public virtual global::Grpc.Testing.Void QuitWorker(global::Grpc.Testing.Void request, CallOptions options)
-      {
-        return CallInvoker.BlockingUnaryCall(__Method_QuitWorker, null, options, request);
-      }
-      public virtual AsyncUnaryCall<global::Grpc.Testing.Void> QuitWorkerAsync(global::Grpc.Testing.Void request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
-      {
-        return QuitWorkerAsync(request, new CallOptions(headers, deadline, cancellationToken));
-      }
-      public virtual AsyncUnaryCall<global::Grpc.Testing.Void> QuitWorkerAsync(global::Grpc.Testing.Void request, CallOptions options)
-      {
-        return CallInvoker.AsyncUnaryCall(__Method_QuitWorker, null, options, request);
-      }
-      protected override WorkerServiceClient NewInstance(ClientBaseConfiguration configuration)
-      {
-        return new WorkerServiceClient(configuration);
+        var call = CreateCall(__Method_QuitWorker, options);
+        return Calls.AsyncUnaryCall(call, request);
       }
     }
 
     // creates service definition that can be registered with a server
     public static ServerServiceDefinition BindService(IWorkerService serviceImpl)
-    {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
-          .AddMethod(__Method_RunServer, serviceImpl.RunServer)
-          .AddMethod(__Method_RunClient, serviceImpl.RunClient)
-          .AddMethod(__Method_CoreCount, serviceImpl.CoreCount)
-          .AddMethod(__Method_QuitWorker, serviceImpl.QuitWorker).Build();
-    }
-
-    // creates service definition that can be registered with a server
-    public static ServerServiceDefinition BindService(WorkerServiceBase serviceImpl)
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_RunServer, serviceImpl.RunServer)

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -181,10 +181,8 @@ class CallOpSendInitialMetadata {
   CallOpSendInitialMetadata() : send_(false) {}
 
   void SendInitialMetadata(
-      const std::multimap<grpc::string, grpc::string>& metadata,
-      uint32_t flags) {
+      const std::multimap<grpc::string, grpc::string>& metadata) {
     send_ = true;
-    flags_ = flags;
     initial_metadata_count_ = metadata.size();
     initial_metadata_ = FillMetadataArray(metadata);
   }
@@ -194,7 +192,7 @@ class CallOpSendInitialMetadata {
     if (!send_) return;
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_SEND_INITIAL_METADATA;
-    op->flags = flags_;
+    op->flags = 0;
     op->reserved = NULL;
     op->data.send_initial_metadata.count = initial_metadata_count_;
     op->data.send_initial_metadata.metadata = initial_metadata_;
@@ -206,7 +204,6 @@ class CallOpSendInitialMetadata {
   }
 
   bool send_;
-  uint32_t flags_;
   size_t initial_metadata_count_;
   grpc_metadata* initial_metadata_;
 };

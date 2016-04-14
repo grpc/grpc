@@ -193,45 +193,44 @@ describe 'ClientStub' do
   describe '#client_streamer' do
     shared_examples 'client streaming' do
       before(:each) do
-        server_port = create_test_server
-        host = "localhost:#{server_port}"
-        @stub = GRPC::ClientStub.new(host, @cq, :this_channel_is_insecure)
-        @options = { k1: 'v1', k2: 'v2' }
         @sent_msgs = Array.new(3) { |i| 'msg_' + (i + 1).to_s }
         @resp = 'a_reply'
       end
 
       it 'should send requests to/receive a reply from a server' do
+        server_port = create_test_server
+        host = "localhost:#{server_port}"
         th = run_client_streamer(@sent_msgs, @resp, @pass)
-        expect(get_response(@stub)).to eq(@resp)
+        stub = GRPC::ClientStub.new(host, @cq, :this_channel_is_insecure)
+        expect(get_response(stub)).to eq(@resp)
         th.join
       end
 
       it 'should send metadata to the server ok' do
-        th = run_client_streamer(@sent_msgs, @resp, @pass, @options)
-        expect(get_response(@stub)).to eq(@resp)
+        server_port = create_test_server
+        host = "localhost:#{server_port}"
+        th = run_client_streamer(@sent_msgs, @resp, @pass,
+                                 k1: 'v1', k2: 'v2')
+        stub = GRPC::ClientStub.new(host, @cq, :this_channel_is_insecure)
+        expect(get_response(stub)).to eq(@resp)
         th.join
       end
 
       it 'should raise an error if the status is not ok' do
+        server_port = create_test_server
+        host = "localhost:#{server_port}"
         th = run_client_streamer(@sent_msgs, @resp, @fail)
-        blk = proc { get_response(@stub) }
+        stub = GRPC::ClientStub.new(host, @cq, :this_channel_is_insecure)
+        blk = proc { get_response(stub) }
         expect(&blk).to raise_error(GRPC::BadStatus)
         th.join
-      end
-
-      it 'should raise ArgumentError if metadata contains invalid values' do
-        @options.merge!(k3: 3)
-        expect do
-          get_response(@stub)
-        end.to raise_error(ArgumentError,
-                           /Header values must be of type string or array/)
       end
     end
 
     describe 'without a call operation' do
       def get_response(stub)
-        stub.client_streamer(@method, @sent_msgs, noop, noop, @options)
+        stub.client_streamer(@method, @sent_msgs, noop, noop,
+                             k1: 'v1', k2: 'v2')
       end
 
       it_behaves_like 'client streaming'
@@ -240,7 +239,7 @@ describe 'ClientStub' do
     describe 'via a call operation' do
       def get_response(stub)
         op = stub.client_streamer(@method, @sent_msgs, noop, noop,
-                                  @options.merge(return_op: true))
+                                  return_op: true, k1: 'v1', k2: 'v2')
         expect(op).to be_a(GRPC::ActiveCall::Operation)
         op.execute
       end

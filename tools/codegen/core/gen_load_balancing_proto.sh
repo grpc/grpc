@@ -82,7 +82,7 @@ fi
 
 readonly GRPC_ROOT=$PWD
 
-OUTPUT_DIR="$GRPC_ROOT/src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0"
+OUTPUT_DIR="$GRPC_ROOT/src/core/proto/grpc/lb/v0"
 if [ $# -eq 2 ]; then
   mkdir -p "$2"
   if [ $? != 0 ]; then
@@ -122,7 +122,7 @@ protoc \
 "$(basename $1)"
 
 readonly PROTO_BASENAME=$(basename $1 .proto)
-sed -i "s:$PROTO_BASENAME.pb.h:src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/$PROTO_BASENAME.pb.h:g" \
+sed -i "s:$PROTO_BASENAME.pb.h:src/core/proto/grpc/lb/v0/$PROTO_BASENAME.pb.h:g" \
     "$OUTPUT_DIR/$PROTO_BASENAME.pb.c"
 
 # prepend copyright

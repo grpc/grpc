@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -436,5 +436,3 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
 void max_concurrent_streams(grpc_end2end_test_config config) {
   test_max_concurrent_streams(config);
 }
-
-void max_concurrent_streams_pre_init(void) {}

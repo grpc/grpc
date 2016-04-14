@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,9 +58,8 @@ namespace grpc {
 std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& override_hostname,
     bool enable_ssl, bool use_prod_roots,
-    const std::shared_ptr<CallCredentials>& creds,
-    const ChannelArguments& args) {
-  ChannelArguments channel_args(args);
+    const std::shared_ptr<CallCredentials>& creds) {
+  ChannelArguments channel_args;
   if (enable_ssl) {
     const char* roots_certs = use_prod_roots ? "" : test_root_cert;
     SslCredentialsOptions ssl_opts = {roots_certs, "", ""};
@@ -80,14 +79,6 @@ std::shared_ptr<Channel> CreateTestChannel(
   } else {
     return CreateChannel(server, InsecureChannelCredentials());
   }
-}
-
-std::shared_ptr<Channel> CreateTestChannel(
-    const grpc::string& server, const grpc::string& override_hostname,
-    bool enable_ssl, bool use_prod_roots,
-    const std::shared_ptr<CallCredentials>& creds) {
-  return CreateTestChannel(server, override_hostname, enable_ssl,
-                           use_prod_roots, creds, ChannelArguments());
 }
 
 std::shared_ptr<Channel> CreateTestChannel(

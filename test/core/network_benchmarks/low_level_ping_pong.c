@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -55,7 +55,7 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
-#include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/iomgr/socket_utils_posix.h"
 
 typedef struct fd_pair {
   int read_fd;
@@ -265,19 +265,19 @@ static int epoll_setup(thread_args *args) {
 #endif
 
 static void server_thread(thread_args *args) {
-  char *buf = gpr_malloc(args->msg_size);
+  char *buf = malloc(args->msg_size);
   if (args->setup(args) < 0) {
     gpr_log(GPR_ERROR, "Setup failed");
   }
   for (;;) {
     if (args->read_bytes(args, buf) < 0) {
       gpr_log(GPR_ERROR, "Server read failed");
-      gpr_free(buf);
+      free(buf);
       return;
     }
     if (args->write_bytes(args, buf) < 0) {
       gpr_log(GPR_ERROR, "Server write failed");
-      gpr_free(buf);
+      free(buf);
       return;
     }
   }
@@ -304,8 +304,7 @@ static double now(void) {
 }
 
 static void client_thread(thread_args *args) {
-  char *buf = gpr_malloc(args->msg_size * sizeof(char));
-  memset(buf, 0, args->msg_size * sizeof(char));
+  char *buf = calloc(args->msg_size, sizeof(char));
   gpr_histogram *histogram = gpr_histogram_create(0.01, 60e9);
   double start_time;
   double end_time;
@@ -334,7 +333,7 @@ static void client_thread(thread_args *args) {
   }
   print_histogram(histogram);
 error:
-  gpr_free(buf);
+  free(buf);
   gpr_histogram_destroy(histogram);
 }
 
@@ -597,8 +596,8 @@ static int run_all_benchmarks(size_t msg_size) {
     test_strategy *strategy = &test_strategies[i];
     size_t j;
     for (j = 0; j < GPR_ARRAY_SIZE(socket_types); ++j) {
-      thread_args *client_args = gpr_malloc(sizeof(thread_args));
-      thread_args *server_args = gpr_malloc(sizeof(thread_args));
+      thread_args *client_args = malloc(sizeof(thread_args));
+      thread_args *server_args = malloc(sizeof(thread_args));
       char *socket_type = socket_types[j];
 
       client_args->read_bytes = strategy->read_strategy;
@@ -621,8 +620,8 @@ static int run_all_benchmarks(size_t msg_size) {
 }
 
 int main(int argc, char **argv) {
-  thread_args *client_args = gpr_malloc(sizeof(thread_args));
-  thread_args *server_args = gpr_malloc(sizeof(thread_args));
+  thread_args *client_args = malloc(sizeof(thread_args));
+  thread_args *server_args = malloc(sizeof(thread_args));
   int msg_size = -1;
   char *read_strategy = NULL;
   char *socket_type = NULL;

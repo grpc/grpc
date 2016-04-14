@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,7 +42,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
-#include "src/core/lib/support/string.h"
+#include "src/core/support/string.h"
 #include "test/core/end2end/cq_verifier.h"
 
 enum { TIMEOUT = 200000 };
@@ -210,5 +210,3 @@ static void test_invoke_simple_request(grpc_end2end_test_config config) {
 void server_finishes_request(grpc_end2end_test_config config) {
   test_invoke_simple_request(config);
 }
-
-void server_finishes_request_pre_init(void) {}

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -194,8 +194,6 @@ class ServerContext {
                 size_t metadata_count);
 
   void set_call(grpc_call* call);
-
-  uint32_t initial_metadata_flags() const { return 0; }
 
   CompletionOp* completion_op_;
   bool has_notify_when_done_tag_;

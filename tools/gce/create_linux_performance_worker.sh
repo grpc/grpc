@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,10 +29,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # Creates a performance worker on GCE.
-# IMPORTANT: After creating the worker, one needs to manually add the pubkey
-# of jenkins@the-machine-where-jenkins-starts-perf-tests
-# to ~/.ssh/authorized_keys so that multi-machine scenarios can work.
-# See tools/run_tests/run_performance_tests.py for details.
 
 set -ex
 
@@ -41,7 +37,7 @@ cd $(dirname $0)
 CLOUD_PROJECT=grpc-testing
 ZONE=us-central1-b  # this zone allows 32core machines
 
-INSTANCE_NAME="${1:-grpc-performance-server1}"
+INSTANCE_NAME="${1:-grpc-performance-driver}"
 MACHINE_TYPE=n1-standard-32
 
 gcloud compute instances create $INSTANCE_NAME \
@@ -57,9 +53,9 @@ sleep 60
 gcloud compute copy-files \
     --project="$CLOUD_PROJECT" \
     --zone "$ZONE" \
-    jenkins_master.pub linux_performance_worker_init.sh jenkins@${INSTANCE_NAME}:~
+    jenkins_master.pub linux_performance_worker_init.sh ${INSTANCE_NAME}:~
 
 gcloud compute ssh \
     --project="$CLOUD_PROJECT" \
     --zone "$ZONE" \
-    jenkins@${INSTANCE_NAME} --command "./linux_performance_worker_init.sh"
+    $INSTANCE_NAME --command "./linux_performance_worker_init.sh"

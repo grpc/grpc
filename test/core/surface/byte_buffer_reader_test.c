@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,7 +42,7 @@
 #include <grpc/support/time.h>
 #include "test/core/util/test_config.h"
 
-#include "src/core/lib/compression/message_compress.h"
+#include "src/core/compression/message_compress.h"
 
 #include <string.h>
 

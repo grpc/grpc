@@ -1,6 +1,6 @@
 #!/usr/bin/env python2.7
 
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -69,7 +69,6 @@ CONFIG = [
     (':scheme', 'grpc'),
     (':authority', ''),
     (':method', 'GET'),
-    (':method', 'PUT'),
     (':path', '/'),
     (':path', '/index.html'),
     (':status', '204'),
@@ -216,9 +215,9 @@ if args:
     C = open('/dev/null', 'w')
 else:
   H = open(os.path.join(
-      os.path.dirname(sys.argv[0]), '../../../src/core/lib/transport/static_metadata.h'), 'w')
+      os.path.dirname(sys.argv[0]), '../../../src/core/transport/static_metadata.h'), 'w')
   C = open(os.path.join(
-      os.path.dirname(sys.argv[0]), '../../../src/core/lib/transport/static_metadata.c'), 'w')
+      os.path.dirname(sys.argv[0]), '../../../src/core/transport/static_metadata.c'), 'w')
 
 # copy-paste copyright notice from this file
 with open(sys.argv[0]) as my_source:
@@ -233,25 +232,25 @@ with open(sys.argv[0]) as my_source:
     if line[0] != '#':
       break
     copyright.append(line)
-  put_banner([H,C], [line[2:].rstrip() for line in copyright])
+  put_banner([H,C], [line[1:].strip() for line in copyright])
 
 put_banner([H,C],
 """WARNING: Auto-generated code.
 
-To make changes to this file, change
-tools/codegen/core/gen_static_metadata.py, and then re-run it.
+To make changes to this file, change tools/codegen/core/gen_static_metadata.py,
+and then re-run it.
 
-See metadata.h for an explanation of the interface here, and metadata.c for
-an explanation of what's going on.
+See metadata.h for an explanation of the interface here, and metadata.c for an
+explanation of what's going on.
 """.splitlines())
 
-print >>H, '#ifndef GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H'
-print >>H, '#define GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H'
+print >>H, '#ifndef GRPC_INTERNAL_CORE_TRANSPORT_STATIC_METADATA_H'
+print >>H, '#define GRPC_INTERNAL_CORE_TRANSPORT_STATIC_METADATA_H'
 print >>H
-print >>H, '#include "src/core/lib/transport/metadata.h"'
+print >>H, '#include "src/core/transport/metadata.h"'
 print >>H
 
-print >>C, '#include "src/core/lib/transport/static_metadata.h"'
+print >>C, '#include "src/core/transport/static_metadata.h"'
 print >>C
 
 print >>H, '#define GRPC_STATIC_MDSTR_COUNT %d' % len(all_strs)
@@ -265,13 +264,13 @@ print >>C
 
 print >>H, '#define GRPC_STATIC_MDELEM_COUNT %d' % len(all_elems)
 print >>H, 'extern grpc_mdelem grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];'
-print >>H, 'extern uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];'
+print >>H, 'extern gpr_uintptr grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];'
 for i, elem in enumerate(all_elems):
   print >>H, '/* "%s": "%s" */' % elem
   print >>H, '#define %s (&grpc_static_mdelem_table[%d])' % (mangle(elem).upper(), i)
 print >>H
 print >>C, 'grpc_mdelem grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];'
-print >>C, 'uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT] = {'
+print >>C, 'gpr_uintptr grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT] = {'
 print >>C, '  %s' % ','.join('%d' % static_userdata.get(elem, 0) for elem in all_elems)
 print >>C, '};'
 print >>C
@@ -286,8 +285,8 @@ def md_idx(m):
     if m == m2:
       return i
 
-print >>H, 'extern const uint8_t grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT*2];'
-print >>C, 'const uint8_t grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT*2] = {'
+print >>H, 'extern const gpr_uint8 grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT*2];'
+print >>C, 'const gpr_uint8 grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT*2] = {'
 print >>C, ','.join('%d' % str_idx(x) for x in itertools.chain.from_iterable([a,b] for a, b in all_elems))
 print >>C, '};'
 print >>C
@@ -298,15 +297,16 @@ print >>C, '%s' % ',\n'.join('  "%s"' % s for s in all_strs)
 print >>C, '};'
 print >>C
 
-print >>H, 'extern const uint8_t grpc_static_accept_encoding_metadata[%d];' % (1 << len(COMPRESSION_ALGORITHMS))
-print >>C, 'const uint8_t grpc_static_accept_encoding_metadata[%d] = {' % (1 << len(COMPRESSION_ALGORITHMS))
+print >>H, 'extern const gpr_uint8 grpc_static_accept_encoding_metadata[%d];' % (1 << len(COMPRESSION_ALGORITHMS))
+print >>C, 'const gpr_uint8 grpc_static_accept_encoding_metadata[%d] = {' % (1 << len(COMPRESSION_ALGORITHMS))
 print >>C, '0,%s' % ','.join('%d' % md_idx(elem) for elem in compression_elems)
 print >>C, '};'
 print >>C
 
 print >>H, '#define GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(algs) (&grpc_static_mdelem_table[grpc_static_accept_encoding_metadata[(algs)]])'
 
-print >>H, '#endif /* GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H */'
+print >>H, '#endif /* GRPC_INTERNAL_CORE_TRANSPORT_STATIC_METADATA_H */'
 
 H.close()
 C.close()
+

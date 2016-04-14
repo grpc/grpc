@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/channel/compress_filter.h"
+#include "src/core/channel/compress_filter.h"
 #include "src/cpp/common/create_auth_context.h"
 
 namespace grpc {
@@ -60,8 +60,6 @@ static ClientContext::GlobalCallbacks* g_client_callbacks =
 
 ClientContext::ClientContext()
     : initial_metadata_received_(false),
-      fail_fast_(true),
-      idempotent_(false),
       call_(nullptr),
       call_canceled_(false),
       deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)),

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -359,7 +359,7 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
       md_ary->metadata[md_ary->count].value_length = value_len;
       md_ary->count += 1;
     }
-  } else if (TYPE(val) == T_STRING) {
+  } else {
     value_str = RSTRING_PTR(val);
     value_len = RSTRING_LEN(val);
     if (!grpc_is_binary_header(key_str, key_len) &&
@@ -373,10 +373,6 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
     md_ary->metadata[md_ary->count].value = value_str;
     md_ary->metadata[md_ary->count].value_length = value_len;
     md_ary->count += 1;
-  } else {
-    rb_raise(rb_eArgError,
-               "Header values must be of type string or array");
-    return ST_STOP;
   }
 
   return ST_CONTINUE;
@@ -555,25 +551,12 @@ static void grpc_run_batch_stack_init(run_batch_stack *st,
 /* grpc_run_batch_stack_cleanup ensures the run_batch_stack is properly
  * cleaned up */
 static void grpc_run_batch_stack_cleanup(run_batch_stack *st) {
-  size_t i = 0;
-
   grpc_metadata_array_destroy(&st->send_metadata);
   grpc_metadata_array_destroy(&st->send_trailing_metadata);
   grpc_metadata_array_destroy(&st->recv_metadata);
   grpc_metadata_array_destroy(&st->recv_trailing_metadata);
-
   if (st->recv_status_details != NULL) {
     gpr_free(st->recv_status_details);
-  }
-
-  if (st->recv_message != NULL) {
-    grpc_byte_buffer_destroy(st->recv_message);
-  }
-
-  for (i = 0; i < st->op_num; i++) {
-    if (st->ops[i].op == GRPC_OP_SEND_MESSAGE) {
-      grpc_byte_buffer_destroy(st->ops[i].data.send_message);
-    }
   }
 }
 
@@ -660,6 +643,7 @@ static VALUE grpc_run_batch_stack_build_result(run_batch_stack *st) {
         break;
       case GRPC_OP_SEND_MESSAGE:
         rb_struct_aset(result, sym_send_message, Qtrue);
+        grpc_byte_buffer_destroy(st->ops[i].data.send_message);
         break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
         rb_struct_aset(result, sym_send_close, Qtrue);

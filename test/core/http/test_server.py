@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -36,8 +36,8 @@ import os
 import ssl
 import sys
 
-_PEM = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../../..', 'src/core/lib/tsi/test_creds/server1.pem'))
-_KEY = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../../..', 'src/core/lib/tsi/test_creds/server1.key'))
+_PEM = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../../..', 'src/core/tsi/test_creds/server1.pem'))
+_KEY = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../../..', 'src/core/tsi/test_creds/server1.key'))
 print _PEM
 open(_PEM).close()
 

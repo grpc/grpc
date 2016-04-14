@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -31,156 +31,93 @@
 
 #endregion
 
-using Grpc.Core.Internal;
-using Grpc.Core.Utils;
+using System;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace Grpc.Core
 {
     /// <summary>
-    /// Generic base class for client-side stubs.
+    /// Interceptor for call headers.
     /// </summary>
-    public abstract class ClientBase<T> : ClientBase
-        where T : ClientBase<T>
-    {
-        /// <summary>
-        /// Initializes a new instance of <c>ClientBase</c> class that
-        /// throws <c>NotImplementedException</c> upon invocation of any RPC.
-        /// This constructor is only provided to allow creation of test doubles
-        /// for client classes (e.g. mocking requires a parameterless constructor).
-        /// </summary>
-        protected ClientBase() : base()
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of <c>ClientBase</c> class.
-        /// </summary>
-        /// <param name="configuration">The configuration.</param>
-        protected ClientBase(ClientBaseConfiguration configuration) : base(configuration)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of <c>ClientBase</c> class.
-        /// </summary>
-        /// <param name="channel">The channel to use for remote call invocation.</param>
-        public ClientBase(Channel channel) : base(channel)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of <c>ClientBase</c> class.
-        /// </summary>
-        /// <param name="callInvoker">The <c>CallInvoker</c> for remote call invocation.</param>
-        public ClientBase(CallInvoker callInvoker) : base(callInvoker)
-        {
-        }
-
-        /// <summary>
-        /// Creates a new client that sets host field for calls explicitly.
-        /// gRPC supports multiple "hosts" being served by a single server.
-        /// By default (if a client was not created by calling this method),
-        /// host <c>null</c> with the meaning "use default host" is used.
-        /// </summary>
-        public T WithHost(string host)
-        {
-            var newConfiguration = this.Configuration.WithHost(host);
-            return NewInstance(newConfiguration);
-        }
-
-        /// <summary>
-        /// Creates a new instance of client from given <c>ClientBaseConfiguration</c>.
-        /// </summary>
-        protected abstract T NewInstance(ClientBaseConfiguration configuration);
-    }
+    /// <remarks>Header interceptor is no longer to recommented way to perform authentication.
+    /// For header (initial metadata) based auth such as OAuth2 or JWT access token, use <see cref="MetadataCredentials"/>.
+    /// </remarks>
+    public delegate void HeaderInterceptor(IMethod method, Metadata metadata);
 
     /// <summary>
     /// Base class for client-side stubs.
     /// </summary>
     public abstract class ClientBase
     {
-        readonly ClientBaseConfiguration configuration;
-        readonly CallInvoker callInvoker;
-
-        /// <summary>
-        /// Initializes a new instance of <c>ClientBase</c> class that
-        /// throws <c>NotImplementedException</c> upon invocation of any RPC.
-        /// This constructor is only provided to allow creation of test doubles
-        /// for client classes (e.g. mocking requires a parameterless constructor).
-        /// </summary>
-        protected ClientBase() : this(new UnimplementedCallInvoker())
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of <c>ClientBase</c> class.
-        /// </summary>
-        /// <param name="configuration">The configuration.</param>
-        protected ClientBase(ClientBaseConfiguration configuration)
-        {
-            this.configuration = GrpcPreconditions.CheckNotNull(configuration, "configuration");
-            this.callInvoker = configuration.CreateDecoratedCallInvoker();
-        }
+        readonly Channel channel;
 
         /// <summary>
         /// Initializes a new instance of <c>ClientBase</c> class.
         /// </summary>
         /// <param name="channel">The channel to use for remote call invocation.</param>
-        public ClientBase(Channel channel) : this(new DefaultCallInvoker(channel))
+        public ClientBase(Channel channel)
         {
+            this.channel = channel;
         }
 
         /// <summary>
-        /// Initializes a new instance of <c>ClientBase</c> class.
+        /// Can be used to register a custom header interceptor.
+        /// The interceptor is invoked each time a new call on this client is started.
+        /// It is not recommented to use header interceptor to add auth headers to RPC calls.
         /// </summary>
-        /// <param name="callInvoker">The <c>CallInvoker</c> for remote call invocation.</param>
-        public ClientBase(CallInvoker callInvoker) : this(new ClientBaseConfiguration(callInvoker, null))
+        /// <seealso cref="HeaderInterceptor"/>
+        public HeaderInterceptor HeaderInterceptor
         {
+            get;
+            set;
         }
 
         /// <summary>
-        /// Gets the call invoker.
+        /// gRPC supports multiple "hosts" being served by a single server. 
+        /// This property can be used to set the target host explicitly.
+        /// By default, this will be set to <c>null</c> with the meaning
+        /// "use default host".
         /// </summary>
-        protected CallInvoker CallInvoker
+        public string Host
         {
-            get { return this.callInvoker; }
+            get;
+            set;
         }
 
         /// <summary>
-        /// Gets the configuration.
+        /// Channel associated with this client.
         /// </summary>
-        internal ClientBaseConfiguration Configuration
+        public Channel Channel
         {
-            get { return this.configuration; }
-        }
-
-        /// <summary>
-        /// Represents configuration of ClientBase. The class itself is visible to
-        /// subclasses, but contents are marked as internal to make the instances opaque.
-        /// The verbose name of this class was chosen to make name clash in generated code 
-        /// less likely.
-        /// </summary>
-        protected internal class ClientBaseConfiguration
-        {
-            readonly CallInvoker undecoratedCallInvoker;
-            readonly string host;
-
-            internal ClientBaseConfiguration(CallInvoker undecoratedCallInvoker, string host)
+            get
             {
-                this.undecoratedCallInvoker = GrpcPreconditions.CheckNotNull(undecoratedCallInvoker);
-                this.host = host;
+                return this.channel;
             }
+        }
 
-            internal CallInvoker CreateDecoratedCallInvoker()
+        /// <summary>
+        /// Creates a new call to given method.
+        /// </summary>
+        /// <param name="method">The method to invoke.</param>
+        /// <param name="options">The call options.</param>
+        /// <typeparam name="TRequest">Request message type.</typeparam>
+        /// <typeparam name="TResponse">Response message type.</typeparam>
+        /// <returns>The call invocation details.</returns>
+        protected CallInvocationDetails<TRequest, TResponse> CreateCall<TRequest, TResponse>(Method<TRequest, TResponse> method, CallOptions options)
+            where TRequest : class
+            where TResponse : class
+        {
+            var interceptor = HeaderInterceptor;
+            if (interceptor != null)
             {
-                return new InterceptingCallInvoker(undecoratedCallInvoker, hostInterceptor: (h) => host);
+                if (options.Headers == null)
+                {
+                    options = options.WithHeaders(new Metadata());
+                }
+                interceptor(method, options.Headers);
             }
-
-            internal ClientBaseConfiguration WithHost(string host)
-            {
-                GrpcPreconditions.CheckNotNull(host, "host");
-                return new ClientBaseConfiguration(this.undecoratedCallInvoker, host);
-            }
+            return new CallInvocationDetails<TRequest, TResponse>(channel, method, Host, options);
         }
     }
 }

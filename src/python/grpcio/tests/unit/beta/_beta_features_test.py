@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -183,7 +183,7 @@ class BetaFeaturesTest(unittest.TestCase):
     port = self._server.add_secure_port('[::]:0', server_credentials)
     self._server.start()
     self._channel_credentials = implementations.ssl_channel_credentials(
-        resources.test_root_certificates())
+        resources.test_root_certificates(), None, None)
     self._call_credentials = implementations.metadata_call_credentials(
         _metadata_plugin)
     channel = test_utilities.not_really_secure_channel(
@@ -296,7 +296,7 @@ class ContextManagementAndLifecycleTest(unittest.TestCase):
     self._server_credentials = implementations.ssl_server_credentials(
         [(resources.private_key(), resources.certificate_chain(),),])
     self._channel_credentials = implementations.ssl_channel_credentials(
-        resources.test_root_certificates())
+        resources.test_root_certificates(), None, None)
     self._stub_options = implementations.stub_options(
         thread_pool_size=test_constants.POOL_SIZE)
 

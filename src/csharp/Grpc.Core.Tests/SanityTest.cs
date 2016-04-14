@@ -38,7 +38,6 @@ using System.Reflection;
 using Grpc.Core;
 using Grpc.Core.Internal;
 using Grpc.Core.Utils;
-using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace Grpc.Core.Tests
@@ -56,23 +55,27 @@ namespace Grpc.Core.Tests
         [Test]
         public void TestsJsonUpToDate()
         {
-            var discoveredTests = DiscoverAllTestClasses();
-            string discoveredTestsJson = JsonConvert.SerializeObject(discoveredTests, Formatting.Indented);
+            var testClasses = DiscoverAllTestClasses();
+            string testsJson = GetTestsJson();
 
-            Assert.AreEqual(discoveredTestsJson, ReadTestsJson());
+            // we don't have a JSON parser at hand, but check that the test class
+            // name is contained in the file instead.
+            foreach (var className in testClasses) {
+                Assert.IsTrue(testsJson.Contains(className),
+                    string.Format("Test class \"{0}\" is missing in C# tests.json file", className));
+            }
         }
 
         /// <summary>
         /// Gets list of all test classes obtained by inspecting all the test assemblies.
         /// </summary>
-        private Dictionary<string, List<string>> DiscoverAllTestClasses()
+        private List<string> DiscoverAllTestClasses()
         {
             var assemblies = GetTestAssemblies();
 
-            var testsByAssembly = new Dictionary<string, List<string>>();
+            var testClasses = new List<string>();
             foreach (var assembly in assemblies)
             {
-                var testClasses = new List<string>();
                 foreach (var t in assembly.GetTypes())
                 {
                     foreach (var m in t.GetMethods())
@@ -86,19 +89,16 @@ namespace Grpc.Core.Tests
 
                     }
                 }
-                testClasses.Sort();
-                testsByAssembly.Add(assembly.GetName().Name, testClasses);
             }
-            return testsByAssembly;
+            testClasses.Sort();
+            return testClasses;
         }
 
-        /// <summary>
-        /// Reads contents of tests.json file.
-        /// </summary>
-        private string ReadTestsJson()
+        private string GetTestsJson()
         {
             var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             var testsJsonFile = Path.Combine(assemblyDir, "..", "..", "..", "tests.json");
+
             return File.ReadAllText(testsJsonFile);
         }
 

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,38 +31,31 @@
  *
  */
 
+#include "src/core/client_config/resolvers/dns_resolver.h"
+
 #include <string.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
-#include "src/core/ext/client_config/resolver_registry.h"
-#include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/timer.h"
+#include "src/core/iomgr/resolve_address.h"
+#include "src/core/iomgr/timer.h"
 #include "test/core/util/test_config.h"
 
-static void client_channel_factory_ref(grpc_client_channel_factory *scv) {}
-static void client_channel_factory_unref(grpc_exec_ctx *exec_ctx,
-                                         grpc_client_channel_factory *scv) {}
-static grpc_subchannel *client_channel_factory_create_subchannel(
-    grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *factory,
+static void subchannel_factory_ref(grpc_subchannel_factory *scv) {}
+static void subchannel_factory_unref(grpc_exec_ctx *exec_ctx,
+                                     grpc_subchannel_factory *scv) {}
+static grpc_subchannel *subchannel_factory_create_subchannel(
+    grpc_exec_ctx *exec_ctx, grpc_subchannel_factory *factory,
     grpc_subchannel_args *args) {
   return NULL;
 }
 
-static grpc_channel *client_channel_factory_create_channel(
-    grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *cc_factory,
-    const char *target, grpc_client_channel_type type,
-    grpc_channel_args *args) {
-  GPR_UNREACHABLE_CODE(return NULL);
-}
+static const grpc_subchannel_factory_vtable sc_vtable = {
+    subchannel_factory_ref, subchannel_factory_unref,
+    subchannel_factory_create_subchannel};
 
-static const grpc_client_channel_factory_vtable sc_vtable = {
-    client_channel_factory_ref, client_channel_factory_unref,
-    client_channel_factory_create_subchannel,
-    client_channel_factory_create_channel};
-
-static grpc_client_channel_factory cc_factory = {&sc_vtable};
+static grpc_subchannel_factory sc_factory = {&sc_vtable};
 
 static gpr_mu g_mu;
 static bool g_fail_resolution = true;
@@ -86,13 +79,13 @@ static grpc_resolved_addresses *my_resolve_address(const char *name,
 }
 
 static grpc_resolver *create_resolver(const char *name) {
-  grpc_resolver_factory *factory = grpc_resolver_factory_lookup("dns");
+  grpc_resolver_factory *factory = grpc_dns_resolver_factory_create();
   grpc_uri *uri = grpc_uri_parse(name, 0);
   GPR_ASSERT(uri);
   grpc_resolver_args args;
   memset(&args, 0, sizeof(args));
   args.uri = uri;
-  args.client_channel_factory = &cc_factory;
+  args.subchannel_factory = &sc_factory;
   grpc_resolver *resolver =
       grpc_resolver_factory_create_resolver(factory, &args);
   grpc_resolver_factory_unref(factory);

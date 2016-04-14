@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,23 +44,26 @@ namespace Grpc.Testing
     /// <summary>
     /// Implementation of BenchmarkService server
     /// </summary>
-    public class BenchmarkServiceImpl : BenchmarkService.BenchmarkServiceBase
+    public class BenchmarkServiceImpl : BenchmarkService.IBenchmarkService
     {
-        public BenchmarkServiceImpl()
+        private readonly int responseSize;
+
+        public BenchmarkServiceImpl(int responseSize)
         {
+            this.responseSize = responseSize;
         }
 
-        public override Task<SimpleResponse> UnaryCall(SimpleRequest request, ServerCallContext context)
+        public Task<SimpleResponse> UnaryCall(SimpleRequest request, ServerCallContext context)
         {
-            var response = new SimpleResponse { Payload = CreateZerosPayload(request.ResponseSize) };
+            var response = new SimpleResponse { Payload = CreateZerosPayload(responseSize) };
             return Task.FromResult(response);
         }
 
-        public override async Task StreamingCall(IAsyncStreamReader<SimpleRequest> requestStream, IServerStreamWriter<SimpleResponse> responseStream, ServerCallContext context)
+        public async Task StreamingCall(IAsyncStreamReader<SimpleRequest> requestStream, IServerStreamWriter<SimpleResponse> responseStream, ServerCallContext context)
         {
             await requestStream.ForEachAsync(async request =>
             {
-                var response = new SimpleResponse { Payload = CreateZerosPayload(request.ResponseSize) };
+                var response = new SimpleResponse { Payload = CreateZerosPayload(responseSize) };
                 await responseStream.WriteAsync(response);
             });
         }

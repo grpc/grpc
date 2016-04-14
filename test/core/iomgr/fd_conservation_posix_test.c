@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,8 +35,8 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/iomgr/endpoint_pair.h"
-#include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/iomgr/endpoint_pair.h"
+#include "src/core/iomgr/iomgr.h"
 #include "test/core/util/test_config.h"
 
 int main(int argc, char **argv) {

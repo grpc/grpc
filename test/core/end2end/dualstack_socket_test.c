@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,9 +39,9 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/socket_utils_posix.h"
-#include "src/core/lib/support/string.h"
+#include "src/core/iomgr/resolve_address.h"
+#include "src/core/iomgr/socket_utils_posix.h"
+#include "src/core/support/string.h"
 
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
@@ -168,7 +168,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
-  op->flags = expect_ok ? GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY : 0;
+  op->flags = 0;
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
@@ -237,7 +237,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
     cq_expect_completion(cqv, tag(1), 1);
     cq_verify(cqv);
 
-    GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
+    GPR_ASSERT(status == GRPC_STATUS_DEADLINE_EXCEEDED);
   }
 
   grpc_call_destroy(c);

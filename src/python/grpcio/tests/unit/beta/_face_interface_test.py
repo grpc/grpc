@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -94,7 +94,7 @@ class _Implementation(test_interfaces.Implementation):
     port = server.add_secure_port('[::]:0', server_credentials)
     server.start()
     channel_credentials = implementations.ssl_channel_credentials(
-        resources.test_root_certificates())
+        resources.test_root_certificates(), None, None)
     channel = test_utilities.not_really_secure_channel(
         'localhost', port, channel_credentials, _SERVER_HOST_OVERRIDE)
     stub_options = implementations.stub_options(

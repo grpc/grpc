@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -34,8 +34,7 @@ gen_build_yaml_dirs="  \
   src/zlib             \
   test/core/bad_client \
   test/core/bad_ssl    \
-  test/core/end2end    \
-  test/cpp/qps"
+  test/core/end2end"
 gen_build_files=""
 for gen_build_yaml in $gen_build_yaml_dirs
 do
@@ -43,3 +42,4 @@ do
   $gen_build_yaml/gen_build_yaml.py > $output_file
   gen_build_files="$gen_build_files $output_file"
 done
+
