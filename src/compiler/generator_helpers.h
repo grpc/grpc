@@ -35,6 +35,9 @@
 #define GRPC_INTERNAL_COMPILER_GENERATOR_HELPERS_H
 
 #include <map>
+#include <sstream>
+#include <string>
+#include <vector>
 
 #include "src/compiler/config.h"
 
@@ -162,6 +165,44 @@ inline MethodType GetMethodType(const grpc::protobuf::MethodDescriptor *method) 
     } else {
       return METHODTYPE_NO_STREAMING;
     }
+  }
+}
+
+inline void Split(const grpc::string &s, char delim,
+                  std::vector<grpc::string> *append_to) {
+  std::istringstream iss(s);
+  grpc::string piece;
+  while (std::getline(iss, piece)) {
+    append_to->push_back(piece);
+  }
+}
+
+enum CommentType {
+  COMMENTTYPE_LEADING,
+  COMMENTTYPE_TRAILING,
+  COMMENTTYPE_LEADING_DETACHED
+};
+
+// Get all the comments and append each line to out.
+template <typename DescriptorType>
+inline void GetComment(const DescriptorType *desc, CommentType type,
+                       std::vector<grpc::string> *out) {
+  grpc::protobuf::SourceLocation location;
+  if (!desc->GetSourceLocation(&location)) {
+    return;
+  }
+  if (type == COMMENTTYPE_LEADING || type == COMMENTTYPE_TRAILING) {
+    const grpc::string &comments = type == COMMENTTYPE_LEADING
+                                       ? location.leading_comments
+                                       : location.trailing_comments;
+    Split(comments, '\n', out);
+  } else if (type == COMMENTTYPE_LEADING_DETACHED) {
+    for (int i = 0; i < location.leading_detached_comments.size(); i++) {
+      Split(location.leading_detached_comments[i], '\n', out);
+      out->push_back("");
+    }
+  } else {
+    abort();
   }
 }
 

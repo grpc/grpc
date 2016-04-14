@@ -101,6 +101,7 @@ grpc::string GetHeaderPrologue(File *file, const Parameters &params) {
     printer->Print(vars,
                   "// If you make any local change, they will be lost.\n");
     printer->Print(vars, "// source: $filename$\n");
+    printer->Print(file->GetLeadingComments().c_str());
     printer->Print(vars, "#ifndef GRPC_$filename_identifier$__INCLUDED\n");
     printer->Print(vars, "#define GRPC_$filename_identifier$__INCLUDED\n");
     printer->Print(vars, "\n");
@@ -455,6 +456,7 @@ void PrintHeaderServerMethodSync(Printer *printer, const Method *method,
   (*vars)["Method"] = method->name();
   (*vars)["Request"] = method->input_type_name();
   (*vars)["Response"] = method->output_type_name();
+  printer->Print(method->GetLeadingComments().c_str());
   if (method->NoStreaming()) {
     printer->Print(*vars,
                    "virtual ::grpc::Status $Method$("
@@ -479,6 +481,7 @@ void PrintHeaderServerMethodSync(Printer *printer, const Method *method,
         "::grpc::ServerReaderWriter< $Response$, $Request$>* stream);"
         "\n");
   }
+  printer->Print(method->GetTrailingComments().c_str());
 }
 
 void PrintHeaderServerMethodAsync(
@@ -673,6 +676,7 @@ void PrintHeaderService(Printer *printer,
                         std::map<grpc::string, grpc::string> *vars) {
   (*vars)["Service"] = service->name();
 
+  printer->Print(service->GetLeadingComments().c_str());
   printer->Print(*vars,
                  "class $Service$ GRPC_FINAL {\n"
                  " public:\n");
@@ -685,7 +689,9 @@ void PrintHeaderService(Printer *printer,
   printer->Indent();
   printer->Print("virtual ~StubInterface() {}\n");
   for (int i = 0; i < service->method_count(); ++i) {
+    printer->Print(service->method(i)->GetLeadingComments().c_str());
     PrintHeaderClientMethodInterfaces(printer, service->method(i).get(), vars, true);
+    printer->Print(service->method(i)->GetTrailingComments().c_str());
   }
   printer->Outdent();
   printer->Print("private:\n");
@@ -761,6 +767,7 @@ void PrintHeaderService(Printer *printer,
 
   printer->Outdent();
   printer->Print("};\n");
+  printer->Print(service->GetTrailingComments().c_str());
 }
 
 grpc::string GetHeaderServices(File *file,
@@ -817,6 +824,8 @@ grpc::string GetHeaderEpilogue(File *file,
 
     printer->Print(vars, "\n");
     printer->Print(vars, "#endif  // GRPC_$filename_identifier$__INCLUDED\n");
+
+    printer->Print(file->GetTrailingComments().c_str());
   }
   return output;
 }
@@ -836,6 +845,7 @@ grpc::string GetSourcePrologue(File *file,
     printer->Print(vars,
                   "// If you make any local change, they will be lost.\n");
     printer->Print(vars, "// source: $filename$\n\n");
+
     printer->Print(vars, "#include \"$filename_base$.pb.h\"\n");
     printer->Print(vars, "#include \"$filename_base$.grpc.pb.h\"\n");
     printer->Print(vars, "\n");
