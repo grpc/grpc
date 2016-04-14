@@ -155,6 +155,7 @@
     <ClInclude Include="$(SolutionDir)\..\test\core\util\grpc_profiler.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\util\mock_endpoint.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\util\parse_hexstring.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\core\util\passthru_endpoint.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\util\port.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\util\port_server_client.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\util\slice_splitter.h" />
@@ -179,6 +180,8 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\util\mock_endpoint.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\parse_hexstring.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\passthru_endpoint.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\port_posix.c">
     </ClCompile>
