@@ -107,13 +107,17 @@ class GprLogReporter : public Reporter {
 /** Dumps the report to a JSON file. */
 class JsonReporter : public Reporter {
  public:
-  JsonReporter(const string& name) : Reporter(name) {}
+  JsonReporter(const string& name, const string& report_file) :
+    Reporter(name),
+    report_file_(report_file) {}
 
  private:
   void ReportQPS(const ScenarioResult& result) GRPC_OVERRIDE;
   void ReportQPSPerCore(const ScenarioResult& result) GRPC_OVERRIDE;
   void ReportLatency(const ScenarioResult& result) GRPC_OVERRIDE;
   void ReportTimes(const ScenarioResult& result) GRPC_OVERRIDE;
+
+  const string report_file_;
 };
 
 }  // namespace testing

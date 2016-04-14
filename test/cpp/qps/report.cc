@@ -33,6 +33,11 @@
 
 #include "test/cpp/qps/report.h"
 
+#include <fstream>
+
+#include <google/protobuf/util/json_util.h>
+#include <google/protobuf/util/type_resolver_util.h>
+
 #include <grpc/support/log.h>
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/stats.h"
@@ -120,7 +125,21 @@ void GprLogReporter::ReportTimes(const ScenarioResult& result) {
 }
 
 void JsonReporter::ReportQPS(const ScenarioResult& result) {
+  std::unique_ptr<google::protobuf::util::TypeResolver> type_resolver(
+      google::protobuf::util::NewTypeResolverForDescriptorPool(
+          "type.googleapis.com",
+          google::protobuf::DescriptorPool::generated_pool()));
+  grpc::string binary;
+  grpc::string json_string;
+  result.SerializeToString(&binary);
+  auto status = BinaryToJsonString(type_resolver.get(),
+                                   "type.googleapis.com/grpc.testing.ScenarioResult",
+                                   binary, &json_string);
+  GPR_ASSERT(status.ok());
 
+  std::ofstream output_file(report_file_);
+  output_file << json_string;
+  output_file.close();
 }
 
 void JsonReporter::ReportQPSPerCore(const ScenarioResult& result) {
