@@ -60,8 +60,7 @@ static void me_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   gpr_mu_lock(&m->parent->mu);
   if (m->parent->shutdown) {
     grpc_exec_ctx_enqueue(exec_ctx, cb, false, NULL);
-  } else
-  if (m->read_buffer.count > 0) {
+  } else if (m->read_buffer.count > 0) {
     gpr_slice_buffer_swap(&m->read_buffer, slices);
     grpc_exec_ctx_enqueue(exec_ctx, cb, true, NULL);
   } else {
@@ -72,8 +71,7 @@ static void me_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 }
 
 static half *other_half(half *h) {
-  if (h == &h->parent->client)
-    return &h->parent->server;
+  if (h == &h->parent->client) return &h->parent->server;
   return &h->parent->client;
 }
 
@@ -81,11 +79,10 @@ static void me_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                      gpr_slice_buffer *slices, grpc_closure *cb) {
   half *m = other_half((half *)ep);
   gpr_mu_lock(&m->parent->mu);
-  bool ok= true;
+  bool ok = true;
   if (m->parent->shutdown) {
-   ok = false; 
-  }
-  else if (m->on_read != NULL) {
+    ok = false;
+  } else if (m->on_read != NULL) {
     gpr_slice_buffer_addn(m->on_read_out, slices->slices, slices->count);
     grpc_exec_ctx_enqueue(exec_ctx, m->on_read, true, NULL);
     m->on_read = NULL;
@@ -103,7 +100,7 @@ static void me_add_to_pollset_set(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                                   grpc_pollset_set *pollset) {}
 
 static void me_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
-  half *m = (half*)ep;
+  half *m = (half *)ep;
   gpr_mu_lock(&m->parent->mu);
   m->parent->shutdown = true;
   if (m->on_read) {
@@ -119,7 +116,7 @@ static void me_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
 }
 
 static void me_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
-  passthru_endpoint *p = ((half*)ep)->parent;
+  passthru_endpoint *p = ((half *)ep)->parent;
   gpr_mu_lock(&p->mu);
   if (0 == --p->halves) {
     gpr_mu_unlock(&p->mu);
@@ -147,7 +144,8 @@ static void half_init(half *m) {
   m->on_read = NULL;
 }
 
-void grpc_passthru_endpoint_create(grpc_endpoint **client, grpc_endpoint **server) {
+void grpc_passthru_endpoint_create(grpc_endpoint **client,
+                                   grpc_endpoint **server) {
   passthru_endpoint *m = gpr_malloc(sizeof(*m));
   half_init(&m->client);
   half_init(&m->server);
@@ -155,4 +153,3 @@ void grpc_passthru_endpoint_create(grpc_endpoint **client, grpc_endpoint **serve
   *client = &m->client.base;
   *server = &m->server.base;
 }
-
