@@ -37,6 +37,9 @@
 DEFINE_bool(enable_log_reporter, true,
             "Enable reporting of benchmark results through GprLog");
 
+DEFINE_string(scenario_result_file, "",
+              "Write JSON benchmark report to the file specified.");
+
 DEFINE_string(hashed_id, "", "Hash of the user id");
 
 DEFINE_string(test_name, "", "Name of the test being executed");
@@ -67,6 +70,10 @@ static std::shared_ptr<Reporter> InitBenchmarkReporters() {
   if (FLAGS_enable_log_reporter) {
     composite_reporter->add(
         std::unique_ptr<Reporter>(new GprLogReporter("LogReporter")));
+  }
+  if (FLAGS_scenario_result_file != "") {
+    composite_reporter->add(std::unique_ptr<Reporter>(
+        new JsonReporter("JsonReporter", FLAGS_scenario_result_file)));
   }
 
   return std::shared_ptr<Reporter>(composite_reporter);

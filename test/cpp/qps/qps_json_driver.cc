@@ -102,11 +102,15 @@ static void QpsDriver() {
   for (int i = 0; i < scenarios.scenarios_size(); i++) {
     const Scenario &scenario = scenarios.scenarios(i);
     std::cerr << "RUNNING SCENARIO: " << scenario.name() << "\n";
-    const auto result =
+    auto result =
         RunScenario(scenario.client_config(), scenario.num_clients(),
                     scenario.server_config(), scenario.num_servers(),
                     scenario.warmup_seconds(), scenario.benchmark_seconds(),
                     scenario.spawn_local_worker_count());
+
+    // Amend the result with scenario config. Eventually we should adjust
+    // RunScenario contract so we don't need to touch the result here.
+    result->mutable_scenario()->CopyFrom(scenario);
 
     GetReporter()->ReportQPS(*result);
     GetReporter()->ReportQPSPerCore(*result);
