@@ -38,13 +38,13 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/transport/metadata.h"
-#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/surface/server.h"
+#include "src/core/lib/transport/metadata.h"
 #include "test/core/util/passthru_endpoint.h"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -190,7 +190,8 @@ extern void (*grpc_tcp_client_connect_impl)(
     grpc_pollset_set *interested_parties, const struct sockaddr *addr,
     size_t addr_len, gpr_timespec deadline);
 
-static void sched_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure, grpc_endpoint **ep, gpr_timespec deadline);
+static void sched_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
+                          grpc_endpoint **ep, gpr_timespec deadline);
 
 typedef struct {
   grpc_timer timer;
@@ -222,13 +223,14 @@ static void do_connect(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   gpr_free(fc);
 }
 
-static void sched_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure, grpc_endpoint **ep, gpr_timespec deadline) {
+static void sched_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
+                          grpc_endpoint **ep, gpr_timespec deadline) {
   if (gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) <= 0) {
     *ep = NULL;
     grpc_exec_ctx_enqueue(exec_ctx, closure, false, NULL);
     return;
   }
-  
+
   future_connect *fc = gpr_malloc(sizeof(*fc));
   fc->closure = closure;
   fc->ep = ep;
@@ -252,6 +254,7 @@ static void my_tcp_client_connect(grpc_exec_ctx *exec_ctx,
 
 typedef enum {
   SERVER_SHUTDOWN,
+  CHANNEL_WATCH,
 } tag_name;
 
 static void *tag(tag_name name) { return (void *)(uintptr_t)name; }
@@ -270,10 +273,12 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 
   bool server_shutdown = false;
   int pending_server_shutdowns = 0;
+  int pending_channel_watches = 0;
 
   grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
 
-  while (!is_eof(&inp) || g_channel != NULL || g_server != NULL) {
+  while (!is_eof(&inp) || g_channel != NULL || g_server != NULL ||
+         pending_channel_watches > 0) {
     if (is_eof(&inp)) {
       if (g_channel != NULL) {
         grpc_channel_destroy(g_channel);
@@ -308,6 +313,10 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
               case SERVER_SHUTDOWN:
                 GPR_ASSERT(pending_server_shutdowns);
                 pending_server_shutdowns--;
+                break;
+              case CHANNEL_WATCH:
+                GPR_ASSERT(pending_channel_watches > 0);
+                pending_channel_watches--;
                 break;
               default:
                 GPR_ASSERT(false);
@@ -395,6 +404,22 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
                                                 next_byte(&inp) > 127);
         }
         break;
+      }
+      // watch connectivity
+      case 9: {
+        if (g_channel != NULL) {
+          grpc_connectivity_state st =
+              grpc_channel_check_connectivity_state(g_channel, 0);
+          if (st != GRPC_CHANNEL_FATAL_FAILURE) {
+            grpc_channel_watch_connectivity_state(
+                g_channel, st,
+                gpr_time_add(
+                    gpr_now(GPR_CLOCK_REALTIME),
+                    gpr_time_from_micros(read_uint32(&inp), GPR_TIMESPAN)), cq,
+                    tag(CHANNEL_WATCH));
+            pending_channel_watches++;
+          }
+        }
       }
     }
   }
