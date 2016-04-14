@@ -86,3 +86,4 @@ def _flatten_result_inplace(scenario_result):
   scenario_result['latencies'] = json.dumps(scenario_result['latencies'])
   for stats in scenario_result['clientStats']:
     stats['latencies'] = json.dumps(stats['latencies'])
+  scenario_result['serverCores'] = json.dumps(scenario_result['serverCores'])
