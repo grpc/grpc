@@ -102,8 +102,8 @@ static void set_pollset(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 }
 
 /* Destructor for call_data */
-static void destroy_call_elem(grpc_exec_ctx *exec_ctx,
-                              grpc_call_element *elem) {
+static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                              const grpc_call_stats *stats) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   grpc_transport_destroy_stream(exec_ctx, chand->transport,

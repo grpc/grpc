@@ -45,6 +45,8 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
+
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -66,6 +68,12 @@ typedef struct {
   const void *server_transport_data;
   grpc_call_context_element *context;
 } grpc_call_element_args;
+
+typedef struct {
+  grpc_transport_stream_stats transport_stream_stats;
+  gpr_timespec latency; /* From call creating to enqueing of received status */
+  grpc_status_code final_status;
+} grpc_call_stats;
 
 /* Channel filters specify:
    1. the amount of memory needed in the channel & call (via the sizeof_XXX
@@ -105,7 +113,8 @@ typedef struct {
                       grpc_pollset *pollset);
   /* Destroy per call data.
      The filter does not need to do any chaining */
-  void (*destroy_call_elem)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem);
+  void (*destroy_call_elem)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                            const grpc_call_stats *stats);
 
   /* sizeof(per channel data) */
   size_t sizeof_channel_data;
@@ -223,7 +232,8 @@ void grpc_call_stack_set_pollset(grpc_exec_ctx *exec_ctx,
 #endif
 
 /* Destroy a call stack */
-void grpc_call_stack_destroy(grpc_exec_ctx *exec_ctx, grpc_call_stack *stack);
+void grpc_call_stack_destroy(grpc_exec_ctx *exec_ctx, grpc_call_stack *stack,
+                             const grpc_call_stats *call_stats);
 
 /* Ignore set pollset - used by filters to implement the set_pollset method
    if they don't care about pollsets at all. Does nothing. */
