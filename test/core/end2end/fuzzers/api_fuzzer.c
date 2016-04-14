@@ -43,7 +43,9 @@
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/transport/metadata.h"
-#include "test/core/util/mock_endpoint.h"
+#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/lib/surface/server.h"
+#include "test/core/util/passthru_endpoint.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // logging
@@ -203,7 +205,17 @@ static void do_connect(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
     *fc->ep = NULL;
     grpc_exec_ctx_enqueue(exec_ctx, fc->closure, false, NULL);
   } else if (g_server != NULL) {
-    abort();
+    grpc_endpoint *client;
+    grpc_endpoint *server;
+    grpc_passthru_endpoint_create(&client, &server);
+    *fc->ep = client;
+
+    grpc_transport *transport =
+        grpc_create_chttp2_transport(exec_ctx, NULL, server, 0);
+    grpc_server_setup_transport(exec_ctx, g_server, transport, NULL);
+    grpc_chttp2_transport_start_reading(exec_ctx, transport, NULL, 0);
+
+    grpc_exec_ctx_enqueue(exec_ctx, fc->closure, false, NULL);
   } else {
     sched_connect(exec_ctx, fc->closure, fc->ep, fc->deadline);
   }
