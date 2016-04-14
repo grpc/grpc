@@ -42,6 +42,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import traceback
 import uuid
 import performance.scenario_config as scenario_config
 
@@ -230,8 +231,22 @@ def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*'):
   for language in languages:
     for scenario_json in language.scenarios():
       if re.search(args.regex, scenario_json['name']):
+        workers = workers_by_lang[str(language)]
+        # 'SERVER_LANGUAGE' is an indicator for this script to pick
+        # a server in different language. It doesn't belong to the Scenario
+        # schema, so we also need to remove it.
+        custom_server_lang = scenario_json.pop('SERVER_LANGUAGE', None)
+        if custom_server_lang:
+          if not workers_by_lang.get(custom_server_lang, []):
+            print 'Warning: Skipping scenario %s as' % scenario_json['name']
+            print('SERVER_LANGUAGE is set to %s yet the language has '
+                  'not been selected with -l' % custom_server_lang)
+            continue
+          for idx in range(0, scenario_json['num_servers']):
+            # replace first X workers by workers of a different language
+            workers[idx] = workers_by_lang[custom_server_lang][idx]
         scenario = create_scenario_jobspec(scenario_json,
-                                           workers_by_lang[str(language)],
+                                           workers,
                                            remote_host=remote_host)
         scenarios.append(scenario)
 
@@ -328,5 +343,7 @@ try:
     jobset.message('FAILED', 'Some of the scenarios failed.',
                    do_newline=True)
     sys.exit(1)
+except:
+  traceback.print_exc()
 finally:
   finish_qps_workers(qpsworker_jobs)
