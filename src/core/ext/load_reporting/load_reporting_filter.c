@@ -31,53 +31,32 @@
  *
  */
 
-#include <string.h>
-
 #include <grpc/support/log.h>
 
 #include "src/core/ext/load_reporting/load_reporting_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/load_reporting/load_reporting.h"
 #include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/support/string.h"
 
-typedef struct call_data { load_reporting_data lr_data; } call_data;
-
+typedef struct call_data { void *dummy; } call_data;
 typedef struct channel_data { void *dummy; } channel_data;
-
-static void load_reporting_start_transport_stream_op(
-    grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-    grpc_transport_stream_op *op) {
-  call_data *calld = elem->call_data;
-
-  GPR_TIMER_BEGIN("load_reporting_start_transport_stream_op", 0);
-  grpc_load_reporting_call(&calld->lr_data);
-  grpc_call_next_op(exec_ctx, elem, op);
-  GPR_TIMER_END("load_reporting_start_transport_stream_op", 0);
-}
 
 /* Constructor for call_data */
 static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                           grpc_call_element_args *args) {
-  /* grab pointers to our data from the call element */
-  call_data *calld = elem->call_data;
-
-  /* initialize members */
-  memset(&calld->lr_data, 0, sizeof(load_reporting_data));
-}
+                           grpc_call_element_args *args) {}
 
 /* Destructor for call_data */
-static void destroy_call_elem(grpc_exec_ctx *exec_ctx,
-                              grpc_call_element *elem) {
-  /* grab pointers to our data from the call element */
-  /*call_data *calld = elem->call_data;*/
+static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                              const grpc_call_stats *stats) {
+  GPR_TIMER_BEGIN("load_reporting_filter", 0);
+  grpc_load_reporting_call(stats);
+  GPR_TIMER_END("load_reporting_filter", 0);
 }
 
 /* Constructor for channel_data */
 static void init_channel_elem(grpc_exec_ctx *exec_ctx,
                               grpc_channel_element *elem,
                               grpc_channel_element_args *args) {
-  /*channel_data *channeld = elem->channel_data;*/
   GPR_ASSERT(!args->is_last);
 }
 
@@ -86,7 +65,7 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem) {}
 
 const grpc_channel_filter grpc_load_reporting_filter = {
-    load_reporting_start_transport_stream_op,
+    grpc_call_next_op,
     grpc_channel_next_op,
     sizeof(call_data),
     init_call_elem,

@@ -40,27 +40,35 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "test/core/util/test_config.h"
 
-static void noop(load_reporting_data *lr_data) {
-  uint32_t *d = (uint32_t *)(lr_data->data);
-  *d = 0xdeadbeef;
+typedef struct { uint64_t total_bytes; } aggregated_bw_stats;
+
+static void sample_fn(void *lr_data, const grpc_call_stats *stats) {
+  aggregated_bw_stats *custom_stats = (aggregated_bw_stats *)lr_data;
+  custom_stats->total_bytes =
+      stats->transport_stream_stats.outgoing.data_bytes +
+      stats->transport_stream_stats.incoming.data_bytes;
 }
 
-static void lr_plugin_init(void) { grpc_load_reporting_init(noop); }
+static void lr_plugin_init(void) {
+  aggregated_bw_stats *data = gpr_malloc(sizeof(aggregated_bw_stats));
+  grpc_load_reporting_init(sample_fn, data);
+}
 
-static void lr_plugin_destroy(void) {}
+static void lr_plugin_destroy(void) { grpc_load_reporting_destroy(); }
 
 static void load_reporting_register() {
   grpc_register_plugin(lr_plugin_init, lr_plugin_destroy);
 }
 
 static void test_load_reporter_registration(void) {
-  load_reporting_data lr_data;
-  lr_data.data = gpr_malloc(sizeof(uint32_t));
-  grpc_load_reporting_call(&lr_data);
+  grpc_call_stats stats;
+  stats.transport_stream_stats.outgoing.data_bytes = 123;
+  stats.transport_stream_stats.incoming.data_bytes = 456;
 
-  GPR_ASSERT(*((uint32_t *)lr_data.data) == 0xdeadbeef);
+  grpc_load_reporting_call(&stats);
 
-  gpr_free(lr_data.data);
+  GPR_ASSERT(((aggregated_bw_stats *)grpc_load_reporting_data())->total_bytes ==
+             123 + 456);
 }
 
 int main(int argc, char **argv) {

@@ -31,18 +31,42 @@
  *
  */
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/sync.h>
+
 #include "src/core/lib/load_reporting/load_reporting.h"
 
-#include <grpc/grpc.h>
+typedef struct load_reporting {
+  gpr_mu mu;
+  load_reporting_fn fn;
+  void *data;
+} load_reporting;
 
-static load_reporting_fn g_load_reporting_fn;
+static load_reporting g_load_reporting;
 
-void grpc_load_reporting_init(load_reporting_fn fn) {
-  g_load_reporting_fn = fn;
+void grpc_load_reporting_init(load_reporting_fn fn, void *data) {
+  gpr_mu_init(&g_load_reporting.mu);
+  g_load_reporting.fn = fn;
+  g_load_reporting.data = data;
 }
 
-void grpc_load_reporting_call(load_reporting_data *lr_data) {
-  if (g_load_reporting_fn != NULL) {
-    g_load_reporting_fn(lr_data);
+void grpc_load_reporting_destroy() {
+  gpr_free(g_load_reporting.data);
+  g_load_reporting.data = NULL;
+  gpr_mu_destroy(&g_load_reporting.mu);
+}
+
+void grpc_load_reporting_call(const grpc_call_stats *stats) {
+  if (g_load_reporting.fn != NULL) {
+    gpr_mu_lock(&g_load_reporting.mu);
+    g_load_reporting.fn(g_load_reporting.data, stats);
+    gpr_mu_unlock(&g_load_reporting.mu);
   }
+}
+
+void *grpc_load_reporting_data() {
+  gpr_mu_lock(&g_load_reporting.mu);
+  void *data = g_load_reporting.data;
+  gpr_mu_unlock(&g_load_reporting.mu);
+  return data;
 }
