@@ -212,7 +212,7 @@ message ScenarioResultSummary
   // client load based on user_time (0.85 => 85%)
   double client_user_time = 6;
 
-  // X% latency percentiles (in seconds)
+  // X% latency percentiles (in nanoseconds)
   double latency_50 = 7;
   double latency_90 = 8;
   double latency_95 = 9;
@@ -230,6 +230,8 @@ message ScenarioResult {
   repeated ClientStats client_stats = 3;
   // Server stats for each server
   repeated ServerStats server_stats = 4;
+  // Number of cores available to each server
+  repeated int32 server_cores = 5;
   // An after-the-fact computed summary
-  ScenarioResultSummary summary = 5;
+  ScenarioResultSummary summary = 6;
 }
