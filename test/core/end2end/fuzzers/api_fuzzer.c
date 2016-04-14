@@ -272,6 +272,8 @@ static void assert_success_and_decrement(void *counter, bool success) {
   --*(int *)counter;
 }
 
+static void decrement(void *counter, bool success) { --*(int *)counter; }
+
 typedef struct connectivity_watch {
   int *counter;
   gpr_timespec deadline;
@@ -294,9 +296,15 @@ static void validate_connectivity_watch(void *p, bool success) {
   gpr_free(w);
 }
 
+static void free_non_null(void *p) {
+  GPR_ASSERT(p != NULL);
+  gpr_free(p);
+}
+
 typedef struct call_state {
   grpc_call *client;
   grpc_call *server;
+  grpc_metadata_array recv_initial_metadata;
 } call_state;
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
@@ -314,6 +322,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   bool server_shutdown = false;
   int pending_server_shutdowns = 0;
   int pending_channel_watches = 0;
+  int pending_pings = 0;
 
 #define MAX_CALLS 16
   call_state calls[MAX_CALLS];
@@ -323,7 +332,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
 
   while (!is_eof(&inp) || g_channel != NULL || g_server != NULL ||
-         pending_channel_watches > 0) {
+         pending_channel_watches > 0 || pending_pings > 0) {
     if (is_eof(&inp)) {
       if (g_channel != NULL) {
         grpc_channel_destroy(g_channel);
@@ -524,6 +533,155 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           GPR_SWAP(call_state, calls[0], calls[new_current]);
         }
         break;
+      }
+      // queue some ops on a call
+      case 12: {
+        size_t num_ops = next_byte(&inp);
+        grpc_op *ops = gpr_malloc(sizeof(grpc_op) * num_ops);
+        bool ok = num_calls > 0;
+        uint8_t on_server = next_byte(&inp);
+        if (on_server != 0 && on_server != 1) {
+          ok = false;
+        }
+        if (ok && on_server && calls[0].server == NULL) {
+          ok = false;
+        }
+        if (ok && !on_server && calls[0].client == NULL) {
+          ok = false;
+        }
+        for (size_t i = 0; i < num_ops; i++) {
+          grpc_op *op = &ops[i];
+          switch (next_byte(&inp)) {
+            default:
+              ok = false;
+              break;
+            case GRPC_OP_SEND_INITIAL_METADATA:
+              op->op = GRPC_OP_SEND_INITIAL_METADATA;
+              op->data.send_initial_metadata.count = next_byte(&inp);
+              read_metadata(&inp, &op->data.send_initial_metadata.count,
+                            &op->data.send_initial_metadata.metadata);
+              break;
+            case GRPC_OP_SEND_MESSAGE:
+              op->op = GRPC_OP_SEND_INITIAL_METADATA;
+              op->data.send_message = read_message(&inp);
+              break;
+            case GRPC_OP_SEND_STATUS_FROM_SERVER:
+              op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
+              read_metadata(
+                  &inp,
+                  &op->data.send_status_from_server.trailing_metadata_count,
+                  &op->data.send_status_from_server.trailing_metadata);
+              break;
+            case GRPC_OP_RECV_INITIAL_METADATA:
+              op->op = GRPC_OP_RECV_INITIAL_METADATA;
+              op->data.recv_initial_metadata = &calls[0].recv_initial_metadata;
+              break;
+            case GRPC_OP_RECV_MESSAGE:
+              op->op = GRPC_OP_RECV_MESSAGE;
+              op->data.recv_message = &calls[0].recv_message[on_server];
+              break;
+            case GRPC_OP_RECV_STATUS_ON_CLIENT:
+              op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+              op->data.recv_status_on_client.status = &calls[0].status;
+              op->data.recv_status_on_client.trailing_metadata =
+                  &calls[0].recv_trailing_metadata;
+              op->data.recv_status_on_client.status_details =
+                  &calls[0].recv_status_details;
+              op->data.recv_status_on_client.status_details_capacity =
+                  &calls[0].recv_status_details_capacity;
+              break;
+            case GRPC_OP_RECV_CLOSE_ON_SERVER:
+              op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+              op->data.recv_close_on_server.cancelled = &calls[0].cancelled;
+              break;
+          }
+          op->reserved = NULL;
+          op->flags = read_uint32(&inp);
+          if (ok) {
+            grpc_call_error error = grpc_call_start_batch(
+                on_server ? calls[0].server : calls[0].client, ops, num_ops,
+                tag, NULL);
+          } else {
+            end(&inp);
+          }
+        }
+        break;
+      }
+      // cancel current call on client
+      case 13: {
+        if (num_calls > 0 && calls[0].client) {
+          grpc_call_cancel(calls[0].client, NULL);
+        } else {
+          end(&inp);
+        }
+        break;
+      }
+      // cancel current call on server
+      case 14: {
+        if (num_calls > 0 && calls[0].server) {
+          grpc_call_cancel(calls[0].server, NULL)
+        } else {
+          end(&inp);
+        }
+        break;
+      }
+      // get a calls peer on client
+      case 15: {
+        if (num_calls > 0 && calls[0].client) {
+          free_non_null(grpc_call_get_peer(calls[0].client));
+        } else {
+          end(&inp);
+        }
+        break;
+      }
+      // get a calls peer on server
+      case 16: {
+        if (num_calls > 0 && calls[0].server) {
+          free_non_null(grpc_call_get_peer(calls[0].server));
+        } else {
+          end(&inp);
+        }
+        break;
+      }
+      // get a channels target
+      case 17: {
+        if (g_channel != NULL) {
+          free_non_null(grpc_channel_get_target(g_channel));
+        } else {
+          end(&inp);
+        }
+        break;
+      }
+      // send a ping on a channel
+      case 18: {
+        if (g_channel != NULL) {
+          grpc_channel_ping(g_channel, cq,
+                            create_validator(decrement, &pending_pings), NULL);
+        } else {
+          end(&inp);
+        }
+        break;
+      }
+      // enable a tracer
+      case 19: {
+        char *tracer = read_string(&inp);
+        grpc_tracer_set_enabled(tracer, 1);
+        gpr_free(tracer);
+        break;
+      }
+      // disable a tracer
+      case 20: {
+        char *tracer = read_string(&inp);
+        grpc_tracer_set_enabled(tracer, 0);
+        gpr_free(tracer);
+        break;
+      }
+      // create an alarm
+      case 21: {
+        gpr_timespec deadline =
+            gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                         gpr_time_from_micros(read_uint32(&inp), GPR_TIMESPAN));
+        grpc_alarm *alarm = grpc_alarm_create(cq, );
       }
     }
   }
