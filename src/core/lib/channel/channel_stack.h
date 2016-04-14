@@ -70,9 +70,8 @@ typedef struct {
 } grpc_call_element_args;
 
 typedef struct {
-  uint64_t bytes_in;
-  uint64_t bytes_out;
-  gpr_timespec latency; /* TODO(dgq): per op? */
+  grpc_transport_stream_stats transport_stream_stats;
+  gpr_timespec latency; /* From call creating to enqueing of received status */
   grpc_status_code final_status;
 } grpc_call_stats;
 
