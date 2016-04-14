@@ -172,7 +172,7 @@ class CXXLanguage:
           'benchmark_seconds': BENCHMARK_SECONDS
       }
       yield {
-          'name': 'cpp_generic_async_qps_unconstrained_%s'
+          'name': 'cpp_protobuf_async_streaming_qps_unconstrained_%s'
                   % secstr,
           'num_servers': 1,
           'num_clients': 0,
@@ -186,15 +186,14 @@ class CXXLanguage:
             'load_params': {
               'closed_loop': {}
             },
-            'payload_config': EMPTY_GENERIC_PAYLOAD,
+            'payload_config': EMPTY_PROTO_PAYLOAD,
             'histogram_params': HISTOGRAM_PARAMS,
           },
           'server_config': {
-            'server_type': 'ASYNC_GENERIC_SERVER',
+            'server_type': 'ASYNC_SERVER',
             'security_params': secargs,
             'core_limit': SINGLE_MACHINE_CORES/2,
             'async_server_threads': 1,
-            'payload_config': EMPTY_GENERIC_PAYLOAD,
           },
           'warmup_seconds': WARMUP_SECONDS,
           'benchmark_seconds': BENCHMARK_SECONDS
