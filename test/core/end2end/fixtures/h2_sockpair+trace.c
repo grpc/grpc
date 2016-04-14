@@ -50,6 +50,7 @@
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -60,6 +61,8 @@
 static void server_setup_transport(void *ts, grpc_transport *transport) {
   grpc_end2end_test_fixture *f = ts;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_endpoint_pair *sfd = f->fixture_data;
+  grpc_endpoint_add_to_pollset(&exec_ctx, sfd->server, grpc_cq_pollset(f->cq));
   grpc_server_setup_transport(&exec_ctx, f->server, transport,
                               grpc_server_get_channel_args(f->server));
   grpc_exec_ctx_finish(&exec_ctx);
