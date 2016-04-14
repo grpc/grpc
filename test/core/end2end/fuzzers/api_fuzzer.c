@@ -41,6 +41,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
+#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/transport/metadata.h"
 #include "test/core/util/mock_endpoint.h"
 
@@ -153,23 +154,44 @@ static void wait_until(gpr_timespec when) {
 ////////////////////////////////////////////////////////////////////////////////
 // dns resolution
 
-static grpc_resolved_addresses *my_resolve_address(const char *name,
-                                                   const char *default_port) {
-  if (0 == strcmp(name, "server")) {
+typedef struct addr_req {
+  grpc_timer timer;
+  char *addr;
+  grpc_resolve_cb cb;
+  void *arg;
+} addr_req;
+
+static void finish_resolve(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+  GPR_ASSERT(success);
+  addr_req *r = arg;
+
+  if (0 == strcmp(r->addr, "server")) {
     wait_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                             gpr_time_from_seconds(1, GPR_TIMESPAN)));
     grpc_resolved_addresses *addrs = gpr_malloc(sizeof(*addrs));
     addrs->naddrs = 1;
     addrs->addrs = gpr_malloc(sizeof(*addrs->addrs));
     addrs->addrs[0].len = 0;
-    return addrs;
-  } else if (0 == strcmp(name, "wait")) {
-    wait_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                            gpr_time_from_seconds(1, GPR_TIMESPAN)));
-    return NULL;
+    r->cb(exec_ctx, r->arg, addrs);
   } else {
-    return NULL;
+    r->cb(exec_ctx, r->arg, NULL);
   }
+
+  gpr_free(r->addr);
+  gpr_free(r);
+}
+
+void my_resolve_address(grpc_exec_ctx *exec_ctx, const char *addr,
+                        const char *default_port, grpc_resolve_cb cb,
+                        void *arg) {
+  addr_req *r = gpr_malloc(sizeof(*r));
+  r->addr = gpr_strdup(addr);
+  r->cb = cb;
+  r->arg = arg;
+  grpc_timer_init(exec_ctx, &r->timer,
+                  gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                               gpr_time_from_seconds(1, GPR_TIMESPAN)),
+                  finish_resolve, r, gpr_now(GPR_CLOCK_MONOTONIC));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -202,7 +224,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_test_only_set_metadata_hash_seed(0);
   if (squelch) gpr_set_log_function(dont_log);
   input_stream inp = {data, data + size};
-  grpc_blocking_resolve_address = my_resolve_address;
+  grpc_resolve_address = my_resolve_address;
   grpc_tcp_client_connect_impl = my_tcp_client_connect;
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_cv);
