@@ -60,7 +60,7 @@ static int detag(void *p) { return (int)(uintptr_t)p; }
 void create_loop_destroy(void *addr) {
   for (int i = 0; i < NUM_OUTER_LOOPS; ++i) {
     grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
-    grpc_channel *chan = grpc_insecure_channel_create((char*)addr, NULL, NULL);
+    grpc_channel *chan = grpc_insecure_channel_create((char *)addr, NULL, NULL);
 
     for (int j = 0; j < NUM_INNER_LOOPS; ++j) {
       gpr_timespec later_time = GRPC_TIMEOUT_MILLIS_TO_DEADLINE(DELAY_MILLIS);
@@ -87,7 +87,7 @@ struct server_thread_args {
 };
 
 void server_thread(void *vargs) {
-  struct server_thread_args *args = (struct server_thread_args*)vargs;
+  struct server_thread_args *args = (struct server_thread_args *)vargs;
   grpc_event ev;
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   ev = grpc_completion_queue_next(args->cq, deadline, NULL);
@@ -97,7 +97,7 @@ void server_thread(void *vargs) {
 
 static void on_connect(grpc_exec_ctx *exec_ctx, void *vargs, grpc_endpoint *tcp,
                        grpc_tcp_server_acceptor *acceptor) {
-  struct server_thread_args *args = (struct server_thread_args*)vargs;
+  struct server_thread_args *args = (struct server_thread_args *)vargs;
   (void)acceptor;
   grpc_endpoint_shutdown(exec_ctx, tcp);
   grpc_endpoint_destroy(exec_ctx, tcp);
@@ -105,7 +105,7 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *vargs, grpc_endpoint *tcp,
 }
 
 void bad_server_thread(void *vargs) {
-  struct server_thread_args *args = (struct server_thread_args*)vargs;
+  struct server_thread_args *args = (struct server_thread_args *)vargs;
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   struct sockaddr_storage addr;
@@ -124,7 +124,8 @@ void bad_server_thread(void *vargs) {
   gpr_mu_lock(args->mu);
   while (gpr_atm_acq_load(&args->stop) == 0) {
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
-    gpr_timespec deadline = gpr_time_add(now, gpr_time_from_millis(100, GPR_TIMESPAN));
+    gpr_timespec deadline =
+        gpr_time_add(now, gpr_time_from_millis(100, GPR_TIMESPAN));
 
     grpc_pollset_worker *worker = NULL;
     grpc_pollset_work(&exec_ctx, args->pollset, &worker, now, deadline);
@@ -155,7 +156,6 @@ int main(int argc, char **argv) {
   gpr_thd_options options = gpr_thd_options_default();
   gpr_thd_options_set_joinable(&options);
 
-
   /* First round, no server */
   gpr_log(GPR_DEBUG, "Wave 1");
   for (size_t i = 0; i < NUM_THREADS; ++i) {
@@ -165,7 +165,6 @@ int main(int argc, char **argv) {
     gpr_thd_join(threads[i]);
   }
   gpr_free(localhost);
-
 
   /* Second round, actual grpc server */
   gpr_log(GPR_DEBUG, "Wave 2");
@@ -190,7 +189,6 @@ int main(int argc, char **argv) {
   grpc_server_destroy(args.server);
   grpc_completion_queue_destroy(args.cq);
   gpr_free(args.addr);
-
 
   /* Third round, bogus tcp server */
   gpr_log(GPR_DEBUG, "Wave 3");
