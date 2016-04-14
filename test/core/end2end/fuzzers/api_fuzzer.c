@@ -199,7 +199,10 @@ typedef struct {
 
 static void do_connect(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   future_connect *fc = arg;
-  if (g_server) {
+  if (!success) {
+    *fc->ep = NULL;
+    grpc_exec_ctx_enqueue(exec_ctx, fc->closure, false, NULL);
+  } else if (g_server != NULL) {
     abort();
   } else {
     sched_connect(exec_ctx, fc->closure, fc->ep, fc->deadline);
@@ -208,7 +211,7 @@ static void do_connect(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
 }
 
 static void sched_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure, grpc_endpoint **ep, gpr_timespec deadline) {
-  if (gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0) {
+  if (gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) <= 0) {
     *ep = NULL;
     grpc_exec_ctx_enqueue(exec_ctx, closure, false, NULL);
     return;
