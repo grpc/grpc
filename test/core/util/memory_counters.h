@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,40 +31,18 @@
  *
  */
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include "test/core/util/test_config.h"
+#ifndef GRPC_TEST_CORE_UTIL_MEMORY_COUNTERS_H
+#define GRPC_TEST_CORE_UTIL_MEMORY_COUNTERS_H
 
-static void *fake_malloc(size_t size) { return (void *)size; }
+struct grpc_memory_counters {
+  size_t total_size_relative;
+  size_t total_size_absolute;
+  size_t total_allocs_relative;
+  size_t total_allocs_absolute;
+};
 
-static void *fake_realloc(void *addr, size_t size) { return (void *)size; }
+void grpc_memory_counters_init();
+void grpc_memory_counters_destroy();
+struct grpc_memory_counters grpc_memory_counters_snapshot();
 
-static void fake_free(void *addr) {
-  *((intptr_t *)addr) = (intptr_t)0xdeadd00d;
-}
-
-static void test_custom_allocs() {
-  const gpr_allocation_functions default_fns = gpr_get_allocation_functions();
-  intptr_t addr_to_free = 0;
-  char *i;
-  gpr_allocation_functions fns = {fake_malloc, fake_realloc, fake_free};
-
-  gpr_set_allocation_functions(fns);
-  GPR_ASSERT((void *)(size_t)0xdeadbeef == gpr_malloc(0xdeadbeef));
-  GPR_ASSERT((void *)(size_t)0xcafed00d == gpr_realloc(0, 0xcafed00d));
-
-  gpr_free(&addr_to_free);
-  GPR_ASSERT(addr_to_free == (intptr_t)0xdeadd00d);
-
-  /* Restore and check we don't get funky values and that we don't leak */
-  gpr_set_allocation_functions(default_fns);
-  GPR_ASSERT((void *)sizeof(*i) != (i = gpr_malloc(sizeof(*i))));
-  GPR_ASSERT((void *)2 != (i = gpr_realloc(i, 2)));
-  gpr_free(i);
-}
-
-int main(int argc, char **argv) {
-  grpc_test_init(argc, argv);
-  test_custom_allocs();
-  return 0;
-}
+#endif

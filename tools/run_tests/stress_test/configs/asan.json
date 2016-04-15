@@ -11,13 +11,13 @@
     "baseTemplates": {
       "default": {
         "wrapperScriptPath": "/var/local/git/grpc/tools/gcp/stress_test/run_client.py",
-        "pollIntervalSecs": 60,
+        "pollIntervalSecs": 120,
         "clientArgs": {
           "num_channels_per_server":5,
           "num_stubs_per_channel":10,
           "test_cases": "empty_unary:1,large_unary:1,client_streaming:1,server_streaming:1,empty_stream:1",
           "metrics_port": 8081,
-          "metrics_collection_interval_secs":60
+          "metrics_collection_interval_secs":120
         },
         "metricsPort": 8081,
         "metricsArgs": {
@@ -66,7 +66,7 @@
       "stress-client-asan": {
         "clientTemplate": "cxx_client_asan",
         "dockerImage": "grpc_stress_cxx_asan",
-        "numInstances": 20,
+        "numInstances": 5,
         "serverPodSpec": "stress-server-asan"
       }
     }
