@@ -652,12 +652,20 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
             op = &ops[i];
             switch (op->op) {
             case GRPC_OP_SEND_INITIAL_METADATA:
+              for (size_t j = 0; j < op->data.send_initial_metadata.count; j++) {
+                gpr_free((void*)op->data.send_initial_metadata.metadata[j].key);
+                gpr_free((void*)op->data.send_initial_metadata.metadata[j].value);
+              }
               gpr_free(op->data.send_initial_metadata.metadata);
               break;
             case GRPC_OP_SEND_MESSAGE:
               grpc_byte_buffer_destroy(op->data.send_message);
               break;
             case GRPC_OP_SEND_STATUS_FROM_SERVER:
+              for (size_t j = 0; j < op->data.send_status_from_server.trailing_metadata_count; j++) {
+                gpr_free((void*)op->data.send_status_from_server.trailing_metadata[j].key);
+                gpr_free((void*)op->data.send_status_from_server.trailing_metadata[j].value);
+              }
               gpr_free(op->data.send_status_from_server.trailing_metadata);
               gpr_free((void*)op->data.send_status_from_server.status_details);
               break;
