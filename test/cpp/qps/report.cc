@@ -78,8 +78,7 @@ void GprLogReporter::ReportQPS(const ScenarioResult& result) {
 }
 
 void GprLogReporter::ReportQPSPerCore(const ScenarioResult& result) {
-  gpr_log(GPR_INFO, "QPS: %.1f (%.1f/server core)",
-          result.summary().qps(),
+  gpr_log(GPR_INFO, "QPS: %.1f (%.1f/server core)", result.summary().qps(),
           result.summary().qps_per_server_core());
 }
 

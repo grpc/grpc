@@ -141,14 +141,15 @@ static void postprocess_scenario_result(ScenarioResult* result) {
   result->mutable_summary()->set_latency_99(histogram.Percentile(99));
   result->mutable_summary()->set_latency_999(histogram.Percentile(99.9));
 
-  auto server_system_time = 100.0 * sum(result->server_stats(), ServerSystemTime) /
-      sum(result->server_stats(), ServerWallTime);
+  auto server_system_time = 100.0 *
+                            sum(result->server_stats(), ServerSystemTime) /
+                            sum(result->server_stats(), ServerWallTime);
   auto server_user_time = 100.0 * sum(result->server_stats(), ServerUserTime) /
-      sum(result->server_stats(), ServerWallTime);
+                          sum(result->server_stats(), ServerWallTime);
   auto client_system_time = 100.0 * sum(result->client_stats(), SystemTime) /
-      sum(result->client_stats(), WallTime);
+                            sum(result->client_stats(), WallTime);
   auto client_user_time = 100.0 * sum(result->client_stats(), UserTime) /
-      sum(result->client_stats(), WallTime);
+                          sum(result->client_stats(), WallTime);
 
   result->mutable_summary()->set_server_system_time(server_system_time);
   result->mutable_summary()->set_server_user_time(server_user_time);
