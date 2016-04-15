@@ -2322,6 +2322,7 @@ LIBGPR_SRC = \
     src/core/lib/support/stack_lockfree.c \
     src/core/lib/support/string.c \
     src/core/lib/support/string_posix.c \
+    src/core/lib/support/string_util_win32.c \
     src/core/lib/support/string_win32.c \
     src/core/lib/support/subprocess_posix.c \
     src/core/lib/support/subprocess_windows.c \
@@ -2336,6 +2337,7 @@ LIBGPR_SRC = \
     src/core/lib/support/time_precise.c \
     src/core/lib/support/time_win32.c \
     src/core/lib/support/tls_pthread.c \
+    src/core/lib/support/tmpfile_msys.c \
     src/core/lib/support/tmpfile_posix.c \
     src/core/lib/support/tmpfile_win32.c \
     src/core/lib/support/wrap_memcpy.c \
