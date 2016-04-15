@@ -172,7 +172,6 @@ class ServiceA GRPC_FINAL {
     }
   };
 };
-// MethodA1 detached comment 1
 
 // ServiceB leading comment 1
 class ServiceB GRPC_FINAL {
