@@ -126,7 +126,7 @@ static void read_metadata(input_stream *inp, size_t *count, grpc_metadata **meta
   memset(*metadata, 0, *count * sizeof(**metadata));
   for (size_t i = 0; i < *count; i++) {
     (*metadata)[i].key = read_string(inp);
-    read_buffer(inp, (char**)&(*metadata[i]).value, &(*metadata[i]).value_length);
+    read_buffer(inp, (char**)&(*metadata)[i].value, &(*metadata)[i].value_length);
     (*metadata)[i].flags = read_uint32(inp);
   }
 }
