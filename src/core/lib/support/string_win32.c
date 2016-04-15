@@ -37,25 +37,17 @@
 
 #ifdef GPR_WIN32_STRING
 
-/* Some platforms (namely msys) need wchar to be included BEFORE
-   anything else, especially strsafe.h. */
-#include <wchar.h>
-
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-#include <strsafe.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/support/string.h"
 
 int gpr_asprintf(char **strp, const char *format, ...) {
   va_list args;
   int ret;
-
-  HRESULT success;
   size_t strp_buflen;
 
   /* Determine the length. */
@@ -76,9 +68,9 @@ int gpr_asprintf(char **strp, const char *format, ...) {
 
   /* Print to the buffer. */
   va_start(args, format);
-  success = StringCbVPrintfA(*strp, strp_buflen, format, args);
+  ret = vsnprintf_s(*strp, strp_buflen, _TRUNCATE, format, args);
   va_end(args);
-  if (success == S_OK) {
+  if ((size_t)ret == strp_buflen - 1) {
     return ret;
   }
 
