@@ -730,6 +730,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       // send a ping on a channel
       case 18: {
         if (g_channel != NULL) {
+          pending_pings++;
           grpc_channel_ping(g_channel, cq,
                             create_validator(decrement, &pending_pings), NULL);
         } else {
