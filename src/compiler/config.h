@@ -42,6 +42,7 @@
 #include <google/protobuf/descriptor.pb.h>
 #define GRPC_CUSTOM_DESCRIPTOR ::google::protobuf::Descriptor
 #define GRPC_CUSTOM_FILEDESCRIPTOR ::google::protobuf::FileDescriptor
+#define GRPC_CUSTOM_FILEDESCRIPTORPROTO ::google::protobuf::FileDescriptorProto
 #define GRPC_CUSTOM_METHODDESCRIPTOR ::google::protobuf::MethodDescriptor
 #define GRPC_CUSTOM_SERVICEDESCRIPTOR ::google::protobuf::ServiceDescriptor
 #define GRPC_CUSTOM_SOURCELOCATION ::google::protobuf::SourceLocation
@@ -73,6 +74,7 @@ namespace grpc {
 namespace protobuf {
 typedef GRPC_CUSTOM_DESCRIPTOR Descriptor;
 typedef GRPC_CUSTOM_FILEDESCRIPTOR FileDescriptor;
+typedef GRPC_CUSTOM_FILEDESCRIPTORPROTO FileDescriptorProto;
 typedef GRPC_CUSTOM_METHODDESCRIPTOR MethodDescriptor;
 typedef GRPC_CUSTOM_SERVICEDESCRIPTOR ServiceDescriptor;
 typedef GRPC_CUSTOM_SOURCELOCATION SourceLocation;

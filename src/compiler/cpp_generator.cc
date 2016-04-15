@@ -101,7 +101,11 @@ grpc::string GetHeaderPrologue(File *file, const Parameters &params) {
     printer->Print(vars,
                   "// If you make any local change, they will be lost.\n");
     printer->Print(vars, "// source: $filename$\n");
-    printer->Print(file->GetLeadingComments().c_str());
+    grpc::string leading_comments = file->GetLeadingComments();
+    if (!leading_comments.empty()) {
+      printer->Print(vars, "// Original file comments:\n");
+      printer->Print(leading_comments.c_str());
+    }
     printer->Print(vars, "#ifndef GRPC_$filename_identifier$__INCLUDED\n");
     printer->Print(vars, "#define GRPC_$filename_identifier$__INCLUDED\n");
     printer->Print(vars, "\n");
