@@ -90,6 +90,21 @@ static void read_buffer(input_stream *inp, char **buffer, size_t *length) {
   }
 }
 
+static uint32_t read_uint22(input_stream *inp) {
+  uint8_t b = next_byte(inp);
+  uint32_t x = b & 0x7f;
+  if (b & 0x80) {
+    x <<= 7;
+    b = next_byte(inp);
+    x |= b & 0x7f;
+    if (b & 0x80) {
+      x <<= 8;
+      x |= next_byte(inp);
+    }
+  }
+  return x;
+}
+
 static uint32_t read_uint32(input_stream *inp) {
   uint8_t b = next_byte(inp);
   uint32_t x = b & 0x7f;
@@ -115,7 +130,7 @@ static uint32_t read_uint32(input_stream *inp) {
 }
 
 static grpc_byte_buffer *read_message(input_stream *inp) {
-  gpr_slice slice = gpr_slice_malloc(read_uint32(inp));
+  gpr_slice slice = gpr_slice_malloc(read_uint22(inp));
   memset(GPR_SLICE_START_PTR(slice), 0, GPR_SLICE_LENGTH(slice));
   return grpc_raw_byte_buffer_create(&slice, 1);
 }
