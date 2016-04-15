@@ -669,6 +669,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
               break;
             }
           }
+          gpr_free(ops);
         }
         break;
       }
