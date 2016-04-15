@@ -93,15 +93,19 @@ def create_qpsworker_job(language, shortname=None,
   return QpsWorkerJob(jobspec, language, host_and_port)
 
 
-def create_scenario_jobspec(scenario_json, workers, remote_host=None):
+def create_scenario_jobspec(scenario_json, workers, remote_host=None,
+                            bq_result_table=None):
   """Runs one scenario using QPS driver."""
   # setting QPS_WORKERS env variable here makes sure it works with SSH too.
-  cmd = 'QPS_WORKERS="%s" bins/opt/qps_json_driver ' % ','.join(workers)
-  cmd += '--scenarios_json=%s' % pipes.quote(json.dumps({'scenarios': [scenario_json]}))
-  cmd += ' --scenario_result_file=scenario_result.json'
+  cmd = 'QPS_WORKERS="%s" ' % ','.join(workers)
+  if bq_result_table:
+    cmd += 'BQ_RESULT_TABLE="%s" ' % bq_result_table
+  cmd += 'tools/run_tests/performance/run_qps_driver.sh '
+  cmd += '--scenarios_json=%s ' % pipes.quote(json.dumps({'scenarios': [scenario_json]}))
+  cmd += '--scenario_result_file=scenario_result.json'
   if remote_host:
     user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, remote_host)
-    cmd = 'ssh %s "cd ~/performance_workspace/grpc/ && %s"' % (user_at_host, cmd)
+    cmd = 'ssh %s "cd ~/performance_workspace/grpc/ && "%s' % (user_at_host, pipes.quote(cmd))
 
   return jobset.JobSpec(
       cmdline=[cmd],
@@ -117,7 +121,7 @@ def create_quit_jobspec(workers, remote_host=None):
   cmd = 'QPS_WORKERS="%s" bins/opt/qps_driver --quit' % ','.join(workers)
   if remote_host:
     user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, remote_host)
-    cmd = 'ssh %s "cd ~/performance_workspace/grpc/ && %s"' % (user_at_host, cmd)
+    cmd = 'ssh %s "cd ~/performance_workspace/grpc/ && "%s' % (user_at_host, pipes.quote(cmd))
 
   return jobset.JobSpec(
       cmdline=[cmd],
@@ -226,7 +230,8 @@ def start_qpsworkers(languages, worker_hosts):
           for worker_idx, worker in enumerate(workers)]
 
 
-def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*'):
+def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*',
+                     bq_result_table=None):
   """Create jobspecs for scenarios to run."""
   scenarios = []
   for language in languages:
@@ -248,7 +253,8 @@ def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*'):
             workers[idx] = workers_by_lang[custom_server_lang][idx]
         scenario = create_scenario_jobspec(scenario_json,
                                            workers,
-                                           remote_host=remote_host)
+                                           remote_host=remote_host,
+                                           bq_result_table=bq_result_table)
         scenarios.append(scenario)
 
   # the very last scenario requests shutting down the workers.
@@ -290,6 +296,8 @@ argp.add_argument('--remote_worker_host',
                   help='Worker hosts where to start QPS workers.')
 argp.add_argument('-r', '--regex', default='.*', type=str,
                   help='Regex to select scenarios to run.')
+argp.add_argument('--bq_result_table', default=None, type=str,
+                  help='Bigquery "dataset.table" to upload results to.')
 
 args = argp.parse_args()
 
@@ -297,6 +305,7 @@ languages = set(scenario_config.LANGUAGES[l]
                 for l in itertools.chain.from_iterable(
                       scenario_config.LANGUAGES.iterkeys() if x == 'all' else [x]
                       for x in args.language))
+
 
 # Put together set of remote hosts where to run and build
 remote_hosts = set()
@@ -329,7 +338,8 @@ try:
   scenarios = create_scenarios(languages,
                                workers_by_lang=worker_addresses,
                                remote_host=args.remote_driver_host,
-                               regex=args.regex)
+                               regex=args.regex,
+                               bq_result_table=args.bq_result_table)
   if not scenarios:
     raise Exception('No scenarios to run')
 
