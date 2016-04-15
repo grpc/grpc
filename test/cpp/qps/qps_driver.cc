@@ -85,7 +85,6 @@ using grpc::testing::ServerConfig;
 using grpc::testing::ClientType;
 using grpc::testing::ServerType;
 using grpc::testing::RpcType;
-using grpc::testing::ResourceUsage;
 using grpc::testing::SecurityParams;
 
 namespace grpc {
