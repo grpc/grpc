@@ -2705,6 +2705,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/end2end/fixtures/proxy.c \
     test/core/iomgr/endpoint_tests.c \
     test/core/util/grpc_profiler.c \
+    test/core/util/memory_counters.c \
     test/core/util/mock_endpoint.c \
     test/core/util/parse_hexstring.c \
     test/core/util/passthru_endpoint.c \
@@ -2754,6 +2755,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     test/core/end2end/fixtures/proxy.c \
     test/core/iomgr/endpoint_tests.c \
     test/core/util/grpc_profiler.c \
+    test/core/util/memory_counters.c \
     test/core/util/mock_endpoint.c \
     test/core/util/parse_hexstring.c \
     test/core/util/passthru_endpoint.c \
