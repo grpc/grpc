@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,24 +31,18 @@
  *
  */
 
-#ifndef TEST_QPS_DRIVER_H
-#define TEST_QPS_DRIVER_H
+#ifndef GRPC_TEST_CORE_UTIL_MEMORY_COUNTERS_H
+#define GRPC_TEST_CORE_UTIL_MEMORY_COUNTERS_H
 
-#include <memory>
+struct grpc_memory_counters {
+  size_t total_size_relative;
+  size_t total_size_absolute;
+  size_t total_allocs_relative;
+  size_t total_allocs_absolute;
+};
 
-#include "src/proto/grpc/testing/control.grpc.pb.h"
-#include "test/cpp/qps/histogram.h"
-
-namespace grpc {
-namespace testing {
-
-std::unique_ptr<ScenarioResult> RunScenario(
-    const grpc::testing::ClientConfig& client_config, size_t num_clients,
-    const grpc::testing::ServerConfig& server_config, size_t num_servers,
-    int warmup_seconds, int benchmark_seconds, int spawn_local_worker_count);
-
-void RunQuit();
-}  // namespace testing
-}  // namespace grpc
+void grpc_memory_counters_init();
+void grpc_memory_counters_destroy();
+struct grpc_memory_counters grpc_memory_counters_snapshot();
 
 #endif

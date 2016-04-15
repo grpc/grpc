@@ -604,6 +604,17 @@ def run_tests(config):
   return is_success
 
 
+def tear_down(config):
+  gke = Gke(config.global_settings.gcp_project_id, '', '',
+            config.global_settings.summary_table_id,
+            config.global_settings.qps_table_id,
+            config.global_settings.kubernetes_proxy_port)
+  for name, server_pod_spec in config.server_pod_specs_dict.iteritems():
+    gke.delete_servers(server_pod_spec)
+  for name, client_pod_spec in config.client_pod_specs_dict.iteritems():
+    gke.delete_clients(client_pod_spec)
+
+
 argp = argparse.ArgumentParser(
     description='Launch stress tests in GKE',
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -614,6 +625,7 @@ argp.add_argument('--config_file',
                   required=True,
                   type=str,
                   help='The test config file')
+argp.add_argument('--tear_down', action='store_true', default=False)
 
 if __name__ == '__main__':
   args = argp.parse_args()
@@ -635,6 +647,12 @@ if __name__ == '__main__':
   grpc_root = os.path.abspath(os.path.join(
       os.path.dirname(sys.argv[0]), '../../..'))
   os.chdir(grpc_root)
+
+  # Note that tear_down is only in cases where we want to manually tear down a
+  # test that for some reason run_tests() could not cleanup
+  if args.tear_down:
+    tear_down(config)
+    sys.exit(1)
 
   if not run_tests(config):
     sys.exit(1)

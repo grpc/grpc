@@ -569,6 +569,7 @@ filegroups:
   - test/core/end2end/fixtures/proxy.h
   - test/core/iomgr/endpoint_tests.h
   - test/core/util/grpc_profiler.h
+  - test/core/util/memory_counters.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
   - test/core/util/port.h
@@ -579,6 +580,7 @@ filegroups:
   - test/core/end2end/fixtures/proxy.c
   - test/core/iomgr/endpoint_tests.c
   - test/core/util/grpc_profiler.c
+  - test/core/util/memory_counters.c
   - test/core/util/mock_endpoint.c
   - test/core/util/parse_hexstring.c
   - test/core/util/port_posix.c
