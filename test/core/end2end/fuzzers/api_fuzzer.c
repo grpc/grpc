@@ -82,6 +82,14 @@ static char *read_string(input_stream *inp) {
   return str;
 }
 
+static void read_buffer(input_stream *inp, char **buffer, size_t *length) {
+  *length = next_byte(inp);
+  *buffer = gpr_malloc(*length);
+  for (size_t i = 0; i < *length; i++) {
+    (*buffer)[i] = (char)next_byte(inp);
+  }
+}
+
 static uint32_t read_uint32(input_stream *inp) {
   uint8_t b = next_byte(inp);
   uint32_t x = b & 0x7f;
@@ -104,6 +112,23 @@ static uint32_t read_uint32(input_stream *inp) {
     }
   }
   return x;
+}
+
+static grpc_byte_buffer *read_message(input_stream *inp) {
+  gpr_slice slice = gpr_slice_malloc(read_uint32(inp));
+  memset(GPR_SLICE_START_PTR(slice), 0, GPR_SLICE_LENGTH(slice));
+  return grpc_raw_byte_buffer_create(&slice, 1);
+}
+
+static void read_metadata(input_stream *inp, size_t *count, grpc_metadata **metadata) {
+  *count = next_byte(inp);
+  *metadata = gpr_malloc(*count * sizeof(**metadata));
+  memset(*metadata, 0, *count * sizeof(**metadata));
+  for (size_t i = 0; i < *count; i++) {
+    (*metadata)[i].key = read_string(inp);
+    read_buffer(inp, (char**)&(*metadata[i]).value, &(*metadata[i]).value_length);
+    (*metadata)[i].flags = read_uint32(inp);
+  }
 }
 
 static int read_int(input_stream *inp) { return (int)read_uint32(inp); }
@@ -304,7 +329,13 @@ static void free_non_null(void *p) {
 typedef struct call_state {
   grpc_call *client;
   grpc_call *server;
+  grpc_byte_buffer *recv_message[2];
+  grpc_status_code status;
   grpc_metadata_array recv_initial_metadata;
+  grpc_metadata_array recv_trailing_metadata;
+  char *recv_status_details;
+  size_t recv_status_details_capacity;
+  int cancelled;
 } call_state;
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
@@ -323,6 +354,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   int pending_server_shutdowns = 0;
   int pending_channel_watches = 0;
   int pending_pings = 0;
+  int pending_ops = 0;
 
 #define MAX_CALLS 16
   call_state calls[MAX_CALLS];
@@ -332,7 +364,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
 
   while (!is_eof(&inp) || g_channel != NULL || g_server != NULL ||
-         pending_channel_watches > 0 || pending_pings > 0) {
+         pending_channel_watches > 0 || pending_pings > 0 || pending_ops > 0) {
     if (is_eof(&inp)) {
       if (g_channel != NULL) {
         grpc_channel_destroy(g_channel);
@@ -549,15 +581,16 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         if (ok && !on_server && calls[0].client == NULL) {
           ok = false;
         }
-        for (size_t i = 0; i < num_ops; i++) {
-          grpc_op *op = &ops[i];
+        size_t i;
+        grpc_op *op;
+        for (i = 0; i < num_ops; i++) {
+          op = &ops[i];
           switch (next_byte(&inp)) {
             default:
               ok = false;
               break;
             case GRPC_OP_SEND_INITIAL_METADATA:
               op->op = GRPC_OP_SEND_INITIAL_METADATA;
-              op->data.send_initial_metadata.count = next_byte(&inp);
               read_metadata(&inp, &op->data.send_initial_metadata.count,
                             &op->data.send_initial_metadata.metadata);
               break;
@@ -565,12 +598,17 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
               op->op = GRPC_OP_SEND_INITIAL_METADATA;
               op->data.send_message = read_message(&inp);
               break;
+            case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
+              op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+              break;
             case GRPC_OP_SEND_STATUS_FROM_SERVER:
               op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
               read_metadata(
                   &inp,
                   &op->data.send_status_from_server.trailing_metadata_count,
                   &op->data.send_status_from_server.trailing_metadata);
+              op->data.send_status_from_server.status = next_byte(&inp);
+              op->data.send_status_from_server.status_details = read_string(&inp);
               break;
             case GRPC_OP_RECV_INITIAL_METADATA:
               op->op = GRPC_OP_RECV_INITIAL_METADATA;
@@ -598,11 +636,38 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           op->reserved = NULL;
           op->flags = read_uint32(&inp);
           if (ok) {
+            validator *v = create_validator(decrement, &pending_ops);
+            pending_ops++;
             grpc_call_error error = grpc_call_start_batch(
                 on_server ? calls[0].server : calls[0].client, ops, num_ops,
-                tag, NULL);
+                v, NULL);
+            if (error != GRPC_CALL_OK) {
+              v->validate(v->arg, false);
+              gpr_free(v);
+            }
           } else {
             end(&inp);
+          }
+          for (i = 0; i < num_ops; i++) {
+            op = &ops[i];
+            switch (op->op) {
+            case GRPC_OP_SEND_INITIAL_METADATA:
+              gpr_free(op->data.send_initial_metadata.metadata);
+              break;
+            case GRPC_OP_SEND_MESSAGE:
+              grpc_byte_buffer_destroy(op->data.send_message);
+              break;
+            case GRPC_OP_SEND_STATUS_FROM_SERVER:
+              gpr_free(op->data.send_status_from_server.trailing_metadata);
+              gpr_free((void*)op->data.send_status_from_server.status_details);
+              break;
+            case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
+            case GRPC_OP_RECV_INITIAL_METADATA:
+            case GRPC_OP_RECV_MESSAGE:
+            case GRPC_OP_RECV_STATUS_ON_CLIENT:
+            case GRPC_OP_RECV_CLOSE_ON_SERVER:
+              break;
+            }
           }
         }
         break;
@@ -619,7 +684,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       // cancel current call on server
       case 14: {
         if (num_calls > 0 && calls[0].server) {
-          grpc_call_cancel(calls[0].server, NULL)
+          grpc_call_cancel(calls[0].server, NULL);
         } else {
           end(&inp);
         }
@@ -675,13 +740,6 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         grpc_tracer_set_enabled(tracer, 0);
         gpr_free(tracer);
         break;
-      }
-      // create an alarm
-      case 21: {
-        gpr_timespec deadline =
-            gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                         gpr_time_from_micros(read_uint32(&inp), GPR_TIMESPAN));
-        grpc_alarm *alarm = grpc_alarm_create(cq, );
       }
     }
   }
