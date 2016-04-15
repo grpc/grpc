@@ -194,6 +194,7 @@ int main(int argc, char **argv) {
   gpr_log(GPR_DEBUG, "Wave 3");
   args.pollset = gpr_malloc(grpc_pollset_size());
   grpc_pollset_init(args.pollset, &args.mu);
+  gpr_event_init(&args.ready);
   gpr_thd_new(&server, bad_server_thread, &args, &options);
   gpr_event_wait(&args.ready, gpr_inf_future(GPR_CLOCK_MONOTONIC));
 
