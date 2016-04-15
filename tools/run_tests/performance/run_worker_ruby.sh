@@ -32,14 +32,4 @@ set -ex
 
 cd $(dirname $0)/../../..
 
-# cleanup after previous builds
-ssh "${USER_AT_HOST}" "rm -rf ~/performance_workspace && mkdir -p ~/performance_workspace"
-
-# TODO(jtattermusch): To be sure there are no running processes that would
-# mess with the results, be rough and reboot the slave here
-# and wait for it to come back online.
-ssh "${USER_AT_HOST}" "killall -9 qps_worker mono node ruby || true"
-
-# push the current sources to the slave and unpack it.
-scp ../grpc.tar "${USER_AT_HOST}:~/performance_workspace"
-ssh "${USER_AT_HOST}" "tar -xf ~/performance_workspace/grpc.tar -C ~/performance_workspace"
+ruby src/ruby/qps/worker.rb $@
