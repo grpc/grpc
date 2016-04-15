@@ -508,21 +508,6 @@ int grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
   }
 }
 
-unsigned grpc_tcp_server_port_fd_count(grpc_tcp_server *s,
-                                       unsigned port_index) {
-  (void)s;
-  (void)port_index;
-  abort();
-}
-
-int grpc_tcp_server_port_fd(grpc_tcp_server *s, unsigned port_index,
-                            unsigned fd_index) {
-  (void)s;
-  (void)port_index;
-  (void)fd_index;
-  abort();
-}
-
 void grpc_tcp_server_start(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s,
                            grpc_pollset **pollset, size_t pollset_count,
                            grpc_tcp_server_cb on_accept_cb,
