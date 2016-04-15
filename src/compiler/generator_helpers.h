@@ -207,6 +207,33 @@ inline void GetComment(const DescriptorType *desc, CommentType type,
   }
 }
 
+// For file level leading and detached leading comments, we return comments
+// above syntax line. Return nothing for trailing comments.
+template <>
+inline void GetComment(const grpc::protobuf::FileDescriptor *desc,
+                       CommentType type, std::vector<grpc::string> *out) {
+  if (type == COMMENTTYPE_TRAILING) {
+    return;
+  }
+  grpc::protobuf::SourceLocation location;
+  std::vector<int> path;
+  path.push_back(grpc::protobuf::FileDescriptorProto::kSyntaxFieldNumber);
+  if (!desc->GetSourceLocation(path, &location)) {
+    return;
+  }
+  if (type == COMMENTTYPE_LEADING) {
+    Split(location.leading_comments, '\n', out);
+  } else if (type == COMMENTTYPE_LEADING_DETACHED) {
+    for (unsigned int i = 0; i < location.leading_detached_comments.size();
+         i++) {
+      Split(location.leading_detached_comments[i], '\n', out);
+      out->push_back("");
+    }
+  } else {
+    abort();
+  }
+}
+
 }  // namespace grpc_generator
 
 #endif  // GRPC_INTERNAL_COMPILER_GENERATOR_HELPERS_H

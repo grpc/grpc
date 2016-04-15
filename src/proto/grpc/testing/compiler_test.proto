@@ -31,12 +31,12 @@
 
 // File detached comment 2
 
-// Syntax leading comment 1
+// File leading comment 1
 syntax = "proto3";
 
-// File detached comment 3
+// Ignored detached comment
 
-// Package leading comment 1
+// Ignored package leading comment
 package grpc.testing;
 
 message Request {
@@ -60,6 +60,7 @@ service ServiceA {
   rpc MethodA2(stream Request) returns (Response);
   // MethodA2 trailing comment 1
 }
+// Ignored ServiceA trailing comment 1
 
 // ServiceB leading comment 1
 service ServiceB {
@@ -69,6 +70,6 @@ service ServiceB {
   rpc MethodB1(Request) returns (Response);
   // MethodB1 trailing comment 1
 }
-// ServiceB trailing comment 2
+// Ignored ServiceB trailing comment 2
 
-// File trailing comment
+// Ignored file trailing comment
