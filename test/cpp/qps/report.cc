@@ -85,7 +85,7 @@ void GprLogReporter::ReportQPS(const ScenarioResult& result) {
   Histogram histogram;
   histogram.MergeProto(result.latencies());
   gpr_log(GPR_INFO, "QPS: %.1f",
-      histogram.Count() / average(result.client_stats(), WallTime));
+          histogram.Count() / average(result.client_stats(), WallTime));
 }
 
 void GprLogReporter::ReportQPSPerCore(const ScenarioResult& result) {
@@ -102,10 +102,8 @@ void GprLogReporter::ReportLatency(const ScenarioResult& result) {
   histogram.MergeProto(result.latencies());
   gpr_log(GPR_INFO,
           "Latencies (50/90/95/99/99.9%%-ile): %.1f/%.1f/%.1f/%.1f/%.1f us",
-          histogram.Percentile(50) / 1000,
-          histogram.Percentile(90) / 1000,
-          histogram.Percentile(95) / 1000,
-          histogram.Percentile(99) / 1000,
+          histogram.Percentile(50) / 1000, histogram.Percentile(90) / 1000,
+          histogram.Percentile(95) / 1000, histogram.Percentile(99) / 1000,
           histogram.Percentile(99.9) / 1000);
 }
 
@@ -133,8 +131,8 @@ void JsonReporter::ReportQPS(const ScenarioResult& result) {
   grpc::string json_string;
   result.SerializeToString(&binary);
   auto status = BinaryToJsonString(type_resolver.get(),
-                                   "type.googleapis.com/grpc.testing.ScenarioResult",
-                                   binary, &json_string);
+      "type.googleapis.com/grpc.testing.ScenarioResult",
+      binary, &json_string);
   GPR_ASSERT(status.ok());
 
   std::ofstream output_file(report_file_);

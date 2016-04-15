@@ -107,9 +107,8 @@ class GprLogReporter : public Reporter {
 /** Dumps the report to a JSON file. */
 class JsonReporter : public Reporter {
  public:
-  JsonReporter(const string& name, const string& report_file) :
-    Reporter(name),
-    report_file_(report_file) {}
+  JsonReporter(const string& name, const string& report_file)
+      : Reporter(name), report_file_(report_file) {}
 
  private:
   void ReportQPS(const ScenarioResult& result) GRPC_OVERRIDE;
