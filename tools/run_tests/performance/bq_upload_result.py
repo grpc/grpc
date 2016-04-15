@@ -1,3 +1,4 @@
+#!/usr/bin/env python2.7
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -27,8 +28,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# utilities for exporting benchmark results
+# Uploads performance benchmark result file to bigquery.
 
+import argparse
 import json
 import os
 import sys
@@ -42,37 +44,36 @@ import big_query_utils
 
 
 _PROJECT_ID='grpc-testing'
-_DATASET_ID='test_dataset'
-_RESULTS_TABLE_ID='scenario_results'
 
 
-def upload_scenario_result_to_bigquery(result_file):
+def _upload_scenario_result_to_bigquery(dataset_id, table_id, result_file):
   bq = big_query_utils.create_big_query()
-  _create_results_table(bq)
+  _create_results_table(bq, dataset_id, table_id)
 
   with open(result_file, 'r') as f:
     scenario_result = json.loads(f.read())
-  _insert_result(bq, scenario_result)
+
+  if not _insert_result(bq, dataset_id, table_id, scenario_result):
+    print 'Error uploading result to bigquery.'
+    sys.exit(1)
 
 
-def _insert_result(bq, scenario_result):
+def _insert_result(bq, dataset_id, table_id, scenario_result):
   _flatten_result_inplace(scenario_result)
-
-  # TODO: handle errors...
   row = big_query_utils.make_row(str(uuid.uuid4()), scenario_result)
   return big_query_utils.insert_rows(bq,
                                      _PROJECT_ID,
-                                     _DATASET_ID,
-                                     _RESULTS_TABLE_ID,
+                                     dataset_id,
+                                     table_id,
                                      [row])
 
 
-def _create_results_table(bq):
+def _create_results_table(bq, dataset_id, table_id):
   with open(os.path.dirname(__file__) + '/scenario_result_schema.json', 'r') as f:
     table_schema = json.loads(f.read())
   desc = 'Results of performance benchmarks.'
-  return big_query_utils.create_table2(bq, _PROJECT_ID, _DATASET_ID,
-                               _RESULTS_TABLE_ID, table_schema, desc)
+  return big_query_utils.create_table2(bq, _PROJECT_ID, dataset_id,
+                               table_id, table_schema, desc)
 
 
 def _flatten_result_inplace(scenario_result):
@@ -87,3 +88,16 @@ def _flatten_result_inplace(scenario_result):
   for stats in scenario_result['clientStats']:
     stats['latencies'] = json.dumps(stats['latencies'])
   scenario_result['serverCores'] = json.dumps(scenario_result['serverCores'])
+
+
+argp = argparse.ArgumentParser(description='Upload result to big query.')
+argp.add_argument('--bq_result_table', required=True, default=None, type=str,
+                  help='Bigquery "dataset.table" to upload results to.')
+argp.add_argument('--file_to_upload', default='scenario_result.json', type=str,
+                  help='Report file to upload.')
+
+args = argp.parse_args()
+
+dataset_id, table_id = args.bq_result_table.split('.', 2)
+_upload_scenario_result_to_bigquery(dataset_id, table_id, args.file_to_upload)
+print 'Successfully uploaded %s to BigQuery.\n' % args.file_to_upload
