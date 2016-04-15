@@ -40,8 +40,8 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-#include <wchar.h>
 #include <strsafe.h>
+#include <wchar.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>

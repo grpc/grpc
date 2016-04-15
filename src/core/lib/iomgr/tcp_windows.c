@@ -65,8 +65,8 @@ static int set_non_block(SOCKET sock) {
   int status;
   uint32_t param = 1;
   DWORD ret;
-  status =
-      WSAIoctl(sock, GRPC_FIONBIO, &param, sizeof(param), NULL, 0, &ret, NULL, NULL);
+  status = WSAIoctl(sock, GRPC_FIONBIO, &param, sizeof(param), NULL, 0, &ret,
+                    NULL, NULL);
   return status == 0;
 }
 
