@@ -635,22 +635,23 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           }
           op->reserved = NULL;
           op->flags = read_uint32(&inp);
-          if (ok) {
-            validator *v = create_validator(decrement, &pending_ops);
-            pending_ops++;
-            grpc_call_error error = grpc_call_start_batch(
-                on_server ? calls[0].server : calls[0].client, ops, num_ops,
-                v, NULL);
-            if (error != GRPC_CALL_OK) {
-              v->validate(v->arg, false);
-              gpr_free(v);
-            }
-          } else {
-            end(&inp);
+        }
+        if (ok) {
+          validator *v = create_validator(decrement, &pending_ops);
+          pending_ops++;
+          grpc_call_error error = grpc_call_start_batch(
+              on_server ? calls[0].server : calls[0].client, ops, num_ops,
+              v, NULL);
+          if (error != GRPC_CALL_OK) {
+            v->validate(v->arg, false);
+            gpr_free(v);
           }
-          for (i = 0; i < num_ops; i++) {
-            op = &ops[i];
-            switch (op->op) {
+        } else {
+          end(&inp);
+        }
+        for (i = 0; i < num_ops; i++) {
+          op = &ops[i];
+          switch (op->op) {
             case GRPC_OP_SEND_INITIAL_METADATA:
               for (size_t j = 0; j < op->data.send_initial_metadata.count; j++) {
                 gpr_free((void*)op->data.send_initial_metadata.metadata[j].key);
@@ -675,10 +676,10 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
             case GRPC_OP_RECV_STATUS_ON_CLIENT:
             case GRPC_OP_RECV_CLOSE_ON_SERVER:
               break;
-            }
           }
-          gpr_free(ops);
         }
+        gpr_free(ops);
+
         break;
       }
       // cancel current call on client
