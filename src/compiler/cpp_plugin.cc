@@ -41,6 +41,105 @@
 #include "src/compiler/cpp_generator.h"
 #include "src/compiler/cpp_generator_helpers.h"
 
+class ProtoBufMethod : public grpc_cpp_generator::Method {
+ public:
+  ProtoBufMethod(const grpc::protobuf::MethodDescriptor *method)
+    : method_(method) {}
+
+  grpc::string name() const { return method_->name(); }
+
+  grpc::string input_type_name() const {
+    return grpc_cpp_generator::ClassName(method_->input_type(), true);
+  }
+  grpc::string output_type_name() const {
+    return grpc_cpp_generator::ClassName(method_->output_type(), true);
+  }
+
+  bool NoStreaming() const {
+    return !method_->client_streaming() && !method_->server_streaming();
+  }
+
+  bool ClientOnlyStreaming() const {
+    return method_->client_streaming() && !method_->server_streaming();
+  }
+
+  bool ServerOnlyStreaming() const {
+    return !method_->client_streaming() && method_->server_streaming();
+  }
+
+  bool BidiStreaming() const {
+    return method_->client_streaming() && method_->server_streaming();
+  }
+
+ private:
+  const grpc::protobuf::MethodDescriptor *method_;
+};
+
+class ProtoBufService : public grpc_cpp_generator::Service {
+ public:
+  ProtoBufService(const grpc::protobuf::ServiceDescriptor *service)
+    : service_(service) {}
+
+  grpc::string name() const { return service_->name(); }
+
+  int method_count() const { return service_->method_count(); };
+  std::unique_ptr<const grpc_cpp_generator::Method> method(int i) const {
+    return std::unique_ptr<const grpc_cpp_generator::Method>(
+          new ProtoBufMethod(service_->method(i)));
+  };
+
+ private:
+  const grpc::protobuf::ServiceDescriptor *service_;
+};
+
+class ProtoBufPrinter : public grpc_cpp_generator::Printer {
+ public:
+  ProtoBufPrinter(grpc::string *str)
+    : output_stream_(str), printer_(&output_stream_, '$') {}
+
+  void Print(const std::map<grpc::string, grpc::string> &vars,
+             const char *string_template) {
+    printer_.Print(vars, string_template);
+  }
+
+  void Print(const char *string) { printer_.Print(string); }
+  void Indent() { printer_.Indent(); }
+  void Outdent() { printer_.Outdent(); }
+
+ private:
+  grpc::protobuf::io::StringOutputStream output_stream_;
+  grpc::protobuf::io::Printer printer_;
+};
+
+class ProtoBufFile : public grpc_cpp_generator::File {
+ public:
+  ProtoBufFile(const grpc::protobuf::FileDescriptor *file) : file_(file) {}
+
+  grpc::string filename() const { return file_->name(); }
+  grpc::string filename_without_ext() const {
+    return grpc_generator::StripProto(filename());
+  }
+
+  grpc::string package() const { return file_->package(); }
+  std::vector<grpc::string> package_parts() const {
+    return grpc_generator::tokenize(package(), ".");
+  }
+
+  int service_count() const { return file_->service_count(); };
+  std::unique_ptr<const grpc_cpp_generator::Service> service(int i) const {
+    return std::unique_ptr<const grpc_cpp_generator::Service> (
+          new ProtoBufService(file_->service(i)));
+  }
+
+  std::unique_ptr<grpc_cpp_generator::Printer> CreatePrinter(grpc::string *str) const {
+    return std::unique_ptr<grpc_cpp_generator::Printer>(
+          new ProtoBufPrinter(str));
+  }
+
+ private:
+  const grpc::protobuf::FileDescriptor *file_;
+};
+
 class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
  public:
   CppGrpcGenerator() {}
@@ -60,6 +159,8 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 
     grpc_cpp_generator::Parameters generator_parameters;
     generator_parameters.use_system_headers = true;
+
+    ProtoBufFile pbfile(file);
 
     if (!parameter.empty()) {
       std::vector<grpc::string> parameters_list =
@@ -92,10 +193,10 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     grpc::string file_name = grpc_generator::StripProto(file->name());
 
     grpc::string header_code =
-        grpc_cpp_generator::GetHeaderPrologue(file, generator_parameters) +
-        grpc_cpp_generator::GetHeaderIncludes(file, generator_parameters) +
-        grpc_cpp_generator::GetHeaderServices(file, generator_parameters) +
-        grpc_cpp_generator::GetHeaderEpilogue(file, generator_parameters);
+        grpc_cpp_generator::GetHeaderPrologue(&pbfile, generator_parameters) +
+        grpc_cpp_generator::GetHeaderIncludes(&pbfile, generator_parameters) +
+        grpc_cpp_generator::GetHeaderServices(&pbfile, generator_parameters) +
+        grpc_cpp_generator::GetHeaderEpilogue(&pbfile, generator_parameters);
     std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> header_output(
         context->Open(file_name + ".grpc.pb.h"));
     grpc::protobuf::io::CodedOutputStream header_coded_out(
@@ -103,10 +204,10 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     header_coded_out.WriteRaw(header_code.data(), header_code.size());
 
     grpc::string source_code =
-        grpc_cpp_generator::GetSourcePrologue(file, generator_parameters) +
-        grpc_cpp_generator::GetSourceIncludes(file, generator_parameters) +
-        grpc_cpp_generator::GetSourceServices(file, generator_parameters) +
-        grpc_cpp_generator::GetSourceEpilogue(file, generator_parameters);
+        grpc_cpp_generator::GetSourcePrologue(&pbfile, generator_parameters) +
+        grpc_cpp_generator::GetSourceIncludes(&pbfile, generator_parameters) +
+        grpc_cpp_generator::GetSourceServices(&pbfile, generator_parameters) +
+        grpc_cpp_generator::GetSourceEpilogue(&pbfile, generator_parameters);
     std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> source_output(
         context->Open(file_name + ".grpc.pb.cc"));
     grpc::protobuf::io::CodedOutputStream source_coded_out(
