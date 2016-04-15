@@ -130,8 +130,8 @@ void JsonReporter::ReportQPS(const ScenarioResult& result) {
   grpc::string binary;
   grpc::string json_string;
   result.SerializeToString(&binary);
-  auto status = BinaryToJsonString(type_resolver.get(),
-      "type.googleapis.com/grpc.testing.ScenarioResult",
+  auto status = BinaryToJsonString(
+      type_resolver.get(), "type.googleapis.com/grpc.testing.ScenarioResult",
       binary, &json_string);
   GPR_ASSERT(status.ok());
 
