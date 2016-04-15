@@ -60,7 +60,8 @@ const char *gpr_log_severity_string(gpr_log_severity severity) {
 
 void gpr_log_message(const char *file, int line, gpr_log_severity severity,
                      const char *message) {
-  if (severity < gpr_atm_no_barrier_load(&g_min_severity_to_print)) return;
+  if ((gpr_atm)severity < gpr_atm_no_barrier_load(&g_min_severity_to_print))
+    return;
 
   gpr_log_func_args lfargs;
   memset(&lfargs, 0, sizeof(lfargs));
