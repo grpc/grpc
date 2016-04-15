@@ -343,8 +343,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
 
   // Finish a run
   std::unique_ptr<ScenarioResult> result(new ScenarioResult);
-  result->client_config = result_client_config;
-  result->server_config = result_server_config;
+  Histogram merged_latencies;
+
   gpr_log(GPR_INFO, "Finishing clients");
   for (auto client = &clients[0]; client != &clients[num_clients]; client++) {
     GPR_ASSERT(client->stream->Write(client_mark));
@@ -353,15 +353,16 @@ std::unique_ptr<ScenarioResult> RunScenario(
   for (auto client = &clients[0]; client != &clients[num_clients]; client++) {
     GPR_ASSERT(client->stream->Read(&client_status));
     const auto& stats = client_status.stats();
-    result->latencies.MergeProto(stats.latencies());
-    result->client_resources.emplace_back(
-        stats.time_elapsed(), stats.time_user(), stats.time_system(), -1);
+    merged_latencies.MergeProto(stats.latencies());
+    result->add_client_stats()->CopyFrom(stats);
     GPR_ASSERT(!client->stream->Read(&client_status));
   }
   for (auto client = &clients[0]; client != &clients[num_clients]; client++) {
     GPR_ASSERT(client->stream->Finish().ok());
   }
   delete[] clients;
+
+  merged_latencies.FillProto(result->mutable_latencies());
 
   gpr_log(GPR_INFO, "Finishing servers");
   for (auto server = &servers[0]; server != &servers[num_servers]; server++) {
@@ -370,10 +371,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
   }
   for (auto server = &servers[0]; server != &servers[num_servers]; server++) {
     GPR_ASSERT(server->stream->Read(&server_status));
-    const auto& stats = server_status.stats();
-    result->server_resources.emplace_back(
-        stats.time_elapsed(), stats.time_user(), stats.time_system(),
-        server_status.cores());
+    result->add_server_stats()->CopyFrom(server_status.stats());
+    result->add_server_cores(server_status.cores());
     GPR_ASSERT(!server->stream->Read(&server_status));
   }
   for (auto server = &servers[0]; server != &servers[num_servers]; server++) {
