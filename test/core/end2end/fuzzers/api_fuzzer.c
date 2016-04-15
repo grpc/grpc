@@ -595,7 +595,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
                             &op->data.send_initial_metadata.metadata);
               break;
             case GRPC_OP_SEND_MESSAGE:
-              op->op = GRPC_OP_SEND_INITIAL_METADATA;
+              op->op = GRPC_OP_SEND_MESSAGE;
               op->data.send_message = read_message(&inp);
               break;
             case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
