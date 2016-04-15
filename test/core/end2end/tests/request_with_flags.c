@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -214,3 +214,5 @@ void request_with_flags(grpc_end2end_test_config config) {
     }
   }
 }
+
+void request_with_flags_pre_init(void) {}

@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -426,7 +426,7 @@ describe GRPC::RpcServer do
         threads.each(&:join)
       end
 
-      it 'should return UNAVAILABLE on too many jobs', server: true do
+      it 'should return RESOURCE_EXHAUSTED on too many jobs', server: true do
         opts = {
           a_channel_arg: 'an_arg',
           server_override: @server,
@@ -449,7 +449,8 @@ describe GRPC::RpcServer do
             begin
               stub.an_rpc(req)
             rescue GRPC::BadStatus => e
-              one_failed_as_unavailable = e.code == StatusCodes::UNAVAILABLE
+              one_failed_as_unavailable =
+                e.code == StatusCodes::RESOURCE_EXHAUSTED
             end
           end
         end

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -142,6 +142,8 @@ typedef struct {
 /** Secondary user agent: goes at the end of the user-agent metadata
     sent on each request */
 #define GRPC_ARG_SECONDARY_USER_AGENT_STRING "grpc.secondary_user_agent"
+/** The maximum time between subsequent connection attempts, in ms */
+#define GRPC_ARG_MAX_RECONNECT_BACKOFF_MS "grpc.max_reconnect_backoff_ms"
 /* The caller of the secure_channel_create functions may override the target
    name used for SSL host name checking using this channel argument which is of
    type GRPC_ARG_STRING. This *should* be used for testing only.
@@ -185,7 +187,9 @@ typedef enum grpc_call_error {
       server */
   GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE,
   /** this batch of operations leads to more operations than allowed */
-  GRPC_CALL_ERROR_BATCH_TOO_BIG
+  GRPC_CALL_ERROR_BATCH_TOO_BIG,
+  /** payload type requested is not the type registered */
+  GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH
 } grpc_call_error;
 
 /* Write Flags: */
@@ -198,6 +202,16 @@ typedef enum grpc_call_error {
 #define GRPC_WRITE_NO_COMPRESS (0x00000002u)
 /** Mask of all valid flags. */
 #define GRPC_WRITE_USED_MASK (GRPC_WRITE_BUFFER_HINT | GRPC_WRITE_NO_COMPRESS)
+
+/* Initial metadata flags */
+/** Signal that the call is idempotent */
+#define GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST (0x00000010u)
+/** Signal that the call should not return UNAVAILABLE before it has started */
+#define GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY (0x00000020u)
+/** Mask of all valid flags */
+#define GRPC_INITIAL_METADATA_USED_MASK       \
+  (GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST | \
+   GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY)
 
 /** A single metadata element */
 typedef struct grpc_metadata {
@@ -250,6 +264,7 @@ typedef struct {
   char *host;
   size_t host_capacity;
   gpr_timespec deadline;
+  uint32_t flags;
   void *reserved;
 } grpc_call_details;
 

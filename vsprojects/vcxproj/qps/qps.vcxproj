@@ -161,14 +161,6 @@
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\benchmark_config.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\control.pb.cc">
-    </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\control.pb.h">
-    </ClInclude>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\control.grpc.pb.cc">
-    </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\control.grpc.pb.h">
-    </ClInclude>
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\messages.pb.cc">
     </ClCompile>
     <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\messages.pb.h">
@@ -185,13 +177,21 @@
     </ClCompile>
     <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\payloads.grpc.pb.h">
     </ClInclude>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.pb.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\stats.pb.cc">
     </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.pb.h">
+    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\stats.pb.h">
     </ClInclude>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.grpc.pb.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\stats.grpc.pb.cc">
     </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.grpc.pb.h">
+    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\stats.grpc.pb.h">
+    </ClInclude>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\control.pb.cc">
+    </ClCompile>
+    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\control.pb.h">
+    </ClInclude>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\control.grpc.pb.cc">
+    </ClCompile>
+    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\control.grpc.pb.h">
     </ClInclude>
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\services.pb.cc">
     </ClCompile>
@@ -201,13 +201,13 @@
     </ClCompile>
     <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\services.grpc.pb.h">
     </ClInclude>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\stats.pb.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.pb.cc">
     </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\stats.pb.h">
+    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.pb.h">
     </ClInclude>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\stats.grpc.pb.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.grpc.pb.cc">
     </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\stats.grpc.pb.h">
+    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.grpc.pb.h">
     </ClInclude>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\client_async.cc">
     </ClCompile>

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -245,3 +245,5 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
 void large_metadata(grpc_end2end_test_config config) {
   test_request_with_large_metadata(config);
 }
+
+void large_metadata_pre_init(void) {}

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -68,6 +68,7 @@ void gpr_log(const char *file, int line, gpr_log_severity severity,
   }
   va_end(args);
   gpr_log_message(file, line, severity, message);
+  /* message has been allocated by vasprintf above, and needs free */
   free(message);
 }
 

@@ -61,15 +61,16 @@ class ChannelCredentials(object):
     self._low_credentials = low_credentials
 
 
-def ssl_channel_credentials(root_certificates, private_key, certificate_chain):
+def ssl_channel_credentials(root_certificates=None, private_key=None,
+                            certificate_chain=None):
   """Creates a ChannelCredentials for use with an SSL-enabled Channel.
 
   Args:
-    root_certificates: The PEM-encoded root certificates or None to ask for
+    root_certificates: The PEM-encoded root certificates or unset to ask for
       them to be retrieved from a default location.
-    private_key: The PEM-encoded private key to use or None if no private key
+    private_key: The PEM-encoded private key to use or unset if no private key
       should be used.
-    certificate_chain: The PEM-encoded certificate chain to use or None if no
+    certificate_chain: The PEM-encoded certificate chain to use or unset if no
       certificate chain should be used.
 
   Returns:

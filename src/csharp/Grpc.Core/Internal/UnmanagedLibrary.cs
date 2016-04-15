@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -32,8 +32,6 @@
 #endregion
 
 using System;
-using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -63,14 +61,9 @@ namespace Grpc.Core.Internal
         readonly string libraryPath;
         readonly IntPtr handle;
 
-        public UnmanagedLibrary(string libraryPath)
+        public UnmanagedLibrary(string[] libraryPathAlternatives)
         {
-            this.libraryPath = GrpcPreconditions.CheckNotNull(libraryPath);
-
-            if (!File.Exists(this.libraryPath))
-            {
-                throw new FileNotFoundException("Error loading native library. File does not exist.", this.libraryPath);
-            }
+            this.libraryPath = FirstValidLibraryPath(libraryPathAlternatives);
 
             Logger.Debug("Attempting to load native library \"{0}\"", this.libraryPath);
 
@@ -137,6 +130,19 @@ namespace Grpc.Core.Internal
                 return MacOSX.dlopen(libraryPath, RTLD_GLOBAL + RTLD_LAZY);
             }
             throw new InvalidOperationException("Unsupported platform.");
+        }
+
+        private static string FirstValidLibraryPath(string[] libraryPathAlternatives)
+        {
+            GrpcPreconditions.CheckArgument(libraryPathAlternatives.Length > 0, "libraryPathAlternatives cannot be empty.");
+            foreach (var path in libraryPathAlternatives)
+            {
+                if (File.Exists(path))
+                {
+                    return path;
+                }
+            }
+            throw new FileNotFoundException(String.Format("Error loading native library. Not found in any of the possible locations {0}", libraryPathAlternatives));
         }
 
         private static class Windows

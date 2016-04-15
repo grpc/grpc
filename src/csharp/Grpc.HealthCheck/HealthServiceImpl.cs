@@ -1,5 +1,5 @@
 ﻿#region Copyright notice and license
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -51,7 +51,7 @@ namespace Grpc.HealthCheck
     /// server.AddServiceDefinition(Grpc.Health.V1.Health.BindService(serviceImpl));
     /// </code>
     /// </summary>
-    public class HealthServiceImpl : Grpc.Health.V1.Health.IHealth
+    public class HealthServiceImpl : Grpc.Health.V1.Health.HealthBase
     {
         private readonly object myLock = new object();
         private readonly Dictionary<string, HealthCheckResponse.Types.ServingStatus> statusMap = 
@@ -99,7 +99,7 @@ namespace Grpc.HealthCheck
         /// <param name="request">The check request.</param>
         /// <param name="context">The call context.</param>
         /// <returns>The asynchronous response.</returns>
-        public Task<HealthCheckResponse> Check(HealthCheckRequest request, ServerCallContext context)
+        public override Task<HealthCheckResponse> Check(HealthCheckRequest request, ServerCallContext context)
         {
             lock (myLock)
             {

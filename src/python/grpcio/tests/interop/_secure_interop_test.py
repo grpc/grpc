@@ -56,7 +56,7 @@ class SecureInteropTest(
     self.stub = test_pb2.beta_create_TestService_stub(
         test_utilities.not_really_secure_channel(
             '[::]', port, implementations.ssl_channel_credentials(
-                resources.test_root_certificates(), None, None),
+                resources.test_root_certificates()),
                 _SERVER_HOST_OVERRIDE))
 
   def tearDown(self):
