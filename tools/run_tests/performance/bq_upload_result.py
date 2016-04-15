@@ -31,9 +31,11 @@
 # Uploads performance benchmark result file to bigquery.
 
 import argparse
+import calendar
 import json
 import os
 import sys
+import time
 import uuid
 
 
@@ -60,6 +62,7 @@ def _upload_scenario_result_to_bigquery(dataset_id, table_id, result_file):
 
 def _insert_result(bq, dataset_id, table_id, scenario_result):
   _flatten_result_inplace(scenario_result)
+  _populate_metadata_inplace(scenario_result)
   row = big_query_utils.make_row(str(uuid.uuid4()), scenario_result)
   return big_query_utils.insert_rows(bq,
                                      _PROJECT_ID,
@@ -88,6 +91,35 @@ def _flatten_result_inplace(scenario_result):
   for stats in scenario_result['clientStats']:
     stats['latencies'] = json.dumps(stats['latencies'])
   scenario_result['serverCores'] = json.dumps(scenario_result['serverCores'])
+
+
+def _populate_metadata_inplace(scenario_result):
+  """Populates metadata based on environment variables set by Jenkins."""
+  # NOTE: Grabbing the Jenkins environment variables will only work if the
+  # driver is running locally on the same machine where Jenkins has started
+  # the job. For our setup, this is currently the case, so just assume that.
+  build_number = os.getenv('BUILD_NUMBER')
+  build_url = os.getenv('BUILD_URL')
+  job_name = os.getenv('JOB_NAME')
+  git_commit = os.getenv('GIT_COMMIT')
+  # actual commit is the actual head of PR that is getting tested
+  git_actual_commit = os.getenv('ghprbActualCommit')
+
+  utc_timestamp = str(calendar.timegm(time.gmtime()))
+  metadata = {'created': utc_timestamp}
+
+  if build_number:
+    metadata['buildNumber'] = build_number
+  if build_url:
+    metadata['buildUrl'] = build_url
+  if job_name:
+    metadata['jobName'] = job_name
+  if git_commit:
+    metadata['gitCommit'] = git_commit
+  if git_actual_commit:
+    metadata['gitActualCommit'] = git_actual_commit
+
+  scenario_result['metadata'] = metadata
 
 
 argp = argparse.ArgumentParser(description='Upload result to big query.')
