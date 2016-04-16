@@ -164,7 +164,6 @@ message ClientArgs {
 }
 
 message ServerConfig {
-  ServerType server_type = 1;
   SecurityParams security_params = 2;
   // Port on which to listen. Zero means pick unused port.
   int32 port = 4;
@@ -233,13 +232,22 @@ message WorkerConfiguration {
   // What is a reasonable upper-bound for the RPC depth?
   // If left undefined, then assume unbounded  
   // This is a soft limit; the driver may choose to ignore it
-  int32 channel_limit = 3;
+  int32 rpc_depth_limit = 3;
 }
 
 message WorkerConfigurationsSupported {
+  // The RPC type being considered here
+  RpcType rpc_type = 1;  
+  
   // list of available worker configuration choices
-  repeated WorkerConfiguration configs = 1;
+  repeated WorkerConfiguration configs = 2;
+
+  // generic method name for this RPC type (server-only)
+  // Leave blank if this particular RPC type is unsupported in generic
+  string generic_method_name = 3;
 }
+
+
 
 message CapabilitiesResponse {
   // Number of cores available on this machine (redundant with CoreCount)
@@ -249,14 +257,10 @@ message CapabilitiesResponse {
   string language = 2;
 
   // What are the supported client configurations for each RPC type?
-  map<RpcType, WorkerConfigurationsSupported> client_configs = 3;
+  repeated WorkerConfigurationsSupported client_configs = 3;
 
   // What are the supported server configurations for each RPC type?
-  map<RpcType, WorkerConfigurationsSupported> server_configs = 4;
-
-  // What is the generic method name for each RPC type?
-  // Leave blank if this particular RPC type is unsupported in generic
-  map<RpcType, string> generic_method_name = 5;
+  repeated WorkerConfigurationsSupported server_configs = 4;
 }
 
 message Void {
