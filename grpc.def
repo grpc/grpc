@@ -86,6 +86,7 @@ EXPORTS
     grpc_header_key_is_legal
     grpc_header_nonbin_value_is_legal
     grpc_is_binary_header
+    grpc_call_error_to_string
     grpc_auth_property_iterator_next
     grpc_auth_context_property_iterator
     grpc_auth_context_peer_identity

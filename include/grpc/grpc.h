@@ -384,6 +384,9 @@ GRPCAPI int grpc_header_nonbin_value_is_legal(const char *value, size_t length);
 /** Check whether a metadata key corresponds to a binary value */
 GRPCAPI int grpc_is_binary_header(const char *key, size_t length);
 
+/** Convert grpc_call_error values to a string */
+GRPCAPI const char *grpc_call_error_to_string(grpc_call_error error);
+
 #ifdef __cplusplus
 }
 #endif

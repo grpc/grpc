@@ -322,6 +322,9 @@ extern grpc_header_nonbin_value_is_legal_type grpc_header_nonbin_value_is_legal_
 typedef int(*grpc_is_binary_header_type)(const char *key, size_t length);
 extern grpc_is_binary_header_type grpc_is_binary_header_import;
 #define grpc_is_binary_header grpc_is_binary_header_import
+typedef const char *(*grpc_call_error_to_string_type)(grpc_call_error error);
+extern grpc_call_error_to_string_type grpc_call_error_to_string_import;
+#define grpc_call_error_to_string grpc_call_error_to_string_import
 typedef const grpc_auth_property *(*grpc_auth_property_iterator_next_type)(grpc_auth_property_iterator *it);
 extern grpc_auth_property_iterator_next_type grpc_auth_property_iterator_next_import;
 #define grpc_auth_property_iterator_next grpc_auth_property_iterator_next_import
