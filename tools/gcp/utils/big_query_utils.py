@@ -119,9 +119,13 @@ def insert_rows(big_query, project_id, dataset_id, table_id, rows_list):
                                                  tableId=table_id,
                                                  body=body)
     res = insert_req.execute(num_retries=NUM_RETRIES)
+    if res.get('insertErrors', None):
+      print 'Error inserting rows! Response: %s' % res
+      is_success = False
   except HttpError as http_error:
-    print 'Error in inserting rows in the table %s' % table_id
+    print 'Error inserting rows to the table %s' % table_id
     is_success = False
+
   return is_success
 
 

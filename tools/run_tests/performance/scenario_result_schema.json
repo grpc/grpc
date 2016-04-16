@@ -148,52 +148,52 @@
         "mode": "NULLABLE"
       },
       {
-        "name": "qps_per_server_core",
+        "name": "qpsPerServerCore",
         "type": "FLOAT",
         "mode": "NULLABLE"
       },
       {
-        "name": "server_system_time",
+        "name": "serverSystemTime",
         "type": "FLOAT",
         "mode": "NULLABLE"
       },
       {
-        "name": "server_user_time",
+        "name": "serverUserTime",
         "type": "FLOAT",
         "mode": "NULLABLE"
       },
       {
-        "name": "client_system_time",
+        "name": "clientSystemTime",
         "type": "FLOAT",
         "mode": "NULLABLE"
       },
       {
-        "name": "client_user_time",
+        "name": "clientUserTime",
         "type": "FLOAT",
         "mode": "NULLABLE"
       },
       {
-        "name": "latency_50",
+        "name": "latency50",
         "type": "FLOAT",
         "mode": "NULLABLE"
       },
       {
-        "name": "latency_90",
+        "name": "latency90",
         "type": "FLOAT",
         "mode": "NULLABLE"
       },
       {
-        "name": "latency_95",
+        "name": "latency95",
         "type": "FLOAT",
         "mode": "NULLABLE"
       },
       {
-        "name": "latency_99",
+        "name": "latency99",
         "type": "FLOAT",
         "mode": "NULLABLE"
       },
       {
-        "name": "latency_999",
+        "name": "latency999",
         "type": "FLOAT",
         "mode": "NULLABLE"
       }
