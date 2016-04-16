@@ -38,7 +38,6 @@
 #include <stdlib.h> /* for abort() */
 
 #include <grpc/impl/codegen/port_platform.h>
-#include <grpc/support/atm.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -136,6 +136,8 @@ EXPORTS
     grpc_raw_byte_buffer_from_reader
     gpr_log
     gpr_log_message
+    gpr_set_log_verbosity
+    gpr_log_verbosity_init
     gpr_set_log_function
     gpr_slice_ref
     gpr_slice_unref
