@@ -61,37 +61,37 @@ half=`echo $QPS_WORKERS | awk -F, '{print int(NF/2)}'`
 
 for secure in true false; do
   # Scenario 1: generic async streaming ping-pong (contentionless latency)
-  "$bins"/opt/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
-    --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=1 \
+  "$bins"/opt/qps_driver --rpc_type=STREAMING_PING_PONG --client_api=async \
+    --server_api=async --outstanding_rpcs_per_channel=1 \
     --client_channels=1 --bbuf_req_size=0 --bbuf_resp_size=0 \
     --async_client_threads=1 --async_server_threads=1 --secure_test=$secure \
     --num_servers=1 --num_clients=1
 
   # Scenario 2: generic async streaming "unconstrained" (QPS)
-  "$bins"/opt/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
-    --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=$deep \
+  "$bins"/opt/qps_driver --rpc_type=STREAMING_PING_PONG --client_api=async \
+    --server_api=async --outstanding_rpcs_per_channel=$deep \
     --client_channels=$wide --bbuf_req_size=0 --bbuf_resp_size=0 \
     --async_client_threads=0 --async_server_threads=0 --secure_test=$secure \
     --num_servers=1 --num_clients=0 2>&1 | tee /tmp/qps-test.$$
 
   # Scenario 2b: QPS with a single server core
-  "$bins"/opt/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
-    --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=$deep \
+  "$bins"/opt/qps_driver --rpc_type=STREAMING_PING_PONG --client_api=async \
+    --server_api=async --outstanding_rpcs_per_channel=$deep \
     --client_channels=$wide --bbuf_req_size=0 --bbuf_resp_size=0 \
     --async_client_threads=0 --async_server_threads=0 --secure_test=$secure \
     --num_servers=1 --num_clients=0 --server_core_limit=1
 
   # Scenario 2c: protobuf-based QPS
-  "$bins"/opt/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
-    --server_type=ASYNC_SERVER --outstanding_rpcs_per_channel=$deep \
+  "$bins"/opt/qps_driver --rpc_type=STREAMING_PING_PONG --client_api=async \
+    --server_api=async --outstanding_rpcs_per_channel=$deep \
     --client_channels=$wide --simple_req_size=0 --simple_resp_size=0 \
     --async_client_threads=0 --async_server_threads=0 --secure_test=$secure \
     --num_servers=1 --num_clients=0
 
   # Scenario 3: Latency at sub-peak load (all clients equally loaded)
   for loadfactor in 0.2 0.5 0.7; do
-    "$bins"/opt/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
-      --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=$deep \
+    "$bins"/opt/qps_driver --rpc_type=STREAMING_PING_PONG --client_api=async \
+      --server_api=async --outstanding_rpcs_per_channel=$deep \
       --client_channels=$wide --bbuf_req_size=0 --bbuf_resp_size=0 \
       --async_client_threads=0 --async_server_threads=0 --secure_test=$secure \
       --num_servers=1 --num_clients=0 --poisson_load=`awk -v lf=$loadfactor \
@@ -101,69 +101,69 @@ for secure in true false; do
   rm /tmp/qps-test.$$
 
   # Scenario 4: Single-channel bidirectional throughput test (like TCP_STREAM).
-  "$bins"/opt/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
-    --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=$deep \
+  "$bins"/opt/qps_driver --rpc_type=STREAMING_PING_PONG --client_api=async \
+    --server_api=async --outstanding_rpcs_per_channel=$deep \
     --client_channels=1 --bbuf_req_size=$big --bbuf_resp_size=$big \
     --async_client_threads=1 --async_server_threads=1 --secure_test=$secure \
     --num_servers=1 --num_clients=1
 
   # Scenario 5: Sync unary ping-pong with protobufs
-  "$bins"/opt/qps_driver --rpc_type=UNARY --client_type=SYNC_CLIENT \
-    --server_type=SYNC_SERVER --outstanding_rpcs_per_channel=1 \
+  "$bins"/opt/qps_driver --rpc_type=UNARY --client_api=sync \
+    --server_api=sync --outstanding_rpcs_per_channel=1 \
     --client_channels=1 --simple_req_size=0 --simple_resp_size=0 \
     --secure_test=$secure --num_servers=1 --num_clients=1
 
   # Scenario 6: Sync streaming ping-pong with protobufs
-  "$bins"/opt/qps_driver --rpc_type=STREAMING --client_type=SYNC_CLIENT \
-    --server_type=SYNC_SERVER --outstanding_rpcs_per_channel=1 \
+  "$bins"/opt/qps_driver --rpc_type=STREAMING_PING_PONG --client_api=sync \
+    --server_api=sync --outstanding_rpcs_per_channel=1 \
     --client_channels=1 --simple_req_size=0 --simple_resp_size=0 \
     --secure_test=$secure --num_servers=1 --num_clients=1
 
   # Scenario 7: Async unary ping-pong with protobufs
-  "$bins"/opt/qps_driver --rpc_type=UNARY --client_type=ASYNC_CLIENT \
-    --server_type=ASYNC_SERVER --outstanding_rpcs_per_channel=1 \
+  "$bins"/opt/qps_driver --rpc_type=UNARY --client_api=async \
+    --server_api=async --outstanding_rpcs_per_channel=1 \
     --client_channels=1 --simple_req_size=0 --simple_resp_size=0 \
     --async_client_threads=1 --async_server_threads=1 --secure_test=$secure \
     --num_servers=1 --num_clients=1
 
   # Scenario 8: Async streaming ping-pong with protobufs
-  "$bins"/opt/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
-    --server_type=ASYNC_SERVER --outstanding_rpcs_per_channel=1 \
+  "$bins"/opt/qps_driver --rpc_type=STREAMING_PING_PONG --client_api=async \
+    --server_api=async --outstanding_rpcs_per_channel=1 \
     --client_channels=1 --simple_req_size=0 --simple_resp_size=0 \
     --async_client_threads=1 --async_server_threads=1 --secure_test=$secure \
     --num_servers=1 --num_clients=1
 
   # Scenario 9: Crossbar QPS test
-  "$bins"/opt/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
-    --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=$deep \
+  "$bins"/opt/qps_driver --rpc_type=STREAMING_PING_PONG --client_api=async \
+    --server_api=async --outstanding_rpcs_per_channel=$deep \
     --client_channels=$wide --bbuf_req_size=0 --bbuf_resp_size=0 \
     --async_client_threads=0 --async_server_threads=0 --secure_test=$secure \
     --num_servers=$half --num_clients=0
 
   # Scenario 10: Multi-channel bidir throughput test
-  "$bins"/opt/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
-    --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=1 \
+  "$bins"/opt/qps_driver --rpc_type=STREAMING_PING_PONG --client_api=async \
+    --server_api=async --outstanding_rpcs_per_channel=1 \
     --client_channels=$wide --bbuf_req_size=$big --bbuf_resp_size=$big \
     --async_client_threads=0 --async_server_threads=0 --secure_test=$secure \
     --num_servers=1 --num_clients=1
 
   # Scenario 11: Single-channel request throughput test
-  "$bins"/opt/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
-    --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=$deep \
+  "$bins"/opt/qps_driver --rpc_type=STREAMING_PING_PONG --client_api=async \
+    --server_api=async --outstanding_rpcs_per_channel=$deep \
     --client_channels=1 --bbuf_req_size=$big --bbuf_resp_size=0 \
     --async_client_threads=1 --async_server_threads=1 --secure_test=$secure \
     --num_servers=1 --num_clients=1
 
   # Scenario 12: Single-channel response throughput test
-  "$bins"/opt/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
-    --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=$deep \
+  "$bins"/opt/qps_driver --rpc_type=STREAMING_PING_PONG --client_api=async \
+    --server_api=async --outstanding_rpcs_per_channel=$deep \
     --client_channels=1 --bbuf_req_size=0 --bbuf_resp_size=$big \
     --async_client_threads=1 --async_server_threads=1 --secure_test=$secure \
     --num_servers=1 --num_clients=1
 
   # Scenario 13: Single-channel bidirectional protobuf throughput test
-  "$bins"/opt/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
-    --server_type=ASYNC_SERVER --outstanding_rpcs_per_channel=$deep \
+  "$bins"/opt/qps_driver --rpc_type=STREAMING_PING_PONG --client_api=async \
+    --server_api=async --outstanding_rpcs_per_channel=$deep \
     --client_channels=1 --simple_req_size=$big --simple_resp_size=$big \
     --async_client_threads=1 --async_server_threads=1 --secure_test=$secure \
     --num_servers=1 --num_clients=1

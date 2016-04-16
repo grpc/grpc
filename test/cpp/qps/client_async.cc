@@ -179,7 +179,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
 
     using namespace std::placeholders;
     int t = 0;
-    for (int i = 0; i < config.outstanding_rpcs_per_channel(); i++) {
+    for (int i = 0; i < config.max_outstanding_rpcs_per_channel(); i++) {
       for (int ch = 0; ch < config.client_channels(); ch++) {
         auto* cq = cli_cqs_[t].get();
         auto ctx =
@@ -386,7 +386,7 @@ class AsyncStreamingClient GRPC_FINAL
       grpc::ClientAsyncReaderWriter<SimpleRequest, SimpleResponse>>
   StartReq(BenchmarkService::Stub* stub, grpc::ClientContext* ctx,
            CompletionQueue* cq, void* tag) {
-    auto stream = stub->AsyncStreamingCall(ctx, cq, tag);
+    auto stream = stub->AsyncStreamingPingPong(ctx, cq, tag);
     return stream;
   };
   static ClientRpcContext* SetupCtx(BenchmarkService::Stub* stub,
@@ -420,7 +420,7 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
   void Start(CompletionQueue* cq) GRPC_OVERRIDE {
     cq_ = cq;
     const grpc::string kMethodName(
-        "/grpc.testing.BenchmarkService/StreamingCall");
+        "/grpc.testing.BenchmarkService/StreamingPingPong");
     stream_ = start_req_(stub_, &context_, kMethodName, cq,
                          ClientRpcContext::tag(this));
     next_state_ = State::STREAM_IDLE;

@@ -49,18 +49,18 @@ static void RunGenericAsyncStreamingPingPong() {
   gpr_log(GPR_INFO, "Running Generic Async Streaming Ping Pong");
 
   ClientConfig client_config;
-  client_config.set_client_type(ASYNC_CLIENT);
-  client_config.set_outstanding_rpcs_per_channel(1);
+  client_config.set_client_api("async");
+  client_config.set_max_outstanding_rpcs_per_channel(1);
   client_config.set_client_channels(1);
   client_config.set_async_client_threads(1);
-  client_config.set_rpc_type(STREAMING);
+  client_config.set_rpc_type(STREAMING_PING_PONG);
   client_config.mutable_load_params()->mutable_closed_loop();
   auto bbuf = client_config.mutable_payload_config()->mutable_bytebuf_params();
   bbuf->set_resp_size(0);
   bbuf->set_req_size(0);
 
   ServerConfig server_config;
-  server_config.set_server_type(ASYNC_GENERIC_SERVER);
+  server_config.set_server_api("async");
   server_config.set_async_server_threads(1);
   *server_config.mutable_payload_config() = client_config.payload_config();
 

@@ -393,7 +393,7 @@ std::unique_ptr<Server> CreateAsyncServer(const ServerConfig &config) {
                              grpc::ServerContext>(
           config, RegisterBenchmarkService,
           &BenchmarkService::AsyncService::RequestUnaryCall,
-          &BenchmarkService::AsyncService::RequestStreamingCall,
+          &BenchmarkService::AsyncService::RequestStreamingPingPong,
           ProcessSimpleRPC));
 }
 std::unique_ptr<Server> CreateAsyncGenericServer(const ServerConfig &config) {

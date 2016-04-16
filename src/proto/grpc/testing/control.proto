@@ -188,7 +188,7 @@ message ServerConfig {
   string scenario_name = 11;
 
   // Which version of the API for this language should the server use?
-  string client_api = 16;
+  string server_api = 16;
 }
 
 message ServerArgs {

@@ -75,7 +75,7 @@ class SynchronousClient
       : ClientImpl<BenchmarkService::Stub, SimpleRequest>(
             config, BenchmarkStubCreator) {
     num_threads_ =
-        config.outstanding_rpcs_per_channel() * config.client_channels();
+        config.max_outstanding_rpcs_per_channel() * config.client_channels();
     responses_.resize(num_threads_);
     SetupLoadTest(config, num_threads_);
   }
@@ -123,7 +123,7 @@ class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
         grpc::ClientReaderWriter<SimpleRequest, SimpleResponse>>[num_threads_];
     for (size_t thread_idx = 0; thread_idx < num_threads_; thread_idx++) {
       auto* stub = channels_[thread_idx % channels_.size()].get_stub();
-      stream_[thread_idx] = stub->StreamingCall(&context_[thread_idx]);
+      stream_[thread_idx] = stub->StreamingPingPong(&context_[thread_idx]);
     }
     StartThreads(num_threads_);
   }

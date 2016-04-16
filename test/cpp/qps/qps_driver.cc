@@ -50,11 +50,11 @@ DEFINE_int32(local_workers, 0, "Number of local workers to start");
 
 // Server config
 DEFINE_int32(async_server_threads, 1, "Number of threads for async servers");
-DEFINE_string(server_type, "SYNC_SERVER", "Server type");
+DEFINE_string(server_api, "sync", "Server API type");
 DEFINE_int32(server_core_limit, -1, "Limit on server cores to use");
 
 // Client config
-DEFINE_string(rpc_type, "UNARY", "Type of RPC: UNARY or STREAMING");
+DEFINE_string(rpc_type, "UNARY", "Type of RPC: UNARY or STREAMING_PING_PONG");
 DEFINE_int32(outstanding_rpcs_per_channel, 1,
              "Number of outstanding rpcs per channel");
 DEFINE_int32(client_channels, 1, "Number of client channels");
@@ -64,7 +64,7 @@ DEFINE_int32(simple_resp_size, -1, "Simple proto response payload size");
 DEFINE_int32(bbuf_req_size, -1, "Byte-buffer request payload size");
 DEFINE_int32(bbuf_resp_size, -1, "Byte-buffer response payload size");
 
-DEFINE_string(client_type, "SYNC_CLIENT", "Client type");
+DEFINE_string(client_api, "sync", "Client API type");
 DEFINE_int32(async_client_threads, 1, "Async client threads");
 
 DEFINE_double(poisson_load, -1.0, "Poisson offered load (qps)");
@@ -78,8 +78,6 @@ DEFINE_bool(core_count_only, false, "Just count the cores at each worker");
 
 using grpc::testing::ClientConfig;
 using grpc::testing::ServerConfig;
-using grpc::testing::ClientType;
-using grpc::testing::ServerType;
 using grpc::testing::RpcType;
 using grpc::testing::SecurityParams;
 
@@ -99,14 +97,9 @@ static void QpsDriver() {
   RpcType rpc_type;
   GPR_ASSERT(RpcType_Parse(FLAGS_rpc_type, &rpc_type));
 
-  ClientType client_type;
-  ServerType server_type;
-  GPR_ASSERT(ClientType_Parse(FLAGS_client_type, &client_type));
-  GPR_ASSERT(ServerType_Parse(FLAGS_server_type, &server_type));
-
   ClientConfig client_config;
-  client_config.set_client_type(client_type);
-  client_config.set_outstanding_rpcs_per_channel(
+  client_config.set_client_api(FLAGS_client_api);
+  client_config.set_max_outstanding_rpcs_per_channel(
       FLAGS_outstanding_rpcs_per_channel);
   client_config.set_client_channels(FLAGS_client_channels);
 
@@ -152,7 +145,7 @@ static void QpsDriver() {
   }
 
   ServerConfig server_config;
-  server_config.set_server_type(server_type);
+  server_config.set_server_api(FLAGS_server_api);
   server_config.set_async_server_threads(FLAGS_async_server_threads);
 
   if (FLAGS_server_core_limit > 0) {
@@ -175,9 +168,9 @@ static void QpsDriver() {
   // Make sure that if we are performing a generic (bytebuf) test
   // that we are also using async streaming
   GPR_ASSERT(!client_config.payload_config().has_bytebuf_params() ||
-             (client_config.client_type() == ASYNC_CLIENT &&
-              client_config.rpc_type() == STREAMING &&
-              server_config.server_type() == ASYNC_GENERIC_SERVER));
+             (client_config.client_api() == "async" &&
+              client_config.rpc_type() != UNARY &&
+              server_config.server_api() == "async"));
 
   const auto result = RunScenario(
       client_config, FLAGS_num_clients, server_config, FLAGS_num_servers,
