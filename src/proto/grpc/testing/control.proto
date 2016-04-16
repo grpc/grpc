@@ -34,25 +34,6 @@ import "src/proto/grpc/testing/stats.proto";
 
 package grpc.testing;
 
-enum ClientType {
-  SYNC_CLIENT = 0;
-  ASYNC_CLIENT = 1;
-  CLIENT_VARIANT_1 = 2;
-  CLIENT_VARIANT_2 = 3;
-  CLIENT_VARIANT_3 = 4;
-  CLIENT_VARIANT_4 = 5;
-}
-
-enum ServerType {
-  SYNC_SERVER = 0;
-  ASYNC_SERVER = 1;
-  ASYNC_GENERIC_SERVER = 2;
-  SERVER_VARIANT_1 = 3;
-  SERVER_VARIANT_2 = 4;
-  SERVER_VARIANT_3 = 5;
-  SERVER_VARIANT_4 = 6;
-}
-
 enum RpcType {
   // First there are ping-pong RPCs in which the client sends a request and the
   // server sends a response
@@ -92,23 +73,39 @@ message SecurityParams {
 message ClientConfig {
   // List of targets to connect to. At least one target needs to be specified.
   repeated string server_targets = 1;
-  ClientType client_type = 2;
+
   SecurityParams security_params = 3;
-  // Maximum limit of how many concurrent RPCs to start for each channel.
-  // For synchronous client, use a separate thread for each outstanding RPC.
-  // In practice, this can be a limit on QPS for both closed-loop and open-loop
+  // Maximum limit of how many concurrent RPCs in flight at any time
+  // for each channel.
+  // For synchronous clients, typically use a separate thread of control
+  // for each outstanding RPC.
+  // In practice, this parameter can limit QPS for closed-loop and open-loop
   // tests. This value should be set to at least the Little's law value for your
   // desired QPS: namely at least QPS/channel * message latency .
   int32 max_outstanding_rpcs_per_channel = 4;
+
   // Number of independent client channels to create.
   // i-th channel will connect to server_target[i % server_targets.size()]
   int32 client_channels = 5;
-  // Only for async client. Number of threads to use to start/manage RPCs.
+
+  // Allow the driver to specify the number of threads to use to
+  // start/manage RPCs. This only applies in cases where the client thread
+  // count is not dependent on the RPC width or depth (e.g., the async client
+  // case in C++),
+  // The worker may ignore this if it is not relevant. The value 0 (or not
+  // present) should be used as an instruction to auto-size.
   int32 async_client_threads = 7;
+
+  // Specify the desired type of RPC to use
   RpcType rpc_type = 8;
-  // The requested load for the entire client (aggregated over all the threads).
+
+  // The requested load for this client worker.
   LoadParams load_params = 10;
+
+  // Information about what to send/expect in the payload
   PayloadConfig payload_config = 11;
+
+  // Parameters for setting up the statistics histogram response
   HistogramParams histogram_params = 12;
 
   // Specify the cores we should run the client on, if desired
@@ -117,17 +114,22 @@ message ClientConfig {
 
   // What the driver calls the scenario
   string scenario_name = 15;
+
+  // Which version of the API for this language should the client use?
+  // e.g. in C++, the valid options might be "sync" and "async"
+  // In any language, the valid options are specified in the
+  // response to the Capabilities RPC
+  string client_api = 16;
 }
 
 message DriverCommandAccepted {
-  // The worker may respond with a map of options and their meaning  
-  map<string,string> tags = 1;
+  // The worker can give an optional explanation to the driver
+  string explanation = 1;
 }
 
 message DriverCommandUnimplemented {
-  // The worker may respond with a map of unimplemented options and
-  // the problem
-  map<string,string> reasons = 1;
+  // The worker can give an optional explanation to the driver
+  string explanation = 1;
 }
 
 message DriverResponse {
@@ -166,8 +168,15 @@ message ServerConfig {
   SecurityParams security_params = 2;
   // Port on which to listen. Zero means pick unused port.
   int32 port = 4;
-  // Only for async server. Number of threads used to serve the requests.
+
+  // Allow the driver to specify the number of threads to use to
+  // start/manage RPCs. This only applies in cases where the client thread
+  // count is not dependent on the RPC width or depth (e.g., the async server
+  // case in C++),
+  // The worker may ignore this if it is not relevant. The value 0 (or not
+  // present) should be used as an instruction to auto-size.
   int32 async_server_threads = 7;
+
   // Specify the number of cores to limit server to, if desired
   int32 core_limit = 8;
   // payload config, used in generic server
@@ -178,6 +187,9 @@ message ServerConfig {
 
   // What the driver calls the scenario
   string scenario_name = 11;
+
+  // Which version of the API for this language should the server use?
+  string client_api = 16;
 }
 
 message ServerArgs {
@@ -204,6 +216,47 @@ message CoreRequest {
 message CoreResponse {
   // Number of cores available on the server
   int32 cores = 1;
+}
+
+message CapabilitiesRequest {
+}
+
+message WorkerConfiguration {
+  // Give a name for this api. Common names might be "sync" or "async"
+  string api_type = 1;
+
+  // What is a reasonable upper-bound for the number of channels?
+  // If left undefined, then assume unbounded
+  // This is a soft limit; the driver may choose to ignore it
+  int32 channel_limit = 2;
+
+  // What is a reasonable upper-bound for the RPC depth?
+  // If left undefined, then assume unbounded  
+  // This is a soft limit; the driver may choose to ignore it
+  int32 channel_limit = 3;
+}
+
+message WorkerConfigurationsSupported {
+  // list of available worker configuration choices
+  repeated WorkerConfiguration configs = 1;
+}
+
+message CapabilitiesResponse {
+  // Number of cores available on this machine (redundant with CoreCount)
+  int32 cores = 1;
+
+  // Programming language used by this worker
+  string language = 2;
+
+  // What are the supported client configurations for each RPC type?
+  map<RpcType, WorkerConfigurationsSupported> client_configs = 3;
+
+  // What are the supported server configurations for each RPC type?
+  map<RpcType, WorkerConfigurationsSupported> server_configs = 4;
+
+  // What is the generic method name for each RPC type?
+  // Leave blank if this particular RPC type is unsupported in generic
+  map<RpcType, string> generic_method_name = 5;
 }
 
 message Void {

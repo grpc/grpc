@@ -34,6 +34,7 @@ package grpc.testing;
 message ByteBufferParams {
   int32 req_size = 1;
   int32 resp_size = 2;
+  string method_name = 3;
 }
 
 message SimpleProtoParams {
