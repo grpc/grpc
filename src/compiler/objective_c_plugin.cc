@@ -64,7 +64,8 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
         ".pbobjc.h\"\n\n"
         "#import <ProtoRPC/ProtoService.h>\n"
         "#import <RxLibrary/GRXWriteable.h>\n"
-        "#import <RxLibrary/GRXWriter.h>\n";
+        "#import <RxLibrary/GRXWriter.h>\n\n"
+        "NS_ASSUME_NONNULL_BEGIN\n\n";
 
       // TODO(jcanizales): Instead forward-declare the input and output types
       // and import the files in the .pbrpc.m
@@ -81,8 +82,10 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
         declarations += grpc_objective_c_generator::GetHeader(service);
       }
 
+      ::grpc::string nonNullEnd = "\nNS_ASSUME_NONNULL_END\n";
+
       Write(context, file_name + ".pbrpc.h",
-          imports + '\n' + proto_imports + '\n' + declarations);
+          imports + '\n' + proto_imports + '\n' + declarations + nonNullEnd);
     }
 
     {
