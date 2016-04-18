@@ -76,7 +76,7 @@ function unaryCall(call, callback) {
  * with a payload containing the requested number of zero bytes.
  * @param {Call} call The call object to be handled
  */
-function streamingCall(call) {
+function streamingPingPong(call) {
   call.on('data', function(value) {
     var payload = {body: zeroBuffer(value.response_size)};
     call.write({payload: payload});
@@ -86,9 +86,9 @@ function streamingCall(call) {
   });
 }
 
-function makeStreamingGenericCall(response_size) {
+function makeStreamingGenericPingPong(response_size) {
   var response = zeroBuffer(response_size);
-  return function streamingGenericCall(call) {
+  return function streamingGenericPingPong(call) {
     call.on('data', function(value) {
       call.write(response);
     });
@@ -96,6 +96,10 @@ function makeStreamingGenericCall(response_size) {
       call.end();
     });
   };
+}
+
+function placeholder(call) {
+  console.log('Placeholder', call);
 }
 
 /**
@@ -127,12 +131,18 @@ function BenchmarkServer(host, port, tls, generic, response_size) {
   this.port = server.bind(host + ':' + port, server_creds);
   if (generic) {
     server.addService(genericService, {
-      streamingCall: makeStreamingGenericCall(response_size)
+      streamingPingPong: makeStreamingGenericPingPong(response_size),
+      serverStreamingCall: placeholder,
+      clientStreamingCall: placeholder,
+      bidiStreamingCall: placeholder
     });
   } else {
     server.addProtoService(serviceProto.BenchmarkService.service, {
       unaryCall: unaryCall,
-      streamingCall: streamingCall
+      streamingPingPong: streamingPingPong,
+      serverStreamingCall: placeholder,
+      clientStreamingCall: placeholder,
+      bidiStreamingCall: placeholder
     });
   }
   this.server = server;

@@ -42,7 +42,7 @@ service BenchmarkService {
   // Each client and server has its own message size as set in the configuration
   // In all tests that use protobufs, the server response size is based on the
   // response_size field of the SimpleRequest protobuf. In tests that do not
-  // use protobuf, the server response size is drawn from the 
+  // use protobuf, the server response size is drawn from the config
 
   // One request followed by one response (ping-pong).
   rpc UnaryCall(SimpleRequest) returns (SimpleResponse);
