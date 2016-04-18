@@ -132,10 +132,5 @@ Internally, gRPC C# uses a native library written in C (gRPC C core) and invokes
 
 Prior to version 0.13, installing `grpc_csharp_ext` was required to make gRPC work on Linux and MacOS. Starting with version 0.13, we have improved the packaging story significantly and precompiled versions of the native library for all supported platforms are now shipped with the NuGet package. Just installing the `Grpc` NuGet package should be the only step needed to use gRPC C#, regardless of your platform (Windows, Linux or Mac) and the bitness (32 or 64bit).
 
-[gRPC Linuxbrew instructions]:https://github.com/grpc/homebrew-grpc#quick-install-linux
-[gRPC Homebrew instructions]:https://github.com/grpc/homebrew-grpc#quick-install-linux
-[homebrew]:http://brew.sh
-[gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
 [grpc.io]: http://www.grpc.io/docs/installation/csharp.html
-[Debian jessie-backports]:http://backports.debian.org/Instructions/
 [Helloworld example]:../../examples/csharp/helloworld
