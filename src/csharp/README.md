@@ -104,8 +104,19 @@ tools/run_tests/run_tests.py -l csharp
 
 DOCUMENTATION
 -------------
-- the gRPC C# reference documentation is available online at [grpc.io][]
-- [Helloworld example][]
+
+You can find out how to build and run our simplest gRPC C# example in the
+[Helloworld example][].
+
+For more detailed documentation on using gRPC with C# , see our main
+documentation site at [grpc.io][], specifically:
+
+- [Getting Started][]: An introduction to gRPC with a simple
+  Hello World example in all our supported languages, including C#.
+- [gRPC Basics - C#][]:
+  A tutorial that steps you through creating a simple gRPC C# example
+  application.
+- [C# API Reference][]
 
 CONTENTS
 --------
@@ -132,5 +143,9 @@ Internally, gRPC C# uses a native library written in C (gRPC C core) and invokes
 
 Prior to version 0.13, installing `grpc_csharp_ext` was required to make gRPC work on Linux and MacOS. Starting with version 0.13, we have improved the packaging story significantly and precompiled versions of the native library for all supported platforms are now shipped with the NuGet package. Just installing the `Grpc` NuGet package should be the only step needed to use gRPC C#, regardless of your platform (Windows, Linux or Mac) and the bitness (32 or 64bit).
 
-[grpc.io]: http://www.grpc.io/docs/installation/csharp.html
 [Helloworld example]:../../examples/csharp/helloworld
+[grpc.io]: http://grpc.io
+[Getting Started]: http://www.grpc.io/docs/
+[gRPC Basics - C#]: http://www.grpc.io/docs/tutorials/basic/csharp.html
+[C# API Reference]: http://grpc.io/grpc/csharp
+
