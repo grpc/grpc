@@ -43,7 +43,8 @@
         "wrapperScriptPath": "/var/local/git/grpc/tools/gcp/stress_test/run_server.py",
         "serverPort": 8080,
         "serverArgs": {
-          "port": 8080
+          "port": 8080,
+		  "use_tls": "false"
         }
       }
     },
@@ -70,7 +71,7 @@
       "java-stress-client": {
         "clientTemplate": "java_client",
         "dockerImage": "grpc_stress_java",
-        "numInstances": 15,
+        "numInstances": 10,
         "serverPodSpec": "java-stress-server"
       }
     }
