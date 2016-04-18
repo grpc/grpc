@@ -147,7 +147,7 @@ message ClientStatus {
   ClientStats stats = 1;
   // Response to driver request. No response means ok. A response may mean
   // ok or failure, with possible additional explanation either way
-  DriverResponse response = 2;  
+  DriverResponse response = 2;
 }
 
 // Request current stats
@@ -230,15 +230,15 @@ message WorkerConfiguration {
   int32 channel_limit = 2;
 
   // What is a reasonable upper-bound for the RPC depth?
-  // If left undefined, then assume unbounded  
+  // If left undefined, then assume unbounded
   // This is a soft limit; the driver may choose to ignore it
   int32 rpc_depth_limit = 3;
 }
 
 message WorkerConfigurationsSupported {
   // The RPC type being considered here
-  RpcType rpc_type = 1;  
-  
+  RpcType rpc_type = 1;
+
   // list of available worker configuration choices
   repeated WorkerConfiguration configs = 2;
 
@@ -261,6 +261,12 @@ message CapabilitiesResponse {
 
   // What are the supported server configurations for each RPC type?
   repeated WorkerConfigurationsSupported server_configs = 4;
+
+  // Does this implementation support core limit?
+  bool core_limit_supported = 5;
+
+  // Does this implementation support security?
+  bool secure_testing_supported = 6;
 }
 
 message Void {
