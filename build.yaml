@@ -1187,6 +1187,7 @@ targets:
   - gpr
   corpus_dirs:
   - test/core/end2end/fuzzers/client_fuzzer_corpus
+  dict: test/core/end2end/fuzzers/hpack.dictionary
   maxlen: 2048
 - name: compression_test
   build: test
@@ -1676,6 +1677,7 @@ targets:
   - gpr
   corpus_dirs:
   - test/core/transport/chttp2/hpack_parser_corpus
+  dict: test/core/end2end/fuzzers/hpack.dictionary
   maxlen: 512
 - name: hpack_parser_test
   build: test
@@ -2027,6 +2029,7 @@ targets:
   - gpr
   corpus_dirs:
   - test/core/end2end/fuzzers/server_fuzzer_corpus
+  dict: test/core/end2end/fuzzers/hpack.dictionary
   maxlen: 2048
 - name: server_test
   build: test
