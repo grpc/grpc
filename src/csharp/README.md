@@ -35,8 +35,6 @@ HOW TO USE
   That will also pull all the transitive dependencies (including the gRPC native library that
   gRPC C# is using internally).
 
-- NOTE: gRPC C# doesn't have a good story yet for shipping precompiled Linux version of Protocol Buffers compiler (_protoc_) and the gRPC _protoc_ plugin. You can install them using [gRPC Linuxbrew instructions][].
-
 **Mac OS X**
 
 - Open Xamarin Studio and start a new project/solution.
@@ -45,7 +43,11 @@ HOW TO USE
   That will also pull all the transitive dependencies (including the gRPC native library that
   gRPC C# is using internally).
 
-- NOTE: gRPC C# doesn't have a good story yet for shipping precompiled Mac OS X version of Protocol Buffers compiler (_protoc_) and the gRPC _protoc_ plugin. You can install them using [gRPC Homebrew instructions][].
+
+GENERATING CLIENT AND SERVER CODE
+--------------
+
+Starting from version 0.13.1, the `Grpc.Tools` NuGet package provides precompiled versions of of Protocol Buffers compiler (_protoc_) and the gRPC _protoc_ plugin for Windows, Linux and Mac OS X platforms. That means you no longer need to compile/install these native dependencies yourself, just install the `Grpc.Tools` NuGet package from your IDE.
 
 BUILD FROM SOURCE
 -----------------
@@ -124,7 +126,7 @@ CONTENTS
 - Grpc.Examples.MathClient:
   An example client that sends some requests to math server.
 - Grpc.Examples.MathServer:
-  An example client that sends some requests to math server.
+  An example implementation of a simple math server.
 - Grpc.IntegrationTesting:
   Cross-language gRPC implementation testing (interop testing).
 
