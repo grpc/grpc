@@ -66,9 +66,18 @@ NS_ASSUME_NONNULL_BEGIN
   // scheme and without port, we'll use port 443. If it has a scheme, we pass it untouched to the C
   // gRPC library.
   // TODO(jcanizales): Add unit tests for the types of addresses we want to let pass untouched.
-  NSURL *hostURL = [NSURL URLWithString:[@"https://" stringByAppendingString:address]];
-  if (hostURL.host && !hostURL.port) {
+  BOOL isSecure = NO;
+  NSURL *hostURL = [NSURL URLWithString:address];
+  if (![address hasPrefix:@"http://"]) {
+    if (![address hasPrefix:@"https://"]) {
+      hostURL = [NSURL URLWithString:[@"https://" stringByAppendingString:address]];
+    }
+    isSecure = YES;
+  }
+  if (isSecure && hostURL.host && !hostURL.port) {
     address = [hostURL.host stringByAppendingString:@":443"];
+  } else {
+    address = [NSString stringWithFormat:@"%@:%@", hostURL.host, hostURL.port];
   }
 
   // Look up the GRPCHost in the cache.
@@ -85,7 +94,7 @@ NS_ASSUME_NONNULL_BEGIN
 
     if ((self = [super init])) {
       _address = address;
-      _secure = YES;
+      _secure = isSecure;
       hostCache[address] = self;
     }
   }
