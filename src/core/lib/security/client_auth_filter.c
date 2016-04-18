@@ -54,11 +54,11 @@ typedef struct {
   grpc_call_credentials *creds;
   grpc_mdstr *host;
   grpc_mdstr *method;
-  /* pollset bound to this call; if we need to make external
-     network requests, they should be done under this pollset
-     so that work can progress when this call wants work to
-     progress */
-  grpc_pollset *pollset;
+  /* pollset_set bound to this call; if we need to make external
+     network requests, they should be done under a pollset added to this
+     pollset_set so that work can progress when this call wants work to progress
+  */
+  grpc_pollset_set *pollset_set;
   grpc_transport_stream_op op;
   uint8_t security_context_set;
   grpc_linked_mdelem md_links[MAX_CREDENTIALS_METADATA_COUNT];
@@ -184,9 +184,9 @@ static void send_security_metadata(grpc_exec_ctx *exec_ctx,
   build_auth_metadata_context(&chand->security_connector->base,
                               chand->auth_context, calld);
   calld->op = *op; /* Copy op (originates from the caller's stack). */
-  GPR_ASSERT(calld->pollset);
+  GPR_ASSERT(calld->pollset_set);
   grpc_call_credentials_get_request_metadata(
-      exec_ctx, calld->creds, calld->pollset, calld->auth_md_context,
+      exec_ctx, calld->creds, calld->pollset_set, calld->auth_md_context,
       on_credentials_metadata, elem);
 }
 
@@ -268,12 +268,23 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                            grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
   memset(calld, 0, sizeof(*calld));
+  calld->pollset_set = grpc_pollset_set_create();
 }
 
-static void set_pollset(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                        grpc_pollset *pollset) {
+static void set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
+                                       grpc_call_element *elem,
+                                       grpc_pollset *pollset,
+                                       grpc_pollset_set *or_pollset_set) {
+  GPR_ASSERT(!(pollset != NULL && or_pollset_set != NULL));
+  GPR_ASSERT(pollset != NULL || or_pollset_set != NULL);
+
   call_data *calld = elem->call_data;
-  calld->pollset = pollset;
+  if (pollset != NULL) {
+    grpc_pollset_set_add_pollset(exec_ctx, calld->pollset_set, pollset);
+  } else if (or_pollset_set != NULL) {
+    grpc_pollset_set_add_pollset_set(exec_ctx, calld->pollset_set,
+                                     or_pollset_set);
+  }
 }
 
 /* Destructor for call_data */
@@ -288,6 +299,7 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx,
     GRPC_MDSTR_UNREF(calld->method);
   }
   reset_auth_metadata_context(&calld->auth_md_context);
+  grpc_pollset_set_destroy(calld->pollset_set);
 }
 
 /* Constructor for channel_data */
@@ -329,8 +341,14 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   GRPC_AUTH_CONTEXT_UNREF(chand->auth_context, "client_auth_filter");
 }
 
-const grpc_channel_filter grpc_client_auth_filter = {
-    auth_start_transport_op, grpc_channel_next_op, sizeof(call_data),
-    init_call_elem,          set_pollset,          destroy_call_elem,
-    sizeof(channel_data),    init_channel_elem,    destroy_channel_elem,
-    grpc_call_next_get_peer, "client-auth"};
+const grpc_channel_filter grpc_client_auth_filter = {auth_start_transport_op,
+                                                     grpc_channel_next_op,
+                                                     sizeof(call_data),
+                                                     init_call_elem,
+                                                     set_pollset_or_pollset_set,
+                                                     destroy_call_elem,
+                                                     sizeof(channel_data),
+                                                     init_channel_elem,
+                                                     destroy_channel_elem,
+                                                     grpc_call_next_get_peer,
+                                                     "client-auth"};

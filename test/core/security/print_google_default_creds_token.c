@@ -48,6 +48,7 @@
 typedef struct {
   gpr_mu *mu;
   grpc_pollset *pollset;
+  grpc_pollset_set *pollset_set;
   int is_done;
 } synchronizer;
 
@@ -95,11 +96,13 @@ int main(int argc, char **argv) {
 
   sync.pollset = gpr_malloc(grpc_pollset_size());
   grpc_pollset_init(sync.pollset, &sync.mu);
+  sync.pollset_set = grpc_pollset_set_create();
+  grpc_pollset_set_add_pollset(&exec_ctx, sync.pollset_set, sync.pollset);
   sync.is_done = 0;
 
   grpc_call_credentials_get_request_metadata(
       &exec_ctx, ((grpc_composite_channel_credentials *)creds)->call_creds,
-      sync.pollset, context, on_metadata_response, &sync);
+      sync.pollset_set, context, on_metadata_response, &sync);
 
   gpr_mu_lock(sync.mu);
   while (!sync.is_done) {
@@ -116,6 +119,7 @@ int main(int argc, char **argv) {
   grpc_exec_ctx_finish(&exec_ctx);
 
   grpc_channel_credentials_release(creds);
+  grpc_pollset_set_destroy(sync.pollset_set);
   gpr_free(sync.pollset);
 
 end:

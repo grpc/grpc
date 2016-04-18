@@ -53,6 +53,10 @@ typedef struct grpc_transport_vtable {
   void (*set_pollset)(grpc_exec_ctx *exec_ctx, grpc_transport *self,
                       grpc_stream *stream, grpc_pollset *pollset);
 
+  /* implementation of grpc_transport_set_pollset */
+  void (*set_pollset_set)(grpc_exec_ctx *exec_ctx, grpc_transport *self,
+                          grpc_stream *stream, grpc_pollset_set *pollset_set);
+
   /* implementation of grpc_transport_perform_stream_op */
   void (*perform_stream_op)(grpc_exec_ctx *exec_ctx, grpc_transport *self,
                             grpc_stream *stream, grpc_transport_stream_op *op);

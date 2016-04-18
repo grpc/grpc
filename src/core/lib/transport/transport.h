@@ -201,6 +201,11 @@ void grpc_transport_set_pollset(grpc_exec_ctx *exec_ctx,
                                 grpc_transport *transport, grpc_stream *stream,
                                 grpc_pollset *pollset);
 
+void grpc_transport_set_pollset_set(grpc_exec_ctx *exec_ctx,
+                                    grpc_transport *transport,
+                                    grpc_stream *stream,
+                                    grpc_pollset_set *pollset_set);
+
 /* Destroy transport data for a stream.
 
    Requires: a recv_batch with final_state == GRPC_STREAM_CLOSED has been

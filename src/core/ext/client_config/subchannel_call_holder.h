@@ -72,6 +72,7 @@ typedef struct grpc_subchannel_call_holder {
   grpc_subchannel_call_holder_creation_phase creation_phase;
   grpc_connected_subchannel *connected_subchannel;
   grpc_pollset *pollset;
+  grpc_pollset_set *pollset_set;
 
   grpc_transport_stream_op *waiting_ops;
   size_t waiting_ops_count;

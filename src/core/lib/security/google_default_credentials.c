@@ -61,6 +61,7 @@ static void init_default_credentials(void) { gpr_mu_init(&g_state_mu); }
 
 typedef struct {
   grpc_pollset *pollset;
+  grpc_pollset_set *pollset_set;
   int is_done;
   int success;
 } compute_engine_detector;
@@ -105,6 +106,9 @@ static int is_stack_running_on_compute_engine(void) {
 
   detector.pollset = gpr_malloc(grpc_pollset_size());
   grpc_pollset_init(detector.pollset, &g_polling_mu);
+  detector.pollset_set = grpc_pollset_set_create();
+  grpc_pollset_set_add_pollset(&exec_ctx, detector.pollset_set,
+                               detector.pollset);
   detector.is_done = 0;
   detector.success = 0;
 
@@ -115,7 +119,7 @@ static int is_stack_running_on_compute_engine(void) {
   grpc_httpcli_context_init(&context);
 
   grpc_httpcli_get(
-      &exec_ctx, &context, detector.pollset, &request,
+      &exec_ctx, &context, detector.pollset_set, &request,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), max_detection_delay),
       on_compute_engine_detection_http_response, &detector);
 
@@ -135,6 +139,7 @@ static int is_stack_running_on_compute_engine(void) {
   grpc_httpcli_context_destroy(&context);
   grpc_closure_init(&destroy_closure, destroy_pollset, detector.pollset);
   grpc_pollset_shutdown(&exec_ctx, detector.pollset, &destroy_closure);
+  grpc_pollset_set_destroy(detector.pollset_set);
   grpc_exec_ctx_finish(&exec_ctx);
   g_polling_mu = NULL;
 

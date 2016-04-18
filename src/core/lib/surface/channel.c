@@ -166,12 +166,14 @@ char *grpc_channel_get_target(grpc_channel *channel) {
 
 static grpc_call *grpc_channel_create_call_internal(
     grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
-    grpc_completion_queue *cq, grpc_mdelem *path_mdelem,
-    grpc_mdelem *authority_mdelem, gpr_timespec deadline) {
+    grpc_completion_queue *cq, grpc_pollset_set *or_pollset_set,
+    grpc_mdelem *path_mdelem, grpc_mdelem *authority_mdelem,
+    gpr_timespec deadline) {
   grpc_mdelem *send_metadata[2];
   size_t num_metadata = 0;
 
   GPR_ASSERT(channel->is_client);
+  GPR_ASSERT(!(cq != NULL && or_pollset_set != NULL));
 
   send_metadata[num_metadata++] = path_mdelem;
   if (authority_mdelem != NULL) {
@@ -180,8 +182,9 @@ static grpc_call *grpc_channel_create_call_internal(
     send_metadata[num_metadata++] = GRPC_MDELEM_REF(channel->default_authority);
   }
 
-  return grpc_call_create(channel, parent_call, propagation_mask, cq, NULL,
-                          send_metadata, num_metadata, deadline);
+  return grpc_call_create(channel, parent_call, propagation_mask, cq,
+                          or_pollset_set, NULL, send_metadata, num_metadata,
+                          deadline);
 }
 
 grpc_call *grpc_channel_create_call(grpc_channel *channel,
@@ -201,7 +204,22 @@ grpc_call *grpc_channel_create_call(grpc_channel *channel,
            (int)deadline.clock_type, reserved));
   GPR_ASSERT(!reserved);
   return grpc_channel_create_call_internal(
-      channel, parent_call, propagation_mask, cq,
+      channel, parent_call, propagation_mask, cq, NULL,
+      grpc_mdelem_from_metadata_strings(GRPC_MDSTR_PATH,
+                                        grpc_mdstr_from_string(method)),
+      host ? grpc_mdelem_from_metadata_strings(GRPC_MDSTR_AUTHORITY,
+                                               grpc_mdstr_from_string(host))
+           : NULL,
+      deadline);
+}
+
+grpc_call *grpc_channel_create_pollset_set_call(
+    grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
+    grpc_pollset_set *pollset_set, const char *method, const char *host,
+    gpr_timespec deadline, void *reserved) {
+  GPR_ASSERT(!reserved);
+  return grpc_channel_create_call_internal(
+      channel, parent_call, propagation_mask, NULL, pollset_set,
       grpc_mdelem_from_metadata_strings(GRPC_MDSTR_PATH,
                                         grpc_mdstr_from_string(method)),
       host ? grpc_mdelem_from_metadata_strings(GRPC_MDSTR_AUTHORITY,
@@ -245,7 +263,7 @@ grpc_call *grpc_channel_create_registered_call(
           (int)deadline.tv_nsec, (int)deadline.clock_type, reserved));
   GPR_ASSERT(!reserved);
   return grpc_channel_create_call_internal(
-      channel, parent_call, propagation_mask, completion_queue,
+      channel, parent_call, propagation_mask, completion_queue, NULL,
       GRPC_MDELEM_REF(rc->path),
       rc->authority ? GRPC_MDELEM_REF(rc->authority) : NULL, deadline);
 }
