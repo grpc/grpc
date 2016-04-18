@@ -124,7 +124,7 @@ CONTENTS
 - ext:
   The extension library that wraps C API to be more digestible by C#.
 - Grpc.Auth:
-  gRPC OAuth2 support.
+  gRPC authentication library (provides OAuth2 and JWT support).
 - Grpc.Core:
   The main gRPC C# library.
 - Grpc.Examples:
