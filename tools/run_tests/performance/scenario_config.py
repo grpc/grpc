@@ -31,6 +31,7 @@
 
 SINGLE_MACHINE_CORES=8
 WARMUP_SECONDS=5
+JAVA_WARMUP_SECONDS=15  # Java needs more warmup time for JIT to kick in.
 BENCHMARK_SECONDS=30
 
 HISTOGRAM_PARAMS = {
@@ -475,9 +476,56 @@ class RubyLanguage:
     return 'ruby'
 
 
+class JavaLanguage:
+
+  def __init__(self):
+    pass
+    self.safename = str(self)
+
+  def worker_cmdline(self):
+    return ['tools/run_tests/performance/run_worker_java.sh']
+
+  def worker_port_offset(self):
+    return 400
+
+  def scenarios(self):
+    # TODO(jtattermusch): add more scenarios
+    secargs = None
+    yield {
+        'name': 'java_protobuf_unary_ping_pong',
+        'num_servers': 1,
+        'num_clients': 1,
+        'client_config': {
+          'client_type': 'SYNC_CLIENT',
+          'security_params': secargs,
+          'outstanding_rpcs_per_channel': 1,
+          'client_channels': 1,
+          'async_client_threads': 1,
+          'rpc_type': 'UNARY',
+          'load_params': {
+            'closed_loop': {}
+          },
+          'payload_config': EMPTY_PROTO_PAYLOAD,
+          'histogram_params': HISTOGRAM_PARAMS,
+        },
+        'server_config': {
+          'server_type': 'SYNC_SERVER',
+          'security_params': secargs,
+          'core_limit': 0,
+          'async_server_threads': 1,
+        },
+        'warmup_seconds': JAVA_WARMUP_SECONDS,
+        'benchmark_seconds': BENCHMARK_SECONDS
+    }
+
+  def __str__(self):
+    return 'java'
+
+
 LANGUAGES = {
     'c++' : CXXLanguage(),
     'csharp' : CSharpLanguage(),
     'node' : NodeLanguage(),
-    'ruby' : RubyLanguage()
+    'ruby' : RubyLanguage(),
+    'java' : JavaLanguage(),
 }
