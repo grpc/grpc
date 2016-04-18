@@ -35,8 +35,6 @@ HOW TO USE
   That will also pull all the transitive dependencies (including the gRPC native library that
   gRPC C# is using internally).
 
-- NOTE: gRPC C# doesn't have a good story yet for shipping precompiled Linux version of Protocol Buffers compiler (_protoc_) and the gRPC _protoc_ plugin. You can install them using [gRPC Linuxbrew instructions][].
-
 **Mac OS X**
 
 - Open Xamarin Studio and start a new project/solution.
@@ -45,7 +43,11 @@ HOW TO USE
   That will also pull all the transitive dependencies (including the gRPC native library that
   gRPC C# is using internally).
 
-- NOTE: gRPC C# doesn't have a good story yet for shipping precompiled Mac OS X version of Protocol Buffers compiler (_protoc_) and the gRPC _protoc_ plugin. You can install them using [gRPC Homebrew instructions][].
+
+GENERATING CLIENT AND SERVER CODE
+--------------
+
+Starting from version 0.13.1, the `Grpc.Tools` NuGet package provides precompiled versions of of Protocol Buffers compiler (_protoc_) and the gRPC _protoc_ plugin for Windows, Linux and Mac OS X platforms. That means you no longer need to compile/install these native dependencies yourself, just install the `Grpc.Tools` NuGet package from your IDE.
 
 BUILD FROM SOURCE
 -----------------
@@ -55,16 +57,11 @@ If you are a user of gRPC C#, go to Usage section above.
 
 **Windows**
 
-- The grpc_csharp_ext native library needs to be built so you can build the gRPC C# solution. You can 
-  either build the native solution in `vsprojects/grpc_csharp_ext.sln` from Visual Studio manually, or you can use
-  a convenience batch script that builds everything for you.
+- The grpc_csharp_ext native library needs to be built so you can build the gRPC C# solution. Open the
+  solution `vsprojects/grpc_csharp_ext.sln` in Visual Studio and build it.
 
-  ```
-  > REM From src/csharp directory
-  > buildall.bat
-  ```
-
-- Open Grpc.sln using Visual Studio.
+- Open `src\csharp\Grpc.sln` (path is relative to gRPC repository root)
+  using Visual Studio
 
 **Linux**
 
@@ -79,7 +76,7 @@ If you are a user of gRPC C#, go to Usage section above.
 **Mac OS X**
 
 - The grpc_csharp_ext native library needs to be built so you can build the gRPC C# solution.
-  
+
   ```sh
   # from the gRPC repository root
   $ tools/run_tests/run_tests.py -c dbg -l csharp --build_only
@@ -107,8 +104,19 @@ tools/run_tests/run_tests.py -l csharp
 
 DOCUMENTATION
 -------------
-- the gRPC C# reference documentation is available online at [grpc.io][]
-- [Helloworld example][]
+
+You can find out how to build and run our simplest gRPC C# example in the
+[Helloworld example][].
+
+For more detailed documentation on using gRPC with C# , see our main
+documentation site at [grpc.io][], specifically:
+
+- [Getting Started][]: An introduction to gRPC with a simple
+  Hello World example in all our supported languages, including C#.
+- [gRPC Basics - C#][]:
+  A tutorial that steps you through creating a simple gRPC C# example
+  application.
+- [C# API Reference][]
 
 CONTENTS
 --------
@@ -116,7 +124,7 @@ CONTENTS
 - ext:
   The extension library that wraps C API to be more digestible by C#.
 - Grpc.Auth:
-  gRPC OAuth2 support.
+  gRPC authentication library (provides OAuth2 and JWT support).
 - Grpc.Core:
   The main gRPC C# library.
 - Grpc.Examples:
@@ -124,7 +132,7 @@ CONTENTS
 - Grpc.Examples.MathClient:
   An example client that sends some requests to math server.
 - Grpc.Examples.MathServer:
-  An example client that sends some requests to math server.
+  An example implementation of a simple math server.
 - Grpc.IntegrationTesting:
   Cross-language gRPC implementation testing (interop testing).
 
@@ -135,10 +143,9 @@ Internally, gRPC C# uses a native library written in C (gRPC C core) and invokes
 
 Prior to version 0.13, installing `grpc_csharp_ext` was required to make gRPC work on Linux and MacOS. Starting with version 0.13, we have improved the packaging story significantly and precompiled versions of the native library for all supported platforms are now shipped with the NuGet package. Just installing the `Grpc` NuGet package should be the only step needed to use gRPC C#, regardless of your platform (Windows, Linux or Mac) and the bitness (32 or 64bit).
 
-[gRPC Linuxbrew instructions]:https://github.com/grpc/homebrew-grpc#quick-install-linux
-[gRPC Homebrew instructions]:https://github.com/grpc/homebrew-grpc#quick-install-linux
-[homebrew]:http://brew.sh
-[gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
-[grpc.io]: http://www.grpc.io/docs/installation/csharp.html
-[Debian jessie-backports]:http://backports.debian.org/Instructions/
 [Helloworld example]:../../examples/csharp/helloworld
+[grpc.io]: http://grpc.io
+[Getting Started]: http://www.grpc.io/docs/
+[gRPC Basics - C#]: http://www.grpc.io/docs/tutorials/basic/csharp.html
+[C# API Reference]: http://grpc.io/grpc/csharp
+
