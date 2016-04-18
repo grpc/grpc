@@ -49,6 +49,7 @@
 #endif
 #include <sys/socket.h>
 
+#include <grpc/support/alloc.h>
 #include <grpc/support/cmdline.h>
 #include <grpc/support/histogram.h>
 #include <grpc/support/log.h>
