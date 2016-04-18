@@ -63,20 +63,19 @@ namespace testing {
 
 static std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
   gpr_log(GPR_INFO, "Starting client of type %s %s %d",
-	  config.client_api().c_str(),
-          RpcType_Name(config.rpc_type()).c_str(),
+          config.client_api().c_str(), RpcType_Name(config.rpc_type()).c_str(),
           config.payload_config().has_bytebuf_params());
 
   if (config.client_api() == "sync") {
     return (config.rpc_type() == RpcType::UNARY)
-      ? CreateSynchronousUnaryClient(config)
-      : CreateSynchronousStreamingClient(config);
+               ? CreateSynchronousUnaryClient(config)
+               : CreateSynchronousStreamingClient(config);
   } else if (config.client_api() == "async") {
     return (config.rpc_type() == RpcType::UNARY)
-      ? CreateAsyncUnaryClient(config)
-      : (config.payload_config().has_bytebuf_params()
-	 ? CreateGenericAsyncStreamingClient(config)
-	 : CreateAsyncStreamingClient(config));
+               ? CreateAsyncUnaryClient(config)
+               : (config.payload_config().has_bytebuf_params()
+                      ? CreateGenericAsyncStreamingClient(config)
+                      : CreateAsyncStreamingClient(config));
   } else {
     abort();
   }
@@ -89,8 +88,9 @@ static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
   if (config.server_api() == "sync") {
     return CreateSynchronousServer(config);
   } else if (config.server_api() == "async") {
-    return (config.payload_config().has_bytebuf_params() ?
-	    CreateAsyncGenericServer(config) : CreateAsyncServer(config));
+    return (config.payload_config().has_bytebuf_params()
+                ? CreateAsyncGenericServer(config)
+                : CreateAsyncServer(config));
   } else {
     abort();
   }
