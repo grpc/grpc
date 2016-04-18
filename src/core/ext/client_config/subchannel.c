@@ -699,7 +699,7 @@ grpc_subchannel_call *grpc_connected_subchannel_create_call(
   GRPC_CONNECTED_SUBCHANNEL_REF(con, "subchannel_call");
   grpc_call_stack_init(exec_ctx, chanstk, 1, subchannel_call_destroy, call,
                        NULL, NULL, callstk);
-  grpc_call_stack_set_pollset(exec_ctx, callstk, pollset);
+  grpc_call_stack_set_pollset_or_pollset_set(exec_ctx, callstk, pollset, NULL);
   return call;
 }
 

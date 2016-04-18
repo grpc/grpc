@@ -68,6 +68,7 @@ void grpc_subchannel_call_holder_init(
   holder->waiting_ops_capacity = 0;
   holder->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING;
   holder->owning_call = owning_call;
+  holder->pollset_set = grpc_pollset_set_create();
 }
 
 void grpc_subchannel_call_holder_destroy(grpc_exec_ctx *exec_ctx,
@@ -81,6 +82,7 @@ void grpc_subchannel_call_holder_destroy(grpc_exec_ctx *exec_ctx,
   gpr_mu_destroy(&holder->mu);
   GPR_ASSERT(holder->waiting_ops_count == 0);
   gpr_free(holder->waiting_ops);
+  grpc_pollset_set_destroy(holder->pollset_set);
 }
 
 void grpc_subchannel_call_holder_perform_op(grpc_exec_ctx *exec_ctx,

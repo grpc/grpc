@@ -47,6 +47,7 @@
 typedef struct {
   gpr_mu *mu;
   grpc_pollset *pollset;
+  grpc_pollset_set *pollset_set;
   int is_done;
   char *token;
 } oauth2_request;
@@ -85,13 +86,15 @@ char *grpc_test_fetch_oauth2_token_with_credentials(
 
   request.pollset = gpr_malloc(grpc_pollset_size());
   grpc_pollset_init(request.pollset, &request.mu);
+  request.pollset_set = grpc_pollset_set_create();
+  grpc_pollset_set_add_pollset(&exec_ctx, request.pollset_set, request.pollset);
   request.is_done = 0;
 
   grpc_closure_init(&do_nothing_closure, do_nothing, NULL);
 
-  grpc_call_credentials_get_request_metadata(&exec_ctx, creds, request.pollset,
-                                             null_ctx, on_oauth2_response,
-                                             &request);
+  grpc_call_credentials_get_request_metadata(&exec_ctx, creds,
+                                             request.pollset_set, null_ctx,
+                                             on_oauth2_response, &request);
 
   grpc_exec_ctx_finish(&exec_ctx);
 
@@ -107,6 +110,7 @@ char *grpc_test_fetch_oauth2_token_with_credentials(
   grpc_pollset_shutdown(&exec_ctx, request.pollset, &do_nothing_closure);
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_pollset_destroy(request.pollset);
+  grpc_pollset_set_destroy(request.pollset_set);
   gpr_free(request.pollset);
   return request.token;
 }

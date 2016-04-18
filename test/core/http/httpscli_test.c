@@ -49,6 +49,7 @@ static int g_done = 0;
 static grpc_httpcli_context g_context;
 static gpr_mu *g_mu;
 static grpc_pollset *g_pollset;
+static grpc_pollset_set *g_pollset_set;
 
 static gpr_timespec n_seconds_time(int seconds) {
   return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(seconds);
@@ -87,8 +88,8 @@ static void test_get(int port) {
   req.http.path = "/get";
   req.handshaker = &grpc_httpcli_ssl;
 
-  grpc_httpcli_get(&exec_ctx, &g_context, g_pollset, &req, n_seconds_time(15),
-                   on_finish, (void *)42);
+  grpc_httpcli_get(&exec_ctx, &g_context, g_pollset_set, &req,
+                   n_seconds_time(15), on_finish, (void *)42);
   gpr_mu_lock(g_mu);
   while (!g_done) {
     grpc_pollset_worker *worker = NULL;
@@ -119,7 +120,7 @@ static void test_post(int port) {
   req.http.path = "/post";
   req.handshaker = &grpc_httpcli_ssl;
 
-  grpc_httpcli_post(&exec_ctx, &g_context, g_pollset, &req, "hello", 5,
+  grpc_httpcli_post(&exec_ctx, &g_context, g_pollset_set, &req, "hello", 5,
                     n_seconds_time(15), on_finish, (void *)42);
   gpr_mu_lock(g_mu);
   while (!g_done) {
@@ -185,6 +186,8 @@ int main(int argc, char **argv) {
   grpc_httpcli_context_init(&g_context);
   g_pollset = gpr_malloc(grpc_pollset_size());
   grpc_pollset_init(g_pollset, &g_mu);
+  g_pollset_set = grpc_pollset_set_create();
+  grpc_pollset_set_add_pollset(&exec_ctx, g_pollset_set, g_pollset);
 
   test_get(port);
   test_post(port);
@@ -193,6 +196,7 @@ int main(int argc, char **argv) {
   grpc_closure_init(&destroyed, destroy_pollset, g_pollset);
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);
+  grpc_pollset_set_destroy(g_pollset_set);
   grpc_shutdown();
 
   gpr_free(g_pollset);

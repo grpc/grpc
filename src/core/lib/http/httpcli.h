@@ -100,7 +100,7 @@ void grpc_httpcli_context_destroy(grpc_httpcli_context *context);
    'on_response' is a callback to report results to (and 'user_data' is a user
      supplied pointer to pass to said call) */
 void grpc_httpcli_get(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
-                      grpc_pollset *pollset,
+                      grpc_pollset_set *pollset_set,
                       const grpc_httpcli_request *request,
                       gpr_timespec deadline,
                       grpc_httpcli_response_cb on_response, void *user_data);
@@ -121,7 +121,7 @@ void grpc_httpcli_get(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
      supplied pointer to pass to said call)
    Does not support ?var1=val1&var2=val2 in the path. */
 void grpc_httpcli_post(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
-                       grpc_pollset *pollset,
+                       grpc_pollset_set *pollset_set,
                        const grpc_httpcli_request *request,
                        const char *body_bytes, size_t body_size,
                        gpr_timespec deadline,
