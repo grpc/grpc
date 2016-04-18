@@ -21,7 +21,6 @@ PREREQUISITES
 
 **Mac OS X**
 - Xamarin Studio 5.9+
-- [homebrew][]
 
 BUILD
 -------
@@ -56,6 +55,5 @@ Tutorial
 
 You can find a more detailed tutorial in [gRPC Basics: C#][]
 
-[homebrew]:http://brew.sh
 [helloworld.proto]:../../protos/helloworld.proto
 [gRPC Basics: C#]:http://www.grpc.io/docs/tutorials/basic/csharp.html
