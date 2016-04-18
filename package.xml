@@ -291,6 +291,7 @@
     <file baseinstalldir="/" name="src/core/ext/client_config/lb_policy.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/lb_policy_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/lb_policy_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/parse_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/resolver_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/resolver_registry.h" role="src" />
@@ -446,6 +447,7 @@
     <file baseinstalldir="/" name="src/core/ext/client_config/lb_policy.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/lb_policy_factory.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/lb_policy_registry.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/client_config/parse_address.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/resolver.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/resolver_factory.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/resolver_registry.c" role="src" />
