@@ -71,31 +71,31 @@ halfcores=`expr $cores / 2`
 
 for secure in true false; do
   # Scenario 1: generic async streaming ping-pong (contentionless latency)
-  bins/$config/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
-    --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=1 \
+  bins/$config/qps_driver --rpc_type=STREAMING_PING_PONG --client_api=async \
+    --server_api=async --outstanding_rpcs_per_channel=1 \
     --client_channels=1 --bbuf_req_size=0 --bbuf_resp_size=0 \
     --async_client_threads=1 --async_server_threads=1 --secure_test=$secure \
     --num_servers=1 --num_clients=1 \
     --server_core_limit=$halfcores --client_core_limit=0
 
   # Scenario 2: generic async streaming "unconstrained" (QPS)
-  bins/$config/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
-    --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=$deep \
+  bins/$config/qps_driver --rpc_type=STREAMING_PING_PONG --client_api=async \
+    --server_api=async --outstanding_rpcs_per_channel=$deep \
     --client_channels=$wide --bbuf_req_size=0 --bbuf_resp_size=0 \
     --async_client_threads=0 --async_server_threads=0 --secure_test=$secure \
     --num_servers=1 --num_clients=0 \
     --server_core_limit=$halfcores --client_core_limit=0 |& tee /tmp/qps-test.$$
 
   # Scenario 2b: QPS with a single server core
-  bins/$config/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
-    --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=$deep \
+  bins/$config/qps_driver --rpc_type=STREAMING_PING_PONG --client_api=async \
+    --server_api=async --outstanding_rpcs_per_channel=$deep \
     --client_channels=$wide --bbuf_req_size=0 --bbuf_resp_size=0 \
     --async_client_threads=0 --async_server_threads=0 --secure_test=$secure \
     --num_servers=1 --num_clients=0 --server_core_limit=1 --client_core_limit=0
 
   # Scenario 2c: protobuf-based QPS
-  bins/$config/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
-    --server_type=ASYNC_SERVER --outstanding_rpcs_per_channel=$deep \
+  bins/$config/qps_driver --rpc_type=STREAMING_PING_PONG --client_api=async \
+    --server_api=async --outstanding_rpcs_per_channel=$deep \
     --client_channels=$wide --simple_req_size=0 --simple_resp_size=0 \
     --async_client_threads=0 --async_server_threads=0 --secure_test=$secure \
     --num_servers=1 --num_clients=0 \
@@ -103,8 +103,8 @@ for secure in true false; do
 
   # Scenario 3: Latency at sub-peak load (all clients equally loaded)
   for loadfactor in 0.7; do
-    bins/$config/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
-      --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=$deep \
+    bins/$config/qps_driver --rpc_type=STREAMING_PING_PONG --client_api=async \
+      --server_api=async --outstanding_rpcs_per_channel=$deep \
       --client_channels=$wide --bbuf_req_size=0 --bbuf_resp_size=0 \
       --async_client_threads=0 --async_server_threads=0 --secure_test=$secure \
       --num_servers=1 --num_clients=0 --poisson_load=`awk -v lf=$loadfactor \
@@ -115,16 +115,16 @@ for secure in true false; do
   rm /tmp/qps-test.$$
 
   # Scenario 4: Single-channel bidirectional throughput test (like TCP_STREAM).
-  bins/$config/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
-    --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=$deep \
+  bins/$config/qps_driver --rpc_type=STREAMING_PING_PONG --client_api=async \
+    --server_api=async --outstanding_rpcs_per_channel=$deep \
     --client_channels=1 --bbuf_req_size=$big --bbuf_resp_size=$big \
     --async_client_threads=1 --async_server_threads=1 --secure_test=$secure \
     --num_servers=1 --num_clients=1 \
     --server_core_limit=$halfcores --client_core_limit=0
 
   # Scenario 5: Sync unary ping-pong with protobufs
-  bins/$config/qps_driver --rpc_type=UNARY --client_type=SYNC_CLIENT \
-    --server_type=SYNC_SERVER --outstanding_rpcs_per_channel=1 \
+  bins/$config/qps_driver --rpc_type=UNARY --client_api=sync \
+    --server_api=sync --outstanding_rpcs_per_channel=1 \
     --client_channels=1 --simple_req_size=0 --simple_resp_size=0 \
     --secure_test=$secure --num_servers=1 --num_clients=1 \
     --server_core_limit=$halfcores --client_core_limit=0
