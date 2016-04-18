@@ -31,6 +31,7 @@
 
 flags="-max_total_time=$runtime -artifact_prefix=fuzzer_output/ -max_len=128"
 
+
 if [ "$jobs" != "1" ]
 then
   flags="-jobs=$jobs -workers=$jobs $flags"
