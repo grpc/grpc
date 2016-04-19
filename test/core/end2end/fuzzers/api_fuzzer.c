@@ -771,7 +771,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         call_state *cs = new_call(active_call, PENDING_SERVER);
         grpc_call_error error = grpc_server_request_call(g_server, &cs->call, &cs->call_details, &cs->recv_initial_metadata,
                                                          cq, cq, NULL);
-        gpr_log(GPR_DEBUG, "%d", error);
+        GPR_ASSERT(error == GRPC_CALL_OK);
         break;
       }
     }
