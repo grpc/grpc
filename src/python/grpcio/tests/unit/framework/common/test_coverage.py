@@ -31,13 +31,14 @@
 
 import abc
 
+import six
+
 # This code is designed for use with the unittest module.
 # pylint: disable=invalid-name
 
 
-class Coverage(object):
+class Coverage(six.with_metaclass(abc.ABCMeta)):
   """Specification of test coverage."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def testSuccessfulUnaryRequestUnaryResponse(self):

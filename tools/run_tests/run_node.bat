@@ -27,6 +27,7 @@
 @rem (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 @rem OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set JUNIT_REPORT_PATH=src\node\reports.xml
+set PATH=%PATH%;C:\Program Files\nodejs\;%APPDATA%\npm
+set JUNIT_REPORT_PATH=src\node\report.xml
 set JUNIT_REPORT_STACK=1
-.\node_modules\.bin\mocha.cmd --reporter mocha-jenkins-reporter src\node\test
+.\node_modules\.bin\mocha.cmd --reporter mocha-jenkins-reporter --timeout 8000 src\node\test

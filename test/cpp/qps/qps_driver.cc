@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -85,7 +85,6 @@ using grpc::testing::ServerConfig;
 using grpc::testing::ClientType;
 using grpc::testing::ServerType;
 using grpc::testing::RpcType;
-using grpc::testing::ResourceUsage;
 using grpc::testing::SecurityParams;
 
 namespace grpc {
@@ -169,6 +168,10 @@ static void QpsDriver() {
 
   if (FLAGS_server_core_limit > 0) {
     server_config.set_core_limit(FLAGS_server_core_limit);
+  }
+
+  if (FLAGS_bbuf_resp_size >= 0) {
+    *server_config.mutable_payload_config() = client_config.payload_config();
   }
 
   if (FLAGS_secure_test) {

@@ -32,6 +32,8 @@
 import abc
 import unittest
 
+import six
+
 from grpc.framework.face import interfaces
 from tests.unit.framework.common import test_constants
 from tests.unit.framework.face.testing import callback as testing_callback
@@ -43,12 +45,12 @@ from tests.unit.framework.face.testing import test_case
 
 
 class EventInvocationSynchronousEventServiceTestCase(
-    test_case.FaceTestCase, coverage.FullCoverage):
+    six.with_metaclass(abc.ABCMeta,
+    test_case.FaceTestCase, coverage.FullCoverage)):
   """A test of the Face layer of RPC Framework.
 
   Concrete subclasses must also extend unittest.TestCase.
   """
-  __metaclass__ = abc.ABCMeta
 
   def setUp(self):
     """See unittest.TestCase.setUp for full specification.
@@ -72,7 +74,7 @@ class EventInvocationSynchronousEventServiceTestCase(
 
   def testSuccessfulUnaryRequestUnaryResponse(self):
     for name, test_messages_sequence in (
-        self.digest.unary_unary_messages_sequences.iteritems()):
+        six.iteritems(self.digest.unary_unary_messages_sequences)):
       for test_messages in test_messages_sequence:
         request = test_messages.request()
         callback = testing_callback.Callback()
@@ -87,7 +89,7 @@ class EventInvocationSynchronousEventServiceTestCase(
 
   def testSuccessfulUnaryRequestStreamResponse(self):
     for name, test_messages_sequence in (
-        self.digest.unary_stream_messages_sequences.iteritems()):
+        six.iteritems(self.digest.unary_stream_messages_sequences)):
       for test_messages in test_messages_sequence:
         request = test_messages.request()
         callback = testing_callback.Callback()
@@ -102,7 +104,7 @@ class EventInvocationSynchronousEventServiceTestCase(
 
   def testSuccessfulStreamRequestUnaryResponse(self):
     for name, test_messages_sequence in (
-        self.digest.stream_unary_messages_sequences.iteritems()):
+        six.iteritems(self.digest.stream_unary_messages_sequences)):
       for test_messages in test_messages_sequence:
         requests = test_messages.requests()
         callback = testing_callback.Callback()
@@ -120,7 +122,7 @@ class EventInvocationSynchronousEventServiceTestCase(
 
   def testSuccessfulStreamRequestStreamResponse(self):
     for name, test_messages_sequence in (
-        self.digest.stream_stream_messages_sequences.iteritems()):
+        six.iteritems(self.digest.stream_stream_messages_sequences)):
       for test_messages in test_messages_sequence:
         requests = test_messages.requests()
         callback = testing_callback.Callback()
@@ -138,7 +140,7 @@ class EventInvocationSynchronousEventServiceTestCase(
   def testSequentialInvocations(self):
     # pylint: disable=cell-var-from-loop
     for name, test_messages_sequence in (
-        self.digest.unary_unary_messages_sequences.iteritems()):
+        six.iteritems(self.digest.unary_unary_messages_sequences)):
       for test_messages in test_messages_sequence:
         first_request = test_messages.request()
         second_request = test_messages.request()
@@ -163,7 +165,7 @@ class EventInvocationSynchronousEventServiceTestCase(
 
   def testExpiredUnaryRequestUnaryResponse(self):
     for name, test_messages_sequence in (
-        self.digest.unary_unary_messages_sequences.iteritems()):
+        six.iteritems(self.digest.unary_unary_messages_sequences)):
       for test_messages in test_messages_sequence:
         request = test_messages.request()
         callback = testing_callback.Callback()
@@ -178,7 +180,7 @@ class EventInvocationSynchronousEventServiceTestCase(
 
   def testExpiredUnaryRequestStreamResponse(self):
     for name, test_messages_sequence in (
-        self.digest.unary_stream_messages_sequences.iteritems()):
+        six.iteritems(self.digest.unary_stream_messages_sequences)):
       for test_messages in test_messages_sequence:
         request = test_messages.request()
         callback = testing_callback.Callback()
@@ -193,7 +195,7 @@ class EventInvocationSynchronousEventServiceTestCase(
 
   def testExpiredStreamRequestUnaryResponse(self):
     for name, test_messages_sequence in (
-        self.digest.stream_unary_messages_sequences.iteritems()):
+        six.iteritems(self.digest.stream_unary_messages_sequences)):
       for unused_test_messages in test_messages_sequence:
         callback = testing_callback.Callback()
 
@@ -206,7 +208,7 @@ class EventInvocationSynchronousEventServiceTestCase(
 
   def testExpiredStreamRequestStreamResponse(self):
     for name, test_messages_sequence in (
-        self.digest.stream_stream_messages_sequences.iteritems()):
+        six.iteritems(self.digest.stream_stream_messages_sequences)):
       for test_messages in test_messages_sequence:
         requests = test_messages.requests()
         callback = testing_callback.Callback()
@@ -221,7 +223,7 @@ class EventInvocationSynchronousEventServiceTestCase(
 
   def testFailedUnaryRequestUnaryResponse(self):
     for name, test_messages_sequence in (
-        self.digest.unary_unary_messages_sequences.iteritems()):
+        six.iteritems(self.digest.unary_unary_messages_sequences)):
       for test_messages in test_messages_sequence:
         request = test_messages.request()
         callback = testing_callback.Callback()
@@ -237,7 +239,7 @@ class EventInvocationSynchronousEventServiceTestCase(
 
   def testFailedUnaryRequestStreamResponse(self):
     for name, test_messages_sequence in (
-        self.digest.unary_stream_messages_sequences.iteritems()):
+        six.iteritems(self.digest.unary_stream_messages_sequences)):
       for test_messages in test_messages_sequence:
         request = test_messages.request()
         callback = testing_callback.Callback()
@@ -253,7 +255,7 @@ class EventInvocationSynchronousEventServiceTestCase(
 
   def testFailedStreamRequestUnaryResponse(self):
     for name, test_messages_sequence in (
-        self.digest.stream_unary_messages_sequences.iteritems()):
+        six.iteritems(self.digest.stream_unary_messages_sequences)):
       for test_messages in test_messages_sequence:
         requests = test_messages.requests()
         callback = testing_callback.Callback()
@@ -272,7 +274,7 @@ class EventInvocationSynchronousEventServiceTestCase(
 
   def testFailedStreamRequestStreamResponse(self):
     for name, test_messages_sequence in (
-        self.digest.stream_stream_messages_sequences.iteritems()):
+        six.iteritems(self.digest.stream_stream_messages_sequences)):
       for test_messages in test_messages_sequence:
         requests = test_messages.requests()
         callback = testing_callback.Callback()
@@ -289,7 +291,7 @@ class EventInvocationSynchronousEventServiceTestCase(
 
   def testParallelInvocations(self):
     for name, test_messages_sequence in (
-        self.digest.unary_unary_messages_sequences.iteritems()):
+        six.iteritems(self.digest.unary_unary_messages_sequences)):
       for test_messages in test_messages_sequence:
         first_request = test_messages.request()
         first_callback = testing_callback.Callback()
@@ -316,7 +318,7 @@ class EventInvocationSynchronousEventServiceTestCase(
 
   def testCancelledUnaryRequestUnaryResponse(self):
     for name, test_messages_sequence in (
-        self.digest.unary_unary_messages_sequences.iteritems()):
+        six.iteritems(self.digest.unary_unary_messages_sequences)):
       for test_messages in test_messages_sequence:
         request = test_messages.request()
         callback = testing_callback.Callback()
@@ -332,7 +334,7 @@ class EventInvocationSynchronousEventServiceTestCase(
 
   def testCancelledUnaryRequestStreamResponse(self):
     for name, test_messages_sequence in (
-        self.digest.unary_stream_messages_sequences.iteritems()):
+        six.iteritems(self.digest.unary_stream_messages_sequences)):
       for test_messages in test_messages_sequence:
         request = test_messages.request()
         callback = testing_callback.Callback()
@@ -347,7 +349,7 @@ class EventInvocationSynchronousEventServiceTestCase(
 
   def testCancelledStreamRequestUnaryResponse(self):
     for name, test_messages_sequence in (
-        self.digest.stream_unary_messages_sequences.iteritems()):
+        six.iteritems(self.digest.stream_unary_messages_sequences)):
       for test_messages in test_messages_sequence:
         requests = test_messages.requests()
         callback = testing_callback.Callback()
@@ -364,7 +366,7 @@ class EventInvocationSynchronousEventServiceTestCase(
 
   def testCancelledStreamRequestStreamResponse(self):
     for name, test_messages_sequence in (
-        self.digest.stream_stream_messages_sequences.iteritems()):
+        six.iteritems(self.digest.stream_stream_messages_sequences)):
       for unused_test_messages in test_messages_sequence:
         callback = testing_callback.Callback()
 

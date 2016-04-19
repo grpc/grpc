@@ -1,5 +1,5 @@
 
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -156,6 +156,12 @@ message StreamingOutputCallRequest {
 message StreamingOutputCallResponse {
   // Payload to increase response size.
   Payload payload = 1;
+}
+
+// For reconnect interop test only.
+// Client tells server what reconnection parameters it used.
+message ReconnectParams {
+  int32 max_reconnect_backoff_ms = 1;
 }
 
 // For reconnect interop test only.

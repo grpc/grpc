@@ -23,6 +23,11 @@
     % endfor
   </ItemGroup>
   % endif
+  % if project.get('dll_def', None):
+  <ItemGroup>
+    <None Include="${get_repo_root(project)}\${to_windows_path(project.dll_def)}" />
+  </ItemGroup>
+  % endif
   % if project.get('public_headers',[]):
   <ItemGroup>
     % for public_header in project.public_headers:

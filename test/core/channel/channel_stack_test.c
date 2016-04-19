@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_stack.h"
 
 #include <string.h>
 
@@ -92,10 +92,17 @@ static void free_call(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
 }
 
 static void test_create_channel_stack(void) {
-  const grpc_channel_filter filter = {
-      call_func, channel_func, sizeof(int), call_init_func,
-      grpc_call_stack_ignore_set_pollset, call_destroy_func, sizeof(int),
-      channel_init_func, channel_destroy_func, get_peer, "some_test_filter"};
+  const grpc_channel_filter filter = {call_func,
+                                      channel_func,
+                                      sizeof(int),
+                                      call_init_func,
+                                      grpc_call_stack_ignore_set_pollset,
+                                      call_destroy_func,
+                                      sizeof(int),
+                                      channel_init_func,
+                                      channel_destroy_func,
+                                      get_peer,
+                                      "some_test_filter"};
   const grpc_channel_filter *filters = &filter;
   grpc_channel_stack *channel_stack;
   grpc_call_stack *call_stack;

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,8 +34,8 @@
 #ifndef GRPC_IMPL_CODEGEN_LOG_H
 #define GRPC_IMPL_CODEGEN_LOG_H
 
-#include <stdlib.h> /* for abort() */
 #include <stdarg.h>
+#include <stdlib.h> /* for abort() */
 
 #include <grpc/impl/codegen/port_platform.h>
 

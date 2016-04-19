@@ -36,18 +36,19 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/channel/channel_args.h"
-#include "src/core/security/credentials.h"
-#include "src/core/support/env.h"
-#include "src/core/support/file.h"
-#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/security/credentials.h"
+#include "src/core/lib/support/env.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/support/tmpfile.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/end2end/fixtures/proxy.h"
-#include "test/core/util/test_config.h"
 #include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
 
 typedef struct fullstack_secure_fixture_data {
   grpc_end2end_proxy *proxy;
@@ -194,6 +195,7 @@ int main(int argc, char **argv) {
   char *roots_filename;
 
   grpc_test_init(argc, argv);
+  grpc_end2end_tests_pre_init();
 
   /* Set the SSL roots env var. */
   roots_file = gpr_tmpfile("chttp2_simple_ssl_fullstack_test", &roots_filename);

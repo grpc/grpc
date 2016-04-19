@@ -39,8 +39,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="System.Interactive.Async, Version=1.2.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="System.Interactive.Async">
       <HintPath>..\packages\Ix-Async.1.2.5\lib\net45\System.Interactive.Async.dll</HintPath>
     </Reference>
   </ItemGroup>
@@ -59,6 +58,7 @@
     <Compile Include="IServerStreamWriter.cs" />
     <Compile Include="IAsyncStreamWriter.cs" />
     <Compile Include="IAsyncStreamReader.cs" />
+    <Compile Include="Logging\TextWriterLogger.cs" />
     <Compile Include="Logging\NullLogger.cs" />
     <Compile Include="ServerPort.cs" />
     <Compile Include="Version.cs" />
@@ -91,7 +91,6 @@
     <Compile Include="Internal\AsyncCallBase.cs" />
     <Compile Include="Internal\AsyncCallServer.cs" />
     <Compile Include="Internal\AsyncCall.cs" />
-    <Compile Include="Utils\Preconditions.cs" />
     <Compile Include="Internal\ServerCredentialsSafeHandle.cs" />
     <Compile Include="ServerCredentials.cs" />
     <Compile Include="Metadata.cs" />
@@ -130,6 +129,11 @@
     <Compile Include="Profiling\IProfiler.cs" />
     <Compile Include="Profiling\Profilers.cs" />
     <Compile Include="Internal\DefaultSslRootsOverride.cs" />
+    <Compile Include="Utils\GrpcPreconditions.cs" />
+    <Compile Include="CallInvoker.cs" />
+    <Compile Include="DefaultCallInvoker.cs" />
+    <Compile Include="Internal\UnimplementedCallInvoker.cs" />
+    <Compile Include="Internal\InterceptingCallInvoker.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Grpc.Core.nuspec" />
@@ -137,9 +141,7 @@
   </ItemGroup>
   <Import Project="NativeDeps.targets" />
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <ItemGroup>
-    <Folder Include="Resources\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <EmbeddedResource Include="..\..\..\etc\roots.pem">
       <Link>Resources\roots.pem</Link>

@@ -31,6 +31,8 @@
 
 import collections
 
+import six
+
 INVOCATION_INITIAL_METADATA = ((b'0', b'abc'), (b'1', b'def'), (b'2', b'ghi'),)
 SERVICE_INITIAL_METADATA = ((b'3', b'jkl'), (b'4', b'mno'), (b'5', b'pqr'),)
 SERVICE_TERMINAL_METADATA = ((b'6', b'stu'), (b'7', b'vwx'), (b'8', b'yza'),)
@@ -65,7 +67,7 @@ def metadata_transmitted(original_metadata, transmitted_metadata):
     key, value = tuple(key_value_pair)
     transmitted[key].append(value)
 
-  for key, values in original.iteritems():
+  for key, values in six.iteritems(original):
     transmitted_values = transmitted[key]
     transmitted_iterator = iter(transmitted_values)
     try:

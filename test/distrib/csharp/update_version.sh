@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -32,5 +32,13 @@ set -e
 
 cd $(dirname $0)
 
+CSHARP_VERSION="$1"
+if [ "$CSHARP_VERSION" == "auto" ]
+then
+  # autodetect C# version
+  CSHARP_VERSION=$(ls TestNugetFeed | grep '^Grpc\.[0-9].*\.nupkg$' | sed s/^Grpc\.// | sed s/\.nupkg$//)
+  echo "Autodetected nuget ${CSHARP_VERSION}"
+fi
+
 # Replaces version placeholder with value provided as first argument.
-sed -ibak "s/__GRPC_NUGET_VERSION__/$1/g" DistribTest/packages.config DistribTest/DistribTest.csproj
+sed -ibak "s/__GRPC_NUGET_VERSION__/${CSHARP_VERSION}/g" DistribTest/packages.config DistribTest/DistribTest.csproj

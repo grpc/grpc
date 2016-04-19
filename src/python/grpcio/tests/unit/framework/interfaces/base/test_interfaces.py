@@ -31,12 +31,13 @@
 
 import abc
 
+import six
+
 from grpc.framework.interfaces.base import base  # pylint: disable=unused-import
 
 
-class Serialization(object):
+class Serialization(six.with_metaclass(abc.ABCMeta)):
   """Specifies serialization and deserialization of test payloads."""
-  __metaclass__ = abc.ABCMeta
 
   def serialize_request(self, request):
     """Serializes a request value used in a test.
@@ -85,9 +86,8 @@ class Serialization(object):
     raise NotImplementedError()
 
 
-class Implementation(object):
+class Implementation(six.with_metaclass(abc.ABCMeta)):
   """Specifies an implementation of the Base layer."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def instantiate(self, serializations, servicer):

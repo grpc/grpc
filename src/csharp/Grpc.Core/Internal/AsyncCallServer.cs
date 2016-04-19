@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
@@ -53,7 +53,7 @@ namespace Grpc.Core.Internal
 
         public AsyncCallServer(Func<TResponse, byte[]> serializer, Func<byte[], TRequest> deserializer, GrpcEnvironment environment, Server server) : base(serializer, deserializer, environment)
         {
-            this.server = Preconditions.CheckNotNull(server);
+            this.server = GrpcPreconditions.CheckNotNull(server);
         }
 
         public void Initialize(CallSafeHandle call)
@@ -71,7 +71,7 @@ namespace Grpc.Core.Internal
         {
             lock (myLock)
             {
-                Preconditions.CheckNotNull(call);
+                GrpcPreconditions.CheckNotNull(call);
 
                 started = true;
 
@@ -108,14 +108,14 @@ namespace Grpc.Core.Internal
         {
             lock (myLock)
             {
-                Preconditions.CheckNotNull(headers, "metadata");
-                Preconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
+                GrpcPreconditions.CheckNotNull(headers, "metadata");
+                GrpcPreconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
 
-                Preconditions.CheckState(!initialMetadataSent, "Response headers can only be sent once per call.");
-                Preconditions.CheckState(streamingWritesCounter == 0, "Response headers can only be sent before the first write starts.");
-                CheckSendingAllowed();
+                GrpcPreconditions.CheckState(!initialMetadataSent, "Response headers can only be sent once per call.");
+                GrpcPreconditions.CheckState(streamingWritesCounter == 0, "Response headers can only be sent before the first write starts.");
+                CheckSendingAllowed(allowFinished: false);
 
-                Preconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
+                GrpcPreconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
 
                 using (var metadataArray = MetadataArraySafeHandle.Create(headers))
                 {
@@ -136,12 +136,12 @@ namespace Grpc.Core.Internal
         {
             lock (myLock)
             {
-                Preconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
-                CheckSendingAllowed();
+                GrpcPreconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
+                CheckSendingAllowed(allowFinished: false);
 
                 using (var metadataArray = MetadataArraySafeHandle.Create(trailers))
                 {
-                    call.StartSendStatusFromServer(HandleHalfclosed, status, metadataArray, !initialMetadataSent);
+                    call.StartSendStatusFromServer(HandleSendStatusFromServerFinished, status, metadataArray, !initialMetadataSent);
                 }
                 halfcloseRequested = true;
                 readingDone = true;
@@ -177,7 +177,7 @@ namespace Grpc.Core.Internal
         protected override void CheckReadingAllowed()
         {
             base.CheckReadingAllowed();
-            Preconditions.CheckArgument(!cancelRequested);
+            GrpcPreconditions.CheckArgument(!cancelRequested);
         }
 
         protected override void OnAfterReleaseResources()
@@ -193,16 +193,6 @@ namespace Grpc.Core.Internal
             lock (myLock)
             {
                 finished = true;
-
-                if (cancelled)
-                {
-                    // Once we cancel, we don't have to care that much 
-                    // about reads and writes.
-
-                    // TODO(jtattermusch): is this still necessary?
-                    Cancel();
-                }
-
                 ReleaseResourcesIfPossible();
             }
             // TODO(jtattermusch): handle error

@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -59,6 +59,8 @@ _SKIP_COMPRESSION = ['large_compressed_unary',
 
 _SKIP_ADVANCED = ['custom_metadata', 'status_code_and_message',
                   'unimplemented_method']
+
+_TEST_TIMEOUT = 3*60
 
 class CXXLanguage:
 
@@ -422,7 +424,7 @@ def _job_kill_handler(job):
     time.sleep(2)
 
 
-def cloud_to_prod_jobspec(language, test_case, server_host_name, 
+def cloud_to_prod_jobspec(language, test_case, server_host_name,
                           server_host_detail, docker_image=None, auth=False):
   """Creates jobspec for cloud-to-prod interop test"""
   container_name = None
@@ -441,7 +443,7 @@ def cloud_to_prod_jobspec(language, test_case, server_host_name,
   cwd = language.client_cwd
 
   if docker_image:
-    container_name = dockerjob.random_name('interop_client_%s' % 
+    container_name = dockerjob.random_name('interop_client_%s' %
                                            language.safename)
     cmdline = docker_run_cmdline(cmdline,
                                  image=docker_image,
@@ -457,9 +459,9 @@ def cloud_to_prod_jobspec(language, test_case, server_host_name,
           cmdline=cmdline,
           cwd=cwd,
           environ=environ,
-          shortname='%s:%s:%s:%s' % (suite_name, server_host_name, language, 
+          shortname='%s:%s:%s:%s' % (suite_name, server_host_name, language,
                                      test_case),
-          timeout_seconds=90,
+          timeout_seconds=_TEST_TIMEOUT,
           flake_retries=5 if args.allow_flakes else 0,
           timeout_retries=2 if args.allow_flakes else 0,
           kill_handler=_job_kill_handler)
@@ -495,7 +497,7 @@ def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
           environ=environ,
           shortname='cloud_to_cloud:%s:%s_server:%s' % (language, server_name,
                                                         test_case),
-          timeout_seconds=90,
+          timeout_seconds=_TEST_TIMEOUT,
           flake_retries=5 if args.allow_flakes else 0,
           timeout_retries=2 if args.allow_flakes else 0,
           kill_handler=_job_kill_handler)
@@ -575,19 +577,23 @@ def aggregate_http2_results(stdout):
     'percent': 1.0 * passed / (passed + failed)
   }
 
-# A dictionary of prod servers to test. 
+# A dictionary of prod servers to test.
 # Format: server_name: (server_host, server_host_override, errors_allowed)
 # TODO(adelez): implement logic for errors_allowed where if the indicated tests
 # fail, they don't impact the overall test result.
 prod_servers = {
-    'default': ('grpc-test.sandbox.googleapis.com', 
+    'default': ('grpc-test.sandbox.googleapis.com',
                 'grpc-test.sandbox.googleapis.com', False),
-    'gateway_v2': ('grpc-test2.sandbox.googleapis.com', 
+    'gateway_v2': ('grpc-test2.sandbox.googleapis.com',
                    'grpc-test2.sandbox.googleapis.com', True),
-    'cloud_gateway': ('216.239.32.255', 'grpc-test.sandbox.googleapis.com', 
+    'cloud_gateway': ('216.239.32.255', 'grpc-test.sandbox.googleapis.com',
                       False),
-    'cloud_gateway_v2': ('216.239.32.255', 'grpc-test2.sandbox.googleapis.com', 
-                         True)
+    'cloud_gateway_v2': ('216.239.32.255', 'grpc-test2.sandbox.googleapis.com',
+                         True),
+    'gateway_v4': ('grpc-test4.sandbox.googleapis.com', 
+                   'grpc-test4.sandbox.googleapis.com', True), 
+    'cloud_gateway_v4': ('216.239.32.255', 'grpc-test4.sandbox.googleapis.com',
+                         True),
 }
 
 argp = argparse.ArgumentParser(description='Run interop tests.')
@@ -720,7 +726,7 @@ try:
           if not test_case in language.unimplemented_test_cases():
             if not test_case in _SKIP_ADVANCED + _SKIP_COMPRESSION:
               test_job = cloud_to_prod_jobspec(
-                  language, test_case, server_host_name, 
+                  language, test_case, server_host_name,
                   prod_servers[server_host_name],
                   docker_image=docker_images.get(str(language)))
               jobs.append(test_job)
@@ -728,7 +734,7 @@ try:
       if args.http2_interop:
         for test_case in _HTTP2_TEST_CASES:
           test_job = cloud_to_prod_jobspec(
-              http2Interop, test_case, server_host_name, 
+              http2Interop, test_case, server_host_name,
               prod_servers[server_host_name],
               docker_image=docker_images.get(str(http2Interop)))
           jobs.append(test_job)
@@ -739,7 +745,7 @@ try:
         for test_case in _AUTH_TEST_CASES:
           if not test_case in language.unimplemented_test_cases():
             test_job = cloud_to_prod_jobspec(
-                language, test_case, server_host_name, 
+                language, test_case, server_host_name,
                 prod_servers[server_host_name],
                 docker_image=docker_images.get(str(language)), auth=True)
             jobs.append(test_job)
@@ -802,7 +808,7 @@ try:
   report_utils.render_interop_html_report(
       set([str(l) for l in languages]), servers, _TEST_CASES, _AUTH_TEST_CASES,
       _HTTP2_TEST_CASES, resultset, num_failures,
-      args.cloud_to_prod_auth or args.cloud_to_prod, args.prod_servers, 
+      args.cloud_to_prod_auth or args.cloud_to_prod, args.prod_servers,
       args.http2_interop)
 
 finally:

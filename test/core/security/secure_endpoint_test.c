@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,16 +36,17 @@
 #include <fcntl.h>
 #include <sys/types.h>
 
-#include "src/core/security/secure_endpoint.h"
-#include "src/core/iomgr/endpoint_pair.h"
-#include "src/core/iomgr/iomgr.h"
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include "src/core/lib/iomgr/endpoint_pair.h"
+#include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/security/secure_endpoint.h"
+#include "src/core/lib/tsi/fake_transport_security.h"
 #include "test/core/util/test_config.h"
-#include "src/core/tsi/fake_transport_security.h"
 
-static grpc_pollset g_pollset;
+static gpr_mu *g_mu;
+static grpc_pollset *g_pollset;
 
 static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
     size_t slice_size, gpr_slice *leftover_slices, size_t leftover_nslices) {
@@ -56,8 +57,8 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
   grpc_endpoint_pair tcp;
 
   tcp = grpc_iomgr_create_endpoint_pair("fixture", slice_size);
-  grpc_endpoint_add_to_pollset(&exec_ctx, tcp.client, &g_pollset);
-  grpc_endpoint_add_to_pollset(&exec_ctx, tcp.server, &g_pollset);
+  grpc_endpoint_add_to_pollset(&exec_ctx, tcp.client, g_pollset);
+  grpc_endpoint_add_to_pollset(&exec_ctx, tcp.server, g_pollset);
 
   if (leftover_nslices == 0) {
     f.client_ep =
@@ -181,13 +182,16 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
 
   grpc_init();
-  grpc_pollset_init(&g_pollset);
-  grpc_endpoint_tests(configs[0], &g_pollset);
+  g_pollset = gpr_malloc(grpc_pollset_size());
+  grpc_pollset_init(g_pollset, &g_mu);
+  grpc_endpoint_tests(configs[0], g_pollset, g_mu);
   test_leftover(configs[1], 1);
-  grpc_closure_init(&destroyed, destroy_pollset, &g_pollset);
-  grpc_pollset_shutdown(&exec_ctx, &g_pollset, &destroyed);
+  grpc_closure_init(&destroyed, destroy_pollset, g_pollset);
+  grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();
+
+  gpr_free(g_pollset);
 
   return 0;
 }

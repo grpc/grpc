@@ -35,6 +35,8 @@ import logging
 import threading
 import time
 
+import six
+
 from grpc._adapter import _intermediary_low
 from grpc._links import _constants
 from grpc.beta import interfaces as beta_interfaces
@@ -372,12 +374,11 @@ class _Kernel(object):
     pool.shutdown(wait=True)
 
 
-class InvocationLink(links.Link, activated.Activated):
+class InvocationLink(six.with_metaclass(abc.ABCMeta, links.Link, activated.Activated)):
   """A links.Link for use on the invocation-side of a gRPC connection.
 
   Implementations of this interface are only valid for use when activated.
   """
-  __metaclass__ = abc.ABCMeta
 
 
 class _InvocationLink(InvocationLink):

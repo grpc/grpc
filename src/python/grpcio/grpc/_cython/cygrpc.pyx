@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -57,14 +57,17 @@ cdef class _ModuleState:
           'grpc._cython', '_windows/grpc_c.64.python')
       if not pygrpc_load_core(filename):
         raise ImportError('failed to load core gRPC library')
-    grpc_init()
+    with nogil:
+      grpc_init()
     self.is_loaded = True
-    grpc_set_ssl_roots_override_callback(
-        <grpc_ssl_roots_override_callback>ssl_roots_override_callback)
+    with nogil:
+      grpc_set_ssl_roots_override_callback(
+          <grpc_ssl_roots_override_callback>ssl_roots_override_callback)
 
   def __dealloc__(self):
     if self.is_loaded:
-      grpc_shutdown()
+      with nogil:
+        grpc_shutdown()
 
 _module_state = _ModuleState()
 

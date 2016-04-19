@@ -176,13 +176,13 @@ namespace Grpc.Core
             {
                 if (propagationToken.Options.IsPropagateDeadline)
                 {
-                    Preconditions.CheckArgument(!newOptions.deadline.HasValue,
+                    GrpcPreconditions.CheckArgument(!newOptions.deadline.HasValue,
                         "Cannot propagate deadline from parent call. The deadline has already been set explicitly.");
                     newOptions.deadline = propagationToken.ParentDeadline;
                 }
                 if (propagationToken.Options.IsPropagateCancellation)
                 {
-                    Preconditions.CheckArgument(!newOptions.cancellationToken.CanBeCanceled,
+                    GrpcPreconditions.CheckArgument(!newOptions.cancellationToken.CanBeCanceled,
                         "Cannot propagate cancellation token from parent call. The cancellation token has already been set to a non-default value.");
                     newOptions.cancellationToken = propagationToken.ParentCancellationToken;
                 }

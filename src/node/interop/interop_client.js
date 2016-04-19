@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -286,10 +286,11 @@ function cancelAfterFirstResponse(client, done) {
 function timeoutOnSleepingServer(client, done) {
   var deadline = new Date();
   deadline.setMilliseconds(deadline.getMilliseconds() + 1);
-  var call = client.fullDuplexCall(null, {deadline: deadline});
+  var call = client.fullDuplexCall({deadline: deadline});
   call.write({
     payload: {body: zeroBuffer(27182)}
   });
+  call.on('data', function() {});
   call.on('error', function(error) {
 
     assert(error.code === grpc.status.DEADLINE_EXCEEDED ||
@@ -315,10 +316,10 @@ function customMetadata(client, done) {
       body: zeroBuffer(271828)
     }
   };
-  var unary = client.unaryCall(arg, function(err, resp) {
+  var unary = client.unaryCall(arg, metadata, function(err, resp) {
     assert.ifError(err);
     done();
-  }, metadata);
+  });
   unary.on('metadata', function(metadata) {
     assert.deepEqual(metadata.get(ECHO_INITIAL_KEY),
                      ['test_initial_metadata_value']);
@@ -336,6 +337,7 @@ function customMetadata(client, done) {
                      ['test_initial_metadata_value']);
     done();
   });
+  stream.on('data', function() {});
   stream.on('status', function(status) {
     var echo_trailer = status.metadata.get(ECHO_TRAILING_KEY);
     assert(echo_trailer.length > 0);
@@ -361,6 +363,7 @@ function statusCodeAndMessage(client, done) {
     done();
   });
   var duplex = client.fullDuplexCall();
+  duplex.on('data', function() {});
   duplex.on('status', function(status) {
     assert(status);
     assert.strictEqual(status.code, 2);
@@ -452,14 +455,14 @@ function perRpcAuthTest(client, done, extra) {
       credential = credential.createScoped(scope);
     }
     var creds = grpc.credentials.createFromGoogleCredential(credential);
-    client.unaryCall(arg, function(err, resp) {
+    client.unaryCall(arg, {credentials: creds}, function(err, resp) {
       assert.ifError(err);
       assert.strictEqual(resp.username, SERVICE_ACCOUNT_EMAIL);
       assert(extra.oauth_scope.indexOf(resp.oauth_scope) > -1);
       if (done) {
         done();
       }
-    }, null, {credentials: creds});
+    });
   });
 }
 
@@ -541,6 +544,8 @@ var test_cases = {
   per_rpc_creds: {run: perRpcAuthTest,
                   Client: testProto.TestService}
 };
+
+exports.test_cases = test_cases;
 
 /**
  * Execute a single test case.

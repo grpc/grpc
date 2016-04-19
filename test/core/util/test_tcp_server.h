@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,14 +35,14 @@
 #define GRPC_TEST_CORE_UTIL_TEST_TCP_SERVER_H
 
 #include <grpc/support/sync.h>
-#include "src/core/iomgr/tcp_server.h"
+#include "src/core/lib/iomgr/tcp_server.h"
 
 typedef struct test_tcp_server {
   grpc_tcp_server *tcp_server;
   grpc_closure shutdown_complete;
   int shutdown;
-  grpc_pollset pollset;
-  grpc_pollset *pollsets[1];
+  gpr_mu *mu;
+  grpc_pollset *pollset;
   grpc_tcp_server_cb on_connect;
   void *cb_data;
 } test_tcp_server;

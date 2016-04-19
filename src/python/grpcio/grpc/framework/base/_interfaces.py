@@ -31,14 +31,15 @@
 
 import abc
 
+import six
+
 # interfaces is referenced from specification in this module.
 from grpc.framework.base import interfaces  # pylint: disable=unused-import
 from grpc.framework.foundation import stream
 
 
-class TerminationManager(object):
+class TerminationManager(six.with_metaclass(abc.ABCMeta)):
   """An object responsible for handling the termination of an operation."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def set_expiration_manager(self, expiration_manager):
@@ -91,9 +92,8 @@ class TerminationManager(object):
     raise NotImplementedError()
 
 
-class TransmissionManager(object):
+class TransmissionManager(six.with_metaclass(abc.ABCMeta)):
   """A manager responsible for transmitting to the other end of an operation."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def inmit(self, emission, complete):
@@ -117,9 +117,8 @@ class TransmissionManager(object):
     raise NotImplementedError()
 
 
-class EmissionManager(stream.Consumer):
+class EmissionManager(six.with_metaclass(abc.ABCMeta, stream.Consumer)):
   """A manager of values emitted by customer code."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def set_ingestion_manager_and_expiration_manager(
@@ -166,9 +165,8 @@ class EmissionManager(stream.Consumer):
     raise NotImplementedError()
 
 
-class IngestionManager(stream.Consumer):
+class IngestionManager(six.with_metaclass(abc.ABCMeta, stream.Consumer)):
   """A manager responsible for executing customer code."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def set_expiration_manager(self, expiration_manager):
@@ -214,9 +212,8 @@ class IngestionManager(stream.Consumer):
     raise NotImplementedError()
 
 
-class ExpirationManager(object):
+class ExpirationManager(six.with_metaclass(abc.ABCMeta)):
   """A manager responsible for aborting the operation if it runs out of time."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def change_timeout(self, timeout):
@@ -246,9 +243,8 @@ class ExpirationManager(object):
     raise NotImplementedError()
 
 
-class ReceptionManager(object):
+class ReceptionManager(six.with_metaclass(abc.ABCMeta)):
   """A manager responsible for receiving tickets from the other end."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def receive_ticket(self, ticket):
@@ -261,9 +257,8 @@ class ReceptionManager(object):
     raise NotImplementedError()
 
 
-class CancellationManager(object):
+class CancellationManager(six.with_metaclass(abc.ABCMeta)):
   """A manager of operation cancellation."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def cancel(self):

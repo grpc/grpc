@@ -33,11 +33,11 @@
 
 #include <grpc++/security/credentials.h>
 
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpc++/channel.h>
 #include <grpc++/support/channel_arguments.h>
 #include <grpc++/support/config.h>
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
 #include "src/cpp/client/create_channel_internal.h"
 
 namespace grpc {
