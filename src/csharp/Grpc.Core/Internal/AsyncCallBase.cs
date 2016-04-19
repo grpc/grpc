@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
@@ -79,9 +79,9 @@ namespace Grpc.Core.Internal
 
         public AsyncCallBase(Func<TWrite, byte[]> serializer, Func<byte[], TRead> deserializer, GrpcEnvironment environment)
         {
-            this.serializer = Preconditions.CheckNotNull(serializer);
-            this.deserializer = Preconditions.CheckNotNull(deserializer);
-            this.environment = Preconditions.CheckNotNull(environment);
+            this.serializer = GrpcPreconditions.CheckNotNull(serializer);
+            this.deserializer = GrpcPreconditions.CheckNotNull(deserializer);
+            this.environment = GrpcPreconditions.CheckNotNull(environment);
         }
 
         /// <summary>
@@ -91,7 +91,7 @@ namespace Grpc.Core.Internal
         {
             lock (myLock)
             {
-                Preconditions.CheckState(started);
+                GrpcPreconditions.CheckState(started);
                 cancelRequested = true;
 
                 if (!disposed)
@@ -135,8 +135,8 @@ namespace Grpc.Core.Internal
 
             lock (myLock)
             {
-                Preconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
-                CheckSendingAllowed();
+                GrpcPreconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
+                CheckSendingAllowed(allowFinished: false);
 
                 call.StartSendMessage(HandleSendFinished, payload, writeFlags, !initialMetadataSent);
 
@@ -154,7 +154,7 @@ namespace Grpc.Core.Internal
         {
             lock (myLock)
             {
-                Preconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
+                GrpcPreconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
                 CheckReadingAllowed();
 
                 call.StartReceiveMessage(HandleReadFinished);
@@ -202,24 +202,24 @@ namespace Grpc.Core.Internal
         {
         }
 
-        protected void CheckSendingAllowed()
+        protected void CheckSendingAllowed(bool allowFinished)
         {
-            Preconditions.CheckState(started);
+            GrpcPreconditions.CheckState(started);
             CheckNotCancelled();
-            Preconditions.CheckState(!disposed);
+            GrpcPreconditions.CheckState(!disposed || allowFinished);
 
-            Preconditions.CheckState(!halfcloseRequested, "Already halfclosed.");
-            Preconditions.CheckState(!finished, "Already finished.");
-            Preconditions.CheckState(sendCompletionDelegate == null, "Only one write can be pending at a time");
+            GrpcPreconditions.CheckState(!halfcloseRequested, "Already halfclosed.");
+            GrpcPreconditions.CheckState(!finished || allowFinished, "Already finished.");
+            GrpcPreconditions.CheckState(sendCompletionDelegate == null, "Only one write can be pending at a time");
         }
 
         protected virtual void CheckReadingAllowed()
         {
-            Preconditions.CheckState(started);
-            Preconditions.CheckState(!disposed);
+            GrpcPreconditions.CheckState(started);
+            GrpcPreconditions.CheckState(!disposed);
 
-            Preconditions.CheckState(!readingDone, "Stream has already been closed.");
-            Preconditions.CheckState(readCompletionDelegate == null, "Only one read can be pending at a time");
+            GrpcPreconditions.CheckState(!readingDone, "Stream has already been closed.");
+            GrpcPreconditions.CheckState(readCompletionDelegate == null, "Only one read can be pending at a time");
         }
 
         protected void CheckNotCancelled()
@@ -294,9 +294,9 @@ namespace Grpc.Core.Internal
         }
 
         /// <summary>
-        /// Handles halfclose completion.
+        /// Handles halfclose (send close from client) completion.
         /// </summary>
-        protected void HandleHalfclosed(bool success)
+        protected void HandleSendCloseFromClientFinished(bool success)
         {
             AsyncCompletionDelegate<object> origCompletionDelegate = null;
             lock (myLock)
@@ -309,7 +309,31 @@ namespace Grpc.Core.Internal
 
             if (!success)
             {
-                FireCompletion(origCompletionDelegate, null, new InvalidOperationException("Halfclose failed"));
+                FireCompletion(origCompletionDelegate, null, new InvalidOperationException("Sending close from client has failed."));
+            }
+            else
+            {
+                FireCompletion(origCompletionDelegate, null, null);
+            }
+        }
+
+        /// <summary>
+        /// Handles send status from server completion.
+        /// </summary>
+        protected void HandleSendStatusFromServerFinished(bool success)
+        {
+            AsyncCompletionDelegate<object> origCompletionDelegate = null;
+            lock (myLock)
+            {
+                origCompletionDelegate = sendCompletionDelegate;
+                sendCompletionDelegate = null;
+
+                ReleaseResourcesIfPossible();
+            }
+
+            if (!success)
+            {
+                FireCompletion(origCompletionDelegate, null, new InvalidOperationException("Error sending status from server."));
             }
             else
             {

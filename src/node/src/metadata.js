@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -64,7 +64,7 @@ function normalizeKey(key) {
   if (grpc.metadataKeyIsLegal(key)) {
     return key;
   } else {
-    throw new Error('Metadata key contains illegal characters');
+    throw new Error('Metadata key"' + key + '" contains illegal characters');
   }
 }
 
@@ -79,7 +79,8 @@ function validate(key, value) {
           'keys that don\'t end with \'-bin\' must have String values');
     }
     if (!grpc.metadataNonbinValueIsLegal(value)) {
-      throw new Error('Metadata string value contains illegal characters');
+      throw new Error('Metadata string value "' + value +
+                      '" contains illegal characters');
     }
   }
 }

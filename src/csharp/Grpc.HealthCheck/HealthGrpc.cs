@@ -7,15 +7,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
 
-namespace Grpc.Health.V1Alpha {
+namespace Grpc.Health.V1 {
   public static class Health
   {
-    static readonly string __ServiceName = "grpc.health.v1alpha.Health";
+    static readonly string __ServiceName = "grpc.health.v1.Health";
 
-    static readonly Marshaller<global::Grpc.Health.V1Alpha.HealthCheckRequest> __Marshaller_HealthCheckRequest = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Health.V1Alpha.HealthCheckRequest.Parser.ParseFrom);
-    static readonly Marshaller<global::Grpc.Health.V1Alpha.HealthCheckResponse> __Marshaller_HealthCheckResponse = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Health.V1Alpha.HealthCheckResponse.Parser.ParseFrom);
+    static readonly Marshaller<global::Grpc.Health.V1.HealthCheckRequest> __Marshaller_HealthCheckRequest = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Health.V1.HealthCheckRequest.Parser.ParseFrom);
+    static readonly Marshaller<global::Grpc.Health.V1.HealthCheckResponse> __Marshaller_HealthCheckResponse = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Health.V1.HealthCheckResponse.Parser.ParseFrom);
 
-    static readonly Method<global::Grpc.Health.V1Alpha.HealthCheckRequest, global::Grpc.Health.V1Alpha.HealthCheckResponse> __Method_Check = new Method<global::Grpc.Health.V1Alpha.HealthCheckRequest, global::Grpc.Health.V1Alpha.HealthCheckResponse>(
+    static readonly Method<global::Grpc.Health.V1.HealthCheckRequest, global::Grpc.Health.V1.HealthCheckResponse> __Method_Check = new Method<global::Grpc.Health.V1.HealthCheckRequest, global::Grpc.Health.V1.HealthCheckResponse>(
         MethodType.Unary,
         __ServiceName,
         "Check",
@@ -25,54 +25,85 @@ namespace Grpc.Health.V1Alpha {
     // service descriptor
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
     {
-      get { return global::Grpc.Health.V1Alpha.HealthReflection.Descriptor.Services[0]; }
+      get { return global::Grpc.Health.V1.HealthReflection.Descriptor.Services[0]; }
     }
 
     // client interface
+    [System.Obsolete("Client side interfaced will be removed in the next release. Use client class directly.")]
     public interface IHealthClient
     {
-      global::Grpc.Health.V1Alpha.HealthCheckResponse Check(global::Grpc.Health.V1Alpha.HealthCheckRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      global::Grpc.Health.V1Alpha.HealthCheckResponse Check(global::Grpc.Health.V1Alpha.HealthCheckRequest request, CallOptions options);
-      AsyncUnaryCall<global::Grpc.Health.V1Alpha.HealthCheckResponse> CheckAsync(global::Grpc.Health.V1Alpha.HealthCheckRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      AsyncUnaryCall<global::Grpc.Health.V1Alpha.HealthCheckResponse> CheckAsync(global::Grpc.Health.V1Alpha.HealthCheckRequest request, CallOptions options);
+      global::Grpc.Health.V1.HealthCheckResponse Check(global::Grpc.Health.V1.HealthCheckRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+      global::Grpc.Health.V1.HealthCheckResponse Check(global::Grpc.Health.V1.HealthCheckRequest request, CallOptions options);
+      AsyncUnaryCall<global::Grpc.Health.V1.HealthCheckResponse> CheckAsync(global::Grpc.Health.V1.HealthCheckRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+      AsyncUnaryCall<global::Grpc.Health.V1.HealthCheckResponse> CheckAsync(global::Grpc.Health.V1.HealthCheckRequest request, CallOptions options);
     }
 
     // server-side interface
+    [System.Obsolete("Service implementations should inherit from the generated abstract base class instead.")]
     public interface IHealth
     {
-      Task<global::Grpc.Health.V1Alpha.HealthCheckResponse> Check(global::Grpc.Health.V1Alpha.HealthCheckRequest request, ServerCallContext context);
+      Task<global::Grpc.Health.V1.HealthCheckResponse> Check(global::Grpc.Health.V1.HealthCheckRequest request, ServerCallContext context);
+    }
+
+    // server-side abstract class
+    public abstract class HealthBase
+    {
+      public virtual Task<global::Grpc.Health.V1.HealthCheckResponse> Check(global::Grpc.Health.V1.HealthCheckRequest request, ServerCallContext context)
+      {
+        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+      }
+
     }
 
     // client stub
-    public class HealthClient : ClientBase, IHealthClient
+    public class HealthClient : ClientBase<HealthClient>, IHealthClient
     {
       public HealthClient(Channel channel) : base(channel)
       {
       }
-      public global::Grpc.Health.V1Alpha.HealthCheckResponse Check(global::Grpc.Health.V1Alpha.HealthCheckRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public HealthClient(CallInvoker callInvoker) : base(callInvoker)
       {
-        var call = CreateCall(__Method_Check, new CallOptions(headers, deadline, cancellationToken));
-        return Calls.BlockingUnaryCall(call, request);
       }
-      public global::Grpc.Health.V1Alpha.HealthCheckResponse Check(global::Grpc.Health.V1Alpha.HealthCheckRequest request, CallOptions options)
+      ///<summary>Protected parameterless constructor to allow creation of test doubles.</summary>
+      protected HealthClient() : base()
       {
-        var call = CreateCall(__Method_Check, options);
-        return Calls.BlockingUnaryCall(call, request);
       }
-      public AsyncUnaryCall<global::Grpc.Health.V1Alpha.HealthCheckResponse> CheckAsync(global::Grpc.Health.V1Alpha.HealthCheckRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      ///<summary>Protected constructor to allow creation of configured clients.</summary>
+      protected HealthClient(ClientBaseConfiguration configuration) : base(configuration)
       {
-        var call = CreateCall(__Method_Check, new CallOptions(headers, deadline, cancellationToken));
-        return Calls.AsyncUnaryCall(call, request);
       }
-      public AsyncUnaryCall<global::Grpc.Health.V1Alpha.HealthCheckResponse> CheckAsync(global::Grpc.Health.V1Alpha.HealthCheckRequest request, CallOptions options)
+
+      public virtual global::Grpc.Health.V1.HealthCheckResponse Check(global::Grpc.Health.V1.HealthCheckRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        var call = CreateCall(__Method_Check, options);
-        return Calls.AsyncUnaryCall(call, request);
+        return Check(request, new CallOptions(headers, deadline, cancellationToken));
+      }
+      public virtual global::Grpc.Health.V1.HealthCheckResponse Check(global::Grpc.Health.V1.HealthCheckRequest request, CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_Check, null, options, request);
+      }
+      public virtual AsyncUnaryCall<global::Grpc.Health.V1.HealthCheckResponse> CheckAsync(global::Grpc.Health.V1.HealthCheckRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      {
+        return CheckAsync(request, new CallOptions(headers, deadline, cancellationToken));
+      }
+      public virtual AsyncUnaryCall<global::Grpc.Health.V1.HealthCheckResponse> CheckAsync(global::Grpc.Health.V1.HealthCheckRequest request, CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_Check, null, options, request);
+      }
+      protected override HealthClient NewInstance(ClientBaseConfiguration configuration)
+      {
+        return new HealthClient(configuration);
       }
     }
 
     // creates service definition that can be registered with a server
     public static ServerServiceDefinition BindService(IHealth serviceImpl)
+    {
+      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+          .AddMethod(__Method_Check, serviceImpl.Check).Build();
+    }
+
+    // creates service definition that can be registered with a server
+    public static ServerServiceDefinition BindService(HealthBase serviceImpl)
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_Check, serviceImpl.Check).Build();

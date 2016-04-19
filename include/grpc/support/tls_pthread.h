@@ -57,4 +57,4 @@ intptr_t gpr_tls_set(struct gpr_pthread_thread_local *tls, intptr_t value);
 }
 #endif
 
-#endif
+#endif /* GRPC_SUPPORT_TLS_PTHREAD_H */

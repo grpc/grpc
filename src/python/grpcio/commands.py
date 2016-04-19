@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -119,8 +119,7 @@ class SphinxDocumentation(setuptools.Command):
     import sphinx
     import sphinx.apidoc
     metadata = self.distribution.metadata
-    src_dir = os.path.join(
-        PYTHON_STEM, self.distribution.package_dir[''], 'grpc')
+    src_dir = os.path.join(PYTHON_STEM, 'grpc')
     sys.path.append(src_dir)
     sphinx.apidoc.main([
         '', '--force', '--full', '-H', metadata.name, '-A', metadata.author,
@@ -262,6 +261,36 @@ class Gather(setuptools.Command):
       self.distribution.fetch_build_eggs(self.distribution.install_requires)
     if self.test and self.distribution.tests_require:
       self.distribution.fetch_build_eggs(self.distribution.tests_require)
+
+
+class TestLite(setuptools.Command):
+  """Command to run tests without fetching or building anything."""
+
+  description = 'run tests without fetching or building anything.'
+  user_options = []
+
+  def initialize_options(self):
+    pass
+
+  def finalize_options(self):
+    # distutils requires this override.
+    pass
+
+  def run(self):
+    self._add_eggs_to_path()
+
+    import tests
+    loader = tests.Loader()
+    loader.loadTestsFromNames(['tests'])
+    runner = tests.Runner()
+    result = runner.run(loader.suite)
+    if not result.wasSuccessful():
+      sys.exit('Test failure')
+
+  def _add_eggs_to_path(self):
+    """Fetch install and test requirements"""
+    self.distribution.fetch_build_eggs(self.distribution.install_requires)
+    self.distribution.fetch_build_eggs(self.distribution.tests_require)
 
 
 class RunInterop(test.test):

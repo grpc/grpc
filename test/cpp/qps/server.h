@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,14 +43,14 @@
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
 #include "test/cpp/qps/limit_cores.h"
-#include "test/cpp/qps/timer.h"
+#include "test/cpp/qps/usage_timer.h"
 
 namespace grpc {
 namespace testing {
 
 class Server {
  public:
-  explicit Server(const ServerConfig& config) : timer_(new Timer) {
+  explicit Server(const ServerConfig& config) : timer_(new UsageTimer) {
     cores_ = LimitCores(config.core_list().data(), config.core_list_size());
     if (config.port()) {
       port_ = config.port();
@@ -62,9 +62,9 @@ class Server {
   virtual ~Server() {}
 
   ServerStats Mark(bool reset) {
-    Timer::Result timer_result;
+    UsageTimer::Result timer_result;
     if (reset) {
-      std::unique_ptr<Timer> timer(new Timer);
+      std::unique_ptr<UsageTimer> timer(new UsageTimer);
       timer.swap(timer_);
       timer_result = timer->Mark();
     } else {
@@ -108,7 +108,7 @@ class Server {
  private:
   int port_;
   int cores_;
-  std::unique_ptr<Timer> timer_;
+  std::unique_ptr<UsageTimer> timer_;
 };
 
 std::unique_ptr<Server> CreateSynchronousServer(const ServerConfig& config);

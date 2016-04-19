@@ -29,6 +29,8 @@
 
 """The Python implementation of the gRPC route guide client."""
 
+from __future__ import print_function
+
 import random
 import time
 
@@ -49,13 +51,13 @@ def make_route_note(message, latitude, longitude):
 def guide_get_one_feature(stub, point):
   feature = stub.GetFeature(point, _TIMEOUT_SECONDS)
   if not feature.location:
-    print "Server returned incomplete feature"
+    print("Server returned incomplete feature")
     return
 
   if feature.name:
-    print "Feature called %s at %s" % (feature.name, feature.location)
+    print("Feature called %s at %s" % (feature.name, feature.location))
   else:
-    print "Found no feature at %s" % feature.location
+    print("Found no feature at %s" % feature.location)
 
 
 def guide_get_feature(stub):
@@ -69,18 +71,18 @@ def guide_list_features(stub):
           latitude=400000000, longitude = -750000000),
       hi=route_guide_pb2.Point(
           latitude = 420000000, longitude = -730000000))
-  print "Looking for features between 40, -75 and 42, -73"
+  print("Looking for features between 40, -75 and 42, -73")
 
   features = stub.ListFeatures(rect, _TIMEOUT_SECONDS)
 
   for feature in features:
-    print "Feature called %s at %s" % (feature.name, feature.location)
+    print("Feature called %s at %s" % (feature.name, feature.location))
 
 
 def generate_route(feature_list):
   for _ in range(0, 10):
     random_feature = feature_list[random.randint(0, len(feature_list) - 1)]
-    print "Visiting point %s" % random_feature.location
+    print("Visiting point %s" % random_feature.location)
     yield random_feature.location
     time.sleep(random.uniform(0.5, 1.5))
 
@@ -90,10 +92,10 @@ def guide_record_route(stub):
 
   route_iter = generate_route(feature_list)
   route_summary = stub.RecordRoute(route_iter, _TIMEOUT_SECONDS)
-  print "Finished trip with %s points " % route_summary.point_count
-  print "Passed %s features " % route_summary.feature_count
-  print "Travelled %s meters " % route_summary.distance
-  print "It took %s seconds " % route_summary.elapsed_time
+  print("Finished trip with %s points " % route_summary.point_count)
+  print("Passed %s features " % route_summary.feature_count)
+  print("Travelled %s meters " % route_summary.distance)
+  print("It took %s seconds " % route_summary.elapsed_time)
 
 
 def generate_messages():
@@ -105,7 +107,7 @@ def generate_messages():
       make_route_note("Fifth message", 1, 0),
   ]
   for msg in messages:
-    print "Sending %s at %s" % (msg.message, msg.location)
+    print("Sending %s at %s" % (msg.message, msg.location))
     yield msg
     time.sleep(random.uniform(0.5, 1.0))
 
@@ -113,19 +115,19 @@ def generate_messages():
 def guide_route_chat(stub):
   responses = stub.RouteChat(generate_messages(), _TIMEOUT_SECONDS)
   for response in responses:
-    print "Received message %s at %s" % (response.message, response.location)
+    print("Received message %s at %s" % (response.message, response.location))
 
 
 def run():
   channel = implementations.insecure_channel('localhost', 50051)
   stub = route_guide_pb2.beta_create_RouteGuide_stub(channel)
-  print "-------------- GetFeature --------------"
+  print("-------------- GetFeature --------------")
   guide_get_feature(stub)
-  print "-------------- ListFeatures --------------"
+  print("-------------- ListFeatures --------------")
   guide_list_features(stub)
-  print "-------------- RecordRoute --------------"
+  print("-------------- RecordRoute --------------")
   guide_record_route(stub)
-  print "-------------- RouteChat --------------"
+  print("-------------- RouteChat --------------")
   guide_route_chat(stub)
 
 

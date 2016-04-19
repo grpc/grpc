@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/compression/message_compress.h"
+#include "src/core/lib/compression/message_compress.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -40,7 +40,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/support/murmur_hash.h"
+#include "src/core/lib/support/murmur_hash.h"
 #include "test/core/util/slice_splitter.h"
 #include "test/core/util/test_config.h"
 

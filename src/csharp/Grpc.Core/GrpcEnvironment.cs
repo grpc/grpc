@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -83,7 +83,7 @@ namespace Grpc.Core
         {
             lock (staticLock)
             {
-                Preconditions.CheckState(refCount > 0);
+                GrpcPreconditions.CheckState(refCount > 0);
                 refCount--;
                 if (refCount == 0)
                 {
@@ -118,7 +118,7 @@ namespace Grpc.Core
         /// </summary>
         public static void SetLogger(ILogger customLogger)
         {
-            Preconditions.CheckNotNull(customLogger, "customLogger");
+            GrpcPreconditions.CheckNotNull(customLogger, "customLogger");
             logger = customLogger;
         }
 

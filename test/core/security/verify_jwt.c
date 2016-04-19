@@ -34,7 +34,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/security/jwt_verifier.h"
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
@@ -43,8 +42,11 @@
 #include <grpc/support/slice.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/security/jwt_verifier.h"
+
 typedef struct {
-  grpc_pollset pollset;
+  grpc_pollset *pollset;
+  gpr_mu *mu;
   int is_done;
   int success;
 } synchronizer;
@@ -77,10 +79,10 @@ static void on_jwt_verification_done(void *user_data,
             grpc_jwt_verifier_status_to_string(status));
   }
 
-  gpr_mu_lock(GRPC_POLLSET_MU(&sync->pollset));
+  gpr_mu_lock(sync->mu);
   sync->is_done = 1;
-  grpc_pollset_kick(&sync->pollset, NULL);
-  gpr_mu_unlock(GRPC_POLLSET_MU(&sync->pollset));
+  grpc_pollset_kick(sync->pollset, NULL);
+  gpr_mu_unlock(sync->mu);
 }
 
 int main(int argc, char **argv) {
@@ -103,23 +105,26 @@ int main(int argc, char **argv) {
 
   grpc_init();
 
-  grpc_pollset_init(&sync.pollset);
+  sync.pollset = gpr_malloc(grpc_pollset_size());
+  grpc_pollset_init(sync.pollset, &sync.mu);
   sync.is_done = 0;
 
-  grpc_jwt_verifier_verify(&exec_ctx, verifier, &sync.pollset, jwt, aud,
+  grpc_jwt_verifier_verify(&exec_ctx, verifier, sync.pollset, jwt, aud,
                            on_jwt_verification_done, &sync);
 
-  gpr_mu_lock(GRPC_POLLSET_MU(&sync.pollset));
+  gpr_mu_lock(sync.mu);
   while (!sync.is_done) {
-    grpc_pollset_worker worker;
-    grpc_pollset_work(&exec_ctx, &sync.pollset, &worker,
+    grpc_pollset_worker *worker = NULL;
+    grpc_pollset_work(&exec_ctx, sync.pollset, &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC),
                       gpr_inf_future(GPR_CLOCK_MONOTONIC));
-    gpr_mu_unlock(GRPC_POLLSET_MU(&sync.pollset));
+    gpr_mu_unlock(sync.mu);
     grpc_exec_ctx_finish(&exec_ctx);
-    gpr_mu_lock(GRPC_POLLSET_MU(&sync.pollset));
+    gpr_mu_lock(sync.mu);
   }
-  gpr_mu_unlock(GRPC_POLLSET_MU(&sync.pollset));
+  gpr_mu_unlock(sync.mu);
+
+  gpr_free(sync.pollset);
 
   grpc_jwt_verifier_destroy(verifier);
   gpr_cmdline_destroy(cl);

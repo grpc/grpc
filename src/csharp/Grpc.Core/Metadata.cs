@@ -179,7 +179,7 @@ namespace Grpc.Core
 
         private void CheckWriteable()
         {
-            Preconditions.CheckState(!readOnly, "Object is read only");
+            GrpcPreconditions.CheckState(!readOnly, "Object is read only");
         }
 
         #endregion
@@ -211,10 +211,10 @@ namespace Grpc.Core
             public Entry(string key, byte[] valueBytes)
             {
                 this.key = NormalizeKey(key);
-                Preconditions.CheckArgument(this.key.EndsWith(BinaryHeaderSuffix),
+                GrpcPreconditions.CheckArgument(this.key.EndsWith(BinaryHeaderSuffix),
                     "Key for binary valued metadata entry needs to have suffix indicating binary value.");
                 this.value = null;
-                Preconditions.CheckNotNull(valueBytes, "valueBytes");
+                GrpcPreconditions.CheckNotNull(valueBytes, "valueBytes");
                 this.valueBytes = new byte[valueBytes.Length];
                 Buffer.BlockCopy(valueBytes, 0, this.valueBytes, 0, valueBytes.Length);  // defensive copy to guarantee immutability
             }
@@ -227,9 +227,9 @@ namespace Grpc.Core
             public Entry(string key, string value)
             {
                 this.key = NormalizeKey(key);
-                Preconditions.CheckArgument(!this.key.EndsWith(BinaryHeaderSuffix),
+                GrpcPreconditions.CheckArgument(!this.key.EndsWith(BinaryHeaderSuffix),
                     "Key for ASCII valued metadata entry cannot have suffix indicating binary value.");
-                this.value = Preconditions.CheckNotNull(value, "value");
+                this.value = GrpcPreconditions.CheckNotNull(value, "value");
                 this.valueBytes = null;
             }
 
@@ -270,7 +270,7 @@ namespace Grpc.Core
             {
                 get
                 {
-                    Preconditions.CheckState(!IsBinary, "Cannot access string value of a binary metadata entry");
+                    GrpcPreconditions.CheckState(!IsBinary, "Cannot access string value of a binary metadata entry");
                     return value ?? Encoding.GetString(valueBytes);
                 }
             }
@@ -323,8 +323,8 @@ namespace Grpc.Core
 
             private static string NormalizeKey(string key)
             {
-                var normalized = Preconditions.CheckNotNull(key, "key").ToLower(CultureInfo.InvariantCulture);
-                Preconditions.CheckArgument(ValidKeyRegex.IsMatch(normalized), 
+                var normalized = GrpcPreconditions.CheckNotNull(key, "key").ToLowerInvariant();
+                GrpcPreconditions.CheckArgument(ValidKeyRegex.IsMatch(normalized), 
                     "Metadata entry key not valid. Keys can only contain lowercase alphanumeric characters, underscores and hyphens.");
                 return normalized;
             }

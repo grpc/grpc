@@ -29,6 +29,8 @@
 
 """Implementations of interoperability test methods."""
 
+from __future__ import print_function
+
 import enum
 import json
 import os
@@ -173,6 +175,9 @@ class _Pipe(object):
   def __iter__(self):
     return self
 
+  def __next__(self):
+    return self.next()
+
   def next(self):
     with self._condition:
       while not self._values and self._open:
@@ -205,7 +210,7 @@ def _ping_pong(stub):
 
   with stub, _Pipe() as pipe:
     response_iterator = stub.FullDuplexCall(pipe, _TIMEOUT)
-    print 'Starting ping-pong with response iterator %s' % response_iterator
+    print('Starting ping-pong with response iterator %s' % response_iterator)
     for response_size, payload_size in zip(
         request_response_sizes, request_payload_sizes):
       request = messages_pb2.StreamingOutputCallRequest(

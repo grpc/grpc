@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,6 +37,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+
+#import "GRPCCompletionQueue.h"
 
 /**
  * Returns @c grpc_channel_credentials from the specified @c path. If the file at the path could not
@@ -203,6 +205,18 @@ grpc_channel_args * buildChannelArgs(NSDictionary *dictionary) {
                                     secure:NO
                                credentials:NULL
                                channelArgs:channelArgs];
+}
+
+- (grpc_call *)unmanagedCallWithPath:(NSString *)path
+                     completionQueue:(GRPCCompletionQueue *)queue {
+  return grpc_channel_create_call(_unmanagedChannel,
+                                  NULL, GRPC_PROPAGATE_DEFAULTS,
+                                  queue.unmanagedQueue,
+                                  path.UTF8String,
+                                  // Get "host" from "host:port"
+                                  // TODO(jcanizales): Use NSURLs throughout, to clarify these.
+                                  [_host componentsSeparatedByString:@":"][0].UTF8String,
+                                  gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
 }
 
 @end

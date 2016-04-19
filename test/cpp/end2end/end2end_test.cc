@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,17 +48,18 @@
 #include <grpc/support/time.h>
 #include <gtest/gtest.h>
 
-#include "src/core/security/credentials.h"
+#include "src/core/lib/security/credentials.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/string_ref_helper.h"
+#include "test/cpp/util/test_credentials_provider.h"
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
+using grpc::testing::kTlsCredentialsType;
 using std::chrono::system_clock;
 
 namespace grpc {
@@ -191,12 +192,14 @@ class TestServiceImplDupPkg
 
 class TestScenario {
  public:
-  TestScenario(bool proxy, bool tls) : use_proxy(proxy), use_tls(tls) {}
+  TestScenario(bool proxy, const grpc::string& creds_type)
+      : use_proxy(proxy), credentials_type(creds_type) {}
   void Log() const {
-    gpr_log(GPR_INFO, "Scenario: proxy %d, tls %d", use_proxy, use_tls);
+    gpr_log(GPR_INFO, "Scenario: proxy %d, credentials %s", use_proxy,
+            credentials_type.c_str());
   }
   bool use_proxy;
-  bool use_tls;
+  const grpc::string credentials_type;
 };
 
 class End2endTest : public ::testing::TestWithParam<TestScenario> {
@@ -220,14 +223,8 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     server_address_ << "127.0.0.1:" << port;
     // Setup server
     ServerBuilder builder;
-    auto server_creds = InsecureServerCredentials();
-    if (GetParam().use_tls) {
-      SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
-                                                          test_server1_cert};
-      SslServerCredentialsOptions ssl_opts;
-      ssl_opts.pem_root_certs = "";
-      ssl_opts.pem_key_cert_pairs.push_back(pkcp);
-      server_creds = SslServerCredentials(ssl_opts);
+    auto server_creds = GetServerCredentials(GetParam().credentials_type);
+    if (GetParam().credentials_type != kInsecureCredentialsType) {
       server_creds->SetAuthMetadataProcessor(processor);
     }
     builder.AddListeningPort(server_address_.str(), server_creds);
@@ -246,12 +243,8 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     }
     EXPECT_TRUE(is_server_started_);
     ChannelArguments args;
-    auto channel_creds = InsecureChannelCredentials();
-    if (GetParam().use_tls) {
-      SslCredentialsOptions ssl_opts = {test_root_cert, "", ""};
-      args.SetSslTargetNameOverride("foo.test.google.fr");
-      channel_creds = SslCredentials(ssl_opts);
-    }
+    auto channel_creds =
+        GetChannelCredentials(GetParam().credentials_type, &args);
     if (!user_agent_prefix_.empty()) {
       args.SetUserAgentPrefix(user_agent_prefix_);
     }
@@ -445,9 +438,10 @@ class End2endServerTryCancelTest : public End2endTest {
         break;
 
       case CANCEL_AFTER_PROCESSING:
-        // Server cancelled after writing all messages. Client must have read
-        // all messages
-        EXPECT_EQ(num_msgs_read, kNumResponseStreamsMsgs);
+        // Even though the Server cancelled after writing all messages, the RPC
+        // may be cancelled before the Client got a chance to read all the
+        // messages.
+        EXPECT_LE(num_msgs_read, kNumResponseStreamsMsgs);
         break;
 
       default: {
@@ -527,7 +521,11 @@ class End2endServerTryCancelTest : public End2endTest {
 
       case CANCEL_AFTER_PROCESSING:
         EXPECT_EQ(num_msgs_sent, num_messages);
-        EXPECT_EQ(num_msgs_read, num_msgs_sent);
+
+        // The Server cancelled after reading the last message and after writing
+        // the message to the client. However, the RPC cancellation might have
+        // taken effect before the client actually read the response.
+        EXPECT_LE(num_msgs_read, num_msgs_sent);
         break;
 
       default:
@@ -912,9 +910,9 @@ TEST_P(End2endTest, SimultaneousReadWritesDone) {
   std::thread reader_thread(ReaderThreadFunc, stream.get(), &ev);
   gpr_event_wait(&ev, gpr_inf_future(GPR_CLOCK_REALTIME));
   stream->WritesDone();
+  reader_thread.join();
   Status s = stream->Finish();
   EXPECT_TRUE(s.ok());
-  reader_thread.join();
 }
 
 TEST_P(End2endTest, ChannelState) {
@@ -941,7 +939,7 @@ TEST_P(End2endTest, ChannelState) {
 
 // Takes 10s.
 TEST_P(End2endTest, ChannelStateTimeout) {
-  if (GetParam().use_tls) {
+  if (GetParam().credentials_type != kInsecureCredentialsType) {
     return;
   }
   int port = grpc_pick_unused_port_or_die();
@@ -1150,7 +1148,7 @@ class SecureEnd2endTest : public End2endTest {
  protected:
   SecureEnd2endTest() {
     GPR_ASSERT(!GetParam().use_proxy);
-    GPR_ASSERT(GetParam().use_tls);
+    GPR_ASSERT(GetParam().credentials_type != kInsecureCredentialsType);
   }
 };
 
@@ -1197,6 +1195,8 @@ TEST_P(SecureEnd2endTest, BlockingAuthMetadataPluginAndProcessorSuccess) {
   request.mutable_param()->set_echo_metadata(true);
   request.mutable_param()->set_expected_client_identity(
       TestAuthMetadataProcessor::kGoodGuy);
+  request.mutable_param()->set_expected_transport_security_type(
+      GetParam().credentials_type);
 
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(request.message(), response.message());
@@ -1304,6 +1304,8 @@ TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginAndProcessorSuccess) {
   request.mutable_param()->set_echo_metadata(true);
   request.mutable_param()->set_expected_client_identity(
       TestAuthMetadataProcessor::kGoodGuy);
+  request.mutable_param()->set_expected_transport_security_type(
+      GetParam().credentials_type);
 
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(request.message(), response.message());
@@ -1352,42 +1354,68 @@ TEST_P(SecureEnd2endTest, ClientAuthContext) {
   EchoRequest request;
   EchoResponse response;
   request.set_message("Hello");
-  request.mutable_param()->set_check_auth_context(true);
-
+  request.mutable_param()->set_check_auth_context(GetParam().credentials_type ==
+                                                  kTlsCredentialsType);
+  request.mutable_param()->set_expected_transport_security_type(
+      GetParam().credentials_type);
   ClientContext context;
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(response.message(), request.message());
   EXPECT_TRUE(s.ok());
 
   std::shared_ptr<const AuthContext> auth_ctx = context.auth_context();
-  std::vector<grpc::string_ref> ssl =
+  std::vector<grpc::string_ref> tst =
       auth_ctx->FindPropertyValues("transport_security_type");
-  EXPECT_EQ(1u, ssl.size());
-  EXPECT_EQ("ssl", ToString(ssl[0]));
-  EXPECT_EQ("x509_subject_alternative_name",
-            auth_ctx->GetPeerIdentityPropertyName());
-  EXPECT_EQ(3u, auth_ctx->GetPeerIdentity().size());
-  EXPECT_EQ("*.test.google.fr", ToString(auth_ctx->GetPeerIdentity()[0]));
-  EXPECT_EQ("waterzooi.test.google.be",
-            ToString(auth_ctx->GetPeerIdentity()[1]));
-  EXPECT_EQ("*.test.youtube.com", ToString(auth_ctx->GetPeerIdentity()[2]));
+  EXPECT_EQ(1u, tst.size());
+  EXPECT_EQ(GetParam().credentials_type, ToString(tst[0]));
+  if (GetParam().credentials_type == kTlsCredentialsType) {
+    EXPECT_EQ("x509_subject_alternative_name",
+              auth_ctx->GetPeerIdentityPropertyName());
+    EXPECT_EQ(4u, auth_ctx->GetPeerIdentity().size());
+    EXPECT_EQ("*.test.google.fr", ToString(auth_ctx->GetPeerIdentity()[0]));
+    EXPECT_EQ("waterzooi.test.google.be",
+              ToString(auth_ctx->GetPeerIdentity()[1]));
+    EXPECT_EQ("*.test.youtube.com", ToString(auth_ctx->GetPeerIdentity()[2]));
+    EXPECT_EQ("192.168.1.3", ToString(auth_ctx->GetPeerIdentity()[3]));
+  }
+}
+
+std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
+                                              bool test_insecure,
+                                              bool test_secure) {
+  std::vector<TestScenario> scenarios;
+  std::vector<grpc::string> credentials_types;
+  if (test_secure) {
+    credentials_types = GetSecureCredentialsTypeList();
+  }
+  if (test_insecure) {
+    credentials_types.push_back(kInsecureCredentialsType);
+  }
+  for (auto it = credentials_types.begin(); it != credentials_types.end();
+       ++it) {
+    scenarios.push_back(TestScenario(false, *it));
+    if (use_proxy) {
+      scenarios.push_back(TestScenario(true, *it));
+    }
+  }
+  return scenarios;
 }
 
 INSTANTIATE_TEST_CASE_P(End2end, End2endTest,
-                        ::testing::Values(TestScenario(false, false),
-                                          TestScenario(false, true)));
+                        ::testing::ValuesIn(CreateTestScenarios(false, true,
+                                                                true)));
 
 INSTANTIATE_TEST_CASE_P(End2endServerTryCancel, End2endServerTryCancelTest,
-                        ::testing::Values(TestScenario(false, false)));
+                        ::testing::ValuesIn(CreateTestScenarios(false, true,
+                                                                false)));
 
 INSTANTIATE_TEST_CASE_P(ProxyEnd2end, ProxyEnd2endTest,
-                        ::testing::Values(TestScenario(false, false),
-                                          TestScenario(false, true),
-                                          TestScenario(true, false),
-                                          TestScenario(true, true)));
+                        ::testing::ValuesIn(CreateTestScenarios(true, true,
+                                                                true)));
 
 INSTANTIATE_TEST_CASE_P(SecureEnd2end, SecureEnd2endTest,
-                        ::testing::Values(TestScenario(false, true)));
+                        ::testing::ValuesIn(CreateTestScenarios(false, false,
+                                                                true)));
 
 }  // namespace
 }  // namespace testing

@@ -36,10 +36,10 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
-#include "src/core/client_config/resolver_registry.h"
-#include "src/core/security/credentials.h"
-#include "src/core/security/security_connector.h"
-#include "src/core/surface/channel.h"
+#include "src/core/ext/client_config/resolver_registry.h"
+#include "src/core/lib/security/credentials.h"
+#include "src/core/lib/security/security_connector.h"
+#include "src/core/lib/surface/channel.h"
 #include "test/core/util/test_config.h"
 
 void test_unknown_scheme_target(void) {

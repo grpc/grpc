@@ -1,5 +1,5 @@
 #region Copyright notice and license
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -101,7 +101,7 @@ namespace Grpc.Core.Internal
         {
             bool success = false;
             shutdownRefcount.IncrementIfNonzero(ref success);
-            Preconditions.CheckState(success, "Shutdown has already been called");
+            GrpcPreconditions.CheckState(success, "Shutdown has already been called");
         }
 
         private void EndOp()

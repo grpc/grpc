@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -38,6 +38,7 @@ lib_dir = File.join(File.dirname(this_dir), 'lib')
 $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
 
 require 'grpc'
+require 'multi_json'
 require 'route_guide_services'
 
 include Routeguide
@@ -115,9 +116,8 @@ def run_record_route(stub, features)
   p 'RecordRoute'
   p '-----------'
   points_on_route = 10  # arbitrary
-  deadline = points_on_route  # as delay b/w each is max 1 second
   reqs = RandomRoute.new(features, points_on_route)
-  resp = stub.record_route(reqs.each, deadline)
+  resp = stub.record_route(reqs.each)
   p "summary: #{resp.inspect}"
 end
 

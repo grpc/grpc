@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -57,7 +57,7 @@ long Gauge::Get() {
 grpc::Status MetricsServiceImpl::GetAllGauges(
     ServerContext* context, const EmptyMessage* request,
     ServerWriter<GaugeResponse>* writer) {
-  gpr_log(GPR_INFO, "GetAllGauges called");
+  gpr_log(GPR_DEBUG, "GetAllGauges called");
 
   std::lock_guard<std::mutex> lock(mu_);
   for (auto it = gauges_.begin(); it != gauges_.end(); it++) {

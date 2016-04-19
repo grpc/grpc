@@ -42,7 +42,7 @@ var ProtoBuf = require('protobufjs');
 var messages_proto = ProtoBuf.loadProtoFile(
     __dirname + '/test_messages.proto').build();
 
-describe('Proto message serialize and deserialize', function() {
+describe('Proto message long int serialize and deserialize', function() {
   var longSerialize = common.serializeCls(messages_proto.LongValues);
   var longDeserialize = common.deserializeCls(messages_proto.LongValues);
   var pos_value = '314159265358979';
@@ -86,5 +86,53 @@ describe('Proto message serialize and deserialize', function() {
     var serialized = longSerialize({sfixed_64: neg_value});
     assert.strictEqual(longDeserialize(serialized).sfixed_64.toString(),
                        neg_value);
+  });
+  it('should deserialize as a number with the right option set', function() {
+    var longNumDeserialize = common.deserializeCls(messages_proto.LongValues,
+                                                   false, false);
+    var serialized = longSerialize({int_64: pos_value});
+    assert.strictEqual(typeof longDeserialize(serialized).int_64, 'string');
+    /* With the longsAsStrings option disabled, long values are represented as
+     * objects with 3 keys: low, high, and unsigned */
+    assert.strictEqual(typeof longNumDeserialize(serialized).int_64, 'object');
+  });
+});
+describe('Proto message bytes serialize and deserialize', function() {
+  var sequenceSerialize = common.serializeCls(messages_proto.SequenceValues);
+  var sequenceDeserialize = common.deserializeCls(
+      messages_proto.SequenceValues);
+  var sequenceBase64Deserialize = common.deserializeCls(
+      messages_proto.SequenceValues, true);
+  var buffer_val = new Buffer([0x69, 0xb7]);
+  var base64_val = 'abc=';
+  it('should preserve a buffer', function() {
+    var serialized = sequenceSerialize({bytes_field: buffer_val});
+    var deserialized = sequenceDeserialize(serialized);
+    assert.strictEqual(deserialized.bytes_field.compare(buffer_val), 0);
+  });
+  it('should accept base64 encoded strings', function() {
+    var serialized = sequenceSerialize({bytes_field: base64_val});
+    var deserialized = sequenceDeserialize(serialized);
+    assert.strictEqual(deserialized.bytes_field.compare(buffer_val), 0);
+  });
+  it('should output base64 encoded strings with an option set', function() {
+    var serialized = sequenceSerialize({bytes_field: base64_val});
+    var deserialized = sequenceBase64Deserialize(serialized);
+    assert.strictEqual(deserialized.bytes_field, base64_val);
+  });
+  /* The next two tests are specific tests to verify that issue
+   * https://github.com/grpc/grpc/issues/5174 has been fixed. They are skipped
+   * because they will not pass until a protobuf.js release has been published
+   * with a fix for https://github.com/dcodeIO/protobuf.js/issues/390 */
+  it.skip('should serialize a repeated field as packed by default', function() {
+    var expected_serialize = new Buffer([0x12, 0x01, 0x01, 0x0a]);
+    var serialized = sequenceSerialize({repeated_field: [10]});
+    assert.strictEqual(expected_serialize.compare(serialized), 0);
+  });
+  it.skip('should deserialize packed or unpacked repeated', function() {
+    var serialized = new Buffer([0x12, 0x01, 0x01, 0x0a]);
+    assert.doesNotThrow(function() {
+      sequenceDeserialize(serialized);
+    });
   });
 });

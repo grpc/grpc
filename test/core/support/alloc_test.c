@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#include <grpc/support/log.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include "test/core/util/test_config.h"
 
 static void *fake_malloc(size_t size) { return (void *)size; }
@@ -46,7 +46,7 @@ static void fake_free(void *addr) {
 static void test_custom_allocs() {
   const gpr_allocation_functions default_fns = gpr_get_allocation_functions();
   intptr_t addr_to_free = 0;
-  int *i;
+  char *i;
   gpr_allocation_functions fns = {fake_malloc, fake_realloc, fake_free};
 
   gpr_set_allocation_functions(fns);
@@ -58,7 +58,7 @@ static void test_custom_allocs() {
 
   /* Restore and check we don't get funky values and that we don't leak */
   gpr_set_allocation_functions(default_fns);
-  GPR_ASSERT((void *)1 != (i = gpr_malloc(sizeof(*i))));
+  GPR_ASSERT((void *)sizeof(*i) != (i = gpr_malloc(sizeof(*i))));
   GPR_ASSERT((void *)2 != (i = gpr_realloc(i, 2)));
   gpr_free(i);
 }

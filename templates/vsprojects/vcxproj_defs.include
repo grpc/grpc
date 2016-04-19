@@ -2,6 +2,9 @@
 <%def name="to_windows_path(path)">${path.replace('/','\\')}</%def>\
 <%def name="get_subsystem(is_library)">${'Windows' if is_library else 'Console'}</%def>\
 <%def name="item_definition_group(project, target, debug, dll, _64bit)">\
+<%
+  repo_root = '$(SolutionDir)\..'
+%>\
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='${'%s%s|%s' % ('Debug' if debug else 'Release', '-DLL' if dll else '', 'x64' if _64bit else 'Win32')}'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -23,6 +26,12 @@
       <SubSystem>${get_subsystem(project.is_library)}</SubSystem>
       <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
       <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
+% if project.get("noentry", False):
+      <NoEntryPoint>true</NoEntryPoint>
+% endif
+% if project.get("dll_def", None):
+      <ModuleDefinitionFile>${repo_root}\${to_windows_path(project.dll_def)}</ModuleDefinitionFile>
+% endif
 % if not debug:
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
@@ -194,6 +203,11 @@ ${gen_package_props(packages, repo_root)}\
     % endfor
   </ItemGroup>
   % endif
+  % if project.get('dll_def', None):
+  <ItemGroup>
+    <None Include="${repo_root}\${to_windows_path(project.dll_def)}" />
+  </ItemGroup>
+  % endif
   % if project.get('src',[]):
   <ItemGroup>
     % for src_name in project.src:
@@ -213,7 +227,7 @@ ${gen_package_props(packages, repo_root)}\
       % endif
     % endfor
   </ItemGroup>
-  % elif configuration_type != 'StaticLibrary':
+  % else:
   <ItemGroup>
     <ClCompile Include="${repo_root}\${to_windows_path('vsprojects/dummy.c')}">
     </ClCompile>

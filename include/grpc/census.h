@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,8 +35,8 @@
  * they can (ultimately) be used in many different RPC systems (with differing
  * implementations). */
 
-#ifndef CENSUS_CENSUS_H
-#define CENSUS_CENSUS_H
+#ifndef GRPC_CENSUS_H
+#define GRPC_CENSUS_H
 
 #include <grpc/grpc.h>
 
@@ -80,18 +80,18 @@ CENSUSAPI int census_enabled(void);
   metrics will be recorded. Keys are unique within a context. */
 typedef struct census_context census_context;
 
-/* A tag is a key:value pair. The key is a non-empty, printable (UTF-8
-   encoded), nil-terminated string. The value is a binary string, that may be
-   printable. There are limits on the sizes of both keys and values (see
-   CENSUS_MAX_TAG_KB_LEN definition below), and the number of tags that can be
-   propagated (CENSUS_MAX_PROPAGATED_TAGS). Users should also remember that
-   some systems may have limits on, e.g., the number of bytes that can be
-   transmitted as metadata, and that larger tags means more memory consumed
-   and time in processing. */
+/* A tag is a key:value pair. Both keys and values are nil-terminated strings,
+   containing printable ASCII characters (decimal 32-126). Keys must be at
+   least one character in length. Both keys and values can have at most
+   CENSUS_MAX_TAG_KB_LEN characters (including the terminating nil). The
+   maximum number of tags that can be propagated is
+   CENSUS_MAX_PROPAGATED_TAGS. Users should also remember that some systems
+   may have limits on, e.g., the number of bytes that can be transmitted as
+   metadata, and that larger tags means more memory consumed and time in
+   processing. */
 typedef struct {
   const char *key;
   const char *value;
-  size_t value_len;
   uint8_t flags;
 } census_tag;
 
@@ -103,28 +103,25 @@ typedef struct {
 /* Tag flags. */
 #define CENSUS_TAG_PROPAGATE 1 /* Tag should be propagated over RPC */
 #define CENSUS_TAG_STATS 2     /* Tag will be used for statistics aggregation */
-#define CENSUS_TAG_BINARY 4    /* Tag value is not printable */
-#define CENSUS_TAG_RESERVED 8  /* Reserved for internal use. */
-/* Flag values 8,16,32,64,128 are reserved for future/internal use. Clients
+#define CENSUS_TAG_RESERVED 4  /* Reserved for internal use. */
+/* Flag values 4,8,16,32,64,128 are reserved for future/internal use. Clients
    should not use or rely on their values. */
 
 #define CENSUS_TAG_IS_PROPAGATED(flags) (flags & CENSUS_TAG_PROPAGATE)
 #define CENSUS_TAG_IS_STATS(flags) (flags & CENSUS_TAG_STATS)
-#define CENSUS_TAG_IS_BINARY(flags) (flags & CENSUS_TAG_BINARY)
 
 /* An instance of this structure is kept by every context, and records the
    basic information associated with the creation of that context. */
 typedef struct {
-  int n_propagated_tags;        /* number of propagated printable tags */
-  int n_propagated_binary_tags; /* number of propagated binary tags */
-  int n_local_tags;             /* number of non-propagated (local) tags */
-  int n_deleted_tags;           /* number of tags that were deleted */
-  int n_added_tags;             /* number of tags that were added */
-  int n_modified_tags;          /* number of tags that were modified */
-  int n_invalid_tags;           /* number of tags with bad keys or values (e.g.
-                                   longer than CENSUS_MAX_TAG_KV_LEN) */
-  int n_ignored_tags;           /* number of tags ignored because of
-                                   CENSUS_MAX_PROPAGATED_TAGS limit. */
+  int n_propagated_tags; /* number of propagated tags */
+  int n_local_tags;      /* number of non-propagated (local) tags */
+  int n_deleted_tags;    /* number of tags that were deleted */
+  int n_added_tags;      /* number of tags that were added */
+  int n_modified_tags;   /* number of tags that were modified */
+  int n_invalid_tags;    /* number of tags with bad keys or values (e.g.
+                            longer than CENSUS_MAX_TAG_KV_LEN) */
+  int n_ignored_tags;    /* number of tags ignored because of
+                            CENSUS_MAX_PROPAGATED_TAGS limit. */
 } census_context_status;
 
 /* Create a new context, adding and removing tags from an existing context.
@@ -132,10 +129,10 @@ typedef struct {
    to add as many tags in a single operation as is practical for the client.
    @param base Base context to build upon. Can be NULL.
    @param tags A set of tags to be added/changed/deleted. Tags with keys that
-   are in 'tags', but not 'base', are added to the tag set. Keys that are in
+   are in 'tags', but not 'base', are added to the context. Keys that are in
    both 'tags' and 'base' will have their value/flags modified. Tags with keys
-   in both, but with NULL or zero-length values, will be deleted from the tag
-   set. Tags with invalid (too long or short) keys or values will be ignored.
+   in both, but with NULL values, will be deleted from the context. Tags with
+   invalid (too long or short) keys or values will be ignored.
    If adding a tag will result in more than CENSUS_MAX_PROPAGATED_TAGS in either
    binary or non-binary tags, they will be ignored, as will deletions of
    tags that don't exist.
@@ -185,32 +182,19 @@ CENSUSAPI int census_context_get_tag(const census_context *context,
    for use by RPC systems only, for purposes of transmitting/receiving contexts.
    */
 
-/* Encode a context into a buffer. The propagated tags are encoded into the
-   buffer in two regions: one for printable tags, and one for binary tags.
+/* Encode a context into a buffer.
    @param context context to be encoded
-   @param buffer pointer to buffer. This address will be used to encode the
-                 printable tags.
+   @param buffer buffer into which the context will be encoded.
    @param buf_size number of available bytes in buffer.
-   @param print_buf_size Will be set to the number of bytes consumed by
-                         printable tags.
-   @param bin_buf_size Will be set to the number of bytes used to encode the
-                       binary tags.
-   @return A pointer to the binary tag's encoded, or NULL if the buffer was
-           insufficiently large to hold the encoded tags. Thus, if successful,
-           printable tags are encoded into
-           [buffer, buffer + *print_buf_size) and binary tags into
-           [returned-ptr, returned-ptr + *bin_buf_size) (and the returned
-           pointer should be buffer + *print_buf_size) */
-CENSUSAPI char *census_context_encode(const census_context *context,
-                                      char *buffer, size_t buf_size,
-                                      size_t *print_buf_size,
-                                      size_t *bin_buf_size);
+   @return The number of buffer bytes consumed for the encoded context, or
+           zero if the buffer was of insufficient size. */
+CENSUSAPI size_t census_context_encode(const census_context *context,
+                                       char *buffer, size_t buf_size);
 
-/* Decode context buffers encoded with census_context_encode(). Returns NULL
+/* Decode context buffer encoded with census_context_encode(). Returns NULL
    if there is an error in parsing either buffer. */
-CENSUSAPI census_context *census_context_decode(const char *buffer, size_t size,
-                                                const char *bin_buffer,
-                                                size_t bin_size);
+CENSUSAPI census_context *census_context_decode(const char *buffer,
+                                                size_t size);
 
 /* Distributed traces can have a number of options. */
 enum census_trace_mask_values {
@@ -553,4 +537,4 @@ CENSUSAPI void census_view_reset(census_view *view);
 }
 #endif
 
-#endif /* CENSUS_CENSUS_H */
+#endif /* GRPC_CENSUS_H */

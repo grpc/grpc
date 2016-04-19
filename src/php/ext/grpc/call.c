@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -491,6 +491,14 @@ cleanup:
   grpc_metadata_array_destroy(&recv_trailing_metadata);
   if (status_details != NULL) {
     gpr_free(status_details);
+  }
+  for (int i = 0; i < op_num; i++) {
+    if (ops[i].op == GRPC_OP_SEND_MESSAGE) {
+      grpc_byte_buffer_destroy(ops[i].data.send_message);
+    }
+    if (ops[i].op == GRPC_OP_RECV_MESSAGE) {
+      grpc_byte_buffer_destroy(message);
+    }
   }
   RETURN_DESTROY_ZVAL(result);
 }

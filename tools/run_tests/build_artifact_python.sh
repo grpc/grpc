@@ -35,24 +35,32 @@ cd $(dirname $0)/../..
 if [ "$SKIP_PIP_INSTALL" == "" ]
 then
   pip install --upgrade six
-  pip install --upgrade setuptools
+  # There's a bug in newer versions of setuptools (see
+  # https://bitbucket.org/pypa/setuptools/issues/503/pkg_resources_vendorpackagingrequirementsi)
+  pip install --upgrade 'setuptools==18'
   pip install -rrequirements.txt
 fi
+
+export GRPC_PYTHON_USE_CUSTOM_BDIST=0
+export GRPC_PYTHON_BUILD_WITH_CYTHON=1
+
+# Build the source distribution first because MANIFEST.in cannot override
+# exclusion of built shared objects among package resources (for some
+# inexplicable reason).
+${SETARCH_CMD} python setup.py  \
+    sdist
 
 # The bdist_wheel_grpc_custom command is finicky about command output ordering
 # and thus ought to be run in a shell command separate of others. Further, it
 # trashes the actual bdist_wheel output, so it should be run first so that
 # bdist_wheel may be run unmolested.
-GRPC_PYTHON_USE_CUSTOM_BDIST=0  \
-GRPC_PYTHON_BUILD_WITH_CYTHON=1 \
 ${SETARCH_CMD} python setup.py  \
     build_tagged_ext
 
-GRPC_PYTHON_USE_CUSTOM_BDIST=0  \
-GRPC_PYTHON_BUILD_WITH_CYTHON=1 \
+# Wheel has a bug where directories don't get excluded.
+# https://bitbucket.org/pypa/wheel/issues/99/cannot-exclude-directory
 ${SETARCH_CMD} python setup.py  \
-    bdist_wheel                 \
-    sdist
+    bdist_wheel
 
 mkdir -p artifacts
 

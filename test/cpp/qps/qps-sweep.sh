@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -72,7 +72,7 @@ for secure in true false; do
     --server_type=ASYNC_GENERIC_SERVER --outstanding_rpcs_per_channel=$deep \
     --client_channels=$wide --bbuf_req_size=0 --bbuf_resp_size=0 \
     --async_client_threads=0 --async_server_threads=0 --secure_test=$secure \
-    --num_servers=1 --num_clients=0 |& tee /tmp/qps-test.$$
+    --num_servers=1 --num_clients=0 2>&1 | tee /tmp/qps-test.$$
 
   # Scenario 2b: QPS with a single server core
   "$bins"/opt/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \

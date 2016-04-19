@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,10 +34,11 @@
 #ifndef GRPCXX_IMPL_CODEGEN_SERVER_INTERFACE_H
 #define GRPCXX_IMPL_CODEGEN_SERVER_INTERFACE_H
 
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc++/impl/codegen/call_hook.h>
 #include <grpc++/impl/codegen/completion_queue_tag.h>
+#include <grpc++/impl/codegen/core_codegen_interface.h>
 #include <grpc++/impl/codegen/rpc_service_method.h>
+#include <grpc/impl/codegen/grpc_types.h>
 
 namespace grpc {
 
@@ -191,10 +192,11 @@ class ServerInterface : public CallHook {
     bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
       bool serialization_status =
           *status && payload_ &&
-          SerializationTraits<Message>::Deserialize(
-              payload_, request_, server_->max_message_size()).ok();
+          SerializationTraits<Message>::Deserialize(payload_, request_,
+                                                    server_->max_message_size())
+              .ok();
       bool ret = RegisteredAsyncRequest::FinalizeResult(tag, status);
-      *status = serialization_status&&* status;
+      *status = serialization_status && *status;
       return ret;
     }
 
@@ -223,7 +225,7 @@ class ServerInterface : public CallHook {
                         CompletionQueue* call_cq,
                         ServerCompletionQueue* notification_cq, void* tag,
                         Message* message) {
-    GPR_ASSERT(method);
+    GPR_CODEGEN_ASSERT(method);
     new PayloadAsyncRequest<Message>(method->server_tag(), this, context,
                                      stream, call_cq, notification_cq, tag,
                                      message);
@@ -233,7 +235,7 @@ class ServerInterface : public CallHook {
                         ServerAsyncStreamingInterface* stream,
                         CompletionQueue* call_cq,
                         ServerCompletionQueue* notification_cq, void* tag) {
-    GPR_ASSERT(method);
+    GPR_CODEGEN_ASSERT(method);
     new NoPayloadAsyncRequest(method->server_tag(), this, context, stream,
                               call_cq, notification_cq, tag);
   }

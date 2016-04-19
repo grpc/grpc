@@ -36,8 +36,8 @@
 
 #include <memory>
 
-#include <grpc/grpc.h>
 #include <grpc++/channel.h>
+#include <grpc/grpc.h>
 #include "src/proto/grpc/testing/messages.grpc.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 
@@ -75,6 +75,7 @@ class InteropClient {
   void DoTimeoutOnSleepingServer();
   void DoEmptyStream();
   void DoStatusWithMessage();
+  void DoCustomMetadata();
   // Auth tests.
   // username is a string containing the user email
   void DoJwtTokenCreds(const grpc::string& username);

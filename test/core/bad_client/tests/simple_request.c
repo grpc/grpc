@@ -35,8 +35,8 @@
 
 #include <string.h>
 
+#include "src/core/lib/surface/server.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "src/core/surface/server.h"
 
 #define PFX_STR                                                            \
   "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"                                       \
@@ -108,9 +108,9 @@ static void verifier(grpc_server *server, grpc_completion_queue *cq,
 static void failure_verifier(grpc_server *server, grpc_completion_queue *cq,
                              void *registered_method) {
   while (grpc_server_has_open_connections(server)) {
-    GPR_ASSERT(grpc_completion_queue_next(cq,
-                                          GRPC_TIMEOUT_MILLIS_TO_DEADLINE(20),
-                                          NULL).type == GRPC_QUEUE_TIMEOUT);
+    GPR_ASSERT(grpc_completion_queue_next(
+                   cq, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(20), NULL)
+                   .type == GRPC_QUEUE_TIMEOUT);
   }
 }
 

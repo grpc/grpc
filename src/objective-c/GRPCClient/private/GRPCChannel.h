@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,7 @@
 
 #include <grpc/grpc.h>
 
+@class GRPCCompletionQueue;
 struct grpc_channel_credentials;
 
 
@@ -80,4 +81,6 @@ struct grpc_channel_credentials;
 + (nonnull GRPCChannel *)insecureChannelWithHost:(nonnull NSString *)host
                                      channelArgs:(nullable NSDictionary *)channelArgs;
 
+- (nullable grpc_call *)unmanagedCallWithPath:(nonnull NSString *)path
+                              completionQueue:(nonnull GRPCCompletionQueue *)queue;
 @end

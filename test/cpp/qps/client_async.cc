@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,7 +54,7 @@
 
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 #include "test/cpp/qps/client.h"
-#include "test/cpp/qps/timer.h"
+#include "test/cpp/qps/usage_timer.h"
 #include "test/cpp/util/create_test_channel.h"
 
 namespace grpc {
@@ -107,14 +107,14 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
   bool RunNextState(bool ok, Histogram* hist) GRPC_OVERRIDE {
     switch (next_state_) {
       case State::READY:
-        start_ = Timer::Now();
+        start_ = UsageTimer::Now();
         response_reader_ = start_req_(stub_, &context_, req_, cq_);
         response_reader_->Finish(&response_, &status_,
                                  ClientRpcContext::tag(this));
         next_state_ = State::RESP_DONE;
         return true;
       case State::RESP_DONE:
-        hist->Add((Timer::Now() - start_) * 1e9);
+        hist->Add((UsageTimer::Now() - start_) * 1e9);
         callback_(status_, &response_);
         next_state_ = State::INVALID;
         return false;
@@ -141,7 +141,8 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
   std::function<gpr_timespec()> next_issue_;
   std::function<std::unique_ptr<grpc::ClientAsyncResponseReader<ResponseType>>(
       BenchmarkService::Stub*, grpc::ClientContext*, const RequestType&,
-      CompletionQueue*)> start_req_;
+      CompletionQueue*)>
+      start_req_;
   grpc::Status status_;
   double start_;
   std::unique_ptr<grpc::ClientAsyncResponseReader<ResponseType>>
@@ -287,8 +288,7 @@ class ClientRpcContextStreamingImpl : public ClientRpcContext {
         next_state_(State::INVALID),
         callback_(on_done),
         next_issue_(next_issue),
-        start_req_(start_req),
-        start_(Timer::Now()) {}
+        start_req_(start_req) {}
   ~ClientRpcContextStreamingImpl() GRPC_OVERRIDE {}
   void Start(CompletionQueue* cq) GRPC_OVERRIDE {
     cq_ = cq;
@@ -314,7 +314,7 @@ class ClientRpcContextStreamingImpl : public ClientRpcContext {
           if (!ok) {
             return false;
           }
-          start_ = Timer::Now();
+          start_ = UsageTimer::Now();
           next_state_ = State::WRITE_DONE;
           stream_->Write(req_, ClientRpcContext::tag(this));
           return true;
@@ -327,7 +327,7 @@ class ClientRpcContextStreamingImpl : public ClientRpcContext {
           return true;
           break;
         case State::READ_DONE:
-          hist->Add((Timer::Now() - start_) * 1e9);
+          hist->Add((UsageTimer::Now() - start_) * 1e9);
           callback_(status_, &response_);
           next_state_ = State::STREAM_IDLE;
           break;  // loop around
@@ -360,10 +360,10 @@ class ClientRpcContextStreamingImpl : public ClientRpcContext {
   State next_state_;
   std::function<void(grpc::Status, ResponseType*)> callback_;
   std::function<gpr_timespec()> next_issue_;
-  std::function<
-      std::unique_ptr<grpc::ClientAsyncReaderWriter<RequestType, ResponseType>>(
-          BenchmarkService::Stub*, grpc::ClientContext*, CompletionQueue*,
-          void*)> start_req_;
+  std::function<std::unique_ptr<
+      grpc::ClientAsyncReaderWriter<RequestType, ResponseType>>(
+      BenchmarkService::Stub*, grpc::ClientContext*, CompletionQueue*, void*)>
+      start_req_;
   grpc::Status status_;
   double start_;
   std::unique_ptr<grpc::ClientAsyncReaderWriter<RequestType, ResponseType>>
@@ -415,8 +415,7 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
         next_state_(State::INVALID),
         callback_(on_done),
         next_issue_(next_issue),
-        start_req_(start_req),
-        start_(Timer::Now()) {}
+        start_req_(start_req) {}
   ~ClientRpcContextGenericStreamingImpl() GRPC_OVERRIDE {}
   void Start(CompletionQueue* cq) GRPC_OVERRIDE {
     cq_ = cq;
@@ -445,7 +444,7 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
           if (!ok) {
             return false;
           }
-          start_ = Timer::Now();
+          start_ = UsageTimer::Now();
           next_state_ = State::WRITE_DONE;
           stream_->Write(req_, ClientRpcContext::tag(this));
           return true;
@@ -458,7 +457,7 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
           return true;
           break;
         case State::READ_DONE:
-          hist->Add((Timer::Now() - start_) * 1e9);
+          hist->Add((UsageTimer::Now() - start_) * 1e9);
           callback_(status_, &response_);
           next_state_ = State::STREAM_IDLE;
           break;  // loop around
@@ -493,7 +492,8 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
   std::function<gpr_timespec()> next_issue_;
   std::function<std::unique_ptr<grpc::GenericClientAsyncReaderWriter>(
       grpc::GenericStub*, grpc::ClientContext*, const grpc::string&,
-      CompletionQueue*, void*)> start_req_;
+      CompletionQueue*, void*)>
+      start_req_;
   grpc::Status status_;
   double start_;
   std::unique_ptr<grpc::GenericClientAsyncReaderWriter> stream_;

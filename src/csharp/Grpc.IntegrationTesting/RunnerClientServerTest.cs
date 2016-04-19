@@ -48,7 +48,6 @@ namespace Grpc.IntegrationTesting
     /// </summary>
     public class RunnerClientServerTest
     {
-        const string Host = "localhost";
         IServerRunner serverRunner;
 
         [TestFixtureSetUp]
@@ -56,15 +55,7 @@ namespace Grpc.IntegrationTesting
         {
             var serverConfig = new ServerConfig
             {
-                ServerType = ServerType.ASYNC_SERVER,
-                Host = Host,
-                PayloadConfig = new PayloadConfig
-                {
-                    SimpleParams = new SimpleProtoParams
-                    {
-                        RespSize = 100
-                    }
-                }
+                ServerType = ServerType.ASYNC_SERVER
             };
             serverRunner = ServerRunners.CreateStarted(serverConfig);
         }
@@ -83,14 +74,15 @@ namespace Grpc.IntegrationTesting
         {
             var config = new ClientConfig
             {
-                ServerTargets = { string.Format("{0}:{1}", Host, serverRunner.BoundPort) },
+                ServerTargets = { string.Format("{0}:{1}", "localhost", serverRunner.BoundPort) },
                 RpcType = RpcType.UNARY,
                 LoadParams = new LoadParams { ClosedLoop = new ClosedLoopParams() },
                 PayloadConfig = new PayloadConfig
                 {
                     SimpleParams = new SimpleProtoParams
                     {
-                        ReqSize = 100
+                        ReqSize = 100,
+                        RespSize = 100
                     }
                 },
                 HistogramParams = new HistogramParams

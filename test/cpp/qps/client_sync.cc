@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -53,12 +53,12 @@
 #include <grpc/support/time.h>
 #include <gtest/gtest.h>
 
-#include "src/core/profiling/timers.h"
+#include "src/core/lib/profiling/timers.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/interarrival.h"
-#include "test/cpp/qps/timer.h"
+#include "test/cpp/qps/usage_timer.h"
 
 namespace grpc {
 namespace testing {
@@ -104,12 +104,12 @@ class SynchronousUnaryClient GRPC_FINAL : public SynchronousClient {
   bool ThreadFunc(Histogram* histogram, size_t thread_idx) GRPC_OVERRIDE {
     WaitToIssue(thread_idx);
     auto* stub = channels_[thread_idx % channels_.size()].get_stub();
-    double start = Timer::Now();
+    double start = UsageTimer::Now();
     GPR_TIMER_SCOPE("SynchronousUnaryClient::ThreadFunc", 0);
     grpc::ClientContext context;
     grpc::Status s =
         stub->UnaryCall(&context, request_, &responses_[thread_idx]);
-    histogram->Add((Timer::Now() - start) * 1e9);
+    histogram->Add((UsageTimer::Now() - start) * 1e9);
     return s.ok();
   }
 };
@@ -143,10 +143,10 @@ class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
   bool ThreadFunc(Histogram* histogram, size_t thread_idx) GRPC_OVERRIDE {
     WaitToIssue(thread_idx);
     GPR_TIMER_SCOPE("SynchronousStreamingClient::ThreadFunc", 0);
-    double start = Timer::Now();
+    double start = UsageTimer::Now();
     if (stream_[thread_idx]->Write(request_) &&
         stream_[thread_idx]->Read(&responses_[thread_idx])) {
-      histogram->Add((Timer::Now() - start) * 1e9);
+      histogram->Add((UsageTimer::Now() - start) * 1e9);
       return true;
     }
     return false;

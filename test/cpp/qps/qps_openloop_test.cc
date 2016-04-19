@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,7 @@
 
 #include <grpc/support/log.h>
 
+#include "test/core/util/test_config.h"
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/report.h"
 #include "test/cpp/util/benchmark_config.h"
@@ -43,7 +44,7 @@ namespace grpc {
 namespace testing {
 
 static const int WARMUP = 5;
-static const int BENCHMARK = 10;
+static const int BENCHMARK = 5;
 
 static void RunQPS() {
   gpr_log(GPR_INFO, "Running QPS test, open-loop");
@@ -55,11 +56,11 @@ static void RunQPS() {
   client_config.set_async_client_threads(8);
   client_config.set_rpc_type(STREAMING);
   client_config.mutable_load_params()->mutable_poisson()->set_offered_load(
-      1000.0);
+      1000.0 / GRPC_TEST_SLOWDOWN_FACTOR);
 
   ServerConfig server_config;
   server_config.set_server_type(ASYNC_SERVER);
-  server_config.set_async_server_threads(4);
+  server_config.set_async_server_threads(8);
 
   const auto result =
       RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);

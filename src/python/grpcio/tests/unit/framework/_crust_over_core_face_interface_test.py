@@ -32,6 +32,8 @@
 import collections
 import unittest
 
+import six
+
 from grpc.framework.core import implementations as core_implementations
 from grpc.framework.crust import implementations as crust_implementations
 from grpc.framework.foundation import logging_pool
@@ -66,7 +68,7 @@ class _Implementation(test_interfaces.Implementation):
     # _digest.TestServiceDigest.
     cardinalities = {
         method: method_object.cardinality()
-        for (group, method), method_object in methods.iteritems()}
+        for (group, method), method_object in six.iteritems(methods)}
     dynamic_stub = crust_implementations.dynamic_stub(
         invocation_end_link, group, cardinalities, pool)
 
