@@ -35,6 +35,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/surface/server.h"
+#include "test/core/util/memory_counters.h"
 #include "test/core/util/mock_endpoint.h"
 
 static const bool squelch = true;
@@ -48,7 +49,9 @@ static void dont_log(gpr_log_func_args *args) {}
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_test_only_set_metadata_hash_seed(0);
+  struct grpc_memory_counters counters;
   if (squelch) gpr_set_log_function(dont_log);
+  grpc_memory_counters_init();
   grpc_init();
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
@@ -117,5 +120,8 @@ done:
   grpc_server_destroy(server);
   grpc_completion_queue_destroy(cq);
   grpc_shutdown();
+  counters = grpc_memory_counters_snapshot();
+  grpc_memory_counters_destroy();
+  GPR_ASSERT(counters.total_size_relative == 0);
   return 0;
 }

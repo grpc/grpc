@@ -27,7 +27,7 @@
           "num_stubs_per_channel":10,
           "test_cases": "empty_unary:1,large_unary:1,client_streaming:1,server_streaming:1,empty_stream:1",
           "metrics_port": 8081,
-          "metrics_collection_interval_secs":60
+          "metrics_collection_interval_secs": 60
         },
         "metricsPort": 8081,
         "metricsArgs": {
@@ -39,18 +39,18 @@
     "templates": {
       "cxx_client_opt": {
         "baseTemplate": "default",
-        "clientImagePath": "/var/local/git/grpc/bins/opt/stress_test",
-        "metricsClientImagePath": "/var/local/git/grpc/bins/opt/metrics_client"
+        "stressClientCmd": ["/var/local/git/grpc/bins/opt/stress_test"],
+        "metricsClientCmd": ["/var/local/git/grpc/bins/opt/metrics_client"]
       },
       "cxx_client_tsan": {
         "baseTemplate": "default",
-        "clientImagePath": "/var/local/git/grpc/bins/tsan/stress_test",
-        "metricsClientImagePath": "/var/local/git/grpc/bins/tsan/metrics_client"
+        "stressClientCmd": ["/var/local/git/grpc/bins/tsan/stress_test"],
+        "metricsClientCmd": ["/var/local/git/grpc/bins/tsan/metrics_client"]
       },
     "cxx_client_asan": {
         "baseTemplate": "default",
-        "clientImagePath": "/var/local/git/grpc/bins/asan/stress_test",
-        "metricsClientImagePath": "/var/local/git/grpc/bins/asan/metrics_client"
+        "stressClientCmd": ["/var/local/git/grpc/bins/asan/stress_test"],
+        "metricsClientCmd": ["/var/local/git/grpc/bins/asan/metrics_client"]
       }
     }
   },
@@ -68,15 +68,15 @@
     "templates": {
       "cxx_server_opt": {
         "baseTemplate": "default",
-        "serverImagePath": "/var/local/git/grpc/bins/opt/interop_server"
+        "stressServerCmd": ["/var/local/git/grpc/bins/opt/interop_server"]
       },
       "cxx_server_tsan": {
         "baseTemplate": "default",
-        "serverImagePath": "/var/local/git/grpc/bins/tsan/interop_server"
+        "stressServerCmd": ["/var/local/git/grpc/bins/tsan/interop_server"]
       },
     "cxx_server_asan": {
         "baseTemplate": "default",
-        "serverImagePath": "/var/local/git/grpc/bins/asan/interop_server"
+        "stressServerCmd": ["/var/local/git/grpc/bins/asan/interop_server"]
       }
     }
   },
@@ -104,19 +104,19 @@
       "stress-client-opt": {
         "clientTemplate": "cxx_client_opt",
         "dockerImage": "grpc_stress_cxx_opt",
-        "numInstances": 3,
+        "numInstances": 5,
         "serverPodSpec": "stress-server-opt"
       },
       "stress-client-tsan": {
         "clientTemplate": "cxx_client_tsan",
         "dockerImage": "grpc_stress_cxx_tsan",
-        "numInstances": 3,
+        "numInstances": 10,
         "serverPodSpec": "stress-server-tsan"
       },
       "stress-client-asan": {
         "clientTemplate": "cxx_client_asan",
         "dockerImage": "grpc_stress_cxx_asan",
-        "numInstances": 3,
+        "numInstances": 10,
         "serverPodSpec": "stress-server-asan"
       }
     }
@@ -126,7 +126,7 @@
     "buildDockerImages": true,
     "pollIntervalSecs": 60,
     "testDurationSecs": 7200,
-    "kubernetesProxyPort": 8001,
+    "kubernetesProxyPort": 8004,
     "datasetIdNamePrefix": "stress_test_opt_tsan",
     "summaryTableId": "summary",
     "qpsTableId": "qps",

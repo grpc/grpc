@@ -35,7 +35,7 @@
 
 #include <grpc/support/alloc.h>
 
-#include "src/core/lib/client_config/lb_policy_registry.h"
+#include "src/core/ext/client_config/lb_policy_registry.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
@@ -49,6 +49,7 @@ int grpc_lb_round_robin_trace = 0;
 typedef struct pending_pick {
   struct pending_pick *next;
   grpc_pollset *pollset;
+  uint32_t initial_metadata_flags;
   grpc_connected_subchannel **target;
   grpc_closure *on_complete;
 } pending_pick;
@@ -275,6 +276,32 @@ static void rr_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   gpr_mu_unlock(&p->mu);
 }
 
+static void rr_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
+                            uint32_t initial_metadata_flags_mask,
+                            uint32_t initial_metadata_flags_eq) {
+  round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
+  pending_pick *pp;
+  gpr_mu_lock(&p->mu);
+  pp = p->pending_picks;
+  p->pending_picks = NULL;
+  while (pp != NULL) {
+    pending_pick *next = pp->next;
+    if ((pp->initial_metadata_flags & initial_metadata_flags_mask) ==
+        initial_metadata_flags_eq) {
+      grpc_pollset_set_del_pollset(exec_ctx, p->base.interested_parties,
+                                   pp->pollset);
+      *pp->target = NULL;
+      grpc_exec_ctx_enqueue(exec_ctx, pp->on_complete, false, NULL);
+      gpr_free(pp);
+    } else {
+      pp->next = p->pending_picks;
+      p->pending_picks = pp;
+    }
+    pp = next;
+  }
+  gpr_mu_unlock(&p->mu);
+}
+
 static void start_picking(grpc_exec_ctx *exec_ctx, round_robin_lb_policy *p) {
   size_t i;
   p->started_picking = 1;
@@ -303,6 +330,7 @@ static void rr_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
 
 static int rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                    grpc_pollset *pollset, grpc_metadata_batch *initial_metadata,
+                   uint32_t initial_metadata_flags,
                    grpc_connected_subchannel **target,
                    grpc_closure *on_complete) {
   round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
@@ -330,6 +358,7 @@ static int rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     pp->pollset = pollset;
     pp->target = target;
     pp->on_complete = on_complete;
+    pp->initial_metadata_flags = initial_metadata_flags;
     p->pending_picks = pp;
     gpr_mu_unlock(&p->mu);
     return 0;
@@ -485,14 +514,9 @@ static void rr_ping_one(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
 }
 
 static const grpc_lb_policy_vtable round_robin_lb_policy_vtable = {
-    rr_destroy,
-    rr_shutdown,
-    rr_pick,
-    rr_cancel_pick,
-    rr_ping_one,
-    rr_exit_idle,
-    rr_check_connectivity,
-    rr_notify_on_state_change};
+    rr_destroy,     rr_shutdown,           rr_pick,
+    rr_cancel_pick, rr_cancel_picks,       rr_ping_one,
+    rr_exit_idle,   rr_check_connectivity, rr_notify_on_state_change};
 
 static void round_robin_factory_ref(grpc_lb_policy_factory *factory) {}
 
@@ -502,7 +526,7 @@ static grpc_lb_policy *create_round_robin(grpc_exec_ctx *exec_ctx,
                                           grpc_lb_policy_factory *factory,
                                           grpc_lb_policy_args *args) {
   GPR_ASSERT(args->addresses != NULL);
-  GPR_ASSERT(args->subchannel_factory != NULL);
+  GPR_ASSERT(args->client_channel_factory != NULL);
 
   round_robin_lb_policy *p = gpr_malloc(sizeof(*p));
   memset(p, 0, sizeof(*p));
@@ -518,8 +542,8 @@ static grpc_lb_policy *create_round_robin(grpc_exec_ctx *exec_ctx,
     sc_args.addr = (struct sockaddr *)(args->addresses->addrs[i].addr);
     sc_args.addr_len = (size_t)args->addresses->addrs[i].len;
 
-    grpc_subchannel *subchannel = grpc_subchannel_factory_create_subchannel(
-        exec_ctx, args->subchannel_factory, &sc_args);
+    grpc_subchannel *subchannel = grpc_client_channel_factory_create_subchannel(
+        exec_ctx, args->client_channel_factory, &sc_args);
 
     if (subchannel != NULL) {
       subchannel_data *sd = gpr_malloc(sizeof(*sd));

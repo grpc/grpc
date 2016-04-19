@@ -42,7 +42,7 @@
 #include <grpc/support/slice_buffer.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/transport/chttp2/transport/alpn.h"
+#include "src/core/ext/transport/chttp2/alpn/alpn.h"
 #include "src/core/lib/security/credentials.h"
 #include "src/core/lib/security/handshake.h"
 #include "src/core/lib/security/secure_endpoint.h"

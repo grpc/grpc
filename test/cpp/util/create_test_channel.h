@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -52,6 +52,12 @@ std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& override_hostname,
     bool enable_ssl, bool use_prod_roots,
     const std::shared_ptr<CallCredentials>& creds);
+
+std::shared_ptr<Channel> CreateTestChannel(
+    const grpc::string& server, const grpc::string& override_hostname,
+    bool enable_ssl, bool use_prod_roots,
+    const std::shared_ptr<CallCredentials>& creds,
+    const ChannelArguments& args);
 
 }  // namespace grpc
 

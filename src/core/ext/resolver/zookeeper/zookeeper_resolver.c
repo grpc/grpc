@@ -39,8 +39,8 @@
 #include <grpc/grpc_zookeeper.h>
 #include <zookeeper/zookeeper.h>
 
-#include "src/core/lib/client_config/lb_policy_registry.h"
-#include "src/core/lib/client_config/resolver_registry.h"
+#include "src/core/ext/client_config/lb_policy_registry.h"
+#include "src/core/ext/client_config/resolver_registry.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/support/string.h"
@@ -57,7 +57,7 @@ typedef struct {
   /** name to resolve */
   char *name;
   /** subchannel factory */
-  grpc_subchannel_factory *subchannel_factory;
+  grpc_client_channel_factory *client_channel_factory;
   /** load balancing policy name */
   char *lb_policy_name;
 
@@ -187,9 +187,8 @@ static void zookeeper_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
   if (addresses != NULL) {
     grpc_lb_policy_args lb_policy_args;
     config = grpc_client_config_create();
-
     lb_policy_args.addresses = addresses;
-    lb_policy_args.subchannel_factory = r->subchannel_factory;
+    lb_policy_args.client_channel_factory = r->client_channel_factory;
     lb_policy =
         grpc_lb_policy_create(exec_ctx, r->lb_policy_name, &lb_policy_args);
 
@@ -424,7 +423,7 @@ static void zookeeper_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
   if (r->resolved_config != NULL) {
     grpc_client_config_unref(exec_ctx, r->resolved_config);
   }
-  grpc_subchannel_factory_unref(exec_ctx, r->subchannel_factory);
+  grpc_client_channel_factory_unref(exec_ctx, r->client_channel_factory);
   gpr_free(r->name);
   gpr_free(r->lb_policy_name);
   gpr_free(r);
@@ -454,8 +453,8 @@ static grpc_resolver *zookeeper_create(grpc_resolver_args *args,
   grpc_resolver_init(&r->base, &zookeeper_resolver_vtable);
   r->name = gpr_strdup(path);
 
-  r->subchannel_factory = args->subchannel_factory;
-  grpc_subchannel_factory_ref(r->subchannel_factory);
+  r->client_channel_factory = args->client_channel_factory;
+  grpc_client_channel_factory_ref(r->client_channel_factory);
 
   r->lb_policy_name = gpr_strdup(lb_policy_name);
 

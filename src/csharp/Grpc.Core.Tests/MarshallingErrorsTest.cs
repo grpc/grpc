@@ -112,7 +112,7 @@ namespace Grpc.Core.Tests
             });
 
             var call = Calls.AsyncServerStreamingCall(helper.CreateServerStreamingCall(), "REQUEST");
-            var ex = Assert.Throws<RpcException>(async () => await call.ResponseStream.MoveNext());
+            var ex = Assert.ThrowsAsync<RpcException>(async () => await call.ResponseStream.MoveNext());
             Assert.AreEqual(StatusCode.Internal, ex.Status.StatusCode);
         }
 
@@ -134,7 +134,7 @@ namespace Grpc.Core.Tests
         {
             helper.ClientStreamingHandler = new ClientStreamingServerMethod<string, string>(async (requestStream, context) =>
             {
-                Assert.Throws<IOException>(async () => await requestStream.MoveNext());
+                Assert.ThrowsAsync<IOException>(async () => await requestStream.MoveNext());
                 return "RESPONSE";
             });
 
@@ -153,7 +153,7 @@ namespace Grpc.Core.Tests
         [Test]
         public void RequestSerializationError_AsyncUnary()
         {
-            Assert.Throws<IOException>(async () => await Calls.AsyncUnaryCall(helper.CreateUnaryCall(), "UNSERIALIZABLE_VALUE"));
+            Assert.ThrowsAsync<IOException>(async () => await Calls.AsyncUnaryCall(helper.CreateUnaryCall(), "UNSERIALIZABLE_VALUE"));
         }
 
         [Test]
@@ -166,7 +166,7 @@ namespace Grpc.Core.Tests
             });
             var call = Calls.AsyncClientStreamingCall(helper.CreateClientStreamingCall());
             await call.RequestStream.WriteAsync("A");
-            Assert.Throws<IOException>(async () => await call.RequestStream.WriteAsync("UNSERIALIZABLE_VALUE"));
+            Assert.ThrowsAsync<IOException>(async () => await call.RequestStream.WriteAsync("UNSERIALIZABLE_VALUE"));
             await call.RequestStream.WriteAsync("B");
             await call.RequestStream.CompleteAsync();
 

@@ -91,7 +91,7 @@ namespace Grpc.Core.Tests
             await call.RequestStream.CompleteAsync();
 
             // Second attempt to close from client is not allowed.
-            Assert.Throws(typeof(InvalidOperationException), async () => await call.RequestStream.CompleteAsync());
+            Assert.ThrowsAsync(typeof(InvalidOperationException), async () => await call.RequestStream.CompleteAsync());
         }
     }
 }

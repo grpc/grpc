@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\duplicate\echo_duplicate.proto">
-      <Filter>src\proto\grpc\testing\duplicate</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\echo_messages.proto">
+      <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\echo.proto">
       <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\echo_messages.proto">
-      <Filter>src\proto\grpc\testing</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\duplicate\echo_duplicate.proto">
+      <Filter>src\proto\grpc\testing\duplicate</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\end2end\test_service_impl.cc">
       <Filter>test\cpp\end2end</Filter>

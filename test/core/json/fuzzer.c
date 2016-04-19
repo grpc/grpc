@@ -38,42 +38,12 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/json/json.h"
-
-static size_t g_total_size = 0;
-static gpr_allocation_functions g_old_allocs;
-
-void *guard_malloc(size_t size) {
-  size_t *ptr;
-  g_total_size += size;
-  ptr = g_old_allocs.malloc_fn(size + sizeof(size));
-  *ptr++ = size;
-  return ptr;
-}
-
-void *guard_realloc(void *vptr, size_t size) {
-  size_t *ptr = vptr;
-  --ptr;
-  g_total_size -= *ptr;
-  ptr = g_old_allocs.realloc_fn(ptr, size + sizeof(size));
-  g_total_size += size;
-  *ptr++ = size;
-  return ptr;
-}
-
-void guard_free(void *vptr) {
-  size_t *ptr = vptr;
-  --ptr;
-  g_total_size -= *ptr;
-  g_old_allocs.free_fn(ptr);
-}
-
-struct gpr_allocation_functions g_guard_allocs = {guard_malloc, guard_realloc,
-                                                  guard_free};
+#include "test/core/util/memory_counters.h"
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   char *s;
-  g_old_allocs = gpr_get_allocation_functions();
-  gpr_set_allocation_functions(g_guard_allocs);
+  struct grpc_memory_counters counters;
+  grpc_memory_counters_init();
   s = gpr_malloc(size);
   memcpy(s, data, size);
   grpc_json *x;
@@ -81,7 +51,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     grpc_json_destroy(x);
   }
   gpr_free(s);
-  gpr_set_allocation_functions(g_old_allocs);
-  GPR_ASSERT(g_total_size == 0);
+  counters = grpc_memory_counters_snapshot();
+  grpc_memory_counters_destroy();
+  GPR_ASSERT(counters.total_size_relative == 0);
   return 0;
 }
