@@ -571,7 +571,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         if (g_channel == NULL) ok = false;
         grpc_call *parent_call = NULL;
         if (active_call->type != ROOT) {
-          if (active_call->call == NULL) {
+          if (active_call->call == NULL || active_call->type == CLIENT) {
             end(&inp);
             break;
           }
