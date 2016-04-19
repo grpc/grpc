@@ -38,6 +38,8 @@ ssh "${USER_AT_HOST}" "rm -rf ~/performance_workspace && mkdir -p ~/performance_
 # TODO(jtattermusch): To be sure there are no running processes that would
 # mess with the results, be rough and reboot the slave here
 # and wait for it to come back online.
+# TODO(jtattermusch): Kill all java QpsWorkers, but killall java
+# could also kill jenkins.
 ssh "${USER_AT_HOST}" "killall -9 qps_worker mono node ruby || true"
 
 # push the current sources to the slave and unpack it.
