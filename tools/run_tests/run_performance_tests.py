@@ -33,13 +33,18 @@
 import argparse
 import itertools
 import jobset
+import json
 import multiprocessing
 import os
+import pipes
+import re
 import subprocess
 import sys
 import tempfile
 import time
+import traceback
 import uuid
+import performance.scenario_config as scenario_config
 
 
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
@@ -47,130 +52,6 @@ os.chdir(_ROOT)
 
 
 _REMOTE_HOST_USERNAME = 'jenkins'
-
-
-class CXXLanguage:
-
-  def __init__(self):
-    self.safename = 'cxx'
-
-  def worker_cmdline(self):
-    return ['bins/opt/qps_worker']
-
-  def worker_port_offset(self):
-    return 0
-
-  def scenarios(self):
-    # TODO(jtattermusch): add more scenarios
-    return {
-            # Scenario 1: generic async streaming ping-pong (contentionless latency)
-            'cpp_async_generic_streaming_ping_pong': [
-                '--rpc_type=STREAMING',
-                '--client_type=ASYNC_CLIENT',
-                '--server_type=ASYNC_GENERIC_SERVER',
-                '--outstanding_rpcs_per_channel=1',
-                '--client_channels=1',
-                '--bbuf_req_size=0',
-                '--bbuf_resp_size=0',
-                '--async_client_threads=1',
-                '--async_server_threads=1',
-                '--secure_test=true',
-                '--num_servers=1',
-                '--num_clients=1',
-                '--server_core_limit=0',
-                '--client_core_limit=0'],
-            # Scenario 5: Sync unary ping-pong with protobufs
-            'cpp_sync_unary_ping_pong_protobuf': [
-                '--rpc_type=UNARY',
-                '--client_type=SYNC_CLIENT',
-                '--server_type=SYNC_SERVER',
-                '--outstanding_rpcs_per_channel=1',
-                '--client_channels=1',
-                '--simple_req_size=0',
-                '--simple_resp_size=0',
-                '--secure_test=true',
-                '--num_servers=1',
-                '--num_clients=1',
-                '--server_core_limit=0',
-                '--client_core_limit=0']}
-
-  def __str__(self):
-    return 'c++'
-
-
-class CSharpLanguage:
-
-  def __init__(self):
-    self.safename = str(self)
-
-  def worker_cmdline(self):
-    return ['tools/run_tests/performance/run_worker_csharp.sh']
-
-  def worker_port_offset(self):
-    return 100
-
-  def scenarios(self):
-    # TODO(jtattermusch): add more scenarios
-    return {
-            # Scenario 1: generic async streaming ping-pong (contentionless latency)
-            'csharp_async_generic_streaming_ping_pong': [
-                '--rpc_type=STREAMING',
-                '--client_type=ASYNC_CLIENT',
-                '--server_type=ASYNC_GENERIC_SERVER',
-                '--outstanding_rpcs_per_channel=1',
-                '--client_channels=1',
-                '--bbuf_req_size=0',
-                '--bbuf_resp_size=0',
-                '--async_client_threads=1',
-                '--async_server_threads=1',
-                '--secure_test=true',
-                '--num_servers=1',
-                '--num_clients=1',
-                '--server_core_limit=0',
-                '--client_core_limit=0']}
-
-  def __str__(self):
-    return 'csharp'
-
-
-class NodeLanguage:
-
-  def __init__(self):
-    pass
-    self.safename = str(self)
-
-  def worker_cmdline(self):
-    return ['tools/run_tests/performance/run_worker_node.sh']
-
-  def worker_port_offset(self):
-    return 200
-
-  def scenarios(self):
-    # TODO(jtattermusch): add more scenarios
-    return {
-             'node_sync_unary_ping_pong_protobuf': [
-                '--rpc_type=UNARY',
-                '--client_type=ASYNC_CLIENT',
-                '--server_type=ASYNC_SERVER',
-                '--outstanding_rpcs_per_channel=1',
-                '--client_channels=1',
-                '--simple_req_size=0',
-                '--simple_resp_size=0',
-                '--secure_test=false',
-                '--num_servers=1',
-                '--num_clients=1',
-                '--server_core_limit=0',
-                '--client_core_limit=0']}
-
-  def __str__(self):
-    return 'node'
-
-
-_LANGUAGES = {
-    'c++' : CXXLanguage(),
-    'csharp' : CSharpLanguage(),
-    'node' : NodeLanguage(),
-}
 
 
 class QpsWorkerJob:
@@ -203,6 +84,8 @@ def create_qpsworker_job(language, shortname=None,
   else:
     host_and_port='localhost:%s' % port
 
+  # TODO(jtattermusch): with some care, we can calculate the right timeout
+  # of a worker from the sum of warmup + benchmark times for all the scenarios
   jobspec = jobset.JobSpec(
       cmdline=cmdline,
       shortname=shortname,
@@ -210,18 +93,39 @@ def create_qpsworker_job(language, shortname=None,
   return QpsWorkerJob(jobspec, language, host_and_port)
 
 
-def create_scenario_jobspec(scenario_name, driver_args, workers, remote_host=None):
+def create_scenario_jobspec(scenario_json, workers, remote_host=None,
+                            bq_result_table=None):
   """Runs one scenario using QPS driver."""
   # setting QPS_WORKERS env variable here makes sure it works with SSH too.
-  cmd = 'QPS_WORKERS="%s" bins/opt/qps_driver ' % ','.join(workers)
-  cmd += ' '.join(driver_args)
+  cmd = 'QPS_WORKERS="%s" ' % ','.join(workers)
+  if bq_result_table:
+    cmd += 'BQ_RESULT_TABLE="%s" ' % bq_result_table
+  cmd += 'tools/run_tests/performance/run_qps_driver.sh '
+  cmd += '--scenarios_json=%s ' % pipes.quote(json.dumps({'scenarios': [scenario_json]}))
+  cmd += '--scenario_result_file=scenario_result.json'
   if remote_host:
     user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, remote_host)
-    cmd = 'ssh %s "cd ~/performance_workspace/grpc/ && %s"' % (user_at_host, cmd)
+    cmd = 'ssh %s "cd ~/performance_workspace/grpc/ && "%s' % (user_at_host, pipes.quote(cmd))
 
   return jobset.JobSpec(
       cmdline=[cmd],
-      shortname='qps_driver.%s' % scenario_name,
+      shortname='qps_json_driver.%s' % scenario_json['name'],
+      timeout_seconds=3*60,
+      shell=True,
+      verbose_success=True)
+
+
+def create_quit_jobspec(workers, remote_host=None):
+  """Runs quit using QPS driver."""
+  # setting QPS_WORKERS env variable here makes sure it works with SSH too.
+  cmd = 'QPS_WORKERS="%s" bins/opt/qps_driver --quit' % ','.join(workers)
+  if remote_host:
+    user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, remote_host)
+    cmd = 'ssh %s "cd ~/performance_workspace/grpc/ && "%s' % (user_at_host, pipes.quote(cmd))
+
+  return jobset.JobSpec(
+      cmdline=[cmd],
+      shortname='qps_driver.quit',
       timeout_seconds=3*60,
       shell=True,
       verbose_success=True)
@@ -272,7 +176,7 @@ def prepare_remote_hosts(hosts):
     sys.exit(1)
 
 
-def build_on_remote_hosts(hosts, languages=_LANGUAGES.keys(), build_local=False):
+def build_on_remote_hosts(hosts, languages=scenario_config.LANGUAGES.keys(), build_local=False):
   """Builds performance worker on remote hosts (and maybe also locally)."""
   build_timeout = 15*60
   build_jobs = []
@@ -326,25 +230,38 @@ def start_qpsworkers(languages, worker_hosts):
           for worker_idx, worker in enumerate(workers)]
 
 
-def create_scenarios(languages, workers_by_lang, remote_host=None):
+def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*',
+                     bq_result_table=None):
   """Create jobspecs for scenarios to run."""
   scenarios = []
   for language in languages:
-    for scenario_name, driver_args in language.scenarios().iteritems():
-      scenario = create_scenario_jobspec(scenario_name,
-                                         driver_args,
-                                         workers_by_lang[str(language)],
-                                         remote_host=remote_host)
-      scenarios.append(scenario)
+    for scenario_json in language.scenarios():
+      if re.search(args.regex, scenario_json['name']):
+        workers = workers_by_lang[str(language)]
+        # 'SERVER_LANGUAGE' is an indicator for this script to pick
+        # a server in different language. It doesn't belong to the Scenario
+        # schema, so we also need to remove it.
+        custom_server_lang = scenario_json.pop('SERVER_LANGUAGE', None)
+        if custom_server_lang:
+          if not workers_by_lang.get(custom_server_lang, []):
+            print 'Warning: Skipping scenario %s as' % scenario_json['name']
+            print('SERVER_LANGUAGE is set to %s yet the language has '
+                  'not been selected with -l' % custom_server_lang)
+            continue
+          for idx in range(0, scenario_json['num_servers']):
+            # replace first X workers by workers of a different language
+            workers[idx] = workers_by_lang[custom_server_lang][idx]
+        scenario = create_scenario_jobspec(scenario_json,
+                                           workers,
+                                           remote_host=remote_host,
+                                           bq_result_table=bq_result_table)
+        scenarios.append(scenario)
 
   # the very last scenario requests shutting down the workers.
   all_workers = [worker
                  for workers in workers_by_lang.values()
                  for worker in workers]
-  scenarios.append(create_scenario_jobspec('quit_workers',
-                                           ['--quit=true'],
-                                           all_workers,
-                                           remote_host=remote_host))
+  scenarios.append(create_quit_jobspec(all_workers, remote_host=remote_host))
   return scenarios
 
 
@@ -366,7 +283,7 @@ def finish_qps_workers(jobs):
 
 argp = argparse.ArgumentParser(description='Run performance tests.')
 argp.add_argument('-l', '--language',
-                  choices=['all'] + sorted(_LANGUAGES.keys()),
+                  choices=['all'] + sorted(scenario_config.LANGUAGES.keys()),
                   nargs='+',
                   default=['all'],
                   help='Languages to benchmark.')
@@ -377,13 +294,18 @@ argp.add_argument('--remote_worker_host',
                   nargs='+',
                   default=[],
                   help='Worker hosts where to start QPS workers.')
+argp.add_argument('-r', '--regex', default='.*', type=str,
+                  help='Regex to select scenarios to run.')
+argp.add_argument('--bq_result_table', default=None, type=str,
+                  help='Bigquery "dataset.table" to upload results to.')
 
 args = argp.parse_args()
 
-languages = set(_LANGUAGES[l]
+languages = set(scenario_config.LANGUAGES[l]
                 for l in itertools.chain.from_iterable(
-                      _LANGUAGES.iterkeys() if x == 'all' else [x]
+                      scenario_config.LANGUAGES.iterkeys() if x == 'all' else [x]
                       for x in args.language))
+
 
 # Put together set of remote hosts where to run and build
 remote_hosts = set()
@@ -404,6 +326,9 @@ build_on_remote_hosts(remote_hosts, languages=[str(l) for l in languages], build
 
 qpsworker_jobs = start_qpsworkers(languages, args.remote_worker_host)
 
+# TODO(jtattermusch): see https://github.com/grpc/grpc/issues/6174
+time.sleep(5)
+
 # get list of worker addresses for each language.
 worker_addresses = dict([(str(language), []) for language in languages])
 for job in qpsworker_jobs:
@@ -412,7 +337,9 @@ for job in qpsworker_jobs:
 try:
   scenarios = create_scenarios(languages,
                                workers_by_lang=worker_addresses,
-                               remote_host=args.remote_driver_host)
+                               remote_host=args.remote_driver_host,
+                               regex=args.regex,
+                               bq_result_table=args.bq_result_table)
   if not scenarios:
     raise Exception('No scenarios to run')
 
@@ -427,5 +354,7 @@ try:
     jobset.message('FAILED', 'Some of the scenarios failed.',
                    do_newline=True)
     sys.exit(1)
+except:
+  traceback.print_exc()
 finally:
   finish_qps_workers(qpsworker_jobs)

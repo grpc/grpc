@@ -101,9 +101,9 @@ typedef struct grpc_transport_stream_op {
   /** Send initial metadata to the peer, from the provided metadata batch.
       idempotent_request MUST be set if this is non-null */
   grpc_metadata_batch *send_initial_metadata;
-  /** Iff send_initial_metadata != NULL, flags if this is an idempotent request
-      or not */
-  bool send_idempotent_request;
+  /** Iff send_initial_metadata != NULL, flags associated with
+      send_initial_metadata: a bitfield of GRPC_INITIAL_METADATA_xxx */
+  uint32_t send_initial_metadata_flags;
 
   /** Send trailing metadata to the peer, from the provided metadata batch. */
   grpc_metadata_batch *send_trailing_metadata;

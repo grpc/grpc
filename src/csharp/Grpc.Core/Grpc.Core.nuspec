@@ -16,7 +16,6 @@
     <tags>gRPC RPC Protocol HTTP/2</tags>
     <dependencies>
       <dependency id="Ix-Async" version="1.2.5" />
-      <dependency id="grpc.native.csharp" version="$version$" />
     </dependencies>
   </metadata>
   <files>
@@ -24,5 +23,12 @@
     <file src="bin/ReleaseSigned/Grpc.Core.pdb" target="lib/net45" />
     <file src="bin/ReleaseSigned/Grpc.Core.xml" target="lib/net45" />
     <file src="**\*.cs" target="src" />
+    <file src="Grpc.Core.targets" target="\build\net45\Grpc.Core.targets" />
+    <file src="windows_x86/grpc_csharp_ext.dll" target="/build/native/bin/windows_x86/grpc_csharp_ext.dll" />
+    <file src="windows_x64/grpc_csharp_ext.dll" target="/build/native/bin/windows_x64/grpc_csharp_ext.dll" />
+    <file src="linux_x86/libgrpc_csharp_ext.so" target="/build/native/bin/linux_x86/libgrpc_csharp_ext.so" />
+    <file src="linux_x64/libgrpc_csharp_ext.so" target="/build/native/bin/linux_x64/libgrpc_csharp_ext.so" />
+    <file src="macosx_x86/libgrpc_csharp_ext.dylib" target="/build/native/bin/macosx_x86/libgrpc_csharp_ext.dylib" />
+    <file src="macosx_x64/libgrpc_csharp_ext.dylib" target="/build/native/bin/macosx_x64/libgrpc_csharp_ext.dylib" />
   </files>
 </package>
