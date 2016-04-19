@@ -348,7 +348,7 @@ static void free_non_null(void *p) {
 }
 
 typedef enum {
-  ROOT, CLIENT, SERVER
+  ROOT, CLIENT, SERVER, PENDING_SERVER
 } call_state_type;
 
 typedef struct call_state {
@@ -361,6 +361,7 @@ typedef struct call_state {
   char *recv_status_details;
   size_t recv_status_details_capacity;
   int cancelled;
+  grpc_call_details call_details;
 
   struct call_state *next;
   struct call_state *prev;
@@ -601,7 +602,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       }
       // queue some ops on a call
       case 12: {
-        if (active_call->type == ROOT || active_call->call == NULL) {
+        if (active_call->type ==PENDING_SERVER || active_call->type == ROOT || active_call->call == NULL) {
           end(&inp);
           break;
         }
@@ -759,6 +760,18 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         char *tracer = read_string(&inp);
         grpc_tracer_set_enabled(tracer, 0);
         gpr_free(tracer);
+        break;
+      }
+      // request a server call
+      case 19: {
+        if (g_server == NULL) {
+          end(&inp);
+          break;
+        }
+        call_state *cs = new_call(active_call, PENDING_SERVER);
+        grpc_call_error error = grpc_server_request_call(g_server, &cs->call, &cs->call_details, &cs->recv_initial_metadata,
+                                                         cq, cq, NULL);
+        gpr_log(GPR_DEBUG, "%d", error);
         break;
       }
     }
