@@ -79,7 +79,7 @@ static char *read_string(input_stream *inp) {
   char c;
   do {
     if (cap == sz) {
-      cap = GPR_MAX(3*cap/2, cap+8);
+      cap = GPR_MAX(3 * cap / 2, cap + 8);
       str = gpr_realloc(str, cap);
     }
     c = (char)next_byte(inp);
@@ -141,13 +141,15 @@ static grpc_byte_buffer *read_message(input_stream *inp) {
   return grpc_raw_byte_buffer_create(&slice, 1);
 }
 
-static void read_metadata(input_stream *inp, size_t *count, grpc_metadata **metadata) {
+static void read_metadata(input_stream *inp, size_t *count,
+                          grpc_metadata **metadata) {
   *count = next_byte(inp);
   *metadata = gpr_malloc(*count * sizeof(**metadata));
   memset(*metadata, 0, *count * sizeof(**metadata));
   for (size_t i = 0; i < *count; i++) {
     (*metadata)[i].key = read_string(inp);
-    read_buffer(inp, (char**)&(*metadata)[i].value, &(*metadata)[i].value_length);
+    read_buffer(inp, (char **)&(*metadata)[i].value,
+                &(*metadata)[i].value_length);
     (*metadata)[i].flags = read_uint32(inp);
   }
 }
@@ -347,9 +349,7 @@ static void free_non_null(void *p) {
   gpr_free(p);
 }
 
-typedef enum {
-  ROOT, CLIENT, SERVER, PENDING_SERVER
-} call_state_type;
+typedef enum { ROOT, CLIENT, SERVER, PENDING_SERVER } call_state_type;
 
 typedef struct call_state {
   call_state_type type;
@@ -371,11 +371,11 @@ static call_state *new_call(call_state *sibling, call_state_type type) {
   call_state *c = gpr_malloc(sizeof(*c));
   memset(c, 0, sizeof(*c));
   if (sibling != NULL) {
-  c->next = sibling;
-  c->prev = sibling->prev;
-  c->next->prev = c->prev->next = c;
+    c->next = sibling;
+    c->prev = sibling->prev;
+    c->next->prev = c->prev->next = c;
   } else {
-  c->next = c->prev = c;
+    c->next = c->prev = c;
   }
   c->type = type;
   return c;
@@ -602,7 +602,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       }
       // queue some ops on a call
       case 12: {
-        if (active_call->type ==PENDING_SERVER || active_call->type == ROOT || active_call->call == NULL) {
+        if (active_call->type == PENDING_SERVER || active_call->type == ROOT ||
+            active_call->call == NULL) {
           end(&inp);
           break;
         }
@@ -636,11 +637,13 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
                   &op->data.send_status_from_server.trailing_metadata_count,
                   &op->data.send_status_from_server.trailing_metadata);
               op->data.send_status_from_server.status = next_byte(&inp);
-              op->data.send_status_from_server.status_details = read_string(&inp);
+              op->data.send_status_from_server.status_details =
+                  read_string(&inp);
               break;
             case GRPC_OP_RECV_INITIAL_METADATA:
               op->op = GRPC_OP_RECV_INITIAL_METADATA;
-              op->data.recv_initial_metadata = &active_call->recv_initial_metadata;
+              op->data.recv_initial_metadata =
+                  &active_call->recv_initial_metadata;
               break;
             case GRPC_OP_RECV_MESSAGE:
               op->op = GRPC_OP_RECV_MESSAGE;
@@ -667,9 +670,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         if (ok) {
           validator *v = create_validator(decrement, &pending_ops);
           pending_ops++;
-          grpc_call_error error = grpc_call_start_batch(
-              active_call->call, ops, num_ops,
-              v, NULL);
+          grpc_call_error error =
+              grpc_call_start_batch(active_call->call, ops, num_ops, v, NULL);
           if (error != GRPC_CALL_OK) {
             v->validate(v->arg, false);
             gpr_free(v);
@@ -681,9 +683,12 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           op = &ops[i];
           switch (op->op) {
             case GRPC_OP_SEND_INITIAL_METADATA:
-              for (size_t j = 0; j < op->data.send_initial_metadata.count; j++) {
-                gpr_free((void*)op->data.send_initial_metadata.metadata[j].key);
-                gpr_free((void*)op->data.send_initial_metadata.metadata[j].value);
+              for (size_t j = 0; j < op->data.send_initial_metadata.count;
+                   j++) {
+                gpr_free(
+                    (void *)op->data.send_initial_metadata.metadata[j].key);
+                gpr_free(
+                    (void *)op->data.send_initial_metadata.metadata[j].value);
               }
               gpr_free(op->data.send_initial_metadata.metadata);
               break;
@@ -691,12 +696,18 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
               grpc_byte_buffer_destroy(op->data.send_message);
               break;
             case GRPC_OP_SEND_STATUS_FROM_SERVER:
-              for (size_t j = 0; j < op->data.send_status_from_server.trailing_metadata_count; j++) {
-                gpr_free((void*)op->data.send_status_from_server.trailing_metadata[j].key);
-                gpr_free((void*)op->data.send_status_from_server.trailing_metadata[j].value);
+              for (size_t j = 0;
+                   j < op->data.send_status_from_server.trailing_metadata_count;
+                   j++) {
+                gpr_free((void *)op->data.send_status_from_server
+                             .trailing_metadata[j]
+                             .key);
+                gpr_free((void *)op->data.send_status_from_server
+                             .trailing_metadata[j]
+                             .value);
               }
               gpr_free(op->data.send_status_from_server.trailing_metadata);
-              gpr_free((void*)op->data.send_status_from_server.status_details);
+              gpr_free((void *)op->data.send_status_from_server.status_details);
               break;
             case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
             case GRPC_OP_RECV_INITIAL_METADATA:
@@ -769,9 +780,15 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           break;
         }
         call_state *cs = new_call(active_call, PENDING_SERVER);
-        grpc_call_error error = grpc_server_request_call(g_server, &cs->call, &cs->call_details, &cs->recv_initial_metadata,
-                                                         cq, cq, NULL);
-        GPR_ASSERT(error == GRPC_CALL_OK);
+        pending_ops++;
+        validator *v = create_validator(decrement, &pending_ops);
+        grpc_call_error error =
+            grpc_server_request_call(g_server, &cs->call, &cs->call_details,
+                                     &cs->recv_initial_metadata, cq, cq, v);
+        if (error != GRPC_CALL_OK) {
+          v->validate(v->arg, false);
+          gpr_free(v);
+        }
         break;
       }
     }
