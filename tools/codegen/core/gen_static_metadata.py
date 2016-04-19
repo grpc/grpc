@@ -205,6 +205,7 @@ all_elems = sorted(list(all_elems), key=mangle)
 args = sys.argv[1:]
 H = None
 C = None
+D = None
 if args:
   if 'header' in args:
     H = sys.stdout
@@ -214,11 +215,17 @@ if args:
     C = sys.stdout
   else:
     C = open('/dev/null', 'w')
+  if 'dictionary' in args:
+    D = sys.stdout
+  else:
+    D = open('/dev/null', 'w')
 else:
   H = open(os.path.join(
       os.path.dirname(sys.argv[0]), '../../../src/core/lib/transport/static_metadata.h'), 'w')
   C = open(os.path.join(
       os.path.dirname(sys.argv[0]), '../../../src/core/lib/transport/static_metadata.c'), 'w')
+  D = open(os.path.join(
+      os.path.dirname(sys.argv[0]), '../../../test/core/end2end/fuzzers/hpack.dictionary'), 'w')
 
 # copy-paste copyright notice from this file
 with open(sys.argv[0]) as my_source:
@@ -234,6 +241,27 @@ with open(sys.argv[0]) as my_source:
       break
     copyright.append(line)
   put_banner([H,C], [line[2:].rstrip() for line in copyright])
+
+
+hex_bytes = [ord(c) for c in "abcdefABCDEF0123456789"]
+
+
+def esc_c(line):
+  out = "\""
+  last_was_hex = False
+  for c in line:
+    if 32 <= c < 127:
+      if c in hex_bytes and last_was_hex:
+        out += "\"\""
+      if c != ord('"'):
+        out += chr(c)
+      else:
+        out += "\\\""
+      last_was_hex = False
+    else:
+      out += "\\x%02x" % c
+      last_was_hex = True
+  return out + "\""
 
 put_banner([H,C],
 """WARNING: Auto-generated code.
@@ -262,6 +290,10 @@ for i, elem in enumerate(all_strs):
 print >>H
 print >>C, 'grpc_mdstr grpc_static_mdstr_table[GRPC_STATIC_MDSTR_COUNT];'
 print >>C
+
+print >>D, '# hpack fuzzing dictionary'
+for i, elem in enumerate(all_strs):
+  print >>D, 'kw%d=%s' % (i, esc_c([len(elem)] + [ord(c) for c in elem]))
 
 print >>H, '#define GRPC_STATIC_MDELEM_COUNT %d' % len(all_elems)
 print >>H, 'extern grpc_mdelem grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];'

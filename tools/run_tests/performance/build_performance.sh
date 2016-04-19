@@ -45,8 +45,15 @@ make CONFIG=${CONFIG} EMBED_OPENSSL=true EMBED_ZLIB=true qps_worker qps_driver q
 
 for language in $@
 do
-  if [ "$language" != "c++" ]
-  then
+  case "$language" in
+  "c++")
+    ;;  # C++ has already been built.
+  "java")
+    (cd ../grpc-java/ &&
+      ./gradlew -PskipCodegen=true :grpc-benchmarks:installDist)
+    ;;
+  *)
     tools/run_tests/run_tests.py -l $language -c $CONFIG --build_only -j 8
-  fi
+    ;;
+  esac
 done
