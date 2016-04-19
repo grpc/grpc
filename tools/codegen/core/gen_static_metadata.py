@@ -289,6 +289,9 @@ print >>C
 print >>D, '# hpack fuzzing dictionary'
 for i, elem in enumerate(all_strs):
   print >>D, '%s' % (esc_dict([len(elem)] + [ord(c) for c in elem]))
+for i, elem in enumerate(all_elems):
+  print >>D, '%s' % (esc_dict([0, len(elem[0])] + [ord(c) for c in elem[0]] +
+                              [len(elem[1])] + [ord(c) for c in elem[1]]))
 
 print >>H, '#define GRPC_STATIC_MDELEM_COUNT %d' % len(all_elems)
 print >>H, 'extern grpc_mdelem grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];'
