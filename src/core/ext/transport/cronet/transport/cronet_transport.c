@@ -47,7 +47,7 @@
 #include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport_impl.h"
-#include "src/core/ext/transport/cronet/transport/cronet_c_for_grpc.h"
+#include "third_party/objective_c/Cronet/cronet_c_for_grpc.h"
 
 #ifdef COMPILE_WITH_CRONET
 
