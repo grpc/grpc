@@ -48,6 +48,22 @@ cd `dirname $0`/../..
 GRPC_ROOT=`pwd`
 MOUNT_ARGS="-v $GRPC_ROOT:/var/local/jenkins/grpc:ro"
 
+GRPC_JAVA_ROOT=`cd ../grpc-java && pwd`
+if [ "$GRPC_JAVA_ROOT" != "" ]
+then
+  MOUNT_ARGS+=" -v $GRPC_JAVA_ROOT:/var/local/jenkins/grpc-java:ro"
+else
+  echo "WARNING: grpc-java not found, it won't be mounted to the docker container."
+fi
+
+GRPC_GO_ROOT=`cd ../grpc-go && pwd`
+if [ "$GRPC_GO_ROOT" != "" ]
+then
+  MOUNT_ARGS+=" -v $GRPC_GO_ROOT:/var/local/jenkins/grpc-go:ro"
+else
+  echo "WARNING: grpc-go not found, it won't be mounted to the docker container."
+fi
+
 mkdir -p /tmp/ccache
 
 # Mount service account dir if available.
