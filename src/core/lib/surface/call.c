@@ -1545,7 +1545,6 @@ const char *grpc_call_error_to_string(grpc_call_error error) {
       return "GRPC_CALL_ERROR_TOO_MANY_OPERATIONS";
     case GRPC_CALL_OK:
       return "GRPC_CALL_OK";
-    default:
-      return "GRPC_CALL_ERROR_UNKNOW";
   }
+  GPR_UNREACHABLE_CODE(return "GRPC_CALL_ERROR_UNKNOW");
 }
