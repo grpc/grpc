@@ -34,6 +34,13 @@
 #   tools/codegen/core/gen_nano_proto.sh \
 #     src/proto/grpc/lb/v0/load_balancer.proto
 #     $PWD/src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0
+#
+# Exit statuses:
+# 1: Incorrect number of arguments
+# 2: Input proto file (1st argument) doesn't exist or is not a regular file.
+# 3: Options file for nanopb not found in same dir as the input proto file.
+# 4: Output dir not an absolute path.
+# 5: Couldn't create output directory (2nd argument).
 
 read -r -d '' COPYRIGHT <<'EOF'
 /*
@@ -76,7 +83,7 @@ COPYRIGHT_FILE=$(mktemp)
 echo "${COPYRIGHT/<YEAR>/$CURRENT_YEAR}" > $COPYRIGHT_FILE
 
 set -ex
-if [ $# -lt 2 ]; then
+if [ $# -lt 2 ] || [ $# -gt 3 ]; then
   echo "Usage: $0 <input.proto> <absolute path to output dir> [grpc path]"
   exit 1
 fi
@@ -89,22 +96,22 @@ readonly EXPECTED_OPTIONS_FILE_PATH="${1%.*}.options"
 
 if [[ ! -f "$INPUT_PROTO" ]]; then
   echo "Input proto file '$INPUT_PROTO' doesn't exist."
-  exit 3
+  exit 2
 fi
 if [[ ! -f "${EXPECTED_OPTIONS_FILE_PATH}" ]]; then
   echo "Expected nanopb options file '${EXPECTED_OPTIONS_FILE_PATH}' missing"
-  exit 4
+  exit 3
 fi
 
 if [[ "${OUTPUT_DIR:0:1}" != '/' ]]; then
   echo "The output directory must be an absolute path. Got '$OUTPUT_DIR'"
-  exit 5
+  exit 4
 fi
 
 mkdir -p "$OUTPUT_DIR"
 if [ $? != 0 ]; then
   echo "Error creating output directory $OUTPUT_DIR"
-  exit 2
+  exit 5
 fi
 
 readonly VENV_DIR=$(mktemp -d)
