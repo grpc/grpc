@@ -341,17 +341,38 @@ static void free_non_null(void *p) {
   gpr_free(p);
 }
 
+typedef enum {
+  ROOT, CLIENT, SERVER
+} call_state_type;
+
 typedef struct call_state {
-  grpc_call *client;
-  grpc_call *server;
-  grpc_byte_buffer *recv_message[2];
+  call_state_type type;
+  grpc_call *call;
+  grpc_byte_buffer *recv_message;
   grpc_status_code status;
   grpc_metadata_array recv_initial_metadata;
   grpc_metadata_array recv_trailing_metadata;
   char *recv_status_details;
   size_t recv_status_details_capacity;
   int cancelled;
+
+  struct call_state *next;
+  struct call_state *prev;
 } call_state;
+
+static call_state *new_call(call_state *sibling, call_state_type type) {
+  call_state *c = gpr_malloc(sizeof(*c));
+  memset(c, 0, sizeof(*c));
+  if (sibling != NULL) {
+  c->next = sibling;
+  c->prev = sibling->prev;
+  c->next->prev = c->prev->next = c;
+  } else {
+  c->next = c->prev = c;
+  }
+  c->type = type;
+  return c;
+}
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_test_only_set_metadata_hash_seed(0);
@@ -371,10 +392,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   int pending_pings = 0;
   int pending_ops = 0;
 
-#define MAX_CALLS 16
-  call_state calls[MAX_CALLS];
-  int num_calls = 0;
-  memset(calls, 0, sizeof(calls));
+  call_state *active_call = new_call(NULL, ROOT);
 
   grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
 
@@ -545,14 +563,13 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       case 10: {
         bool ok = true;
         if (g_channel == NULL) ok = false;
-        if (num_calls >= MAX_CALLS) ok = false;
         grpc_call *parent_call = NULL;
-        uint8_t pcidx = next_byte(&inp);
-        if (pcidx > MAX_CALLS)
-          ok = false;
-        else if (pcidx < MAX_CALLS) {
-          parent_call = calls[pcidx].server;
-          if (parent_call == NULL) ok = false;
+        if (active_call->type != ROOT) {
+          if (active_call->call == NULL) {
+            end(&inp);
+            break;
+          }
+          parent_call = active_call->call;
         }
         uint32_t propagation_mask = read_uint32(&inp);
         char *method = read_string(&inp);
@@ -562,8 +579,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
                          gpr_time_from_micros(read_uint32(&inp), GPR_TIMESPAN));
 
         if (ok) {
-          GPR_ASSERT(calls[num_calls].client == NULL);
-          calls[num_calls].client =
+          call_state *cs = new_call(active_call, CLIENT);
+          cs->call =
               grpc_channel_create_call(g_channel, parent_call, propagation_mask,
                                        cq, method, host, deadline, NULL);
         } else {
@@ -573,29 +590,18 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       }
       // switch the 'current' call
       case 11: {
-        uint8_t new_current = next_byte(&inp);
-        if (new_current == 0 || new_current >= num_calls) {
-          end(&inp);
-        } else {
-          GPR_SWAP(call_state, calls[0], calls[new_current]);
-        }
+        active_call = active_call->next;
         break;
       }
       // queue some ops on a call
       case 12: {
+        if (active_call->type == ROOT || active_call->call == NULL) {
+          end(&inp);
+          break;
+        }
         size_t num_ops = next_byte(&inp);
         grpc_op *ops = gpr_malloc(sizeof(grpc_op) * num_ops);
-        bool ok = num_calls > 0;
-        uint8_t on_server = next_byte(&inp);
-        if (on_server != 0 && on_server != 1) {
-          ok = false;
-        }
-        if (ok && on_server && calls[0].server == NULL) {
-          ok = false;
-        }
-        if (ok && !on_server && calls[0].client == NULL) {
-          ok = false;
-        }
+        bool ok = true;
         size_t i;
         grpc_op *op;
         for (i = 0; i < num_ops; i++) {
@@ -627,25 +633,25 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
               break;
             case GRPC_OP_RECV_INITIAL_METADATA:
               op->op = GRPC_OP_RECV_INITIAL_METADATA;
-              op->data.recv_initial_metadata = &calls[0].recv_initial_metadata;
+              op->data.recv_initial_metadata = &active_call->recv_initial_metadata;
               break;
             case GRPC_OP_RECV_MESSAGE:
               op->op = GRPC_OP_RECV_MESSAGE;
-              op->data.recv_message = &calls[0].recv_message[on_server];
+              op->data.recv_message = &active_call->recv_message;
               break;
             case GRPC_OP_RECV_STATUS_ON_CLIENT:
               op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-              op->data.recv_status_on_client.status = &calls[0].status;
+              op->data.recv_status_on_client.status = &active_call->status;
               op->data.recv_status_on_client.trailing_metadata =
-                  &calls[0].recv_trailing_metadata;
+                  &active_call->recv_trailing_metadata;
               op->data.recv_status_on_client.status_details =
-                  &calls[0].recv_status_details;
+                  &active_call->recv_status_details;
               op->data.recv_status_on_client.status_details_capacity =
-                  &calls[0].recv_status_details_capacity;
+                  &active_call->recv_status_details_capacity;
               break;
             case GRPC_OP_RECV_CLOSE_ON_SERVER:
               op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-              op->data.recv_close_on_server.cancelled = &calls[0].cancelled;
+              op->data.recv_close_on_server.cancelled = &active_call->cancelled;
               break;
           }
           op->reserved = NULL;
@@ -655,7 +661,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           validator *v = create_validator(decrement, &pending_ops);
           pending_ops++;
           grpc_call_error error = grpc_call_start_batch(
-              on_server ? calls[0].server : calls[0].client, ops, num_ops,
+              active_call->call, ops, num_ops,
               v, NULL);
           if (error != GRPC_CALL_OK) {
             v->validate(v->arg, false);
@@ -697,44 +703,26 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 
         break;
       }
-      // cancel current call on client
+      // cancel current call
       case 13: {
-        if (num_calls > 0 && calls[0].client) {
-          grpc_call_cancel(calls[0].client, NULL);
+        if (active_call->type != ROOT && active_call->call != NULL) {
+          grpc_call_cancel(active_call->call, NULL);
         } else {
           end(&inp);
         }
         break;
       }
-      // cancel current call on server
+      // get a calls peer
       case 14: {
-        if (num_calls > 0 && calls[0].server) {
-          grpc_call_cancel(calls[0].server, NULL);
-        } else {
-          end(&inp);
-        }
-        break;
-      }
-      // get a calls peer on client
-      case 15: {
-        if (num_calls > 0 && calls[0].client) {
-          free_non_null(grpc_call_get_peer(calls[0].client));
-        } else {
-          end(&inp);
-        }
-        break;
-      }
-      // get a calls peer on server
-      case 16: {
-        if (num_calls > 0 && calls[0].server) {
-          free_non_null(grpc_call_get_peer(calls[0].server));
+        if (active_call->type != ROOT && active_call->call != NULL) {
+          free_non_null(grpc_call_get_peer(active_call->call));
         } else {
           end(&inp);
         }
         break;
       }
       // get a channels target
-      case 17: {
+      case 15: {
         if (g_channel != NULL) {
           free_non_null(grpc_channel_get_target(g_channel));
         } else {
@@ -743,7 +731,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         break;
       }
       // send a ping on a channel
-      case 18: {
+      case 16: {
         if (g_channel != NULL) {
           pending_pings++;
           grpc_channel_ping(g_channel, cq,
@@ -754,14 +742,14 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         break;
       }
       // enable a tracer
-      case 19: {
+      case 17: {
         char *tracer = read_string(&inp);
         grpc_tracer_set_enabled(tracer, 1);
         gpr_free(tracer);
         break;
       }
       // disable a tracer
-      case 20: {
+      case 18: {
         char *tracer = read_string(&inp);
         grpc_tracer_set_enabled(tracer, 0);
         gpr_free(tracer);
