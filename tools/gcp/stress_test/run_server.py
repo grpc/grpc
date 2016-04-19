@@ -30,6 +30,7 @@
 
 import datetime
 import os
+import resource
 import select
 import subprocess
 import sys
@@ -56,6 +57,10 @@ def run_server():
          might want to connect to the pod for examining logs). This is the
          reason why the script waits forever in case of failures.
   """
+  # Set the 'core file' size to 'unlimited' so that 'core' files are generated
+  # if the server crashes (Note: This is not relevant for Java and Go servers)
+  resource.setrlimit(resource.RLIMIT_CORE,
+                     (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
 
   # Read the parameters from environment variables
   env = dict(os.environ)
@@ -73,9 +78,10 @@ def run_server():
   logfile_name = env.get('LOGFILE_NAME')
 
   print('pod_name: %s, project_id: %s, run_id: %s, dataset_id: %s, '
-        'summary_table_id: %s, qps_table_id: %s') % (
-            pod_name, project_id, run_id, dataset_id, summary_table_id,
-            qps_table_id)
+        'summary_table_id: %s, qps_table_id: %s') % (pod_name, project_id,
+                                                     run_id, dataset_id,
+                                                     summary_table_id,
+                                                     qps_table_id)
 
   bq_helper = BigQueryHelper(run_id, image_type, pod_name, project_id,
                              dataset_id, summary_table_id, qps_table_id)
