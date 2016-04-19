@@ -73,12 +73,18 @@ static uint8_t next_byte(input_stream *inp) {
 static void end(input_stream *inp) { inp->cur = inp->end; }
 
 static char *read_string(input_stream *inp) {
-  size_t len = next_byte(inp);
-  char *str = gpr_malloc(len + 1);
-  for (size_t i = 0; i < len; i++) {
-    str[i] = (char)next_byte(inp);
-  }
-  str[len] = 0;
+  char *str = NULL;
+  size_t cap = 0;
+  size_t sz = 0;
+  char c;
+  do {
+    if (cap == sz) {
+      cap = GPR_MAX(3*cap/2, cap+8);
+      str = gpr_realloc(str, cap);
+    }
+    c = (char)next_byte(inp);
+    str[sz++] = c;
+  } while (c != 0);
   return str;
 }
 
