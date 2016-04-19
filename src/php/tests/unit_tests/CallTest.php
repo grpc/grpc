@@ -94,7 +94,7 @@ class CallTest extends PHPUnit_Framework_TestCase
 
     public function testCancel()
     {
-      $this->assertNull($this->call->cancel());
+        $this->assertNull($this->call->cancel());
     }
 
     /**
@@ -118,5 +118,4 @@ class CallTest extends PHPUnit_Framework_TestCase
         ];
         $result = $this->call->startBatch($batch);
     }
-
 }
