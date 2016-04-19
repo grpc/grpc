@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -31,9 +30,6 @@
 
 set -ex
 
-export GRPC_CONFIG=${CONFIG:-opt}
+cd $(dirname $0)/../../..
 
-# change to grpc repo root
-cd $(dirname $0)/../..
-
-bundle install
+ruby src/ruby/qps/worker.rb $@
