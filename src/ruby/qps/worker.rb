@@ -55,12 +55,12 @@ class WorkerServiceImpl < Grpc::Testing::WorkerService::Service
     Thread.new {
       bms = ''
       gtss = Grpc::Testing::ServerStatus
-      reqs.each do |req|        
+      reqs.each do |req|
         case req.argtype.to_s
         when 'setup'
           bms = BenchmarkServer.new(req.setup, @server_port)
           q.push(gtss.new(stats: bms.mark(false), port: bms.get_port))
-        when 'mark'         
+        when 'mark'
           q.push(gtss.new(stats: bms.mark(req.mark.reset), cores: cpu_cores))
         end
       end
