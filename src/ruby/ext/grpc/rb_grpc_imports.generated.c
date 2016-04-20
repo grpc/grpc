@@ -174,6 +174,8 @@ grpc_byte_buffer_reader_readall_type grpc_byte_buffer_reader_readall_import;
 grpc_raw_byte_buffer_from_reader_type grpc_raw_byte_buffer_from_reader_import;
 gpr_log_type gpr_log_import;
 gpr_log_message_type gpr_log_message_import;
+gpr_set_log_verbosity_type gpr_set_log_verbosity_import;
+gpr_log_verbosity_init_type gpr_log_verbosity_init_import;
 gpr_set_log_function_type gpr_set_log_function_import;
 gpr_slice_ref_type gpr_slice_ref_import;
 gpr_slice_unref_type gpr_slice_unref_import;
@@ -436,6 +438,8 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_raw_byte_buffer_from_reader_import = (grpc_raw_byte_buffer_from_reader_type) GetProcAddress(library, "grpc_raw_byte_buffer_from_reader");
   gpr_log_import = (gpr_log_type) GetProcAddress(library, "gpr_log");
   gpr_log_message_import = (gpr_log_message_type) GetProcAddress(library, "gpr_log_message");
+  gpr_set_log_verbosity_import = (gpr_set_log_verbosity_type) GetProcAddress(library, "gpr_set_log_verbosity");
+  gpr_log_verbosity_init_import = (gpr_log_verbosity_init_type) GetProcAddress(library, "gpr_log_verbosity_init");
   gpr_set_log_function_import = (gpr_set_log_function_type) GetProcAddress(library, "gpr_set_log_function");
   gpr_slice_ref_import = (gpr_slice_ref_type) GetProcAddress(library, "gpr_slice_ref");
   gpr_slice_unref_import = (gpr_slice_unref_type) GetProcAddress(library, "gpr_slice_unref");

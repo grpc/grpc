@@ -45,14 +45,6 @@
 namespace grpc {
 namespace testing {
 
-static double WallTime(ClientStats s) { return s.time_elapsed(); }
-static double SystemTime(ClientStats s) { return s.time_system(); }
-static double UserTime(ClientStats s) { return s.time_user(); }
-static double ServerWallTime(ServerStats s) { return s.time_elapsed(); }
-static double ServerSystemTime(ServerStats s) { return s.time_system(); }
-static double ServerUserTime(ServerStats s) { return s.time_user(); }
-static int Cores(int n) { return n; }
-
 void CompositeReporter::add(std::unique_ptr<Reporter> reporter) {
   reporters_.emplace_back(std::move(reporter));
 }
@@ -82,44 +74,33 @@ void CompositeReporter::ReportTimes(const ScenarioResult& result) {
 }
 
 void GprLogReporter::ReportQPS(const ScenarioResult& result) {
-  Histogram histogram;
-  histogram.MergeProto(result.latencies());
-  gpr_log(GPR_INFO, "QPS: %.1f",
-          histogram.Count() / average(result.client_stats(), WallTime));
+  gpr_log(GPR_INFO, "QPS: %.1f", result.summary().qps());
 }
 
 void GprLogReporter::ReportQPSPerCore(const ScenarioResult& result) {
-  Histogram histogram;
-  histogram.MergeProto(result.latencies());
-  auto qps = histogram.Count() / average(result.client_stats(), WallTime);
-
-  gpr_log(GPR_INFO, "QPS: %.1f (%.1f/server core)", qps,
-          qps / sum(result.server_cores(), Cores));
+  gpr_log(GPR_INFO, "QPS: %.1f (%.1f/server core)", result.summary().qps(),
+          result.summary().qps_per_server_core());
 }
 
 void GprLogReporter::ReportLatency(const ScenarioResult& result) {
-  Histogram histogram;
-  histogram.MergeProto(result.latencies());
   gpr_log(GPR_INFO,
           "Latencies (50/90/95/99/99.9%%-ile): %.1f/%.1f/%.1f/%.1f/%.1f us",
-          histogram.Percentile(50) / 1000, histogram.Percentile(90) / 1000,
-          histogram.Percentile(95) / 1000, histogram.Percentile(99) / 1000,
-          histogram.Percentile(99.9) / 1000);
+          result.summary().latency_50() / 1000,
+          result.summary().latency_90() / 1000,
+          result.summary().latency_95() / 1000,
+          result.summary().latency_99() / 1000,
+          result.summary().latency_999() / 1000);
 }
 
 void GprLogReporter::ReportTimes(const ScenarioResult& result) {
   gpr_log(GPR_INFO, "Server system time: %.2f%%",
-          100.0 * sum(result.server_stats(), ServerSystemTime) /
-              sum(result.server_stats(), ServerWallTime));
+          result.summary().server_system_time());
   gpr_log(GPR_INFO, "Server user time:   %.2f%%",
-          100.0 * sum(result.server_stats(), ServerUserTime) /
-              sum(result.server_stats(), ServerWallTime));
+          result.summary().server_user_time());
   gpr_log(GPR_INFO, "Client system time: %.2f%%",
-          100.0 * sum(result.client_stats(), SystemTime) /
-              sum(result.client_stats(), WallTime));
+          result.summary().client_system_time());
   gpr_log(GPR_INFO, "Client user time:   %.2f%%",
-          100.0 * sum(result.client_stats(), UserTime) /
-              sum(result.client_stats(), WallTime));
+          result.summary().client_user_time());
 }
 
 void JsonReporter::ReportQPS(const ScenarioResult& result) {

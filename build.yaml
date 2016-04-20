@@ -442,6 +442,7 @@ filegroups:
   - src/core/ext/client_config/lb_policy.h
   - src/core/ext/client_config/lb_policy_factory.h
   - src/core/ext/client_config/lb_policy_registry.h
+  - src/core/ext/client_config/parse_address.h
   - src/core/ext/client_config/resolver.h
   - src/core/ext/client_config/resolver_factory.h
   - src/core/ext/client_config/resolver_registry.h
@@ -461,6 +462,7 @@ filegroups:
   - src/core/ext/client_config/lb_policy.c
   - src/core/ext/client_config/lb_policy_factory.c
   - src/core/ext/client_config/lb_policy_registry.c
+  - src/core/ext/client_config/parse_address.c
   - src/core/ext/client_config/resolver.c
   - src/core/ext/client_config/resolver_factory.c
   - src/core/ext/client_config/resolver_registry.c
