@@ -219,10 +219,13 @@ static VALUE grpc_rb_call_get_peer_cert(VALUE self) {
   grpc_call *call = NULL;
   VALUE res = Qnil;
   grpc_auth_context *ctx = NULL;
-  // char *peer_cert = NULL;
   TypedData_Get_Struct(self, grpc_call, &grpc_call_data_type, call);
 
   ctx = grpc_call_auth_context(call);
+
+  if (!ctx || !grpc_auth_context_peer_is_authenticated(ctx)) {
+    return Qnil;
+  }
 
   grpc_auth_property_iterator it =
       grpc_auth_context_find_properties_by_name(ctx, GRPC_X509_PEM_CERT_PROPERTY_NAME);
@@ -232,6 +235,8 @@ static VALUE grpc_rb_call_get_peer_cert(VALUE self) {
   }
 
   res = rb_str_new2(prop->value);
+
+  grpc_auth_context_release(ctx);
 
   return res;
 }
