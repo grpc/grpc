@@ -53,7 +53,7 @@ static void RunQPS() {
   gpr_log(GPR_INFO, "Running QPS test");
 
   ClientConfig client_config;
-  client_config.set_client_type(ASYNC_CLIENT);
+  client_config.set_client_api("async");
   client_config.set_outstanding_rpcs_per_channel(1000);
   client_config.set_client_channels(8);
   client_config.set_async_client_threads(8);
@@ -61,7 +61,7 @@ static void RunQPS() {
   client_config.mutable_load_params()->mutable_closed_loop();
 
   ServerConfig server_config;
-  server_config.set_server_type(ASYNC_SERVER);
+  server_config.set_server_api("async");
   server_config.set_async_server_threads(4);
 
   const auto result =

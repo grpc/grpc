@@ -48,6 +48,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     int warmup_seconds, int benchmark_seconds, int spawn_local_worker_count);
 
 void RunQuit();
+void RunCoreCountOnly();
 }  // namespace testing
 }  // namespace grpc
 

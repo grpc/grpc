@@ -1,4 +1,4 @@
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,6 +41,12 @@ message ServerStats {
   // change in server time (in seconds) used by the server process and all
   // threads since last reset
   double time_system = 3;
+
+  // Number of requests received
+  uint64 requests_received = 4;
+
+  // Number of responses sent
+  uint64 responses_sent = 5;
 }
 
 // Histogram params based on grpc/support/histogram.c
@@ -67,4 +73,12 @@ message ClientStats {
   double time_elapsed = 2;
   double time_user = 3;
   double time_system = 4;
+
+  // Number of requests sent
+  // For streaming, this should be interpreted as messages, not RPCs
+  uint64 requests_sent = 5;
+
+  // Number of responses received
+  // For streaming, this should be interpreted as messages, not RPCs
+  uint64 responses_received = 6;
 }

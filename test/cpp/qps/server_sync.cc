@@ -63,7 +63,7 @@ class BenchmarkServiceImpl GRPC_FINAL : public BenchmarkService::Service {
     }
     return Status::OK;
   }
-  Status StreamingCall(
+  Status StreamingPingPong(
       ServerContext* context,
       ServerReaderWriter<SimpleResponse, SimpleRequest>* stream) GRPC_OVERRIDE {
     SimpleRequest request;

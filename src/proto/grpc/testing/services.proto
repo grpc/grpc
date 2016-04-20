@@ -37,13 +37,28 @@ import "src/proto/grpc/testing/control.proto";
 package grpc.testing;
 
 service BenchmarkService {
-  // One request followed by one response.
-  // The server returns the client payload as-is.
+  // This is the actual service used for benchmarking, with methods for
+  // unary and various types of streaming.
+  // Each client and server has its own message size as set in the configuration
+  // In all tests that use protobufs, the server response size is based on the
+  // response_size field of the SimpleRequest protobuf. In tests that do not
+  // use protobuf, the server response size is drawn from the config
+
+  // One request followed by one response (ping-pong).
   rpc UnaryCall(SimpleRequest) returns (SimpleResponse);
 
-  // One request followed by one response.
-  // The server returns the client payload as-is.
-  rpc StreamingCall(stream SimpleRequest) returns (stream SimpleResponse);
+  // A stream of repeated ping-pongs.
+  rpc StreamingPingPong(stream SimpleRequest) returns (stream SimpleResponse);
+
+  // One request followed by unbounded responses.
+  rpc ServerStreamingCall(SimpleRequest) returns (stream SimpleResponse);
+
+  // Client repeatedly sends requests and gets one response at end
+  rpc ClientStreamingCall(stream SimpleRequest) returns (SimpleResponse);
+
+  // Each side repeatedly sends messages without regard to what progress has
+  // been made by the other side
+  rpc BidiStreamingCall(stream SimpleRequest) returns (stream SimpleResponse);
 }
 
 service WorkerService {
@@ -65,6 +80,9 @@ service WorkerService {
 
   // Just return the core count - unary call
   rpc CoreCount(CoreRequest) returns (CoreResponse);
+
+  // Return a set of capabilities for this worker - unary call
+  rpc Capabilities(CapabilitiesRequest) returns (CapabilitiesResponse);
 
   // Quit this worker
   rpc QuitWorker(Void) returns (Void);

@@ -63,40 +63,36 @@ namespace testing {
 
 static std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
   gpr_log(GPR_INFO, "Starting client of type %s %s %d",
-          ClientType_Name(config.client_type()).c_str(),
-          RpcType_Name(config.rpc_type()).c_str(),
+          config.client_api().c_str(), RpcType_Name(config.rpc_type()).c_str(),
           config.payload_config().has_bytebuf_params());
 
-  switch (config.client_type()) {
-    case ClientType::SYNC_CLIENT:
-      return (config.rpc_type() == RpcType::UNARY)
-                 ? CreateSynchronousUnaryClient(config)
-                 : CreateSynchronousStreamingClient(config);
-    case ClientType::ASYNC_CLIENT:
-      return (config.rpc_type() == RpcType::UNARY)
-                 ? CreateAsyncUnaryClient(config)
-                 : (config.payload_config().has_bytebuf_params()
-                        ? CreateGenericAsyncStreamingClient(config)
-                        : CreateAsyncStreamingClient(config));
-    default:
-      abort();
+  if (config.client_api() == "sync") {
+    return (config.rpc_type() == RpcType::UNARY)
+               ? CreateSynchronousUnaryClient(config)
+               : CreateSynchronousStreamingClient(config);
+  } else if (config.client_api() == "async") {
+    return (config.rpc_type() == RpcType::UNARY)
+               ? CreateAsyncUnaryClient(config)
+               : (config.payload_config().has_bytebuf_params()
+                      ? CreateGenericAsyncStreamingClient(config)
+                      : CreateAsyncStreamingClient(config));
+  } else {
+    abort();
   }
   abort();
 }
 
 static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
-  gpr_log(GPR_INFO, "Starting server of type %s",
-          ServerType_Name(config.server_type()).c_str());
+  gpr_log(GPR_INFO, "Starting server of type %s", config.server_api().c_str());
 
-  switch (config.server_type()) {
-    case ServerType::SYNC_SERVER:
-      return CreateSynchronousServer(config);
-    case ServerType::ASYNC_SERVER:
-      return CreateAsyncServer(config);
-    case ServerType::ASYNC_GENERIC_SERVER:
-      return CreateAsyncGenericServer(config);
-    default:
-      abort();
+  if (config.server_api() == "sync") {
+    return CreateSynchronousServer(config);
+  } else if (config.server_api() == "async") {
+    return (config.payload_config().has_bytebuf_params()
+                ? CreateAsyncGenericServer(config)
+                : CreateAsyncServer(config));
+  } else {
+    abort();
   }
   abort();
 }

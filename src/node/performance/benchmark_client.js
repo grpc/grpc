@@ -134,7 +134,7 @@ util.inherits(BenchmarkClient, EventEmitter);
  * @param {number} outstanding_rpcs_per_channel Number of RPCs to start per
  *     channel
  * @param {string} rpc_type Which method to call. Should be 'UNARY' or
- *     'STREAMING'
+ *     'STREAMING_PING_PONG'
  * @param {number} req_size The size of the payload to send with each request
  * @param {number} resp_size The size of payload to request be sent in responses
  * @param {boolean} generic Indicates that the generic (non-proto) clients
@@ -191,7 +191,7 @@ BenchmarkClient.prototype.startClosedLoop = function(
       if (self.running) {
         self.pending_calls++;
         var start_time = process.hrtime();
-        var call = client.streamingCall();
+        var call = client.streamingPingPong();
         call.write(argument);
         call.on('data', function() {
         });
@@ -226,7 +226,7 @@ BenchmarkClient.prototype.startClosedLoop = function(
  * @param {number} outstanding_rpcs_per_channel Number of RPCs to start per
  *     channel
  * @param {string} rpc_type Which method to call. Should be 'UNARY' or
- *     'STREAMING'
+ *     'STREAMING_PING_PONG'
  * @param {number} req_size The size of the payload to send with each request
  * @param {number} resp_size The size of payload to request be sent in responses
  * @param {number} offered_load The load parameter for the Poisson process
@@ -286,7 +286,7 @@ BenchmarkClient.prototype.startPoisson = function(
       if (self.running) {
         self.pending_calls++;
         var start_time = process.hrtime();
-        var call = client.streamingCall();
+        var call = client.streamingPingPong();
         call.write(argument);
         call.on('data', function() {
         });

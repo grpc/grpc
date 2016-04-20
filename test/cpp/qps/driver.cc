@@ -439,5 +439,20 @@ void RunQuit() {
   }
 }
 
+void RunCoreCountOnly() {
+  // Get client, server lists
+  auto workers = get_workers("QPS_WORKERS");
+  for (size_t i = 0; i < workers.size(); i++) {
+    auto stub = WorkerService::NewStub(
+        CreateChannel(workers[i], InsecureChannelCredentials()));
+    grpc::ClientContext ctx;
+    CoreRequest dummy;
+    CoreResponse cores;
+    GPR_ASSERT(stub->CoreCount(&ctx, dummy, &cores).ok());
+    gpr_log(GPR_INFO, "Worker %s has %d cores", workers[i].c_str(),
+            cores.cores());
+  }
+}
+
 }  // namespace testing
 }  // namespace grpc

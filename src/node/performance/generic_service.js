@@ -34,7 +34,34 @@
 var _ = require('lodash');
 
 module.exports = {
-  'streamingCall' : {
+  'streamingPingPong' : {
+    path: '/grpc.testing/BenchmarkService',
+    requestStream: true,
+    responseStream: true,
+    requestSerialize: _.identity,
+    requestDeserialize: _.identity,
+    responseSerialize: _.identity,
+    responseDeserialize: _.identity
+  },
+  'serverStreamingCall' : {
+    path: '/grpc.testing/BenchmarkService',
+    requestStream: false,
+    responseStream: true,
+    requestSerialize: _.identity,
+    requestDeserialize: _.identity,
+    responseSerialize: _.identity,
+    responseDeserialize: _.identity
+  },
+  'clientStreamingCall' : {
+    path: '/grpc.testing/BenchmarkService',
+    requestStream: true,
+    responseStream: false,
+    requestSerialize: _.identity,
+    requestDeserialize: _.identity,
+    responseSerialize: _.identity,
+    responseDeserialize: _.identity
+  },
+  'bidiStreamingCall' : {
     path: '/grpc.testing/BenchmarkService',
     requestStream: true,
     responseStream: true,

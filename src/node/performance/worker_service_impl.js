@@ -156,3 +156,7 @@ exports.runServer = function runServer(call) {
 exports.coreCount = function coreCount(call, callback) {
   callback(null, {cores: os.cpus().length});
 };
+
+exports.capabilities = function capabilities(call, callback) {
+  callback(null, {});
+};
