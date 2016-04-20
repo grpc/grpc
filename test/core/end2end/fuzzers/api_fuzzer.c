@@ -656,7 +656,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           switch (next_byte(&inp)) {
             default:
               /* invalid value */
-              op->op = -1;
+              op->op = (grpc_op_type)-1;
               ok = false;
               break;
             case GRPC_OP_SEND_INITIAL_METADATA:
