@@ -643,6 +643,10 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           break;
         }
         size_t num_ops = next_byte(&inp);
+        if (num_ops > 6) {
+          end(&inp);
+          break;
+        }
         grpc_op *ops = gpr_malloc(sizeof(grpc_op) * num_ops);
         bool ok = true;
         size_t i;
@@ -651,6 +655,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           op = &ops[i];
           switch (next_byte(&inp)) {
             default:
+              /* invalid value */
+              op->op = -1;
               ok = false;
               break;
             case GRPC_OP_SEND_INITIAL_METADATA:
