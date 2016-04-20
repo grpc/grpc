@@ -314,7 +314,8 @@ class PythonLanguage:
     ]
 
   def global_env(self):
-    return {'LD_LIBRARY_PATH': '{}/libs/opt'.format(DOCKER_WORKDIR_ROOT)}
+    return {'LD_LIBRARY_PATH': '{}/libs/opt'.format(DOCKER_WORKDIR_ROOT),
+            'PYTHONPATH': '{}/src/python/gens'.format(DOCKER_WORKDIR_ROOT)}
 
   def unimplemented_test_cases(self):
     return _SKIP_ADVANCED + _SKIP_COMPRESSION + ['jwt_token_creds',
