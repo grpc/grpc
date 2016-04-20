@@ -65,6 +65,7 @@ struct Parameters {
 };
 
 // A common interface for objects having comments in the source.
+// Return formatted comments to be inserted in generated code.
 struct CommentHolder {
   virtual ~CommentHolder() {}
   virtual grpc::string GetLeadingComments() const = 0;
