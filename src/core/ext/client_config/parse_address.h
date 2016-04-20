@@ -1,4 +1,3 @@
-<?php
 /*
  *
  * Copyright 2015, Google Inc.
@@ -32,42 +31,26 @@
  *
  */
 
-class ChanellCredentialsTest extends PHPUnit_Framework_TestCase
-{
-    public function setUp()
-    {
-    }
+#ifndef GRPC_CORE_EXT_CLIENT_CONFIG_PARSE_ADDRESS_H
+#define GRPC_CORE_EXT_CLIENT_CONFIG_PARSE_ADDRESS_H
 
-    public function tearDown()
-    {
-    }
+#include <stddef.h>
 
-    public function testCreateDefault()
-    {
-        $channel_credentials = Grpc\ChannelCredentials::createDefault();
-        $this->assertSame('Grpc\ChannelCredentials', get_class($channel_credentials));
-    }
+#include "src/core/ext/client_config/uri_parser.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
-    public function testInvalidCreateSsl()
-    {
-        $channel_credentials = Grpc\ChannelCredentials::createSsl([]);
-    }
+#ifdef GPR_HAVE_UNIX_SOCKET
+/** Populate \a addr and \a len from \a uri, whose path is expected to contain a
+ * unix socket path. Returns true upon success. */
+int parse_unix(grpc_uri *uri, struct sockaddr_storage *addr, size_t *len);
+#endif
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
-    public function testInvalidCreateComposite()
-    {
-        $channel_credentials = Grpc\ChannelCredentials::createComposite(
-            'something', 'something');
-    }
+/** Populate /a addr and \a len from \a uri, whose path is expected to contain a
+ * host:port pair. Returns true upon success. */
+int parse_ipv4(grpc_uri *uri, struct sockaddr_storage *addr, size_t *len);
 
-    public function testCreateInsecure()
-    {
-        $channel_credentials = Grpc\ChannelCredentials::createInsecure();
-        $this->assertNull($channel_credentials);
-    }
-}
+/** Populate /a addr and \a len from \a uri, whose path is expected to contain a
+ * host:port pair. Returns true upon success. */
+int parse_ipv6(grpc_uri *uri, struct sockaddr_storage *addr, size_t *len);
+
+#endif /* GRPC_CORE_EXT_CLIENT_CONFIG_PARSE_ADDRESS_H */

@@ -52,6 +52,7 @@
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/qps_worker.h"
+#include "test/cpp/qps/stats.h"
 
 using std::list;
 using std::thread;
@@ -113,6 +114,47 @@ static deque<string> get_workers(const string& name) {
       return out;
     }
   }
+}
+
+// helpers for postprocess_scenario_result
+static double WallTime(ClientStats s) { return s.time_elapsed(); }
+static double SystemTime(ClientStats s) { return s.time_system(); }
+static double UserTime(ClientStats s) { return s.time_user(); }
+static double ServerWallTime(ServerStats s) { return s.time_elapsed(); }
+static double ServerSystemTime(ServerStats s) { return s.time_system(); }
+static double ServerUserTime(ServerStats s) { return s.time_user(); }
+static int Cores(int n) { return n; }
+
+// Postprocess ScenarioResult and populate result summary.
+static void postprocess_scenario_result(ScenarioResult* result) {
+  Histogram histogram;
+  histogram.MergeProto(result->latencies());
+
+  auto qps = histogram.Count() / average(result->client_stats(), WallTime);
+  auto qps_per_server_core = qps / sum(result->server_cores(), Cores);
+
+  result->mutable_summary()->set_qps(qps);
+  result->mutable_summary()->set_qps_per_server_core(qps_per_server_core);
+  result->mutable_summary()->set_latency_50(histogram.Percentile(50));
+  result->mutable_summary()->set_latency_90(histogram.Percentile(90));
+  result->mutable_summary()->set_latency_95(histogram.Percentile(95));
+  result->mutable_summary()->set_latency_99(histogram.Percentile(99));
+  result->mutable_summary()->set_latency_999(histogram.Percentile(99.9));
+
+  auto server_system_time = 100.0 *
+                            sum(result->server_stats(), ServerSystemTime) /
+                            sum(result->server_stats(), ServerWallTime);
+  auto server_user_time = 100.0 * sum(result->server_stats(), ServerUserTime) /
+                          sum(result->server_stats(), ServerWallTime);
+  auto client_system_time = 100.0 * sum(result->client_stats(), SystemTime) /
+                            sum(result->client_stats(), WallTime);
+  auto client_user_time = 100.0 * sum(result->client_stats(), UserTime) /
+                          sum(result->client_stats(), WallTime);
+
+  result->mutable_summary()->set_server_system_time(server_system_time);
+  result->mutable_summary()->set_server_user_time(server_user_time);
+  result->mutable_summary()->set_client_system_time(client_system_time);
+  result->mutable_summary()->set_client_user_time(client_user_time);
 }
 
 // Namespace for classes and functions used only in RunScenario
@@ -380,6 +422,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
   }
 
   delete[] servers;
+
+  postprocess_scenario_result(result.get());
   return result;
 }
 
