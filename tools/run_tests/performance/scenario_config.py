@@ -109,7 +109,7 @@ class CXXLanguage:
           'server_config': {
             'server_type': 'ASYNC_GENERIC_SERVER',
             'security_params': secargs,
-            'core_limit': SINGLE_MACHINE_CORES/2,
+            'core_limit': 1,
             'async_server_threads': 1,
             'payload_config': EMPTY_GENERIC_PAYLOAD,
           },
@@ -126,7 +126,7 @@ class CXXLanguage:
             'security_params': secargs,
             'outstanding_rpcs_per_channel': DEEP,
             'client_channels': WIDE,
-            'async_client_threads': 1,
+            'async_client_threads': 0,
             'rpc_type': 'STREAMING',
             'load_params': {
               'closed_loop': {}
@@ -138,7 +138,7 @@ class CXXLanguage:
             'server_type': 'ASYNC_GENERIC_SERVER',
             'security_params': secargs,
             'core_limit': SINGLE_MACHINE_CORES/2,
-            'async_server_threads': 1,
+            'async_server_threads': 0,
             'payload_config': EMPTY_GENERIC_PAYLOAD,
           },
           'warmup_seconds': WARMUP_SECONDS,
@@ -154,7 +154,7 @@ class CXXLanguage:
             'security_params': secargs,
             'outstanding_rpcs_per_channel': DEEP,
             'client_channels': WIDE,
-            'async_client_threads': 1,
+            'async_client_threads': 0,
             'rpc_type': 'STREAMING',
             'load_params': {
               'closed_loop': {}
@@ -182,7 +182,7 @@ class CXXLanguage:
             'security_params': secargs,
             'outstanding_rpcs_per_channel': DEEP,
             'client_channels': WIDE,
-            'async_client_threads': 1,
+            'async_client_threads': 0,
             'rpc_type': 'STREAMING',
             'load_params': {
               'closed_loop': {}
@@ -194,7 +194,7 @@ class CXXLanguage:
             'server_type': 'ASYNC_SERVER',
             'security_params': secargs,
             'core_limit': SINGLE_MACHINE_CORES/2,
-            'async_server_threads': 1,
+            'async_server_threads': 0,
           },
           'warmup_seconds': WARMUP_SECONDS,
           'benchmark_seconds': BENCHMARK_SECONDS
@@ -207,9 +207,9 @@ class CXXLanguage:
           'client_config': {
             'client_type': 'ASYNC_CLIENT',
             'security_params': secargs,
-            'outstanding_rpcs_per_channel': 1,
+            'outstanding_rpcs_per_channel': DEEP,
             'client_channels': 1,
-            'async_client_threads': 1,
+            'async_client_threads': 0,
             'rpc_type': 'STREAMING',
             'load_params': {
               'closed_loop': {}
@@ -221,7 +221,7 @@ class CXXLanguage:
             'server_type': 'ASYNC_GENERIC_SERVER',
             'security_params': secargs,
             'core_limit': SINGLE_MACHINE_CORES/2,
-            'async_server_threads': 1,
+            'async_server_threads': 0,
             'payload_config': BIG_GENERIC_PAYLOAD,
           },
           'warmup_seconds': WARMUP_SECONDS,
@@ -248,7 +248,7 @@ class CXXLanguage:
           'server_config': {
             'server_type': 'ASYNC_SERVER',
             'security_params': secargs,
-            'core_limit': SINGLE_MACHINE_CORES/2,
+            'core_limit': 1,
             'async_server_threads': 1,
           },
           'warmup_seconds': WARMUP_SECONDS,
