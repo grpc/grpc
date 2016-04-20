@@ -31,6 +31,7 @@
 import datetime
 import os
 import re
+import resource
 import select
 import subprocess
 import sys
@@ -89,6 +90,11 @@ def run_client():
                examining logs). This is the reason why the script waits forever
                in case of failures
   """
+  # Set the 'core file' size to 'unlimited' so that 'core' files are generated
+  # if the client crashes (Note: This is not relevant for Java and Go clients)
+  resource.setrlimit(resource.RLIMIT_CORE,
+                     (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
+
   env = dict(os.environ)
   image_type = env['STRESS_TEST_IMAGE_TYPE']
   stress_client_cmd = env['STRESS_TEST_CMD'].split()
@@ -103,6 +109,11 @@ def run_client():
   dataset_id = env['DATASET_ID']
   summary_table_id = env['SUMMARY_TABLE_ID']
   qps_table_id = env['QPS_TABLE_ID']
+  # The following parameter is to inform us whether the stress client runs
+  # forever until forcefully stopped or will it naturally stop after sometime.
+  # This way, we know that the stress client process should not terminate (even
+  # if it does with a success exit code) and flag the termination as a failure
+  will_run_forever = env.get('WILL_RUN_FOREVER', '1')
 
   bq_helper = BigQueryHelper(run_id, image_type, pod_name, project_id,
                              dataset_id, summary_table_id, qps_table_id)
@@ -140,11 +151,12 @@ def run_client():
   while True:
     # Check if stress_client is still running. If so, collect metrics and upload
     # to BigQuery status table
+    # If stress_p.poll() is not None, it means that the stress client terminated
     if stress_p.poll() is not None:
       end_time = datetime.datetime.now().isoformat()
       event_type = EventType.SUCCESS
       details = 'End time: %s' % end_time
-      if stress_p.returncode != 0:
+      if will_run_forever == '1' or stress_p.returncode != 0:
         event_type = EventType.FAILURE
         details = 'Return code = %d. End time: %s' % (stress_p.returncode,
                                                       end_time)

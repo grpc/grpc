@@ -68,11 +68,6 @@ DEFINE_string(client_type, "SYNC_CLIENT", "Client type");
 DEFINE_int32(async_client_threads, 1, "Async client threads");
 
 DEFINE_double(poisson_load, -1.0, "Poisson offered load (qps)");
-DEFINE_double(uniform_lo, -1.0, "Uniform low interarrival time (us)");
-DEFINE_double(uniform_hi, -1.0, "Uniform high interarrival time (us)");
-DEFINE_double(determ_load, -1.0, "Deterministic offered load (qps)");
-DEFINE_double(pareto_base, -1.0, "Pareto base interarrival time (us)");
-DEFINE_double(pareto_alpha, -1.0, "Pareto alpha value");
 
 DEFINE_int32(client_core_limit, -1, "Limit on client cores to use");
 
@@ -85,7 +80,6 @@ using grpc::testing::ServerConfig;
 using grpc::testing::ClientType;
 using grpc::testing::ServerType;
 using grpc::testing::RpcType;
-using grpc::testing::ResourceUsage;
 using grpc::testing::SecurityParams;
 
 namespace grpc {
@@ -138,17 +132,6 @@ static void QpsDriver() {
   if (FLAGS_poisson_load > 0.0) {
     auto poisson = client_config.mutable_load_params()->mutable_poisson();
     poisson->set_offered_load(FLAGS_poisson_load);
-  } else if (FLAGS_uniform_lo > 0.0) {
-    auto uniform = client_config.mutable_load_params()->mutable_uniform();
-    uniform->set_interarrival_lo(FLAGS_uniform_lo / 1e6);
-    uniform->set_interarrival_hi(FLAGS_uniform_hi / 1e6);
-  } else if (FLAGS_determ_load > 0.0) {
-    auto determ = client_config.mutable_load_params()->mutable_determ();
-    determ->set_offered_load(FLAGS_determ_load);
-  } else if (FLAGS_pareto_base > 0.0) {
-    auto pareto = client_config.mutable_load_params()->mutable_pareto();
-    pareto->set_interarrival_base(FLAGS_pareto_base / 1e6);
-    pareto->set_alpha(FLAGS_pareto_alpha);
   } else {
     client_config.mutable_load_params()->mutable_closed_loop();
     // No further load parameters to set up for closed loop
