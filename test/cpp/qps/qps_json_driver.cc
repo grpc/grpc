@@ -59,10 +59,10 @@ static void QpsDriver() {
   bool scfile = (FLAGS_scenarios_file != "");
   bool scjson = (FLAGS_scenarios_json != "");
   if ((!scfile && !scjson && !FLAGS_quit) ||
-      (scfile && (scjson || FLAGS_quit)) ||
-      (scjson && FLAGS_quit)) {
-    gpr_log(GPR_ERROR, "Exactly one of --scenarios_file, --scenarios_json, "
-	    "or --quit must be set");
+      (scfile && (scjson || FLAGS_quit)) || (scjson && FLAGS_quit)) {
+    gpr_log(GPR_ERROR,
+            "Exactly one of --scenarios_file, --scenarios_json, "
+            "or --quit must be set");
     abort();
   }
 
