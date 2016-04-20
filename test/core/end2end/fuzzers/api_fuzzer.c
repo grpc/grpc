@@ -381,6 +381,33 @@ static call_state *new_call(call_state *sibling, call_state_type type) {
   return c;
 }
 
+static call_state *maybe_delete_call_state(call_state **active, call_state *call) {
+  call_state *next = call->next;
+  
+  if (call->call != NULL) return next;
+
+  if (call == *active) {
+    *active = call->next;
+    GPR_ASSERT(call != *active);
+  }
+
+  call->prev->next = call->next;
+  call->next->prev = call->prev;
+  grpc_metadata_array_destroy(&call->recv_initial_metadata);
+  grpc_metadata_array_destroy(&call->recv_trailing_metadata);
+  gpr_free(call->recv_status_details);
+  grpc_call_details_destroy(&call->call_details);
+  gpr_free(call);
+
+  return next;
+}
+
+static call_state *destroy_call(call_state **active, call_state *call) {
+  grpc_call_destroy(call->call);
+  call->call = NULL;
+  return maybe_delete_call_state(active, call);
+}
+
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_test_only_set_metadata_hash_seed(0);
   if (squelch) gpr_set_log_function(dont_log);
@@ -422,6 +449,12 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           g_server = NULL;
         }
       }
+      call_state *s = active_call;
+      do {
+        if (s->type != PENDING_SERVER && s->call != NULL) {
+          s = destroy_call(&active_call, s);
+        }
+      } while (s != active_call);
 
       g_now = gpr_time_add(g_now, gpr_time_from_seconds(1, GPR_TIMESPAN));
     }
@@ -788,6 +821,16 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         if (error != GRPC_CALL_OK) {
           v->validate(v->arg, false);
           gpr_free(v);
+        }
+        break;
+      }
+      // destroy a call
+      case 20: {
+        if (active_call->type != ROOT && active_call->type != PENDING_SERVER &&
+            active_call->call != NULL) {
+          destroy_call(&active_call, active_call);
+        } else {
+          end(&inp);
         }
         break;
       }
