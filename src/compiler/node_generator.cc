@@ -138,7 +138,7 @@ void PrintMessageTransformer(const Descriptor *descriptor, Printer *out) {
   out->Print("}\n");
   out->Print("return new Buffer(arg.serializeBinary());\n");
   out->Outdent();
-  out->Print("}\n");
+  out->Print("}\n\n");
 
   // Print the deserializer
   out->Print(template_vars,
@@ -148,7 +148,7 @@ void PrintMessageTransformer(const Descriptor *descriptor, Printer *out) {
       template_vars,
       "return $node_name$.deserializeBinary(new Uint8Array(buffer_arg));\n");
   out->Outdent();
-  out->Print("}\n");
+  out->Print("}\n\n");
 }
 
 void PrintMethod(const MethodDescriptor *method, Printer *out) {
@@ -211,6 +211,8 @@ grpc::string GetImports(const FileDescriptor *file) {
     }
 
     out.Print("// GENERATED CODE -- DO NOT EDIT!\n\n");
+
+    out.Print("'use strict';\n");
 
     out.Print("var grpc = require('grpc');\n");
     if (file->message_type_count() > 0) {
