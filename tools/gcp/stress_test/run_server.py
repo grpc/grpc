@@ -69,6 +69,11 @@ def run_server():
   dataset_id = env['DATASET_ID']
   summary_table_id = env['SUMMARY_TABLE_ID']
   qps_table_id = env['QPS_TABLE_ID']
+  # The following parameter is to inform us whether the server runs forever
+  # until forcefully stopped or will it naturally stop after sometime.
+  # This way, we know that the process should not terminate (even if it does
+  # with a success exit code) and flag any termination as a failure.
+  will_run_forever = env.get('WILL_RUN_FOREVER', '1')
 
   logfile_name = env.get('LOGFILE_NAME')
 
@@ -106,7 +111,8 @@ def run_server():
                               stderr=subprocess.STDOUT)
 
   returncode = stress_p.wait()
-  if returncode != 0:
+
+  if will_run_forever == '1' or returncode != 0:
     end_time = datetime.datetime.now().isoformat()
     event_type = EventType.FAILURE
     details = 'Returncode: %d; End time: %s' % (returncode, end_time)
