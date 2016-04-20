@@ -431,7 +431,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
 
   while (!is_eof(&inp) || g_channel != NULL || g_server != NULL ||
-         pending_channel_watches > 0 || pending_pings > 0 || pending_ops > 0) {
+         pending_channel_watches > 0 || pending_pings > 0 || pending_ops > 0 || active_call->type != ROOT || active_call->next != active_call) {
     if (is_eof(&inp)) {
       if (g_channel != NULL) {
         grpc_channel_destroy(g_channel);
@@ -847,6 +847,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 
   GPR_ASSERT(g_channel == NULL);
   GPR_ASSERT(g_server == NULL);
+  GPR_ASSERT(active_call->type == ROOT);
+  GPR_ASSERT(active_call->next == active_call);
+  gpr_free(active_call);
 
   grpc_completion_queue_shutdown(cq);
   GPR_ASSERT(
