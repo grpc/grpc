@@ -626,6 +626,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         } else {
           end(&inp);
         }
+        gpr_free(method);
+        gpr_free(host);
         break;
       }
       // switch the 'current' call
