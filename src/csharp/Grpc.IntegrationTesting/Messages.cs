@@ -47,11 +47,12 @@ namespace Grpc.Testing {
             "c3Npb24YBiABKA4yHS5ncnBjLnRlc3RpbmcuQ29tcHJlc3Npb25UeXBlEjEK",
             "D3Jlc3BvbnNlX3N0YXR1cxgHIAEoCzIYLmdycGMudGVzdGluZy5FY2hvU3Rh",
             "dHVzIkUKG1N0cmVhbWluZ091dHB1dENhbGxSZXNwb25zZRImCgdwYXlsb2Fk",
-            "GAEgASgLMhUuZ3JwYy50ZXN0aW5nLlBheWxvYWQiMwoNUmVjb25uZWN0SW5m",
-            "bxIOCgZwYXNzZWQYASABKAgSEgoKYmFja29mZl9tcxgCIAMoBSo/CgtQYXls",
-            "b2FkVHlwZRIQCgxDT01QUkVTU0FCTEUQABISCg5VTkNPTVBSRVNTQUJMRRAB",
-            "EgoKBlJBTkRPTRACKjIKD0NvbXByZXNzaW9uVHlwZRIICgROT05FEAASCAoE",
-            "R1pJUBABEgsKB0RFRkxBVEUQAmIGcHJvdG8z"));
+            "GAEgASgLMhUuZ3JwYy50ZXN0aW5nLlBheWxvYWQiMwoPUmVjb25uZWN0UGFy",
+            "YW1zEiAKGG1heF9yZWNvbm5lY3RfYmFja29mZl9tcxgBIAEoBSIzCg1SZWNv",
+            "bm5lY3RJbmZvEg4KBnBhc3NlZBgBIAEoCBISCgpiYWNrb2ZmX21zGAIgAygF",
+            "Kj8KC1BheWxvYWRUeXBlEhAKDENPTVBSRVNTQUJMRRAAEhIKDlVOQ09NUFJF",
+            "U1NBQkxFEAESCgoGUkFORE9NEAIqMgoPQ29tcHJlc3Npb25UeXBlEggKBE5P",
+            "TkUQABIICgRHWklQEAESCwoHREVGTEFURRACYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedCodeInfo(new[] {typeof(global::Grpc.Testing.PayloadType), typeof(global::Grpc.Testing.CompressionType), }, new pbr::GeneratedCodeInfo[] {
@@ -64,6 +65,7 @@ namespace Grpc.Testing {
             new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ResponseParameters), global::Grpc.Testing.ResponseParameters.Parser, new[]{ "Size", "IntervalUs" }, null, null, null),
             new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.StreamingOutputCallRequest), global::Grpc.Testing.StreamingOutputCallRequest.Parser, new[]{ "ResponseType", "ResponseParameters", "Payload", "ResponseCompression", "ResponseStatus" }, null, null, null),
             new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.StreamingOutputCallResponse), global::Grpc.Testing.StreamingOutputCallResponse.Parser, new[]{ "Payload" }, null, null, null),
+            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ReconnectParams), global::Grpc.Testing.ReconnectParams.Parser, new[]{ "MaxReconnectBackoffMs" }, null, null, null),
             new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ReconnectInfo), global::Grpc.Testing.ReconnectInfo.Parser, new[]{ "Passed", "BackoffMs" }, null, null, null)
           }));
     }
@@ -1574,6 +1576,113 @@ namespace Grpc.Testing {
 
   /// <summary>
   ///  For reconnect interop test only.
+  ///  Client tells server what reconnection parameters it used.
+  /// </summary>
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+  public sealed partial class ReconnectParams : pb::IMessage<ReconnectParams> {
+    private static readonly pb::MessageParser<ReconnectParams> _parser = new pb::MessageParser<ReconnectParams>(() => new ReconnectParams());
+    public static pb::MessageParser<ReconnectParams> Parser { get { return _parser; } }
+
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Grpc.Testing.MessagesReflection.Descriptor.MessageTypes[9]; }
+    }
+
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    public ReconnectParams() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    public ReconnectParams(ReconnectParams other) : this() {
+      maxReconnectBackoffMs_ = other.maxReconnectBackoffMs_;
+    }
+
+    public ReconnectParams Clone() {
+      return new ReconnectParams(this);
+    }
+
+    /// <summary>Field number for the "max_reconnect_backoff_ms" field.</summary>
+    public const int MaxReconnectBackoffMsFieldNumber = 1;
+    private int maxReconnectBackoffMs_;
+    public int MaxReconnectBackoffMs {
+      get { return maxReconnectBackoffMs_; }
+      set {
+        maxReconnectBackoffMs_ = value;
+      }
+    }
+
+    public override bool Equals(object other) {
+      return Equals(other as ReconnectParams);
+    }
+
+    public bool Equals(ReconnectParams other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (MaxReconnectBackoffMs != other.MaxReconnectBackoffMs) return false;
+      return true;
+    }
+
+    public override int GetHashCode() {
+      int hash = 1;
+      if (MaxReconnectBackoffMs != 0) hash ^= MaxReconnectBackoffMs.GetHashCode();
+      return hash;
+    }
+
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (MaxReconnectBackoffMs != 0) {
+        output.WriteRawTag(8);
+        output.WriteInt32(MaxReconnectBackoffMs);
+      }
+    }
+
+    public int CalculateSize() {
+      int size = 0;
+      if (MaxReconnectBackoffMs != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(MaxReconnectBackoffMs);
+      }
+      return size;
+    }
+
+    public void MergeFrom(ReconnectParams other) {
+      if (other == null) {
+        return;
+      }
+      if (other.MaxReconnectBackoffMs != 0) {
+        MaxReconnectBackoffMs = other.MaxReconnectBackoffMs;
+      }
+    }
+
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            input.SkipLastField();
+            break;
+          case 8: {
+            MaxReconnectBackoffMs = input.ReadInt32();
+            break;
+          }
+        }
+      }
+    }
+
+  }
+
+  /// <summary>
+  ///  For reconnect interop test only.
   ///  Server tells client whether its reconnects are following the spec and the
   ///  reconnect backoffs it saw.
   /// </summary>
@@ -1583,7 +1692,7 @@ namespace Grpc.Testing {
     public static pb::MessageParser<ReconnectInfo> Parser { get { return _parser; } }
 
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Testing.MessagesReflection.Descriptor.MessageTypes[9]; }
+      get { return global::Grpc.Testing.MessagesReflection.Descriptor.MessageTypes[10]; }
     }
 
     pbr::MessageDescriptor pb::IMessage.Descriptor {
