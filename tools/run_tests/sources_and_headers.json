@@ -3227,6 +3227,19 @@
   {
     "deps": [
       "boringssl", 
+      "boringssl_test_util", 
+      "boringssl_x509_test_lib"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_x509_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
       "boringssl_tab_test_lib", 
       "boringssl_test_util"
     ], 
@@ -4562,12 +4575,12 @@
       "third_party/boringssl/crypto/cipher/internal.h", 
       "third_party/boringssl/crypto/conf/conf_def.h", 
       "third_party/boringssl/crypto/conf/internal.h", 
+      "third_party/boringssl/crypto/curve25519/internal.h", 
       "third_party/boringssl/crypto/des/internal.h", 
       "third_party/boringssl/crypto/dh/internal.h", 
       "third_party/boringssl/crypto/digest/internal.h", 
       "third_party/boringssl/crypto/digest/md32_common.h", 
       "third_party/boringssl/crypto/directory.h", 
-      "third_party/boringssl/crypto/dsa/internal.h", 
       "third_party/boringssl/crypto/ec/internal.h", 
       "third_party/boringssl/crypto/ec/p256-x86_64-table.h", 
       "third_party/boringssl/crypto/evp/internal.h", 
@@ -5070,6 +5083,18 @@
     "headers": [], 
     "language": "c", 
     "name": "boringssl_pkcs7_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_x509_test_lib", 
     "src": [], 
     "third_party": true, 
     "type": "lib"
@@ -6015,6 +6040,7 @@
       "src/core/ext/client_config/lb_policy.h", 
       "src/core/ext/client_config/lb_policy_factory.h", 
       "src/core/ext/client_config/lb_policy_registry.h", 
+      "src/core/ext/client_config/parse_address.h", 
       "src/core/ext/client_config/resolver.h", 
       "src/core/ext/client_config/resolver_factory.h", 
       "src/core/ext/client_config/resolver_registry.h", 
@@ -6045,6 +6071,8 @@
       "src/core/ext/client_config/lb_policy_factory.h", 
       "src/core/ext/client_config/lb_policy_registry.c", 
       "src/core/ext/client_config/lb_policy_registry.h", 
+      "src/core/ext/client_config/parse_address.c", 
+      "src/core/ext/client_config/parse_address.h", 
       "src/core/ext/client_config/resolver.c", 
       "src/core/ext/client_config/resolver.h", 
       "src/core/ext/client_config/resolver_factory.c", 
@@ -6244,6 +6272,7 @@
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.h", 
       "test/core/util/grpc_profiler.h", 
+      "test/core/util/memory_counters.h", 
       "test/core/util/mock_endpoint.h", 
       "test/core/util/parse_hexstring.h", 
       "test/core/util/port.h", 
@@ -6261,6 +6290,8 @@
       "test/core/iomgr/endpoint_tests.h", 
       "test/core/util/grpc_profiler.c", 
       "test/core/util/grpc_profiler.h", 
+      "test/core/util/memory_counters.c", 
+      "test/core/util/memory_counters.h", 
       "test/core/util/mock_endpoint.c", 
       "test/core/util/mock_endpoint.h", 
       "test/core/util/parse_hexstring.c", 

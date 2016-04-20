@@ -68,6 +68,7 @@ void gpr_log(const char *file, int line, gpr_log_severity severity,
   }
   va_end(args);
   gpr_log_message(file, line, severity, message);
+  /* message has been allocated by vasprintf above, and needs free */
   free(message);
 }
 
