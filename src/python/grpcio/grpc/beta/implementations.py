@@ -197,19 +197,20 @@ def insecure_channel(host, port):
   return Channel(intermediary_low_channel._internal, intermediary_low_channel)  # pylint: disable=protected-access
 
 
-def secure_channel(host, port, channel_credentials):
+def secure_channel(host, port, channel_credentials, server_name=None):
   """Creates a secure Channel to a remote host.
 
   Args:
     host: The name of the remote host to which to connect.
     port: The port of the remote host to which to connect.
     channel_credentials: A ChannelCredentials.
+    server_name: server name override
 
   Returns:
     A secure Channel to the remote host through which RPCs may be conducted.
   """
   intermediary_low_channel = _intermediary_low.Channel(
-      '%s:%d' % (host, port), channel_credentials._low_credentials)
+      '%s:%d' % (host, port), channel_credentials._low_credentials, server_host_override=server_name)
   return Channel(intermediary_low_channel._internal, intermediary_low_channel)  # pylint: disable=protected-access
 
 
