@@ -453,6 +453,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       do {
         if (s->type != PENDING_SERVER && s->call != NULL) {
           s = destroy_call(&active_call, s);
+        } else {
+          s = s->next;
         }
       } while (s != active_call);
 
