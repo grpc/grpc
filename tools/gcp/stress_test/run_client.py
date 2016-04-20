@@ -31,6 +31,7 @@
 import datetime
 import os
 import re
+import resource
 import select
 import subprocess
 import sys
@@ -89,6 +90,11 @@ def run_client():
                examining logs). This is the reason why the script waits forever
                in case of failures
   """
+  # Set the 'core file' size to 'unlimited' so that 'core' files are generated
+  # if the client crashes (Note: This is not relevant for Java and Go clients)
+  resource.setrlimit(resource.RLIMIT_CORE,
+                     (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
+
   env = dict(os.environ)
   image_type = env['STRESS_TEST_IMAGE_TYPE']
   stress_client_cmd = env['STRESS_TEST_CMD'].split()
