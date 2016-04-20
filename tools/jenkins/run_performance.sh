@@ -40,7 +40,7 @@ cd $(dirname $0)/../..
 
 config=opt
 
-make CONFIG=$config qps_worker qps_driver -j8
+make CONFIG=$config qps_worker qps_json_driver -j8
 
 bins/$config/qps_worker -driver_port 10000 &
 PID1=$!
@@ -66,7 +66,7 @@ deep=100
 
 #
 # Get total core count
-cores=`grep -c ^processor /proc/cpuinfo`
+cores=`grep -c ^processor /proc/cpuinfo || sysctl -n hw.ncpu`
 halfcores=`expr $cores / 2`
 
 for secure in true false; do
@@ -84,7 +84,8 @@ for secure in true false; do
     --client_channels=$wide --bbuf_req_size=0 --bbuf_resp_size=0 \
     --async_client_threads=0 --async_server_threads=0 --secure_test=$secure \
     --num_servers=1 --num_clients=0 \
-    --server_core_limit=$halfcores --client_core_limit=0 |& tee /tmp/qps-test.$$
+    --server_core_limit=$halfcores --client_core_limit=0 2>&1 | \
+      tee /tmp/qps-test.$$
 
   # Scenario 2b: QPS with a single server core
   bins/$config/qps_driver --rpc_type=STREAMING --client_type=ASYNC_CLIENT \
@@ -131,6 +132,6 @@ for secure in true false; do
 
 done
 
-bins/$config/qps_driver --quit=true
+bins/$config/qps_json_driver --quit=true
 
 wait
