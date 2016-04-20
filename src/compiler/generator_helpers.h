@@ -34,6 +34,7 @@
 #ifndef GRPC_INTERNAL_COMPILER_GENERATOR_HELPERS_H
 #define GRPC_INTERNAL_COMPILER_GENERATOR_HELPERS_H
 
+#include <iostream>
 #include <map>
 #include <sstream>
 #include <string>
@@ -203,6 +204,7 @@ inline void GetComment(const DescriptorType *desc, CommentType type,
       out->push_back("");
     }
   } else {
+    std::cerr << "Unknown comment type " << type << std::endl;
     abort();
   }
 }
@@ -230,8 +232,47 @@ inline void GetComment(const grpc::protobuf::FileDescriptor *desc,
       out->push_back("");
     }
   } else {
+    std::cerr << "Unknown comment type " << type << std::endl;
     abort();
   }
+}
+
+namespace {
+
+// Prefix comment line with "// " and concatenate them into a string.
+grpc::string GenerateComments(const std::vector<grpc::string> &in) {
+  std::ostringstream oss;
+  for (const grpc::string &elem : in) {
+    if (elem.empty()) {
+      oss << "//\n";
+    } else if (elem[0] == ' ') {
+      oss << "//" << elem << "\n";
+    } else {
+      oss << "// " << elem << "\n";
+    }
+  }
+  return oss.str();
+}
+
+}  // namespace
+
+// Get leading or trailing comments in a string. Comment lines start with "// ".
+// Leading detached comments are put in in front of leading comments.
+template <typename DescriptorType>
+inline grpc::string GetComments(const DescriptorType *desc, bool leading) {
+  std::vector<grpc::string> out;
+  if (leading) {
+    grpc_generator::GetComment(
+        desc, grpc_generator::COMMENTTYPE_LEADING_DETACHED, &out);
+    std::vector<grpc::string> leading;
+    grpc_generator::GetComment(desc, grpc_generator::COMMENTTYPE_LEADING,
+                               &leading);
+    out.insert(out.end(), leading.begin(), leading.end());
+  } else {
+    grpc_generator::GetComment(desc, grpc_generator::COMMENTTYPE_TRAILING,
+                               &out);
+  }
+  return GenerateComments(out);
 }
 
 }  // namespace grpc_generator
