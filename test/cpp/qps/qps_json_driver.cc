@@ -104,6 +104,9 @@ static void QpsDriver() {
   }
   GPR_ASSERT(scenarios.ParseFromString(binary));
 
+  // Make sure that there is at least some valid scenario here
+  GPR_ASSERT(scenarios.scenarios_size() > 0);
+
   for (int i = 0; i < scenarios.scenarios_size(); i++) {
     const Scenario &scenario = scenarios.scenarios(i);
     std::cerr << "RUNNING SCENARIO: " << scenario.name() << "\n";
