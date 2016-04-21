@@ -227,14 +227,16 @@ static VALUE grpc_rb_call_get_peer_cert(VALUE self) {
     return Qnil;
   }
 
-  grpc_auth_property_iterator it =
-      grpc_auth_context_find_properties_by_name(ctx, GRPC_X509_PEM_CERT_PROPERTY_NAME);
-  const grpc_auth_property *prop = grpc_auth_property_iterator_next(&it);
-  if (prop == NULL) {
-    return Qnil;
-  }
+  {
+    grpc_auth_property_iterator it =
+        grpc_auth_context_find_properties_by_name(ctx, GRPC_X509_PEM_CERT_PROPERTY_NAME);
+    const grpc_auth_property *prop = grpc_auth_property_iterator_next(&it);
+    if (prop == NULL) {
+      return Qnil;
+    }
 
-  res = rb_str_new2(prop->value);
+    res = rb_str_new2(prop->value);
+  }
 
   grpc_auth_context_release(ctx);
 
