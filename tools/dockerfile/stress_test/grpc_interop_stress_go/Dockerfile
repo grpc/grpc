@@ -27,7 +27,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-FROM golang:1.4
+FROM golang:1.5
 
 # Google Cloud platform API libraries
 RUN apt-get update && apt-get install -y python-pip && apt-get clean
@@ -35,7 +35,7 @@ RUN pip install --upgrade google-api-python-client
 
 
 # Using login shell removes Go from path, so we add it.
-RUN ln -s /usr/src/go/bin/go /usr/local/bin
+RUN ln -s /usr/local/go/bin/go /usr/local/bin
 
 # Define the default command.
 CMD ["bash"]
