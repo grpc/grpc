@@ -328,6 +328,32 @@ class CSharpLanguage:
     # TODO(jtattermusch): add more scenarios
     secargs = None
     yield {
+        'name': 'csharp_protobuf_async_streaming_qps_unconstrained',
+        'num_servers': 1,
+        'num_clients': 0,
+        'client_config': {
+          'client_type': 'ASYNC_CLIENT',
+          'security_params': secargs,
+          'outstanding_rpcs_per_channel': DEEP,
+          'client_channels': WIDE,
+          'async_client_threads': 0,
+          'rpc_type': 'STREAMING',
+          'load_params': {
+            'closed_loop': {}
+          },
+          'payload_config': EMPTY_PROTO_PAYLOAD,
+          'histogram_params': HISTOGRAM_PARAMS,
+        },
+        'server_config': {
+          'server_type': 'ASYNC_SERVER',
+          'security_params': secargs,
+          'core_limit': 0,
+          'async_server_threads': 0,
+        },
+        'warmup_seconds': WARMUP_SECONDS,
+        'benchmark_seconds': BENCHMARK_SECONDS
+    }
+    yield {
         'name': 'csharp_generic_async_streaming_ping_pong',
         'num_servers': 1,
         'num_clients': 1,
@@ -348,7 +374,7 @@ class CSharpLanguage:
           'server_type': 'ASYNC_GENERIC_SERVER',
           'security_params': secargs,
           'core_limit': 0,
-          'async_server_threads': 1,
+          'async_server_threads': 0,
           'payload_config': EMPTY_GENERIC_PAYLOAD,
         },
         'warmup_seconds': WARMUP_SECONDS,
@@ -375,7 +401,7 @@ class CSharpLanguage:
           'server_type': 'ASYNC_SERVER',
           'security_params': secargs,
           'core_limit': 0,
-          'async_server_threads': 1,
+          'async_server_threads': 0,
         },
         'warmup_seconds': WARMUP_SECONDS,
         'benchmark_seconds': BENCHMARK_SECONDS
@@ -401,7 +427,7 @@ class CSharpLanguage:
           'server_type': 'ASYNC_SERVER',
           'security_params': secargs,
           'core_limit': 0,
-          'async_server_threads': 1,
+          'async_server_threads': 0,
         },
         'warmup_seconds': WARMUP_SECONDS,
         'benchmark_seconds': BENCHMARK_SECONDS
@@ -427,7 +453,7 @@ class CSharpLanguage:
           'server_type': 'SYNC_SERVER',
           'security_params': secargs,
           'core_limit': 0,
-          'async_server_threads': 1,
+          'async_server_threads': 0,
         },
         'warmup_seconds': WARMUP_SECONDS,
         'benchmark_seconds': BENCHMARK_SECONDS,
