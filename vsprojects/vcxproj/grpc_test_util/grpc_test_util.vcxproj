@@ -162,6 +162,8 @@
     <ClInclude Include="$(SolutionDir)\..\test\core\util\slice_splitter.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\data\client_certs.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\data\server1_cert.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\data\server1_key.c">

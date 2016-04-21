@@ -786,6 +786,7 @@ include/grpc/impl/codegen/sync_posix.h \
 include/grpc/impl/codegen/sync_win32.h \
 include/grpc/impl/codegen/time.h \
 include/grpc/grpc_security.h \
+include/grpc/grpc_security_constants.h \
 include/grpc/census.h \
 src/core/lib/channel/channel_args.h \
 src/core/lib/channel/channel_stack.h \
@@ -903,6 +904,7 @@ src/core/ext/client_config/initial_connect_string.h \
 src/core/ext/client_config/lb_policy.h \
 src/core/ext/client_config/lb_policy_factory.h \
 src/core/ext/client_config/lb_policy_registry.h \
+src/core/ext/client_config/parse_address.h \
 src/core/ext/client_config/resolver.h \
 src/core/ext/client_config/resolver_factory.h \
 src/core/ext/client_config/resolver_registry.h \
@@ -1058,6 +1060,7 @@ src/core/ext/client_config/initial_connect_string.c \
 src/core/ext/client_config/lb_policy.c \
 src/core/ext/client_config/lb_policy_factory.c \
 src/core/ext/client_config/lb_policy_registry.c \
+src/core/ext/client_config/parse_address.c \
 src/core/ext/client_config/resolver.c \
 src/core/ext/client_config/resolver_factory.c \
 src/core/ext/client_config/resolver_registry.c \

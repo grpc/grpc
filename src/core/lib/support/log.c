@@ -31,14 +31,20 @@
  *
  */
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
+
+#include "src/core/lib/support/env.h"
+#include "src/core/lib/support/string.h"
 
 #include <stdio.h>
 #include <string.h>
 
 extern void gpr_default_log(gpr_log_func_args *args);
 static gpr_log_func g_log_func = gpr_default_log;
+static gpr_atm g_min_severity_to_print = GPR_LOG_VERBOSITY_UNSET;
 
 const char *gpr_log_severity_string(gpr_log_severity severity) {
   switch (severity) {
@@ -54,6 +60,9 @@ const char *gpr_log_severity_string(gpr_log_severity severity) {
 
 void gpr_log_message(const char *file, int line, gpr_log_severity severity,
                      const char *message) {
+  if ((gpr_atm)severity < gpr_atm_no_barrier_load(&g_min_severity_to_print))
+    return;
+
   gpr_log_func_args lfargs;
   memset(&lfargs, 0, sizeof(lfargs));
   lfargs.file = file;
@@ -61,6 +70,30 @@ void gpr_log_message(const char *file, int line, gpr_log_severity severity,
   lfargs.severity = severity;
   lfargs.message = message;
   g_log_func(&lfargs);
+}
+
+void gpr_set_log_verbosity(gpr_log_severity min_severity_to_print) {
+  gpr_atm_no_barrier_store(&g_min_severity_to_print,
+                           (gpr_atm)min_severity_to_print);
+}
+
+void gpr_log_verbosity_init() {
+  char *verbosity = gpr_getenv("GRPC_VERBOSITY");
+  if (verbosity == NULL) return;
+
+  gpr_atm min_severity_to_print = GPR_LOG_VERBOSITY_UNSET;
+  if (strcmp(verbosity, "DEBUG") == 0) {
+    min_severity_to_print = (gpr_atm)GPR_LOG_SEVERITY_DEBUG;
+  } else if (strcmp(verbosity, "INFO") == 0) {
+    min_severity_to_print = (gpr_atm)GPR_LOG_SEVERITY_INFO;
+  } else if (strcmp(verbosity, "ERROR") == 0) {
+    min_severity_to_print = (gpr_atm)GPR_LOG_SEVERITY_ERROR;
+  }
+  gpr_free(verbosity);
+  if ((gpr_atm_no_barrier_load(&g_min_severity_to_print)) ==
+      GPR_LOG_VERBOSITY_UNSET) {
+    gpr_atm_no_barrier_store(&g_min_severity_to_print, min_severity_to_print);
+  }
 }
 
 void gpr_set_log_function(gpr_log_func f) { g_log_func = f; }

@@ -718,6 +718,14 @@ static tsi_result build_alpn_protocol_name_list(
   return TSI_OK;
 }
 
+// The verification callback is used for clients that don't really care about
+// the server's certificate, but we need to pull it anyway, in case a higher
+// layer wants to look at it. In this case the verification may fail, but
+// we don't really care.
+static int NullVerifyCallback(int preverify_ok, X509_STORE_CTX *ctx) {
+  return 1;
+}
+
 /* --- tsi_frame_protector methods implementation. ---*/
 
 static tsi_result ssl_protector_protect(tsi_frame_protector *self,
@@ -1390,6 +1398,26 @@ tsi_result tsi_create_ssl_server_handshaker_factory(
     const char *cipher_list, const unsigned char **alpn_protocols,
     const unsigned char *alpn_protocols_lengths, uint16_t num_alpn_protocols,
     tsi_ssl_handshaker_factory **factory) {
+  return tsi_create_ssl_server_handshaker_factory_ex(
+      pem_private_keys, pem_private_keys_sizes, pem_cert_chains,
+      pem_cert_chains_sizes, key_cert_pair_count, pem_client_root_certs,
+      pem_client_root_certs_size,
+      force_client_auth ? TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
+                        : TSI_DONT_REQUEST_CLIENT_CERTIFICATE,
+      cipher_list, alpn_protocols, alpn_protocols_lengths, num_alpn_protocols,
+      factory);
+}
+
+tsi_result tsi_create_ssl_server_handshaker_factory_ex(
+    const unsigned char **pem_private_keys,
+    const size_t *pem_private_keys_sizes, const unsigned char **pem_cert_chains,
+    const size_t *pem_cert_chains_sizes, size_t key_cert_pair_count,
+    const unsigned char *pem_client_root_certs,
+    size_t pem_client_root_certs_size,
+    tsi_client_certificate_request_type client_certificate_request,
+    const char *cipher_list, const unsigned char **alpn_protocols,
+    const unsigned char *alpn_protocols_lengths, uint16_t num_alpn_protocols,
+    tsi_ssl_handshaker_factory **factory) {
   tsi_ssl_server_handshaker_factory *impl = NULL;
   tsi_result result = TSI_OK;
   size_t i = 0;
@@ -1445,7 +1473,6 @@ tsi_result tsi_create_ssl_server_handshaker_factory(
       if (result != TSI_OK) break;
 
       if (pem_client_root_certs != NULL) {
-        int flags = SSL_VERIFY_PEER;
         STACK_OF(X509_NAME) *root_names = NULL;
         result = ssl_ctx_load_verification_certs(
             impl->ssl_contexts[i], pem_client_root_certs,
@@ -1455,8 +1482,29 @@ tsi_result tsi_create_ssl_server_handshaker_factory(
           break;
         }
         SSL_CTX_set_client_CA_list(impl->ssl_contexts[i], root_names);
-        if (force_client_auth) flags |= SSL_VERIFY_FAIL_IF_NO_PEER_CERT;
-        SSL_CTX_set_verify(impl->ssl_contexts[i], flags, NULL);
+        switch (client_certificate_request) {
+          case TSI_DONT_REQUEST_CLIENT_CERTIFICATE:
+            SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_NONE, NULL);
+            break;
+          case TSI_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY:
+            SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_PEER,
+                               NullVerifyCallback);
+            break;
+          case TSI_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY:
+            SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_PEER, NULL);
+            break;
+          case TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY:
+            SSL_CTX_set_verify(
+                impl->ssl_contexts[i],
+                SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
+                NullVerifyCallback);
+            break;
+          case TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY:
+            SSL_CTX_set_verify(
+                impl->ssl_contexts[i],
+                SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
+            break;
+        }
         /* TODO(jboeuf): Add revocation verification. */
       }
 
