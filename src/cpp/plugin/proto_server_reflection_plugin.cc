@@ -31,28 +31,46 @@
  *
  */
 
-#ifndef GRPCXX_IMPL_SERVER_BUILDER_OPTION_H
-#define GRPCXX_IMPL_SERVER_BUILDER_OPTION_H
-
-#include <map>
-#include <memory>
+#include "src/cpp/plugin/proto_server_reflection_plugin.h"
 
 #include <grpc++/impl/server_builder_plugin.h>
-#include <grpc++/support/channel_arguments.h>
+#include <grpc++/impl/server_initializer.h>
+#include <grpc++/server.h>
+
+#include "src/cpp/plugin/reflection/proto_server_reflection.h"
 
 namespace grpc {
+namespace sBPProtoReflection {
 
-/// Interface to pass an option to a \a ServerBuilder.
-class ServerBuilderOption {
- public:
-  virtual ~ServerBuilderOption() {}
-  /// Alter the \a ChannelArguments used to create the gRPC server.
-  virtual void UpdateArguments(ChannelArguments* args) = 0;
-  virtual void UpdatePlugins(
-      std::map<grpc::string, std::unique_ptr<ServerBuilderPlugin> >*
-          plugins) = 0;
-};
+ProtoServerReflectionPlugin::ProtoServerReflectionPlugin()
+    : reflection_service(new grpc::ProtoServerReflection()) {}
 
+grpc::string ProtoServerReflectionPlugin::name() { return "p1"; }
+
+void ProtoServerReflectionPlugin::InitServer(grpc::ServerInitializer* si) {
+  si->RegisterService(reflection_service);
+}
+
+void ProtoServerReflectionPlugin::Finish(grpc::ServerInitializer* si) {
+  reflection_service->SetSeviceList(si->GetServiceList());
+}
+
+void ProtoServerReflectionPlugin::ChangeArguments(const grpc::string& name,
+                                                  void* value) {}
+
+bool ProtoServerReflectionPlugin::has_synchronous_methods() const {
+  if (reflection_service != nullptr) {
+    return reflection_service->has_synchronous_methods();
+  }
+  return false;
+}
+
+bool ProtoServerReflectionPlugin::has_async_methods() const {
+  if (reflection_service != nullptr) {
+    return reflection_service->has_async_methods();
+  }
+  return false;
+}
+
+}  // namespace sBPProtoReflection
 }  // namespace grpc
-
-#endif  // GRPCXX_IMPL_SERVER_BUILDER_OPTION_H

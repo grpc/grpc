@@ -197,6 +197,24 @@ class Verifier {
   bool spin_;
 };
 
+class ServerBuilderSyncPluginDisabler : public ServerBuilderOption {
+ public:
+  void UpdateArguments(ChannelArguments* arg) GRPC_OVERRIDE {}
+
+  void UpdatePlugins(
+      std::map<grpc::string, std::unique_ptr<ServerBuilderPlugin> >*
+          plugins) GRPC_OVERRIDE {
+    auto plugin = plugins->begin();
+    while (plugin != plugins->end()) {
+      if ((*plugin).second->has_synchronous_methods()) {
+        plugins->erase(plugin++);
+      } else {
+        plugin++;
+      }
+    }
+  }
+};
+
 class AsyncEnd2endTest : public ::testing::TestWithParam<bool> {
  protected:
   AsyncEnd2endTest() {}
@@ -213,6 +231,12 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<bool> {
                              grpc::InsecureServerCredentials());
     builder.RegisterService(&service_);
     cq_ = builder.AddCompletionQueue();
+
+    // TODO(zyc): make a test option to choose wheather sync plugins should be
+    // deleted
+    std::unique_ptr<ServerBuilderOption> sync_plugin_disabler(
+        new ServerBuilderSyncPluginDisabler());
+    builder.SetOption(move(sync_plugin_disabler));
     server_ = builder.BuildAndStart();
 
     gpr_tls_set(&g_is_async_end2end_test, 1);

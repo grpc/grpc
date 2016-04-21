@@ -1,0 +1,90 @@
+// Copyright 2016, Google Inc.
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+syntax = "proto3";
+import "google/protobuf/descriptor.proto";
+
+// option java_multiple_files = true;
+// option java_package = "io.grpc.examples.helloworld";
+// option java_outer_classname = "HelloWorldProto";
+// option objc_class_prefix = "HLW";
+
+package grpc.reflection.v1;
+
+service ServerReflection {
+  rpc ListService(ListServiceRequest) returns (ListServiceResponse) {
+  }
+  rpc GetService(GetDescriptorRequest) returns (GetServiceResponse) {
+  }
+  rpc GetMethod(GetDescriptorRequest) returns (GetMethodResponse) {
+  }
+  rpc GetMessageType(GetDescriptorRequest) returns (GetMessageTypeResponse) {
+  }
+  rpc GetEnumType(GetDescriptorRequest) returns (GetEnumTypeResponse) {
+  }
+  rpc GetEnumValue(GetDescriptorRequest) returns (GetEnumValueResponse) {
+  }
+  rpc GetExtension(GetDescriptorRequest) returns (GetExtensionResponse) {
+  }
+}
+
+message ListServiceRequest {
+}
+
+message GetDescriptorRequest {
+  string name = 1;
+}
+
+message ListServiceResponse {
+  repeated string services = 1;
+}
+
+message GetMethodResponse {
+  google.protobuf.MethodDescriptorProto method = 1;
+}
+
+message GetServiceResponse {
+  google.protobuf.ServiceDescriptorProto service = 1;
+}
+
+message GetMessageTypeResponse {
+  google.protobuf.DescriptorProto message_type = 1;
+}
+
+message GetEnumTypeResponse {
+  google.protobuf.EnumDescriptorProto enum_type = 1;
+}
+
+message GetEnumValueResponse {
+  google.protobuf.EnumValueDescriptorProto enum_value = 1;
+}
+
+message GetExtensionResponse {
+  google.protobuf.FieldDescriptorProto extension = 1;
+}
