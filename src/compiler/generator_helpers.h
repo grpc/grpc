@@ -237,16 +237,18 @@ inline void GetComment(const grpc::protobuf::FileDescriptor *desc,
   }
 }
 
-// Prefix comment line with "// " and concatenate them into a string.
-inline grpc::string GenerateComments(const std::vector<grpc::string> &in) {
+// Add prefix and newline to each comment line and concatenate them together.
+// Make sure there is a space after the prefix unless the line is empty.
+inline grpc::string GenerateCommentsWithPrefix(
+    const std::vector<grpc::string> &in, const grpc::string &prefix) {
   std::ostringstream oss;
   for (const grpc::string &elem : in) {
     if (elem.empty()) {
-      oss << "//\n";
+      oss << prefix << "\n";
     } else if (elem[0] == ' ') {
-      oss << "//" << elem << "\n";
+      oss << prefix << elem << "\n";
     } else {
-      oss << "// " << elem << "\n";
+      oss << prefix << " " << elem << "\n";
     }
   }
   return oss.str();
@@ -268,7 +270,7 @@ inline grpc::string GetComments(const DescriptorType *desc, bool leading) {
     grpc_generator::GetComment(desc, grpc_generator::COMMENTTYPE_TRAILING,
                                &out);
   }
-  return GenerateComments(out);
+  return GenerateCommentsWithPrefix(out, "//");
 }
 
 }  // namespace grpc_generator
