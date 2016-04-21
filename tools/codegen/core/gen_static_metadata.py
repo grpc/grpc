@@ -246,21 +246,16 @@ with open(sys.argv[0]) as my_source:
 hex_bytes = [ord(c) for c in "abcdefABCDEF0123456789"]
 
 
-def esc_c(line):
+def esc_dict(line):
   out = "\""
-  last_was_hex = False
   for c in line:
     if 32 <= c < 127:
-      if c in hex_bytes and last_was_hex:
-        out += "\"\""
       if c != ord('"'):
         out += chr(c)
       else:
         out += "\\\""
-      last_was_hex = False
     else:
-      out += "\\x%02x" % c
-      last_was_hex = True
+      out += "\\x%02X" % c
   return out + "\""
 
 put_banner([H,C],
@@ -293,7 +288,10 @@ print >>C
 
 print >>D, '# hpack fuzzing dictionary'
 for i, elem in enumerate(all_strs):
-  print >>D, 'kw%d=%s' % (i, esc_c([len(elem)] + [ord(c) for c in elem]))
+  print >>D, '%s' % (esc_dict([len(elem)] + [ord(c) for c in elem]))
+for i, elem in enumerate(all_elems):
+  print >>D, '%s' % (esc_dict([0, len(elem[0])] + [ord(c) for c in elem[0]] +
+                              [len(elem[1])] + [ord(c) for c in elem[1]]))
 
 print >>H, '#define GRPC_STATIC_MDELEM_COUNT %d' % len(all_elems)
 print >>H, 'extern grpc_mdelem grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];'

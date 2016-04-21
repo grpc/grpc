@@ -82,9 +82,12 @@ sudo apt-get install -y libgflags-dev libgtest-dev libc++-dev clang
 
 # Python dependencies
 sudo pip install tabulate
+sudo pip install google-api-python-client
+
 curl -O https://bootstrap.pypa.io/get-pip.py
 sudo pypy get-pip.py
 sudo pypy -m pip install tabulate
+sudo pip install google-api-python-client
 
 # Node dependencies (nvm has to be installed under user jenkins)
 touch .profile
@@ -101,5 +104,9 @@ sudo apt-get install -y mono-devel nuget
 # Ruby dependencies
 gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
 curl -sSL https://get.rvm.io | bash -s stable --ruby
+
+# Install bundler (prerequisite for gRPC Ruby)
+source ~/.rvm/scripts/rvm
+gem install bundler
 
 # Java dependencies - nothing as we already have Java JDK 8
