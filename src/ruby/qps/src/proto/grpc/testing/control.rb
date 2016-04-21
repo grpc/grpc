@@ -34,6 +34,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :histogram_params, :message, 12, "grpc.testing.HistogramParams"
     repeated :core_list, :int32, 13
     optional :core_limit, :int32, 14
+    optional :other_client_api, :string, 15
   end
   add_message "grpc.testing.ClientStatus" do
     optional :stats, :message, 1, "grpc.testing.ClientStats"
@@ -55,6 +56,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :core_limit, :int32, 8
     optional :payload_config, :message, 9, "grpc.testing.PayloadConfig"
     repeated :core_list, :int32, 10
+    optional :other_server_api, :string, 11
   end
   add_message "grpc.testing.ServerArgs" do
     oneof :argtype do
@@ -111,11 +113,13 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
   add_enum "grpc.testing.ClientType" do
     value :SYNC_CLIENT, 0
     value :ASYNC_CLIENT, 1
+    value :OTHER_CLIENT, 2
   end
   add_enum "grpc.testing.ServerType" do
     value :SYNC_SERVER, 0
     value :ASYNC_SERVER, 1
     value :ASYNC_GENERIC_SERVER, 2
+    value :OTHER_SERVER, 3
   end
   add_enum "grpc.testing.RpcType" do
     value :UNARY, 0
