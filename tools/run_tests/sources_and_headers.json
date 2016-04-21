@@ -2364,26 +2364,6 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
-      "grpc++_test_config", 
-      "grpc++_test_util", 
-      "grpc_test_util", 
-      "qps"
-    ], 
-    "headers": [], 
-    "language": "c++", 
-    "name": "qps_driver", 
-    "src": [
-      "test/cpp/qps/qps_driver.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
       "grpc++_test_util", 
       "grpc_test_util", 
       "qps"
@@ -3707,6 +3687,23 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "h2_ssl_cert_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_ssl_cert.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "h2_ssl_proxy_test", 
     "src": [
       "test/core/end2end/fixtures/h2_ssl_proxy.c"
@@ -4130,6 +4127,7 @@
     "language": "c", 
     "name": "grpc_test_util", 
     "src": [
+      "test/core/end2end/data/client_certs.c", 
       "test/core/end2end/data/server1_cert.c", 
       "test/core/end2end/data/server1_key.c", 
       "test/core/end2end/data/ssl_test_data.h", 
@@ -6030,6 +6028,7 @@
       "src/core/ext/client_config/lb_policy.h", 
       "src/core/ext/client_config/lb_policy_factory.h", 
       "src/core/ext/client_config/lb_policy_registry.h", 
+      "src/core/ext/client_config/parse_address.h", 
       "src/core/ext/client_config/resolver.h", 
       "src/core/ext/client_config/resolver_factory.h", 
       "src/core/ext/client_config/resolver_registry.h", 
@@ -6060,6 +6059,8 @@
       "src/core/ext/client_config/lb_policy_factory.h", 
       "src/core/ext/client_config/lb_policy_registry.c", 
       "src/core/ext/client_config/lb_policy_registry.h", 
+      "src/core/ext/client_config/parse_address.c", 
+      "src/core/ext/client_config/parse_address.h", 
       "src/core/ext/client_config/resolver.c", 
       "src/core/ext/client_config/resolver.h", 
       "src/core/ext/client_config/resolver_factory.c", 
@@ -6193,6 +6194,7 @@
     ], 
     "headers": [
       "include/grpc/grpc_security.h", 
+      "include/grpc/grpc_security_constants.h", 
       "src/core/lib/security/auth_filters.h", 
       "src/core/lib/security/b64.h", 
       "src/core/lib/security/credentials.h", 
@@ -6212,6 +6214,7 @@
     "name": "grpc_secure", 
     "src": [
       "include/grpc/grpc_security.h", 
+      "include/grpc/grpc_security_constants.h", 
       "src/core/lib/http/httpcli_security_connector.c", 
       "src/core/lib/security/auth_filters.h", 
       "src/core/lib/security/b64.c", 

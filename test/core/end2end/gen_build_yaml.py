@@ -65,6 +65,7 @@ END2END_FIXTURES = {
     'h2_sockpair+trace': socketpair_unsecure_fixture_options._replace(
         ci_mac=False, tracing=True),
     'h2_ssl': default_secure_fixture_options,
+    'h2_ssl_cert': default_secure_fixture_options,
     'h2_ssl_proxy': default_secure_fixture_options._replace(includes_proxy=True,
                                                             ci_mac=False),
     'h2_uds': uds_fixture_options,

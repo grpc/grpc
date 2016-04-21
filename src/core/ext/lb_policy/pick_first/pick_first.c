@@ -109,7 +109,7 @@ static void pf_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   if (selected != NULL) {
     grpc_connected_subchannel_notify_on_state_change(
         exec_ctx, selected, NULL, NULL, &p->connectivity_changed);
-  } else {
+  } else if (p->num_subchannels > 0) {
     grpc_subchannel_notify_on_state_change(
         exec_ctx, p->subchannels[p->checking_subchannel], NULL, NULL,
         &p->connectivity_changed);
