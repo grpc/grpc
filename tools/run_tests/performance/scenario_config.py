@@ -207,7 +207,7 @@ class CXXLanguage:
           'client_config': {
             'client_type': 'ASYNC_CLIENT',
             'security_params': secargs,
-            'outstanding_rpcs_per_channel': DEEP,
+            'outstanding_rpcs_per_channel': 1,
             'client_channels': 1,
             'async_client_threads': 0,
             'rpc_type': 'STREAMING',
