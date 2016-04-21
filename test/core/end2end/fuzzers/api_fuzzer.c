@@ -386,7 +386,7 @@ static call_state *new_call(call_state *sibling, call_state_type type) {
 
 static call_state *maybe_delete_call_state(call_state *call) {
   call_state *next = call->next;
-  
+
   if (call->call != NULL) return next;
   if (call->pending_ops != 0) return next;
 
@@ -452,7 +452,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
 
   while (!is_eof(&inp) || g_channel != NULL || g_server != NULL ||
-         pending_channel_watches > 0 || pending_pings > 0 || g_active_call->type != ROOT || g_active_call->next != g_active_call) {
+         pending_channel_watches > 0 || pending_pings > 0 ||
+         g_active_call->type != ROOT || g_active_call->next != g_active_call) {
     if (is_eof(&inp)) {
       if (g_channel != NULL) {
         grpc_channel_destroy(g_channel);
@@ -660,8 +661,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       }
       // queue some ops on a call
       case 12: {
-        if (g_active_call->type == PENDING_SERVER || g_active_call->type == ROOT ||
-            g_active_call->call == NULL) {
+        if (g_active_call->type == PENDING_SERVER ||
+            g_active_call->type == ROOT || g_active_call->call == NULL) {
           end(&inp);
           break;
         }
@@ -725,7 +726,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
               break;
             case GRPC_OP_RECV_CLOSE_ON_SERVER:
               op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-              op->data.recv_close_on_server.cancelled = &g_active_call->cancelled;
+              op->data.recv_close_on_server.cancelled =
+                  &g_active_call->cancelled;
               break;
           }
           op->reserved = NULL;
@@ -857,7 +859,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       }
       // destroy a call
       case 20: {
-        if (g_active_call->type != ROOT && g_active_call->type != PENDING_SERVER &&
+        if (g_active_call->type != ROOT &&
+            g_active_call->type != PENDING_SERVER &&
             g_active_call->call != NULL) {
           destroy_call(g_active_call);
         } else {
