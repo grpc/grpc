@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -27,30 +27,25 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# Builds C++ interop server and client in a base image.
+set -e
 
-# performs a single qps run with one client and one server
+mkdir -p /var/local/git
+# grpc-java repo
+git clone --recursive --depth 1 /var/local/jenkins/grpc-java /var/local/git/grpc-java
 
-set -ex
+# grpc repo (for metrics client and for the stress test wrapper scripts)
+git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
 
-cd $(dirname $0)/../../..
+# Copy service account keys if available
+cp -r /var/local/jenkins/service_account $HOME || true
 
-killall qps_worker || true
+# First build the metrics client in grpc repo
+cd /var/local/git/grpc
+make metrics_client
 
-config=opt
-
-NUMCPUS=`python2.7 -c 'import multiprocessing; print multiprocessing.cpu_count()'`
-
-make CONFIG=$config qps_worker qps_driver -j$NUMCPUS
-
-bins/$config/qps_worker -driver_port 10000 &
-PID1=$!
-bins/$config/qps_worker -driver_port 10010 &
-PID2=$!
-
-export QPS_WORKERS="localhost:10000,localhost:10010"
-
-bins/$config/qps_driver $*
-
-kill -2 $PID1 $PID2
-wait
-
+# Build all interop test targets (which includes interop server and stress test
+# client) in grpc-java repo
+cd /var/local/git/grpc-java
+./gradlew :grpc-interop-testing:installDist -PskipCodegen=true
