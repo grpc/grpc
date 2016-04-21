@@ -184,7 +184,7 @@ enum CommentType {
   COMMENTTYPE_LEADING_DETACHED
 };
 
-// Get all the comments and append each line to out.
+// Get all the raw comments and append each line without newline to out.
 template <typename DescriptorType>
 inline void GetComment(const DescriptorType *desc, CommentType type,
                        std::vector<grpc::string> *out) {
@@ -209,6 +209,7 @@ inline void GetComment(const DescriptorType *desc, CommentType type,
   }
 }
 
+// Each raw comment line without newline is appended to out.
 // For file level leading and detached leading comments, we return comments
 // above syntax line. Return nothing for trailing comments.
 template <>
