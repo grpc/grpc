@@ -67,17 +67,27 @@ static int got_sigint = 0;
 static struct grpc_memory_counters counters, previous_counters;
 
 static void show_counters() {
-  gpr_log(GPR_INFO, "  actual memory allocated:       %zu", counters.total_size_relative);
-  gpr_log(GPR_INFO, "  total memory allocated:        %zu", counters.total_size_absolute);
-  gpr_log(GPR_INFO, "  current number of allocations: %zu", counters.total_allocs_relative);
-  gpr_log(GPR_INFO, "  total number of allocations:   %zu", counters.total_allocs_absolute);
+  gpr_log(GPR_INFO, "  actual memory allocated:       %zu",
+          counters.total_size_relative);
+  gpr_log(GPR_INFO, "  total memory allocated:        %zu",
+          counters.total_size_absolute);
+  gpr_log(GPR_INFO, "  current number of allocations: %zu",
+          counters.total_allocs_relative);
+  gpr_log(GPR_INFO, "  total number of allocations:   %zu",
+          counters.total_allocs_absolute);
 }
 
 static void show_difference() {
-  gpr_log(GPR_INFO, "  actual memory allocated:       %zi", counters.total_size_relative - previous_counters.total_size_relative);
-  gpr_log(GPR_INFO, "  total memory allocated:        %zi", counters.total_size_absolute - previous_counters.total_size_absolute);
-  gpr_log(GPR_INFO, "  current number of allocations: %zi", counters.total_allocs_relative - previous_counters.total_allocs_relative);
-  gpr_log(GPR_INFO, "  total number of allocations:   %zi", counters.total_allocs_absolute - previous_counters.total_allocs_absolute);
+  gpr_log(GPR_INFO, "  actual memory allocated:       %zi",
+          counters.total_size_relative - previous_counters.total_size_relative);
+  gpr_log(GPR_INFO, "  total memory allocated:        %zi",
+          counters.total_size_absolute - previous_counters.total_size_absolute);
+  gpr_log(
+      GPR_INFO, "  current number of allocations: %zi",
+      counters.total_allocs_relative - previous_counters.total_allocs_relative);
+  gpr_log(
+      GPR_INFO, "  total number of allocations:   %zi",
+      counters.total_allocs_absolute - previous_counters.total_allocs_absolute);
 }
 
 static void memory_probe(const char *op) {
