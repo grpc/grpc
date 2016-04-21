@@ -228,7 +228,7 @@ class CXXLanguage:
           'benchmark_seconds': BENCHMARK_SECONDS
       }
       yield {
-          'name': 'cpp_protobuf_async_ping_pong_%s'
+          'name': 'cpp_protobuf_async_streaming_ping_pong_%s'
                   % secstr,
           'num_servers': 1,
           'num_clients': 1,
@@ -239,6 +239,60 @@ class CXXLanguage:
             'client_channels': 1,
             'async_client_threads': 1,
             'rpc_type': 'STREAMING',
+            'load_params': {
+              'closed_loop': {}
+            },
+            'payload_config': EMPTY_PROTO_PAYLOAD,
+            'histogram_params': HISTOGRAM_PARAMS,
+          },
+          'server_config': {
+            'server_type': 'ASYNC_SERVER',
+            'security_params': secargs,
+            'core_limit': 1,
+            'async_server_threads': 1,
+          },
+          'warmup_seconds': WARMUP_SECONDS,
+          'benchmark_seconds': BENCHMARK_SECONDS
+      }
+      yield {
+          'name': 'cpp_protobuf_sync_unary_ping_pong_%s'
+                  % secstr,
+          'num_servers': 1,
+          'num_clients': 1,
+          'client_config': {
+            'client_type': 'SYNC_CLIENT',
+            'security_params': secargs,
+            'outstanding_rpcs_per_channel': 1,
+            'client_channels': 1,
+            'async_client_threads': 0,
+            'rpc_type': 'UNARY',
+            'load_params': {
+              'closed_loop': {}
+            },
+            'payload_config': EMPTY_PROTO_PAYLOAD,
+            'histogram_params': HISTOGRAM_PARAMS,
+          },
+          'server_config': {
+            'server_type': 'SYNC_SERVER',
+            'security_params': secargs,
+            'core_limit': 1,
+            'async_server_threads': 0,
+          },
+          'warmup_seconds': WARMUP_SECONDS,
+          'benchmark_seconds': BENCHMARK_SECONDS
+      }
+      yield {
+          'name': 'cpp_protobuf_async_unary_ping_pong_%s'
+                  % secstr,
+          'num_servers': 1,
+          'num_clients': 1,
+          'client_config': {
+            'client_type': 'ASYNC_CLIENT',
+            'security_params': secargs,
+            'outstanding_rpcs_per_channel': 1,
+            'client_channels': 1,
+            'async_client_threads': 1,
+            'rpc_type': 'UNARY',
             'load_params': {
               'closed_loop': {}
             },
