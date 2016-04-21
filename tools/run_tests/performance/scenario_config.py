@@ -453,8 +453,8 @@ class CSharpLanguage:
         'server_config': {
           'server_type': 'SYNC_SERVER',
           'security_params': secargs,
-          'core_limit': 0,
-          'async_server_threads': 0,
+          'core_limit': 1,
+          'async_server_threads': 1,
         },
         'warmup_seconds': WARMUP_SECONDS,
         'benchmark_seconds': BENCHMARK_SECONDS,
