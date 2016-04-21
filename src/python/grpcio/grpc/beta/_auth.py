@@ -27,44 +27,47 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Tests the implementations module of the gRPC Python Beta API."""
+"""GRPCAuthMetadataPlugins for standard authentication."""
 
-import datetime
-import unittest
+from concurrent import futures
 
-from oauth2client import client as oauth2client_client
-
-from grpc.beta import implementations
-from tests.unit import resources
+from grpc.beta import interfaces
 
 
-class ChannelCredentialsTest(unittest.TestCase):
-
-  def test_runtime_provided_root_certificates(self):
-    channel_credentials = implementations.ssl_channel_credentials()
-    self.assertIsInstance(
-        channel_credentials, implementations.ChannelCredentials)
-  
-  def test_application_provided_root_certificates(self):
-    channel_credentials = implementations.ssl_channel_credentials(
-        resources.test_root_certificates())
-    self.assertIsInstance(
-        channel_credentials, implementations.ChannelCredentials)
+def _sign_request(callback, token, error):
+  metadata = (('authorization', 'Bearer {}'.format(token)),)
+  callback(metadata, error)
 
 
-class CallCredentialsTest(unittest.TestCase):
+class GoogleCallCredentials(interfaces.GRPCAuthMetadataPlugin):
+  """Metadata wrapper for GoogleCredentials from the oauth2client library."""
 
-  def test_google_call_credentials(self):
-    creds = oauth2client_client.GoogleCredentials(
-        'token', 'client_id', 'secret', 'refresh_token',
-        datetime.datetime(2008, 6, 24), 'https://refresh.uri.com/',
-        'user_agent')
-    call_creds = implementations.google_call_credentials(creds)
-    self.assertIsInstance(call_creds, implementations.CallCredentials)
+  def __init__(self, credentials):
+    self._credentials = credentials
+    self._pool = futures.ThreadPoolExecutor(max_workers=1)
 
-  def test_access_token_call_credentials(self):
-    call_creds = implementations.access_token_call_credentials('token')
-    self.assertIsInstance(call_creds, implementations.CallCredentials)
+  def __call__(self, context, callback):
+    # MetadataPlugins cannot block (see grpc.beta.interfaces.py)
+    future = self._pool.submit(self._credentials.get_access_token)
+    future.add_done_callback(lambda x: self._get_token_callback(callback, x))
 
-if __name__ == '__main__':
-  unittest.main(verbosity=2)
+  def _get_token_callback(self, callback, future):
+    try:
+      access_token = future.result().access_token
+    except Exception as e:
+      _sign_request(callback, None, e)
+    else:
+      _sign_request(callback, access_token, None)
+
+  def __del__(self):
+    self._pool.shutdown(wait=False)
+
+
+class AccessTokenCallCredentials(interfaces.GRPCAuthMetadataPlugin):
+  """Metadata wrapper for raw access token credentials."""
+
+  def __init__(self, access_token):
+    self._access_token = access_token
+
+  def __call__(self, context, callback):
+    _sign_request(callback, self._access_token, None)
