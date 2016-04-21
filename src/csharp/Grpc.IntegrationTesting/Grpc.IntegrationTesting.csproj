@@ -113,6 +113,7 @@
     <Compile Include="GeneratedClientTest.cs" />
     <Compile Include="InterarrivalTimers.cs" />
     <Compile Include="NUnitMain.cs" />
+    <Compile Include="StressTestClient.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
