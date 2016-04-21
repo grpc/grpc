@@ -34,6 +34,9 @@ WARMUP_SECONDS=5
 JAVA_WARMUP_SECONDS=15  # Java needs more warmup time for JIT to kick in.
 BENCHMARK_SECONDS=30
 
+SECURE_SECARGS = {'use_test_ca': True,
+                  'server_host_override': 'foo.test.google.fr'}
+
 HISTOGRAM_PARAMS = {
   'resolution': 0.01,
   'max_possible': 60e9,
@@ -82,8 +85,7 @@ class CXXLanguage:
     for secure in [True, False]:
       if secure:
         secstr = 'secure'
-        secargs = {'use_test_ca': True,
-                   'server_host_override': 'foo.test.google.fr'}
+        secargs = SECURE_SECARGS
       else:
         secstr = 'insecure'
         secargs = None
@@ -325,8 +327,7 @@ class CSharpLanguage:
     return 100
 
   def scenarios(self):
-    # TODO(jtattermusch): add more scenarios
-    secargs = None
+    secargs = SECURE_SECARGS
     yield {
         'name': 'csharp_protobuf_async_streaming_qps_unconstrained',
         'num_servers': 1,
@@ -478,7 +479,7 @@ class NodeLanguage:
 
   def scenarios(self):
     # TODO(jtattermusch): add more scenarios
-    secargs = None
+    secargs = SECURE_SECARGS
     yield {
         'name': 'node_protobuf_unary_ping_pong',
         'num_servers': 1,
@@ -524,7 +525,7 @@ class RubyLanguage:
 
   def scenarios(self):
     # TODO(jtattermusch): add more scenarios
-    secargs = None
+    secargs = SECURE_SECARGS
     yield {
         'name': 'ruby_protobuf_unary_ping_pong',
         'num_servers': 1,
@@ -572,7 +573,7 @@ class JavaLanguage:
     # TODO(jtattermusch): add more scenarios
     secargs = None
     yield {
-        'name': 'java_protobuf_unary_ping_pong',
+        'name': 'java_protobuf_unary_ping_pong_insecure',
         'num_servers': 1,
         'num_clients': 1,
         'client_config': {
