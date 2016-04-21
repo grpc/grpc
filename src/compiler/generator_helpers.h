@@ -237,10 +237,8 @@ inline void GetComment(const grpc::protobuf::FileDescriptor *desc,
   }
 }
 
-namespace {
-
 // Prefix comment line with "// " and concatenate them into a string.
-grpc::string GenerateComments(const std::vector<grpc::string> &in) {
+inline grpc::string GenerateComments(const std::vector<grpc::string> &in) {
   std::ostringstream oss;
   for (const grpc::string &elem : in) {
     if (elem.empty()) {
@@ -253,8 +251,6 @@ grpc::string GenerateComments(const std::vector<grpc::string> &in) {
   }
   return oss.str();
 }
-
-}  // namespace
 
 // Get leading or trailing comments in a string. Comment lines start with "// ".
 // Leading detached comments are put in in front of leading comments.
