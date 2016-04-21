@@ -3205,6 +3205,19 @@
   {
     "deps": [
       "boringssl", 
+      "boringssl_test_util", 
+      "boringssl_x509_test_lib"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_x509_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
       "boringssl_tab_test_lib", 
       "boringssl_test_util"
     ], 
@@ -4575,12 +4588,12 @@
       "third_party/boringssl/crypto/cipher/internal.h", 
       "third_party/boringssl/crypto/conf/conf_def.h", 
       "third_party/boringssl/crypto/conf/internal.h", 
+      "third_party/boringssl/crypto/curve25519/internal.h", 
       "third_party/boringssl/crypto/des/internal.h", 
       "third_party/boringssl/crypto/dh/internal.h", 
       "third_party/boringssl/crypto/digest/internal.h", 
       "third_party/boringssl/crypto/digest/md32_common.h", 
       "third_party/boringssl/crypto/directory.h", 
-      "third_party/boringssl/crypto/dsa/internal.h", 
       "third_party/boringssl/crypto/ec/internal.h", 
       "third_party/boringssl/crypto/ec/p256-x86_64-table.h", 
       "third_party/boringssl/crypto/evp/internal.h", 
@@ -5083,6 +5096,18 @@
     "headers": [], 
     "language": "c", 
     "name": "boringssl_pkcs7_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "boringssl_x509_test_lib", 
     "src": [], 
     "third_party": true, 
     "type": "lib"
