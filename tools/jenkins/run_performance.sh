@@ -34,10 +34,4 @@ set -ex
 # Enter the gRPC repo root
 cd $(dirname $0)/../..
 
-[[ $* =~ '--latency_profile' ]] \
-	&& tools/profiling/latency_profile/run_latency_profile.sh \
-	|| true
-
 tools/run_tests/run_performance_tests.py -l c++
-
-wait
