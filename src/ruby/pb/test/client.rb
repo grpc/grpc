@@ -464,6 +464,9 @@ def main
   opts = parse_args
   stub = create_stub(opts)
   NamedTests.new(stub, opts).method(opts['test_case']).call
+  p "OK: #{opts['test_case']}"
 end
 
-main
+if __FILE__ == $0
+  main
+end

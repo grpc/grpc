@@ -270,13 +270,13 @@ class RubyLanguage:
     self.safename = str(self)
 
   def client_cmd(self, args):
-    return ['ruby', 'src/ruby/bin/interop/interop_client.rb'] + args
+    return ['ruby', 'src/ruby/pb/test/client.rb'] + args
 
   def cloud_to_prod_env(self):
     return {}
 
   def server_cmd(self, args):
-    return ['ruby', 'src/ruby/bin/interop/interop_server.rb', '--use_tls=true'] + args
+    return ['ruby', 'src/ruby/pb/test/server.rb', '--use_tls=true'] + args
 
   def global_env(self):
     return {}
@@ -590,8 +590,8 @@ prod_servers = {
                       False),
     'cloud_gateway_v2': ('216.239.32.255', 'grpc-test2.sandbox.googleapis.com',
                          True),
-    'gateway_v4': ('grpc-test4.sandbox.googleapis.com', 
-                   'grpc-test4.sandbox.googleapis.com', True), 
+    'gateway_v4': ('grpc-test4.sandbox.googleapis.com',
+                   'grpc-test4.sandbox.googleapis.com', True),
     'cloud_gateway_v4': ('216.239.32.255', 'grpc-test4.sandbox.googleapis.com',
                          True),
 }
