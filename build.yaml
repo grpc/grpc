@@ -2706,20 +2706,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: qps_driver
-  build: benchmark
-  language: c++
-  src:
-  - test/cpp/qps/qps_driver.cc
-  deps:
-  - qps
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr_test_util
-  - gpr
-  - grpc++_test_config
 - name: qps_interarrival_test
   build: test
   run: false
