@@ -1,4 +1,6 @@
 [
+  "_auth_test.AccessTokenCallCredentialsTest",
+  "_auth_test.GoogleCallCredentialsTest",
   "_base_interface_test.AsyncEasyTest", 
   "_base_interface_test.AsyncPeasyTest", 
   "_base_interface_test.SyncEasyTest", 
@@ -30,6 +32,7 @@
   "_face_interface_test.MultiCallableInvokerBlockingInvocationInlineServiceTest", 
   "_face_interface_test.MultiCallableInvokerFutureInvocationAsynchronousEventServiceTest",
   "_health_servicer_test.HealthServicerTest",
+  "_implementations_test.CallCredentialsTest",
   "_implementations_test.ChannelCredentialsTest", 
   "_insecure_interop_test.InsecureInteropTest", 
   "_intermediary_low_test.CancellationTest", 
