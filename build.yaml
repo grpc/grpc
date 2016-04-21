@@ -1901,6 +1901,42 @@ targets:
   - mac
   - linux
   - posix
+- name: memory_client
+  build: test
+  run: false
+  language: c
+  src:
+  - test/core/memory/memory_client.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: memory_server
+  build: test
+  run: false
+  language: c
+  src:
+  - test/core/memory/memory_server.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: memory_test
+  build: test
+  language: c
+  src:
+  - test/core/memory/memory_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: message_compress_test
   build: test
   language: c
