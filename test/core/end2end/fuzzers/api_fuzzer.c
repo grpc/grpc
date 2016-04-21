@@ -361,11 +361,14 @@ typedef struct call_state {
   char *recv_status_details;
   size_t recv_status_details_capacity;
   int cancelled;
+  int pending_ops;
   grpc_call_details call_details;
 
   struct call_state *next;
   struct call_state *prev;
 } call_state;
+
+static call_state *g_active_call;
 
 static call_state *new_call(call_state *sibling, call_state_type type) {
   call_state *c = gpr_malloc(sizeof(*c));
@@ -381,14 +384,15 @@ static call_state *new_call(call_state *sibling, call_state_type type) {
   return c;
 }
 
-static call_state *maybe_delete_call_state(call_state **active, call_state *call) {
+static call_state *maybe_delete_call_state(call_state *call) {
   call_state *next = call->next;
   
   if (call->call != NULL) return next;
+  if (call->pending_ops != 0) return next;
 
-  if (call == *active) {
-    *active = call->next;
-    GPR_ASSERT(call != *active);
+  if (call == g_active_call) {
+    g_active_call = call->next;
+    GPR_ASSERT(call != g_active_call);
   }
 
   call->prev->next = call->next;
@@ -402,10 +406,28 @@ static call_state *maybe_delete_call_state(call_state **active, call_state *call
   return next;
 }
 
-static call_state *destroy_call(call_state **active, call_state *call) {
+static call_state *destroy_call(call_state *call) {
   grpc_call_destroy(call->call);
   call->call = NULL;
-  return maybe_delete_call_state(active, call);
+  return maybe_delete_call_state(call);
+}
+
+static void finished_request_call(void *csp, bool success) {
+  call_state *cs = csp;
+  GPR_ASSERT(cs->pending_ops > 0);
+  --cs->pending_ops;
+  if (success) {
+    GPR_ASSERT(cs->call != NULL);
+    cs->type = SERVER;
+  } else {
+    maybe_delete_call_state(cs);
+  }
+}
+
+static void finished_batch(void *csp, bool success) {
+  call_state *cs = csp;
+  --cs->pending_ops;
+  maybe_delete_call_state(cs);
 }
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
@@ -424,14 +446,13 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   int pending_server_shutdowns = 0;
   int pending_channel_watches = 0;
   int pending_pings = 0;
-  int pending_ops = 0;
 
-  call_state *active_call = new_call(NULL, ROOT);
+  g_active_call = new_call(NULL, ROOT);
 
   grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
 
   while (!is_eof(&inp) || g_channel != NULL || g_server != NULL ||
-         pending_channel_watches > 0 || pending_pings > 0 || pending_ops > 0 || active_call->type != ROOT || active_call->next != active_call) {
+         pending_channel_watches > 0 || pending_pings > 0 || g_active_call->type != ROOT || g_active_call->next != g_active_call) {
     if (is_eof(&inp)) {
       if (g_channel != NULL) {
         grpc_channel_destroy(g_channel);
@@ -449,14 +470,14 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           g_server = NULL;
         }
       }
-      call_state *s = active_call;
+      call_state *s = g_active_call;
       do {
         if (s->type != PENDING_SERVER && s->call != NULL) {
-          s = destroy_call(&active_call, s);
+          s = destroy_call(s);
         } else {
           s = s->next;
         }
-      } while (s != active_call);
+      } while (s != g_active_call);
 
       g_now = gpr_time_add(g_now, gpr_time_from_seconds(1, GPR_TIMESPAN));
     }
@@ -606,12 +627,12 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         bool ok = true;
         if (g_channel == NULL) ok = false;
         grpc_call *parent_call = NULL;
-        if (active_call->type != ROOT) {
-          if (active_call->call == NULL || active_call->type == CLIENT) {
+        if (g_active_call->type != ROOT) {
+          if (g_active_call->call == NULL || g_active_call->type == CLIENT) {
             end(&inp);
             break;
           }
-          parent_call = active_call->call;
+          parent_call = g_active_call->call;
         }
         uint32_t propagation_mask = read_uint32(&inp);
         char *method = read_string(&inp);
@@ -621,7 +642,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
                          gpr_time_from_micros(read_uint32(&inp), GPR_TIMESPAN));
 
         if (ok) {
-          call_state *cs = new_call(active_call, CLIENT);
+          call_state *cs = new_call(g_active_call, CLIENT);
           cs->call =
               grpc_channel_create_call(g_channel, parent_call, propagation_mask,
                                        cq, method, host, deadline, NULL);
@@ -634,13 +655,13 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       }
       // switch the 'current' call
       case 11: {
-        active_call = active_call->next;
+        g_active_call = g_active_call->next;
         break;
       }
       // queue some ops on a call
       case 12: {
-        if (active_call->type == PENDING_SERVER || active_call->type == ROOT ||
-            active_call->call == NULL) {
+        if (g_active_call->type == PENDING_SERVER || g_active_call->type == ROOT ||
+            g_active_call->call == NULL) {
           end(&inp);
           break;
         }
@@ -686,35 +707,35 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
             case GRPC_OP_RECV_INITIAL_METADATA:
               op->op = GRPC_OP_RECV_INITIAL_METADATA;
               op->data.recv_initial_metadata =
-                  &active_call->recv_initial_metadata;
+                  &g_active_call->recv_initial_metadata;
               break;
             case GRPC_OP_RECV_MESSAGE:
               op->op = GRPC_OP_RECV_MESSAGE;
-              op->data.recv_message = &active_call->recv_message;
+              op->data.recv_message = &g_active_call->recv_message;
               break;
             case GRPC_OP_RECV_STATUS_ON_CLIENT:
               op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-              op->data.recv_status_on_client.status = &active_call->status;
+              op->data.recv_status_on_client.status = &g_active_call->status;
               op->data.recv_status_on_client.trailing_metadata =
-                  &active_call->recv_trailing_metadata;
+                  &g_active_call->recv_trailing_metadata;
               op->data.recv_status_on_client.status_details =
-                  &active_call->recv_status_details;
+                  &g_active_call->recv_status_details;
               op->data.recv_status_on_client.status_details_capacity =
-                  &active_call->recv_status_details_capacity;
+                  &g_active_call->recv_status_details_capacity;
               break;
             case GRPC_OP_RECV_CLOSE_ON_SERVER:
               op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-              op->data.recv_close_on_server.cancelled = &active_call->cancelled;
+              op->data.recv_close_on_server.cancelled = &g_active_call->cancelled;
               break;
           }
           op->reserved = NULL;
           op->flags = read_uint32(&inp);
         }
         if (ok) {
-          validator *v = create_validator(decrement, &pending_ops);
-          pending_ops++;
+          validator *v = create_validator(finished_batch, g_active_call);
+          g_active_call->pending_ops++;
           grpc_call_error error =
-              grpc_call_start_batch(active_call->call, ops, num_ops, v, NULL);
+              grpc_call_start_batch(g_active_call->call, ops, num_ops, v, NULL);
           if (error != GRPC_CALL_OK) {
             v->validate(v->arg, false);
             gpr_free(v);
@@ -766,8 +787,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       }
       // cancel current call
       case 13: {
-        if (active_call->type != ROOT && active_call->call != NULL) {
-          grpc_call_cancel(active_call->call, NULL);
+        if (g_active_call->type != ROOT && g_active_call->call != NULL) {
+          grpc_call_cancel(g_active_call->call, NULL);
         } else {
           end(&inp);
         }
@@ -775,8 +796,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       }
       // get a calls peer
       case 14: {
-        if (active_call->type != ROOT && active_call->call != NULL) {
-          free_non_null(grpc_call_get_peer(active_call->call));
+        if (g_active_call->type != ROOT && g_active_call->call != NULL) {
+          free_non_null(grpc_call_get_peer(g_active_call->call));
         } else {
           end(&inp);
         }
@@ -822,9 +843,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           end(&inp);
           break;
         }
-        call_state *cs = new_call(active_call, PENDING_SERVER);
-        pending_ops++;
-        validator *v = create_validator(decrement, &pending_ops);
+        call_state *cs = new_call(g_active_call, PENDING_SERVER);
+        cs->pending_ops++;
+        validator *v = create_validator(finished_request_call, cs);
         grpc_call_error error =
             grpc_server_request_call(g_server, &cs->call, &cs->call_details,
                                      &cs->recv_initial_metadata, cq, cq, v);
@@ -836,9 +857,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       }
       // destroy a call
       case 20: {
-        if (active_call->type != ROOT && active_call->type != PENDING_SERVER &&
-            active_call->call != NULL) {
-          destroy_call(&active_call, active_call);
+        if (g_active_call->type != ROOT && g_active_call->type != PENDING_SERVER &&
+            g_active_call->call != NULL) {
+          destroy_call(g_active_call);
         } else {
           end(&inp);
         }
@@ -849,9 +870,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 
   GPR_ASSERT(g_channel == NULL);
   GPR_ASSERT(g_server == NULL);
-  GPR_ASSERT(active_call->type == ROOT);
-  GPR_ASSERT(active_call->next == active_call);
-  gpr_free(active_call);
+  GPR_ASSERT(g_active_call->type == ROOT);
+  GPR_ASSERT(g_active_call->next == g_active_call);
+  gpr_free(g_active_call);
 
   grpc_completion_queue_shutdown(cq);
   GPR_ASSERT(
