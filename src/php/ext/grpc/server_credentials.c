@@ -115,10 +115,11 @@ PHP_METHOD(ServerCredentials, createSsl) {
                          "createSsl expects 3 strings", 1 TSRMLS_CC);
     return;
   }
-  /* TODO: add a force_client_auth field in ServerCredentials and pass it as
-   * the last parameter. */
-  grpc_server_credentials *creds = grpc_ssl_server_credentials_create(
-      pem_root_certs, &pem_key_cert_pair, 1, 0, NULL);
+  /* TODO: add a client_certificate_request field in ServerCredentials and pass
+   * it as the last parameter. */
+  grpc_server_credentials *creds = grpc_ssl_server_credentials_create_ex(
+      pem_root_certs, &pem_key_cert_pair, 1,
+      GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, NULL);
   zval *creds_object = grpc_php_wrap_server_credentials(creds);
   RETURN_DESTROY_ZVAL(creds_object);
 }

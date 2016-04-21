@@ -241,7 +241,7 @@ typedef struct {
   size_t num_key_cert_pairs;
   unsigned char *pem_root_certs;
   size_t pem_root_certs_size;
-  int force_client_auth;
+  grpc_ssl_client_certificate_request_type client_certificate_request;
 } grpc_ssl_server_config;
 
 /* Creates an SSL server_security_connector.
