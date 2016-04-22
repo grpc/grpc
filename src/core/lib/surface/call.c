@@ -576,7 +576,7 @@ static int prepare_application_metadata(grpc_call *call, int count,
   }
   if (i != count) {
     for (int j = 0; j <= i; j++) {
-      grpc_metadata *md = &metadata[i];
+      grpc_metadata *md = &metadata[j];
       grpc_linked_mdelem *l = (grpc_linked_mdelem *)&md->internal_data;
       GRPC_MDELEM_UNREF(l->md);
     }
