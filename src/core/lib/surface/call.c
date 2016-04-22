@@ -220,10 +220,7 @@ struct grpc_call {
     } server;
   } final_op;
 
-  struct {
-    void *bctlp;
-    bool success;
-  } saved_receiving_stream_ready_ctx;
+  void *saved_receiving_stream_ready_bctlp;
 };
 
 #define CALL_STACK_FROM_CALL(call) ((grpc_call_stack *)((call) + 1))
@@ -1065,12 +1062,11 @@ static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
   grpc_call *call = bctl->call;
 
   gpr_mu_lock(&bctl->call->mu);
-  if (bctl->call->has_initial_md_been_received) {
+  if (bctl->call->has_initial_md_been_received || !success) {
     gpr_mu_unlock(&bctl->call->mu);
     process_data_after_md(exec_ctx, bctlp, success);
   } else {
-    call->saved_receiving_stream_ready_ctx.bctlp = bctlp;
-    call->saved_receiving_stream_ready_ctx.success = success;
+    call->saved_receiving_stream_ready_bctlp = bctlp;
     gpr_mu_unlock(&bctl->call->mu);
   }
 }
@@ -1099,13 +1095,11 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
   }
 
   call->has_initial_md_been_received = true;
-  if (call->saved_receiving_stream_ready_ctx.bctlp != NULL) {
+  if (call->saved_receiving_stream_ready_bctlp != NULL) {
     grpc_closure *saved_rsr_closure = grpc_closure_create(
-        receiving_stream_ready, call->saved_receiving_stream_ready_ctx.bctlp);
-    grpc_exec_ctx_enqueue(
-        exec_ctx, saved_rsr_closure,
-        call->saved_receiving_stream_ready_ctx.success && success, NULL);
-    call->saved_receiving_stream_ready_ctx.bctlp = NULL;
+        receiving_stream_ready, call->saved_receiving_stream_ready_bctlp);
+    call->saved_receiving_stream_ready_bctlp = NULL;
+    grpc_exec_ctx_enqueue(exec_ctx, saved_rsr_closure, success, NULL);
   }
 
   gpr_mu_unlock(&call->mu);
