@@ -57,15 +57,13 @@ FILE *gpr_tmpfile(const char *prefix, char **tmp_filename_out) {
   /* Generate a unique filename with our template + temporary path. */
   success = GetTempFileNameA(".", prefix, 0, tmp_filename);
   fprintf(stderr, "success = %d\n", success);
-  if (!success) goto end;
 
-  /* Open a file there. */
-  result = fopen(tmp_filename, "wb+");
-  fprintf(stderr, "result = %p\n", result);
-  if (result == NULL) goto end;
-
-end:
-  if (result && tmp_filename_out) {
+  if (success) {
+    /* Open a file there. */
+    result = fopen(tmp_filename, "wb+");
+    fprintf(stderr, "result = %p\n", result);
+  }
+  if (result != NULL && tmp_filename_out) {
     *tmp_filename_out = gpr_strdup(tmp_filename);
   }
 
