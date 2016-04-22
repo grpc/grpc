@@ -409,6 +409,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\lb_policy_registry.c">
       <Filter>src\core\ext\client_config</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\parse_address.c">
+      <Filter>src\core\ext\client_config</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\resolver.c">
       <Filter>src\core\ext\client_config</Filter>
     </ClCompile>
@@ -571,6 +574,9 @@
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_security.h">
+      <Filter>include\grpc</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_security_constants.h">
       <Filter>include\grpc</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\census.h">
@@ -924,6 +930,9 @@
       <Filter>src\core\ext\client_config</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\lb_policy_registry.h">
+      <Filter>src\core\ext\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\parse_address.h">
       <Filter>src\core\ext\client_config</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\resolver.h">

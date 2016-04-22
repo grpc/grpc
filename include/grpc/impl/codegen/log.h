@@ -61,6 +61,8 @@ typedef enum gpr_log_severity {
   GPR_LOG_SEVERITY_ERROR
 } gpr_log_severity;
 
+#define GPR_LOG_VERBOSITY_UNSET -1
+
 /* Returns a string representation of the log severity */
 const char *gpr_log_severity_string(gpr_log_severity severity);
 
@@ -76,6 +78,11 @@ GPRAPI void gpr_log(const char *file, int line, gpr_log_severity severity,
 
 GPRAPI void gpr_log_message(const char *file, int line,
                             gpr_log_severity severity, const char *message);
+
+/* Set global log verbosity */
+GPRAPI void gpr_set_log_verbosity(gpr_log_severity min_severity_to_print);
+
+GPRAPI void gpr_log_verbosity_init();
 
 /* Log overrides: applications can use this API to intercept logging calls
    and use their own implementations */
