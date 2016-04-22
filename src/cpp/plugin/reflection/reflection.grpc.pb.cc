@@ -237,7 +237,6 @@ ServerReflection::Service::~Service() {}
   return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
 
-
 }  // namespace grpc
 }  // namespace reflection
 }  // namespace v1

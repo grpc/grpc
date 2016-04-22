@@ -398,6 +398,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\cpp\plugin\proto_server_reflection_plugin.h">
       <Filter>src\cpp\plugin</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\cpp\plugin\reflection\proto_server_reflection.h">
+      <Filter>src\cpp\plugin\reflection</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\cpp\plugin\reflection\reflection.grpc.pb.h">
       <Filter>src\cpp\plugin\reflection</Filter>
     </ClInclude>

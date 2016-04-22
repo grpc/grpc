@@ -206,8 +206,8 @@ class ServerBuilderSyncPluginDisabler : public ServerBuilderOption {
   void UpdateArguments(ChannelArguments* arg) GRPC_OVERRIDE {}
 
   void UpdatePlugins(
-      std::map<grpc::string, std::unique_ptr<ServerBuilderPlugin> >*
-          plugins) GRPC_OVERRIDE {
+      std::map<grpc::string, std::unique_ptr<ServerBuilderPlugin>>* plugins)
+      GRPC_OVERRIDE {
     auto plugin = plugins->begin();
     while (plugin != plugins->end()) {
       if ((*plugin).second->has_synchronous_methods()) {

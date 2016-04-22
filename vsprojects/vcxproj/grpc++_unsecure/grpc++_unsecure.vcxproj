@@ -361,6 +361,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\cpp\common\core_codegen.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\common\create_auth_context.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\plugin\proto_server_reflection_plugin.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\cpp\plugin\reflection\proto_server_reflection.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\plugin\reflection\reflection.grpc.pb.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\plugin\reflection\reflection.pb.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\dynamic_thread_pool.h" />

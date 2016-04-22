@@ -864,6 +864,7 @@ src/cpp/server/secure_server_credentials.h \
 src/cpp/client/create_channel_internal.h \
 src/cpp/common/create_auth_context.h \
 src/cpp/plugin/proto_server_reflection_plugin.h \
+src/cpp/plugin/reflection/proto_server_reflection.h \
 src/cpp/plugin/reflection/reflection.grpc.pb.h \
 src/cpp/plugin/reflection/reflection.pb.h \
 src/cpp/server/dynamic_thread_pool.h \
