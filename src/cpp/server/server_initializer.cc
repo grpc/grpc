@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,29 +31,21 @@
  *
  */
 
-#ifndef GRPCXX_IMPL_SERVER_BUILDER_OPTION_H
-#define GRPCXX_IMPL_SERVER_BUILDER_OPTION_H
+#include <grpc++/impl/server_initializer.h>
 
-#include <map>
-#include <memory>
-
-#include <grpc++/impl/server_builder_plugin.h>
-#include <grpc++/support/channel_arguments.h>
+#include <grpc++/impl/service_type.h>
+#include <grpc++/server.h>
 
 namespace grpc {
 
-/// Interface to pass an option to a \a ServerBuilder.
-class ServerBuilderOption {
- public:
-  virtual ~ServerBuilderOption() {}
-  /// Alter the \a ChannelArguments used to create the gRPC server.
-  virtual void UpdateArguments(ChannelArguments* args) = 0;
-  /// Alter the ServerBuilderPlugin map that will be added into ServerBuilder.
-  virtual void UpdatePlugins(
-      std::map<grpc::string, std::unique_ptr<ServerBuilderPlugin> >*
-          plugins) = 0;
-};
+ServerInitializer::ServerInitializer(Server* server) : server_(server) {}
+
+bool ServerInitializer::RegisterService(std::shared_ptr<Service> service) {
+  if (!server_->RegisterService(nullptr, service.get())) {
+    return false;
+  }
+  services_.push_back(service);
+  return true;
+}
 
 }  // namespace grpc
-
-#endif  // GRPCXX_IMPL_SERVER_BUILDER_OPTION_H
