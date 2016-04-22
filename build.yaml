@@ -442,6 +442,7 @@ filegroups:
   - src/core/ext/client_config/lb_policy.h
   - src/core/ext/client_config/lb_policy_factory.h
   - src/core/ext/client_config/lb_policy_registry.h
+  - src/core/ext/client_config/parse_address.h
   - src/core/ext/client_config/resolver.h
   - src/core/ext/client_config/resolver_factory.h
   - src/core/ext/client_config/resolver_registry.h
@@ -461,6 +462,7 @@ filegroups:
   - src/core/ext/client_config/lb_policy.c
   - src/core/ext/client_config/lb_policy_factory.c
   - src/core/ext/client_config/lb_policy_registry.c
+  - src/core/ext/client_config/parse_address.c
   - src/core/ext/client_config/resolver.c
   - src/core/ext/client_config/resolver_factory.c
   - src/core/ext/client_config/resolver_registry.c
@@ -523,6 +525,7 @@ filegroups:
 - name: grpc_secure
   public_headers:
   - include/grpc/grpc_security.h
+  - include/grpc/grpc_security_constants.h
   headers:
   - src/core/lib/security/auth_filters.h
   - src/core/lib/security/b64.h
@@ -567,6 +570,7 @@ filegroups:
   - test/core/end2end/fixtures/proxy.h
   - test/core/iomgr/endpoint_tests.h
   - test/core/util/grpc_profiler.h
+  - test/core/util/memory_counters.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
   - test/core/util/port.h
@@ -577,6 +581,7 @@ filegroups:
   - test/core/end2end/fixtures/proxy.c
   - test/core/iomgr/endpoint_tests.c
   - test/core/util/grpc_profiler.c
+  - test/core/util/memory_counters.c
   - test/core/util/mock_endpoint.c
   - test/core/util/parse_hexstring.c
   - test/core/util/port_posix.c
@@ -751,6 +756,7 @@ libs:
   - test/core/end2end/data/ssl_test_data.h
   - test/core/security/oauth2_utils.h
   src:
+  - test/core/end2end/data/client_certs.c
   - test/core/end2end/data/server1_cert.c
   - test/core/end2end/data/server1_key.c
   - test/core/end2end/data/test_root_cert.c
@@ -1183,6 +1189,7 @@ targets:
   - gpr
   corpus_dirs:
   - test/core/end2end/fuzzers/client_fuzzer_corpus
+  dict: test/core/end2end/fuzzers/hpack.dictionary
   maxlen: 2048
 - name: compression_test
   build: test
@@ -1672,6 +1679,7 @@ targets:
   - gpr
   corpus_dirs:
   - test/core/transport/chttp2/hpack_parser_corpus
+  dict: test/core/end2end/fuzzers/hpack.dictionary
   maxlen: 512
 - name: hpack_parser_test
   build: test
@@ -2023,6 +2031,7 @@ targets:
   - gpr
   corpus_dirs:
   - test/core/end2end/fuzzers/server_fuzzer_corpus
+  dict: test/core/end2end/fuzzers/hpack.dictionary
   maxlen: 2048
 - name: server_test
   build: test
@@ -2699,20 +2708,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: qps_driver
-  build: benchmark
-  language: c++
-  src:
-  - test/cpp/qps/qps_driver.cc
-  deps:
-  - qps
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr_test_util
-  - gpr
-  - grpc++_test_config
 - name: qps_interarrival_test
   build: test
   run: false

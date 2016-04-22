@@ -28,6 +28,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+source ~/.rvm/scripts/rvm
 set -ex
 
 cd $(dirname $0)/../../..
@@ -41,12 +42,19 @@ CONFIG=${CONFIG:-opt}
 # TODO(jtattermusch): not embedding OpenSSL breaks the C# build because
 # grpc_csharp_ext needs OpenSSL embedded and some intermediate files from
 # this build will be reused.
-make CONFIG=${CONFIG} EMBED_OPENSSL=true EMBED_ZLIB=true qps_worker qps_driver qps_json_driver -j8
+make CONFIG=${CONFIG} EMBED_OPENSSL=true EMBED_ZLIB=true qps_worker qps_json_driver -j8
 
 for language in $@
 do
-  if [ "$language" != "c++" ]
-  then
+  case "$language" in
+  "c++")
+    ;;  # C++ has already been built.
+  "java")
+    (cd ../grpc-java/ &&
+      ./gradlew -PskipCodegen=true :grpc-benchmarks:installDist)
+    ;;
+  *)
     tools/run_tests/run_tests.py -l $language -c $CONFIG --build_only -j 8
-  fi
+    ;;
+  esac
 done

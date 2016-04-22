@@ -90,9 +90,12 @@ static void grpc_rb_server_credentials_mark(void *p) {
 
 static const rb_data_type_t grpc_rb_server_credentials_data_type = {
     "grpc_server_credentials",
-    {grpc_rb_server_credentials_mark, grpc_rb_server_credentials_free,
-     GRPC_RB_MEMSIZE_UNAVAILABLE, {NULL, NULL}},
-    NULL, NULL,
+    {grpc_rb_server_credentials_mark,
+     grpc_rb_server_credentials_free,
+     GRPC_RB_MEMSIZE_UNAVAILABLE,
+     {NULL, NULL}},
+    NULL,
+    NULL,
 #ifdef RUBY_TYPED_FREE_IMMEDIATELY
     RUBY_TYPED_FREE_IMMEDIATELY
 #endif
@@ -219,7 +222,9 @@ static VALUE grpc_rb_server_credentials_init(VALUE self, VALUE pem_root_certs,
     }
   }
 
-  auth_client = TYPE(force_client_auth) == T_TRUE;
+  auth_client = TYPE(force_client_auth) == T_TRUE
+                    ? GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
+                    : GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE;
   key_cert_pairs = ALLOC_N(grpc_ssl_pem_key_cert_pair, num_key_certs);
   for (i = 0; i < num_key_certs; i++) {
     key_cert = rb_ary_entry(pem_key_certs, i);
@@ -233,13 +238,12 @@ static VALUE grpc_rb_server_credentials_init(VALUE self, VALUE pem_root_certs,
                        &grpc_rb_server_credentials_data_type, wrapper);
 
   if (pem_root_certs == Qnil) {
-    creds = grpc_ssl_server_credentials_create(NULL, key_cert_pairs,
-                                               num_key_certs,
-                                               auth_client, NULL);
+    creds = grpc_ssl_server_credentials_create_ex(
+        NULL, key_cert_pairs, num_key_certs, auth_client, NULL);
   } else {
-    creds = grpc_ssl_server_credentials_create(RSTRING_PTR(pem_root_certs),
-                                               key_cert_pairs, num_key_certs,
-                                               auth_client, NULL);
+    creds = grpc_ssl_server_credentials_create_ex(RSTRING_PTR(pem_root_certs),
+                                                  key_cert_pairs, num_key_certs,
+                                                  auth_client, NULL);
   }
   xfree(key_cert_pairs);
   if (creds == NULL) {

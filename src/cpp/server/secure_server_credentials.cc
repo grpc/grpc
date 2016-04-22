@@ -130,10 +130,14 @@ std::shared_ptr<ServerCredentials> SslServerCredentials(
                                     key_cert_pair->cert_chain.c_str()};
     pem_key_cert_pairs.push_back(p);
   }
-  grpc_server_credentials* c_creds = grpc_ssl_server_credentials_create(
+  grpc_server_credentials* c_creds = grpc_ssl_server_credentials_create_ex(
       options.pem_root_certs.empty() ? nullptr : options.pem_root_certs.c_str(),
       pem_key_cert_pairs.empty() ? nullptr : &pem_key_cert_pairs[0],
-      pem_key_cert_pairs.size(), options.force_client_auth, nullptr);
+      pem_key_cert_pairs.size(),
+      options.force_client_auth
+          ? GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
+          : options.client_certificate_request,
+      nullptr);
   return std::shared_ptr<ServerCredentials>(
       new SecureServerCredentials(c_creds));
 }
