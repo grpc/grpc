@@ -325,7 +325,7 @@ int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr,
                            &sockname_len)) {
         port = grpc_sockaddr_get_port((struct sockaddr *)&sockname_temp);
         if (port > 0) {
-          allocated_addr = malloc(addr_len);
+          allocated_addr = gpr_malloc(addr_len);
           memcpy(allocated_addr, addr, addr_len);
           grpc_sockaddr_set_port(allocated_addr, port);
           addr = allocated_addr;

@@ -38,6 +38,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/compress_filter.h"
@@ -70,6 +71,7 @@ static gpr_mu g_init_mu;
 static int g_initializations;
 
 static void do_basic_init(void) {
+  gpr_log_verbosity_init();
   gpr_mu_init(&g_init_mu);
   grpc_register_built_in_plugins();
   g_initializations = 0;

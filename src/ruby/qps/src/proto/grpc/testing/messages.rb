@@ -46,6 +46,9 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
   add_message "grpc.testing.StreamingOutputCallResponse" do
     optional :payload, :message, 1, "grpc.testing.Payload"
   end
+  add_message "grpc.testing.ReconnectParams" do
+    optional :max_reconnect_backoff_ms, :int32, 1
+  end
   add_message "grpc.testing.ReconnectInfo" do
     optional :passed, :bool, 1
     repeated :backoff_ms, :int32, 2
@@ -73,6 +76,7 @@ module Grpc
     ResponseParameters = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ResponseParameters").msgclass
     StreamingOutputCallRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.StreamingOutputCallRequest").msgclass
     StreamingOutputCallResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.StreamingOutputCallResponse").msgclass
+    ReconnectParams = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ReconnectParams").msgclass
     ReconnectInfo = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ReconnectInfo").msgclass
     PayloadType = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.PayloadType").enummodule
     CompressionType = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.CompressionType").enummodule
