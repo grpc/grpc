@@ -1,0 +1,23 @@
+#===========================
+# Native Client dependencies
+
+# Needed for the Chrome dependency msttcorefonts
+# http://askubuntu.com/questions/89096/how-do-i-enable-the-multiverse-repository
+RUN sed -i "/^# deb.*multiverse/ s/^# //" /etc/apt/sources.list
+RUN apt-get install msttcorefonts  # FIXME
+# The following does not work (presumably because the Ubuntu version is too old)
+# sudo apt-add-repository multiverse && sudo apt-get update
+
+# Download source
+RUN git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+RUN mkdir chromium && cd chromium
+RUN ../depot_tools/fetch --nohooks --no-history chromium
+RUN cd src && ./build/install-build-deps.sh --nacl --no-prompt && cd ..
+
+# Build NaCl toolchain
+# The GYP_DEFINES is needed to install some ARM-specific tools necessary to
+# build the SDK.
+# https://chromium.googlesource.com/chromium/src/+/master/native_client_sdk/src/BUILDING.rst
+RUN cd src/native_client_sdk/src
+RUN GYP_DEFINES=target_arch=arm ../../../depot_tools/gclient runhooks
+RUN build_tools/build_sdk.py
