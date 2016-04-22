@@ -32,22 +32,22 @@ import threading
 import time
 
 from grpc.beta import implementations
+from src.proto.grpc.testing import control_pb2
+from src.proto.grpc.testing import services_pb2
+from src.proto.grpc.testing import stats_pb2
+
+from tests.qps import benchmark_client
+from tests.qps import benchmark_server
+from tests.qps import client_runner
+from tests.qps import histogram
+from tests.qps import intervals
 from tests.unit import resources
 
-from tests.qps.benchmark_client import *
-from tests.qps.benchmark_server import BenchmarkServer
-from tests.qps.client_runner import ClosedLoopClientRunner, OpenLoopClientRunner
-from tests.qps import intervals
-from tests.qps.histogram import Histogram
-from tests.qps.control_pb2 import *
-from tests.qps.stats_pb2 import ServerStats, ClientStats
-from tests.qps import services_pb2
 
-""" Python Worker Server implementation.  Responsible for running servers 
-and clients on demand.
-"""
 class WorkerServer(services_pb2.BetaWorkerServiceServicer):
-
+  """Python Worker Server implementation.
+  Responsible for running servers and clients on demand.
+  """
 
   def __init__(self):
     self._quit_event = threading.Event()
@@ -59,11 +59,11 @@ class WorkerServer(services_pb2.BetaWorkerServiceServicer):
     server.start()
     start_time = time.time()
     yield self._get_server_status(start_time, start_time, port, cores)
-      
+
     for request in request_iterator:
       end_time = time.time()
       status = self._get_server_status(start_time, end_time, port, cores)
-      if(request.mark.reset):
+      if request.mark.reset:
         start_time = end_time
       yield status
     server.stop(0)
@@ -71,32 +71,35 @@ class WorkerServer(services_pb2.BetaWorkerServiceServicer):
   def _get_server_status(self, start_time, end_time, port, cores):
     end_time = time.time()
     elapsed_time = end_time - start_time
-    stats = ServerStats(time_elapsed=elapsed_time,
-        time_user=elapsed_time, time_system=elapsed_time)
-    return ServerStatus(stats=stats, port=port, cores=cores)
+    stats = stats_pb2.ServerStats(time_elapsed=elapsed_time,
+                                  time_user=elapsed_time,
+                                  time_system=elapsed_time)
+    return control_pb2.ServerStatus(stats=stats, port=port, cores=cores)
 
   def _create_server(self, config):
-    if config.server_type != SYNC_SERVER:
-      raise Exception('Unsupported server type {}'.format(config.ServerType))
+    if config.server_type != control_pb2.SYNC_SERVER:
+      raise Exception("Unsupported server type {}".format(config.ServerType))
 
-    if config.HasField("security_params"): #Use SSL
-      server_creds = implementations.ssl_server_credentials(
-          [(resources.private_key(), resources.certificate_chain())])
-      server = services_pb2.beta_create_BenchmarkService_server(BenchmarkServer())
-      port = server.add_secure_port('[::]:{}'.format(config.port), server_creds)
+    if config.HasField("security_params"):  # Use SSL
+      server_creds = implementations.ssl_server_credentials([(
+          resources.private_key(), resources.certificate_chain())])
+      server = services_pb2.beta_create_BenchmarkService_server(
+          benchmark_server.BenchmarkServer())
+      port = server.add_secure_port("[::]:{}".format(config.port), server_creds)
     else:
-      server = services_pb2.beta_create_BenchmarkService_server(BenchmarkServer())
-      port = server.add_insecure_port('[::]:{}'.format(config.port))
+      server = services_pb2.beta_create_BenchmarkService_server(
+          benchmark_server.BenchmarkServer())
+      port = server.add_insecure_port("[::]:{}".format(config.port))
 
     return (server, port)
 
   def RunClient(self, request_iterator, context):
     config = next(request_iterator).setup
     client_runners = []
-    qps_data = Histogram(config.histogram_params.resolution, 
-                         config.histogram_params.max_possible)
+    qps_data = histogram.Histogram(config.histogram_params.resolution,
+                                   config.histogram_params.max_possible)
     start_time = time.time()
-      
+
     # Create a client for each channel
     for i in xrange(config.client_channels):
       server = config.server_targets[i % len(config.server_targets)]
@@ -113,9 +116,9 @@ class WorkerServer(services_pb2.BetaWorkerServiceServicer):
       status = self._get_client_status(start_time, end_time, qps_data)
       if request.mark.reset:
         qps_data.reset()
-        start_time = end_time
+        start_time = time.time()
       yield status
-    
+
     # Cleanup the clients
     for runner in client_runners:
       runner.stop()
@@ -124,39 +127,46 @@ class WorkerServer(services_pb2.BetaWorkerServiceServicer):
     latencies = qps_data.get_data()
     end_time = time.time()
     elapsed_time = end_time - start_time
-    stats = ClientStats(latencies=latencies, time_elapsed=elapsed_time,
-        time_user=elapsed_time, time_system=elapsed_time)
-    return ClientStatus(stats=stats)
-  
+    stats = stats_pb2.ClientStats(latencies=latencies,
+                                  time_elapsed=elapsed_time,
+                                  time_user=elapsed_time,
+                                  time_system=elapsed_time)
+    return control_pb2.ClientStatus(stats=stats)
 
   def _create_client_runner(self, server, config, qps_data):
     use_ssl = config.HasField("security_params")
-    if config.client_type == SYNC_CLIENT:
-      assert config.rpc_type == UNARY
-      client = UnarySyncBenchmarkClient(server, config.payload_config, use_ssl, qps_data, config.outstanding_rpcs_per_channel)
-    elif config.rpc_type == UNARY:
-      client = UnaryAsyncBenchmarkClient(server, config.payload_config, use_ssl, qps_data)
+    if config.client_type == control_pb2.SYNC_CLIENT:
+      assert config.rpc_type == control_pb2.UNARY
+      client = benchmark_client.UnarySyncBenchmarkClient(
+          server, config.payload_config, use_ssl, qps_data,
+          config.outstanding_rpcs_per_channel)
+    elif config.rpc_type == control_pb2.UNARY:
+      client = benchmark_client.UnaryAsyncBenchmarkClient(server,
+                                                          config.payload_config,
+                                                          use_ssl, qps_data)
     else:
-      client = StreamingAsyncBenchmarkClient(server, config.payload_config, use_ssl, qps_data)
+      client = benchmark_client.StreamingAsyncBenchmarkClient(
+          server, config.payload_config, use_ssl, qps_data)
 
     # In multi-channel tests, we split the load across all channels
     load_factor = float(config.client_channels)
     if config.load_params.HasField("closed_loop"):
-      runner = ClosedLoopClientRunner(client, config.outstanding_rpcs_per_channel)
+      runner = client_runner.ClosedLoopClientRunner(
+          client, config.outstanding_rpcs_per_channel)
     elif config.load_params.HasField("poisson"):
-      runner = OpenLoopClientRunner(client,
-          intervals.poisson(config.load_params.poisson.offered_load/load_factor))
+      runner = client_runner.OpenLoopClientRunner(client, intervals.poisson(
+          config.load_params.poisson.offered_load / load_factor))
     else:
       raise Exception("Only ClosedLoop and Poisson parameters supported")
-    
+
     return runner
-    
+
   def CoreCount(self, request, context):
-    return CoreResponse(cores=multiprocessing.cpu_count())
+    return control_pb2.CoreResponse(cores=multiprocessing.cpu_count())
 
   def QuitWorker(self, request, context):
     self._quit_event.set()
-    return Void()
+    return control_pb2.Void()
 
   def wait_for_quit(self):
     self._quit_event.wait()

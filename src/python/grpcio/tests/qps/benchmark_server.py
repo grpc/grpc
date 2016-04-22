@@ -27,20 +27,19 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from tests.interop.messages_pb2 import SimpleResponse, Payload
-from tests.qps.services_pb2 import BetaBenchmarkServiceServicer
+from src.proto.grpc.testing import messages_pb2
+from src.proto.grpc.testing import services_pb2
 
-""" Synchronous Server implementation for the Benchmark service
-"""
-class BenchmarkServer(BetaBenchmarkServiceServicer):
 
-  
+class BenchmarkServer(services_pb2.BetaBenchmarkServiceServicer):
+  """ Synchronous Server implementation for the Benchmark service
+  """
+
   def UnaryCall(self, request, context):
-    payload = Payload(body='\0'*request.response_size)
-    return SimpleResponse(payload=payload)
+    payload = messages_pb2.Payload(body='\0' * request.response_size)
+    return messages_pb2.SimpleResponse(payload=payload)
 
   def StreamingCall(self, request_iterator, context):
     for request in request_iterator:
-      payload = Payload(body='\0'*request.response_size)
-      yield SimpleResponse(payload=payload)
-
+      payload = messages_pb2.Payload(body='\0' * request.response_size)
+      yield messages_pb2.SimpleResponse(payload=payload)

@@ -29,6 +29,7 @@
 
 import random
 
+
 def poisson(alpha):
- while True:
-   yield random.expovariate(alpha)
+  while True:
+    yield random.expovariate(alpha)

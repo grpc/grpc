@@ -28,45 +28,48 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import abc
-try:
-  import Queue as queue #Python 2.x
-except ImportError:
-  import queue #Python 3  
-from concurrent.futures import ThreadPoolExecutor
 import time
+try:
+  import Queue as queue  #Python 2.x
+except ImportError:
+  import queue  #Python 3
 
+import concurrent.futures
 from grpc.beta import implementations
+from src.proto.grpc.testing import messages_pb2
+from src.proto.grpc.testing import services_pb2
 from tests.unit import resources
 from tests.unit.beta import test_utilities
-
-from tests.interop.messages_pb2 import Payload, SimpleRequest 
-from tests.qps import services_pb2
 
 _TIMEOUT = 60 * 60 * 24
 _SERVER_HOST_OVERRIDE = 'foo.test.google.fr'
 
-"""Abstract benchmark client interface that exposes a non-blocking 
-send_request() method used by the client runners
-"""
+
 class BenchmarkClient:
+  """Abstract benchmark client interface that exposes a non-blocking 
+  send_request() method used by the client runners
+  """
   __metaclass__ = abc.ABCMeta
 
-
-  def __init__(self, server, payload_config, use_ssl, hist):    
-    #Create the stub
+  def __init__(self, server, payload_config, use_ssl, hist):
+    # Create the stub
     host, port = server.split(':')
     port = int(port)
     if use_ssl:
-      creds = implementations.ssl_channel_credentials(resources.test_root_certificates())
-      channel = test_utilities.not_really_secure_channel(host, port, creds, _SERVER_HOST_OVERRIDE) 
+      creds = implementations.ssl_channel_credentials(
+          resources.test_root_certificates())
+      channel = test_utilities.not_really_secure_channel(host, port, creds,
+                                                         _SERVER_HOST_OVERRIDE)
     else:
       channel = implementations.insecure_channel(host, port)
     self._stub = services_pb2.beta_create_BenchmarkService_stub(channel)
 
-    #Create a dummy message
-    payload = Payload(body='\0'*payload_config.simple_params.req_size)
-    self._request = SimpleRequest(
-        payload=payload, response_size=payload_config.simple_params.resp_size)
+    # Create a dummy message
+    payload = messages_pb2.Payload(
+        body='\0' * payload_config.simple_params.req_size)
+    self._request = messages_pb2.SimpleRequest(
+        payload=payload,
+        response_size=payload_config.simple_params.resp_size)
 
     self._hist = hist
     self._response_callbacks = []
@@ -76,7 +79,7 @@ class BenchmarkClient:
 
   @abc.abstractmethod
   def send_request(self):
-    raise NotImplementedError()  
+    raise NotImplementedError()
 
   def start(self):
     pass
@@ -85,17 +88,17 @@ class BenchmarkClient:
     pass
 
   def _handle_response(self, query_time):
-    self._hist.add(query_time * 1e9) #Report times in nanoseconds
+    self._hist.add(query_time * 1e9)  # Report times in nanoseconds
     for callback in self._response_callbacks:
       callback(query_time)
 
 
 class UnarySyncBenchmarkClient(BenchmarkClient):
-  
 
   def __init__(self, server, payload_config, use_ssl, hist, max_rpcs):
-    super(UnarySyncBenchmarkClient, self).__init__(server, payload_config, use_ssl, hist)
-    self._pool = ThreadPoolExecutor(max_workers=max_rpcs)
+    super(UnarySyncBenchmarkClient, self).__init__(server, payload_config,
+                                                   use_ssl, hist)
+    self._pool = concurrent.futures.ThreadPoolExecutor(max_workers=max_rpcs)
 
   def send_request(self):
     # Send Sync requests in seperate threads to support multiple outstanding rpcs
@@ -114,17 +117,16 @@ class UnarySyncBenchmarkClient(BenchmarkClient):
 
 
 class UnaryAsyncBenchmarkClient(BenchmarkClient):
-  
 
   def send_request(self):
-    #Use the Future callback api to support multiple outstanding rpcs
+    # Use the Future callback api to support multiple outstanding rpcs
     start_time = time.time()
     response_future = self._stub.UnaryCall.future(self._request, _TIMEOUT)
     response_future.add_done_callback(
-        lambda resp : self._response_received(start_time, resp))
+        lambda resp: self._response_received(start_time))
 
-  def _response_received(self, start_time, response):
-    end_time = time.time()    
+  def _response_received(self, start_time):
+    end_time = time.time()
     self._handle_response(end_time - start_time)
 
   def stop(self):
@@ -133,24 +135,25 @@ class UnaryAsyncBenchmarkClient(BenchmarkClient):
 
 class StreamingAsyncBenchmarkClient(BenchmarkClient):
 
-
   def __init__(self, server, payload_config, use_ssl, hist):
-    super(StreamingAsyncBenchmarkClient, self).__init__(server, payload_config, use_ssl, hist)
+    super(StreamingAsyncBenchmarkClient, self).__init__(server, payload_config,
+                                                        use_ssl, hist)
 
     self.exception = None
     self._is_streaming = False
-    self._pool = ThreadPoolExecutor(max_workers=1)
+    self._pool = concurrent.futures.ThreadPoolExecutor(max_workers=1)
     # Use a thread-safe queue to put requests on the stream
     self._request_queue = queue.Queue()
     self._send_time_queue = queue.Queue()
 
   def send_request(self):
+    self._send_time_queue.put(time.time())
     self._request_queue.put(self._request)
 
   def start(self):
     self._is_streaming = True
     self._pool.submit(self._request_stream)
-  
+
   def stop(self):
     self._is_streaming = False
     self._pool.shutdown(wait=True)
@@ -158,17 +161,16 @@ class StreamingAsyncBenchmarkClient(BenchmarkClient):
 
   def _request_stream(self):
     self._is_streaming = True
-    response_stream = self._stub.StreamingCall(self._request_generator(), _TIMEOUT)
-    for response in response_stream:
+    response_stream = self._stub.StreamingCall(self._request_generator(),
+                                               _TIMEOUT)
+    for _ in response_stream:
       end_time = time.time()
       self._handle_response(end_time - self._send_time_queue.get_nowait())
 
   def _request_generator(self):
-    while(self._is_streaming):
+    while (self._is_streaming):
       try:
         request = self._request_queue.get(block=True, timeout=1.0)
-        self._send_time_queue.put(time.time())
         yield request
       except queue.Empty:
         pass
-       

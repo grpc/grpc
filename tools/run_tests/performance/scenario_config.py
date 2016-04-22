@@ -253,7 +253,7 @@ class CXXLanguage:
           'warmup_seconds': WARMUP_SECONDS,
           'benchmark_seconds': BENCHMARK_SECONDS
       }
-
+      
   def __str__(self):
     return 'c++'
 
@@ -437,7 +437,7 @@ class PythonLanguage:
     return ['tools/run_tests/performance/run_worker_python.sh']
 
   def worker_port_offset(self):
-    return 300
+    return 500
 
   def scenarios(self):
     for secure in [True]:
@@ -473,7 +473,8 @@ class PythonLanguage:
             'async_server_threads': 1,
           },
           'warmup_seconds': WARMUP_SECONDS,
-          'benchmark_seconds': BENCHMARK_SECONDS
+          'benchmark_seconds': BENCHMARK_SECONDS,
+          'SERVER_LANGUAGE': 'c++' 
       }
       yield {
           'name': 'python_protobuf_sync_unary_ping_pong_%s'
@@ -500,7 +501,36 @@ class PythonLanguage:
             'async_server_threads': 1,
           },
           'warmup_seconds': WARMUP_SECONDS,
-          'benchmark_seconds': BENCHMARK_SECONDS
+          'benchmark_seconds': BENCHMARK_SECONDS,
+          'SERVER_LANGUAGE': 'c++' 
+      }
+      yield {
+          'name': 'python_protobuf_async_unary_ping_pong_%s'
+                  % secstr,
+          'num_servers': 1,
+          'num_clients': 1,
+          'client_config': {
+            'client_type': 'ASYNC_CLIENT',
+            'security_params': secargs,
+            'outstanding_rpcs_per_channel': 1,
+            'client_channels': 1,
+            'async_client_threads': 1,
+            'rpc_type': 'UNARY',
+            'load_params': {
+              'closed_loop': {}
+            },
+            'payload_config': EMPTY_PROTO_PAYLOAD,
+            'histogram_params': HISTOGRAM_PARAMS,
+          },
+          'server_config': {
+            'server_type': 'SYNC_SERVER',
+            'security_params': secargs,
+            'core_limit': 0,
+            'async_server_threads': 1,
+          },
+          'warmup_seconds': WARMUP_SECONDS,
+          'benchmark_seconds': BENCHMARK_SECONDS,
+          'SERVER_LANGUAGE': 'c++'
       }
       
   def __str__(self):
@@ -553,9 +583,9 @@ class RubyLanguage:
 
 
 LANGUAGES = {
-    'python' : PythonLanguage(),
     'c++' : CXXLanguage(),
     'csharp' : CSharpLanguage(),
     'node' : NodeLanguage(),
+    'python' : PythonLanguage(),
     'ruby' : RubyLanguage()
 }

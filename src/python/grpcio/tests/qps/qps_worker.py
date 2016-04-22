@@ -26,33 +26,33 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+"""The entry point for the qps worker."""
 import argparse
 import time
 
-import grpc.beta.implementations
+from src.proto.grpc.testing import services_pb2
 
-from tests.qps.worker_server import WorkerServer
-from tests.qps import services_pb2
+from tests.qps import worker_server
 
-""" The entry point for the qps worker.  Run this script using
-./qps_worker.py --driver_port <port>
-"""
 
 def run_worker_server(port):
-  servicer = WorkerServer()
+  servicer = worker_server.WorkerServer()
   server = services_pb2.beta_create_WorkerService_server(servicer)
   server.add_insecure_port('[::]:{}'.format(port))
   server.start()
   servicer.wait_for_quit()
+  # Drain outstanding requests for clean exit
   time.sleep(2)
   server.stop(0)
 
+
 if __name__ == '__main__':
-  parser = argparse.ArgumentParser(description='gRPC Python performance testing worker')
-  parser.add_argument('--driver_port', type=int, dest='port',
-                   help='The port the worker should listen on')
+  parser = argparse.ArgumentParser(
+      description='gRPC Python performance testing worker')
+  parser.add_argument('--driver_port',
+                      type=int,
+                      dest='port',
+                      help='The port the worker should listen on')
   args = parser.parse_args()
 
   run_worker_server(args.port)
-  

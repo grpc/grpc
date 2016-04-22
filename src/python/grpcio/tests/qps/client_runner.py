@@ -27,11 +27,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import abc 
-import time
+import abc
 import thread
+import time
 
 class ClientRunner:
+  """Abstract interface for sending requests from clients.
+  """
   __metaclass__ = abc.ABCMeta
 
   def __init__(self, client):
@@ -46,19 +48,18 @@ class ClientRunner:
     raise NotImplementedError()
 
 class OpenLoopClientRunner(ClientRunner):
+ 
   def __init__(self, client, interval_generator):
     super(OpenLoopClientRunner, self).__init__(client)
     self._is_running = False
     self._interval_generator = interval_generator
 
   def start(self):
-    assert not self._is_running
     self._is_running = True
     self._client.start()
     thread.start_new_thread(self._dispatch_requests, ())
 
   def stop(self):
-    assert self._is_running
     self._is_running = False
     self._client.stop()
     self._client = None
@@ -69,6 +70,7 @@ class OpenLoopClientRunner(ClientRunner):
       time.sleep(next(self._interval_generator))
 
 class ClosedLoopClientRunner(ClientRunner):
+
   def __init__(self, client, request_count):
     super(ClosedLoopClientRunner, self).__init__(client)
     self._is_running = False
@@ -77,14 +79,12 @@ class ClosedLoopClientRunner(ClientRunner):
     self._client.add_response_callback(self._send_request)
      
   def start(self):
-    assert not self._is_running
     self._is_running = True
     for i in xrange(self._request_count):
       self._client.send_request()
     self._client.start()
 
   def stop(self):
-    assert self._is_running
     self._is_running = False
     self._client.stop()
     self._client = None
