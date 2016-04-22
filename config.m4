@@ -216,6 +216,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/client_config/lb_policy.c \
     src/core/ext/client_config/lb_policy_factory.c \
     src/core/ext/client_config/lb_policy_registry.c \
+    src/core/ext/client_config/parse_address.c \
     src/core/ext/client_config/resolver.c \
     src/core/ext/client_config/resolver_factory.c \
     src/core/ext/client_config/resolver_registry.c \
@@ -316,6 +317,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/crypto/bn/shift.c \
     third_party/boringssl/crypto/bn/sqrt.c \
     third_party/boringssl/crypto/buf/buf.c \
+    third_party/boringssl/crypto/bytestring/asn1_compat.c \
     third_party/boringssl/crypto/bytestring/ber.c \
     third_party/boringssl/crypto/bytestring/cbb.c \
     third_party/boringssl/crypto/bytestring/cbs.c \
@@ -339,6 +341,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/crypto/cpu-intel.c \
     third_party/boringssl/crypto/crypto.c \
     third_party/boringssl/crypto/curve25519/curve25519.c \
+    third_party/boringssl/crypto/curve25519/x25519-x86_64.c \
     third_party/boringssl/crypto/des/des.c \
     third_party/boringssl/crypto/dh/check.c \
     third_party/boringssl/crypto/dh/dh.c \
@@ -530,6 +533,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/ssl/ssl_buffer.c \
     third_party/boringssl/ssl/ssl_cert.c \
     third_party/boringssl/ssl/ssl_cipher.c \
+    third_party/boringssl/ssl/ssl_ecdh.c \
     third_party/boringssl/ssl/ssl_file.c \
     third_party/boringssl/ssl/ssl_lib.c \
     third_party/boringssl/ssl/ssl_rsa.c \

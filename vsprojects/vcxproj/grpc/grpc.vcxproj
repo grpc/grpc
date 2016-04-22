@@ -293,6 +293,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_win32.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_security.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_security_constants.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\census.h" />
   </ItemGroup>
   <ItemGroup>
@@ -412,6 +413,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\lb_policy.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\lb_policy_factory.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\lb_policy_registry.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\parse_address.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\resolver.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\resolver_factory.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\resolver_registry.h" />
@@ -704,6 +706,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\lb_policy_factory.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\lb_policy_registry.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\parse_address.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\resolver.c">
     </ClCompile>

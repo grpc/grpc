@@ -48,6 +48,7 @@ DEFINE_string(scenarios_file, "",
               "JSON file containing an array of Scenario objects");
 DEFINE_string(scenarios_json, "",
               "JSON string containing an array of Scenario objects");
+DEFINE_bool(quit, false, "Quit the workers");
 
 namespace grpc {
 namespace testing {
@@ -55,12 +56,17 @@ namespace testing {
 static void QpsDriver() {
   grpc::string json;
 
-  if (FLAGS_scenarios_file != "") {
-    if (FLAGS_scenarios_json != "") {
-      gpr_log(GPR_ERROR,
-              "Only one of --scenarios_file or --scenarios_json must be set");
-      abort();
-    }
+  bool scfile = (FLAGS_scenarios_file != "");
+  bool scjson = (FLAGS_scenarios_json != "");
+  if ((!scfile && !scjson && !FLAGS_quit) ||
+      (scfile && (scjson || FLAGS_quit)) || (scjson && FLAGS_quit)) {
+    gpr_log(GPR_ERROR,
+            "Exactly one of --scenarios_file, --scenarios_json, "
+            "or --quit must be set");
+    abort();
+  }
+
+  if (scfile) {
     // Read the json data from disk
     FILE *json_file = fopen(FLAGS_scenarios_file.c_str(), "r");
     GPR_ASSERT(json_file != NULL);
@@ -72,12 +78,11 @@ static void QpsDriver() {
     fclose(json_file);
     json = grpc::string(data, data + len);
     delete[] data;
-  } else if (FLAGS_scenarios_json != "") {
+  } else if (scjson) {
     json = FLAGS_scenarios_json.c_str();
-  } else {
-    gpr_log(GPR_ERROR,
-            "One of --scenarios_file or --scenarios_json must be set");
-    abort();
+  } else if (FLAGS_quit) {
+    RunQuit();
+    return;
   }
 
   // Parse into an array of scenarios
@@ -87,11 +92,15 @@ static void QpsDriver() {
   for (int i = 0; i < scenarios.scenarios_size(); i++) {
     const Scenario &scenario = scenarios.scenarios(i);
     std::cerr << "RUNNING SCENARIO: " << scenario.name() << "\n";
-    const auto result =
+    auto result =
         RunScenario(scenario.client_config(), scenario.num_clients(),
                     scenario.server_config(), scenario.num_servers(),
                     scenario.warmup_seconds(), scenario.benchmark_seconds(),
                     scenario.spawn_local_worker_count());
+
+    // Amend the result with scenario config. Eventually we should adjust
+    // RunScenario contract so we don't need to touch the result here.
+    result->mutable_scenario()->CopyFrom(scenario);
 
     GetReporter()->ReportQPS(*result);
     GetReporter()->ReportQPSPerCore(*result);
