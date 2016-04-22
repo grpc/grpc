@@ -142,22 +142,23 @@ struct grpc_call {
   gpr_mu mu;
 
   /* client or server call */
-  uint8_t is_client;
+  bool is_client;
   /* is the alarm set */
-  uint8_t have_alarm;
+  bool have_alarm;
   /** has grpc_call_destroy been called */
-  uint8_t destroy_called;
+  bool destroy_called;
   /** flag indicating that cancellation is inherited */
-  uint8_t cancellation_is_inherited;
+  bool cancellation_is_inherited;
   /** bitmask of live batches */
   uint8_t used_batches;
   /** which ops are in-flight */
-  uint8_t sent_initial_metadata;
-  uint8_t sending_message;
-  uint8_t sent_final_op;
-  uint8_t received_initial_metadata;
-  uint8_t receiving_message;
-  uint8_t received_final_op;
+  bool sent_initial_metadata;
+  bool sending_message;
+  bool sent_final_op;
+  bool received_initial_metadata;
+  bool receiving_message;
+  bool requested_final_op;
+  bool received_final_op;
 
   /* have we received initial metadata */
   bool has_initial_md_been_received;
@@ -1135,6 +1136,7 @@ static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp, bool success) {
         &call->metadata_batch[1 /* is_receiving */][1 /* is_trailing */];
     grpc_metadata_batch_filter(md, recv_trailing_filter, call);
 
+    call->received_final_op = true;
     if (call->have_alarm) {
       grpc_timer_cancel(exec_ctx, &call->alarm);
     }
@@ -1379,11 +1381,11 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           error = GRPC_CALL_ERROR_NOT_ON_SERVER;
           goto done_with_error;
         }
-        if (call->received_final_op) {
+        if (call->requested_final_op) {
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
-        call->received_final_op = 1;
+        call->requested_final_op = 1;
         call->buffered_metadata[1] =
             op->data.recv_status_on_client.trailing_metadata;
         call->final_op.client.status = op->data.recv_status_on_client.status;
@@ -1406,11 +1408,11 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           error = GRPC_CALL_ERROR_NOT_ON_CLIENT;
           goto done_with_error;
         }
-        if (call->received_final_op) {
+        if (call->requested_final_op) {
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
-        call->received_final_op = 1;
+        call->requested_final_op = 1;
         call->final_op.server.cancelled =
             op->data.recv_close_on_server.cancelled;
         bctl->recv_final_op = 1;
@@ -1459,7 +1461,7 @@ done_with_error:
     call->receiving_message = 0;
   }
   if (bctl->recv_final_op) {
-    call->received_final_op = 0;
+    call->requested_final_op = 0;
   }
   gpr_mu_unlock(&call->mu);
   goto done;
