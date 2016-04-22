@@ -138,7 +138,9 @@ static uint32_t read_uint32(input_stream *inp) {
 static grpc_byte_buffer *read_message(input_stream *inp) {
   gpr_slice slice = gpr_slice_malloc(read_uint22(inp));
   memset(GPR_SLICE_START_PTR(slice), 0, GPR_SLICE_LENGTH(slice));
-  return grpc_raw_byte_buffer_create(&slice, 1);
+  grpc_byte_buffer *out = grpc_raw_byte_buffer_create(&slice, 1);
+  gpr_slice_unref(slice);
+  return out;
 }
 
 static void read_metadata(input_stream *inp, size_t *count,
