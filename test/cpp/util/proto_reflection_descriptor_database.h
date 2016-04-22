@@ -50,6 +50,10 @@ class ProtoReflectionDescriptorDatabase
  public:
   explicit ProtoReflectionDescriptorDatabase(
       std::unique_ptr<reflection::v1::ServerReflection::Stub> stub);
+
+  explicit ProtoReflectionDescriptorDatabase(
+      std::shared_ptr<grpc::Channel> channel);
+
   virtual ~ProtoReflectionDescriptorDatabase();
 
   // DescriptorDatabase methods
@@ -67,6 +71,8 @@ class ProtoReflectionDescriptorDatabase
 
   bool FindAllExtensionNumbers(const string& extendee_type,
                                std::vector<int>* output) GRPC_OVERRIDE;
+
+  bool GetServices(std::vector<std::string>* output);
 
   grpc::reflection::v1::ServerReflection::Stub* stub() { return stub_.get(); }
 

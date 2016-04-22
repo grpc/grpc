@@ -43,6 +43,10 @@ ProtoReflectionDescriptorDatabase::ProtoReflectionDescriptorDatabase(
     std::unique_ptr<reflection::v1::ServerReflection::Stub> stub)
     : stub_(std::move(stub)) {}
 
+ProtoReflectionDescriptorDatabase::ProtoReflectionDescriptorDatabase(
+    std::shared_ptr<grpc::Channel> channel)
+    : stub_(reflection::v1::ServerReflection::NewStub(channel)) {}
+
 ProtoReflectionDescriptorDatabase::~ProtoReflectionDescriptorDatabase() {}
 
 bool ProtoReflectionDescriptorDatabase::FindFileByName(
@@ -61,15 +65,20 @@ bool ProtoReflectionDescriptorDatabase::FindFileByName(
   reflection::v1::FileDescriptorProtoResponse response;
 
   Status status = stub_->GetFileByName(&ctx, request, &response);
-  if (status.error_code() == StatusCode::OK) {
+  if (status.ok()) {
     const google::protobuf::FileDescriptorProto* file_proto =
         response.mutable_file_descriptor_proto();
     known_files_.insert(file_proto->name());
     cached_db_.Add(*file_proto);
   } else if (status.error_code() == StatusCode::NOT_FOUND) {
-    gpr_log(GPR_INFO, "NOT_FOUND from server for FindFileByName()");
+    gpr_log(GPR_INFO, "NOT_FOUND from server for FindFileByName(%s)",
+            filename.c_str());
   } else {
-    gpr_log(GPR_INFO, "Error on FindFileByName()");
+    gpr_log(GPR_INFO,
+            "Error on FindFileByName(%s)\n\tError code: %d\n"
+            "\tError Message: %s",
+            filename.c_str(), status.error_code(),
+            status.error_message().c_str());
   }
 
   return cached_db_.FindFileByName(filename, output);
@@ -91,7 +100,7 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingSymbol(
   reflection::v1::FileDescriptorProtoResponse response;
 
   Status status = stub_->GetFileContainingSymbol(&ctx, request, &response);
-  if (status.error_code() == StatusCode::OK) {
+  if (status.ok()) {
     const google::protobuf::FileDescriptorProto* file_proto =
         response.mutable_file_descriptor_proto();
     if (known_files_.find(file_proto->name()) == known_files_.end()) {
@@ -100,9 +109,14 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingSymbol(
     }
   } else if (status.error_code() == StatusCode::NOT_FOUND) {
     missing_symbols_.insert(symbol_name);
-    gpr_log(GPR_INFO, "NOT_FOUND from server for FindFileContainingSymbol()");
+    gpr_log(GPR_INFO, "NOT_FOUND from server for FindFileContainingSymbol(%s)",
+            symbol_name.c_str());
   } else {
-    gpr_log(GPR_INFO, "Error on FindFileContainingSymbol()");
+    gpr_log(GPR_INFO,
+            "Error on FindFileContainingSymbol(%s)\n"
+            "\tError code: %d\n\tError Message: %s",
+            symbol_name.c_str(), status.error_code(),
+            status.error_message().c_str());
   }
 
   cached_db_.FindFileContainingSymbol(symbol_name, output);
@@ -130,7 +144,7 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingExtension(
   reflection::v1::FileDescriptorProtoResponse response;
 
   Status status = stub_->GetFileContainingExtention(&ctx, request, &response);
-  if (status.error_code() == StatusCode::OK) {
+  if (status.ok()) {
     const google::protobuf::FileDescriptorProto* file_proto =
         response.mutable_file_descriptor_proto();
     if (known_files_.find(file_proto->name()) == known_files_.end()) {
@@ -144,9 +158,14 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingExtension(
     }
     missing_extensions_[containing_type].insert(field_number);
     gpr_log(GPR_INFO,
-            "NOT_FOUND from server for FindFileContainingExtension()");
+            "NOT_FOUND from server for FindFileContainingExtension(%s, %d)",
+            containing_type.c_str(), field_number);
   } else {
-    gpr_log(GPR_INFO, "Error on FindFileContainingExtension()");
+    gpr_log(GPR_INFO,
+            "Error on FindFileContainingExtension(%s, %d)\n"
+            "\tError code: %d\n\tError Message: %s",
+            containing_type.c_str(), field_number, status.error_code(),
+            status.error_message().c_str());
   }
 
   return cached_db_.FindFileContainingExtension(containing_type, field_number,
@@ -167,15 +186,41 @@ bool ProtoReflectionDescriptorDatabase::FindAllExtensionNumbers(
   reflection::v1::ExtensionNumberResponse response;
 
   Status status = stub_->GetAllExtensionNumbers(&ctx, request, &response);
-  if (status.error_code() == StatusCode::OK) {
+  if (status.ok()) {
     auto number = response.extension_number();
     *output = std::vector<int>(number.begin(), number.end());
     cached_extension_numbers_[extendee_type] = *output;
     return true;
   } else if (status.error_code() == StatusCode::NOT_FOUND) {
-    gpr_log(GPR_INFO, "NOT_FOUND from server for FindAllExtensionNumbers()");
+    gpr_log(GPR_INFO, "NOT_FOUND from server for FindAllExtensionNumbers(%s)",
+            extendee_type.c_str());
   } else {
-    gpr_log(GPR_INFO, "Error on FindAllExtensionNumbersExtension()");
+    gpr_log(GPR_INFO,
+            "Error on FindAllExtensionNumbersExtension(%s)\n"
+            "\tError code: %d\n\tError Message: %s",
+            extendee_type.c_str(), status.error_code(),
+            status.error_message().c_str());
+  }
+  return false;
+}
+
+bool ProtoReflectionDescriptorDatabase::GetServices(
+    std::vector<std::string>* output) {
+  ClientContext ctx;
+  reflection::v1::EmptyRequest request;
+  reflection::v1::ListServiceResponse response;
+
+  Status status = stub_->ListService(&ctx, request, &response);
+  if (status.ok()) {
+    for (int i = 0; i < response.services_size(); ++i) {
+      (*output).push_back(response.services(i));
+    }
+    return true;
+  } else {
+    gpr_log(GPR_INFO,
+            "Error on GetServices()\n\tError code: %d\n"
+            "\tError Message: %s",
+            status.error_code(), status.error_message().c_str());
   }
   return false;
 }

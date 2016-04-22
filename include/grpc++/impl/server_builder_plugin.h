@@ -46,9 +46,18 @@ class ServerBuilderPlugin {
  public:
   virtual ~ServerBuilderPlugin() {}
   virtual grpc::string name() = 0;
+
+  // InitServer will be called in ServerBuilder::BuildAndStart(), after the
+  // Server instance is created.
   virtual void InitServer(ServerInitializer* si) = 0;
+
+  // Finish will be called at the end of ServerBuilder::BuildAndStart().
   virtual void Finish(ServerInitializer* si) = 0;
+
+  // ChangeArguments is an interface that can be used in
+  // ServerBuilderOption::UpdatePlugins
   virtual void ChangeArguments(const grpc::string& name, void* value) = 0;
+
   virtual bool has_synchronous_methods() const { return false; }
   virtual bool has_async_methods() const { return false; }
 };

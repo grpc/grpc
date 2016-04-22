@@ -27,22 +27,35 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+// Service exported by server reflection
+
 syntax = "proto3";
 import "google/protobuf/descriptor.proto";
 
 package grpc.reflection.v1;
 
 service ServerReflection {
+  // List the full names of registered services.
   rpc ListService(EmptyRequest) returns (ListServiceResponse) {
   }
+
+  // Find a proto file by file name.
   rpc GetFileByName(FileNameRequest) returns (FileDescriptorProtoResponse) {
   }
+
+  // Find the proto file that declares the given fully-qualified symbol name.
   rpc GetFileContainingSymbol(SymbolRequest)
       returns (FileDescriptorProtoResponse) {
   }
+
+  // Find the proto file which defines an extension extending the given message
+  // type with the given field number.
   rpc GetFileContainingExtention(ExtensionRequest)
       returns (FileDescriptorProtoResponse) {
   }
+
+  // Finds the tag numbers used by all known extensions of extendee_type, and
+  // appends them to ExtensionNumberResponse in an undefined order.
   rpc GetAllExtensionNumbers(TypeRequest) returns (ExtensionNumberResponse) {
   }
 }

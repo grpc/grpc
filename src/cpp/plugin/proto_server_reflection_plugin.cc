@@ -52,7 +52,7 @@ void ProtoServerReflectionPlugin::InitServer(grpc::ServerInitializer* si) {
 }
 
 void ProtoServerReflectionPlugin::Finish(grpc::ServerInitializer* si) {
-  reflection_service->SetSeviceList(si->GetServiceList());
+  reflection_service->SetServiceList(si->GetServiceList());
 }
 
 void ProtoServerReflectionPlugin::ChangeArguments(const grpc::string& name,

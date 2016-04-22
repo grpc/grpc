@@ -30,12 +30,14 @@
 #
 
 CXX = g++
+INCLUDES += -I. -I../../../test/cpp/util
 CPPFLAGS += -I/usr/local/include -pthread
-CXXFLAGS += -std=c++11
+CXXFLAGS += -std=c++11 ${INCLUDES}
 LDFLAGS += -L/usr/local/lib -lgrpc++_unsecure -lgrpc -lprotobuf -lpthread -ldl
 PROTOC = protoc
 GRPC_CPP_PLUGIN = grpc_cpp_plugin
 GRPC_CPP_PLUGIN_PATH ?= `which $(GRPC_CPP_PLUGIN)`
+VPATH = ../../../test/cpp/util
 
 PROTOS_PATH = ../../../src/cpp/plugin/reflection
 
@@ -44,10 +46,15 @@ vpath %.proto $(PROTOS_PATH)
 all: system-check reflection_client
 
 reflection_client: reflection.pb.o reflection.grpc.pb.o proto_reflection_descriptor_database.o reflection_client.o
-	$(CXX) $^ $(LDFLAGS) -o $@
+	$(CXX) $(INCLUDES) $^ $(LDFLAGS) -o $@
 
-database: reflection.pb.o reflection.grpc.pb.o proto_reflection_descriptor_database.o
-		$(CXX) $^ $(LDFLAGS) -o $@
+
+#
+# database: reflection.pb.o reflection.grpc.pb.o proto_reflection_descriptor_database.o
+# 	$(CXX) -I ../../../test/cpp/util $^ $(LDFLAGS) -o $@
+#
+# proto_reflection_descriptor_database.o:
+# 	$(CXX) -I ../../../test/cpp/util $^ $(LDFLAGS) -o $@
 
 .PRECIOUS: %.grpc.pb.cc
 %.grpc.pb.cc: %.proto

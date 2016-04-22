@@ -65,14 +65,7 @@ namespace grpc {
 ProtoServerReflection::ProtoServerReflection()
     : descriptor_pool_(DescriptorPool::generated_pool()) {}
 
-ProtoServerReflection::ProtoServerReflection(const Server* server)
-    : server_(server) {}
-
-void ProtoServerReflection::SetServer(const Server* server) {
-  server_ = server;
-}
-
-void ProtoServerReflection::SetSeviceList(
+void ProtoServerReflection::SetServiceList(
     const std::vector<grpc::string>* services) {
   services_ = services;
 }

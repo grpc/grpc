@@ -47,16 +47,14 @@
 
 namespace grpc {
 
-class ProtoServerReflection final
+class ProtoServerReflection GRPC_FINAL
     : public reflection::v1::ServerReflection::Service {
  public:
   ProtoServerReflection();
 
   ProtoServerReflection(const Server* server);
 
-  void SetServer(const Server* server);
-
-  void SetSeviceList(const std::vector<grpc::string>* services);
+  void SetServiceList(const std::vector<grpc::string>* services);
 
   Status ListService(
       ServerContext* context, const reflection::v1::EmptyRequest* request,
@@ -80,7 +78,6 @@ class ProtoServerReflection final
 
  private:
   const google::protobuf::DescriptorPool* descriptor_pool_;
-  const Server* server_;
   const std::vector<string>* services_;
 };
 
