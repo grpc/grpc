@@ -15,8 +15,8 @@
     <Exec Condition="'$(OS)' == 'Unix'" Command="chmod +x $(MSBuildThisFileDirectory)../tools/*/grpc_csharp_plugin"/>
 
     <!-- Execute our wrapper that generates C# source for proto files -->
-    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="$(MSBuildThisFileDirectory)..\tools\Grpc.Tools.CSharpGenerator.exe $(ProjectDir) $(IntermediateOutputPath) @(Proto)" LogStandardErrorAsError="true"/>
-    <Exec Condition="'$(OS)' == 'Unix'" Command="mono $(MSBuildThisFileDirectory)..\tools\Grpc.Tools.CSharpGenerator.exe $(ProjectDir) $(IntermediateOutputPath) @(Proto)" LogStandardErrorAsError="true"/>
+    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="$(MSBuildThisFileDirectory)..\tools\Grpc.Tools.CSharpGenerator.exe $(ProjectDir) $(IntermediateOutputPath) @(Proto, ' ')" LogStandardErrorAsError="true"/>
+    <Exec Condition="'$(OS)' == 'Unix'" Command="mono $(MSBuildThisFileDirectory)..\tools\Grpc.Tools.CSharpGenerator.exe $(ProjectDir) $(IntermediateOutputPath) @(Proto, ' ')" LogStandardErrorAsError="true"/>
 
     <!-- Grpc.Tools.CSharpGenerator.exe wrote protocs.txt
          containing the names of all the generated files -->

@@ -112,8 +112,8 @@ namespace Grpc.Tools.CSharpGenerator
                 var protosIncludeDir = ".";
                 var outputDir = Path.Combine(projectDir, intermediateOutputDir);
 
-                var inputFiles = from protoPath in args.Skip(2).TakeWhile(s => true)
-                                 select protoPath;
+                var inputFiles = args.Skip(2).TakeWhile(s => true);
+                Console.WriteLine("Input files: {0}", string.Join(", ", inputFiles));
 
                 var outputFiles = Enumerable.Empty<string>();
                 foreach (var inputFile in inputFiles)
