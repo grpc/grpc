@@ -29,7 +29,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-flags="-max_total_time=$runtime -artifact_prefix=fuzzer_output/ -max_len=2048"
+flags="-max_total_time=$runtime -artifact_prefix=fuzzer_output/ -max_len=2048 -timeout=120"
 
 
 if [ "$jobs" != "1" ]
