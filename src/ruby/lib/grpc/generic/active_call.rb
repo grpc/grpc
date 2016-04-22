@@ -59,7 +59,8 @@ module GRPC
     include Core::CallOps
     extend Forwardable
     attr_reader(:deadline)
-    def_delegators :@call, :cancel, :metadata, :write_flag, :write_flag=, :peer, :peer_cert
+    def_delegators :@call, :cancel, :metadata, :write_flag, :write_flag=,
+                   :peer, :peer_cert
 
     # client_invoke begins a client invocation.
     #
