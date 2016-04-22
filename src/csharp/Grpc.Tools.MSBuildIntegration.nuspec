@@ -12,7 +12,7 @@
     <projectUrl>https://github.com/grpc/grpc</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <releaseNotes>Release $version$</releaseNotes>
-    <copyright>Copyright 2015, Google Inc.</copyright>
+    <copyright>Copyright 2016, Google Inc.</copyright>
     <tags>gRPC RPC Protocol HTTP/2</tags>
 	<developmentDependency>true</developmentDependency>
   </metadata>

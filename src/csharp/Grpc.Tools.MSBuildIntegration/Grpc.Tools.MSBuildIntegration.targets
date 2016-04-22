@@ -1,27 +1,43 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <CoreCompileDependsOn>Proto;$(CoreCompileDependsOn)</CoreCompileDependsOn>
+    <!-- C# generation task -->
+    <CoreCompileDependsOn>ProtoGen;$(CoreCompileDependsOn)</CoreCompileDependsOn>
+
+    <!-- Clean task to remove temporary files -->
+    <CleanDependsOn>ProtoGenClean;$(CleanDependsOn)</CleanDependsOn>
   </PropertyGroup>
   <ItemGroup>
     <AvailableItemName Include="Proto"/>
   </ItemGroup>
-  <Target Name="Proto" Inputs="@(Proto)" Outputs="@(Proto->'$(IntermediateOutputPath)%(FileName).cs')">
-    <!-- Run our platform independent wrapper that launches protoc with the right arguments -->
-    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="$(MSBuildThisFileDirectory)..\tools\Grpc.Tools.CSharpGenerator.exe $(ProjectDir) $(IntermediateOutputPath) @(Proto->'%(filename)%(extension)', ' ')" LogStandardErrorAsError="true"/>
-    
+  <Target Name="ProtoGen" Inputs="@(Proto)" Outputs="$(ProjectDir)$(IntermediateOutputPath)protocs.txt;$(ProjectDir)$(IntermediateOutputPath)protodeps.txt">
     <!-- Make sure that our protoc and protoc_csharp_plugin files are executable -->
     <Exec Condition="'$(OS)' == 'Unix'" Command="chmod +x $(MSBuildThisFileDirectory)../tools/*/protoc"/>
-    <Exec Condition="'$(OS)' == 'Unix'" Command="chmod +x $(MSBuildThisFileDirectory)../tools/*/grpc_csharp_plugin"/>    
+    <Exec Condition="'$(OS)' == 'Unix'" Command="chmod +x $(MSBuildThisFileDirectory)../tools/*/grpc_csharp_plugin"/>
 
-    <!-- Run our platform independent wrapper that launches protoc with the right arguments -->
-    <Exec Condition="'$(OS)' == 'Unix'" Command="mono $(MSBuildThisFileDirectory)../tools/Grpc.Tools.CSharpGenerator.exe $(ProjectDir) $(IntermediateOutputPath) @(Proto->'%(filename)%(extension)', ' ')" LogStandardErrorAsError="true"/>
-    
-    <!-- Ensure that only files that exist (are touchable) are added in to the Compile target -->
-    <Touch Files="@(Proto->'$(IntermediateOutputPath)%(FileName).cs')" ForceTouch="true">
-        <Output TaskParameter="TouchedFiles" ItemName="Compile" />
-    </Touch>
-    <Touch Files="@(Proto->'$(IntermediateOutputPath)%(FileName)Grpc.cs')" ForceTouch="true">
-        <Output TaskParameter="TouchedFiles" ItemName="Compile" />
-    </Touch>
+    <!-- Execute our wrapper that generates C# source for proto files -->
+    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="$(MSBuildThisFileDirectory)..\tools\Grpc.Tools.CSharpGenerator.exe $(ProjectDir) $(IntermediateOutputPath) @(Proto)" LogStandardErrorAsError="true"/>
+    <Exec Condition="'$(OS)' == 'Unix'" Command="mono $(MSBuildThisFileDirectory)..\tools\Grpc.Tools.CSharpGenerator.exe $(ProjectDir) $(IntermediateOutputPath) @(Proto)" LogStandardErrorAsError="true"/>
+
+    <!-- Grpc.Tools.CSharpGenerator.exe wrote protocs.txt
+         containing the names of all the generated files -->
+    <ReadLinesFromFile File="$(ProjectDir)$(IntermediateOutputPath)protocs.txt">
+      <Output TaskParameter="Lines"
+              ItemName="Compile"/>
+    </ReadLinesFromFile>
+  </Target>
+
+  <!-- ProtoGenClean uses protodeps.txt containing
+       the names of all the other temp files and
+       cleans it up -->
+  <Target Name="ProtoGenClean">
+    <ReadLinesFromFile File="$(ProjectDir)$(IntermediateOutputPath)protocs.txt">
+      <Output TaskParameter="Lines"
+              ItemName="ProtoGenFilesToClean"/>
+    </ReadLinesFromFile>
+    <ReadLinesFromFile File="$(ProjectDir)$(IntermediateOutputPath)protodeps.txt">
+      <Output TaskParameter="Lines"
+              ItemName="ProtoGenFilesToClean"/>
+    </ReadLinesFromFile>
+    <Delete Files="@(ProtoGenFilesToClean);$(ProjectDir)$(IntermediateOutputPath)protocs.txt;$(ProjectDir)$(IntermediateOutputPath)protodeps.txt"/>
   </Target>
 </Project>
