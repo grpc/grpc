@@ -138,8 +138,9 @@ static const grpc_endpoint_vtable vtable = {
     me_shutdown, me_destroy, me_get_peer,
 };
 
-static void half_init(half *m) {
+static void half_init(half *m, passthru_endpoint *parent) {
   m->base.vtable = &vtable;
+  m->parent = parent;
   gpr_slice_buffer_init(&m->read_buffer);
   m->on_read = NULL;
 }
@@ -147,8 +148,8 @@ static void half_init(half *m) {
 void grpc_passthru_endpoint_create(grpc_endpoint **client,
                                    grpc_endpoint **server) {
   passthru_endpoint *m = gpr_malloc(sizeof(*m));
-  half_init(&m->client);
-  half_init(&m->server);
+  half_init(&m->client, m);
+  half_init(&m->server, m);
   gpr_mu_init(&m->mu);
   *client = &m->client.base;
   *server = &m->server.base;
