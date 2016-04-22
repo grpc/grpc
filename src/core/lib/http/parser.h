@@ -113,4 +113,6 @@ void grpc_http_parser_destroy(grpc_http_parser *parser);
 int grpc_http_parser_parse(grpc_http_parser *parser, gpr_slice slice);
 int grpc_http_parser_eof(grpc_http_parser *parser);
 
+extern int grpc_http1_trace;
+
 #endif /* GRPC_CORE_LIB_HTTP_PARSER_H */
