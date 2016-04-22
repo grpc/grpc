@@ -257,6 +257,8 @@ class CLanguage(object):
       return ('ubuntu1404', self._clang_make_options())
     elif compiler == 'clang3.6':
       return ('ubuntu1604', self._clang_make_options())
+    elif compiler == 'nacl':
+      return ('nacl', [])
     else:
       raise Exception('Compiler %s not supported.' % compiler)
 
@@ -807,7 +809,8 @@ argp.add_argument('--compiler',
                   choices=['default',
                            'gcc4.4', 'gcc4.9', 'gcc5.3',
                            'clang3.4', 'clang3.6',
-                           'vs2010', 'vs2013', 'vs2015'],
+                           'vs2010', 'vs2013', 'vs2015',
+                           'nacl'],
                   default='default',
                   help='Selects compiler to use. Allowed values depend on the platform and language.')
 argp.add_argument('--build_only',
