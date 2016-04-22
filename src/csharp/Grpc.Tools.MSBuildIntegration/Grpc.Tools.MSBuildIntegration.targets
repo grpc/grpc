@@ -14,6 +14,10 @@
     <Exec Condition="'$(OS)' == 'Unix'" Command="chmod +x $(MSBuildThisFileDirectory)../tools/*/protoc"/>
     <Exec Condition="'$(OS)' == 'Unix'" Command="chmod +x $(MSBuildThisFileDirectory)../tools/*/grpc_csharp_plugin"/>
 
+    <!-- Ensure that any nested directories we need to put our temp output files into exist -->
+    <Message Text="@(Proto -> '$(ProjectDir)$(IntermediateOutputPath)%(RelativeDir)')" />
+    <MakeDir Directories="@(Proto -> '$(ProjectDir)$(IntermediateOutputPath)%(RelativeDir)')" />
+
     <!-- Execute our wrapper that generates C# source for proto files -->
     <Exec Condition="'$(OS)' == 'Windows_NT'" Command="$(MSBuildThisFileDirectory)..\tools\Grpc.Tools.CSharpGenerator.exe $(ProjectDir) $(IntermediateOutputPath) @(Proto, ' ')" LogStandardErrorAsError="true"/>
     <Exec Condition="'$(OS)' == 'Unix'" Command="mono $(MSBuildThisFileDirectory)..\tools\Grpc.Tools.CSharpGenerator.exe $(ProjectDir) $(IntermediateOutputPath) @(Proto, ' ')" LogStandardErrorAsError="true"/>
@@ -39,5 +43,7 @@
               ItemName="ProtoGenFilesToClean"/>
     </ReadLinesFromFile>
     <Delete Files="@(ProtoGenFilesToClean);$(ProjectDir)$(IntermediateOutputPath)protocs.txt;$(ProjectDir)$(IntermediateOutputPath)protodeps.txt"/>
-  </Target>
+    <RemoveDir Directories="@(Proto -> '$(ProjectDir)$(IntermediateOutputPath)%(RelativeDir)')" />
+  
+</Target>
 </Project>

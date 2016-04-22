@@ -18,7 +18,7 @@ namespace Grpc.Tools.CSharpGenerator
             try
             {
                 var protocArguments = string.Format("-I{0} --csharp_out {1} --grpc_out {1} --plugin=protoc-gen-grpc={2} --dependency_out={3}.deps {4}",
-                    protosIncludeDir, outputDir, grpcCSharpPluginPath, Path.Combine(outputDir, inputFile), inputFile);
+                    protosIncludeDir, Path.Combine(outputDir, Path.GetDirectoryName(inputFile)), grpcCSharpPluginPath, Path.Combine(outputDir, inputFile), inputFile);
                 Console.WriteLine("Generating Grpc for {0}...", inputFile);
                 Console.WriteLine("Command line: {0} {1}", protocPath, protocArguments);
                 var process = Process.Start(new ProcessStartInfo
