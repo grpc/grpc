@@ -554,6 +554,34 @@ static int prepare_application_metadata(grpc_call *call, int count,
   int i;
   grpc_metadata_batch *batch =
       &call->metadata_batch[0 /* is_receiving */][is_trailing];
+  for (i = 0; i < count; i++) {
+    grpc_metadata *md = &metadata[i];
+    grpc_linked_mdelem *l = (grpc_linked_mdelem *)&md->internal_data;
+    GPR_ASSERT(sizeof(grpc_linked_mdelem) == sizeof(md->internal_data));
+    l->md = grpc_mdelem_from_string_and_buffer(
+        md->key, (const uint8_t *)md->value, md->value_length);
+    if (!grpc_header_key_is_legal(grpc_mdstr_as_c_string(l->md->key),
+                                  GRPC_MDSTR_LENGTH(l->md->key))) {
+      gpr_log(GPR_ERROR, "attempt to send invalid metadata key: %s",
+              grpc_mdstr_as_c_string(l->md->key));
+      break;
+    } else if (!grpc_is_binary_header(grpc_mdstr_as_c_string(l->md->key),
+                                      GRPC_MDSTR_LENGTH(l->md->key)) &&
+               !grpc_header_nonbin_value_is_legal(
+                   grpc_mdstr_as_c_string(l->md->value),
+                   GRPC_MDSTR_LENGTH(l->md->value))) {
+      gpr_log(GPR_ERROR, "attempt to send invalid metadata value");
+      break;
+    }
+  }
+  if (i != count) {
+    for (int j = 0; j <= i; j++) {
+      grpc_metadata *md = &metadata[i];
+      grpc_linked_mdelem *l = (grpc_linked_mdelem *)&md->internal_data;
+      GRPC_MDELEM_UNREF(l->md);
+    }
+    return 0;
+  }
   if (prepend_extra_metadata) {
     if (call->send_extra_metadata_count == 0) {
       prepend_extra_metadata = 0;
@@ -567,26 +595,6 @@ static int prepare_application_metadata(grpc_call *call, int count,
       for (i = 0; i < call->send_extra_metadata_count - 1; i++) {
         call->send_extra_metadata[i].next = &call->send_extra_metadata[i + 1];
       }
-    }
-  }
-  for (i = 0; i < count; i++) {
-    grpc_metadata *md = &metadata[i];
-    grpc_linked_mdelem *l = (grpc_linked_mdelem *)&md->internal_data;
-    GPR_ASSERT(sizeof(grpc_linked_mdelem) == sizeof(md->internal_data));
-    l->md = grpc_mdelem_from_string_and_buffer(
-        md->key, (const uint8_t *)md->value, md->value_length);
-    if (!grpc_header_key_is_legal(grpc_mdstr_as_c_string(l->md->key),
-                                  GRPC_MDSTR_LENGTH(l->md->key))) {
-      gpr_log(GPR_ERROR, "attempt to send invalid metadata key: %s",
-              grpc_mdstr_as_c_string(l->md->key));
-      return 0;
-    } else if (!grpc_is_binary_header(grpc_mdstr_as_c_string(l->md->key),
-                                      GRPC_MDSTR_LENGTH(l->md->key)) &&
-               !grpc_header_nonbin_value_is_legal(
-                   grpc_mdstr_as_c_string(l->md->value),
-                   GRPC_MDSTR_LENGTH(l->md->value))) {
-      gpr_log(GPR_ERROR, "attempt to send invalid metadata value");
-      return 0;
     }
   }
   for (i = 1; i < count; i++) {
