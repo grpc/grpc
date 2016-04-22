@@ -28,7 +28,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 begin
-  require "grpc/#{RUBY_VERSION.sub(/\.\d$/, '')}/grpc_c"
+  require_relative "#{RUBY_VERSION.sub(/\.\d$/, '')}/grpc_c"
 rescue LoadError
-  require 'grpc/grpc_c'
+  require_relative 'grpc_c'
 end
