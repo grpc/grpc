@@ -43,7 +43,8 @@ void test_unknown_scheme_target(void) {
   grpc_resolver_registry_init("");
 
   chan = grpc_insecure_channel_create("blah://blah", NULL, NULL);
-  GPR_ASSERT(chan == NULL);
+  GPR_ASSERT(chan != NULL);
+  grpc_channel_destroy(chan);
 }
 
 int main(int argc, char **argv) {

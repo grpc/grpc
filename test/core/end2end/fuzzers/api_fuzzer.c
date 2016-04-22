@@ -50,7 +50,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // logging
 
-static const bool squelch = true;
+static const bool squelch = !true;
 
 static void dont_log(gpr_log_func_args *args) {}
 
