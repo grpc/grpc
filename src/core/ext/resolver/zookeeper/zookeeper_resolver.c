@@ -375,8 +375,10 @@ static void zookeeper_get_node_completion(int rc, const char *value,
     r->resolved_addrs->naddrs = 0;
     r->resolved_total = 1;
     /** Further resolves address by DNS */
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_resolve_address(&exec_ctx, address, NULL, zookeeper_dns_resolved, r);
     gpr_free(address);
+    grpc_exec_ctx_finish(&exec_ctx);
     return;
   }
 
