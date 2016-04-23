@@ -297,6 +297,10 @@ static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
     grpc_resolver_shutdown(exec_ctx, chand->resolver);
     GRPC_RESOLVER_UNREF(exec_ctx, chand->resolver, "channel");
     chand->resolver = NULL;
+    if (!chand->started_resolving) {
+      grpc_closure_list_fail_all(&chand->waiting_for_config_closures);
+      grpc_exec_ctx_enqueue_list(exec_ctx, &chand->waiting_for_config_closures, NULL);
+    }
     if (chand->lb_policy != NULL) {
       grpc_pollset_set_del_pollset_set(exec_ctx,
                                        chand->lb_policy->interested_parties,
