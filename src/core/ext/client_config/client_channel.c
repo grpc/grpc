@@ -389,14 +389,18 @@ static int cc_pick_subchannel(grpc_exec_ctx *exec_ctx, void *elemp,
                        &chand->incoming_configuration,
                        &chand->on_config_changed);
   }
-  cpa = gpr_malloc(sizeof(*cpa));
-  cpa->initial_metadata = initial_metadata;
-  cpa->initial_metadata_flags = initial_metadata_flags;
-  cpa->connected_subchannel = connected_subchannel;
-  cpa->on_ready = on_ready;
-  cpa->elem = elem;
-  grpc_closure_init(&cpa->closure, continue_picking, cpa);
-  grpc_closure_list_add(&chand->waiting_for_config_closures, &cpa->closure, 1);
+  if (chand->resolver != NULL) {
+    cpa = gpr_malloc(sizeof(*cpa));
+    cpa->initial_metadata = initial_metadata;
+    cpa->initial_metadata_flags = initial_metadata_flags;
+    cpa->connected_subchannel = connected_subchannel;
+    cpa->on_ready = on_ready;
+    cpa->elem = elem;
+    grpc_closure_init(&cpa->closure, continue_picking, cpa);
+    grpc_closure_list_add(&chand->waiting_for_config_closures, &cpa->closure, 1);
+  } else {
+    grpc_exec_ctx_enqueue(exec_ctx, on_ready, false, NULL);
+  }
   gpr_mu_unlock(&chand->mu_config);
   return 0;
 }
