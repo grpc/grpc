@@ -34,13 +34,13 @@
 #include <memory>
 #include <set>
 
-#include <google/protobuf/util/json_util.h>
-#include <google/protobuf/util/type_resolver_util.h>
+#include <grpc++/support/config_protobuf.h>
 
 #include <gflags/gflags.h>
 #include <grpc/support/log.h>
 
 #include "test/cpp/qps/driver.h"
+#include "test/cpp/qps/parse_json.h"
 #include "test/cpp/qps/report.h"
 #include "test/cpp/util/benchmark_config.h"
 
@@ -87,22 +87,10 @@ static void QpsDriver() {
 
   // Parse into an array of scenarios
   Scenarios scenarios;
-  std::unique_ptr<google::protobuf::util::TypeResolver> type_resolver(
-      google::protobuf::util::NewTypeResolverForDescriptorPool(
-          "type.googleapis.com",
-          google::protobuf::DescriptorPool::generated_pool()));
-  grpc::string binary;
-  auto status = JsonToBinaryString(type_resolver.get(),
-                                   "type.googleapis.com/grpc.testing.Scenarios",
-                                   json, &binary);
-  if (!status.ok()) {
-    grpc::string msg(status.error_message());
-    gpr_log(GPR_ERROR, "Failed to convert json to binary: errcode=%d msg=%s",
-            status.error_code(), msg.c_str());
-    gpr_log(GPR_ERROR, "JSON: ", json.c_str());
-    abort();
-  }
-  GPR_ASSERT(scenarios.ParseFromString(binary));
+  ParseJson(json.c_str(), "grpc.testing.Scenarios", &scenarios);
+
+  // Make sure that there is at least some valid scenario here
+  GPR_ASSERT(scenarios.scenarios_size() > 0);
 
   for (int i = 0; i < scenarios.scenarios_size(); i++) {
     const Scenario &scenario = scenarios.scenarios(i);

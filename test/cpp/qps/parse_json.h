@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,13 +30,20 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#include <memory>
 
-#include <grpc++/security/auth_context.h>
-#include <grpc/grpc.h>
+#ifndef TEST_QPS_PARSE_JSON_H
+#define TEST_QPS_PARSE_JSON_H
+
+#include <grpc++/support/config.h>
+#include <grpc++/support/config_protobuf.h>
 
 namespace grpc {
+namespace testing {
 
-std::shared_ptr<const AuthContext> CreateAuthContext(grpc_call* call);
+void ParseJson(const grpc::string& json, const grpc::string& type,
+               GRPC_CUSTOM_MESSAGE* msg);
 
-}  // namespace grpc
+}  // testing
+}  // grpc
+
+#endif  // TEST_QPS_PARSE_JSON_H
