@@ -410,6 +410,8 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\rpc_metric_id.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\init.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\init_unsecure.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.c">
@@ -549,8 +551,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\completion_queue.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\event_string.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\init.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\lame_client.c">
     </ClCompile>
