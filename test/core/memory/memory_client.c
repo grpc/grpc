@@ -181,6 +181,10 @@ int main(int argc, char **argv) {
   grpc_byte_buffer_destroy(the_buffer);
   memory_probe("grpc_byte_memory_buffer_destroy");
   gpr_slice_unref(slice);
+  grpc_metadata_array_destroy(&initial_metadata);
+  grpc_metadata_array_destroy(&trailing_metadata);
+  memory_probe("metadata + slice");
+
 
   grpc_shutdown();
   memory_probe("grpc_shutdown");
