@@ -38,8 +38,10 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
+#include <grpc/compression.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 
@@ -100,6 +102,170 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
+}
+
+static void request_for_disabled_algorithm(
+    grpc_end2end_test_config config, const char *test_name,
+    uint32_t send_flags_bitmask,
+    grpc_compression_algorithm algorithm_to_disable,
+    grpc_compression_algorithm requested_client_compression_algorithm,
+    grpc_status_code expected_error, grpc_metadata *client_metadata) {
+  grpc_call *c;
+  grpc_call *s;
+  gpr_slice request_payload_slice;
+  grpc_byte_buffer *request_payload;
+  gpr_timespec deadline = five_seconds_time();
+  grpc_channel_args *client_args;
+  grpc_channel_args *server_args;
+  grpc_end2end_test_fixture f;
+  grpc_op ops[6];
+  grpc_op *op;
+  grpc_metadata_array initial_metadata_recv;
+  grpc_metadata_array trailing_metadata_recv;
+  grpc_metadata_array request_metadata_recv;
+  grpc_byte_buffer *request_payload_recv = NULL;
+  grpc_call_details call_details;
+  grpc_status_code status;
+  grpc_call_error error;
+  char *details = NULL;
+  size_t details_capacity = 0;
+  int was_cancelled = 2;
+  cq_verifier *cqv;
+  char str[1024];
+
+  memset(str, 'x', 1023);
+  str[1023] = '\0';
+  request_payload_slice = gpr_slice_from_copied_string(str);
+  request_payload = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
+
+  client_args = grpc_channel_args_set_compression_algorithm(
+      NULL, requested_client_compression_algorithm);
+  server_args =
+      grpc_channel_args_set_compression_algorithm(NULL, GRPC_COMPRESS_NONE);
+  server_args = grpc_channel_args_compression_algorithm_set_state(
+      &server_args, algorithm_to_disable, false);
+
+  f = begin_test(config, test_name, client_args, server_args);
+  cqv = cq_verifier_create(f.cq);
+
+  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               "/foo", "foo.test.google.fr", deadline, NULL);
+  GPR_ASSERT(c);
+
+  grpc_metadata_array_init(&initial_metadata_recv);
+  grpc_metadata_array_init(&trailing_metadata_recv);
+  grpc_metadata_array_init(&request_metadata_recv);
+  grpc_call_details_init(&call_details);
+
+  op = ops;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  if (client_metadata != NULL) {
+    op->data.send_initial_metadata.count = 1;
+    op->data.send_initial_metadata.metadata = client_metadata;
+  } else {
+    op->data.send_initial_metadata.count = 0;
+  }
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_SEND_MESSAGE;
+  op->data.send_message = request_payload;
+  op->flags = send_flags_bitmask;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_RECV_INITIAL_METADATA;
+  op->data.recv_initial_metadata = &initial_metadata_recv;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.status = &status;
+  op->data.recv_status_on_client.status_details = &details;
+  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+
+  error =
+      grpc_server_request_call(f.server, &s, &call_details,
+                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  GPR_ASSERT(GRPC_CALL_OK == error);
+  cq_expect_completion(cqv, tag(101), 1);
+  cq_verify(cqv);
+
+  op = ops;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message = &request_payload_recv;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+
+  cq_expect_completion(cqv, tag(102), 0);
+  cq_verify(cqv);
+
+  op = ops;
+  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  op->data.recv_close_on_server.cancelled = &was_cancelled;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+
+  cq_expect_completion(cqv, tag(103), 1);
+  cq_expect_completion(cqv, tag(1), 1);
+  cq_verify(cqv);
+
+  /* call was cancelled (closed) ... */
+  GPR_ASSERT(was_cancelled != 0);
+  /* with a certain error */
+  GPR_ASSERT(status == expected_error);
+
+  char *algo_name = NULL;
+  GPR_ASSERT(grpc_compression_algorithm_name(algorithm_to_disable, &algo_name));
+  char *expected_details = NULL;
+  gpr_asprintf(&expected_details, "Compression algorithm '%s' is disabled.",
+               algo_name);
+  /* and we expect a specific reason for it */
+  GPR_ASSERT(0 == strcmp(details, expected_details));
+  gpr_free(expected_details);
+  GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
+  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
+
+  gpr_free(details);
+  grpc_metadata_array_destroy(&initial_metadata_recv);
+  grpc_metadata_array_destroy(&trailing_metadata_recv);
+  grpc_metadata_array_destroy(&request_metadata_recv);
+  grpc_call_details_destroy(&call_details);
+
+  grpc_call_destroy(c);
+  grpc_call_destroy(s);
+
+  cq_verifier_destroy(cqv);
+
+  gpr_slice_unref(request_payload_slice);
+  grpc_byte_buffer_destroy(request_payload);
+  grpc_byte_buffer_destroy(request_payload_recv);
+
+  grpc_channel_args_destroy(client_args);
+  grpc_channel_args_destroy(server_args);
+
+  end_test(&f);
+  config.tear_down_data(&f);
 }
 
 static void request_with_payload_template(
@@ -196,8 +362,8 @@ static void request_with_payload_template(
   cq_expect_completion(cqv, tag(101), 1);
   cq_verify(cqv);
 
-  GPR_ASSERT(
-      GPR_BITCOUNT(grpc_call_test_only_get_encodings_accepted_by_peer(s)) == 3);
+  GPR_ASSERT(GPR_BITCOUNT(grpc_call_test_only_get_encodings_accepted_by_peer(
+                 s)) == GRPC_COMPRESS_ALGORITHMS_COUNT);
   GPR_ASSERT(GPR_BITGET(grpc_call_test_only_get_encodings_accepted_by_peer(s),
                         GRPC_COMPRESS_NONE) != 0);
   GPR_ASSERT(GPR_BITGET(grpc_call_test_only_get_encodings_accepted_by_peer(s),
@@ -330,11 +496,19 @@ static void test_invoke_request_with_compressed_payload_md_override(
       GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_NONE, &none_compression_override);
 }
 
+static void test_invoke_request_with_invalid_algorithm(
+    grpc_end2end_test_config config) {
+  request_for_disabled_algorithm(
+      config, "test_invoke_request_with_invalid_algorithm", 0,
+      GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP, GRPC_STATUS_INTERNAL, NULL);
+}
+
 void compressed_payload(grpc_end2end_test_config config) {
   test_invoke_request_with_exceptionally_uncompressed_payload(config);
   test_invoke_request_with_uncompressed_payload(config);
   test_invoke_request_with_compressed_payload(config);
   test_invoke_request_with_compressed_payload_md_override(config);
+  test_invoke_request_with_invalid_algorithm(config);
 }
 
 void compressed_payload_pre_init(void) {}

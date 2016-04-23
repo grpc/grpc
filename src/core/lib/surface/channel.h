@@ -45,6 +45,10 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
 /** Get a (borrowed) pointer to this channels underlying channel stack */
 grpc_channel_stack *grpc_channel_get_channel_stack(grpc_channel *channel);
 
+/** Return the compression options for \a channel */
+grpc_compression_options grpc_channel_get_compression_options(
+    const grpc_channel *channel);
+
 /** Get a grpc_mdelem of grpc-status: X where X is the numeric value of
     status_code.
 
