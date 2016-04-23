@@ -465,10 +465,10 @@ CENSUSAPI void census_record_values(census_context *context,
 typedef struct census_aggregation_ops census_aggregation_ops;
 
 /* Predefined aggregation types, for use with census_view_create(). */
-extern census_aggregation_ops census_agg_sum;
-extern census_aggregation_ops census_agg_distribution;
-extern census_aggregation_ops census_agg_histogram;
-extern census_aggregation_ops census_agg_window;
+CENSUSAPI const census_aggregation_ops *census_agg_sum();
+CENSUSAPI const census_aggregation_ops *census_agg_distribution();
+CENSUSAPI const census_aggregation_ops *census_agg_histogram();
+CENSUSAPI const census_aggregation_ops *census_agg_window();
 
 /** Information needed to instantiate a new aggregation. Used in view
     construction via census_define_view(). */
