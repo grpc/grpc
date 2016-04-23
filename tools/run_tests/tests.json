@@ -54696,6 +54696,28 @@
   }, 
   {
     "args": [
+      "test/core/nanopb/corpus_response/0052f8fb6a7884ced8a6754aa13441be1f7dcd51"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "nanopb_fuzzer_response_test_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "test/core/nanopb/corpus_response/0c35544f40d428d103e9c5b969ad9cd16767b110"
     ], 
     "ci_platforms": [
@@ -55181,6 +55203,28 @@
   {
     "args": [
       "test/core/nanopb/corpus_response/67fe0d2acc727c8a39a707b92c6cebda9bd20986"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "nanopb_fuzzer_response_test_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "test/core/nanopb/corpus_response/6995dd153f712ad257ab5a365e5a4b84dc676ed3"
     ], 
     "ci_platforms": [
       "linux", 
@@ -55907,6 +55951,28 @@
   {
     "args": [
       "test/core/nanopb/corpus_response/eced8b29efbdc82eb8a1d0865c5f382f0ff78446"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "nanopb_fuzzer_response_test_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "test/core/nanopb/corpus_response/f107c60f00da44a2c412c5b89c733efe5f9be4aa"
     ], 
     "ci_platforms": [
       "linux", 
