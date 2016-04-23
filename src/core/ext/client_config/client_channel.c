@@ -205,7 +205,11 @@ static void cc_on_config_changed(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_mu_lock(&chand->mu_config);
   old_lb_policy = chand->lb_policy;
   chand->lb_policy = lb_policy;
-  if (lb_policy != NULL || chand->resolver == NULL /* disconnected */) {
+  if (lb_policy != NULL) {
+    grpc_exec_ctx_enqueue_list(exec_ctx, &chand->waiting_for_config_closures,
+                               NULL);
+  } else if (chand->resolver == NULL /* disconnected */) {
+    grpc_closure_list_fail_all(&chand->waiting_for_config_closures);
     grpc_exec_ctx_enqueue_list(exec_ctx, &chand->waiting_for_config_closures,
                                NULL);
   }
@@ -321,10 +325,10 @@ static int cc_pick_subchannel(grpc_exec_ctx *exec_ctx, void *arg,
 
 static void continue_picking(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   continue_picking_args *cpa = arg;
-  if (!success) {
-    grpc_exec_ctx_enqueue(exec_ctx, cpa->on_ready, false, NULL);
-  } else if (cpa->connected_subchannel == NULL) {
+  if (cpa->connected_subchannel == NULL) {
     /* cancelled, do nothing */
+  } else if (!success) {
+    grpc_exec_ctx_enqueue(exec_ctx, cpa->on_ready, false, NULL);
   } else if (cc_pick_subchannel(exec_ctx, cpa->elem, cpa->initial_metadata,
                                 cpa->initial_metadata_flags,
                                 cpa->connected_subchannel, cpa->on_ready)) {
