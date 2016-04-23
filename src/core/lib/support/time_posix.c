@@ -95,12 +95,6 @@ static gpr_timespec now_impl(gpr_clock_type clock_type) {
     return gpr_from_timespec(now, clock_type);
   }
 }
-
-gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type) = now_impl;
-
-gpr_timespec gpr_now(gpr_clock_type clock_type) {
-  return gpr_now_impl(clock_type);
-}
 #else
 /* For some reason Apple's OSes haven't implemented clock_gettime. */
 
@@ -120,7 +114,7 @@ void gpr_time_init(void) {
   g_time_start = mach_absolute_time();
 }
 
-gpr_timespec gpr_now(gpr_clock_type clock) {
+static gpr_timespec now_impl(gpr_clock_type clock) {
   gpr_timespec now;
   struct timeval now_tv;
   double now_dbl;
@@ -147,6 +141,12 @@ gpr_timespec gpr_now(gpr_clock_type clock) {
   return now;
 }
 #endif
+
+gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type) = now_impl;
+
+gpr_timespec gpr_now(gpr_clock_type clock_type) {
+  return gpr_now_impl(clock_type);
+}
 
 void gpr_sleep_until(gpr_timespec until) {
   gpr_timespec now;
