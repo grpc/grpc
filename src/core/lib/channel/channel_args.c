@@ -35,6 +35,7 @@
 #include <grpc/grpc.h>
 #include "src/core/lib/support/string.h"
 
+#include <grpc/compression.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -180,6 +181,7 @@ grpc_compression_algorithm grpc_channel_args_get_compression_algorithm(
 
 grpc_channel_args *grpc_channel_args_set_compression_algorithm(
     grpc_channel_args *a, grpc_compression_algorithm algorithm) {
+  GPR_ASSERT(algorithm < GRPC_COMPRESS_ALGORITHMS_COUNT);
   grpc_arg tmp;
   tmp.type = GRPC_ARG_INTEGER;
   tmp.key = GRPC_COMPRESSION_ALGORITHM_ARG;
@@ -212,7 +214,15 @@ grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
   const int states_arg_found =
       find_compression_algorithm_states_bitset(*a, &states_arg);
 
-  if (states_arg_found) {
+  if (grpc_channel_args_get_compression_algorithm(*a) == algorithm &&
+      state == 0) {
+    char *algo_name = NULL;
+    GPR_ASSERT(grpc_compression_algorithm_name(algorithm, &algo_name) != 0);
+    gpr_log(GPR_ERROR,
+            "Tried to disable default compression algorithm '%s'. The "
+            "operation has been ignored.",
+            algo_name);
+  } else if (states_arg_found) {
     if (state != 0) {
       GPR_BITSET((unsigned *)states_arg, algorithm);
     } else {
