@@ -2234,6 +2234,25 @@
       "mac", 
       "posix"
     ], 
+    "cpu_cost": 1000, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c++", 
+    "name": "generic_async_streaming_big_deep_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
