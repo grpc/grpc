@@ -31,6 +31,7 @@
 
 flags="-max_total_time=$runtime -artifact_prefix=fuzzer_output/ -max_len=2048 -timeout=120"
 
+flags="$flags -dict=test/core/end2end/fuzzers/api_fuzzer.dictionary"
 
 if [ "$jobs" != "1" ]
 then
