@@ -1063,7 +1063,8 @@ static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
   grpc_call *call = bctl->call;
 
   gpr_mu_lock(&bctl->call->mu);
-  if (bctl->call->has_initial_md_been_received || !success) {
+  if (bctl->call->has_initial_md_been_received || !success ||
+      call->receiving_stream == NULL) {
     gpr_mu_unlock(&bctl->call->mu);
     process_data_after_md(exec_ctx, bctlp, success);
   } else {

@@ -299,7 +299,8 @@ static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
     chand->resolver = NULL;
     if (!chand->started_resolving) {
       grpc_closure_list_fail_all(&chand->waiting_for_config_closures);
-      grpc_exec_ctx_enqueue_list(exec_ctx, &chand->waiting_for_config_closures, NULL);
+      grpc_exec_ctx_enqueue_list(exec_ctx, &chand->waiting_for_config_closures,
+                                 NULL);
     }
     if (chand->lb_policy != NULL) {
       grpc_pollset_set_del_pollset_set(exec_ctx,
@@ -397,7 +398,8 @@ static int cc_pick_subchannel(grpc_exec_ctx *exec_ctx, void *elemp,
     cpa->on_ready = on_ready;
     cpa->elem = elem;
     grpc_closure_init(&cpa->closure, continue_picking, cpa);
-    grpc_closure_list_add(&chand->waiting_for_config_closures, &cpa->closure, 1);
+    grpc_closure_list_add(&chand->waiting_for_config_closures, &cpa->closure,
+                          1);
   } else {
     grpc_exec_ctx_enqueue(exec_ctx, on_ready, false, NULL);
   }
