@@ -1130,6 +1130,7 @@ targets:
   - gpr
   corpus_dirs:
   - test/core/end2end/fuzzers/api_fuzzer_corpus
+  dict: test/core/end2end/fuzzers/api_fuzzer.dictionary
   maxlen: 2048
 - name: bin_encoder_test
   build: test
