@@ -143,19 +143,6 @@ static grpc_byte_buffer *read_message(input_stream *inp) {
   return out;
 }
 
-static void read_metadata(input_stream *inp, size_t *count,
-                          grpc_metadata **metadata) {
-  *count = next_byte(inp);
-  *metadata = gpr_malloc(*count * sizeof(**metadata));
-  memset(*metadata, 0, *count * sizeof(**metadata));
-  for (size_t i = 0; i < *count; i++) {
-    (*metadata)[i].key = read_string(inp);
-    read_buffer(inp, (char **)&(*metadata)[i].value,
-                &(*metadata)[i].value_length);
-    (*metadata)[i].flags = read_uint32(inp);
-  }
-}
-
 static int read_int(input_stream *inp) { return (int)read_uint32(inp); }
 
 static grpc_channel_args *read_args(input_stream *inp) {
@@ -366,6 +353,11 @@ typedef struct call_state {
   int pending_ops;
   grpc_call_details call_details;
 
+  // array of pointers to free later
+  size_t num_to_free;
+  size_t cap_to_free;
+  void **to_free;
+
   struct call_state *next;
   struct call_state *prev;
 } call_state;
@@ -403,9 +395,40 @@ static call_state *maybe_delete_call_state(call_state *call) {
   grpc_metadata_array_destroy(&call->recv_trailing_metadata);
   gpr_free(call->recv_status_details);
   grpc_call_details_destroy(&call->call_details);
+
+  for (size_t i = 0; i < call->num_to_free; i++) {
+    gpr_free(call->to_free[i]);
+  }
+  gpr_free(call->to_free);
+
   gpr_free(call);
 
   return next;
+}
+
+static void add_to_free(call_state *call, void *p) {
+  if (call->num_to_free == call->cap_to_free) {
+    call->cap_to_free = GPR_MAX(8, 2 * call->cap_to_free);
+    call->to_free =
+        gpr_realloc(call->to_free, sizeof(*call->to_free) * call->cap_to_free);
+  }
+  call->to_free[call->num_to_free++] = p;
+}
+
+static void read_metadata(input_stream *inp, size_t *count,
+                          grpc_metadata **metadata, call_state *cs) {
+  *count = next_byte(inp);
+  *metadata = gpr_malloc(*count * sizeof(**metadata));
+  memset(*metadata, 0, *count * sizeof(**metadata));
+  for (size_t i = 0; i < *count; i++) {
+    (*metadata)[i].key = read_string(inp);
+    read_buffer(inp, (char **)&(*metadata)[i].value,
+                &(*metadata)[i].value_length);
+    (*metadata)[i].flags = read_uint32(inp);
+    add_to_free(cs, (void *)(*metadata)[i].key);
+    add_to_free(cs, (void *)(*metadata)[i].value);
+  }
+  add_to_free(cs, *metadata);
 }
 
 static call_state *destroy_call(call_state *call) {
@@ -688,7 +711,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
             case GRPC_OP_SEND_INITIAL_METADATA:
               op->op = GRPC_OP_SEND_INITIAL_METADATA;
               read_metadata(&inp, &op->data.send_initial_metadata.count,
-                            &op->data.send_initial_metadata.metadata);
+                            &op->data.send_initial_metadata.metadata,
+                            g_active_call);
               break;
             case GRPC_OP_SEND_MESSAGE:
               op->op = GRPC_OP_SEND_MESSAGE;
@@ -702,7 +726,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
               read_metadata(
                   &inp,
                   &op->data.send_status_from_server.trailing_metadata_count,
-                  &op->data.send_status_from_server.trailing_metadata);
+                  &op->data.send_status_from_server.trailing_metadata,
+                  g_active_call);
               op->data.send_status_from_server.status = next_byte(&inp);
               op->data.send_status_from_server.status_details =
                   read_string(&inp);
@@ -751,30 +776,11 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           op = &ops[i];
           switch (op->op) {
             case GRPC_OP_SEND_INITIAL_METADATA:
-              for (size_t j = 0; j < op->data.send_initial_metadata.count;
-                   j++) {
-                gpr_free(
-                    (void *)op->data.send_initial_metadata.metadata[j].key);
-                gpr_free(
-                    (void *)op->data.send_initial_metadata.metadata[j].value);
-              }
-              gpr_free(op->data.send_initial_metadata.metadata);
               break;
             case GRPC_OP_SEND_MESSAGE:
               grpc_byte_buffer_destroy(op->data.send_message);
               break;
             case GRPC_OP_SEND_STATUS_FROM_SERVER:
-              for (size_t j = 0;
-                   j < op->data.send_status_from_server.trailing_metadata_count;
-                   j++) {
-                gpr_free((void *)op->data.send_status_from_server
-                             .trailing_metadata[j]
-                             .key);
-                gpr_free((void *)op->data.send_status_from_server
-                             .trailing_metadata[j]
-                             .value);
-              }
-              gpr_free(op->data.send_status_from_server.trailing_metadata);
               gpr_free((void *)op->data.send_status_from_server.status_details);
               break;
             case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
