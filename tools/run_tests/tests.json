@@ -34764,7 +34764,51 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/08a8a647b6a8f47ae10852322d14832fc15021f1"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/0949f4ac376808482be6ab2dcb18a2ecb08d9a52"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/0b6fa6330bce65dfe7f758bcbfca2a2844dd07a6"
     ], 
     "ci_platforms": [
       "linux", 
@@ -35688,6 +35732,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/204093594b568ada9c7857a971f2a4b42123ee1c"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/20539e464ced1a0a63d74bae731ca0a75db05967"
     ], 
     "ci_platforms": [
@@ -35908,6 +35974,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/252de25a5237c830ad8c5e4732c176e03785042b"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/25761748660a64111a8daa46f72ea1f336c2046a"
     ], 
     "ci_platforms": [
@@ -35996,6 +36084,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/2663ce44ca5832381cbbdf7b252e39d6df021a93"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/269afce3bfff993c05c2a3b28c6cf3dfb3f461d7"
     ], 
     "ci_platforms": [
@@ -36019,6 +36129,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/26b8a9d27cef1ce4c3c5aefa2dee50001aab4b13"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/27f37037525aac7a41ffbadd6ce52e5a1851a2b7"
     ], 
     "ci_platforms": [
       "linux", 
@@ -36700,6 +36832,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/368c75135a7341a96627d0dcfc4b2081003d8979"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/370b2c16cc353621091eda4964d4c4329205ffc3"
     ], 
     "ci_platforms": [
@@ -36855,6 +37009,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/3afbc4c35885b79c6e6628afce93ce852d7767de"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/3b3b4f9a985ec49f6c54bae798208625e5adb777"
     ], 
     "ci_platforms": [
       "linux", 
@@ -37272,6 +37448,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/47e8aee44c2c7bd870f15b50fc085c5a8030edfc"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/489e9830136adcc53f4b191199c33504685b3737"
     ], 
     "ci_platforms": [
@@ -37295,6 +37493,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/49112bf1277d93601eb6526fe9ee9d45864d759e"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/4a11af9ef42aeb36691185520be281c4760ad27b"
     ], 
     "ci_platforms": [
       "linux", 
@@ -38658,6 +38878,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/77ea9180617391d8503427a1c060538182f7729f"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/7885df741c88ca4b539798d9985c445f41cc2929"
     ], 
     "ci_platforms": [
@@ -38724,7 +38966,51 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/7c2e48b0d08aaeb95b5ca26036384aa2cec9de77"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/7c73c0671308e37a8075a20863e70e180ef8b6ea"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/7e18989175bba8d9aea34413d6f328549e1c6825"
     ], 
     "ci_platforms": [
       "linux", 
@@ -38813,6 +39099,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/813d2c34c0df8d4a918e68e58cf0ae3703d0d46f"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/824152f7bd022996b41327002f6971cd9900b265"
     ], 
     "ci_platforms": [
       "linux", 
@@ -39121,6 +39429,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/89cf42c02d7135afa6c81d8a0c2bc4c3df557769"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/8b7b914723bfc23ec650cb91d209141641fba09f"
     ], 
     "ci_platforms": [
       "linux", 
@@ -40000,6 +40330,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/9f9ed47f98b4905f1f6ef2b552a66905bdf79b1b"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/9fee3212240d4bccfdab3696dbbc579b06d39982"
     ], 
     "ci_platforms": [
@@ -40111,6 +40463,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/a4874327383ca168f9d9d59cffe327f61e9a6610"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/a4e4a0473ac1f2b8de86efdf00fcb382a343126d"
     ], 
     "ci_platforms": [
       "linux", 
@@ -40440,6 +40814,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/ac727124e46a249419f088c8665324a11b357b84"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/adb9bf315315338bcad85929917b9def2aa098cb"
     ], 
     "ci_platforms": [
@@ -40463,6 +40859,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/ade2d2f0e120a9527487e9b92458ee6844800e4e"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/ae8c538d4ad7f2996ac724bad7a075e1aea32556"
     ], 
     "ci_platforms": [
       "linux", 
@@ -40616,6 +41034,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/b2a79b262ee3966c5ce7c7b42dcffd55d7d0956b"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/b2aa4861b5104e8bb8bb173f4b023a2172a7b9a2"
     ], 
     "ci_platforms": [
@@ -40639,6 +41079,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/b33eb7e1bde4c69671dbbf9489b4d4b87c5d23fd"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/b39bfaf6a3072d8a50984dcc54967e9246f8d3e5"
     ], 
     "ci_platforms": [
       "linux", 
@@ -41254,6 +41716,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/c8cb20176e427d2e108187924f570ef1df6d440c"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/c916ea9c6901c1e77af764773bd2843baa2ebdc6"
     ], 
     "ci_platforms": [
@@ -41804,6 +42288,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/d2df8e95436cf98ef2189191a75a3d9c78b1be6c"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/d3386702918881101368cdba2c4967e86ff3a7b9"
     ], 
     "ci_platforms": [
@@ -41871,6 +42377,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/d49450b97f489f0dea74a9f83c71abeba1066d3c"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/d4a72650e8218ec551fef6560ddd136d52828a4e"
     ], 
     "ci_platforms": [
       "linux", 
@@ -42332,6 +42860,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/e1f2e203d39ab2509d4a67f7a44265b1e6364334"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/e262f378a3d27bc519d472ce3650bdffcd48a055"
     ], 
     "ci_platforms": [
@@ -42575,6 +43125,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/client_fuzzer_corpus/e6a08259a7d47601eab5c0249cb6547024e002c7"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "client_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/client_fuzzer_corpus/e6b3c920b47e00055226d49b9f715c5d4353e3e5"
     ], 
     "ci_platforms": [
       "linux", 
@@ -68688,6 +69260,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/2a688fd507072e1cfa2e3bc58652a7cd82dface3"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/2abe64b96e5e72adcf2dcc43444a69d0fb664b66"
     ], 
     "ci_platforms": [
@@ -71438,6 +72032,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/88017b0894db1e6f4e3a6640ffe2876d31a54723"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/8846918f967dd6513040c6d382fcd68ff7099873"
     ], 
     "ci_platforms": [
@@ -73748,6 +74364,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/dad922e2daf84cf039f50cf8636eaa9dbd01ff83"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/db33559d4afb4c32e68525c000fde16a4c3300f5"
     ], 
     "ci_platforms": [
@@ -74013,6 +74651,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/ed8da77f.bin"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/ee64e1ba4897bfd7c6baa1fb72d4c5f83b5654e4"
     ], 
     "ci_platforms": [
       "linux", 
@@ -74694,6 +75354,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/slow-unit-1ae0ed17a042aab8a3c3199c83a809b0243d1424"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/slow-unit-1b6c4b5c1949adae3efd5e3264bb32a40eea524e"
     ], 
     "ci_platforms": [
@@ -74717,6 +75399,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/slow-unit-3991c873ba814d0cd03a67d25fff0c8fe8713aca"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/slow-unit-4c6da955e4c101b81a62b2f8e934d94a62ae534b"
     ], 
     "ci_platforms": [
       "linux", 
@@ -74826,6 +75530,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/slow-unit-6d37c5e6d7efee56319b1316725fdc5aee5a52c3"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/slow-unit-6e980a9d12c392175b5f66683e608626ae983276"
     ], 
     "ci_platforms": [
@@ -74871,6 +75597,28 @@
   {
     "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/slow-unit-7281d9eaed0d20b0b6b5e7709c57e78fefe9c315"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/slow-unit-73e0a41066bc09c8e3fbd0dd7628445bcdaabb4a"
     ], 
     "ci_platforms": [
       "linux", 
@@ -75002,7 +75750,51 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/slow-unit-ba2b1fde90cc70d9abae22c4c4cb051aae8aa148"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/slow-unit-bda43d420a3e5d5228a5f5130207a1f11fc1c81f"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/slow-unit-c05c239719a7beeca2c126b7e5ef7251fa615b54"
     ], 
     "ci_platforms": [
       "linux", 
@@ -75046,6 +75838,28 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/slow-unit-cacd0e0c5f7d4169085735400100da4d36397185"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/slow-unit-d3c3cba3897fafec97665411ea1f94a89bb4de7b"
     ], 
     "ci_platforms": [
@@ -75068,7 +75882,51 @@
   }, 
   {
     "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/slow-unit-d3fcd80cd6f1bb05f5e5084ebb2ee801067863fb"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
       "test/core/end2end/fuzzers/server_fuzzer_corpus/slow-unit-ddfe613d8791b2d377e14fbdffb18b84a89d49b6"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_fuzzer_one_entry", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "test/core/end2end/fuzzers/server_fuzzer_corpus/slow-unit-f67be653815f6c2c10eea55c8009e1167ac9c20b"
     ], 
     "ci_platforms": [
       "linux", 
