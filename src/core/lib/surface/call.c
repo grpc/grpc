@@ -248,7 +248,7 @@ static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
 
 grpc_call *grpc_call_create(
     grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
-    grpc_completion_queue *cq, grpc_pollset_set *or_pollset_set,
+    grpc_completion_queue *cq, grpc_pollset_set *pollset_set_alternative,
     const void *server_transport_data, grpc_mdelem **add_initial_metadata,
     size_t add_initial_metadata_count, gpr_timespec send_deadline) {
   size_t i, j;
@@ -261,12 +261,13 @@ grpc_call *grpc_call_create(
   gpr_mu_init(&call->mu);
   call->channel = channel;
   call->cq = cq;
-  if (cq != NULL && or_pollset_set != NULL) {
-    gpr_log(GPR_ERROR,
-            "Only one of 'cq' and 'or_pollset_set' should be non-NULL.");
+  if (cq != NULL && pollset_set_alternative != NULL) {
+    gpr_log(
+        GPR_ERROR,
+        "Only one of 'cq' and 'pollset_set_alternative' should be non-NULL.");
     abort();
   }
-  call->pollset_set = or_pollset_set;
+  call->pollset_set = pollset_set_alternative;
   call->parent = parent_call;
   call->is_client = server_transport_data == NULL;
   if (call->is_client) {
@@ -295,10 +296,10 @@ grpc_call *grpc_call_create(
     grpc_call_stack_set_pollset_or_pollset_set(
         &exec_ctx, CALL_STACK_FROM_CALL(call), grpc_cq_pollset(cq), NULL);
   }
-  if (or_pollset_set != NULL) {
+  if (pollset_set_alternative != NULL) {
     GPR_ASSERT(cq == NULL);
     grpc_call_stack_set_pollset_or_pollset_set(
-        &exec_ctx, CALL_STACK_FROM_CALL(call), NULL, or_pollset_set);
+        &exec_ctx, CALL_STACK_FROM_CALL(call), NULL, pollset_set_alternative);
   }
   if (parent_call != NULL) {
     GRPC_CALL_INTERNAL_REF(parent_call, "child");

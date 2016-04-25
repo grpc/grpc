@@ -446,21 +446,20 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   gpr_mu_destroy(&chand->mu_config);
 }
 
-static void cc_set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
-                                          grpc_call_element *elem,
-                                          grpc_pollset *pollset,
-                                          grpc_pollset_set *or_pollset_set) {
-  GPR_ASSERT(!(pollset != NULL && or_pollset_set != NULL));
-  GPR_ASSERT(pollset != NULL || or_pollset_set != NULL);
+static void cc_set_pollset_or_pollset_set(
+    grpc_exec_ctx *exec_ctx, grpc_call_element *elem, grpc_pollset *pollset,
+    grpc_pollset_set *pollset_set_alternative) {
+  GPR_ASSERT((pollset == NULL) + (pollset_set_alternative == NULL) == 1);
+  GPR_ASSERT(pollset != NULL || pollset_set_alternative != NULL);
 
   call_data *calld = elem->call_data;
   if (pollset != NULL) {
     calld->pollset = pollset;
     grpc_pollset_set_add_pollset(exec_ctx, calld->pollset_set, pollset);
-  } else if (or_pollset_set != NULL) {
+  } else if (pollset_set_alternative != NULL) {
     calld->pollset = NULL;
     grpc_pollset_set_add_pollset_set(exec_ctx, calld->pollset_set,
-                                     or_pollset_set);
+                                     pollset_set_alternative);
   }
 }
 
