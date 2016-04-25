@@ -230,6 +230,9 @@ static void read_and_write_test(grpc_endpoint_test_config config,
     grpc_endpoint_shutdown(&exec_ctx, state.read_ep);
     gpr_log(GPR_DEBUG, "shutdown write");
     grpc_endpoint_shutdown(&exec_ctx, state.write_ep);
+    // Test that repeated shutdown should have no side effect
+    grpc_endpoint_shutdown(&exec_ctx, state.read_ep);
+    grpc_endpoint_shutdown(&exec_ctx, state.write_ep);
   }
   grpc_exec_ctx_finish(&exec_ctx);
 
