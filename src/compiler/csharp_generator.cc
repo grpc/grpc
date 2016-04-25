@@ -350,10 +350,12 @@ void GenerateServerClass(Printer* out, const ServiceDescriptor *service) {
 
 void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
   out->Print("// client stub\n");
+  out->Print("#pragma warning disable 0618\n");
   out->Print(
       "public class $name$ : ClientBase<$name$>, $interface$\n",
       "name", GetClientClassName(service),
       "interface", GetClientInterfaceName(service));
+  out->Print("#pragma warning restore 0618\n");
   out->Print("{\n");
   out->Indent();
 
@@ -480,10 +482,12 @@ void GenerateBindServiceMethod(Printer* out, const ServiceDescriptor *service,
                                bool use_server_class) {
   out->Print(
       "// creates service definition that can be registered with a server\n");
+  out->Print("#pragma warning disable 0618\n");
   out->Print(
       "public static ServerServiceDefinition BindService($interface$ serviceImpl)\n",
       "interface", use_server_class ? GetServerClassName(service) :
           GetServerInterfaceName(service));
+  out->Print("#pragma warning restore 0618\n");
   out->Print("{\n");
   out->Indent();
 
