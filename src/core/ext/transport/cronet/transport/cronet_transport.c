@@ -41,10 +41,10 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport_impl.h"
 #include "third_party/objective_c/Cronet/cronet_c_for_grpc.h"
@@ -215,8 +215,7 @@ void on_response_trailers_received(
   s->response_trailers_received = true;
   next_recv_step(s, ON_RESPONSE_TRAILERS_RECEIVED);
 }
-void on_write_completed(cronet_bidirectional_stream *stream,
-                        const char *data) {
+void on_write_completed(cronet_bidirectional_stream *stream, const char *data) {
   GRPC_CRONET_TRACE(GPR_DEBUG, "W: on_write_completed");
   stream_obj *s = (stream_obj *)stream->annotation;
   enqueue_callbacks(s->callback_list[CB_SEND_MESSAGE]);
@@ -287,7 +286,6 @@ cronet_bidirectional_stream_callback callbacks = {on_request_headers_sent,
                                                   on_succeded,
                                                   on_failed,
                                                   on_canceled};
-
 
 void invoke_closing_callback(stream_obj *s) {
   grpc_chttp2_incoming_metadata_buffer_publish(&s->imb,
@@ -363,7 +361,6 @@ void next_recv_step(stream_obj *s, enum e_caller caller) {
   gpr_mu_unlock(&s->recv_mu);
 }
 
-
 // This function takes the data from s->write_slicebuffer and assembles into
 // a contiguous byte stream with 5 byte gRPC header prepended.
 void create_grpc_frame(stream_obj *s) {
@@ -390,22 +387,22 @@ void do_write(stream_obj *s) {
     create_grpc_frame(s);
     GRPC_CRONET_TRACE(GPR_DEBUG, "W: cronet_bidirectional_stream_write");
     cronet_bidirectional_stream_write(s->cbs, s->write_buffer,
-                                      (int)s->write_buffer_size,
-                                      false);
+                                      (int)s->write_buffer_size, false);
   }
 }
 
-// 
+//
 void next_send_step(stream_obj *s) {
-  switch(cronet_send_state) {
+  switch (cronet_send_state) {
     case CRONET_SEND_IDLE:
-      GPR_ASSERT(s->cbs);  // cronet_bidirectional_stream is not initialized yet.
+      GPR_ASSERT(
+          s->cbs);  // cronet_bidirectional_stream is not initialized yet.
       cronet_send_state = CRONET_REQ_STARTED;
       GRPC_CRONET_TRACE(GPR_DEBUG, "cronet_bidirectional_stream_start to %s",
                         s->url);
       cronet_bidirectional_stream_start(s->cbs, s->url, 0, "POST",
                                         &s->header_array, false);
-    break;
+      break;
     case CRONET_SEND_HEADER:
       do_write(s);
       cronet_send_state = CRONET_WRITE;

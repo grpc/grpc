@@ -54,19 +54,19 @@ typedef struct grpc_cronet_transport grpc_cronet_transport;
 extern grpc_transport_vtable cronet_vtable;
 
 GRPCAPI grpc_channel *grpc_custom_secure_channel_create(
-    void *engine, const char *target,
-    const grpc_channel_args *args, void *reserved) {
+    void *engine, const char *target, const grpc_channel_args *args,
+    void *reserved) {
   grpc_cronet_transport *ct = gpr_malloc(sizeof(grpc_cronet_transport));
   ct->base.vtable = &cronet_vtable;
   ct->engine = engine;
   ct->host = gpr_malloc(strlen(target) + 1);
   strcpy(ct->host, target);
-  gpr_log(
-      GPR_DEBUG, "grpc_create_cronet_transport: cronet_engine = %p, target=%s",
-      engine, ct->host);
+  gpr_log(GPR_DEBUG,
+          "grpc_create_cronet_transport: cronet_engine = %p, target=%s", engine,
+          ct->host);
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   return grpc_channel_create(&exec_ctx, target, args,
-                                GRPC_CLIENT_DIRECT_CHANNEL, (grpc_transport *)ct);
+                             GRPC_CLIENT_DIRECT_CHANNEL, (grpc_transport *)ct);
 }
 #endif  // COMPILE_WITH_CRONET
