@@ -130,11 +130,13 @@ namespace Grpc.Tools.CSharpGenerator
                 var protodepsPath = Path.Combine(outputDir, "protodeps.txt");
                 outputFiles = outputFiles.Union(new[] { protocsPath });
 
+                var nonStandardDirSeparator = Grpc.Core.Internal.PlatformApis.IsWindows ? '/' : '\\';
+
                 // We're done, write out all the output file paths
                 // CS files (for compile, clean)
-                File.WriteAllText(protocsPath, string.Join("\n", from o in outputFiles where o.EndsWith(".cs") select o));
+                File.WriteAllText(protocsPath, string.Join("\n", from o in outputFiles where o.EndsWith(".cs") select o.Replace(nonStandardDirSeparator, Path.DirectorySeparatorChar)));
                 // All other files (for clean)
-                File.WriteAllText(protodepsPath, string.Join("\n", from o in outputFiles where !o.EndsWith(".cs") select o));
+                File.WriteAllText(protodepsPath, string.Join("\n", from o in outputFiles where !o.EndsWith(".cs") select o.Replace(nonStandardDirSeparator, Path.DirectorySeparatorChar)));
             }
             catch (Exception ex)
             {
