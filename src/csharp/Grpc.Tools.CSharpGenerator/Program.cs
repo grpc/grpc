@@ -13,10 +13,16 @@ namespace Grpc.Tools.CSharpGenerator
         static readonly Regex _generatedFilesRegex = new Regex(@"[^\s]*\.cs", RegexOptions.Compiled);
 
         static bool ProcessFile(string protocPath, string protosIncludeDir, string projectDir, string outputDir, string grpcCSharpPluginPath, string inputFile, 
-            ref IEnumerable<string> outputFiles)
+            ref IEnumerable<string> outputFiles, bool recursive)
         {
             try
             {
+                var outDir = Path.Combine(outputDir, Path.GetDirectoryName(inputFile));
+                if (!Directory.Exists(outDir))
+                {
+                    Console.WriteLine("Creating directory: {0} because it does not exist", outDir);
+                    Directory.CreateDirectory(outDir);
+                }
                 var protocArguments = string.Format("-I{0} --csharp_out {1} --grpc_out {1} --plugin=protoc-gen-grpc={2} --dependency_out={3}.deps {4}",
                     protosIncludeDir, Path.Combine(outputDir, Path.GetDirectoryName(inputFile)), grpcCSharpPluginPath, Path.Combine(outputDir, inputFile), inputFile);
                 Console.WriteLine("Generating Grpc for {0}...", inputFile);
@@ -47,24 +53,24 @@ namespace Grpc.Tools.CSharpGenerator
 
                 // Process all files except the one we just processed now
                 var dependencies = from dep in depsMatch.AsEnumerable()
-                                   let depFullPath = Path.GetFullPath(dep.Value)
+                                   let depFullPath = Path.GetFullPath(dep.Value).NormalizeDirSeparators()
                                    where string.Compare(inputFileFullPath, depFullPath,
-                                   Path.DirectorySeparatorChar == '\\' ? StringComparison.CurrentCultureIgnoreCase : StringComparison.CurrentCulture) != 0
-                                   select dep.Value;
+                                   Grpc.Core.Internal.PlatformApis.IsWindows ? StringComparison.CurrentCultureIgnoreCase : StringComparison.CurrentCulture) != 0
+                                   select dep.Value.NormalizeDirSeparators();
                 var generatedFiles = from o in outputsMatch.AsEnumerable()
-                                     let outputPath = Path.GetFullPath(o.Value)
-                                     select o.Value;
+                                     select o.Value.NormalizeDirSeparators();
 
                 foreach (var f in generatedFiles)
                     Console.WriteLine("Generated: {0}", f);
-                
+
                 // Add all generated files to outputFiles
                 outputFiles = outputFiles.Union(generatedFiles);
                 outputFiles = outputFiles.Union(new[] { depsFilename });
-
-                foreach (var dep in dependencies)
-                    if (!ProcessFile(protocPath, protosIncludeDir, projectDir, outputDir, grpcCSharpPluginPath, dep, ref outputFiles))
-                        return false;
+                
+                if (recursive)
+                    foreach (var dep in dependencies)
+                        if (!ProcessFile(protocPath, protosIncludeDir, projectDir, outputDir, grpcCSharpPluginPath, dep, ref outputFiles, recursive))
+                            return false;
                 return true;
             }
             catch (Exception ex)
@@ -119,7 +125,8 @@ namespace Grpc.Tools.CSharpGenerator
                 foreach (var inputFile in inputFiles)
                 {
                     Console.WriteLine("Going to process: {0}", inputFile);
-                    if (!ProcessFile(protocPath, protosIncludeDir, projectDir, outputDir, grpcCSharpPluginPath, inputFile, ref outputFiles))
+                    if (!ProcessFile(protocPath, protosIncludeDir, projectDir, outputDir, grpcCSharpPluginPath, inputFile, ref outputFiles,
+                        recursive: false))
                     {
                         Console.Error.WriteLine("Could not process {0}", inputFile);
                         break;
@@ -130,13 +137,12 @@ namespace Grpc.Tools.CSharpGenerator
                 var protodepsPath = Path.Combine(outputDir, "protodeps.txt");
                 outputFiles = outputFiles.Union(new[] { protocsPath });
 
-                var nonStandardDirSeparator = Grpc.Core.Internal.PlatformApis.IsWindows ? '/' : '\\';
 
                 // We're done, write out all the output file paths
                 // CS files (for compile, clean)
-                File.WriteAllText(protocsPath, string.Join("\n", from o in outputFiles where o.EndsWith(".cs") select o.Replace(nonStandardDirSeparator, Path.DirectorySeparatorChar)));
+                File.WriteAllText(protocsPath, string.Join("\n", from o in outputFiles where o.EndsWith(".cs") select o.NormalizeDirSeparators()));
                 // All other files (for clean)
-                File.WriteAllText(protodepsPath, string.Join("\n", from o in outputFiles where !o.EndsWith(".cs") select o.Replace(nonStandardDirSeparator, Path.DirectorySeparatorChar)));
+                File.WriteAllText(protodepsPath, string.Join("\n", from o in outputFiles where !o.EndsWith(".cs") select o.NormalizeDirSeparators()));
             }
             catch (Exception ex)
             {
@@ -161,6 +167,12 @@ namespace Grpc.Tools.CSharpGenerator
         {
             for (int i = 0; i < collection.Count; i++)
                 yield return collection[i];
+        }
+
+        static readonly char NonStandardDirSeparator = Grpc.Core.Internal.PlatformApis.IsWindows ? '/' : '\\';
+        public static string NormalizeDirSeparators(this string path)
+        {
+            return path.Replace(NonStandardDirSeparator, Path.DirectorySeparatorChar);
         }
     }
 }
