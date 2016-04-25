@@ -43,7 +43,7 @@
 #include "src/compiler/cpp_generator_helpers.h"
 #include "src/compiler/generator_helpers.h"
 
-using grpc_generator::GetComments;
+using grpc_generator::GetCppComments;
 
 class ProtoBufMethod : public grpc_cpp_generator::Method {
  public:
@@ -75,10 +75,12 @@ class ProtoBufMethod : public grpc_cpp_generator::Method {
     return method_->client_streaming() && method_->server_streaming();
   }
 
-  grpc::string GetLeadingComments() const { return GetComments(method_, true); }
+  grpc::string GetLeadingComments() const {
+    return GetCppComments(method_, true);
+  }
 
   grpc::string GetTrailingComments() const {
-    return GetComments(method_, false);
+    return GetCppComments(method_, false);
   }
 
  private:
@@ -99,11 +101,11 @@ class ProtoBufService : public grpc_cpp_generator::Service {
   };
 
   grpc::string GetLeadingComments() const {
-    return GetComments(service_, true);
+    return GetCppComments(service_, true);
   }
 
   grpc::string GetTrailingComments() const {
-    return GetComments(service_, false);
+    return GetCppComments(service_, false);
   }
 
  private:
@@ -154,9 +156,13 @@ class ProtoBufFile : public grpc_cpp_generator::File {
           new ProtoBufPrinter(str));
   }
 
-  grpc::string GetLeadingComments() const { return GetComments(file_, true); }
+  grpc::string GetLeadingComments() const {
+    return GetCppComments(file_, true);
+  }
 
-  grpc::string GetTrailingComments() const { return GetComments(file_, false); }
+  grpc::string GetTrailingComments() const {
+    return GetCppComments(file_, false);
+  }
 
  private:
   const grpc::protobuf::FileDescriptor *file_;

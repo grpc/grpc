@@ -258,7 +258,7 @@ inline grpc::string GenerateCommentsWithPrefix(
 // Get leading or trailing comments in a string. Comment lines start with "// ".
 // Leading detached comments are put in in front of leading comments.
 template <typename DescriptorType>
-inline grpc::string GetComments(const DescriptorType *desc, bool leading) {
+inline grpc::string GetCppComments(const DescriptorType *desc, bool leading) {
   std::vector<grpc::string> out;
   if (leading) {
     grpc_generator::GetComment(
