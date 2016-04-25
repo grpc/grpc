@@ -527,7 +527,8 @@ void GenerateNewStubMethods(Printer* out, const ServiceDescriptor *service) {
   out->Print("\n");
 }
 
-void GenerateService(Printer* out, const ServiceDescriptor *service) {
+void GenerateService(Printer* out, const ServiceDescriptor *service,
+                     bool generate_client, bool generate_server) {
   out->Print("public static class $classname$\n", "classname",
              GetServiceClassName(service));
   out->Print("{\n");
@@ -542,13 +543,22 @@ void GenerateService(Printer* out, const ServiceDescriptor *service) {
     GenerateStaticMethodField(out, service->method(i));
   }
   GenerateServiceDescriptorProperty(out, service);
-  GenerateClientInterface(out, service);
-  GenerateServerInterface(out, service);
-  GenerateServerClass(out, service);
-  GenerateClientStub(out, service);
-  GenerateBindServiceMethod(out, service, false);
-  GenerateBindServiceMethod(out, service, true);
-  GenerateNewStubMethods(out, service);
+
+  if (generate_client) {
+    GenerateClientInterface(out, service);
+  }
+  if (generate_server) {
+    GenerateServerInterface(out, service);
+    GenerateServerClass(out, service);
+  }
+  if (generate_client) {
+    GenerateClientStub(out, service);
+    GenerateNewStubMethods(out, service);
+  }
+  if (generate_server) {
+    GenerateBindServiceMethod(out, service, false);
+    GenerateBindServiceMethod(out, service, true);
+  }
 
   out->Outdent();
   out->Print("}\n");
@@ -584,7 +594,7 @@ grpc::string GetServices(const FileDescriptor *file) {
     out.Print("namespace $namespace$ {\n", "namespace", GetFileNamespace(file));
     out.Indent();
     for (int i = 0; i < file->service_count(); i++) {
-      GenerateService(&out, file->service(i));
+      GenerateService(&out, file->service(i), true, true);
     }
     out.Outdent();
     out.Print("}\n");
