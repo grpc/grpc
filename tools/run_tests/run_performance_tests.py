@@ -89,7 +89,7 @@ def create_qpsworker_job(language, shortname=None,
   jobspec = jobset.JobSpec(
       cmdline=cmdline,
       shortname=shortname,
-      timeout_seconds=15*60)
+      timeout_seconds=30*60)
   return QpsWorkerJob(jobspec, language, host_and_port)
 
 
@@ -118,24 +118,29 @@ def create_scenario_jobspec(scenario_json, workers, remote_host=None,
 def create_quit_jobspec(workers, remote_host=None):
   """Runs quit using QPS driver."""
   # setting QPS_WORKERS env variable here makes sure it works with SSH too.
-  cmd = 'QPS_WORKERS="%s" bins/opt/qps_driver --quit' % ','.join(workers)
+  cmd = 'QPS_WORKERS="%s" bins/opt/qps_json_driver --quit' % ','.join(workers)
   if remote_host:
     user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, remote_host)
     cmd = 'ssh %s "cd ~/performance_workspace/grpc/ && "%s' % (user_at_host, pipes.quote(cmd))
 
   return jobset.JobSpec(
       cmdline=[cmd],
-      shortname='qps_driver.quit',
+      shortname='qps_json_driver.quit',
       timeout_seconds=3*60,
       shell=True,
       verbose_success=True)
 
 
-def archive_repo():
+def archive_repo(languages):
   """Archives local version of repo including submodules."""
-  # TODO: also archive grpc-go and grpc-java repos
+  cmdline=['tar', '-cf', '../grpc.tar', '../grpc/']
+  if 'java' in languages:
+    cmdline.append('../grpc-java')
+  if 'go' in languages:
+    cmdline.append('../grpc-go')
+
   archive_job = jobset.JobSpec(
-      cmdline=['tar', '-cf', '../grpc.tar', '../grpc/'],
+      cmdline=cmdline,
       shortname='archive_repo',
       timeout_seconds=3*60)
 
@@ -144,7 +149,7 @@ def archive_repo():
       [archive_job], newline_on_success=True, maxjobs=1)
   if num_failures == 0:
     jobset.message('SUCCESS',
-                   'Archive with local repository create successfully.',
+                   'Archive with local repository created successfully.',
                    do_newline=True)
   else:
     jobset.message('FAILED', 'Failed to archive local repository.',
@@ -316,7 +321,7 @@ if args.remote_driver_host:
   remote_hosts.add(args.remote_driver_host)
 
 if remote_hosts:
-  archive_repo()
+  archive_repo(languages=[str(l) for l in languages])
   prepare_remote_hosts(remote_hosts)
 
 build_local = False
@@ -356,5 +361,6 @@ try:
     sys.exit(1)
 except:
   traceback.print_exc()
+  raise
 finally:
   finish_qps_workers(qpsworker_jobs)

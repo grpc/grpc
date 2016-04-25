@@ -34,13 +34,13 @@
 #include <memory>
 #include <set>
 
-#include <google/protobuf/util/json_util.h>
-#include <google/protobuf/util/type_resolver_util.h>
+#include <grpc++/support/config_protobuf.h>
 
 #include <gflags/gflags.h>
 #include <grpc/support/log.h>
 
 #include "test/cpp/qps/driver.h"
+#include "test/cpp/qps/parse_json.h"
 #include "test/cpp/qps/report.h"
 #include "test/cpp/util/benchmark_config.h"
 
@@ -48,6 +48,7 @@ DEFINE_string(scenarios_file, "",
               "JSON file containing an array of Scenario objects");
 DEFINE_string(scenarios_json, "",
               "JSON string containing an array of Scenario objects");
+DEFINE_bool(quit, false, "Quit the workers");
 
 namespace grpc {
 namespace testing {
@@ -55,12 +56,17 @@ namespace testing {
 static void QpsDriver() {
   grpc::string json;
 
-  if (FLAGS_scenarios_file != "") {
-    if (FLAGS_scenarios_json != "") {
-      gpr_log(GPR_ERROR,
-              "Only one of --scenarios_file or --scenarios_json must be set");
-      abort();
-    }
+  bool scfile = (FLAGS_scenarios_file != "");
+  bool scjson = (FLAGS_scenarios_json != "");
+  if ((!scfile && !scjson && !FLAGS_quit) ||
+      (scfile && (scjson || FLAGS_quit)) || (scjson && FLAGS_quit)) {
+    gpr_log(GPR_ERROR,
+            "Exactly one of --scenarios_file, --scenarios_json, "
+            "or --quit must be set");
+    abort();
+  }
+
+  if (scfile) {
     // Read the json data from disk
     FILE *json_file = fopen(FLAGS_scenarios_file.c_str(), "r");
     GPR_ASSERT(json_file != NULL);
@@ -72,32 +78,19 @@ static void QpsDriver() {
     fclose(json_file);
     json = grpc::string(data, data + len);
     delete[] data;
-  } else if (FLAGS_scenarios_json != "") {
+  } else if (scjson) {
     json = FLAGS_scenarios_json.c_str();
-  } else {
-    gpr_log(GPR_ERROR,
-            "One of --scenarios_file or --scenarios_json must be set");
-    abort();
+  } else if (FLAGS_quit) {
+    RunQuit();
+    return;
   }
 
   // Parse into an array of scenarios
   Scenarios scenarios;
-  std::unique_ptr<google::protobuf::util::TypeResolver> type_resolver(
-      google::protobuf::util::NewTypeResolverForDescriptorPool(
-          "type.googleapis.com",
-          google::protobuf::DescriptorPool::generated_pool()));
-  grpc::string binary;
-  auto status = JsonToBinaryString(type_resolver.get(),
-                                   "type.googleapis.com/grpc.testing.Scenarios",
-                                   json, &binary);
-  if (!status.ok()) {
-    grpc::string msg(status.error_message());
-    gpr_log(GPR_ERROR, "Failed to convert json to binary: errcode=%d msg=%s",
-            status.error_code(), msg.c_str());
-    gpr_log(GPR_ERROR, "JSON: ", json.c_str());
-    abort();
-  }
-  GPR_ASSERT(scenarios.ParseFromString(binary));
+  ParseJson(json.c_str(), "grpc.testing.Scenarios", &scenarios);
+
+  // Make sure that there is at least some valid scenario here
+  GPR_ASSERT(scenarios.scenarios_size() > 0);
 
   for (int i = 0; i < scenarios.scenarios_size(); i++) {
     const Scenario &scenario = scenarios.scenarios(i);
