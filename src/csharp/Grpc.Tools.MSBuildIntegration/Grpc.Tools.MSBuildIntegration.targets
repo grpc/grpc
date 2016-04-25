@@ -1,0 +1,49 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <!-- C# generation task -->
+    <CoreCompileDependsOn>ProtoGen;$(CoreCompileDependsOn)</CoreCompileDependsOn>
+
+    <!-- Clean task to remove temporary files -->
+    <CleanDependsOn>ProtoGenClean;$(CleanDependsOn)</CleanDependsOn>
+  </PropertyGroup>
+  <ItemGroup>
+    <AvailableItemName Include="Proto"/>
+  </ItemGroup>
+  <Target Name="ProtoGen" Inputs="@(Proto)" Outputs="$(ProjectDir)$(IntermediateOutputPath)protocs.txt;$(ProjectDir)$(IntermediateOutputPath)protodeps.txt">
+    <!-- Make sure that our protoc and protoc_csharp_plugin files are executable -->
+    <Exec Condition="'$(OS)' == 'Unix'" Command="chmod +x $(MSBuildThisFileDirectory)../tools/*/protoc"/>
+    <Exec Condition="'$(OS)' == 'Unix'" Command="chmod +x $(MSBuildThisFileDirectory)../tools/*/grpc_csharp_plugin"/>
+
+    <!-- Ensure that any nested directories we need to put our temp output files into exist -->
+    <Message Text="@(Proto -> '$(ProjectDir)$(IntermediateOutputPath)%(RelativeDir)')" />
+    <MakeDir Directories="@(Proto -> '$(ProjectDir)$(IntermediateOutputPath)%(RelativeDir)')" />
+
+    <!-- Execute our wrapper that generates C# source for proto files -->
+    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="$(MSBuildThisFileDirectory)..\tools\Grpc.Tools.CSharpGenerator.exe $(ProjectDir) $(IntermediateOutputPath) @(Proto, ' ')" LogStandardErrorAsError="true"/>
+    <Exec Condition="'$(OS)' == 'Unix'" Command="mono $(MSBuildThisFileDirectory)..\tools\Grpc.Tools.CSharpGenerator.exe $(ProjectDir) $(IntermediateOutputPath) @(Proto, ' ')" LogStandardErrorAsError="true"/>
+
+    <!-- Grpc.Tools.CSharpGenerator.exe wrote protocs.txt
+         containing the names of all the generated files -->
+    <ReadLinesFromFile File="$(ProjectDir)$(IntermediateOutputPath)protocs.txt">
+      <Output TaskParameter="Lines"
+              ItemName="Compile"/>
+    </ReadLinesFromFile>
+  </Target>
+
+  <!-- ProtoGenClean uses protodeps.txt containing
+       the names of all the other temp files and
+       cleans it up -->
+  <Target Name="ProtoGenClean">
+    <ReadLinesFromFile File="$(ProjectDir)$(IntermediateOutputPath)protocs.txt">
+      <Output TaskParameter="Lines"
+              ItemName="ProtoGenFilesToClean"/>
+    </ReadLinesFromFile>
+    <ReadLinesFromFile File="$(ProjectDir)$(IntermediateOutputPath)protodeps.txt">
+      <Output TaskParameter="Lines"
+              ItemName="ProtoGenFilesToClean"/>
+    </ReadLinesFromFile>
+    <Delete Files="@(ProtoGenFilesToClean);$(ProjectDir)$(IntermediateOutputPath)protocs.txt;$(ProjectDir)$(IntermediateOutputPath)protodeps.txt"/>
+    <RemoveDir Directories="@(Proto -> '$(ProjectDir)$(IntermediateOutputPath)%(RelativeDir)')" />
+  
+</Target>
+</Project>
