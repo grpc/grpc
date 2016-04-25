@@ -40,7 +40,8 @@
 
 namespace grpc_csharp_generator {
 
-grpc::string GetServices(const grpc::protobuf::FileDescriptor *file);
+grpc::string GetServices(const grpc::protobuf::FileDescriptor *file,
+                         bool generate_client, bool generate_server);
 
 }  // namespace grpc_csharp_generator
 
