@@ -269,6 +269,8 @@ namespace Grpc.IntegrationTesting
 
         class MetricsServiceImpl : MetricsService.MetricsServiceBase 
         {
+            const string GaugeName = "csharp_overall_qps";
+
             readonly Histogram histogram;
             readonly WallClockStopwatch wallClockStopwatch = new WallClockStopwatch();
 
@@ -277,19 +279,39 @@ namespace Grpc.IntegrationTesting
                 this.histogram = histogram;
             }
 
+            public override Task<GaugeResponse> GetGauge(GaugeRequest request, ServerCallContext context)
+            {
+                if (request.Name == GaugeName)
+                {
+                    long qps = GetQpsAndReset();
+
+                    return Task.FromResult(new GaugeResponse
+                    {
+                        Name = GaugeName,
+                        LongValue = qps
+                    });
+                }
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "Gauge does not exist"));
+            }
+
             public override async Task GetAllGauges(EmptyMessage request, IServerStreamWriter<GaugeResponse> responseStream, ServerCallContext context)
+            {
+                long qps = GetQpsAndReset();
+
+                var response = new GaugeResponse
+                {
+                    Name = GaugeName,
+                    LongValue = qps
+                };
+                await responseStream.WriteAsync(response);
+            }
+
+            long GetQpsAndReset()
             {
                 var snapshot = histogram.GetSnapshot(true);
                 var elapsedSnapshot = wallClockStopwatch.GetElapsedSnapshot(true);
 
-                double qps = snapshot.Count / elapsedSnapshot.Seconds;
-
-                var response = new GaugeResponse
-                {
-                    Name = "csharp_overall_qps",
-                    DoubleValue = qps
-                };
-                await responseStream.WriteAsync(response);
+                return (long) (snapshot.Count / elapsedSnapshot.Seconds);
             }
         }
     }
