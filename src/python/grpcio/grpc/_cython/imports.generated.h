@@ -136,6 +136,18 @@ extern census_trace_scan_end_type census_trace_scan_end_import;
 typedef void(*census_record_values_type)(census_context *context, census_value *values, size_t nvalues);
 extern census_record_values_type census_record_values_import;
 #define census_record_values census_record_values_import
+typedef const census_aggregation_ops *(*census_agg_sum_type)();
+extern census_agg_sum_type census_agg_sum_import;
+#define census_agg_sum census_agg_sum_import
+typedef const census_aggregation_ops *(*census_agg_distribution_type)();
+extern census_agg_distribution_type census_agg_distribution_import;
+#define census_agg_distribution census_agg_distribution_import
+typedef const census_aggregation_ops *(*census_agg_histogram_type)();
+extern census_agg_histogram_type census_agg_histogram_import;
+#define census_agg_histogram census_agg_histogram_import
+typedef const census_aggregation_ops *(*census_agg_window_type)();
+extern census_agg_window_type census_agg_window_import;
+#define census_agg_window census_agg_window_import
 typedef census_view *(*census_view_create_type)(uint32_t metric_id, const census_context *tags, const census_aggregation *aggregations, size_t naggregations);
 extern census_view_create_type census_view_create_import;
 #define census_view_create census_view_create_import

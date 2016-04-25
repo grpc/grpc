@@ -108,19 +108,10 @@ void census_view_reset(census_view *view) {
   abort();
 }
 
-const census_aggregation_ops *census_agg_sum() {
-  abort();
-}
+const census_aggregation_ops *census_agg_sum() { abort(); }
 
-const census_aggregation_ops *census_agg_distribution() {
-  abort();
-}
+const census_aggregation_ops *census_agg_distribution() { abort(); }
 
-const census_aggregation_ops *census_agg_histogram() {
-  abort();
-}
+const census_aggregation_ops *census_agg_histogram() { abort(); }
 
-const census_aggregation_ops *census_agg_window() {
-  abort();
-}
-
+const census_aggregation_ops *census_agg_window() { abort(); }
