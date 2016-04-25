@@ -167,8 +167,8 @@ static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
   grpc_executor_enqueue(&r->request_closure, 1);
 }
 
-void (*grpc_resolved_address)(grpc_exec_ctx *exec_ctx, const char *name,
-                              const char *default_port, grpc_resolve_cb cb,
-                              void *arg) = resolve_address_impl;
+void (*grpc_resolve_address)(grpc_exec_ctx *exec_ctx, const char *name,
+                             const char *default_port, grpc_resolve_cb cb,
+                             void *arg) = resolve_address_impl;
 
 #endif
