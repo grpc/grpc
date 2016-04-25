@@ -99,6 +99,9 @@ static void lame_start_transport_op(grpc_exec_ctx *exec_ctx,
   if (op->on_consumed != NULL) {
     op->on_consumed->cb(exec_ctx, op->on_consumed->cb_arg, 1);
   }
+  if (op->send_ping != NULL) {
+    op->send_ping->cb(exec_ctx, op->send_ping->cb_arg, 0);
+  }
 }
 
 static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,

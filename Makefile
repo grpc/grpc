@@ -881,6 +881,7 @@ alarm_test: $(BINDIR)/$(CONFIG)/alarm_test
 algorithm_test: $(BINDIR)/$(CONFIG)/algorithm_test
 alloc_test: $(BINDIR)/$(CONFIG)/alloc_test
 alpn_test: $(BINDIR)/$(CONFIG)/alpn_test
+api_fuzzer: $(BINDIR)/$(CONFIG)/api_fuzzer
 bin_encoder_test: $(BINDIR)/$(CONFIG)/bin_encoder_test
 census_context_test: $(BINDIR)/$(CONFIG)/census_context_test
 channel_create_test: $(BINDIR)/$(CONFIG)/channel_create_test
@@ -1119,6 +1120,7 @@ h2_sockpair_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair_nosec_test
 h2_sockpair+trace_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair+trace_nosec_test
 h2_sockpair_1byte_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_nosec_test
 h2_uds_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds_nosec_test
+api_fuzzer_one_entry: $(BINDIR)/$(CONFIG)/api_fuzzer_one_entry
 client_fuzzer_one_entry: $(BINDIR)/$(CONFIG)/client_fuzzer_one_entry
 hpack_parser_fuzzer_test_one_entry: $(BINDIR)/$(CONFIG)/hpack_parser_fuzzer_test_one_entry
 http_fuzzer_test_one_entry: $(BINDIR)/$(CONFIG)/http_fuzzer_test_one_entry
@@ -1347,6 +1349,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/h2_sockpair+trace_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_uds_nosec_test \
+  $(BINDIR)/$(CONFIG)/api_fuzzer_one_entry \
   $(BINDIR)/$(CONFIG)/client_fuzzer_one_entry \
   $(BINDIR)/$(CONFIG)/hpack_parser_fuzzer_test_one_entry \
   $(BINDIR)/$(CONFIG)/http_fuzzer_test_one_entry \
@@ -2711,6 +2714,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/util/memory_counters.c \
     test/core/util/mock_endpoint.c \
     test/core/util/parse_hexstring.c \
+    test/core/util/passthru_endpoint.c \
     test/core/util/port_posix.c \
     test/core/util/port_server_client.c \
     test/core/util/port_windows.c \
@@ -2760,6 +2764,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     test/core/util/memory_counters.c \
     test/core/util/mock_endpoint.c \
     test/core/util/parse_hexstring.c \
+    test/core/util/passthru_endpoint.c \
     test/core/util/port_posix.c \
     test/core/util/port_server_client.c \
     test/core/util/port_windows.c \
@@ -6048,6 +6053,38 @@ deps_alpn_test: $(ALPN_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(ALPN_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+API_FUZZER_SRC = \
+    test/core/end2end/fuzzers/api_fuzzer.c \
+
+API_FUZZER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(API_FUZZER_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/api_fuzzer: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/api_fuzzer: $(API_FUZZER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(API_FUZZER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -lFuzzer -o $(BINDIR)/$(CONFIG)/api_fuzzer
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/fuzzers/api_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_api_fuzzer: $(API_FUZZER_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(API_FUZZER_OBJS:.o=.dep)
 endif
 endif
 
@@ -13845,6 +13882,41 @@ deps_h2_uds_nosec_test: $(H2_UDS_NOSEC_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_DEPS),true)
 -include $(H2_UDS_NOSEC_TEST_OBJS:.o=.dep)
+endif
+
+
+API_FUZZER_ONE_ENTRY_SRC = \
+    test/core/end2end/fuzzers/api_fuzzer.c \
+    test/core/util/one_corpus_entry_fuzzer.c \
+
+API_FUZZER_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(API_FUZZER_ONE_ENTRY_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/api_fuzzer_one_entry: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/api_fuzzer_one_entry: $(API_FUZZER_ONE_ENTRY_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(API_FUZZER_ONE_ENTRY_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/api_fuzzer_one_entry
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/fuzzers/api_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/core/util/one_corpus_entry_fuzzer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_api_fuzzer_one_entry: $(API_FUZZER_ONE_ENTRY_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(API_FUZZER_ONE_ENTRY_OBJS:.o=.dep)
+endif
 endif
 
 

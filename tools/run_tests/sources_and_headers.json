@@ -65,6 +65,22 @@
   }, 
   {
     "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "api_fuzzer", 
+    "src": [
+      "test/core/end2end/fuzzers/api_fuzzer.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
       "grpc", 
       "grpc_test_util"
     ], 
@@ -3908,6 +3924,23 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "src": [
+      "test/core/end2end/fuzzers/api_fuzzer.c", 
+      "test/core/util/one_corpus_entry_fuzzer.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "client_fuzzer_one_entry", 
     "src": [
       "test/core/end2end/fuzzers/client_fuzzer.c", 
@@ -6000,6 +6033,7 @@
       "test/core/util/memory_counters.h", 
       "test/core/util/mock_endpoint.h", 
       "test/core/util/parse_hexstring.h", 
+      "test/core/util/passthru_endpoint.h", 
       "test/core/util/port.h", 
       "test/core/util/port_server_client.h", 
       "test/core/util/slice_splitter.h"
@@ -6021,6 +6055,8 @@
       "test/core/util/mock_endpoint.h", 
       "test/core/util/parse_hexstring.c", 
       "test/core/util/parse_hexstring.h", 
+      "test/core/util/passthru_endpoint.c", 
+      "test/core/util/passthru_endpoint.h", 
       "test/core/util/port.h", 
       "test/core/util/port_posix.c", 
       "test/core/util/port_server_client.c", 
