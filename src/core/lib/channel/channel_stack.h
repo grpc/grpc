@@ -104,7 +104,7 @@ typedef struct {
   void (*set_pollset_or_pollset_set)(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
                                      grpc_pollset *pollset,
-                                     grpc_pollset_set *or_pollset_set);
+                                     grpc_pollset_set *pollset_set_alternative);
   /* Destroy per call data.
      The filter does not need to do any chaining */
   void (*destroy_call_elem)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem);
@@ -203,7 +203,7 @@ void grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
  * op is started */
 void grpc_call_stack_set_pollset_or_pollset_set(
     grpc_exec_ctx *exec_ctx, grpc_call_stack *call_stack, grpc_pollset *pollset,
-    grpc_pollset_set *or_pollset_set);
+    grpc_pollset_set *pollset_set_alternative);
 
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
 #define GRPC_CALL_STACK_REF(call_stack, reason) \
@@ -233,7 +233,7 @@ void grpc_call_stack_destroy(grpc_exec_ctx *exec_ctx, grpc_call_stack *stack);
  * Does nothing. */
 void grpc_call_stack_ignore_set_pollset_or_pollset_set(
     grpc_exec_ctx *exec_ctx, grpc_call_element *elem, grpc_pollset *pollset,
-    grpc_pollset_set *or_pollset_set);
+    grpc_pollset_set *pollset_set_alternative);
 /* Call the next operation in a call stack */
 void grpc_call_next_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                        grpc_transport_stream_op *op);

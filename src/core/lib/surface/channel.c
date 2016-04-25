@@ -166,14 +166,14 @@ char *grpc_channel_get_target(grpc_channel *channel) {
 
 static grpc_call *grpc_channel_create_call_internal(
     grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
-    grpc_completion_queue *cq, grpc_pollset_set *or_pollset_set,
+    grpc_completion_queue *cq, grpc_pollset_set *pollset_set_alternative,
     grpc_mdelem *path_mdelem, grpc_mdelem *authority_mdelem,
     gpr_timespec deadline) {
   grpc_mdelem *send_metadata[2];
   size_t num_metadata = 0;
 
   GPR_ASSERT(channel->is_client);
-  GPR_ASSERT(!(cq != NULL && or_pollset_set != NULL));
+  GPR_ASSERT(!(cq != NULL && pollset_set_alternative != NULL));
 
   send_metadata[num_metadata++] = path_mdelem;
   if (authority_mdelem != NULL) {
@@ -183,8 +183,8 @@ static grpc_call *grpc_channel_create_call_internal(
   }
 
   return grpc_call_create(channel, parent_call, propagation_mask, cq,
-                          or_pollset_set, NULL, send_metadata, num_metadata,
-                          deadline);
+                          pollset_set_alternative, NULL, send_metadata,
+                          num_metadata, deadline);
 }
 
 grpc_call *grpc_channel_create_call(grpc_channel *channel,
