@@ -37,6 +37,9 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\util\parse_hexstring.c">
       <Filter>test\core\util</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\passthru_endpoint.c">
+      <Filter>test\core\util</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\port_posix.c">
       <Filter>test\core\util</Filter>
     </ClCompile>
@@ -76,6 +79,9 @@
       <Filter>test\core\util</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\core\util\parse_hexstring.h">
+      <Filter>test\core\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\core\util\passthru_endpoint.h">
       <Filter>test\core\util</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\core\util\port.h">

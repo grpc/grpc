@@ -70,6 +70,7 @@ static gpr_clock_type g_clock_type;
 static shard_type g_shards[NUM_SHARDS];
 /* Protected by g_mu */
 static shard_type *g_shard_queue[NUM_SHARDS];
+static bool g_initialized = false;
 
 static int run_some_expired_timers(grpc_exec_ctx *exec_ctx, gpr_timespec now,
                                    gpr_timespec *next, int success);
@@ -83,6 +84,7 @@ static gpr_timespec compute_min_deadline(shard_type *shard) {
 void grpc_timer_list_init(gpr_timespec now) {
   uint32_t i;
 
+  g_initialized = true;
   gpr_mu_init(&g_mu);
   gpr_mu_init(&g_checker_mu);
   g_clock_type = now.clock_type;
@@ -111,6 +113,7 @@ void grpc_timer_list_shutdown(grpc_exec_ctx *exec_ctx) {
   }
   gpr_mu_destroy(&g_mu);
   gpr_mu_destroy(&g_checker_mu);
+  g_initialized = false;
 }
 
 /* This is a cheap, but good enough, pointer hash for sharding the tasks: */
@@ -179,6 +182,18 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
   grpc_closure_init(&timer->closure, timer_cb, timer_cb_arg);
   timer->deadline = deadline;
   timer->triggered = 0;
+
+  if (!g_initialized) {
+    timer->triggered = 1;
+    grpc_exec_ctx_enqueue(exec_ctx, &timer->closure, false, NULL);
+    return;
+  }
+
+  if (gpr_time_cmp(deadline, now) <= 0) {
+    timer->triggered = 1;
+    grpc_exec_ctx_enqueue(exec_ctx, &timer->closure, true, NULL);
+    return;
+  }
 
   /* TODO(ctiller): check deadline expired */
 
