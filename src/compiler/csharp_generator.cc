@@ -123,6 +123,10 @@ std::string GetMethodRequestParamMaybe(const MethodDescriptor *method,
   return GetClassName(method->input_type()) + " request, ";
 }
 
+std::string GetAccessLevel(bool internal_access) {
+  return internal_access ? "internal" : "public";
+}
+
 std::string GetMethodReturnTypeClient(const MethodDescriptor *method) {
   switch (GetMethodType(method)) {
     case METHODTYPE_NO_STREAMING:
@@ -528,8 +532,10 @@ void GenerateNewStubMethods(Printer* out, const ServiceDescriptor *service) {
 }
 
 void GenerateService(Printer* out, const ServiceDescriptor *service,
-                     bool generate_client, bool generate_server) {
-  out->Print("public static class $classname$\n", "classname",
+                     bool generate_client, bool generate_server,
+                     bool internal_access) {
+  out->Print("$access_level$ static class $classname$\n", "access_level",
+             GetAccessLevel(internal_access), "classname",
              GetServiceClassName(service));
   out->Print("{\n");
   out->Indent();
@@ -567,7 +573,7 @@ void GenerateService(Printer* out, const ServiceDescriptor *service,
 }  // anonymous namespace
 
 grpc::string GetServices(const FileDescriptor *file, bool generate_client,
-                         bool generate_server) {
+                         bool generate_server, bool internal_access) {
   grpc::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
@@ -595,7 +601,8 @@ grpc::string GetServices(const FileDescriptor *file, bool generate_client,
     out.Print("namespace $namespace$ {\n", "namespace", GetFileNamespace(file));
     out.Indent();
     for (int i = 0; i < file->service_count(); i++) {
-      GenerateService(&out, file->service(i), generate_client, generate_server);
+      GenerateService(&out, file->service(i), generate_client, generate_server,
+                      internal_access);
     }
     out.Outdent();
     out.Print("}\n");
