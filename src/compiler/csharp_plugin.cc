@@ -51,7 +51,22 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     std::vector<std::pair<grpc::string, grpc::string> > options;
     grpc::protobuf::compiler::ParseGeneratorParameter(parameter, &options);
 
-    grpc::string code = grpc_csharp_generator::GetServices(file);
+    bool generate_client = true;
+    bool generate_server = true;
+    for (size_t i = 0; i < options.size(); i++) {
+      if (options[i].first == "no_client") {
+        generate_client = false;
+      } else if (options[i].first == "no_server") {
+        generate_server = false;
+      } else {
+        *error = "Unknown generator option: " + options[i].first;
+        return false;
+      }
+    }
+
+    grpc::string code = grpc_csharp_generator::GetServices(file,
+                                                           generate_client,
+                                                           generate_server);
     if (code.size() == 0) {
       return true;  // don't generate a file if there are no services
     }

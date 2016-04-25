@@ -566,7 +566,8 @@ void GenerateService(Printer* out, const ServiceDescriptor *service,
 
 }  // anonymous namespace
 
-grpc::string GetServices(const FileDescriptor *file) {
+grpc::string GetServices(const FileDescriptor *file, bool generate_client,
+                         bool generate_server) {
   grpc::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
@@ -594,7 +595,7 @@ grpc::string GetServices(const FileDescriptor *file) {
     out.Print("namespace $namespace$ {\n", "namespace", GetFileNamespace(file));
     out.Indent();
     for (int i = 0; i < file->service_count(); i++) {
-      GenerateService(&out, file->service(i), true, true);
+      GenerateService(&out, file->service(i), generate_client, generate_server);
     }
     out.Outdent();
     out.Print("}\n");
