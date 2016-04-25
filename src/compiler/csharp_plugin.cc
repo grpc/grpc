@@ -48,6 +48,9 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
                 const grpc::string &parameter,
                 grpc::protobuf::compiler::GeneratorContext *context,
                 grpc::string *error) const {
+    std::vector<std::pair<grpc::string, grpc::string> > options;
+    grpc::protobuf::compiler::ParseGeneratorParameter(parameter, &options);
+
     grpc::string code = grpc_csharp_generator::GetServices(file);
     if (code.size() == 0) {
       return true;  // don't generate a file if there are no services
