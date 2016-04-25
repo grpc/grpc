@@ -71,8 +71,15 @@ RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev c
 # Native Client dependencies
 
 # Needed for the Chrome dependency msttcorefonts
-RUN sed -i "/^# deb.*multiverse/ s/^# //" /etc/apt/sources.list
-RUN apt-get install msttcorefonts
+# http://askubuntu.com/questions/89096/how-do-i-enable-the-multiverse-repository
+RUN echo 'deb http://archive.ubuntu.com/ubuntu/ trusty multiverse' >> /etc/apt/sources.list
+RUN echo 'deb-src http://archive.ubuntu.com/ubuntu/ trusty multiverse' >> /etc/apt/sources.list
+RUN echo 'deb http://archive.ubuntu.com/ubuntu/ trusty-updates multiverse' >> /etc/apt/sources.list
+RUN echo 'deb-src http://archive.ubuntu.com/ubuntu/ trusty-updates multiverse' >> /etc/apt/sources.list
+RUN echo 'deb http://archive.ubuntu.com/ubuntu/ trusty-security multiverse' >> /etc/apt/sources.list
+RUN echo 'deb-src http://archive.ubuntu.com/ubuntu/ trusty-security multiverse' >> /etc/apt/sources.list
+RUN apt-get update
+RUN apt-get -y install msttcorefonts
 
 # Download source
 RUN git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
