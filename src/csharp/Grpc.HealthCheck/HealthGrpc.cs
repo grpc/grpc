@@ -97,6 +97,12 @@ namespace Grpc.Health.V1 {
       }
     }
 
+    // creates a new client
+    public static HealthClient NewClient(Channel channel)
+    {
+      return new HealthClient(channel);
+    }
+
     // creates service definition that can be registered with a server
     #pragma warning disable 0618
     public static ServerServiceDefinition BindService(IHealth serviceImpl)
@@ -113,12 +119,6 @@ namespace Grpc.Health.V1 {
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_Check, serviceImpl.Check).Build();
-    }
-
-    // creates a new client
-    public static HealthClient NewClient(Channel channel)
-    {
-      return new HealthClient(channel);
     }
 
   }

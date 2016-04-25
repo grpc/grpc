@@ -120,6 +120,12 @@ namespace Grpc.Testing {
       }
     }
 
+    // creates a new client
+    public static BenchmarkServiceClient NewClient(Channel channel)
+    {
+      return new BenchmarkServiceClient(channel);
+    }
+
     // creates service definition that can be registered with a server
     #pragma warning disable 0618
     public static ServerServiceDefinition BindService(IBenchmarkService serviceImpl)
@@ -138,12 +144,6 @@ namespace Grpc.Testing {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_UnaryCall, serviceImpl.UnaryCall)
           .AddMethod(__Method_StreamingCall, serviceImpl.StreamingCall).Build();
-    }
-
-    // creates a new client
-    public static BenchmarkServiceClient NewClient(Channel channel)
-    {
-      return new BenchmarkServiceClient(channel);
     }
 
   }
@@ -320,6 +320,12 @@ namespace Grpc.Testing {
       }
     }
 
+    // creates a new client
+    public static WorkerServiceClient NewClient(Channel channel)
+    {
+      return new WorkerServiceClient(channel);
+    }
+
     // creates service definition that can be registered with a server
     #pragma warning disable 0618
     public static ServerServiceDefinition BindService(IWorkerService serviceImpl)
@@ -342,12 +348,6 @@ namespace Grpc.Testing {
           .AddMethod(__Method_RunClient, serviceImpl.RunClient)
           .AddMethod(__Method_CoreCount, serviceImpl.CoreCount)
           .AddMethod(__Method_QuitWorker, serviceImpl.QuitWorker).Build();
-    }
-
-    // creates a new client
-    public static WorkerServiceClient NewClient(Channel channel)
-    {
-      return new WorkerServiceClient(channel);
     }
 
   }

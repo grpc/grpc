@@ -121,6 +121,12 @@ namespace Grpc.Testing {
       }
     }
 
+    // creates a new client
+    public static MetricsServiceClient NewClient(Channel channel)
+    {
+      return new MetricsServiceClient(channel);
+    }
+
     // creates service definition that can be registered with a server
     #pragma warning disable 0618
     public static ServerServiceDefinition BindService(IMetricsService serviceImpl)
@@ -139,12 +145,6 @@ namespace Grpc.Testing {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_GetAllGauges, serviceImpl.GetAllGauges)
           .AddMethod(__Method_GetGauge, serviceImpl.GetGauge).Build();
-    }
-
-    // creates a new client
-    public static MetricsServiceClient NewClient(Channel channel)
-    {
-      return new MetricsServiceClient(channel);
     }
 
   }
