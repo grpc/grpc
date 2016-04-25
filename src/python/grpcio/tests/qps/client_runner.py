@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,24 +31,26 @@ import abc
 import thread
 import time
 
+
 class ClientRunner:
-  """Abstract interface for sending requests from clients.
-  """
+  """Abstract interface for sending requests from clients."""
+
   __metaclass__ = abc.ABCMeta
 
   def __init__(self, client):
     self._client = client
-  
+
   @abc.abstractmethod
   def start(self):
     raise NotImplementedError()
- 
+
   @abc.abstractmethod
   def stop(self):
     raise NotImplementedError()
 
+
 class OpenLoopClientRunner(ClientRunner):
- 
+
   def __init__(self, client, interval_generator):
     super(OpenLoopClientRunner, self).__init__(client)
     self._is_running = False
@@ -65,9 +67,10 @@ class OpenLoopClientRunner(ClientRunner):
     self._client = None
 
   def _dispatch_requests(self):
-    while(self._is_running):
+    while self._is_running:
       self._client.send_request()
       time.sleep(next(self._interval_generator))
+
 
 class ClosedLoopClientRunner(ClientRunner):
 
@@ -75,9 +78,9 @@ class ClosedLoopClientRunner(ClientRunner):
     super(ClosedLoopClientRunner, self).__init__(client)
     self._is_running = False
     self._request_count = request_count
-    #Send a new request on each response for closedloop
+    # Send a new request on each response for closed loop
     self._client.add_response_callback(self._send_request)
-     
+
   def start(self):
     self._is_running = True
     for i in xrange(self._request_count):
@@ -90,6 +93,6 @@ class ClosedLoopClientRunner(ClientRunner):
     self._client = None
 
   def _send_request(self, response_time):
-    if(self._is_running):
+    if self._is_running:
       self._client.send_request()
 

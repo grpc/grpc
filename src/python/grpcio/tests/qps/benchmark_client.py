@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,12 +27,14 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+"""Defines test client behaviors (UNARY/STREAMING) (SYNC/ASYNC)."""
+
 import abc
 import time
 try:
-  import Queue as queue  #Python 2.x
+  import Queue as queue  # Python 2.x
 except ImportError:
-  import queue  #Python 3
+  import queue  # Python 3
 
 import concurrent.futures
 from grpc.beta import implementations
@@ -46,9 +48,8 @@ _SERVER_HOST_OVERRIDE = 'foo.test.google.fr'
 
 
 class BenchmarkClient:
-  """Abstract benchmark client interface that exposes a non-blocking 
-  send_request() method used by the client runners
-  """
+  """Benchmark client interface that exposes a non-blocking send_request()."""
+
   __metaclass__ = abc.ABCMeta
 
   def __init__(self, server, payload_config, use_ssl, hist):
@@ -62,14 +63,19 @@ class BenchmarkClient:
                                                          _SERVER_HOST_OVERRIDE)
     else:
       channel = implementations.insecure_channel(host, port)
-    self._stub = services_pb2.beta_create_BenchmarkService_stub(channel)
 
-    # Create a dummy message
-    payload = messages_pb2.Payload(
-        body='\0' * payload_config.simple_params.req_size)
-    self._request = messages_pb2.SimpleRequest(
-        payload=payload,
-        response_size=payload_config.simple_params.resp_size)
+    if payload_config.HasField('simple_params'):
+      self._generic = False
+      self._stub = services_pb2.beta_create_BenchmarkService_stub(channel)
+      payload = messages_pb2.Payload(
+          body='\0' * payload_config.simple_params.req_size)
+      self._request = messages_pb2.SimpleRequest(
+          payload=payload,
+          response_size=payload_config.simple_params.resp_size)
+    else:
+      self._generic = True
+      self._stub = implementations.generic_stub(channel)
+      self._request = '\0' * payload_config.bytebuf_params.req_size
 
     self._hist = hist
     self._response_callbacks = []
@@ -101,7 +107,7 @@ class UnarySyncBenchmarkClient(BenchmarkClient):
     self._pool = concurrent.futures.ThreadPoolExecutor(max_workers=max_rpcs)
 
   def send_request(self):
-    # Send Sync requests in seperate threads to support multiple outstanding rpcs
+    # Send requests in seperate threads to support multiple outstanding rpcs
     # (See src/proto/grpc/testing/control.proto)
     self._pool.submit(self._dispatch_request)
 
@@ -111,7 +117,11 @@ class UnarySyncBenchmarkClient(BenchmarkClient):
 
   def _dispatch_request(self):
     start_time = time.time()
-    self._stub.UnaryCall(self._request, _TIMEOUT)
+    if self._generic:
+      self._stub.blocking_unary_unary('grpc.testing.BenchmarkService',
+                                      'UnaryCall', self._request, _TIMEOUT)
+    else:
+      self._stub.UnaryCall(self._request, _TIMEOUT)
     end_time = time.time()
     self._handle_response(end_time - start_time)
 
@@ -121,9 +131,14 @@ class UnaryAsyncBenchmarkClient(BenchmarkClient):
   def send_request(self):
     # Use the Future callback api to support multiple outstanding rpcs
     start_time = time.time()
-    response_future = self._stub.UnaryCall.future(self._request, _TIMEOUT)
-    response_future.add_done_callback(
-        lambda resp: self._response_received(start_time))
+    if self._generic:
+      response_future = self._stub.future_unary_unary(
+          'grpc.testing.BenchmarkService', 'UnaryCall', self._request,
+          _TIMEOUT)
+    else:
+      response_future = self._stub.UnaryCall.future(self._request, _TIMEOUT)
+      response_future.add_done_callback(
+          lambda resp: self._response_received(start_time))
 
   def _response_received(self, start_time):
     end_time = time.time()
@@ -138,7 +153,6 @@ class StreamingAsyncBenchmarkClient(BenchmarkClient):
   def __init__(self, server, payload_config, use_ssl, hist):
     super(StreamingAsyncBenchmarkClient, self).__init__(server, payload_config,
                                                         use_ssl, hist)
-
     self.exception = None
     self._is_streaming = False
     self._pool = concurrent.futures.ThreadPoolExecutor(max_workers=1)
@@ -161,14 +175,19 @@ class StreamingAsyncBenchmarkClient(BenchmarkClient):
 
   def _request_stream(self):
     self._is_streaming = True
-    response_stream = self._stub.StreamingCall(self._request_generator(),
-                                               _TIMEOUT)
+    if self._generic:
+      response_stream = self._stub.inline_stream_stream(
+          'grpc.testing.BenchmarkService', 'StreamingCall',
+          self._request_generator(), _TIMEOUT)
+    else:
+      response_stream = self._stub.StreamingCall(self._request_generator(),
+                                                 _TIMEOUT)
     for _ in response_stream:
       end_time = time.time()
       self._handle_response(end_time - self._send_time_queue.get_nowait())
 
   def _request_generator(self):
-    while (self._is_streaming):
+    while self._is_streaming:
       try:
         request = self._request_queue.get(block=True, timeout=1.0)
         yield request

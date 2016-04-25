@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,10 +28,12 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import multiprocessing
+import random
 import threading
 import time
 
 from grpc.beta import implementations
+from grpc.framework.interfaces.face import utilities
 from src.proto.grpc.testing import control_pb2
 from src.proto.grpc.testing import services_pb2
 from src.proto.grpc.testing import stats_pb2
@@ -40,14 +42,11 @@ from tests.qps import benchmark_client
 from tests.qps import benchmark_server
 from tests.qps import client_runner
 from tests.qps import histogram
-from tests.qps import intervals
 from tests.unit import resources
 
 
 class WorkerServer(services_pb2.BetaWorkerServiceServicer):
-  """Python Worker Server implementation.
-  Responsible for running servers and clients on demand.
-  """
+  """Python Worker Server implementation."""
 
   def __init__(self):
     self._quit_event = threading.Event()
@@ -78,18 +77,29 @@ class WorkerServer(services_pb2.BetaWorkerServiceServicer):
 
   def _create_server(self, config):
     if config.server_type != control_pb2.SYNC_SERVER:
-      raise Exception("Unsupported server type {}".format(config.ServerType))
+      raise Exception('Unsupported server type {}'.format(config.ServerType))
 
-    if config.HasField("security_params"):  # Use SSL
+    if config.payload_config.HasField('simple_params'):
+      resp_size = config.payload_config.simple_params.resp_size
+      servicer = benchmark_server.BenchmarkServer(resp_size)
+      server = services_pb2.beta_create_BenchmarkService_server(servicer)
+    else:
+      resp_size = config.payload_config.bytebuf_params.resp_size
+      servicer = benchmark_server.BenchmarkServer(resp_size, generic=True)
+      method_implementations = {
+          ('grpc.testing.BenchmarkService', 'StreamingCall'):
+          utilities.stream_stream_inline(servicer.StreamingCall),
+          ('grpc.testing.BenchmarkService', 'UnaryCall'):
+          utilities.unary_unary_inline(servicer.UnaryCall),
+      }
+      server = implementations.server(method_implementations)
+
+    if config.HasField('security_params'):  # Use SSL
       server_creds = implementations.ssl_server_credentials([(
           resources.private_key(), resources.certificate_chain())])
-      server = services_pb2.beta_create_BenchmarkService_server(
-          benchmark_server.BenchmarkServer())
-      port = server.add_secure_port("[::]:{}".format(config.port), server_creds)
+      port = server.add_secure_port('[::]:{}'.format(config.port), server_creds)
     else:
-      server = services_pb2.beta_create_BenchmarkService_server(
-          benchmark_server.BenchmarkServer())
-      port = server.add_insecure_port("[::]:{}".format(config.port))
+      port = server.add_insecure_port('[::]:{}'.format(config.port))
 
     return (server, port)
 
@@ -134,7 +144,7 @@ class WorkerServer(services_pb2.BetaWorkerServiceServicer):
     return control_pb2.ClientStatus(stats=stats)
 
   def _create_client_runner(self, server, config, qps_data):
-    use_ssl = config.HasField("security_params")
+    use_ssl = config.HasField('security_params')
     if config.client_type == control_pb2.SYNC_CLIENT:
       assert config.rpc_type == control_pb2.UNARY
       client = benchmark_client.UnarySyncBenchmarkClient(
@@ -150,14 +160,16 @@ class WorkerServer(services_pb2.BetaWorkerServiceServicer):
 
     # In multi-channel tests, we split the load across all channels
     load_factor = float(config.client_channels)
-    if config.load_params.HasField("closed_loop"):
+    if config.load_params.HasField('closed_loop'):
       runner = client_runner.ClosedLoopClientRunner(
           client, config.outstanding_rpcs_per_channel)
-    elif config.load_params.HasField("poisson"):
-      runner = client_runner.OpenLoopClientRunner(client, intervals.poisson(
-          config.load_params.poisson.offered_load / load_factor))
-    else:
-      raise Exception("Only ClosedLoop and Poisson parameters supported")
+    else:  # Open loop Poisson
+      alpha = config.load_params.poisson.offered_load / load_factor
+      def poisson():
+        while True:
+          yield random.expovariate(alpha)
+
+      runner = client_runner.OpenLoopClientRunner(client, poisson())
 
     return runner
 

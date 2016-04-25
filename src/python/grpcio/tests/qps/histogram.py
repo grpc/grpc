@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,7 @@ from src.proto.grpc.testing import stats_pb2
 
 class Histogram(object):
   """Histogram class used for recording performance testing data.
+
   This class is thread safe.
   """
 

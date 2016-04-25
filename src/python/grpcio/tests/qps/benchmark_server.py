@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -32,14 +32,18 @@ from src.proto.grpc.testing import services_pb2
 
 
 class BenchmarkServer(services_pb2.BetaBenchmarkServiceServicer):
-  """ Synchronous Server implementation for the Benchmark service
-  """
+  """Synchronous Server implementation for the Benchmark service."""
+
+  def __init__(self, resp_size, generic=False):
+    if generic:
+      self._response = '\0' * resp_size
+    else:
+      payload = messages_pb2.Payload(body='\0' * resp_size)
+      self._response = messages_pb2.SimpleResponse(payload=payload)
 
   def UnaryCall(self, request, context):
-    payload = messages_pb2.Payload(body='\0' * request.response_size)
-    return messages_pb2.SimpleResponse(payload=payload)
+    return self._response
 
   def StreamingCall(self, request_iterator, context):
     for request in request_iterator:
-      payload = messages_pb2.Payload(body='\0' * request.response_size)
-      yield messages_pb2.SimpleResponse(payload=payload)
+      yield self._response
