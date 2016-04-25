@@ -812,6 +812,7 @@ include/grpc++/impl/codegen/client_unary_call.h \
 include/grpc++/impl/codegen/completion_queue.h \
 include/grpc++/impl/codegen/completion_queue_tag.h \
 include/grpc++/impl/codegen/core_codegen_interface.h \
+include/grpc++/impl/codegen/create_auth_context.h \
 include/grpc++/impl/codegen/grpc_library.h \
 include/grpc++/impl/codegen/method_handler_impl.h \
 include/grpc++/impl/codegen/proto_utils.h \

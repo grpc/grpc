@@ -35,14 +35,18 @@ import "src/proto/grpc/testing/stats.proto";
 package grpc.testing;
 
 enum ClientType {
+  // Many languages support a basic distinction between using
+  // sync or async client, and this allows the specification
   SYNC_CLIENT = 0;
   ASYNC_CLIENT = 1;
+  OTHER_CLIENT = 2; // used for some language-specific variants
 }
 
 enum ServerType {
   SYNC_SERVER = 0;
   ASYNC_SERVER = 1;
   ASYNC_GENERIC_SERVER = 2;
+  OTHER_SERVER = 3; // used for some language-specific variants
 }
 
 enum RpcType {
@@ -57,18 +61,6 @@ message PoissonParams {
   double offered_load = 1;
 }
 
-message UniformParams {
-  double interarrival_lo = 1;
-  double interarrival_hi = 2;
-}
-
-message DeterministicParams { double offered_load = 1; }
-
-message ParetoParams {
-  double interarrival_base = 1;
-  double alpha = 2;
-}
-
 // Once an RPC finishes, immediately start a new one.
 // No configuration parameters needed.
 message ClosedLoopParams {}
@@ -77,9 +69,6 @@ message LoadParams {
   oneof load {
     ClosedLoopParams closed_loop = 1;
     PoissonParams poisson = 2;
-    UniformParams uniform = 3;
-    DeterministicParams determ = 4;
-    ParetoParams pareto = 5;
   };
 }
 
@@ -111,6 +100,9 @@ message ClientConfig {
   // Specify the cores we should run the client on, if desired
   repeated int32 core_list = 13;
   int32 core_limit = 14;
+
+  // If we use an OTHER_CLIENT client_type, this string gives more detail
+  string other_client_api = 15;
 }
 
 message ClientStatus { ClientStats stats = 1; }
@@ -142,6 +134,9 @@ message ServerConfig {
 
   // Specify the cores we should run the server on, if desired
   repeated int32 core_list = 10;
+
+  // If we use an OTHER_SERVER client_type, this string gives more detail
+  string other_server_api = 11;
 }
 
 message ServerArgs {

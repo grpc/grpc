@@ -9,26 +9,12 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
   add_message "grpc.testing.PoissonParams" do
     optional :offered_load, :double, 1
   end
-  add_message "grpc.testing.UniformParams" do
-    optional :interarrival_lo, :double, 1
-    optional :interarrival_hi, :double, 2
-  end
-  add_message "grpc.testing.DeterministicParams" do
-    optional :offered_load, :double, 1
-  end
-  add_message "grpc.testing.ParetoParams" do
-    optional :interarrival_base, :double, 1
-    optional :alpha, :double, 2
-  end
   add_message "grpc.testing.ClosedLoopParams" do
   end
   add_message "grpc.testing.LoadParams" do
     oneof :load do
       optional :closed_loop, :message, 1, "grpc.testing.ClosedLoopParams"
       optional :poisson, :message, 2, "grpc.testing.PoissonParams"
-      optional :uniform, :message, 3, "grpc.testing.UniformParams"
-      optional :determ, :message, 4, "grpc.testing.DeterministicParams"
-      optional :pareto, :message, 5, "grpc.testing.ParetoParams"
     end
   end
   add_message "grpc.testing.SecurityParams" do
@@ -48,6 +34,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :histogram_params, :message, 12, "grpc.testing.HistogramParams"
     repeated :core_list, :int32, 13
     optional :core_limit, :int32, 14
+    optional :other_client_api, :string, 15
   end
   add_message "grpc.testing.ClientStatus" do
     optional :stats, :message, 1, "grpc.testing.ClientStats"
@@ -69,6 +56,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :core_limit, :int32, 8
     optional :payload_config, :message, 9, "grpc.testing.PayloadConfig"
     repeated :core_list, :int32, 10
+    optional :other_server_api, :string, 11
   end
   add_message "grpc.testing.ServerArgs" do
     oneof :argtype do
@@ -88,14 +76,50 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
   end
   add_message "grpc.testing.Void" do
   end
+  add_message "grpc.testing.Scenario" do
+    optional :name, :string, 1
+    optional :client_config, :message, 2, "grpc.testing.ClientConfig"
+    optional :num_clients, :int32, 3
+    optional :server_config, :message, 4, "grpc.testing.ServerConfig"
+    optional :num_servers, :int32, 5
+    optional :warmup_seconds, :int32, 6
+    optional :benchmark_seconds, :int32, 7
+    optional :spawn_local_worker_count, :int32, 8
+  end
+  add_message "grpc.testing.Scenarios" do
+    repeated :scenarios, :message, 1, "grpc.testing.Scenario"
+  end
+  add_message "grpc.testing.ScenarioResultSummary" do
+    optional :qps, :double, 1
+    optional :qps_per_server_core, :double, 2
+    optional :server_system_time, :double, 3
+    optional :server_user_time, :double, 4
+    optional :client_system_time, :double, 5
+    optional :client_user_time, :double, 6
+    optional :latency_50, :double, 7
+    optional :latency_90, :double, 8
+    optional :latency_95, :double, 9
+    optional :latency_99, :double, 10
+    optional :latency_999, :double, 11
+  end
+  add_message "grpc.testing.ScenarioResult" do
+    optional :scenario, :message, 1, "grpc.testing.Scenario"
+    optional :latencies, :message, 2, "grpc.testing.HistogramData"
+    repeated :client_stats, :message, 3, "grpc.testing.ClientStats"
+    repeated :server_stats, :message, 4, "grpc.testing.ServerStats"
+    repeated :server_cores, :int32, 5
+    optional :summary, :message, 6, "grpc.testing.ScenarioResultSummary"
+  end
   add_enum "grpc.testing.ClientType" do
     value :SYNC_CLIENT, 0
     value :ASYNC_CLIENT, 1
+    value :OTHER_CLIENT, 2
   end
   add_enum "grpc.testing.ServerType" do
     value :SYNC_SERVER, 0
     value :ASYNC_SERVER, 1
     value :ASYNC_GENERIC_SERVER, 2
+    value :OTHER_SERVER, 3
   end
   add_enum "grpc.testing.RpcType" do
     value :UNARY, 0
@@ -106,9 +130,6 @@ end
 module Grpc
   module Testing
     PoissonParams = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.PoissonParams").msgclass
-    UniformParams = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.UniformParams").msgclass
-    DeterministicParams = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.DeterministicParams").msgclass
-    ParetoParams = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ParetoParams").msgclass
     ClosedLoopParams = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ClosedLoopParams").msgclass
     LoadParams = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.LoadParams").msgclass
     SecurityParams = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.SecurityParams").msgclass
@@ -122,6 +143,10 @@ module Grpc
     CoreRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.CoreRequest").msgclass
     CoreResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.CoreResponse").msgclass
     Void = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.Void").msgclass
+    Scenario = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.Scenario").msgclass
+    Scenarios = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.Scenarios").msgclass
+    ScenarioResultSummary = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ScenarioResultSummary").msgclass
+    ScenarioResult = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ScenarioResult").msgclass
     ClientType = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ClientType").enummodule
     ServerType = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ServerType").enummodule
     RpcType = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.RpcType").enummodule
