@@ -28,7 +28,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'forwardable'
-require 'grpc/generic/bidi_call'
+require_relative 'bidi_call'
 
 class Struct
   # BatchResult is the struct returned by calls to call#start_batch.
