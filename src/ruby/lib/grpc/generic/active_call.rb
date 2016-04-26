@@ -59,7 +59,8 @@ module GRPC
     include Core::CallOps
     extend Forwardable
     attr_reader(:deadline)
-    def_delegators :@call, :cancel, :metadata, :write_flag, :write_flag=
+    def_delegators :@call, :cancel, :metadata, :write_flag, :write_flag=,
+                   :peer, :peer_cert
 
     # client_invoke begins a client invocation.
     #
@@ -472,7 +473,7 @@ module GRPC
     # SingleReqView limits access to an ActiveCall's methods for use in server
     # handlers that receive just one request.
     SingleReqView = view_class(:cancelled, :deadline, :metadata,
-                               :output_metadata)
+                               :output_metadata, :peer, :peer_cert)
 
     # MultiReqView limits access to an ActiveCall's methods for use in
     # server client_streamer handlers.
