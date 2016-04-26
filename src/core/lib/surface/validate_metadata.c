@@ -40,7 +40,7 @@ static int conforms_to(const char *s, size_t len, const uint8_t *legal_bits) {
   const char *p = s;
   const char *e = s + len;
   for (; p != e; p++) {
-    int idx = *p;
+    int idx = (uint8_t)*p;
     int byte = idx / 8;
     int bit = idx % 8;
     if ((legal_bits[byte] & (1 << bit)) == 0) return 0;

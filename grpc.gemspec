@@ -24,10 +24,6 @@ Gem::Specification.new do |s|
   s.files += Dir.glob('include/grpc/**/*')
   s.test_files = Dir.glob('src/ruby/spec/**/*')
   s.bindir = 'src/ruby/bin'
-  %w(math noproto).each do |b|
-    s.executables += ["#{b}_client.rb", "#{b}_server.rb"]
-  end
-  s.executables += %w(grpc_ruby_interop_client grpc_ruby_interop_server)
   s.require_paths = %w( src/ruby/bin src/ruby/lib src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
@@ -171,6 +167,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/impl/codegen/sync_win32.h )
   s.files += %w( include/grpc/impl/codegen/time.h )
   s.files += %w( include/grpc/grpc_security.h )
+  s.files += %w( include/grpc/grpc_security_constants.h )
   s.files += %w( include/grpc/census.h )
   s.files += %w( src/core/lib/channel/channel_args.h )
   s.files += %w( src/core/lib/channel/channel_stack.h )
@@ -308,6 +305,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/census/grpc_filter.h )
   s.files += %w( src/core/ext/census/mlog.h )
   s.files += %w( src/core/ext/census/rpc_metric_id.h )
+  s.files += %w( src/core/lib/surface/init.c )
   s.files += %w( src/core/lib/channel/channel_args.c )
   s.files += %w( src/core/lib/channel/channel_stack.c )
   s.files += %w( src/core/lib/channel/channel_stack_builder.c )
@@ -377,7 +375,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/surface/channel_stack_type.c )
   s.files += %w( src/core/lib/surface/completion_queue.c )
   s.files += %w( src/core/lib/surface/event_string.c )
-  s.files += %w( src/core/lib/surface/init.c )
   s.files += %w( src/core/lib/surface/lame_client.c )
   s.files += %w( src/core/lib/surface/metadata_array.c )
   s.files += %w( src/core/lib/surface/server.c )

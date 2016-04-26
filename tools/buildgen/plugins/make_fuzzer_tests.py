@@ -41,7 +41,8 @@ def mako_plugin(dictionary):
       new_target['build'] = 'test'
       new_target['name'] += '_one_entry'
       new_target['run'] = False
-      new_target['deps'].insert(0, 'one_input_fuzzer')
+      new_target['src'].append('test/core/util/one_corpus_entry_fuzzer.c')
+      new_target['own_src'].append('test/core/util/one_corpus_entry_fuzzer.c')
       targets.append(new_target)
       for corpus in new_target['corpus_dirs']:
         for fn in sorted(glob.glob('%s/*' % corpus)):
@@ -49,8 +50,8 @@ def mako_plugin(dictionary):
               'name': new_target['name'],
               'args': [fn],
               'exclude_configs': [],
-              'platforms': ['linux', 'mac', 'windows', 'posix'],
-              'ci_platforms': ['linux', 'mac', 'windows', 'posix'],
+              'platforms': ['linux'],
+              'ci_platforms': ['linux'],
               'flaky': False,
               'language': 'c',
               'cpu_cost': 0.1,

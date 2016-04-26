@@ -46,6 +46,7 @@
 #include "src/core/lib/channel/http_client_filter.h"
 #include "src/core/lib/channel/http_server_filter.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/profiling/timers.h"
@@ -162,6 +163,7 @@ void grpc_init(void) {
     grpc_register_tracer("connectivity_state", &grpc_connectivity_state_trace);
     grpc_register_tracer("channel_stack_builder",
                          &grpc_trace_channel_stack_builder);
+    grpc_register_tracer("http1", &grpc_http1_trace);
     grpc_security_pre_init();
     grpc_iomgr_init();
     grpc_executor_init();

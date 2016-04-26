@@ -310,6 +310,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\completion_queue.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\completion_queue_tag.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\core_codegen_interface.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\create_auth_context.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\grpc_library.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\method_handler_impl.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\proto_utils.h" />
@@ -360,7 +361,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\cpp\common\secure_auth_context.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\secure_server_credentials.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\client\create_channel_internal.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\cpp\common\create_auth_context.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\dynamic_thread_pool.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\thread_pool_interface.h" />
   </ItemGroup>

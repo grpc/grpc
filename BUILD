@@ -291,6 +291,7 @@ cc_library(
     "src/core/ext/census/grpc_filter.h",
     "src/core/ext/census/mlog.h",
     "src/core/ext/census/rpc_metric_id.h",
+    "src/core/lib/surface/init.c",
     "src/core/lib/channel/channel_args.c",
     "src/core/lib/channel/channel_stack.c",
     "src/core/lib/channel/channel_stack_builder.c",
@@ -360,7 +361,6 @@ cc_library(
     "src/core/lib/surface/channel_stack_type.c",
     "src/core/lib/surface/completion_queue.c",
     "src/core/lib/surface/event_string.c",
-    "src/core/lib/surface/init.c",
     "src/core/lib/surface/lame_client.c",
     "src/core/lib/surface/metadata_array.c",
     "src/core/lib/surface/server.c",
@@ -481,6 +481,7 @@ cc_library(
     "include/grpc/impl/codegen/sync_win32.h",
     "include/grpc/impl/codegen/time.h",
     "include/grpc/grpc_security.h",
+    "include/grpc/grpc_security_constants.h",
     "include/grpc/census.h",
   ],
   includes = [
@@ -621,6 +622,7 @@ cc_library(
     "src/core/ext/census/grpc_filter.h",
     "src/core/ext/census/mlog.h",
     "src/core/ext/census/rpc_metric_id.h",
+    "src/core/lib/surface/init.c",
     "src/core/lib/surface/init_unsecure.c",
     "src/core/lib/channel/channel_args.c",
     "src/core/lib/channel/channel_stack.c",
@@ -691,7 +693,6 @@ cc_library(
     "src/core/lib/surface/channel_stack_type.c",
     "src/core/lib/surface/completion_queue.c",
     "src/core/lib/surface/event_string.c",
-    "src/core/lib/surface/init.c",
     "src/core/lib/surface/lame_client.c",
     "src/core/lib/surface/metadata_array.c",
     "src/core/lib/surface/server.c",
@@ -835,7 +836,6 @@ cc_library(
     "src/cpp/common/secure_auth_context.h",
     "src/cpp/server/secure_server_credentials.h",
     "src/cpp/client/create_channel_internal.h",
-    "src/cpp/common/create_auth_context.h",
     "src/cpp/server/dynamic_thread_pool.h",
     "src/cpp/server/thread_pool_interface.h",
     "src/cpp/client/secure_credentials.cc",
@@ -923,6 +923,7 @@ cc_library(
     "include/grpc++/impl/codegen/completion_queue.h",
     "include/grpc++/impl/codegen/completion_queue_tag.h",
     "include/grpc++/impl/codegen/core_codegen_interface.h",
+    "include/grpc++/impl/codegen/create_auth_context.h",
     "include/grpc++/impl/codegen/grpc_library.h",
     "include/grpc++/impl/codegen/method_handler_impl.h",
     "include/grpc++/impl/codegen/proto_utils.h",
@@ -985,7 +986,6 @@ cc_library(
   srcs = [
     "src/cpp/client/create_channel_internal.h",
     "src/cpp/common/core_codegen.h",
-    "src/cpp/common/create_auth_context.h",
     "src/cpp/server/dynamic_thread_pool.h",
     "src/cpp/server/thread_pool_interface.h",
     "src/cpp/common/insecure_create_auth_context.cc",
@@ -1068,6 +1068,7 @@ cc_library(
     "include/grpc++/impl/codegen/completion_queue.h",
     "include/grpc++/impl/codegen/completion_queue_tag.h",
     "include/grpc++/impl/codegen/core_codegen_interface.h",
+    "include/grpc++/impl/codegen/create_auth_context.h",
     "include/grpc++/impl/codegen/grpc_library.h",
     "include/grpc++/impl/codegen/method_handler_impl.h",
     "include/grpc++/impl/codegen/proto_utils.h",
@@ -1135,6 +1136,8 @@ cc_library(
     "src/compiler/csharp_generator.h",
     "src/compiler/csharp_generator_helpers.h",
     "src/compiler/generator_helpers.h",
+    "src/compiler/node_generator.h",
+    "src/compiler/node_generator_helpers.h",
     "src/compiler/objective_c_generator.h",
     "src/compiler/objective_c_generator_helpers.h",
     "src/compiler/python_generator.h",
@@ -1144,6 +1147,7 @@ cc_library(
     "src/compiler/ruby_generator_string-inl.h",
     "src/compiler/cpp_generator.cc",
     "src/compiler/csharp_generator.cc",
+    "src/compiler/node_generator.cc",
     "src/compiler/objective_c_generator.cc",
     "src/compiler/python_generator.cc",
     "src/compiler/ruby_generator.cc",
@@ -1302,6 +1306,7 @@ objc_library(
 objc_library(
   name = "grpc_objc",
   srcs = [
+    "src/core/lib/surface/init.c",
     "src/core/lib/channel/channel_args.c",
     "src/core/lib/channel/channel_stack.c",
     "src/core/lib/channel/channel_stack_builder.c",
@@ -1371,7 +1376,6 @@ objc_library(
     "src/core/lib/surface/channel_stack_type.c",
     "src/core/lib/surface/completion_queue.c",
     "src/core/lib/surface/event_string.c",
-    "src/core/lib/surface/init.c",
     "src/core/lib/surface/lame_client.c",
     "src/core/lib/surface/metadata_array.c",
     "src/core/lib/surface/server.c",
@@ -1492,6 +1496,7 @@ objc_library(
     "include/grpc/impl/codegen/sync_win32.h",
     "include/grpc/impl/codegen/time.h",
     "include/grpc/grpc_security.h",
+    "include/grpc/grpc_security_constants.h",
     "include/grpc/census.h",
     "src/core/lib/channel/channel_args.h",
     "src/core/lib/channel/channel_stack.h",
@@ -1656,6 +1661,18 @@ cc_binary(
   name = "grpc_csharp_plugin",
   srcs = [
     "src/compiler/csharp_plugin.cc",
+  ],
+  deps = [
+    "//external:protobuf_compiler",
+    ":grpc_plugin_support",
+  ],
+)
+
+
+cc_binary(
+  name = "grpc_node_plugin",
+  srcs = [
+    "src/compiler/node_plugin.cc",
   ],
   deps = [
     "//external:protobuf_compiler",

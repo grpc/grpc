@@ -174,6 +174,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_win32.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/time.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc_security.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/grpc_security_constants.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/census.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack.h" role="src" />
@@ -311,6 +312,7 @@
     <file baseinstalldir="/" name="src/core/ext/census/grpc_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/mlog.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/rpc_metric_id.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/init.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_args.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack_builder.c" role="src" />
@@ -380,7 +382,6 @@
     <file baseinstalldir="/" name="src/core/lib/surface/channel_stack_type.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/completion_queue.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/event_string.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/init.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/lame_client.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/metadata_array.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/server.c" role="src" />

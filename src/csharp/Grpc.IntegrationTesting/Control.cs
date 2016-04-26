@@ -31,7 +31,7 @@ namespace Grpc.Testing {
             "cnBjLnRlc3RpbmcuQ2xvc2VkTG9vcFBhcmFtc0gAEi4KB3BvaXNzb24YAiAB",
             "KAsyGy5ncnBjLnRlc3RpbmcuUG9pc3NvblBhcmFtc0gAQgYKBGxvYWQiQwoO",
             "U2VjdXJpdHlQYXJhbXMSEwoLdXNlX3Rlc3RfY2EYASABKAgSHAoUc2VydmVy",
-            "X2hvc3Rfb3ZlcnJpZGUYAiABKAki1gMKDENsaWVudENvbmZpZxIWCg5zZXJ2",
+            "X2hvc3Rfb3ZlcnJpZGUYAiABKAki8AMKDENsaWVudENvbmZpZxIWCg5zZXJ2",
             "ZXJfdGFyZ2V0cxgBIAMoCRItCgtjbGllbnRfdHlwZRgCIAEoDjIYLmdycGMu",
             "dGVzdGluZy5DbGllbnRUeXBlEjUKD3NlY3VyaXR5X3BhcmFtcxgDIAEoCzIc",
             "LmdycGMudGVzdGluZy5TZWN1cml0eVBhcmFtcxIkChxvdXRzdGFuZGluZ19y",
@@ -41,46 +41,48 @@ namespace Grpc.Testing {
             "ASgLMhguZ3JwYy50ZXN0aW5nLkxvYWRQYXJhbXMSMwoOcGF5bG9hZF9jb25m",
             "aWcYCyABKAsyGy5ncnBjLnRlc3RpbmcuUGF5bG9hZENvbmZpZxI3ChBoaXN0",
             "b2dyYW1fcGFyYW1zGAwgASgLMh0uZ3JwYy50ZXN0aW5nLkhpc3RvZ3JhbVBh",
-            "cmFtcxIRCgljb3JlX2xpc3QYDSADKAUSEgoKY29yZV9saW1pdBgOIAEoBSI4",
-            "CgxDbGllbnRTdGF0dXMSKAoFc3RhdHMYASABKAsyGS5ncnBjLnRlc3Rpbmcu",
-            "Q2xpZW50U3RhdHMiFQoETWFyaxINCgVyZXNldBgBIAEoCCJoCgpDbGllbnRB",
-            "cmdzEisKBXNldHVwGAEgASgLMhouZ3JwYy50ZXN0aW5nLkNsaWVudENvbmZp",
-            "Z0gAEiIKBG1hcmsYAiABKAsyEi5ncnBjLnRlc3RpbmcuTWFya0gAQgkKB2Fy",
-            "Z3R5cGUi/AEKDFNlcnZlckNvbmZpZxItCgtzZXJ2ZXJfdHlwZRgBIAEoDjIY",
-            "LmdycGMudGVzdGluZy5TZXJ2ZXJUeXBlEjUKD3NlY3VyaXR5X3BhcmFtcxgC",
-            "IAEoCzIcLmdycGMudGVzdGluZy5TZWN1cml0eVBhcmFtcxIMCgRwb3J0GAQg",
-            "ASgFEhwKFGFzeW5jX3NlcnZlcl90aHJlYWRzGAcgASgFEhIKCmNvcmVfbGlt",
-            "aXQYCCABKAUSMwoOcGF5bG9hZF9jb25maWcYCSABKAsyGy5ncnBjLnRlc3Rp",
-            "bmcuUGF5bG9hZENvbmZpZxIRCgljb3JlX2xpc3QYCiADKAUiaAoKU2VydmVy",
-            "QXJncxIrCgVzZXR1cBgBIAEoCzIaLmdycGMudGVzdGluZy5TZXJ2ZXJDb25m",
-            "aWdIABIiCgRtYXJrGAIgASgLMhIuZ3JwYy50ZXN0aW5nLk1hcmtIAEIJCgdh",
-            "cmd0eXBlIlUKDFNlcnZlclN0YXR1cxIoCgVzdGF0cxgBIAEoCzIZLmdycGMu",
-            "dGVzdGluZy5TZXJ2ZXJTdGF0cxIMCgRwb3J0GAIgASgFEg0KBWNvcmVzGAMg",
-            "ASgFIg0KC0NvcmVSZXF1ZXN0Ih0KDENvcmVSZXNwb25zZRINCgVjb3JlcxgB",
-            "IAEoBSIGCgRWb2lkIv0BCghTY2VuYXJpbxIMCgRuYW1lGAEgASgJEjEKDWNs",
-            "aWVudF9jb25maWcYAiABKAsyGi5ncnBjLnRlc3RpbmcuQ2xpZW50Q29uZmln",
-            "EhMKC251bV9jbGllbnRzGAMgASgFEjEKDXNlcnZlcl9jb25maWcYBCABKAsy",
-            "Gi5ncnBjLnRlc3RpbmcuU2VydmVyQ29uZmlnEhMKC251bV9zZXJ2ZXJzGAUg",
-            "ASgFEhYKDndhcm11cF9zZWNvbmRzGAYgASgFEhkKEWJlbmNobWFya19zZWNv",
-            "bmRzGAcgASgFEiAKGHNwYXduX2xvY2FsX3dvcmtlcl9jb3VudBgIIAEoBSI2",
-            "CglTY2VuYXJpb3MSKQoJc2NlbmFyaW9zGAEgAygLMhYuZ3JwYy50ZXN0aW5n",
-            "LlNjZW5hcmlvIpICChVTY2VuYXJpb1Jlc3VsdFN1bW1hcnkSCwoDcXBzGAEg",
-            "ASgBEhsKE3Fwc19wZXJfc2VydmVyX2NvcmUYAiABKAESGgoSc2VydmVyX3N5",
-            "c3RlbV90aW1lGAMgASgBEhgKEHNlcnZlcl91c2VyX3RpbWUYBCABKAESGgoS",
-            "Y2xpZW50X3N5c3RlbV90aW1lGAUgASgBEhgKEGNsaWVudF91c2VyX3RpbWUY",
-            "BiABKAESEgoKbGF0ZW5jeV81MBgHIAEoARISCgpsYXRlbmN5XzkwGAggASgB",
-            "EhIKCmxhdGVuY3lfOTUYCSABKAESEgoKbGF0ZW5jeV85ORgKIAEoARITCgts",
-            "YXRlbmN5Xzk5ORgLIAEoASKYAgoOU2NlbmFyaW9SZXN1bHQSKAoIc2NlbmFy",
-            "aW8YASABKAsyFi5ncnBjLnRlc3RpbmcuU2NlbmFyaW8SLgoJbGF0ZW5jaWVz",
-            "GAIgASgLMhsuZ3JwYy50ZXN0aW5nLkhpc3RvZ3JhbURhdGESLwoMY2xpZW50",
-            "X3N0YXRzGAMgAygLMhkuZ3JwYy50ZXN0aW5nLkNsaWVudFN0YXRzEi8KDHNl",
-            "cnZlcl9zdGF0cxgEIAMoCzIZLmdycGMudGVzdGluZy5TZXJ2ZXJTdGF0cxIU",
-            "CgxzZXJ2ZXJfY29yZXMYBSADKAUSNAoHc3VtbWFyeRgGIAEoCzIjLmdycGMu",
-            "dGVzdGluZy5TY2VuYXJpb1Jlc3VsdFN1bW1hcnkqLwoKQ2xpZW50VHlwZRIP",
-            "CgtTWU5DX0NMSUVOVBAAEhAKDEFTWU5DX0NMSUVOVBABKkkKClNlcnZlclR5",
-            "cGUSDwoLU1lOQ19TRVJWRVIQABIQCgxBU1lOQ19TRVJWRVIQARIYChRBU1lO",
-            "Q19HRU5FUklDX1NFUlZFUhACKiMKB1JwY1R5cGUSCQoFVU5BUlkQABINCglT",
-            "VFJFQU1JTkcQAWIGcHJvdG8z"));
+            "cmFtcxIRCgljb3JlX2xpc3QYDSADKAUSEgoKY29yZV9saW1pdBgOIAEoBRIY",
+            "ChBvdGhlcl9jbGllbnRfYXBpGA8gASgJIjgKDENsaWVudFN0YXR1cxIoCgVz",
+            "dGF0cxgBIAEoCzIZLmdycGMudGVzdGluZy5DbGllbnRTdGF0cyIVCgRNYXJr",
+            "Eg0KBXJlc2V0GAEgASgIImgKCkNsaWVudEFyZ3MSKwoFc2V0dXAYASABKAsy",
+            "Gi5ncnBjLnRlc3RpbmcuQ2xpZW50Q29uZmlnSAASIgoEbWFyaxgCIAEoCzIS",
+            "LmdycGMudGVzdGluZy5NYXJrSABCCQoHYXJndHlwZSKWAgoMU2VydmVyQ29u",
+            "ZmlnEi0KC3NlcnZlcl90eXBlGAEgASgOMhguZ3JwYy50ZXN0aW5nLlNlcnZl",
+            "clR5cGUSNQoPc2VjdXJpdHlfcGFyYW1zGAIgASgLMhwuZ3JwYy50ZXN0aW5n",
+            "LlNlY3VyaXR5UGFyYW1zEgwKBHBvcnQYBCABKAUSHAoUYXN5bmNfc2VydmVy",
+            "X3RocmVhZHMYByABKAUSEgoKY29yZV9saW1pdBgIIAEoBRIzCg5wYXlsb2Fk",
+            "X2NvbmZpZxgJIAEoCzIbLmdycGMudGVzdGluZy5QYXlsb2FkQ29uZmlnEhEK",
+            "CWNvcmVfbGlzdBgKIAMoBRIYChBvdGhlcl9zZXJ2ZXJfYXBpGAsgASgJImgK",
+            "ClNlcnZlckFyZ3MSKwoFc2V0dXAYASABKAsyGi5ncnBjLnRlc3RpbmcuU2Vy",
+            "dmVyQ29uZmlnSAASIgoEbWFyaxgCIAEoCzISLmdycGMudGVzdGluZy5NYXJr",
+            "SABCCQoHYXJndHlwZSJVCgxTZXJ2ZXJTdGF0dXMSKAoFc3RhdHMYASABKAsy",
+            "GS5ncnBjLnRlc3RpbmcuU2VydmVyU3RhdHMSDAoEcG9ydBgCIAEoBRINCgVj",
+            "b3JlcxgDIAEoBSINCgtDb3JlUmVxdWVzdCIdCgxDb3JlUmVzcG9uc2USDQoF",
+            "Y29yZXMYASABKAUiBgoEVm9pZCL9AQoIU2NlbmFyaW8SDAoEbmFtZRgBIAEo",
+            "CRIxCg1jbGllbnRfY29uZmlnGAIgASgLMhouZ3JwYy50ZXN0aW5nLkNsaWVu",
+            "dENvbmZpZxITCgtudW1fY2xpZW50cxgDIAEoBRIxCg1zZXJ2ZXJfY29uZmln",
+            "GAQgASgLMhouZ3JwYy50ZXN0aW5nLlNlcnZlckNvbmZpZxITCgtudW1fc2Vy",
+            "dmVycxgFIAEoBRIWCg53YXJtdXBfc2Vjb25kcxgGIAEoBRIZChFiZW5jaG1h",
+            "cmtfc2Vjb25kcxgHIAEoBRIgChhzcGF3bl9sb2NhbF93b3JrZXJfY291bnQY",
+            "CCABKAUiNgoJU2NlbmFyaW9zEikKCXNjZW5hcmlvcxgBIAMoCzIWLmdycGMu",
+            "dGVzdGluZy5TY2VuYXJpbyKSAgoVU2NlbmFyaW9SZXN1bHRTdW1tYXJ5EgsK",
+            "A3FwcxgBIAEoARIbChNxcHNfcGVyX3NlcnZlcl9jb3JlGAIgASgBEhoKEnNl",
+            "cnZlcl9zeXN0ZW1fdGltZRgDIAEoARIYChBzZXJ2ZXJfdXNlcl90aW1lGAQg",
+            "ASgBEhoKEmNsaWVudF9zeXN0ZW1fdGltZRgFIAEoARIYChBjbGllbnRfdXNl",
+            "cl90aW1lGAYgASgBEhIKCmxhdGVuY3lfNTAYByABKAESEgoKbGF0ZW5jeV85",
+            "MBgIIAEoARISCgpsYXRlbmN5Xzk1GAkgASgBEhIKCmxhdGVuY3lfOTkYCiAB",
+            "KAESEwoLbGF0ZW5jeV85OTkYCyABKAEimAIKDlNjZW5hcmlvUmVzdWx0EigK",
+            "CHNjZW5hcmlvGAEgASgLMhYuZ3JwYy50ZXN0aW5nLlNjZW5hcmlvEi4KCWxh",
+            "dGVuY2llcxgCIAEoCzIbLmdycGMudGVzdGluZy5IaXN0b2dyYW1EYXRhEi8K",
+            "DGNsaWVudF9zdGF0cxgDIAMoCzIZLmdycGMudGVzdGluZy5DbGllbnRTdGF0",
+            "cxIvCgxzZXJ2ZXJfc3RhdHMYBCADKAsyGS5ncnBjLnRlc3RpbmcuU2VydmVy",
+            "U3RhdHMSFAoMc2VydmVyX2NvcmVzGAUgAygFEjQKB3N1bW1hcnkYBiABKAsy",
+            "Iy5ncnBjLnRlc3RpbmcuU2NlbmFyaW9SZXN1bHRTdW1tYXJ5KkEKCkNsaWVu",
+            "dFR5cGUSDwoLU1lOQ19DTElFTlQQABIQCgxBU1lOQ19DTElFTlQQARIQCgxP",
+            "VEhFUl9DTElFTlQQAipbCgpTZXJ2ZXJUeXBlEg8KC1NZTkNfU0VSVkVSEAAS",
+            "EAoMQVNZTkNfU0VSVkVSEAESGAoUQVNZTkNfR0VORVJJQ19TRVJWRVIQAhIQ",
+            "CgxPVEhFUl9TRVJWRVIQAyojCgdScGNUeXBlEgkKBVVOQVJZEAASDQoJU1RS",
+            "RUFNSU5HEAFiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Grpc.Testing.PayloadsReflection.Descriptor, global::Grpc.Testing.StatsReflection.Descriptor, },
           new pbr::GeneratedCodeInfo(new[] {typeof(global::Grpc.Testing.ClientType), typeof(global::Grpc.Testing.ServerType), typeof(global::Grpc.Testing.RpcType), }, new pbr::GeneratedCodeInfo[] {
@@ -88,11 +90,11 @@ namespace Grpc.Testing {
             new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ClosedLoopParams), global::Grpc.Testing.ClosedLoopParams.Parser, null, null, null, null),
             new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.LoadParams), global::Grpc.Testing.LoadParams.Parser, new[]{ "ClosedLoop", "Poisson" }, new[]{ "Load" }, null, null),
             new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.SecurityParams), global::Grpc.Testing.SecurityParams.Parser, new[]{ "UseTestCa", "ServerHostOverride" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ClientConfig), global::Grpc.Testing.ClientConfig.Parser, new[]{ "ServerTargets", "ClientType", "SecurityParams", "OutstandingRpcsPerChannel", "ClientChannels", "AsyncClientThreads", "RpcType", "LoadParams", "PayloadConfig", "HistogramParams", "CoreList", "CoreLimit" }, null, null, null),
+            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ClientConfig), global::Grpc.Testing.ClientConfig.Parser, new[]{ "ServerTargets", "ClientType", "SecurityParams", "OutstandingRpcsPerChannel", "ClientChannels", "AsyncClientThreads", "RpcType", "LoadParams", "PayloadConfig", "HistogramParams", "CoreList", "CoreLimit", "OtherClientApi" }, null, null, null),
             new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ClientStatus), global::Grpc.Testing.ClientStatus.Parser, new[]{ "Stats" }, null, null, null),
             new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.Mark), global::Grpc.Testing.Mark.Parser, new[]{ "Reset" }, null, null, null),
             new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ClientArgs), global::Grpc.Testing.ClientArgs.Parser, new[]{ "Setup", "Mark" }, new[]{ "Argtype" }, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ServerConfig), global::Grpc.Testing.ServerConfig.Parser, new[]{ "ServerType", "SecurityParams", "Port", "AsyncServerThreads", "CoreLimit", "PayloadConfig", "CoreList" }, null, null, null),
+            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ServerConfig), global::Grpc.Testing.ServerConfig.Parser, new[]{ "ServerType", "SecurityParams", "Port", "AsyncServerThreads", "CoreLimit", "PayloadConfig", "CoreList", "OtherServerApi" }, null, null, null),
             new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ServerArgs), global::Grpc.Testing.ServerArgs.Parser, new[]{ "Setup", "Mark" }, new[]{ "Argtype" }, null, null),
             new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ServerStatus), global::Grpc.Testing.ServerStatus.Parser, new[]{ "Stats", "Port", "Cores" }, null, null, null),
             new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.CoreRequest), global::Grpc.Testing.CoreRequest.Parser, null, null, null, null),
@@ -109,14 +111,26 @@ namespace Grpc.Testing {
   }
   #region Enums
   public enum ClientType {
+    /// <summary>
+    ///  Many languages support a basic distinction between using
+    ///  sync or async client, and this allows the specification
+    /// </summary>
     SYNC_CLIENT = 0,
     ASYNC_CLIENT = 1,
+    /// <summary>
+    ///  used for some language-specific variants
+    /// </summary>
+    OTHER_CLIENT = 2,
   }
 
   public enum ServerType {
     SYNC_SERVER = 0,
     ASYNC_SERVER = 1,
     ASYNC_GENERIC_SERVER = 2,
+    /// <summary>
+    ///  used for some language-specific variants
+    /// </summary>
+    OTHER_SERVER = 3,
   }
 
   public enum RpcType {
@@ -651,6 +665,7 @@ namespace Grpc.Testing {
       HistogramParams = other.histogramParams_ != null ? other.HistogramParams.Clone() : null;
       coreList_ = other.coreList_.Clone();
       coreLimit_ = other.coreLimit_;
+      otherClientApi_ = other.otherClientApi_;
     }
 
     public ClientConfig Clone() {
@@ -795,6 +810,19 @@ namespace Grpc.Testing {
       }
     }
 
+    /// <summary>Field number for the "other_client_api" field.</summary>
+    public const int OtherClientApiFieldNumber = 15;
+    private string otherClientApi_ = "";
+    /// <summary>
+    ///  If we use an OTHER_CLIENT client_type, this string gives more detail
+    /// </summary>
+    public string OtherClientApi {
+      get { return otherClientApi_; }
+      set {
+        otherClientApi_ = pb::Preconditions.CheckNotNull(value, "value");
+      }
+    }
+
     public override bool Equals(object other) {
       return Equals(other as ClientConfig);
     }
@@ -818,6 +846,7 @@ namespace Grpc.Testing {
       if (!object.Equals(HistogramParams, other.HistogramParams)) return false;
       if(!coreList_.Equals(other.coreList_)) return false;
       if (CoreLimit != other.CoreLimit) return false;
+      if (OtherClientApi != other.OtherClientApi) return false;
       return true;
     }
 
@@ -835,6 +864,7 @@ namespace Grpc.Testing {
       if (histogramParams_ != null) hash ^= HistogramParams.GetHashCode();
       hash ^= coreList_.GetHashCode();
       if (CoreLimit != 0) hash ^= CoreLimit.GetHashCode();
+      if (OtherClientApi.Length != 0) hash ^= OtherClientApi.GetHashCode();
       return hash;
     }
 
@@ -885,6 +915,10 @@ namespace Grpc.Testing {
         output.WriteRawTag(112);
         output.WriteInt32(CoreLimit);
       }
+      if (OtherClientApi.Length != 0) {
+        output.WriteRawTag(122);
+        output.WriteString(OtherClientApi);
+      }
     }
 
     public int CalculateSize() {
@@ -920,6 +954,9 @@ namespace Grpc.Testing {
       size += coreList_.CalculateSize(_repeated_coreList_codec);
       if (CoreLimit != 0) {
         size += 1 + pb::CodedOutputStream.ComputeInt32Size(CoreLimit);
+      }
+      if (OtherClientApi.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(OtherClientApi);
       }
       return size;
     }
@@ -971,6 +1008,9 @@ namespace Grpc.Testing {
       coreList_.Add(other.coreList_);
       if (other.CoreLimit != 0) {
         CoreLimit = other.CoreLimit;
+      }
+      if (other.OtherClientApi.Length != 0) {
+        OtherClientApi = other.OtherClientApi;
       }
     }
 
@@ -1040,6 +1080,10 @@ namespace Grpc.Testing {
           }
           case 112: {
             CoreLimit = input.ReadInt32();
+            break;
+          }
+          case 122: {
+            OtherClientApi = input.ReadString();
             break;
           }
         }
@@ -1462,6 +1506,7 @@ namespace Grpc.Testing {
       coreLimit_ = other.coreLimit_;
       PayloadConfig = other.payloadConfig_ != null ? other.PayloadConfig.Clone() : null;
       coreList_ = other.coreList_.Clone();
+      otherServerApi_ = other.otherServerApi_;
     }
 
     public ServerConfig Clone() {
@@ -1552,6 +1597,19 @@ namespace Grpc.Testing {
       get { return coreList_; }
     }
 
+    /// <summary>Field number for the "other_server_api" field.</summary>
+    public const int OtherServerApiFieldNumber = 11;
+    private string otherServerApi_ = "";
+    /// <summary>
+    ///  If we use an OTHER_SERVER client_type, this string gives more detail
+    /// </summary>
+    public string OtherServerApi {
+      get { return otherServerApi_; }
+      set {
+        otherServerApi_ = pb::Preconditions.CheckNotNull(value, "value");
+      }
+    }
+
     public override bool Equals(object other) {
       return Equals(other as ServerConfig);
     }
@@ -1570,6 +1628,7 @@ namespace Grpc.Testing {
       if (CoreLimit != other.CoreLimit) return false;
       if (!object.Equals(PayloadConfig, other.PayloadConfig)) return false;
       if(!coreList_.Equals(other.coreList_)) return false;
+      if (OtherServerApi != other.OtherServerApi) return false;
       return true;
     }
 
@@ -1582,6 +1641,7 @@ namespace Grpc.Testing {
       if (CoreLimit != 0) hash ^= CoreLimit.GetHashCode();
       if (payloadConfig_ != null) hash ^= PayloadConfig.GetHashCode();
       hash ^= coreList_.GetHashCode();
+      if (OtherServerApi.Length != 0) hash ^= OtherServerApi.GetHashCode();
       return hash;
     }
 
@@ -1615,6 +1675,10 @@ namespace Grpc.Testing {
         output.WriteMessage(PayloadConfig);
       }
       coreList_.WriteTo(output, _repeated_coreList_codec);
+      if (OtherServerApi.Length != 0) {
+        output.WriteRawTag(90);
+        output.WriteString(OtherServerApi);
+      }
     }
 
     public int CalculateSize() {
@@ -1638,6 +1702,9 @@ namespace Grpc.Testing {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(PayloadConfig);
       }
       size += coreList_.CalculateSize(_repeated_coreList_codec);
+      if (OtherServerApi.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(OtherServerApi);
+      }
       return size;
     }
 
@@ -1670,6 +1737,9 @@ namespace Grpc.Testing {
         PayloadConfig.MergeFrom(other.PayloadConfig);
       }
       coreList_.Add(other.coreList_);
+      if (other.OtherServerApi.Length != 0) {
+        OtherServerApi = other.OtherServerApi;
+      }
     }
 
     public void MergeFrom(pb::CodedInputStream input) {
@@ -1712,6 +1782,10 @@ namespace Grpc.Testing {
           case 82:
           case 80: {
             coreList_.AddEntriesFrom(input, _repeated_coreList_codec);
+            break;
+          }
+          case 90: {
+            OtherServerApi = input.ReadString();
             break;
           }
         }
