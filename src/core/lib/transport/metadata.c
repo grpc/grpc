@@ -38,18 +38,20 @@
 #include <string.h>
 
 #include <grpc/compression.h>
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/murmur_hash.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/static_metadata.h"
+
+gpr_slice (*grpc_chttp2_base64_encode_and_huffman_compress)(gpr_slice input);
 
 /* There are two kinds of mdelem and mdstr instances.
  * Static instances are declared in static_metadata.{h,c} and
@@ -79,6 +81,7 @@
 
 typedef void (*destroy_user_data_func)(void *user_data);
 
+#define SIZE_IN_DECODER_TABLE_NOT_SET -1
 /* Shadow structure for grpc_mdstr for non-static values */
 typedef struct internal_string {
   /* must be byte compatible with grpc_mdstr */
@@ -92,6 +95,8 @@ typedef struct internal_string {
   gpr_slice_refcount refcount;
 
   gpr_slice base64_and_huffman;
+
+  gpr_atm size_in_decoder_table;
 
   struct internal_string *bucket_next;
 } internal_string;
@@ -413,6 +418,7 @@ grpc_mdstr *grpc_mdstr_from_buffer(const uint8_t *buf, size_t length) {
   }
   s->has_base64_and_huffman_encoded = 0;
   s->hash = hash;
+  s->size_in_decoder_table = SIZE_IN_DECODER_TABLE_NOT_SET;
   s->bucket_next = shard->strs[idx];
   shard->strs[idx] = s;
 
@@ -580,6 +586,39 @@ grpc_mdelem *grpc_mdelem_from_string_and_buffer(const char *key,
                                                 size_t value_length) {
   return grpc_mdelem_from_metadata_strings(
       grpc_mdstr_from_string(key), grpc_mdstr_from_buffer(value, value_length));
+}
+
+static size_t get_base64_encoded_size(size_t raw_length) {
+  static const uint8_t tail_xtra[3] = {0, 2, 3};
+  return raw_length / 3 * 4 + tail_xtra[raw_length % 3];
+}
+
+size_t grpc_mdelem_get_size_in_hpack_table(grpc_mdelem *elem) {
+  size_t overhead_and_key = 32 + GPR_SLICE_LENGTH(elem->key->slice);
+  size_t value_len = GPR_SLICE_LENGTH(elem->value->slice);
+  if (is_mdstr_static(elem->value)) {
+    if (grpc_is_binary_header(
+            (const char *)GPR_SLICE_START_PTR(elem->key->slice),
+            GPR_SLICE_LENGTH(elem->key->slice))) {
+      return overhead_and_key + get_base64_encoded_size(value_len);
+    } else {
+      return overhead_and_key + value_len;
+    }
+  } else {
+    internal_string *is = (internal_string *)elem->value;
+    gpr_atm current_size = gpr_atm_acq_load(&is->size_in_decoder_table);
+    if (current_size == SIZE_IN_DECODER_TABLE_NOT_SET) {
+      if (grpc_is_binary_header(
+              (const char *)GPR_SLICE_START_PTR(elem->key->slice),
+              GPR_SLICE_LENGTH(elem->key->slice))) {
+        current_size = (gpr_atm)get_base64_encoded_size(value_len);
+      } else {
+        current_size = (gpr_atm)value_len;
+      }
+      gpr_atm_rel_store(&is->size_in_decoder_table, current_size);
+    }
+    return overhead_and_key + (size_t)current_size;
+  }
 }
 
 grpc_mdelem *grpc_mdelem_ref(grpc_mdelem *gmd DEBUG_ARGS) {

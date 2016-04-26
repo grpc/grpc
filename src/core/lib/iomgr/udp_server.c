@@ -166,7 +166,6 @@ static void deactivated_all_ports(grpc_exec_ctx *exec_ctx, grpc_udp_server *s) {
   if (s->nports) {
     for (i = 0; i < s->nports; i++) {
       server_port *sp = &s->ports[i];
-      grpc_unlink_if_unix_domain_socket(&sp->addr.sockaddr);
       sp->destroyed_closure.cb = destroyed_port;
       sp->destroyed_closure.cb_arg = s;
       grpc_fd_orphan(exec_ctx, sp->emfd, &sp->destroyed_closure, NULL,
@@ -317,8 +316,6 @@ int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr,
   socklen_t sockname_len;
   int port;
 
-  grpc_unlink_if_unix_domain_socket((struct sockaddr *)addr);
-
   /* Check if this is a wildcard port, and if so, try to keep the port the same
      as some previously created listener. */
   if (grpc_sockaddr_get_port(addr) == 0) {
@@ -328,7 +325,7 @@ int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr,
                            &sockname_len)) {
         port = grpc_sockaddr_get_port((struct sockaddr *)&sockname_temp);
         if (port > 0) {
-          allocated_addr = malloc(addr_len);
+          allocated_addr = gpr_malloc(addr_len);
           memcpy(allocated_addr, addr, addr_len);
           grpc_sockaddr_set_port(allocated_addr, port);
           addr = allocated_addr;

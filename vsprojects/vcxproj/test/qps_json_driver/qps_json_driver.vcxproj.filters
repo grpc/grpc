@@ -1,9 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\parse_json.cc">
+      <Filter>test\cpp\qps</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\qps_json_driver.cc">
       <Filter>test\cpp\qps</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\parse_json.h">
+      <Filter>test\cpp\qps</Filter>
+    </ClInclude>
   </ItemGroup>
 
   <ItemGroup>

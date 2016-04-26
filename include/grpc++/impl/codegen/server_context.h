@@ -38,6 +38,7 @@
 #include <memory>
 
 #include <grpc++/impl/codegen/config.h>
+#include <grpc++/impl/codegen/create_auth_context.h>
 #include <grpc++/impl/codegen/security/auth_context.h>
 #include <grpc++/impl/codegen/string_ref.h>
 #include <grpc++/impl/codegen/time.h>
@@ -135,7 +136,12 @@ class ServerContext {
   }
   void set_compression_algorithm(grpc_compression_algorithm algorithm);
 
-  std::shared_ptr<const AuthContext> auth_context() const;
+  std::shared_ptr<const AuthContext> auth_context() const {
+    if (auth_context_.get() == nullptr) {
+      auth_context_ = CreateAuthContext(call_);
+    }
+    return auth_context_;
+  }
 
   // Return the peer uri in a string.
   // WARNING: this value is never authenticated or subject to any security
@@ -193,7 +199,7 @@ class ServerContext {
   ServerContext(gpr_timespec deadline, grpc_metadata* metadata,
                 size_t metadata_count);
 
-  void set_call(grpc_call* call);
+  void set_call(grpc_call* call) { call_ = call; }
 
   uint32_t initial_metadata_flags() const { return 0; }
 

@@ -29,7 +29,15 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-flags="-max_total_time=3600 -jobs=3 -workers=3 -artifact_prefix=fuzzer_output/ -max_len=2048"
+flags="-max_total_time=$runtime -artifact_prefix=fuzzer_output/ -max_len=2048 -timeout=120"
+
+flags="$flags -dict=test/core/end2end/fuzzers/hpack.dictionary"
+
+if [ "$jobs" != "1" ]
+then
+  flags="-jobs=$jobs -workers=$jobs $flags"
+fi
+
 if [ "$config" == "asan-trace-cmp" ]
 then
   flags="-use_traces=1 $flags"

@@ -145,9 +145,13 @@ NAN_METHOD(ServerCredentials::CreateSsl) {
     return Nan::ThrowTypeError(
         "createSsl's second argument must be a list of objects");
   }
-  int force_client_auth = 0;
+
+  grpc_ssl_client_certificate_request_type client_certificate_request;
   if (info[2]->IsBoolean()) {
-    force_client_auth = (int)Nan::To<bool>(info[2]).FromJust();
+    client_certificate_request =
+        Nan::To<bool>(info[2]).FromJust()
+            ? GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
+            : GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE;
   } else if (!(info[2]->IsUndefined() || info[2]->IsNull())) {
     return Nan::ThrowTypeError(
         "createSsl's third argument must be a boolean if provided");
@@ -180,8 +184,9 @@ NAN_METHOD(ServerCredentials::CreateSsl) {
     key_cert_pairs[i].private_key = ::node::Buffer::Data(maybe_key);
     key_cert_pairs[i].cert_chain = ::node::Buffer::Data(maybe_cert);
   }
-  grpc_server_credentials *creds = grpc_ssl_server_credentials_create(
-      root_certs, key_cert_pairs, key_cert_pair_count, force_client_auth, NULL);
+  grpc_server_credentials *creds = grpc_ssl_server_credentials_create_ex(
+      root_certs, key_cert_pairs, key_cert_pair_count,
+      client_certificate_request, NULL);
   delete key_cert_pairs;
   if (creds == NULL) {
     info.GetReturnValue().SetNull();

@@ -445,7 +445,7 @@ namespace Grpc.IntegrationTesting
                 await Task.Delay(1000);
                 cts.Cancel();
 
-                var ex = Assert.Throws<RpcException>(async () => await call.ResponseAsync);
+                var ex = Assert.ThrowsAsync<RpcException>(async () => await call.ResponseAsync);
                 Assert.AreEqual(StatusCode.Cancelled, ex.Status.StatusCode);
             }
             Console.WriteLine("Passed!");
@@ -471,7 +471,7 @@ namespace Grpc.IntegrationTesting
 
                 cts.Cancel();
 
-                var ex = Assert.Throws<RpcException>(async () => await call.ResponseStream.MoveNext());
+                var ex = Assert.ThrowsAsync<RpcException>(async () => await call.ResponseStream.MoveNext());
                 Assert.AreEqual(StatusCode.Cancelled, ex.Status.StatusCode);
             }
             Console.WriteLine("Passed!");
@@ -493,7 +493,7 @@ namespace Grpc.IntegrationTesting
                     // Deadline was reached before write has started. Eat the exception and continue.
                 }
 
-                var ex = Assert.Throws<RpcException>(async () => await call.ResponseStream.MoveNext());
+                var ex = Assert.ThrowsAsync<RpcException>(async () => await call.ResponseStream.MoveNext());
                 Assert.AreEqual(StatusCode.DeadlineExceeded, ex.Status.StatusCode);
             }
             Console.WriteLine("Passed!");
@@ -572,7 +572,7 @@ namespace Grpc.IntegrationTesting
                 await call.RequestStream.WriteAsync(request);
                 await call.RequestStream.CompleteAsync();
 
-                var e = Assert.Throws<RpcException>(async () => await call.ResponseStream.ToListAsync());
+                var e = Assert.ThrowsAsync<RpcException>(async () => await call.ResponseStream.ToListAsync());
                 Assert.AreEqual(StatusCode.Unknown, e.Status.StatusCode);
                 Assert.AreEqual(echoStatus.Message, e.Status.Detail);
             }
