@@ -252,9 +252,9 @@ char *grpc_subchannel_call_holder_get_peer(
     grpc_exec_ctx *exec_ctx, grpc_subchannel_call_holder *holder) {
   grpc_subchannel_call *subchannel_call = GET_CALL(holder);
 
-  if (subchannel_call) {
-    return grpc_subchannel_call_get_peer(exec_ctx, subchannel_call);
-  } else {
+  if (subchannel_call == NULL || subchannel_call == CANCELLED_CALL) {
     return NULL;
+  } else {
+    return grpc_subchannel_call_get_peer(exec_ctx, subchannel_call);
   }
 }
