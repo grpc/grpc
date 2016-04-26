@@ -97,7 +97,7 @@ class MetricsServiceImpl GRPC_FINAL : public MetricsService::Service {
   // NOTE: CreateQpsGauge can be called anytime (i.e before or after calling
   // StartServer).
   std::shared_ptr<QpsGauge> CreateQpsGauge(const grpc::string& name,
-                                     bool* already_present);
+                                           bool* already_present);
 
   std::unique_ptr<grpc::Server> StartServer(int port);
 
