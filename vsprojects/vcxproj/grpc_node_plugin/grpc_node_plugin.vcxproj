@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{B6E81D84-2ACB-41B8-8781-493A944C7817}</ProjectGuid>
+    <ProjectGuid>{57ABD9A2-CE8E-CCA7-5171-35C4534F3595}</ProjectGuid>
     <IgnoreWarnIntDirInTempDetected>true</IgnoreWarnIntDirInTempDetected>
     <IntDir>$(SolutionDir)IntDir\$(MSBuildProjectName)\</IntDir>
   </PropertyGroup>
@@ -37,12 +37,12 @@
     <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
@@ -53,15 +53,15 @@
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(SolutionDir)\..\vsprojects\global.props" />
+    <Import Project="$(SolutionDir)\..\vsprojects\protobuf.props" />
     <Import Project="$(SolutionDir)\..\vsprojects\protoc.props" />
-    <Import Project="$(SolutionDir)\..\vsprojects\winsock.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
-    <TargetName>grpc_plugin_support</TargetName>
+    <TargetName>grpc_node_plugin</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
-    <TargetName>grpc_plugin_support</TargetName>
+    <TargetName>grpc_node_plugin</TargetName>
   </PropertyGroup>
     <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -76,7 +76,7 @@
       <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
       <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
     </Link>
@@ -95,7 +95,7 @@
       <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
       <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
     </Link>
@@ -116,7 +116,7 @@
       <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
       <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -139,7 +139,7 @@
       <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
       <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -148,41 +148,13 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\config.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\config_protobuf.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config_protobuf.h" />
+    <ClCompile Include="$(SolutionDir)\..\src\compiler\node_plugin.cc">
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\src\compiler\config.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\compiler\cpp_generator.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\compiler\cpp_generator_helpers.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\compiler\csharp_generator.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\compiler\csharp_generator_helpers.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\compiler\generator_helpers.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\compiler\node_generator.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\compiler\node_generator_helpers.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\compiler\objective_c_generator.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\compiler\objective_c_generator_helpers.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\compiler\python_generator.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\compiler\ruby_generator.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\compiler\ruby_generator_helpers-inl.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\compiler\ruby_generator_map-inl.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\compiler\ruby_generator_string-inl.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\src\compiler\cpp_generator.cc">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\compiler\csharp_generator.cc">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\compiler\node_generator.cc">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\compiler\objective_c_generator.cc">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\compiler\python_generator.cc">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\compiler\ruby_generator.cc">
-    </ClCompile>
+    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc_plugin_support\grpc_plugin_support.vcxproj">
+      <Project>{B6E81D84-2ACB-41B8-8781-493A944C7817}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

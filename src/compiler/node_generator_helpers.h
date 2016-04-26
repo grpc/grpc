@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,31 +31,20 @@
  *
  */
 
-var grpc = require('grpc');
+#ifndef GRPC_INTERNAL_COMPILER_NODE_GENERATOR_HELPERS_H
+#define GRPC_INTERNAL_COMPILER_NODE_GENERATOR_HELPERS_H
 
-var hello_messages = require('./helloworld_pb');
-var hello_service = require('./helloworld_grpc_pb');
+#include <algorithm>
 
-function main() {
-  var client = new hello_service.GreeterClient('localhost:50051',
-                                               grpc.credentials.createInsecure());
-  var user;
-  if (process.argv.length >= 3) {
-    user = process.argv[2];
-  } else {
-    user = 'world';
-  }
+#include "src/compiler/config.h"
+#include "src/compiler/generator_helpers.h"
 
-  var request = new hello_messages.HelloRequest();
-  request.setName(user);
+namespace grpc_node_generator {
 
-  client.sayHello(request, function(err, response) {
-    if (err) {
-      debugger;
-      throw err;
-    }
-    console.log('Greeting:', response.getMessage());
-  });
+inline grpc::string GetJSServiceFilename(const grpc::string& filename) {
+  return grpc_generator::StripProto(filename) + "_grpc_pb.js";
 }
 
-main();
+}  // namespace grpc_node_generator
+
+#endif  // GRPC_INTERNAL_COMPILER_NODE_GENERATOR_HELPERS_H

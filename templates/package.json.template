@@ -21,7 +21,7 @@
       "lib": "src/node/src"
     },
     "scripts": {
-      "lint": "node ./node_modules/jshint/bin/jshint src/node/src src/node/test src/node/interop src/node/index.js",
+      "lint": "node ./node_modules/jshint/bin/jshint src/node/src src/node/test src/node/interop src/node/index.js --exclude-path=src/node/.jshintignore",
       "test": "./node_modules/.bin/mocha src/node/test && npm run-script lint",
       "gen_docs": "./node_modules/.bin/jsdoc -c src/node/jsdoc_conf.json",
       "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha src/node/test",
@@ -37,6 +37,7 @@
     "devDependencies": {
       "async": "^1.5.0",
       "google-auth-library": "^0.9.2",
+      "google-protobuf": "^3.0.0-alpha.5",
       "istanbul": "^0.3.21",
       "jsdoc": "^3.3.2",
       "jshint": "^2.5.0",
@@ -74,5 +75,25 @@
       "binding.gyp"
     ],
     "main": "src/node/index.js",
-    "license": "BSD-3-Clause"
+    "license": "BSD-3-Clause",
+    "jshintConfig" : {
+      "bitwise": true,
+      "curly": true,
+      "eqeqeq": true,
+      "esnext": true,
+      "freeze": true,
+      "immed": true,
+      "indent": 2,
+      "latedef": "nofunc",
+      "maxlen": 80,
+      "mocha": true,
+      "newcap": true,
+      "node": true,
+      "noarg": true,
+      "quotmark": "single",
+      "strict": true,
+      "trailing": true,
+      "undef": true,
+      "unused": "vars"
+    }
   }

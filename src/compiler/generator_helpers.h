@@ -52,6 +52,16 @@ inline bool StripSuffix(grpc::string *filename, const grpc::string &suffix) {
   return false;
 }
 
+inline bool StripPrefix(grpc::string *name, const grpc::string &prefix) {
+  if (name->length() >= prefix.length()) {
+    if (name->substr(0, prefix.size()) == prefix) {
+      *name = name->substr(prefix.size());
+      return true;
+    }
+  }
+  return false;
+}
+
 inline grpc::string StripProto(grpc::string filename) {
   if (!StripSuffix(&filename, ".protodevel")) {
     StripSuffix(&filename, ".proto");
