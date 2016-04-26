@@ -202,34 +202,6 @@ class CXXLanguage:
           'benchmark_seconds': BENCHMARK_SECONDS
       }
       yield {
-          'name': 'cpp_single_channel_throughput_%s'
-                  % secstr,
-          'num_servers': 1,
-          'num_clients': 1,
-          'client_config': {
-            'client_type': 'ASYNC_CLIENT',
-            'security_params': secargs,
-            'outstanding_rpcs_per_channel': DEEP,
-            'client_channels': 1,
-            'async_client_threads': 0,
-            'rpc_type': 'STREAMING',
-            'load_params': {
-              'closed_loop': {}
-            },
-            'payload_config': BIG_GENERIC_PAYLOAD,
-            'histogram_params': HISTOGRAM_PARAMS,
-          },
-          'server_config': {
-            'server_type': 'ASYNC_GENERIC_SERVER',
-            'security_params': secargs,
-            'core_limit': SINGLE_MACHINE_CORES/2,
-            'async_server_threads': 0,
-            'payload_config': BIG_GENERIC_PAYLOAD,
-          },
-          'warmup_seconds': WARMUP_SECONDS,
-          'benchmark_seconds': BENCHMARK_SECONDS
-      }
-      yield {
           'name': 'cpp_protobuf_async_streaming_ping_pong_%s'
                   % secstr,
           'num_servers': 1,
@@ -328,32 +300,6 @@ class CSharpLanguage:
 
   def scenarios(self):
     secargs = SECURE_SECARGS
-    yield {
-        'name': 'csharp_protobuf_async_streaming_qps_unconstrained',
-        'num_servers': 1,
-        'num_clients': 0,
-        'client_config': {
-          'client_type': 'ASYNC_CLIENT',
-          'security_params': secargs,
-          'outstanding_rpcs_per_channel': DEEP,
-          'client_channels': WIDE,
-          'async_client_threads': 0,
-          'rpc_type': 'STREAMING',
-          'load_params': {
-            'closed_loop': {}
-          },
-          'payload_config': EMPTY_PROTO_PAYLOAD,
-          'histogram_params': HISTOGRAM_PARAMS,
-        },
-        'server_config': {
-          'server_type': 'ASYNC_SERVER',
-          'security_params': secargs,
-          'core_limit': 0,
-          'async_server_threads': 0,
-        },
-        'warmup_seconds': WARMUP_SECONDS,
-        'benchmark_seconds': BENCHMARK_SECONDS
-    }
     yield {
         'name': 'csharp_generic_async_streaming_ping_pong',
         'num_servers': 1,

@@ -93,6 +93,8 @@ void grpc_exec_ctx_enqueue_list(grpc_exec_ctx *exec_ctx,
                                 grpc_workqueue *offload_target_or_null);
 
 void grpc_exec_ctx_global_init(void);
+
+void grpc_exec_ctx_global_init(void);
 void grpc_exec_ctx_global_shutdown(void);
 
 #endif /* GRPC_CORE_LIB_IOMGR_EXEC_CTX_H */
