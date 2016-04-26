@@ -92,8 +92,10 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
        require */
     return NULL;
   } else if (md->key == GRPC_MDSTR_CONTENT_TYPE) {
-    if (strncmp(grpc_mdstr_as_c_string(md->value), "application/grpc+", 17) ==
-        0) {
+    const char* value_str = grpc_mdstr_as_c_string(md->value);
+    if (strncmp(value_str, "application/grpc", 16) == 0 &&
+        (strlen(value_str) == 16 ||
+         value_str[16] == '+' || value_str[16] == ';')) {
       /* Although the C implementation doesn't (currently) generate them,
          any custom +-suffix is explicitly valid. */
       /* TODO(klempner): We should consider preallocating common values such
@@ -102,8 +104,7 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
     } else {
       /* TODO(klempner): We're currently allowing this, but we shouldn't
          see it without a proxy so log for now. */
-      gpr_log(GPR_INFO, "Unexpected content-type %s",
-              grpc_mdstr_as_c_string(md->value));
+      gpr_log(GPR_INFO, "Unexpected content-type %s", value_str);
     }
     return NULL;
   } else if (md->key == GRPC_MDSTR_TE || md->key == GRPC_MDSTR_METHOD ||
