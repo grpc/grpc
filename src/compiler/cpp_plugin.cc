@@ -120,10 +120,15 @@ class ProtoBufFile : public grpc_cpp_generator::File {
     return grpc_generator::StripProto(filename());
   }
 
+  grpc::string message_header_ext() const { return ".pb.h"; }
+  grpc::string service_header_ext() const { return ".grpc.pb.h"; }
+
   grpc::string package() const { return file_->package(); }
   std::vector<grpc::string> package_parts() const {
     return grpc_generator::tokenize(package(), ".");
   }
+
+  grpc::string additional_headers() const { return ""; }
 
   int service_count() const { return file_->service_count(); };
   std::unique_ptr<const grpc_cpp_generator::Service> service(int i) const {
