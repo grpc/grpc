@@ -32,13 +32,13 @@ unless ENV['GRPC_DEFAULT_SSL_ROOTS_FILE_PATH']
   ENV['GRPC_DEFAULT_SSL_ROOTS_FILE_PATH'] = ssl_roots_path
 end
 
-require 'grpc/errors'
-require 'grpc/grpc'
-require 'grpc/logconfig'
-require 'grpc/notifier'
-require 'grpc/version'
-require 'grpc/core/time_consts'
-require 'grpc/generic/active_call'
-require 'grpc/generic/client_stub'
-require 'grpc/generic/service'
-require 'grpc/generic/rpc_server'
+require_relative 'grpc/errors'
+require_relative 'grpc/grpc'
+require_relative 'grpc/logconfig'
+require_relative 'grpc/notifier'
+require_relative 'grpc/version'
+require_relative 'grpc/core/time_consts'
+require_relative 'grpc/generic/active_call'
+require_relative 'grpc/generic/client_stub'
+require_relative 'grpc/generic/service'
+require_relative 'grpc/generic/rpc_server'

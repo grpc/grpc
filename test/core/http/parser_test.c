@@ -238,6 +238,11 @@ int main(int argc, char **argv) {
                   "\r\n"
                   "hello world!",
                   200, "hello world!", "xyz", "abc", NULL);
+    test_succeeds(split_modes[i],
+                  "HTTP/1.1 200 OK\n"
+                  "\n"
+                  "abc",
+                  200, "abc", NULL);
     test_request_succeeds(split_modes[i],
                           "GET / HTTP/1.0\r\n"
                           "\r\n",
@@ -264,6 +269,11 @@ int main(int argc, char **argv) {
                           "xyz",
                           "GET", GRPC_HTTP_HTTP10, "/", "xyz", "xyz", "abc",
                           NULL);
+    test_request_succeeds(split_modes[i],
+                          "GET / HTTP/1.0\n"
+                          "\n"
+                          "xyz",
+                          "GET", GRPC_HTTP_HTTP10, "/", "xyz", NULL);
     test_fails(split_modes[i], "HTTP/1.0\r\n");
     test_fails(split_modes[i], "HTTP/1.2\r\n");
     test_fails(split_modes[i], "HTTP/1.0 000 XYX\r\n");
@@ -281,6 +291,7 @@ int main(int argc, char **argv) {
     test_fails(split_modes[i], "GET / HTTP/0.0\r\n");
     test_fails(split_modes[i], "GET / ____/1.0\r\n");
     test_fails(split_modes[i], "GET / HTTP/1.2\r\n");
+    test_fails(split_modes[i], "GET / HTTP/1.0\n");
 
     tmp1 = gpr_malloc(2 * GRPC_HTTP_PARSER_MAX_HEADER_LENGTH);
     memset(tmp1, 'a', 2 * GRPC_HTTP_PARSER_MAX_HEADER_LENGTH - 1);
