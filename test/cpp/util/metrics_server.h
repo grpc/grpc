@@ -36,7 +36,6 @@
 #include <map>
 #include <mutex>
 
-#include "grpc/support/time.h"
 #include "src/proto/grpc/testing/metrics.grpc.pb.h"
 #include "src/proto/grpc/testing/metrics.pb.h"
 
