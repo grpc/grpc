@@ -50,6 +50,9 @@ from setuptools.command import test
 import support
 
 PYTHON_STEM = os.path.dirname(os.path.abspath(__file__))
+GRPC_STEM = os.path.abspath(PYTHON_STEM + '../../../../')
+PROTO_STEM = os.path.join(GRPC_STEM, 'src', 'proto')
+PROTO_GEN_STEM = os.path.join(GRPC_STEM, 'src', 'python', 'gens')
 
 CONF_PY_ADDENDUM = """
 extensions.append('sphinx.ext.napoleon')
@@ -157,30 +160,45 @@ class BuildProtoModules(setuptools.Command):
     if not self.grpc_python_plugin_command:
       raise CommandError('could not find grpc_python_plugin '
                          '(protoc plugin for GRPC Python)')
+
+    if not os.path.exists(PROTO_GEN_STEM):
+      os.makedirs(PROTO_GEN_STEM)
+
     include_regex = re.compile(self.include)
     exclude_regex = re.compile(self.exclude) if self.exclude else None
     paths = []
-    root_directory = PYTHON_STEM
-    for walk_root, directories, filenames in os.walk(root_directory):
+    for walk_root, directories, filenames in os.walk(PROTO_STEM):
       for filename in filenames:
         path = os.path.join(walk_root, filename)
         if include_regex.match(path) and not (
             exclude_regex and exclude_regex.match(path)):
           paths.append(path)
-    command = [
-        self.protoc_command,
-        '--plugin=protoc-gen-python-grpc={}'.format(
-            self.grpc_python_plugin_command),
-        '-I {}'.format(root_directory),
-        '--python_out={}'.format(root_directory),
-        '--python-grpc_out={}'.format(root_directory),
-    ] + paths
-    try:
-      subprocess.check_output(' '.join(command), cwd=root_directory, shell=True,
-                              stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as e:
-      raise CommandError('Command:\n{}\nMessage:\n{}\nOutput:\n{}'.format(
-          command, e.message, e.output))
+
+    # TODO(kpayson): It would be nice to do this in a batch command,
+    # but we currently have name conflicts in src/proto
+    for path in paths:
+      command = [
+          self.protoc_command,
+          '--plugin=protoc-gen-python-grpc={}'.format(
+              self.grpc_python_plugin_command),
+          '-I {}'.format(GRPC_STEM),
+          '--python_out={}'.format(PROTO_GEN_STEM),
+          '--python-grpc_out={}'.format(PROTO_GEN_STEM),
+      ] + [path]
+      try:
+        subprocess.check_output(' '.join(command), cwd=PYTHON_STEM, shell=True,
+                                stderr=subprocess.STDOUT)
+      except subprocess.CalledProcessError as e:
+        sys.stderr.write(
+            'warning: Command:\n{}\nMessage:\n{}\nOutput:\n{}'.format(
+                command, e.message, e.output))
+
+    # Generated proto directories dont include __init__.py, but
+    # these are needed for python package resolution
+    for walk_root, _, _ in os.walk(PROTO_GEN_STEM):
+      if walk_root != PROTO_GEN_STEM:
+        path = os.path.join(walk_root, '__init__.py')
+        open(path, 'a').close()
 
 
 class BuildProjectMetadata(setuptools.Command):
