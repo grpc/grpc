@@ -77,6 +77,27 @@
   "\x10\x0cgrpc-timeout\x02"                                               \
   "5S"
 
+#define PFX_STR_UNUSUAL2                                                   \
+  "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"                                       \
+  "\x00\x00\x00\x04\x00\x00\x00\x00\x00" /* settings frame */              \
+  "\x00\x00\xf4\x01\x04\x00\x00\x00\x01" /* headers: generated from        \
+                                            simple_request_unusual2.headers \
+                                            in this directory */           \
+  "\x10\x05:path\x08/foo/bar"                                              \
+  "\x10\x07:scheme\x04http"                                                \
+  "\x10\x07:method\x04POST"                                                \
+  "\x10\x04host\x09localhost"                                              \
+  "\x10\x0c"                                                               \
+  "content-type\x1e"                                                       \
+  "application/grpc;this-is-valid"                                         \
+  "\x10\x14grpc-accept-encoding\x15identity,deflate,gzip"                  \
+  "\x10\x02te\x08trailers"                                                 \
+  "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)"                 \
+  "\x10\x0cgrpc-timeout\x03"                                               \
+  "10S"                                                                    \
+  "\x10\x0cgrpc-timeout\x02"                                               \
+  "5S"
+
 static void *tag(intptr_t t) { return (void *)t; }
 
 static void verifier(grpc_server *server, grpc_completion_queue *cq,
@@ -120,6 +141,7 @@ int main(int argc, char **argv) {
   /* basic request: check that things are working */
   GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR, 0);
   GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR_UNUSUAL, 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR_UNUSUAL2, 0);
 
   /* push an illegal data frame */
   GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR
