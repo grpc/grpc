@@ -117,11 +117,11 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\end2end_tests.h">
-      <Filter>test\core\end2end</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\tests\cancel_test_helpers.h">
       <Filter>test\core\end2end\tests</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\end2end_tests.h">
+      <Filter>test\core\end2end</Filter>
     </ClInclude>
   </ItemGroup>
 

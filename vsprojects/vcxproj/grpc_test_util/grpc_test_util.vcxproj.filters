@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\cq_verifier.c">
-      <Filter>test\core\end2end</Filter>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\data\client_certs.c">
+      <Filter>test\core\end2end\data</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\data\server1_cert.c">
       <Filter>test\core\end2end\data</Filter>
@@ -13,22 +13,31 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\data\test_root_cert.c">
       <Filter>test\core\end2end\data</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\security\oauth2_utils.c">
+      <Filter>test\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\cq_verifier.c">
+      <Filter>test\core\end2end</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\proxy.c">
       <Filter>test\core\end2end\fixtures</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\iomgr\endpoint_tests.c">
       <Filter>test\core\iomgr</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\core\security\oauth2_utils.c">
-      <Filter>test\core\security</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\grpc_profiler.c">
+      <Filter>test\core\util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\memory_counters.c">
       <Filter>test\core\util</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\mock_endpoint.c">
       <Filter>test\core\util</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\parse_hexstring.c">
+      <Filter>test\core\util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\passthru_endpoint.c">
       <Filter>test\core\util</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\port_posix.c">
@@ -45,11 +54,14 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\cq_verifier.h">
-      <Filter>test\core\end2end</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\data\ssl_test_data.h">
       <Filter>test\core\end2end\data</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\core\security\oauth2_utils.h">
+      <Filter>test\core\security</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\cq_verifier.h">
+      <Filter>test\core\end2end</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fixtures\proxy.h">
       <Filter>test\core\end2end\fixtures</Filter>
@@ -57,16 +69,19 @@
     <ClInclude Include="$(SolutionDir)\..\test\core\iomgr\endpoint_tests.h">
       <Filter>test\core\iomgr</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\test\core\security\oauth2_utils.h">
-      <Filter>test\core\security</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\core\util\grpc_profiler.h">
+      <Filter>test\core\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\core\util\memory_counters.h">
       <Filter>test\core\util</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\core\util\mock_endpoint.h">
       <Filter>test\core\util</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\core\util\parse_hexstring.h">
+      <Filter>test\core\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\core\util\passthru_endpoint.h">
       <Filter>test\core\util</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\core\util\port.h">

@@ -39,7 +39,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
-extern int grpc_http_trace;
+int grpc_http1_trace = 0;
 
 static char *buf2str(void *buffer, size_t length) {
   char *out = gpr_malloc(length + 1);
@@ -74,7 +74,7 @@ static int handle_response_line(grpc_http_parser *parser) {
   return 1;
 
 error:
-  if (grpc_http_trace) gpr_log(GPR_ERROR, "Failed parsing response line");
+  if (grpc_http1_trace) gpr_log(GPR_ERROR, "Failed parsing response line");
   return 0;
 }
 
@@ -127,7 +127,7 @@ static int handle_request_line(grpc_http_parser *parser) {
   return 1;
 
 error:
-  if (grpc_http_trace) gpr_log(GPR_ERROR, "Failed parsing request line");
+  if (grpc_http1_trace) gpr_log(GPR_ERROR, "Failed parsing request line");
   return 0;
 }
 
@@ -152,7 +152,7 @@ static int add_header(grpc_http_parser *parser) {
   GPR_ASSERT(cur != end);
 
   if (*cur == ' ' || *cur == '\t') {
-    if (grpc_http_trace)
+    if (grpc_http1_trace)
       gpr_log(GPR_ERROR, "Continued header lines not supported yet");
     goto error;
   }
@@ -161,7 +161,8 @@ static int add_header(grpc_http_parser *parser) {
     cur++;
   }
   if (cur == end) {
-    if (grpc_http_trace) gpr_log(GPR_ERROR, "Didn't find ':' in header string");
+    if (grpc_http1_trace)
+      gpr_log(GPR_ERROR, "Didn't find ':' in header string");
     goto error;
   }
   GPR_ASSERT(cur >= beg);
@@ -171,8 +172,8 @@ static int add_header(grpc_http_parser *parser) {
   while (cur != end && (*cur == ' ' || *cur == '\t')) {
     cur++;
   }
-  GPR_ASSERT(end - cur >= 2);
-  hdr.value = buf2str(cur, (size_t)(end - cur) - 2);
+  GPR_ASSERT((size_t)(end - cur) >= parser->cur_line_end_length);
+  hdr.value = buf2str(cur, (size_t)(end - cur) - parser->cur_line_end_length);
 
   if (parser->type == GRPC_HTTP_RESPONSE) {
     hdr_count = &parser->http.response.hdr_count;
@@ -207,7 +208,7 @@ static int finish_line(grpc_http_parser *parser) {
       parser->state = GRPC_HTTP_HEADERS;
       break;
     case GRPC_HTTP_HEADERS:
-      if (parser->cur_line_length == 2) {
+      if (parser->cur_line_length == parser->cur_line_end_length) {
         parser->state = GRPC_HTTP_BODY;
         break;
       }
@@ -247,21 +248,43 @@ static int addbyte_body(grpc_http_parser *parser, uint8_t byte) {
   return 1;
 }
 
+static int check_line(grpc_http_parser *parser) {
+  if (parser->cur_line_length >= 2 &&
+      parser->cur_line[parser->cur_line_length - 2] == '\r' &&
+      parser->cur_line[parser->cur_line_length - 1] == '\n') {
+    return 1;
+  }
+
+  // HTTP request with \n\r line termiantors.
+  else if (parser->cur_line_length >= 2 &&
+           parser->cur_line[parser->cur_line_length - 2] == '\n' &&
+           parser->cur_line[parser->cur_line_length - 1] == '\r') {
+    return 1;
+  }
+
+  // HTTP request with only \n line terminators.
+  else if (parser->cur_line_length >= 1 &&
+           parser->cur_line[parser->cur_line_length - 1] == '\n') {
+    parser->cur_line_end_length = 1;
+    return 1;
+  }
+
+  return 0;
+}
+
 static int addbyte(grpc_http_parser *parser, uint8_t byte) {
   switch (parser->state) {
     case GRPC_HTTP_FIRST_LINE:
     case GRPC_HTTP_HEADERS:
       if (parser->cur_line_length >= GRPC_HTTP_PARSER_MAX_HEADER_LENGTH) {
-        if (grpc_http_trace)
+        if (grpc_http1_trace)
           gpr_log(GPR_ERROR, "HTTP client max line length (%d) exceeded",
                   GRPC_HTTP_PARSER_MAX_HEADER_LENGTH);
         return 0;
       }
       parser->cur_line[parser->cur_line_length] = byte;
       parser->cur_line_length++;
-      if (parser->cur_line_length >= 2 &&
-          parser->cur_line[parser->cur_line_length - 2] == '\r' &&
-          parser->cur_line[parser->cur_line_length - 1] == '\n') {
+      if (check_line(parser)) {
         return finish_line(parser);
       } else {
         return 1;
@@ -277,6 +300,7 @@ void grpc_http_parser_init(grpc_http_parser *parser) {
   memset(parser, 0, sizeof(*parser));
   parser->state = GRPC_HTTP_FIRST_LINE;
   parser->type = GRPC_HTTP_UNKNOWN;
+  parser->cur_line_end_length = 2;
 }
 
 void grpc_http_parser_destroy(grpc_http_parser *parser) {

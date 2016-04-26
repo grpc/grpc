@@ -1248,6 +1248,10 @@ static void cancel_from_api(grpc_exec_ctx *exec_ctx,
     grpc_chttp2_fake_status(exec_ctx, transport_global, stream_global, status,
                             NULL);
   }
+  if (status != GRPC_STATUS_OK && !stream_global->seen_error) {
+    stream_global->seen_error = 1;
+    grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
+  }
   grpc_chttp2_mark_stream_closed(exec_ctx, transport_global, stream_global, 1,
                                  1);
 }
