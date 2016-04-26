@@ -31,31 +31,47 @@
  *
  */
 
-var grpc = require('grpc');
+// Generates Node gRPC service interface out of Protobuf IDL.
 
-var hello_messages = require('./helloworld_pb');
-var hello_service = require('./helloworld_grpc_pb');
+#include <memory>
 
-function main() {
-  var client = new hello_service.GreeterClient('localhost:50051',
-                                               grpc.credentials.createInsecure());
-  var user;
-  if (process.argv.length >= 3) {
-    user = process.argv[2];
-  } else {
-    user = 'world';
-  }
+#include "src/compiler/config.h"
+#include "src/compiler/node_generator.h"
+#include "src/compiler/node_generator_helpers.h"
 
-  var request = new hello_messages.HelloRequest();
-  request.setName(user);
+using grpc_node_generator::GetImports;
+using grpc_node_generator::GetJSServiceFilename;
+using grpc_node_generator::GetServices;
+using grpc_node_generator::GetTransformers;
 
-  client.sayHello(request, function(err, response) {
-    if (err) {
-      debugger;
-      throw err;
+class NodeGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
+ public:
+  NodeGrpcGenerator() {}
+  ~NodeGrpcGenerator() {}
+
+  bool Generate(const grpc::protobuf::FileDescriptor *file,
+                const grpc::string &parameter,
+                grpc::protobuf::compiler::GeneratorContext *context,
+                grpc::string *error) const {
+    grpc::string code = GetImports(file) +
+        GetTransformers(file) +
+        GetServices(file);
+    if (code.size() == 0) {
+      return true;
     }
-    console.log('Greeting:', response.getMessage());
-  });
-}
 
-main();
+    // Get output file name
+    grpc::string file_name = GetJSServiceFilename(file->name());
+
+    std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(
+        context->Open(file_name));
+    grpc::protobuf::io::CodedOutputStream coded_out(output.get());
+    coded_out.WriteRaw(code.data(), code.size());
+    return true;
+  }
+};
+
+int main(int argc, char *argv[]) {
+  NodeGrpcGenerator generator;
+  return grpc::protobuf::compiler::PluginMain(argc, argv, &generator);
+}
