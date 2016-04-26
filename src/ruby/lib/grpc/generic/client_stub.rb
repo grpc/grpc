@@ -27,8 +27,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-require 'grpc/generic/active_call'
-require 'grpc/version'
+require_relative 'active_call'
+require_relative '../version'
 
 # GRPC contains the General RPC module.
 module GRPC
