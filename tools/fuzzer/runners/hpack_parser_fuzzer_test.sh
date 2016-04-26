@@ -29,7 +29,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-flags="-max_total_time=$runtime -artifact_prefix=fuzzer_output/ -max_len=512"
+flags="-max_total_time=$runtime -artifact_prefix=fuzzer_output/ -max_len=512 -timeout=120"
+
+flags="$flags -dict=test/core/end2end/fuzzers/hpack.dictionary"
 
 if [ "$jobs" != "1" ]
 then

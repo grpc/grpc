@@ -35,8 +35,12 @@ template: |
   # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   #
 
-  flags="-max_total_time=$runtime -artifact_prefix=fuzzer_output/ -max_len=${selected.maxlen}"
+  flags="-max_total_time=$runtime -artifact_prefix=fuzzer_output/ -max_len=${selected.maxlen} -timeout=120"
   
+  %if selected.get('dict'):
+  flags="$flags -dict=${selected.dict}"
+  %endif
+
   if [ "$jobs" != "1" ]
   then
     flags="-jobs=$jobs -workers=$jobs $flags"

@@ -211,11 +211,11 @@ finish:
   grpc_exec_ctx_enqueue(exec_ctx, closure, *ep != NULL, NULL);
 }
 
-void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
-                             grpc_endpoint **ep,
-                             grpc_pollset_set *interested_parties,
-                             const struct sockaddr *addr, size_t addr_len,
-                             gpr_timespec deadline) {
+static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
+                                    grpc_closure *closure, grpc_endpoint **ep,
+                                    grpc_pollset_set *interested_parties,
+                                    const struct sockaddr *addr,
+                                    size_t addr_len, gpr_timespec deadline) {
   int fd;
   grpc_dualstack_mode dsmode;
   int err;
@@ -301,6 +301,21 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
 done:
   gpr_free(name);
   gpr_free(addr_str);
+}
+
+// overridden by api_fuzzer.c
+void (*grpc_tcp_client_connect_impl)(
+    grpc_exec_ctx *exec_ctx, grpc_closure *closure, grpc_endpoint **ep,
+    grpc_pollset_set *interested_parties, const struct sockaddr *addr,
+    size_t addr_len, gpr_timespec deadline) = tcp_client_connect_impl;
+
+void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
+                             grpc_endpoint **ep,
+                             grpc_pollset_set *interested_parties,
+                             const struct sockaddr *addr, size_t addr_len,
+                             gpr_timespec deadline) {
+  grpc_tcp_client_connect_impl(exec_ctx, closure, ep, interested_parties, addr,
+                               addr_len, deadline);
 }
 
 #endif

@@ -31,7 +31,16 @@
 
 SINGLE_MACHINE_CORES=8
 WARMUP_SECONDS=5
+JAVA_WARMUP_SECONDS=15  # Java needs more warmup time for JIT to kick in.
 BENCHMARK_SECONDS=30
+
+SECURE_SECARGS = {'use_test_ca': True,
+                  'server_host_override': 'foo.test.google.fr'}
+
+HISTOGRAM_PARAMS = {
+  'resolution': 0.01,
+  'max_possible': 60e9,
+}
 
 EMPTY_GENERIC_PAYLOAD = {
   'bytebuf_params': {
@@ -76,14 +85,13 @@ class CXXLanguage:
     for secure in [True, False]:
       if secure:
         secstr = 'secure'
-        secargs = {'use_test_ca': True,
-                   'server_host_override': 'foo.test.google.fr'}
+        secargs = SECURE_SECARGS
       else:
         secstr = 'insecure'
         secargs = None
 
       yield {
-          'name': 'generic_async_streaming_ping_pong_%s'
+          'name': 'cpp_generic_async_streaming_ping_pong_%s'
                   % secstr,
           'num_servers': 1,
           'num_clients': 1,
@@ -98,60 +106,7 @@ class CXXLanguage:
               'closed_loop': {}
             },
             'payload_config': EMPTY_GENERIC_PAYLOAD,
-          },
-          'server_config': {
-            'server_type': 'ASYNC_GENERIC_SERVER',
-            'security_params': secargs,
-            'core_limit': SINGLE_MACHINE_CORES/2,
-            'async_server_threads': 1,
-            'payload_config': EMPTY_GENERIC_PAYLOAD,
-          },
-          'warmup_seconds': WARMUP_SECONDS,
-          'benchmark_seconds': BENCHMARK_SECONDS
-      }
-      yield {
-          'name': 'generic_async_streaming_qps_unconstrained_%s'
-                  % secstr,
-          'num_servers': 1,
-          'num_clients': 0,
-          'client_config': {
-            'client_type': 'ASYNC_CLIENT',
-            'security_params': secargs,
-            'outstanding_rpcs_per_channel': DEEP,
-            'client_channels': WIDE,
-            'async_client_threads': 1,
-            'rpc_type': 'STREAMING',
-            'load_params': {
-              'closed_loop': {}
-            },
-            'payload_config': EMPTY_GENERIC_PAYLOAD,
-          },
-          'server_config': {
-            'server_type': 'ASYNC_GENERIC_SERVER',
-            'security_params': secargs,
-            'core_limit': SINGLE_MACHINE_CORES/2,
-            'async_server_threads': 1,
-            'payload_config': EMPTY_GENERIC_PAYLOAD,
-          },
-          'warmup_seconds': WARMUP_SECONDS,
-          'benchmark_seconds': BENCHMARK_SECONDS
-      }
-      yield {
-          'name': 'generic_async_streaming_qps_one_server_core_%s'
-                  % secstr,
-          'num_servers': 1,
-          'num_clients': 0,
-          'client_config': {
-            'client_type': 'ASYNC_CLIENT',
-            'security_params': secargs,
-            'outstanding_rpcs_per_channel': DEEP,
-            'client_channels': WIDE,
-            'async_client_threads': 1,
-            'rpc_type': 'STREAMING',
-            'load_params': {
-              'closed_loop': {}
-            },
-            'payload_config': EMPTY_GENERIC_PAYLOAD,
+            'histogram_params': HISTOGRAM_PARAMS,
           },
           'server_config': {
             'server_type': 'ASYNC_GENERIC_SERVER',
@@ -164,7 +119,7 @@ class CXXLanguage:
           'benchmark_seconds': BENCHMARK_SECONDS
       }
       yield {
-          'name': 'protobuf_async_qps_unconstrained_%s'
+          'name': 'cpp_generic_async_streaming_qps_unconstrained_%s'
                   % secstr,
           'num_servers': 1,
           'num_clients': 0,
@@ -173,52 +128,81 @@ class CXXLanguage:
             'security_params': secargs,
             'outstanding_rpcs_per_channel': DEEP,
             'client_channels': WIDE,
-            'async_client_threads': 1,
+            'async_client_threads': 0,
             'rpc_type': 'STREAMING',
             'load_params': {
               'closed_loop': {}
             },
             'payload_config': EMPTY_GENERIC_PAYLOAD,
+            'histogram_params': HISTOGRAM_PARAMS,
           },
           'server_config': {
             'server_type': 'ASYNC_GENERIC_SERVER',
             'security_params': secargs,
             'core_limit': SINGLE_MACHINE_CORES/2,
-            'async_server_threads': 1,
+            'async_server_threads': 0,
             'payload_config': EMPTY_GENERIC_PAYLOAD,
           },
           'warmup_seconds': WARMUP_SECONDS,
           'benchmark_seconds': BENCHMARK_SECONDS
       }
       yield {
-          'name': 'single_channel_throughput_%s'
+          'name': 'cpp_generic_async_streaming_qps_one_server_core_%s'
                   % secstr,
           'num_servers': 1,
-          'num_clients': 1,
+          'num_clients': 0,
           'client_config': {
             'client_type': 'ASYNC_CLIENT',
             'security_params': secargs,
-            'outstanding_rpcs_per_channel': 1,
-            'client_channels': 1,
-            'async_client_threads': 1,
+            'outstanding_rpcs_per_channel': DEEP,
+            'client_channels': WIDE,
+            'async_client_threads': 0,
             'rpc_type': 'STREAMING',
             'load_params': {
               'closed_loop': {}
             },
-            'payload_config': BIG_GENERIC_PAYLOAD,
+            'payload_config': EMPTY_GENERIC_PAYLOAD,
+            'histogram_params': HISTOGRAM_PARAMS,
           },
           'server_config': {
             'server_type': 'ASYNC_GENERIC_SERVER',
             'security_params': secargs,
-            'core_limit': SINGLE_MACHINE_CORES/2,
+            'core_limit': 1,
             'async_server_threads': 1,
-            'payload_config': BIG_GENERIC_PAYLOAD,
+            'payload_config': EMPTY_GENERIC_PAYLOAD,
           },
           'warmup_seconds': WARMUP_SECONDS,
           'benchmark_seconds': BENCHMARK_SECONDS
       }
       yield {
-          'name': 'protobuf_async_ping_pong_%s'
+          'name': 'cpp_protobuf_async_streaming_qps_unconstrained_%s'
+                  % secstr,
+          'num_servers': 1,
+          'num_clients': 0,
+          'client_config': {
+            'client_type': 'ASYNC_CLIENT',
+            'security_params': secargs,
+            'outstanding_rpcs_per_channel': DEEP,
+            'client_channels': WIDE,
+            'async_client_threads': 0,
+            'rpc_type': 'STREAMING',
+            'load_params': {
+              'closed_loop': {}
+            },
+            'payload_config': EMPTY_PROTO_PAYLOAD,
+            'histogram_params': HISTOGRAM_PARAMS,
+          },
+          'server_config': {
+            'server_type': 'ASYNC_SERVER',
+            'security_params': secargs,
+            'core_limit': SINGLE_MACHINE_CORES/2,
+            'async_server_threads': 0,
+          },
+          'warmup_seconds': WARMUP_SECONDS,
+          'benchmark_seconds': BENCHMARK_SECONDS
+      }
+      yield {
+          'name': 'cpp_protobuf_async_streaming_ping_pong_%s'
                   % secstr,
           'num_servers': 1,
           'num_clients': 1,
@@ -233,13 +217,67 @@ class CXXLanguage:
               'closed_loop': {}
             },
             'payload_config': EMPTY_PROTO_PAYLOAD,
+            'histogram_params': HISTOGRAM_PARAMS,
           },
           'server_config': {
-            'server_type': 'ASYNC_GENERIC_SERVER',
+            'server_type': 'ASYNC_SERVER',
             'security_params': secargs,
-            'core_limit': SINGLE_MACHINE_CORES/2,
+            'core_limit': 1,
             'async_server_threads': 1,
+          },
+          'warmup_seconds': WARMUP_SECONDS,
+          'benchmark_seconds': BENCHMARK_SECONDS
+      }
+      yield {
+          'name': 'cpp_protobuf_sync_unary_ping_pong_%s'
+                  % secstr,
+          'num_servers': 1,
+          'num_clients': 1,
+          'client_config': {
+            'client_type': 'SYNC_CLIENT',
+            'security_params': secargs,
+            'outstanding_rpcs_per_channel': 1,
+            'client_channels': 1,
+            'async_client_threads': 0,
+            'rpc_type': 'UNARY',
+            'load_params': {
+              'closed_loop': {}
+            },
             'payload_config': EMPTY_PROTO_PAYLOAD,
+            'histogram_params': HISTOGRAM_PARAMS,
+          },
+          'server_config': {
+            'server_type': 'SYNC_SERVER',
+            'security_params': secargs,
+            'core_limit': 1,
+            'async_server_threads': 0,
+          },
+          'warmup_seconds': WARMUP_SECONDS,
+          'benchmark_seconds': BENCHMARK_SECONDS
+      }
+      yield {
+          'name': 'cpp_protobuf_async_unary_ping_pong_%s'
+                  % secstr,
+          'num_servers': 1,
+          'num_clients': 1,
+          'client_config': {
+            'client_type': 'ASYNC_CLIENT',
+            'security_params': secargs,
+            'outstanding_rpcs_per_channel': 1,
+            'client_channels': 1,
+            'async_client_threads': 1,
+            'rpc_type': 'UNARY',
+            'load_params': {
+              'closed_loop': {}
+            },
+            'payload_config': EMPTY_PROTO_PAYLOAD,
+            'histogram_params': HISTOGRAM_PARAMS,
+          },
+          'server_config': {
+            'server_type': 'ASYNC_SERVER',
+            'security_params': secargs,
+            'core_limit': 1,
+            'async_server_threads': 1,
           },
           'warmup_seconds': WARMUP_SECONDS,
           'benchmark_seconds': BENCHMARK_SECONDS
@@ -261,9 +299,9 @@ class CSharpLanguage:
     return 100
 
   def scenarios(self):
-    # TODO(jtattermusch): add more scenarios
+    secargs = SECURE_SECARGS
     yield {
-        'name': 'csharp_async_generic_streaming_ping_pong',
+        'name': 'csharp_generic_async_streaming_ping_pong',
         'num_servers': 1,
         'num_clients': 1,
         'client_config': {
@@ -277,16 +315,96 @@ class CSharpLanguage:
             'closed_loop': {}
           },
           'payload_config': EMPTY_GENERIC_PAYLOAD,
+          'histogram_params': HISTOGRAM_PARAMS,
         },
         'server_config': {
           'server_type': 'ASYNC_GENERIC_SERVER',
           'security_params': secargs,
-          'core_limit': SINGLE_MACHINE_CORES/2,
-          'async_server_threads': 1,
+          'core_limit': 0,
+          'async_server_threads': 0,
           'payload_config': EMPTY_GENERIC_PAYLOAD,
         },
         'warmup_seconds': WARMUP_SECONDS,
         'benchmark_seconds': BENCHMARK_SECONDS
+    }
+    yield {
+        'name': 'csharp_protobuf_async_unary_ping_pong',
+        'num_servers': 1,
+        'num_clients': 1,
+        'client_config': {
+          'client_type': 'ASYNC_CLIENT',
+          'security_params': secargs,
+          'outstanding_rpcs_per_channel': 1,
+          'client_channels': 1,
+          'async_client_threads': 1,
+          'rpc_type': 'UNARY',
+          'load_params': {
+            'closed_loop': {}
+          },
+          'payload_config': EMPTY_PROTO_PAYLOAD,
+          'histogram_params': HISTOGRAM_PARAMS,
+        },
+        'server_config': {
+          'server_type': 'ASYNC_SERVER',
+          'security_params': secargs,
+          'core_limit': 0,
+          'async_server_threads': 0,
+        },
+        'warmup_seconds': WARMUP_SECONDS,
+        'benchmark_seconds': BENCHMARK_SECONDS
+    }
+    yield {
+        'name': 'csharp_protobuf_sync_to_async_unary_ping_pong',
+        'num_servers': 1,
+        'num_clients': 1,
+        'client_config': {
+          'client_type': 'SYNC_CLIENT',
+          'security_params': secargs,
+          'outstanding_rpcs_per_channel': 1,
+          'client_channels': 1,
+          'async_client_threads': 1,
+          'rpc_type': 'UNARY',
+          'load_params': {
+            'closed_loop': {}
+          },
+          'payload_config': EMPTY_PROTO_PAYLOAD,
+          'histogram_params': HISTOGRAM_PARAMS,
+        },
+        'server_config': {
+          'server_type': 'ASYNC_SERVER',
+          'security_params': secargs,
+          'core_limit': 0,
+          'async_server_threads': 0,
+        },
+        'warmup_seconds': WARMUP_SECONDS,
+        'benchmark_seconds': BENCHMARK_SECONDS
+    }
+    yield {
+        'name': 'csharp_to_cpp_protobuf_sync_unary_ping_pong',
+        'num_servers': 1,
+        'num_clients': 1,
+        'client_config': {
+          'client_type': 'SYNC_CLIENT',
+          'security_params': secargs,
+          'outstanding_rpcs_per_channel': 1,
+          'client_channels': 1,
+          'async_client_threads': 1,
+          'rpc_type': 'UNARY',
+          'load_params': {
+            'closed_loop': {}
+          },
+          'payload_config': EMPTY_PROTO_PAYLOAD,
+          'histogram_params': HISTOGRAM_PARAMS,
+        },
+        'server_config': {
+          'server_type': 'SYNC_SERVER',
+          'security_params': secargs,
+          'core_limit': 1,
+          'async_server_threads': 1,
+        },
+        'warmup_seconds': WARMUP_SECONDS,
+        'benchmark_seconds': BENCHMARK_SECONDS,
+        'SERVER_LANGUAGE': 'c++'  # recognized by run_performance_tests.py
     }
 
   def __str__(self):
@@ -307,8 +425,9 @@ class NodeLanguage:
 
   def scenarios(self):
     # TODO(jtattermusch): add more scenarios
+    secargs = SECURE_SECARGS
     yield {
-        'name': 'node_sync_unary_ping_pong_protobuf',
+        'name': 'node_protobuf_unary_ping_pong',
         'num_servers': 1,
         'num_clients': 1,
         'client_config': {
@@ -317,18 +436,18 @@ class NodeLanguage:
           'outstanding_rpcs_per_channel': 1,
           'client_channels': 1,
           'async_client_threads': 1,
-          'rpc_type': 'STREAMING',
+          'rpc_type': 'UNARY',
           'load_params': {
             'closed_loop': {}
           },
           'payload_config': EMPTY_PROTO_PAYLOAD,
+          'histogram_params': HISTOGRAM_PARAMS,
         },
         'server_config': {
-          'server_type': 'ASYNC_GENERIC_SERVER',
+          'server_type': 'ASYNC_SERVER',
           'security_params': secargs,
-          'core_limit': SINGLE_MACHINE_CORES/2,
+          'core_limit': 0,
           'async_server_threads': 1,
-          'payload_config': EMPTY_PROTO_PAYLOAD,
         },
         'warmup_seconds': WARMUP_SECONDS,
         'benchmark_seconds': BENCHMARK_SECONDS
@@ -338,8 +457,109 @@ class NodeLanguage:
     return 'node'
 
 
+class RubyLanguage:
+
+  def __init__(self):
+    pass
+    self.safename = str(self)
+
+  def worker_cmdline(self):
+    return ['tools/run_tests/performance/run_worker_ruby.sh']
+
+  def worker_port_offset(self):
+    return 300
+
+  def scenarios(self):
+    # TODO(jtattermusch): add more scenarios
+    secargs = SECURE_SECARGS
+    yield {
+        'name': 'ruby_protobuf_unary_ping_pong',
+        'num_servers': 1,
+        'num_clients': 1,
+        'client_config': {
+          'client_type': 'SYNC_CLIENT',
+          'security_params': secargs,
+          'outstanding_rpcs_per_channel': 1,
+          'client_channels': 1,
+          'async_client_threads': 1,
+          'rpc_type': 'UNARY',
+          'load_params': {
+            'closed_loop': {}
+          },
+          'payload_config': EMPTY_PROTO_PAYLOAD,
+          'histogram_params': HISTOGRAM_PARAMS,
+        },
+        'server_config': {
+          'server_type': 'SYNC_SERVER',
+          'security_params': secargs,
+          'core_limit': 0,
+          'async_server_threads': 1,
+        },
+        'warmup_seconds': WARMUP_SECONDS,
+        'benchmark_seconds': BENCHMARK_SECONDS
+    }
+
+  def __str__(self):
+    return 'ruby'
+
+
+class JavaLanguage:
+
+  def __init__(self):
+    pass
+    self.safename = str(self)
+
+  def worker_cmdline(self):
+    return ['tools/run_tests/performance/run_worker_java.sh']
+
+  def worker_port_offset(self):
+    return 400
+
+  def scenarios(self):
+    # TODO(jtattermusch): add more scenarios
+    for secure in [True, False]:
+      if secure:
+        secstr = 'secure'
+        secargs = SECURE_SECARGS
+      else:
+        secstr = 'insecure'
+        secargs = None
+
+      yield {
+          'name': 'java_protobuf_unary_ping_pong_%s' % secstr,
+          'num_servers': 1,
+          'num_clients': 1,
+          'client_config': {
+            'client_type': 'SYNC_CLIENT',
+            'security_params': secargs,
+            'outstanding_rpcs_per_channel': 1,
+            'client_channels': 1,
+            'async_client_threads': 1,
+            'rpc_type': 'UNARY',
+            'load_params': {
+              'closed_loop': {}
+            },
+            'payload_config': EMPTY_PROTO_PAYLOAD,
+            'histogram_params': HISTOGRAM_PARAMS,
+          },
+          'server_config': {
+            'server_type': 'SYNC_SERVER',
+            'security_params': secargs,
+            'core_limit': 0,
+            'async_server_threads': 1,
+          },
+          'warmup_seconds': JAVA_WARMUP_SECONDS,
+          'benchmark_seconds': BENCHMARK_SECONDS
+      }
+
+  def __str__(self):
+    return 'java'
+
+
 LANGUAGES = {
     'c++' : CXXLanguage(),
     'csharp' : CSharpLanguage(),
     'node' : NodeLanguage(),
+    'ruby' : RubyLanguage(),
+    'java' : JavaLanguage(),
 }

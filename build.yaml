@@ -138,132 +138,6 @@ filegroups:
   - include/grpc/impl/codegen/sync_posix.h
   - include/grpc/impl/codegen/sync_win32.h
   - include/grpc/impl/codegen/time.h
-- name: grpc++_base
-  public_headers:
-  - include/grpc++/alarm.h
-  - include/grpc++/channel.h
-  - include/grpc++/client_context.h
-  - include/grpc++/completion_queue.h
-  - include/grpc++/create_channel.h
-  - include/grpc++/generic/async_generic_service.h
-  - include/grpc++/generic/generic_stub.h
-  - include/grpc++/grpc++.h
-  - include/grpc++/impl/call.h
-  - include/grpc++/impl/client_unary_call.h
-  - include/grpc++/impl/grpc_library.h
-  - include/grpc++/impl/method_handler_impl.h
-  - include/grpc++/impl/proto_utils.h
-  - include/grpc++/impl/rpc_method.h
-  - include/grpc++/impl/rpc_service_method.h
-  - include/grpc++/impl/serialization_traits.h
-  - include/grpc++/impl/server_builder_option.h
-  - include/grpc++/impl/service_type.h
-  - include/grpc++/impl/sync.h
-  - include/grpc++/impl/sync_cxx11.h
-  - include/grpc++/impl/sync_no_cxx11.h
-  - include/grpc++/impl/thd.h
-  - include/grpc++/impl/thd_cxx11.h
-  - include/grpc++/impl/thd_no_cxx11.h
-  - include/grpc++/security/auth_context.h
-  - include/grpc++/security/auth_metadata_processor.h
-  - include/grpc++/security/credentials.h
-  - include/grpc++/security/server_credentials.h
-  - include/grpc++/server.h
-  - include/grpc++/server_builder.h
-  - include/grpc++/server_context.h
-  - include/grpc++/support/async_stream.h
-  - include/grpc++/support/async_unary_call.h
-  - include/grpc++/support/byte_buffer.h
-  - include/grpc++/support/channel_arguments.h
-  - include/grpc++/support/slice.h
-  - include/grpc++/support/status.h
-  - include/grpc++/support/status_code_enum.h
-  - include/grpc++/support/string_ref.h
-  - include/grpc++/support/stub_options.h
-  - include/grpc++/support/sync_stream.h
-  - include/grpc++/support/time.h
-  headers:
-  - src/cpp/client/create_channel_internal.h
-  - src/cpp/common/core_codegen.h
-  - src/cpp/common/create_auth_context.h
-  - src/cpp/server/dynamic_thread_pool.h
-  - src/cpp/server/thread_pool_interface.h
-  src:
-  - src/cpp/client/channel.cc
-  - src/cpp/client/client_context.cc
-  - src/cpp/client/create_channel.cc
-  - src/cpp/client/create_channel_internal.cc
-  - src/cpp/client/credentials.cc
-  - src/cpp/client/generic_stub.cc
-  - src/cpp/client/insecure_credentials.cc
-  - src/cpp/common/channel_arguments.cc
-  - src/cpp/common/completion_queue.cc
-  - src/cpp/common/core_codegen.cc
-  - src/cpp/common/rpc_method.cc
-  - src/cpp/server/async_generic_service.cc
-  - src/cpp/server/create_default_thread_pool.cc
-  - src/cpp/server/dynamic_thread_pool.cc
-  - src/cpp/server/insecure_server_credentials.cc
-  - src/cpp/server/server.cc
-  - src/cpp/server/server_builder.cc
-  - src/cpp/server/server_context.cc
-  - src/cpp/server/server_credentials.cc
-  - src/cpp/util/byte_buffer.cc
-  - src/cpp/util/slice.cc
-  - src/cpp/util/status.cc
-  - src/cpp/util/string_ref.cc
-  - src/cpp/util/time.cc
-  deps:
-  - grpc
-  uses:
-  - grpc++_codegen
-  - grpc++_config
-- name: grpc++_codegen
-  public_headers:
-  - include/grpc++/impl/codegen/async_stream.h
-  - include/grpc++/impl/codegen/async_unary_call.h
-  - include/grpc++/impl/codegen/call.h
-  - include/grpc++/impl/codegen/call_hook.h
-  - include/grpc++/impl/codegen/channel_interface.h
-  - include/grpc++/impl/codegen/client_context.h
-  - include/grpc++/impl/codegen/client_unary_call.h
-  - include/grpc++/impl/codegen/completion_queue.h
-  - include/grpc++/impl/codegen/completion_queue_tag.h
-  - include/grpc++/impl/codegen/core_codegen_interface.h
-  - include/grpc++/impl/codegen/grpc_library.h
-  - include/grpc++/impl/codegen/method_handler_impl.h
-  - include/grpc++/impl/codegen/proto_utils.h
-  - include/grpc++/impl/codegen/rpc_method.h
-  - include/grpc++/impl/codegen/rpc_service_method.h
-  - include/grpc++/impl/codegen/security/auth_context.h
-  - include/grpc++/impl/codegen/serialization_traits.h
-  - include/grpc++/impl/codegen/server_context.h
-  - include/grpc++/impl/codegen/server_interface.h
-  - include/grpc++/impl/codegen/service_type.h
-  - include/grpc++/impl/codegen/status.h
-  - include/grpc++/impl/codegen/status_code_enum.h
-  - include/grpc++/impl/codegen/string_ref.h
-  - include/grpc++/impl/codegen/stub_options.h
-  - include/grpc++/impl/codegen/sync.h
-  - include/grpc++/impl/codegen/sync_cxx11.h
-  - include/grpc++/impl/codegen/sync_no_cxx11.h
-  - include/grpc++/impl/codegen/sync_stream.h
-  - include/grpc++/impl/codegen/time.h
-  src:
-  - src/cpp/codegen/codegen_init.cc
-  uses:
-  - grpc_codegen
-  - grpc++_config_codegen
-- name: grpc++_config
-  public_headers:
-  - include/grpc++/support/config.h
-  - include/grpc++/support/config_protobuf.h
-  uses:
-  - grpc++_config_codegen
-- name: grpc++_config_codegen
-  public_headers:
-  - include/grpc++/impl/codegen/config.h
-  - include/grpc++/impl/codegen/config_protobuf.h
 - name: grpc_base
   public_headers:
   - include/grpc/byte_buffer.h
@@ -415,7 +289,6 @@ filegroups:
   - src/core/lib/surface/channel_stack_type.c
   - src/core/lib/surface/completion_queue.c
   - src/core/lib/surface/event_string.c
-  - src/core/lib/surface/init.c
   - src/core/lib/surface/lame_client.c
   - src/core/lib/surface/metadata_array.c
   - src/core/lib/surface/server.c
@@ -442,6 +315,7 @@ filegroups:
   - src/core/ext/client_config/lb_policy.h
   - src/core/ext/client_config/lb_policy_factory.h
   - src/core/ext/client_config/lb_policy_registry.h
+  - src/core/ext/client_config/parse_address.h
   - src/core/ext/client_config/resolver.h
   - src/core/ext/client_config/resolver_factory.h
   - src/core/ext/client_config/resolver_registry.h
@@ -461,6 +335,7 @@ filegroups:
   - src/core/ext/client_config/lb_policy.c
   - src/core/ext/client_config/lb_policy_factory.c
   - src/core/ext/client_config/lb_policy_registry.c
+  - src/core/ext/client_config/parse_address.c
   - src/core/ext/client_config/resolver.c
   - src/core/ext/client_config/resolver_factory.c
   - src/core/ext/client_config/resolver_registry.c
@@ -523,6 +398,7 @@ filegroups:
 - name: grpc_secure
   public_headers:
   - include/grpc/grpc_security.h
+  - include/grpc/grpc_security_constants.h
   headers:
   - src/core/lib/security/auth_filters.h
   - src/core/lib/security/b64.h
@@ -533,11 +409,6 @@ filegroups:
   - src/core/lib/security/secure_endpoint.h
   - src/core/lib/security/security_connector.h
   - src/core/lib/security/security_context.h
-  - src/core/lib/tsi/fake_transport_security.h
-  - src/core/lib/tsi/ssl_transport_security.h
-  - src/core/lib/tsi/ssl_types.h
-  - src/core/lib/tsi/transport_security.h
-  - src/core/lib/tsi/transport_security_interface.h
   src:
   - src/core/lib/http/httpcli_security_connector.c
   - src/core/lib/security/b64.c
@@ -555,13 +426,13 @@ filegroups:
   - src/core/lib/security/security_context.c
   - src/core/lib/security/server_auth_filter.c
   - src/core/lib/surface/init_secure.c
-  - src/core/lib/tsi/fake_transport_security.c
-  - src/core/lib/tsi/ssl_transport_security.c
-  - src/core/lib/tsi/transport_security.c
+  secure: true
   uses:
   - grpc_base
   - grpc_transport_chttp2_alpn
+  - tsi
 - name: grpc_test_util_base
+  build: test
   headers:
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/fixtures/proxy.h
@@ -570,6 +441,7 @@ filegroups:
   - test/core/util/memory_counters.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
   - test/core/util/port.h
   - test/core/util/port_server_client.h
   - test/core/util/slice_splitter.h
@@ -581,6 +453,7 @@ filegroups:
   - test/core/util/memory_counters.c
   - test/core/util/mock_endpoint.c
   - test/core/util/parse_hexstring.c
+  - test/core/util/passthru_endpoint.c
   - test/core/util/port_posix.c
   - test/core/util/port_server_client.c
   - test/core/util/port_windows.c
@@ -681,6 +554,150 @@ filegroups:
   - third_party/nanopb/pb_common.c
   - third_party/nanopb/pb_decode.c
   - third_party/nanopb/pb_encode.c
+- name: tsi
+  headers:
+  - src/core/lib/tsi/fake_transport_security.h
+  - src/core/lib/tsi/ssl_transport_security.h
+  - src/core/lib/tsi/ssl_types.h
+  - src/core/lib/tsi/transport_security.h
+  - src/core/lib/tsi/transport_security_interface.h
+  src:
+  - src/core/lib/tsi/fake_transport_security.c
+  - src/core/lib/tsi/ssl_transport_security.c
+  - src/core/lib/tsi/transport_security.c
+  deps:
+  - gpr
+  secure: true
+- name: grpc++_base
+  language: c++
+  public_headers:
+  - include/grpc++/alarm.h
+  - include/grpc++/channel.h
+  - include/grpc++/client_context.h
+  - include/grpc++/completion_queue.h
+  - include/grpc++/create_channel.h
+  - include/grpc++/generic/async_generic_service.h
+  - include/grpc++/generic/generic_stub.h
+  - include/grpc++/grpc++.h
+  - include/grpc++/impl/call.h
+  - include/grpc++/impl/client_unary_call.h
+  - include/grpc++/impl/grpc_library.h
+  - include/grpc++/impl/method_handler_impl.h
+  - include/grpc++/impl/proto_utils.h
+  - include/grpc++/impl/rpc_method.h
+  - include/grpc++/impl/rpc_service_method.h
+  - include/grpc++/impl/serialization_traits.h
+  - include/grpc++/impl/server_builder_option.h
+  - include/grpc++/impl/service_type.h
+  - include/grpc++/impl/sync.h
+  - include/grpc++/impl/sync_cxx11.h
+  - include/grpc++/impl/sync_no_cxx11.h
+  - include/grpc++/impl/thd.h
+  - include/grpc++/impl/thd_cxx11.h
+  - include/grpc++/impl/thd_no_cxx11.h
+  - include/grpc++/security/auth_context.h
+  - include/grpc++/security/auth_metadata_processor.h
+  - include/grpc++/security/credentials.h
+  - include/grpc++/security/server_credentials.h
+  - include/grpc++/server.h
+  - include/grpc++/server_builder.h
+  - include/grpc++/server_context.h
+  - include/grpc++/support/async_stream.h
+  - include/grpc++/support/async_unary_call.h
+  - include/grpc++/support/byte_buffer.h
+  - include/grpc++/support/channel_arguments.h
+  - include/grpc++/support/slice.h
+  - include/grpc++/support/status.h
+  - include/grpc++/support/status_code_enum.h
+  - include/grpc++/support/string_ref.h
+  - include/grpc++/support/stub_options.h
+  - include/grpc++/support/sync_stream.h
+  - include/grpc++/support/time.h
+  headers:
+  - src/cpp/client/create_channel_internal.h
+  - src/cpp/common/core_codegen.h
+  - src/cpp/server/dynamic_thread_pool.h
+  - src/cpp/server/thread_pool_interface.h
+  src:
+  - src/cpp/client/channel.cc
+  - src/cpp/client/client_context.cc
+  - src/cpp/client/create_channel.cc
+  - src/cpp/client/create_channel_internal.cc
+  - src/cpp/client/credentials.cc
+  - src/cpp/client/generic_stub.cc
+  - src/cpp/client/insecure_credentials.cc
+  - src/cpp/common/channel_arguments.cc
+  - src/cpp/common/completion_queue.cc
+  - src/cpp/common/core_codegen.cc
+  - src/cpp/common/rpc_method.cc
+  - src/cpp/server/async_generic_service.cc
+  - src/cpp/server/create_default_thread_pool.cc
+  - src/cpp/server/dynamic_thread_pool.cc
+  - src/cpp/server/insecure_server_credentials.cc
+  - src/cpp/server/server.cc
+  - src/cpp/server/server_builder.cc
+  - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
+  - src/cpp/util/byte_buffer.cc
+  - src/cpp/util/slice.cc
+  - src/cpp/util/status.cc
+  - src/cpp/util/string_ref.cc
+  - src/cpp/util/time.cc
+  deps:
+  - grpc
+  uses:
+  - grpc++_codegen
+  - grpc++_config
+- name: grpc++_codegen
+  language: c++
+  public_headers:
+  - include/grpc++/impl/codegen/async_stream.h
+  - include/grpc++/impl/codegen/async_unary_call.h
+  - include/grpc++/impl/codegen/call.h
+  - include/grpc++/impl/codegen/call_hook.h
+  - include/grpc++/impl/codegen/channel_interface.h
+  - include/grpc++/impl/codegen/client_context.h
+  - include/grpc++/impl/codegen/client_unary_call.h
+  - include/grpc++/impl/codegen/completion_queue.h
+  - include/grpc++/impl/codegen/completion_queue_tag.h
+  - include/grpc++/impl/codegen/core_codegen_interface.h
+  - include/grpc++/impl/codegen/create_auth_context.h
+  - include/grpc++/impl/codegen/grpc_library.h
+  - include/grpc++/impl/codegen/method_handler_impl.h
+  - include/grpc++/impl/codegen/proto_utils.h
+  - include/grpc++/impl/codegen/rpc_method.h
+  - include/grpc++/impl/codegen/rpc_service_method.h
+  - include/grpc++/impl/codegen/security/auth_context.h
+  - include/grpc++/impl/codegen/serialization_traits.h
+  - include/grpc++/impl/codegen/server_context.h
+  - include/grpc++/impl/codegen/server_interface.h
+  - include/grpc++/impl/codegen/service_type.h
+  - include/grpc++/impl/codegen/status.h
+  - include/grpc++/impl/codegen/status_code_enum.h
+  - include/grpc++/impl/codegen/string_ref.h
+  - include/grpc++/impl/codegen/stub_options.h
+  - include/grpc++/impl/codegen/sync.h
+  - include/grpc++/impl/codegen/sync_cxx11.h
+  - include/grpc++/impl/codegen/sync_no_cxx11.h
+  - include/grpc++/impl/codegen/sync_stream.h
+  - include/grpc++/impl/codegen/time.h
+  src:
+  - src/cpp/codegen/codegen_init.cc
+  uses:
+  - grpc_codegen
+  - grpc++_config_codegen
+- name: grpc++_config
+  language: c++
+  public_headers:
+  - include/grpc++/support/config.h
+  - include/grpc++/support/config_protobuf.h
+  uses:
+  - grpc++_config_codegen
+- name: grpc++_config_codegen
+  language: c++
+  public_headers:
+  - include/grpc++/impl/codegen/config.h
+  - include/grpc++/impl/codegen/config_protobuf.h
 libs:
 - name: gpr
   build: all
@@ -703,6 +720,8 @@ libs:
 - name: grpc
   build: all
   language: c
+  src:
+  - src/core/lib/surface/init.c
   baselib: true
   deps_linkage: static
   dll: true
@@ -753,6 +772,7 @@ libs:
   - test/core/end2end/data/ssl_test_data.h
   - test/core/security/oauth2_utils.h
   src:
+  - test/core/end2end/data/client_certs.c
   - test/core/end2end/data/server1_cert.c
   - test/core/end2end/data/server1_key.c
   - test/core/end2end/data/test_root_cert.c
@@ -779,6 +799,7 @@ libs:
   build: all
   language: c
   src:
+  - src/core/lib/surface/init.c
   - src/core/lib/surface/init_unsecure.c
   baselib: true
   deps_linkage: static
@@ -810,14 +831,6 @@ libs:
   - zookeeper
   platforms:
   - linux
-  secure: false
-- name: one_input_fuzzer
-  build: private
-  language: c
-  src:
-  - test/core/util/one_corpus_entry_fuzzer.c
-  deps:
-  - gpr
   secure: false
 - name: reconnect_server
   build: private
@@ -1105,6 +1118,20 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: api_fuzzer
+  build: fuzzer
+  language: c
+  src:
+  - test/core/end2end/fuzzers/api_fuzzer.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/end2end/fuzzers/api_fuzzer_corpus
+  dict: test/core/end2end/fuzzers/api_fuzzer.dictionary
+  maxlen: 2048
 - name: bin_encoder_test
   build: test
   language: c
@@ -1185,6 +1212,7 @@ targets:
   - gpr
   corpus_dirs:
   - test/core/end2end/fuzzers/client_fuzzer_corpus
+  dict: test/core/end2end/fuzzers/hpack.dictionary
   maxlen: 2048
 - name: compression_test
   build: test
@@ -1674,6 +1702,7 @@ targets:
   - gpr
   corpus_dirs:
   - test/core/transport/chttp2/hpack_parser_corpus
+  dict: test/core/end2end/fuzzers/hpack.dictionary
   maxlen: 512
 - name: hpack_parser_test
   build: test
@@ -2025,6 +2054,7 @@ targets:
   - gpr
   corpus_dirs:
   - test/core/end2end/fuzzers/server_fuzzer_corpus
+  dict: test/core/end2end/fuzzers/hpack.dictionary
   maxlen: 2048
 - name: server_test
   build: test
@@ -2701,20 +2731,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: qps_driver
-  build: benchmark
-  language: c++
-  src:
-  - test/cpp/qps/qps_driver.cc
-  deps:
-  - qps
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr_test_util
-  - gpr
-  - grpc++_test_config
 - name: qps_interarrival_test
   build: test
   run: false
@@ -2737,7 +2753,10 @@ targets:
   build: test
   run: false
   language: c++
+  headers:
+  - test/cpp/qps/parse_json.h
   src:
+  - test/cpp/qps/parse_json.cc
   - test/cpp/qps/qps_json_driver.cc
   deps:
   - qps
