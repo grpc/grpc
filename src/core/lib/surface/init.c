@@ -167,7 +167,6 @@ void grpc_init(void) {
     grpc_security_pre_init();
     grpc_iomgr_init();
     grpc_executor_init();
-    grpc_tracer_init("GRPC_TRACE");
     gpr_timers_global_init();
     grpc_cq_global_init();
     for (i = 0; i < g_number_of_plugins; i++) {
@@ -179,6 +178,7 @@ void grpc_init(void) {
      * at the appropriate time */
     grpc_register_security_filters();
     register_builtin_channel_init();
+    grpc_tracer_init("GRPC_TRACE");
     /* no more changes to channel init pipelines */
     grpc_channel_init_finalize();
   }
