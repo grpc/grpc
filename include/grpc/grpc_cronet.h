@@ -31,42 +31,21 @@
  *
  */
 
-#include <grpc/impl/codegen/port_platform.h>
+#ifndef GRPC_GRPC_CRONET_H
+#define GRPC_GRPC_CRONET_H
 
-#ifdef GRPC_COMPILE_WITH_CRONET
+#include <grpc/grpc.h>
 
-#include <stdio.h>
-#include <string.h>
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/surface/channel.h"
-#include "src/core/lib/transport/transport_impl.h"
-
-// Cronet transport object
-typedef struct cronet_transport {
-  grpc_transport base; // must be first element in this structure
-  void *engine;
-  char *host;
-} cronet_transport;
-
-extern grpc_transport_vtable grpc_cronet_vtable;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 GRPCAPI grpc_channel *grpc_cronet_secure_channel_create(
     void *engine, const char *target, const grpc_channel_args *args,
-    void *reserved) {
-  cronet_transport *ct = gpr_malloc(sizeof(cronet_transport));
-  ct->base.vtable = &grpc_cronet_vtable;
-  ct->engine = engine;
-  ct->host = gpr_malloc(strlen(target) + 1);
-  strcpy(ct->host, target);
-  gpr_log(GPR_DEBUG,
-          "grpc_create_cronet_transport: cronet_engine = %p, target=%s", engine,
-          ct->host);
+    void *reserved);
 
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  return grpc_channel_create(&exec_ctx, target, args,
-                             GRPC_CLIENT_DIRECT_CHANNEL, (grpc_transport *)ct);
+#ifdef __cplusplus
 }
-#endif  // GRPC_COMPILE_WITH_CRONET
+#endif
+
+#endif /* GRPC_GRPC_CRONET_H */
