@@ -39,6 +39,9 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/transport/static_metadata.h"
 
+#define EXPECTED_CONTENT_TYPE "application/grpc"
+#define EXPECTED_CONTENT_TYPE_LENGTH sizeof(EXPECTED_CONTENT_TYPE) - 1
+
 typedef struct call_data {
   uint8_t seen_path;
   uint8_t seen_method;
@@ -93,9 +96,10 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
     return NULL;
   } else if (md->key == GRPC_MDSTR_CONTENT_TYPE) {
     const char* value_str = grpc_mdstr_as_c_string(md->value);
-    if (strncmp(value_str, "application/grpc", 16) == 0 &&
-        (strlen(value_str) == 16 ||
-         value_str[16] == '+' || value_str[16] == ';')) {
+    if (strncmp(value_str, EXPECTED_CONTENT_TYPE,
+                EXPECTED_CONTENT_TYPE_LENGTH) == 0 &&
+        (value_str[EXPECTED_CONTENT_TYPE_LENGTH] == '+' ||
+         value_str[EXPECTED_CONTENT_TYPE_LENGTH] == ';')) {
       /* Although the C implementation doesn't (currently) generate them,
          any custom +-suffix is explicitly valid. */
       /* TODO(klempner): We should consider preallocating common values such
