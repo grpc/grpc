@@ -33,6 +33,8 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../..
 
+TOX_PYTHON_ENV="$1"
+
 ROOT=`pwd`
 export LD_LIBRARY_PATH=$ROOT/libs/$CONFIG
 export DYLD_LIBRARY_PATH=$ROOT/libs/$CONFIG
@@ -47,9 +49,9 @@ then
   export GRPC_PYTHON_ENABLE_CYTHON_TRACING=1
 fi
 
-tox --notest
+tox -e ${TOX_PYTHON_ENV} --notest
 
-$ROOT/.tox/py27/bin/python $ROOT/setup.py build
-$ROOT/.tox/py27/bin/python $ROOT/setup.py build_py
-$ROOT/.tox/py27/bin/python $ROOT/setup.py build_ext --inplace
-$ROOT/.tox/py27/bin/python $ROOT/setup.py gather --test
+$ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/setup.py build
+$ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/setup.py build_py
+$ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/setup.py build_ext --inplace
+$ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/setup.py gather --test
