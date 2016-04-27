@@ -52,7 +52,7 @@ static void RunGenericAsyncStreamingPingPong() {
   client_config.set_client_type(ASYNC_CLIENT);
   client_config.set_outstanding_rpcs_per_channel(1);
   client_config.set_client_channels(1);
-  client_config.set_async_client_threads(1);
+  client_config.set_async_client_threads(0);
   client_config.set_rpc_type(STREAMING);
   client_config.mutable_load_params()->mutable_closed_loop();
   auto bbuf = client_config.mutable_payload_config()->mutable_bytebuf_params();
@@ -61,7 +61,7 @@ static void RunGenericAsyncStreamingPingPong() {
 
   ServerConfig server_config;
   server_config.set_server_type(ASYNC_GENERIC_SERVER);
-  server_config.set_async_server_threads(1);
+  server_config.set_async_server_threads(0);
   *server_config.mutable_payload_config() = client_config.payload_config();
 
   // Set up security params
