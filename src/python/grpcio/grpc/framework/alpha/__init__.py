@@ -33,3 +33,5 @@ warnings.simplefilter('always', DeprecationWarning)
 warnings.warn('the alpha API (includes this package) is deprecated, '
               'unmaintained, and no longer tested. Please migrate to the beta '
               'API.', DeprecationWarning, stacklevel=2)
+
+__all__ = [ "exceptions", "interfaces", "utilities" ]
