@@ -282,7 +282,7 @@ class CXXLanguage:
           'warmup_seconds': WARMUP_SECONDS,
           'benchmark_seconds': BENCHMARK_SECONDS
       }
-      
+
   def __str__(self):
     return 'c++'
 
@@ -468,54 +468,69 @@ class PythonLanguage:
     return 500
 
   def scenarios(self):
-    for secure in [True]:
-      if secure:
-        secstr = 'secure'
-        secargs = {'use_test_ca': True,
-                   'server_host_override': 'foo.test.google.fr'}
-      else:
-        secstr = 'insecure'
-        secargs = None
-      yield {
-          'name': 'python_protobuf_streaming_ping_pong_%s'
-                  % secstr,
-          'num_servers': 1,
-          'num_clients': 1,
-          'client_config': {
-            'client_type': 'ASYNC_CLIENT',
-            'security_params': secargs,
-            'outstanding_rpcs_per_channel': 1,
-            'client_channels': 1,
-            'async_client_threads': 1,
-            'rpc_type': 'STREAMING',
-            'load_params': {
-              'closed_loop': {}
-            },
-            'payload_config': EMPTY_PROTO_PAYLOAD,
-            'histogram_params': HISTOGRAM_PARAMS,
+    yield {
+        'name': 'python_to_cpp_protobuf_streaming_ping_pong_secure',
+        'num_servers': 1,
+        'num_clients': 1,
+        'client_config': {
+          'client_type': 'ASYNC_CLIENT',
+          'security_params': SECURE_SECARGS,
+          'outstanding_rpcs_per_channel': 1,
+          'client_channels': 1,
+          'async_client_threads': 1,
+          'rpc_type': 'STREAMING',
+          'load_params': {
+            'closed_loop': {}
           },
-          'server_config': {
-            'server_type': 'SYNC_SERVER',
-            'payload_config': EMPTY_PROTO_PAYLOAD,
-            'security_params': secargs,
-            'core_limit': 0,
-            'async_server_threads': 1,
+          'payload_config': EMPTY_PROTO_PAYLOAD,
+          'histogram_params': HISTOGRAM_PARAMS,
+        },
+        'server_config': {
+          'server_type': 'SYNC_SERVER',
+          'security_params': SECURE_SECARGS,
+          'core_limit': 0,
+          'async_server_threads': 1,
+        },
+        'warmup_seconds': WARMUP_SECONDS,
+        'benchmark_seconds': BENCHMARK_SECONDS,
+        'SERVER_LANGUAGE': 'c++' 
+    }
+    yield {
+        'name': 'python_protobuf_sync_unary_ping_pong_secure',
+        'num_servers': 1,
+        'num_clients': 1,
+        'client_config': {
+          'client_type': 'SYNC_CLIENT',
+          'security_params': SECURE_SECARGS,
+          'outstanding_rpcs_per_channel': 1,
+          'client_channels': 1,
+          'async_client_threads': 1,
+          'rpc_type': 'UNARY',
+          'load_params': {
+            'closed_loop': {}
           },
-          'warmup_seconds': WARMUP_SECONDS,
-          'benchmark_seconds': BENCHMARK_SECONDS,
-          'SERVER_LANGUAGE': 'c++' 
-      }
-      yield {
-          'name': 'python_protobuf_sync_unary_ping_pong_%s'
-                  % secstr,
-          'num_servers': 1,
-          'num_clients': 1,
-          'client_config': {
-            'client_type': 'SYNC_CLIENT',
-            'security_params': secargs,
-            'outstanding_rpcs_per_channel': 1,
-            'client_channels': 1,
-            'async_client_threads': 1,
+          'payload_config': EMPTY_PROTO_PAYLOAD,
+          'histogram_params': HISTOGRAM_PARAMS,
+        },
+        'server_config': {
+          'server_type': 'SYNC_SERVER',
+          'security_params': SECURE_SECARGS,
+          'core_limit': 0,
+          'async_server_threads': 1,
+        },
+        'warmup_seconds': WARMUP_SECONDS,
+        'benchmark_seconds': BENCHMARK_SECONDS,
+    }
+    yield {
+        'name': 'python_protobuf_async_unary_ping_pong_secure',
+        'num_servers': 1,
+        'num_clients': 1,
+        'client_config': {
+          'client_type': 'ASYNC_CLIENT',
+          'security_params': SECURE_SECARGS,
+          'outstanding_rpcs_per_channel': 1,
+          'client_channels': 1,
+          'async_client_threads': 1,
             'rpc_type': 'UNARY',
             'load_params': {
               'closed_loop': {}
@@ -525,73 +540,41 @@ class PythonLanguage:
           },
           'server_config': {
             'server_type': 'SYNC_SERVER',
-            'payload_config': EMPTY_PROTO_PAYLOAD,
-            'security_params': secargs,
+            'security_params': SECURE_SECARGS,
             'core_limit': 0,
             'async_server_threads': 1,
           },
           'warmup_seconds': WARMUP_SECONDS,
           'benchmark_seconds': BENCHMARK_SECONDS,
-          'SERVER_LANGUAGE': 'c++' 
-      }
-      yield {
-          'name': 'python_protobuf_async_unary_ping_pong_%s'
-                  % secstr,
-          'num_servers': 1,
-          'num_clients': 1,
-          'client_config': {
-            'client_type': 'ASYNC_CLIENT',
-            'security_params': secargs,
-            'outstanding_rpcs_per_channel': 1,
-            'client_channels': 1,
-            'async_client_threads': 1,
-            'rpc_type': 'UNARY',
-            'load_params': {
-              'closed_loop': {}
-            },
-            'payload_config': EMPTY_PROTO_PAYLOAD,
-            'histogram_params': HISTOGRAM_PARAMS,
+    }
+    yield {
+        'name': 'python_to_cpp_single_channel_throughput_secure',
+        'num_servers': 1,
+        'num_clients': 1,
+        'client_config': {
+          'client_type': 'ASYNC_CLIENT',
+          'security_params': SECURE_SECARGS,
+          'outstanding_rpcs_per_channel': 1,
+          'client_channels': 1,
+          'async_client_threads': 1,
+          'rpc_type': 'STREAMING',
+          'load_params': {
+            'closed_loop': {}
           },
-          'server_config': {
-            'server_type': 'SYNC_SERVER',
-            'payload_config': EMPTY_PROTO_PAYLOAD,
-            'security_params': secargs,
-            'core_limit': 0,
-            'async_server_threads': 1,
-          },
-          'warmup_seconds': WARMUP_SECONDS,
-          'benchmark_seconds': BENCHMARK_SECONDS,
-          'SERVER_LANGUAGE': 'c++'
-      }
-      yield {
-          'name': 'python_single_channel_throughput_%s'
-                  % secstr,
-          'num_servers': 1,
-          'num_clients': 1,
-          'client_config': {
-            'client_type': 'ASYNC_CLIENT',
-            'security_params': secargs,
-            'outstanding_rpcs_per_channel': 1,
-            'client_channels': 1,
-            'async_client_threads': 1,
-            'rpc_type': 'STREAMING',
-            'load_params': {
-              'closed_loop': {}
-            },
-            'payload_config': BIG_GENERIC_PAYLOAD,
-            'histogram_params': HISTOGRAM_PARAMS,
-          },
-          'server_config': {
-            'server_type': 'ASYNC_GENERIC_SERVER',
-            'security_params': secargs,
-            'core_limit': SINGLE_MACHINE_CORES/2,
-            'async_server_threads': 1,
-            'payload_config': BIG_GENERIC_PAYLOAD,
-          },
-          'warmup_seconds': WARMUP_SECONDS,
-          'benchmark_seconds': BENCHMARK_SECONDS,
-          'SERVER_LANGUAGE': 'c++'
-      }
+          'payload_config': BIG_GENERIC_PAYLOAD,
+          'histogram_params': HISTOGRAM_PARAMS,
+        },
+        'server_config': {
+          'server_type': 'ASYNC_GENERIC_SERVER',
+          'security_params': SECURE_SECARGS,
+          'core_limit': SINGLE_MACHINE_CORES/2,
+          'async_server_threads': 1,
+          'payload_config': BIG_GENERIC_PAYLOAD,
+        },
+        'warmup_seconds': WARMUP_SECONDS,
+        'benchmark_seconds': BENCHMARK_SECONDS,
+        'SERVER_LANGUAGE': 'c++'
+    }
       
   def __str__(self):
     return 'python'

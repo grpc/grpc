@@ -34,12 +34,21 @@ from src.proto.grpc.testing import services_pb2
 class BenchmarkServer(services_pb2.BetaBenchmarkServiceServicer):
   """Synchronous Server implementation for the Benchmark service."""
 
-  def __init__(self, resp_size, generic=False):
-    if generic:
-      self._response = '\0' * resp_size
-    else:
-      payload = messages_pb2.Payload(body='\0' * resp_size)
-      self._response = messages_pb2.SimpleResponse(payload=payload)
+  def UnaryCall(self, request, context):
+    payload = messages_pb2.Payload(body='\0' * request.response_size)
+    return messages_pb2.SimpleResponse(payload=payload)
+
+  def StreamingCall(self, request_iterator, context):
+    for request in request_iterator:
+      payload = messages_pb2.Payload(body='\0' * request.response_size)
+      yield messages_pb2.SimpleResponse(payload=payload)
+
+
+class GenericBenchmarkServer(services_pb2.BetaBenchmarkServiceServicer):
+  """Generic Server implementation for the Benchmark service."""
+
+  def __init__(self, resp_size):
+    self._response = '\0' * resp_size
 
   def UnaryCall(self, request, context):
     return self._response

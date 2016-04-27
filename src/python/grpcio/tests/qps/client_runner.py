@@ -27,6 +27,12 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+"""Defines behavior for WHEN clients send requests.
+
+Each client exposes a non-blocking send_request() method that the
+ClientRunner invokes either periodically or in response to some event.
+"""
+
 import abc
 import thread
 import time
@@ -83,7 +89,7 @@ class ClosedLoopClientRunner(ClientRunner):
 
   def start(self):
     self._is_running = True
-    for i in xrange(self._request_count):
+    for _ in xrange(self._request_count):
       self._client.send_request()
     self._client.start()
 

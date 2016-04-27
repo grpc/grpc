@@ -76,16 +76,12 @@ class WorkerServer(services_pb2.BetaWorkerServiceServicer):
     return control_pb2.ServerStatus(stats=stats, port=port, cores=cores)
 
   def _create_server(self, config):
-    if config.server_type != control_pb2.SYNC_SERVER:
-      raise Exception('Unsupported server type {}'.format(config.ServerType))
-
-    if config.payload_config.HasField('simple_params'):
-      resp_size = config.payload_config.simple_params.resp_size
-      servicer = benchmark_server.BenchmarkServer(resp_size)
+    if config.server_type == control_pb2.SYNC_SERVER:
+      servicer = benchmark_server.BenchmarkServer()
       server = services_pb2.beta_create_BenchmarkService_server(servicer)
-    else:
+    elif config.server_type == control_pb2.ASYNC_GENERIC_SERVER:
       resp_size = config.payload_config.bytebuf_params.resp_size
-      servicer = benchmark_server.BenchmarkServer(resp_size, generic=True)
+      servicer = benchmark_server.GenericBenchmarkServer(resp_size)
       method_implementations = {
           ('grpc.testing.BenchmarkService', 'StreamingCall'):
           utilities.stream_stream_inline(servicer.StreamingCall),
@@ -93,6 +89,8 @@ class WorkerServer(services_pb2.BetaWorkerServiceServicer):
           utilities.unary_unary_inline(servicer.UnaryCall),
       }
       server = implementations.server(method_implementations)
+    else:
+      raise Exception('Unsupported server type {}'.format(config.ServerType))
 
     if config.HasField('security_params'):  # Use SSL
       server_creds = implementations.ssl_server_credentials([(
@@ -144,23 +142,20 @@ class WorkerServer(services_pb2.BetaWorkerServiceServicer):
     return control_pb2.ClientStatus(stats=stats)
 
   def _create_client_runner(self, server, config, qps_data):
-    use_ssl = config.HasField('security_params')
     if config.client_type == control_pb2.SYNC_CLIENT:
       assert config.rpc_type == control_pb2.UNARY
       client = benchmark_client.UnarySyncBenchmarkClient(
-          server, config.payload_config, use_ssl, qps_data,
-          config.outstanding_rpcs_per_channel)
+          server, config, qps_data)
     elif config.rpc_type == control_pb2.UNARY:
-      client = benchmark_client.UnaryAsyncBenchmarkClient(server,
-                                                          config.payload_config,
-                                                          use_ssl, qps_data)
+      client = benchmark_client.UnaryAsyncBenchmarkClient(
+          server, config, qps_data)
     else:
       client = benchmark_client.StreamingAsyncBenchmarkClient(
-          server, config.payload_config, use_ssl, qps_data)
+          server, config, qps_data)
 
     # In multi-channel tests, we split the load across all channels
     load_factor = float(config.client_channels)
-    if config.load_params.HasField('closed_loop'):
+    if config.load_params.WhichOneof('load') == 'closed_loop':
       runner = client_runner.ClosedLoopClientRunner(
           client, config.outstanding_rpcs_per_channel)
     else:  # Open loop Poisson
