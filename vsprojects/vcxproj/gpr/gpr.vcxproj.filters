@@ -37,7 +37,7 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\env_posix.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\env_win32.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\env_windows.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\histogram.c">
@@ -61,7 +61,7 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\log_posix.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\log_win32.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\log_windows.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\murmur_hash.c">
@@ -82,7 +82,7 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\string_posix.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\string_win32.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\string_windows.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\subprocess_posix.c">
@@ -97,7 +97,7 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\sync_posix.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\sync_win32.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\sync_windows.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\thd.c">
@@ -106,7 +106,7 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\thd_posix.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\thd_win32.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\thd_windows.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\time.c">
@@ -118,7 +118,7 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\time_precise.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\time_win32.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\time_windows.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\tls_pthread.c">
@@ -127,7 +127,7 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\tmpfile_posix.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\tmpfile_win32.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\tmpfile_windows.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\wrap_memcpy.c">
@@ -147,7 +147,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\atm_gcc_sync.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\atm_win32.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\atm_windows.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\avl.h">
@@ -168,7 +168,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\log.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\log_win32.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\log_windows.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\port_platform.h">
@@ -195,7 +195,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\sync_posix.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\sync_win32.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\sync_windows.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\thd.h">
@@ -231,7 +231,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_sync.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_win32.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_windows.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\log.h">
@@ -255,7 +255,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_win32.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_windows.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h">
@@ -287,7 +287,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\string.h">
       <Filter>src\core\lib\support</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\string_win32.h">
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\string_windows.h">
       <Filter>src\core\lib\support</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\thd_internal.h">

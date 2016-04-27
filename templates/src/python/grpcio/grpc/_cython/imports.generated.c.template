@@ -37,7 +37,7 @@
 
   #include "imports.generated.h"
 
-  #ifdef GPR_WIN32
+  #ifdef GPR_WINDOWS
 
   %for api in c_apis:
   ${api.name}_type ${api.name}_import;
@@ -57,5 +57,5 @@
   }
   #endif  /* __cpluslus */
 
-  #endif /* !GPR_WIN32 */
+  #endif /* !GPR_WINDOWS */
 

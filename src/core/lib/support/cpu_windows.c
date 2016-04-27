@@ -33,7 +33,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WIN32
+#ifdef GPR_WINDOWS
 #include <grpc/support/log.h>
 
 unsigned gpr_cpu_num_cores(void) {
@@ -44,4 +44,4 @@ unsigned gpr_cpu_num_cores(void) {
 
 unsigned gpr_cpu_current_cpu(void) { return GetCurrentProcessorNumber(); }
 
-#endif /* GPR_WIN32 */
+#endif /* GPR_WINDOWS */

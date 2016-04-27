@@ -54,14 +54,14 @@
     <file baseinstalldir="/" name="include/grpc/support/atm.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/atm_gcc_atomic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/atm_gcc_sync.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/support/atm_win32.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/support/atm_windows.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/avl.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/cmdline.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/cpu.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/histogram.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/host_port.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/log.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/support/log_win32.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/support/log_windows.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/port_platform.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/slice_buffer.h" role="src" />
@@ -70,7 +70,7 @@
     <file baseinstalldir="/" name="include/grpc/support/sync.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/sync_generic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/sync_posix.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/support/sync_win32.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/support/sync_windows.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/thd.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/time.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/tls.h" role="src" />
@@ -82,7 +82,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_atomic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_sync.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_win32.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_windows.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/log.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/port_platform.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/slice.h" role="src" />
@@ -90,7 +90,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_generic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_posix.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_win32.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_windows.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/time.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/timers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/backoff.h" role="src" />
@@ -100,7 +100,7 @@
     <file baseinstalldir="/" name="src/core/lib/support/murmur_hash.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/stack_lockfree.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/string_win32.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/string_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/thd_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/time_precise.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/tmpfile.h" role="src" />
@@ -116,7 +116,7 @@
     <file baseinstalldir="/" name="src/core/lib/support/cpu_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/env_linux.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/env_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/env_win32.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/env_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/histogram.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/host_port.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/load_file.c" role="src" />
@@ -124,29 +124,29 @@
     <file baseinstalldir="/" name="src/core/lib/support/log_android.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/log_linux.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/log_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/log_win32.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/log_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/murmur_hash.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/slice.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/slice_buffer.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/stack_lockfree.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/string_win32.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/string_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/subprocess_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/subprocess_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/sync.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/sync_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/sync_win32.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/sync_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/thd.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/thd_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/thd_win32.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/thd_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/time.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/time_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/time_precise.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/time_win32.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/time_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/tls_pthread.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/tmpfile_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/tmpfile_win32.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/tmpfile_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/wrap_memcpy.c" role="src" />
     <file baseinstalldir="/" name="include/grpc/byte_buffer.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/byte_buffer_reader.h" role="src" />
@@ -163,7 +163,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_atomic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_sync.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_win32.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_windows.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/log.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/port_platform.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/slice.h" role="src" />
@@ -171,7 +171,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_generic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_posix.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_win32.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_windows.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/time.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc_security.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc_security_constants.h" role="src" />
@@ -209,7 +209,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_utils.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_win32.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client.h" role="src" />
@@ -423,7 +423,7 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials_metadata.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials_posix.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials_win32.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/google_default_credentials.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/handshake.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/json_token.c" role="src" />

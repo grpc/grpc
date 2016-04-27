@@ -58,8 +58,8 @@
 
 #if defined(GPR_POSIX_SYNC)
 #include <grpc/impl/codegen/sync_posix.h>
-#elif defined(GPR_WIN32)
-#include <grpc/impl/codegen/sync_win32.h>
+#elif defined(GPR_WINDOWS)
+#include <grpc/impl/codegen/sync_windows.h>
 #elif !defined(GPR_CUSTOM_SYNC)
 #error Unable to determine platform for sync
 #endif

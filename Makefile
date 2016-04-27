@@ -2316,7 +2316,7 @@ LIBGPR_SRC = \
     src/core/lib/support/cpu_windows.c \
     src/core/lib/support/env_linux.c \
     src/core/lib/support/env_posix.c \
-    src/core/lib/support/env_win32.c \
+    src/core/lib/support/env_windows.c \
     src/core/lib/support/histogram.c \
     src/core/lib/support/host_port.c \
     src/core/lib/support/load_file.c \
@@ -2324,29 +2324,29 @@ LIBGPR_SRC = \
     src/core/lib/support/log_android.c \
     src/core/lib/support/log_linux.c \
     src/core/lib/support/log_posix.c \
-    src/core/lib/support/log_win32.c \
+    src/core/lib/support/log_windows.c \
     src/core/lib/support/murmur_hash.c \
     src/core/lib/support/slice.c \
     src/core/lib/support/slice_buffer.c \
     src/core/lib/support/stack_lockfree.c \
     src/core/lib/support/string.c \
     src/core/lib/support/string_posix.c \
-    src/core/lib/support/string_win32.c \
+    src/core/lib/support/string_windows.c \
     src/core/lib/support/subprocess_posix.c \
     src/core/lib/support/subprocess_windows.c \
     src/core/lib/support/sync.c \
     src/core/lib/support/sync_posix.c \
-    src/core/lib/support/sync_win32.c \
+    src/core/lib/support/sync_windows.c \
     src/core/lib/support/thd.c \
     src/core/lib/support/thd_posix.c \
-    src/core/lib/support/thd_win32.c \
+    src/core/lib/support/thd_windows.c \
     src/core/lib/support/time.c \
     src/core/lib/support/time_posix.c \
     src/core/lib/support/time_precise.c \
-    src/core/lib/support/time_win32.c \
+    src/core/lib/support/time_windows.c \
     src/core/lib/support/tls_pthread.c \
     src/core/lib/support/tmpfile_posix.c \
-    src/core/lib/support/tmpfile_win32.c \
+    src/core/lib/support/tmpfile_windows.c \
     src/core/lib/support/wrap_memcpy.c \
 
 PUBLIC_HEADERS_C += \
@@ -2354,14 +2354,14 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/atm.h \
     include/grpc/support/atm_gcc_atomic.h \
     include/grpc/support/atm_gcc_sync.h \
-    include/grpc/support/atm_win32.h \
+    include/grpc/support/atm_windows.h \
     include/grpc/support/avl.h \
     include/grpc/support/cmdline.h \
     include/grpc/support/cpu.h \
     include/grpc/support/histogram.h \
     include/grpc/support/host_port.h \
     include/grpc/support/log.h \
-    include/grpc/support/log_win32.h \
+    include/grpc/support/log_windows.h \
     include/grpc/support/port_platform.h \
     include/grpc/support/slice.h \
     include/grpc/support/slice_buffer.h \
@@ -2370,7 +2370,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/sync.h \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
-    include/grpc/support/sync_win32.h \
+    include/grpc/support/sync_windows.h \
     include/grpc/support/thd.h \
     include/grpc/support/time.h \
     include/grpc/support/tls.h \
@@ -2382,7 +2382,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
-    include/grpc/impl/codegen/atm_win32.h \
+    include/grpc/impl/codegen/atm_windows.h \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/slice.h \
@@ -2390,7 +2390,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/sync.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
-    include/grpc/impl/codegen/sync_win32.h \
+    include/grpc/impl/codegen/sync_windows.h \
     include/grpc/impl/codegen/time.h \
 
 LIBGPR_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGPR_SRC))))
@@ -2567,7 +2567,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/credentials.c \
     src/core/lib/security/credentials_metadata.c \
     src/core/lib/security/credentials_posix.c \
-    src/core/lib/security/credentials_win32.c \
+    src/core/lib/security/credentials_windows.c \
     src/core/lib/security/google_default_credentials.c \
     src/core/lib/security/handshake.c \
     src/core/lib/security/json_token.c \
@@ -2638,7 +2638,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
-    include/grpc/impl/codegen/atm_win32.h \
+    include/grpc/impl/codegen/atm_windows.h \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/slice.h \
@@ -2646,7 +2646,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/sync.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
-    include/grpc/impl/codegen/sync_win32.h \
+    include/grpc/impl/codegen/sync_windows.h \
     include/grpc/impl/codegen/time.h \
     include/grpc/grpc_security.h \
     include/grpc/grpc_security_constants.h \
@@ -2958,7 +2958,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
-    include/grpc/impl/codegen/atm_win32.h \
+    include/grpc/impl/codegen/atm_windows.h \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/slice.h \
@@ -2966,7 +2966,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/sync.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
-    include/grpc/impl/codegen/sync_win32.h \
+    include/grpc/impl/codegen/sync_windows.h \
     include/grpc/impl/codegen/time.h \
     include/grpc/census.h \
 
@@ -3244,7 +3244,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
-    include/grpc/impl/codegen/atm_win32.h \
+    include/grpc/impl/codegen/atm_windows.h \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/slice.h \
@@ -3252,7 +3252,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/sync.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
-    include/grpc/impl/codegen/sync_win32.h \
+    include/grpc/impl/codegen/sync_windows.h \
     include/grpc/impl/codegen/time.h \
     include/grpc++/impl/codegen/config.h \
     include/grpc++/impl/codegen/config_protobuf.h \
@@ -3547,7 +3547,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
-    include/grpc/impl/codegen/atm_win32.h \
+    include/grpc/impl/codegen/atm_windows.h \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/slice.h \
@@ -3555,7 +3555,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/sync.h \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
-    include/grpc/impl/codegen/sync_win32.h \
+    include/grpc/impl/codegen/sync_windows.h \
     include/grpc/impl/codegen/time.h \
     include/grpc++/impl/codegen/config.h \
     include/grpc++/impl/codegen/config_protobuf.h \
@@ -14251,7 +14251,7 @@ src/core/lib/security/client_auth_filter.c: $(OPENSSL_DEP)
 src/core/lib/security/credentials.c: $(OPENSSL_DEP)
 src/core/lib/security/credentials_metadata.c: $(OPENSSL_DEP)
 src/core/lib/security/credentials_posix.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials_win32.c: $(OPENSSL_DEP)
+src/core/lib/security/credentials_windows.c: $(OPENSSL_DEP)
 src/core/lib/security/google_default_credentials.c: $(OPENSSL_DEP)
 src/core/lib/security/handshake.c: $(OPENSSL_DEP)
 src/core/lib/security/json_token.c: $(OPENSSL_DEP)

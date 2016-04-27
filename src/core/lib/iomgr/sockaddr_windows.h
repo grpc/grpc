@@ -31,43 +31,13 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#ifndef GRPC_CORE_LIB_IOMGR_SOCKADDR_WINDOWS_H
+#define GRPC_CORE_LIB_IOMGR_SOCKADDR_WINDOWS_H
 
-#ifdef GPR_WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
 
-#include "src/core/lib/support/env.h"
-#include "src/core/lib/support/string.h"
+// must be included after the above
+#include <mswsock.h>
 
-#ifdef __MINGW32__
-errno_t getenv_s(size_t *size_needed, char *buffer, size_t size,
-                 const char *varname);
-#else
-#include <stdlib.h>
-#endif
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-
-char *gpr_getenv(const char *name) {
-  size_t size;
-  char *result = NULL;
-  errno_t err;
-
-  err = getenv_s(&size, NULL, 0, name);
-  if (err || (size == 0)) return NULL;
-  result = gpr_malloc(size);
-  err = getenv_s(&size, result, size, name);
-  if (err) {
-    gpr_free(result);
-    return NULL;
-  }
-  return result;
-}
-
-void gpr_setenv(const char *name, const char *value) {
-  errno_t res = _putenv_s(name, value);
-  GPR_ASSERT(res == 0);
-}
-
-#endif /* GPR_WIN32 */
+#endif /* GRPC_CORE_LIB_IOMGR_SOCKADDR_WINDOWS_H */

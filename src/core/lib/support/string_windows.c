@@ -35,7 +35,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WIN32
+#ifdef GPR_WINDOWS
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -106,4 +106,4 @@ char *gpr_tchar_to_char(LPTSTR input) { return gpr_strdup(input); }
 char *gpr_char_to_tchar(LPTSTR input) { return gpr_strdup(input); }
 #endif
 
-#endif /* GPR_WIN32 */
+#endif /* GPR_WINDOWS */

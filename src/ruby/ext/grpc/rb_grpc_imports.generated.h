@@ -36,7 +36,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WIN32
+#ifdef GPR_WINDOWS
 
 #include <windows.h>
 
@@ -56,7 +56,7 @@
 #include <grpc/support/cpu.h>
 #include <grpc/support/histogram.h>
 #include <grpc/support/host_port.h>
-#include <grpc/support/log_win32.h>
+#include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/subprocess.h>
 #include <grpc/support/thd.h>
@@ -853,6 +853,6 @@ extern gpr_thd_join_type gpr_thd_join_import;
 
 void grpc_rb_load_imports(HMODULE library);
 
-#endif /* GPR_WIN32 */
+#endif /* GPR_WINDOWS */
 
 #endif

@@ -84,7 +84,7 @@
 #if !defined(GPR_NO_AUTODETECT_PLATFORM)
 #if defined(_WIN64) || defined(WIN64)
 #define GPR_PLATFORM_STRING "windows"
-#define GPR_WIN32 1
+#define GPR_WINDOWS 1
 #define GPR_ARCH_64 1
 #define GPR_GETPID_IN_PROCESS_H 1
 #define GPR_WINSOCK_SOCKET 1
@@ -93,14 +93,14 @@
 #define GPR_GCC_ATOMIC 1
 #define GPR_GCC_TLS 1
 #else
-#define GPR_WIN32_ATOMIC 1
+#define GPR_WINDOWS_ATOMIC 1
 #define GPR_MSVC_TLS 1
 #endif
 #define GPR_WINDOWS_CRASH_HANDLER 1
 #elif defined(_WIN32) || defined(WIN32)
 #define GPR_PLATFORM_STRING "windows"
 #define GPR_ARCH_32 1
-#define GPR_WIN32 1
+#define GPR_WINDOWS 1
 #define GPR_GETPID_IN_PROCESS_H 1
 #define GPR_WINSOCK_SOCKET 1
 #define GPR_WINDOWS_SUBPROCESS 1
@@ -108,7 +108,7 @@
 #define GPR_GCC_ATOMIC 1
 #define GPR_GCC_TLS 1
 #else
-#define GPR_WIN32_ATOMIC 1
+#define GPR_WINDOWS_ATOMIC 1
 #define GPR_MSVC_TLS 1
 #endif
 #define GPR_WINDOWS_CRASH_HANDLER 1
@@ -345,19 +345,19 @@ typedef unsigned __int64 uint64_t;
 
 /* Validate platform combinations */
 #if defined(GPR_GCC_ATOMIC) + defined(GPR_GCC_SYNC) + \
-        defined(GPR_WIN32_ATOMIC) !=                  \
+        defined(GPR_WINDOWS_ATOMIC) !=                  \
     1
-#error Must define exactly one of GPR_GCC_ATOMIC, GPR_GCC_SYNC, GPR_WIN32_ATOMIC
+#error Must define exactly one of GPR_GCC_ATOMIC, GPR_GCC_SYNC, GPR_WINDOWS_ATOMIC
 #endif
 
 #if defined(GPR_ARCH_32) + defined(GPR_ARCH_64) != 1
 #error Must define exactly one of GPR_ARCH_32, GPR_ARCH_64
 #endif
 
-#if defined(GPR_CPU_LINUX) + defined(GPR_CPU_POSIX) + defined(GPR_WIN32) + \
+#if defined(GPR_CPU_LINUX) + defined(GPR_CPU_POSIX) + defined(GPR_WINDOWS) + \
         defined(GPR_CPU_IPHONE) + defined(GPR_CPU_CUSTOM) !=               \
     1
-#error Must define exactly one of GPR_CPU_LINUX, GPR_CPU_POSIX, GPR_WIN32, GPR_CPU_IPHONE, GPR_CPU_CUSTOM
+#error Must define exactly one of GPR_CPU_LINUX, GPR_CPU_POSIX, GPR_WINDOWS, GPR_CPU_IPHONE, GPR_CPU_CUSTOM
 #endif
 
 #if defined(GPR_POSIX_MULTIPOLL_WITH_POLL) && !defined(GPR_POSIX_SOCKET)
