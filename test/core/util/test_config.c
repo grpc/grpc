@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,7 +39,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "src/core/support/string.h"
+#include "src/core/lib/support/string.h"
 
 double g_fixture_slowdown_factor = 1.0;
 
@@ -99,6 +99,7 @@ static void print_current_stack() {
     SymFromAddrW(process, (DWORD64)(callers_stack[i]), 0, symbol);
     fwprintf(stderr, L"*** %d: %016I64X %ls - %016I64X\n", i,
              (DWORD64)callers_stack[i], symbol->Name, (DWORD64)symbol->Address);
+    fflush(stderr);
   }
 
   free(symbol);
@@ -154,6 +155,7 @@ static void print_stack_from_context(CONTEXT c) {
     fwprintf(
         stderr, L"*** %016I64X %ls - %016I64X\n", (DWORD64)(s.AddrPC.Offset),
         has_symbol ? symbol->Name : L"<<no symbol>>", (DWORD64)symbol->Address);
+    fflush(stderr);
   }
 
   free(symbol);

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,9 +38,9 @@
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
 
-#include "src/core/support/load_file.h"
-#include "src/core/support/tmpfile.h"
-#include "src/core/support/string.h"
+#include "src/core/lib/support/load_file.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/support/tmpfile.h"
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST_NAME(x) gpr_log(GPR_INFO, "%s", x)

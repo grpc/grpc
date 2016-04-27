@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/iomgr/tcp_posix.h"
+#include "src/core/lib/iomgr/tcp_posix.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -97,7 +97,7 @@ static ssize_t fill_socket(int fd) {
 static size_t fill_socket_partial(int fd, size_t bytes) {
   ssize_t write_bytes;
   size_t total_bytes = 0;
-  unsigned char *buf = malloc(bytes);
+  unsigned char *buf = gpr_malloc(bytes);
   unsigned i;
   for (i = 0; i < bytes; ++i) {
     buf[i] = (uint8_t)(i % 256);
@@ -292,7 +292,7 @@ static void write_done(grpc_exec_ctx *exec_ctx,
 }
 
 void drain_socket_blocking(int fd, size_t num_bytes, size_t read_size) {
-  unsigned char *buf = malloc(read_size);
+  unsigned char *buf = gpr_malloc(read_size);
   ssize_t bytes_read;
   size_t bytes_left = num_bytes;
   int flags;

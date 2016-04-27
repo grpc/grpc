@@ -30,6 +30,27 @@
 3. Install Google Cloud SDK. Instructions [here](https://cloud.google.com/sdk/). This installs the `gcloud` tool
 4. Install `kubectl`, Kubernetes command line tool using `gcloud`. i.e
     - `$ gcloud components update kubectl`
+    - NOTE: If you are running this from a GCE instance, the command may fail with the following error:
+    ```
+     You cannot perform this action because this Cloud SDK installation is 
+     managed by an external package manager. If you would like to get the
+     latest version, please see our main download page at:
+
+     https://developers.google.com/cloud/sdk/
+
+     ERROR: (gcloud.components.update) The component manager is disabled for this installation
+    ```
+    -- If so, you will have to manually install Cloud SDK by doing the following
+    ```shell
+      $ # The following installs latest Cloud SDK and updates the PATH
+      $ # (Accept the default values when prompted)
+      $ curl https://sdk.cloud.google.com | bash
+      $ exec -l $SHELL
+      $ # Set the defaults. Pick the default GCE credentials when prompted (The service account
+      $ # name will have a name similar to: "xxx-compute@developer.gserviceaccount.com")
+      $ gcloud init
+    ``` 
+
 5. Install Google python client apis:
     - `‘$ sudo pip install --upgrade google-api-python-client’`
     -  **Note**: Do `$ sudo apt-get install python-pip` (or `$ easy_install -U pip`) if you do not have pip
@@ -42,12 +63,14 @@
 The stress tests are launched by the following script (path is relative to GRPC root directory) :
 `tools/run_tests/stress_test/run_stress_tests_on_gke.py`
 
-The script has several parameters and you can find out more details by using the `--help` flag.
-  - `<grpc_root_dir>$ tools/run_tests/stress_test/run_stress_tests_on_gke.py --help`
+You can find out more details by using the `--help` flag.
+  - `<grpc_root_dir>$ tools/run_tests/stress_test/run_on_gke.py --help`
 
 > **Example**
-> `$ tools/run_tests/stress_test/run_stress_tests_on_gke.py --project_id=sree-gce --test_duration_secs=180 --num_clients=5`
+> ```bash
+> $ # Change to the grpc root directory
+> $ cd $GRPC_ROOT
+> $ tools/run_tests/stress_test/run_on_gke.py --project_id=sree-gce --config_file=tools/run_tests/stress_test/configs/opt.json
+> ```
 
-> Launches the 5 instances of stress test clients, 1 instance of stress test server and runs the test for 180 seconds. The test would be run on the default container cluster (that you have set in `gcloud`) in the project `sree-gce`.
-
-> Note: we currently do not have the ability to launch multiple instances of the server. This can be added very easily in future
+> The above runs the stress test on GKE under the project `sree-gce` in the default cluster (that you set by `gcloud` command earlier). The test settings (like number of client instances, servers, the parmeters to pass, test cases etc) are all loaded from the config file `$GRPC_ROOT/tools/run_tests/stress_test/opt.json`

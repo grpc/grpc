@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -81,9 +81,10 @@ def main(argv):
   plugins = []
   output_name = None
   got_preprocessed_input = False
+  output_merged = None
 
   try:
-    opts, args = getopt.getopt(argv, 'hm:d:o:p:t:P:w:')
+    opts, args = getopt.getopt(argv, 'hM:m:d:o:p:t:P:w:')
   except getopt.GetoptError:
     out('Unknown option')
     showhelp()
@@ -107,6 +108,12 @@ def main(argv):
         showhelp()
         sys.exit(4)
       module_directory = arg
+    elif opt == '-M':
+      if output_merged is not None:
+        out('Got more than one output merged path')
+        showhelp()
+        sys.exit(5)
+      output_merged = arg
     elif opt == '-P':
       assert not got_preprocessed_input
       assert json_dict == {}
@@ -126,6 +133,9 @@ def main(argv):
   if not got_preprocessed_input:
     for plugin in plugins:
       plugin.mako_plugin(json_dict)
+    if output_merged:
+      with open(output_merged, 'w') as yaml_file:
+        yaml_file.write(yaml.dump(json_dict))
     for k, v in json_dict.items():
       dictionary[k] = bunch.to_bunch(v)
 

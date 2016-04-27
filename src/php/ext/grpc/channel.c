@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -110,9 +110,11 @@ void php_grpc_read_args_array(zval *args_array, grpc_channel_args *args) {
     switch (Z_TYPE_P(*data)) {
       case IS_LONG:
         args->args[args_index].value.integer = (int)Z_LVAL_P(*data);
+        args->args[args_index].type = GRPC_ARG_INTEGER;
         break;
       case IS_STRING:
         args->args[args_index].value.string = Z_STRVAL_P(*data);
+        args->args[args_index].type = GRPC_ARG_STRING;
         break;
       default:
         zend_throw_exception(spl_ce_InvalidArgumentException,

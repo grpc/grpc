@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,12 +56,14 @@ Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
   Call call(channel->CreateCall(method, context, &cq));
   CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
             CallOpRecvInitialMetadata, CallOpRecvMessage<OutputMessage>,
-            CallOpClientSendClose, CallOpClientRecvStatus> ops;
+            CallOpClientSendClose, CallOpClientRecvStatus>
+      ops;
   Status status = ops.SendMessage(request);
   if (!status.ok()) {
     return status;
   }
-  ops.SendInitialMetadata(context->send_initial_metadata_);
+  ops.SendInitialMetadata(context->send_initial_metadata_,
+                          context->initial_metadata_flags());
   ops.RecvInitialMetadata(context);
   ops.RecvMessage(result);
   ops.ClientSendClose();

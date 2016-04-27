@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,7 +49,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/profiling/timers.h"
+#include "src/core/lib/profiling/timers.h"
 #include "src/cpp/server/thread_pool_interface.h"
 
 namespace grpc {
@@ -264,6 +264,7 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
   void* const tag_;
   bool in_flight_;
   const bool has_request_payload_;
+  uint32_t incoming_flags_;
   grpc_call* call_;
   grpc_call_details* call_details_;
   gpr_timespec deadline_;
@@ -320,6 +321,19 @@ void Server::SetGlobalCallbacks(GlobalCallbacks* callbacks) {
   g_callbacks.reset(callbacks);
 }
 
+static grpc_server_register_method_payload_handling PayloadHandlingForMethod(
+    RpcServiceMethod* method) {
+  switch (method->method_type()) {
+    case RpcMethod::NORMAL_RPC:
+    case RpcMethod::SERVER_STREAMING:
+      return GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER;
+    case RpcMethod::CLIENT_STREAMING:
+    case RpcMethod::BIDI_STREAMING:
+      return GRPC_SRM_PAYLOAD_NONE;
+  }
+  GPR_UNREACHABLE_CODE(return GRPC_SRM_PAYLOAD_NONE;);
+}
+
 bool Server::RegisterService(const grpc::string* host, Service* service) {
   bool has_async_methods = service->has_async_methods();
   if (has_async_methods) {
@@ -333,8 +347,9 @@ bool Server::RegisterService(const grpc::string* host, Service* service) {
       continue;
     }
     RpcServiceMethod* method = it->get();
-    void* tag = grpc_server_register_method(server_, method->name(),
-                                            host ? host->c_str() : nullptr);
+    void* tag = grpc_server_register_method(
+        server_, method->name(), host ? host->c_str() : nullptr,
+        PayloadHandlingForMethod(method), 0);
     if (tag == nullptr) {
       gpr_log(GPR_DEBUG, "Attempt to register %s multiple times",
               method->name());

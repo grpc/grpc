@@ -34,11 +34,11 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/useful.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include "src/core/json/json.h"
-#include "src/core/support/string.h"
+#include <grpc/support/useful.h>
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/support/string.h"
 
 #include "test/core/util/test_config.h"
 
@@ -67,7 +67,7 @@ static testing_pair testing_pairs[] = {
     {"{\"\\ud834\\udd1e\":0}", "{\"\\ud834\\udd1e\":0}"},
     /* Testing nested empty containers. */
     {
-     " [ [ ] , { } , [ ] ] ", "[[],{},[]]",
+        " [ [ ] , { } , [ ] ] ", "[[],{},[]]",
     },
     /* Testing escapes and control chars in key strings. */
     {" { \"\\u007f\x7f\\n\\r\\\"\\f\\b\\\\a , b\": 1, \"\": 0 } ",
@@ -89,6 +89,8 @@ static testing_pair testing_pairs[] = {
     {"{\"foo\": bar}", NULL},
     {"{\"foo\": bar\"x\"}", NULL},
     {"fals", NULL},
+    {"0,0 ", NULL},
+    {"\"foo\",[]", NULL},
     /* Testing unterminated string. */
     {"\"\\x", NULL},
     /* Testing invalid UTF-16 number. */

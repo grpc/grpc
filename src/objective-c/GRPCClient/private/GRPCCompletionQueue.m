@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,9 +35,6 @@
 
 #import <grpc/grpc.h>
 
-
-const int64_t kGRPCCompletionQueueDefaultTimeoutSecs = 60;
-
 @implementation GRPCCompletionQueue
 
 + (instancetype)completionQueue {
@@ -50,13 +47,8 @@ const int64_t kGRPCCompletionQueueDefaultTimeoutSecs = 60;
 }
 
 - (instancetype)init {
-  return [self initWithTimeout:kGRPCCompletionQueueDefaultTimeoutSecs];
-}
-
-- (instancetype)initWithTimeout:(int64_t)timeoutSecs {
   if ((self = [super init])) {
     _unmanagedQueue = grpc_completion_queue_create(NULL);
-    _timeoutSecs = timeoutSecs;
 
     // This is for the following block to capture the pointer by value (instead
     // of retaining self and doing self->_unmanagedQueue). This is essential
@@ -74,28 +66,22 @@ const int64_t kGRPCCompletionQueueDefaultTimeoutSecs = 60;
       gDefaultConcurrentQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
     });
     dispatch_async(gDefaultConcurrentQueue, ^{
-      // Using a non-infinite deadline to re-enter grpc_completion_queue_next()
-      // alleviates https://github.com/grpc/grpc/issues/5593
-      gpr_timespec deadline = (timeoutSecs < 0)
-          ? gpr_inf_future(GPR_CLOCK_REALTIME)
-          : gpr_time_from_seconds(timeoutSecs, GPR_CLOCK_REALTIME);
       while (YES) {
-        // The following call blocks until an event is available or the deadline elapses.
-        grpc_event event = grpc_completion_queue_next(unmanagedQueue, deadline, NULL);
+        // The following call blocks until an event is available.
+        grpc_event event = grpc_completion_queue_next(unmanagedQueue,
+                                                      gpr_inf_future(GPR_CLOCK_REALTIME),
+                                                      NULL);
         GRPCQueueCompletionHandler handler;
         switch (event.type) {
           case GRPC_OP_COMPLETE:
             handler = (__bridge_transfer GRPCQueueCompletionHandler)event.tag;
             handler(event.success);
             break;
-          case GRPC_QUEUE_TIMEOUT:
-            // Nothing to do here
-            break;
           case GRPC_QUEUE_SHUTDOWN:
             grpc_completion_queue_destroy(unmanagedQueue);
             return;
           default:
-            [NSException raise:@"Unrecognized completion type" format:@"type=%d", event.type];
+            [NSException raise:@"Unrecognized completion type" format:@""];
         }
       };
     });

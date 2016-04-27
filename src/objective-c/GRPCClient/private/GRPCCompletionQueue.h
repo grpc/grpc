@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,8 +36,6 @@
 
 typedef void(^GRPCQueueCompletionHandler)(bool success);
 
-extern const int64_t kGRPCCompletionQueueDefaultTimeoutSecs;
-
 /**
  * This class lets one more easily use |grpc_completion_queue|. To use it, pass the value of the
  * |unmanagedQueue| property of an instance of this class to |grpc_channel_create_call|. Then for
@@ -51,11 +49,6 @@ extern const int64_t kGRPCCompletionQueueDefaultTimeoutSecs;
  */
 @interface GRPCCompletionQueue : NSObject
 @property(nonatomic, readonly) grpc_completion_queue *unmanagedQueue;
-@property(nonatomic, readonly) int64_t timeoutSecs;
 
 + (instancetype)completionQueue;
-
-- (instancetype)init;
-- (instancetype)initWithTimeout:(int64_t)timeoutSecs NS_DESIGNATED_INITIALIZER;
-
 @end

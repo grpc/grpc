@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,14 +43,16 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
+#include <gtest/gtest.h>
 
-#include "src/core/support/env.h"
+#include "src/core/lib/support/env.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/qps_worker.h"
+#include "test/cpp/qps/stats.h"
 
 using std::list;
 using std::thread;
@@ -114,17 +116,56 @@ static deque<string> get_workers(const string& name) {
   }
 }
 
+// helpers for postprocess_scenario_result
+static double WallTime(ClientStats s) { return s.time_elapsed(); }
+static double SystemTime(ClientStats s) { return s.time_system(); }
+static double UserTime(ClientStats s) { return s.time_user(); }
+static double ServerWallTime(ServerStats s) { return s.time_elapsed(); }
+static double ServerSystemTime(ServerStats s) { return s.time_system(); }
+static double ServerUserTime(ServerStats s) { return s.time_user(); }
+static int Cores(int n) { return n; }
+
+// Postprocess ScenarioResult and populate result summary.
+static void postprocess_scenario_result(ScenarioResult* result) {
+  Histogram histogram;
+  histogram.MergeProto(result->latencies());
+
+  auto qps = histogram.Count() / average(result->client_stats(), WallTime);
+  auto qps_per_server_core = qps / sum(result->server_cores(), Cores);
+
+  result->mutable_summary()->set_qps(qps);
+  result->mutable_summary()->set_qps_per_server_core(qps_per_server_core);
+  result->mutable_summary()->set_latency_50(histogram.Percentile(50));
+  result->mutable_summary()->set_latency_90(histogram.Percentile(90));
+  result->mutable_summary()->set_latency_95(histogram.Percentile(95));
+  result->mutable_summary()->set_latency_99(histogram.Percentile(99));
+  result->mutable_summary()->set_latency_999(histogram.Percentile(99.9));
+
+  auto server_system_time = 100.0 *
+                            sum(result->server_stats(), ServerSystemTime) /
+                            sum(result->server_stats(), ServerWallTime);
+  auto server_user_time = 100.0 * sum(result->server_stats(), ServerUserTime) /
+                          sum(result->server_stats(), ServerWallTime);
+  auto client_system_time = 100.0 * sum(result->client_stats(), SystemTime) /
+                            sum(result->client_stats(), WallTime);
+  auto client_user_time = 100.0 * sum(result->client_stats(), UserTime) /
+                          sum(result->client_stats(), WallTime);
+
+  result->mutable_summary()->set_server_system_time(server_system_time);
+  result->mutable_summary()->set_server_user_time(server_user_time);
+  result->mutable_summary()->set_client_system_time(client_system_time);
+  result->mutable_summary()->set_client_user_time(client_user_time);
+}
+
 // Namespace for classes and functions used only in RunScenario
 // Using this rather than local definitions to workaround gcc-4.4 limitations
 // regarding using templates without linkage
 namespace runsc {
 
 // ClientContext allocator
-template <class T>
-static ClientContext* AllocContext(list<ClientContext>* contexts, T deadline) {
+static ClientContext* AllocContext(list<ClientContext>* contexts) {
   contexts->emplace_back();
   auto context = &contexts->back();
-  context->set_deadline(deadline);
   return context;
 }
 
@@ -196,9 +237,6 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // Trim to just what we need
   workers.resize(num_clients + num_servers);
 
-  gpr_timespec deadline =
-      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(warmup_seconds + benchmark_seconds + 20);
-
   // Start servers
   using runsc::ServerData;
   // servers is array rather than std::vector to avoid gcc-4.4 issues
@@ -248,7 +286,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     ServerArgs args;
     *args.mutable_setup() = server_config;
     servers[i].stream =
-        servers[i].stub->RunServer(runsc::AllocContext(&contexts, deadline));
+        servers[i].stub->RunServer(runsc::AllocContext(&contexts));
     GPR_ASSERT(servers[i].stream->Write(args));
     ServerStatus init_status;
     GPR_ASSERT(servers[i].stream->Read(&init_status));
@@ -304,7 +342,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     ClientArgs args;
     *args.mutable_setup() = per_client_config;
     clients[i].stream =
-        clients[i].stub->RunClient(runsc::AllocContext(&contexts, deadline));
+        clients[i].stub->RunClient(runsc::AllocContext(&contexts));
     GPR_ASSERT(clients[i].stream->Write(args));
     ClientStatus init_status;
     GPR_ASSERT(clients[i].stream->Read(&init_status));
@@ -342,12 +380,13 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // Use gpr_sleep_until rather than this_thread::sleep_until to support
   // compilers that don't work with this_thread
   gpr_sleep_until(gpr_time_add(
-      start, gpr_time_from_seconds(benchmark_seconds, GPR_TIMESPAN)));
+      start,
+      gpr_time_from_seconds(warmup_seconds + benchmark_seconds, GPR_TIMESPAN)));
 
   // Finish a run
   std::unique_ptr<ScenarioResult> result(new ScenarioResult);
-  result->client_config = result_client_config;
-  result->server_config = result_server_config;
+  Histogram merged_latencies;
+
   gpr_log(GPR_INFO, "Finishing clients");
   for (auto client = &clients[0]; client != &clients[num_clients]; client++) {
     GPR_ASSERT(client->stream->Write(client_mark));
@@ -356,15 +395,16 @@ std::unique_ptr<ScenarioResult> RunScenario(
   for (auto client = &clients[0]; client != &clients[num_clients]; client++) {
     GPR_ASSERT(client->stream->Read(&client_status));
     const auto& stats = client_status.stats();
-    result->latencies.MergeProto(stats.latencies());
-    result->client_resources.emplace_back(
-        stats.time_elapsed(), stats.time_user(), stats.time_system(), -1);
+    merged_latencies.MergeProto(stats.latencies());
+    result->add_client_stats()->CopyFrom(stats);
     GPR_ASSERT(!client->stream->Read(&client_status));
   }
   for (auto client = &clients[0]; client != &clients[num_clients]; client++) {
     GPR_ASSERT(client->stream->Finish().ok());
   }
   delete[] clients;
+
+  merged_latencies.FillProto(result->mutable_latencies());
 
   gpr_log(GPR_INFO, "Finishing servers");
   for (auto server = &servers[0]; server != &servers[num_servers]; server++) {
@@ -373,10 +413,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
   }
   for (auto server = &servers[0]; server != &servers[num_servers]; server++) {
     GPR_ASSERT(server->stream->Read(&server_status));
-    const auto& stats = server_status.stats();
-    result->server_resources.emplace_back(
-        stats.time_elapsed(), stats.time_user(), stats.time_system(),
-        server_status.cores());
+    result->add_server_stats()->CopyFrom(server_status.stats());
+    result->add_server_cores(server_status.cores());
     GPR_ASSERT(!server->stream->Read(&server_status));
   }
   for (auto server = &servers[0]; server != &servers[num_servers]; server++) {
@@ -384,6 +422,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
   }
 
   delete[] servers;
+
+  postprocess_scenario_result(result.get());
   return result;
 }
 

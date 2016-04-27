@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/transport/chttp2/alpn.h"
+#include "src/core/ext/transport/chttp2/alpn/alpn.h"
 
 #include <grpc/support/log.h>
 #include "test/core/util/test_config.h"

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,8 +58,12 @@ static CoreCodegen g_core_codegen;
 class GrpcLibraryInitializer GRPC_FINAL {
  public:
   GrpcLibraryInitializer() {
-    grpc::g_glip = &g_gli;
-    grpc::g_core_codegen_interface = &g_core_codegen;
+    if (grpc::g_glip == nullptr) {
+      grpc::g_glip = &g_gli;
+    }
+    if (grpc::g_core_codegen_interface == nullptr) {
+      grpc::g_core_codegen_interface = &g_core_codegen;
+    }
   }
 
   /// A no-op method to force the linker to reference this class, which will

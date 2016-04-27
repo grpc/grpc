@@ -34,7 +34,7 @@
 #ifndef GRPC_TEST_CORE_SECURITY_OAUTH2_UTILS_H
 #define GRPC_TEST_CORE_SECURITY_OAUTH2_UTILS_H
 
-#include "src/core/security/credentials.h"
+#include "src/core/lib/security/credentials.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,10 +31,7 @@
  *
  */
 
-#include "src/core/statistics/census_log.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "src/core/ext/census/census_log.h"
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
@@ -42,6 +39,9 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "test/core/util/test_config.h"
 
 /* Fills in 'record' of size 'size'. Each byte in record is filled in with the

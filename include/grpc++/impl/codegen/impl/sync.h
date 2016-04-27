@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPCXX_IMPL_CODEGEN_SYNC_H
-#define GRPCXX_IMPL_CODEGEN_SYNC_H
+#ifndef GRPCXX_IMPL_CODEGEN_IMPL_SYNC_H
+#define GRPCXX_IMPL_CODEGEN_IMPL_SYNC_H
 
 #include <grpc++/impl/codegen/config.h>
 
@@ -42,4 +42,4 @@
 #include <grpc++/impl/codegen/sync_cxx11.h>
 #endif
 
-#endif  // GRPCXX_IMPL_CODEGEN_SYNC_H
+#endif  // GRPCXX_IMPL_CODEGEN_IMPL_SYNC_H

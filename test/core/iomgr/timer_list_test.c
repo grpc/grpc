@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/iomgr/timer.h"
+#include "src/core/lib/iomgr/timer.h"
 
 #include <string.h>
 
@@ -81,9 +81,8 @@ static void add_test(void) {
   }
 
   GPR_ASSERT(!grpc_timer_check(
-                 &exec_ctx,
-                 gpr_time_add(start, gpr_time_from_millis(600, GPR_TIMESPAN)),
-                 NULL));
+      &exec_ctx, gpr_time_add(start, gpr_time_from_millis(600, GPR_TIMESPAN)),
+      NULL));
   grpc_exec_ctx_finish(&exec_ctx);
   for (i = 0; i < 30; i++) {
     GPR_ASSERT(cb_called[i][1] == (i < 10));
@@ -101,9 +100,8 @@ static void add_test(void) {
   }
 
   GPR_ASSERT(!grpc_timer_check(
-                 &exec_ctx,
-                 gpr_time_add(start, gpr_time_from_millis(1600, GPR_TIMESPAN)),
-                 NULL));
+      &exec_ctx, gpr_time_add(start, gpr_time_from_millis(1600, GPR_TIMESPAN)),
+      NULL));
   for (i = 0; i < 30; i++) {
     GPR_ASSERT(cb_called[i][1] == (i < 20));
     GPR_ASSERT(cb_called[i][0] == 0);

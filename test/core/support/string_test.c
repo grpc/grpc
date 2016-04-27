@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/support/string.h"
+#include "src/core/lib/support/string.h"
 
 #include <limits.h>
 #include <stddef.h>

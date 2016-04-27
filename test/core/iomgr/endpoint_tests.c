@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -89,7 +89,7 @@ static void end_test(grpc_endpoint_test_config config) { config.clean_up(); }
 static gpr_slice *allocate_blocks(size_t num_bytes, size_t slice_size,
                                   size_t *num_blocks, uint8_t *current_data) {
   size_t nslices = num_bytes / slice_size + (num_bytes % slice_size ? 1 : 0);
-  gpr_slice *slices = malloc(sizeof(gpr_slice) * nslices);
+  gpr_slice *slices = gpr_malloc(sizeof(gpr_slice) * nslices);
   size_t num_bytes_left = num_bytes;
   size_t i;
   size_t j;
@@ -164,7 +164,7 @@ static void read_and_write_test_write_handler(grpc_exec_ctx *exec_ctx,
       gpr_slice_buffer_addn(&state->outgoing, slices, nslices);
       grpc_endpoint_write(exec_ctx, state->write_ep, &state->outgoing,
                           &state->done_write);
-      free(slices);
+      gpr_free(slices);
       return;
     }
   }

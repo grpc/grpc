@@ -1,7 +1,7 @@
 <?php
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,13 +38,13 @@ include 'tests/generated_code/math.php';
 
 function p($line)
 {
-    print("$line<br/>\n");
+    echo "$line<br/>\n";
 }
 
 $host = 'localhost:50051';
 p("Connecting to host: $host");
 $client = new math\MathClient($host, [
-    'credentials' => Grpc\ChannelCredentials::createInsecure()
+    'credentials' => Grpc\ChannelCredentials::createInsecure(),
 ]);
 p('Client class: '.get_class($client));
 p('');

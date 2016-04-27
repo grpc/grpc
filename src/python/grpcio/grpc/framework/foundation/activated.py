@@ -31,14 +31,14 @@
 
 import abc
 
+import six
 
-class Activated(object):
+class Activated(six.with_metaclass(abc.ABCMeta)):
   """Interface for objects that may be started and stopped.
 
   Values implementing this type must also implement the context manager
   protocol.
   """
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def __enter__(self):

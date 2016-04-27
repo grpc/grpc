@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -80,7 +80,7 @@ class Config(object):
     self.timeout_multiplier = timeout_multiplier
 
   def job_spec(self, cmdline, hash_targets, timeout_seconds=5*60,
-               shortname=None, environ={}, cpu_cost=1.0):
+               shortname=None, environ={}, cpu_cost=1.0, flaky=False):
     """Construct a jobset.JobSpec for a test under this config
 
        Args:
@@ -102,7 +102,7 @@ class Config(object):
                           timeout_seconds=(self.timeout_multiplier * timeout_seconds if timeout_seconds else None),
                           hash_targets=hash_targets
                               if self.allow_hashing else None,
-                          flake_retries=5 if args.allow_flakes else 0,
+                          flake_retries=5 if flaky or args.allow_flakes else 0,
                           timeout_retries=3 if args.allow_flakes else 0)
 
 
@@ -120,7 +120,12 @@ def get_c_tests(travis, test_lang) :
 
 def _check_compiler(compiler, supported_compilers):
   if compiler not in supported_compilers:
-    raise Exception('Compiler %s not supported.' % compiler)
+    raise Exception('Compiler %s not supported (on this platform).' % compiler)
+
+
+def _check_arch(arch, supported_archs):
+  if arch not in supported_archs:
+    raise Exception('Architecture %s not supported.' % arch)
 
 
 def _is_use_docker_child():
@@ -183,14 +188,15 @@ class CLanguage(object):
                                               shortname='%s:%s' % (binary, test),
                                               cpu_cost=target['cpu_cost'],
                                               environ={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
-                                                       _ROOT + '/src/core/tsi/test_creds/ca.pem'}))
+                                                       _ROOT + '/src/core/lib/tsi/test_creds/ca.pem'}))
         else:
           cmdline = [binary] + target['args']
           out.append(self.config.job_spec(cmdline, [binary],
-                                          shortname=' '.join(cmdline),
+                                          shortname=target.get('shortname', ' '.join(cmdline)),
                                           cpu_cost=target['cpu_cost'],
+                                          flaky=target.get('flaky', False),
                                           environ={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
-                                                   _ROOT + '/src/core/tsi/test_creds/ca.pem'}))
+                                                   _ROOT + '/src/core/lib/tsi/test_creds/ca.pem'}))
       elif self.args.regex == '.*' or self.platform == 'windows':
         print '\nWARNING: binary not found, skipping', binary
     return sorted(out)
@@ -231,6 +237,9 @@ class CLanguage(object):
   def _clang_make_options(self):
     return ['CC=clang', 'CXX=clang++', 'LD=clang', 'LDXX=clang++']
 
+  def _gcc44_make_options(self):
+    return ['CC=gcc-4.4', 'CXX=g++-4.4', 'LD=gcc-4.4', 'LDXX=g++-4.4']
+
   def _compiler_options(self, use_docker, compiler):
     """Returns docker distro and make options to use for given compiler."""
     if _is_use_docker_child():
@@ -241,7 +250,7 @@ class CLanguage(object):
     if compiler == 'gcc4.9' or compiler == 'default':
       return ('jessie', [])
     elif compiler == 'gcc4.4':
-      return ('squeeze', [])
+      return ('wheezy', self._gcc44_make_options())
     elif compiler == 'gcc5.3':
       return ('ubuntu1604', [])
     elif compiler == 'clang3.4':
@@ -362,6 +371,7 @@ class PythonLanguage(object):
       tests_json = json.load(tests_json_file)
     environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
     environment['PYVER'] = '2.7'
+    environment['PYTHONPATH'] = os.path.abspath('src/python/gens')
     if self.config.build_config != 'gcov':
       return [self.config.job_spec(
           ['tools/run_tests/run_python.sh'],
@@ -460,45 +470,65 @@ class CSharpLanguage(object):
   def configure(self, config, args):
     self.config = config
     self.args = args
-    _check_compiler(self.args.compiler, ['default'])
+    if self.platform == 'windows':
+      # Explicitly choosing between x86 and x64 arch doesn't work yet
+      _check_arch(self.args.arch, ['default'])
+      self._make_options = [_windows_toolset_option(self.args.compiler),
+                            _windows_arch_option(self.args.arch)]
+    else:
+      _check_compiler(self.args.compiler, ['default'])
+      if self.platform == 'mac':
+        # On Mac, official distribution of mono is 32bit.
+        # TODO(jtattermusch): EMBED_ZLIB=true currently breaks the mac build
+        self._make_options = ['EMBED_OPENSSL=true',
+                              'CFLAGS=-m32', 'LDFLAGS=-m32']
+      else:
+        self._make_options = ['EMBED_OPENSSL=true', 'EMBED_ZLIB=true']
 
   def test_specs(self):
     with open('src/csharp/tests.json') as f:
-      tests_json = json.load(f)
-    assemblies = tests_json['assemblies']
-    tests = tests_json['tests']
+      tests_by_assembly = json.load(f)
 
     msbuild_config = _MSBUILD_CONFIG[self.config.build_config]
-    assembly_files = ['%s/bin/%s/%s.dll' % (a, msbuild_config, a)
-                      for a in assemblies]
-
-    extra_args = ['-labels'] + assembly_files
-
+    nunit_args = ['--labels=All',
+                  '--noresult',
+                  '--workers=1']
     if self.platform == 'windows':
-      script_name = 'tools\\run_tests\\run_csharp.bat'
-      extra_args += ['-domain=None']
+      runtime_cmd = []
     else:
-      script_name = 'tools/run_tests/run_csharp.sh'
+      runtime_cmd = ['mono']
 
-    if self.config.build_config == 'gcov':
-      # On Windows, we only collect C# code coverage.
-      # On Linux, we only collect coverage for native extension.
-      # For code coverage all tests need to run as one suite.
-      return [self.config.job_spec([script_name] + extra_args, None,
-                                    shortname='csharp.coverage',
-                                    environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
-    else:
-      specs = []
-      for test in tests:
-        cmdline = [script_name, '-run=%s' % test] + extra_args
-        if self.platform == 'windows':
-          # use different output directory for each test to prevent
-          # TestResult.xml clash between parallel test runs.
-          cmdline += ['-work=test-result/%s' % uuid.uuid4()]
-        specs.append(self.config.job_spec(cmdline, None,
-                                          shortname='csharp.%s' % test,
+    specs = []
+    for assembly in tests_by_assembly.iterkeys():
+      assembly_file = 'src/csharp/%s/bin/%s/%s.exe' % (assembly, msbuild_config, assembly)
+      if self.config.build_config != 'gcov' or self.platform != 'windows':
+        # normally, run each test as a separate process
+        for test in tests_by_assembly[assembly]:
+          cmdline = runtime_cmd + [assembly_file, '--test=%s' % test] + nunit_args
+          specs.append(self.config.job_spec(cmdline,
+                                            None,
+                                            shortname='csharp.%s' % test,
+                                            environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+      else:
+        # For C# test coverage, run all tests from the same assembly at once
+        # using OpenCover.Console (only works on Windows).
+        cmdline = ['src\\csharp\\packages\\OpenCover.4.6.519\\tools\\OpenCover.Console.exe',
+                   '-target:%s' % assembly_file,
+                   '-targetdir:src\\csharp',
+                   '-targetargs:%s' % ' '.join(nunit_args),
+                   '-filter:+[Grpc.Core]*',
+                   '-register:user',
+                   '-output:src\\csharp\\coverage_csharp_%s.xml' % assembly]
+
+        # set really high cpu_cost to make sure instances of OpenCover.Console run exclusively
+        # to prevent problems with registering the profiler.
+        run_exclusive = 1000000
+        specs.append(self.config.job_spec(cmdline,
+                                          None,
+                                          shortname='csharp.coverage.%s' % assembly,
+                                          cpu_cost=run_exclusive,
                                           environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-      return specs
+    return specs
 
   def pre_build_steps(self):
     if self.platform == 'windows':
@@ -507,28 +537,24 @@ class CSharpLanguage(object):
       return [['tools/run_tests/pre_build_csharp.sh']]
 
   def make_targets(self):
-    # For Windows, this target doesn't really build anything,
-    # everything is build by buildall script later.
-    if self.platform == 'windows':
-      return []
-    else:
-      return ['grpc_csharp_ext']
+    return ['grpc_csharp_ext']
 
   def make_options(self):
-    if self.platform == 'mac':
-      # On Mac, official distribution of mono is 32bit.
-      return ['CFLAGS=-arch i386', 'LDFLAGS=-arch i386']
-    else:
-      return []
+    return self._make_options;
 
   def build_steps(self):
     if self.platform == 'windows':
-      return [['src\\csharp\\buildall.bat']]
+      return [[_windows_build_bat(self.args.compiler),
+               'src/csharp/Grpc.sln',
+               '/p:Configuration=%s' % _MSBUILD_CONFIG[self.config.build_config]]]
     else:
       return [['tools/run_tests/build_csharp.sh']]
 
   def post_tests_steps(self):
-    return []
+    if self.platform == 'windows':
+      return [['tools\\run_tests\\post_tests_csharp.bat']]
+    else:
+      return [['tools/run_tests/post_tests_csharp.sh']]
 
   def makefile_name(self):
     return 'Makefile'
@@ -879,7 +905,7 @@ if args.use_docker:
       sys.exit(1)
   else:
     dockerfile_dir = next(iter(dockerfile_dirs))
-    
+
   child_argv = [ arg for arg in sys.argv if not arg == '--use_docker' ]
   run_tests_cmd = 'python tools/run_tests/run_tests.py %s' % ' '.join(child_argv[1:])
 

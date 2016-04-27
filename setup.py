@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -42,6 +42,7 @@ from setuptools.command import egg_info
 # Redirect the manifest template from MANIFEST.in to PYTHON-MANIFEST.in.
 egg_info.manifest_maker.template = 'PYTHON-MANIFEST.in'
 
+PY3 = sys.version_info.major == 3
 PYTHON_STEM = './src/python/grpcio'
 CORE_INCLUDE = ('./include', '.',)
 BORINGSSL_INCLUDE = ('./third_party/boringssl/include',)
@@ -103,10 +104,14 @@ if "linux" in sys.platform:
   LDFLAGS += ('-Wl,-wrap,memcpy',)
 if "linux" in sys.platform or "darwin" in sys.platform:
   CFLAGS += ('-fvisibility=hidden',)
-  DEFINE_MACROS += (('PyMODINIT_FUNC', '__attribute__((visibility ("default"))) void'),)
+
+  pymodinit_type = 'PyObject*' if PY3 else 'void'
+
+  pymodinit = '__attribute__((visibility ("default"))) {}'.format(pymodinit_type)
+  DEFINE_MACROS += (('PyMODINIT_FUNC', pymodinit),)
 
 
-def cython_extensions(package_names, module_names, extra_sources, include_dirs,
+def cython_extensions(module_names, extra_sources, include_dirs,
                       libraries, define_macros, build_with_cython=False):
   # Set compiler directives linetrace argument only if we care about tracing;
   # this is due to Cython having different behavior between linetrace being
@@ -139,7 +144,7 @@ def cython_extensions(package_names, module_names, extra_sources, include_dirs,
     return extensions
 
 CYTHON_EXTENSION_MODULES = cython_extensions(
-    list(CYTHON_EXTENSION_PACKAGE_NAMES), list(CYTHON_EXTENSION_MODULE_NAMES),
+    list(CYTHON_EXTENSION_MODULE_NAMES),
     list(CYTHON_HELPER_C_FILES) + list(CORE_C_FILES),
     list(EXTENSION_INCLUDE_DIRECTORIES), list(EXTENSION_LIBRARIES),
     list(DEFINE_MACROS), bool(BUILD_WITH_CYTHON))

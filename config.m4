@@ -36,210 +36,215 @@ if test "$PHP_GRPC" != "no"; then
     src/php/ext/grpc/server.c \
     src/php/ext/grpc/server_credentials.c \
     src/php/ext/grpc/timeval.c \
-    src/core/profiling/basic_timers.c \
-    src/core/profiling/stap_timers.c \
-    src/core/support/alloc.c \
-    src/core/support/avl.c \
-    src/core/support/backoff.c \
-    src/core/support/cmdline.c \
-    src/core/support/cpu_iphone.c \
-    src/core/support/cpu_linux.c \
-    src/core/support/cpu_posix.c \
-    src/core/support/cpu_windows.c \
-    src/core/support/env_linux.c \
-    src/core/support/env_posix.c \
-    src/core/support/env_win32.c \
-    src/core/support/histogram.c \
-    src/core/support/host_port.c \
-    src/core/support/load_file.c \
-    src/core/support/log.c \
-    src/core/support/log_android.c \
-    src/core/support/log_linux.c \
-    src/core/support/log_posix.c \
-    src/core/support/log_win32.c \
-    src/core/support/murmur_hash.c \
-    src/core/support/slice.c \
-    src/core/support/slice_buffer.c \
-    src/core/support/stack_lockfree.c \
-    src/core/support/string.c \
-    src/core/support/string_posix.c \
-    src/core/support/string_win32.c \
-    src/core/support/subprocess_posix.c \
-    src/core/support/subprocess_windows.c \
-    src/core/support/sync.c \
-    src/core/support/sync_posix.c \
-    src/core/support/sync_win32.c \
-    src/core/support/thd.c \
-    src/core/support/thd_posix.c \
-    src/core/support/thd_win32.c \
-    src/core/support/time.c \
-    src/core/support/time_posix.c \
-    src/core/support/time_precise.c \
-    src/core/support/time_win32.c \
-    src/core/support/tls_pthread.c \
-    src/core/support/tmpfile_posix.c \
-    src/core/support/tmpfile_win32.c \
-    src/core/support/wrap_memcpy.c \
-    src/core/census/grpc_context.c \
-    src/core/census/grpc_filter.c \
-    src/core/channel/channel_args.c \
-    src/core/channel/channel_stack.c \
-    src/core/channel/client_channel.c \
-    src/core/channel/client_uchannel.c \
-    src/core/channel/compress_filter.c \
-    src/core/channel/connected_channel.c \
-    src/core/channel/http_client_filter.c \
-    src/core/channel/http_server_filter.c \
-    src/core/channel/subchannel_call_holder.c \
-    src/core/client_config/client_config.c \
-    src/core/client_config/connector.c \
-    src/core/client_config/default_initial_connect_string.c \
-    src/core/client_config/initial_connect_string.c \
-    src/core/client_config/lb_policies/load_balancer_api.c \
-    src/core/client_config/lb_policies/pick_first.c \
-    src/core/client_config/lb_policies/round_robin.c \
-    src/core/client_config/lb_policy.c \
-    src/core/client_config/lb_policy_factory.c \
-    src/core/client_config/lb_policy_registry.c \
-    src/core/client_config/resolver.c \
-    src/core/client_config/resolver_factory.c \
-    src/core/client_config/resolver_registry.c \
-    src/core/client_config/resolvers/dns_resolver.c \
-    src/core/client_config/resolvers/sockaddr_resolver.c \
-    src/core/client_config/subchannel.c \
-    src/core/client_config/subchannel_factory.c \
-    src/core/client_config/subchannel_index.c \
-    src/core/client_config/uri_parser.c \
-    src/core/compression/compression_algorithm.c \
-    src/core/compression/message_compress.c \
-    src/core/debug/trace.c \
-    src/core/httpcli/format_request.c \
-    src/core/httpcli/httpcli.c \
-    src/core/httpcli/parser.c \
-    src/core/iomgr/closure.c \
-    src/core/iomgr/endpoint.c \
-    src/core/iomgr/endpoint_pair_posix.c \
-    src/core/iomgr/endpoint_pair_windows.c \
-    src/core/iomgr/exec_ctx.c \
-    src/core/iomgr/executor.c \
-    src/core/iomgr/fd_posix.c \
-    src/core/iomgr/iocp_windows.c \
-    src/core/iomgr/iomgr.c \
-    src/core/iomgr/iomgr_posix.c \
-    src/core/iomgr/iomgr_windows.c \
-    src/core/iomgr/pollset_multipoller_with_epoll.c \
-    src/core/iomgr/pollset_multipoller_with_poll_posix.c \
-    src/core/iomgr/pollset_posix.c \
-    src/core/iomgr/pollset_set_posix.c \
-    src/core/iomgr/pollset_set_windows.c \
-    src/core/iomgr/pollset_windows.c \
-    src/core/iomgr/resolve_address_posix.c \
-    src/core/iomgr/resolve_address_windows.c \
-    src/core/iomgr/sockaddr_utils.c \
-    src/core/iomgr/socket_utils_common_posix.c \
-    src/core/iomgr/socket_utils_linux.c \
-    src/core/iomgr/socket_utils_posix.c \
-    src/core/iomgr/socket_windows.c \
-    src/core/iomgr/tcp_client_posix.c \
-    src/core/iomgr/tcp_client_windows.c \
-    src/core/iomgr/tcp_posix.c \
-    src/core/iomgr/tcp_server_posix.c \
-    src/core/iomgr/tcp_server_windows.c \
-    src/core/iomgr/tcp_windows.c \
-    src/core/iomgr/time_averaged_stats.c \
-    src/core/iomgr/timer.c \
-    src/core/iomgr/timer_heap.c \
-    src/core/iomgr/udp_server.c \
-    src/core/iomgr/wakeup_fd_eventfd.c \
-    src/core/iomgr/wakeup_fd_nospecial.c \
-    src/core/iomgr/wakeup_fd_pipe.c \
-    src/core/iomgr/wakeup_fd_posix.c \
-    src/core/iomgr/workqueue_posix.c \
-    src/core/iomgr/workqueue_windows.c \
-    src/core/json/json.c \
-    src/core/json/json_reader.c \
-    src/core/json/json_string.c \
-    src/core/json/json_writer.c \
-    src/core/proto/grpc/lb/v0/load_balancer.pb.c \
-    src/core/surface/alarm.c \
-    src/core/surface/api_trace.c \
-    src/core/surface/byte_buffer.c \
-    src/core/surface/byte_buffer_reader.c \
-    src/core/surface/call.c \
-    src/core/surface/call_details.c \
-    src/core/surface/call_log_batch.c \
-    src/core/surface/channel.c \
-    src/core/surface/channel_connectivity.c \
-    src/core/surface/channel_create.c \
-    src/core/surface/channel_ping.c \
-    src/core/surface/completion_queue.c \
-    src/core/surface/event_string.c \
-    src/core/surface/init.c \
-    src/core/surface/lame_client.c \
-    src/core/surface/metadata_array.c \
-    src/core/surface/server.c \
-    src/core/surface/server_chttp2.c \
-    src/core/surface/server_create.c \
-    src/core/surface/validate_metadata.c \
-    src/core/surface/version.c \
-    src/core/transport/byte_stream.c \
-    src/core/transport/chttp2/alpn.c \
-    src/core/transport/chttp2/bin_encoder.c \
-    src/core/transport/chttp2/frame_data.c \
-    src/core/transport/chttp2/frame_goaway.c \
-    src/core/transport/chttp2/frame_ping.c \
-    src/core/transport/chttp2/frame_rst_stream.c \
-    src/core/transport/chttp2/frame_settings.c \
-    src/core/transport/chttp2/frame_window_update.c \
-    src/core/transport/chttp2/hpack_encoder.c \
-    src/core/transport/chttp2/hpack_parser.c \
-    src/core/transport/chttp2/hpack_table.c \
-    src/core/transport/chttp2/huffsyms.c \
-    src/core/transport/chttp2/incoming_metadata.c \
-    src/core/transport/chttp2/parsing.c \
-    src/core/transport/chttp2/status_conversion.c \
-    src/core/transport/chttp2/stream_lists.c \
-    src/core/transport/chttp2/stream_map.c \
-    src/core/transport/chttp2/timeout_encoding.c \
-    src/core/transport/chttp2/varint.c \
-    src/core/transport/chttp2/writing.c \
-    src/core/transport/chttp2_transport.c \
-    src/core/transport/connectivity_state.c \
-    src/core/transport/metadata.c \
-    src/core/transport/metadata_batch.c \
-    src/core/transport/static_metadata.c \
-    src/core/transport/transport.c \
-    src/core/transport/transport_op_string.c \
-    src/core/httpcli/httpcli_security_connector.c \
-    src/core/security/b64.c \
-    src/core/security/client_auth_filter.c \
-    src/core/security/credentials.c \
-    src/core/security/credentials_metadata.c \
-    src/core/security/credentials_posix.c \
-    src/core/security/credentials_win32.c \
-    src/core/security/google_default_credentials.c \
-    src/core/security/handshake.c \
-    src/core/security/json_token.c \
-    src/core/security/jwt_verifier.c \
-    src/core/security/secure_endpoint.c \
-    src/core/security/security_connector.c \
-    src/core/security/security_context.c \
-    src/core/security/server_auth_filter.c \
-    src/core/security/server_secure_chttp2.c \
-    src/core/surface/init_secure.c \
-    src/core/surface/secure_channel_create.c \
-    src/core/tsi/fake_transport_security.c \
-    src/core/tsi/ssl_transport_security.c \
-    src/core/tsi/transport_security.c \
-    src/core/census/context.c \
-    src/core/census/initialize.c \
-    src/core/census/mlog.c \
-    src/core/census/operation.c \
-    src/core/census/placeholders.c \
-    src/core/census/tracing.c \
+    src/core/lib/profiling/basic_timers.c \
+    src/core/lib/profiling/stap_timers.c \
+    src/core/lib/support/alloc.c \
+    src/core/lib/support/avl.c \
+    src/core/lib/support/backoff.c \
+    src/core/lib/support/cmdline.c \
+    src/core/lib/support/cpu_iphone.c \
+    src/core/lib/support/cpu_linux.c \
+    src/core/lib/support/cpu_posix.c \
+    src/core/lib/support/cpu_windows.c \
+    src/core/lib/support/env_linux.c \
+    src/core/lib/support/env_posix.c \
+    src/core/lib/support/env_win32.c \
+    src/core/lib/support/histogram.c \
+    src/core/lib/support/host_port.c \
+    src/core/lib/support/load_file.c \
+    src/core/lib/support/log.c \
+    src/core/lib/support/log_android.c \
+    src/core/lib/support/log_linux.c \
+    src/core/lib/support/log_posix.c \
+    src/core/lib/support/log_win32.c \
+    src/core/lib/support/murmur_hash.c \
+    src/core/lib/support/slice.c \
+    src/core/lib/support/slice_buffer.c \
+    src/core/lib/support/stack_lockfree.c \
+    src/core/lib/support/string.c \
+    src/core/lib/support/string_posix.c \
+    src/core/lib/support/string_win32.c \
+    src/core/lib/support/subprocess_posix.c \
+    src/core/lib/support/subprocess_windows.c \
+    src/core/lib/support/sync.c \
+    src/core/lib/support/sync_posix.c \
+    src/core/lib/support/sync_win32.c \
+    src/core/lib/support/thd.c \
+    src/core/lib/support/thd_posix.c \
+    src/core/lib/support/thd_win32.c \
+    src/core/lib/support/time.c \
+    src/core/lib/support/time_posix.c \
+    src/core/lib/support/time_precise.c \
+    src/core/lib/support/time_win32.c \
+    src/core/lib/support/tls_pthread.c \
+    src/core/lib/support/tmpfile_posix.c \
+    src/core/lib/support/tmpfile_win32.c \
+    src/core/lib/support/wrap_memcpy.c \
+    src/core/lib/surface/init.c \
+    src/core/lib/channel/channel_args.c \
+    src/core/lib/channel/channel_stack.c \
+    src/core/lib/channel/channel_stack_builder.c \
+    src/core/lib/channel/compress_filter.c \
+    src/core/lib/channel/connected_channel.c \
+    src/core/lib/channel/http_client_filter.c \
+    src/core/lib/channel/http_server_filter.c \
+    src/core/lib/compression/compression_algorithm.c \
+    src/core/lib/compression/message_compress.c \
+    src/core/lib/debug/trace.c \
+    src/core/lib/http/format_request.c \
+    src/core/lib/http/httpcli.c \
+    src/core/lib/http/parser.c \
+    src/core/lib/iomgr/closure.c \
+    src/core/lib/iomgr/endpoint.c \
+    src/core/lib/iomgr/endpoint_pair_posix.c \
+    src/core/lib/iomgr/endpoint_pair_windows.c \
+    src/core/lib/iomgr/ev_poll_and_epoll_posix.c \
+    src/core/lib/iomgr/ev_posix.c \
+    src/core/lib/iomgr/exec_ctx.c \
+    src/core/lib/iomgr/executor.c \
+    src/core/lib/iomgr/iocp_windows.c \
+    src/core/lib/iomgr/iomgr.c \
+    src/core/lib/iomgr/iomgr_posix.c \
+    src/core/lib/iomgr/iomgr_windows.c \
+    src/core/lib/iomgr/pollset_set_windows.c \
+    src/core/lib/iomgr/pollset_windows.c \
+    src/core/lib/iomgr/resolve_address_posix.c \
+    src/core/lib/iomgr/resolve_address_windows.c \
+    src/core/lib/iomgr/sockaddr_utils.c \
+    src/core/lib/iomgr/socket_utils_common_posix.c \
+    src/core/lib/iomgr/socket_utils_linux.c \
+    src/core/lib/iomgr/socket_utils_posix.c \
+    src/core/lib/iomgr/socket_windows.c \
+    src/core/lib/iomgr/tcp_client_posix.c \
+    src/core/lib/iomgr/tcp_client_windows.c \
+    src/core/lib/iomgr/tcp_posix.c \
+    src/core/lib/iomgr/tcp_server_posix.c \
+    src/core/lib/iomgr/tcp_server_windows.c \
+    src/core/lib/iomgr/tcp_windows.c \
+    src/core/lib/iomgr/time_averaged_stats.c \
+    src/core/lib/iomgr/timer.c \
+    src/core/lib/iomgr/timer_heap.c \
+    src/core/lib/iomgr/udp_server.c \
+    src/core/lib/iomgr/unix_sockets_posix.c \
+    src/core/lib/iomgr/unix_sockets_posix_noop.c \
+    src/core/lib/iomgr/wakeup_fd_eventfd.c \
+    src/core/lib/iomgr/wakeup_fd_nospecial.c \
+    src/core/lib/iomgr/wakeup_fd_pipe.c \
+    src/core/lib/iomgr/wakeup_fd_posix.c \
+    src/core/lib/iomgr/workqueue_posix.c \
+    src/core/lib/iomgr/workqueue_windows.c \
+    src/core/lib/json/json.c \
+    src/core/lib/json/json_reader.c \
+    src/core/lib/json/json_string.c \
+    src/core/lib/json/json_writer.c \
+    src/core/lib/surface/alarm.c \
+    src/core/lib/surface/api_trace.c \
+    src/core/lib/surface/byte_buffer.c \
+    src/core/lib/surface/byte_buffer_reader.c \
+    src/core/lib/surface/call.c \
+    src/core/lib/surface/call_details.c \
+    src/core/lib/surface/call_log_batch.c \
+    src/core/lib/surface/channel.c \
+    src/core/lib/surface/channel_init.c \
+    src/core/lib/surface/channel_ping.c \
+    src/core/lib/surface/channel_stack_type.c \
+    src/core/lib/surface/completion_queue.c \
+    src/core/lib/surface/event_string.c \
+    src/core/lib/surface/lame_client.c \
+    src/core/lib/surface/metadata_array.c \
+    src/core/lib/surface/server.c \
+    src/core/lib/surface/validate_metadata.c \
+    src/core/lib/surface/version.c \
+    src/core/lib/transport/byte_stream.c \
+    src/core/lib/transport/connectivity_state.c \
+    src/core/lib/transport/metadata.c \
+    src/core/lib/transport/metadata_batch.c \
+    src/core/lib/transport/static_metadata.c \
+    src/core/lib/transport/transport.c \
+    src/core/lib/transport/transport_op_string.c \
+    src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c \
+    src/core/ext/transport/chttp2/transport/bin_encoder.c \
+    src/core/ext/transport/chttp2/transport/chttp2_plugin.c \
+    src/core/ext/transport/chttp2/transport/chttp2_transport.c \
+    src/core/ext/transport/chttp2/transport/frame_data.c \
+    src/core/ext/transport/chttp2/transport/frame_goaway.c \
+    src/core/ext/transport/chttp2/transport/frame_ping.c \
+    src/core/ext/transport/chttp2/transport/frame_rst_stream.c \
+    src/core/ext/transport/chttp2/transport/frame_settings.c \
+    src/core/ext/transport/chttp2/transport/frame_window_update.c \
+    src/core/ext/transport/chttp2/transport/hpack_encoder.c \
+    src/core/ext/transport/chttp2/transport/hpack_parser.c \
+    src/core/ext/transport/chttp2/transport/hpack_table.c \
+    src/core/ext/transport/chttp2/transport/huffsyms.c \
+    src/core/ext/transport/chttp2/transport/incoming_metadata.c \
+    src/core/ext/transport/chttp2/transport/parsing.c \
+    src/core/ext/transport/chttp2/transport/status_conversion.c \
+    src/core/ext/transport/chttp2/transport/stream_lists.c \
+    src/core/ext/transport/chttp2/transport/stream_map.c \
+    src/core/ext/transport/chttp2/transport/timeout_encoding.c \
+    src/core/ext/transport/chttp2/transport/varint.c \
+    src/core/ext/transport/chttp2/transport/writing.c \
+    src/core/ext/transport/chttp2/alpn/alpn.c \
+    src/core/lib/http/httpcli_security_connector.c \
+    src/core/lib/security/b64.c \
+    src/core/lib/security/client_auth_filter.c \
+    src/core/lib/security/credentials.c \
+    src/core/lib/security/credentials_metadata.c \
+    src/core/lib/security/credentials_posix.c \
+    src/core/lib/security/credentials_win32.c \
+    src/core/lib/security/google_default_credentials.c \
+    src/core/lib/security/handshake.c \
+    src/core/lib/security/json_token.c \
+    src/core/lib/security/jwt_verifier.c \
+    src/core/lib/security/secure_endpoint.c \
+    src/core/lib/security/security_connector.c \
+    src/core/lib/security/security_context.c \
+    src/core/lib/security/server_auth_filter.c \
+    src/core/lib/surface/init_secure.c \
+    src/core/lib/tsi/fake_transport_security.c \
+    src/core/lib/tsi/ssl_transport_security.c \
+    src/core/lib/tsi/transport_security.c \
+    src/core/ext/transport/chttp2/client/secure/secure_channel_create.c \
+    src/core/ext/client_config/channel_connectivity.c \
+    src/core/ext/client_config/client_channel.c \
+    src/core/ext/client_config/client_channel_factory.c \
+    src/core/ext/client_config/client_config.c \
+    src/core/ext/client_config/client_config_plugin.c \
+    src/core/ext/client_config/connector.c \
+    src/core/ext/client_config/default_initial_connect_string.c \
+    src/core/ext/client_config/initial_connect_string.c \
+    src/core/ext/client_config/lb_policy.c \
+    src/core/ext/client_config/lb_policy_factory.c \
+    src/core/ext/client_config/lb_policy_registry.c \
+    src/core/ext/client_config/parse_address.c \
+    src/core/ext/client_config/resolver.c \
+    src/core/ext/client_config/resolver_factory.c \
+    src/core/ext/client_config/resolver_registry.c \
+    src/core/ext/client_config/subchannel.c \
+    src/core/ext/client_config/subchannel_call_holder.c \
+    src/core/ext/client_config/subchannel_index.c \
+    src/core/ext/client_config/uri_parser.c \
+    src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
+    src/core/ext/transport/chttp2/client/insecure/channel_create.c \
+    src/core/ext/lb_policy/grpclb/load_balancer_api.c \
+    src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c \
     third_party/nanopb/pb_common.c \
     third_party/nanopb/pb_decode.c \
     third_party/nanopb/pb_encode.c \
+    src/core/ext/lb_policy/pick_first/pick_first.c \
+    src/core/ext/lb_policy/round_robin/round_robin.c \
+    src/core/ext/resolver/dns/native/dns_resolver.c \
+    src/core/ext/resolver/sockaddr/sockaddr_resolver.c \
+    src/core/ext/census/context.c \
+    src/core/ext/census/grpc_context.c \
+    src/core/ext/census/grpc_filter.c \
+    src/core/ext/census/grpc_plugin.c \
+    src/core/ext/census/initialize.c \
+    src/core/ext/census/mlog.c \
+    src/core/ext/census/operation.c \
+    src/core/ext/census/placeholders.c \
+    src/core/ext/census/tracing.c \
+    src/core/plugin_registry/grpc_plugin_registry.c \
     src/boringssl/err_data.c \
     third_party/boringssl/crypto/aes/aes.c \
     third_party/boringssl/crypto/aes/mode_wrappers.c \
@@ -312,6 +317,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/crypto/bn/shift.c \
     third_party/boringssl/crypto/bn/sqrt.c \
     third_party/boringssl/crypto/buf/buf.c \
+    third_party/boringssl/crypto/bytestring/asn1_compat.c \
     third_party/boringssl/crypto/bytestring/ber.c \
     third_party/boringssl/crypto/bytestring/cbb.c \
     third_party/boringssl/crypto/bytestring/cbs.c \
@@ -335,6 +341,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/crypto/cpu-intel.c \
     third_party/boringssl/crypto/crypto.c \
     third_party/boringssl/crypto/curve25519/curve25519.c \
+    third_party/boringssl/crypto/curve25519/x25519-x86_64.c \
     third_party/boringssl/crypto/des/des.c \
     third_party/boringssl/crypto/dh/check.c \
     third_party/boringssl/crypto/dh/dh.c \
@@ -526,6 +533,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/ssl/ssl_buffer.c \
     third_party/boringssl/ssl/ssl_cert.c \
     third_party/boringssl/ssl/ssl_cipher.c \
+    third_party/boringssl/ssl/ssl_ecdh.c \
     third_party/boringssl/ssl/ssl_file.c \
     third_party/boringssl/ssl/ssl_lib.c \
     third_party/boringssl/ssl/ssl_rsa.c \
@@ -542,24 +550,33 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/php/ext/grpc)
 
   PHP_ADD_BUILD_DIR($ext_builddir/src/boringssl)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/census)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/channel)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/client_config)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/client_config/lb_policies)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/client_config/resolvers)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/compression)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/debug)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/httpcli)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/iomgr)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/json)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/profiling)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/proto/grpc/lb/v0)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/security)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/support)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/surface)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/transport)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/transport/chttp2)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/census)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/client_config)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/grpclb)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/pick_first)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/round_robin)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/resolver/dns/native)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/resolver/sockaddr)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/alpn)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/client/insecure)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/client/secure)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/server/insecure)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/server/secure)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/transport)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/channel)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/compression)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/debug)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/http)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/json)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/profiling)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/support)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/surface)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/transport)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/tsi)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/plugin_registry)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/aes)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/asn1)

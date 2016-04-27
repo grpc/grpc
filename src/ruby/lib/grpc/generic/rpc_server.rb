@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,9 +27,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-require 'grpc/grpc'
-require 'grpc/generic/active_call'
-require 'grpc/generic/service'
+require_relative '../grpc'
+require_relative 'active_call'
+require_relative 'service'
 require 'thread'
 
 # A global that contains signals the gRPC servers should respond to.
@@ -332,10 +332,15 @@ module GRPC
     # the current thread to terminate it.
     def run_till_terminated
       GRPC.trap_signals
-      t = Thread.new { run }
+      stopped = false
+      t = Thread.new do
+        run
+        stopped = true
+      end
       wait_till_running
       loop do
         sleep SIGNAL_CHECK_PERIOD
+        break if stopped
         break unless GRPC.handle_signals
       end
       stop
@@ -403,7 +408,7 @@ module GRPC
       loop_handle_server_calls
     end
 
-    # Sends UNAVAILABLE if there are too many unprocessed jobs
+    # Sends RESOURCE_EXHAUSTED if there are too many unprocessed jobs
     def available?(an_rpc)
       jobs_count, max = @pool.jobs_waiting, @max_waiting_requests
       GRPC.logger.info("waiting: #{jobs_count}, max: #{max}")
@@ -411,7 +416,7 @@ module GRPC
       GRPC.logger.warn("NOT AVAILABLE: too many jobs_waiting: #{an_rpc}")
       noop = proc { |x| x }
       c = ActiveCall.new(an_rpc.call, @cq, noop, noop, an_rpc.deadline)
-      c.send_status(StatusCodes::UNAVAILABLE, '')
+      c.send_status(StatusCodes::RESOURCE_EXHAUSTED, '')
       nil
     end
 
@@ -434,7 +439,6 @@ module GRPC
         begin
           an_rpc = @server.request_call(@cq, loop_tag, INFINITE_FUTURE)
           break if (!an_rpc.nil?) && an_rpc.call.nil?
-
           active_call = new_active_server_call(an_rpc)
           unless active_call.nil?
             @pool.schedule(active_call) do |ac|

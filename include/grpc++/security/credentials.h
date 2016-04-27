@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPCXX_CREDENTIALS_H
-#define GRPCXX_CREDENTIALS_H
+#ifndef GRPCXX_SECURITY_CREDENTIALS_H
+#define GRPCXX_SECURITY_CREDENTIALS_H
 
 #include <map>
 #include <memory>
@@ -229,4 +229,4 @@ std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
 
 }  // namespace grpc
 
-#endif  // GRPCXX_CREDENTIALS_H
+#endif  // GRPCXX_SECURITY_CREDENTIALS_H

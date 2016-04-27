@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -67,7 +67,8 @@ class ClientAsyncResponseReader GRPC_FINAL
         call_(channel->CreateCall(method, context, cq)),
         collection_(new CallOpSetCollection) {
     collection_->init_buf_.SetCollection(collection_);
-    collection_->init_buf_.SendInitialMetadata(context->send_initial_metadata_);
+    collection_->init_buf_.SendInitialMetadata(
+        context->send_initial_metadata_, context->initial_metadata_flags());
     // TODO(ctiller): don't assert
     GPR_CODEGEN_ASSERT(collection_->init_buf_.SendMessage(request).ok());
     collection_->init_buf_.ClientSendClose();
@@ -101,10 +102,12 @@ class ClientAsyncResponseReader GRPC_FINAL
   class CallOpSetCollection : public CallOpSetCollectionInterface {
    public:
     SneakyCallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
-                    CallOpClientSendClose> init_buf_;
+                    CallOpClientSendClose>
+        init_buf_;
     CallOpSet<CallOpRecvInitialMetadata> meta_buf_;
     CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>,
-              CallOpClientRecvStatus> finish_buf_;
+              CallOpClientRecvStatus>
+        finish_buf_;
   };
   std::shared_ptr<CallOpSetCollection> collection_;
 };
@@ -120,7 +123,8 @@ class ServerAsyncResponseWriter GRPC_FINAL
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     meta_buf_.set_output_tag(tag);
-    meta_buf_.SendInitialMetadata(ctx_->initial_metadata_);
+    meta_buf_.SendInitialMetadata(ctx_->initial_metadata_,
+                                  ctx_->initial_metadata_flags());
     ctx_->sent_initial_metadata_ = true;
     call_.PerformOps(&meta_buf_);
   }
@@ -128,7 +132,8 @@ class ServerAsyncResponseWriter GRPC_FINAL
   void Finish(const W& msg, const Status& status, void* tag) {
     finish_buf_.set_output_tag(tag);
     if (!ctx_->sent_initial_metadata_) {
-      finish_buf_.SendInitialMetadata(ctx_->initial_metadata_);
+      finish_buf_.SendInitialMetadata(ctx_->initial_metadata_,
+                                      ctx_->initial_metadata_flags());
       ctx_->sent_initial_metadata_ = true;
     }
     // The response is dropped if the status is not OK.
@@ -145,7 +150,8 @@ class ServerAsyncResponseWriter GRPC_FINAL
     GPR_CODEGEN_ASSERT(!status.ok());
     finish_buf_.set_output_tag(tag);
     if (!ctx_->sent_initial_metadata_) {
-      finish_buf_.SendInitialMetadata(ctx_->initial_metadata_);
+      finish_buf_.SendInitialMetadata(ctx_->initial_metadata_,
+                                      ctx_->initial_metadata_flags());
       ctx_->sent_initial_metadata_ = true;
     }
     finish_buf_.ServerSendStatus(ctx_->trailing_metadata_, status);
@@ -159,7 +165,8 @@ class ServerAsyncResponseWriter GRPC_FINAL
   ServerContext* ctx_;
   CallOpSet<CallOpSendInitialMetadata> meta_buf_;
   CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
-            CallOpServerSendStatus> finish_buf_;
+            CallOpServerSendStatus>
+      finish_buf_;
 };
 
 }  // namespace grpc

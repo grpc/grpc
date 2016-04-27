@@ -54,7 +54,9 @@
 
 - (void)finish {
   if (_handler) {
-    _handler();
+    void(^handler)() = _handler;
+    _handler = nil;
+    handler();
   }
 }
 @end

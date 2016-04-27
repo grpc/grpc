@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -181,8 +181,10 @@ class CallOpSendInitialMetadata {
   CallOpSendInitialMetadata() : send_(false) {}
 
   void SendInitialMetadata(
-      const std::multimap<grpc::string, grpc::string>& metadata) {
+      const std::multimap<grpc::string, grpc::string>& metadata,
+      uint32_t flags) {
     send_ = true;
+    flags_ = flags;
     initial_metadata_count_ = metadata.size();
     initial_metadata_ = FillMetadataArray(metadata);
   }
@@ -192,7 +194,7 @@ class CallOpSendInitialMetadata {
     if (!send_) return;
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_SEND_INITIAL_METADATA;
-    op->flags = 0;
+    op->flags = flags_;
     op->reserved = NULL;
     op->data.send_initial_metadata.count = initial_metadata_count_;
     op->data.send_initial_metadata.metadata = initial_metadata_;
@@ -204,6 +206,7 @@ class CallOpSendInitialMetadata {
   }
 
   bool send_;
+  uint32_t flags_;
   size_t initial_metadata_count_;
   grpc_metadata* initial_metadata_;
 };
@@ -280,7 +283,8 @@ class CallOpRecvMessage {
       if (*status) {
         got_message = true;
         *status = SerializationTraits<R>::Deserialize(recv_buf_, message_,
-                                                      max_message_size).ok();
+                                                      max_message_size)
+                      .ok();
       } else {
         got_message = false;
         g_core_codegen_interface->grpc_byte_buffer_destroy(recv_buf_);

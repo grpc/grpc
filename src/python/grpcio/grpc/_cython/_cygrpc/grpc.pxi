@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -104,6 +104,13 @@ cdef extern from "grpc/_cython/loader.h":
     GRPC_SSL_ROOTS_OVERRIDE_OK
     GRPC_SSL_ROOTS_OVERRIDE_FAILED_PERMANENTLY
     GRPC_SSL_ROOTS_OVERRIDE_FAILED
+
+  ctypedef enum grpc_ssl_client_certificate_request_type:
+    GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
+    GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY
+    GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY
+    GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY
+    GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
 
   struct grpc_byte_buffer_reader:
     # We don't care about the internals

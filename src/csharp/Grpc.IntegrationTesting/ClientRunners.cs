@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,6 +41,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Grpc.Core;
+using Grpc.Core.Logging;
 using Grpc.Core.Utils;
 using NUnit.Framework;
 using Grpc.Testing;
@@ -50,58 +51,101 @@ namespace Grpc.IntegrationTesting
     /// <summary>
     /// Helper methods to start client runners for performance testing.
     /// </summary>
-    public static class ClientRunners
+    public class ClientRunners
     {
+        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<ClientRunners>();
+
         /// <summary>
         /// Creates a started client runner.
         /// </summary>
         public static IClientRunner CreateStarted(ClientConfig config)
         {
-            string target = config.ServerTargets.Single();
-            GrpcPreconditions.CheckArgument(config.LoadParams.LoadCase == LoadParams.LoadOneofCase.ClosedLoop);
+            Logger.Debug("ClientConfig: {0}", config);
 
-            var credentials = config.SecurityParams != null ? TestCredentials.CreateSslCredentials() : ChannelCredentials.Insecure;
-            var channel = new Channel(target, credentials);
-
-            switch (config.RpcType)
+            if (config.AsyncClientThreads != 0)
             {
-                case RpcType.UNARY:
-                    return new SyncUnaryClientRunner(channel,
-                        config.PayloadConfig.SimpleParams.ReqSize,
-                        config.HistogramParams);
-
-                case RpcType.STREAMING:
-                default:
-                    throw new ArgumentException("Unsupported RpcType.");
+                Logger.Warning("ClientConfig.AsyncClientThreads is not supported for C#. Ignoring the value");
             }
+            if (config.CoreLimit != 0)
+            {
+                Logger.Warning("ClientConfig.CoreLimit is not supported for C#. Ignoring the value");
+            }
+            if (config.CoreList.Count > 0)
+            {
+                Logger.Warning("ClientConfig.CoreList is not supported for C#. Ignoring the value");
+            }
+
+            var channels = CreateChannels(config.ClientChannels, config.ServerTargets, config.SecurityParams);
+
+            return new ClientRunnerImpl(channels,
+                config.ClientType,
+                config.RpcType,
+                config.OutstandingRpcsPerChannel,
+                config.LoadParams,
+                config.PayloadConfig,
+                config.HistogramParams);
+        }
+
+        private static List<Channel> CreateChannels(int clientChannels, IEnumerable<string> serverTargets, SecurityParams securityParams)
+        {
+            GrpcPreconditions.CheckArgument(clientChannels > 0, "clientChannels needs to be at least 1.");
+            GrpcPreconditions.CheckArgument(serverTargets.Count() > 0, "at least one serverTarget needs to be specified.");
+
+            var credentials = securityParams != null ? TestCredentials.CreateSslCredentials() : ChannelCredentials.Insecure;
+            List<ChannelOption> channelOptions = null;
+            if (securityParams != null && securityParams.ServerHostOverride != "")
+            {
+                channelOptions = new List<ChannelOption>
+                {
+                    new ChannelOption(ChannelOptions.SslTargetNameOverride, securityParams.ServerHostOverride)
+                };
+            }
+
+            var result = new List<Channel>();
+            for (int i = 0; i < clientChannels; i++)
+            {
+                var target = serverTargets.ElementAt(i % serverTargets.Count());
+                var channel = new Channel(target, credentials, channelOptions);
+                result.Add(channel);
+            }
+            return result;
         }
     }
 
-    /// <summary>
-    /// Client that starts synchronous unary calls in a closed loop.
-    /// </summary>
-    public class SyncUnaryClientRunner : IClientRunner
+    public class ClientRunnerImpl : IClientRunner
     {
         const double SecondsToNanos = 1e9;
 
-        readonly Channel channel;
-        readonly int payloadSize;
+        readonly List<Channel> channels;
+        readonly ClientType clientType;
+        readonly RpcType rpcType;
+        readonly PayloadConfig payloadConfig;
         readonly Histogram histogram;
 
-        readonly BenchmarkService.IBenchmarkServiceClient client;
-        readonly Task runnerTask;
-        readonly CancellationTokenSource stoppedCts;
+        readonly List<Task> runnerTasks;
+        readonly CancellationTokenSource stoppedCts = new CancellationTokenSource();
         readonly WallClockStopwatch wallClockStopwatch = new WallClockStopwatch();
         
-        public SyncUnaryClientRunner(Channel channel, int payloadSize, HistogramParams histogramParams)
+        public ClientRunnerImpl(List<Channel> channels, ClientType clientType, RpcType rpcType, int outstandingRpcsPerChannel, LoadParams loadParams, PayloadConfig payloadConfig, HistogramParams histogramParams)
         {
-            this.channel = GrpcPreconditions.CheckNotNull(channel);
-            this.payloadSize = payloadSize;
+            GrpcPreconditions.CheckArgument(outstandingRpcsPerChannel > 0, "outstandingRpcsPerChannel");
+            GrpcPreconditions.CheckNotNull(histogramParams, "histogramParams");
+            this.channels = new List<Channel>(channels);
+            this.clientType = clientType;
+            this.rpcType = rpcType;
+            this.payloadConfig = payloadConfig;
             this.histogram = new Histogram(histogramParams.Resolution, histogramParams.MaxPossible);
 
-            this.stoppedCts = new CancellationTokenSource();
-            this.client = BenchmarkService.NewClient(channel);
-            this.runnerTask = Task.Factory.StartNew(Run, TaskCreationOptions.LongRunning);
+            this.runnerTasks = new List<Task>();
+            foreach (var channel in this.channels)
+            {
+                for (int i = 0; i < outstandingRpcsPerChannel; i++)
+                {
+                    var timer = CreateTimer(loadParams, 1.0 / this.channels.Count / outstandingRpcsPerChannel);
+                    var threadBody = GetThreadBody(channel, timer);
+                    this.runnerTasks.Add(Task.Factory.StartNew(threadBody, TaskCreationOptions.LongRunning));
+                }
+            }
         }
 
         public ClientStats GetStats(bool reset)
@@ -122,16 +166,20 @@ namespace Grpc.IntegrationTesting
         public async Task StopAsync()
         {
             stoppedCts.Cancel();
-            await runnerTask;
-            await channel.ShutdownAsync();
+            foreach (var runnerTask in runnerTasks)
+            {
+                await runnerTask;
+            }
+            foreach (var channel in channels)
+            {
+                await channel.ShutdownAsync();
+            }
         }
 
-        private void Run()
+        private void RunUnary(Channel channel, IInterarrivalTimer timer)
         {
-            var request = new SimpleRequest
-            {
-                Payload = CreateZerosPayload(payloadSize)
-            };
+            var client = BenchmarkService.NewClient(channel);
+            var request = CreateSimpleRequest();
             var stopwatch = new Stopwatch();
 
             while (!stoppedCts.Token.IsCancellationRequested)
@@ -142,12 +190,153 @@ namespace Grpc.IntegrationTesting
 
                 // spec requires data point in nanoseconds.
                 histogram.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
+
+                timer.WaitForNext();
             }
+        }
+
+        private async Task RunUnaryAsync(Channel channel, IInterarrivalTimer timer)
+        {
+            var client = BenchmarkService.NewClient(channel);
+            var request = CreateSimpleRequest();
+            var stopwatch = new Stopwatch();
+
+            while (!stoppedCts.Token.IsCancellationRequested)
+            {
+                stopwatch.Restart();
+                await client.UnaryCallAsync(request);
+                stopwatch.Stop();
+
+                // spec requires data point in nanoseconds.
+                histogram.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
+
+                await timer.WaitForNextAsync();
+            }
+        }
+
+        private async Task RunStreamingPingPongAsync(Channel channel, IInterarrivalTimer timer)
+        {
+            var client = BenchmarkService.NewClient(channel);
+            var request = CreateSimpleRequest();
+            var stopwatch = new Stopwatch();
+
+            using (var call = client.StreamingCall())
+            {
+                while (!stoppedCts.Token.IsCancellationRequested)
+                {
+                    stopwatch.Restart();
+                    await call.RequestStream.WriteAsync(request);
+                    await call.ResponseStream.MoveNext();
+                    stopwatch.Stop();
+
+                    // spec requires data point in nanoseconds.
+                    histogram.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
+
+                    await timer.WaitForNextAsync();
+                }
+
+                // finish the streaming call
+                await call.RequestStream.CompleteAsync();
+                Assert.IsFalse(await call.ResponseStream.MoveNext());
+            }
+        }
+
+        private async Task RunGenericStreamingAsync(Channel channel, IInterarrivalTimer timer)
+        {
+            var request = CreateByteBufferRequest();
+            var stopwatch = new Stopwatch();
+
+            var callDetails = new CallInvocationDetails<byte[], byte[]>(channel, GenericService.StreamingCallMethod, new CallOptions());
+
+            using (var call = Calls.AsyncDuplexStreamingCall(callDetails))
+            {
+                while (!stoppedCts.Token.IsCancellationRequested)
+                {
+                    stopwatch.Restart();
+                    await call.RequestStream.WriteAsync(request);
+                    await call.ResponseStream.MoveNext();
+                    stopwatch.Stop();
+
+                    // spec requires data point in nanoseconds.
+                    histogram.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
+
+                    await timer.WaitForNextAsync();
+                }
+
+                // finish the streaming call
+                await call.RequestStream.CompleteAsync();
+                Assert.IsFalse(await call.ResponseStream.MoveNext());
+            }
+        }
+
+        private Action GetThreadBody(Channel channel, IInterarrivalTimer timer)
+        {
+            if (payloadConfig.PayloadCase == PayloadConfig.PayloadOneofCase.BytebufParams)
+            {
+                GrpcPreconditions.CheckArgument(clientType == ClientType.ASYNC_CLIENT, "Generic client only supports async API");
+                GrpcPreconditions.CheckArgument(rpcType == RpcType.STREAMING, "Generic client only supports streaming calls");
+                return () =>
+                {
+                    RunGenericStreamingAsync(channel, timer).Wait();
+                };
+            }
+
+            GrpcPreconditions.CheckNotNull(payloadConfig.SimpleParams);
+            if (clientType == ClientType.SYNC_CLIENT)
+            {
+                GrpcPreconditions.CheckArgument(rpcType == RpcType.UNARY, "Sync client can only be used for Unary calls in C#");
+                return () => RunUnary(channel, timer);
+            }
+            else if (clientType == ClientType.ASYNC_CLIENT)
+            {
+                switch (rpcType)
+                {
+                    case RpcType.UNARY:
+                        return () =>
+                        {
+                            RunUnaryAsync(channel, timer).Wait();
+                        };
+                    case RpcType.STREAMING:
+                        return () =>
+                        {
+                            RunStreamingPingPongAsync(channel, timer).Wait();
+                        };
+                }
+            }
+            throw new ArgumentException("Unsupported configuration.");
+        }
+
+        private SimpleRequest CreateSimpleRequest()
+        {
+            GrpcPreconditions.CheckNotNull(payloadConfig.SimpleParams);
+            return new SimpleRequest
+            {
+                Payload = CreateZerosPayload(payloadConfig.SimpleParams.ReqSize),
+                ResponseSize = payloadConfig.SimpleParams.RespSize
+            };
+        }
+
+        private byte[] CreateByteBufferRequest()
+        {
+            return new byte[payloadConfig.BytebufParams.ReqSize];
         }
 
         private static Payload CreateZerosPayload(int size)
         {
             return new Payload { Body = ByteString.CopyFrom(new byte[size]) };
+        }
+
+        private static IInterarrivalTimer CreateTimer(LoadParams loadParams, double loadMultiplier)
+        {
+            switch (loadParams.LoadCase)
+            {
+                case LoadParams.LoadOneofCase.ClosedLoop:
+                    return new ClosedLoopInterarrivalTimer();
+                case LoadParams.LoadOneofCase.Poisson:
+                    return new PoissonInterarrivalTimer(loadParams.Poisson.OfferedLoad * loadMultiplier);
+                default:
+                    throw new ArgumentException("Unknown load type");
+            }
         }
     }
 }

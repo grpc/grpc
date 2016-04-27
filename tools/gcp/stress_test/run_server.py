@@ -30,6 +30,7 @@
 
 import datetime
 import os
+import resource
 import select
 import subprocess
 import sys
@@ -56,26 +57,36 @@ def run_server():
          might want to connect to the pod for examining logs). This is the
          reason why the script waits forever in case of failures.
   """
+  # Set the 'core file' size to 'unlimited' so that 'core' files are generated
+  # if the server crashes (Note: This is not relevant for Java and Go servers)
+  resource.setrlimit(resource.RLIMIT_CORE,
+                     (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
 
   # Read the parameters from environment variables
   env = dict(os.environ)
 
   run_id = env['RUN_ID']  # The unique run id for this test
   image_type = env['STRESS_TEST_IMAGE_TYPE']
-  image_name = env['STRESS_TEST_IMAGE']
+  stress_server_cmd = env['STRESS_TEST_CMD'].split()
   args_str = env['STRESS_TEST_ARGS_STR']
   pod_name = env['POD_NAME']
   project_id = env['GCP_PROJECT_ID']
   dataset_id = env['DATASET_ID']
   summary_table_id = env['SUMMARY_TABLE_ID']
   qps_table_id = env['QPS_TABLE_ID']
+  # The following parameter is to inform us whether the server runs forever
+  # until forcefully stopped or will it naturally stop after sometime.
+  # This way, we know that the process should not terminate (even if it does
+  # with a success exit code) and flag any termination as a failure.
+  will_run_forever = env.get('WILL_RUN_FOREVER', '1')
 
   logfile_name = env.get('LOGFILE_NAME')
 
   print('pod_name: %s, project_id: %s, run_id: %s, dataset_id: %s, '
-        'summary_table_id: %s, qps_table_id: %s') % (
-            pod_name, project_id, run_id, dataset_id, summary_table_id,
-            qps_table_id)
+        'summary_table_id: %s, qps_table_id: %s') % (pod_name, project_id,
+                                                     run_id, dataset_id,
+                                                     summary_table_id,
+                                                     qps_table_id)
 
   bq_helper = BigQueryHelper(run_id, image_type, pod_name, project_id,
                              dataset_id, summary_table_id, qps_table_id)
@@ -98,7 +109,7 @@ def run_server():
   # Update status that the test is starting (in the status table)
   bq_helper.insert_summary_row(EventType.STARTING, details)
 
-  stress_cmd = [image_name] + [x for x in args_str.split()]
+  stress_cmd = stress_server_cmd + [x for x in args_str.split()]
 
   print 'Launching process %s ...' % stress_cmd
   stress_p = subprocess.Popen(args=stress_cmd,
@@ -106,7 +117,8 @@ def run_server():
                               stderr=subprocess.STDOUT)
 
   returncode = stress_p.wait()
-  if returncode != 0:
+
+  if will_run_forever == '1' or returncode != 0:
     end_time = datetime.datetime.now().isoformat()
     event_type = EventType.FAILURE
     details = 'Returncode: %d; End time: %s' % (returncode, end_time)

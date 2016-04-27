@@ -46,7 +46,6 @@ class Relay(object):
   would be no reason to use an implementation of this interface instead of a
   thread pool.
   """
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def add_value(self, value):

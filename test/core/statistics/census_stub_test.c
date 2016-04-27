@@ -34,10 +34,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "src/core/statistics/census_interface.h"
-#include "src/core/statistics/census_rpc_stats.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include "src/core/ext/census/census_interface.h"
+#include "src/core/ext/census/census_rpc_stats.h"
 #include "test/core/util/test_config.h"
 
 /* Tests census noop stubs in a simulated rpc flow */

@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/iomgr/time_averaged_stats.h"
+#include "src/core/lib/iomgr/time_averaged_stats.h"
 
 #include <math.h>
 

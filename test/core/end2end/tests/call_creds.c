@@ -36,15 +36,15 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <grpc/grpc_security.h>
 #include <grpc/byte_buffer.h>
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+#include "src/core/lib/security/credentials.h"
+#include "src/core/lib/support/string.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "src/core/security/credentials.h"
-#include "src/core/support/string.h"
 
 static const char iam_token[] = "token";
 static const char iam_selector[] = "selector";
@@ -93,9 +93,9 @@ static void drain_cq(grpc_completion_queue *cq) {
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(1000),
-                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5),
-                                         NULL).type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
+                 .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
 }
@@ -475,3 +475,5 @@ void call_creds(grpc_end2end_test_config config) {
     test_request_with_server_rejecting_client_creds(config);
   }
 }
+
+void call_creds_pre_init(void) {}

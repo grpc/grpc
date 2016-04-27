@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -302,6 +302,8 @@ def server_credentials_ssl(pem_root_certs, pem_key_cert_pairs,
         (<SslPemKeyCertPair>pem_key_cert_pairs[i]).c_pair)
   credentials.c_credentials = grpc_ssl_server_credentials_create(
       c_pem_root_certs, credentials.c_ssl_pem_key_cert_pairs,
-      credentials.c_ssl_pem_key_cert_pairs_count, force_client_auth, NULL)
+      credentials.c_ssl_pem_key_cert_pairs_count,
+      GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY if force_client_auth else GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
+      NULL)
   return credentials
 

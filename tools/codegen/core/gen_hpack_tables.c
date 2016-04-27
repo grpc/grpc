@@ -33,13 +33,13 @@
 
 /* generates constant tables for hpack.c */
 
+#include <assert.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
 
 #include <grpc/support/log.h>
-#include "src/core/transport/chttp2/huffsyms.h"
+#include "src/core/ext/transport/chttp2/transport/huffsyms.h"
 
 /*
  * first byte LUT generation

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,8 +42,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/channel/compress_filter.h"
-#include "src/cpp/common/create_auth_context.h"
+#include "src/core/lib/channel/compress_filter.h"
+#include "src/core/lib/surface/call.h"
 
 namespace grpc {
 
@@ -197,7 +197,7 @@ bool ServerContext::IsCancelled() const {
 
 void ServerContext::set_compression_level(grpc_compression_level level) {
   const grpc_compression_algorithm algorithm_for_level =
-      grpc_compression_algorithm_for_level(level);
+      grpc_call_compression_for_level(call_, level);
   set_compression_algorithm(algorithm_for_level);
 }
 
@@ -211,18 +211,6 @@ void ServerContext::set_compression_algorithm(
   }
   GPR_ASSERT(algorithm_name != NULL);
   AddInitialMetadata(GRPC_COMPRESS_REQUEST_ALGORITHM_KEY, algorithm_name);
-}
-
-void ServerContext::set_call(grpc_call* call) {
-  call_ = call;
-  auth_context_ = CreateAuthContext(call);
-}
-
-std::shared_ptr<const AuthContext> ServerContext::auth_context() const {
-  if (auth_context_.get() == nullptr) {
-    auth_context_ = CreateAuthContext(call_);
-  }
-  return auth_context_;
 }
 
 grpc::string ServerContext::peer() const {

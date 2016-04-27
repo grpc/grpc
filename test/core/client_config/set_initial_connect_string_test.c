@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,10 +38,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
 
-#include "src/core/client_config/initial_connect_string.h"
-#include "src/core/iomgr/sockaddr.h"
-#include "src/core/security/credentials.h"
-#include "src/core/support/string.h"
+#include "src/core/ext/client_config/initial_connect_string.h"
+#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/security/credentials.h"
+#include "src/core/lib/support/string.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/test_tcp_server.h"

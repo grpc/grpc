@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -123,8 +123,10 @@ class ClientReader GRPC_FINAL : public ClientReaderInterface<R> {
                ClientContext* context, const W& request)
       : context_(context), call_(channel->CreateCall(method, context, &cq_)) {
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
-              CallOpClientSendClose> ops;
-    ops.SendInitialMetadata(context->send_initial_metadata_);
+              CallOpClientSendClose>
+        ops;
+    ops.SendInitialMetadata(context->send_initial_metadata_,
+                            context->initial_metadata_flags());
     // TODO(ctiller): don't assert
     GPR_CODEGEN_ASSERT(ops.SendMessage(request).ok());
     ops.ClientSendClose();
@@ -189,7 +191,8 @@ class ClientWriter : public ClientWriterInterface<W> {
     finish_ops_.RecvMessage(response);
 
     CallOpSet<CallOpSendInitialMetadata> ops;
-    ops.SendInitialMetadata(context->send_initial_metadata_);
+    ops.SendInitialMetadata(context->send_initial_metadata_,
+                            context->initial_metadata_flags());
     call_.PerformOps(&ops);
     cq_.Pluck(&ops);
   }
@@ -235,7 +238,8 @@ class ClientWriter : public ClientWriterInterface<W> {
  private:
   ClientContext* context_;
   CallOpSet<CallOpRecvInitialMetadata, CallOpGenericRecvMessage,
-            CallOpClientRecvStatus> finish_ops_;
+            CallOpClientRecvStatus>
+      finish_ops_;
   CompletionQueue cq_;
   Call call_;
 };
@@ -266,7 +270,8 @@ class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
                      ClientContext* context)
       : context_(context), call_(channel->CreateCall(method, context, &cq_)) {
     CallOpSet<CallOpSendInitialMetadata> ops;
-    ops.SendInitialMetadata(context->send_initial_metadata_);
+    ops.SendInitialMetadata(context->send_initial_metadata_,
+                            context->initial_metadata_flags());
     call_.PerformOps(&ops);
     cq_.Pluck(&ops);
   }
@@ -332,7 +337,8 @@ class ServerReader GRPC_FINAL : public ReaderInterface<R> {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     CallOpSet<CallOpSendInitialMetadata> ops;
-    ops.SendInitialMetadata(ctx_->initial_metadata_);
+    ops.SendInitialMetadata(ctx_->initial_metadata_,
+                            ctx_->initial_metadata_flags());
     ctx_->sent_initial_metadata_ = true;
     call_->PerformOps(&ops);
     call_->cq()->Pluck(&ops);
@@ -359,7 +365,8 @@ class ServerWriter GRPC_FINAL : public WriterInterface<W> {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     CallOpSet<CallOpSendInitialMetadata> ops;
-    ops.SendInitialMetadata(ctx_->initial_metadata_);
+    ops.SendInitialMetadata(ctx_->initial_metadata_,
+                            ctx_->initial_metadata_flags());
     ctx_->sent_initial_metadata_ = true;
     call_->PerformOps(&ops);
     call_->cq()->Pluck(&ops);
@@ -372,7 +379,8 @@ class ServerWriter GRPC_FINAL : public WriterInterface<W> {
       return false;
     }
     if (!ctx_->sent_initial_metadata_) {
-      ops.SendInitialMetadata(ctx_->initial_metadata_);
+      ops.SendInitialMetadata(ctx_->initial_metadata_,
+                              ctx_->initial_metadata_flags());
       ctx_->sent_initial_metadata_ = true;
     }
     call_->PerformOps(&ops);
@@ -395,7 +403,8 @@ class ServerReaderWriter GRPC_FINAL : public WriterInterface<W>,
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     CallOpSet<CallOpSendInitialMetadata> ops;
-    ops.SendInitialMetadata(ctx_->initial_metadata_);
+    ops.SendInitialMetadata(ctx_->initial_metadata_,
+                            ctx_->initial_metadata_flags());
     ctx_->sent_initial_metadata_ = true;
     call_->PerformOps(&ops);
     call_->cq()->Pluck(&ops);
@@ -415,7 +424,8 @@ class ServerReaderWriter GRPC_FINAL : public WriterInterface<W>,
       return false;
     }
     if (!ctx_->sent_initial_metadata_) {
-      ops.SendInitialMetadata(ctx_->initial_metadata_);
+      ops.SendInitialMetadata(ctx_->initial_metadata_,
+                              ctx_->initial_metadata_flags());
       ctx_->sent_initial_metadata_ = true;
     }
     call_->PerformOps(&ops);

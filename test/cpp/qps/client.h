@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -172,20 +172,6 @@ class Client {
       case LoadParams::kPoisson:
         random_dist.reset(
             new ExpDist(load.poisson().offered_load() / num_threads));
-        break;
-      case LoadParams::kUniform:
-        random_dist.reset(
-            new UniformDist(load.uniform().interarrival_lo() * num_threads,
-                            load.uniform().interarrival_hi() * num_threads));
-        break;
-      case LoadParams::kDeterm:
-        random_dist.reset(
-            new DetDist(num_threads / load.determ().offered_load()));
-        break;
-      case LoadParams::kPareto:
-        random_dist.reset(
-            new ParetoDist(load.pareto().interarrival_base() * num_threads,
-                           load.pareto().alpha()));
         break;
       default:
         GPR_ASSERT(false);

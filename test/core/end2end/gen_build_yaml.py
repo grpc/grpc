@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -53,12 +53,9 @@ END2END_FIXTURES = {
     'h2_census': default_unsecure_fixture_options,
     'h2_fakesec': default_secure_fixture_options._replace(ci_mac=False),
     'h2_full': default_unsecure_fixture_options,
-    'h2_full+poll': default_unsecure_fixture_options._replace(
-        platforms=['linux']),
     'h2_full+pipe': default_unsecure_fixture_options._replace(
         platforms=['linux']),
-    'h2_full+poll+pipe': default_unsecure_fixture_options._replace(
-        platforms=['linux']),
+    'h2_full+trace': default_unsecure_fixture_options._replace(tracing=True),
     'h2_oauth2': default_secure_fixture_options._replace(ci_mac=False),
     'h2_proxy': default_unsecure_fixture_options._replace(includes_proxy=True,
                                                           ci_mac=False),
@@ -66,13 +63,11 @@ END2END_FIXTURES = {
         ci_mac=False),
     'h2_sockpair': socketpair_unsecure_fixture_options._replace(ci_mac=False),
     'h2_sockpair+trace': socketpair_unsecure_fixture_options._replace(
-        tracing=True),
+        ci_mac=False, tracing=True),
     'h2_ssl': default_secure_fixture_options,
-    'h2_ssl+poll': default_secure_fixture_options._replace(platforms=['linux']),
+    'h2_ssl_cert': default_secure_fixture_options,
     'h2_ssl_proxy': default_secure_fixture_options._replace(includes_proxy=True,
                                                             ci_mac=False),
-    'h2_uchannel': default_unsecure_fixture_options._replace(fullstack=False),
-    'h2_uds+poll': uds_fixture_options._replace(platforms=['linux']),
     'h2_uds': uds_fixture_options,
 }
 
@@ -100,10 +95,12 @@ END2END_TESTS = {
                                                   needs_dns=True),
     'disappearing_server': connectivity_test_options,
     'empty_batch': default_test_options,
+    'filter_causes_close': default_test_options,
     'graceful_server_shutdown': default_test_options._replace(cpu_cost=LOWCPU),
     'hpack_size': default_test_options._replace(proxyable=False,
                                                 traceable=False),
     'high_initial_seqno': default_test_options,
+    'idempotent_request': default_test_options,
     'invoke_large_request': default_test_options,
     'large_metadata': default_test_options,
     'max_concurrent_streams': default_test_options._replace(proxyable=False),

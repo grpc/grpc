@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@ want_submodules=`mktemp /tmp/submXXXXXX`
 
 git submodule | awk '{ print $1 }' | sort > $submodules
 cat << EOF | awk '{ print $1 }' | sort > $want_submodules
- 9f897b25800d2f54f5c442ef01a60721aeca6d87 third_party/boringssl (version_for_cocoapods_1.0-67-g9f897b2)
+ c880e42ba1c8032d4cdde2aba0541d8a9d9fa2e9 third_party/boringssl (heads/2661)
  05b155ff59114735ec8cd089f669c4c3d8f59029 third_party/gflags (v2.1.0-45-g05b155f)
  c99458533a9b4c743ed51537e25989ea55944908 third_party/googletest (release-1.7.0)
  f8ac463766281625ad710900479130c7fcb4d63b third_party/nanopb (nanopb-0.3.4-29-gf8ac463)

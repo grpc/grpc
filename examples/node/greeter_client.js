@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,22 +31,30 @@
  *
  */
 
-var PROTO_PATH = __dirname + '/../protos/helloworld.proto';
-
 var grpc = require('grpc');
-var hello_proto = grpc.load(PROTO_PATH).helloworld;
+
+var hello_messages = require('./helloworld_pb');
+var hello_service = require('./helloworld_grpc_pb');
 
 function main() {
-  var client = new hello_proto.Greeter('localhost:50051',
-                                       grpc.credentials.createInsecure());
+  var client = new hello_service.GreeterClient('localhost:50051',
+                                               grpc.credentials.createInsecure());
   var user;
   if (process.argv.length >= 3) {
     user = process.argv[2];
   } else {
     user = 'world';
   }
-  client.sayHello({name: user}, function(err, response) {
-    console.log('Greeting:', response.message);
+
+  var request = new hello_messages.HelloRequest();
+  request.setName(user);
+
+  client.sayHello(request, function(err, response) {
+    if (err) {
+      debugger;
+      throw err;
+    }
+    console.log('Greeting:', response.getMessage());
   });
 }
 

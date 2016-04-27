@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -339,7 +339,7 @@ function _read(size) {
     try {
       deserialized = self.deserialize(data);
     } catch (e) {
-      e.code = grpc.status.INVALID_ARGUMENT;
+      e.code = grpc.status.INTERNAL;
       self.emit('error', e);
       return;
     }
@@ -475,7 +475,7 @@ function handleUnary(call, handler, metadata) {
     try {
       emitter.request = handler.deserialize(result.read);
     } catch (e) {
-      e.code = grpc.status.INVALID_ARGUMENT;
+      e.code = grpc.status.INTERNAL;
       handleError(call, e);
       return;
     }
@@ -516,7 +516,7 @@ function handleServerStreaming(call, handler, metadata) {
     try {
       stream.request = handler.deserialize(result.read);
     } catch (e) {
-      e.code = grpc.status.INVALID_ARGUMENT;
+      e.code = grpc.status.INTERNAL;
       stream.emit('error', e);
       return;
     }

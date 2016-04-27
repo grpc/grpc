@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -130,8 +130,7 @@ class AsyncQpsServerTest : public Server {
     }
   }
   ~AsyncQpsServerTest() {
-    auto deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10);
-    server_->Shutdown(deadline);
+    server_->Shutdown();
     for (auto ss = shutdown_state_.begin(); ss != shutdown_state_.end(); ++ss) {
       (*ss)->set_shutdown();
     }
@@ -388,12 +387,14 @@ static Status ProcessGenericRPC(const PayloadConfig &payload_config,
 }
 
 std::unique_ptr<Server> CreateAsyncServer(const ServerConfig &config) {
-  return std::unique_ptr<Server>(new AsyncQpsServerTest<
-      SimpleRequest, SimpleResponse, BenchmarkService::AsyncService,
-      grpc::ServerContext>(
-      config, RegisterBenchmarkService,
-      &BenchmarkService::AsyncService::RequestUnaryCall,
-      &BenchmarkService::AsyncService::RequestStreamingCall, ProcessSimpleRPC));
+  return std::unique_ptr<Server>(
+      new AsyncQpsServerTest<SimpleRequest, SimpleResponse,
+                             BenchmarkService::AsyncService,
+                             grpc::ServerContext>(
+          config, RegisterBenchmarkService,
+          &BenchmarkService::AsyncService::RequestUnaryCall,
+          &BenchmarkService::AsyncService::RequestStreamingCall,
+          ProcessSimpleRPC));
 }
 std::unique_ptr<Server> CreateAsyncGenericServer(const ServerConfig &config) {
   return std::unique_ptr<Server>(

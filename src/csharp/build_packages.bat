@@ -12,12 +12,12 @@ set NUGET=C:\nuget\nuget.exe
 
 @rem Collect the artifacts built by the previous build step if running on Jenkins
 @rem TODO(jtattermusch): is there a better way to do this?
-xcopy /Y /I ..\..\architecture=x86,language=csharp,platform=windows\artifacts\* grpc.native.csharp\windows_x86\
-xcopy /Y /I ..\..\architecture=x64,language=csharp,platform=windows\artifacts\* grpc.native.csharp\windows_x64\
-xcopy /Y /I ..\..\architecture=x86,language=csharp,platform=linux\artifacts\* grpc.native.csharp\linux_x86\
-xcopy /Y /I ..\..\architecture=x64,language=csharp,platform=linux\artifacts\* grpc.native.csharp\linux_x64\
-xcopy /Y /I ..\..\architecture=x86,language=csharp,platform=macos\artifacts\* grpc.native.csharp\macosx_x86\
-xcopy /Y /I ..\..\architecture=x64,language=csharp,platform=macos\artifacts\* grpc.native.csharp\macosx_x64\
+xcopy /Y /I ..\..\architecture=x86,language=csharp,platform=windows\artifacts\* Grpc.Core\windows_x86\
+xcopy /Y /I ..\..\architecture=x64,language=csharp,platform=windows\artifacts\* Grpc.Core\windows_x64\
+xcopy /Y /I ..\..\architecture=x86,language=csharp,platform=linux\artifacts\* Grpc.Core\linux_x86\
+xcopy /Y /I ..\..\architecture=x64,language=csharp,platform=linux\artifacts\* Grpc.Core\linux_x64\
+xcopy /Y /I ..\..\architecture=x86,language=csharp,platform=macos\artifacts\* Grpc.Core\macosx_x86\
+xcopy /Y /I ..\..\architecture=x64,language=csharp,platform=macos\artifacts\* Grpc.Core\macosx_x64\
 
 @rem Collect protoc artifacts built by the previous build step
 xcopy /Y /I ..\..\architecture=x86,language=protoc,platform=windows\artifacts\* protoc_plugins\windows_x86\
@@ -42,7 +42,6 @@ msbuild Grpc.sln /p:Configuration=ReleaseSigned || goto :error
 
 endlocal
 
-%NUGET% pack grpc.native.csharp\grpc.native.csharp.nuspec -Version %VERSION% || goto :error
 %NUGET% pack Grpc.Auth\Grpc.Auth.nuspec -Symbols -Version %VERSION% || goto :error
 %NUGET% pack Grpc.Core\Grpc.Core.nuspec -Symbols -Version %VERSION% || goto :error
 %NUGET% pack Grpc.HealthCheck\Grpc.HealthCheck.nuspec -Symbols -Version %VERSION_WITH_BETA% -Properties ProtobufVersion=%PROTOBUF_VERSION% || goto :error

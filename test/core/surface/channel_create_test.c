@@ -33,7 +33,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include "src/core/client_config/resolver_registry.h"
+#include "src/core/ext/client_config/resolver_registry.h"
 #include "test/core/util/test_config.h"
 
 void test_unknown_scheme_target(void) {
@@ -43,7 +43,8 @@ void test_unknown_scheme_target(void) {
   grpc_resolver_registry_init("");
 
   chan = grpc_insecure_channel_create("blah://blah", NULL, NULL);
-  GPR_ASSERT(chan == NULL);
+  GPR_ASSERT(chan != NULL);
+  grpc_channel_destroy(chan);
 }
 
 int main(int argc, char **argv) {

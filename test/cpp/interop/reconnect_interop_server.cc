@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -71,6 +71,7 @@ using grpc::Status;
 using grpc::testing::Empty;
 using grpc::testing::ReconnectService;
 using grpc::testing::ReconnectInfo;
+using grpc::testing::ReconnectParams;
 
 static bool got_sigint = false;
 
@@ -92,7 +93,8 @@ class ReconnectServiceImpl : public ReconnectService::Service {
 
   void Poll(int seconds) { reconnect_server_poll(&tcp_server_, seconds); }
 
-  Status Start(ServerContext* context, const Empty* request, Empty* response) {
+  Status Start(ServerContext* context, const ReconnectParams* request,
+               Empty* response) {
     bool start_server = true;
     std::unique_lock<std::mutex> lock(mu_);
     while (serving_ && !shutdown_) {
@@ -105,6 +107,8 @@ class ReconnectServiceImpl : public ReconnectService::Service {
     if (server_started_) {
       start_server = false;
     } else {
+      tcp_server_.max_reconnect_backoff_ms =
+          request->max_reconnect_backoff_ms();
       server_started_ = true;
     }
     lock.unlock();
@@ -133,7 +137,9 @@ class ReconnectServiceImpl : public ReconnectService::Service {
     const double kTransmissionDelay = 100.0;
     const double kBackoffMultiplier = 1.6;
     const double kJitterFactor = 0.2;
-    const int kMaxBackoffMs = 120 * 1000;
+    const int kMaxBackoffMs = tcp_server_.max_reconnect_backoff_ms
+                                  ? tcp_server_.max_reconnect_backoff_ms
+                                  : 120 * 1000;
     bool passed = true;
     for (timestamp_list* cur = tcp_server_.head; cur && cur->next;
          cur = cur->next) {

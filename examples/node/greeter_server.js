@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,16 +31,18 @@
  *
  */
 
-var PROTO_PATH = __dirname + '/../protos/helloworld.proto';
-
 var grpc = require('grpc');
-var hello_proto = grpc.load(PROTO_PATH).helloworld;
+
+var hello_messages = require('./helloworld_pb');
+var hello_service = require('./helloworld_grpc_pb');
 
 /**
  * Implements the SayHello RPC method.
  */
 function sayHello(call, callback) {
-  callback(null, {message: 'Hello ' + call.request.name});
+  var reply = new hello_messages.HelloReply();
+  reply.setMessage("Hello " + call.request.getName());
+  callback(null, reply);
 }
 
 /**
@@ -49,7 +51,7 @@ function sayHello(call, callback) {
  */
 function main() {
   var server = new grpc.Server();
-  server.addProtoService(hello_proto.Greeter.service, {sayHello: sayHello});
+  server.addService(hello_service.GreeterService, {sayHello: sayHello});
   server.bind('0.0.0.0:50051', grpc.ServerCredentials.createInsecure());
   server.start();
 }
