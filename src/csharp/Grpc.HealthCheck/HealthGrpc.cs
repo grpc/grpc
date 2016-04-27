@@ -56,7 +56,9 @@ namespace Grpc.Health.V1 {
     }
 
     // client stub
+    #pragma warning disable 0618
     public class HealthClient : ClientBase<HealthClient>, IHealthClient
+    #pragma warning restore 0618
     {
       public HealthClient(Channel channel) : base(channel)
       {
@@ -96,14 +98,18 @@ namespace Grpc.Health.V1 {
     }
 
     // creates service definition that can be registered with a server
+    #pragma warning disable 0618
     public static ServerServiceDefinition BindService(IHealth serviceImpl)
+    #pragma warning restore 0618
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_Check, serviceImpl.Check).Build();
     }
 
     // creates service definition that can be registered with a server
+    #pragma warning disable 0618
     public static ServerServiceDefinition BindService(HealthBase serviceImpl)
+    #pragma warning restore 0618
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_Check, serviceImpl.Check).Build();
