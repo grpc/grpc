@@ -129,6 +129,7 @@ namespace Grpc.IntegrationTesting
         public ClientRunnerImpl(List<Channel> channels, ClientType clientType, RpcType rpcType, int outstandingRpcsPerChannel, LoadParams loadParams, PayloadConfig payloadConfig, HistogramParams histogramParams)
         {
             GrpcPreconditions.CheckArgument(outstandingRpcsPerChannel > 0, "outstandingRpcsPerChannel");
+            GrpcPreconditions.CheckNotNull(histogramParams, "histogramParams");
             this.channels = new List<Channel>(channels);
             this.clientType = clientType;
             this.rpcType = rpcType;

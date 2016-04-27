@@ -67,5 +67,4 @@ class ServerTest extends PHPUnit_Framework_TestCase
         $this->server = new Grpc\Server([]);
         $this->port = $this->server->addSecureHttp2Port(['0.0.0.0:0']);
     }
-
 }

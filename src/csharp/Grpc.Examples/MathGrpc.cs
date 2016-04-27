@@ -103,7 +103,9 @@ namespace Math {
     }
 
     // client stub
+    #pragma warning disable 0618
     public class MathClient : ClientBase<MathClient>, IMathClient
+    #pragma warning restore 0618
     {
       public MathClient(Channel channel) : base(channel)
       {
@@ -167,7 +169,9 @@ namespace Math {
     }
 
     // creates service definition that can be registered with a server
+    #pragma warning disable 0618
     public static ServerServiceDefinition BindService(IMath serviceImpl)
+    #pragma warning restore 0618
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_Div, serviceImpl.Div)
@@ -177,7 +181,9 @@ namespace Math {
     }
 
     // creates service definition that can be registered with a server
+    #pragma warning disable 0618
     public static ServerServiceDefinition BindService(MathBase serviceImpl)
+    #pragma warning restore 0618
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_Div, serviceImpl.Div)

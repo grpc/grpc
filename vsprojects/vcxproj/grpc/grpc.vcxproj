@@ -293,6 +293,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_win32.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_security.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_security_constants.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\census.h" />
   </ItemGroup>
   <ItemGroup>
@@ -414,6 +415,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\lb_policy.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\lb_policy_factory.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\lb_policy_registry.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\parse_address.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\resolver.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\resolver_factory.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\resolver_registry.h" />
@@ -435,6 +437,8 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\rpc_metric_id.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\init.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting_filter.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.c">
@@ -577,8 +581,6 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\event_string.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\init.c">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\lame_client.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\metadata_array.c">
@@ -710,6 +712,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\lb_policy_factory.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\lb_policy_registry.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\parse_address.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\resolver.c">
     </ClCompile>
