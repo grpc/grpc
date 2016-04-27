@@ -29,9 +29,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 source ~/.nvm/nvm.sh
-set -ex
 
 nvm use 4
+set -ex
 
 cd $(dirname $0)/../..
 

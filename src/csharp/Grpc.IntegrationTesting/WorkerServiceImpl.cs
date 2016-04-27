@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -45,9 +45,16 @@ namespace Grpc.Testing
     /// <summary>
     /// Implementation of WorkerService server
     /// </summary>
-    public class WorkerServiceImpl : WorkerService.IWorkerService
+    public class WorkerServiceImpl : WorkerService.WorkerServiceBase
     {
-        public async Task RunServer(IAsyncStreamReader<ServerArgs> requestStream, IServerStreamWriter<ServerStatus> responseStream, ServerCallContext context)
+        readonly Action stopRequestHandler;
+
+        public WorkerServiceImpl(Action stopRequestHandler)
+        {
+            this.stopRequestHandler = GrpcPreconditions.CheckNotNull(stopRequestHandler);
+        }
+        
+        public override async Task RunServer(IAsyncStreamReader<ServerArgs> requestStream, IServerStreamWriter<ServerStatus> responseStream, ServerCallContext context)
         {
             GrpcPreconditions.CheckState(await requestStream.MoveNext());
             var serverConfig = requestStream.Current.Setup;
@@ -71,7 +78,7 @@ namespace Grpc.Testing
             await runner.StopAsync();
         }
 
-        public async Task RunClient(IAsyncStreamReader<ClientArgs> requestStream, IServerStreamWriter<ClientStatus> responseStream, ServerCallContext context)
+        public override async Task RunClient(IAsyncStreamReader<ClientArgs> requestStream, IServerStreamWriter<ClientStatus> responseStream, ServerCallContext context)
         {
             GrpcPreconditions.CheckState(await requestStream.MoveNext());
             var clientConfig = requestStream.Current.Setup;
@@ -91,6 +98,17 @@ namespace Grpc.Testing
                 });
             }
             await runner.StopAsync();
+        }
+
+        public override Task<CoreResponse> CoreCount(CoreRequest request, ServerCallContext context)
+        {
+            return Task.FromResult(new CoreResponse { Cores = Environment.ProcessorCount });
+        }
+
+        public override Task<Void> QuitWorker(Void request, ServerCallContext context)
+        {
+            stopRequestHandler();
+            return Task.FromResult(new Void());
         }
     }
 }

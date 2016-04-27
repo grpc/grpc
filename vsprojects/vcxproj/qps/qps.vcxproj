@@ -157,7 +157,7 @@
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\report.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\server.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\stats.h" />
-    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\timer.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\usage_timer.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\benchmark_config.h" />
   </ItemGroup>
   <ItemGroup>
@@ -227,7 +227,7 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\server_sync.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\timer.cc">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\usage_timer.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\util\benchmark_config.cc">
     </ClCompile>

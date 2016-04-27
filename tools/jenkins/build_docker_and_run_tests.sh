@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -60,6 +60,9 @@ docker build -t $DOCKER_IMAGE_NAME $DOCKERFILE_DIR
 # Choose random name for docker container
 CONTAINER_NAME="run_tests_$(uuidgen)"
 
+# Git root as seen by the docker instance
+docker_instance_git_root=/var/local/jenkins/grpc
+
 # Run tests inside docker
 docker run \
   -e "RUN_TESTS_COMMAND=$RUN_TESTS_COMMAND" \
@@ -69,9 +72,10 @@ docker run \
   -e XDG_CACHE_HOME=/tmp/xdg-cache-home \
   -e THIS_IS_REALLY_NEEDED='see https://github.com/docker/docker/issues/14203 for why docker is awful' \
   -e HOST_GIT_ROOT=$git_root \
+  -e LOCAL_GIT_ROOT=$docker_instance_git_root \
   -e "BUILD_ID=$BUILD_ID" \
   -i $TTY_FLAG \
-  -v "$git_root:/var/local/jenkins/grpc" \
+  -v "$git_root:$docker_instance_git_root" \
   -v /tmp/ccache:/tmp/ccache \
   -v /tmp/npm-cache:/tmp/npm-cache \
   -v /tmp/xdg-cache-home:/tmp/xdg-cache-home \
@@ -81,11 +85,6 @@ docker run \
   --name=$CONTAINER_NAME \
   $DOCKER_IMAGE_NAME \
   bash -l "/var/local/jenkins/grpc/$DOCKER_RUN_SCRIPT" || DOCKER_FAILED="true"
-
-if [ "$XML_REPORT" != "" ]
-then
-  docker cp "$CONTAINER_NAME:/var/local/git/grpc/$XML_REPORT" $git_root || true
-fi
 
 docker cp "$CONTAINER_NAME:/var/local/git/grpc/reports.zip" $git_root || true
 unzip -o $git_root/reports.zip -d $git_root || true

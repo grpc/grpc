@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -65,7 +65,14 @@ RUN apt-get update && apt-get install -y time && apt-get clean
 
 #========================
 # Sanity test dependencies
-RUN apt-get update && apt-get install -y python-pip
+RUN apt-get update && apt-get install -y \
+      python-pip \
+      autoconf \
+      automake \
+      libtool \
+      curl \
+      python-virtualenv \
+      python-lxml
 RUN pip install simplejson mako
 
 #===================

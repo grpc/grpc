@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -40,8 +40,16 @@ export PATH=$ROOT/bins/$CONFIG:$ROOT/bins/$CONFIG/protobuf:$PATH
 export CFLAGS="-I$ROOT/include -std=gnu99"
 export LDFLAGS="-L$ROOT/libs/$CONFIG"
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1
-export GRPC_PYTHON_ENABLE_CYTHON_TRACING=1
+export GRPC_PYTHON_USE_PRECOMPILED_BINARIES=0
+
+if [ "$CONFIG" = "gcov" ]
+then
+  export GRPC_PYTHON_ENABLE_CYTHON_TRACING=1
+fi
 
 tox --notest
 
 $ROOT/.tox/py27/bin/python $ROOT/setup.py build
+$ROOT/.tox/py27/bin/python $ROOT/setup.py build_py
+$ROOT/.tox/py27/bin/python $ROOT/setup.py build_ext --inplace
+$ROOT/.tox/py27/bin/python $ROOT/setup.py gather --test

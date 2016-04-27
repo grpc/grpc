@@ -32,6 +32,8 @@
 import abc
 import collections
 
+import six
+
 from grpc.framework.base import _constants
 from grpc.framework.base import _interfaces
 from grpc.framework.base import exceptions
@@ -72,9 +74,8 @@ class _EmptyConsumer(stream.Consumer):
     """See stream.Consumer.consume_and_terminate for specification."""
 
 
-class _ConsumerCreator(object):
+class _ConsumerCreator(six.with_metaclass(abc.ABCMeta)):
   """Common specification of different consumer-creating behavior."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def create_consumer(self, requirement):

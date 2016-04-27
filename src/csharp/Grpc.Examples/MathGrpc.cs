@@ -52,6 +52,7 @@ namespace Math {
     }
 
     // client interface
+    [System.Obsolete("Client side interfaced will be removed in the next release. Use client class directly.")]
     public interface IMathClient
     {
       global::Math.DivReply Div(global::Math.DivArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
@@ -67,6 +68,7 @@ namespace Math {
     }
 
     // server-side interface
+    [System.Obsolete("Service implementations should inherit from the generated abstract base class instead.")]
     public interface IMath
     {
       Task<global::Math.DivReply> Div(global::Math.DivArgs request, ServerCallContext context);
@@ -75,66 +77,113 @@ namespace Math {
       Task<global::Math.Num> Sum(IAsyncStreamReader<global::Math.Num> requestStream, ServerCallContext context);
     }
 
+    // server-side abstract class
+    public abstract class MathBase
+    {
+      public virtual Task<global::Math.DivReply> Div(global::Math.DivArgs request, ServerCallContext context)
+      {
+        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+      }
+
+      public virtual Task DivMany(IAsyncStreamReader<global::Math.DivArgs> requestStream, IServerStreamWriter<global::Math.DivReply> responseStream, ServerCallContext context)
+      {
+        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+      }
+
+      public virtual Task Fib(global::Math.FibArgs request, IServerStreamWriter<global::Math.Num> responseStream, ServerCallContext context)
+      {
+        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+      }
+
+      public virtual Task<global::Math.Num> Sum(IAsyncStreamReader<global::Math.Num> requestStream, ServerCallContext context)
+      {
+        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+      }
+
+    }
+
     // client stub
-    public class MathClient : ClientBase, IMathClient
+    #pragma warning disable 0618
+    public class MathClient : ClientBase<MathClient>, IMathClient
+    #pragma warning restore 0618
     {
       public MathClient(Channel channel) : base(channel)
       {
       }
-      public global::Math.DivReply Div(global::Math.DivArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public MathClient(CallInvoker callInvoker) : base(callInvoker)
       {
-        var call = CreateCall(__Method_Div, new CallOptions(headers, deadline, cancellationToken));
-        return Calls.BlockingUnaryCall(call, request);
       }
-      public global::Math.DivReply Div(global::Math.DivArgs request, CallOptions options)
+      ///<summary>Protected parameterless constructor to allow creation of test doubles.</summary>
+      protected MathClient() : base()
       {
-        var call = CreateCall(__Method_Div, options);
-        return Calls.BlockingUnaryCall(call, request);
       }
-      public AsyncUnaryCall<global::Math.DivReply> DivAsync(global::Math.DivArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      ///<summary>Protected constructor to allow creation of configured clients.</summary>
+      protected MathClient(ClientBaseConfiguration configuration) : base(configuration)
       {
-        var call = CreateCall(__Method_Div, new CallOptions(headers, deadline, cancellationToken));
-        return Calls.AsyncUnaryCall(call, request);
       }
-      public AsyncUnaryCall<global::Math.DivReply> DivAsync(global::Math.DivArgs request, CallOptions options)
+
+      public virtual global::Math.DivReply Div(global::Math.DivArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        var call = CreateCall(__Method_Div, options);
-        return Calls.AsyncUnaryCall(call, request);
+        return Div(request, new CallOptions(headers, deadline, cancellationToken));
       }
-      public AsyncDuplexStreamingCall<global::Math.DivArgs, global::Math.DivReply> DivMany(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public virtual global::Math.DivReply Div(global::Math.DivArgs request, CallOptions options)
       {
-        var call = CreateCall(__Method_DivMany, new CallOptions(headers, deadline, cancellationToken));
-        return Calls.AsyncDuplexStreamingCall(call);
+        return CallInvoker.BlockingUnaryCall(__Method_Div, null, options, request);
       }
-      public AsyncDuplexStreamingCall<global::Math.DivArgs, global::Math.DivReply> DivMany(CallOptions options)
+      public virtual AsyncUnaryCall<global::Math.DivReply> DivAsync(global::Math.DivArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        var call = CreateCall(__Method_DivMany, options);
-        return Calls.AsyncDuplexStreamingCall(call);
+        return DivAsync(request, new CallOptions(headers, deadline, cancellationToken));
       }
-      public AsyncServerStreamingCall<global::Math.Num> Fib(global::Math.FibArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public virtual AsyncUnaryCall<global::Math.DivReply> DivAsync(global::Math.DivArgs request, CallOptions options)
       {
-        var call = CreateCall(__Method_Fib, new CallOptions(headers, deadline, cancellationToken));
-        return Calls.AsyncServerStreamingCall(call, request);
+        return CallInvoker.AsyncUnaryCall(__Method_Div, null, options, request);
       }
-      public AsyncServerStreamingCall<global::Math.Num> Fib(global::Math.FibArgs request, CallOptions options)
+      public virtual AsyncDuplexStreamingCall<global::Math.DivArgs, global::Math.DivReply> DivMany(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        var call = CreateCall(__Method_Fib, options);
-        return Calls.AsyncServerStreamingCall(call, request);
+        return DivMany(new CallOptions(headers, deadline, cancellationToken));
       }
-      public AsyncClientStreamingCall<global::Math.Num, global::Math.Num> Sum(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public virtual AsyncDuplexStreamingCall<global::Math.DivArgs, global::Math.DivReply> DivMany(CallOptions options)
       {
-        var call = CreateCall(__Method_Sum, new CallOptions(headers, deadline, cancellationToken));
-        return Calls.AsyncClientStreamingCall(call);
+        return CallInvoker.AsyncDuplexStreamingCall(__Method_DivMany, null, options);
       }
-      public AsyncClientStreamingCall<global::Math.Num, global::Math.Num> Sum(CallOptions options)
+      public virtual AsyncServerStreamingCall<global::Math.Num> Fib(global::Math.FibArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        var call = CreateCall(__Method_Sum, options);
-        return Calls.AsyncClientStreamingCall(call);
+        return Fib(request, new CallOptions(headers, deadline, cancellationToken));
+      }
+      public virtual AsyncServerStreamingCall<global::Math.Num> Fib(global::Math.FibArgs request, CallOptions options)
+      {
+        return CallInvoker.AsyncServerStreamingCall(__Method_Fib, null, options, request);
+      }
+      public virtual AsyncClientStreamingCall<global::Math.Num, global::Math.Num> Sum(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      {
+        return Sum(new CallOptions(headers, deadline, cancellationToken));
+      }
+      public virtual AsyncClientStreamingCall<global::Math.Num, global::Math.Num> Sum(CallOptions options)
+      {
+        return CallInvoker.AsyncClientStreamingCall(__Method_Sum, null, options);
+      }
+      protected override MathClient NewInstance(ClientBaseConfiguration configuration)
+      {
+        return new MathClient(configuration);
       }
     }
 
     // creates service definition that can be registered with a server
+    #pragma warning disable 0618
     public static ServerServiceDefinition BindService(IMath serviceImpl)
+    #pragma warning restore 0618
+    {
+      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+          .AddMethod(__Method_Div, serviceImpl.Div)
+          .AddMethod(__Method_DivMany, serviceImpl.DivMany)
+          .AddMethod(__Method_Fib, serviceImpl.Fib)
+          .AddMethod(__Method_Sum, serviceImpl.Sum).Build();
+    }
+
+    // creates service definition that can be registered with a server
+    #pragma warning disable 0618
+    public static ServerServiceDefinition BindService(MathBase serviceImpl)
+    #pragma warning restore 0618
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_Div, serviceImpl.Div)

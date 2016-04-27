@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/support/string.h"
+#include "src/core/lib/support/string.h"
 
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/support/port_platform.h>
@@ -911,9 +911,12 @@ grpcsharp_ssl_server_credentials_create(
       key_cert_pairs[i].private_key = key_cert_pair_private_key_array[i];
     }
   }
-  creds = grpc_ssl_server_credentials_create(pem_root_certs, key_cert_pairs,
-                                             num_key_cert_pairs,
-                                             force_client_auth, NULL);
+  creds = grpc_ssl_server_credentials_create_ex(
+      pem_root_certs, key_cert_pairs, num_key_cert_pairs,
+      force_client_auth
+          ? GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
+          : GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
+      NULL);
   gpr_free(key_cert_pairs);
   return creds;
 }

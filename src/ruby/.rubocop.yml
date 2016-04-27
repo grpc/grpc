@@ -7,7 +7,7 @@ AllCops:
     - 'bin/apis/**/*'
     - 'bin/math.rb'
     - 'bin/math_services.rb'
-    - 'pb/grpc/health/v1alpha/*'
+    - 'pb/grpc/health/v1/*'
     - 'pb/test/**/*'
 
 Metrics/CyclomaticComplexity:
@@ -15,3 +15,6 @@ Metrics/CyclomaticComplexity:
 
 Metrics/PerceivedComplexity:
   Max: 8
+
+Metrics/ClassLength:
+  Max: 250

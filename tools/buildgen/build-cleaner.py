@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -40,6 +40,7 @@ TEST = (os.environ.get('TEST', 'false') == 'true')
 _TOP_LEVEL_KEYS = ['settings', 'proto_deps', 'filegroups', 'libs', 'targets', 'vspackages']
 _ELEM_KEYS = [
     'name',
+    'gtest',
     'cpu_cost',
     'flaky',
     'build',
@@ -98,4 +99,3 @@ for filename in sys.argv[1:]:
   else:
     with open(filename, 'w') as f:
       f.write(output)
-

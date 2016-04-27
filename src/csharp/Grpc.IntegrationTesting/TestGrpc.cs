@@ -69,6 +69,7 @@ namespace Grpc.Testing {
     }
 
     // client interface
+    [System.Obsolete("Client side interfaced will be removed in the next release. Use client class directly.")]
     public interface ITestServiceClient
     {
       global::Grpc.Testing.Empty EmptyCall(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
@@ -90,6 +91,7 @@ namespace Grpc.Testing {
     }
 
     // server-side interface
+    [System.Obsolete("Service implementations should inherit from the generated abstract base class instead.")]
     public interface ITestService
     {
       Task<global::Grpc.Testing.Empty> EmptyCall(global::Grpc.Testing.Empty request, ServerCallContext context);
@@ -100,96 +102,149 @@ namespace Grpc.Testing {
       Task HalfDuplexCall(IAsyncStreamReader<global::Grpc.Testing.StreamingOutputCallRequest> requestStream, IServerStreamWriter<global::Grpc.Testing.StreamingOutputCallResponse> responseStream, ServerCallContext context);
     }
 
+    // server-side abstract class
+    public abstract class TestServiceBase
+    {
+      public virtual Task<global::Grpc.Testing.Empty> EmptyCall(global::Grpc.Testing.Empty request, ServerCallContext context)
+      {
+        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+      }
+
+      public virtual Task<global::Grpc.Testing.SimpleResponse> UnaryCall(global::Grpc.Testing.SimpleRequest request, ServerCallContext context)
+      {
+        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+      }
+
+      public virtual Task StreamingOutputCall(global::Grpc.Testing.StreamingOutputCallRequest request, IServerStreamWriter<global::Grpc.Testing.StreamingOutputCallResponse> responseStream, ServerCallContext context)
+      {
+        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+      }
+
+      public virtual Task<global::Grpc.Testing.StreamingInputCallResponse> StreamingInputCall(IAsyncStreamReader<global::Grpc.Testing.StreamingInputCallRequest> requestStream, ServerCallContext context)
+      {
+        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+      }
+
+      public virtual Task FullDuplexCall(IAsyncStreamReader<global::Grpc.Testing.StreamingOutputCallRequest> requestStream, IServerStreamWriter<global::Grpc.Testing.StreamingOutputCallResponse> responseStream, ServerCallContext context)
+      {
+        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+      }
+
+      public virtual Task HalfDuplexCall(IAsyncStreamReader<global::Grpc.Testing.StreamingOutputCallRequest> requestStream, IServerStreamWriter<global::Grpc.Testing.StreamingOutputCallResponse> responseStream, ServerCallContext context)
+      {
+        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+      }
+
+    }
+
     // client stub
-    public class TestServiceClient : ClientBase, ITestServiceClient
+    #pragma warning disable 0618
+    public class TestServiceClient : ClientBase<TestServiceClient>, ITestServiceClient
+    #pragma warning restore 0618
     {
       public TestServiceClient(Channel channel) : base(channel)
       {
       }
-      public global::Grpc.Testing.Empty EmptyCall(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public TestServiceClient(CallInvoker callInvoker) : base(callInvoker)
       {
-        var call = CreateCall(__Method_EmptyCall, new CallOptions(headers, deadline, cancellationToken));
-        return Calls.BlockingUnaryCall(call, request);
       }
-      public global::Grpc.Testing.Empty EmptyCall(global::Grpc.Testing.Empty request, CallOptions options)
+      ///<summary>Protected parameterless constructor to allow creation of test doubles.</summary>
+      protected TestServiceClient() : base()
       {
-        var call = CreateCall(__Method_EmptyCall, options);
-        return Calls.BlockingUnaryCall(call, request);
       }
-      public AsyncUnaryCall<global::Grpc.Testing.Empty> EmptyCallAsync(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      ///<summary>Protected constructor to allow creation of configured clients.</summary>
+      protected TestServiceClient(ClientBaseConfiguration configuration) : base(configuration)
       {
-        var call = CreateCall(__Method_EmptyCall, new CallOptions(headers, deadline, cancellationToken));
-        return Calls.AsyncUnaryCall(call, request);
       }
-      public AsyncUnaryCall<global::Grpc.Testing.Empty> EmptyCallAsync(global::Grpc.Testing.Empty request, CallOptions options)
+
+      public virtual global::Grpc.Testing.Empty EmptyCall(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        var call = CreateCall(__Method_EmptyCall, options);
-        return Calls.AsyncUnaryCall(call, request);
+        return EmptyCall(request, new CallOptions(headers, deadline, cancellationToken));
       }
-      public global::Grpc.Testing.SimpleResponse UnaryCall(global::Grpc.Testing.SimpleRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public virtual global::Grpc.Testing.Empty EmptyCall(global::Grpc.Testing.Empty request, CallOptions options)
       {
-        var call = CreateCall(__Method_UnaryCall, new CallOptions(headers, deadline, cancellationToken));
-        return Calls.BlockingUnaryCall(call, request);
+        return CallInvoker.BlockingUnaryCall(__Method_EmptyCall, null, options, request);
       }
-      public global::Grpc.Testing.SimpleResponse UnaryCall(global::Grpc.Testing.SimpleRequest request, CallOptions options)
+      public virtual AsyncUnaryCall<global::Grpc.Testing.Empty> EmptyCallAsync(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        var call = CreateCall(__Method_UnaryCall, options);
-        return Calls.BlockingUnaryCall(call, request);
+        return EmptyCallAsync(request, new CallOptions(headers, deadline, cancellationToken));
       }
-      public AsyncUnaryCall<global::Grpc.Testing.SimpleResponse> UnaryCallAsync(global::Grpc.Testing.SimpleRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public virtual AsyncUnaryCall<global::Grpc.Testing.Empty> EmptyCallAsync(global::Grpc.Testing.Empty request, CallOptions options)
       {
-        var call = CreateCall(__Method_UnaryCall, new CallOptions(headers, deadline, cancellationToken));
-        return Calls.AsyncUnaryCall(call, request);
+        return CallInvoker.AsyncUnaryCall(__Method_EmptyCall, null, options, request);
       }
-      public AsyncUnaryCall<global::Grpc.Testing.SimpleResponse> UnaryCallAsync(global::Grpc.Testing.SimpleRequest request, CallOptions options)
+      public virtual global::Grpc.Testing.SimpleResponse UnaryCall(global::Grpc.Testing.SimpleRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        var call = CreateCall(__Method_UnaryCall, options);
-        return Calls.AsyncUnaryCall(call, request);
+        return UnaryCall(request, new CallOptions(headers, deadline, cancellationToken));
       }
-      public AsyncServerStreamingCall<global::Grpc.Testing.StreamingOutputCallResponse> StreamingOutputCall(global::Grpc.Testing.StreamingOutputCallRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public virtual global::Grpc.Testing.SimpleResponse UnaryCall(global::Grpc.Testing.SimpleRequest request, CallOptions options)
       {
-        var call = CreateCall(__Method_StreamingOutputCall, new CallOptions(headers, deadline, cancellationToken));
-        return Calls.AsyncServerStreamingCall(call, request);
+        return CallInvoker.BlockingUnaryCall(__Method_UnaryCall, null, options, request);
       }
-      public AsyncServerStreamingCall<global::Grpc.Testing.StreamingOutputCallResponse> StreamingOutputCall(global::Grpc.Testing.StreamingOutputCallRequest request, CallOptions options)
+      public virtual AsyncUnaryCall<global::Grpc.Testing.SimpleResponse> UnaryCallAsync(global::Grpc.Testing.SimpleRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        var call = CreateCall(__Method_StreamingOutputCall, options);
-        return Calls.AsyncServerStreamingCall(call, request);
+        return UnaryCallAsync(request, new CallOptions(headers, deadline, cancellationToken));
       }
-      public AsyncClientStreamingCall<global::Grpc.Testing.StreamingInputCallRequest, global::Grpc.Testing.StreamingInputCallResponse> StreamingInputCall(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public virtual AsyncUnaryCall<global::Grpc.Testing.SimpleResponse> UnaryCallAsync(global::Grpc.Testing.SimpleRequest request, CallOptions options)
       {
-        var call = CreateCall(__Method_StreamingInputCall, new CallOptions(headers, deadline, cancellationToken));
-        return Calls.AsyncClientStreamingCall(call);
+        return CallInvoker.AsyncUnaryCall(__Method_UnaryCall, null, options, request);
       }
-      public AsyncClientStreamingCall<global::Grpc.Testing.StreamingInputCallRequest, global::Grpc.Testing.StreamingInputCallResponse> StreamingInputCall(CallOptions options)
+      public virtual AsyncServerStreamingCall<global::Grpc.Testing.StreamingOutputCallResponse> StreamingOutputCall(global::Grpc.Testing.StreamingOutputCallRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        var call = CreateCall(__Method_StreamingInputCall, options);
-        return Calls.AsyncClientStreamingCall(call);
+        return StreamingOutputCall(request, new CallOptions(headers, deadline, cancellationToken));
       }
-      public AsyncDuplexStreamingCall<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse> FullDuplexCall(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public virtual AsyncServerStreamingCall<global::Grpc.Testing.StreamingOutputCallResponse> StreamingOutputCall(global::Grpc.Testing.StreamingOutputCallRequest request, CallOptions options)
       {
-        var call = CreateCall(__Method_FullDuplexCall, new CallOptions(headers, deadline, cancellationToken));
-        return Calls.AsyncDuplexStreamingCall(call);
+        return CallInvoker.AsyncServerStreamingCall(__Method_StreamingOutputCall, null, options, request);
       }
-      public AsyncDuplexStreamingCall<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse> FullDuplexCall(CallOptions options)
+      public virtual AsyncClientStreamingCall<global::Grpc.Testing.StreamingInputCallRequest, global::Grpc.Testing.StreamingInputCallResponse> StreamingInputCall(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        var call = CreateCall(__Method_FullDuplexCall, options);
-        return Calls.AsyncDuplexStreamingCall(call);
+        return StreamingInputCall(new CallOptions(headers, deadline, cancellationToken));
       }
-      public AsyncDuplexStreamingCall<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse> HalfDuplexCall(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public virtual AsyncClientStreamingCall<global::Grpc.Testing.StreamingInputCallRequest, global::Grpc.Testing.StreamingInputCallResponse> StreamingInputCall(CallOptions options)
       {
-        var call = CreateCall(__Method_HalfDuplexCall, new CallOptions(headers, deadline, cancellationToken));
-        return Calls.AsyncDuplexStreamingCall(call);
+        return CallInvoker.AsyncClientStreamingCall(__Method_StreamingInputCall, null, options);
       }
-      public AsyncDuplexStreamingCall<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse> HalfDuplexCall(CallOptions options)
+      public virtual AsyncDuplexStreamingCall<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse> FullDuplexCall(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        var call = CreateCall(__Method_HalfDuplexCall, options);
-        return Calls.AsyncDuplexStreamingCall(call);
+        return FullDuplexCall(new CallOptions(headers, deadline, cancellationToken));
+      }
+      public virtual AsyncDuplexStreamingCall<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse> FullDuplexCall(CallOptions options)
+      {
+        return CallInvoker.AsyncDuplexStreamingCall(__Method_FullDuplexCall, null, options);
+      }
+      public virtual AsyncDuplexStreamingCall<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse> HalfDuplexCall(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      {
+        return HalfDuplexCall(new CallOptions(headers, deadline, cancellationToken));
+      }
+      public virtual AsyncDuplexStreamingCall<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse> HalfDuplexCall(CallOptions options)
+      {
+        return CallInvoker.AsyncDuplexStreamingCall(__Method_HalfDuplexCall, null, options);
+      }
+      protected override TestServiceClient NewInstance(ClientBaseConfiguration configuration)
+      {
+        return new TestServiceClient(configuration);
       }
     }
 
     // creates service definition that can be registered with a server
+    #pragma warning disable 0618
     public static ServerServiceDefinition BindService(ITestService serviceImpl)
+    #pragma warning restore 0618
+    {
+      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+          .AddMethod(__Method_EmptyCall, serviceImpl.EmptyCall)
+          .AddMethod(__Method_UnaryCall, serviceImpl.UnaryCall)
+          .AddMethod(__Method_StreamingOutputCall, serviceImpl.StreamingOutputCall)
+          .AddMethod(__Method_StreamingInputCall, serviceImpl.StreamingInputCall)
+          .AddMethod(__Method_FullDuplexCall, serviceImpl.FullDuplexCall)
+          .AddMethod(__Method_HalfDuplexCall, serviceImpl.HalfDuplexCall).Build();
+    }
+
+    // creates service definition that can be registered with a server
+    #pragma warning disable 0618
+    public static ServerServiceDefinition BindService(TestServiceBase serviceImpl)
+    #pragma warning restore 0618
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_EmptyCall, serviceImpl.EmptyCall)
@@ -227,6 +282,7 @@ namespace Grpc.Testing {
     }
 
     // client interface
+    [System.Obsolete("Client side interfaced will be removed in the next release. Use client class directly.")]
     public interface IUnimplementedServiceClient
     {
       global::Grpc.Testing.Empty UnimplementedCall(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
@@ -236,41 +292,77 @@ namespace Grpc.Testing {
     }
 
     // server-side interface
+    [System.Obsolete("Service implementations should inherit from the generated abstract base class instead.")]
     public interface IUnimplementedService
     {
       Task<global::Grpc.Testing.Empty> UnimplementedCall(global::Grpc.Testing.Empty request, ServerCallContext context);
     }
 
+    // server-side abstract class
+    public abstract class UnimplementedServiceBase
+    {
+      public virtual Task<global::Grpc.Testing.Empty> UnimplementedCall(global::Grpc.Testing.Empty request, ServerCallContext context)
+      {
+        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+      }
+
+    }
+
     // client stub
-    public class UnimplementedServiceClient : ClientBase, IUnimplementedServiceClient
+    #pragma warning disable 0618
+    public class UnimplementedServiceClient : ClientBase<UnimplementedServiceClient>, IUnimplementedServiceClient
+    #pragma warning restore 0618
     {
       public UnimplementedServiceClient(Channel channel) : base(channel)
       {
       }
-      public global::Grpc.Testing.Empty UnimplementedCall(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public UnimplementedServiceClient(CallInvoker callInvoker) : base(callInvoker)
       {
-        var call = CreateCall(__Method_UnimplementedCall, new CallOptions(headers, deadline, cancellationToken));
-        return Calls.BlockingUnaryCall(call, request);
       }
-      public global::Grpc.Testing.Empty UnimplementedCall(global::Grpc.Testing.Empty request, CallOptions options)
+      ///<summary>Protected parameterless constructor to allow creation of test doubles.</summary>
+      protected UnimplementedServiceClient() : base()
       {
-        var call = CreateCall(__Method_UnimplementedCall, options);
-        return Calls.BlockingUnaryCall(call, request);
       }
-      public AsyncUnaryCall<global::Grpc.Testing.Empty> UnimplementedCallAsync(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      ///<summary>Protected constructor to allow creation of configured clients.</summary>
+      protected UnimplementedServiceClient(ClientBaseConfiguration configuration) : base(configuration)
       {
-        var call = CreateCall(__Method_UnimplementedCall, new CallOptions(headers, deadline, cancellationToken));
-        return Calls.AsyncUnaryCall(call, request);
       }
-      public AsyncUnaryCall<global::Grpc.Testing.Empty> UnimplementedCallAsync(global::Grpc.Testing.Empty request, CallOptions options)
+
+      public virtual global::Grpc.Testing.Empty UnimplementedCall(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        var call = CreateCall(__Method_UnimplementedCall, options);
-        return Calls.AsyncUnaryCall(call, request);
+        return UnimplementedCall(request, new CallOptions(headers, deadline, cancellationToken));
+      }
+      public virtual global::Grpc.Testing.Empty UnimplementedCall(global::Grpc.Testing.Empty request, CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_UnimplementedCall, null, options, request);
+      }
+      public virtual AsyncUnaryCall<global::Grpc.Testing.Empty> UnimplementedCallAsync(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      {
+        return UnimplementedCallAsync(request, new CallOptions(headers, deadline, cancellationToken));
+      }
+      public virtual AsyncUnaryCall<global::Grpc.Testing.Empty> UnimplementedCallAsync(global::Grpc.Testing.Empty request, CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_UnimplementedCall, null, options, request);
+      }
+      protected override UnimplementedServiceClient NewInstance(ClientBaseConfiguration configuration)
+      {
+        return new UnimplementedServiceClient(configuration);
       }
     }
 
     // creates service definition that can be registered with a server
+    #pragma warning disable 0618
     public static ServerServiceDefinition BindService(IUnimplementedService serviceImpl)
+    #pragma warning restore 0618
+    {
+      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+          .AddMethod(__Method_UnimplementedCall, serviceImpl.UnimplementedCall).Build();
+    }
+
+    // creates service definition that can be registered with a server
+    #pragma warning disable 0618
+    public static ServerServiceDefinition BindService(UnimplementedServiceBase serviceImpl)
+    #pragma warning restore 0618
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_UnimplementedCall, serviceImpl.UnimplementedCall).Build();
@@ -287,14 +379,15 @@ namespace Grpc.Testing {
   {
     static readonly string __ServiceName = "grpc.testing.ReconnectService";
 
+    static readonly Marshaller<global::Grpc.Testing.ReconnectParams> __Marshaller_ReconnectParams = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.ReconnectParams.Parser.ParseFrom);
     static readonly Marshaller<global::Grpc.Testing.Empty> __Marshaller_Empty = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.Empty.Parser.ParseFrom);
     static readonly Marshaller<global::Grpc.Testing.ReconnectInfo> __Marshaller_ReconnectInfo = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.ReconnectInfo.Parser.ParseFrom);
 
-    static readonly Method<global::Grpc.Testing.Empty, global::Grpc.Testing.Empty> __Method_Start = new Method<global::Grpc.Testing.Empty, global::Grpc.Testing.Empty>(
+    static readonly Method<global::Grpc.Testing.ReconnectParams, global::Grpc.Testing.Empty> __Method_Start = new Method<global::Grpc.Testing.ReconnectParams, global::Grpc.Testing.Empty>(
         MethodType.Unary,
         __ServiceName,
         "Start",
-        __Marshaller_Empty,
+        __Marshaller_ReconnectParams,
         __Marshaller_Empty);
 
     static readonly Method<global::Grpc.Testing.Empty, global::Grpc.Testing.ReconnectInfo> __Method_Stop = new Method<global::Grpc.Testing.Empty, global::Grpc.Testing.ReconnectInfo>(
@@ -311,12 +404,13 @@ namespace Grpc.Testing {
     }
 
     // client interface
+    [System.Obsolete("Client side interfaced will be removed in the next release. Use client class directly.")]
     public interface IReconnectServiceClient
     {
-      global::Grpc.Testing.Empty Start(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      global::Grpc.Testing.Empty Start(global::Grpc.Testing.Empty request, CallOptions options);
-      AsyncUnaryCall<global::Grpc.Testing.Empty> StartAsync(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      AsyncUnaryCall<global::Grpc.Testing.Empty> StartAsync(global::Grpc.Testing.Empty request, CallOptions options);
+      global::Grpc.Testing.Empty Start(global::Grpc.Testing.ReconnectParams request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+      global::Grpc.Testing.Empty Start(global::Grpc.Testing.ReconnectParams request, CallOptions options);
+      AsyncUnaryCall<global::Grpc.Testing.Empty> StartAsync(global::Grpc.Testing.ReconnectParams request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+      AsyncUnaryCall<global::Grpc.Testing.Empty> StartAsync(global::Grpc.Testing.ReconnectParams request, CallOptions options);
       global::Grpc.Testing.ReconnectInfo Stop(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
       global::Grpc.Testing.ReconnectInfo Stop(global::Grpc.Testing.Empty request, CallOptions options);
       AsyncUnaryCall<global::Grpc.Testing.ReconnectInfo> StopAsync(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
@@ -324,62 +418,100 @@ namespace Grpc.Testing {
     }
 
     // server-side interface
+    [System.Obsolete("Service implementations should inherit from the generated abstract base class instead.")]
     public interface IReconnectService
     {
-      Task<global::Grpc.Testing.Empty> Start(global::Grpc.Testing.Empty request, ServerCallContext context);
+      Task<global::Grpc.Testing.Empty> Start(global::Grpc.Testing.ReconnectParams request, ServerCallContext context);
       Task<global::Grpc.Testing.ReconnectInfo> Stop(global::Grpc.Testing.Empty request, ServerCallContext context);
     }
 
+    // server-side abstract class
+    public abstract class ReconnectServiceBase
+    {
+      public virtual Task<global::Grpc.Testing.Empty> Start(global::Grpc.Testing.ReconnectParams request, ServerCallContext context)
+      {
+        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+      }
+
+      public virtual Task<global::Grpc.Testing.ReconnectInfo> Stop(global::Grpc.Testing.Empty request, ServerCallContext context)
+      {
+        throw new RpcException(new Status(StatusCode.Unimplemented, ""));
+      }
+
+    }
+
     // client stub
-    public class ReconnectServiceClient : ClientBase, IReconnectServiceClient
+    #pragma warning disable 0618
+    public class ReconnectServiceClient : ClientBase<ReconnectServiceClient>, IReconnectServiceClient
+    #pragma warning restore 0618
     {
       public ReconnectServiceClient(Channel channel) : base(channel)
       {
       }
-      public global::Grpc.Testing.Empty Start(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public ReconnectServiceClient(CallInvoker callInvoker) : base(callInvoker)
       {
-        var call = CreateCall(__Method_Start, new CallOptions(headers, deadline, cancellationToken));
-        return Calls.BlockingUnaryCall(call, request);
       }
-      public global::Grpc.Testing.Empty Start(global::Grpc.Testing.Empty request, CallOptions options)
+      ///<summary>Protected parameterless constructor to allow creation of test doubles.</summary>
+      protected ReconnectServiceClient() : base()
       {
-        var call = CreateCall(__Method_Start, options);
-        return Calls.BlockingUnaryCall(call, request);
       }
-      public AsyncUnaryCall<global::Grpc.Testing.Empty> StartAsync(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      ///<summary>Protected constructor to allow creation of configured clients.</summary>
+      protected ReconnectServiceClient(ClientBaseConfiguration configuration) : base(configuration)
       {
-        var call = CreateCall(__Method_Start, new CallOptions(headers, deadline, cancellationToken));
-        return Calls.AsyncUnaryCall(call, request);
       }
-      public AsyncUnaryCall<global::Grpc.Testing.Empty> StartAsync(global::Grpc.Testing.Empty request, CallOptions options)
+
+      public virtual global::Grpc.Testing.Empty Start(global::Grpc.Testing.ReconnectParams request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        var call = CreateCall(__Method_Start, options);
-        return Calls.AsyncUnaryCall(call, request);
+        return Start(request, new CallOptions(headers, deadline, cancellationToken));
       }
-      public global::Grpc.Testing.ReconnectInfo Stop(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public virtual global::Grpc.Testing.Empty Start(global::Grpc.Testing.ReconnectParams request, CallOptions options)
       {
-        var call = CreateCall(__Method_Stop, new CallOptions(headers, deadline, cancellationToken));
-        return Calls.BlockingUnaryCall(call, request);
+        return CallInvoker.BlockingUnaryCall(__Method_Start, null, options, request);
       }
-      public global::Grpc.Testing.ReconnectInfo Stop(global::Grpc.Testing.Empty request, CallOptions options)
+      public virtual AsyncUnaryCall<global::Grpc.Testing.Empty> StartAsync(global::Grpc.Testing.ReconnectParams request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        var call = CreateCall(__Method_Stop, options);
-        return Calls.BlockingUnaryCall(call, request);
+        return StartAsync(request, new CallOptions(headers, deadline, cancellationToken));
       }
-      public AsyncUnaryCall<global::Grpc.Testing.ReconnectInfo> StopAsync(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public virtual AsyncUnaryCall<global::Grpc.Testing.Empty> StartAsync(global::Grpc.Testing.ReconnectParams request, CallOptions options)
       {
-        var call = CreateCall(__Method_Stop, new CallOptions(headers, deadline, cancellationToken));
-        return Calls.AsyncUnaryCall(call, request);
+        return CallInvoker.AsyncUnaryCall(__Method_Start, null, options, request);
       }
-      public AsyncUnaryCall<global::Grpc.Testing.ReconnectInfo> StopAsync(global::Grpc.Testing.Empty request, CallOptions options)
+      public virtual global::Grpc.Testing.ReconnectInfo Stop(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        var call = CreateCall(__Method_Stop, options);
-        return Calls.AsyncUnaryCall(call, request);
+        return Stop(request, new CallOptions(headers, deadline, cancellationToken));
+      }
+      public virtual global::Grpc.Testing.ReconnectInfo Stop(global::Grpc.Testing.Empty request, CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_Stop, null, options, request);
+      }
+      public virtual AsyncUnaryCall<global::Grpc.Testing.ReconnectInfo> StopAsync(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      {
+        return StopAsync(request, new CallOptions(headers, deadline, cancellationToken));
+      }
+      public virtual AsyncUnaryCall<global::Grpc.Testing.ReconnectInfo> StopAsync(global::Grpc.Testing.Empty request, CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_Stop, null, options, request);
+      }
+      protected override ReconnectServiceClient NewInstance(ClientBaseConfiguration configuration)
+      {
+        return new ReconnectServiceClient(configuration);
       }
     }
 
     // creates service definition that can be registered with a server
+    #pragma warning disable 0618
     public static ServerServiceDefinition BindService(IReconnectService serviceImpl)
+    #pragma warning restore 0618
+    {
+      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+          .AddMethod(__Method_Start, serviceImpl.Start)
+          .AddMethod(__Method_Stop, serviceImpl.Stop).Build();
+    }
+
+    // creates service definition that can be registered with a server
+    #pragma warning disable 0618
+    public static ServerServiceDefinition BindService(ReconnectServiceBase serviceImpl)
+    #pragma warning restore 0618
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_Start, serviceImpl.Start)

@@ -74,4 +74,4 @@
 #include <grpc/support/tls_pthread.h>
 #endif
 
-#endif
+#endif /* GRPC_SUPPORT_TLS_H */

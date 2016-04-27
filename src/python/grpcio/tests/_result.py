@@ -27,7 +27,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import cStringIO as StringIO
+from __future__ import absolute_import
+
 import collections
 import itertools
 import traceback
@@ -35,6 +36,7 @@ import unittest
 from xml.etree import ElementTree
 
 import coverage
+from six import moves
 
 from tests import _loader
 
@@ -202,7 +204,7 @@ class AugmentedResult(unittest.TestResult):
     """
     case_id = self.id_map(test)
     self.cases[case_id] = self.cases[case_id].updated(
-        stdout=stdout, stderr=stderr)
+        stdout=stdout.decode(), stderr=stderr.decode())
 
   def augmented_results(self, filter):
     """Convenience method to retrieve filtered case results.
@@ -356,7 +358,7 @@ def _traceback_string(type, value, trace):
   Returns:
     str: Formatted exception descriptive string.
   """
-  buffer = StringIO.StringIO()
+  buffer = moves.cStringIO()
   traceback.print_exception(type, value, trace, file=buffer)
   return buffer.getvalue()
 

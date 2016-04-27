@@ -51,7 +51,7 @@ namespace Grpc.IntegrationTesting
         const string Host = "localhost";
         Server server;
         Channel channel;
-        TestService.ITestServiceClient client;
+        TestService.TestServiceClient client;
 
         [TestFixtureSetUp]
         public void Init()
@@ -140,14 +140,12 @@ namespace Grpc.IntegrationTesting
         }
 
         [Test]
-        [Ignore("TODO: see #4427")]
         public async Task StatusCodeAndMessage()
         {
             await InteropClient.RunStatusCodeAndMessageAsync(client);
         }
 
         [Test]
-        [Ignore("TODO: see #4427")]
         public void UnimplementedMethod()
         {
             InteropClient.RunUnimplementedMethod(UnimplementedService.NewClient(channel));

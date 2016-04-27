@@ -14,7 +14,7 @@ dist/
 *.egg
 
 # Node installation output
-node_modules/
+^node_modules
 src/node/extension_binary/
 
 # gcov coverage data
@@ -35,6 +35,7 @@ coverage
 
 # cache for run_tests.py
 .run_tests_cache
+.preprocessed_build
 
 # emacs temp files
 *~

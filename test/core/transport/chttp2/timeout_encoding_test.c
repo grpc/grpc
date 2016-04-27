@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,16 +31,16 @@
  *
  */
 
-#include "src/core/transport/chttp2/timeout_encoding.h"
+#include "src/core/ext/transport/chttp2/transport/timeout_encoding.h"
 
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
+#include "src/core/lib/support/string.h"
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
@@ -128,11 +128,10 @@ void test_decoding(void) {
   decode_suite('H', gpr_time_from_hours);
   assert_decodes_as("1000000000S",
                     gpr_time_from_seconds(1000 * 1000 * 1000, GPR_TIMESPAN));
-  assert_decodes_as("1000000000000000000000u",
-                    gpr_inf_future(GPR_CLOCK_REALTIME));
-  assert_decodes_as("1000000001S", gpr_inf_future(GPR_CLOCK_REALTIME));
-  assert_decodes_as("2000000001S", gpr_inf_future(GPR_CLOCK_REALTIME));
-  assert_decodes_as("9999999999S", gpr_inf_future(GPR_CLOCK_REALTIME));
+  assert_decodes_as("1000000000000000000000u", gpr_inf_future(GPR_TIMESPAN));
+  assert_decodes_as("1000000001S", gpr_inf_future(GPR_TIMESPAN));
+  assert_decodes_as("2000000001S", gpr_inf_future(GPR_TIMESPAN));
+  assert_decodes_as("9999999999S", gpr_inf_future(GPR_TIMESPAN));
 }
 
 void test_decoding_fails(void) {

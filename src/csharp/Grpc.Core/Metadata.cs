@@ -1,5 +1,5 @@
 #region Copyright notice and license
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -323,7 +323,7 @@ namespace Grpc.Core
 
             private static string NormalizeKey(string key)
             {
-                var normalized = GrpcPreconditions.CheckNotNull(key, "key").ToLower(CultureInfo.InvariantCulture);
+                var normalized = GrpcPreconditions.CheckNotNull(key, "key").ToLowerInvariant();
                 GrpcPreconditions.CheckArgument(ValidKeyRegex.IsMatch(normalized), 
                     "Metadata entry key not valid. Keys can only contain lowercase alphanumeric characters, underscores and hyphens.");
                 return normalized;

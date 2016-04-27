@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,6 +45,9 @@ var EventEmitter = require('events');
 var _ = require('lodash');
 var PoissonProcess = require('poisson-process');
 var Histogram = require('./histogram');
+
+var genericService = require('./generic_service');
+
 var grpc = require('../../../');
 var serviceProto = grpc.load({
   root: __dirname + '/../../..',
@@ -104,9 +107,13 @@ function BenchmarkClient(server_targets, channels, histogram_params,
   }
 
   this.clients = [];
+  var GenericClient = grpc.makeGenericClientConstructor(genericService);
+  this.genericClients = [];
 
   for (var i = 0; i < channels; i++) {
     this.clients[i] = new serviceProto.BenchmarkService(
+        server_targets[i % server_targets.length], creds, options);
+    this.genericClients[i] = new GenericClient(
         server_targets[i % server_targets.length], creds, options);
   }
 
@@ -130,9 +137,11 @@ util.inherits(BenchmarkClient, EventEmitter);
  *     'STREAMING'
  * @param {number} req_size The size of the payload to send with each request
  * @param {number} resp_size The size of payload to request be sent in responses
+ * @param {boolean} generic Indicates that the generic (non-proto) clients
+ *     should be used
  */
 BenchmarkClient.prototype.startClosedLoop = function(
-    outstanding_rpcs_per_channel, rpc_type, req_size, resp_size) {
+    outstanding_rpcs_per_channel, rpc_type, req_size, resp_size, generic) {
   var self = this;
 
   self.running = true;
@@ -141,12 +150,20 @@ BenchmarkClient.prototype.startClosedLoop = function(
 
   var makeCall;
 
-  var argument = {
-    response_size: resp_size,
-    payload: {
-      body: zeroBuffer(req_size)
-    }
-  };
+  var argument;
+  var client_list;
+  if (generic) {
+    argument = zeroBuffer(req_size);
+    client_list = self.genericClients;
+  } else {
+    argument = {
+      response_size: resp_size,
+      payload: {
+        body: zeroBuffer(req_size)
+      }
+    };
+    client_list = self.clients;
+  }
 
   if (rpc_type == 'UNARY') {
     makeCall = function(client) {
@@ -195,7 +212,7 @@ BenchmarkClient.prototype.startClosedLoop = function(
     };
   }
 
-  _.each(self.clients, function(client) {
+  _.each(client_list, function(client) {
     _.times(outstanding_rpcs_per_channel, function() {
       makeCall(client);
     });
@@ -213,9 +230,12 @@ BenchmarkClient.prototype.startClosedLoop = function(
  * @param {number} req_size The size of the payload to send with each request
  * @param {number} resp_size The size of payload to request be sent in responses
  * @param {number} offered_load The load parameter for the Poisson process
+ * @param {boolean} generic Indicates that the generic (non-proto) clients
+ *     should be used
  */
 BenchmarkClient.prototype.startPoisson = function(
-    outstanding_rpcs_per_channel, rpc_type, req_size, resp_size, offered_load) {
+    outstanding_rpcs_per_channel, rpc_type, req_size, resp_size, offered_load,
+    generic) {
   var self = this;
 
   self.running = true;
@@ -224,12 +244,20 @@ BenchmarkClient.prototype.startPoisson = function(
 
   var makeCall;
 
-  var argument = {
-    response_size: resp_size,
-    payload: {
-      body: zeroBuffer(req_size)
-    }
-  };
+  var argument;
+  var client_list;
+  if (generic) {
+    argument = zeroBuffer(req_size);
+    client_list = self.genericClients;
+  } else {
+    argument = {
+      response_size: resp_size,
+      payload: {
+        body: zeroBuffer(req_size)
+      }
+    };
+    client_list = self.clients;
+  }
 
   if (rpc_type == 'UNARY') {
     makeCall = function(client, poisson) {
@@ -282,7 +310,7 @@ BenchmarkClient.prototype.startPoisson = function(
 
   var averageIntervalMs = (1 / offered_load) * 1000;
 
-  _.each(self.clients, function(client) {
+  _.each(client_list, function(client) {
     _.times(outstanding_rpcs_per_channel, function() {
       var p = PoissonProcess.create(averageIntervalMs, function() {
         makeCall(client, p);

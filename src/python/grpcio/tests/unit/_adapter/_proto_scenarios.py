@@ -32,12 +32,13 @@
 import abc
 import threading
 
+import six
+
 from tests.unit._junkdrawer import math_pb2
 
 
-class ProtoScenario(object):
+class ProtoScenario(six.with_metaclass(abc.ABCMeta)):
   """An RPC test scenario using protocol buffers."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def method(self):

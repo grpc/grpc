@@ -5,7 +5,7 @@
 
 [![Join the chat at https://gitter.im/grpc/grpc](https://badges.gitter.im/grpc/grpc.svg)](https://gitter.im/grpc/grpc?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-Copyright 2015-2016 Google Inc.
+Copyright 2015 Google Inc.
 
 #Documentation
 
@@ -13,7 +13,7 @@ You can find more detailed documentation and examples in the [doc](doc) and [exa
 
 #Installation
 
-See [grpc/INSTALL](INSTALL) for installation instructions for various platforms.
+See [INSTALL](INSTALL.md) for installation instructions for various platforms.
 
 #Repository Structure & Status
 

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,19 +34,21 @@
 #ifndef GRPCXX_IMPL_CODEGEN_CALL_H
 #define GRPCXX_IMPL_CODEGEN_CALL_H
 
-#include <functional>
-#include <memory>
-#include <map>
 #include <cstring>
+#include <functional>
+#include <map>
+#include <memory>
 
+#include <grpc++/impl/codegen/call_hook.h>
+#include <grpc++/impl/codegen/client_context.h>
+#include <grpc++/impl/codegen/completion_queue_tag.h>
+#include <grpc++/impl/codegen/config.h>
+#include <grpc++/impl/codegen/core_codegen_interface.h>
+#include <grpc++/impl/codegen/serialization_traits.h>
+#include <grpc++/impl/codegen/status.h>
+#include <grpc++/impl/codegen/string_ref.h>
 #include <grpc/impl/codegen/alloc.h>
 #include <grpc/impl/codegen/grpc_types.h>
-#include <grpc++/impl/codegen/client_context.h>
-#include <grpc++/impl/codegen/call_hook.h>
-#include <grpc++/impl/codegen/completion_queue_tag.h>
-#include <grpc++/impl/codegen/serialization_traits.h>
-#include <grpc++/impl/codegen/config.h>
-#include <grpc++/impl/codegen/status.h>
 
 struct grpc_byte_buffer;
 
@@ -56,12 +58,39 @@ class ByteBuffer;
 class Call;
 class CallHook;
 class CompletionQueue;
+extern CoreCodegenInterface* g_core_codegen_interface;
 
-void FillMetadataMap(
+inline void FillMetadataMap(
     grpc_metadata_array* arr,
-    std::multimap<grpc::string_ref, grpc::string_ref>* metadata);
-grpc_metadata* FillMetadataArray(
-    const std::multimap<grpc::string, grpc::string>& metadata);
+    std::multimap<grpc::string_ref, grpc::string_ref>* metadata) {
+  for (size_t i = 0; i < arr->count; i++) {
+    // TODO(yangg) handle duplicates?
+    metadata->insert(std::pair<grpc::string_ref, grpc::string_ref>(
+        arr->metadata[i].key, grpc::string_ref(arr->metadata[i].value,
+                                               arr->metadata[i].value_length)));
+  }
+  g_core_codegen_interface->grpc_metadata_array_destroy(arr);
+  g_core_codegen_interface->grpc_metadata_array_init(arr);
+}
+
+// TODO(yangg) if the map is changed before we send, the pointers will be a
+// mess. Make sure it does not happen.
+inline grpc_metadata* FillMetadataArray(
+    const std::multimap<grpc::string, grpc::string>& metadata) {
+  if (metadata.empty()) {
+    return nullptr;
+  }
+  grpc_metadata* metadata_array =
+      (grpc_metadata*)(g_core_codegen_interface->gpr_malloc(
+          metadata.size() * sizeof(grpc_metadata)));
+  size_t i = 0;
+  for (auto iter = metadata.cbegin(); iter != metadata.cend(); ++iter, ++i) {
+    metadata_array[i].key = iter->first.c_str();
+    metadata_array[i].value = iter->second.c_str();
+    metadata_array[i].value_length = iter->second.size();
+  }
+  return metadata_array;
+}
 
 /// Per-message write options.
 class WriteOptions {
@@ -152,8 +181,10 @@ class CallOpSendInitialMetadata {
   CallOpSendInitialMetadata() : send_(false) {}
 
   void SendInitialMetadata(
-      const std::multimap<grpc::string, grpc::string>& metadata) {
+      const std::multimap<grpc::string, grpc::string>& metadata,
+      uint32_t flags) {
     send_ = true;
+    flags_ = flags;
     initial_metadata_count_ = metadata.size();
     initial_metadata_ = FillMetadataArray(metadata);
   }
@@ -163,18 +194,19 @@ class CallOpSendInitialMetadata {
     if (!send_) return;
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_SEND_INITIAL_METADATA;
-    op->flags = 0;
+    op->flags = flags_;
     op->reserved = NULL;
     op->data.send_initial_metadata.count = initial_metadata_count_;
     op->data.send_initial_metadata.metadata = initial_metadata_;
   }
   void FinishOp(bool* status, int max_message_size) {
     if (!send_) return;
-    gpr_free(initial_metadata_);
+    g_core_codegen_interface->gpr_free(initial_metadata_);
     send_ = false;
   }
 
   bool send_;
+  uint32_t flags_;
   size_t initial_metadata_count_;
   grpc_metadata* initial_metadata_;
 };
@@ -204,7 +236,7 @@ class CallOpSendMessage {
     write_options_.Clear();
   }
   void FinishOp(bool* status, int max_message_size) {
-    if (own_buf_) grpc_byte_buffer_destroy(send_buf_);
+    if (own_buf_) g_core_codegen_interface->grpc_byte_buffer_destroy(send_buf_);
     send_buf_ = nullptr;
   }
 
@@ -251,10 +283,11 @@ class CallOpRecvMessage {
       if (*status) {
         got_message = true;
         *status = SerializationTraits<R>::Deserialize(recv_buf_, message_,
-                                                      max_message_size).ok();
+                                                      max_message_size)
+                      .ok();
       } else {
         got_message = false;
-        grpc_byte_buffer_destroy(recv_buf_);
+        g_core_codegen_interface->grpc_byte_buffer_destroy(recv_buf_);
       }
     } else {
       got_message = false;
@@ -272,6 +305,7 @@ namespace CallOpGenericRecvMessageHelper {
 class DeserializeFunc {
  public:
   virtual Status Deserialize(grpc_byte_buffer* buf, int max_message_size) = 0;
+  virtual ~DeserializeFunc() {}
 };
 
 template <class R>
@@ -282,6 +316,8 @@ class DeserializeFuncType GRPC_FINAL : public DeserializeFunc {
                      int max_message_size) GRPC_OVERRIDE {
     return SerializationTraits<R>::Deserialize(buf, message_, max_message_size);
   }
+
+  ~DeserializeFuncType() override {}
 
  private:
   R* message_;  // Not a managed pointer because management is external to this
@@ -318,7 +354,7 @@ class CallOpGenericRecvMessage {
         *status = deserialize_->Deserialize(recv_buf_, max_message_size).ok();
       } else {
         got_message = false;
-        grpc_byte_buffer_destroy(recv_buf_);
+        g_core_codegen_interface->grpc_byte_buffer_destroy(recv_buf_);
       }
     } else {
       got_message = false;
@@ -383,7 +419,7 @@ class CallOpServerSendStatus {
 
   void FinishOp(bool* status, int max_message_size) {
     if (!send_status_available_) return;
-    gpr_free(trailing_metadata_);
+    g_core_codegen_interface->gpr_free(trailing_metadata_);
     send_status_available_ = false;
   }
 
@@ -459,7 +495,7 @@ class CallOpClientRecvStatus {
     *recv_status_ = Status(
         static_cast<StatusCode>(status_code_),
         status_details_ ? grpc::string(status_details_) : grpc::string());
-    gpr_free(status_details_);
+    g_core_codegen_interface->gpr_free(status_details_);
     recv_status_ = nullptr;
   }
 
@@ -573,11 +609,22 @@ class SneakyCallOpSet : public CallOpSet<Op1, Op2, Op3, Op4, Op5, Op6> {
 class Call GRPC_FINAL {
  public:
   /* call is owned by the caller */
-  Call(grpc_call* call, CallHook* call_hook_, CompletionQueue* cq);
-  Call(grpc_call* call, CallHook* call_hook_, CompletionQueue* cq,
-       int max_message_size);
+  Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq)
+      : call_hook_(call_hook), cq_(cq), call_(call), max_message_size_(-1) {}
 
-  void PerformOps(CallOpSetInterface* ops);
+  Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq,
+       int max_message_size)
+      : call_hook_(call_hook),
+        cq_(cq),
+        call_(call),
+        max_message_size_(max_message_size) {}
+
+  void PerformOps(CallOpSetInterface* ops) {
+    if (max_message_size_ > 0) {
+      ops->set_max_message_size(max_message_size_);
+    }
+    call_hook_->PerformOpsOnCall(ops, this);
+  }
 
   grpc_call* call() { return call_; }
   CompletionQueue* cq() { return cq_; }

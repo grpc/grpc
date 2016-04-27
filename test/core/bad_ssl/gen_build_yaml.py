@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -52,8 +52,8 @@ def main():
               'name': 'bad_ssl_test_server',
               'build': 'private',
               'language': 'c',
-              'src': ['test/core/bad_ssl/server.c'],
-              'headers': ['test/core/bad_ssl/server.h'],
+              'src': ['test/core/bad_ssl/server_common.c'],
+              'headers': ['test/core/bad_ssl/server_common.h'],
               'vs_proj_dir': 'test',
               'platforms': ['linux', 'posix', 'mac'],
               'deps': [

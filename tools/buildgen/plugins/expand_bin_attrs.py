@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -52,6 +52,7 @@ def mako_plugin(dictionary):
     tgt['ci_platforms'] = sorted(tgt.get('ci_platforms', tgt['platforms']))
     tgt['boringssl'] = tgt.get('boringssl', False)
     tgt['zlib'] = tgt.get('zlib', False)
+    tgt['gtest'] = tgt.get('gtest', False)
 
   libs = dictionary.get('libs')
   for lib in libs:

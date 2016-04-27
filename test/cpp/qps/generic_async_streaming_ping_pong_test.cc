@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,7 +43,7 @@ namespace grpc {
 namespace testing {
 
 static const int WARMUP = 5;
-static const int BENCHMARK = 10;
+static const int BENCHMARK = 5;
 
 static void RunGenericAsyncStreamingPingPong() {
   gpr_log(GPR_INFO, "Running Generic Async Streaming Ping Pong");
@@ -62,6 +62,7 @@ static void RunGenericAsyncStreamingPingPong() {
   ServerConfig server_config;
   server_config.set_server_type(ASYNC_GENERIC_SERVER);
   server_config.set_async_server_threads(1);
+  *server_config.mutable_payload_config() = client_config.payload_config();
 
   const auto result =
       RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);

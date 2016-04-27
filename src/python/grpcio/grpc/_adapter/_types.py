@@ -31,6 +31,8 @@ import abc
 import collections
 import enum
 
+import six
+
 from grpc._cython import cygrpc
 
 
@@ -247,8 +249,7 @@ class Event(collections.namedtuple(
   """
 
 
-class CompletionQueue:
-  __metaclass__ = abc.ABCMeta
+class CompletionQueue(six.with_metaclass(abc.ABCMeta)):
 
   @abc.abstractmethod
   def __init__(self):
@@ -261,6 +262,9 @@ class CompletionQueue:
     deadline of None (i.e. no deadline).
     """
     return self
+
+  def __next__(self):
+    return self.next()
 
   @abc.abstractmethod
   def next(self, deadline=float('+inf')):
@@ -285,8 +289,7 @@ class CompletionQueue:
     return None
 
 
-class Call:
-  __metaclass__ = abc.ABCMeta
+class Call(six.with_metaclass(abc.ABCMeta)):
 
   @abc.abstractmethod
   def start_batch(self, ops, tag):
@@ -334,8 +337,7 @@ class Call:
     return None
 
 
-class Channel:
-  __metaclass__ = abc.ABCMeta
+class Channel(six.with_metaclass(abc.ABCMeta)):
 
   @abc.abstractmethod
   def __init__(self, target, args, credentials=None):
@@ -399,8 +401,7 @@ class Channel:
     return None
 
 
-class Server:
-  __metaclass__ = abc.ABCMeta
+class Server(six.with_metaclass(abc.ABCMeta)):
 
   @abc.abstractmethod
   def __init__(self, completion_queue, args):

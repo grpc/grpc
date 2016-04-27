@@ -7,7 +7,7 @@
   # This file can be regenerated from the template by running
   # tools/buildgen/generate_projects.sh
 
-  # Copyright 2015-2016, Google Inc.
+  # Copyright 2015, Google Inc.
   # All rights reserved.
   #
   # Redistribution and use in source and binary forms, with or without
@@ -159,7 +159,7 @@
   else
   ifeq ($(SYSTEM),Darwin)
   ifeq ($(origin AR), default)
-  AR = libtool -o
+  AR = libtool -no_warning_for_no_symbols -o
   endif
   STRIP ?= strip -x
   else
@@ -187,6 +187,12 @@
   CXX11_CHECK_CMD = $(CXX) -std=c++11 -o $(TMPOUT) -c test/build/c++11.cc
   HAS_CXX11 = $(shell $(CXX11_CHECK_CMD) 2> /dev/null && echo true || echo false)
 
+  CHECK_SHADOW_WORKS_CMD = $(CC) -std=c99 -Werror -Wshadow -o $(TMPOUT) -c test/build/shadow.c
+  HAS_WORKING_SHADOW = $(shell $(CHECK_SHADOW_WORKS_CMD) 2> /dev/null && echo true || echo false)
+  ifeq ($(HAS_WORKING_SHADOW),true)
+  W_SHADOW=-Wshadow
+  endif
+
   CHECK_NO_SHIFT_NEGATIVE_VALUE_CMD = $(CC) -std=c99 -Werror -Wno-shift-negative-value -o $(TMPOUT) -c test/build/empty.c
   HAS_NO_SHIFT_NEGATIVE_VALUE = $(shell $(CHECK_NO_SHIFT_NEGATIVE_VALUE_CMD) 2> /dev/null && echo true || echo false)
   ifeq ($(HAS_NO_SHIFT_NEGATIVE_VALUE),true)
@@ -207,7 +213,7 @@
   DEFINES += $(EXTRA_DEFINES)
   endif
 
-  CFLAGS += -std=c99 -Wsign-conversion -Wconversion -Wshadow
+  CFLAGS += -std=c99 -Wsign-conversion -Wconversion $(W_SHADOW)
   ifeq ($(HAS_CXX11),true)
   CXXFLAGS += -std=c++11
   else
@@ -352,6 +358,7 @@
 
   OPENSSL_ALPN_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/openssl-alpn.c $(addprefix -l, $(OPENSSL_LIBS)) $(LDFLAGS)
   OPENSSL_NPN_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/openssl-npn.c $(addprefix -l, $(OPENSSL_LIBS)) $(LDFLAGS)
+  BORINGSSL_COMPILE_CHECK_CMD = $(CC) $(CPPFLAGS) ${defaults.boringssl.CPPFLAGS} $(CFLAGS) ${defaults.boringssl.CFLAGS} -o $(TMPOUT) test/build/boringssl.c $(LDFLAGS)
   ZLIB_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/zlib.c -lz $(LDFLAGS)
   PROTOBUF_CHECK_CMD = $(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $(TMPOUT) test/build/protobuf.cc -lprotobuf $(LDFLAGS)
 
@@ -436,10 +443,13 @@
   # Note that for testing purposes, one can do:
   #   make HAS_EMBEDDED_OPENSSL_ALPN=false
   # to emulate the fact we do not have OpenSSL in the third_party folder.
-  ifeq ($(wildcard third_party/boringssl/include/openssl/ssl.h),)
+  ifneq ($(wildcard third_party/${openssl_fallback.extraction_dir}/libssl.a),)
+  HAS_EMBEDDED_OPENSSL_ALPN = third_party/${openssl_fallback.extraction_dir}
+  else ifeq ($(wildcard third_party/boringssl/include/openssl/ssl.h),)
   HAS_EMBEDDED_OPENSSL_ALPN = false
   else
-  HAS_EMBEDDED_OPENSSL_ALPN = true
+  CAN_COMPILE_EMBEDDED_OPENSSL ?= $(shell $(BORINGSSL_COMPILE_CHECK_CMD) 2> /dev/null && echo true || echo false)
+  HAS_EMBEDDED_OPENSSL_ALPN = $(CAN_COMPILE_EMBEDDED_OPENSSL)
   endif
 
   ifeq ($(wildcard third_party/zlib/zlib.h),)
@@ -498,8 +508,8 @@
   EMBED_OPENSSL ?= false
   NO_SECURE ?= false
   else # HAS_SYSTEM_OPENSSL_ALPN=false
-  ifeq ($(HAS_EMBEDDED_OPENSSL_ALPN),true)
-  EMBED_OPENSSL ?= true
+  ifneq ($(HAS_EMBEDDED_OPENSSL_ALPN),false)
+  EMBED_OPENSSL ?= $(HAS_EMBEDDED_OPENSSL_ALPN)
   NO_SECURE ?= false
   else # HAS_EMBEDDED_OPENSSL_ALPN=false
   ifeq ($(HAS_SYSTEM_OPENSSL_NPN),true)
@@ -520,6 +530,12 @@
   OPENSSL_MERGE_OBJS += $(LIBBORINGSSL_OBJS)
   # need to prefix these to ensure overriding system libraries
   CPPFLAGS := -Ithird_party/boringssl/include $(CPPFLAGS)
+  else ifneq ($(EMBED_OPENSSL),false)
+  OPENSSL_DEP += $(EMBED_OPENSSL)/libssl.a $(EMBED_OPENSSL)/libcrypto.a
+  OPENSSL_MERGE_LIBS += $(EMBED_OPENSSL)/libssl.a $(EMBED_OPENSSL)/libcrypto.a
+  OPENSSL_MERGE_OBJS += $(wildcard $(EMBED_OPENSSL)/grpc_obj/*.o)
+  # need to prefix these to ensure overriding system libraries
+  CPPFLAGS := -I$(EMBED_OPENSSL)/include $(CPPFLAGS)
   else # EMBED_OPENSSL=false
   ifeq ($(HAS_PKG_CONFIG),true)
   OPENSSL_PKG_CONFIG = true
@@ -706,8 +722,9 @@
   	@echo
   	@echo "DEPENDENCY ERROR"
   	@echo
-  	@echo "The target you are trying to run requires OpenSSL."
-  	@echo "Your system doesn't have it, and neither does the third_party directory."
+  	@echo "The target you are trying to run requires an OpenSSL implementation."
+  	@echo "Your system doesn't have one, and either the third_party directory"
+  	@echo "doesn't have it, or your compiler can't build BoringSSL."
   	@echo
   	@echo "Please consult INSTALL to get more information."
   	@echo
@@ -790,8 +807,10 @@
 
   static_c: pc_c pc_c_unsecure cache.mk pc_c_zookeeper\
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c' and not lib.get('external_deps', None):
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
+  % endif
   % endif
   % endfor
    static_zookeeper_libs
@@ -799,8 +818,10 @@
 
   static_cxx: pc_cxx pc_cxx_unsecure cache.mk \
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c++':
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
+  % endif
   % endif
   % endfor
 
@@ -809,39 +830,49 @@
 
   shared_c: pc_c pc_c_unsecure cache.mk pc_c_zookeeper\
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c' and not lib.get('external_deps', None):
    $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)\
+  % endif
   % endif
   % endfor
    shared_zookeeper_libs
 
   shared_cxx: pc_cxx pc_cxx_unsecure cache.mk\
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c++':
    $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)\
+  % endif
   % endif
   % endfor
 
 
   shared_csharp: shared_c \
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'csharp':
    $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)\
+  % endif
   % endif
   % endfor
 
   ifeq ($(HAS_ZOOKEEPER),true)
   static_zookeeper_libs:\
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c' and 'zookeeper' in lib.get('external_deps', []):
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
+  % endif
   % endif
   % endfor
 
   shared_zookeeper_libs:\
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c' and 'zookeeper' in lib.get('external_deps', []):
    $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)\
+  % endif
   % endif
   % endfor
 
@@ -861,8 +892,10 @@
 
   privatelibs_c: \
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'private' and lib.language == 'c' and not lib.get('external_deps', None) and not lib.boringssl:
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
+  % endif
   % endif
   % endfor
 
@@ -882,8 +915,10 @@
 
   privatelibs_cxx: \
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'private' and lib.language == 'c++' and not lib.get('external_deps', None):
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
+  % endif
   % endif
   % endfor
 
@@ -891,8 +926,10 @@
   ifeq ($(HAS_ZOOKEEPER),true)
   privatelibs_zookeeper: \
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'private' and lib.language == 'c++' and zookeeper in lib.get('external_deps', []):
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
+  % endif
   % endif
   % endfor
 
@@ -1044,6 +1081,7 @@
   strip-static_c: static_c
   ifeq ($(CONFIG),opt)
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c":
   % if lib.build == "all":
   % if not lib.get('external_deps', None):
@@ -1052,14 +1090,17 @@
   % endif
   % endif
   % endif
+  % endif
   % endfor
   ifeq ($(HAS_ZOOKEEPER),true)
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c":
   % if lib.build == "all":
   % if 'zookeeper' in lib.get('external_deps', []):
   	$(E) "[STRIP]   Stripping lib${lib.name}.a"
   	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
+  % endif
   % endif
   % endif
   % endif
@@ -1070,10 +1111,12 @@
   strip-static_cxx: static_cxx
   ifeq ($(CONFIG),opt)
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c++":
   % if lib.build == "all":
   	$(E) "[STRIP]   Stripping lib${lib.name}.a"
   	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
+  % endif
   % endif
   % endif
   % endfor
@@ -1082,6 +1125,7 @@
   strip-shared_c: shared_c
   ifeq ($(CONFIG),opt)
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c":
   % if lib.build == "all":
   % if not lib.get('external_deps', None):
@@ -1090,14 +1134,17 @@
   % endif
   % endif
   % endif
+  % endif
   % endfor
   ifeq ($(HAS_ZOOKEEPER),true)
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c":
   % if lib.build == "all":
   % if 'zookeeper' in lib.get('external_deps', []):
   	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)"
   	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)
+  % endif
   % endif
   % endif
   % endif
@@ -1108,10 +1155,12 @@
   strip-shared_cxx: shared_cxx
   ifeq ($(CONFIG),opt)
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c++":
   % if lib.build == "all":
   	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)"
   	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)
+  % endif
   % endif
   % endif
   % endfor
@@ -1120,10 +1169,12 @@
   strip-shared_csharp: shared_csharp
   ifeq ($(CONFIG),opt)
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "csharp":
   % if lib.build == "all":
   	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)"
   	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)
+  % endif
   % endif
   % endif
   % endfor
@@ -1234,6 +1285,7 @@
 
   install-static_c: static_c strip-static_c install-pkg-config_c
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c":
   % if lib.build == "all":
   % if not lib.get('external_deps', None):
@@ -1243,15 +1295,18 @@
   % endif
   % endif
   % endif
+  % endif
   % endfor
   ifeq ($(HAS_ZOOKEEPER),true)
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c":
   % if lib.build == "all":
   % if 'zookeeper' in lib.get('external_deps', []):
   	$(E) "[INSTALL] Installing lib${lib.name}.a"
   	$(Q) $(INSTALL) -d $(prefix)/lib
   	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(prefix)/lib/lib${lib.name}.a
+  % endif
   % endif
   % endif
   % endif
@@ -1260,6 +1315,7 @@
 
   install-static_cxx: static_cxx strip-static_cxx install-pkg-config_cxx
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == "c++":
   % if lib.build == "all":
   	$(E) "[INSTALL] Installing lib${lib.name}.a"
@@ -1267,10 +1323,12 @@
   	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(prefix)/lib/lib${lib.name}.a
   % endif
   % endif
+  % endif
   % endfor
 
   <%def name="install_shared(lang_filter)">\
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == lang_filter:
   % if lib.build == "all":
   % if not lib.get('external_deps', None):
@@ -1286,9 +1344,11 @@
   % endif
   % endif
   % endif
+  % endif
   % endfor
   ifeq ($(HAS_ZOOKEEPER),true)
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.language == lang_filter:
   % if lib.build == "all":
   % if 'zookeeper' in lib.get('external_deps', []):
@@ -1301,6 +1361,7 @@
   	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.so.${settings.core_version.major}
   	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.so
   endif
+  % endif
   % endif
   % endif
   % endif
@@ -1383,7 +1444,9 @@
   # The various libraries
 
   % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
   ${makelib(lib)}
+  % endif
   % endfor
 
 
@@ -1498,7 +1561,7 @@
   % endif
 
   ifeq ($(SYSTEM),Darwin)
-  	$(Q) ranlib $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
+  	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
   endif
 
   <%
@@ -1674,7 +1737,7 @@
    $(LIBDIR)/$(CONFIG)/lib${dep}.a\
   % endfor
 
-  % if tgt.language == "c++" or tgt.boringssl:
+  % if tgt.language == "c++" or tgt.boringssl or tgt.build == 'fuzzer':
   ## C++ targets specificies.
   % if tgt.build == 'protoc':
   	$(E) "[HOSTLD]  Linking $@"
@@ -1727,6 +1790,9 @@
    $(GTEST_LIB)\
   % elif tgt.language == 'c++' and tgt.build == 'benchmark':
    $(GTEST_LIB)\
+  % endif
+  % if tgt.build == 'fuzzer':
+   -lFuzzer\
   % endif
    -o $(BINDIR)/$(CONFIG)/${tgt.name}
   % if tgt.build == 'protoc' or tgt.language == 'c++':
@@ -1800,3 +1866,9 @@
   strip_cxx strip-shared_cxx strip-static_cxx \
   dep_c dep_cxx bins_dep_c bins_dep_cxx \
   clean
+
+  .PHONY: printvars
+  printvars:
+  	@$(foreach V,$(sort $(.VARIABLES)),                 \
+  	  $(if $(filter-out environment% default automatic, \
+  	  $(origin $V)),$(warning $V=$($V) ($(value $V)))))

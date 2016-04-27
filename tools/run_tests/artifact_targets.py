@@ -69,16 +69,17 @@ def create_jobspec(name, cmdline, environ=None, shell=False,
   return jobspec
 
 
-def macos_arch_env(arch):
-  """Returns environ specifying -arch arguments for make."""
-  if arch == 'x86':
-    arch_arg = '-arch i386'
-  elif arch == 'x64':
-    arch_arg = '-arch x86_64'
-  else:
-    raise Exception('Unsupported arch')
-  return {'CFLAGS': arch_arg, 'LDFLAGS': arch_arg}
+_MACOS_COMPAT_FLAG = '-mmacosx-version-min=10.7'
 
+_ARCH_FLAG_MAP = {
+  'x86': '-m32',
+  'x64': '-m64'
+}
+
+python_version_arch_map = {
+  'x86': 'Python27_32bits',
+  'x64': 'Python27'
+}
 
 class PythonArtifact:
   """Builds Python artifacts."""
@@ -88,27 +89,31 @@ class PythonArtifact:
     self.platform = platform
     self.arch = arch
     self.labels = ['artifact', 'python', platform, arch]
+    self.python_version = python_version_arch_map[arch]
 
   def pre_build_jobspecs(self):
       return []
 
   def build_jobspec(self):
-    if self.platform == 'windows':
-      raise Exception('Not supported yet.')
+    environ = {}
+    if self.platform == 'linux':
+      if self.arch == 'x86':
+        environ['SETARCH_CMD'] = 'linux32'
+      return create_docker_jobspec(self.name,
+          'tools/dockerfile/grpc_artifact_linux_%s' % self.arch,
+          'tools/run_tests/build_artifact_python.sh',
+          environ=environ)
+    elif self.platform == 'windows':
+      return create_jobspec(self.name,
+                            ['tools\\run_tests\\build_artifact_python.bat',
+                             self.python_version
+                            ],
+                            shell=True)
     else:
-      environ = {}
-      if self.platform == 'linux':
-        if self.arch == 'x86':
-          environ['SETARCH_CMD'] = 'linux32'
-        return create_docker_jobspec(self.name,
-            'tools/dockerfile/grpc_artifact_linux_%s' % self.arch,
-            'tools/run_tests/build_artifact_python.sh',
-            environ=environ)
-      else:
-        environ['SKIP_PIP_INSTALL'] = 'TRUE'
-        return create_jobspec(self.name,
-                              ['tools/run_tests/build_artifact_python.sh'],
-                              environ=environ)
+      environ['SKIP_PIP_INSTALL'] = 'TRUE'
+      return create_jobspec(self.name,
+                            ['tools/run_tests/build_artifact_python.sh'],
+                            environ=environ)
 
   def __str__(self):
     return self.name
@@ -176,19 +181,24 @@ class CSharpExtArtifact:
       environ = {'CONFIG': 'opt',
                  'EMBED_OPENSSL': 'true',
                  'EMBED_ZLIB': 'true',
-                 'CFLAGS': '-DGPR_BACKWARDS_COMPATIBILITY_MODE'}
+                 'CFLAGS': '-DGPR_BACKWARDS_COMPATIBILITY_MODE',
+                 'LDFLAGS': ''}
       if self.platform == 'linux':
         return create_docker_jobspec(self.name,
             'tools/dockerfile/grpc_artifact_linux_%s' % self.arch,
-            'tools/run_tests/build_artifact_csharp.sh')
+            'tools/run_tests/build_artifact_csharp.sh',
+            environ=environ)
       else:
-        environ.update(macos_arch_env(self.arch))
+        archflag = _ARCH_FLAG_MAP[self.arch]
+        environ['CFLAGS'] += ' %s %s' % (archflag, _MACOS_COMPAT_FLAG)
+        environ['LDFLAGS'] += ' %s' % archflag
         return create_jobspec(self.name,
                               ['tools/run_tests/build_artifact_csharp.sh'],
                               environ=environ)
 
   def __str__(self):
     return self.name
+
 
 node_gyp_arch_map = {
   'x86': 'ia32',
@@ -225,16 +235,85 @@ class NodeExtArtifact:
                               ['tools/run_tests/build_artifact_node.sh',
                                self.gyp_arch])
 
+class PHPArtifact:
+  """Builds PHP PECL package"""
+
+  def __init__(self, platform, arch):
+    self.name = 'php_pecl_package_{0}_{1}'.format(platform, arch)
+    self.platform = platform
+    self.arch = arch
+    self.labels = ['artifact', 'php', platform, arch]
+
+  def pre_build_jobspecs(self):
+    return []
+
+  def build_jobspec(self):
+    if self.platform == 'linux':
+      return create_docker_jobspec(
+          self.name,
+          'tools/dockerfile/grpc_artifact_linux_{}'.format(self.arch),
+          'tools/run_tests/build_artifact_php.sh')
+    else:
+      return create_jobspec(self.name,
+                            ['tools/run_tests/build_artifact_php.sh'])
+
+class ProtocArtifact:
+  """Builds protoc and protoc-plugin artifacts"""
+
+  def __init__(self, platform, arch):
+    self.name = 'protoc_%s_%s' % (platform, arch)
+    self.platform = platform
+    self.arch = arch
+    self.labels = ['artifact', 'protoc', platform, arch]
+
+  def pre_build_jobspecs(self):
+      return []
+
+  def build_jobspec(self):
+    if self.platform != 'windows':
+      cxxflags = '-DNDEBUG %s' % _ARCH_FLAG_MAP[self.arch]
+      ldflags = '%s' % _ARCH_FLAG_MAP[self.arch]
+      if self.platform != 'macos':
+        ldflags += '  -static-libgcc -static-libstdc++ -s'
+      environ={'CONFIG': 'opt',
+               'CXXFLAGS': cxxflags,
+               'LDFLAGS': ldflags,
+               'PROTOBUF_LDFLAGS_EXTRA': ldflags}
+      if self.platform == 'linux':
+        return create_docker_jobspec(self.name,
+            'tools/dockerfile/grpc_artifact_protoc',
+            'tools/run_tests/build_artifact_protoc.sh',
+            environ=environ)
+      else:
+        environ['CXXFLAGS'] += ' -std=c++11 -stdlib=libc++ %s' % _MACOS_COMPAT_FLAG
+        return create_jobspec(self.name,
+            ['tools/run_tests/build_artifact_protoc.sh'],
+            environ=environ)
+    else:
+      generator = 'Visual Studio 12 Win64' if self.arch == 'x64' else 'Visual Studio 12' 
+      vcplatform = 'x64' if self.arch == 'x64' else 'Win32'
+      return create_jobspec(self.name,
+                            ['tools\\run_tests\\build_artifact_protoc.bat'],
+                            environ={'generator': generator,
+                                     'Platform': vcplatform})
+
+  def __str__(self):
+    return self.name
+
 
 def targets():
   """Gets list of supported targets"""
   return ([Cls(platform, arch)
-           for Cls in (CSharpExtArtifact, NodeExtArtifact)
+           for Cls in (CSharpExtArtifact, NodeExtArtifact, ProtocArtifact)
            for platform in ('linux', 'macos', 'windows')
            for arch in ('x86', 'x64')] +
           [PythonArtifact('linux', 'x86'),
            PythonArtifact('linux', 'x64'),
            PythonArtifact('macos', 'x64'),
+           PythonArtifact('windows', 'x86'),
+           PythonArtifact('windows', 'x64'),
            RubyArtifact('linux', 'x86'),
            RubyArtifact('linux', 'x64'),
-           RubyArtifact('macos', 'x64')])
+           RubyArtifact('macos', 'x64'),
+           PHPArtifact('linux', 'x64'),
+           PHPArtifact('macos', 'x64')])

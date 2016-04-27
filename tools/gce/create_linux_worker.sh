@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,7 @@ cd $(dirname $0)
 CLOUD_PROJECT=grpc-testing
 ZONE=us-central1-a
 
-INSTANCE_NAME=grpc-jenkins-worker1
+INSTANCE_NAME="${1:-grpc-jenkins-worker1}"
 
 gcloud compute instances create $INSTANCE_NAME \
     --project="$CLOUD_PROJECT" \

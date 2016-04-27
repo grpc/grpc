@@ -35,8 +35,8 @@
 
 #include <string.h>
 
+#include "src/core/lib/surface/server.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "src/core/surface/server.h"
 
 #define PFX_STR                                               \
   "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"                          \

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -34,9 +34,7 @@ cd $(dirname $0)
 
 unzip -o "$EXTERNAL_GIT_ROOT/input_artifacts/csharp_nugets.zip" -d TestNugetFeed
 
-# Extract the version number from Grpc nuget package name.
-CSHARP_VERSION=$(ls TestNugetFeed | grep '^Grpc\.[0-9].*\.nupkg$' | sed s/^Grpc\.// | sed s/\.nupkg$//)
-./update_version.sh $CSHARP_VERSION
+./update_version.sh auto
 
 nuget restore
 

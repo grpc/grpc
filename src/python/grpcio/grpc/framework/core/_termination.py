@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,6 +31,8 @@
 
 import abc
 
+import six
+
 from grpc.framework.core import _constants
 from grpc.framework.core import _interfaces
 from grpc.framework.core import _utilities
@@ -50,9 +52,8 @@ def _service_completion_predicate(
   return transmission_complete and ingestion_complete
 
 
-class TerminationManager(_interfaces.TerminationManager):
+class TerminationManager(six.with_metaclass(abc.ABCMeta, _interfaces.TerminationManager)):
   """A _interfaces.TransmissionManager on which another manager may be set."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def set_expiration_manager(self, expiration_manager):

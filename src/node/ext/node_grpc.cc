@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -237,7 +237,8 @@ NAN_METHOD(MetadataKeyIsLegal) {
         "headerKeyIsLegal's argument must be a string");
   }
   Local<String> key = Nan::To<String>(info[0]).ToLocalChecked();
-  char *key_str = *Nan::Utf8String(key);
+  Nan::Utf8String key_utf8_str(key);
+  char *key_str = *key_utf8_str;
   info.GetReturnValue().Set(static_cast<bool>(
       grpc_header_key_is_legal(key_str, static_cast<size_t>(key->Length()))));
 }
@@ -248,7 +249,8 @@ NAN_METHOD(MetadataNonbinValueIsLegal) {
         "metadataNonbinValueIsLegal's argument must be a string");
   }
   Local<String> value = Nan::To<String>(info[0]).ToLocalChecked();
-  char *value_str = *Nan::Utf8String(value);
+  Nan::Utf8String value_utf8_str(value);
+  char *value_str = *value_utf8_str;
   info.GetReturnValue().Set(static_cast<bool>(
       grpc_header_nonbin_value_is_legal(
           value_str, static_cast<size_t>(value->Length()))));
@@ -260,7 +262,8 @@ NAN_METHOD(MetadataKeyIsBinary) {
         "metadataKeyIsLegal's argument must be a string");
   }
   Local<String> key = Nan::To<String>(info[0]).ToLocalChecked();
-  char *key_str = *Nan::Utf8String(key);
+  Nan::Utf8String key_utf8_str(key);
+  char *key_str = *key_utf8_str;
   info.GetReturnValue().Set(static_cast<bool>(
       grpc_is_binary_header(key_str, static_cast<size_t>(key->Length()))));
 }

@@ -1,7 +1,7 @@
 <?php
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -94,13 +94,13 @@ class TimevalTest extends PHPUnit_Framework_TestCase
 
     public function testSimilar()
     {
-      $a = Grpc\Timeval::now();
-      $delta = new Grpc\Timeval(1000);
-      $b = $a->add($delta);
-      $thresh = new Grpc\Timeval(1100);
-      $this->assertTrue(Grpc\Timeval::similar($a, $b, $thresh));
-      $thresh = new Grpc\Timeval(900);
-      $this->assertFalse(Grpc\Timeval::similar($a, $b, $thresh));
+        $a = Grpc\Timeval::now();
+        $delta = new Grpc\Timeval(1000);
+        $b = $a->add($delta);
+        $thresh = new Grpc\Timeval(1100);
+        $this->assertTrue(Grpc\Timeval::similar($a, $b, $thresh));
+        $thresh = new Grpc\Timeval(900);
+        $this->assertFalse(Grpc\Timeval::similar($a, $b, $thresh));
     }
 
     public function testSleepUntil()
@@ -155,5 +155,4 @@ class TimevalTest extends PHPUnit_Framework_TestCase
     {
         $a = Grpc\Timeval::similar(1000, 1100, 1200);
     }
-
 }

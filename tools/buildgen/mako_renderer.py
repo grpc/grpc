@@ -38,6 +38,7 @@ Just a wrapper around the mako rendering library.
 import getopt
 import imp
 import os
+import cPickle as pickle
 import shutil
 import sys
 
@@ -66,21 +67,24 @@ def out(msg):
 
 
 def showhelp():
-  out('mako-renderer.py [-o out] [-m cache] [-d dict] [-d dict...] template')
+  out('mako-renderer.py [-o out] [-m cache] [-P preprocessed_input] [-d dict] [-d dict...]'
+      ' [-t template] [-w preprocessed_output]')
 
 
 def main(argv):
   got_input = False
   module_directory = None
+  preprocessed_output = None
   dictionary = {}
   json_dict = {}
   got_output = False
-  output_file = sys.stdout
   plugins = []
   output_name = None
+  got_preprocessed_input = False
+  output_merged = None
 
   try:
-    opts, args = getopt.getopt(argv, 'hm:d:o:p:')
+    opts, args = getopt.getopt(argv, 'hM:m:d:o:p:t:P:w:')
   except getopt.GetoptError:
     out('Unknown option')
     showhelp()
@@ -104,18 +108,40 @@ def main(argv):
         showhelp()
         sys.exit(4)
       module_directory = arg
+    elif opt == '-M':
+      if output_merged is not None:
+        out('Got more than one output merged path')
+        showhelp()
+        sys.exit(5)
+      output_merged = arg
+    elif opt == '-P':
+      assert not got_preprocessed_input
+      assert json_dict == {}
+      sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), 'plugins')))
+      with open(arg, 'r') as dict_file:
+        dictionary = pickle.load(dict_file)
+      got_preprocessed_input = True
     elif opt == '-d':
-      dict_file = open(arg, 'r')
-      bunch.merge_json(json_dict, yaml.load(dict_file.read()))
-      dict_file.close()
+      assert not got_preprocessed_input
+      with open(arg, 'r') as dict_file:
+        bunch.merge_json(json_dict, yaml.load(dict_file.read()))
     elif opt == '-p':
       plugins.append(import_plugin(arg))
+    elif opt == '-w':
+      preprocessed_output = arg
 
-  for plugin in plugins:
-    plugin.mako_plugin(json_dict)
+  if not got_preprocessed_input:
+    for plugin in plugins:
+      plugin.mako_plugin(json_dict)
+    if output_merged:
+      with open(output_merged, 'w') as yaml_file:
+        yaml_file.write(yaml.dump(json_dict))
+    for k, v in json_dict.items():
+      dictionary[k] = bunch.to_bunch(v)
 
-  for k, v in json_dict.items():
-    dictionary[k] = bunch.to_bunch(v)
+  if preprocessed_output:
+    with open(preprocessed_output, 'w') as dict_file:
+      pickle.dump(dictionary, dict_file)
 
   cleared_dir = False
   for arg in args:
@@ -168,11 +194,9 @@ def main(argv):
           with open(item_output_name, 'w') as output_file:
             template.render_context(Context(output_file, **args))
 
-  if not got_input:
+  if not got_input and not preprocessed_output:
     out('Got nothing to do')
     showhelp()
-
-  output_file.close()
 
 if __name__ == '__main__':
   main(sys.argv[1:])

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -146,6 +146,8 @@ exports.getProtobufServiceAttrs = function getProtobufServiceAttrs(service,
       path: prefix + method.name,
       requestStream: method.requestStream,
       responseStream: method.responseStream,
+      requestType: method.resolvedRequestType,
+      responseType: method.resolvedResponseType,
       requestSerialize: serializeCls(method.resolvedRequestType.build()),
       requestDeserialize: deserializeCls(method.resolvedRequestType.build(),
                                      binaryAsBase64, longsAsStrings),

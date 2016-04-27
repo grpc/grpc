@@ -62,14 +62,16 @@ void MaybeEchoDeadline(ServerContext* context, const EchoRequest* request,
   }
 }
 
-void CheckServerAuthContext(const ServerContext* context,
-                            const grpc::string& expected_client_identity) {
+void CheckServerAuthContext(
+    const ServerContext* context,
+    const grpc::string& expected_transport_security_type,
+    const grpc::string& expected_client_identity) {
   std::shared_ptr<const AuthContext> auth_ctx = context->auth_context();
-  std::vector<grpc::string_ref> ssl =
+  std::vector<grpc::string_ref> tst =
       auth_ctx->FindPropertyValues("transport_security_type");
-  EXPECT_EQ(1u, ssl.size());
-  EXPECT_EQ("ssl", ToString(ssl[0]));
-  if (expected_client_identity.length() == 0) {
+  EXPECT_EQ(1u, tst.size());
+  EXPECT_EQ(expected_transport_security_type, ToString(tst[0]));
+  if (expected_client_identity.empty()) {
     EXPECT_TRUE(auth_ctx->GetPeerIdentityPropertyName().empty());
     EXPECT_TRUE(auth_ctx->GetPeerIdentity().empty());
     EXPECT_FALSE(auth_ctx->IsPeerAuthenticated());
@@ -127,10 +129,9 @@ Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
   if (request->has_param() && request->param().echo_metadata()) {
     const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata =
         context->client_metadata();
-    for (
-        std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator iter =
-            client_metadata.begin();
-        iter != client_metadata.end(); ++iter) {
+    for (std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator
+             iter = client_metadata.begin();
+         iter != client_metadata.end(); ++iter) {
       context->AddTrailingMetadata(ToString(iter->first),
                                    ToString(iter->second));
     }
@@ -139,6 +140,7 @@ Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
       (request->param().expected_client_identity().length() > 0 ||
        request->param().check_auth_context())) {
     CheckServerAuthContext(context,
+                           request->param().expected_transport_security_type(),
                            request->param().expected_client_identity());
   }
   if (request->has_param() && request->param().response_message_length() > 0) {
@@ -326,7 +328,11 @@ void TestServiceImpl::ServerTryCancel(ServerContext* context) {
   EXPECT_FALSE(context->IsCancelled());
   context->TryCancel();
   gpr_log(GPR_INFO, "Server called TryCancel() to cancel the request");
-  EXPECT_TRUE(context->IsCancelled());
+  // Now wait until it's really canceled
+  while (!context->IsCancelled()) {
+    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                 gpr_time_from_micros(1000, GPR_TIMESPAN)));
+  }
 }
 
 }  // namespace testing

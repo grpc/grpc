@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -100,10 +100,7 @@ namespace Grpc.Core
         /// </summary>
         public WriteOptions WriteOptions
         {
-            get
-            {
-                return this.writeOptions;
-            }
+            get { return this.writeOptions; }
         }
 
         /// <summary>
@@ -111,10 +108,7 @@ namespace Grpc.Core
         /// </summary>
         public ContextPropagationToken PropagationToken
         {
-            get
-            {
-                return this.propagationToken;
-            }
+            get { return this.propagationToken; }
         }
 
         /// <summary>
@@ -122,10 +116,7 @@ namespace Grpc.Core
         /// </summary>
         public CallCredentials Credentials
         {
-            get
-            {
-                return this.credentials;
-            }
+            get { return this.credentials; }
         }
 
         /// <summary>
@@ -161,6 +152,42 @@ namespace Grpc.Core
         {
             var newOptions = this;
             newOptions.cancellationToken = cancellationToken;
+            return newOptions;
+        }
+
+        /// <summary>
+        /// Returns new instance of <see cref="CallOptions"/> with
+        /// <c>WriteOptions</c> set to the value provided. Values of all other fields are preserved.
+        /// </summary>
+        /// <param name="writeOptions">The write options.</param>
+        public CallOptions WithWriteOptions(WriteOptions writeOptions)
+        {
+            var newOptions = this;
+            newOptions.writeOptions = writeOptions;
+            return newOptions;
+        }
+
+        /// <summary>
+        /// Returns new instance of <see cref="CallOptions"/> with
+        /// <c>PropagationToken</c> set to the value provided. Values of all other fields are preserved.
+        /// </summary>
+        /// <param name="propagationToken">The context propagation token.</param>
+        public CallOptions WithPropagationToken(ContextPropagationToken propagationToken)
+        {
+            var newOptions = this;
+            newOptions.propagationToken = propagationToken;
+            return newOptions;
+        }
+
+        /// <summary>
+        /// Returns new instance of <see cref="CallOptions"/> with
+        /// <c>Credentials</c> set to the value provided. Values of all other fields are preserved.
+        /// </summary>
+        /// <param name="credentials">The call credentials.</param>
+        public CallOptions WithCredentials(CallCredentials credentials)
+        {
+            var newOptions = this;
+            newOptions.credentials = credentials;
             return newOptions;
         }
 

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,9 +36,12 @@
 #ifndef GRPCXX_ALARM_H
 #define GRPCXX_ALARM_H
 
+#include <grpc++/impl/codegen/completion_queue.h>
 #include <grpc++/impl/codegen/completion_queue_tag.h>
 #include <grpc++/impl/codegen/grpc_library.h>
 #include <grpc++/impl/codegen/time.h>
+#include <grpc++/impl/grpc_library.h>
+#include <grpc/grpc.h>
 
 struct grpc_alarm;
 
@@ -47,21 +50,29 @@ namespace grpc {
 class CompletionQueue;
 
 /// A thin wrapper around \a grpc_alarm (see / \a / src/core/surface/alarm.h).
-class Alarm : private GrpcLibrary {
+class Alarm : private GrpcLibraryCodegen {
  public:
   /// Create a completion queue alarm instance associated to \a cq.
   ///
   /// Once the alarm expires (at \a deadline) or it's cancelled (see \a Cancel),
   /// an event with tag \a tag will be added to \a cq. If the alarm expired, the
   /// event's success bit will be true, false otherwise (ie, upon cancellation).
-  Alarm(CompletionQueue* cq, gpr_timespec deadline, void* tag);
+  /// \internal We rely on the presence of \a cq for grpc initialization. If \a
+  /// cq were ever to be removed, a reference to a static
+  /// internal::GrpcLibraryInitializer instance would need to be introduced
+  /// here. \endinternal.
+  template <typename T>
+  Alarm(CompletionQueue* cq, const T& deadline, void* tag)
+      : tag_(tag),
+        alarm_(grpc_alarm_create(cq->cq(), TimePoint<T>(deadline).raw_time(),
+                                 static_cast<void*>(&tag_))) {}
 
   /// Destroy the given completion queue alarm, cancelling it in the process.
-  ~Alarm();
+  ~Alarm() { grpc_alarm_destroy(alarm_); }
 
   /// Cancel a completion queue alarm. Calling this function over an alarm that
   /// has already fired has no effect.
-  void Cancel();
+  void Cancel() { grpc_alarm_cancel(alarm_); }
 
  private:
   class AlarmEntry : public CompletionQueueTag {

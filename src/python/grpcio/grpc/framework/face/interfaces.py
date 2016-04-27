@@ -32,6 +32,8 @@
 import abc
 import enum
 
+import six
+
 # cardinality, style, exceptions, abandonment, future, and stream are
 # referenced from specification in this module.
 from grpc.framework.common import cardinality  # pylint: disable=unused-import
@@ -52,14 +54,16 @@ class Abortion(enum.Enum):
   SERVICER_FAILURE = 'servicer failure'
 
 
-class CancellableIterator(object):
+class CancellableIterator(six.with_metaclass(abc.ABCMeta)):
   """Implements the Iterator protocol and affords a cancel method."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def __iter__(self):
     """Returns the self object in accordance with the Iterator protocol."""
     raise NotImplementedError()
+
+  def __next__(self):
+    return self.next()
 
   @abc.abstractmethod
   def next(self):
@@ -72,9 +76,8 @@ class CancellableIterator(object):
     raise NotImplementedError()
 
 
-class RpcContext(object):
+class RpcContext(six.with_metaclass(abc.ABCMeta)):
   """Provides RPC-related information and action."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def is_active(self):
@@ -103,13 +106,12 @@ class RpcContext(object):
     raise NotImplementedError()
 
 
-class Call(object):
+class Call(six.with_metaclass(abc.ABCMeta)):
   """Invocation-side representation of an RPC.
 
   Attributes:
     context: An RpcContext affording information about the RPC.
   """
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def cancel(self):
@@ -117,9 +119,8 @@ class Call(object):
     raise NotImplementedError()
 
 
-class UnaryUnaryMultiCallable(object):
+class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
   """Affords invoking a unary-unary RPC in any call style."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def __call__(self, request, timeout):
@@ -171,9 +172,8 @@ class UnaryUnaryMultiCallable(object):
     raise NotImplementedError()
 
 
-class UnaryStreamMultiCallable(object):
+class UnaryStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
   """Affords invoking a unary-stream RPC in any call style."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def __call__(self, request, timeout):
@@ -209,9 +209,8 @@ class UnaryStreamMultiCallable(object):
     raise NotImplementedError()
 
 
-class StreamUnaryMultiCallable(object):
+class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
   """Affords invoking a stream-unary RPC in any call style."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def __call__(self, request_iterator, timeout):
@@ -264,9 +263,8 @@ class StreamUnaryMultiCallable(object):
     raise NotImplementedError()
 
 
-class StreamStreamMultiCallable(object):
+class StreamStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
   """Affords invoking a stream-stream RPC in any call style."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def __call__(self, request_iterator, timeout):
@@ -302,7 +300,7 @@ l    Args:
     raise NotImplementedError()
 
 
-class MethodImplementation(object):
+class MethodImplementation(six.with_metaclass(abc.ABCMeta)):
   """A sum type that describes an RPC method implementation.
 
   Attributes:
@@ -347,12 +345,10 @@ class MethodImplementation(object):
       is cardinality.Cardinality.STREAM_STREAM and style is
       style.Service.EVENT.
   """
-  __metaclass__ = abc.ABCMeta
 
 
-class MultiMethodImplementation(object):
+class MultiMethodImplementation(six.with_metaclass(abc.ABCMeta)):
   """A general type able to service many RPC methods."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def service(self, name, response_consumer, context):
@@ -381,9 +377,8 @@ class MultiMethodImplementation(object):
     raise NotImplementedError()
 
 
-class GenericStub(object):
+class GenericStub(six.with_metaclass(abc.ABCMeta)):
   """Affords RPC methods to callers."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def blocking_value_in_value_out(self, name, request, timeout):
@@ -622,7 +617,7 @@ class GenericStub(object):
     raise NotImplementedError()
 
 
-class DynamicStub(object):
+class DynamicStub(six.with_metaclass(abc.ABCMeta)):
   """A stub with RPC-method-bound multi-callable attributes.
 
   Instances of this type responsd to attribute access as follows: if the
@@ -637,4 +632,3 @@ class DynamicStub(object):
   the attribute will be a StreamStreamMultiCallable with which to invoke the
   RPC method.
   """
-  __metaclass__ = abc.ABCMeta

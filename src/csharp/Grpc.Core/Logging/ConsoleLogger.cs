@@ -33,118 +33,33 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace Grpc.Core.Logging
 {
     /// <summary>Logger that logs to System.Console.</summary>
-    public class ConsoleLogger : ILogger
+    public class ConsoleLogger : TextWriterLogger
     {
-        readonly Type forType;
-        readonly string forTypeString;
-
         /// <summary>Creates a console logger not associated to any specific type.</summary>
         public ConsoleLogger() : this(null)
         {
         }
 
         /// <summary>Creates a console logger that logs messsage specific for given type.</summary>
-        private ConsoleLogger(Type forType)
+        private ConsoleLogger(Type forType) : base(() => Console.Error, forType)
         {
-            this.forType = forType;
-            if (forType != null)
-            {
-                var namespaceStr = forType.Namespace ?? "";
-                if (namespaceStr.Length > 0)
-                {
-                     namespaceStr += ".";
-                }
-                this.forTypeString = namespaceStr + forType.Name + " ";
-            }
-            else
-            {
-                this.forTypeString = "";
-            }
         }
  
         /// <summary>
         /// Returns a logger associated with the specified type.
         /// </summary>
-        public ILogger ForType<T>()
+        public override ILogger ForType<T>()
         {
-            if (typeof(T) == forType)
+            if (typeof(T) == AssociatedType)
             {
                 return this;
             }
             return new ConsoleLogger(typeof(T));
-        }
-
-        /// <summary>Logs a message with severity Debug.</summary>
-        public void Debug(string message)
-        {
-            Log("D", message);
-        }
-
-        /// <summary>Logs a formatted message with severity Debug.</summary>
-        public void Debug(string format, params object[] formatArgs)
-        {
-            Debug(string.Format(format, formatArgs));
-        }
-
-        /// <summary>Logs a message with severity Info.</summary>
-        public void Info(string message)
-        {
-            Log("I", message);
-        }
-
-        /// <summary>Logs a formatted message with severity Info.</summary>
-        public void Info(string format, params object[] formatArgs)
-        {
-            Info(string.Format(format, formatArgs));
-        }
-
-        /// <summary>Logs a message with severity Warning.</summary>
-        public void Warning(string message)
-        {
-            Log("W", message);
-        }
-
-        /// <summary>Logs a formatted message with severity Warning.</summary>
-        public void Warning(string format, params object[] formatArgs)
-        {
-            Warning(string.Format(format, formatArgs));
-        }
-
-        /// <summary>Logs a message and an associated exception with severity Warning.</summary>
-        public void Warning(Exception exception, string message)
-        {
-            Warning(message + " " + exception);
-        }
-
-        /// <summary>Logs a message with severity Error.</summary>
-        public void Error(string message)
-        {
-            Log("E", message);
-        }
-
-        /// <summary>Logs a formatted message with severity Error.</summary>
-        public void Error(string format, params object[] formatArgs)
-        {
-            Error(string.Format(format, formatArgs));
-        }
-
-        /// <summary>Logs a message and an associated exception with severity Error.</summary>
-        public void Error(Exception exception, string message)
-        {
-            Error(message + " " + exception);
-        }
-
-        private void Log(string severityString, string message)
-        {
-            Console.Error.WriteLine("{0}{1} {2}{3}",
-                severityString,
-                DateTime.Now,
-                forTypeString,
-                message);
         }
     }
 }

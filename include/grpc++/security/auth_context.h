@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,9 +31,9 @@
  *
  */
 
-#ifndef GRPCXX_SUPPORT_AUTH_CONTEXT_H
-#define GRPCXX_SUPPORT_AUTH_CONTEXT_H
+#ifndef GRPCXX_SECURITY_AUTH_CONTEXT_H
+#define GRPCXX_SECURITY_AUTH_CONTEXT_H
 
 #include <grpc++/impl/codegen/security/auth_context.h>
 
-#endif  // GRPCXX_SUPPORT_AUTH_CONTEXT_H
+#endif  // GRPCXX_SECURITY_AUTH_CONTEXT_H

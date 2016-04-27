@@ -31,16 +31,18 @@
  *
  */
 
-#include "src/core/transport/chttp2/hpack_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 
 #include <stdio.h>
+#include <string.h>
 
-#include "src/core/support/string.h"
-#include "src/core/transport/chttp2/hpack_parser.h"
-#include "src/core/transport/metadata.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+
+#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/transport/metadata.h"
 #include "test/core/util/parse_hexstring.h"
 #include "test/core/util/slice_splitter.h"
 #include "test/core/util/test_config.h"
@@ -93,7 +95,10 @@ static void verify(size_t window_available, int eof, size_t expect_window_used,
 
   gpr_slice_buffer_init(&output);
 
-  grpc_chttp2_encode_header(&g_compressor, 0xdeadbeef, &b, eof, &output);
+  grpc_transport_one_way_stats stats;
+  memset(&stats, 0, sizeof(stats));
+  grpc_chttp2_encode_header(&g_compressor, 0xdeadbeef, &b, eof, &stats,
+                            &output);
   merged = grpc_slice_merge(output.slices, output.count);
   gpr_slice_buffer_destroy(&output);
   grpc_metadata_batch_destroy(&b);
@@ -179,6 +184,37 @@ static void test_decode_table_overflow(void) {
   verify(0, 0, 0, "000007 0104 deadbeef 40 026161 026261", 1, "aa", "ba");
 }
 
+static void verify_table_size_change_match_elem_size(const char *key,
+                                                     const char *value) {
+  gpr_slice_buffer output;
+  grpc_mdelem *elem = grpc_mdelem_from_strings(key, value);
+  size_t elem_size = grpc_mdelem_get_size_in_hpack_table(elem);
+  size_t initial_table_size = g_compressor.table_size;
+  grpc_linked_mdelem *e = gpr_malloc(sizeof(*e));
+  grpc_metadata_batch b;
+  grpc_metadata_batch_init(&b);
+  e[0].md = elem;
+  e[0].prev = NULL;
+  e[0].next = NULL;
+  b.list.head = &e[0];
+  b.list.tail = &e[0];
+  gpr_slice_buffer_init(&output);
+
+  grpc_transport_one_way_stats stats;
+  memset(&stats, 0, sizeof(stats));
+  grpc_chttp2_encode_header(&g_compressor, 0xdeadbeef, &b, 0, &stats, &output);
+  gpr_slice_buffer_destroy(&output);
+  grpc_metadata_batch_destroy(&b);
+
+  GPR_ASSERT(g_compressor.table_size == elem_size + initial_table_size);
+  gpr_free(e);
+}
+
+static void test_encode_header_size(void) {
+  verify_table_size_change_match_elem_size("hello", "world");
+  verify_table_size_change_match_elem_size("hello-bin", "world");
+}
+
 static void run_test(void (*test)(), const char *name) {
   gpr_log(GPR_INFO, "RUN TEST: %s", name);
   grpc_chttp2_hpack_compressor_init(&g_compressor);
@@ -193,6 +229,7 @@ int main(int argc, char **argv) {
   grpc_init();
   TEST(test_basic_headers);
   TEST(test_decode_table_overflow);
+  TEST(test_encode_header_size);
   grpc_shutdown();
   for (i = 0; i < num_to_delete; i++) {
     gpr_free(to_delete[i]);

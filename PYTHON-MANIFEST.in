@@ -1,8 +1,11 @@
-graft src/python/grpcio/grpc
+recursive-include src/python/grpcio/grpc *.c *.h *.py *.pyx *.pxd *.pxi *.python *.pem
+recursive-exclude src/python/grpcio/grpc/_cython *.so *.pyd
 graft src/python/grpcio/tests
 graft src/core
+graft src/boringssl
 graft include/grpc
 graft third_party/boringssl
+graft third_party/nanopb
 graft third_party/zlib
 include src/python/grpcio/commands.py
 include src/python/grpcio/grpc_version.py

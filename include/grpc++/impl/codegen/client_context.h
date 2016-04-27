@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,6 +54,8 @@
 #include <string>
 
 #include <grpc++/impl/codegen/config.h>
+#include <grpc++/impl/codegen/core_codegen_interface.h>
+#include <grpc++/impl/codegen/create_auth_context.h>
 #include <grpc++/impl/codegen/security/auth_context.h>
 #include <grpc++/impl/codegen/status.h>
 #include <grpc++/impl/codegen/string_ref.h>
@@ -192,7 +194,7 @@ class ClientContext {
   /// \return A multimap of initial metadata key-value pairs from the server.
   const std::multimap<grpc::string_ref, grpc::string_ref>&
   GetServerInitialMetadata() {
-    GPR_ASSERT(initial_metadata_received_);
+    GPR_CODEGEN_ASSERT(initial_metadata_received_);
     return recv_initial_metadata_;
   }
 
@@ -220,6 +222,12 @@ class ClientContext {
     deadline_ = deadline_tp.raw_time();
   }
 
+  /// EXPERIMENTAL: Set this request to be idempotent
+  void set_idempotent(bool idempotent) { idempotent_ = idempotent; }
+
+  /// EXPERIMENTAL: Trigger fail-fast or not on this request
+  void set_fail_fast(bool fail_fast) { fail_fast_ = fail_fast; }
+
 #ifndef GRPC_CXX0X_NO_CHRONO
   /// Return the deadline for the client call.
   std::chrono::system_clock::time_point deadline() {
@@ -237,7 +245,12 @@ class ClientContext {
   /// Return the authentication context for this client call.
   ///
   /// \see grpc::AuthContext.
-  std::shared_ptr<const AuthContext> auth_context() const;
+  std::shared_ptr<const AuthContext> auth_context() const {
+    if (auth_context_.get() == nullptr) {
+      auth_context_ = CreateAuthContext(call_);
+    }
+    return auth_context_;
+  }
 
   /// Set credentials for the client call.
   ///
@@ -327,9 +340,16 @@ class ClientContext {
   grpc_call* call() { return call_; }
   void set_call(grpc_call* call, const std::shared_ptr<Channel>& channel);
 
+  uint32_t initial_metadata_flags() const {
+    return (idempotent_ ? GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST : 0) |
+           (fail_fast_ ? 0 : GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY);
+  }
+
   grpc::string authority() { return authority_; }
 
   bool initial_metadata_received_;
+  bool fail_fast_;
+  bool idempotent_;
   std::shared_ptr<Channel> channel_;
   grpc::mutex mu_;
   grpc_call* call_;

@@ -38,12 +38,14 @@ include 'tests/generated_code/math.php';
 
 function p($line)
 {
-    print("$line<br/>\n");
+    echo "$line<br/>\n";
 }
 
 $host = 'localhost:50051';
 p("Connecting to host: $host");
-$client = new math\MathClient($host, []);
+$client = new math\MathClient($host, [
+    'credentials' => Grpc\ChannelCredentials::createInsecure(),
+]);
 p('Client class: '.get_class($client));
 p('');
 
