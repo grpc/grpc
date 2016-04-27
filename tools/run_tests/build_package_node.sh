@@ -35,7 +35,7 @@ set -ex
 
 cd $(dirname $0)/../..
 
-artifacts=$cwd/artifacts
+artifacts=$(pwd)/artifacts
 
 mkdir -p $artifacts
 cp -r $EXTERNAL_GIT_ROOT/architecture={x86,x64},language=node,platform={windows,linux,macos}/artifacts/* $artifacts/ || true
