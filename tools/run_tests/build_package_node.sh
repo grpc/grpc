@@ -68,8 +68,8 @@ for arch in {x86,x64}; do
         node_plat=$plat
     esac
     input_dir="$EXTERNAL_GIT_ROOT/architecture=$arch,language=protoc,platform=$plat/artifacts"
-    cp $input_dir/protoc bin/
-    cp $input_dir/grpc_node_plugin bin/
+    cp $input_dir/protoc* bin/
+    cp $input_dir/grpc_node_plugin* bin/
     # For now, this will have to be manually uploaded to a folder with the
     # correct package version
     output_dir=$artifacts/grpc-precompiled-binaries/node/grpc-tools/
