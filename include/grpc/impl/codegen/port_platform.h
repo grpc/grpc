@@ -345,7 +345,7 @@ typedef unsigned __int64 uint64_t;
 
 /* Validate platform combinations */
 #if defined(GPR_GCC_ATOMIC) + defined(GPR_GCC_SYNC) + \
-        defined(GPR_WINDOWS_ATOMIC) !=                  \
+        defined(GPR_WINDOWS_ATOMIC) !=                \
     1
 #error Must define exactly one of GPR_GCC_ATOMIC, GPR_GCC_SYNC, GPR_WINDOWS_ATOMIC
 #endif
@@ -355,7 +355,7 @@ typedef unsigned __int64 uint64_t;
 #endif
 
 #if defined(GPR_CPU_LINUX) + defined(GPR_CPU_POSIX) + defined(GPR_WINDOWS) + \
-        defined(GPR_CPU_IPHONE) + defined(GPR_CPU_CUSTOM) !=               \
+        defined(GPR_CPU_IPHONE) + defined(GPR_CPU_CUSTOM) !=                 \
     1
 #error Must define exactly one of GPR_CPU_LINUX, GPR_CPU_POSIX, GPR_WINDOWS, GPR_CPU_IPHONE, GPR_CPU_CUSTOM
 #endif
