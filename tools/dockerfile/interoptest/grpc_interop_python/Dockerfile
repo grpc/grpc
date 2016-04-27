@@ -27,12 +27,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# A work-in-progress Dockerfile that allows running gRPC test suites
-# inside a docker container.
-
 FROM debian:jessie
 
-# Install Git.
+# Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
   autoconf \
   autotools-dev \
@@ -43,23 +40,43 @@ RUN apt-get update && apt-get install -y \
   gcc \
   gcc-multilib \
   git \
+  golang \
   gyp \
+  lcov \
   libc6 \
   libc6-dbg \
   libc6-dev \
   libgtest-dev \
-  libssl-dev \
   libtool \
   make \
+  perl \
   strace \
   python-dev \
-  python-pip \
   python-setuptools \
   python-yaml \
   telnet \
   unzip \
   wget \
   zip && apt-get clean
+
+#================
+# Build profiling
+RUN apt-get update && apt-get install -y time && apt-get clean
+
+#====================
+# Python dependencies
+
+# Install dependencies
+
+RUN apt-get update && apt-get install -y \
+    python-all-dev \
+    python3-all-dev \
+    python-pip
+
+# Install Python packages from PyPI
+RUN pip install pip --upgrade
+RUN pip install virtualenv
+RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.0.0a2 tox
 
 # Prepare ccache
 RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
@@ -69,14 +86,12 @@ RUN ln -s /usr/bin/ccache /usr/local/bin/c++
 RUN ln -s /usr/bin/ccache /usr/local/bin/clang
 RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
 
+#======================
+# Zookeeper dependencies
+# TODO(jtattermusch): is zookeeper still needed?
+RUN apt-get install -y libzookeeper-mt-dev
 
-#####################
-# Python dependencies
-
-# Install Python requisites
-RUN /bin/bash -l -c "pip install --upgrade pip"
-RUN /bin/bash -l -c "pip install virtualenv"
-RUN /bin/bash -l -c "pip install tox"
+RUN mkdir /var/local/jenkins
 
 # Define the default command.
 CMD ["bash"]

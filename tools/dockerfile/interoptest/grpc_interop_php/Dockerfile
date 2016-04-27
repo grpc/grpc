@@ -27,12 +27,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# A work-in-progress Dockerfile that allows running gRPC test suites
-# inside a docker container.
-
 FROM debian:jessie
 
-# Install Git.
+# Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
   autoconf \
   autotools-dev \
@@ -43,13 +40,16 @@ RUN apt-get update && apt-get install -y \
   gcc \
   gcc-multilib \
   git \
+  golang \
   gyp \
+  lcov \
   libc6 \
   libc6-dbg \
   libc6-dev \
   libgtest-dev \
   libtool \
   make \
+  perl \
   strace \
   python-dev \
   python-setuptools \
@@ -59,15 +59,11 @@ RUN apt-get update && apt-get install -y \
   wget \
   zip && apt-get clean
 
-# Prepare ccache
-RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
-RUN ln -s /usr/bin/ccache /usr/local/bin/g++
-RUN ln -s /usr/bin/ccache /usr/local/bin/cc
-RUN ln -s /usr/bin/ccache /usr/local/bin/c++
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
+#================
+# Build profiling
+RUN apt-get update && apt-get install -y time && apt-get clean
 
-##################
+#==================
 # Ruby dependencies
 
 # Install rvm
@@ -82,13 +78,34 @@ RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
 RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.1' >> ~/.bashrc"
 RUN /bin/bash -l -c "gem install bundler --no-ri --no-rdoc"
 
-##################
+#=================
 # PHP dependencies
 
 # Install dependencies
 
+RUN /bin/bash -l -c "echo 'deb http://packages.dotdeb.org wheezy-php55 all' \
+    >> /etc/apt/sources.list.d/dotdeb.list"
+RUN /bin/bash -l -c "echo 'deb-src http://packages.dotdeb.org wheezy-php55 all' \
+    >> /etc/apt/sources.list.d/dotdeb.list"
+RUN wget http://www.dotdeb.org/dotdeb.gpg -O- | apt-key add -
+
 RUN apt-get update && apt-get install -y \
     git php5 php5-dev phpunit unzip
+
+# Prepare ccache
+RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
+RUN ln -s /usr/bin/ccache /usr/local/bin/g++
+RUN ln -s /usr/bin/ccache /usr/local/bin/cc
+RUN ln -s /usr/bin/ccache /usr/local/bin/c++
+RUN ln -s /usr/bin/ccache /usr/local/bin/clang
+RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
+
+#======================
+# Zookeeper dependencies
+# TODO(jtattermusch): is zookeeper still needed?
+RUN apt-get install -y libzookeeper-mt-dev
+
+RUN mkdir /var/local/jenkins
 
 # ronn: a ruby tool used to convert markdown to man pages, used during the
 # install of Protobuf extensions
