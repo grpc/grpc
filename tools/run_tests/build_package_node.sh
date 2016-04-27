@@ -72,7 +72,8 @@ for arch in {x86,x64}; do
     cp $input_dir/grpc_node_plugin* bin/
     # For now, this will have to be manually uploaded to a folder with the
     # correct package version
-    output_dir=$artifacts/grpc-precompiled-binaries/node/grpc-tools/
+    output_dir=$artifacts/grpc-precompiled-binaries/node/grpc-tools
+    mkdir -p $output_dir
     tar -czf $output_dir/$node_plat-$node_arch.tar.gz bin/
   done
 done
