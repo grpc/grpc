@@ -1,5 +1,4 @@
-
-// Copyright 2015, Google Inc.
+// Copyright 2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -28,16 +27,49 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+// File detached comment 1
+
+// File detached comment 2
+
+// File leading comment 1
 syntax = "proto3";
 
+// Ignored detached comment
+
+// Ignored package leading comment
 package grpc.testing;
 
-// An empty message that you can re-use to avoid defining duplicated empty
-// messages in your project. A typical example is to use it as argument or the
-// return value of a service API. For instance:
-//
-//   service Foo {
-//     rpc Bar (grpc.testing.Empty) returns (grpc.testing.Empty) { };
-//   };
-//
-message Empty {}
+message Request {
+}
+message Response {
+}
+
+// ServiceA detached comment 1
+
+// ServiceA detached comment 2
+
+// ServiceA leading comment 1
+service ServiceA {
+  // MethodA1 leading comment 1
+  rpc MethodA1(Request) returns (Response);  // MethodA1 trailing comment 1
+
+  // MethodA2 detached leading comment 1
+
+  // Method A2 leading comment 1
+  // Method A2 leading comment 2
+  rpc MethodA2(stream Request) returns (Response);
+  // MethodA2 trailing comment 1
+}
+// Ignored ServiceA trailing comment 1
+
+// ServiceB leading comment 1
+service ServiceB {
+  // ServiceB trailing comment 1
+
+  // MethodB1 leading comment 1
+  rpc MethodB1(Request) returns (Response);
+  // MethodB1 trailing comment 1
+}
+// Ignored ServiceB trailing comment 2
+
+// Ignored file trailing comment

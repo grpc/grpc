@@ -938,6 +938,8 @@ libs:
   - src/compiler/csharp_generator.h
   - src/compiler/csharp_generator_helpers.h
   - src/compiler/generator_helpers.h
+  - src/compiler/node_generator.h
+  - src/compiler/node_generator_helpers.h
   - src/compiler/objective_c_generator.h
   - src/compiler/objective_c_generator_helpers.h
   - src/compiler/python_generator.h
@@ -948,6 +950,7 @@ libs:
   src:
   - src/compiler/cpp_generator.cc
   - src/compiler/csharp_generator.cc
+  - src/compiler/node_generator.cc
   - src/compiler/objective_c_generator.cc
   - src/compiler/python_generator.cc
   - src/compiler/ruby_generator.cc
@@ -2548,6 +2551,17 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: golden_file_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - src/proto/grpc/testing/compiler_test.proto
+  - test/cpp/codegen/golden_file_test.cc
+  deps:
+  - grpc++
+  - grpc
+  - gpr
 - name: grpc_cli
   build: test
   run: false
@@ -2582,6 +2596,15 @@ targets:
   secure: false
   vs_config_type: Application
   vs_project_guid: '{3C813052-A49A-4662-B90A-1ADBEC7EE453}'
+- name: grpc_node_plugin
+  build: protoc
+  language: c++
+  src:
+  - src/compiler/node_plugin.cc
+  deps:
+  - grpc_plugin_support
+  secure: false
+  vs_config_type: Application
 - name: grpc_objective_c_plugin
   build: protoc
   language: c++
