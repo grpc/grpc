@@ -38,6 +38,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/compress_filter.h"
@@ -45,6 +46,7 @@
 #include "src/core/lib/channel/http_client_filter.h"
 #include "src/core/lib/channel/http_server_filter.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/profiling/timers.h"
@@ -69,6 +71,7 @@ static gpr_mu g_init_mu;
 static int g_initializations;
 
 static void do_basic_init(void) {
+  gpr_log_verbosity_init();
   gpr_mu_init(&g_init_mu);
   grpc_register_built_in_plugins();
   g_initializations = 0;
@@ -160,6 +163,7 @@ void grpc_init(void) {
     grpc_register_tracer("connectivity_state", &grpc_connectivity_state_trace);
     grpc_register_tracer("channel_stack_builder",
                          &grpc_trace_channel_stack_builder);
+    grpc_register_tracer("http1", &grpc_http1_trace);
     grpc_security_pre_init();
     grpc_iomgr_init();
     grpc_executor_init();

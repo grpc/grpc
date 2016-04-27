@@ -786,6 +786,7 @@ include/grpc/impl/codegen/sync_posix.h \
 include/grpc/impl/codegen/sync_win32.h \
 include/grpc/impl/codegen/time.h \
 include/grpc/grpc_security.h \
+include/grpc/grpc_security_constants.h \
 include/grpc/census.h \
 src/core/ext/load_reporting/load_reporting_filter.h \
 src/core/lib/channel/channel_args.h \
@@ -905,6 +906,7 @@ src/core/ext/client_config/initial_connect_string.h \
 src/core/ext/client_config/lb_policy.h \
 src/core/ext/client_config/lb_policy_factory.h \
 src/core/ext/client_config/lb_policy_registry.h \
+src/core/ext/client_config/parse_address.h \
 src/core/ext/client_config/resolver.h \
 src/core/ext/client_config/resolver_factory.h \
 src/core/ext/client_config/resolver_registry.h \
@@ -924,6 +926,7 @@ src/core/ext/census/census_rpc_stats.h \
 src/core/ext/census/grpc_filter.h \
 src/core/ext/census/mlog.h \
 src/core/ext/census/rpc_metric_id.h \
+src/core/lib/surface/init.c \
 src/core/ext/load_reporting/load_reporting_filter.c \
 src/core/lib/channel/channel_args.c \
 src/core/lib/channel/channel_stack.c \
@@ -995,7 +998,6 @@ src/core/lib/surface/channel_ping.c \
 src/core/lib/surface/channel_stack_type.c \
 src/core/lib/surface/completion_queue.c \
 src/core/lib/surface/event_string.c \
-src/core/lib/surface/init.c \
 src/core/lib/surface/lame_client.c \
 src/core/lib/surface/metadata_array.c \
 src/core/lib/surface/server.c \
@@ -1062,6 +1064,7 @@ src/core/ext/client_config/initial_connect_string.c \
 src/core/ext/client_config/lb_policy.c \
 src/core/ext/client_config/lb_policy_factory.c \
 src/core/ext/client_config/lb_policy_registry.c \
+src/core/ext/client_config/parse_address.c \
 src/core/ext/client_config/resolver.c \
 src/core/ext/client_config/resolver_factory.c \
 src/core/ext/client_config/resolver_registry.c \

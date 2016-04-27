@@ -138,7 +138,9 @@ namespace Grpc.Testing {
     }
 
     // client stub
+    #pragma warning disable 0618
     public class TestServiceClient : ClientBase<TestServiceClient>, ITestServiceClient
+    #pragma warning restore 0618
     {
       public TestServiceClient(Channel channel) : base(channel)
       {
@@ -226,7 +228,9 @@ namespace Grpc.Testing {
     }
 
     // creates service definition that can be registered with a server
+    #pragma warning disable 0618
     public static ServerServiceDefinition BindService(ITestService serviceImpl)
+    #pragma warning restore 0618
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_EmptyCall, serviceImpl.EmptyCall)
@@ -238,7 +242,9 @@ namespace Grpc.Testing {
     }
 
     // creates service definition that can be registered with a server
+    #pragma warning disable 0618
     public static ServerServiceDefinition BindService(TestServiceBase serviceImpl)
+    #pragma warning restore 0618
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_EmptyCall, serviceImpl.EmptyCall)
@@ -303,7 +309,9 @@ namespace Grpc.Testing {
     }
 
     // client stub
+    #pragma warning disable 0618
     public class UnimplementedServiceClient : ClientBase<UnimplementedServiceClient>, IUnimplementedServiceClient
+    #pragma warning restore 0618
     {
       public UnimplementedServiceClient(Channel channel) : base(channel)
       {
@@ -343,14 +351,18 @@ namespace Grpc.Testing {
     }
 
     // creates service definition that can be registered with a server
+    #pragma warning disable 0618
     public static ServerServiceDefinition BindService(IUnimplementedService serviceImpl)
+    #pragma warning restore 0618
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_UnimplementedCall, serviceImpl.UnimplementedCall).Build();
     }
 
     // creates service definition that can be registered with a server
+    #pragma warning disable 0618
     public static ServerServiceDefinition BindService(UnimplementedServiceBase serviceImpl)
+    #pragma warning restore 0618
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_UnimplementedCall, serviceImpl.UnimplementedCall).Build();
@@ -367,14 +379,15 @@ namespace Grpc.Testing {
   {
     static readonly string __ServiceName = "grpc.testing.ReconnectService";
 
+    static readonly Marshaller<global::Grpc.Testing.ReconnectParams> __Marshaller_ReconnectParams = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.ReconnectParams.Parser.ParseFrom);
     static readonly Marshaller<global::Grpc.Testing.Empty> __Marshaller_Empty = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.Empty.Parser.ParseFrom);
     static readonly Marshaller<global::Grpc.Testing.ReconnectInfo> __Marshaller_ReconnectInfo = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.ReconnectInfo.Parser.ParseFrom);
 
-    static readonly Method<global::Grpc.Testing.Empty, global::Grpc.Testing.Empty> __Method_Start = new Method<global::Grpc.Testing.Empty, global::Grpc.Testing.Empty>(
+    static readonly Method<global::Grpc.Testing.ReconnectParams, global::Grpc.Testing.Empty> __Method_Start = new Method<global::Grpc.Testing.ReconnectParams, global::Grpc.Testing.Empty>(
         MethodType.Unary,
         __ServiceName,
         "Start",
-        __Marshaller_Empty,
+        __Marshaller_ReconnectParams,
         __Marshaller_Empty);
 
     static readonly Method<global::Grpc.Testing.Empty, global::Grpc.Testing.ReconnectInfo> __Method_Stop = new Method<global::Grpc.Testing.Empty, global::Grpc.Testing.ReconnectInfo>(
@@ -394,10 +407,10 @@ namespace Grpc.Testing {
     [System.Obsolete("Client side interfaced will be removed in the next release. Use client class directly.")]
     public interface IReconnectServiceClient
     {
-      global::Grpc.Testing.Empty Start(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      global::Grpc.Testing.Empty Start(global::Grpc.Testing.Empty request, CallOptions options);
-      AsyncUnaryCall<global::Grpc.Testing.Empty> StartAsync(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      AsyncUnaryCall<global::Grpc.Testing.Empty> StartAsync(global::Grpc.Testing.Empty request, CallOptions options);
+      global::Grpc.Testing.Empty Start(global::Grpc.Testing.ReconnectParams request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+      global::Grpc.Testing.Empty Start(global::Grpc.Testing.ReconnectParams request, CallOptions options);
+      AsyncUnaryCall<global::Grpc.Testing.Empty> StartAsync(global::Grpc.Testing.ReconnectParams request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+      AsyncUnaryCall<global::Grpc.Testing.Empty> StartAsync(global::Grpc.Testing.ReconnectParams request, CallOptions options);
       global::Grpc.Testing.ReconnectInfo Stop(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
       global::Grpc.Testing.ReconnectInfo Stop(global::Grpc.Testing.Empty request, CallOptions options);
       AsyncUnaryCall<global::Grpc.Testing.ReconnectInfo> StopAsync(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
@@ -408,14 +421,14 @@ namespace Grpc.Testing {
     [System.Obsolete("Service implementations should inherit from the generated abstract base class instead.")]
     public interface IReconnectService
     {
-      Task<global::Grpc.Testing.Empty> Start(global::Grpc.Testing.Empty request, ServerCallContext context);
+      Task<global::Grpc.Testing.Empty> Start(global::Grpc.Testing.ReconnectParams request, ServerCallContext context);
       Task<global::Grpc.Testing.ReconnectInfo> Stop(global::Grpc.Testing.Empty request, ServerCallContext context);
     }
 
     // server-side abstract class
     public abstract class ReconnectServiceBase
     {
-      public virtual Task<global::Grpc.Testing.Empty> Start(global::Grpc.Testing.Empty request, ServerCallContext context)
+      public virtual Task<global::Grpc.Testing.Empty> Start(global::Grpc.Testing.ReconnectParams request, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }
@@ -428,7 +441,9 @@ namespace Grpc.Testing {
     }
 
     // client stub
+    #pragma warning disable 0618
     public class ReconnectServiceClient : ClientBase<ReconnectServiceClient>, IReconnectServiceClient
+    #pragma warning restore 0618
     {
       public ReconnectServiceClient(Channel channel) : base(channel)
       {
@@ -445,19 +460,19 @@ namespace Grpc.Testing {
       {
       }
 
-      public virtual global::Grpc.Testing.Empty Start(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public virtual global::Grpc.Testing.Empty Start(global::Grpc.Testing.ReconnectParams request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return Start(request, new CallOptions(headers, deadline, cancellationToken));
       }
-      public virtual global::Grpc.Testing.Empty Start(global::Grpc.Testing.Empty request, CallOptions options)
+      public virtual global::Grpc.Testing.Empty Start(global::Grpc.Testing.ReconnectParams request, CallOptions options)
       {
         return CallInvoker.BlockingUnaryCall(__Method_Start, null, options, request);
       }
-      public virtual AsyncUnaryCall<global::Grpc.Testing.Empty> StartAsync(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      public virtual AsyncUnaryCall<global::Grpc.Testing.Empty> StartAsync(global::Grpc.Testing.ReconnectParams request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return StartAsync(request, new CallOptions(headers, deadline, cancellationToken));
       }
-      public virtual AsyncUnaryCall<global::Grpc.Testing.Empty> StartAsync(global::Grpc.Testing.Empty request, CallOptions options)
+      public virtual AsyncUnaryCall<global::Grpc.Testing.Empty> StartAsync(global::Grpc.Testing.ReconnectParams request, CallOptions options)
       {
         return CallInvoker.AsyncUnaryCall(__Method_Start, null, options, request);
       }
@@ -484,7 +499,9 @@ namespace Grpc.Testing {
     }
 
     // creates service definition that can be registered with a server
+    #pragma warning disable 0618
     public static ServerServiceDefinition BindService(IReconnectService serviceImpl)
+    #pragma warning restore 0618
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_Start, serviceImpl.Start)
@@ -492,7 +509,9 @@ namespace Grpc.Testing {
     }
 
     // creates service definition that can be registered with a server
+    #pragma warning disable 0618
     public static ServerServiceDefinition BindService(ReconnectServiceBase serviceImpl)
+    #pragma warning restore 0618
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_Start, serviceImpl.Start)

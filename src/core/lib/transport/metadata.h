@@ -120,6 +120,7 @@ void grpc_mdelem_set_user_data(grpc_mdelem *md, void (*destroy_func)(void *),
                                void *user_data);
 
 /* Reference counting */
+//#define GRPC_METADATA_REFCOUNT_DEBUG
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
 #define GRPC_MDSTR_REF(s) grpc_mdstr_ref((s), __FILE__, __LINE__)
 #define GRPC_MDSTR_UNREF(s) grpc_mdstr_unref((s), __FILE__, __LINE__)

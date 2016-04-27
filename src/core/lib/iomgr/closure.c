@@ -54,6 +54,12 @@ void grpc_closure_list_add(grpc_closure_list *closure_list,
   closure_list->tail = closure;
 }
 
+void grpc_closure_list_fail_all(grpc_closure_list *list) {
+  for (grpc_closure *c = list->head; c != NULL; c = grpc_closure_next(c)) {
+    c->final_data &= ~(uintptr_t)1;
+  }
+}
+
 bool grpc_closure_list_empty(grpc_closure_list closure_list) {
   return closure_list.head == NULL;
 }
