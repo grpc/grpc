@@ -71,7 +71,9 @@ namespace Grpc.Testing {
     }
 
     // client stub
+    #pragma warning disable 0618
     public class BenchmarkServiceClient : ClientBase<BenchmarkServiceClient>, IBenchmarkServiceClient
+    #pragma warning restore 0618
     {
       public BenchmarkServiceClient(Channel channel) : base(channel)
       {
@@ -119,7 +121,9 @@ namespace Grpc.Testing {
     }
 
     // creates service definition that can be registered with a server
+    #pragma warning disable 0618
     public static ServerServiceDefinition BindService(IBenchmarkService serviceImpl)
+    #pragma warning restore 0618
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_UnaryCall, serviceImpl.UnaryCall)
@@ -127,7 +131,9 @@ namespace Grpc.Testing {
     }
 
     // creates service definition that can be registered with a server
+    #pragma warning disable 0618
     public static ServerServiceDefinition BindService(BenchmarkServiceBase serviceImpl)
+    #pragma warning restore 0618
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_UnaryCall, serviceImpl.UnaryCall)
@@ -241,7 +247,9 @@ namespace Grpc.Testing {
     }
 
     // client stub
+    #pragma warning disable 0618
     public class WorkerServiceClient : ClientBase<WorkerServiceClient>, IWorkerServiceClient
+    #pragma warning restore 0618
     {
       public WorkerServiceClient(Channel channel) : base(channel)
       {
@@ -313,7 +321,9 @@ namespace Grpc.Testing {
     }
 
     // creates service definition that can be registered with a server
+    #pragma warning disable 0618
     public static ServerServiceDefinition BindService(IWorkerService serviceImpl)
+    #pragma warning restore 0618
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_RunServer, serviceImpl.RunServer)
@@ -323,7 +333,9 @@ namespace Grpc.Testing {
     }
 
     // creates service definition that can be registered with a server
+    #pragma warning disable 0618
     public static ServerServiceDefinition BindService(WorkerServiceBase serviceImpl)
+    #pragma warning restore 0618
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_RunServer, serviceImpl.RunServer)

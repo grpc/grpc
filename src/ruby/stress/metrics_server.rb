@@ -1,6 +1,4 @@
-#!/usr/bin/env ruby
-
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,23 +27,57 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# #######################################################################
-# DEPRECATED: The behaviour in this file has been moved to pb/test/client.rb
-#
-# This file remains to support existing tools and scripts that use it.
-# ######################################################################
-#
-# interop_client is a testing tool that accesses a gRPC interop testing
-# server and runs a test on it.
-#
-# Helps validate interoperation b/w different gRPC implementations.
-#
-# Usage: $ path/to/interop_client.rb --server_host=<hostname> \
-#                                    --server_port=<port> \
-#                                    --test_case=<testcase_name>
+require_relative '../pb/grpc/testing/metrics.rb'
+require_relative '../pb/grpc/testing/metrics_services.rb'
 
-this_dir = File.expand_path(File.dirname(__FILE__))
-pb_dir = File.join(File.dirname(File.dirname(this_dir)), 'pb')
-$LOAD_PATH.unshift(pb_dir) unless $LOAD_PATH.include?(pb_dir)
+class Gauge
+  def get_name
+    raise NoMethodError.new
+  end
 
-require 'test/client'
+  def get_type
+    raise NoMethodError.new
+  end
+
+  def get_value
+    raise NoMethodError.new
+  end
+end
+
+class MetricsServiceImpl < Grpc::Testing::MetricsService::Service
+  include Grpc::Testing
+  @gauges
+
+  def initialize
+    @gauges = {}
+  end
+
+  def register_gauge(gauge)
+    @gauges[gauge.get_name] = gauge
+  end
+
+  def make_gauge_response(gauge)
+    response = GaugeResponse.new(:name => gauge.get_name)
+    value = gauge.get_value
+    case gauge.get_type
+    when 'long'
+      response.long_value = value
+    when 'double'
+      response.double_value = value
+    when 'string'
+      response.string_value = value
+    end
+    response
+  end
+
+  def get_all_gauges(_empty, _call)
+    @gauges.values.map do |gauge|
+      make_gauge_response gauge
+    end
+  end
+
+  def get_gauge(gauge_req, _call)
+    gauge = @gauges[gauge_req.name]
+    make_gauge_response gauge
+  end
+end
