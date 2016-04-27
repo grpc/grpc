@@ -2551,6 +2551,17 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: golden_file_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - src/proto/grpc/testing/compiler_test.proto
+  - test/cpp/codegen/golden_file_test.cc
+  deps:
+  - grpc++
+  - grpc
+  - gpr
 - name: grpc_cli
   build: test
   run: false
