@@ -31,11 +31,11 @@
  *
  */
 
-/* Posix code for gpr snprintf support. */
+/* Windows code for gpr snprintf support. */
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WIN32
+#ifdef GPR_WIN32_STRING
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -80,30 +80,4 @@ int gpr_asprintf(char **strp, const char *format, ...) {
   return -1;
 }
 
-#if defined UNICODE || defined _UNICODE
-LPTSTR
-gpr_char_to_tchar(LPCSTR input) {
-  LPTSTR ret;
-  int needed = MultiByteToWideChar(CP_UTF8, 0, input, -1, NULL, 0);
-  if (needed <= 0) return NULL;
-  ret = gpr_malloc((unsigned)needed * sizeof(TCHAR));
-  MultiByteToWideChar(CP_UTF8, 0, input, -1, ret, needed);
-  return ret;
-}
-
-LPSTR
-gpr_tchar_to_char(LPCTSTR input) {
-  LPSTR ret;
-  int needed = WideCharToMultiByte(CP_UTF8, 0, input, -1, NULL, 0, NULL, NULL);
-  if (needed <= 0) return NULL;
-  ret = gpr_malloc((unsigned)needed);
-  WideCharToMultiByte(CP_UTF8, 0, input, -1, ret, needed, NULL, NULL);
-  return ret;
-}
-#else
-char *gpr_tchar_to_char(LPTSTR input) { return gpr_strdup(input); }
-
-char *gpr_char_to_tchar(LPTSTR input) { return gpr_strdup(input); }
-#endif
-
-#endif /* GPR_WIN32 */
+#endif /* GPR_WIN32_STRING */

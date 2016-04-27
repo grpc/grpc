@@ -39,8 +39,4 @@ cp -r /var/local/jenkins/service_account $HOME || true
 
 cd /var/local/git/grpc
 
-make
-
-# build Python interop client and server
-CONFIG=opt ./tools/run_tests/build_python.sh
-
+tools/run_tests/run_tests.py -l python -c opt --build_only

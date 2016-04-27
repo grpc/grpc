@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,55 +31,64 @@
  *
  */
 
+/* Posix code for gpr snprintf support. */
+
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_POSIX_TMPFILE
+#ifdef GPR_WIN32
 
-#include "src/core/lib/support/tmpfile.h"
+/* Some platforms (namely msys) need wchar to be included BEFORE
+   anything else, especially strsafe.h. */
+#include <wchar.h>
 
-#include <errno.h>
-#include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
 #include <string.h>
-#include <unistd.h>
+#include <strsafe.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/support/string.h"
 
-FILE *gpr_tmpfile(const char *prefix, char **tmp_filename) {
-  FILE *result = NULL;
-  char *template;
-  int fd;
-
-  if (tmp_filename != NULL) *tmp_filename = NULL;
-
-  gpr_asprintf(&template, "/tmp/%s_XXXXXX", prefix);
-  GPR_ASSERT(template != NULL);
-
-  fd = mkstemp(template);
-  if (fd == -1) {
-    gpr_log(GPR_ERROR, "mkstemp failed for template %s with error %s.",
-            template, strerror(errno));
-    goto end;
-  }
-  result = fdopen(fd, "w+");
-  if (result == NULL) {
-    gpr_log(GPR_ERROR, "Could not open file %s from fd %d (error = %s).",
-            template, fd, strerror(errno));
-    unlink(template);
-    close(fd);
-    goto end;
-  }
-
-end:
-  if (result != NULL && tmp_filename != NULL) {
-    *tmp_filename = template;
-  } else {
-    gpr_free(template);
-  }
-  return result;
+#if defined UNICODE || defined _UNICODE
+LPTSTR
+gpr_char_to_tchar(LPCSTR input) {
+  LPTSTR ret;
+  int needed = MultiByteToWideChar(CP_UTF8, 0, input, -1, NULL, 0);
+  if (needed <= 0) return NULL;
+  ret = gpr_malloc((unsigned)needed * sizeof(TCHAR));
+  MultiByteToWideChar(CP_UTF8, 0, input, -1, ret, needed);
+  return ret;
 }
 
-#endif /* GPR_POSIX_TMPFILE */
+LPSTR
+gpr_tchar_to_char(LPCTSTR input) {
+  LPSTR ret;
+  int needed = WideCharToMultiByte(CP_UTF8, 0, input, -1, NULL, 0, NULL, NULL);
+  if (needed <= 0) return NULL;
+  ret = gpr_malloc((unsigned)needed);
+  WideCharToMultiByte(CP_UTF8, 0, input, -1, ret, needed, NULL, NULL);
+  return ret;
+}
+#else
+char *gpr_tchar_to_char(LPTSTR input) { return gpr_strdup(input); }
+
+char *gpr_char_to_tchar(LPTSTR input) { return gpr_strdup(input); }
+#endif
+
+char *gpr_format_message(int messageid) {
+  LPTSTR tmessage;
+  char *message;
+  DWORD status = FormatMessage(
+      FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
+          FORMAT_MESSAGE_IGNORE_INSERTS,
+      NULL, (DWORD)messageid, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+      (LPTSTR)(&tmessage), 0, NULL);
+  if (status == 0) return gpr_strdup("Unable to retrieve error string");
+  message = gpr_tchar_to_char(tmessage);
+  LocalFree(tmessage);
+  return message;
+}
+
+#endif /* GPR_WIN32 */

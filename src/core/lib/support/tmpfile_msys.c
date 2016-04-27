@@ -33,53 +33,41 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_POSIX_TMPFILE
+#ifdef GPR_MSYS_TMPFILE
 
-#include "src/core/lib/support/tmpfile.h"
-
-#include <errno.h>
-#include <stdlib.h>
+#include <io.h>
+#include <stdio.h>
 #include <string.h>
-#include <unistd.h>
+#include <tchar.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/support/string.h"
+#include "src/core/lib/support/string_win32.h"
+#include "src/core/lib/support/tmpfile.h"
 
-FILE *gpr_tmpfile(const char *prefix, char **tmp_filename) {
+FILE *gpr_tmpfile(const char *prefix, char **tmp_filename_out) {
   FILE *result = NULL;
-  char *template;
-  int fd;
+  char tmp_filename[MAX_PATH];
+  UINT success;
 
-  if (tmp_filename != NULL) *tmp_filename = NULL;
+  if (tmp_filename_out != NULL) *tmp_filename_out = NULL;
 
-  gpr_asprintf(&template, "/tmp/%s_XXXXXX", prefix);
-  GPR_ASSERT(template != NULL);
+  /* Generate a unique filename with our template + temporary path. */
+  success = GetTempFileNameA(".", prefix, 0, tmp_filename);
+  fprintf(stderr, "success = %d\n", success);
 
-  fd = mkstemp(template);
-  if (fd == -1) {
-    gpr_log(GPR_ERROR, "mkstemp failed for template %s with error %s.",
-            template, strerror(errno));
-    goto end;
+  if (success) {
+    /* Open a file there. */
+    result = fopen(tmp_filename, "wb+");
+    fprintf(stderr, "result = %p\n", result);
   }
-  result = fdopen(fd, "w+");
-  if (result == NULL) {
-    gpr_log(GPR_ERROR, "Could not open file %s from fd %d (error = %s).",
-            template, fd, strerror(errno));
-    unlink(template);
-    close(fd);
-    goto end;
+  if (result != NULL && tmp_filename_out) {
+    *tmp_filename_out = gpr_strdup(tmp_filename);
   }
 
-end:
-  if (result != NULL && tmp_filename != NULL) {
-    *tmp_filename = template;
-  } else {
-    gpr_free(template);
-  }
   return result;
 }
 
-#endif /* GPR_POSIX_TMPFILE */
+#endif /* GPR_MSYS_TMPFILE */
