@@ -53,7 +53,7 @@ cd src/node/tools
 npm update
 npm pack
 cp grpc-tools-*.tgz $artifacts/
-tools_version=$(npm list | grep -oP '(?<=grpc-tools@)\\S+')
+tools_version=$(npm list | grep -oP '(?<=grpc-tools@)\S+')
 
 output_dir=$artifacts/grpc-precompiled-binaries/node/grpc-tools/$tools_version
 mkdir -p $output_dir
