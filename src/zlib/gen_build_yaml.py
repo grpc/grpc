@@ -56,9 +56,10 @@ try:
       'zlib': True,
       'defaults': 'zlib',
       'build': 'private',
+      'external': 'zlib',
       'language': 'c',
       'secure': 'no',
-      'src': sorted(cmvar('ZLIB_SRCS')),
+      'src': sorted([f for f in cmvar('ZLIB_SRCS') if not f.startswith('third_party/zlib/g')]),
       'headers': sorted(cmvar('ZLIB_PUBLIC_HDRS') + cmvar('ZLIB_PRIVATE_HDRS')),
   }]
 except:

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\refcount_test.c">
-      <Filter>third_party\boringssl\crypto</Filter>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\src\crypto\refcount_test.c">
+      <Filter>third_party\boringssl\src\crypto</Filter>
     </ClCompile>
   </ItemGroup>
 
@@ -13,8 +13,11 @@
     <Filter Include="third_party\boringssl">
       <UniqueIdentifier>{07e15140-4465-ac3d-ec1e-5a0f4c69b114}</UniqueIdentifier>
     </Filter>
-    <Filter Include="third_party\boringssl\crypto">
-      <UniqueIdentifier>{7f7132bd-a082-c334-dfb0-941a5f2e3cb6}</UniqueIdentifier>
+    <Filter Include="third_party\boringssl\src">
+      <UniqueIdentifier>{da9affe1-1f43-2365-de6d-9729df1cd3f2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\src\crypto">
+      <UniqueIdentifier>{b209ae66-9155-6c00-25e3-c1dd82c967e9}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

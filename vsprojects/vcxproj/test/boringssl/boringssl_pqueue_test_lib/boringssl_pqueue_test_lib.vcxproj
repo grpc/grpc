@@ -147,7 +147,7 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\pqueue\pqueue_test.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\src\ssl\pqueue\pqueue_test.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

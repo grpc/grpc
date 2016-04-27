@@ -1,0 +1,35 @@
+<%!
+  def src_massage(src, external):
+    if src.startswith('third_party/' + external + '/'):
+      return src[len(external) + len('third_party//'):]
+    else:
+      return src
+%>
+<%def name="gen_build(external, includes)">\
+% for lib in libs:
+%   if lib.get('external', '') == external:
+cc_library(
+  name = "${lib.name}",
+  linkstatic = 1,
+  srcs = [
+%     for src in lib.src:
+    '${src_massage(src, external)}',
+%     endfor
+  ],
+  hdrs = [
+%     for hdr in lib.headers:
+    '${src_massage(hdr, external)}',
+%     endfor
+  ],
+  includes = [
+%     for include in includes:
+      '${include}',
+%     endfor
+  ],
+  visibility = [
+    "//visibility:public",
+  ],
+)
+%   endif
+% endfor
+</%def>\

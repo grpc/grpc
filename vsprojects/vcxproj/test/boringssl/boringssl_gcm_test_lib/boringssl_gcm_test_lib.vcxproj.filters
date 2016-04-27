@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\modes\gcm_test.c">
-      <Filter>third_party\boringssl\crypto\modes</Filter>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\src\crypto\modes\gcm_test.c">
+      <Filter>third_party\boringssl\src\crypto\modes</Filter>
     </ClCompile>
   </ItemGroup>
 
@@ -13,11 +13,14 @@
     <Filter Include="third_party\boringssl">
       <UniqueIdentifier>{4755635e-5b04-b37c-9eaf-f60bb75ad41f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="third_party\boringssl\crypto">
-      <UniqueIdentifier>{3635913e-d3df-8976-eecd-6d5c4deee814}</UniqueIdentifier>
+    <Filter Include="third_party\boringssl\src">
+      <UniqueIdentifier>{5830cbe0-24e8-01fe-fe43-4688e39faa15}</UniqueIdentifier>
     </Filter>
-    <Filter Include="third_party\boringssl\crypto\modes">
-      <UniqueIdentifier>{eef787de-3d8b-a356-55fa-9f4c6c6b0e36}</UniqueIdentifier>
+    <Filter Include="third_party\boringssl\src\crypto">
+      <UniqueIdentifier>{f65ee5e5-e82a-ebd1-011b-2d6d00d7ae13}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\src\crypto\modes">
+      <UniqueIdentifier>{d88af090-01dc-3bcf-aa72-3fc7fe4a89d8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

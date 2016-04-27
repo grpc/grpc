@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\hkdf\hkdf_test.c">
-      <Filter>third_party\boringssl\crypto\hkdf</Filter>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\src\crypto\hkdf\hkdf_test.c">
+      <Filter>third_party\boringssl\src\crypto\hkdf</Filter>
     </ClCompile>
   </ItemGroup>
 
@@ -13,11 +13,14 @@
     <Filter Include="third_party\boringssl">
       <UniqueIdentifier>{8881db75-0db6-1a1a-d917-aed225227cb9}</UniqueIdentifier>
     </Filter>
-    <Filter Include="third_party\boringssl\crypto">
-      <UniqueIdentifier>{d99524e4-9e9c-ce95-621b-d588a890d5d8}</UniqueIdentifier>
+    <Filter Include="third_party\boringssl\src">
+      <UniqueIdentifier>{d22942b0-5ffe-3b75-6bac-5788adc4fabf}</UniqueIdentifier>
     </Filter>
-    <Filter Include="third_party\boringssl\crypto\hkdf">
-      <UniqueIdentifier>{5cfd8c8d-bb59-cad4-f1fe-d51adcc23e03}</UniqueIdentifier>
+    <Filter Include="third_party\boringssl\src\crypto">
+      <UniqueIdentifier>{d7aa5c27-8072-422e-cc86-750803f98c55}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\src\crypto\hkdf">
+      <UniqueIdentifier>{f23871e8-9fc3-9128-379b-3f367e20e637}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
