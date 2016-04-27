@@ -371,6 +371,7 @@ class PythonLanguage(object):
       tests_json = json.load(tests_json_file)
     environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
     environment['PYVER'] = '2.7'
+    environment['PYTHONPATH'] = os.path.abspath('src/python/gens')
     if self.config.build_config != 'gcov':
       return [self.config.job_spec(
           ['tools/run_tests/run_python.sh'],
