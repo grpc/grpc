@@ -1668,6 +1668,14 @@ static void set_pollset(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
  * BYTE STREAM
  */
 
+static void incoming_byte_stream_unref(grpc_exec_ctx *exec_ctx,
+                                       grpc_chttp2_incoming_byte_stream *bs) {
+  if (gpr_unref(&bs->refs)) {
+    gpr_slice_buffer_destroy(&bs->slices);
+    gpr_free(bs);
+  }
+}
+
 static void incoming_byte_stream_update_flow_control(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global, size_t max_size_hint,
@@ -1738,6 +1746,7 @@ static void incoming_byte_stream_next_locked(grpc_exec_ctx *exec_ctx,
     bs->on_next = arg->on_complete;
     bs->next = arg->slice;
   }
+  incoming_byte_stream_unref(exec_ctx, bs);
 }
 
 static int incoming_byte_stream_next(grpc_exec_ctx *exec_ctx,
@@ -1747,18 +1756,11 @@ static int incoming_byte_stream_next(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_incoming_byte_stream *bs =
       (grpc_chttp2_incoming_byte_stream *)byte_stream;
   incoming_byte_stream_next_arg arg = {bs, slice, max_size_hint, on_complete};
+  gpr_ref(&bs->refs);
   grpc_chttp2_run_with_global_lock(exec_ctx, bs->transport, bs->stream,
                                    incoming_byte_stream_next_locked, &arg,
                                    sizeof(arg));
   return 0;
-}
-
-static void incoming_byte_stream_unref(grpc_exec_ctx *exec_ctx,
-                                       grpc_chttp2_incoming_byte_stream *bs) {
-  if (gpr_unref(&bs->refs)) {
-    gpr_slice_buffer_destroy(&bs->slices);
-    gpr_free(bs);
-  }
 }
 
 static void incoming_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
@@ -1801,12 +1803,14 @@ static void incoming_byte_stream_push_locked(grpc_exec_ctx *exec_ctx,
   } else {
     gpr_slice_buffer_add(&bs->slices, arg->slice);
   }
+  incoming_byte_stream_unref(exec_ctx, bs);
 }
 
 void grpc_chttp2_incoming_byte_stream_push(grpc_exec_ctx *exec_ctx,
                                            grpc_chttp2_incoming_byte_stream *bs,
                                            gpr_slice slice) {
   incoming_byte_stream_push_arg arg = {bs, slice};
+  gpr_ref(&bs->refs);
   grpc_chttp2_run_with_global_lock(exec_ctx, bs->transport, bs->stream,
                                    incoming_byte_stream_push_locked, &arg,
                                    sizeof(arg));
