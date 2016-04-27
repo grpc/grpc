@@ -7,6 +7,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\compiler\csharp_generator.cc">
       <Filter>src\compiler</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\compiler\node_generator.cc">
+      <Filter>src\compiler</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\compiler\objective_c_generator.cc">
       <Filter>src\compiler</Filter>
     </ClCompile>
@@ -48,6 +51,12 @@
       <Filter>src\compiler</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\compiler\generator_helpers.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\node_generator.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\node_generator_helpers.h">
       <Filter>src\compiler</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\compiler\objective_c_generator.h">

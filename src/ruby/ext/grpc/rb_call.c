@@ -214,6 +214,35 @@ static VALUE grpc_rb_call_get_peer(VALUE self) {
   return res;
 }
 
+/* Called to obtain the x509 cert of an authenticated peer. */
+static VALUE grpc_rb_call_get_peer_cert(VALUE self) {
+  grpc_call *call = NULL;
+  VALUE res = Qnil;
+  grpc_auth_context *ctx = NULL;
+  TypedData_Get_Struct(self, grpc_call, &grpc_call_data_type, call);
+
+  ctx = grpc_call_auth_context(call);
+
+  if (!ctx || !grpc_auth_context_peer_is_authenticated(ctx)) {
+    return Qnil;
+  }
+
+  {
+    grpc_auth_property_iterator it =
+        grpc_auth_context_find_properties_by_name(ctx, GRPC_X509_PEM_CERT_PROPERTY_NAME);
+    const grpc_auth_property *prop = grpc_auth_property_iterator_next(&it);
+    if (prop == NULL) {
+      return Qnil;
+    }
+
+    res = rb_str_new2(prop->value);
+  }
+
+  grpc_auth_context_release(ctx);
+
+  return res;
+}
+
 /*
   call-seq:
   status = call.status
@@ -861,6 +890,7 @@ void Init_grpc_call() {
   rb_define_method(grpc_rb_cCall, "run_batch", grpc_rb_call_run_batch, 4);
   rb_define_method(grpc_rb_cCall, "cancel", grpc_rb_call_cancel, 0);
   rb_define_method(grpc_rb_cCall, "peer", grpc_rb_call_get_peer, 0);
+  rb_define_method(grpc_rb_cCall, "peer_cert", grpc_rb_call_get_peer_cert, 0);
   rb_define_method(grpc_rb_cCall, "status", grpc_rb_call_get_status, 0);
   rb_define_method(grpc_rb_cCall, "status=", grpc_rb_call_set_status, 1);
   rb_define_method(grpc_rb_cCall, "metadata", grpc_rb_call_get_metadata, 0);
