@@ -35,7 +35,9 @@ set -ex
 
 cd $(dirname $0)/../..
 
-artifacts=$(pwd)/artifacts
+base=$(pwd)
+
+artifacts=$base/artifacts
 
 mkdir -p $artifacts
 cp -r $EXTERNAL_GIT_ROOT/architecture={x86,x64},language=node,platform={windows,linux,macos}/artifacts/* $artifacts/ || true
@@ -46,6 +48,15 @@ npm pack
 cp grpc-*.tgz $artifacts/grpc.tgz
 
 mkdir -p bin
+
+cd src/node/tools
+npm update
+npm pack
+cp grpc-tools-*.tgz $artifacts/
+tools_version=$(npm list | grep -oP '(?<=grpc-tools@)\\S+')
+
+output_dir=$artifacts/grpc-precompiled-binaries/node/grpc-tools/$tools_version
+mkdir -p $output_dir
 
 for arch in {x86,x64}; do
   case arch in
@@ -70,15 +81,6 @@ for arch in {x86,x64}; do
     input_dir="$EXTERNAL_GIT_ROOT/architecture=$arch,language=protoc,platform=$plat/artifacts"
     cp $input_dir/protoc* bin/
     cp $input_dir/grpc_node_plugin* bin/
-    # For now, this will have to be manually uploaded to a folder with the
-    # correct package version
-    output_dir=$artifacts/grpc-precompiled-binaries/node/grpc-tools
-    mkdir -p $output_dir
     tar -czf $output_dir/$node_plat-$node_arch.tar.gz bin/
   done
 done
-
-cd src/node/tools
-npm update
-npm pack
-cp grpc-tools-*.tgz $artifacts/
