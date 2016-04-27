@@ -40,7 +40,5 @@ cp -r /var/local/jenkins/service_account $HOME || true
 cd /var/local/git/grpc
 rvm --default use ruby-2.1
 
-make install-certs
-
 # build Ruby interop client and server
 (cd src/ruby && gem update bundler && bundle && rake compile)

@@ -41,8 +41,6 @@ cd /var/local/git/grpc
 nvm use 0.12
 nvm alias default 0.12  # prevent the need to run 'nvm use' in every shell
 
-make install-certs
-
 # build Node interop client & server
 npm install -g node-gyp
 npm install --unsafe-perm --build-from-source
