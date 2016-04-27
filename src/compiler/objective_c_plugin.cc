@@ -81,12 +81,12 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
         declarations += grpc_objective_c_generator::GetHeader(service);
       }
 
-      ::grpc::string nonNullBegin = "\nNS_ASSUME_NONNULL_BEGIN\n\n";
-      ::grpc::string nonNullEnd = "\nNS_ASSUME_NONNULL_END\n";
+      static const ::grpc::string kNonNullBegin = "\nNS_ASSUME_NONNULL_BEGIN\n\n";
+      static const ::grpc::string kNonNullEnd = "\nNS_ASSUME_NONNULL_END\n";
 
       Write(context, file_name + ".pbrpc.h",
-          imports + '\n' + proto_imports + '\n' + nonNullBegin + 
-          declarations + nonNullEnd);
+          imports + '\n' + proto_imports + '\n' + kNonNullBegin + 
+          declarations + kNonNullEnd);
     }
 
     {
