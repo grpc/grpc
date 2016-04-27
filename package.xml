@@ -154,6 +154,7 @@
     <file baseinstalldir="/" name="include/grpc/grpc.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/status.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/byte_buffer.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/byte_buffer_reader.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/compression_types.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/connectivity_state.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/grpc_types.h" role="src" />

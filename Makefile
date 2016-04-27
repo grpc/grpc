@@ -2629,6 +2629,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/grpc.h \
     include/grpc/status.h \
     include/grpc/impl/codegen/byte_buffer.h \
+    include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
     include/grpc/impl/codegen/grpc_types.h \
@@ -2949,6 +2950,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/grpc.h \
     include/grpc/status.h \
     include/grpc/impl/codegen/byte_buffer.h \
+    include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
     include/grpc/impl/codegen/grpc_types.h \
@@ -3235,6 +3237,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/sync_stream.h \
     include/grpc++/impl/codegen/time.h \
     include/grpc/impl/codegen/byte_buffer.h \
+    include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
     include/grpc/impl/codegen/grpc_types.h \
@@ -3538,6 +3541,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/sync_stream.h \
     include/grpc++/impl/codegen/time.h \
     include/grpc/impl/codegen/byte_buffer.h \
+    include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
     include/grpc/impl/codegen/grpc_types.h \

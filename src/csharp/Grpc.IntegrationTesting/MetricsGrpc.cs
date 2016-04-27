@@ -72,7 +72,9 @@ namespace Grpc.Testing {
     }
 
     // client stub
+    #pragma warning disable 0618
     public class MetricsServiceClient : ClientBase<MetricsServiceClient>, IMetricsServiceClient
+    #pragma warning restore 0618
     {
       public MetricsServiceClient(Channel channel) : base(channel)
       {
@@ -120,7 +122,9 @@ namespace Grpc.Testing {
     }
 
     // creates service definition that can be registered with a server
+    #pragma warning disable 0618
     public static ServerServiceDefinition BindService(IMetricsService serviceImpl)
+    #pragma warning restore 0618
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_GetAllGauges, serviceImpl.GetAllGauges)
@@ -128,7 +132,9 @@ namespace Grpc.Testing {
     }
 
     // creates service definition that can be registered with a server
+    #pragma warning disable 0618
     public static ServerServiceDefinition BindService(MetricsServiceBase serviceImpl)
+    #pragma warning restore 0618
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_GetAllGauges, serviceImpl.GetAllGauges)
