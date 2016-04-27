@@ -152,6 +152,8 @@ typedef struct {
    channel). If this parameter is specified and the underlying is not an SSL
    channel, it will just be ignored. */
 #define GRPC_SSL_TARGET_NAME_OVERRIDE_ARG "grpc.ssl_target_name_override"
+/* Maximum metadata size */
+#define GRPC_ARG_MAX_METADATA_SIZE "grpc.max_metadata_size"
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
     particular operation, the grpc_call_error returned will be GRPC_CALL_OK.

@@ -56,6 +56,8 @@
 #define DEFAULT_CONNECTION_WINDOW_TARGET (1024 * 1024)
 #define MAX_WINDOW 0x7fffffffu
 
+#define DEFAULT_MAX_METADATA_SIZE 16 * 1024
+
 #define MAX_CLIENT_STREAM_ID 0x7fffffffu
 
 int grpc_http_trace = 0;
@@ -250,6 +252,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   t->global.ping_counter = 1;
   t->global.pings.next = t->global.pings.prev = &t->global.pings;
   t->parsing.is_client = is_client;
+  t->parsing.max_metadata_size = DEFAULT_MAX_METADATA_SIZE;
   t->parsing.deframe_state =
       is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0;
   t->writing.is_client = is_client;
@@ -371,6 +374,18 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
           grpc_chttp2_hpack_compressor_set_max_usable_size(
               &t->writing.hpack_compressor,
               (uint32_t)channel_args->args[i].value.integer);
+        }
+      } else if (0 == strcmp(channel_args->args[i].key,
+                             GRPC_ARG_MAX_METADATA_SIZE)) {
+        if (channel_args->args[i].type != GRPC_ARG_INTEGER) {
+          gpr_log(GPR_ERROR, "%s: must be an integer",
+                  GRPC_ARG_MAX_METADATA_SIZE);
+        } else if (channel_args->args[i].value.integer < 0) {
+          gpr_log(GPR_ERROR, "%s: must be non-negative",
+                  GRPC_ARG_MAX_METADATA_SIZE);
+        } else {
+          t->parsing.max_metadata_size =
+              (uint32_t)channel_args->args[i].value.integer;
         }
       }
     }

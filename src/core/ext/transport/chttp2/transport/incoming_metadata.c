@@ -65,6 +65,7 @@ void grpc_chttp2_incoming_metadata_buffer_add(
         gpr_realloc(buffer->elems, sizeof(*buffer->elems) * buffer->capacity);
   }
   buffer->elems[buffer->count++].md = elem;
+  buffer->size += GRPC_MDELEM_LENGTH(elem);
 }
 
 void grpc_chttp2_incoming_metadata_buffer_set_deadline(
