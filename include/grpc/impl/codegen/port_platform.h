@@ -82,28 +82,31 @@
    things.  */
 
 #if !defined(GPR_NO_AUTODETECT_PLATFORM)
+#if defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32)
 #if defined(_WIN64) || defined(WIN64)
-#define GPR_PLATFORM_STRING "windows"
-#define GPR_WIN32 1
 #define GPR_ARCH_64 1
-#define GPR_GETPID_IN_PROCESS_H 1
-#define GPR_WINSOCK_SOCKET 1
-#define GPR_WINDOWS_SUBPROCESS 1
-#ifdef __GNUC__
-#define GPR_GCC_ATOMIC 1
-#define GPR_GCC_TLS 1
 #else
-#define GPR_WIN32_ATOMIC 1
-#define GPR_MSVC_TLS 1
-#endif
-#define GPR_WINDOWS_CRASH_HANDLER 1
-#elif defined(_WIN32) || defined(WIN32)
-#define GPR_PLATFORM_STRING "windows"
 #define GPR_ARCH_32 1
+#endif
+#define GPR_PLATFORM_STRING "windows"
 #define GPR_WIN32 1
-#define GPR_GETPID_IN_PROCESS_H 1
 #define GPR_WINSOCK_SOCKET 1
 #define GPR_WINDOWS_SUBPROCESS 1
+#define GPR_WIN32_ENV
+#ifdef __MSYS__
+#define GPR_GETPID_IN_UNISTD_H 1
+#define GPR_MSYS_TMPFILE
+#define GPR_POSIX_LOG
+#define GPR_POSIX_STRING
+#define GPR_POSIX_TIME
+#else
+#define GPR_GETPID_IN_PROCESS_H 1
+#define GPR_WIN32_TMPFILE
+#define GPR_WIN32_LOG
+#define GPR_WINDOWS_CRASH_HANDLER 1
+#define GPR_WIN32_STRING
+#define GPR_WIN32_TIME
+#endif
 #ifdef __GNUC__
 #define GPR_GCC_ATOMIC 1
 #define GPR_GCC_TLS 1
@@ -111,7 +114,6 @@
 #define GPR_WIN32_ATOMIC 1
 #define GPR_MSVC_TLS 1
 #endif
-#define GPR_WINDOWS_CRASH_HANDLER 1
 #elif defined(ANDROID) || defined(__ANDROID__)
 #define GPR_PLATFORM_STRING "android"
 #define GPR_ANDROID 1
@@ -127,6 +129,8 @@
 #define GPR_POSIX_SOCKETUTILS 1
 #define GPR_POSIX_ENV 1
 #define GPR_POSIX_FILE 1
+#define GPR_POSIX_TMPFILE 1
+#define GPR_POSIX_LOG
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
@@ -153,6 +157,7 @@
 #define GPR_GCC_ATOMIC 1
 #define GPR_GCC_TLS 1
 #define GPR_LINUX 1
+#define GPR_LINUX_LOG
 #define GPR_LINUX_MULTIPOLL_WITH_EPOLL 1
 #define GPR_POSIX_WAKEUP_FD 1
 #define GPR_POSIX_SOCKET 1
@@ -176,6 +181,7 @@
 #define GPR_POSIX_SOCKETUTILS
 #endif
 #define GPR_POSIX_FILE 1
+#define GPR_POSIX_TMPFILE 1
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
@@ -214,6 +220,7 @@
 #define GPR_POSIX_SOCKETUTILS 1
 #define GPR_POSIX_ENV 1
 #define GPR_POSIX_FILE 1
+#define GPR_POSIX_TMPFILE 1
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
@@ -244,6 +251,7 @@
 #define GPR_POSIX_SOCKETUTILS 1
 #define GPR_POSIX_ENV 1
 #define GPR_POSIX_FILE 1
+#define GPR_POSIX_TMPFILE 1
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
@@ -281,6 +289,7 @@
 #define GPR_POSIX_SOCKETUTILS 1
 #define GPR_POSIX_ENV 1
 #define GPR_POSIX_FILE 1
+#define GPR_POSIX_TMPFILE 1
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
