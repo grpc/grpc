@@ -95,7 +95,7 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
        require */
     return NULL;
   } else if (md->key == GRPC_MDSTR_CONTENT_TYPE) {
-    const char* value_str = grpc_mdstr_as_c_string(md->value);
+    const char *value_str = grpc_mdstr_as_c_string(md->value);
     if (strncmp(value_str, EXPECTED_CONTENT_TYPE,
                 EXPECTED_CONTENT_TYPE_LENGTH) == 0 &&
         (value_str[EXPECTED_CONTENT_TYPE_LENGTH] == '+' ||
