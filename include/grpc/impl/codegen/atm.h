@@ -83,8 +83,8 @@
 #include <grpc/impl/codegen/atm_gcc_atomic.h>
 #elif defined(GPR_GCC_SYNC)
 #include <grpc/impl/codegen/atm_gcc_sync.h>
-#elif defined(GPR_WIN32_ATOMIC)
-#include <grpc/impl/codegen/atm_win32.h>
+#elif defined(GPR_WINDOWS_ATOMIC)
+#include <grpc/impl/codegen/atm_windows.h>
 #else
 #error could not determine platform for atm
 #endif

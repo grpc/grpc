@@ -35,7 +35,7 @@
 
 #include "imports.generated.h"
 
-#ifdef GPR_WIN32
+#ifdef GPR_WINDOWS
 
 census_initialize_type census_initialize_import;
 census_shutdown_type census_shutdown_import;
@@ -575,4 +575,4 @@ void pygrpc_load_imports(HMODULE library) {
 }
 #endif  /* __cpluslus */
 
-#endif /* !GPR_WIN32 */
+#endif /* !GPR_WINDOWS */

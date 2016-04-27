@@ -33,7 +33,7 @@
 
 #include "rb_grpc_imports.generated.h"
 
-#if GPR_WIN32
+#if GPR_WINDOWS
 #include <tchar.h>
 
 int grpc_rb_load_core() {

@@ -33,7 +33,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WIN32
+#ifdef GPR_WINDOWS
 
 #include <io.h>
 #include <stdio.h>
@@ -44,7 +44,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/support/string_win32.h"
+#include "src/core/lib/support/string_windows.h"
 #include "src/core/lib/support/tmpfile.h"
 
 FILE *gpr_tmpfile(const char *prefix, char **tmp_filename_out) {
@@ -81,4 +81,4 @@ end:
   return result;
 }
 
-#endif /* GPR_WIN32 */
+#endif /* GPR_WINDOWS */

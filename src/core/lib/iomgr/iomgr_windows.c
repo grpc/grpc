@@ -35,7 +35,7 @@
 
 #ifdef GPR_WINSOCK_SOCKET
 
-#include "src/core/lib/iomgr/sockaddr_win32.h"
+#include "src/core/lib/iomgr/sockaddr_windows.h"
 
 #include <grpc/support/log.h>
 

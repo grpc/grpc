@@ -38,7 +38,7 @@
 
   #include <grpc/support/port_platform.h>
 
-  #ifdef GPR_WIN32
+  #ifdef GPR_WINDOWS
 
   #include <windows.h>
 
@@ -54,6 +54,6 @@
 
   void grpc_rb_load_imports(HMODULE library);
 
-  #endif /* GPR_WIN32 */
+  #endif /* GPR_WINDOWS */
 
   #endif

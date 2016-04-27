@@ -45,7 +45,7 @@
 
 #include <string.h>
 
-#ifdef GPR_WIN32
+#ifdef GPR_WINDOWS
 #define GPR_EXPORT __declspec(dllexport)
 #define GPR_CALLTYPE __stdcall
 #endif

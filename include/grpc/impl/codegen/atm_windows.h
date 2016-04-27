@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_IMPL_CODEGEN_ATM_WIN32_H
-#define GRPC_IMPL_CODEGEN_ATM_WIN32_H
+#ifndef GRPC_IMPL_CODEGEN_ATM_WINDOWS_H
+#define GRPC_IMPL_CODEGEN_ATM_WINDOWS_H
 
 /* Win32 variant of atm_platform.h */
 #include <grpc/impl/codegen/port_platform.h>
@@ -122,4 +122,4 @@ static __inline gpr_atm gpr_atm_full_fetch_add(gpr_atm *p, gpr_atm delta) {
   return old;
 }
 
-#endif /* GRPC_IMPL_CODEGEN_ATM_WIN32_H */
+#endif /* GRPC_IMPL_CODEGEN_ATM_WINDOWS_H */

@@ -31,21 +31,17 @@
  *
  */
 
-#ifndef GRPC_SUPPORT_LOG_WIN32_H
-#define GRPC_SUPPORT_LOG_WIN32_H
+#ifndef GRPC_CORE_LIB_SUPPORT_STRING_WINDOWS_H
+#define GRPC_CORE_LIB_SUPPORT_STRING_WINDOWS_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <grpc/support/port_platform.h>
 
-/* Returns a string allocated with gpr_malloc that contains a UTF-8
- * formatted error message, corresponding to the error messageid.
- * Use in conjunction with GetLastError() et al.
- */
-GPRAPI char *gpr_format_message(int messageid);
+#ifdef GPR_WINDOWS
 
-#ifdef __cplusplus
-}
-#endif
+/* These allocate new strings using gpr_malloc to convert from and to utf-8. */
+LPTSTR gpr_char_to_tchar(LPCSTR input);
+LPSTR gpr_tchar_to_char(LPCTSTR input);
 
-#endif /* GRPC_SUPPORT_LOG_WIN32_H */
+#endif /* GPR_WINDOWS */
+
+#endif /* GRPC_CORE_LIB_SUPPORT_STRING_WINDOWS_H */

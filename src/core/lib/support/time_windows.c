@@ -35,7 +35,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WIN32
+#ifdef GPR_WINDOWS
 
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -107,4 +107,4 @@ void gpr_sleep_until(gpr_timespec until) {
   }
 }
 
-#endif /* GPR_WIN32 */
+#endif /* GPR_WINDOWS */

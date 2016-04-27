@@ -43,7 +43,7 @@
 #include "src/core/lib/iomgr/workqueue_posix.h"
 #endif
 
-#ifdef GPR_WIN32
+#ifdef GPR_WINDOWS
 #include "src/core/lib/iomgr/workqueue_windows.h"
 #endif
 

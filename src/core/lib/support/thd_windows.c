@@ -35,7 +35,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WIN32
+#ifdef GPR_WINDOWS
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -114,4 +114,4 @@ void gpr_thd_join(gpr_thd_id t) {
   destroy_thread(info);
 }
 
-#endif /* GPR_WIN32 */
+#endif /* GPR_WINDOWS */

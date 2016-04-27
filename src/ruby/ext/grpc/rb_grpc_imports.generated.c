@@ -33,7 +33,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WIN32
+#ifdef GPR_WINDOWS
 
 #include "rb_grpc_imports.generated.h"
 
@@ -567,4 +567,4 @@ void grpc_rb_load_imports(HMODULE library) {
   gpr_thd_join_import = (gpr_thd_join_type) GetProcAddress(library, "gpr_thd_join");
 }
 
-#endif /* GPR_WIN32 */
+#endif /* GPR_WINDOWS */
