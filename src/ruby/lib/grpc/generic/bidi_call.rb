@@ -28,7 +28,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'forwardable'
-require 'grpc/grpc'
+require_relative '../grpc'
 
 # GRPC contains the General RPC module.
 module GRPC

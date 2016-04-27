@@ -10,7 +10,7 @@
   <email>grpc-packages@google.com</email>
   <active>yes</active>
  </lead>
- <date>2016-03-01</date>
+ <date>2016-04-19</date>
  <time>16:06:07</time>
  <version>
   <release>0.14.0</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>BSD</license>
  <notes>
-- Increase unit test code coverage #5225
+- destroy grpc_byte_buffer after startBatch #6096
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -996,8 +996,8 @@ Update to wrap gRPC C Core version 0.10.0
   </release>
   <release>
    <version>
-    <release>0.14.0</release>
-    <api>0.14.0</api>
+    <release>0.8.1</release>
+    <api>0.8.1</api>
    </version>
    <stability>
     <release>beta</release>
@@ -1007,6 +1007,21 @@ Update to wrap gRPC C Core version 0.10.0
    <license>BSD</license>
    <notes>
 - Increase unit test code coverage #5225
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>0.14.0</release>
+    <api>0.14.0</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <date>2016-04-19</date>
+   <license>BSD</license>
+   <notes>
+- destroy grpc_byte_buffer after startBatch #6096
    </notes>
   </release>
  </changelog>
