@@ -35,6 +35,8 @@
 
 #ifdef GPR_WINSOCK_SOCKET
 
+#include <limits.h>
+
 #include "src/core/lib/iomgr/sockaddr_win32.h"
 
 #include <grpc/support/alloc.h>
@@ -51,12 +53,20 @@
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer.h"
 
+#if defined(__MSYS__) && defined(GPR_ARCH_64)
+/* Nasty workaround for nasty bug when using the 64 bits msys compiler
+   in conjunction with Microsoft Windows headers. */
+#define GRPC_FIONBIO _IOW('f', 126, uint32_t)
+#else
+#define GRPC_FIONBIO FIONBIO
+#endif
+
 static int set_non_block(SOCKET sock) {
   int status;
-  unsigned long param = 1;
+  uint32_t param = 1;
   DWORD ret;
-  status =
-      WSAIoctl(sock, FIONBIO, &param, sizeof(param), NULL, 0, &ret, NULL, NULL);
+  status = WSAIoctl(sock, GRPC_FIONBIO, &param, sizeof(param), NULL, 0, &ret,
+                    NULL, NULL);
   return status == 0;
 }
 
