@@ -37,21 +37,23 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include "src/core/lib/iomgr/error.h"
+
 /* a wrapper for accept or accept4 */
 int grpc_accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen,
                  int nonblock, int cloexec);
 
 /* set a socket to non blocking mode */
-int grpc_set_socket_nonblocking(int fd, int non_blocking);
+grpc_error *grpc_set_socket_nonblocking(int fd, int non_blocking);
 
 /* set a socket to close on exec */
-int grpc_set_socket_cloexec(int fd, int close_on_exec);
+grpc_error *grpc_set_socket_cloexec(int fd, int close_on_exec);
 
 /* set a socket to reuse old addresses */
-int grpc_set_socket_reuse_addr(int fd, int reuse);
+grpc_error *grpc_set_socket_reuse_addr(int fd, int reuse);
 
 /* disable nagle */
-int grpc_set_socket_low_latency(int fd, int low_latency);
+grpc_error *grpc_set_socket_low_latency(int fd, int low_latency);
 
 /* Returns true if this system can create AF_INET6 sockets bound to ::1.
    The value is probed once, and cached for the life of the process.
@@ -66,17 +68,17 @@ int grpc_ipv6_loopback_available(void);
 /* Tries to set SO_NOSIGPIPE if available on this platform.
    Returns 1 on success, 0 on failure.
    If SO_NO_SIGPIPE is not available, returns 1. */
-int grpc_set_socket_no_sigpipe_if_possible(int fd);
+grpc_error *grpc_set_socket_no_sigpipe_if_possible(int fd);
 
 /* Tries to set IP_PKTINFO if available on this platform.
    Returns 1 on success, 0 on failure.
    If IP_PKTINFO is not available, returns 1. */
-int grpc_set_socket_ip_pktinfo_if_possible(int fd);
+grpc_error *grpc_set_socket_ip_pktinfo_if_possible(int fd);
 
 /* Tries to set IPV6_RECVPKTINFO if available on this platform.
    Returns 1 on success, 0 on failure.
    If IPV6_RECVPKTINFO is not available, returns 1. */
-int grpc_set_socket_ipv6_recvpktinfo_if_possible(int fd);
+grpc_error *grpc_set_socket_ipv6_recvpktinfo_if_possible(int fd);
 
 /* An enum to keep track of IPv4/IPv6 socket modes.
 
@@ -117,7 +119,9 @@ extern int grpc_forbid_dualstack_sockets_for_testing;
      IPv4, so that bind() or connect() see the correct family.
    Also, it's important to distinguish between DUALSTACK and IPV6 when
    listening on the [::] wildcard address. */
-int grpc_create_dualstack_socket(const struct sockaddr *addr, int type,
-                                 int protocol, grpc_dualstack_mode *dsmode);
+grpc_error *grpc_create_dualstack_socket(const struct sockaddr *addr, int type,
+                                         int protocol,
+                                         grpc_dualstack_mode *dsmode,
+                                         int *newfd);
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_POSIX_H */

@@ -193,6 +193,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/closure.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/error.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_poll_and_epoll_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/exec_ctx.h" role="src" />
@@ -330,6 +331,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair_windows.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/error.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_poll_and_epoll_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/exec_ctx.c" role="src" />

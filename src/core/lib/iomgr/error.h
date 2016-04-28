@@ -31,23 +31,39 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_EXECUTOR_H
-#define GRPC_CORE_LIB_IOMGR_EXECUTOR_H
+#ifndef GRPC_CORE_LIB_IOMGR_ERROR_H
+#define GRPC_CORE_LIB_IOMGR_ERROR_H
 
-#include "src/core/lib/iomgr/closure.h"
+#include <stdint.h>
 
-/** Initialize the global executor.
- *
- * This mechanism is meant to outsource work (grpc_closure instances) to a
- * thread, for those cases where blocking isn't an option but there isn't a
- * non-blocking solution available. */
-void grpc_executor_init();
+typedef struct grpc_error grpc_error;
 
-/** Enqueue \a closure for its eventual execution of \a f(arg) on a separate
- * thread */
-void grpc_executor_push(grpc_closure *closure, grpc_error *error);
+typedef enum {
+  GRPC_ERROR_INT_STATUS_CODE,
+  GRPC_ERROR_INT_ERRNO
+} grpc_error_ints;
 
-/** Shutdown the executor, running all pending work as part of the call */
-void grpc_executor_shutdown();
+typedef enum {
+  GRPC_ERROR_STR_DESCRIPTION,
+  GRPC_ERROR_STR_TARGET_ADDRESS,
+  GRPC_ERROR_STR_OS_ERROR,
+  GRPC_ERROR_STR_SYSCALL
+} grpc_error_strs;
 
-#endif /* GRPC_CORE_LIB_IOMGR_EXECUTOR_H */
+#define GRPC_ERROR_NONE ((grpc_error *)NULL)
+#define GRPC_ERROR_OOM ((grpc_error *)1)
+
+const char *grpc_error_string(grpc_error *error);
+void grpc_error_free_string(const char *str);
+
+grpc_error *grpc_error_create(void);
+grpc_error *grpc_error_ref(grpc_error *err);
+void grpc_error_unref(grpc_error *err);
+grpc_error *grpc_error_set_int(grpc_error *src, grpc_error_ints which,
+                               intptr_t value);
+grpc_error *grpc_error_set_str(grpc_error *src, grpc_error_strs which,
+                               const char *value);
+grpc_error *grpc_error_add_child(grpc_error *src, grpc_error *child);
+grpc_error *grpc_os_error(int err, const char *call_name);
+
+#endif /* GRPC_CORE_LIB_IOMGR_ERROR_H */

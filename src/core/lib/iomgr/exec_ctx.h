@@ -83,9 +83,9 @@ bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx);
  *  the instance is destroyed, or work may be lost. */
 void grpc_exec_ctx_finish(grpc_exec_ctx *exec_ctx);
 /** Add a closure to be executed at the next flush/finish point */
-void grpc_exec_ctx_enqueue(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
-                           bool success,
-                           grpc_workqueue *offload_target_or_null);
+void grpc_exec_ctx_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
+                        grpc_error *error,
+                        grpc_workqueue *offload_target_or_null);
 /** Add a list of closures to be executed at the next flush/finish point.
  *  Leaves \a list empty. */
 void grpc_exec_ctx_enqueue_list(grpc_exec_ctx *exec_ctx,

@@ -36,6 +36,7 @@
 
 #include <grpc/support/port_platform.h>
 #include <stdbool.h>
+#include "src/core/lib/iomgr/error.h"
 
 struct grpc_closure;
 typedef struct grpc_closure grpc_closure;
@@ -65,10 +66,12 @@ struct grpc_closure {
   /** Arguments to be passed to "cb". */
   void *cb_arg;
 
-  /** Once enqueued, contains in the lower bit the success of the closure,
-      and in the upper bits the pointer to the next closure in the list.
-      Before enqueing for execution, this is usable for scratch data. */
-  uintptr_t final_data;
+  union {
+    grpc_error *error;
+    uintptr_t scratch;
+  } final_data;
+
+  grpc_closure *next;
 };
 
 /** Initializes \a closure with \a cb and \a cb_arg. */
@@ -83,19 +86,17 @@ grpc_closure *grpc_closure_create(grpc_iomgr_cb_func cb, void *cb_arg);
 
 /** add \a closure to the end of \a list and set \a closure's success to \a
  * success */
-void grpc_closure_list_add(grpc_closure_list *list, grpc_closure *closure,
-                           bool success);
+void grpc_closure_list_append(grpc_closure_list *list, grpc_closure *closure,
+                              grpc_error *error);
 
 /** force all success bits in \a list to false */
-void grpc_closure_list_fail_all(grpc_closure_list *list);
+void grpc_closure_list_fail_all(grpc_closure_list *list,
+                                grpc_error *forced_failure);
 
 /** append all closures from \a src to \a dst and empty \a src. */
 void grpc_closure_list_move(grpc_closure_list *src, grpc_closure_list *dst);
 
 /** return whether \a list is empty. */
 bool grpc_closure_list_empty(grpc_closure_list list);
-
-/** return the next pointer for a queued closure list */
-grpc_closure *grpc_closure_next(grpc_closure *closure);
 
 #endif /* GRPC_CORE_LIB_IOMGR_CLOSURE_H */
