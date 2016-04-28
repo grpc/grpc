@@ -32,18 +32,20 @@ set -ex
 
 cd $(dirname $0)/../../..
 
-# cleanup after previous builds
-ssh "${USER_AT_HOST}" "rm -rf ~/performance_workspace && mkdir -p ~/performance_workspace"
+# Make sure there are no pre-existing QPS workers around before starting
+# the performance test suite
 
-# TODO(jtattermusch): To be sure there are no running processes that would
-# mess with the results, be rough and reboot the slave here
-# and wait for it to come back online.
-# could also kill jenkins.
-ssh "${USER_AT_HOST}" "killall -9 qps_worker mono node ruby || true"
+# C++
+killall -9 qps_worker || true
 
-# push the current sources to the slave and unpack it.
-scp ../grpc.tar "${USER_AT_HOST}:~/performance_workspace"
-ssh "${USER_AT_HOST}" "tar -xf ~/performance_workspace/grpc.tar -C ~/performance_workspace"
+# C#
+ps -C mono -o pid=,cmd= | grep QpsWorker | awk '{print $1}' | xargs kill -9
 
-# For consistency with local run, invoke the kill_workers script remotely.
-ssh "${USER_AT_HOST}" "~/performance_workspace/grpc/tools/run_tests/performance/kill_workers.sh"
+# Ruby
+ps -C ruby -o pid=,cmd= | grep 'qps/worker.rb' | awk '{print $1}' | xargs kill -9
+
+# Node
+ps -C node -o pid=,cmd= | grep 'performance/worker.js' | awk '{print $1}' | xargs kill -9
+
+# Java
+jps | grep LoadWorker | awk '{print $1}' | xargs kill -9
