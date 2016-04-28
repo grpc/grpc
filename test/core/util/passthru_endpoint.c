@@ -84,7 +84,7 @@ static void me_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     ok = false;
   } else if (m->on_read != NULL) {
     for (size_t i = 0; i < slices->count; i++) {
-      gpr_slice_buffer_add(&m->read_buffer, gpr_slice_ref(slices->slices[i]));
+      gpr_slice_buffer_add(m->on_read_out, gpr_slice_ref(slices->slices[i]));
     }
     grpc_exec_ctx_enqueue(exec_ctx, m->on_read, true, NULL);
     m->on_read = NULL;
