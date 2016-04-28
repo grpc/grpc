@@ -314,6 +314,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\closure.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint_pair.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\error.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_and_epoll_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\exec_ctx.h" />
@@ -470,6 +471,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint_pair_posix.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint_pair_windows.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\error.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_and_epoll_posix.c">
     </ClCompile>

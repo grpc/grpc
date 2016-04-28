@@ -1,0 +1,346 @@
+/*
+ *
+ * Copyright 2015, Google Inc.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following disclaimer
+ * in the documentation and/or other materials provided with the
+ * distribution.
+ *     * Neither the name of Google Inc. nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
+
+#include "src/core/lib/iomgr/error.h"
+
+#include <stdbool.h>
+#include <string.h>
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/avl.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/useful.h>
+
+static void destroy_integer(void *key) {}
+
+static void *copy_integer(void *key) { return key; }
+
+static long compare_integers(void *key1, void *key2) {
+  return GPR_ICMP((uintptr_t)key1, (uintptr_t)key2);
+}
+
+static void destroy_string(void *str) { gpr_free(str); }
+
+static void *copy_string(void *str) { return gpr_strdup(str); }
+
+static void destroy_err(void *err) { grpc_error_unref(err); }
+
+static void *copy_err(void *err) { return grpc_error_ref(err); }
+
+static const gpr_avl_vtable avl_vtable_ints = {destroy_integer, copy_integer,
+                                               compare_integers,
+                                               destroy_integer, copy_integer};
+
+static const gpr_avl_vtable avl_vtable_strs = {destroy_integer, copy_integer,
+                                               compare_integers, destroy_string,
+                                               copy_string};
+
+static const gpr_avl_vtable avl_vtable_errs = {
+    destroy_integer, copy_integer, compare_integers, destroy_err, copy_err};
+
+static const char *error_int_name(grpc_error_ints key) {
+  switch (key) {
+    case GRPC_ERROR_INT_STATUS_CODE:
+      return "status_code";
+    case GRPC_ERROR_INT_ERRNO:
+      return "errno";
+  }
+  GPR_UNREACHABLE_CODE(return "unknown");
+}
+
+static const char *error_str_name(grpc_error_strs key) {
+  switch (key) {
+    case GRPC_ERROR_STR_DESCRIPTION:
+      return "description";
+    case GRPC_ERROR_STR_OS_ERROR:
+      return "os_error";
+    case GRPC_ERROR_STR_TARGET_ADDRESS:
+      return "target_address";
+    case GRPC_ERROR_STR_SYSCALL:
+      return "syscall";
+  }
+  GPR_UNREACHABLE_CODE(return "unknown");
+}
+
+struct grpc_error {
+  gpr_refcount refs;
+  gpr_avl ints;
+  gpr_avl strs;
+  gpr_avl errs;
+  uintptr_t next_err;
+};
+
+static bool is_special(grpc_error *err) {
+  return err == GRPC_ERROR_NONE || err == GRPC_ERROR_OOM;
+}
+
+grpc_error *grpc_error_ref(grpc_error *err) {
+  if (is_special(err)) return err;
+  gpr_ref(&err->refs);
+  return err;
+}
+
+static void error_destroy(grpc_error *err) {
+  GPR_ASSERT(!is_special(err));
+  gpr_avl_unref(err->ints);
+  gpr_avl_unref(err->strs);
+  gpr_avl_unref(err->errs);
+}
+
+void grpc_error_unref(grpc_error *err) {
+  if (!is_special(err) && gpr_unref(&err->refs)) {
+    error_destroy(err);
+  }
+}
+
+grpc_error *grpc_error_create(void) {
+  grpc_error *err = gpr_malloc(sizeof(*err));
+  if (err == NULL) {  // TODO(ctiller): make gpr_malloc return NULL
+    return GRPC_ERROR_OOM;
+  }
+  err->ints = gpr_avl_create(&avl_vtable_ints);
+  err->strs = gpr_avl_create(&avl_vtable_strs);
+  err->errs = gpr_avl_create(&avl_vtable_errs);
+  err->next_err = 0;
+  gpr_ref_init(&err->refs, 1);
+  return err;
+}
+
+static grpc_error *copy_error_and_unref(grpc_error *in) {
+  if (is_special(in)) {
+    return grpc_error_create();
+  }
+  grpc_error *out = gpr_malloc(sizeof(*out));
+  out->ints = gpr_avl_ref(in->ints);
+  out->strs = gpr_avl_ref(in->strs);
+  out->errs = gpr_avl_ref(in->errs);
+  out->next_err = in->next_err;
+  gpr_ref_init(&out->refs, 1);
+  grpc_error_unref(in);
+  return out;
+}
+
+grpc_error *grpc_error_set_int(grpc_error *src, grpc_error_ints which,
+                               intptr_t value) {
+  grpc_error *new = copy_error_and_unref(src);
+  new->ints = gpr_avl_add(new->ints, (void *)(uintptr_t)which, (void *)value);
+  return new;
+}
+
+grpc_error *grpc_error_set_str(grpc_error *src, grpc_error_strs which,
+                               const char *value) {
+  grpc_error *new = copy_error_and_unref(src);
+  new->strs = gpr_avl_add(new->strs, (void *)(uintptr_t)which, (void *)value);
+  return new;
+}
+
+grpc_error *grpc_error_add_child(grpc_error *src, grpc_error *child) {
+  grpc_error *new = copy_error_and_unref(src);
+  new->errs = gpr_avl_add(new->errs, (void *)(new->next_err++), child);
+  return new;
+}
+
+static const char *no_error_string = "null";
+static const char *oom_error_string = "\"Out of memory\"";
+
+typedef struct {
+  char *key;
+  char *value;
+} kv_pair;
+
+typedef struct {
+  kv_pair *kvs;
+  size_t num_kvs;
+  size_t cap_kvs;
+} kv_pairs;
+
+static void append_kv(kv_pairs *kvs, char *key, char *value) {
+  if (kvs->num_kvs == kvs->cap_kvs) {
+    kvs->cap_kvs = GPR_MAX(3 * kvs->cap_kvs / 2, 4);
+    kvs->kvs = gpr_realloc(kvs->kvs, sizeof(*kvs->kvs) * kvs->cap_kvs);
+  }
+  kvs->kvs[kvs->num_kvs].key = key;
+  kvs->kvs[kvs->num_kvs].value = value;
+  kvs->num_kvs++;
+}
+
+static void collect_kvs(gpr_avl_node *node, char *key(void *k),
+                        char *fmt(void *v), kv_pairs *kvs) {
+  if (node == NULL) return;
+  append_kv(kvs, key(node->key), fmt(node->value));
+  collect_kvs(node->left, key, fmt, kvs);
+  collect_kvs(node->right, key, fmt, kvs);
+}
+
+static char *key_int(void *p) {
+  return gpr_strdup(error_int_name((grpc_error_ints)(uintptr_t)p));
+}
+
+static char *key_str(void *p) {
+  return gpr_strdup(error_str_name((grpc_error_strs)(uintptr_t)p));
+}
+
+static char *fmt_int(void *p) {
+  char *s;
+  gpr_asprintf(&s, "%lld", (intptr_t)p);
+  return s;
+}
+
+static void append_chr(char c, char **s, size_t *sz, size_t *cap) {
+  if (*sz == *cap) {
+    *cap = GPR_MAX(8, 3 * *cap / 2);
+    *s = gpr_realloc(*s, *cap);
+  }
+  (*s)[(*sz)++] = c;
+}
+
+static void append_str(const char *str, char **s, size_t *sz, size_t *cap) {
+  for (const char *c = str; *c; c++) {
+    append_chr(*c, s, sz, cap);
+  }
+}
+
+static void append_esc_str(const char *str, char **s, size_t *sz, size_t *cap) {
+  static const char *hex = "0123456789abcdef";
+  append_chr('"', s, sz, cap);
+  for (const uint8_t *c = (const uint8_t *)str; *c; c++) {
+    if (*c < 32 || *c >= 127) {
+      append_chr('\\', s, sz, cap);
+      switch (*c) {
+        case '\b':
+          append_chr('b', s, sz, cap);
+          break;
+        case '\f':
+          append_chr('f', s, sz, cap);
+          break;
+        case '\n':
+          append_chr('n', s, sz, cap);
+          break;
+        case '\r':
+          append_chr('r', s, sz, cap);
+          break;
+        case '\t':
+          append_chr('t', s, sz, cap);
+          break;
+        default:
+          append_chr('u', s, sz, cap);
+          append_chr('0', s, sz, cap);
+          append_chr('0', s, sz, cap);
+          append_chr(hex[*c >> 4], s, sz, cap);
+          append_chr(hex[*c & 0x0f], s, sz, cap);
+          break;
+      }
+    } else {
+      append_chr((char)*c, s, sz, cap);
+    }
+  }
+  append_chr('"', s, sz, cap);
+  append_chr(0, s, sz, cap);
+}
+
+static char *fmt_str(void *p) {
+  char *s = NULL;
+  size_t sz = 0;
+  size_t cap = 0;
+  append_esc_str(p, &s, &sz, &cap);
+  return s;
+}
+
+static void add_errs(gpr_avl_node *n, char **s, size_t *sz, size_t *cap) {
+  if (n == NULL) return;
+  add_errs(n->left, s, sz, cap);
+  const char *e = grpc_error_string(n->value);
+  append_str(e, s, sz, cap);
+  grpc_error_free_string(e);
+  add_errs(n->right, s, sz, cap);
+}
+
+static char *errs_string(grpc_error *err) {
+  char *s = NULL;
+  size_t sz = 0;
+  size_t cap = 0;
+  append_chr('[', &s, &sz, &cap);
+  add_errs(err->errs.root, &s, &sz, &cap);
+  append_chr(']', &s, &sz, &cap);
+  return s;
+}
+
+static int cmp_kvs(const void *a, const void *b) {
+  const kv_pair *ka = a;
+  const kv_pair *kb = b;
+  return strcmp(ka->key, kb->key);
+}
+
+static const char *finish_kvs(kv_pairs *kvs) {
+  char *s = NULL;
+  size_t sz = 0;
+  size_t cap = 0;
+
+  append_chr('{', &s, &sz, &cap);
+  for (size_t i = 0; i < kvs->num_kvs; i++) {
+    append_esc_str(kvs->kvs[i].key, &s, &sz, &cap);
+    gpr_free(kvs->kvs[i].key);
+    append_chr(':', &s, &sz, &cap);
+    append_str(kvs->kvs[i].value, &s, &sz, &cap);
+    gpr_free(kvs->kvs[i].value);
+  }
+  append_chr('}', &s, &sz, &cap);
+
+  gpr_free(kvs->kvs);
+  return s;
+}
+
+const char *grpc_error_string(grpc_error *err) {
+  if (err == GRPC_ERROR_NONE) return no_error_string;
+  if (err == GRPC_ERROR_OOM) return oom_error_string;
+
+  kv_pairs kvs;
+  memset(&kvs, 0, sizeof(kvs));
+
+  collect_kvs(err->ints.root, key_int, fmt_int, &kvs);
+  collect_kvs(err->strs.root, key_str, fmt_str, &kvs);
+  append_kv(&kvs, gpr_strdup("referenced_errors"), errs_string(err));
+
+  qsort(kvs.kvs, kvs.num_kvs, sizeof(kv_pair), cmp_kvs);
+
+  return finish_kvs(&kvs);
+}
+
+grpc_error *grpc_os_error(int err, const char *call_name) {
+  return grpc_error_set_str(
+      grpc_error_set_str(
+          grpc_error_set_int(grpc_error_create(), GRPC_ERROR_INT_ERRNO, err),
+          GRPC_ERROR_STR_OS_ERROR, strerror(err)),
+      GRPC_ERROR_STR_SYSCALL, call_name);
+}

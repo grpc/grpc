@@ -459,7 +459,7 @@ static void close_fd_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
   } else {
     remove_fd_from_all_epoll_sets(fd->fd);
   }
-  grpc_exec_ctx_enqueue(exec_ctx, fd->on_done_closure, true, NULL);
+  grpc_exec_ctx_push(exec_ctx, fd->on_done_closure, GRPC_ERROR_NONE, NULL);
 }
 
 static int fd_wrapped_fd(grpc_fd *fd) {
@@ -508,6 +508,15 @@ static void fd_ref(grpc_fd *fd) { ref_by(fd, 2); }
 static void fd_unref(grpc_fd *fd) { unref_by(fd, 2); }
 #endif
 
+static grpc_error *fd_shutdown_error(bool shutdown) {
+  if (!shutdown) {
+    return GRPC_ERROR_NONE;
+  } else {
+    return grpc_error_set_str(grpc_error_create(), GRPC_ERROR_STR_DESCRIPTION,
+                              "FD shutdown");
+  }
+}
+
 static void notify_on_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                              grpc_closure **st, grpc_closure *closure) {
   if (*st == CLOSURE_NOT_READY) {
@@ -516,7 +525,8 @@ static void notify_on_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
   } else if (*st == CLOSURE_READY) {
     /* already ready ==> queue the closure to run immediately */
     *st = CLOSURE_NOT_READY;
-    grpc_exec_ctx_enqueue(exec_ctx, closure, !fd->shutdown, NULL);
+    grpc_exec_ctx_push(exec_ctx, closure, fd_shutdown_error(fd->shutdown),
+                       NULL);
     maybe_wake_one_watcher_locked(fd);
   } else {
     /* upcallptr was set to a different closure.  This is an error! */
@@ -539,7 +549,7 @@ static int set_ready_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
     return 0;
   } else {
     /* waiting ==> queue closure */
-    grpc_exec_ctx_enqueue(exec_ctx, *st, !fd->shutdown, NULL);
+    grpc_exec_ctx_push(exec_ctx, *st, fd_shutdown_error(fd->shutdown), NULL);
     *st = CLOSURE_NOT_READY;
     return 1;
   }
@@ -864,7 +874,7 @@ static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
   GPR_ASSERT(grpc_closure_list_empty(pollset->idle_jobs));
   pollset->vtable->finish_shutdown(pollset);
-  grpc_exec_ctx_enqueue(exec_ctx, pollset->shutdown_done, true, NULL);
+  grpc_exec_ctx_push(exec_ctx, pollset->shutdown_done, GRPC_ERROR_NONE, NULL);
 }
 
 static void pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
@@ -1137,7 +1147,8 @@ static void basic_pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   up_args->promotion_closure.cb = basic_do_promote;
   up_args->promotion_closure.cb_arg = up_args;
 
-  grpc_closure_list_add(&pollset->idle_jobs, &up_args->promotion_closure, 1);
+  grpc_closure_list_append(&pollset->idle_jobs, &up_args->promotion_closure,
+                           GRPC_ERROR_NONE);
   pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
 
 exit:
@@ -1573,7 +1584,8 @@ static void perform_delayed_add(grpc_exec_ctx *exec_ctx, void *arg,
     /* We don't care about this pollset anymore. */
     if (da->pollset->in_flight_cbs == 0 && !da->pollset->called_shutdown) {
       da->pollset->called_shutdown = 1;
-      grpc_exec_ctx_enqueue(exec_ctx, da->pollset->shutdown_done, true, NULL);
+      grpc_exec_ctx_push(exec_ctx, da->pollset->shutdown_done, GRPC_ERROR_NONE,
+                         NULL);
     }
   }
   gpr_mu_unlock(&da->pollset->mu);
@@ -1597,7 +1609,7 @@ static void multipoll_with_epoll_pollset_add_fd(grpc_exec_ctx *exec_ctx,
     GRPC_FD_REF(fd, "delayed_add");
     grpc_closure_init(&da->closure, perform_delayed_add, da);
     pollset->in_flight_cbs++;
-    grpc_exec_ctx_enqueue(exec_ctx, &da->closure, true, NULL);
+    grpc_exec_ctx_push(exec_ctx, &da->closure, GRPC_ERROR_NONE, NULL);
   }
 }
 

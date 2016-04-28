@@ -98,6 +98,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/endpoint.c \
     src/core/lib/iomgr/endpoint_pair_posix.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
+    src/core/lib/iomgr/error.c \
     src/core/lib/iomgr/ev_poll_and_epoll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \

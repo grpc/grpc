@@ -173,7 +173,7 @@ static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
   r->default_port = gpr_strdup(default_port);
   r->cb = cb;
   r->arg = arg;
-  grpc_executor_enqueue(&r->request_closure, 1);
+  grpc_executor_push(&r->request_closure, GRPC_ERROR_NONE);
 }
 
 void (*grpc_resolve_address)(grpc_exec_ctx *exec_ctx, const char *name,

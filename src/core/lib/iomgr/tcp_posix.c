@@ -274,14 +274,13 @@ static void tcp_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     tcp->finished_edge = 0;
     grpc_fd_notify_on_read(exec_ctx, tcp->em_fd, &tcp->read_closure);
   } else {
-    grpc_exec_ctx_enqueue(exec_ctx, &tcp->read_closure, true, NULL);
+    grpc_exec_ctx_push(exec_ctx, &tcp->read_closure, GRPC_ERROR_NONE, NULL);
   }
 }
 
-typedef enum { FLUSH_DONE, FLUSH_PENDING, FLUSH_ERROR } flush_result;
-
+/* returns true if done, false if pending; if returning true, *error is set */
 #define MAX_WRITE_IOVEC 16
-static flush_result tcp_flush(grpc_tcp *tcp) {
+static bool tcp_flush(grpc_tcp *tcp, grpc_error **error) {
   struct msghdr msg;
   struct iovec iov[MAX_WRITE_IOVEC];
   msg_iovlen_type iov_size;
@@ -331,10 +330,10 @@ static flush_result tcp_flush(grpc_tcp *tcp) {
       if (errno == EAGAIN) {
         tcp->outgoing_slice_idx = unwind_slice_idx;
         tcp->outgoing_byte_idx = unwind_byte_idx;
-        return FLUSH_PENDING;
+        return false;
       } else {
-        /* TODO(klempner): Log some of these */
-        return FLUSH_ERROR;
+        *error = grpc_os_error(errno, "sendmsg");
+        return true;
       }
     }
 
@@ -355,7 +354,8 @@ static flush_result tcp_flush(grpc_tcp *tcp) {
     }
 
     if (tcp->outgoing_slice_idx == tcp->outgoing_buffer->count) {
-      return FLUSH_DONE;
+      *error = GRPC_ERROR_NONE;
+      return true;
     }
   };
 }
@@ -363,7 +363,7 @@ static flush_result tcp_flush(grpc_tcp *tcp) {
 static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
                              bool success) {
   grpc_tcp *tcp = (grpc_tcp *)arg;
-  flush_result status;
+  grpc_error *error = GRPC_ERROR_NONE;
   grpc_closure *cb;
 
   if (!success) {
@@ -374,14 +374,13 @@ static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
     return;
   }
 
-  status = tcp_flush(tcp);
-  if (status == FLUSH_PENDING) {
+  if (!tcp_flush(tcp, &error)) {
     grpc_fd_notify_on_write(exec_ctx, tcp->em_fd, &tcp->write_closure);
   } else {
     cb = tcp->write_cb;
     tcp->write_cb = NULL;
     GPR_TIMER_BEGIN("tcp_handle_write.cb", 0);
-    cb->cb(exec_ctx, cb->cb_arg, status == FLUSH_DONE);
+    cb->cb(exec_ctx, cb->cb_arg, error);
     GPR_TIMER_END("tcp_handle_write.cb", 0);
     TCP_UNREF(exec_ctx, tcp, "write");
   }
@@ -390,7 +389,7 @@ static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
 static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                       gpr_slice_buffer *buf, grpc_closure *cb) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
-  flush_result status;
+  grpc_error *error = GRPC_ERROR_NONE;
 
   if (grpc_tcp_trace) {
     size_t i;
@@ -408,20 +407,19 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 
   if (buf->length == 0) {
     GPR_TIMER_END("tcp_write", 0);
-    grpc_exec_ctx_enqueue(exec_ctx, cb, true, NULL);
+    grpc_exec_ctx_push(exec_ctx, cb, GRPC_ERROR_NONE, NULL);
     return;
   }
   tcp->outgoing_buffer = buf;
   tcp->outgoing_slice_idx = 0;
   tcp->outgoing_byte_idx = 0;
 
-  status = tcp_flush(tcp);
-  if (status == FLUSH_PENDING) {
+  if (!tcp_flush(tcp, &error)) {
     TCP_REF(tcp, "write");
     tcp->write_cb = cb;
     grpc_fd_notify_on_write(exec_ctx, tcp->em_fd, &tcp->write_closure);
   } else {
-    grpc_exec_ctx_enqueue(exec_ctx, cb, status == FLUSH_DONE, NULL);
+    grpc_exec_ctx_push(exec_ctx, cb, error, NULL);
   }
 
   GPR_TIMER_END("tcp_write", 0);
