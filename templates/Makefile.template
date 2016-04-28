@@ -445,7 +445,7 @@
   # to emulate the fact we do not have OpenSSL in the third_party folder.
   ifneq ($(wildcard third_party/${openssl_fallback.extraction_dir}/libssl.a),)
   HAS_EMBEDDED_OPENSSL_ALPN = third_party/${openssl_fallback.extraction_dir}
-  else ifeq ($(wildcard third_party/boringssl/include/openssl/ssl.h),)
+  else ifeq ($(wildcard third_party/boringssl/src/include/openssl/ssl.h),)
   HAS_EMBEDDED_OPENSSL_ALPN = false
   else
   CAN_COMPILE_EMBEDDED_OPENSSL ?= $(shell $(BORINGSSL_COMPILE_CHECK_CMD) 2> /dev/null && echo true || echo false)
@@ -529,7 +529,7 @@
   OPENSSL_MERGE_LIBS += $(LIBDIR)/$(CONFIG)/libboringssl.a
   OPENSSL_MERGE_OBJS += $(LIBBORINGSSL_OBJS)
   # need to prefix these to ensure overriding system libraries
-  CPPFLAGS := -Ithird_party/boringssl/include $(CPPFLAGS)
+  CPPFLAGS := -Ithird_party/boringssl/src/include $(CPPFLAGS)
   else ifneq ($(EMBED_OPENSSL),false)
   OPENSSL_DEP += $(EMBED_OPENSSL)/libssl.a $(EMBED_OPENSSL)/libcrypto.a
   OPENSSL_MERGE_LIBS += $(EMBED_OPENSSL)/libssl.a $(EMBED_OPENSSL)/libcrypto.a
@@ -1698,8 +1698,8 @@
   # boringssl needs an override to ensure that it does not include
   # system openssl headers regardless of other configuration
   # we do so here with a target specific variable assignment
-  $(${tgt.name.upper()}_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value
-  $(${tgt.name.upper()}_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+  $(${tgt.name.upper()}_OBJS): CFLAGS := -Ithird_party/boringssl/src/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value
+  $(${tgt.name.upper()}_OBJS): CXXFLAGS := -Ithird_party/boringssl/src/include $(CXXFLAGS)
   $(${tgt.name.upper()}_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
   % else:
   % endif
