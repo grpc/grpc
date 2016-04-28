@@ -59,7 +59,7 @@ struct grpc_lb_policy_vtable {
 
   /** implement grpc_lb_policy_pick */
   int (*pick)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-              grpc_pollset_set *pollset_set,
+              grpc_pollset *pollset, grpc_pollset_set *pollset_set_alternative,
               grpc_metadata_batch *initial_metadata,
               uint32_t initial_metadata_flags,
               grpc_connected_subchannel **target, grpc_closure *on_complete);
@@ -125,7 +125,8 @@ void grpc_lb_policy_init(grpc_lb_policy *policy,
     \a target.
     Picking can be asynchronous. Any IO should be done under \a pollset. */
 int grpc_lb_policy_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-                        grpc_pollset_set *pollset_set,
+                        grpc_pollset *pollset,
+                        grpc_pollset_set *pollset_set_alternative,
                         grpc_metadata_batch *initial_metadata,
                         uint32_t initial_metadata_flags,
                         grpc_connected_subchannel **target,

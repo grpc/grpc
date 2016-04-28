@@ -5854,8 +5854,26 @@
   {
     "deps": [
       "gpr", 
+      "grpc_base"
+    ], 
+    "headers": [
+      "src/core/ext/lb_policy/common.h"
+    ], 
+    "language": "c", 
+    "name": "grpc_lb_policy_common", 
+    "src": [
+      "src/core/ext/lb_policy/common.c", 
+      "src/core/ext/lb_policy/common.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc_base", 
       "grpc_client_config", 
+      "grpc_lb_policy_common", 
       "nanopb"
     ], 
     "headers": [
@@ -5877,7 +5895,8 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_config"
+      "grpc_client_config", 
+      "grpc_lb_policy_common"
     ], 
     "headers": [], 
     "language": "c", 
@@ -5892,7 +5911,8 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_config"
+      "grpc_client_config", 
+      "grpc_lb_policy_common"
     ], 
     "headers": [], 
     "language": "c", 
