@@ -70,6 +70,11 @@
 #define GRPC_CUSTOM_PLUGINMAIN ::google::protobuf::compiler::PluginMain
 #endif
 
+#ifndef GRPC_CUSTOM_PARSEGENERATORPARAMETER
+#include <google/protobuf/compiler/code_generator.h>
+#define GRPC_CUSTOM_PARSEGENERATORPARAMETER ::google::protobuf::compiler::ParseGeneratorParameter
+#endif
+
 namespace grpc {
 namespace protobuf {
 typedef GRPC_CUSTOM_DESCRIPTOR Descriptor;
@@ -85,6 +90,11 @@ static inline int PluginMain(int argc, char* argv[],
                              const CodeGenerator* generator) {
   return GRPC_CUSTOM_PLUGINMAIN(argc, argv, generator);
 }
+static inline void ParseGeneratorParameter(const string& parameter,
+    std::vector<std::pair<string, string> >* options) {
+  GRPC_CUSTOM_PARSEGENERATORPARAMETER(parameter, options);
+}
+
 }  // namespace compiler
 namespace io {
 typedef GRPC_CUSTOM_PRINTER Printer;

@@ -227,6 +227,12 @@ namespace Grpc.Testing {
       }
     }
 
+    // creates a new client
+    public static TestServiceClient NewClient(Channel channel)
+    {
+      return new TestServiceClient(channel);
+    }
+
     // creates service definition that can be registered with a server
     #pragma warning disable 0618
     public static ServerServiceDefinition BindService(ITestService serviceImpl)
@@ -253,12 +259,6 @@ namespace Grpc.Testing {
           .AddMethod(__Method_StreamingInputCall, serviceImpl.StreamingInputCall)
           .AddMethod(__Method_FullDuplexCall, serviceImpl.FullDuplexCall)
           .AddMethod(__Method_HalfDuplexCall, serviceImpl.HalfDuplexCall).Build();
-    }
-
-    // creates a new client
-    public static TestServiceClient NewClient(Channel channel)
-    {
-      return new TestServiceClient(channel);
     }
 
   }
@@ -350,6 +350,12 @@ namespace Grpc.Testing {
       }
     }
 
+    // creates a new client
+    public static UnimplementedServiceClient NewClient(Channel channel)
+    {
+      return new UnimplementedServiceClient(channel);
+    }
+
     // creates service definition that can be registered with a server
     #pragma warning disable 0618
     public static ServerServiceDefinition BindService(IUnimplementedService serviceImpl)
@@ -366,12 +372,6 @@ namespace Grpc.Testing {
     {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_UnimplementedCall, serviceImpl.UnimplementedCall).Build();
-    }
-
-    // creates a new client
-    public static UnimplementedServiceClient NewClient(Channel channel)
-    {
-      return new UnimplementedServiceClient(channel);
     }
 
   }
@@ -498,6 +498,12 @@ namespace Grpc.Testing {
       }
     }
 
+    // creates a new client
+    public static ReconnectServiceClient NewClient(Channel channel)
+    {
+      return new ReconnectServiceClient(channel);
+    }
+
     // creates service definition that can be registered with a server
     #pragma warning disable 0618
     public static ServerServiceDefinition BindService(IReconnectService serviceImpl)
@@ -516,12 +522,6 @@ namespace Grpc.Testing {
       return ServerServiceDefinition.CreateBuilder(__ServiceName)
           .AddMethod(__Method_Start, serviceImpl.Start)
           .AddMethod(__Method_Stop, serviceImpl.Stop).Build();
-    }
-
-    // creates a new client
-    public static ReconnectServiceClient NewClient(Channel channel)
-    {
-      return new ReconnectServiceClient(channel);
     }
 
   }

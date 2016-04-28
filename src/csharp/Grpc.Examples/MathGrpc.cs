@@ -168,6 +168,12 @@ namespace Math {
       }
     }
 
+    // creates a new client
+    public static MathClient NewClient(Channel channel)
+    {
+      return new MathClient(channel);
+    }
+
     // creates service definition that can be registered with a server
     #pragma warning disable 0618
     public static ServerServiceDefinition BindService(IMath serviceImpl)
@@ -190,12 +196,6 @@ namespace Math {
           .AddMethod(__Method_DivMany, serviceImpl.DivMany)
           .AddMethod(__Method_Fib, serviceImpl.Fib)
           .AddMethod(__Method_Sum, serviceImpl.Sum).Build();
-    }
-
-    // creates a new client
-    public static MathClient NewClient(Channel channel)
-    {
-      return new MathClient(channel);
     }
 
   }
