@@ -36,13 +36,13 @@ syntax = "proto3";
 import "src/proto/grpc/testing/empty.proto";
 import "src/proto/grpc/testing/messages.proto";
 
-package grpc.testing;
+package grpc.testing.integration;
 
 // A simple service to test the various types of RPCs and experiment with
 // performance with various types of payload.
 service TestService {
   // One empty request followed by one empty response.
-  rpc EmptyCall(grpc.testing.Empty) returns (grpc.testing.Empty);
+  rpc EmptyCall(Empty) returns (Empty);
 
   // One request followed by one response.
   rpc UnaryCall(SimpleRequest) returns (SimpleResponse);
@@ -75,11 +75,11 @@ service TestService {
 // that case.
 service UnimplementedService {
   // A call that no server should implement
-  rpc UnimplementedCall(grpc.testing.Empty) returns (grpc.testing.Empty);
+  rpc UnimplementedCall(Empty) returns (Empty);
 }
 
 // A service used to control reconnect server.
 service ReconnectService {
-  rpc Start(grpc.testing.ReconnectParams) returns (grpc.testing.Empty);
-  rpc Stop(grpc.testing.Empty) returns (grpc.testing.ReconnectInfo);
+  rpc Start(ReconnectParams) returns (Empty);
+  rpc Stop(Empty) returns (ReconnectInfo);
 }

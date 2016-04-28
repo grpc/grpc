@@ -32,7 +32,7 @@ syntax = "proto3";
 import "src/proto/grpc/testing/payloads.proto";
 import "src/proto/grpc/testing/stats.proto";
 
-package grpc.testing;
+package grpc.testing.integration;
 
 enum ClientType {
   // Many languages support a basic distinction between using

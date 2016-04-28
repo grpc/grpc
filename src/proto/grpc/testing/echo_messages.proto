@@ -30,7 +30,7 @@
 
 syntax = "proto3";
 
-package grpc.testing;
+package grpc.testing.integration;
 
 message RequestParams {
   bool echo_deadline = 1;

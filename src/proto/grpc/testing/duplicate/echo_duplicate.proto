@@ -37,5 +37,5 @@ import "src/proto/grpc/testing/echo_messages.proto";
 package grpc.testing.duplicate;
 
 service EchoTestService {
-  rpc Echo(grpc.testing.EchoRequest) returns (grpc.testing.EchoResponse);
+  rpc Echo(grpc.testing.integration.EchoRequest) returns (grpc.testing.integration.EchoResponse);
 }
