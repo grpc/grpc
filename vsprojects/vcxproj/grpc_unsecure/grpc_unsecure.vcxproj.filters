@@ -400,6 +400,9 @@
     <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.c">
       <Filter>third_party\nanopb</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\common.c">
+      <Filter>src\core\ext\lb_policy</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\pick_first\pick_first.c">
       <Filter>src\core\ext\lb_policy\pick_first</Filter>
     </ClCompile>
@@ -865,6 +868,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.h">
       <Filter>third_party\nanopb</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\common.h">
+      <Filter>src\core\ext\lb_policy</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\aggregation.h">
       <Filter>src\core\ext\census</Filter>

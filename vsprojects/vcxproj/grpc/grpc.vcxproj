@@ -427,6 +427,7 @@
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_common.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\common.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\aggregation.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\census_interface.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\census_rpc_stats.h" />
@@ -736,6 +737,8 @@
     <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\common.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\pick_first\pick_first.c">
     </ClCompile>
