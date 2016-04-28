@@ -27,49 +27,32 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# A work-in-progress Dockerfile that allows running gRPC test suites
-# inside a docker container.
-
 FROM debian:jessie
 
-# Install Git.
-RUN apt-get update && apt-get install -y \
-  autoconf \
-  autotools-dev \
-  build-essential \
-  bzip2 \
-  ccache \
-  curl \
-  gcc \
-  gcc-multilib \
-  git \
-  gyp \
-  libc6 \
-  libc6-dbg \
-  libc6-dev \
-  libgtest-dev \
-  libtool \
-  make \
-  strace \
-  python-dev \
-  python-setuptools \
-  python-yaml \
-  telnet \
-  unzip \
-  wget \
-  zip && apt-get clean
+# Install JDK 8 and Git
+#
+RUN echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections && \
+  echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee /etc/apt/sources.list.d/webupd8team-java.list && \
+  echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee -a /etc/apt/sources.list.d/webupd8team-java.list && \
+  apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886
 
-# Prepare ccache
-RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
-RUN ln -s /usr/bin/ccache /usr/local/bin/g++
-RUN ln -s /usr/bin/ccache /usr/local/bin/cc
-RUN ln -s /usr/bin/ccache /usr/local/bin/c++
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
+RUN apt-get update && apt-get -y install \
+      git \
+      libapr1 \
+      oracle-java8-installer \
+      && \
+    apt-get clean && rm -r /var/cache/oracle-jdk8-installer/
 
-##################
-# C++ dependencies
-RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang
+ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
+ENV PATH $PATH:$JAVA_HOME/bin
+
+
+
+# Trigger download of as many Gradle artifacts as possible.
+RUN git clone --recursive --depth 1 https://github.com/grpc/grpc-java.git && \
+  cd grpc-java && \
+  ./gradlew :grpc-interop-testing:installDist -PskipCodegen=true && \
+  rm -r "$(pwd)"
 
 # Define the default command.
 CMD ["bash"]

@@ -27,12 +27,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# A work-in-progress Dockerfile that allows running gRPC test suites
-# inside a docker container.
-
 FROM debian:jessie
 
-# Install Git.
+# Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
   autoconf \
   autotools-dev \
@@ -43,13 +40,16 @@ RUN apt-get update && apt-get install -y \
   gcc \
   gcc-multilib \
   git \
+  golang \
   gyp \
+  lcov \
   libc6 \
   libc6-dbg \
   libc6-dev \
   libgtest-dev \
   libtool \
   make \
+  perl \
   strace \
   python-dev \
   python-setuptools \
@@ -59,6 +59,25 @@ RUN apt-get update && apt-get install -y \
   wget \
   zip && apt-get clean
 
+#================
+# Build profiling
+RUN apt-get update && apt-get install -y time && apt-get clean
+
+#==================
+# Ruby dependencies
+
+# Install rvm
+RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
+RUN \curl -sSL https://get.rvm.io | bash -s stable
+
+# Install Ruby 2.1
+RUN /bin/bash -l -c "rvm install ruby-2.1"
+RUN /bin/bash -l -c "rvm use --default ruby-2.1"
+RUN /bin/bash -l -c "echo 'gem: --no-ri --no-rdoc' > ~/.gemrc"
+RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
+RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.1' >> ~/.bashrc"
+RUN /bin/bash -l -c "gem install bundler --no-ri --no-rdoc"
+
 # Prepare ccache
 RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
 RUN ln -s /usr/bin/ccache /usr/local/bin/g++
@@ -67,22 +86,12 @@ RUN ln -s /usr/bin/ccache /usr/local/bin/c++
 RUN ln -s /usr/bin/ccache /usr/local/bin/clang
 RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
 
-#################
-# C# dependencies
+#======================
+# Zookeeper dependencies
+# TODO(jtattermusch): is zookeeper still needed?
+RUN apt-get install -y libzookeeper-mt-dev
 
-# Update to a newer version of mono
-RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
-RUN echo "deb http://download.mono-project.com/repo/debian wheezy main" | tee /etc/apt/sources.list.d/mono-xamarin.list
-RUN echo "deb http://download.mono-project.com/repo/debian wheezy-apache24-compat main" | tee -a /etc/apt/sources.list.d/mono-xamarin.list
-RUN echo "deb http://download.mono-project.com/repo/debian wheezy-libjpeg62-compat main" | tee -a /etc/apt/sources.list.d/mono-xamarin.list
-RUN echo "deb http://download.mono-project.com/repo/debian wheezy-libtiff-compat main" | tee -a /etc/apt/sources.list.d/mono-xamarin.list
-
-# Install dependencies
-RUN apt-get update && apt-get -y dist-upgrade && apt-get install -y \
-    mono-devel \
-    ca-certificates-mono \
-    nuget \
-    && apt-get clean
+RUN mkdir /var/local/jenkins
 
 # Define the default command.
 CMD ["bash"]
