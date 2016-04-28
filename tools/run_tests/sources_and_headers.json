@@ -65,6 +65,22 @@
   }, 
   {
     "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "api_fuzzer", 
+    "src": [
+      "test/core/end2end/fuzzers/api_fuzzer.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2112,6 +2128,24 @@
   {
     "deps": [
       "gpr", 
+      "grpc", 
+      "grpc++"
+    ], 
+    "headers": [
+      "src/proto/grpc/testing/compiler_test.grpc.pb.h", 
+      "src/proto/grpc/testing/compiler_test.pb.h"
+    ], 
+    "language": "c++", 
+    "name": "golden_file_test", 
+    "src": [
+      "test/cpp/codegen/golden_file_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
@@ -2150,6 +2184,19 @@
     "name": "grpc_csharp_plugin", 
     "src": [
       "src/compiler/csharp_plugin.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "grpc_plugin_support"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "grpc_node_plugin", 
+    "src": [
+      "src/compiler/node_plugin.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -3908,6 +3955,23 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "api_fuzzer_one_entry", 
+    "src": [
+      "test/core/end2end/fuzzers/api_fuzzer.c", 
+      "test/core/util/one_corpus_entry_fuzzer.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "client_fuzzer_one_entry", 
     "src": [
       "test/core/end2end/fuzzers/client_fuzzer.c", 
@@ -4330,6 +4394,8 @@
       "src/compiler/csharp_generator.h", 
       "src/compiler/csharp_generator_helpers.h", 
       "src/compiler/generator_helpers.h", 
+      "src/compiler/node_generator.h", 
+      "src/compiler/node_generator_helpers.h", 
       "src/compiler/objective_c_generator.h", 
       "src/compiler/objective_c_generator_helpers.h", 
       "src/compiler/python_generator.h", 
@@ -4349,6 +4415,9 @@
       "src/compiler/csharp_generator.h", 
       "src/compiler/csharp_generator_helpers.h", 
       "src/compiler/generator_helpers.h", 
+      "src/compiler/node_generator.cc", 
+      "src/compiler/node_generator.h", 
+      "src/compiler/node_generator_helpers.h", 
       "src/compiler/objective_c_generator.cc", 
       "src/compiler/objective_c_generator.h", 
       "src/compiler/objective_c_generator_helpers.h", 
@@ -5446,6 +5515,7 @@
       "src/core/lib/support/string.c", 
       "src/core/lib/support/string.h", 
       "src/core/lib/support/string_posix.c", 
+      "src/core/lib/support/string_util_win32.c", 
       "src/core/lib/support/string_win32.c", 
       "src/core/lib/support/string_win32.h", 
       "src/core/lib/support/subprocess_posix.c", 
@@ -5464,6 +5534,7 @@
       "src/core/lib/support/time_win32.c", 
       "src/core/lib/support/tls_pthread.c", 
       "src/core/lib/support/tmpfile.h", 
+      "src/core/lib/support/tmpfile_msys.c", 
       "src/core/lib/support/tmpfile_posix.c", 
       "src/core/lib/support/tmpfile_win32.c", 
       "src/core/lib/support/wrap_memcpy.c"
@@ -6020,6 +6091,7 @@
       "test/core/util/memory_counters.h", 
       "test/core/util/mock_endpoint.h", 
       "test/core/util/parse_hexstring.h", 
+      "test/core/util/passthru_endpoint.h", 
       "test/core/util/port.h", 
       "test/core/util/port_server_client.h", 
       "test/core/util/slice_splitter.h"
@@ -6041,6 +6113,8 @@
       "test/core/util/mock_endpoint.h", 
       "test/core/util/parse_hexstring.c", 
       "test/core/util/parse_hexstring.h", 
+      "test/core/util/passthru_endpoint.c", 
+      "test/core/util/passthru_endpoint.h", 
       "test/core/util/port.h", 
       "test/core/util/port_posix.c", 
       "test/core/util/port_server_client.c", 

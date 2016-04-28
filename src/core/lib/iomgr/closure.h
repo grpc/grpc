@@ -86,6 +86,9 @@ grpc_closure *grpc_closure_create(grpc_iomgr_cb_func cb, void *cb_arg);
 void grpc_closure_list_add(grpc_closure_list *list, grpc_closure *closure,
                            bool success);
 
+/** force all success bits in \a list to false */
+void grpc_closure_list_fail_all(grpc_closure_list *list);
+
 /** append all closures from \a src to \a dst and empty \a src. */
 void grpc_closure_list_move(grpc_closure_list *src, grpc_closure_list *dst);
 

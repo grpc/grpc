@@ -138,7 +138,9 @@ namespace Grpc.Testing {
     }
 
     // client stub
+    #pragma warning disable 0618
     public class TestServiceClient : ClientBase<TestServiceClient>, ITestServiceClient
+    #pragma warning restore 0618
     {
       public TestServiceClient(Channel channel) : base(channel)
       {
@@ -225,34 +227,38 @@ namespace Grpc.Testing {
       }
     }
 
-    // creates service definition that can be registered with a server
-    public static ServerServiceDefinition BindService(ITestService serviceImpl)
-    {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
-          .AddMethod(__Method_EmptyCall, serviceImpl.EmptyCall)
-          .AddMethod(__Method_UnaryCall, serviceImpl.UnaryCall)
-          .AddMethod(__Method_StreamingOutputCall, serviceImpl.StreamingOutputCall)
-          .AddMethod(__Method_StreamingInputCall, serviceImpl.StreamingInputCall)
-          .AddMethod(__Method_FullDuplexCall, serviceImpl.FullDuplexCall)
-          .AddMethod(__Method_HalfDuplexCall, serviceImpl.HalfDuplexCall).Build();
-    }
-
-    // creates service definition that can be registered with a server
-    public static ServerServiceDefinition BindService(TestServiceBase serviceImpl)
-    {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
-          .AddMethod(__Method_EmptyCall, serviceImpl.EmptyCall)
-          .AddMethod(__Method_UnaryCall, serviceImpl.UnaryCall)
-          .AddMethod(__Method_StreamingOutputCall, serviceImpl.StreamingOutputCall)
-          .AddMethod(__Method_StreamingInputCall, serviceImpl.StreamingInputCall)
-          .AddMethod(__Method_FullDuplexCall, serviceImpl.FullDuplexCall)
-          .AddMethod(__Method_HalfDuplexCall, serviceImpl.HalfDuplexCall).Build();
-    }
-
     // creates a new client
     public static TestServiceClient NewClient(Channel channel)
     {
       return new TestServiceClient(channel);
+    }
+
+    // creates service definition that can be registered with a server
+    #pragma warning disable 0618
+    public static ServerServiceDefinition BindService(ITestService serviceImpl)
+    #pragma warning restore 0618
+    {
+      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+          .AddMethod(__Method_EmptyCall, serviceImpl.EmptyCall)
+          .AddMethod(__Method_UnaryCall, serviceImpl.UnaryCall)
+          .AddMethod(__Method_StreamingOutputCall, serviceImpl.StreamingOutputCall)
+          .AddMethod(__Method_StreamingInputCall, serviceImpl.StreamingInputCall)
+          .AddMethod(__Method_FullDuplexCall, serviceImpl.FullDuplexCall)
+          .AddMethod(__Method_HalfDuplexCall, serviceImpl.HalfDuplexCall).Build();
+    }
+
+    // creates service definition that can be registered with a server
+    #pragma warning disable 0618
+    public static ServerServiceDefinition BindService(TestServiceBase serviceImpl)
+    #pragma warning restore 0618
+    {
+      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+          .AddMethod(__Method_EmptyCall, serviceImpl.EmptyCall)
+          .AddMethod(__Method_UnaryCall, serviceImpl.UnaryCall)
+          .AddMethod(__Method_StreamingOutputCall, serviceImpl.StreamingOutputCall)
+          .AddMethod(__Method_StreamingInputCall, serviceImpl.StreamingInputCall)
+          .AddMethod(__Method_FullDuplexCall, serviceImpl.FullDuplexCall)
+          .AddMethod(__Method_HalfDuplexCall, serviceImpl.HalfDuplexCall).Build();
     }
 
   }
@@ -303,7 +309,9 @@ namespace Grpc.Testing {
     }
 
     // client stub
+    #pragma warning disable 0618
     public class UnimplementedServiceClient : ClientBase<UnimplementedServiceClient>, IUnimplementedServiceClient
+    #pragma warning restore 0618
     {
       public UnimplementedServiceClient(Channel channel) : base(channel)
       {
@@ -342,24 +350,28 @@ namespace Grpc.Testing {
       }
     }
 
-    // creates service definition that can be registered with a server
-    public static ServerServiceDefinition BindService(IUnimplementedService serviceImpl)
-    {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
-          .AddMethod(__Method_UnimplementedCall, serviceImpl.UnimplementedCall).Build();
-    }
-
-    // creates service definition that can be registered with a server
-    public static ServerServiceDefinition BindService(UnimplementedServiceBase serviceImpl)
-    {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
-          .AddMethod(__Method_UnimplementedCall, serviceImpl.UnimplementedCall).Build();
-    }
-
     // creates a new client
     public static UnimplementedServiceClient NewClient(Channel channel)
     {
       return new UnimplementedServiceClient(channel);
+    }
+
+    // creates service definition that can be registered with a server
+    #pragma warning disable 0618
+    public static ServerServiceDefinition BindService(IUnimplementedService serviceImpl)
+    #pragma warning restore 0618
+    {
+      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+          .AddMethod(__Method_UnimplementedCall, serviceImpl.UnimplementedCall).Build();
+    }
+
+    // creates service definition that can be registered with a server
+    #pragma warning disable 0618
+    public static ServerServiceDefinition BindService(UnimplementedServiceBase serviceImpl)
+    #pragma warning restore 0618
+    {
+      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+          .AddMethod(__Method_UnimplementedCall, serviceImpl.UnimplementedCall).Build();
     }
 
   }
@@ -429,7 +441,9 @@ namespace Grpc.Testing {
     }
 
     // client stub
+    #pragma warning disable 0618
     public class ReconnectServiceClient : ClientBase<ReconnectServiceClient>, IReconnectServiceClient
+    #pragma warning restore 0618
     {
       public ReconnectServiceClient(Channel channel) : base(channel)
       {
@@ -484,26 +498,30 @@ namespace Grpc.Testing {
       }
     }
 
-    // creates service definition that can be registered with a server
-    public static ServerServiceDefinition BindService(IReconnectService serviceImpl)
-    {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
-          .AddMethod(__Method_Start, serviceImpl.Start)
-          .AddMethod(__Method_Stop, serviceImpl.Stop).Build();
-    }
-
-    // creates service definition that can be registered with a server
-    public static ServerServiceDefinition BindService(ReconnectServiceBase serviceImpl)
-    {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
-          .AddMethod(__Method_Start, serviceImpl.Start)
-          .AddMethod(__Method_Stop, serviceImpl.Stop).Build();
-    }
-
     // creates a new client
     public static ReconnectServiceClient NewClient(Channel channel)
     {
       return new ReconnectServiceClient(channel);
+    }
+
+    // creates service definition that can be registered with a server
+    #pragma warning disable 0618
+    public static ServerServiceDefinition BindService(IReconnectService serviceImpl)
+    #pragma warning restore 0618
+    {
+      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+          .AddMethod(__Method_Start, serviceImpl.Start)
+          .AddMethod(__Method_Stop, serviceImpl.Stop).Build();
+    }
+
+    // creates service definition that can be registered with a server
+    #pragma warning disable 0618
+    public static ServerServiceDefinition BindService(ReconnectServiceBase serviceImpl)
+    #pragma warning restore 0618
+    {
+      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+          .AddMethod(__Method_Start, serviceImpl.Start)
+          .AddMethod(__Method_Stop, serviceImpl.Stop).Build();
     }
 
   }

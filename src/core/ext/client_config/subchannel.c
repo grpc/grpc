@@ -135,8 +135,6 @@ struct grpc_subchannel {
   int have_alarm;
   /** our alarm */
   grpc_timer alarm;
-  /** current random value */
-  uint32_t random;
 };
 
 struct grpc_subchannel_call {
@@ -297,10 +295,6 @@ void grpc_subchannel_weak_unref(grpc_exec_ctx *exec_ctx,
   }
 }
 
-static uint32_t random_seed() {
-  return (uint32_t)(gpr_time_to_millis(gpr_now(GPR_CLOCK_MONOTONIC)));
-}
-
 grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
                                         grpc_connector *connector,
                                         grpc_subchannel_args *args) {
@@ -332,7 +326,6 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
   grpc_set_initial_connect_string(&c->addr, &c->addr_len,
                                   &c->initial_connect_string);
   c->args = grpc_channel_args_copy(args->args);
-  c->random = random_seed();
   c->root_external_state_watcher.next = c->root_external_state_watcher.prev =
       &c->root_external_state_watcher;
   grpc_closure_init(&c->connected, subchannel_connected, c);

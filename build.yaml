@@ -103,6 +103,7 @@ filegroups:
   - src/core/lib/support/stack_lockfree.c
   - src/core/lib/support/string.c
   - src/core/lib/support/string_posix.c
+  - src/core/lib/support/string_util_win32.c
   - src/core/lib/support/string_win32.c
   - src/core/lib/support/subprocess_posix.c
   - src/core/lib/support/subprocess_windows.c
@@ -117,6 +118,7 @@ filegroups:
   - src/core/lib/support/time_precise.c
   - src/core/lib/support/time_win32.c
   - src/core/lib/support/tls_pthread.c
+  - src/core/lib/support/tmpfile_msys.c
   - src/core/lib/support/tmpfile_posix.c
   - src/core/lib/support/tmpfile_win32.c
   - src/core/lib/support/wrap_memcpy.c
@@ -451,6 +453,7 @@ filegroups:
   - test/core/util/memory_counters.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
   - test/core/util/port.h
   - test/core/util/port_server_client.h
   - test/core/util/slice_splitter.h
@@ -462,6 +465,7 @@ filegroups:
   - test/core/util/memory_counters.c
   - test/core/util/mock_endpoint.c
   - test/core/util/parse_hexstring.c
+  - test/core/util/passthru_endpoint.c
   - test/core/util/port_posix.c
   - test/core/util/port_server_client.c
   - test/core/util/port_windows.c
@@ -946,6 +950,8 @@ libs:
   - src/compiler/csharp_generator.h
   - src/compiler/csharp_generator_helpers.h
   - src/compiler/generator_helpers.h
+  - src/compiler/node_generator.h
+  - src/compiler/node_generator_helpers.h
   - src/compiler/objective_c_generator.h
   - src/compiler/objective_c_generator_helpers.h
   - src/compiler/python_generator.h
@@ -956,6 +962,7 @@ libs:
   src:
   - src/compiler/cpp_generator.cc
   - src/compiler/csharp_generator.cc
+  - src/compiler/node_generator.cc
   - src/compiler/objective_c_generator.cc
   - src/compiler/python_generator.cc
   - src/compiler/ruby_generator.cc
@@ -1126,6 +1133,20 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: api_fuzzer
+  build: fuzzer
+  language: c
+  src:
+  - test/core/end2end/fuzzers/api_fuzzer.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/end2end/fuzzers/api_fuzzer_corpus
+  dict: test/core/end2end/fuzzers/api_fuzzer.dictionary
+  maxlen: 2048
 - name: bin_encoder_test
   build: test
   language: c
@@ -2542,6 +2563,17 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: golden_file_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - src/proto/grpc/testing/compiler_test.proto
+  - test/cpp/codegen/golden_file_test.cc
+  deps:
+  - grpc++
+  - grpc
+  - gpr
 - name: grpc_cli
   build: test
   run: false
@@ -2576,6 +2608,15 @@ targets:
   secure: false
   vs_config_type: Application
   vs_project_guid: '{3C813052-A49A-4662-B90A-1ADBEC7EE453}'
+- name: grpc_node_plugin
+  build: protoc
+  language: c++
+  src:
+  - src/compiler/node_plugin.cc
+  deps:
+  - grpc_plugin_support
+  secure: false
+  vs_config_type: Application
 - name: grpc_objective_c_plugin
   build: protoc
   language: c++
