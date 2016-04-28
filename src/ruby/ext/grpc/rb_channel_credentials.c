@@ -254,6 +254,7 @@ static grpc_ssl_roots_override_result get_ssl_roots_override(
 static VALUE grpc_rb_set_default_roots_pem(VALUE self, VALUE roots) {
   char *roots_ptr = StringValueCStr(roots);
   size_t length = strlen(roots_ptr);
+  (void)self;
   pem_root_certs = gpr_malloc((length + 1) * sizeof(char));
   memcpy(pem_root_certs, roots_ptr, length + 1);
   return Qnil;
