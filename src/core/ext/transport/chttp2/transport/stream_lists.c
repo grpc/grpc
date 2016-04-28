@@ -305,6 +305,14 @@ void grpc_chttp2_list_add_check_read_ops(
                   GRPC_CHTTP2_LIST_CHECK_READ_OPS);
 }
 
+bool grpc_chttp2_list_remove_check_read_ops(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global) {
+  return stream_list_maybe_remove(TRANSPORT_FROM_GLOBAL(transport_global),
+                                  STREAM_FROM_GLOBAL(stream_global),
+                                  GRPC_CHTTP2_LIST_CHECK_READ_OPS);
+}
+
 int grpc_chttp2_list_pop_check_read_ops(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global **stream_global) {
