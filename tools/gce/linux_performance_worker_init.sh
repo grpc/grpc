@@ -88,6 +88,7 @@ curl -O https://bootstrap.pypa.io/get-pip.py
 sudo pypy get-pip.py
 sudo pypy -m pip install tabulate
 sudo pip install google-api-python-client
+sudo pip install tox
 
 # Node dependencies (nvm has to be installed under user jenkins)
 touch .profile
