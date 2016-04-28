@@ -1,4 +1,5 @@
 <%include file="ccache_setup.include"/>
+<%include file="bazel_setup.include"/>
 #======================
 # Zookeeper dependencies
 # TODO(jtattermusch): is zookeeper still needed?

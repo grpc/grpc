@@ -85,6 +85,12 @@ RUN ln -s /usr/bin/ccache /usr/local/bin/c++
 RUN ln -s /usr/bin/ccache /usr/local/bin/clang
 RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
 
+# Install bazel
+RUN apt-get install -y openjdk-8-jdk pkg-config zip g++ zlib1g-dev unzip
+RUN wget https://github.com/bazelbuild/bazel/releases/download/0.2.2b/bazel_0.2.2b-jdk7-linux-x86_64.deb &&
+    dpkg -i bazel_0.2.2b-jdk7-linux-x86_64.deb &&
+    rm bazel_0.2.2b-jdk7-linux-x86_64.deb
+
 #======================
 # Zookeeper dependencies
 # TODO(jtattermusch): is zookeeper still needed?
