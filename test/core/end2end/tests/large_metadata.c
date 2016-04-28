@@ -199,7 +199,7 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config,
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cq_expect_completion(cqv, tag(102), 1);
+  cq_expect_completion(cqv, tag(102), allow_large_metadata);
   cq_verify(cqv);
 
   op = ops;
@@ -222,13 +222,13 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config,
   cq_expect_completion(cqv, tag(1), 1);
   cq_verify(cqv);
 
-// FIXME: why is this assert passing with allow_large_metadata=false?
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(0 == strcmp(details, "xyz"));
+  GPR_ASSERT(status == (allow_large_metadata ? GRPC_STATUS_OK
+                        : GRPC_STATUS_RESOURCE_EXHAUSTED));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
   GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
   GPR_ASSERT(was_cancelled == 0);
   if (allow_large_metadata) {
+    GPR_ASSERT(0 == strcmp(details, "xyz"));
     GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
     GPR_ASSERT(contains_metadata(&request_metadata_recv, "key", meta.value));
   } else {

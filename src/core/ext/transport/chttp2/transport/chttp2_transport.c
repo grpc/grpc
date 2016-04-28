@@ -858,7 +858,7 @@ static void perform_stream_op_locked(
         add_closure_barrier(on_complete);
     stream_global->send_initial_metadata = op->send_initial_metadata;
     if (contains_non_ok_status(transport_global, op->send_initial_metadata)) {
-      stream_global->seen_error = 1;
+      stream_global->seen_error = true;
       grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
     }
     if (!stream_global->write_closed) {
@@ -899,7 +899,7 @@ static void perform_stream_op_locked(
         add_closure_barrier(on_complete);
     stream_global->send_trailing_metadata = op->send_trailing_metadata;
     if (contains_non_ok_status(transport_global, op->send_trailing_metadata)) {
-      stream_global->seen_error = 1;
+      stream_global->seen_error = true;
       grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
     }
     if (stream_global->write_closed) {
@@ -1076,6 +1076,16 @@ static void check_read_ops(grpc_exec_ctx *exec_ctx,
       grpc_chttp2_list_pop_check_read_ops(transport_global, &stream_global)) {
     if (stream_global->recv_initial_metadata_ready != NULL &&
         stream_global->published_initial_metadata) {
+      if (stream_global->seen_error) {
+        while ((bs = grpc_chttp2_incoming_frame_queue_pop(
+                    &stream_global->incoming_frames)) != NULL) {
+          grpc_byte_stream_destroy(exec_ctx, bs);
+        }
+        if (stream_global->exceeded_metadata_size) {
+          cancel_from_api(exec_ctx, transport_global, stream_global,
+                          GRPC_STATUS_RESOURCE_EXHAUSTED);
+        }
+      }
       grpc_chttp2_incoming_metadata_buffer_publish(
           &stream_global->received_initial_metadata,
           stream_global->recv_initial_metadata);
@@ -1105,10 +1115,15 @@ static void check_read_ops(grpc_exec_ctx *exec_ctx,
     }
     if (stream_global->recv_trailing_metadata_finished != NULL &&
         stream_global->read_closed && stream_global->write_closed) {
-      while (stream_global->seen_error &&
-             (bs = grpc_chttp2_incoming_frame_queue_pop(
-                  &stream_global->incoming_frames)) != NULL) {
-        grpc_byte_stream_destroy(exec_ctx, bs);
+      if (stream_global->seen_error) {
+        while ((bs = grpc_chttp2_incoming_frame_queue_pop(
+                    &stream_global->incoming_frames)) != NULL) {
+          grpc_byte_stream_destroy(exec_ctx, bs);
+        }
+        if (stream_global->exceeded_metadata_size) {
+          cancel_from_api(exec_ctx, transport_global, stream_global,
+                          GRPC_STATUS_RESOURCE_EXHAUSTED);
+        }
       }
       if (stream_global->incoming_frames.head == NULL) {
         grpc_chttp2_incoming_metadata_buffer_publish(
@@ -1175,7 +1190,7 @@ static void cancel_from_api(grpc_exec_ctx *exec_ctx,
                             NULL);
   }
   if (status != GRPC_STATUS_OK && !stream_global->seen_error) {
-    stream_global->seen_error = 1;
+    stream_global->seen_error = true;
     grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
   }
   grpc_chttp2_mark_stream_closed(exec_ctx, transport_global, stream_global, 1,
@@ -1187,7 +1202,7 @@ void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx,
                              grpc_chttp2_stream_global *stream_global,
                              grpc_status_code status, gpr_slice *slice) {
   if (status != GRPC_STATUS_OK) {
-    stream_global->seen_error = 1;
+    stream_global->seen_error = true;
     grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
   }
   /* stream_global->recv_trailing_metadata_finished gives us a
