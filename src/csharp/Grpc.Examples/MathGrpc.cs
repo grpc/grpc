@@ -103,7 +103,9 @@ namespace Math {
     }
 
     // client stub
+    #pragma warning disable 0618
     public class MathClient : ClientBase<MathClient>, IMathClient
+    #pragma warning restore 0618
     {
       public MathClient(Channel channel) : base(channel)
       {
@@ -166,30 +168,34 @@ namespace Math {
       }
     }
 
-    // creates service definition that can be registered with a server
-    public static ServerServiceDefinition BindService(IMath serviceImpl)
-    {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
-          .AddMethod(__Method_Div, serviceImpl.Div)
-          .AddMethod(__Method_DivMany, serviceImpl.DivMany)
-          .AddMethod(__Method_Fib, serviceImpl.Fib)
-          .AddMethod(__Method_Sum, serviceImpl.Sum).Build();
-    }
-
-    // creates service definition that can be registered with a server
-    public static ServerServiceDefinition BindService(MathBase serviceImpl)
-    {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
-          .AddMethod(__Method_Div, serviceImpl.Div)
-          .AddMethod(__Method_DivMany, serviceImpl.DivMany)
-          .AddMethod(__Method_Fib, serviceImpl.Fib)
-          .AddMethod(__Method_Sum, serviceImpl.Sum).Build();
-    }
-
     // creates a new client
     public static MathClient NewClient(Channel channel)
     {
       return new MathClient(channel);
+    }
+
+    // creates service definition that can be registered with a server
+    #pragma warning disable 0618
+    public static ServerServiceDefinition BindService(IMath serviceImpl)
+    #pragma warning restore 0618
+    {
+      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+          .AddMethod(__Method_Div, serviceImpl.Div)
+          .AddMethod(__Method_DivMany, serviceImpl.DivMany)
+          .AddMethod(__Method_Fib, serviceImpl.Fib)
+          .AddMethod(__Method_Sum, serviceImpl.Sum).Build();
+    }
+
+    // creates service definition that can be registered with a server
+    #pragma warning disable 0618
+    public static ServerServiceDefinition BindService(MathBase serviceImpl)
+    #pragma warning restore 0618
+    {
+      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+          .AddMethod(__Method_Div, serviceImpl.Div)
+          .AddMethod(__Method_DivMany, serviceImpl.DivMany)
+          .AddMethod(__Method_Fib, serviceImpl.Fib)
+          .AddMethod(__Method_Sum, serviceImpl.Sum).Build();
     }
 
   }

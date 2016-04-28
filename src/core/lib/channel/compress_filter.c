@@ -268,8 +268,14 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
   channeld->default_compression_algorithm =
       grpc_channel_args_get_compression_algorithm(args->channel_args);
   /* Make sure the default isn't disabled. */
-  GPR_ASSERT(grpc_compression_options_is_algorithm_enabled(
-      &channeld->compression_options, channeld->default_compression_algorithm));
+  if (!grpc_compression_options_is_algorithm_enabled(
+          &channeld->compression_options,
+          channeld->default_compression_algorithm)) {
+    gpr_log(GPR_DEBUG,
+            "compression algorithm %d not enabled: switching to none",
+            channeld->default_compression_algorithm);
+    channeld->default_compression_algorithm = GRPC_COMPRESS_NONE;
+  }
   channeld->compression_options.default_compression_algorithm =
       channeld->default_compression_algorithm;
 

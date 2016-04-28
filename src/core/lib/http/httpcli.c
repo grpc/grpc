@@ -246,7 +246,7 @@ static void internal_request_begin(
 
   grpc_pollset_set_add_pollset_set(exec_ctx, req->context->pollset_set,
                                    req->pollset_set);
-  grpc_resolve_address(request->host, req->handshaker->default_port,
+  grpc_resolve_address(exec_ctx, request->host, req->handshaker->default_port,
                        on_resolved, req);
 }
 

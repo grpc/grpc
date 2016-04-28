@@ -35,13 +35,20 @@ namespace Grpc.Core
 {
     /// <summary>
     /// Provides info about current version of gRPC.
+    /// See https://codingforsmarties.wordpress.com/2016/01/21/how-to-version-assemblies-destined-for-nuget/
+    /// for rationale about assembly versioning.
     /// </summary>
     public static class VersionInfo
     {
         /// <summary>
-        /// Current version of gRPC C# assemblies
+        /// Current <c>AssemblyVersion</c> attribute of gRPC C# assemblies
         /// </summary>
-        public const string CurrentAssemblyVersion = "0.14.0.0";
+        public const string CurrentAssemblyVersion = "1.0.0.0";
+
+        /// <summary>
+        /// Current <c>AssemblyFileVersion</c> of gRPC C# assemblies
+        /// </summary>
+        public const string CurrentAssemblyFileVersion = "0.14.0.0";
 
         /// <summary>
         /// Current version of gRPC C#

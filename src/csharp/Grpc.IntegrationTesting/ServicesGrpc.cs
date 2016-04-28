@@ -71,7 +71,9 @@ namespace Grpc.Testing {
     }
 
     // client stub
+    #pragma warning disable 0618
     public class BenchmarkServiceClient : ClientBase<BenchmarkServiceClient>, IBenchmarkServiceClient
+    #pragma warning restore 0618
     {
       public BenchmarkServiceClient(Channel channel) : base(channel)
       {
@@ -118,26 +120,30 @@ namespace Grpc.Testing {
       }
     }
 
-    // creates service definition that can be registered with a server
-    public static ServerServiceDefinition BindService(IBenchmarkService serviceImpl)
-    {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
-          .AddMethod(__Method_UnaryCall, serviceImpl.UnaryCall)
-          .AddMethod(__Method_StreamingCall, serviceImpl.StreamingCall).Build();
-    }
-
-    // creates service definition that can be registered with a server
-    public static ServerServiceDefinition BindService(BenchmarkServiceBase serviceImpl)
-    {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
-          .AddMethod(__Method_UnaryCall, serviceImpl.UnaryCall)
-          .AddMethod(__Method_StreamingCall, serviceImpl.StreamingCall).Build();
-    }
-
     // creates a new client
     public static BenchmarkServiceClient NewClient(Channel channel)
     {
       return new BenchmarkServiceClient(channel);
+    }
+
+    // creates service definition that can be registered with a server
+    #pragma warning disable 0618
+    public static ServerServiceDefinition BindService(IBenchmarkService serviceImpl)
+    #pragma warning restore 0618
+    {
+      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+          .AddMethod(__Method_UnaryCall, serviceImpl.UnaryCall)
+          .AddMethod(__Method_StreamingCall, serviceImpl.StreamingCall).Build();
+    }
+
+    // creates service definition that can be registered with a server
+    #pragma warning disable 0618
+    public static ServerServiceDefinition BindService(BenchmarkServiceBase serviceImpl)
+    #pragma warning restore 0618
+    {
+      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+          .AddMethod(__Method_UnaryCall, serviceImpl.UnaryCall)
+          .AddMethod(__Method_StreamingCall, serviceImpl.StreamingCall).Build();
     }
 
   }
@@ -241,7 +247,9 @@ namespace Grpc.Testing {
     }
 
     // client stub
+    #pragma warning disable 0618
     public class WorkerServiceClient : ClientBase<WorkerServiceClient>, IWorkerServiceClient
+    #pragma warning restore 0618
     {
       public WorkerServiceClient(Channel channel) : base(channel)
       {
@@ -312,30 +320,34 @@ namespace Grpc.Testing {
       }
     }
 
-    // creates service definition that can be registered with a server
-    public static ServerServiceDefinition BindService(IWorkerService serviceImpl)
-    {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
-          .AddMethod(__Method_RunServer, serviceImpl.RunServer)
-          .AddMethod(__Method_RunClient, serviceImpl.RunClient)
-          .AddMethod(__Method_CoreCount, serviceImpl.CoreCount)
-          .AddMethod(__Method_QuitWorker, serviceImpl.QuitWorker).Build();
-    }
-
-    // creates service definition that can be registered with a server
-    public static ServerServiceDefinition BindService(WorkerServiceBase serviceImpl)
-    {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
-          .AddMethod(__Method_RunServer, serviceImpl.RunServer)
-          .AddMethod(__Method_RunClient, serviceImpl.RunClient)
-          .AddMethod(__Method_CoreCount, serviceImpl.CoreCount)
-          .AddMethod(__Method_QuitWorker, serviceImpl.QuitWorker).Build();
-    }
-
     // creates a new client
     public static WorkerServiceClient NewClient(Channel channel)
     {
       return new WorkerServiceClient(channel);
+    }
+
+    // creates service definition that can be registered with a server
+    #pragma warning disable 0618
+    public static ServerServiceDefinition BindService(IWorkerService serviceImpl)
+    #pragma warning restore 0618
+    {
+      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+          .AddMethod(__Method_RunServer, serviceImpl.RunServer)
+          .AddMethod(__Method_RunClient, serviceImpl.RunClient)
+          .AddMethod(__Method_CoreCount, serviceImpl.CoreCount)
+          .AddMethod(__Method_QuitWorker, serviceImpl.QuitWorker).Build();
+    }
+
+    // creates service definition that can be registered with a server
+    #pragma warning disable 0618
+    public static ServerServiceDefinition BindService(WorkerServiceBase serviceImpl)
+    #pragma warning restore 0618
+    {
+      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+          .AddMethod(__Method_RunServer, serviceImpl.RunServer)
+          .AddMethod(__Method_RunClient, serviceImpl.RunClient)
+          .AddMethod(__Method_CoreCount, serviceImpl.CoreCount)
+          .AddMethod(__Method_QuitWorker, serviceImpl.QuitWorker).Build();
     }
 
   }

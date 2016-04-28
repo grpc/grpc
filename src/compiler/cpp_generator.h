@@ -64,8 +64,16 @@ struct Parameters {
   grpc::string grpc_search_path;
 };
 
+// A common interface for objects having comments in the source.
+// Return formatted comments to be inserted in generated code.
+struct CommentHolder {
+  virtual ~CommentHolder() {}
+  virtual grpc::string GetLeadingComments() const = 0;
+  virtual grpc::string GetTrailingComments() const = 0;
+};
+
 // An abstract interface representing a method.
-struct Method {
+struct Method : public CommentHolder {
   virtual ~Method() {}
 
   virtual grpc::string name() const = 0;
@@ -80,7 +88,7 @@ struct Method {
 };
 
 // An abstract interface representing a service.
-struct Service {
+struct Service : public CommentHolder {
   virtual ~Service() {}
 
   virtual grpc::string name() const = 0;
@@ -101,13 +109,16 @@ struct Printer {
 
 // An interface that allows the source generated to be output using various
 // libraries/idls/serializers.
-struct File {
+struct File : public CommentHolder {
   virtual ~File() {}
 
   virtual grpc::string filename() const = 0;
   virtual grpc::string filename_without_ext() const = 0;
+  virtual grpc::string message_header_ext() const = 0;
+  virtual grpc::string service_header_ext() const = 0;
   virtual grpc::string package() const = 0;
   virtual std::vector<grpc::string> package_parts() const = 0;
+  virtual grpc::string additional_headers() const = 0;
 
   virtual int service_count() const = 0;
   virtual std::unique_ptr<const Service> service(int i) const = 0;
