@@ -410,7 +410,8 @@ typedef struct {
   uint8_t in_stream_map;
   /** has this stream seen an error? if 1, then pending incoming frames
       can be thrown away */
-  uint8_t seen_error;
+  bool seen_error;
+  bool exceeded_metadata_size;
 
   uint8_t published_initial_metadata;
   uint8_t published_trailing_metadata;
@@ -457,7 +458,8 @@ struct grpc_chttp2_stream_parsing {
   /** which metadata did we get (on this parse) */
   uint8_t got_metadata_on_parse[2];
   /** should we raise the seen_error flag in transport_global */
-  uint8_t seen_error;
+  bool seen_error;
+  bool exceeded_metadata_size;
   /** window available for peer to send to us */
   int64_t incoming_window;
   /** parsing state for data frames */

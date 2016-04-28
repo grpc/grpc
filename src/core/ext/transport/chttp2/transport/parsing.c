@@ -167,7 +167,9 @@ void grpc_chttp2_publish_reads(
   while (grpc_chttp2_list_pop_parsing_seen_stream(
       transport_global, transport_parsing, &stream_global, &stream_parsing)) {
     if (stream_parsing->seen_error) {
-      stream_global->seen_error = 1;
+      stream_global->seen_error = true;
+      stream_global->exceeded_metadata_size =
+          stream_parsing->exceeded_metadata_size;
       grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
     }
 
@@ -603,7 +605,7 @@ static void on_initial_header(void *tp, grpc_mdelem *md) {
 
   if (md->key == GRPC_MDSTR_GRPC_STATUS && md != GRPC_MDELEM_GRPC_STATUS_0) {
     /* TODO(ctiller): check for a status like " 0" */
-    stream_parsing->seen_error = 1;
+    stream_parsing->seen_error = true;
   }
 
   if (md->key == GRPC_MDSTR_GRPC_TIMEOUT) {
@@ -627,7 +629,8 @@ static void on_initial_header(void *tp, grpc_mdelem *md) {
     const size_t new_size = stream_parsing->metadata_buffer[0].size +
                             GRPC_MDELEM_LENGTH(md);
     if (new_size > transport_parsing->max_metadata_size) {
-      stream_parsing->seen_error = 1;
+      stream_parsing->seen_error = true;
+      stream_parsing->exceeded_metadata_size = true;
       GRPC_MDELEM_UNREF(md);
     } else {
       grpc_chttp2_incoming_metadata_buffer_add(
@@ -656,13 +659,14 @@ static void on_trailing_header(void *tp, grpc_mdelem *md) {
 
   if (md->key == GRPC_MDSTR_GRPC_STATUS && md != GRPC_MDELEM_GRPC_STATUS_0) {
     /* TODO(ctiller): check for a status like " 0" */
-    stream_parsing->seen_error = 1;
+    stream_parsing->seen_error = true;
   }
 
   const size_t new_size = stream_parsing->metadata_buffer[1].size +
                           GRPC_MDELEM_LENGTH(md);
   if (new_size > transport_parsing->max_metadata_size) {
-    stream_parsing->seen_error = 1;
+    stream_parsing->seen_error = true;
+    stream_parsing->exceeded_metadata_size = true;
     GRPC_MDELEM_UNREF(md);
   } else {
     grpc_chttp2_incoming_metadata_buffer_add(
