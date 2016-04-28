@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -27,22 +26,65 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Builds Node interop server and client in a base image.
-set -e
 
-mkdir -p /var/local/git
-git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
+FROM debian:jessie
 
-# copy service account keys if available
-cp -r /var/local/jenkins/service_account $HOME || true
+# Install Git and basic packages.
+RUN apt-get update && apt-get install -y \
+  autoconf \
+  autotools-dev \
+  build-essential \
+  bzip2 \
+  ccache \
+  curl \
+  gcc \
+  gcc-multilib \
+  git \
+  golang \
+  gyp \
+  lcov \
+  libc6 \
+  libc6-dbg \
+  libc6-dev \
+  libgtest-dev \
+  libtool \
+  make \
+  perl \
+  strace \
+  python-dev \
+  python-setuptools \
+  python-yaml \
+  telnet \
+  unzip \
+  wget \
+  zip && apt-get clean
 
-cd /var/local/git/grpc
-nvm use 0.12
-nvm alias default 0.12  # prevent the need to run 'nvm use' in every shell
+#================
+# Build profiling
+RUN apt-get update && apt-get install -y time && apt-get clean
 
-make install-certs
+#==================
+# Node dependencies
 
-# build Node interop client & server
-npm install -g node-gyp
-npm install --unsafe-perm --build-from-source
+# Install nvm
+RUN touch .profile
+RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.25.4/install.sh | bash
+RUN /bin/bash -l -c "nvm install 0.12 && npm config set cache /tmp/npm-cache"
+
+# Prepare ccache
+RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
+RUN ln -s /usr/bin/ccache /usr/local/bin/g++
+RUN ln -s /usr/bin/ccache /usr/local/bin/cc
+RUN ln -s /usr/bin/ccache /usr/local/bin/c++
+RUN ln -s /usr/bin/ccache /usr/local/bin/clang
+RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
+
+#======================
+# Zookeeper dependencies
+# TODO(jtattermusch): is zookeeper still needed?
+RUN apt-get install -y libzookeeper-mt-dev
+
+RUN mkdir /var/local/jenkins
+
+# Define the default command.
+CMD ["bash"]

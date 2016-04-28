@@ -29,30 +29,58 @@
 
 FROM debian:jessie
 
-# Install JDK 8 and Git
-#
-# TODO(temiola): simplify this if/when a simpler process is available.
-#
-RUN echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections && \
-  echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee /etc/apt/sources.list.d/webupd8team-java.list && \
-  echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee -a /etc/apt/sources.list.d/webupd8team-java.list && \
-  apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886 && \
-  apt-get update && \
-  apt-get -y install \
-      git \
-      libapr1 \
-      oracle-java8-installer \
-      && \
-  apt-get clean && rm -r /var/cache/oracle-jdk8-installer/
+# Install Git and basic packages.
+RUN apt-get update && apt-get install -y \
+  autoconf \
+  autotools-dev \
+  build-essential \
+  bzip2 \
+  ccache \
+  curl \
+  gcc \
+  gcc-multilib \
+  git \
+  golang \
+  gyp \
+  lcov \
+  libc6 \
+  libc6-dbg \
+  libc6-dev \
+  libgtest-dev \
+  libtool \
+  make \
+  perl \
+  strace \
+  python-dev \
+  python-setuptools \
+  python-yaml \
+  telnet \
+  unzip \
+  wget \
+  zip && apt-get clean
 
-ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
-ENV PATH $PATH:$JAVA_HOME/bin
+#================
+# Build profiling
+RUN apt-get update && apt-get install -y time && apt-get clean
 
-# Trigger download of as many Gradle artifacts as possible.
-RUN git clone --recursive --depth 1 https://github.com/grpc/grpc-java.git && \
-  cd grpc-java && \
-  ./gradlew :grpc-interop-testing:installDist -PskipCodegen=true && \
-  rm -r "$(pwd)"
+#=================
+# C++ dependencies
+RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
+
+# Prepare ccache
+RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
+RUN ln -s /usr/bin/ccache /usr/local/bin/g++
+RUN ln -s /usr/bin/ccache /usr/local/bin/cc
+RUN ln -s /usr/bin/ccache /usr/local/bin/c++
+RUN ln -s /usr/bin/ccache /usr/local/bin/clang
+RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
+
+#======================
+# Zookeeper dependencies
+# TODO(jtattermusch): is zookeeper still needed?
+RUN apt-get install -y libzookeeper-mt-dev
+
+RUN mkdir /var/local/jenkins
 
 # Define the default command.
 CMD ["bash"]
