@@ -362,7 +362,7 @@ CPPFLAGS += -fPIC
 LDFLAGS += -fPIC
 endif
 
-INCLUDES = . include $(GENDIR)
+INCLUDES = . include third_party/nanopb $(GENDIR)
 LDFLAGS += -Llibs/$(CONFIG)
 
 ifeq ($(SYSTEM),Darwin)
