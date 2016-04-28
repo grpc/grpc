@@ -469,7 +469,7 @@ class PythonLanguage:
 
   def scenarios(self):
     yield {
-        'name': 'python_to_cpp_protobuf_streaming_ping_pong_secure',
+        'name': 'python_to_cpp_protobuf_streaming_ping_pong',
         'num_servers': 1,
         'num_clients': 1,
         'client_config': {
@@ -496,7 +496,7 @@ class PythonLanguage:
         'SERVER_LANGUAGE': 'c++' 
     }
     yield {
-        'name': 'python_protobuf_sync_unary_ping_pong_secure',
+        'name': 'python_protobuf_sync_unary_ping_pong',
         'num_servers': 1,
         'num_clients': 1,
         'client_config': {
@@ -522,7 +522,7 @@ class PythonLanguage:
         'benchmark_seconds': BENCHMARK_SECONDS,
     }
     yield {
-        'name': 'python_protobuf_async_unary_ping_pong_secure',
+        'name': 'python_protobuf_async_unary_ping_pong',
         'num_servers': 1,
         'num_clients': 1,
         'client_config': {
@@ -548,7 +548,7 @@ class PythonLanguage:
           'benchmark_seconds': BENCHMARK_SECONDS,
     }
     yield {
-        'name': 'python_to_cpp_single_channel_throughput_secure',
+        'name': 'python_to_cpp_single_channel_throughput',
         'num_servers': 1,
         'num_clients': 1,
         'client_config': {

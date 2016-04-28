@@ -90,7 +90,7 @@ class WorkerServer(services_pb2.BetaWorkerServiceServicer):
       }
       server = implementations.server(method_implementations)
     else:
-      raise Exception('Unsupported server type {}'.format(config.ServerType))
+      raise Exception('Unsupported server type {}'.format(config.server_type))
 
     if config.HasField('security_params'):  # Use SSL
       server_creds = implementations.ssl_server_credentials([(
@@ -143,15 +143,20 @@ class WorkerServer(services_pb2.BetaWorkerServiceServicer):
 
   def _create_client_runner(self, server, config, qps_data):
     if config.client_type == control_pb2.SYNC_CLIENT:
-      assert config.rpc_type == control_pb2.UNARY
-      client = benchmark_client.UnarySyncBenchmarkClient(
-          server, config, qps_data)
-    elif config.rpc_type == control_pb2.UNARY:
-      client = benchmark_client.UnaryAsyncBenchmarkClient(
-          server, config, qps_data)
+      if config.rpc_type == control_pb2.UNARY:
+        client = benchmark_client.UnarySyncBenchmarkClient(
+            server, config, qps_data)
+      else:
+        raise Exception('STREAMING SYNC client not supported')
+    elif config.client_type == control_pb2.ASYNC_CLIENT:
+      if config.rpc_type == control_pb2.UNARY:
+        client = benchmark_client.UnaryAsyncBenchmarkClient(
+            server, config, qps_data)
+      elif config.rpc_type == control_pb2.STREAMING:
+        client = benchmark_client.StreamingAsyncBenchmarkClient(
+            server, config, qps_data)
     else:
-      client = benchmark_client.StreamingAsyncBenchmarkClient(
-          server, config, qps_data)
+      raise Exception('Unsupported client type {}'.format(config.client_type))
 
     # In multi-channel tests, we split the load across all channels
     load_factor = float(config.client_channels)

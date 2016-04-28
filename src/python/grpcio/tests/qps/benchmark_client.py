@@ -27,10 +27,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Defines test client behaviors (UNARY/STREAMING) (SYNC/ASYNC).
-
-Each client type must provide a non-blocking send_request().
-"""
+"""Defines test client behaviors (UNARY/STREAMING) (SYNC/ASYNC)."""
 
 import abc
 import time
@@ -88,6 +85,7 @@ class BenchmarkClient:
 
   @abc.abstractmethod
   def send_request(self):
+    """Non-blocking wrapper for a client's request operation."""
     raise NotImplementedError()
 
   def start(self):
