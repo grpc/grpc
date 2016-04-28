@@ -63,7 +63,8 @@ typedef struct {
   grpc_endpoint **endpoint;
 } async_connect;
 
-static void async_connect_unlock_and_cleanup(async_connect *ac, grpc_winsocket *socket) {
+static void async_connect_unlock_and_cleanup(async_connect *ac,
+                                             grpc_winsocket *socket) {
   int done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
   if (done) {
