@@ -912,13 +912,13 @@ if args.use_docker:
   env = os.environ.copy()
   env['RUN_TESTS_COMMAND'] = run_tests_cmd
   env['DOCKERFILE_DIR'] = dockerfile_dir
-  env['DOCKER_RUN_SCRIPT'] = 'tools/jenkins/docker_run_tests.sh'
+  env['DOCKER_RUN_SCRIPT'] = 'tools/run_tests/dockerize/docker_run_tests.sh'
   if args.xml_report:
     env['XML_REPORT'] = args.xml_report
   if not args.travis:
     env['TTY_FLAG'] = '-t'  # enables Ctrl-C when not on Jenkins.
 
-  subprocess.check_call(['tools/jenkins/build_docker_and_run_tests.sh'],
+  subprocess.check_call(['tools/run_tests/dockerize/build_docker_and_run_tests.sh'],
                         shell=True,
                         env=env)
   sys.exit(0)
