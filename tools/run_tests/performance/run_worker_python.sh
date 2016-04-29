@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-# Copyright 2015, Google Inc.
+#!/bin/bash
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,11 +27,9 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# This script is invoked by Jenkins and runs performance smoke test.
+
 set -ex
 
-# Enter the gRPC repo root
-cd $(dirname $0)/../..
+cd $(dirname $0)/../../..
 
-tools/run_tests/run_performance_tests.py -l c++ node ruby csharp python
+PYTHONPATH=src/python/grpcio:src/python/gens .tox/py27/bin/python src/python/grpcio/tests/qps/qps_worker.py $@

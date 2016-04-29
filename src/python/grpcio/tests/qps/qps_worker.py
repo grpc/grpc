@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,11 +26,35 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# This script is invoked by Jenkins and runs performance smoke test.
-set -ex
 
-# Enter the gRPC repo root
-cd $(dirname $0)/../..
+"""The entry point for the qps worker."""
 
-tools/run_tests/run_performance_tests.py -l c++ node ruby csharp python
+import argparse
+import time
+
+from src.proto.grpc.testing import services_pb2
+
+from tests.qps import worker_server
+
+
+def run_worker_server(port):
+  servicer = worker_server.WorkerServer()
+  server = services_pb2.beta_create_WorkerService_server(servicer)
+  server.add_insecure_port('[::]:{}'.format(port))
+  server.start()
+  servicer.wait_for_quit()
+  # Drain outstanding requests for clean exit
+  time.sleep(2)
+  server.stop(0)
+
+
+if __name__ == '__main__':
+  parser = argparse.ArgumentParser(
+      description='gRPC Python performance testing worker')
+  parser.add_argument('--driver_port',
+                      type=int,
+                      dest='port',
+                      help='The port the worker should listen on')
+  args = parser.parse_args()
+
+  run_worker_server(args.port)
