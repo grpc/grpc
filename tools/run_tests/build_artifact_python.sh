@@ -62,6 +62,13 @@ ${SETARCH_CMD} python setup.py  \
 ${SETARCH_CMD} python setup.py  \
     bdist_wheel
 
-mkdir -p artifacts
+# Build gRPC tools package
+python tools/distrib/python/make_grpcio_tools.py
+# Build with clang since there's a bug in GCC 4.x where some constant
+# expressions are treated as non-constant in the presence of the fwrapv flag
+# (fixed in at most GCC 5.3).
+CC=clang python tools/distrib/python/grpcio_tools/setup.py bdist_wheel
 
+mkdir -p artifacts
 cp -r dist/* artifacts
+cp -r tools/distrib/python/grpcio_tools/dist/* artifacts

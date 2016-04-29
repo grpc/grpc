@@ -37,6 +37,7 @@ RUN apt-get update && apt-get install -y \
   autotools-dev \
   build-essential \
   bzip2 \
+  clang \
   curl \
   gcc \
   gcc-multilib \
@@ -65,6 +66,14 @@ RUN /bin/bash -l -c "nvm install 4 && npm install -g node-pre-gyp"
 
 ##################
 # Python dependencies
+
+# Install bazel
+RUN echo "deb http://httpredir.debian.org/debian jessie-backports main" >   /etc/apt/sources.list.d/backports.list
+RUN apt-get update
+RUN apt-get -t jessie-backports install -y openjdk-8-jdk
+RUN git clone https://github.com/bazelbuild/bazel.git /bazel
+RUN cd /bazel && ./compile.sh
+RUN ln -s /bazel/output/bazel /bin/
 
 RUN apt-get update && apt-get install -y \
     python-all-dev \
