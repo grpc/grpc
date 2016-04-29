@@ -44,7 +44,8 @@ Pod::Spec.new do |s|
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
   s.source = { :git => 'https://github.com/grpc/grpc.git',
-               :tag => "release-#{version.gsub(/\./, '_')}-objectivec-#{version}" }
+               :tag => "release-#{version.gsub(/\./, '_')}-objectivec-#{version}",
+               :submodules => true }
 
 
   s.ios.deployment_target = '7.1'
