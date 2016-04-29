@@ -246,6 +246,9 @@ def start_qpsworkers(languages, worker_hosts):
 def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*',
                      bq_result_table=None):
   """Create jobspecs for scenarios to run."""
+  all_workers = [worker
+                 for workers in workers_by_lang.values()
+                 for worker in workers]
   scenarios = []
   for language in languages:
     for scenario_json in language.scenarios():
@@ -271,9 +274,6 @@ def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*',
         scenarios.append(scenario)
 
   # the very last scenario requests shutting down the workers.
-  all_workers = [worker
-                 for workers in workers_by_lang.values()
-                 for worker in workers]
   scenarios.append(create_quit_jobspec(all_workers, remote_host=remote_host))
   return scenarios
 
