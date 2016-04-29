@@ -4,6 +4,8 @@ require_relative 'version.rb'
 Gem::Specification.new do |s|
   s.name = 'grpc-tools'
   s.version = GRPC::Tools::VERSION
+  s.authors = ['grpc Authors']
+  s.email = 'grpc-io@googlegroups.com'
   s.homepage = 'https://github.com/google/grpc/tree/master/src/ruby/tools'
   s.summary = 'Development tools for Ruby gRPC'
   s.description = 'protoc and the Ruby gRPC protoc plugin'
