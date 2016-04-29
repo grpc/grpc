@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,8 +43,16 @@
   if (!host || !certsPath || !testName) {
     [NSException raise:NSInvalidArgumentException format:@"host, path and name must be provided."];
   }
+  NSError *error = nil;
+  NSString *certs = [NSString stringWithContentsOfFile:certsPath
+                                                      encoding:NSUTF8StringEncoding
+                                                      error:&error];
+  if (error != nil) {
+      [NSException raise:[error localizedDescription] format:@"failed to load certs"];
+  }
+
   GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
-  hostConfig.pathToCertificates = certsPath;
+  [hostConfig setTLSPEMRootCerts:certs withPrivateKey:nil withCertChain:nil error:nil];
   hostConfig.hostNameOverride = testName;
 }
 
