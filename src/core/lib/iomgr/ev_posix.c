@@ -44,7 +44,6 @@
 static const grpc_event_engine_vtable *g_event_engine;
 
 grpc_poll_function_type grpc_poll_function = poll;
-grpc_wakeup_fd grpc_global_wakeup_fd;
 
 void grpc_event_engine_init(void) {
   if ((g_event_engine = grpc_init_poll_and_epoll_posix())) {
