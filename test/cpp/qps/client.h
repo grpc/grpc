@@ -39,8 +39,8 @@
 #include <vector>
 
 #include <grpc++/support/byte_buffer.h>
-#include <grpc++/support/slice.h>
 #include <grpc++/support/channel_arguments.h>
+#include <grpc++/support/slice.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
@@ -304,16 +304,17 @@ class ClientImpl : public Client {
     }
     void init(const grpc::string& target, const ClientConfig& config,
               std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)>
-                  create_stub, int shard) {
+                  create_stub,
+              int shard) {
       // We have to use a 2-phase init like this with a default
       // constructor followed by an initializer function to make
       // old compilers happy with using this in std::vector
       ChannelArguments args;
-      args.SetInt("shard", shard);
+      args.SetInt("shard_to_ensure_no_subchannel_merges", shard);
       channel_ = CreateTestChannel(
           target, config.security_params().server_host_override(),
-          config.has_security_params(),
-          !config.security_params().use_test_ca(), std::shared_ptr<CallCredentials>(), args);
+          config.has_security_params(), !config.security_params().use_test_ca(),
+          std::shared_ptr<CallCredentials>(), args);
       stub_ = create_stub(channel_);
     }
     Channel* get_channel() { return channel_.get(); }
