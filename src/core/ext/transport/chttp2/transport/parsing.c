@@ -45,6 +45,10 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/transport/static_metadata.h"
 
+#define TRANSPORT_FROM_PARSING(tp)                                        \
+  ((grpc_chttp2_transport *)((char *)(tp)-offsetof(grpc_chttp2_transport, \
+                                                   parsing)))
+
 static int init_frame_parser(grpc_exec_ctx *exec_ctx,
                              grpc_chttp2_transport_parsing *transport_parsing);
 static int init_header_frame_parser(
@@ -628,7 +632,10 @@ static void on_initial_header(void *tp, grpc_mdelem *md) {
   } else {
     const size_t new_size = stream_parsing->metadata_buffer[0].size +
                             GRPC_MDELEM_LENGTH(md);
-    if (new_size > transport_parsing->max_metadata_size) {
+    grpc_chttp2_transport_global *transport_global =
+        &TRANSPORT_FROM_PARSING(transport_parsing)->global;
+    if (new_size > transport_global->settings
+            [GRPC_LOCAL_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE]) {
       stream_parsing->seen_error = true;
       stream_parsing->exceeded_metadata_size = true;
       GRPC_MDELEM_UNREF(md);
@@ -664,7 +671,10 @@ static void on_trailing_header(void *tp, grpc_mdelem *md) {
 
   const size_t new_size = stream_parsing->metadata_buffer[1].size +
                           GRPC_MDELEM_LENGTH(md);
-  if (new_size > transport_parsing->max_metadata_size) {
+  grpc_chttp2_transport_global *transport_global =
+      &TRANSPORT_FROM_PARSING(transport_parsing)->global;
+  if (new_size > transport_global->settings
+          [GRPC_LOCAL_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE]) {
     stream_parsing->seen_error = true;
     stream_parsing->exceeded_metadata_size = true;
     GRPC_MDELEM_UNREF(md);
