@@ -31,15 +31,16 @@
  *
  */
 
+#include <string.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/load_reporting/load_reporting.h"
 #include "src/core/ext/load_reporting/load_reporting_filter.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/load_reporting/load_reporting.h"
 #include "src/core/lib/profiling/timers.h"
 
 typedef struct call_data { void *dummy; } call_data;
-typedef struct channel_data { void *dummy; } channel_data;
+typedef struct channel_data { grpc_load_reporting_data *lrd; } channel_data;
 
 /* Constructor for call_data */
 static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
@@ -48,8 +49,9 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_stats *stats) {
+  channel_data *chand = elem->channel_data;
   GPR_TIMER_BEGIN("load_reporting_filter", 0);
-  grpc_load_reporting_call(stats);
+  grpc_load_reporting_call(chand->lrd, stats);
   GPR_TIMER_END("load_reporting_filter", 0);
 }
 
@@ -58,11 +60,26 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
                               grpc_channel_element *elem,
                               grpc_channel_element_args *args) {
   GPR_ASSERT(!args->is_last);
+
+  channel_data *chand = elem->channel_data;
+  memset(chand, 0, sizeof(channel_data));
+
+  for (size_t i = 0; i < args->channel_args->num_args; i++) {
+    if (0 == strcmp(args->channel_args->args[i].key, GRPC_ARG_ENABLE_LOAD_REPORTING)) {
+      chand->lrd = args->channel_args->args[i].value.pointer.p;
+      GPR_ASSERT(chand->lrd != NULL);
+    }
+  }
+  GPR_ASSERT(chand->lrd != NULL); /* arg actually found */
+
 }
 
 /* Destructor for channel data */
 static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
-                                 grpc_channel_element *elem) {}
+                                 grpc_channel_element *elem) {
+  channel_data *chand = elem->channel_data;
+  grpc_load_reporting_destroy(chand->lrd);
+}
 
 const grpc_channel_filter grpc_load_reporting_filter = {
     grpc_call_next_op,

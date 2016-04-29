@@ -1257,22 +1257,6 @@
     ], 
     "headers": [], 
     "language": "c", 
-    "name": "load_reporting_registration_test", 
-    "src": [
-      "test/core/load_reporting/load_reporting_registration.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
     "name": "low_level_ping_pong_benchmark", 
     "src": [
       "test/core/network_benchmarks/low_level_ping_pong.c"
@@ -4150,6 +4134,7 @@
       "grpc_lb_policy_grpclb", 
       "grpc_lb_policy_pick_first", 
       "grpc_lb_policy_round_robin", 
+      "grpc_load_reporting", 
       "grpc_resolver_dns_native", 
       "grpc_resolver_sockaddr", 
       "grpc_secure", 
@@ -5606,7 +5591,6 @@
       "include/grpc/compression.h", 
       "include/grpc/grpc.h", 
       "include/grpc/status.h", 
-      "src/core/ext/load_reporting/load_reporting_filter.h", 
       "src/core/lib/channel/channel_args.h", 
       "src/core/lib/channel/channel_stack.h", 
       "src/core/lib/channel/channel_stack_builder.h", 
@@ -5661,7 +5645,6 @@
       "src/core/lib/json/json_common.h", 
       "src/core/lib/json/json_reader.h", 
       "src/core/lib/json/json_writer.h", 
-      "src/core/lib/load_reporting/load_reporting.h", 
       "src/core/lib/surface/api_trace.h", 
       "src/core/lib/surface/call.h", 
       "src/core/lib/surface/call_test_only.h", 
@@ -5690,8 +5673,6 @@
       "include/grpc/compression.h", 
       "include/grpc/grpc.h", 
       "include/grpc/status.h", 
-      "src/core/ext/load_reporting/load_reporting_filter.c", 
-      "src/core/ext/load_reporting/load_reporting_filter.h", 
       "src/core/lib/channel/channel_args.c", 
       "src/core/lib/channel/channel_args.h", 
       "src/core/lib/channel/channel_stack.c", 
@@ -5802,8 +5783,6 @@
       "src/core/lib/json/json_string.c", 
       "src/core/lib/json/json_writer.c", 
       "src/core/lib/json/json_writer.h", 
-      "src/core/lib/load_reporting/load_reporting.c", 
-      "src/core/lib/load_reporting/load_reporting.h", 
       "src/core/lib/surface/alarm.c", 
       "src/core/lib/surface/api_trace.c", 
       "src/core/lib/surface/api_trace.h", 
@@ -5990,6 +5969,26 @@
     "name": "grpc_lb_policy_round_robin", 
     "src": [
       "src/core/ext/lb_policy/round_robin/round_robin.c"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base"
+    ], 
+    "headers": [
+      "src/core/ext/load_reporting/load_reporting.h", 
+      "src/core/ext/load_reporting/load_reporting_filter.h"
+    ], 
+    "language": "c", 
+    "name": "grpc_load_reporting", 
+    "src": [
+      "src/core/ext/load_reporting/load_reporting.c", 
+      "src/core/ext/load_reporting/load_reporting.h", 
+      "src/core/ext/load_reporting/load_reporting_filter.c", 
+      "src/core/ext/load_reporting/load_reporting_filter.h"
     ], 
     "third_party": false, 
     "type": "filegroup"

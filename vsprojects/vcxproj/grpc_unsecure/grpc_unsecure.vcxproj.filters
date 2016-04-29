@@ -7,9 +7,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\init_unsecure.c">
       <Filter>src\core\lib\surface</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting_filter.c">
-      <Filter>src\core\ext\load_reporting</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
@@ -177,9 +174,6 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json_writer.c">
       <Filter>src\core\lib\json</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\load_reporting\load_reporting.c">
-      <Filter>src\core\lib\load_reporting</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\alarm.c">
       <Filter>src\core\lib\surface</Filter>
@@ -524,9 +518,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting_filter.h">
-      <Filter>src\core\ext\load_reporting</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\channel\channel_args.h">
       <Filter>src\core\lib\channel</Filter>
     </ClInclude>
@@ -688,9 +679,6 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_writer.h">
       <Filter>src\core\lib\json</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\load_reporting\load_reporting.h">
-      <Filter>src\core\lib\load_reporting</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\api_trace.h">
       <Filter>src\core\lib\surface</Filter>
@@ -950,9 +938,6 @@
     <Filter Include="src\core\ext\lb_policy\round_robin">
       <UniqueIdentifier>{e5fc1091-5d60-404f-775b-686ef4b3266f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\ext\load_reporting">
-      <UniqueIdentifier>{2d6e3879-24c7-06e2-b415-40ab18a3b918}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\core\ext\resolver">
       <UniqueIdentifier>{88c78e27-267a-95df-07c5-50e5fbc2f40c}</UniqueIdentifier>
     </Filter>
@@ -1009,9 +994,6 @@
     </Filter>
     <Filter Include="src\core\lib\json">
       <UniqueIdentifier>{681cdaeb-c47f-8853-d985-bf13c2873947}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\lib\load_reporting">
-      <UniqueIdentifier>{2d492e12-b2aa-48d8-8e90-c55a605fb34a}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\lib\surface">
       <UniqueIdentifier>{506dc3b3-d884-2b59-0dfa-57ed6affa2d3}</UniqueIdentifier>

@@ -958,7 +958,6 @@ json_stream_error_test: $(BINDIR)/$(CONFIG)/json_stream_error_test
 json_test: $(BINDIR)/$(CONFIG)/json_test
 lame_client_test: $(BINDIR)/$(CONFIG)/lame_client_test
 lb_policies_test: $(BINDIR)/$(CONFIG)/lb_policies_test
-load_reporting_registration_test: $(BINDIR)/$(CONFIG)/load_reporting_registration_test
 low_level_ping_pong_benchmark: $(BINDIR)/$(CONFIG)/low_level_ping_pong_benchmark
 message_compress_test: $(BINDIR)/$(CONFIG)/message_compress_test
 mlog_test: $(BINDIR)/$(CONFIG)/mlog_test
@@ -1285,7 +1284,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/json_test \
   $(BINDIR)/$(CONFIG)/lame_client_test \
   $(BINDIR)/$(CONFIG)/lb_policies_test \
-  $(BINDIR)/$(CONFIG)/load_reporting_registration_test \
   $(BINDIR)/$(CONFIG)/message_compress_test \
   $(BINDIR)/$(CONFIG)/mlog_test \
   $(BINDIR)/$(CONFIG)/multiple_server_queues_test \
@@ -1592,8 +1590,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/json_test || ( echo test json_test failed ; exit 1 )
 	$(E) "[RUN]     Testing lame_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/lame_client_test || ( echo test lame_client_test failed ; exit 1 )
-	$(E) "[RUN]     Testing load_reporting_registration_test"
-	$(Q) $(BINDIR)/$(CONFIG)/load_reporting_registration_test || ( echo test load_reporting_registration_test failed ; exit 1 )
 	$(E) "[RUN]     Testing message_compress_test"
 	$(Q) $(BINDIR)/$(CONFIG)/message_compress_test || ( echo test message_compress_test failed ; exit 1 )
 	$(E) "[RUN]     Testing multiple_server_queues_test"
@@ -2480,7 +2476,6 @@ endif
 
 LIBGRPC_SRC = \
     src/core/lib/surface/init.c \
-    src/core/ext/load_reporting/load_reporting_filter.c \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
@@ -2537,7 +2532,6 @@ LIBGRPC_SRC = \
     src/core/lib/json/json_reader.c \
     src/core/lib/json/json_string.c \
     src/core/lib/json/json_writer.c \
-    src/core/lib/load_reporting/load_reporting.c \
     src/core/lib/surface/alarm.c \
     src/core/lib/surface/api_trace.c \
     src/core/lib/surface/byte_buffer.c \
@@ -2636,6 +2630,8 @@ LIBGRPC_SRC = \
     src/core/ext/lb_policy/round_robin/round_robin.c \
     src/core/ext/resolver/dns/native/dns_resolver.c \
     src/core/ext/resolver/sockaddr/sockaddr_resolver.c \
+    src/core/ext/load_reporting/load_reporting.c \
+    src/core/ext/load_reporting/load_reporting_filter.c \
     src/core/ext/census/context.c \
     src/core/ext/census/grpc_context.c \
     src/core/ext/census/grpc_filter.c \
@@ -2823,7 +2819,6 @@ endif
 LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/init.c \
     src/core/lib/surface/init_unsecure.c \
-    src/core/ext/load_reporting/load_reporting_filter.c \
     src/core/lib/channel/channel_args.c \
     src/core/lib/channel/channel_stack.c \
     src/core/lib/channel/channel_stack_builder.c \
@@ -2880,7 +2875,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/json/json_reader.c \
     src/core/lib/json/json_string.c \
     src/core/lib/json/json_writer.c \
-    src/core/lib/load_reporting/load_reporting.c \
     src/core/lib/surface/alarm.c \
     src/core/lib/surface/api_trace.c \
     src/core/lib/surface/byte_buffer.c \
@@ -8548,38 +8542,6 @@ deps_lb_policies_test: $(LB_POLICIES_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(LB_POLICIES_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-LOAD_REPORTING_REGISTRATION_TEST_SRC = \
-    test/core/load_reporting/load_reporting_registration.c \
-
-LOAD_REPORTING_REGISTRATION_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LOAD_REPORTING_REGISTRATION_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/load_reporting_registration_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/load_reporting_registration_test: $(LOAD_REPORTING_REGISTRATION_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(LOAD_REPORTING_REGISTRATION_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/load_reporting_registration_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/load_reporting/load_reporting_registration.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_load_reporting_registration_test: $(LOAD_REPORTING_REGISTRATION_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(LOAD_REPORTING_REGISTRATION_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -14349,6 +14311,8 @@ ifneq ($(OPENSSL_DEP),)
 # This is to ensure the embedded OpenSSL is built beforehand, properly
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
+src/core/ext/load_reporting/load_reporting.c: $(OPENSSL_DEP)
+src/core/ext/load_reporting/load_reporting_filter.c: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/client/secure/secure_channel_create.c: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c: $(OPENSSL_DEP)
 src/core/lib/http/httpcli_security_connector.c: $(OPENSSL_DEP)

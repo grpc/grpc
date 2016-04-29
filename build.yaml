@@ -146,7 +146,6 @@ filegroups:
   - include/grpc/grpc.h
   - include/grpc/status.h
   headers:
-  - src/core/ext/load_reporting/load_reporting_filter.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
@@ -201,7 +200,6 @@ filegroups:
   - src/core/lib/json/json_common.h
   - src/core/lib/json/json_reader.h
   - src/core/lib/json/json_writer.h
-  - src/core/lib/load_reporting/load_reporting.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
@@ -222,7 +220,6 @@ filegroups:
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
   src:
-  - src/core/ext/load_reporting/load_reporting_filter.c
   - src/core/lib/channel/channel_args.c
   - src/core/lib/channel/channel_stack.c
   - src/core/lib/channel/channel_stack_builder.c
@@ -279,7 +276,6 @@ filegroups:
   - src/core/lib/json/json_reader.c
   - src/core/lib/json/json_string.c
   - src/core/lib/json/json_writer.c
-  - src/core/lib/load_reporting/load_reporting.c
   - src/core/lib/surface/alarm.c
   - src/core/lib/surface/api_trace.c
   - src/core/lib/surface/byte_buffer.c
@@ -385,6 +381,16 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_config
+- name: grpc_load_reporting
+  headers:
+  - src/core/ext/load_reporting/load_reporting.h
+  - src/core/ext/load_reporting/load_reporting_filter.h
+  src:
+  - src/core/ext/load_reporting/load_reporting.c
+  - src/core/ext/load_reporting/load_reporting_filter.c
+  plugin: grpc_load_reporting_plugin
+  uses:
+  - grpc_base
 - name: grpc_resolver_dns_native
   src:
   - src/core/ext/resolver/dns/native/dns_resolver.c
@@ -740,6 +746,7 @@ libs:
   - grpc_lb_policy_round_robin
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
+  - grpc_load_reporting
   - grpc_secure
   - census
   generate_plugin_registry: true
@@ -1914,16 +1921,6 @@ targets:
   language: c
   src:
   - test/core/client_config/lb_policies_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: load_reporting_registration_test
-  build: test
-  language: c
-  src:
-  - test/core/load_reporting/load_reporting_registration.c
   deps:
   - grpc_test_util
   - grpc
