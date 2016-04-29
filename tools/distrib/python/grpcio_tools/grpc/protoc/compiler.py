@@ -31,8 +31,8 @@
 
 import sys
 
-from grpc.protoc import protoc_plugin
+from grpc.protoc import protoc_compiler
 
 
 if __name__ == '__main__':
-  protoc_plugin.run_main(sys.argv)
+  protoc_compiler.run_main(sys.argv)
