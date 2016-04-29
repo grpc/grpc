@@ -299,10 +299,6 @@ GRPCAPI grpc_channel *grpc_secure_channel_create(
     grpc_channel_credentials *creds, const char *target,
     const grpc_channel_args *args, void *reserved);
 
-GRPCAPI grpc_channel *grpc_custom_secure_channel_create(
-    void *engine, const char *target, const grpc_channel_args *args,
-    void *reserved);
-
 /* --- grpc_server_credentials object. ---
 
    A server credentials object represents a way to authenticate a server.  */
