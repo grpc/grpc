@@ -45,7 +45,7 @@ cp -r $EXTERNAL_GIT_ROOT/architecture={x86,x64},language=ruby,platform={windows,
 # in the artifacts/ directory. They should be all equivalent though.
 
 for arch in {x86,x64}; do
-  case arch in
+  case $arch in
     x64)
       ruby_arch=x86_64
       ;;
