@@ -71,10 +71,10 @@ then
 fi
 
 # Use image name based on Dockerfile checksum
-BASE_IMAGE=${BASE_NAME}_base:`sha1sum tools/dockerfile/$BASE_NAME/Dockerfile | cut -f1 -d\ `
+BASE_IMAGE=${BASE_NAME}_base:`sha1sum tools/dockerfile/interoptest/$BASE_NAME/Dockerfile | cut -f1 -d\ `
 
 # Make sure base docker image has been built. Should be instantaneous if so.
-docker build -t $BASE_IMAGE --force-rm=true tools/dockerfile/$BASE_NAME || exit $?
+docker build -t $BASE_IMAGE --force-rm=true tools/dockerfile/interoptest/$BASE_NAME || exit $?
 
 # Create a local branch so the child Docker script won't complain
 git branch -f jenkins-docker
@@ -92,7 +92,7 @@ CONTAINER_NAME="build_${BASE_NAME}_$(uuidgen)"
   -v /tmp/ccache:/tmp/ccache \
   --name=$CONTAINER_NAME \
   $BASE_IMAGE \
-  bash -l /var/local/jenkins/grpc/tools/dockerfile/$BASE_NAME/build_interop.sh \
+  bash -l /var/local/jenkins/grpc/tools/dockerfile/interoptest/$BASE_NAME/build_interop.sh \
   && docker commit $CONTAINER_NAME $INTEROP_IMAGE \
   && echo "Successfully built image $INTEROP_IMAGE")
 EXITCODE=$?
