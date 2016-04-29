@@ -64,12 +64,12 @@ class ServerBuilderPlugin {
 
 }  // namespace grpc
 
-#define DECLARE_PLUGIN(plugin_name)                                    \
+#define GRPC_DECLARE_PLUGIN(plugin_name)                               \
   namespace sBP##plugin_name {                                         \
     extern std::unique_ptr<ServerBuilderPlugin> Create##plugin_name(); \
   }
 
-#define INIT_PLUGIN(map, plugin_name)             \
+#define GRPC_INIT_PLUGIN(map, plugin_name)        \
   {                                               \
     std::unique_ptr<ServerBuilderPlugin> plugin = \
         sBP##plugin_name::Create##plugin_name();  \
