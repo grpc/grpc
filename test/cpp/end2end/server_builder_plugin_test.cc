@@ -78,9 +78,19 @@ class TestServerBuilderPlugin : public ServerBuilderPlugin {
     change_arguments_is_called_ = true;
   }
 
-  bool has_async_methods() const GRPC_OVERRIDE { return register_service_; }
+  bool has_async_methods() const GRPC_OVERRIDE {
+    if (register_service_) {
+      return service_->has_async_methods();
+    }
+    return false;
+  }
 
-  bool has_sync_methods() const GRPC_OVERRIDE { return register_service_; }
+  bool has_sync_methods() const GRPC_OVERRIDE {
+    if (register_service_) {
+      return service_->has_synchronous_methods();
+    }
+    return false;
+  }
 
   void SetRegisterService() { register_service_ = true; }
 
