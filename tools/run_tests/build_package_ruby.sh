@@ -56,9 +56,9 @@ for arch in {x86,x64}; do
   for plat in {windows,linux,macos}; do
     input_dir="$EXTERNAL_GIT_ROOT/architecture=$arch,language=protoc,platform=$plat/artifacts"
     output_dir="$base/src/ruby/tools/bin/${ruby_arch}-${plat}"
-    mkdir -p output_dir
-    cp $input_dir/protoc* output_dir/
-    cp $input_dir/grpc_ruby_plugin* output_dir/
+    mkdir -p $output_dir
+    cp $input_dir/protoc* $output_dir/
+    cp $input_dir/grpc_ruby_plugin* $output_dir/
   done
 done
 
