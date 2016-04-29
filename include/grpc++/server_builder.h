@@ -34,10 +34,12 @@
 #ifndef GRPCXX_SERVER_BUILDER_H
 #define GRPCXX_SERVER_BUILDER_H
 
+#include <map>
 #include <memory>
 #include <vector>
 
 #include <grpc++/impl/server_builder_option.h>
+#include <grpc++/impl/server_builder_plugin.h>
 #include <grpc++/support/config.h>
 #include <grpc/compression.h>
 
@@ -50,6 +52,10 @@ class Server;
 class ServerCompletionQueue;
 class ServerCredentials;
 class Service;
+
+namespace testing {
+class ServerBuilderPluginTest;
+}  // namespace testing
 
 /// A builder class for the creation and startup of \a grpc::Server instances.
 class ServerBuilder {
@@ -108,6 +114,8 @@ class ServerBuilder {
   std::unique_ptr<Server> BuildAndStart();
 
  private:
+  friend class ::grpc::testing::ServerBuilderPluginTest;
+
   struct Port {
     grpc::string addr;
     std::shared_ptr<ServerCredentials> creds;
@@ -130,6 +138,7 @@ class ServerBuilder {
   std::vector<Port> ports_;
   std::vector<ServerCompletionQueue*> cqs_;
   std::shared_ptr<ServerCredentials> creds_;
+  std::map<grpc::string, std::unique_ptr<ServerBuilderPlugin>> plugins_;
   AsyncGenericService* generic_service_;
 };
 
