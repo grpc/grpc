@@ -315,7 +315,7 @@ struct grpc_chttp2_transport {
     gpr_mu mu;
 
     /** is a thread currently in the global lock */
-    bool global_active;
+    gpr_atm global_active_atm;
     /** is a thread currently writing */
     bool writing_active;
     /** is a thread currently parsing */
