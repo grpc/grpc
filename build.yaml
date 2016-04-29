@@ -590,6 +590,8 @@ filegroups:
   - include/grpc++/impl/rpc_service_method.h
   - include/grpc++/impl/serialization_traits.h
   - include/grpc++/impl/server_builder_option.h
+  - include/grpc++/impl/server_builder_plugin.h
+  - include/grpc++/impl/server_initializer.h
   - include/grpc++/impl/service_type.h
   - include/grpc++/impl/sync.h
   - include/grpc++/impl/sync_cxx11.h
@@ -2914,6 +2916,19 @@ targets:
   - mac
   - linux
   - posix
+- name: server_builder_plugin_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/end2end/server_builder_plugin_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: server_crash_test
   gtest: true
   cpu_cost: 0.1

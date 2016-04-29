@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,29 +31,49 @@
  *
  */
 
-#ifndef GRPCXX_IMPL_SERVER_BUILDER_OPTION_H
-#define GRPCXX_IMPL_SERVER_BUILDER_OPTION_H
+#ifndef GRPCXX_IMPL_SERVER_BUILDER_PLUGIN_H
+#define GRPCXX_IMPL_SERVER_BUILDER_PLUGIN_H
 
-#include <map>
 #include <memory>
 
-#include <grpc++/impl/server_builder_plugin.h>
-#include <grpc++/support/channel_arguments.h>
+#include <grpc++/support/config.h>
 
 namespace grpc {
 
-/// Interface to pass an option to a \a ServerBuilder.
-class ServerBuilderOption {
+class ServerInitializer;
+
+class ServerBuilderPlugin {
  public:
-  virtual ~ServerBuilderOption() {}
-  /// Alter the \a ChannelArguments used to create the gRPC server.
-  virtual void UpdateArguments(ChannelArguments* args) = 0;
-  /// Alter the ServerBuilderPlugin map that will be added into ServerBuilder.
-  virtual void UpdatePlugins(
-      std::map<grpc::string, std::unique_ptr<ServerBuilderPlugin> >*
-          plugins) = 0;
+  virtual ~ServerBuilderPlugin() {}
+  virtual grpc::string name() = 0;
+
+  // InitServer will be called in ServerBuilder::BuildAndStart(), after the
+  // Server instance is created.
+  virtual void InitServer(ServerInitializer* si) = 0;
+
+  // Finish will be called at the end of ServerBuilder::BuildAndStart().
+  virtual void Finish(ServerInitializer* si) = 0;
+
+  // ChangeArguments is an interface that can be used in
+  // ServerBuilderOption::UpdatePlugins
+  virtual void ChangeArguments(const grpc::string& name, void* value) = 0;
+
+  virtual bool has_sync_methods() const { return false; }
+  virtual bool has_async_methods() const { return false; }
 };
 
 }  // namespace grpc
 
-#endif  // GRPCXX_IMPL_SERVER_BUILDER_OPTION_H
+#define DECLARE_PLUGIN(plugin_name)                                    \
+  namespace sBP##plugin_name {                                         \
+    extern std::unique_ptr<ServerBuilderPlugin> Create##plugin_name(); \
+  }
+
+#define INIT_PLUGIN(map, plugin_name)             \
+  {                                               \
+    std::unique_ptr<ServerBuilderPlugin> plugin = \
+        sBP##plugin_name::Create##plugin_name();  \
+    map[plugin->name()] = std::move(plugin);      \
+  }
+
+#endif  // GRPCXX_IMPL_SERVER_BUILDER_PLUGIN_H
