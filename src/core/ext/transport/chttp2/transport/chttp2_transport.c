@@ -126,9 +126,6 @@ static void add_to_pollset_set_locked(grpc_exec_ctx *exec_ctx,
 static void maybe_start_some_streams(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global);
 
-static void finish_global_actions(grpc_exec_ctx *exec_ctx,
-                                  grpc_chttp2_transport *t);
-
 static void connectivity_state_set(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
     grpc_connectivity_state state, const char *reason);
@@ -612,12 +609,32 @@ grpc_chttp2_stream_parsing *grpc_chttp2_parsing_accept_stream(
  * LOCK MANAGEMENT
  */
 
+static bool run_pending_actions_and_unlock(grpc_exec_ctx *exec_ctx,
+                                           grpc_chttp2_transport *t) {
+  assert(gpr_atm_no_barrier_load(&t->executor.global_active_atm));
+  if (t->executor.pending_actions != NULL) {
+    grpc_chttp2_executor_action_header *hdr = t->executor.pending_actions;
+    t->executor.pending_actions = NULL;
+    gpr_mu_unlock(&t->executor.mu);
+    while (hdr != NULL) {
+      hdr->action(exec_ctx, t, hdr->stream, hdr->arg);
+      grpc_chttp2_executor_action_header *next = hdr->next;
+      gpr_free(hdr);
+      UNREF_TRANSPORT(exec_ctx, t, "pending_action");
+      hdr = next;
+    }
+    return true;
+  } else {
+    gpr_atm_rel_store(&t->executor.global_active_atm, 0);
+    gpr_mu_unlock(&t->executor.mu);
+    return false;
+  }
+}
+
 static void finish_global_actions(grpc_exec_ctx *exec_ctx,
                                   grpc_chttp2_transport *t) {
-  grpc_chttp2_executor_action_header *hdr;
-  grpc_chttp2_executor_action_header *next;
-
-  for (;;) {
+  assert(gpr_atm_no_barrier_load(&t->executor.global_active_atm));
+  do {
     if (!t->executor.writing_active && !t->closed &&
         grpc_chttp2_unlocking_check_writes(exec_ctx, &t->global, &t->writing,
                                            t->executor.parsing_active)) {
@@ -629,24 +646,7 @@ static void finish_global_actions(grpc_exec_ctx *exec_ctx,
     check_read_ops(exec_ctx, &t->global);
 
     gpr_mu_lock(&t->executor.mu);
-    if (t->executor.pending_actions != NULL) {
-      hdr = t->executor.pending_actions;
-      t->executor.pending_actions = NULL;
-      gpr_mu_unlock(&t->executor.mu);
-      while (hdr != NULL) {
-        hdr->action(exec_ctx, t, hdr->stream, hdr->arg);
-        next = hdr->next;
-        gpr_free(hdr);
-        UNREF_TRANSPORT(exec_ctx, t, "pending_action");
-        hdr = next;
-      }
-      continue;
-    } else {
-      t->executor.global_active = false;
-    }
-    gpr_mu_unlock(&t->executor.mu);
-    break;
-  }
+  } while (run_pending_actions_and_unlock(exec_ctx, t));
 }
 
 void grpc_chttp2_run_with_global_lock(grpc_exec_ctx *exec_ctx,
@@ -656,45 +656,36 @@ void grpc_chttp2_run_with_global_lock(grpc_exec_ctx *exec_ctx,
                                       void *arg, size_t sizeof_arg) {
   grpc_chttp2_executor_action_header *hdr;
 
-  REF_TRANSPORT(t, "run_global");
-  gpr_mu_lock(&t->executor.mu);
+  REF_TRANSPORT(t, "run_with_global_lock");
 
-  for (;;) {
-    if (!t->executor.global_active) {
-      t->executor.global_active = 1;
-      gpr_mu_unlock(&t->executor.mu);
+  if (gpr_atm_acq_cas(&t->executor.global_active_atm, 0, 1)) {
+    action(exec_ctx, t, optional_stream, arg);
+    finish_global_actions(exec_ctx, t);
+  } else {
+    hdr = gpr_malloc(sizeof(*hdr) + sizeof_arg);
+    hdr->stream = optional_stream;
+    hdr->action = action;
+    if (sizeof_arg == 0) {
+      hdr->arg = arg;
+    } else {
+      hdr->arg = hdr + 1;
+      memcpy(hdr->arg, arg, sizeof_arg);
+    }
 
-      action(exec_ctx, t, optional_stream, arg);
+    gpr_mu_lock(&t->executor.mu);
+    hdr->next = t->executor.pending_actions;
+    t->executor.pending_actions = hdr;
+    REF_TRANSPORT(t, "pending_action");
 
+    if (gpr_atm_acq_cas(&t->executor.global_active_atm, 0, 1)) {
+      GPR_ASSERT(run_pending_actions_and_unlock(exec_ctx, t));
       finish_global_actions(exec_ctx, t);
     } else {
       gpr_mu_unlock(&t->executor.mu);
-
-      hdr = gpr_malloc(sizeof(*hdr) + sizeof_arg);
-      hdr->stream = optional_stream;
-      hdr->action = action;
-      if (sizeof_arg == 0) {
-        hdr->arg = arg;
-      } else {
-        hdr->arg = hdr + 1;
-        memcpy(hdr->arg, arg, sizeof_arg);
-      }
-
-      gpr_mu_lock(&t->executor.mu);
-      if (!t->executor.global_active) {
-        /* global lock was released while allocating memory: release & retry */
-        gpr_free(hdr);
-        continue;
-      }
-      hdr->next = t->executor.pending_actions;
-      t->executor.pending_actions = hdr;
-      REF_TRANSPORT(t, "pending_action");
-      gpr_mu_unlock(&t->executor.mu);
     }
-    break;
   }
 
-  UNREF_TRANSPORT(exec_ctx, t, "run_global");
+  UNREF_TRANSPORT(exec_ctx, t, "run_with_global_lock");
 }
 
 /*******************************************************************************
