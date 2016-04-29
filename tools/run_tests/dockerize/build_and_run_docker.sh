@@ -33,7 +33,7 @@
 
 set -ex
 
-cd $(dirname $0)/../..
+cd $(dirname $0)/../../..
 git_root=$(pwd)
 cd -
 
