@@ -41,6 +41,8 @@ struct grpc_channel_credentials;
 
 @interface GRPCHost : NSObject
 
++ (void)flushChannelCache;
+
 @property(nonatomic, readonly) NSString *address;
 @property(nonatomic, copy, nullable) NSString *userAgentPrefix;
 @property(nonatomic, nullable) struct grpc_channel_credentials *channelCreds;

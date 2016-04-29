@@ -48,6 +48,8 @@ NS_ASSUME_NONNULL_BEGIN
 // templates/src/core/surface/version.c.template .
 #define GRPC_OBJC_VERSION_STRING @"0.13.0"
 
+static NSMutableDictionary *kHostCache;
+
 @implementation GRPCHost {
   // TODO(mlumish): Investigate whether caching channels with strong links is a good idea.
   GRPCChannel *_channel;
@@ -79,13 +81,12 @@ NS_ASSUME_NONNULL_BEGIN
   }
 
   // Look up the GRPCHost in the cache.
-  static NSMutableDictionary *hostCache;
   static dispatch_once_t cacheInitialization;
   dispatch_once(&cacheInitialization, ^{
-    hostCache = [NSMutableDictionary dictionary];
+    kHostCache = [NSMutableDictionary dictionary];
   });
-  @synchronized(hostCache) {
-    GRPCHost *cachedHost = hostCache[address];
+  @synchronized(kHostCache) {
+    GRPCHost *cachedHost = kHostCache[address];
     if (cachedHost) {
       return cachedHost;
     }
@@ -93,10 +94,20 @@ NS_ASSUME_NONNULL_BEGIN
     if ((self = [super init])) {
       _address = address;
       _secure = YES;
-      hostCache[address] = self;
+      kHostCache[address] = self;
     }
   }
   return self;
+}
+
++ (void)flushChannelCache {
+  @synchronized(kHostCache) {
+    [kHostCache enumerateKeysAndObjectsUsingBlock:^(id  _Nonnull key,
+                                                    GRPCHost * _Nonnull host,
+                                                    BOOL * _Nonnull stop) {
+      [host disconnect];
+    }];
+  }
 }
 
 - (nullable grpc_call *)unmanagedCallWithPath:(NSString *)path
