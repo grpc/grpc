@@ -80,10 +80,9 @@ enum recv_state {
   CRONET_RECV_CLOSED,
 };
 
-static const char *recv_state_name[] = {"CRONET_RECV_IDLE",
-                                 "CRONET_RECV_READ_LENGTH",
-                                 "CRONET_RECV_READ_DATA,",
-                                 "CRONET_RECV_CLOSED"};
+static const char *recv_state_name[] = {
+    "CRONET_RECV_IDLE", "CRONET_RECV_READ_LENGTH", "CRONET_RECV_READ_DATA,",
+    "CRONET_RECV_CLOSED"};
 
 // Enum that identifies calling function.
 enum e_caller {
@@ -152,7 +151,6 @@ typedef struct stream_obj stream_obj;
 static void next_send_step(stream_obj *s);
 static void next_recv_step(stream_obj *s, enum e_caller caller);
 
-
 static void set_pollset_do_nothing(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
                                    grpc_stream *gs, grpc_pollset *pollset) {}
 
@@ -208,7 +206,8 @@ static void on_response_trailers_received(
   next_recv_step(s, ON_RESPONSE_TRAILERS_RECEIVED);
 }
 
-static void on_write_completed(cronet_bidirectional_stream *stream, const char *data) {
+static void on_write_completed(cronet_bidirectional_stream *stream,
+                               const char *data) {
   if (grpc_cronet_trace) {
     gpr_log(GPR_DEBUG, "W: on_write_completed");
   }
@@ -219,7 +218,7 @@ static void on_write_completed(cronet_bidirectional_stream *stream, const char *
 }
 
 static void process_recv_message(stream_obj *s, const uint8_t *recv_data) {
-  gpr_slice read_data_slice = gpr_slice_malloc((uint32_t) s->total_read_bytes);
+  gpr_slice read_data_slice = gpr_slice_malloc((uint32_t)s->total_read_bytes);
   uint8_t *dst_p = GPR_SLICE_START_PTR(read_data_slice);
   memcpy(dst_p, recv_data, s->total_read_bytes);
   gpr_slice_buffer_add(&s->read_slice_buffer, read_data_slice);
@@ -238,11 +237,11 @@ static int parse_grpc_header(const uint8_t *data) {
 }
 
 static void on_read_completed(cronet_bidirectional_stream *stream, char *data,
-                       int count) {
+                              int count) {
   stream_obj *s = (stream_obj *)stream->annotation;
   if (grpc_cronet_trace) {
     gpr_log(GPR_DEBUG, "R: on_read_completed count=%d, total=%d, remaining=%d",
-                    count, s->total_read_bytes, s->remaining_read_bytes);
+            count, s->total_read_bytes, s->remaining_read_bytes);
   }
   if (count > 0) {
     GPR_ASSERT(s->recv_message);
@@ -278,14 +277,15 @@ static void on_request_headers_sent(cronet_bidirectional_stream *stream) {
 }
 
 // Callback function pointers (invoked by cronet in response to events)
-static cronet_bidirectional_stream_callback callbacks = {on_request_headers_sent,
-                                                  on_response_headers_received,
-                                                  on_read_completed,
-                                                  on_write_completed,
-                                                  on_response_trailers_received,
-                                                  on_succeeded,
-                                                  on_failed,
-                                                  on_canceled};
+static cronet_bidirectional_stream_callback callbacks = {
+    on_request_headers_sent,
+    on_response_headers_received,
+    on_read_completed,
+    on_write_completed,
+    on_response_trailers_received,
+    on_succeeded,
+    on_failed,
+    on_canceled};
 
 static void invoke_closing_callback(stream_obj *s) {
   grpc_chttp2_incoming_metadata_buffer_publish(&s->imb,
@@ -301,7 +301,6 @@ static void set_recv_state(stream_obj *s, enum recv_state state) {
   }
   s->cronet_recv_state = state;
 }
-
 
 // This is invoked from perform_stream_op, and all on_xxxx callbacks.
 static void next_recv_step(stream_obj *s, enum e_caller caller) {
@@ -322,8 +321,11 @@ static void next_recv_step(stream_obj *s, enum e_caller caller) {
           s->total_read_bytes = s->remaining_read_bytes =
               GRPC_HEADER_SIZE_IN_BYTES;
           GPR_ASSERT(s->read_buffer);
-          if (grpc_cronet_trace) {gpr_log(GPR_DEBUG, "R: cronet_bidirectional_stream_read()");}
-          cronet_bidirectional_stream_read(s->cbs, s->read_buffer, s->remaining_read_bytes);
+          if (grpc_cronet_trace) {
+            gpr_log(GPR_DEBUG, "R: cronet_bidirectional_stream_read()");
+          }
+          cronet_bidirectional_stream_read(s->cbs, s->read_buffer,
+                                           s->remaining_read_bytes);
         }
       }
       break;
@@ -341,10 +343,14 @@ static void next_recv_step(stream_obj *s, enum e_caller caller) {
           set_recv_state(s, CRONET_RECV_READ_DATA);
           s->total_read_bytes = s->remaining_read_bytes =
               parse_grpc_header((const uint8_t *)s->read_buffer);
-          s->read_buffer = gpr_realloc(s->read_buffer, (uint32_t)s->remaining_read_bytes);
+          s->read_buffer =
+              gpr_realloc(s->read_buffer, (uint32_t)s->remaining_read_bytes);
           GPR_ASSERT(s->read_buffer);
-          if (grpc_cronet_trace) {gpr_log(GPR_DEBUG, "R: cronet_bidirectional_stream_read()");}
-          cronet_bidirectional_stream_read(s->cbs, (char *)s->read_buffer, s->remaining_read_bytes);
+          if (grpc_cronet_trace) {
+            gpr_log(GPR_DEBUG, "R: cronet_bidirectional_stream_read()");
+          }
+          cronet_bidirectional_stream_read(s->cbs, (char *)s->read_buffer,
+                                           s->remaining_read_bytes);
         }
       }
       break;
@@ -356,9 +362,11 @@ static void next_recv_step(stream_obj *s, enum e_caller caller) {
         if (s->remaining_read_bytes > 0) {
           int offset = s->total_read_bytes - s->remaining_read_bytes;
           GPR_ASSERT(s->read_buffer);
-          if (grpc_cronet_trace) {gpr_log(GPR_DEBUG, "R: cronet_bidirectional_stream_read()");}
-          cronet_bidirectional_stream_read(s->cbs, (char *)s->read_buffer + offset,
-                      s->remaining_read_bytes);
+          if (grpc_cronet_trace) {
+            gpr_log(GPR_DEBUG, "R: cronet_bidirectional_stream_read()");
+          }
+          cronet_bidirectional_stream_read(
+              s->cbs, (char *)s->read_buffer + offset, s->remaining_read_bytes);
         } else {
           gpr_slice_buffer_init(&s->read_slice_buffer);
           uint8_t *p = (uint8_t *)s->read_buffer;
@@ -448,11 +456,13 @@ static void convert_metadata_to_cronet_headers(grpc_linked_mdelem *head,
     num_headers_available++;
   }
   // Allocate enough memory
-  s->headers = (cronet_bidirectional_stream_header *)
-      gpr_malloc(sizeof(cronet_bidirectional_stream_header) * num_headers_available);
+  s->headers = (cronet_bidirectional_stream_header *)gpr_malloc(
+      sizeof(cronet_bidirectional_stream_header) * num_headers_available);
 
-  // Walk the linked list again, this time copying the header fields. s->num_headers
-  // can be less than num_headers_available, as some headers are not used for cronet
+  // Walk the linked list again, this time copying the header fields.
+  // s->num_headers
+  // can be less than num_headers_available, as some headers are not used for
+  // cronet
   curr = head;
   s->num_headers = 0;
   while (s->num_headers < num_headers_available) {
@@ -489,9 +499,9 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   stream_obj *s = (stream_obj *)gs;
   if (op->recv_trailing_metadata) {
     if (grpc_cronet_trace) {
-      gpr_log(
-        GPR_DEBUG, "perform_stream_op - recv_trailing_metadata: on_complete=%p",
-        op->on_complete);
+      gpr_log(GPR_DEBUG,
+              "perform_stream_op - recv_trailing_metadata: on_complete=%p",
+              op->on_complete);
     }
     s->recv_trailing_metadata = op->recv_trailing_metadata;
     GPR_ASSERT(!s->callback_list[CB_RECV_TRAILING_METADATA][0]);
@@ -500,7 +510,7 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   if (op->recv_message) {
     if (grpc_cronet_trace) {
       gpr_log(GPR_DEBUG, "perform_stream_op - recv_message: on_complete=%p",
-                         op->on_complete);
+              op->on_complete);
     }
     s->recv_message = (grpc_byte_buffer **)op->recv_message;
     GPR_ASSERT(!s->callback_list[CB_RECV_MESSAGE][0]);
@@ -513,7 +523,7 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   if (op->recv_initial_metadata) {
     if (grpc_cronet_trace) {
       gpr_log(GPR_DEBUG, "perform_stream_op - recv_initial_metadata:=%p",
-                         op->on_complete);
+              op->on_complete);
     }
     s->recv_initial_metadata = op->recv_initial_metadata;
     GPR_ASSERT(!s->callback_list[CB_RECV_INITIAL_METADATA][0]);
@@ -524,9 +534,9 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   }
   if (op->send_initial_metadata) {
     if (grpc_cronet_trace) {
-      gpr_log(
-        GPR_DEBUG, "perform_stream_op - send_initial_metadata: on_complete=%p",
-        op->on_complete);
+      gpr_log(GPR_DEBUG,
+              "perform_stream_op - send_initial_metadata: on_complete=%p",
+              op->on_complete);
     }
     s->num_headers = 0;
     convert_metadata_to_cronet_headers(op->send_initial_metadata->list.head,
@@ -540,7 +550,7 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   if (op->send_message) {
     if (grpc_cronet_trace) {
       gpr_log(GPR_DEBUG, "perform_stream_op - send_message: on_complete=%p",
-                         op->on_complete);
+              op->on_complete);
     }
     grpc_byte_stream_next(exec_ctx, op->send_message, &s->slice,
                           op->send_message->length, NULL);
@@ -566,8 +576,9 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   }
   if (op->send_trailing_metadata) {
     if (grpc_cronet_trace) {
-      gpr_log(GPR_DEBUG, "perform_stream_op - send_trailing_metadata: on_complete=%p",
-        op->on_complete);
+      gpr_log(GPR_DEBUG,
+              "perform_stream_op - send_trailing_metadata: on_complete=%p",
+              op->on_complete);
     }
     GPR_ASSERT(!s->callback_list[CB_SEND_TRAILING_METADATA][0]);
     s->callback_list[CB_SEND_TRAILING_METADATA][0] = op->on_complete;
@@ -622,13 +633,8 @@ static void destroy_transport(grpc_exec_ctx *exec_ctx, grpc_transport *gt) {
   }
 }
 
-const grpc_transport_vtable grpc_cronet_vtable = {sizeof(stream_obj),
-                                             "cronet_http",
-                                             init_stream,
-                                             set_pollset_do_nothing,
-                                             perform_stream_op,
-                                             NULL,
-                                             destroy_stream,
-                                             destroy_transport,
-                                             NULL};
+const grpc_transport_vtable grpc_cronet_vtable = {
+    sizeof(stream_obj),     "cronet_http",     init_stream,
+    set_pollset_do_nothing, perform_stream_op, NULL,
+    destroy_stream,         destroy_transport, NULL};
 #endif  // GRPC_COMPILE_WITH_CRONET

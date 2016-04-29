@@ -46,7 +46,7 @@
 
 // Cronet transport object
 typedef struct cronet_transport {
-  grpc_transport base; // must be first element in this structure
+  grpc_transport base;  // must be first element in this structure
   void *engine;
   char *host;
 } cronet_transport;
