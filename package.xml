@@ -176,7 +176,6 @@
     <file baseinstalldir="/" name="include/grpc/grpc_security.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc_security_constants.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/census.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/load_reporting/load_reporting_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack_builder.h" role="src" />
@@ -231,7 +230,6 @@
     <file baseinstalldir="/" name="src/core/lib/json/json_common.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_reader.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_writer.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/load_reporting/load_reporting.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call_test_only.h" role="src" />
@@ -308,6 +306,8 @@
     <file baseinstalldir="/" name="third_party/nanopb/pb_common.h" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_decode.h" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_encode.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/load_reporting/load_reporting.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/load_reporting/load_reporting_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/aggregation.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/census_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/census_rpc_stats.h" role="src" />
@@ -315,7 +315,6 @@
     <file baseinstalldir="/" name="src/core/ext/census/mlog.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/rpc_metric_id.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/init.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/load_reporting/load_reporting_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_args.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack_builder.c" role="src" />
@@ -372,7 +371,6 @@
     <file baseinstalldir="/" name="src/core/lib/json/json_reader.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_string.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_writer.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/load_reporting/load_reporting.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/alarm.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/byte_buffer.c" role="src" />
@@ -471,6 +469,8 @@
     <file baseinstalldir="/" name="src/core/ext/lb_policy/round_robin/round_robin.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/resolver/dns/native/dns_resolver.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/resolver/sockaddr/sockaddr_resolver.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/load_reporting/load_reporting.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/load_reporting/load_reporting_filter.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/context.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/grpc_context.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/grpc_filter.c" role="src" />
