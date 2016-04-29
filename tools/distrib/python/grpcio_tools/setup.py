@@ -83,7 +83,7 @@ def maybe_cythonize(exts):
   return Build.cythonize(exts)
 
 setuptools.setup(
-  name='grpcio_protoc',
+  name='grpcio_tools',
   version='0.14.0rc1',
   license='',
   ext_modules=maybe_cythonize([

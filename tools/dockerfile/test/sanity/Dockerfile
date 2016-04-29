@@ -75,6 +75,15 @@ RUN apt-get update && apt-get install -y \
       python-lxml
 RUN pip install simplejson mako
 
+#======================================
+# More sanity test dependencies (bazel)
+RUN echo "deb http://httpredir.debian.org/debian jessie-backports main" >   /etc/apt/sources.list.d/backports.list
+RUN apt-get update
+RUN apt-get -t jessie-backports install -y openjdk-8-jdk
+RUN git clone https://github.com/bazelbuild/bazel.git /bazel
+RUN cd /bazel && ./compile.sh
+RUN ln -s /bazel/output/bazel /bin/
+
 #===================
 # Docker "inception"
 # Note this is quite the ugly hack.
