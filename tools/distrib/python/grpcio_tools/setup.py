@@ -40,32 +40,17 @@ from setuptools.command import build_ext
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.abspath('.'))
 
-import protoc_deps
 import protoc_lib_deps
 
 def protoc_ext_module():
-  protoc_sources = [
-      os.path.join('third_party/protobuf/src', cc_file)
-      for cc_file in protoc_deps.CC_FILES]
-  protoc_ext = extension.Extension(
-    name='grpc.protoc.protoc',
-    sources=['grpc/protoc/protoc.pyx'] + protoc_sources,
-    include_dirs=['.', 'third_party/protobuf/src'],
-    language='c++',
-    define_macros=[('HAVE_PTHREAD', 1)],
-    extra_compile_args=['-lpthread', '-frtti'],
-  )
-  return protoc_ext
-
-def plugin_ext_module():
   plugin_sources = [
-      'grpc_root/src/compiler/python_generator.cc',
-      'grpc_root/src/compiler/python_plugin.cc'] + [
+      'grpc/protoc/main.cc',
+      'grpc_root/src/compiler/python_generator.cc'] + [
       os.path.join('third_party/protobuf/src', cc_file)
       for cc_file in protoc_lib_deps.CC_FILES]
   plugin_ext = extension.Extension(
-      name='grpc.protoc.protoc_plugin',
-      sources=['grpc/protoc/protoc_plugin.pyx'] + plugin_sources,
+      name='grpc.protoc.protoc_compiler',
+      sources=['grpc/protoc/protoc_compiler.pyx'] + plugin_sources,
       include_dirs=[
           '.',
           'grpc_root',
@@ -74,7 +59,7 @@ def plugin_ext_module():
       ],
       language='c++',
       define_macros=[('HAVE_PTHREAD', 1)],
-      extra_compile_args=['-lpthread', '-std=c++11'],
+      extra_compile_args=['-lpthread', '-frtti', '-std=c++11'],
   )
   return plugin_ext
 
@@ -88,12 +73,7 @@ setuptools.setup(
   license='',
   ext_modules=maybe_cythonize([
       protoc_ext_module(),
-      plugin_ext_module(),
   ]),
-  scripts=[
-    'grpc/protoc/grpc_python_protoc_compiler.py',
-    'grpc/protoc/grpc_python_protoc_plugin.py',
-  ],
   packages=setuptools.find_packages('.'),
   namespace_packages=['grpc'],
   install_requires=[
