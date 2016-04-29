@@ -31,9 +31,16 @@
 
 cd $(dirname $0)/../../../
 
-docker build -t bazel `realpath ./tools/dockerfile/bazel/`
-docker run -v "`realpath .`:/src/grpc/" \
-  -w /src/grpc/third_party/protobuf              \
-  bazel                                          \
+# First check if bazel is installed on the machine. If it is, then we don't need
+# to invoke the docker bazel.
+if [ "bazel version" ]
+then
+  cd third_party/protobuf
   bazel query 'deps('$1')'
-
+else
+  docker build -t bazel `realpath ./tools/dockerfile/bazel/`
+  docker run -v "`realpath .`:/src/grpc/"          \
+    -w /src/grpc/third_party/protobuf              \
+    bazel                                          \
+    bazel query 'deps('$1')'
+fi

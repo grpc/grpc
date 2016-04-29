@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -27,26 +29,25 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-FROM ubuntu:wily
-RUN apt-get update
-RUN apt-get -y install software-properties-common python-software-properties
-RUN add-apt-repository ppa:webupd8team/java
-RUN apt-get update
-RUN apt-get -y install \
-	vim            \
-	wget           \
-	openjdk-8-jdk  \
-	pkg-config     \
-	zip            \
-	g++            \
-	zlib1g-dev     \
-	unzip          \
-	git
+import cStringIO
 
-RUN git clone https://github.com/bazelbuild/bazel.git /bazel
-RUN cd /bazel && ./compile.sh
+import make_grpcio_tools as make
 
-RUN ln -s /bazel/output/bazel /bin/
+OUT_OF_DATE_MESSAGE = """file {} is out of date
 
-# ensure the installation has been extracted
-RUN bazel
+Have you called tools/distrib/python/make_grpcio_tools.py since upgrading protobuf?"""
+
+check_protoc_deps_file = cStringIO.StringIO()
+check_protoc_lib_deps_file = cStringIO.StringIO()
+make.write_deps(make.BAZEL_DEPS_PROTOC_QUERY, check_protoc_deps_file)
+make.write_deps(make.BAZEL_DEPS_PROTOC_LIB_QUERY, check_protoc_lib_deps_file)
+
+with open(make.GRPC_PYTHON_PROTOC_DEPS, 'r') as protoc_deps_file:
+  if protoc_deps_file.read() != check_protoc_deps_file.getvalue():
+    print(OUT_OF_DATE_MESSAGE.format(make.GRPC_PYTHON_PROTOC_DEPS))
+    raise SystemExit(1)
+
+with open(make.GRPC_PYTHON_PROTOC_LIB_DEPS, 'r') as protoc_lib_deps_file:
+  if protoc_lib_deps_file.read() != check_protoc_lib_deps_file.getvalue():
+    print(OUT_OF_DATE_MESSAGE.format(make.GRPC_PYTHON_PROTOC_LIB_DEPS))
+    raise SystemExit(1)
