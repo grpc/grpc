@@ -229,9 +229,6 @@ struct grpc_chttp2_transport_parsing {
   /** is this transport a client? (boolean) */
   uint8_t is_client;
 
-  /** max metadata size */
-  uint32_t max_metadata_size;
-
   /** were settings updated? */
   uint8_t settings_updated;
   /** was a settings ack received? */
