@@ -147,7 +147,7 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
   void InsertPlugin() {
     if (GetParam()) {
       // Add ServerBuilder plugin directly
-      INIT_PLUGIN(builder_->plugins_, TestServerBuilderPlugin);
+      GRPC_INIT_PLUGIN(builder_->plugins_, TestServerBuilderPlugin);
       EXPECT_TRUE(builder_->plugins_[PLUGIN_NAME] != nullptr);
     } else {
       // Add ServerBuilder plugin using ServerBuilder::SetOption()
@@ -159,7 +159,7 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
   void InsertPluginWithTestService() {
     if (GetParam()) {
       // Add ServerBuilder plugin directly
-      INIT_PLUGIN(builder_->plugins_, TestServerBuilderPlugin);
+      GRPC_INIT_PLUGIN(builder_->plugins_, TestServerBuilderPlugin);
       EXPECT_TRUE(builder_->plugins_[PLUGIN_NAME] != nullptr);
       auto plugin = static_cast<TestServerBuilderPlugin*>(
           builder_->plugins_[PLUGIN_NAME].get());
