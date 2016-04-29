@@ -776,7 +776,8 @@ void grpc_chttp2_add_incoming_goaway(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
     uint32_t goaway_error, gpr_slice goaway_text) {
   char *msg = gpr_dump_slice(goaway_text, GPR_DUMP_HEX | GPR_DUMP_ASCII);
-  gpr_log(GPR_DEBUG, "got goaway [%d]: %s", goaway_error, msg);
+  GRPC_CHTTP2_IF_TRACING(gpr_log(
+      GPR_DEBUG, "got goaway [%d]: %s", goaway_error, msg));
   gpr_free(msg);
   gpr_slice_unref(goaway_text);
   transport_global->seen_goaway = 1;
