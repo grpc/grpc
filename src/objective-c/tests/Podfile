@@ -7,6 +7,9 @@ def shared_pods
 	pod 'Protobuf', :path => "../../../third_party/protobuf"
 	pod 'BoringSSL', :podspec => ".."
 	pod 'gRPC', :path => "../../.."
+	pod 'gRPC-Core', :path => "../../.."
+	pod 'gRPC-RxLibrary', :path => "../../.."
+	pod 'gRPC-ProtoRPC',  :path => "../../.."
 	pod 'RemoteTest', :path => "RemoteTestClient"
 end
 
