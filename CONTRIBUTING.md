@@ -1,7 +1,8 @@
 # How to contribute
 
-We definitely welcome patches and contribution to grpc! Here is some guideline
-and information about how to do so.
+This is a place for various components in the gRPC ecosystem that aren't part of the gRPC core. We welcome contributions in this repo which either build extensions around gRPC or showcase how to use gRPC in various use cases and/or with other technologies.
+Here is some guideline and information about how to do so.
+
 
 ## Getting started
 
@@ -10,58 +11,14 @@ and information about how to do so.
 In order to protect both you and ourselves, you will need to sign the
 [Contributor License Agreement](https://cla.developers.google.com/clas).
 
-### Technical requirements
+### Guidelines to contribute
 
-You will need several tools to work with this repository. In addition to all of
-the packages described in the [INSTALL](INSTALL.md) file, you will also need
-python, and the mako template renderer. To install the latter, using pip, one
-should simply be able to do `pip install mako`.
+Each contribution needs to have a) top level readme explaining what the contribution does, how to use it with gRPC, how to build and test it and what are its external technical dependencies.
+Have at least a top level readme.md describing overview, how to use, dependencies, and how to build and test.
+Third party libraries: Note that no third party libraries with AGPL license etc should not be used in the codebases.
+Automated tests - will have a badge called “Verified” for tested contributions. Contributors should have automated tests present in every contribution and they should run on commit. We (gRPC team) will set up travis CI to facilitate this. Tests must return green before we merge them.
 
-In order to run all of the tests we provide, you will need valgrind and clang.
-More specifically, under debian, you will need the package libc++-dev to
-properly run all the tests.
+### How contributions will be accepted?
 
-Compiling and running grpc C++ tests depend on protobuf 3.0.0, gtest and gflags.
-Although gflags is provided in third_party, you will need to manually install
-that dependency on your system to run these tests. Under a Debian or Ubuntu
-system, you can install the gtests and gflags packages using apt-get:
+gRPC core team members will accept PRs and merge. Code reviews will be done on a best effort basis. It is however expected that the community will address the comments from core team members. As long as contribution meets the two above mentioned guidelines and CLA is signed, PRs will be merged. The team will try and take care of outstanding requests weekly (ie during office hours). If people want a faster dev cycle, we'd recommend doing this in a fork, per github flow anyways. 
 
-```sh
- $ [sudo] apt-get install libgflags-dev libgtest-dev
-```
-
-If you are planning to work on any of the languages other than C and C++, you
-will also need their appropriate development environments.
-
-If you want to work under Windows, we recommend the use of Visual Studio 2013.
-The [Community or Express editions](http://www.visualstudio.com/en-us/downloads/download-visual-studio-vs.aspx)
-are free and suitable for developing with grpc. Note however that our test
-environment and tools are available for Unix environments only at the moment.
-
-## Testing your changes
-
-We provide a tool to help run the suite of tests in various environments.
-In order to run most of the available tests, one would need to run:
-
-`./tools/run_tests/run_tests.py`
-
-If you want to run tests for any of the languages {c, c++, csharp, node, objc, php, python, ruby}, do this:
-
-`./tools/run_tests/run_tests.py -l <lang>`
-
-To know about the list of available commands, do this:
-
-`./tools/run_tests/run_tests.py -h`
-
-## Adding or removing source code
-
-Each language uses its own build system to work. Currently, the root's Makefile
-and the Visual Studio project files are building only the C and C++ source code.
-In order to ease the maintenance of these files, we have a
-template system. Please do not contribute manual changes to any of the generated
-files. Instead, modify the template files, or the build.yaml file, and
-re-generate the project files using the following command:
-
-`./tools/buildgen/generate_projects.sh`
-
-You'll find more information about this in the [templates](templates) folder.
