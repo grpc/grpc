@@ -219,19 +219,16 @@ void PrintMethodImplementations(Printer *printer,
     map< ::grpc::string,::grpc::string> vars = {{"service_name", service->name()},
                                 {"service_class", ServiceClassName(service)},
                                 {"package", service->file()->package()}};
-
-    printer.Print(vars,
-                  "static NSString *const kPackageName = @\"$package$\";\n");
     printer.Print(
-        vars, "static NSString *const kServiceName = @\"$service_name$\";\n\n");
+        vars, "static NSString *const kServiceName_$service_name$ = @\"$service_name$\";\n\n");
 
     printer.Print(vars, "@implementation $service_class$\n\n");
 
     printer.Print("// Designated initializer\n");
     printer.Print("- (instancetype)initWithHost:(NSString *)host {\n");
-    printer.Print(
+    printer.Print(vars,
         "  return (self = [super initWithHost:host"
-        " packageName:kPackageName serviceName:kServiceName]);\n");
+        " packageName:kPackageName serviceName:kServiceName_$service_name$]);\n");
     printer.Print("}\n\n");
     printer.Print(
         "// Override superclass initializer to disallow different"
