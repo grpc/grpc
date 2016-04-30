@@ -35,10 +35,10 @@
 
 
 Pod::Spec.new do |s|
-  s.name     = 'gRPC'
+  s.name     = 'gRPC-RxLibrary'
   version = '0.14.0'
   s.version  = version
-  s.summary  = 'gRPC client library for iOS/OSX'
+  s.summary  = 'Reactive Extensions library for iOS/OSX.'
   s.homepage = 'http://www.grpc.io'
   s.license  = 'New BSD'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
@@ -51,18 +51,12 @@ Pod::Spec.new do |s|
   s.ios.deployment_target = '7.1'
   s.osx.deployment_target = '10.9'
 
-  name = 'GRPCClient'
+  name = 'RxLibrary'
   s.module_name = name
   s.header_dir = name
 
-  src_dir = 'src/objective-c/GRPCClient'
+  src_dir = 'src/objective-c/RxLibrary'
   s.source_files = "#{src_dir}/*.{h,m}", "#{src_dir}/**/*.{h,m}"
   s.private_header_files = "#{src_dir}/private/*.h"
   s.header_mappings_dir = "#{src_dir}"
-
-  s.dependency 'gRPC-Core', version
-  s.dependency 'gRPC-RxLibrary', version
-
-  # Certificates, to be able to establish TLS connections:
-  s.resource_bundles = { 'gRPCCertificates' => ['etc/roots.pem'] }
 end
