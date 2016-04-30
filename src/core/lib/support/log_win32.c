@@ -33,7 +33,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WIN32
+#ifdef GPR_WIN32_LOG
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -109,18 +109,4 @@ void gpr_default_log(gpr_log_func_args *args) {
   fflush(stderr);
 }
 
-char *gpr_format_message(int messageid) {
-  LPTSTR tmessage;
-  char *message;
-  DWORD status = FormatMessage(
-      FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
-          FORMAT_MESSAGE_IGNORE_INSERTS,
-      NULL, (DWORD)messageid, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-      (LPTSTR)(&tmessage), 0, NULL);
-  if (status == 0) return gpr_strdup("Unable to retrieve error string");
-  message = gpr_tchar_to_char(tmessage);
-  LocalFree(tmessage);
-  return message;
-}
-
-#endif /* GPR_WIN32 */
+#endif /* GPR_WIN32_LOG */

@@ -50,7 +50,7 @@ static unsigned seed(void) { return (unsigned)getpid(); }
 
 #if GPR_GETPID_IN_PROCESS_H
 #include <process.h>
-static unsigned seed(void) { return _getpid(); }
+static unsigned seed(void) { return (unsigned)_getpid(); }
 #endif
 
 #if GPR_WINDOWS_CRASH_HANDLER

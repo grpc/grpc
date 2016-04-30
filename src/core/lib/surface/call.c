@@ -373,8 +373,6 @@ static void destroy_call(grpc_exec_ctx *exec_ctx, void *call, bool success) {
   if (c->receiving_stream != NULL) {
     grpc_byte_stream_destroy(exec_ctx, c->receiving_stream);
   }
-  grpc_call_stack_destroy(exec_ctx, CALL_STACK_FROM_CALL(c), &c->stats);
-  GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, c->channel, "call");
   gpr_mu_destroy(&c->mu);
   for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
     if (c->status[i].details) {
@@ -392,7 +390,9 @@ static void destroy_call(grpc_exec_ctx *exec_ctx, void *call, bool success) {
   if (c->cq) {
     GRPC_CQ_INTERNAL_UNREF(c->cq, "bind");
   }
-  gpr_free(c);
+  grpc_channel *channel = c->channel;
+  grpc_call_stack_destroy(exec_ctx, CALL_STACK_FROM_CALL(c), &c->stats, c);
+  GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, channel, "call");
   GPR_TIMER_END("destroy_call", 0);
 }
 
@@ -1516,4 +1516,40 @@ grpc_compression_algorithm grpc_call_compression_for_level(
   const uint32_t accepted_encodings = call->encodings_accepted_by_peer;
   gpr_mu_unlock(&call->mu);
   return grpc_compression_algorithm_for_level(level, accepted_encodings);
+}
+
+const char *grpc_call_error_to_string(grpc_call_error error) {
+  switch (error) {
+    case GRPC_CALL_ERROR:
+      return "GRPC_CALL_ERROR";
+    case GRPC_CALL_ERROR_ALREADY_ACCEPTED:
+      return "GRPC_CALL_ERROR_ALREADY_ACCEPTED";
+    case GRPC_CALL_ERROR_ALREADY_FINISHED:
+      return "GRPC_CALL_ERROR_ALREADY_FINISHED";
+    case GRPC_CALL_ERROR_ALREADY_INVOKED:
+      return "GRPC_CALL_ERROR_ALREADY_INVOKED";
+    case GRPC_CALL_ERROR_BATCH_TOO_BIG:
+      return "GRPC_CALL_ERROR_BATCH_TOO_BIG";
+    case GRPC_CALL_ERROR_INVALID_FLAGS:
+      return "GRPC_CALL_ERROR_INVALID_FLAGS";
+    case GRPC_CALL_ERROR_INVALID_MESSAGE:
+      return "GRPC_CALL_ERROR_INVALID_MESSAGE";
+    case GRPC_CALL_ERROR_INVALID_METADATA:
+      return "GRPC_CALL_ERROR_INVALID_METADATA";
+    case GRPC_CALL_ERROR_NOT_INVOKED:
+      return "GRPC_CALL_ERROR_NOT_INVOKED";
+    case GRPC_CALL_ERROR_NOT_ON_CLIENT:
+      return "GRPC_CALL_ERROR_NOT_ON_CLIENT";
+    case GRPC_CALL_ERROR_NOT_ON_SERVER:
+      return "GRPC_CALL_ERROR_NOT_ON_SERVER";
+    case GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE:
+      return "GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE";
+    case GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH:
+      return "GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH";
+    case GRPC_CALL_ERROR_TOO_MANY_OPERATIONS:
+      return "GRPC_CALL_ERROR_TOO_MANY_OPERATIONS";
+    case GRPC_CALL_OK:
+      return "GRPC_CALL_OK";
+  }
+  GPR_UNREACHABLE_CODE(return "GRPC_CALL_ERROR_UNKNOW");
 }

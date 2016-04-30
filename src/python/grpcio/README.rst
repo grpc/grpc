@@ -23,6 +23,16 @@ Else system wide (on Ubuntu)...
 
   $ sudo pip install grpcio
 
+If you're on Windows make sure that you installed the :code:`pip.exe` component
+when you installed Python (if not go back and install it!) then invoke:
+
+::
+
+  $ pip.exe install grpcio
+
+Windows users may need to invoke :code:`pip.exe` from a command line ran as
+administrator.
+
 n.b. On Windows and on Mac OS X one *must* have a recent release of :code:`pip`
 to retrieve the proper wheel from PyPI. Be sure to upgrade to the latest
 version!
@@ -43,6 +53,9 @@ package named :code:`python-dev`).
   $ pip install -rrequirements.txt
   $ GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
 
+You cannot currently install Python from source on Windows. Things might work
+out for you in MSYS2 (follow the Linux instructions), but it isn't officially
+supported at the moment.
 
 Troubleshooting
 ~~~~~~~~~~~~~~~
