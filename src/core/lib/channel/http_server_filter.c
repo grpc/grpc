@@ -39,6 +39,9 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/transport/static_metadata.h"
 
+#define EXPECTED_CONTENT_TYPE "application/grpc"
+#define EXPECTED_CONTENT_TYPE_LENGTH sizeof(EXPECTED_CONTENT_TYPE) - 1
+
 typedef struct call_data {
   uint8_t seen_path;
   uint8_t seen_method;
@@ -92,8 +95,11 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
        require */
     return NULL;
   } else if (md->key == GRPC_MDSTR_CONTENT_TYPE) {
-    if (strncmp(grpc_mdstr_as_c_string(md->value), "application/grpc+", 17) ==
-        0) {
+    const char *value_str = grpc_mdstr_as_c_string(md->value);
+    if (strncmp(value_str, EXPECTED_CONTENT_TYPE,
+                EXPECTED_CONTENT_TYPE_LENGTH) == 0 &&
+        (value_str[EXPECTED_CONTENT_TYPE_LENGTH] == '+' ||
+         value_str[EXPECTED_CONTENT_TYPE_LENGTH] == ';')) {
       /* Although the C implementation doesn't (currently) generate them,
          any custom +-suffix is explicitly valid. */
       /* TODO(klempner): We should consider preallocating common values such
@@ -102,8 +108,7 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
     } else {
       /* TODO(klempner): We're currently allowing this, but we shouldn't
          see it without a proxy so log for now. */
-      gpr_log(GPR_INFO, "Unexpected content-type %s",
-              grpc_mdstr_as_c_string(md->value));
+      gpr_log(GPR_INFO, "Unexpected content-type %s", value_str);
     }
     return NULL;
   } else if (md->key == GRPC_MDSTR_TE || md->key == GRPC_MDSTR_METHOD ||
@@ -221,7 +226,8 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                              const grpc_call_stats *stats) {}
+                              const grpc_call_stats *stats,
+                              void *ignored) {}
 
 /* Constructor for channel_data */
 static void init_channel_elem(grpc_exec_ctx *exec_ctx,

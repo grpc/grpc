@@ -47,6 +47,8 @@
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/static_metadata.h"
 
+int grpc_compress_filter_trace = 0;
+
 typedef struct call_data {
   gpr_slice_buffer slices; /**< Buffers up input slices to be compressed */
   grpc_linked_mdelem compression_algorithm_storage;
@@ -169,9 +171,29 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
   did_compress =
       grpc_msg_compress(calld->compression_algorithm, &calld->slices, &tmp);
   if (did_compress) {
+    if (grpc_compress_filter_trace) {
+      char *algo_name;
+      const size_t before_size = calld->slices.length;
+      const size_t after_size = tmp.length;
+      const float savings_ratio = 1.0f - (float)after_size / (float)before_size;
+      GPR_ASSERT(grpc_compression_algorithm_name(calld->compression_algorithm,
+                                                 &algo_name));
+      gpr_log(GPR_DEBUG,
+              "Compressed[%s] %d bytes vs. %d bytes (%.2f%% savings)",
+              algo_name, before_size, after_size, 100 * savings_ratio);
+    }
     gpr_slice_buffer_swap(&calld->slices, &tmp);
     calld->send_flags |= GRPC_WRITE_INTERNAL_COMPRESS;
+  } else {
+    if (grpc_compress_filter_trace) {
+      char *algo_name;
+      GPR_ASSERT(grpc_compression_algorithm_name(calld->compression_algorithm,
+                                                 &algo_name));
+      gpr_log(GPR_DEBUG, "Algorithm '%s' enabled but decided not to compress.",
+              algo_name);
+    }
   }
+
   gpr_slice_buffer_destroy(&tmp);
 
   grpc_slice_buffer_stream_init(&calld->replacement_stream, &calld->slices,
@@ -247,7 +269,8 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                              const grpc_call_stats *stats) {
+                              const grpc_call_stats *stats,
+                              void *ignored) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   gpr_slice_buffer_destroy(&calld->slices);
