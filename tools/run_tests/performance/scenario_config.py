@@ -456,6 +456,128 @@ class NodeLanguage:
   def __str__(self):
     return 'node'
 
+class PythonLanguage:
+
+  def __init__(self):
+    self.safename = 'python'
+
+  def worker_cmdline(self):
+    return ['tools/run_tests/performance/run_worker_python.sh']
+
+  def worker_port_offset(self):
+    return 500
+
+  def scenarios(self):
+    yield {
+        'name': 'python_to_cpp_protobuf_streaming_ping_pong',
+        'num_servers': 1,
+        'num_clients': 1,
+        'client_config': {
+          'client_type': 'ASYNC_CLIENT',
+          'security_params': SECURE_SECARGS,
+          'outstanding_rpcs_per_channel': 1,
+          'client_channels': 1,
+          'async_client_threads': 1,
+          'rpc_type': 'STREAMING',
+          'load_params': {
+            'closed_loop': {}
+          },
+          'payload_config': EMPTY_PROTO_PAYLOAD,
+          'histogram_params': HISTOGRAM_PARAMS,
+        },
+        'server_config': {
+          'server_type': 'SYNC_SERVER',
+          'security_params': SECURE_SECARGS,
+          'core_limit': 0,
+          'async_server_threads': 1,
+        },
+        'warmup_seconds': WARMUP_SECONDS,
+        'benchmark_seconds': BENCHMARK_SECONDS,
+        'SERVER_LANGUAGE': 'c++' 
+    }
+    yield {
+        'name': 'python_protobuf_sync_unary_ping_pong',
+        'num_servers': 1,
+        'num_clients': 1,
+        'client_config': {
+          'client_type': 'SYNC_CLIENT',
+          'security_params': SECURE_SECARGS,
+          'outstanding_rpcs_per_channel': 1,
+          'client_channels': 1,
+          'async_client_threads': 1,
+          'rpc_type': 'UNARY',
+          'load_params': {
+            'closed_loop': {}
+          },
+          'payload_config': EMPTY_PROTO_PAYLOAD,
+          'histogram_params': HISTOGRAM_PARAMS,
+        },
+        'server_config': {
+          'server_type': 'SYNC_SERVER',
+          'security_params': SECURE_SECARGS,
+          'core_limit': 0,
+          'async_server_threads': 1,
+        },
+        'warmup_seconds': WARMUP_SECONDS,
+        'benchmark_seconds': BENCHMARK_SECONDS,
+    }
+    yield {
+        'name': 'python_protobuf_async_unary_ping_pong',
+        'num_servers': 1,
+        'num_clients': 1,
+        'client_config': {
+          'client_type': 'ASYNC_CLIENT',
+          'security_params': SECURE_SECARGS,
+          'outstanding_rpcs_per_channel': 1,
+          'client_channels': 1,
+          'async_client_threads': 1,
+            'rpc_type': 'UNARY',
+            'load_params': {
+              'closed_loop': {}
+            },
+            'payload_config': EMPTY_PROTO_PAYLOAD,
+            'histogram_params': HISTOGRAM_PARAMS,
+          },
+          'server_config': {
+            'server_type': 'SYNC_SERVER',
+            'security_params': SECURE_SECARGS,
+            'core_limit': 0,
+            'async_server_threads': 1,
+          },
+          'warmup_seconds': WARMUP_SECONDS,
+          'benchmark_seconds': BENCHMARK_SECONDS,
+    }
+    yield {
+        'name': 'python_to_cpp_single_channel_throughput',
+        'num_servers': 1,
+        'num_clients': 1,
+        'client_config': {
+          'client_type': 'ASYNC_CLIENT',
+          'security_params': SECURE_SECARGS,
+          'outstanding_rpcs_per_channel': 1,
+          'client_channels': 1,
+          'async_client_threads': 1,
+          'rpc_type': 'STREAMING',
+          'load_params': {
+            'closed_loop': {}
+          },
+          'payload_config': BIG_GENERIC_PAYLOAD,
+          'histogram_params': HISTOGRAM_PARAMS,
+        },
+        'server_config': {
+          'server_type': 'ASYNC_GENERIC_SERVER',
+          'security_params': SECURE_SECARGS,
+          'core_limit': SINGLE_MACHINE_CORES/2,
+          'async_server_threads': 1,
+          'payload_config': BIG_GENERIC_PAYLOAD,
+        },
+        'warmup_seconds': WARMUP_SECONDS,
+        'benchmark_seconds': BENCHMARK_SECONDS,
+        'SERVER_LANGUAGE': 'c++'
+    }
+      
+  def __str__(self):
+    return 'python'
 
 class RubyLanguage:
 
@@ -562,4 +684,5 @@ LANGUAGES = {
     'node' : NodeLanguage(),
     'ruby' : RubyLanguage(),
     'java' : JavaLanguage(),
+    'python' : PythonLanguage(),
 }
