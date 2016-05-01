@@ -169,18 +169,18 @@ NAN_METHOD(ServerCredentials::CreateSsl) {
   for(uint32_t i = 0; i < key_cert_pair_count; i++) {
     Local<Value> pair_val = Nan::Get(pair_list, i).ToLocalChecked();
     if (!pair_val->IsObject()) {
-      delete key_cert_pairs;
+      delete[] key_cert_pairs;
       return Nan::ThrowTypeError("Key/cert pairs must be objects");
     }
     Local<Object> pair_obj = Nan::To<Object>(pair_val).ToLocalChecked();
     Local<Value> maybe_key = Nan::Get(pair_obj, key_key).ToLocalChecked();
     Local<Value> maybe_cert = Nan::Get(pair_obj, cert_key).ToLocalChecked();
     if (!::node::Buffer::HasInstance(maybe_key)) {
-      delete key_cert_pairs;
+      delete[] key_cert_pairs;
       return Nan::ThrowTypeError("private_key must be a Buffer");
     }
     if (!::node::Buffer::HasInstance(maybe_cert)) {
-      delete key_cert_pairs;
+      delete[] key_cert_pairs;
       return Nan::ThrowTypeError("cert_chain must be a Buffer");
     }
     key_cert_pairs[i].private_key = ::node::Buffer::Data(maybe_key);
@@ -189,7 +189,7 @@ NAN_METHOD(ServerCredentials::CreateSsl) {
   grpc_server_credentials *creds = grpc_ssl_server_credentials_create_ex(
       root_certs, key_cert_pairs, key_cert_pair_count,
       client_certificate_request, NULL);
-  delete key_cert_pairs;
+  delete[] key_cert_pairs;
   if (creds == NULL) {
     info.GetReturnValue().SetNull();
   } else {
