@@ -64,6 +64,7 @@ void free_wrapped_grpc_channel(void *object TSRMLS_DC) {
   if (channel->wrapped != NULL) {
     grpc_channel_destroy(channel->wrapped);
   }
+  zend_object_std_dtor(&channel->std TSRMLS_CC);
   efree(channel);
 }
 

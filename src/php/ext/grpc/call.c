@@ -65,6 +65,7 @@ void free_wrapped_grpc_call(void *object TSRMLS_DC) {
   if (call->owned && call->wrapped != NULL) {
     grpc_call_destroy(call->wrapped);
   }
+  zend_object_std_dtor(&call->std TSRMLS_CC);
   efree(call);
 }
 
