@@ -60,6 +60,7 @@ void free_wrapped_grpc_call_credentials(void *object TSRMLS_DC) {
   if (creds->wrapped != NULL) {
     grpc_call_credentials_release(creds->wrapped);
   }
+  zend_object_std_dtor(&creds->std TSRMLS_CC);
   efree(creds);
 }
 

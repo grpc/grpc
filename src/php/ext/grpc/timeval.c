@@ -53,7 +53,11 @@
 zend_class_entry *grpc_ce_timeval;
 
 /* Frees and destroys an instance of wrapped_grpc_call */
-void free_wrapped_grpc_timeval(void *object TSRMLS_DC) { efree(object); }
+void free_wrapped_grpc_timeval(void *object TSRMLS_DC) {
+    wrapped_grpc_timeval *timeval = (wrapped_grpc_timeval *)object;
+    zend_object_std_dtor(&timeval->std TSRMLS_CC);
+    efree(object);
+}
 
 /* Initializes an instance of wrapped_grpc_timeval to be associated with an
  * object of a class specified by class_type */
