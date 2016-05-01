@@ -259,6 +259,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\string_posix.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\string_util_win32.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\string_win32.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\subprocess_posix.c">
@@ -286,6 +288,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\time_win32.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\tls_pthread.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\tmpfile_msys.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\tmpfile_posix.c">
     </ClCompile>

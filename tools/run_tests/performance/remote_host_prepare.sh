@@ -41,10 +41,9 @@ ssh "${USER_AT_HOST}" "rm -rf ~/performance_workspace && mkdir -p ~/performance_
 # could also kill jenkins.
 ssh "${USER_AT_HOST}" "killall -9 qps_worker mono node ruby || true"
 
-# Kill all java LoadWorker processes. We can't just killall java
-# as one of the processes might be jenkins.
-ssh "${USER_AT_HOST}" 'kill -9 $(jps | grep LoadWorker | cut -f1 -d" ") || true'
-
 # push the current sources to the slave and unpack it.
 scp ../grpc.tar "${USER_AT_HOST}:~/performance_workspace"
 ssh "${USER_AT_HOST}" "tar -xf ~/performance_workspace/grpc.tar -C ~/performance_workspace"
+
+# For consistency with local run, invoke the kill_workers script remotely.
+ssh "${USER_AT_HOST}" "~/performance_workspace/grpc/tools/run_tests/performance/kill_workers.sh"

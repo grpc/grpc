@@ -33,7 +33,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WIN32
+#ifdef GPR_WIN32_TMPFILE
 
 #include <io.h>
 #include <stdio.h>
@@ -81,4 +81,4 @@ end:
   return result;
 }
 
-#endif /* GPR_WIN32 */
+#endif /* GPR_WIN32_TMPFILE */
