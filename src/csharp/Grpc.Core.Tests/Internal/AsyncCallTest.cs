@@ -160,7 +160,7 @@ namespace Grpc.Core.Internal.Tests
         }
 
         [Test]
-        public void ServerStreaming_NoResponse1_Success()
+        public void ServerStreaming_NoResponse_Success1()
         {
             asyncCall.StartServerStreamingCall("request1");
             var responseStream = new ClientResponseStream<string, string>(asyncCall);
@@ -176,7 +176,7 @@ namespace Grpc.Core.Internal.Tests
         }
 
         [Test]
-        public void ServerStreaming_NoResponse2_Success()
+        public void ServerStreaming_NoResponse_Success2()
         {
             asyncCall.StartServerStreamingCall("request1");
             var responseStream = new ClientResponseStream<string, string>(asyncCall);
@@ -190,6 +190,22 @@ namespace Grpc.Core.Internal.Tests
             fakeCall.ReceivedMessageHandler(true, null);
 
             AssertStreamingResponseSuccess(asyncCall, fakeCall, readTask);
+        }
+
+        [Test]
+        public void ServerStreaming_NoResponse_ReadFailure()
+        {
+            asyncCall.StartServerStreamingCall("request1");
+            var responseStream = new ClientResponseStream<string, string>(asyncCall);
+            var readTask = responseStream.MoveNext();
+
+            fakeCall.ReceivedResponseHeadersHandler(true, new Metadata());
+            Assert.AreEqual(0, asyncCall.ResponseHeadersAsync.Result.Count);
+
+            fakeCall.ReceivedMessageHandler(false, null);  // after a failed read, we rely on C core to deliver appropriate status code.
+            fakeCall.ReceivedStatusOnClientHandler(true, CreateClientSideStatus(StatusCode.Internal));
+
+            AssertStreamingResponseError(asyncCall, fakeCall, readTask, StatusCode.Internal);
         }
 
         ClientSideStatus CreateClientSideStatus(StatusCode statusCode)
@@ -232,6 +248,17 @@ namespace Grpc.Core.Internal.Tests
             Assert.AreEqual(expectedStatusCode, asyncCall.GetStatus().StatusCode);
             var ex = Assert.ThrowsAsync<RpcException>(async () => await resultTask);
             Assert.AreEqual(expectedStatusCode, ex.Status.StatusCode);
+            Assert.AreEqual(0, asyncCall.ResponseHeadersAsync.Result.Count);
+            Assert.AreEqual(0, asyncCall.GetTrailers().Count);
+        }
+
+        static void AssertStreamingResponseError(AsyncCall<string, string> asyncCall, FakeNativeCall fakeCall, Task<bool> moveNextTask, StatusCode expectedStatusCode)
+        {
+            Assert.IsTrue(moveNextTask.IsCompleted);
+            Assert.IsTrue(fakeCall.IsDisposed);
+
+            var ex = Assert.ThrowsAsync<RpcException>(async () => await moveNextTask);
+            Assert.AreEqual(expectedStatusCode, asyncCall.GetStatus().StatusCode);
             Assert.AreEqual(0, asyncCall.ResponseHeadersAsync.Result.Count);
             Assert.AreEqual(0, asyncCall.GetTrailers().Count);
         }
