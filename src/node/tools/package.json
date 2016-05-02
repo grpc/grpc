@@ -16,7 +16,8 @@
     }
   ],
   "bin": {
-    "grpc-tools-protoc": "./bin/protoc.js"
+    "grpc-tools-protoc": "./bin/protoc.js",
+    "grpc-tools-plugin": "./bin/protoc_plugin.js"
   },
   "scripts": {
     "install": "./node_modules/.bin/node-pre-gyp install"
@@ -32,6 +33,7 @@
   "files": [
     "index.js",
     "bin/protoc.js",
+    "bin/protoc_plugin.js",
     "LICENSE"
   ],
   "main": "index.js"
