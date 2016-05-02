@@ -30,6 +30,8 @@
 
 require 'rbconfig'
 
+require_relative '../os_check'
+
 plugin_name = 'grpc_ruby_plugin' + RbConfig::CONFIG['EXEEXT']
 
 plugin_path = File.join(File.dirname(__FILE__),

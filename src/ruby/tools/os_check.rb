@@ -1,4 +1,3 @@
-#!/usr/bin/env ruby
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -28,14 +27,19 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# This is based on http://stackoverflow.com/a/171011/159388 by Aaron Hinni
+
 require 'rbconfig'
 
-require_relative '../os_check'
-
-protoc_name = 'protoc' + RbConfig::CONFIG['EXEEXT']
-
-protoc_path = File.join(File.dirname(__FILE__),
-                        RbConfig::CONFIG['host_cpu'] + '-' + OS.os_name,
-                        protoc_name)
-
-exec([ protoc_path, protoc_path ], *ARGV)
+module OS
+  def OS.os_name
+    case RbConfig::CONFIG['host_os']
+    when /cygwin|mswin|mingw|bccwin|wince|emx/
+      'windows'
+    when /darwin/
+      'macos'
+    else
+      'linux'
+    end
+  end
+end
