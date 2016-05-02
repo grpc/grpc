@@ -42,7 +42,7 @@
 #include <grpc/support/slice.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/security/credentials.h"
+#include "src/core/lib/security/credentials/credentials.h"
 
 typedef struct {
   gpr_mu *mu;

@@ -37,10 +37,10 @@
 #include <string.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/security/auth_filters.h"
-#include "src/core/lib/security/credentials.h"
-#include "src/core/lib/security/secure_endpoint.h"
-#include "src/core/lib/security/security_connector.h"
+#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/transport/auth_filters.h"
+#include "src/core/lib/security/transport/secure_endpoint.h"
+#include "src/core/lib/security/transport/security_connector.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/tsi/transport_security_interface.h"
 

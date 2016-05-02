@@ -188,20 +188,28 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/transport/writing.c \
     src/core/ext/transport/chttp2/alpn/alpn.c \
     src/core/lib/http/httpcli_security_connector.c \
-    src/core/lib/security/b64.c \
-    src/core/lib/security/client_auth_filter.c \
-    src/core/lib/security/credentials.c \
-    src/core/lib/security/credentials_metadata.c \
-    src/core/lib/security/credentials_posix.c \
-    src/core/lib/security/credentials_win32.c \
-    src/core/lib/security/google_default_credentials.c \
-    src/core/lib/security/handshake.c \
-    src/core/lib/security/json_token.c \
-    src/core/lib/security/jwt_verifier.c \
-    src/core/lib/security/secure_endpoint.c \
-    src/core/lib/security/security_connector.c \
-    src/core/lib/security/security_context.c \
-    src/core/lib/security/server_auth_filter.c \
+    src/core/lib/security/context/security_context.c \
+    src/core/lib/security/credentials/composite/composite_credentials.c \
+    src/core/lib/security/credentials/credentials.c \
+    src/core/lib/security/credentials/credentials_metadata.c \
+    src/core/lib/security/credentials/fake/fake_credentials.c \
+    src/core/lib/security/credentials/google_default/credentials_posix.c \
+    src/core/lib/security/credentials/google_default/credentials_win32.c \
+    src/core/lib/security/credentials/google_default/google_default_credentials.c \
+    src/core/lib/security/credentials/iam/iam_credentials.c \
+    src/core/lib/security/credentials/jwt/json_token.c \
+    src/core/lib/security/credentials/jwt/jwt_credentials.c \
+    src/core/lib/security/credentials/jwt/jwt_verifier.c \
+    src/core/lib/security/credentials/oauth2/oauth2_credentials.c \
+    src/core/lib/security/credentials/plugin/plugin_credentials.c \
+    src/core/lib/security/credentials/ssl/ssl_credentials.c \
+    src/core/lib/security/transport/client_auth_filter.c \
+    src/core/lib/security/transport/handshake.c \
+    src/core/lib/security/transport/secure_endpoint.c \
+    src/core/lib/security/transport/security_connector.c \
+    src/core/lib/security/transport/server_auth_filter.c \
+    src/core/lib/security/util/b64.c \
+    src/core/lib/security/util/json_util.c \
     src/core/lib/surface/init_secure.c \
     src/core/lib/tsi/fake_transport_security.c \
     src/core/lib/tsi/ssl_transport_security.c \
@@ -573,7 +581,18 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/json)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/profiling)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/context)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/composite)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/fake)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/google_default)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/iam)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/jwt)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/oauth2)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/plugin)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/ssl)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/transport)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/util)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/support)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/surface)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/transport)
