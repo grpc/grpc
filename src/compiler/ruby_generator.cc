@@ -98,8 +98,8 @@ void PrintService(const ServiceDescriptor *service, const grpc::string &package,
   out->Print("self.marshal_class_method = :encode\n");
   out->Print("self.unmarshal_class_method = :decode\n");
   std::map<grpc::string, grpc::string> pkg_vars =
-      ListToDict({"service_full_namename", service->full_name()});
-  out->Print(pkg_vars, "self.service_name = '$pkg.name$.$service.name$'\n");
+      ListToDict({"service_full_name", service->full_name()});
+  out->Print(pkg_vars, "self.service_name = '$service_full_name$'\n");
   out->Print("\n");
   for (int i = 0; i < service->method_count(); ++i) {
     PrintMethod(service->method(i), package, out);
