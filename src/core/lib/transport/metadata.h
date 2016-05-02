@@ -148,8 +148,8 @@ const char *grpc_mdstr_as_c_string(grpc_mdstr *s);
 #define GRPC_MDSTR_LENGTH(s) (GPR_SLICE_LENGTH(s->slice))
 
 /* We add 32 bytes of padding as per RFC-7540 section 6.5.2. */
-#define GRPC_MDELEM_LENGTH(e) (GRPC_MDSTR_LENGTH(e->key) + \
-                               GRPC_MDSTR_LENGTH(e->value) + 32)
+#define GRPC_MDELEM_LENGTH(e) (GRPC_MDSTR_LENGTH((e)->key) + \
+                               GRPC_MDSTR_LENGTH((e)->value) + 32)
 
 int grpc_mdstr_is_legal_header(grpc_mdstr *s);
 int grpc_mdstr_is_legal_nonbin_header(grpc_mdstr *s);
