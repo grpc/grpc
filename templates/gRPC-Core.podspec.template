@@ -74,6 +74,8 @@
     s.module_name = name
     s.header_dir = name
 
+    s.module_map = 'include/grpc/module.modulemap'
+
     s.source_files = ${(',\n' + 19*' ').join('\'%s\'' % f for f in grpc_files(libs))}
 
     s.private_header_files = ${(',\n' + 27*' ').join('\'%s\'' % f for f in grpc_private_headers(libs))}
