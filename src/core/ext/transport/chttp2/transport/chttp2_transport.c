@@ -854,24 +854,37 @@ static void perform_stream_op_locked(
     stream_global->send_initial_metadata_finished =
         add_closure_barrier(on_complete);
     stream_global->send_initial_metadata = op->send_initial_metadata;
-    if (contains_non_ok_status(transport_global, op->send_initial_metadata)) {
-      stream_global->seen_error = true;
-      grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
-    }
-    if (!stream_global->write_closed) {
-      if (transport_global->is_client) {
-        GPR_ASSERT(stream_global->id == 0);
-        grpc_chttp2_list_add_waiting_for_concurrency(transport_global,
-                                                     stream_global);
-        maybe_start_some_streams(exec_ctx, transport_global);
-      } else {
-        GPR_ASSERT(stream_global->id != 0);
-        grpc_chttp2_become_writable(transport_global, stream_global);
-      }
+    const size_t metadata_size = grpc_metadata_batch_size(
+        op->send_initial_metadata);
+    const size_t metadata_peer_limit =
+        transport_global->settings[GRPC_PEER_SETTINGS]
+                                  [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE];
+    if (metadata_size > metadata_peer_limit) {
+      gpr_log(GPR_DEBUG,
+              "initial metadata size exceeds peer limit (%lu vs. %lu)",
+              metadata_size, metadata_peer_limit);
+      cancel_from_api(exec_ctx, transport_global, stream_global,
+                      GRPC_STATUS_RESOURCE_EXHAUSTED);
     } else {
-      grpc_chttp2_complete_closure_step(
-          exec_ctx, stream_global,
-          &stream_global->send_initial_metadata_finished, 0);
+      if (contains_non_ok_status(transport_global, op->send_initial_metadata)) {
+        stream_global->seen_error = true;
+        grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
+      }
+      if (!stream_global->write_closed) {
+        if (transport_global->is_client) {
+          GPR_ASSERT(stream_global->id == 0);
+          grpc_chttp2_list_add_waiting_for_concurrency(transport_global,
+                                                       stream_global);
+          maybe_start_some_streams(exec_ctx, transport_global);
+        } else {
+          GPR_ASSERT(stream_global->id != 0);
+          grpc_chttp2_become_writable(transport_global, stream_global);
+        }
+      } else {
+        grpc_chttp2_complete_closure_step(
+            exec_ctx, stream_global,
+            &stream_global->send_initial_metadata_finished, 0);
+      }
     }
   }
 
@@ -895,19 +908,33 @@ static void perform_stream_op_locked(
     stream_global->send_trailing_metadata_finished =
         add_closure_barrier(on_complete);
     stream_global->send_trailing_metadata = op->send_trailing_metadata;
-    if (contains_non_ok_status(transport_global, op->send_trailing_metadata)) {
-      stream_global->seen_error = true;
-      grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
-    }
-    if (stream_global->write_closed) {
-      grpc_chttp2_complete_closure_step(
-          exec_ctx, stream_global,
-          &stream_global->send_trailing_metadata_finished,
-          grpc_metadata_batch_is_empty(op->send_trailing_metadata));
-    } else if (stream_global->id != 0) {
-      /* TODO(ctiller): check if there's flow control for any outstanding
-         bytes before going writable */
-      grpc_chttp2_become_writable(transport_global, stream_global);
+    const size_t metadata_size = grpc_metadata_batch_size(
+        op->send_trailing_metadata);
+    const size_t metadata_peer_limit =
+        transport_global->settings[GRPC_PEER_SETTINGS]
+                                  [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE];
+    if (metadata_size > metadata_peer_limit) {
+      gpr_log(GPR_DEBUG,
+              "trailing metadata size exceeds peer limit (%lu vs. %lu)",
+              metadata_size, metadata_peer_limit);
+      cancel_from_api(exec_ctx, transport_global, stream_global,
+                      GRPC_STATUS_RESOURCE_EXHAUSTED);
+    } else {
+      if (contains_non_ok_status(transport_global,
+                                 op->send_trailing_metadata)) {
+        stream_global->seen_error = true;
+        grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
+      }
+      if (stream_global->write_closed) {
+        grpc_chttp2_complete_closure_step(
+            exec_ctx, stream_global,
+            &stream_global->send_trailing_metadata_finished,
+            grpc_metadata_batch_is_empty(op->send_trailing_metadata));
+      } else if (stream_global->id != 0) {
+        /* TODO(ctiller): check if there's flow control for any outstanding
+           bytes before going writable */
+        grpc_chttp2_become_writable(transport_global, stream_global);
+      }
     }
   }
 
