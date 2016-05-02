@@ -66,37 +66,50 @@ static void test_execute_one(void) {
 }
 
 typedef struct {
+  size_t ctr;
+  grpc_aelock *lock;
+} thd_args;
+
+typedef struct {
   size_t *ctr;
   size_t value;
 } ex_args;
 
 static void check_one(grpc_exec_ctx *exec_ctx, void *a) {
   ex_args *args = a;
+  // gpr_log(GPR_DEBUG, "*%p=%d; step %d", args->ctr, *args->ctr, args->value);
   GPR_ASSERT(*args->ctr == args->value - 1);
   *args->ctr = args->value;
 }
 
-static void execute_many_loop(void *lock) {
+static void execute_many_loop(void *a) {
+  thd_args *args = a;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  for (size_t i = 0; i < 100; i++) {
-    size_t ctr = 0;
-    for (size_t j = 1; j <= 1000; j++) {
-      ex_args args = {&ctr, j};
-      grpc_aelock_execute(&exec_ctx, lock, check_one, &args, sizeof(args));
+  size_t n = 1;
+  for (size_t i = 0; i < 10; i++) {
+    for (size_t j = 0; j < 1000; j++) {
+      ex_args c = {&args->ctr, n++};
+      grpc_aelock_execute(&exec_ctx, args->lock, check_one, &c, sizeof(c));
       grpc_exec_ctx_flush(&exec_ctx);
     }
-    gpr_sleep_until(GRPC_TIMEOUT_MILLIS_TO_DEADLINE(1));
+    gpr_sleep_until(GRPC_TIMEOUT_MILLIS_TO_DEADLINE(100));
   }
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_execute_many(void) {
+  gpr_log(GPR_DEBUG, "test_execute_many");
+
   grpc_aelock lock;
   gpr_thd_id thds[100];
+  thd_args ta[GPR_ARRAY_SIZE(thds)];
   grpc_aelock_init(&lock, NULL);
   for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
     gpr_thd_options options = gpr_thd_options_default();
     gpr_thd_options_set_joinable(&options);
-    GPR_ASSERT(gpr_thd_new(&thds[i], execute_many_loop, &lock, &options));
+    ta[i].ctr = 0;
+    ta[i].lock = &lock;
+    GPR_ASSERT(gpr_thd_new(&thds[i], execute_many_loop, &ta[i], &options));
   }
   for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
     gpr_thd_join(thds[i]);

@@ -40,11 +40,16 @@
 
 #define NO_CONSUMER ((gpr_atm)1)
 
+static void bad_action(grpc_exec_ctx *exec_ctx, void *arg) {
+  GPR_UNREACHABLE_CODE(return );
+}
+
 void grpc_aelock_init(grpc_aelock *lock, grpc_workqueue *optional_workqueue) {
   lock->optional_workqueue = optional_workqueue;
   gpr_atm_no_barrier_store(&lock->head, NO_CONSUMER);
-  lock->tail = &lock->stub;
-  gpr_atm_no_barrier_store(&lock->stub.next, 0);
+  gpr_atm_no_barrier_store(&lock->tombstone.next, 0);
+  lock->tombstone.action = bad_action;
+  lock->tail = &lock->tombstone;
 }
 
 void grpc_aelock_destroy(grpc_aelock *lock) {
@@ -56,15 +61,35 @@ static void finish(grpc_exec_ctx *exec_ctx, grpc_aelock *lock) {
     grpc_aelock_qnode *tail = lock->tail;
     grpc_aelock_qnode *next =
         (grpc_aelock_qnode *)gpr_atm_acq_load(&tail->next);
-    if (next == NULL) {
-      if (gpr_atm_rel_cas(&lock->head, (gpr_atm)&lock->stub, NO_CONSUMER)) {
-        return;
+    if (tail == &lock->tombstone) {
+      if (next == NULL) {
+        if (gpr_atm_rel_cas(&lock->head, (gpr_atm)&lock->tombstone,
+                            NO_CONSUMER)) {
+          return;
+        }
+      } else {
+        lock->tail = next;
+        tail = next;
+        next = (grpc_aelock_qnode *)gpr_atm_acq_load(&tail->next);
       }
-    } else {
+    }
+    if (next != NULL) {
       lock->tail = next;
-
-      next->action(exec_ctx, next->arg);
-      gpr_free(next);
+      tail->action(exec_ctx, tail->arg);
+      gpr_free(tail);
+    } else {
+      grpc_aelock_qnode *head =
+          (grpc_aelock_qnode *)gpr_atm_acq_load(&lock->head);
+      if (head != tail) {
+        // TODO(ctiller): consider sleeping?
+        continue;
+      }
+      gpr_atm_no_barrier_store(&lock->tombstone.next, 0);
+      while (!gpr_atm_rel_cas(&lock->head, (gpr_atm)head,
+                              (gpr_atm)&lock->tombstone)) {
+        head = (grpc_aelock_qnode *)gpr_atm_acq_load(&lock->head);
+      }
+      gpr_atm_rel_store(&head->next, (gpr_atm)&lock->tombstone);
     }
   }
 }
@@ -72,11 +97,11 @@ static void finish(grpc_exec_ctx *exec_ctx, grpc_aelock *lock) {
 void grpc_aelock_execute(grpc_exec_ctx *exec_ctx, grpc_aelock *lock,
                          grpc_aelock_action action, void *arg,
                          size_t sizeof_arg) {
-  gpr_atm cur;
+  gpr_atm head;
 retry_top:
-  cur = gpr_atm_acq_load(&lock->head);
-  if (cur == NO_CONSUMER) {
-    if (!gpr_atm_rel_cas(&lock->head, NO_CONSUMER, (gpr_atm)&lock->stub)) {
+  head = gpr_atm_acq_load(&lock->head);
+  if (head == NO_CONSUMER) {
+    if (!gpr_atm_rel_cas(&lock->head, NO_CONSUMER, (gpr_atm)&lock->tombstone)) {
       goto retry_top;
     }
     action(exec_ctx, arg);
@@ -86,18 +111,19 @@ retry_top:
 
   grpc_aelock_qnode *n = gpr_malloc(sizeof(*n) + sizeof_arg);
   n->action = action;
-  gpr_atm_no_barrier_store(&n->next, 0);
   if (sizeof_arg > 0) {
     memcpy(n + 1, arg, sizeof_arg);
     n->arg = n + 1;
   } else {
     n->arg = arg;
   }
-  while (!gpr_atm_rel_cas(&lock->head, cur, (gpr_atm)n)) {
+  gpr_atm_no_barrier_store(&n->next, 0);
+  while (!gpr_atm_rel_cas(&lock->head, head, (gpr_atm)n)) {
   retry_queue_load:
-    cur = gpr_atm_acq_load(&lock->head);
-    if (cur == NO_CONSUMER) {
-      if (!gpr_atm_rel_cas(&lock->head, NO_CONSUMER, (gpr_atm)&lock->stub)) {
+    head = gpr_atm_acq_load(&lock->head);
+    if (head == NO_CONSUMER) {
+      if (!gpr_atm_rel_cas(&lock->head, NO_CONSUMER,
+                           (gpr_atm)&lock->tombstone)) {
         goto retry_queue_load;
       }
       gpr_free(n);
@@ -106,5 +132,5 @@ retry_top:
       return;  // early out
     }
   }
-  gpr_atm_no_barrier_store(&((grpc_aelock_qnode *)cur)->next, (gpr_atm)n);
+  gpr_atm_rel_store(&((grpc_aelock_qnode *)head)->next, (gpr_atm)n);
 }

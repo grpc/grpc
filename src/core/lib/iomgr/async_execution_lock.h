@@ -52,7 +52,7 @@ typedef struct grpc_aelock {
   // grpc_aelock_qnode*
   gpr_atm head;
   grpc_aelock_qnode *tail;
-  grpc_aelock_qnode stub;
+  grpc_aelock_qnode tombstone;
 } grpc_aelock;
 
 void grpc_aelock_init(grpc_aelock *lock, grpc_workqueue *optional_workqueue);
