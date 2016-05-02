@@ -192,3 +192,12 @@ int grpc_metadata_batch_is_empty(grpc_metadata_batch *batch) {
          gpr_time_cmp(gpr_inf_future(batch->deadline.clock_type),
                       batch->deadline) == 0;
 }
+
+size_t grpc_metadata_batch_size(grpc_metadata_batch *batch) {
+  size_t size = 0;
+  for (grpc_linked_mdelem* elem = batch->list.head;
+       elem != NULL; elem = elem->next) {
+    size += GRPC_MDELEM_LENGTH(elem->md);
+  }
+  return size;
+}
