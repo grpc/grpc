@@ -164,10 +164,10 @@ void grpc_init(void) {
     grpc_register_tracer("channel_stack_builder",
                          &grpc_trace_channel_stack_builder);
     grpc_register_tracer("http1", &grpc_http1_trace);
+    grpc_register_tracer("compression", &grpc_compress_filter_trace);
     grpc_security_pre_init();
     grpc_iomgr_init();
     grpc_executor_init();
-    grpc_tracer_init("GRPC_TRACE");
     gpr_timers_global_init();
     grpc_cq_global_init();
     for (i = 0; i < g_number_of_plugins; i++) {
@@ -179,6 +179,7 @@ void grpc_init(void) {
      * at the appropriate time */
     grpc_register_security_filters();
     register_builtin_channel_init();
+    grpc_tracer_init("GRPC_TRACE");
     /* no more changes to channel init pipelines */
     grpc_channel_init_finalize();
   }

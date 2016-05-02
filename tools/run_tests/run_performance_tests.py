@@ -157,8 +157,9 @@ def archive_repo(languages):
     sys.exit(1)
 
 
-def prepare_remote_hosts(hosts):
-  """Prepares remote hosts."""
+def prepare_remote_hosts(hosts, prepare_local=False):
+  """Prepares remote hosts (and maybe prepare localhost as well)."""
+  prepare_timeout = 5*60
   prepare_jobs = []
   for host in hosts:
     user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, host)
@@ -167,13 +168,20 @@ def prepare_remote_hosts(hosts):
             cmdline=['tools/run_tests/performance/remote_host_prepare.sh'],
             shortname='remote_host_prepare.%s' % host,
             environ = {'USER_AT_HOST': user_at_host},
-            timeout_seconds=5*60))
-  jobset.message('START', 'Preparing remote hosts.', do_newline=True)
+            timeout_seconds=prepare_timeout))
+  if prepare_local:
+    # Prepare localhost as well
+    prepare_jobs.append(
+        jobset.JobSpec(
+            cmdline=['tools/run_tests/performance/kill_workers.sh'],
+            shortname='local_prepare',
+            timeout_seconds=prepare_timeout))
+  jobset.message('START', 'Preparing hosts.', do_newline=True)
   num_failures, _ = jobset.run(
       prepare_jobs, newline_on_success=True, maxjobs=10)
   if num_failures == 0:
     jobset.message('SUCCESS',
-                   'Remote hosts ready to start build.',
+                   'Prepare step completed successfully.',
                    do_newline=True)
   else:
     jobset.message('FAILED', 'Failed to prepare remote hosts.',
@@ -238,6 +246,9 @@ def start_qpsworkers(languages, worker_hosts):
 def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*',
                      bq_result_table=None):
   """Create jobspecs for scenarios to run."""
+  all_workers = [worker
+                 for workers in workers_by_lang.values()
+                 for worker in workers]
   scenarios = []
   for language in languages:
     for scenario_json in language.scenarios():
@@ -263,9 +274,6 @@ def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*',
         scenarios.append(scenario)
 
   # the very last scenario requests shutting down the workers.
-  all_workers = [worker
-                 for workers in workers_by_lang.values()
-                 for worker in workers]
   scenarios.append(create_quit_jobspec(all_workers, remote_host=remote_host))
   return scenarios
 
@@ -322,7 +330,9 @@ if args.remote_driver_host:
 
 if remote_hosts:
   archive_repo(languages=[str(l) for l in languages])
-  prepare_remote_hosts(remote_hosts)
+  prepare_remote_hosts(remote_hosts, prepare_local=True)
+else:
+  prepare_remote_hosts([], prepare_local=True)
 
 build_local = False
 if not args.remote_driver_host:
