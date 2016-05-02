@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -28,40 +27,19 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+# This is based on http://stackoverflow.com/a/171011/159388 by Aaron Hinni
 
-cd $(dirname $0)/../..
+require 'rbconfig'
 
-base=$(pwd)
-
-mkdir -p artifacts/
-
-# All the ruby packages have been built in the artifact phase already
-# and we only collect them here to deliver them to the distribtest phase.
-cp -r $EXTERNAL_GIT_ROOT/architecture={x86,x64},language=ruby,platform={windows,linux,macos}/artifacts/* artifacts/ || true
-
-# TODO: all the artifact builder configurations generate a grpc-VERSION.gem
-# source distribution package, and only one of them will end up
-# in the artifacts/ directory. They should be all equivalent though.
-
-for arch in {x86,x64}; do
-  case $arch in
-    x64)
-      ruby_arch=x86_64
-      ;;
-    *)
-      ruby_arch=$arch
-      ;;
-  esac
-  for plat in {windows,linux,macos}; do
-    input_dir="$EXTERNAL_GIT_ROOT/architecture=$arch,language=protoc,platform=$plat/artifacts"
-    output_dir="$base/src/ruby/tools/bin/${ruby_arch}-${plat}"
-    mkdir -p $output_dir
-    cp $input_dir/protoc* $output_dir/
-    cp $input_dir/grpc_ruby_plugin* $output_dir/
-  done
-done
-
-cd $base/src/ruby/tools
-gem build grpc-tools.gemspec
-cp ./grpc-tools*.gem $base/artifacts/
+module OS
+  def OS.os_name
+    case RbConfig::CONFIG['host_os']
+    when /cygwin|mswin|mingw|bccwin|wince|emx/
+      'windows'
+    when /darwin/
+      'macos'
+    else
+      'linux'
+    end
+  end
+end
