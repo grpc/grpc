@@ -323,7 +323,8 @@ struct grpc_chttp2_transport {
     /** is a thread currently parsing */
     bool parsing_active;
 
-    grpc_chttp2_executor_action_header *pending_actions;
+    grpc_chttp2_executor_action_header *pending_actions_head;
+    grpc_chttp2_executor_action_header *pending_actions_tail;
   } executor;
 
   /** is the transport destroying itself? */
