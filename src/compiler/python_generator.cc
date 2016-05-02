@@ -190,7 +190,7 @@ bool PrintBetaServicer(const ServiceDescriptor* service,
         "Documentation", doc,
       });
   out->Print("\n");
-  out->Print(dict, "class Beta$Service$Servicer(six.with_metaclass(abc.ABCMeta, object)):\n");
+  out->Print(dict, "class Beta$Service$Servicer(object):\n");
   {
     IndentScope raii_class_indent(out);
     out->Print(dict, "\"\"\"$Documentation$\"\"\"\n");
@@ -198,12 +198,11 @@ bool PrintBetaServicer(const ServiceDescriptor* service,
       auto meth = service->method(i);
       grpc::string arg_name = meth->client_streaming() ?
           "request_iterator" : "request";
-      out->Print("@abc.abstractmethod\n");
       out->Print("def $Method$(self, $ArgName$, context):\n",
                  "Method", meth->name(), "ArgName", arg_name);
       {
         IndentScope raii_method_indent(out);
-        out->Print("raise NotImplementedError()\n");
+        out->Print("context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)\n");
       }
     }
   }
@@ -218,7 +217,7 @@ bool PrintBetaStub(const ServiceDescriptor* service,
         "Documentation", doc,
       });
   out->Print("\n");
-  out->Print(dict, "class Beta$Service$Stub(six.with_metaclass(abc.ABCMeta, object)):\n");
+  out->Print(dict, "class Beta$Service$Stub(object):\n");
   {
     IndentScope raii_class_indent(out);
     out->Print(dict, "\"\"\"$Documentation$\"\"\"\n");
@@ -227,7 +226,6 @@ bool PrintBetaStub(const ServiceDescriptor* service,
       grpc::string arg_name = meth->client_streaming() ?
           "request_iterator" : "request";
       auto methdict = ListToDict({"Method", meth->name(), "ArgName", arg_name});
-      out->Print("@abc.abstractmethod\n");
       out->Print(methdict, "def $Method$(self, $ArgName$, timeout):\n");
       {
         IndentScope raii_method_indent(out);
@@ -449,6 +447,8 @@ bool PrintPreamble(const FileDescriptor* file,
   out->Print("import abc\n");
   out->Print("import six\n");
   out->Print("from $Package$ import implementations as beta_implementations\n",
+             "Package", config.beta_package_root);
+  out->Print("from $Package$ import interfaces as beta_interfaces\n",
              "Package", config.beta_package_root);
   out->Print("from grpc.framework.common import cardinality\n");
   out->Print("from grpc.framework.interfaces.face import utilities as face_utilities\n");
