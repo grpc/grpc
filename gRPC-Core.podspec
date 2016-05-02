@@ -56,6 +56,8 @@ Pod::Spec.new do |s|
   s.module_name = name
   s.header_dir = name
 
+  s.module_map = 'include/grpc/module.modulemap'
+
   s.source_files = 'src/core/lib/profiling/timers.h',
                    'src/core/lib/support/backoff.h',
                    'src/core/lib/support/block_annotate.h',
