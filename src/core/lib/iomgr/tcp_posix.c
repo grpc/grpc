@@ -98,6 +98,10 @@ typedef struct {
   grpc_closure read_closure;
   grpc_closure write_closure;
 
+  /* Mechanism to prevent multiple shutdowns on a socket */
+  gpr_mu mu;
+  int shutting_down;
+
   char *peer_string;
 } grpc_tcp;
 
@@ -108,7 +112,16 @@ static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
 
 static void tcp_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
-  grpc_fd_shutdown(exec_ctx, tcp->em_fd);
+  gpr_mu_lock(&tcp->mu);
+  /* We may already be in the process of shutting down, for example
+   * due to network status change. In this case do nothing. */
+  if (tcp->shutting_down == 0) {
+    /* At that point, what may happen is that we're already inside the
+     * IOCP callback. See the comments in on_read and on_write. */
+    tcp->shutting_down = 1;
+    grpc_fd_shutdown(exec_ctx, tcp->em_fd);
+  }
+  gpr_mu_unlock(&tcp->mu);
 }
 
 static void tcp_free(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
@@ -471,8 +484,9 @@ grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd, size_t slice_size,
   tcp->write_closure.cb = tcp_handle_write;
   tcp->write_closure.cb_arg = tcp;
   gpr_slice_buffer_init(&tcp->last_read_buffer);
+  gpr_mu_init(&tcp->mu);
   /* Tell network status tracker about new endpoint */
-  network_status_register_endpoint(&tcp->base);
+  grpc_network_status_register_endpoint(&tcp->base);
 
   return &tcp->base;
 }

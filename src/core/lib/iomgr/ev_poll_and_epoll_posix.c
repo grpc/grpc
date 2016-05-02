@@ -547,13 +547,10 @@ static int set_ready_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 
 static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
   gpr_mu_lock(&fd->mu);
-  /* We may already be in the process of shutting down, for example
-   * due to network status change. In this case do nothing. */
-  if (!fd->shutdown) {
-    fd->shutdown = 1;
-    set_ready_locked(exec_ctx, fd, &fd->read_closure);
-    set_ready_locked(exec_ctx, fd, &fd->write_closure);
-  }
+  GPR_ASSERT(!fd->shutdown);
+  fd->shutdown = 1;
+  set_ready_locked(exec_ctx, fd, &fd->read_closure);
+  set_ready_locked(exec_ctx, fd, &fd->write_closure);
   gpr_mu_unlock(&fd->mu);
 }
 

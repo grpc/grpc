@@ -44,7 +44,7 @@
 #include "test/core/end2end/cq_verifier.h"
 
 /* this is a private API but exposed here for testing*/
-extern void network_status_shutdown_all_endpoints();
+extern void grpc_network_status_shutdown_all_endpoints();
 
 enum { TIMEOUT = 200000 };
 
@@ -186,7 +186,7 @@ static void test_invoke_network_status_change(grpc_end2end_test_config config) {
 
   cq_expect_completion(cqv, tag(102), 1);
   // Simulate the network loss event
-  network_status_shutdown_all_endpoints();
+  grpc_network_status_shutdown_all_endpoints();
   cq_verify(cqv);
 
   op = ops;
