@@ -84,14 +84,14 @@ RUN apt-get -y install msttcorefonts
 # Download source and build NaCl SDK
 RUN git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
 ENV PATH $pwd/depot_tools:$PATH
-RUN mkdir chromium && cd chromium && \
-  fetch --nohooks --no-history chromium && \
-  cd src && ./build/install-build-deps.sh --nacl --no-prompt && \
-  # The GYP_DEFINES is needed to install some ARM-specific tools necessary to
-  # build the SDK.
-  # https://chromium.googlesource.com/chromium/src/+/master/native_client_sdk/src/BUILDING.rst
-  GYP_DEFINES=target_arch=arm gclient runhooks && \
-  ./native_client_sdk/src/build_tools/build_sdk.py
+RUN mkdir /chromium && cd /chromium && \
+  fetch --nohooks --no-history chromium
+RUN cd /chromium/src && ./build/install-build-deps.sh --nacl --no-prompt
+# The GYP_DEFINES is needed to install some ARM-specific tools necessary to
+# build the SDK.
+# https://chromium.googlesource.com/chromium/src/+/master/native_client_sdk/src/BUILDING.rst
+RUN cd /chromium && GYP_DEFINES=target_arch=arm gclient runhooks
+RUN cd /chromium/src && ./native_client_sdk/src/build_tools/build_sdk.py
 
 # Prepare ccache
 RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
