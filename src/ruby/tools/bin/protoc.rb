@@ -30,14 +30,7 @@
 
 require 'rbconfig'
 
-require_relative '../os_check'
-
-protoc_name = case OS.os_name
-              when 'windows'
-                'protoc.exe'
-              else
-                'protoc'
-              end
+protoc_name = 'protoc' + RbConfig::CONFIG['EXEEXT']
 
 protoc_path = File.join(File.dirname(__FILE__),
                         RbConfig::CONFIG['host_cpu'] + '-' + OS.os_name,

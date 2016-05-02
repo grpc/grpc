@@ -30,14 +30,7 @@
 
 require 'rbconfig'
 
-require_relative '../os_check'
-
-plugin_name = 'grpc_ruby_plugin' + case OS.os_name
-                                   when 'windows'
-                                     '.exe'
-                                   else
-                                     ''
-                                   end
+plugin_name = 'grpc_ruby_plugin' + RbConfig::CONFIG['EXEEXT']
 
 plugin_path = File.join(File.dirname(__FILE__),
                         RbConfig::CONFIG['host_cpu'] + '-' + OS.os_name,
