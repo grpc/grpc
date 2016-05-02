@@ -192,6 +192,7 @@
     <file baseinstalldir="/" name="src/core/lib/http/format_request.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/httpcli.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/parser.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/async_execution_lock.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/closure.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair.h" role="src" />
@@ -328,6 +329,7 @@
     <file baseinstalldir="/" name="src/core/lib/http/format_request.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/httpcli.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/parser.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/async_execution_lock.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/closure.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair_posix.c" role="src" />

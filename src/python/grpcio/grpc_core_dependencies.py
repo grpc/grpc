@@ -90,6 +90,7 @@ CORE_SOURCE_FILES = [
   'src/core/lib/http/format_request.c',
   'src/core/lib/http/httpcli.c',
   'src/core/lib/http/parser.c',
+  'src/core/lib/iomgr/async_execution_lock.c',
   'src/core/lib/iomgr/closure.c',
   'src/core/lib/iomgr/endpoint.c',
   'src/core/lib/iomgr/endpoint_pair_posix.c',

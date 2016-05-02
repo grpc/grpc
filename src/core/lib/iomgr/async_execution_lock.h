@@ -34,6 +34,11 @@
 #ifndef AEL_H
 #define AEL_H
 
+#include <stddef.h>
+
+#include <grpc/support/atm.h>
+#include "src/core/lib/iomgr/exec_ctx.h"
+
 typedef void (*grpc_aelock_action)(grpc_exec_ctx *exec_ctx, void *arg);
 
 typedef struct grpc_aelock_qnode {
@@ -44,10 +49,11 @@ typedef struct grpc_aelock_qnode {
 
 typedef struct grpc_aelock {
   grpc_workqueue *optional_workqueue;
+  // grpc_aelock_qnode*
   gpr_atm head;
-  struct grpc_aelock *tail;
+  grpc_aelock_qnode *tail;
   grpc_aelock_qnode stub;
-};
+} grpc_aelock;
 
 void grpc_aelock_init(grpc_aelock *lock, grpc_workqueue *optional_workqueue);
 void grpc_aelock_destroy(grpc_aelock *lock);

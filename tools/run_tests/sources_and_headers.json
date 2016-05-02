@@ -81,6 +81,22 @@
   }, 
   {
     "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "async_execution_lock_test", 
+    "src": [
+      "test/core/iomgr/async_execution_lock_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
       "grpc", 
       "grpc_test_util"
     ], 
@@ -5606,6 +5622,7 @@
       "src/core/lib/http/format_request.h", 
       "src/core/lib/http/httpcli.h", 
       "src/core/lib/http/parser.h", 
+      "src/core/lib/iomgr/async_execution_lock.h", 
       "src/core/lib/iomgr/closure.h", 
       "src/core/lib/iomgr/endpoint.h", 
       "src/core/lib/iomgr/endpoint_pair.h", 
@@ -5701,6 +5718,8 @@
       "src/core/lib/http/httpcli.h", 
       "src/core/lib/http/parser.c", 
       "src/core/lib/http/parser.h", 
+      "src/core/lib/iomgr/async_execution_lock.c", 
+      "src/core/lib/iomgr/async_execution_lock.h", 
       "src/core/lib/iomgr/closure.c", 
       "src/core/lib/iomgr/closure.h", 
       "src/core/lib/iomgr/endpoint.c", 

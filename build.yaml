@@ -162,6 +162,7 @@ filegroups:
   - src/core/lib/http/format_request.h
   - src/core/lib/http/httpcli.h
   - src/core/lib/http/parser.h
+  - src/core/lib/iomgr/async_execution_lock.h
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/endpoint.h
   - src/core/lib/iomgr/endpoint_pair.h
@@ -235,6 +236,7 @@ filegroups:
   - src/core/lib/http/format_request.c
   - src/core/lib/http/httpcli.c
   - src/core/lib/http/parser.c
+  - src/core/lib/iomgr/async_execution_lock.c
   - src/core/lib/iomgr/closure.c
   - src/core/lib/iomgr/endpoint.c
   - src/core/lib/iomgr/endpoint_pair_posix.c
@@ -1137,6 +1139,16 @@ targets:
   - test/core/end2end/fuzzers/api_fuzzer_corpus
   dict: test/core/end2end/fuzzers/api_fuzzer.dictionary
   maxlen: 2048
+- name: async_execution_lock_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/async_execution_lock_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: bin_encoder_test
   build: test
   language: c

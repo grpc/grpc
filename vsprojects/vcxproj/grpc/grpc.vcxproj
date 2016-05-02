@@ -311,6 +311,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\http\format_request.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\http\httpcli.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\http\parser.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\async_execution_lock.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\closure.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint_pair.h" />
@@ -462,6 +463,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\http\httpcli.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\http\parser.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\async_execution_lock.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\closure.c">
     </ClCompile>

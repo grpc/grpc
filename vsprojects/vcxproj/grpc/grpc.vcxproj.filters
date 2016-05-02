@@ -43,6 +43,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\http\parser.c">
       <Filter>src\core\lib\http</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\async_execution_lock.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\closure.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
@@ -625,6 +628,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\http\parser.h">
       <Filter>src\core\lib\http</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\async_execution_lock.h">
+      <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\closure.h">
       <Filter>src\core\lib\iomgr</Filter>

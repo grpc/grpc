@@ -882,6 +882,7 @@ algorithm_test: $(BINDIR)/$(CONFIG)/algorithm_test
 alloc_test: $(BINDIR)/$(CONFIG)/alloc_test
 alpn_test: $(BINDIR)/$(CONFIG)/alpn_test
 api_fuzzer: $(BINDIR)/$(CONFIG)/api_fuzzer
+async_execution_lock_test: $(BINDIR)/$(CONFIG)/async_execution_lock_test
 bin_encoder_test: $(BINDIR)/$(CONFIG)/bin_encoder_test
 census_context_test: $(BINDIR)/$(CONFIG)/census_context_test
 channel_create_test: $(BINDIR)/$(CONFIG)/channel_create_test
@@ -1218,6 +1219,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/algorithm_test \
   $(BINDIR)/$(CONFIG)/alloc_test \
   $(BINDIR)/$(CONFIG)/alpn_test \
+  $(BINDIR)/$(CONFIG)/async_execution_lock_test \
   $(BINDIR)/$(CONFIG)/bin_encoder_test \
   $(BINDIR)/$(CONFIG)/census_context_test \
   $(BINDIR)/$(CONFIG)/channel_create_test \
@@ -1472,6 +1474,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/alloc_test || ( echo test alloc_test failed ; exit 1 )
 	$(E) "[RUN]     Testing alpn_test"
 	$(Q) $(BINDIR)/$(CONFIG)/alpn_test || ( echo test alpn_test failed ; exit 1 )
+	$(E) "[RUN]     Testing async_execution_lock_test"
+	$(Q) $(BINDIR)/$(CONFIG)/async_execution_lock_test || ( echo test async_execution_lock_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bin_encoder_test"
 	$(Q) $(BINDIR)/$(CONFIG)/bin_encoder_test || ( echo test bin_encoder_test failed ; exit 1 )
 	$(E) "[RUN]     Testing census_context_test"
@@ -2491,6 +2495,7 @@ LIBGRPC_SRC = \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
+    src/core/lib/iomgr/async_execution_lock.c \
     src/core/lib/iomgr/closure.c \
     src/core/lib/iomgr/endpoint.c \
     src/core/lib/iomgr/endpoint_pair_posix.c \
@@ -2832,6 +2837,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/http/format_request.c \
     src/core/lib/http/httpcli.c \
     src/core/lib/http/parser.c \
+    src/core/lib/iomgr/async_execution_lock.c \
     src/core/lib/iomgr/closure.c \
     src/core/lib/iomgr/endpoint.c \
     src/core/lib/iomgr/endpoint_pair_posix.c \
@@ -6110,6 +6116,38 @@ deps_api_fuzzer: $(API_FUZZER_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(API_FUZZER_OBJS:.o=.dep)
+endif
+endif
+
+
+ASYNC_EXECUTION_LOCK_TEST_SRC = \
+    test/core/iomgr/async_execution_lock_test.c \
+
+ASYNC_EXECUTION_LOCK_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ASYNC_EXECUTION_LOCK_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/async_execution_lock_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/async_execution_lock_test: $(ASYNC_EXECUTION_LOCK_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(ASYNC_EXECUTION_LOCK_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/async_execution_lock_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/iomgr/async_execution_lock_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_async_execution_lock_test: $(ASYNC_EXECUTION_LOCK_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(ASYNC_EXECUTION_LOCK_TEST_OBJS:.o=.dep)
 endif
 endif
 

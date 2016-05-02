@@ -802,6 +802,7 @@ src/core/lib/debug/trace.h \
 src/core/lib/http/format_request.h \
 src/core/lib/http/httpcli.h \
 src/core/lib/http/parser.h \
+src/core/lib/iomgr/async_execution_lock.h \
 src/core/lib/iomgr/closure.h \
 src/core/lib/iomgr/endpoint.h \
 src/core/lib/iomgr/endpoint_pair.h \
@@ -938,6 +939,7 @@ src/core/lib/debug/trace.c \
 src/core/lib/http/format_request.c \
 src/core/lib/http/httpcli.c \
 src/core/lib/http/parser.c \
+src/core/lib/iomgr/async_execution_lock.c \
 src/core/lib/iomgr/closure.c \
 src/core/lib/iomgr/endpoint.c \
 src/core/lib/iomgr/endpoint_pair_posix.c \
