@@ -42,27 +42,33 @@
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/surface/channel_init.h"
 
-struct grpc_load_reporting_data {
+struct grpc_load_reporting_config {
   grpc_load_reporting_fn fn;
   void *data;
 };
 
-grpc_load_reporting_data *grpc_load_reporting_create(grpc_load_reporting_fn fn,
-                                                     void *data) {
-  grpc_load_reporting_data *lrd = gpr_malloc(sizeof(grpc_load_reporting_data));
-  lrd->fn = fn;
-  lrd->data = data;
-  return lrd;
+grpc_load_reporting_config *grpc_load_reporting_config_create(
+    grpc_load_reporting_fn fn, void *data) {
+  grpc_load_reporting_config *lrc =
+      gpr_malloc(sizeof(grpc_load_reporting_config));
+  lrc->fn = fn;
+  lrc->data = data;
+  return lrc;
 }
 
-void grpc_load_reporting_destroy(grpc_load_reporting_data *lrd) {
-  gpr_free(lrd);
+grpc_load_reporting_config *grpc_load_reporting_config_copy(
+    grpc_load_reporting_config *src) {
+  return grpc_load_reporting_config_create(src->fn, src->data);
 }
 
-void grpc_load_reporting_call(grpc_load_reporting_data *lrd,
-    const grpc_call_stats *stats) {
-  if (lrd->fn != NULL) {
-    lrd->fn(lrd->data, stats);
+void grpc_load_reporting_config_destroy(grpc_load_reporting_config *lrc) {
+  gpr_free(lrc);
+}
+
+void grpc_load_reporting_config_call(grpc_load_reporting_config *lrc,
+                                     const grpc_call_stats *stats) {
+  if (lrc->fn != NULL) {
+    lrc->fn(stats, lrc->data);
   }
 }
 
@@ -85,6 +91,31 @@ static bool maybe_add_load_reporting_filter(grpc_channel_stack_builder *builder,
         builder, (const grpc_channel_filter *)arg, NULL, NULL);
   }
   return true;
+}
+
+static void lrd_arg_destroy(void *p) { grpc_load_reporting_config_destroy(p); }
+
+static void *lrd_arg_copy(void *p) {
+  return grpc_load_reporting_config_copy(p);
+}
+
+static int lrd_arg_cmp(void *a, void *b) {
+  grpc_load_reporting_config *lhs = a;
+  grpc_load_reporting_config *rhs = b;
+  return !(lhs->fn == rhs->fn && lhs->data == rhs->data);
+}
+
+static const grpc_arg_pointer_vtable lrd_ptr_vtable = {
+    lrd_arg_copy, lrd_arg_destroy, lrd_arg_cmp};
+
+grpc_arg grpc_load_reporting_config_create_arg(
+    grpc_load_reporting_config *lrc) {
+  grpc_arg arg;
+  arg.type = GRPC_ARG_POINTER;
+  arg.key = GRPC_ARG_ENABLE_LOAD_REPORTING;
+  arg.value.pointer.p = lrc;
+  arg.value.pointer.vtable = &lrd_ptr_vtable;
+  return arg;
 }
 
 /* Plugin registration */

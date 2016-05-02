@@ -823,6 +823,7 @@ libs:
   - grpc_transport_chttp2_client_insecure
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
+  - grpc_load_reporting
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin

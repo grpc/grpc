@@ -31,8 +31,8 @@
  *
  */
 
-#include <string.h>
 #include <grpc/support/log.h>
+#include <string.h>
 
 #include "src/core/ext/load_reporting/load_reporting.h"
 #include "src/core/ext/load_reporting/load_reporting_filter.h"
@@ -40,7 +40,7 @@
 #include "src/core/lib/profiling/timers.h"
 
 typedef struct call_data { void *dummy; } call_data;
-typedef struct channel_data { grpc_load_reporting_data *lrd; } channel_data;
+typedef struct channel_data { grpc_load_reporting_config *lrc; } channel_data;
 
 /* Constructor for call_data */
 static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
@@ -50,9 +50,11 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_stats *stats, void *ignored) {
   channel_data *chand = elem->channel_data;
-  GPR_TIMER_BEGIN("load_reporting_filter", 0);
-  grpc_load_reporting_call(chand->lrd, stats);
-  GPR_TIMER_END("load_reporting_filter", 0);
+  if (chand->lrc != NULL) {
+    GPR_TIMER_BEGIN("load_reporting_filter", 0);
+    grpc_load_reporting_config_call(chand->lrc, stats);
+    GPR_TIMER_END("load_reporting_filter", 0);
+  }
 }
 
 /* Constructor for channel_data */
@@ -65,20 +67,23 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
   memset(chand, 0, sizeof(channel_data));
 
   for (size_t i = 0; i < args->channel_args->num_args; i++) {
-    if (0 == strcmp(args->channel_args->args[i].key, GRPC_ARG_ENABLE_LOAD_REPORTING)) {
-      chand->lrd = args->channel_args->args[i].value.pointer.p;
-      GPR_ASSERT(chand->lrd != NULL);
+    if (0 == strcmp(args->channel_args->args[i].key,
+                    GRPC_ARG_ENABLE_LOAD_REPORTING)) {
+      grpc_load_reporting_config *arg_lrc =
+          args->channel_args->args[i].value.pointer.p;
+      chand->lrc = grpc_load_reporting_config_copy(arg_lrc);
+      GPR_ASSERT(chand->lrc != NULL);
+      break;
     }
   }
-  GPR_ASSERT(chand->lrd != NULL); /* arg actually found */
-
+  GPR_ASSERT(chand->lrc != NULL); /* arg actually found */
 }
 
 /* Destructor for channel data */
 static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem) {
   channel_data *chand = elem->channel_data;
-  grpc_load_reporting_destroy(chand->lrd);
+  grpc_load_reporting_config_destroy(chand->lrc);
 }
 
 const grpc_channel_filter grpc_load_reporting_filter = {
