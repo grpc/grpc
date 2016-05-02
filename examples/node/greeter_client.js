@@ -1,3 +1,4 @@
+'use strict';
 /*
  *
  * Copyright 2015, Google Inc.
@@ -31,15 +32,16 @@
  *
  */
 
-var PROTO_PATH = __dirname + '/../protos/helloworld.proto';
+const PROTO_PATH = __dirname + '/../protos/helloworld.proto';
+const SERVER_ADDRESS = 'localhost:50051';
 
-var grpc = require('grpc');
-var hello_proto = grpc.load(PROTO_PATH).helloworld;
+const grpc = require('grpc');
+const hello_proto = grpc.load(PROTO_PATH).helloworld;
 
 function main() {
-  var client = new hello_proto.Greeter('localhost:50051',
+  const client = new hello_proto.Greeter(SERVER_ADDRESS,
                                        grpc.credentials.createInsecure());
-  var user;
+  let user;
   if (process.argv.length >= 3) {
     user = process.argv[2];
   } else {
