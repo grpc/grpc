@@ -201,15 +201,24 @@ class Verifier {
 
 class TestScenario {
  public:
-  TestScenario(bool non_block, const grpc::string& creds_type)
-      : disable_blocking(non_block), credentials_type(creds_type) {}
+  TestScenario(bool non_block, const grpc::string& creds_type,
+               const grpc::string& content)
+      : disable_blocking(non_block),
+        credentials_type(creds_type),
+        message_content(content) {}
+  void Log() const {
+    gpr_log(GPR_INFO,
+            "Scenario: disable_blocking %d, credentials %s, message size %d",
+            disable_blocking, credentials_type.c_str(), message_content.size());
+  }
   bool disable_blocking;
   const grpc::string credentials_type;
+  const grpc::string message_content;
 };
 
 class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
  protected:
-  AsyncEnd2endTest() {}
+  AsyncEnd2endTest() { GetParam().Log(); }
 
   void SetUp() GRPC_OVERRIDE {
     poll_overrider_.reset(new PollingOverrider(!GetParam().disable_blocking));
@@ -260,7 +269,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
       ServerContext srv_ctx;
       grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
 
-      send_request.set_message("Hello");
+      send_request.set_message(GetParam().message_content);
       std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
           stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
 
@@ -315,7 +324,7 @@ TEST_P(AsyncEnd2endTest, AsyncNextRpc) {
   ServerContext srv_ctx;
   grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
 
-  send_request.set_message("Hello");
+  send_request.set_message(GetParam().message_content);
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
 
@@ -362,7 +371,7 @@ TEST_P(AsyncEnd2endTest, SimpleClientStreaming) {
   ServerContext srv_ctx;
   ServerAsyncReader<EchoResponse, EchoRequest> srv_stream(&srv_ctx);
 
-  send_request.set_message("Hello");
+  send_request.set_message(GetParam().message_content);
   std::unique_ptr<ClientAsyncWriter<EchoRequest>> cli_stream(
       stub_->AsyncRequestStream(&cli_ctx, &recv_response, cq_.get(), tag(1)));
 
@@ -418,7 +427,7 @@ TEST_P(AsyncEnd2endTest, SimpleServerStreaming) {
   ServerContext srv_ctx;
   ServerAsyncWriter<EchoResponse> srv_stream(&srv_ctx);
 
-  send_request.set_message("Hello");
+  send_request.set_message(GetParam().message_content);
   std::unique_ptr<ClientAsyncReader<EchoResponse>> cli_stream(
       stub_->AsyncResponseStream(&cli_ctx, send_request, cq_.get(), tag(1)));
 
@@ -471,7 +480,7 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreaming) {
   ServerContext srv_ctx;
   ServerAsyncReaderWriter<EchoResponse, EchoRequest> srv_stream(&srv_ctx);
 
-  send_request.set_message("Hello");
+  send_request.set_message(GetParam().message_content);
   std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse>>
       cli_stream(stub_->AsyncBidiStream(&cli_ctx, cq_.get(), tag(1)));
 
@@ -527,7 +536,7 @@ TEST_P(AsyncEnd2endTest, ClientInitialMetadataRpc) {
   ServerContext srv_ctx;
   grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
 
-  send_request.set_message("Hello");
+  send_request.set_message(GetParam().message_content);
   std::pair<grpc::string, grpc::string> meta1("key1", "val1");
   std::pair<grpc::string, grpc::string> meta2("key2", "val2");
   std::pair<grpc::string, grpc::string> meta3("g.r.d-bin", "xyz");
@@ -576,7 +585,7 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataRpc) {
   ServerContext srv_ctx;
   grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
 
-  send_request.set_message("Hello");
+  send_request.set_message(GetParam().message_content);
   std::pair<grpc::string, grpc::string> meta1("key1", "val1");
   std::pair<grpc::string, grpc::string> meta2("key2", "val2");
 
@@ -625,7 +634,7 @@ TEST_P(AsyncEnd2endTest, ServerTrailingMetadataRpc) {
   ServerContext srv_ctx;
   grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
 
-  send_request.set_message("Hello");
+  send_request.set_message(GetParam().message_content);
   std::pair<grpc::string, grpc::string> meta1("key1", "val1");
   std::pair<grpc::string, grpc::string> meta2("key2", "val2");
 
@@ -671,7 +680,7 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
   ServerContext srv_ctx;
   grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
 
-  send_request.set_message("Hello");
+  send_request.set_message(GetParam().message_content);
   std::pair<grpc::string, grpc::string> meta1("key1", "val1");
   std::pair<grpc::string, grpc::string> meta2(
       "key2-bin",
@@ -750,7 +759,7 @@ TEST_P(AsyncEnd2endTest, ServerCheckCancellation) {
   ServerContext srv_ctx;
   grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
 
-  send_request.set_message("Hello");
+  send_request.set_message(GetParam().message_content);
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
 
@@ -785,7 +794,7 @@ TEST_P(AsyncEnd2endTest, ServerCheckDone) {
   ServerContext srv_ctx;
   grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
 
-  send_request.set_message("Hello");
+  send_request.set_message(GetParam().message_content);
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
 
@@ -822,7 +831,7 @@ TEST_P(AsyncEnd2endTest, UnimplementedRpc) {
   Status recv_status;
 
   ClientContext cli_ctx;
-  send_request.set_message("Hello");
+  send_request.set_message(GetParam().message_content);
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub->AsyncUnimplemented(&cli_ctx, send_request, cq_.get()));
 
@@ -1319,28 +1328,47 @@ TEST_P(AsyncEnd2endServerTryCancelTest, ServerBidiStreamingTryCancelAfter) {
 }
 
 std::vector<TestScenario> CreateTestScenarios(bool test_disable_blocking,
-                                              bool test_secure) {
+                                              bool test_secure,
+                                              int test_big_limit) {
   std::vector<TestScenario> scenarios;
   std::vector<grpc::string> credentials_types;
-  if (test_secure) {
-    credentials_types = GetSecureCredentialsTypeList();
-  }
+  std::vector<grpc::string> messages;
+
   credentials_types.push_back(kInsecureCredentialsType);
-  for (auto it = credentials_types.begin(); it != credentials_types.end();
-       ++it) {
-    scenarios.push_back(TestScenario(false, *it));
-    if (test_disable_blocking) {
-      scenarios.push_back(TestScenario(true, *it));
+  auto sec_list = GetSecureCredentialsTypeList();
+  for (auto sec = sec_list.begin(); sec != sec_list.end(); sec++) {
+    credentials_types.push_back(*sec);
+  }
+
+  messages.push_back("Hello");
+  for (int sz = 1; sz < test_big_limit; sz *= 2) {
+    grpc::string big_msg;
+    for (int i = 0; i < sz * 1024; i++) {
+      char c = 'a' + (i % 26);
+      big_msg += c;
+    }
+    messages.push_back(big_msg);
+  }
+
+  for (auto cred = credentials_types.begin(); cred != credentials_types.end();
+       ++cred) {
+    for (auto msg = messages.begin(); msg != messages.end(); msg++) {
+      scenarios.push_back(TestScenario(false, *cred, *msg));
+      if (test_disable_blocking) {
+        scenarios.push_back(TestScenario(true, *cred, *msg));
+      }
     }
   }
   return scenarios;
 }
 
 INSTANTIATE_TEST_CASE_P(AsyncEnd2end, AsyncEnd2endTest,
-                        ::testing::ValuesIn(CreateTestScenarios(true, true)));
+                        ::testing::ValuesIn(CreateTestScenarios(true, true,
+                                                                1024)));
 INSTANTIATE_TEST_CASE_P(AsyncEnd2endServerTryCancel,
                         AsyncEnd2endServerTryCancelTest,
-                        ::testing::ValuesIn(CreateTestScenarios(false, false)));
+                        ::testing::ValuesIn(CreateTestScenarios(false, false,
+                                                                0)));
 
 }  // namespace
 }  // namespace testing
