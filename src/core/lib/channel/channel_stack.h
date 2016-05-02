@@ -117,7 +117,7 @@ typedef struct {
      \a and_free_memory that should be passed to gpr_free when destruction
      is complete. */
   void (*destroy_call_elem)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-      const grpc_call_stats *stats,
+                            const grpc_call_stats *stats,
                             void *and_free_memory);
 
   /* sizeof(per channel data) */
