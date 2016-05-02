@@ -63,39 +63,45 @@ typedef struct {
   grpc_endpoint **endpoint;
 } async_connect;
 
-static void async_connect_unlock_and_cleanup(async_connect *ac) {
+static void async_connect_unlock_and_cleanup(async_connect *ac,
+                                             grpc_winsocket *socket) {
   int done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
   if (done) {
-    if (ac->socket != NULL) grpc_winsocket_destroy(ac->socket);
     gpr_mu_destroy(&ac->mu);
     gpr_free(ac->addr_name);
     gpr_free(ac);
   }
+  if (socket != NULL) grpc_winsocket_destroy(socket);
 }
 
 static void on_alarm(grpc_exec_ctx *exec_ctx, void *acp, bool occured) {
   async_connect *ac = acp;
   gpr_mu_lock(&ac->mu);
-  /* If the alarm didn't occur, it got cancelled. */
-  if (ac->socket != NULL && occured) {
+  if (ac->socket != NULL) {
     grpc_winsocket_shutdown(ac->socket);
   }
-  async_connect_unlock_and_cleanup(ac);
+  async_connect_unlock_and_cleanup(ac, ac->socket);
 }
 
 static void on_connect(grpc_exec_ctx *exec_ctx, void *acp, bool from_iocp) {
   async_connect *ac = acp;
   SOCKET sock = ac->socket->socket;
   grpc_endpoint **ep = ac->endpoint;
+  GPR_ASSERT(*ep == NULL);
   grpc_winsocket_callback_info *info = &ac->socket->write_info;
   grpc_closure *on_done = ac->on_done;
+
+  gpr_mu_lock(&ac->mu);
+  grpc_winsocket *socket = ac->socket;
+  ac->socket = NULL;
+  gpr_mu_unlock(&ac->mu);
 
   grpc_timer_cancel(exec_ctx, &ac->alarm);
 
   gpr_mu_lock(&ac->mu);
 
-  if (from_iocp) {
+  if (from_iocp && socket != NULL) {
     DWORD transfered_bytes = 0;
     DWORD flags;
     BOOL wsa_success = WSAGetOverlappedResult(sock, &info->overlapped,
@@ -107,12 +113,12 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *acp, bool from_iocp) {
               ac->addr_name, utf8_message);
       gpr_free(utf8_message);
     } else {
-      *ep = grpc_tcp_create(ac->socket, ac->addr_name);
-      ac->socket = NULL;
+      *ep = grpc_tcp_create(socket, ac->addr_name);
+      socket = NULL;
     }
   }
 
-  async_connect_unlock_and_cleanup(ac);
+  async_connect_unlock_and_cleanup(ac, socket);
   /* If the connection was aborted, the callback was already called when
      the deadline was met. */
   on_done->cb(exec_ctx, on_done->cb_arg, *ep != NULL);
@@ -138,6 +144,7 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
   const char *message = NULL;
   char *utf8_message;
   grpc_winsocket_callback_info *info;
+  int last_error;
 
   *endpoint = NULL;
 
@@ -208,8 +215,10 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
   return;
 
 failure:
-  utf8_message = gpr_format_message(WSAGetLastError());
+  last_error = WSAGetLastError();
+  utf8_message = gpr_format_message(last_error);
   gpr_log(GPR_ERROR, message, utf8_message);
+  gpr_log(GPR_ERROR, "last error = %d", last_error);
   gpr_free(utf8_message);
   if (socket != NULL) {
     grpc_winsocket_destroy(socket);

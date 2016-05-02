@@ -51,6 +51,11 @@
 #include "src/core/lib/support/env.h"
 #include "test/core/util/port_server_client.h"
 
+#if GPR_GETPID_IN_UNISTD_H
+#include <sys/unistd.h>
+static int _getpid() { return getpid(); }
+#endif
+
 #define NUM_RANDOM_PORTS_TO_PICK 100
 
 static int *chosen_ports = NULL;
@@ -114,7 +119,7 @@ static int is_port_available(int *port, int is_tcp) {
   /* Try binding to port */
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = INADDR_ANY;
-  addr.sin_port = htons(*port);
+  addr.sin_port = htons((u_short)*port);
   if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
     gpr_log(GPR_DEBUG, "bind(port=%d) failed: %s", *port, strerror(errno));
     closesocket(fd);
@@ -127,7 +132,7 @@ static int is_port_available(int *port, int is_tcp) {
     closesocket(fd);
     return 0;
   }
-  GPR_ASSERT(alen <= sizeof(addr));
+  GPR_ASSERT(alen <= (socklen_t)sizeof(addr));
   actual_port = ntohs(addr.sin_port);
   GPR_ASSERT(actual_port > 0);
   if (*port == 0) {

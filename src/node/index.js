@@ -34,12 +34,9 @@
 'use strict';
 
 var path = require('path');
+var fs = require('fs');
 
 var SSL_ROOTS_PATH = path.resolve(__dirname, '..', '..', 'etc', 'roots.pem');
-
-if (!process.env.GRPC_DEFAULT_SSL_ROOTS_FILE_PATH) {
-  process.env.GRPC_DEFAULT_SSL_ROOTS_FILE_PATH = SSL_ROOTS_PATH;
-}
 
 var _ = require('lodash');
 
@@ -52,6 +49,8 @@ var server = require('./src/server.js');
 var Metadata = require('./src/metadata.js');
 
 var grpc = require('./src/grpc_extension');
+
+grpc.setDefaultRootsPem(fs.readFileSync(SSL_ROOTS_PATH, 'ascii'));
 
 /**
  * Load a gRPC object from an existing ProtoBuf.Reflect object.
