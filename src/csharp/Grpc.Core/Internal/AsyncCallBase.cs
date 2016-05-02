@@ -346,6 +346,10 @@ namespace Grpc.Core.Internal
         /// </summary>
         protected void HandleReadFinished(bool success, byte[] receivedMessage)
         {
+            // if success == false, received message will be null. It that case we will
+            // treat this completion as the last read an rely on C core to handle the failed
+            // read (e.g. deliver approriate statusCode on the clientside).
+
             TRead msg = default(TRead);
             var deserializeException = (success && receivedMessage != null) ? TryDeserialize(receivedMessage, out msg) : null;
 
@@ -369,8 +373,6 @@ namespace Grpc.Core.Internal
 
                 ReleaseResourcesIfPossible();
             }
-
-            // TODO: handle the case when success==false
 
             if (deserializeException != null && !IsClient)
             {
