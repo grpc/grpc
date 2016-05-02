@@ -3633,6 +3633,23 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "h2_loadreporting_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_loadreporting.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "h2_oauth2_test", 
     "src": [
       "test/core/end2end/fixtures/h2_oauth2.c"
@@ -3857,6 +3874,23 @@
     "name": "h2_full+trace_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_full+trace.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_loadreporting_nosec_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_loadreporting.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4212,6 +4246,7 @@
       "grpc_lb_policy_grpclb", 
       "grpc_lb_policy_pick_first", 
       "grpc_lb_policy_round_robin", 
+      "grpc_load_reporting", 
       "grpc_resolver_dns_native", 
       "grpc_resolver_sockaddr", 
       "grpc_transport_chttp2_client_insecure", 

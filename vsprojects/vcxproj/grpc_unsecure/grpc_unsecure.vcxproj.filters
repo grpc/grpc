@@ -385,6 +385,12 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\sockaddr\sockaddr_resolver.c">
       <Filter>src\core\ext\resolver\sockaddr</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting.c">
+      <Filter>src\core\ext\load_reporting</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting_filter.c">
+      <Filter>src\core\ext\load_reporting</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.c">
       <Filter>src\core\ext\lb_policy\grpclb</Filter>
     </ClCompile>
@@ -848,6 +854,12 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\uri_parser.h">
       <Filter>src\core\ext\client_config</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting.h">
+      <Filter>src\core\ext\load_reporting</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting_filter.h">
+      <Filter>src\core\ext\load_reporting</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.h">
       <Filter>src\core\ext\lb_policy\grpclb</Filter>
     </ClInclude>
@@ -937,6 +949,9 @@
     </Filter>
     <Filter Include="src\core\ext\lb_policy\round_robin">
       <UniqueIdentifier>{e5fc1091-5d60-404f-775b-686ef4b3266f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\load_reporting">
+      <UniqueIdentifier>{2d6e3879-24c7-06e2-b415-40ab18a3b918}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\ext\resolver">
       <UniqueIdentifier>{88c78e27-267a-95df-07c5-50e5fbc2f40c}</UniqueIdentifier>

@@ -37,28 +37,28 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/surface/call.h"
 
-typedef struct grpc_load_reporting_data grpc_load_reporting_data;
+typedef struct grpc_load_reporting_config grpc_load_reporting_config;
 
-/** Custom function to be called by the load reporting filter.
- *
- * The \a data pointer is the same as the one passed to \a
- * grpc_load_reporting_init. \a stats are the final per-call statistics gathered
- * by the gRPC runtime. */
-typedef void (*grpc_load_reporting_fn)(void *data,
-                                       const grpc_call_stats *stats);
+/** Custom function to be called by the load reporting filter. */
+typedef void (*grpc_load_reporting_fn)(const grpc_call_stats *stats,
+                                       void *data);
 
 /** Register \a fn as the function to be invoked by the load reporting filter,
- * passing \a data as its namesake argument. To be called only from a plugin
- * init function. */
-grpc_load_reporting_data *grpc_load_reporting_create(grpc_load_reporting_fn fn,
-                                                     void *data);
+ * passing \a data alongisde the call stats */
+grpc_load_reporting_config *grpc_load_reporting_config_create(
+    grpc_load_reporting_fn fn, void *data);
 
-// XXX
-void grpc_load_reporting_destroy(grpc_load_reporting_data *lrd);
+grpc_load_reporting_config *grpc_load_reporting_config_copy(
+    grpc_load_reporting_config *src);
+
+void grpc_load_reporting_config_destroy(grpc_load_reporting_config *lrc);
 
 /** Invoke the function registered by \a grpc_load_reporting_init, passing it \a
  * stats as one of the arguments (see \a load_reporting_fn). */
-void grpc_load_reporting_call(grpc_load_reporting_data *lrd,
-                              const grpc_call_stats *stats);
+void grpc_load_reporting_config_call(grpc_load_reporting_config *lrc,
+                                     const grpc_call_stats *stats);
+
+/** Return a \a grpc_arg enabling load reporting */
+grpc_arg grpc_load_reporting_config_create_arg(grpc_load_reporting_config *lrc);
 
 #endif /* GRPC_CORE_EXT_LOAD_REPORTING_LOAD_REPORTING_H */
