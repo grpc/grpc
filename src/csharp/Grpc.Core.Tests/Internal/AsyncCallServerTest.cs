@@ -75,7 +75,6 @@ namespace Grpc.Core.Internal.Tests
         {
             var finishedTask = asyncCallServer.ServerSideCallAsync();
             var requestStream = new ServerRequestStream<string, string>(asyncCallServer);
-            var responseStream = new ServerResponseStream<string, string>(asyncCallServer);
 
             // Finishing requestStream is needed for dispose to happen.
             var moveNextTask = requestStream.MoveNext();
@@ -91,7 +90,6 @@ namespace Grpc.Core.Internal.Tests
         {
             var finishedTask = asyncCallServer.ServerSideCallAsync();
             var requestStream = new ServerRequestStream<string, string>(asyncCallServer);
-            var responseStream = new ServerResponseStream<string, string>(asyncCallServer);
 
             fakeCall.ReceivedCloseOnServerHandler(true, cancelled: true);
 
@@ -103,24 +101,89 @@ namespace Grpc.Core.Internal.Tests
             AssertFinished(asyncCallServer, fakeCall, finishedTask);
         }
 
+        [Test]
+        public void ReadCompletionFailureClosesRequestStream()
+        {
+            var finishedTask = asyncCallServer.ServerSideCallAsync();
+            var requestStream = new ServerRequestStream<string, string>(asyncCallServer);
 
-        // TODO: read completion failure ...
+            // if a read completion's success==false, the request stream will silently finish
+            // and we rely on C core cancelling the call.
+            var moveNextTask = requestStream.MoveNext();
+            fakeCall.ReceivedMessageHandler(false, null);
+            Assert.IsFalse(moveNextTask.Result);
 
+            fakeCall.ReceivedCloseOnServerHandler(true, cancelled: true);
+            AssertFinished(asyncCallServer, fakeCall, finishedTask);
+        }
 
+        [Test]
+        public void WriteAfterCancelNotificationFails()
+        {
+            var finishedTask = asyncCallServer.ServerSideCallAsync();
+            var requestStream = new ServerRequestStream<string, string>(asyncCallServer);
+            var responseStream = new ServerResponseStream<string, string>(asyncCallServer);
 
-        // TODO: write fails...
+            fakeCall.ReceivedCloseOnServerHandler(true, cancelled: true);
 
-        // TODO: write completion fails...
+            // TODO(jtattermusch): should we throw a different exception type instead?
+            Assert.Throws(typeof(InvalidOperationException), () => responseStream.WriteAsync("request1"));
 
-        // TODO: cancellation delivered...
+            // Finishing requestStream is needed for dispose to happen.
+            var moveNextTask = requestStream.MoveNext();
+            fakeCall.ReceivedMessageHandler(true, null);
+            Assert.IsFalse(moveNextTask.Result);
 
-        // TODO: cancel notification in the middle of a read...
+            AssertFinished(asyncCallServer, fakeCall, finishedTask);
+        }
 
-        // TODO: cancel notification in the middle of a write...
+        [Test]
+        public void WriteCompletionFailureThrows()
+        {
+            var finishedTask = asyncCallServer.ServerSideCallAsync();
+            var requestStream = new ServerRequestStream<string, string>(asyncCallServer);
+            var responseStream = new ServerResponseStream<string, string>(asyncCallServer);
 
-        // TODO: cancellation delivered...
+            var writeTask = responseStream.WriteAsync("request1");
+            fakeCall.SendCompletionHandler(false);
+            // TODO(jtattermusch): should we throw a different exception type instead?
+            Assert.ThrowsAsync(typeof(InvalidOperationException), async () => await writeTask);
 
-        // TODO: what does writing status do to reads?
+            // Finishing requestStream is needed for dispose to happen.
+            var moveNextTask = requestStream.MoveNext();
+            fakeCall.ReceivedMessageHandler(true, null);
+            Assert.IsFalse(moveNextTask.Result);
+
+            fakeCall.ReceivedCloseOnServerHandler(true, cancelled: true);
+
+            AssertFinished(asyncCallServer, fakeCall, finishedTask);
+        }
+
+        [Test]
+        public void WriteAndWriteStatusCanRunConcurrently()
+        {
+            var finishedTask = asyncCallServer.ServerSideCallAsync();
+            var requestStream = new ServerRequestStream<string, string>(asyncCallServer);
+            var responseStream = new ServerResponseStream<string, string>(asyncCallServer);
+
+            var writeTask = responseStream.WriteAsync("request1");
+            var writeStatusTask = asyncCallServer.SendStatusFromServerAsync(Status.DefaultSuccess, new Metadata());
+
+            fakeCall.SendCompletionHandler(true);
+            fakeCall.SendStatusFromServerHandler(true);
+
+            Assert.DoesNotThrowAsync(async () => await writeTask);
+            Assert.DoesNotThrowAsync(async () => await writeStatusTask);
+
+            // Finishing requestStream is needed for dispose to happen.
+            var moveNextTask = requestStream.MoveNext();
+            fakeCall.ReceivedMessageHandler(true, null);
+            Assert.IsFalse(moveNextTask.Result);
+
+            fakeCall.ReceivedCloseOnServerHandler(true, cancelled: true);
+
+            AssertFinished(asyncCallServer, fakeCall, finishedTask);
+        }
 
         static void AssertFinished(AsyncCallServer<string, string> asyncCallServer, FakeNativeCall fakeCall, Task finishedTask)
         {
