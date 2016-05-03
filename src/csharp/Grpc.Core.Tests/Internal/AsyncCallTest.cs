@@ -76,8 +76,8 @@ namespace Grpc.Core.Internal.Tests
         public void AsyncUnary_StreamingOperationsNotAllowed()
         {
             asyncCall.UnaryCallAsync("request1");
-            Assert.Throws(typeof(InvalidOperationException),
-                () => asyncCall.StartReadMessage((x,y) => {}));
+            Assert.ThrowsAsync(typeof(InvalidOperationException),
+                async () => await asyncCall.ReadMessageAsync());
             Assert.Throws(typeof(InvalidOperationException),
                 () => asyncCall.StartSendMessage("abc", new WriteFlags(), (x,y) => {}));
         }
@@ -123,8 +123,8 @@ namespace Grpc.Core.Internal.Tests
         public void ClientStreaming_StreamingReadNotAllowed()
         {
             asyncCall.ClientStreamingCallAsync();
-            Assert.Throws(typeof(InvalidOperationException),
-                () => asyncCall.StartReadMessage((x,y) => {}));
+            Assert.ThrowsAsync(typeof(InvalidOperationException),
+                async () => await asyncCall.ReadMessageAsync());
         }
 
         [Test]
@@ -182,9 +182,6 @@ namespace Grpc.Core.Internal.Tests
             var responseStream = new ClientResponseStream<string, string>(asyncCall);
             var readTask = responseStream.MoveNext();
 
-            fakeCall.ReceivedResponseHeadersHandler(true, new Metadata());
-            Assert.AreEqual(0, asyncCall.ResponseHeadersAsync.Result.Count);
-
             // try alternative order of completions
             fakeCall.ReceivedStatusOnClientHandler(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
             fakeCall.ReceivedMessageHandler(true, null);
@@ -199,13 +196,33 @@ namespace Grpc.Core.Internal.Tests
             var responseStream = new ClientResponseStream<string, string>(asyncCall);
             var readTask = responseStream.MoveNext();
 
-            fakeCall.ReceivedResponseHeadersHandler(true, new Metadata());
-            Assert.AreEqual(0, asyncCall.ResponseHeadersAsync.Result.Count);
-
             fakeCall.ReceivedMessageHandler(false, null);  // after a failed read, we rely on C core to deliver appropriate status code.
             fakeCall.ReceivedStatusOnClientHandler(true, CreateClientSideStatus(StatusCode.Internal));
 
             AssertStreamingResponseError(asyncCall, fakeCall, readTask, StatusCode.Internal);
+        }
+
+        [Test]
+        public void ServerStreaming_MoreResponses_Success()
+        {
+            asyncCall.StartServerStreamingCall("request1");
+            var responseStream = new ClientResponseStream<string, string>(asyncCall);
+
+            var readTask1 = responseStream.MoveNext();
+            fakeCall.ReceivedMessageHandler(true, CreateResponsePayload());
+            Assert.IsTrue(readTask1.Result);
+            Assert.AreEqual("response1", responseStream.Current);
+
+            var readTask2 = responseStream.MoveNext();
+            fakeCall.ReceivedMessageHandler(true, CreateResponsePayload());
+            Assert.IsTrue(readTask2.Result);
+            Assert.AreEqual("response1", responseStream.Current);
+
+            var readTask3 = responseStream.MoveNext();
+            fakeCall.ReceivedStatusOnClientHandler(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
+            fakeCall.ReceivedMessageHandler(true, null);
+
+            AssertStreamingResponseSuccess(asyncCall, fakeCall, readTask3);
         }
 
         ClientSideStatus CreateClientSideStatus(StatusCode statusCode)
@@ -236,7 +253,6 @@ namespace Grpc.Core.Internal.Tests
 
             Assert.IsFalse(moveNextTask.Result);
             Assert.AreEqual(Status.DefaultSuccess, asyncCall.GetStatus());
-            Assert.AreEqual(0, asyncCall.ResponseHeadersAsync.Result.Count);
             Assert.AreEqual(0, asyncCall.GetTrailers().Count);
         }
 
@@ -259,7 +275,6 @@ namespace Grpc.Core.Internal.Tests
 
             var ex = Assert.ThrowsAsync<RpcException>(async () => await moveNextTask);
             Assert.AreEqual(expectedStatusCode, asyncCall.GetStatus().StatusCode);
-            Assert.AreEqual(0, asyncCall.ResponseHeadersAsync.Result.Count);
             Assert.AreEqual(0, asyncCall.GetTrailers().Count);
         }
 
