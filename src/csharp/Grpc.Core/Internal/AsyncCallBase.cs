@@ -68,7 +68,7 @@ namespace Grpc.Core.Internal
         protected bool cancelRequested;
 
         protected AsyncCompletionDelegate<object> sendCompletionDelegate;  // Completion of a pending send or sendclose if not null.
-        protected AsyncCompletionDelegate<TRead> readCompletionDelegate;  // Completion of a pending send or sendclose if not null.
+        protected TaskCompletionSource<TRead> streamingReadTcs;  // Completion of a pending streaming read if not null.
 
         protected bool readingDone;  // True if last read (i.e. read with null payload) was already received.
         protected bool halfcloseRequested;  // True if send close have been initiated.
@@ -150,15 +150,25 @@ namespace Grpc.Core.Internal
         /// Initiates reading a message. Only one read operation can be active at a time.
         /// completionDelegate is invoked upon completion.
         /// </summary>
-        protected void StartReadMessageInternal(AsyncCompletionDelegate<TRead> completionDelegate)
+        protected Task<TRead> ReadMessageInternalAsync()
         {
             lock (myLock)
             {
-                GrpcPreconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
                 CheckReadingAllowed();
+                if (readingDone)
+                {
+                    // the last read that returns null or throws an exception is idempotent
+                    // and maintain its state.
+                    GrpcPreconditions.CheckState(streamingReadTcs != null, "Call does not support streaming reads.");
+                    return streamingReadTcs.Task;
+                }
+
+                GrpcPreconditions.CheckState(streamingReadTcs == null, "Only one read can be pending at a time");
+                GrpcPreconditions.CheckState(!disposed);
 
                 call.StartReceiveMessage(HandleReadFinished);
-                readCompletionDelegate = completionDelegate;
+                streamingReadTcs = new TaskCompletionSource<TRead>();
+                return streamingReadTcs.Task;
             }
         }
 
@@ -216,10 +226,6 @@ namespace Grpc.Core.Internal
         protected virtual void CheckReadingAllowed()
         {
             GrpcPreconditions.CheckState(started);
-            GrpcPreconditions.CheckState(!disposed);
-
-            GrpcPreconditions.CheckState(!readingDone, "Stream has already been closed.");
-            GrpcPreconditions.CheckState(readCompletionDelegate == null, "Only one read can be pending at a time");
         }
 
         protected void CheckNotCancelled()
@@ -353,12 +359,10 @@ namespace Grpc.Core.Internal
             TRead msg = default(TRead);
             var deserializeException = (success && receivedMessage != null) ? TryDeserialize(receivedMessage, out msg) : null;
 
-            AsyncCompletionDelegate<TRead> origCompletionDelegate = null;
+            TaskCompletionSource<TRead> origTcs = null;
             lock (myLock)
             {
-                origCompletionDelegate = readCompletionDelegate;
-                readCompletionDelegate = null;
-
+                origTcs = streamingReadTcs;
                 if (receivedMessage == null)
                 {
                     // This was the last read.
@@ -368,7 +372,14 @@ namespace Grpc.Core.Internal
                 if (deserializeException != null && IsClient)
                 {
                     readingDone = true;
+
+                    // TODO(jtattermusch): it might be too late to set the status
                     CancelWithStatus(DeserializeResponseFailureStatus);
+                }
+
+                if (!readingDone)
+                {
+                    streamingReadTcs = null;
                 }
 
                 ReleaseResourcesIfPossible();
@@ -376,10 +387,10 @@ namespace Grpc.Core.Internal
 
             if (deserializeException != null && !IsClient)
             {
-                FireCompletion(origCompletionDelegate, default(TRead), new IOException("Failed to deserialize request message.", deserializeException));
+                origTcs.SetException(new IOException("Failed to deserialize request message.", deserializeException));
                 return;
             }
-            FireCompletion(origCompletionDelegate, msg, null);
+            origTcs.SetResult(msg);
         }
     }
 }
