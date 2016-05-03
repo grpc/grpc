@@ -76,6 +76,12 @@ namespace Grpc.Core.Internal.Tests
             set;
         }
 
+        public SendCompletionHandler SendStatusFromServerHandler
+        {
+            get;
+            set;
+        }
+
         public ReceivedCloseOnServerHandler ReceivedCloseOnServerHandler
         {
             get;
@@ -161,7 +167,7 @@ namespace Grpc.Core.Internal.Tests
 
         public void StartSendStatusFromServer(SendCompletionHandler callback, Status status, MetadataArraySafeHandle metadataArray, bool sendEmptyInitialMetadata)
         {
-            SendCompletionHandler = callback;
+            SendStatusFromServerHandler = callback;
         }
 
         public void StartServerSide(ReceivedCloseOnServerHandler callback)
