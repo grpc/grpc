@@ -107,14 +107,6 @@ int contains_metadata(grpc_metadata_array *array, const char *key,
   return has_metadata(array->metadata, array->count, key, value);
 }
 
-int contains_metadata_key(grpc_metadata_array *array, const char *key) {
-  for (size_t i = 0; i < array->count; ++i) {
-    if (strcmp(array->metadata[i].key, key) == 0)
-      return 1;
-  }
-  return 0;
-}
-
 static gpr_slice merge_slices(gpr_slice *slices, size_t nslices) {
   size_t i;
   size_t len = 0;
