@@ -43,7 +43,9 @@
 var path = require('path');
 var execFile = require('child_process').execFile;
 
-var protoc = path.resolve(__dirname, 'protoc');
+var exe_ext = process.platform === 'win32' ? '.exe' : '';
+
+var protoc = path.resolve(__dirname, 'protoc' + exe_ext);
 
 execFile(protoc, process.argv.slice(2), function(error, stdout, stderr) {
   if (error) {
