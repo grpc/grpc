@@ -54,7 +54,14 @@ namespace Grpc.Core.Internal.Tests
         public void Init()
         {
             var environment = GrpcEnvironment.AddRef();
-            server = new Server();
+
+            // Create a fake server just so we have an instance to refer to.
+            // The server won't actually be used at all.
+            server = new Server()
+            {
+                Ports = { { "localhost", 0, ServerCredentials.Insecure } }
+            };
+            server.Start();
 
             fakeCall = new FakeNativeCall();
             asyncCallServer = new AsyncCallServer<string, string>(
@@ -67,6 +74,7 @@ namespace Grpc.Core.Internal.Tests
         [TearDown]
         public void Cleanup()
         {
+            server.ShutdownAsync().Wait();
             GrpcEnvironment.Release();
         }
 
