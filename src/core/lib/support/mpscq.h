@@ -34,12 +34,10 @@
 #ifndef GRPC_CORE_LIB_SUPPORT_MPSCQ_H
 #define GRPC_CORE_LIB_SUPPORT_MPSCQ_H
 
-#include <stddef.h>
 #include <grpc/support/atm.h>
+#include <stddef.h>
 
-typedef struct gpr_mpscq_node {
-  gpr_atm next;
-} gpr_mpscq_node;
+typedef struct gpr_mpscq_node { gpr_atm next; } gpr_mpscq_node;
 
 typedef struct gpr_mpscq {
   gpr_atm head;

@@ -37,8 +37,8 @@
 #include <stddef.h>
 
 #include <grpc/support/atm.h>
-#include "src/core/lib/support/mpscq.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/support/mpscq.h"
 
 typedef void (*grpc_aelock_action)(grpc_exec_ctx *exec_ctx, void *arg);
 

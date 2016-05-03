@@ -57,7 +57,7 @@ static void finish(grpc_exec_ctx *exec_ctx, grpc_aelock *lock) {
     while ((n = gpr_mpscq_pop(&lock->queue)) == NULL) {
       // TODO(ctiller): find something to fill in the time
     }
-    grpc_aelock_qnode *ln = (grpc_aelock_qnode*)n;
+    grpc_aelock_qnode *ln = (grpc_aelock_qnode *)n;
     ln->action(exec_ctx, ln->arg);
     gpr_free(ln);
   }

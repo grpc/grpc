@@ -123,7 +123,7 @@ static __inline gpr_atm gpr_atm_full_fetch_add(gpr_atm *p, gpr_atm delta) {
 }
 
 static __inline gpr_atm gpr_atm_full_xchg(gpr_atm *p, gpr_atm n) {
-  return (gpr_atm)InterlockedExchangePointer((PVOID*)p, (PVOID)n);
+  return (gpr_atm)InterlockedExchangePointer((PVOID *)p, (PVOID)n);
 }
 
 #endif /* GRPC_IMPL_CODEGEN_ATM_WIN32_H */

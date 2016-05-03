@@ -48,13 +48,14 @@ void gpr_mpscq_destroy(gpr_mpscq *q) {
 
 void gpr_mpscq_push(gpr_mpscq *q, gpr_mpscq_node *n) {
   gpr_atm_no_barrier_store(&n->next, 0);
-  gpr_mpscq_node *prev = (gpr_mpscq_node*)gpr_atm_full_xchg(&q->head, (gpr_atm)n);
+  gpr_mpscq_node *prev =
+      (gpr_mpscq_node *)gpr_atm_full_xchg(&q->head, (gpr_atm)n);
   gpr_atm_rel_store(&prev->next, (gpr_atm)n);
 }
 
 gpr_mpscq_node *gpr_mpscq_pop(gpr_mpscq *q) {
   gpr_mpscq_node *tail = q->tail;
-  gpr_mpscq_node *next = (gpr_mpscq_node*)gpr_atm_acq_load(&tail->next);
+  gpr_mpscq_node *next = (gpr_mpscq_node *)gpr_atm_acq_load(&tail->next);
   if (tail == &q->stub) {
     if (next == NULL) return NULL;
     q->tail = next;
@@ -65,7 +66,7 @@ gpr_mpscq_node *gpr_mpscq_pop(gpr_mpscq *q) {
     q->tail = next;
     return tail;
   }
-  gpr_mpscq_node *head = (gpr_mpscq_node*)gpr_atm_acq_load(&q->head);
+  gpr_mpscq_node *head = (gpr_mpscq_node *)gpr_atm_acq_load(&q->head);
   if (tail != head) {
     return 0;
   }
@@ -77,4 +78,3 @@ gpr_mpscq_node *gpr_mpscq_pop(gpr_mpscq *q) {
   }
   return NULL;
 }
-
