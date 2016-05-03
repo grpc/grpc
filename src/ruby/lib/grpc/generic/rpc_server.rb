@@ -332,15 +332,13 @@ module GRPC
     # the current thread to terminate it.
     def run_till_terminated
       GRPC.trap_signals
-      stopped = false
       t = Thread.new do
         run
-        stopped = true
       end
+      t.abort_on_exception = true
       wait_till_running
-      loop do
+      until running_state == :stopped
         sleep SIGNAL_CHECK_PERIOD
-        break if stopped
         break unless GRPC.handle_signals
       end
       stop
@@ -416,7 +414,7 @@ module GRPC
       GRPC.logger.warn("NOT AVAILABLE: too many jobs_waiting: #{an_rpc}")
       noop = proc { |x| x }
       c = ActiveCall.new(an_rpc.call, @cq, noop, noop, an_rpc.deadline)
-      c.send_status(StatusCodes::RESOURCE_EXHAUSTED, '')
+      c.send_status(GRPC::Core::StatusCodes::RESOURCE_EXHAUSTED, '')
       nil
     end
 
@@ -427,7 +425,7 @@ module GRPC
       GRPC.logger.warn("UNIMPLEMENTED: #{an_rpc}")
       noop = proc { |x| x }
       c = ActiveCall.new(an_rpc.call, @cq, noop, noop, an_rpc.deadline)
-      c.send_status(StatusCodes::UNIMPLEMENTED, '')
+      c.send_status(GRPC::Core::StatusCodes::UNIMPLEMENTED, '')
       nil
     end
 
@@ -443,7 +441,12 @@ module GRPC
           unless active_call.nil?
             @pool.schedule(active_call) do |ac|
               c, mth = ac
-              rpc_descs[mth].run_server_method(c, rpc_handlers[mth])
+              begin
+                rpc_descs[mth].run_server_method(c, rpc_handlers[mth])
+              rescue StandardError => e
+                c.send_status(code = GRPC::Core::StatusCodes::INTERNAL,
+                              details = "Server handler failed")
+              end
             end
           end
         rescue Core::CallError, RuntimeError => e
