@@ -63,17 +63,6 @@ RUN apt-get update && apt-get install -y \
 # Build profiling
 RUN apt-get update && apt-get install -y time && apt-get clean
 
-#==================
-# Node dependencies
-
-# Install nvm
-RUN touch .profile
-RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.25.4/install.sh | bash
-# Install all versions of node that we want to test
-RUN /bin/bash -l -c "nvm install 0.12 && npm config set cache /tmp/npm-cache"
-RUN /bin/bash -l -c "nvm install 4 && npm config set cache /tmp/npm-cache"
-RUN /bin/bash -l -c "nvm install 5 && npm config set cache /tmp/npm-cache"
-RUN /bin/bash -l -c "nvm alias default 4"
 # Prepare ccache
 RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
 RUN ln -s /usr/bin/ccache /usr/local/bin/g++
@@ -82,12 +71,29 @@ RUN ln -s /usr/bin/ccache /usr/local/bin/c++
 RUN ln -s /usr/bin/ccache /usr/local/bin/clang
 RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
 
-#======================
-# Zookeeper dependencies
-# TODO(jtattermusch): is zookeeper still needed?
-RUN apt-get install -y libzookeeper-mt-dev
+#=================
+# C++ dependencies
+RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
 
-RUN mkdir /var/local/jenkins
+# Google Cloud platform API libraries
+RUN apt-get update && apt-get install -y python-pip && apt-get clean
+RUN pip install --upgrade google-api-python-client
+
+
+#==================
+# Ruby dependencies
+
+# Install rvm
+RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
+RUN \curl -sSL https://get.rvm.io | bash -s stable
+
+# Install Ruby 2.1
+RUN /bin/bash -l -c "rvm install ruby-2.1"
+RUN /bin/bash -l -c "rvm use --default ruby-2.1"
+RUN /bin/bash -l -c "echo 'gem: --no-ri --no-rdoc' > ~/.gemrc"
+RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
+RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.1' >> ~/.bashrc"
+RUN /bin/bash -l -c "gem install bundler --no-ri --no-rdoc"
 
 # Define the default command.
 CMD ["bash"]

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,18 +27,11 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Builds Node interop server and client in a base image.
-set -e
 
-mkdir -p /var/local/git
-git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
+# This is a wrapper script that was created to help run_server.py and
+# run_client.py to launch 'node js' stress clients and stress servers
+source /etc/profile.d/rvm.sh
 
-# copy service account keys if available
-cp -r /var/local/jenkins/service_account $HOME || true
+set -ex
 
-cd /var/local/git/grpc
-
-# build Node interop client & server
-npm install -g node-gyp
-npm install --unsafe-perm --build-from-source
+$@
