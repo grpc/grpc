@@ -32,43 +32,48 @@ set -ex
 
 cd $(dirname $0)/../..
 
-if [ "$SKIP_PIP_INSTALL" == "" ]
-then
-  pip install --upgrade six
-  # There's a bug in newer versions of setuptools (see
-  # https://bitbucket.org/pypa/setuptools/issues/503/pkg_resources_vendorpackagingrequirementsi)
-  pip install --upgrade 'setuptools==18'
-  pip install -rrequirements.txt
-fi
-
 export GRPC_PYTHON_USE_CUSTOM_BDIST=0
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1
+export PYTHON=${PYTHON:-python}
+export PIP=${PIP:-pip}
+export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
+
+
+if [ "$SKIP_PIP_INSTALL" == "" ]
+then
+  ${PIP} install --upgrade six
+  # There's a bug in newer versions of setuptools (see
+  # https://bitbucket.org/pypa/setuptools/issues/503/pkg_resources_vendorpackagingrequirementsi)
+  ${PIP} pip install --upgrade 'setuptools==18'
+  ${PIP} install -rrequirements.txt
+fi
 
 # Build the source distribution first because MANIFEST.in cannot override
 # exclusion of built shared objects among package resources (for some
 # inexplicable reason).
-${SETARCH_CMD} python setup.py  \
+${SETARCH_CMD} ${PYTHON} setup.py  \
     sdist
-
-# The bdist_wheel_grpc_custom command is finicky about command output ordering
-# and thus ought to be run in a shell command separate of others. Further, it
-# trashes the actual bdist_wheel output, so it should be run first so that
-# bdist_wheel may be run unmolested.
-${SETARCH_CMD} python setup.py  \
-    build_tagged_ext
 
 # Wheel has a bug where directories don't get excluded.
 # https://bitbucket.org/pypa/wheel/issues/99/cannot-exclude-directory
-${SETARCH_CMD} python setup.py  \
+${SETARCH_CMD} ${PYTHON} setup.py  \
     bdist_wheel
 
 # Build gRPC tools package
-python tools/distrib/python/make_grpcio_tools.py
-# Build with clang since there's a bug in GCC 4.x where some constant
-# expressions are treated as non-constant in the presence of the fwrapv flag
-# (fixed in at most GCC 5.3).
-CC=clang python tools/distrib/python/grpcio_tools/setup.py bdist_wheel
+${PYTHON} tools/distrib/python/make_grpcio_tools.py
+CFLAGS="$CFLAGS -fno-wrapv" ${SETARCH_CMD} \
+  ${PYTHON} tools/distrib/python/grpcio_tools/setup.py bdist_wheel
 
 mkdir -p artifacts
-cp -r dist/* artifacts
-cp -r tools/distrib/python/grpcio_tools/dist/* artifacts
+if command -v ${AUDITWHEEL}
+then
+  for wheel in dist/*.whl; do
+    ${AUDITWHEEL} repair $wheel -w artifacts/
+  done
+  for wheel in tools/distrib/python/grpcio_tools/dist/*.whl; do
+    ${AUDITWHEEL} repair $wheel -w artifacts/
+  done
+else
+  cp -r dist/* artifacts
+  cp -r tools/distrib/python/grpcio_tools/dist/* artifacts
+fi
