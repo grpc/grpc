@@ -69,6 +69,7 @@ namespace Grpc.Core.Internal
 
         protected AsyncCompletionDelegate<object> sendCompletionDelegate;  // Completion of a pending send or sendclose if not null.
         protected TaskCompletionSource<TRead> streamingReadTcs;  // Completion of a pending streaming read if not null.
+        protected TaskCompletionSource<object> sendStatusFromServerTcs;
 
         protected bool readingDone;  // True if last read (i.e. read with null payload) was already received.
         protected bool halfcloseRequested;  // True if send close have been initiated.
@@ -328,22 +329,18 @@ namespace Grpc.Core.Internal
         /// </summary>
         protected void HandleSendStatusFromServerFinished(bool success)
         {
-            AsyncCompletionDelegate<object> origCompletionDelegate = null;
             lock (myLock)
             {
-                origCompletionDelegate = sendCompletionDelegate;
-                sendCompletionDelegate = null;
-
                 ReleaseResourcesIfPossible();
             }
 
             if (!success)
             {
-                FireCompletion(origCompletionDelegate, null, new InvalidOperationException("Error sending status from server."));
+                sendStatusFromServerTcs.SetException(new InvalidOperationException("Error sending status from server."));
             }
             else
             {
-                FireCompletion(origCompletionDelegate, null, null);
+                sendStatusFromServerTcs.SetResult(null);
             }
         }
 
