@@ -240,6 +240,20 @@ class CLanguage(object):
   def _gcc44_make_options(self):
     return ['CC=gcc-4.4', 'CXX=g++-4.4', 'LD=gcc-4.4', 'LDXX=g++-4.4']
 
+  def _nacl_make_options(self):
+    # Note: This will need to be updated every six weeks as the current Chrome
+    # release version changes.
+    # https://chromium.googlesource.com/chromium/src/+/master/native_client_sdk/src/BUILDING.rst
+    _CHROME_PREFIX = '/chromium/src/out/pepper_52/toolchain/linux_x86_glibc'
+    return [
+        'CC=%s/x86_64-nacl-gcc' % _CHROME_PREFIX,
+        'CXX=%s/x86_64-nacl-g++' % _CHROME_PREFIX,
+        'LD=%s/x86_64-nacl-ld' % _CHROME_PREFIX,
+        'LDXX=%s/x86_64-nacl-ld' % _CHROME_PREFIX,
+        'AR=%s/x86_64-nacl-ar' % _CHROME_PREFIX,
+        'STRIP=%s/x86_64-nacl-strip' % _CHROME_PREFIX,
+    ]
+
   def _compiler_options(self, use_docker, compiler):
     """Returns docker distro and make options to use for given compiler."""
     if _is_use_docker_child():
@@ -258,7 +272,7 @@ class CLanguage(object):
     elif compiler == 'clang3.6':
       return ('ubuntu1604', self._clang_make_options())
     elif compiler == 'nacl':
-      return ('nacl', [])
+      return ('nacl', self._nacl_make_options())
     else:
       raise Exception('Compiler %s not supported.' % compiler)
 
@@ -927,6 +941,8 @@ if args.use_docker:
 
 _check_arch_option(args.arch)
 
+# TODO(ahedberg): somehow, override makefile for --compiler=nacl.
+# And write makefile for NaCl toolchain...
 def make_jobspec(cfg, targets, makefile='Makefile'):
   if platform_string() == 'windows':
     extra_args = []
