@@ -83,7 +83,7 @@ namespace Grpc.Core.Internal.Tests
             Assert.IsFalse(moveNextTask.Result);
 
             fakeCall.ReceivedCloseOnServerHandler(true, cancelled: true);
-            AssertDisposed(asyncCallServer, fakeCall, finishedTask);
+            AssertFinished(asyncCallServer, fakeCall, finishedTask);
         }
 
         [Test]
@@ -100,13 +100,11 @@ namespace Grpc.Core.Internal.Tests
             fakeCall.ReceivedMessageHandler(true, null);
             Assert.IsFalse(moveNextTask.Result);
 
-            AssertDisposed(asyncCallServer, fakeCall, finishedTask);
+            AssertFinished(asyncCallServer, fakeCall, finishedTask);
         }
 
 
         // TODO: read completion failure ...
-
-        // TODO: 
 
 
 
@@ -124,7 +122,7 @@ namespace Grpc.Core.Internal.Tests
 
         // TODO: what does writing status do to reads?
 
-        static void AssertDisposed(AsyncCallServer<string, string> asyncCallServer, FakeNativeCall fakeCall, Task finishedTask)
+        static void AssertFinished(AsyncCallServer<string, string> asyncCallServer, FakeNativeCall fakeCall, Task finishedTask)
         {
             Assert.IsTrue(fakeCall.IsDisposed);
             Assert.IsTrue(finishedTask.IsCompleted);
