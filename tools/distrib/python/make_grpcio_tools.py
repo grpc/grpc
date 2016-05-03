@@ -33,6 +33,8 @@ import os
 import os.path
 import shutil
 import subprocess
+import sys
+import traceback
 
 DEPS_FILE_CONTENT="""
 # Copyright 2016, Google Inc.
@@ -93,7 +95,7 @@ BAZEL_DEPS = os.path.join(GRPC_ROOT, 'tools/distrib/python/bazel_deps.sh')
 BAZEL_DEPS_PROTOC_LIB_QUERY = '//:protoc_lib'
 
 
-def write_deps(query, out_file):
+def get_deps(query):
   """Write the result of the bazel query `query` against protobuf to
      `out_file`."""
   output = subprocess.check_output([BAZEL_DEPS, query])
@@ -103,7 +105,7 @@ def write_deps(query, out_file):
       if name.endswith('.cc') and name.startswith(PROTOBUF_CC_PREFIX)]
   cc_files = [cc_file[len(PROTOBUF_CC_PREFIX):] for cc_file in cc_files]
   deps_file_content = DEPS_FILE_CONTENT.format(cc_files)
-  out_file.write(deps_file_content)
+  return deps_file_content
 
 
 def main():
@@ -120,8 +122,18 @@ def main():
   shutil.copytree(GRPC_PROTOC_PLUGINS, GRPC_PYTHON_PROTOC_PLUGINS)
   shutil.copytree(GRPC_INCLUDE, GRPC_PYTHON_INCLUDE)
 
+  try:
+    protoc_lib_deps_content = get_deps(BAZEL_DEPS_PROTOC_LIB_QUERY)
+  except Exception as error:
+    # We allow this script to succeed even if we couldn't get the dependencies,
+    # as then we can assume that even without a successful bazel run the
+    # dependencies currently in source control are 'good enough'.
+    sys.stderr.write("Got non-fatal error:\n")
+    traceback.print_exc(file=sys.stderr)
+    return
+  # If we successfully got the dependencies, truncate and rewrite the deps file.
   with open(GRPC_PYTHON_PROTOC_LIB_DEPS, 'w') as deps_file:
-    write_deps(BAZEL_DEPS_PROTOC_LIB_QUERY, deps_file)
+    deps_file.write(protoc_lib_deps_content)
 
 if __name__ == '__main__':
   main()
