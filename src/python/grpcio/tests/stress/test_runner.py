@@ -1,5 +1,3 @@
-#!/usr/bin/env python2.7
-
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -29,51 +27,47 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import collections
-import fnmatch
-import os
-import re
-import sys
-import yaml
+"""Thread that sends random weighted requests on a TestService stub."""
+
+import random
+import threading
+import time
+import traceback
 
 
-_RE_API = r'(?:GPRAPI|GRPCAPI|CENSUSAPI)([^;]*);'
+def _weighted_test_case_generator(weighted_cases):
+  weight_sum = sum(weighted_cases.itervalues())
+
+  while True:
+    val = random.uniform(0, weight_sum)
+    partial_sum = 0
+    for case in weighted_cases:
+      partial_sum += weighted_cases[case]
+      if val <= partial_sum:
+        yield case
+        break
 
 
-def list_c_apis(filenames):
-  for filename in filenames:
-    with open(filename, 'r') as f:
-      text = f.read()
-    for m in re.finditer(_RE_API, text):
-      api_declaration = re.sub('[ \r\n\t]+', ' ', m.group(1))
-      type_and_name, args_and_close = api_declaration.split('(', 1)
-      args = args_and_close[:args_and_close.rfind(')')].strip()
-      last_space = type_and_name.rfind(' ')
-      last_star = type_and_name.rfind('*')
-      type_end = max(last_space, last_star)
-      return_type = type_and_name[0:type_end+1].strip()
-      name = type_and_name[type_end+1:].strip()
-      yield {'return_type': return_type, 'name': name, 'arguments': args, 'header': filename}
+class TestRunner(threading.Thread):
 
+  def __init__(self, stub, test_cases, hist, exception_queue, stop_event):
+    super(TestRunner, self).__init__()
+    self._exception_queue = exception_queue
+    self._stop_event = stop_event
+    self._stub = stub
+    self._test_cases = _weighted_test_case_generator(test_cases)
+    self._histogram = hist
 
-def headers_under(directory):
-  for root, dirnames, filenames in os.walk(directory):
-    for filename in fnmatch.filter(filenames, '*.h'):
-      yield os.path.join(root, filename)
-
-
-def mako_plugin(dictionary):
-  apis = []
-  headers = []
-
-  for lib in dictionary['libs']:
-    if lib['name'] in ['grpc', 'gpr']:
-      headers.extend(lib['public_headers'])
-
-  apis.extend(list_c_apis(sorted(set(headers))))
-  dictionary['c_apis'] = apis
-
-
-if __name__ == '__main__':
-  print yaml.dump([api for api in list_c_apis(headers_under('include/grpc'))])
-
+  def run(self):
+    while not self._stop_event.is_set():
+      try:
+        test_case = next(self._test_cases)
+        start_time = time.time()
+        test_case.test_interoperability(self._stub, None)
+        end_time = time.time()
+        self._histogram.add((end_time - start_time)*1e9)
+      except Exception as e:
+        traceback.print_exc()
+        self._exception_queue.put(
+            Exception("An exception occured during test {}"
+                      .format(test_case), e))
