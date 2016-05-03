@@ -32,8 +32,8 @@
  */
 
 #include "src/core/ext/lb_policy/grpclb/load_balancer_api.h"
-#include "third_party/nanopb/pb_decode.h"
-#include "third_party/nanopb/pb_encode.h"
+#include "pb_decode.h"
+#include "pb_encode.h"
 
 #include <grpc/support/alloc.h>
 

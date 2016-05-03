@@ -2849,6 +2849,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aes_test", 
@@ -2873,6 +2874,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_asn1_test", 
@@ -2897,6 +2899,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_base64_test", 
@@ -2921,6 +2924,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_bio_test", 
@@ -2945,6 +2949,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_bn_test", 
@@ -2969,6 +2974,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_bytestring_test", 
@@ -2982,7 +2988,7 @@
   {
     "args": [
       "aes-128-gcm", 
-      "third_party/boringssl/crypto/cipher/test/aes_128_gcm_tests.txt"
+      "third_party/boringssl/src/crypto/cipher/test/aes_128_gcm_tests.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -2996,6 +3002,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -3009,7 +3016,7 @@
   {
     "args": [
       "aes-128-key-wrap", 
-      "third_party/boringssl/crypto/cipher/test/aes_128_key_wrap_tests.txt"
+      "third_party/boringssl/src/crypto/cipher/test/aes_128_key_wrap_tests.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -3023,6 +3030,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -3036,7 +3044,7 @@
   {
     "args": [
       "aes-256-gcm", 
-      "third_party/boringssl/crypto/cipher/test/aes_256_gcm_tests.txt"
+      "third_party/boringssl/src/crypto/cipher/test/aes_256_gcm_tests.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -3050,6 +3058,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -3063,7 +3072,7 @@
   {
     "args": [
       "aes-256-key-wrap", 
-      "third_party/boringssl/crypto/cipher/test/aes_256_key_wrap_tests.txt"
+      "third_party/boringssl/src/crypto/cipher/test/aes_256_key_wrap_tests.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -3077,6 +3086,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -3090,7 +3100,7 @@
   {
     "args": [
       "chacha20-poly1305", 
-      "third_party/boringssl/crypto/cipher/test/chacha20_poly1305_tests.txt"
+      "third_party/boringssl/src/crypto/cipher/test/chacha20_poly1305_tests.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -3104,6 +3114,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -3117,7 +3128,7 @@
   {
     "args": [
       "chacha20-poly1305-old", 
-      "third_party/boringssl/crypto/cipher/test/chacha20_poly1305_old_tests.txt"
+      "third_party/boringssl/src/crypto/cipher/test/chacha20_poly1305_old_tests.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -3131,6 +3142,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -3144,7 +3156,7 @@
   {
     "args": [
       "rc4-md5-tls", 
-      "third_party/boringssl/crypto/cipher/test/rc4_md5_tls_tests.txt"
+      "third_party/boringssl/src/crypto/cipher/test/rc4_md5_tls_tests.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -3158,6 +3170,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -3171,7 +3184,7 @@
   {
     "args": [
       "rc4-sha1-tls", 
-      "third_party/boringssl/crypto/cipher/test/rc4_sha1_tls_tests.txt"
+      "third_party/boringssl/src/crypto/cipher/test/rc4_sha1_tls_tests.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -3185,6 +3198,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -3198,7 +3212,7 @@
   {
     "args": [
       "aes-128-cbc-sha1-tls", 
-      "third_party/boringssl/crypto/cipher/test/aes_128_cbc_sha1_tls_tests.txt"
+      "third_party/boringssl/src/crypto/cipher/test/aes_128_cbc_sha1_tls_tests.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -3212,6 +3226,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -3225,7 +3240,7 @@
   {
     "args": [
       "aes-128-cbc-sha1-tls-implicit-iv", 
-      "third_party/boringssl/crypto/cipher/test/aes_128_cbc_sha1_tls_implicit_iv_tests.txt"
+      "third_party/boringssl/src/crypto/cipher/test/aes_128_cbc_sha1_tls_implicit_iv_tests.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -3239,6 +3254,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -3252,7 +3268,7 @@
   {
     "args": [
       "aes-128-cbc-sha256-tls", 
-      "third_party/boringssl/crypto/cipher/test/aes_128_cbc_sha256_tls_tests.txt"
+      "third_party/boringssl/src/crypto/cipher/test/aes_128_cbc_sha256_tls_tests.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -3266,6 +3282,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -3279,7 +3296,7 @@
   {
     "args": [
       "aes-256-cbc-sha1-tls", 
-      "third_party/boringssl/crypto/cipher/test/aes_256_cbc_sha1_tls_tests.txt"
+      "third_party/boringssl/src/crypto/cipher/test/aes_256_cbc_sha1_tls_tests.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -3293,6 +3310,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -3306,7 +3324,7 @@
   {
     "args": [
       "aes-256-cbc-sha1-tls-implicit-iv", 
-      "third_party/boringssl/crypto/cipher/test/aes_256_cbc_sha1_tls_implicit_iv_tests.txt"
+      "third_party/boringssl/src/crypto/cipher/test/aes_256_cbc_sha1_tls_implicit_iv_tests.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -3320,6 +3338,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -3333,7 +3352,7 @@
   {
     "args": [
       "aes-256-cbc-sha256-tls", 
-      "third_party/boringssl/crypto/cipher/test/aes_256_cbc_sha256_tls_tests.txt"
+      "third_party/boringssl/src/crypto/cipher/test/aes_256_cbc_sha256_tls_tests.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -3347,6 +3366,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -3360,7 +3380,7 @@
   {
     "args": [
       "aes-256-cbc-sha384-tls", 
-      "third_party/boringssl/crypto/cipher/test/aes_256_cbc_sha384_tls_tests.txt"
+      "third_party/boringssl/src/crypto/cipher/test/aes_256_cbc_sha384_tls_tests.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -3374,6 +3394,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -3387,7 +3408,7 @@
   {
     "args": [
       "des-ede3-cbc-sha1-tls", 
-      "third_party/boringssl/crypto/cipher/test/des_ede3_cbc_sha1_tls_tests.txt"
+      "third_party/boringssl/src/crypto/cipher/test/des_ede3_cbc_sha1_tls_tests.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -3401,6 +3422,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -3414,7 +3436,7 @@
   {
     "args": [
       "des-ede3-cbc-sha1-tls-implicit-iv", 
-      "third_party/boringssl/crypto/cipher/test/des_ede3_cbc_sha1_tls_implicit_iv_tests.txt"
+      "third_party/boringssl/src/crypto/cipher/test/des_ede3_cbc_sha1_tls_implicit_iv_tests.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -3428,6 +3450,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -3441,7 +3464,7 @@
   {
     "args": [
       "rc4-md5-ssl3", 
-      "third_party/boringssl/crypto/cipher/test/rc4_md5_ssl3_tests.txt"
+      "third_party/boringssl/src/crypto/cipher/test/rc4_md5_ssl3_tests.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -3455,6 +3478,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -3468,7 +3492,7 @@
   {
     "args": [
       "rc4-sha1-ssl3", 
-      "third_party/boringssl/crypto/cipher/test/rc4_sha1_ssl3_tests.txt"
+      "third_party/boringssl/src/crypto/cipher/test/rc4_sha1_ssl3_tests.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -3482,6 +3506,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -3495,7 +3520,7 @@
   {
     "args": [
       "aes-128-cbc-sha1-ssl3", 
-      "third_party/boringssl/crypto/cipher/test/aes_128_cbc_sha1_ssl3_tests.txt"
+      "third_party/boringssl/src/crypto/cipher/test/aes_128_cbc_sha1_ssl3_tests.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -3509,6 +3534,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -3522,7 +3548,7 @@
   {
     "args": [
       "aes-256-cbc-sha1-ssl3", 
-      "third_party/boringssl/crypto/cipher/test/aes_256_cbc_sha1_ssl3_tests.txt"
+      "third_party/boringssl/src/crypto/cipher/test/aes_256_cbc_sha1_ssl3_tests.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -3536,6 +3562,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -3549,7 +3576,7 @@
   {
     "args": [
       "des-ede3-cbc-sha1-ssl3", 
-      "third_party/boringssl/crypto/cipher/test/des_ede3_cbc_sha1_ssl3_tests.txt"
+      "third_party/boringssl/src/crypto/cipher/test/des_ede3_cbc_sha1_ssl3_tests.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -3563,6 +3590,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -3576,7 +3604,7 @@
   {
     "args": [
       "aes-128-ctr-hmac-sha256", 
-      "third_party/boringssl/crypto/cipher/test/aes_128_ctr_hmac_sha256.txt"
+      "third_party/boringssl/src/crypto/cipher/test/aes_128_ctr_hmac_sha256.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -3590,6 +3618,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -3603,7 +3632,7 @@
   {
     "args": [
       "aes-256-ctr-hmac-sha256", 
-      "third_party/boringssl/crypto/cipher/test/aes_256_ctr_hmac_sha256.txt"
+      "third_party/boringssl/src/crypto/cipher/test/aes_256_ctr_hmac_sha256.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -3617,6 +3646,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_aead_test", 
@@ -3629,7 +3659,7 @@
   }, 
   {
     "args": [
-      "third_party/boringssl/crypto/cipher/test/cipher_test.txt"
+      "third_party/boringssl/src/crypto/cipher/test/cipher_test.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -3643,6 +3673,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_cipher_test", 
@@ -3667,6 +3698,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_cmac_test", 
@@ -3691,6 +3723,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_constant_time_test", 
@@ -3703,7 +3736,7 @@
   }, 
   {
     "args": [
-      "third_party/boringssl/crypto/curve25519/ed25519_tests.txt"
+      "third_party/boringssl/src/crypto/curve25519/ed25519_tests.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -3717,6 +3750,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_ed25519_test", 
@@ -3741,6 +3775,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_x25519_test", 
@@ -3765,6 +3800,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_dh_test", 
@@ -3789,6 +3825,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_digest_test", 
@@ -3813,6 +3850,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_dsa_test", 
@@ -3837,6 +3875,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_ec_test", 
@@ -3861,6 +3900,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_example_mul", 
@@ -3885,6 +3925,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_ecdsa_test", 
@@ -3909,6 +3950,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_err_test", 
@@ -3933,6 +3975,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_evp_extra_test", 
@@ -3945,7 +3988,7 @@
   }, 
   {
     "args": [
-      "third_party/boringssl/crypto/evp/evp_tests.txt"
+      "third_party/boringssl/src/crypto/evp/evp_tests.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -3959,6 +4002,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_evp_test", 
@@ -3983,6 +4027,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_pbkdf_test", 
@@ -4007,6 +4052,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_hkdf_test", 
@@ -4019,7 +4065,7 @@
   }, 
   {
     "args": [
-      "third_party/boringssl/crypto/hmac/hmac_tests.txt"
+      "third_party/boringssl/src/crypto/hmac/hmac_tests.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -4033,6 +4079,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_hmac_test", 
@@ -4057,6 +4104,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_lhash_test", 
@@ -4081,6 +4129,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_gcm_test", 
@@ -4105,6 +4154,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_pkcs8_test", 
@@ -4129,6 +4179,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_pkcs12_test", 
@@ -4141,7 +4192,7 @@
   }, 
   {
     "args": [
-      "third_party/boringssl/crypto/poly1305/poly1305_test.txt"
+      "third_party/boringssl/src/crypto/poly1305/poly1305_test.txt"
     ], 
     "boringssl": true, 
     "ci_platforms": [
@@ -4155,6 +4206,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_poly1305_test", 
@@ -4179,6 +4231,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_refcount_test", 
@@ -4203,6 +4256,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_rsa_test", 
@@ -4227,6 +4281,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_thread_test", 
@@ -4251,6 +4306,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_pkcs7_test", 
@@ -4275,6 +4331,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_x509_test", 
@@ -4299,6 +4356,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_tab_test", 
@@ -4323,6 +4381,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_v3name_test", 
@@ -4347,6 +4406,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_pqueue_test", 
@@ -4371,6 +4431,7 @@
     "exclude_configs": [
       "asan"
     ], 
+    "external": "boringssl", 
     "flaky": false, 
     "language": "c++", 
     "name": "boringssl_ssl_test", 

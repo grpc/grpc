@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\cmac\cmac_test.cc">
-      <Filter>third_party\boringssl\crypto\cmac</Filter>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\src\crypto\cmac\cmac_test.cc">
+      <Filter>third_party\boringssl\src\crypto\cmac</Filter>
     </ClCompile>
   </ItemGroup>
 
@@ -13,11 +13,14 @@
     <Filter Include="third_party\boringssl">
       <UniqueIdentifier>{b66015a1-5670-4295-592e-5ea2dcaacdf3}</UniqueIdentifier>
     </Filter>
-    <Filter Include="third_party\boringssl\crypto">
-      <UniqueIdentifier>{eb12650d-202c-15e1-a00f-f2cac75bd50f}</UniqueIdentifier>
+    <Filter Include="third_party\boringssl\src">
+      <UniqueIdentifier>{0520d03e-3f78-9655-2214-fb0863489344}</UniqueIdentifier>
     </Filter>
-    <Filter Include="third_party\boringssl\crypto\cmac">
-      <UniqueIdentifier>{ecaf3674-c5c5-cf27-1c8c-f579fe987a6f}</UniqueIdentifier>
+    <Filter Include="third_party\boringssl\src\crypto">
+      <UniqueIdentifier>{d4bf43b4-66f8-2682-6772-d90c518fa220}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\src\crypto\cmac">
+      <UniqueIdentifier>{7909e7a8-8fc7-ea99-a471-1ce57568fe6f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

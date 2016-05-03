@@ -36,8 +36,7 @@ import yaml
 sys.dont_write_bytecode = True
 
 boring_ssl_root = os.path.abspath(os.path.join(
-    os.path.dirname(sys.argv[0]), 
-    '../../third_party/boringssl'))
+    os.path.dirname(sys.argv[0]), 'src'))
 sys.path.append(os.path.join(boring_ssl_root, 'util'))
 
 try:
@@ -47,14 +46,14 @@ except ImportError:
   sys.exit()
 
 def map_dir(filename):
-  if filename[0:4] == 'src/':
-    return 'third_party/boringssl/' + filename[4:]
+  if filename[0:4] == 'tmp/':
+    return 'third_party/boringssl/src/' + filename[4:]
   else:
-    return 'src/boringssl/' + filename
+    return 'third_party/boringssl/' + filename
 
 def map_testarg(arg):
   if '/' in arg:
-    return 'third_party/boringssl/' + arg
+    return 'third_party/boringssl/src/' + arg
   else:
     return arg
 
@@ -84,6 +83,7 @@ class Grpc(object):
               for f in files['ssl_headers'] + files['ssl_internal_headers'] + files['crypto_headers'] + files['crypto_internal_headers']
             ),
             'boringssl': True,
+            'external': 'boringssl',
             'defaults': 'boringssl',
           },
           {
@@ -92,6 +92,7 @@ class Grpc(object):
             'language': 'c++',
             'secure': 'no',
             'boringssl': True,
+            'external': 'boringssl',
             'defaults': 'boringssl',
             'src': [
               map_dir(f)
@@ -107,6 +108,7 @@ class Grpc(object):
             'src': [map_dir(test)],
             'vs_proj_dir': 'test/boringssl',
             'boringssl': True,
+            'external': 'boringssl',
             'defaults': 'boringssl',
             'deps': [
                 'boringssl_test_util',
@@ -125,6 +127,7 @@ class Grpc(object):
             'src': [],
             'vs_proj_dir': 'test/boringssl',
             'boringssl': True,
+            'external': 'boringssl',
             'defaults': 'boringssl',
             'deps': [
                 'boringssl_%s_lib' % os.path.splitext(os.path.basename(test))[0],
@@ -144,6 +147,7 @@ class Grpc(object):
             'flaky': False,
             'language': 'c++',
             'boringssl': True,
+            'external': 'boringssl',
             'defaults': 'boringssl',
             'cpu_cost': 1.0
           }
@@ -153,11 +157,11 @@ class Grpc(object):
 
 
 os.chdir(os.path.dirname(sys.argv[0]))
-os.mkdir('src')
+os.mkdir('tmp')
 try:
   for f in os.listdir(boring_ssl_root):
     os.symlink(os.path.join(boring_ssl_root, f),
-               os.path.join('src', f))
+               os.path.join('tmp', f))
 
   g = Grpc()
   generate_build_files.main([g])
@@ -165,4 +169,4 @@ try:
   print yaml.dump(g.yaml)
 
 finally:
-  shutil.rmtree('src')
+  shutil.rmtree('tmp')

@@ -834,6 +834,13 @@ libs:
   platforms:
   - linux
   secure: false
+- name: nanopb
+  build: internal
+  language: c
+  external: nanopb
+  filegroups:
+  - nanopb
+  secure: false
 - name: reconnect_server
   build: private
   language: c

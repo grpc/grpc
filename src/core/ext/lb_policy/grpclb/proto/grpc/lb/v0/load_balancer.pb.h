@@ -35,7 +35,7 @@
 
 #ifndef PB_LOAD_BALANCER_PB_H_INCLUDED
 #define PB_LOAD_BALANCER_PB_H_INCLUDED
-#include "third_party/nanopb/pb.h"
+#include "pb.h"
 #if PB_PROTO_HEADER_VERSION != 30
 #error Regenerate this file with the current version of nanopb generator.
 #endif

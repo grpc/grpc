@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\ec\ec_test.cc">
-      <Filter>third_party\boringssl\crypto\ec</Filter>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\src\crypto\ec\ec_test.cc">
+      <Filter>third_party\boringssl\src\crypto\ec</Filter>
     </ClCompile>
   </ItemGroup>
 
@@ -13,11 +13,14 @@
     <Filter Include="third_party\boringssl">
       <UniqueIdentifier>{845f42f3-1622-7f5a-d949-f6921e429143}</UniqueIdentifier>
     </Filter>
-    <Filter Include="third_party\boringssl\crypto">
-      <UniqueIdentifier>{971129bb-6f10-5a13-6770-3334e05d027e}</UniqueIdentifier>
+    <Filter Include="third_party\boringssl\src">
+      <UniqueIdentifier>{fb226907-9fa5-7ddb-6866-6f536b9b4897}</UniqueIdentifier>
     </Filter>
-    <Filter Include="third_party\boringssl\crypto\ec">
-      <UniqueIdentifier>{0673821d-35d0-95dd-6e39-870eb33127fc}</UniqueIdentifier>
+    <Filter Include="third_party\boringssl\src\crypto">
+      <UniqueIdentifier>{5341741b-0eda-df8e-a29c-28cb4aaa014a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\src\crypto\ec">
+      <UniqueIdentifier>{b4cc7638-6143-ef72-b1d9-40a9c207bf04}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

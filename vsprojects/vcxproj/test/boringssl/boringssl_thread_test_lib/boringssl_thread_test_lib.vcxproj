@@ -147,7 +147,7 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\thread_test.c">
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\src\crypto\thread_test.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -13,18 +13,6 @@
     <ClCompile Include="$(SolutionDir)\..\third_party\zlib\deflate.c">
       <Filter>third_party\zlib</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\zlib\gzclose.c">
-      <Filter>third_party\zlib</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\zlib\gzlib.c">
-      <Filter>third_party\zlib</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\zlib\gzread.c">
-      <Filter>third_party\zlib</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\zlib\gzwrite.c">
-      <Filter>third_party\zlib</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\third_party\zlib\infback.c">
       <Filter>third_party\zlib</Filter>
     </ClCompile>

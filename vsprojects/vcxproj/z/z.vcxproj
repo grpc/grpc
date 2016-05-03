@@ -168,14 +168,6 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\third_party\zlib\deflate.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\zlib\gzclose.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\zlib\gzlib.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\zlib\gzread.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\zlib\gzwrite.c">
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\third_party\zlib\infback.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\third_party\zlib\inffast.c">

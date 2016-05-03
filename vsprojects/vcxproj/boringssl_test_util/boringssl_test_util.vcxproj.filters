@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\test\file_test.cc">
-      <Filter>third_party\boringssl\crypto\test</Filter>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\src\crypto\test\file_test.cc">
+      <Filter>third_party\boringssl\src\crypto\test</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\test\malloc.cc">
-      <Filter>third_party\boringssl\crypto\test</Filter>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\src\crypto\test\malloc.cc">
+      <Filter>third_party\boringssl\src\crypto\test</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\test\test_util.cc">
-      <Filter>third_party\boringssl\crypto\test</Filter>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\src\crypto\test\test_util.cc">
+      <Filter>third_party\boringssl\src\crypto\test</Filter>
     </ClCompile>
   </ItemGroup>
 
@@ -19,11 +19,14 @@
     <Filter Include="third_party\boringssl">
       <UniqueIdentifier>{5eb132f5-83f9-1528-e503-f07750f7d9af}</UniqueIdentifier>
     </Filter>
-    <Filter Include="third_party\boringssl\crypto">
-      <UniqueIdentifier>{ae2f5257-9ea9-8f0f-7e70-0ca4f1e9d83a}</UniqueIdentifier>
+    <Filter Include="third_party\boringssl\src">
+      <UniqueIdentifier>{4b0c912f-4392-248b-4718-1b2797dbb17a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="third_party\boringssl\crypto\test">
-      <UniqueIdentifier>{a7911910-503b-8f04-67d8-656dfb02381e}</UniqueIdentifier>
+    <Filter Include="third_party\boringssl\src\crypto">
+      <UniqueIdentifier>{cb83c5ea-f6c4-8239-5e48-6272cd239135}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\src\crypto\test">
+      <UniqueIdentifier>{844f897f-ebcb-00e4-dd6c-8d2669055093}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

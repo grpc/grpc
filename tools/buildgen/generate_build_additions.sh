@@ -29,7 +29,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 gen_build_yaml_dirs="  \
-  src/boringssl        \
+  third_party/boringssl\
   src/proto            \
   src/zlib             \
   test/core/bad_client \
