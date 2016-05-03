@@ -78,6 +78,6 @@ void grpc_workqueue_add_to_pollset(grpc_exec_ctx *exec_ctx,
 
 /** Add a work item to a workqueue */
 void grpc_workqueue_push(grpc_workqueue *workqueue, grpc_closure *closure,
-                         int success);
+                         grpc_error *error);
 
 #endif /* GRPC_CORE_LIB_IOMGR_WORKQUEUE_H */

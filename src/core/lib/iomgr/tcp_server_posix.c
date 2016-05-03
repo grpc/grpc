@@ -59,6 +59,8 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
+#include <grpc/support/useful.h>
+
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
@@ -150,7 +152,7 @@ grpc_tcp_server *grpc_tcp_server_create(grpc_closure *shutdown_complete) {
 
 static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   if (s->shutdown_complete != NULL) {
-    grpc_exec_ctx_enqueue(exec_ctx, s->shutdown_complete, true, NULL);
+    grpc_exec_ctx_push(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE, NULL);
   }
 
   gpr_mu_destroy(&s->mu);
@@ -165,7 +167,7 @@ static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
 }
 
 static void destroyed_port(grpc_exec_ctx *exec_ctx, void *server,
-                           bool success) {
+                           grpc_error *error) {
   grpc_tcp_server *s = server;
   gpr_mu_lock(&s->mu);
   s->destroyed_ports++;
@@ -306,14 +308,14 @@ error:
 }
 
 /* event manager callback when reads are ready */
-static void on_read(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *err) {
   grpc_tcp_listener *sp = arg;
   grpc_tcp_server_acceptor acceptor = {sp->server, sp->port_index,
                                        sp->fd_index};
   grpc_fd *fdobj;
   size_t i;
 
-  if (!success) {
+  if (err != GRPC_ERROR_NONE) {
     goto error;
   }
 
@@ -420,8 +422,8 @@ static grpc_tcp_listener *add_socket_to_server(grpc_tcp_server *s, int fd,
   return sp;
 }
 
-int grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
-                             size_t addr_len) {
+grpc_error *grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
+                                     size_t addr_len, int *out_port) {
   grpc_tcp_listener *sp;
   grpc_tcp_listener *sp2 = NULL;
   int fd;
@@ -436,6 +438,7 @@ int grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
   int port;
   unsigned port_index = 0;
   unsigned fd_index = 0;
+  grpc_error *errs[2] = {GRPC_ERROR_NONE, GRPC_ERROR_NONE};
   if (s->tail != NULL) {
     port_index = s->tail->port_index + 1;
   }
@@ -474,26 +477,26 @@ int grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
     /* Try listening on IPv6 first. */
     addr = (struct sockaddr *)&wild6;
     addr_len = sizeof(wild6);
-    fd = grpc_create_dualstack_socket(addr, SOCK_STREAM, 0, &dsmode);
-    sp = add_socket_to_server(s, fd, addr, addr_len, port_index, fd_index);
-    if (fd >= 0 && dsmode == GRPC_DSMODE_DUALSTACK) {
-      goto done;
+    errs[0] = grpc_create_dualstack_socket(addr, SOCK_STREAM, 0, &dsmode, &fd);
+    if (errs[0] == GRPC_ERROR_NONE) {
+      sp = add_socket_to_server(s, fd, addr, addr_len, port_index, fd_index);
+      if (fd >= 0 && dsmode == GRPC_DSMODE_DUALSTACK) {
+        goto done;
+      }
+      if (sp != NULL) {
+        ++fd_index;
+      }
+      /* If we didn't get a dualstack socket, also listen on 0.0.0.0. */
+      if (port == 0 && sp != NULL) {
+        grpc_sockaddr_set_port((struct sockaddr *)&wild4, sp->port);
+      }
+      addr = (struct sockaddr *)&wild4;
+      addr_len = sizeof(wild4);
     }
-    if (sp != NULL) {
-      ++fd_index;
-    }
-    /* If we didn't get a dualstack socket, also listen on 0.0.0.0. */
-    if (port == 0 && sp != NULL) {
-      grpc_sockaddr_set_port((struct sockaddr *)&wild4, sp->port);
-    }
-    addr = (struct sockaddr *)&wild4;
-    addr_len = sizeof(wild4);
   }
 
-  fd = grpc_create_dualstack_socket(addr, SOCK_STREAM, 0, &dsmode);
-  if (fd < 0) {
-    gpr_log(GPR_ERROR, "Unable to create socket: %s", strerror(errno));
-  } else {
+  errs[1] = grpc_create_dualstack_socket(addr, SOCK_STREAM, 0, &dsmode, &fd);
+  if (errs[1] == GRPC_ERROR_NONE) {
     if (dsmode == GRPC_DSMODE_IPV4 &&
         grpc_sockaddr_is_v4mapped(addr, &addr4_copy)) {
       addr = (struct sockaddr *)&addr4_copy;
@@ -510,9 +513,19 @@ int grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
 done:
   gpr_free(allocated_addr);
   if (sp != NULL) {
-    return sp->port;
+    *out_port = sp->port;
+    grpc_error_unref(errs[0]);
+    grpc_error_unref(errs[1]);
+    return GRPC_ERROR_NONE;
   } else {
-    return -1;
+    *out_port = -1;
+    char *addr_str = grpc_sockaddr_to_uri(addr);
+    grpc_error *err = grpc_error_set_str(
+        GRPC_ERROR_CREATE_REFERENCING("Failed to add port to server", errs,
+                                      GPR_ARRAY_SIZE(errs)),
+        GRPC_ERROR_STR_TARGET_ADDRESS, addr_str);
+    gpr_free(addr_str);
+    return err;
   }
 }
 
@@ -581,7 +594,8 @@ grpc_tcp_server *grpc_tcp_server_ref(grpc_tcp_server *s) {
 void grpc_tcp_server_shutdown_starting_add(grpc_tcp_server *s,
                                            grpc_closure *shutdown_starting) {
   gpr_mu_lock(&s->mu);
-  grpc_closure_list_add(&s->shutdown_starting, shutdown_starting, 1);
+  grpc_closure_list_append(&s->shutdown_starting, shutdown_starting,
+                           GRPC_ERROR_NONE);
   gpr_mu_unlock(&s->mu);
 }
 

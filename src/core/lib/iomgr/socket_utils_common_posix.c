@@ -60,7 +60,7 @@
 grpc_error *grpc_set_socket_nonblocking(int fd, int non_blocking) {
   int oldflags = fcntl(fd, F_GETFL, 0);
   if (oldflags < 0) {
-    return grpc_os_error(errno, "fcntl");
+    return GRPC_OS_ERROR(errno, "fcntl");
   }
 
   if (non_blocking) {
@@ -70,7 +70,7 @@ grpc_error *grpc_set_socket_nonblocking(int fd, int non_blocking) {
   }
 
   if (fcntl(fd, F_SETFL, oldflags) != 0) {
-    return grpc_os_error(errno, "fcntl");
+    return GRPC_OS_ERROR(errno, "fcntl");
   }
 
   return GRPC_ERROR_NONE;
@@ -82,13 +82,13 @@ grpc_error *grpc_set_socket_no_sigpipe_if_possible(int fd) {
   int newval;
   socklen_t intlen = sizeof(newval);
   if (0 != setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &val, sizeof(val))) {
-    return grpc_os_error(errno, "setsockopt(SO_NOSIGPIPE)");
+    return GRPC_OS_ERROR(errno, "setsockopt(SO_NOSIGPIPE)");
   }
   if (0 == getsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &newval, &intlen)) {
-    return grpc_os_error(errno, "getsockopt(SO_NOSIGPIPE)");
+    return GRPC_OS_ERROR(errno, "getsockopt(SO_NOSIGPIPE)");
   }
   if ((newval != 0) == val) {
-    return grpc_error_set_str(grpc_error_create(), GRPC_ERROR_STR_grpc_os_error,
+    return grpc_error_set_str(GRPC_ERROR_CREATE(), GRPC_ERROR_STR_grpc_os_error,
                               "Failed to set SO_NOSIGPIPE");
   }
 #endif
@@ -100,7 +100,7 @@ grpc_error *grpc_set_socket_ip_pktinfo_if_possible(int fd) {
   int get_local_ip = 1;
   if (0 != setsockopt(fd, IPPROTO_IP, IP_PKTINFO, &get_local_ip,
                       sizeof(get_local_ip))) {
-    return grpc_os_error(errno, "setsockopt(IP_PKTINFO)");
+    return GRPC_OS_ERROR(errno, "setsockopt(IP_PKTINFO)");
   }
 #endif
   return GRPC_ERROR_NONE;
@@ -111,7 +111,7 @@ grpc_error *grpc_set_socket_ipv6_recvpktinfo_if_possible(int fd) {
   int get_local_ip = 1;
   if (0 != setsockopt(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, &get_local_ip,
                       sizeof(get_local_ip))) {
-    return grpc_os_error(errno, "setsockopt(IPV6_RECVPKTINFO)");
+    return GRPC_OS_ERROR(errno, "setsockopt(IPV6_RECVPKTINFO)");
   }
 #endif
   return GRPC_ERROR_NONE;
@@ -121,7 +121,7 @@ grpc_error *grpc_set_socket_ipv6_recvpktinfo_if_possible(int fd) {
 grpc_error *grpc_set_socket_cloexec(int fd, int close_on_exec) {
   int oldflags = fcntl(fd, F_GETFD, 0);
   if (oldflags < 0) {
-    return grpc_os_error(errno, "fcntl");
+    return GRPC_OS_ERROR(errno, "fcntl");
   }
 
   if (close_on_exec) {
@@ -131,7 +131,7 @@ grpc_error *grpc_set_socket_cloexec(int fd, int close_on_exec) {
   }
 
   if (fcntl(fd, F_SETFD, oldflags) != 0) {
-    return grpc_os_error(errno, "fcntl");
+    return GRPC_OS_ERROR(errno, "fcntl");
   }
 
   return GRPC_ERROR_NONE;
@@ -143,14 +143,13 @@ grpc_error *grpc_set_socket_reuse_addr(int fd, int reuse) {
   int newval;
   socklen_t intlen = sizeof(newval);
   if (0 != setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val))) {
-    return grpc_os_error(errno, "setsockopt(SO_REUSEADDR)");
+    return GRPC_OS_ERROR(errno, "setsockopt(SO_REUSEADDR)");
   }
   if (0 != getsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &newval, &intlen)) {
-    return grpc_os_error(errno, "getsockopt(SO_REUSEADDR)");
+    return GRPC_OS_ERROR(errno, "getsockopt(SO_REUSEADDR)");
   }
   if ((newval != 0) != val) {
-    return grpc_error_set_str(grpc_error_create(), GRPC_ERROR_STR_OS_ERROR,
-                              "Failed to set SO_REUSEADDR");
+    return GRPC_ERROR_CREATE("Failed to set SO_REUSEADDR");
   }
 
   return GRPC_ERROR_NONE;
@@ -162,14 +161,13 @@ grpc_error *grpc_set_socket_low_latency(int fd, int low_latency) {
   int newval;
   socklen_t intlen = sizeof(newval);
   if (0 != setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val))) {
-    return grpc_os_error(errno, "setsockopt(TCP_NODELAY)");
+    return GRPC_OS_ERROR(errno, "setsockopt(TCP_NODELAY)");
   }
   if (0 != getsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &newval, &intlen)) {
-    return grpc_os_error(errno, "getsockopt(TCP_NODELAY)");
+    return GRPC_OS_ERROR(errno, "getsockopt(TCP_NODELAY)");
   }
   if ((newval != 0) != val) {
-    return grpc_error_set_str(grpc_error_create(), GRPC_ERROR_STR_OS_ERROR,
-                              "Failed to set TCP_NODELAY");
+    return GRPC_ERROR_CREATE("Failed to set TCP_NODELAY");
   }
   return GRPC_ERROR_NONE;
 }
@@ -250,7 +248,7 @@ grpc_error *grpc_create_dualstack_socket(const struct sockaddr *addr, int type,
   *dsmode = family == AF_INET ? GRPC_DSMODE_IPV4 : GRPC_DSMODE_NONE;
   *newfd = socket(family, type, protocol);
   if (*newfd == -1) {
-    return grpc_os_error(errno, "socket");
+    return GRPC_OS_ERROR(errno, "socket");
   }
   return GRPC_ERROR_NONE;
 }

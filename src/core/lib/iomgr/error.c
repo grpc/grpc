@@ -58,6 +58,16 @@ static void destroy_err(void *err) { grpc_error_unref(err); }
 
 static void *copy_err(void *err) { return grpc_error_ref(err); }
 
+static void destroy_time(void *tm) { gpr_free(tm); }
+
+static gpr_timespec *box_time(gpr_timespec tm) {
+  gpr_timespec *out = gpr_malloc(sizeof(*out));
+  *out = tm;
+  return out;
+}
+
+static void *copy_time(void *tm) { return box_time(*(gpr_timespec *)tm); }
+
 static const gpr_avl_vtable avl_vtable_ints = {destroy_integer, copy_integer,
                                                compare_integers,
                                                destroy_integer, copy_integer};
@@ -65,6 +75,9 @@ static const gpr_avl_vtable avl_vtable_ints = {destroy_integer, copy_integer,
 static const gpr_avl_vtable avl_vtable_strs = {destroy_integer, copy_integer,
                                                compare_integers, destroy_string,
                                                copy_string};
+
+static const gpr_avl_vtable avl_vtable_times = {
+    destroy_integer, copy_integer, compare_integers, destroy_time, copy_time};
 
 static const gpr_avl_vtable avl_vtable_errs = {
     destroy_integer, copy_integer, compare_integers, destroy_err, copy_err};
@@ -75,6 +88,8 @@ static const char *error_int_name(grpc_error_ints key) {
       return "status_code";
     case GRPC_ERROR_INT_ERRNO:
       return "errno";
+    case GRPC_ERROR_INT_FILE_LINE:
+      return "file_line";
   }
   GPR_UNREACHABLE_CODE(return "unknown");
 }
@@ -89,6 +104,16 @@ static const char *error_str_name(grpc_error_strs key) {
       return "target_address";
     case GRPC_ERROR_STR_SYSCALL:
       return "syscall";
+    case GRPC_ERROR_STR_FILE:
+      return "file";
+  }
+  GPR_UNREACHABLE_CODE(return "unknown");
+}
+
+static const char *error_time_name(grpc_error_times key) {
+  switch (key) {
+    case GRPC_ERROR_TIME_CREATED:
+      return "created";
   }
   GPR_UNREACHABLE_CODE(return "unknown");
 }
@@ -97,12 +122,14 @@ struct grpc_error {
   gpr_refcount refs;
   gpr_avl ints;
   gpr_avl strs;
+  gpr_avl times;
   gpr_avl errs;
   uintptr_t next_err;
 };
 
 static bool is_special(grpc_error *err) {
-  return err == GRPC_ERROR_NONE || err == GRPC_ERROR_OOM;
+  return err == GRPC_ERROR_NONE || err == GRPC_ERROR_OOM ||
+         err == GRPC_ERROR_CANCELLED;
 }
 
 grpc_error *grpc_error_ref(grpc_error *err) {
@@ -116,6 +143,7 @@ static void error_destroy(grpc_error *err) {
   gpr_avl_unref(err->ints);
   gpr_avl_unref(err->strs);
   gpr_avl_unref(err->errs);
+  gpr_avl_unref(err->times);
 }
 
 void grpc_error_unref(grpc_error *err) {
@@ -124,14 +152,29 @@ void grpc_error_unref(grpc_error *err) {
   }
 }
 
-grpc_error *grpc_error_create(void) {
+grpc_error *grpc_error_create(const char *file, int line, const char *desc,
+                              grpc_error **referencing,
+                              size_t num_referencing) {
   grpc_error *err = gpr_malloc(sizeof(*err));
   if (err == NULL) {  // TODO(ctiller): make gpr_malloc return NULL
     return GRPC_ERROR_OOM;
   }
-  err->ints = gpr_avl_create(&avl_vtable_ints);
-  err->strs = gpr_avl_create(&avl_vtable_strs);
+  err->ints = gpr_avl_add(gpr_avl_create(&avl_vtable_ints),
+                          (void *)(uintptr_t)GRPC_ERROR_INT_FILE_LINE,
+                          (void *)(uintptr_t)line);
+  err->strs = gpr_avl_add(
+      gpr_avl_add(gpr_avl_create(&avl_vtable_strs),
+                  (void *)(uintptr_t)GRPC_ERROR_STR_FILE, (void *)file),
+      (void *)(uintptr_t)GRPC_ERROR_STR_DESCRIPTION, (void *)desc);
   err->errs = gpr_avl_create(&avl_vtable_errs);
+  for (size_t i = 0; i < num_referencing; i++) {
+    if (referencing[i] == GRPC_ERROR_NONE) continue;
+    err->errs =
+        gpr_avl_add(err->errs, (void *)(err->next_err++), referencing[i]);
+  }
+  err->times = gpr_avl_add(gpr_avl_create(&avl_vtable_times),
+                           (void *)(uintptr_t)GRPC_ERROR_TIME_CREATED,
+                           box_time(gpr_now(GPR_CLOCK_REALTIME)));
   err->next_err = 0;
   gpr_ref_init(&err->refs, 1);
   return err;
@@ -139,12 +182,16 @@ grpc_error *grpc_error_create(void) {
 
 static grpc_error *copy_error_and_unref(grpc_error *in) {
   if (is_special(in)) {
-    return grpc_error_create();
+    if (in == GRPC_ERROR_NONE) return GRPC_ERROR_CREATE("no error");
+    if (in == GRPC_ERROR_OOM) return GRPC_ERROR_CREATE("oom");
+    if (in == GRPC_ERROR_CANCELLED) return GRPC_ERROR_CREATE("cancelled");
+    return GRPC_ERROR_CREATE("unknown");
   }
   grpc_error *out = gpr_malloc(sizeof(*out));
   out->ints = gpr_avl_ref(in->ints);
   out->strs = gpr_avl_ref(in->strs);
   out->errs = gpr_avl_ref(in->errs);
+  out->times = gpr_avl_ref(in->times);
   out->next_err = in->next_err;
   gpr_ref_init(&out->refs, 1);
   grpc_error_unref(in);
@@ -173,6 +220,7 @@ grpc_error *grpc_error_add_child(grpc_error *src, grpc_error *child) {
 
 static const char *no_error_string = "null";
 static const char *oom_error_string = "\"Out of memory\"";
+static const char *cancelled_error_string = "\"Cancelled\"";
 
 typedef struct {
   char *key;
@@ -209,6 +257,10 @@ static char *key_int(void *p) {
 
 static char *key_str(void *p) {
   return gpr_strdup(error_str_name((grpc_error_strs)(uintptr_t)p));
+}
+
+static char *key_time(void *p) {
+  return gpr_strdup(error_time_name((grpc_error_times)(uintptr_t)p));
 }
 
 static char *fmt_int(void *p) {
@@ -277,6 +329,28 @@ static char *fmt_str(void *p) {
   return s;
 }
 
+static char *fmt_time(void *p) {
+  gpr_timespec tm = *(gpr_timespec *)p;
+  char *out;
+  char *pfx = "!!";
+  switch (tm.clock_type) {
+    case GPR_CLOCK_MONOTONIC:
+      pfx = "@monotonic:";
+      break;
+    case GPR_CLOCK_REALTIME:
+      pfx = "@";
+      break;
+    case GPR_CLOCK_PRECISE:
+      pfx = "@precise:";
+      break;
+    case GPR_TIMESPAN:
+      pfx = "";
+      break;
+  }
+  gpr_asprintf(&out, "%s%d.%09d", pfx, tm.tv_sec, tm.tv_nsec);
+  return out;
+}
+
 static void add_errs(gpr_avl_node *n, char **s, size_t *sz, size_t *cap) {
   if (n == NULL) return;
   add_errs(n->left, s, sz, cap);
@@ -324,12 +398,14 @@ static const char *finish_kvs(kv_pairs *kvs) {
 const char *grpc_error_string(grpc_error *err) {
   if (err == GRPC_ERROR_NONE) return no_error_string;
   if (err == GRPC_ERROR_OOM) return oom_error_string;
+  if (err == GRPC_ERROR_CANCELLED) return cancelled_error_string;
 
   kv_pairs kvs;
   memset(&kvs, 0, sizeof(kvs));
 
   collect_kvs(err->ints.root, key_int, fmt_int, &kvs);
   collect_kvs(err->strs.root, key_str, fmt_str, &kvs);
+  collect_kvs(err->times.root, key_time, fmt_time, &kvs);
   append_kv(&kvs, gpr_strdup("referenced_errors"), errs_string(err));
 
   qsort(kvs.kvs, kvs.num_kvs, sizeof(kv_pair), cmp_kvs);
@@ -337,10 +413,12 @@ const char *grpc_error_string(grpc_error *err) {
   return finish_kvs(&kvs);
 }
 
-grpc_error *grpc_os_error(int err, const char *call_name) {
+grpc_error *grpc_os_error(const char *file, int line, int err,
+                          const char *call_name) {
   return grpc_error_set_str(
       grpc_error_set_str(
-          grpc_error_set_int(grpc_error_create(), GRPC_ERROR_INT_ERRNO, err),
+          grpc_error_set_int(grpc_error_create(file, line, "OS Error", NULL, 0),
+                             GRPC_ERROR_INT_ERRNO, err),
           GRPC_ERROR_STR_OS_ERROR, strerror(err)),
       GRPC_ERROR_STR_SYSCALL, call_name);
 }

@@ -117,13 +117,12 @@ static void finish(grpc_exec_ctx *exec_ctx, internal_request *req,
   gpr_free(req);
 }
 
-static void on_read(grpc_exec_ctx *exec_ctx, void *user_data, bool success);
-
 static void do_read(grpc_exec_ctx *exec_ctx, internal_request *req) {
   grpc_endpoint_read(exec_ctx, req->ep, &req->incoming, &req->on_read);
 }
 
-static void on_read(grpc_exec_ctx *exec_ctx, void *user_data, bool success) {
+static void on_read(grpc_exec_ctx *exec_ctx, void *user_data,
+                    grpc_error *error) {
   internal_request *req = user_data;
   size_t i;
 
@@ -137,7 +136,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *user_data, bool success) {
     }
   }
 
-  if (success) {
+  if (error == GRPC_ERROR_NONE) {
     do_read(exec_ctx, req);
   } else if (!req->have_read_byte) {
     next_address(exec_ctx, req);
@@ -154,9 +153,9 @@ static void on_written(grpc_exec_ctx *exec_ctx, internal_request *req) {
   do_read(exec_ctx, req);
 }
 
-static void done_write(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+static void done_write(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   internal_request *req = arg;
-  if (success) {
+  if (error == GRPC_ERROR_NONE) {
     on_written(exec_ctx, req);
   } else {
     next_address(exec_ctx, req);
@@ -182,7 +181,8 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   start_write(exec_ctx, req);
 }
 
-static void on_connected(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+static void on_connected(grpc_exec_ctx *exec_ctx, void *arg,
+                         grpc_error *error) {
   internal_request *req = arg;
 
   if (!req->ep) {

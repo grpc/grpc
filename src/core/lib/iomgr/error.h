@@ -36,34 +36,53 @@
 
 #include <stdint.h>
 
+#include <grpc/support/time.h>
+
 typedef struct grpc_error grpc_error;
 
 typedef enum {
+  GRPC_ERROR_INT_ERRNO,
+  GRPC_ERROR_INT_FILE_LINE,
   GRPC_ERROR_INT_STATUS_CODE,
-  GRPC_ERROR_INT_ERRNO
 } grpc_error_ints;
 
 typedef enum {
   GRPC_ERROR_STR_DESCRIPTION,
-  GRPC_ERROR_STR_TARGET_ADDRESS,
+  GRPC_ERROR_STR_FILE,
   GRPC_ERROR_STR_OS_ERROR,
-  GRPC_ERROR_STR_SYSCALL
+  GRPC_ERROR_STR_SYSCALL,
+  GRPC_ERROR_STR_TARGET_ADDRESS,
 } grpc_error_strs;
+
+typedef enum {
+  GRPC_ERROR_TIME_CREATED,
+} grpc_error_times;
 
 #define GRPC_ERROR_NONE ((grpc_error *)NULL)
 #define GRPC_ERROR_OOM ((grpc_error *)1)
+#define GRPC_ERROR_CANCELLED ((grpc_error *)2)
 
 const char *grpc_error_string(grpc_error *error);
 void grpc_error_free_string(const char *str);
 
-grpc_error *grpc_error_create(void);
+grpc_error *grpc_error_create(const char *file, int line, const char *desc,
+                              grpc_error **referencing, size_t num_referencing);
+#define GRPC_ERROR_CREATE(desc) \
+  grpc_error_create(__FILE__, __LINE__, desc, NULL, 0)
+#define GRPC_ERROR_CREATE_REFERENCING(desc, errs, count) \
+  grpc_error_create(__FILE__, __LINE__, desc, errs, count)
 grpc_error *grpc_error_ref(grpc_error *err);
 void grpc_error_unref(grpc_error *err);
 grpc_error *grpc_error_set_int(grpc_error *src, grpc_error_ints which,
                                intptr_t value);
+grpc_error *grpc_error_set_time(grpc_error *src, grpc_error_times which,
+                                gpr_timespec value);
 grpc_error *grpc_error_set_str(grpc_error *src, grpc_error_strs which,
                                const char *value);
 grpc_error *grpc_error_add_child(grpc_error *src, grpc_error *child);
-grpc_error *grpc_os_error(int err, const char *call_name);
+grpc_error *grpc_os_error(const char *file, int line, int err,
+                          const char *call_name);
+#define GRPC_OS_ERROR(err, call_name) \
+  grpc_os_error(__FILE__, __LINE__, err, call_name)
 
 #endif /* GRPC_CORE_LIB_IOMGR_ERROR_H */

@@ -87,12 +87,13 @@ typedef struct {
   grpc_closure wrapper;
 } wrapped_closure;
 
-static void closure_wrapper(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+static void closure_wrapper(grpc_exec_ctx *exec_ctx, void *arg,
+                            grpc_error *error) {
   wrapped_closure *wc = arg;
   grpc_iomgr_cb_func cb = wc->cb;
   void *cb_arg = wc->cb_arg;
   gpr_free(wc);
-  cb(exec_ctx, cb_arg, success);
+  cb(exec_ctx, cb_arg, error);
 }
 
 grpc_closure *grpc_closure_create(grpc_iomgr_cb_func cb, void *cb_arg) {

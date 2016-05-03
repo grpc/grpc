@@ -512,8 +512,7 @@ static grpc_error *fd_shutdown_error(bool shutdown) {
   if (!shutdown) {
     return GRPC_ERROR_NONE;
   } else {
-    return grpc_error_set_str(grpc_error_create(), GRPC_ERROR_STR_DESCRIPTION,
-                              "FD shutdown");
+    return GRPC_ERROR_CREATE("FD shutdown");
   }
 }
 
@@ -1045,7 +1044,7 @@ typedef struct grpc_unary_promote_args {
 } grpc_unary_promote_args;
 
 static void basic_do_promote(grpc_exec_ctx *exec_ctx, void *args,
-                             bool success) {
+                             grpc_error *error) {
   grpc_unary_promote_args *up_args = args;
   const grpc_pollset_vtable *original_vtable = up_args->original_vtable;
   grpc_pollset *pollset = up_args->pollset;
@@ -1571,7 +1570,7 @@ static void finally_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 }
 
 static void perform_delayed_add(grpc_exec_ctx *exec_ctx, void *arg,
-                                bool iomgr_status) {
+                                grpc_error *error) {
   delayed_add *da = arg;
 
   if (!fd_is_orphaned(da->fd)) {

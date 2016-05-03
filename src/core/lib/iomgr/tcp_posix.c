@@ -101,9 +101,9 @@ typedef struct {
 } grpc_tcp;
 
 static void tcp_handle_read(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
-                            bool success);
+                            grpc_error *error);
 static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
-                             bool success);
+                             grpc_error *error);
 
 static void tcp_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
@@ -155,12 +155,15 @@ static void tcp_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   TCP_UNREF(exec_ctx, tcp, "destroy");
 }
 
-static void call_read_cb(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp, int success) {
+static void call_read_cb(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
+                         grpc_error *error) {
   grpc_closure *cb = tcp->read_cb;
 
   if (grpc_tcp_trace) {
     size_t i;
-    gpr_log(GPR_DEBUG, "read: success=%d", success);
+    const char *str = grpc_error_string(error);
+    gpr_log(GPR_DEBUG, "read: error=%s", str);
+    grpc_error_free_string(str);
     for (i = 0; i < tcp->incoming_buffer->count; i++) {
       char *dump = gpr_dump_slice(tcp->incoming_buffer->slices[i],
                                   GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -171,7 +174,7 @@ static void call_read_cb(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp, int success) {
 
   tcp->read_cb = NULL;
   tcp->incoming_buffer = NULL;
-  cb->cb(exec_ctx, cb->cb_arg, success);
+  cb->cb(exec_ctx, cb->cb_arg, error);
 }
 
 #define MAX_READ_IOVEC 4
@@ -240,7 +243,7 @@ static void tcp_continue_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
       ++tcp->iov_size;
     }
     GPR_ASSERT((size_t)read_bytes == tcp->incoming_buffer->length);
-    call_read_cb(exec_ctx, tcp, 1);
+    call_read_cb(exec_ctx, tcp, GRPC_ERROR_NONE);
     TCP_UNREF(exec_ctx, tcp, "read");
   }
 
@@ -248,11 +251,11 @@ static void tcp_continue_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
 }
 
 static void tcp_handle_read(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
-                            bool success) {
+                            grpc_error *error) {
   grpc_tcp *tcp = (grpc_tcp *)arg;
   GPR_ASSERT(!tcp->finished_edge);
 
-  if (!success) {
+  if (error != GRPC_ERROR_NONE) {
     gpr_slice_buffer_reset_and_unref(tcp->incoming_buffer);
     call_read_cb(exec_ctx, tcp, 0);
     TCP_UNREF(exec_ctx, tcp, "read");
@@ -332,7 +335,7 @@ static bool tcp_flush(grpc_tcp *tcp, grpc_error **error) {
         tcp->outgoing_byte_idx = unwind_byte_idx;
         return false;
       } else {
-        *error = grpc_os_error(errno, "sendmsg");
+        *error = GRPC_OS_ERROR(errno, "sendmsg");
         return true;
       }
     }
@@ -361,12 +364,11 @@ static bool tcp_flush(grpc_tcp *tcp, grpc_error **error) {
 }
 
 static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
-                             bool success) {
+                             grpc_error *error) {
   grpc_tcp *tcp = (grpc_tcp *)arg;
-  grpc_error *error = GRPC_ERROR_NONE;
   grpc_closure *cb;
 
-  if (!success) {
+  if (error != GRPC_ERROR_NONE) {
     cb = tcp->write_cb;
     tcp->write_cb = NULL;
     cb->cb(exec_ctx, cb->cb_arg, 0);
