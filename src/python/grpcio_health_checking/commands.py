@@ -43,7 +43,7 @@ from setuptools.command import sdist
 
 ROOT_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 HEALTH_PROTO = os.path.abspath(
-    ROOT_DIR + '../../../proto/grpc/health/v1/health.proto')
+    os.path.join(ROOT_DIR, '../../../proto/grpc/health/v1/health.proto'))
 
 
 class BuildProtoModules(setuptools.Command):
@@ -93,7 +93,8 @@ class CopyProtoModules(setuptools.Command):
 
   def run(self):
     if os.path.isfile(HEALTH_PROTO):
-      shutil.copyfile(HEALTH_PROTO, ROOT_DIR + '/grpc/health/v1/health.proto')
+      shutil.copyfile(HEALTH_PROTO,
+          os.path.join(ROOT_DIR, 'grpc/health/v1/health.proto'))
 
 
 class BuildPy(build_py.build_py):
