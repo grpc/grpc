@@ -634,10 +634,17 @@ static void on_initial_header(void *tp, grpc_mdelem *md) {
                             GRPC_MDELEM_LENGTH(md);
     grpc_chttp2_transport_global *transport_global =
         &TRANSPORT_FROM_PARSING(transport_parsing)->global;
-    if (new_size > transport_global->settings
-            [GRPC_LOCAL_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE]) {
-      stream_parsing->seen_error = true;
-      stream_parsing->exceeded_metadata_size = true;
+    const size_t metadata_size_limit =
+        transport_global->settings[GRPC_LOCAL_SETTINGS]
+                                  [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE];
+    if (new_size > metadata_size_limit) {
+      if (!stream_parsing->exceeded_metadata_size) {
+        gpr_log(GPR_DEBUG,
+                "received initial metadata size exceeds limit (%lu vs. %lu)",
+                new_size, metadata_size_limit);
+        stream_parsing->seen_error = true;
+        stream_parsing->exceeded_metadata_size = true;
+      }
       GRPC_MDELEM_UNREF(md);
     } else {
       grpc_chttp2_incoming_metadata_buffer_add(
@@ -673,10 +680,17 @@ static void on_trailing_header(void *tp, grpc_mdelem *md) {
                           GRPC_MDELEM_LENGTH(md);
   grpc_chttp2_transport_global *transport_global =
       &TRANSPORT_FROM_PARSING(transport_parsing)->global;
-  if (new_size > transport_global->settings
-          [GRPC_LOCAL_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE]) {
-    stream_parsing->seen_error = true;
-    stream_parsing->exceeded_metadata_size = true;
+  const size_t metadata_size_limit =
+      transport_global->settings[GRPC_LOCAL_SETTINGS]
+                                [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE];
+  if (new_size > metadata_size_limit) {
+    if (!stream_parsing->exceeded_metadata_size) {
+      gpr_log(GPR_DEBUG,
+              "received trailing metadata size exceeds limit (%lu vs. %lu)",
+              new_size, metadata_size_limit);
+      stream_parsing->seen_error = true;
+      stream_parsing->exceeded_metadata_size = true;
+    }
     GRPC_MDELEM_UNREF(md);
   } else {
     grpc_chttp2_incoming_metadata_buffer_add(
