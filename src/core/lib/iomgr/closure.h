@@ -56,7 +56,7 @@ typedef struct grpc_closure_list {
  * \param success An indication on the state of the iomgr. On false, cleanup
  * actions should be taken (eg, shutdown). */
 typedef void (*grpc_iomgr_cb_func)(grpc_exec_ctx *exec_ctx, void *arg,
-                                   bool success);
+                                   grpc_error *error);
 
 /** A closure over a grpc_iomgr_cb_func. */
 struct grpc_closure {

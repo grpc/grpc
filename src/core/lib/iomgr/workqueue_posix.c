@@ -45,7 +45,7 @@
 
 #include "src/core/lib/iomgr/ev_posix.h"
 
-static void on_readable(grpc_exec_ctx *exec_ctx, void *arg, bool success);
+static void on_readable(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error);
 
 grpc_workqueue *grpc_workqueue_create(grpc_exec_ctx *exec_ctx) {
   char name[32];
@@ -110,10 +110,10 @@ void grpc_workqueue_flush(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {
   gpr_mu_unlock(&workqueue->mu);
 }
 
-static void on_readable(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+static void on_readable(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   grpc_workqueue *workqueue = arg;
 
-  if (!success) {
+  if (error != GRPC_ERROR_NONE) {
     gpr_mu_destroy(&workqueue->mu);
     /* HACK: let wakeup_fd code know that we stole the fd */
     workqueue->wakeup_fd.read_fd = 0;
@@ -131,12 +131,12 @@ static void on_readable(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
 }
 
 void grpc_workqueue_push(grpc_workqueue *workqueue, grpc_closure *closure,
-                         int success) {
+                         grpc_error *error) {
   gpr_mu_lock(&workqueue->mu);
   if (grpc_closure_list_empty(workqueue->closure_list)) {
     grpc_wakeup_fd_wakeup(&workqueue->wakeup_fd);
   }
-  grpc_closure_list_add(&workqueue->closure_list, closure, success);
+  grpc_closure_list_append(&workqueue->closure_list, closure, error);
   gpr_mu_unlock(&workqueue->mu);
 }
 
