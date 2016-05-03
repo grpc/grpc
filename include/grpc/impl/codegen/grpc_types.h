@@ -307,7 +307,9 @@ typedef enum {
   GRPC_OP_RECV_STATUS_ON_CLIENT,
   /** Receive close on the server: one and only one must be made on the
       server.
-      This op completes after the close has been received by the server. */
+      This op completes after the close has been received by the server. 
+      This operation always succeeds, meaning ops paired with this operation
+      will also appear to succeed, even though they may not have. */
   GRPC_OP_RECV_CLOSE_ON_SERVER
 } grpc_op_type;
 
