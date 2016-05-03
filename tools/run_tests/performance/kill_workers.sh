@@ -47,5 +47,8 @@ ps -C ruby -o pid=,cmd= | grep 'qps/worker.rb' | awk '{print $1}' | xargs kill -
 # Node
 ps -C node -o pid=,cmd= | grep 'performance/worker.js' | awk '{print $1}' | xargs kill -9
 
+# Python
+ps -C python -o pid=,cmd= | grep 'qps_worker.py' | awk '{print $1}' | xargs kill -9
+
 # Java
 jps | grep LoadWorker | awk '{print $1}' | xargs kill -9
