@@ -62,8 +62,8 @@ static void call_init_func(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 static void channel_destroy_func(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem) {}
 
-static void call_destroy_func(grpc_exec_ctx *exec_ctx,
-                              grpc_call_element *elem) {
+static void call_destroy_func(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                              void *ignored) {
   ++*(int *)(elem->channel_data);
 }
 
@@ -87,7 +87,7 @@ static void free_channel(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
 }
 
 static void free_call(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
-  grpc_call_stack_destroy(exec_ctx, arg);
+  grpc_call_stack_destroy(exec_ctx, arg, NULL);
   gpr_free(arg);
 }
 

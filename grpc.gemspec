@@ -24,10 +24,6 @@ Gem::Specification.new do |s|
   s.files += Dir.glob('include/grpc/**/*')
   s.test_files = Dir.glob('src/ruby/spec/**/*')
   s.bindir = 'src/ruby/bin'
-  %w(math noproto).each do |b|
-    s.executables += ["#{b}_client.rb", "#{b}_server.rb"]
-  end
-  s.executables += %w(grpc_ruby_interop_client grpc_ruby_interop_server)
   s.require_paths = %w( src/ruby/bin src/ruby/lib src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
@@ -128,6 +124,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/support/stack_lockfree.c )
   s.files += %w( src/core/lib/support/string.c )
   s.files += %w( src/core/lib/support/string_posix.c )
+  s.files += %w( src/core/lib/support/string_util_win32.c )
   s.files += %w( src/core/lib/support/string_win32.c )
   s.files += %w( src/core/lib/support/subprocess_posix.c )
   s.files += %w( src/core/lib/support/subprocess_windows.c )
@@ -142,6 +139,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/support/time_precise.c )
   s.files += %w( src/core/lib/support/time_win32.c )
   s.files += %w( src/core/lib/support/tls_pthread.c )
+  s.files += %w( src/core/lib/support/tmpfile_msys.c )
   s.files += %w( src/core/lib/support/tmpfile_posix.c )
   s.files += %w( src/core/lib/support/tmpfile_win32.c )
   s.files += %w( src/core/lib/support/wrap_memcpy.c )

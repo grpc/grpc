@@ -142,6 +142,12 @@ void bad_server_thread(void *vargs) {
   gpr_free(args->addr);
 }
 
+static void done_pollset_shutdown(grpc_exec_ctx *exec_ctx, void *pollset,
+                                  bool success) {
+  grpc_pollset_destroy(pollset);
+  gpr_free(pollset);
+}
+
 int main(int argc, char **argv) {
   struct server_thread_args args;
   memset(&args, 0, sizeof(args));
@@ -207,8 +213,11 @@ int main(int argc, char **argv) {
 
   gpr_atm_rel_store(&args.stop, 1);
   gpr_thd_join(server);
-  grpc_pollset_destroy(args.pollset);
-  gpr_free(args.pollset);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_pollset_shutdown(
+      &exec_ctx, args.pollset,
+      grpc_closure_create(done_pollset_shutdown, args.pollset));
+  grpc_exec_ctx_finish(&exec_ctx);
 
   grpc_shutdown();
   return 0;

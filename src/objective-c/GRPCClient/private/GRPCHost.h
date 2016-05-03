@@ -37,23 +37,28 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class GRPCCompletionQueue;
 struct grpc_call;
+struct grpc_channel_credentials;
 
 @interface GRPCHost : NSObject
 
 @property(nonatomic, readonly) NSString *address;
 @property(nonatomic, copy, nullable) NSString *userAgentPrefix;
+@property(nonatomic, nullable) struct grpc_channel_credentials *channelCreds;
 
 /** The following properties should only be modified for testing: */
 
 @property(nonatomic, getter=isSecure) BOOL secure;
 
-@property(nonatomic, copy, nullable) NSString *pathToCertificates;
 @property(nonatomic, copy, nullable) NSString *hostNameOverride;
 
 - (nullable instancetype)init NS_UNAVAILABLE;
 /** Host objects initialized with the same address are the same. */
 + (nullable instancetype)hostWithAddress:(NSString *)address;
 - (nullable instancetype)initWithAddress:(NSString *)address NS_DESIGNATED_INITIALIZER;
+- (BOOL)setTLSPEMRootCerts:(nullable NSString *)pemRootCerts
+            withPrivateKey:(nullable NSString *)pemPrivateKey
+             withCertChain:(nullable NSString *)pemCertChain
+                     error:(NSError **)errorPtr;
 
 /** Create a grpc_call object to the provided path on this host. */
 - (nullable struct grpc_call *)unmanagedCallWithPath:(NSString *)path
