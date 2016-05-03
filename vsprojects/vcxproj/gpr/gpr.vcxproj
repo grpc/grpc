@@ -196,6 +196,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\block_annotate.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\env.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\load_file.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\mpscq.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\murmur_hash.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\stack_lockfree.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\string.h" />
@@ -247,13 +248,13 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\log_win32.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\mpscq.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\murmur_hash.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\slice.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\slice_buffer.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\stack_lockfree.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\string.c">
     </ClCompile>

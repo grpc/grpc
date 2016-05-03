@@ -97,6 +97,7 @@
     <file baseinstalldir="/" name="src/core/lib/support/block_annotate.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/env.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/load_file.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/mpscq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/murmur_hash.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/stack_lockfree.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string.h" role="src" />
@@ -125,10 +126,10 @@
     <file baseinstalldir="/" name="src/core/lib/support/log_linux.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/log_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/log_win32.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/mpscq.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/murmur_hash.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/slice.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/slice_buffer.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/support/stack_lockfree.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string_util_win32.c" role="src" />

@@ -64,6 +64,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\log_win32.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\mpscq.c">
+      <Filter>src\core\lib\support</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\murmur_hash.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
@@ -71,9 +74,6 @@
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\slice_buffer.c">
-      <Filter>src\core\lib\support</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\stack_lockfree.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\string.c">
@@ -282,6 +282,9 @@
       <Filter>src\core\lib\support</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\load_file.h">
+      <Filter>src\core\lib\support</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\mpscq.h">
       <Filter>src\core\lib\support</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\murmur_hash.h">
