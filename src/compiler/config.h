@@ -42,8 +42,10 @@
 #include <google/protobuf/descriptor.pb.h>
 #define GRPC_CUSTOM_DESCRIPTOR ::google::protobuf::Descriptor
 #define GRPC_CUSTOM_FILEDESCRIPTOR ::google::protobuf::FileDescriptor
+#define GRPC_CUSTOM_FILEDESCRIPTORPROTO ::google::protobuf::FileDescriptorProto
 #define GRPC_CUSTOM_METHODDESCRIPTOR ::google::protobuf::MethodDescriptor
 #define GRPC_CUSTOM_SERVICEDESCRIPTOR ::google::protobuf::ServiceDescriptor
+#define GRPC_CUSTOM_SOURCELOCATION ::google::protobuf::SourceLocation
 #endif
 
 #ifndef GRPC_CUSTOM_CODEGENERATOR
@@ -68,12 +70,19 @@
 #define GRPC_CUSTOM_PLUGINMAIN ::google::protobuf::compiler::PluginMain
 #endif
 
+#ifndef GRPC_CUSTOM_PARSEGENERATORPARAMETER
+#include <google/protobuf/compiler/code_generator.h>
+#define GRPC_CUSTOM_PARSEGENERATORPARAMETER ::google::protobuf::compiler::ParseGeneratorParameter
+#endif
+
 namespace grpc {
 namespace protobuf {
 typedef GRPC_CUSTOM_DESCRIPTOR Descriptor;
 typedef GRPC_CUSTOM_FILEDESCRIPTOR FileDescriptor;
+typedef GRPC_CUSTOM_FILEDESCRIPTORPROTO FileDescriptorProto;
 typedef GRPC_CUSTOM_METHODDESCRIPTOR MethodDescriptor;
 typedef GRPC_CUSTOM_SERVICEDESCRIPTOR ServiceDescriptor;
+typedef GRPC_CUSTOM_SOURCELOCATION SourceLocation;
 namespace compiler {
 typedef GRPC_CUSTOM_CODEGENERATOR CodeGenerator;
 typedef GRPC_CUSTOM_GENERATORCONTEXT GeneratorContext;
@@ -81,6 +90,11 @@ static inline int PluginMain(int argc, char* argv[],
                              const CodeGenerator* generator) {
   return GRPC_CUSTOM_PLUGINMAIN(argc, argv, generator);
 }
+static inline void ParseGeneratorParameter(const string& parameter,
+    std::vector<std::pair<string, string> >* options) {
+  GRPC_CUSTOM_PARSEGENERATORPARAMETER(parameter, options);
+}
+
 }  // namespace compiler
 namespace io {
 typedef GRPC_CUSTOM_PRINTER Printer;
