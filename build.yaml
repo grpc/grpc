@@ -1142,6 +1142,7 @@ targets:
   dict: test/core/end2end/fuzzers/api_fuzzer.dictionary
   maxlen: 2048
 - name: async_execution_lock_test
+  cpu_cost: 30
   build: test
   language: c
   src:
@@ -1481,7 +1482,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: gpr_mpscq_test
-  cpu_cost: 10
+  cpu_cost: 30
   build: test
   language: c
   src:

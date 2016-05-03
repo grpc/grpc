@@ -74,7 +74,7 @@ typedef struct {
   gpr_mpscq *q;
 } thd_args;
 
-#define THREAD_ITERATIONS 1000000
+#define THREAD_ITERATIONS 100000
 
 static void test_thread(void *args) {
   thd_args *a = args;

@@ -93,7 +93,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 30, 
     "exclude_configs": [], 
     "flaky": false, 
     "gtest": false, 
@@ -669,7 +669,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 10, 
+    "cpu_cost": 30, 
     "exclude_configs": [], 
     "flaky": false, 
     "gtest": false, 
