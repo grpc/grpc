@@ -240,6 +240,39 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
+        public async Task ClientStreamingCall_ServerSideReadAfterCancelNotificationReturnsNull()
+        {
+            var handlerStartedBarrier = new TaskCompletionSource<object>();
+            var cancelNotificationReceivedBarrier = new TaskCompletionSource<object>();
+            var successTcs = new TaskCompletionSource<string>();
+
+            helper.ClientStreamingHandler = new ClientStreamingServerMethod<string, string>(async (requestStream, context) =>
+            {
+                
+                handlerStartedBarrier.SetResult(null);
+
+                // wait for cancellation to be delivered.
+                context.CancellationToken.Register(() => cancelNotificationReceivedBarrier.SetResult(null));
+                await cancelNotificationReceivedBarrier.Task;
+
+                var moveNextResult = await requestStream.MoveNext();
+                successTcs.SetResult(!moveNextResult ? "SUCCESS" : "FAIL");
+                return "";
+            });
+
+            var cts = new CancellationTokenSource();
+            var call = Calls.AsyncClientStreamingCall(helper.CreateClientStreamingCall(new CallOptions(cancellationToken: cts.Token)));
+
+            await handlerStartedBarrier.Task;
+            cts.Cancel();
+
+            var ex = Assert.ThrowsAsync<RpcException>(async () => await call.ResponseAsync);
+            Assert.AreEqual(StatusCode.Cancelled, ex.Status.StatusCode);
+
+            Assert.AreEqual("SUCCESS", await successTcs.Task);
+        }
+
+        [Test]
         public async Task AsyncUnaryCall_EchoMetadata()
         {
             helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
