@@ -136,24 +136,24 @@ namespace Grpc.Core.Internal
         }
 
         /// <summary>
-        /// Sends call result status, also indicating server is done with streaming responses.
-        /// Only one pending send action is allowed at any given time.
-        /// completionDelegate is called when the operation finishes.
+        /// Sends call result status, indicating we are done with writes.
+        /// Sending a status different from StatusCode.OK will also implicitly cancel the call.
         /// </summary>
-        public void StartSendStatusFromServer(Status status, Metadata trailers, AsyncCompletionDelegate<object> completionDelegate)
+        public Task SendStatusFromServerAsync(Status status, Metadata trailers)
         {
             lock (myLock)
             {
-                GrpcPreconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
-                CheckSendingAllowed(allowFinished: false);
+                GrpcPreconditions.CheckState(started);
+                GrpcPreconditions.CheckState(!disposed);
+                GrpcPreconditions.CheckState(!halfcloseRequested, "Can only send status from server once.");
 
                 using (var metadataArray = MetadataArraySafeHandle.Create(trailers))
                 {
                     call.StartSendStatusFromServer(HandleSendStatusFromServerFinished, status, metadataArray, !initialMetadataSent);
                 }
                 halfcloseRequested = true;
-                readingDone = true;
-                sendCompletionDelegate = completionDelegate;
+                sendStatusFromServerTcs = new TaskCompletionSource<object>();
+                return sendStatusFromServerTcs.Task;
             }
         }
 
@@ -198,12 +198,13 @@ namespace Grpc.Core.Internal
         /// </summary>
         private void HandleFinishedServerside(bool success, bool cancelled)
         {
+            // NOTE: because this event is a result of batch containing GRPC_OP_RECV_CLOSE_ON_SERVER,
+            // success will be always set to true.
             lock (myLock)
             {
                 finished = true;
                 ReleaseResourcesIfPossible();
             }
-            // TODO(jtattermusch): handle error
 
             if (cancelled)
             {

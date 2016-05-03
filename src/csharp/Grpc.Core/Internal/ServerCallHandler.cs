@@ -93,7 +93,7 @@ namespace Grpc.Core.Internal
             }
             try
             {
-                await responseStream.WriteStatusAsync(status, context.ResponseTrailers).ConfigureAwait(false);
+                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
@@ -149,7 +149,7 @@ namespace Grpc.Core.Internal
 
             try
             {
-                await responseStream.WriteStatusAsync(status, context.ResponseTrailers).ConfigureAwait(false);
+                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
@@ -209,7 +209,7 @@ namespace Grpc.Core.Internal
 
             try
             {
-                await responseStream.WriteStatusAsync(status, context.ResponseTrailers).ConfigureAwait(false);
+                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
@@ -260,7 +260,7 @@ namespace Grpc.Core.Internal
             }
             try
             {
-                await responseStream.WriteStatusAsync(status, context.ResponseTrailers).ConfigureAwait(false);
+                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
@@ -282,9 +282,7 @@ namespace Grpc.Core.Internal
             
             asyncCall.Initialize(newRpc.Call);
             var finishedTask = asyncCall.ServerSideCallAsync();
-            var responseStream = new ServerResponseStream<byte[], byte[]>(asyncCall);
-
-            await responseStream.WriteStatusAsync(new Status(StatusCode.Unimplemented, ""), Metadata.Empty).ConfigureAwait(false);
+            await asyncCall.SendStatusFromServerAsync(new Status(StatusCode.Unimplemented, ""), Metadata.Empty).ConfigureAwait(false);
             await finishedTask.ConfigureAwait(false);
         }
     }
