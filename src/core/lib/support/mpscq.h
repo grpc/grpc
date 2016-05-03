@@ -37,10 +37,18 @@
 #include <grpc/support/atm.h>
 #include <stddef.h>
 
+// Multiple-producer single-consumer lock free queue, based upon the
+// implementation from Dmitry Vyukov here:
+// http://www.1024cores.net/home/lock-free-algorithms/queues/intrusive-mpsc-node-based-queue
+
+// List node (include this in a data structure and dangle the rest of the
+// interesting bits off the end)
 typedef struct gpr_mpscq_node { gpr_atm next; } gpr_mpscq_node;
 
+// Actual queue type
 typedef struct gpr_mpscq {
   gpr_atm head;
+  // make sure head & tail don't share a cacheline
   char padding[GPR_CACHELINE_SIZE];
   gpr_mpscq_node *tail;
   gpr_mpscq_node stub;
@@ -48,7 +56,11 @@ typedef struct gpr_mpscq {
 
 void gpr_mpscq_init(gpr_mpscq *q);
 void gpr_mpscq_destroy(gpr_mpscq *q);
+// Push a node
 void gpr_mpscq_push(gpr_mpscq *q, gpr_mpscq_node *n);
+// Pop a node (returns NULL if no node is ready - which doesn't indicate that
+// the queue is empty!!)
 gpr_mpscq_node *gpr_mpscq_pop(gpr_mpscq *q);
 
 #endif /* GRPC_CORE_LIB_SUPPORT_MPSCQ_H */
+
