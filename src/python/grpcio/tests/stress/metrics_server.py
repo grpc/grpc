@@ -1,5 +1,3 @@
-#!/usr/bin/env python2.7
-
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -29,51 +27,34 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import collections
-import fnmatch
-import os
-import re
-import sys
-import yaml
+"""MetricsService for publishing stress test qps data."""
+
+import time
+
+from src.proto.grpc.testing import metrics_pb2
+
+GAUGE_NAME = 'python_overall_qps'
 
 
-_RE_API = r'(?:GPRAPI|GRPCAPI|CENSUSAPI)([^;]*);'
+class MetricsServer(metrics_pb2.BetaMetricsServiceServicer):
 
+  def __init__(self, histogram):
+    self._start_time = time.time()
+    self._histogram = histogram
 
-def list_c_apis(filenames):
-  for filename in filenames:
-    with open(filename, 'r') as f:
-      text = f.read()
-    for m in re.finditer(_RE_API, text):
-      api_declaration = re.sub('[ \r\n\t]+', ' ', m.group(1))
-      type_and_name, args_and_close = api_declaration.split('(', 1)
-      args = args_and_close[:args_and_close.rfind(')')].strip()
-      last_space = type_and_name.rfind(' ')
-      last_star = type_and_name.rfind('*')
-      type_end = max(last_space, last_star)
-      return_type = type_and_name[0:type_end+1].strip()
-      name = type_and_name[type_end+1:].strip()
-      yield {'return_type': return_type, 'name': name, 'arguments': args, 'header': filename}
+  def _get_qps(self):
+    count = self._histogram.get_data().count
+    delta = time.time() - self._start_time
+    self._histogram.reset()
+    self._start_time = time.time()
+    return int(count/delta)
 
+  def GetAllGauges(self, request, context):
+    qps = self._get_qps()
+    return [metrics_pb2.GaugeResponse(name=GAUGE_NAME, long_value=qps)]
 
-def headers_under(directory):
-  for root, dirnames, filenames in os.walk(directory):
-    for filename in fnmatch.filter(filenames, '*.h'):
-      yield os.path.join(root, filename)
-
-
-def mako_plugin(dictionary):
-  apis = []
-  headers = []
-
-  for lib in dictionary['libs']:
-    if lib['name'] in ['grpc', 'gpr']:
-      headers.extend(lib['public_headers'])
-
-  apis.extend(list_c_apis(sorted(set(headers))))
-  dictionary['c_apis'] = apis
-
-
-if __name__ == '__main__':
-  print yaml.dump([api for api in list_c_apis(headers_under('include/grpc'))])
-
+  def GetGauge(self, request, context):
+    if request.name != GAUGE_NAME:
+      raise Exception('Gauge {} does not exist'.format(request.name))
+    qps = self._get_qps()
+    return metrics_pb2.GaugeResponse(name=GAUGE_NAME, long_value=qps)
