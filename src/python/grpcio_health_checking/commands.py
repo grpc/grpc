@@ -43,7 +43,7 @@ from setuptools.command import sdist
 
 ROOT_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 HEALTH_PROTO = os.path.abspath(
-    os.path.join(ROOT_DIR, '../../../proto/grpc/health/v1/health.proto'))
+    os.path.join(ROOT_DIR, '../../proto/grpc/health/v1/health.proto'))
 
 
 class BuildProtoModules(setuptools.Command):
