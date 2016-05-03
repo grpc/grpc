@@ -5,7 +5,7 @@
 
 #include "grpc/protoc/main.h"
 
-int main(int argc, char* argv[]) {
+int protoc_main(int argc, char* argv[]) {
   google::protobuf::compiler::CommandLineInterface cli;
   cli.AllowPlugins("protoc-");
 

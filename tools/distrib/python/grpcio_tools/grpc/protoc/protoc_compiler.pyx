@@ -30,10 +30,10 @@
 from libc cimport stdlib
 
 cdef extern from "grpc/protoc/main.h":
-  int main(int argc, char *argv[])
+  int protoc_main(int argc, char *argv[])
 
 def run_main(list args not None):
   cdef char **argv = <char **>stdlib.malloc(len(args)*sizeof(char *))
   for i in range(len(args)):
     argv[i] = args[i]
-  return main(len(args), argv)
+  return protoc_main(len(args), argv)
