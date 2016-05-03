@@ -115,6 +115,11 @@ class InsertPluginServerBuilderOption : public ServerBuilderOption {
   void UpdatePlugins(
       std::map<grpc::string, std::unique_ptr<ServerBuilderPlugin>>* plugins)
       GRPC_OVERRIDE {
+    auto it = plugins->begin();
+    while (it != plugins->end()) {
+      plugins->erase(it++);
+    }
+
     std::unique_ptr<TestServerBuilderPlugin> plugin(
         new TestServerBuilderPlugin());
     if (register_service_) plugin->SetRegisterService();
@@ -127,13 +132,24 @@ class InsertPluginServerBuilderOption : public ServerBuilderOption {
   bool register_service_;
 };
 
-namespace sBPTestServerBuilderPlugin {
-
 std::unique_ptr<ServerBuilderPlugin> CreateTestServerBuilderPlugin() {
   return std::unique_ptr<ServerBuilderPlugin>(new TestServerBuilderPlugin());
 }
 
-}  // namespace sBPTestServerBuilderPlugin
+void grpc_AddServerBuilderPlugin_reflection() {
+  static bool already_here = false;
+  if (already_here) return;
+  already_here = true;
+  ::grpc::ServerBuilder::InternalAddPluginFactory(
+      &CreateTestServerBuilderPlugin);
+}
+
+// Force AddServerBuilderPlugin() to be called at static initialization time.
+struct StaticPluginInitializer_reflection {
+  StaticPluginInitializer_reflection() {
+    grpc_AddServerBuilderPlugin_reflection();
+  }
+} static_plugin_initializer_reflection_;
 
 class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
  public:
@@ -146,8 +162,7 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
 
   void InsertPlugin() {
     if (GetParam()) {
-      // Add ServerBuilder plugin directly
-      GRPC_INIT_PLUGIN(builder_->plugins_, TestServerBuilderPlugin);
+      // Add ServerBuilder plugin in static initialization
       EXPECT_TRUE(builder_->plugins_[PLUGIN_NAME] != nullptr);
     } else {
       // Add ServerBuilder plugin using ServerBuilder::SetOption()
@@ -158,8 +173,7 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
 
   void InsertPluginWithTestService() {
     if (GetParam()) {
-      // Add ServerBuilder plugin directly
-      GRPC_INIT_PLUGIN(builder_->plugins_, TestServerBuilderPlugin);
+      // Add ServerBuilder plugin in static initialization
       EXPECT_TRUE(builder_->plugins_[PLUGIN_NAME] != nullptr);
       auto plugin = static_cast<TestServerBuilderPlugin*>(
           builder_->plugins_[PLUGIN_NAME].get());

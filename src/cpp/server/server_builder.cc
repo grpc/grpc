@@ -41,9 +41,21 @@
 
 namespace grpc {
 
+static std::vector<std::unique_ptr<ServerBuilderPlugin> (*)()>* plugin_list;
+static gpr_once once_init_plugin_list = GPR_ONCE_INIT;
+
+static void do_plugin_list_init(void) {
+  plugin_list = new std::vector<std::unique_ptr<ServerBuilderPlugin> (*)()>();
+}
+
 ServerBuilder::ServerBuilder()
     : max_message_size_(-1), generic_service_(nullptr) {
   grpc_compression_options_init(&compression_options_);
+  gpr_once_init(&once_init_plugin_list, do_plugin_list_init);
+  for (auto factory : (*plugin_list)) {
+    std::unique_ptr<ServerBuilderPlugin> plugin = factory();
+    plugins_[plugin->name()] = std::move(plugin);
+  }
 }
 
 std::unique_ptr<ServerCompletionQueue> ServerBuilder::AddCompletionQueue() {
@@ -154,6 +166,12 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     (*plugin).second->Finish(initializer);
   }
   return server;
+}
+
+void ServerBuilder::InternalAddPluginFactory(
+    std::unique_ptr<ServerBuilderPlugin> (*CreatePlugin)()) {
+  gpr_once_init(&once_init_plugin_list, do_plugin_list_init);
+  (*plugin_list).push_back(CreatePlugin);
 }
 
 }  // namespace grpc
