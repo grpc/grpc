@@ -113,6 +113,9 @@ class ServerBuilder {
   /// Return a running server which is ready for processing calls.
   std::unique_ptr<Server> BuildAndStart();
 
+  static void InternalAddPluginFactory(
+      std::unique_ptr<ServerBuilderPlugin> (*CreatePlugin)());
+
  private:
   friend class ::grpc::testing::ServerBuilderPluginTest;
 
