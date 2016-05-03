@@ -41,6 +41,9 @@ using NUnit.Framework;
 
 namespace Grpc.Core.Internal.Tests
 {
+    /// <summary>
+    /// Uses fake native call to test interaction of wrapping code with C core in different situations.
+    /// </summary>
     public class AsyncCallTest
     {
         Channel channel;
@@ -152,6 +155,99 @@ namespace Grpc.Core.Internal.Tests
         }
 
         [Test]
+        public void ClientStreaming_MoreRequests_Success()
+        {
+            var resultTask = asyncCall.ClientStreamingCallAsync();
+            var requestStream = new ClientRequestStream<string, string>(asyncCall);
+
+            var writeTask = requestStream.WriteAsync("request1");
+            fakeCall.SendCompletionHandler(true);
+            writeTask.Wait();
+
+            var writeTask2 = requestStream.WriteAsync("request2");
+            fakeCall.SendCompletionHandler(true);
+            writeTask2.Wait();
+
+            var completeTask = requestStream.CompleteAsync();
+            fakeCall.SendCompletionHandler(true);
+            completeTask.Wait();
+
+            fakeCall.UnaryResponseClientHandler(true,
+                new ClientSideStatus(Status.DefaultSuccess, new Metadata()),
+                CreateResponsePayload(),
+                new Metadata());
+
+            AssertUnaryResponseSuccess(asyncCall, fakeCall, resultTask);
+        }
+
+        [Test]
+        public void ClientStreaming_WriteFailure()
+        {
+            var resultTask = asyncCall.ClientStreamingCallAsync();
+            var requestStream = new ClientRequestStream<string, string>(asyncCall);
+
+            var writeTask = requestStream.WriteAsync("request1");
+            fakeCall.SendCompletionHandler(false);
+            Assert.ThrowsAsync(typeof(InvalidOperationException), async () => await writeTask);
+
+            fakeCall.UnaryResponseClientHandler(true,
+                CreateClientSideStatus(StatusCode.Internal),
+                CreateResponsePayload(),
+                new Metadata());
+
+            AssertUnaryResponseError(asyncCall, fakeCall, resultTask, StatusCode.Internal);
+        }
+
+        [Test]
+        public void ClientStreaming_WriteAfterReceivingStatusFails()
+        {
+            var resultTask = asyncCall.ClientStreamingCallAsync();
+            var requestStream = new ClientRequestStream<string, string>(asyncCall);
+
+            fakeCall.UnaryResponseClientHandler(true,
+                new ClientSideStatus(Status.DefaultSuccess, new Metadata()),
+                CreateResponsePayload(),
+                new Metadata());
+
+            AssertUnaryResponseSuccess(asyncCall, fakeCall, resultTask);
+            Assert.Throws(typeof(InvalidOperationException), () => requestStream.WriteAsync("request1"));
+        }
+
+        [Test]
+        public void ClientStreaming_CompleteAfterReceivingStatusSucceeds()
+        {
+            var resultTask = asyncCall.ClientStreamingCallAsync();
+            var requestStream = new ClientRequestStream<string, string>(asyncCall);
+
+            fakeCall.UnaryResponseClientHandler(true,
+                new ClientSideStatus(Status.DefaultSuccess, new Metadata()),
+                CreateResponsePayload(),
+                new Metadata());
+
+            AssertUnaryResponseSuccess(asyncCall, fakeCall, resultTask);
+            Assert.DoesNotThrowAsync(async () => await requestStream.CompleteAsync());
+        }
+
+        [Test]
+        public void ClientStreaming_WriteAfterCancellationRequestFails()
+        {
+            var resultTask = asyncCall.ClientStreamingCallAsync();
+            var requestStream = new ClientRequestStream<string, string>(asyncCall);
+
+            asyncCall.Cancel();
+            Assert.IsTrue(fakeCall.IsCancelled);
+
+            Assert.Throws(typeof(OperationCanceledException), () => requestStream.WriteAsync("request1"));
+
+            fakeCall.UnaryResponseClientHandler(true,
+                CreateClientSideStatus(StatusCode.Cancelled),
+                CreateResponsePayload(),
+                new Metadata());
+
+            AssertUnaryResponseError(asyncCall, fakeCall, resultTask, StatusCode.Cancelled);
+        }
+
+        [Test]
         public void ServerStreaming_StreamingSendNotAllowed()
         {
             asyncCall.StartServerStreamingCall("request1");
@@ -223,6 +319,116 @@ namespace Grpc.Core.Internal.Tests
             fakeCall.ReceivedMessageHandler(true, null);
 
             AssertStreamingResponseSuccess(asyncCall, fakeCall, readTask3);
+        }
+
+        [Test]
+        public void DuplexStreaming_NoRequestNoResponse_Success()
+        {
+            asyncCall.StartDuplexStreamingCall();
+            var requestStream = new ClientRequestStream<string, string>(asyncCall);
+            var responseStream = new ClientResponseStream<string, string>(asyncCall);
+
+            var writeTask1 = requestStream.CompleteAsync();
+            fakeCall.SendCompletionHandler(true);
+            Assert.DoesNotThrowAsync(async () => await writeTask1);
+
+            var readTask = responseStream.MoveNext();
+            fakeCall.ReceivedMessageHandler(true, null);
+            fakeCall.ReceivedStatusOnClientHandler(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
+
+            AssertStreamingResponseSuccess(asyncCall, fakeCall, readTask);
+        }
+
+        [Test]
+        public void DuplexStreaming_WriteAfterReceivingStatusFails()
+        {
+            asyncCall.StartDuplexStreamingCall();
+            var requestStream = new ClientRequestStream<string, string>(asyncCall);
+            var responseStream = new ClientResponseStream<string, string>(asyncCall);
+
+            var readTask = responseStream.MoveNext();
+            fakeCall.ReceivedMessageHandler(true, null);
+            fakeCall.ReceivedStatusOnClientHandler(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
+
+            AssertStreamingResponseSuccess(asyncCall, fakeCall, readTask);
+
+            Assert.ThrowsAsync(typeof(InvalidOperationException), async () => await requestStream.WriteAsync("request1"));
+        }
+
+        [Test]
+        public void DuplexStreaming_CompleteAfterReceivingStatusFails()
+        {
+            asyncCall.StartDuplexStreamingCall();
+            var requestStream = new ClientRequestStream<string, string>(asyncCall);
+            var responseStream = new ClientResponseStream<string, string>(asyncCall);
+
+            var readTask = responseStream.MoveNext();
+            fakeCall.ReceivedMessageHandler(true, null);
+            fakeCall.ReceivedStatusOnClientHandler(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
+
+            AssertStreamingResponseSuccess(asyncCall, fakeCall, readTask);
+
+            Assert.DoesNotThrowAsync(async () => await requestStream.CompleteAsync());
+        }
+
+        [Test]
+        public void DuplexStreaming_WriteAfterCancellationRequestFails()
+        {
+            asyncCall.StartDuplexStreamingCall();
+            var requestStream = new ClientRequestStream<string, string>(asyncCall);
+            var responseStream = new ClientResponseStream<string, string>(asyncCall);
+
+            asyncCall.Cancel();
+            Assert.IsTrue(fakeCall.IsCancelled);
+            Assert.Throws(typeof(OperationCanceledException), () => requestStream.WriteAsync("request1"));
+
+            var readTask = responseStream.MoveNext();
+            fakeCall.ReceivedMessageHandler(true, null);
+            fakeCall.ReceivedStatusOnClientHandler(true, CreateClientSideStatus(StatusCode.Cancelled));
+
+            AssertStreamingResponseError(asyncCall, fakeCall, readTask, StatusCode.Cancelled);
+        }
+
+        [Test]
+        public void DuplexStreaming_ReadAfterCancellationRequestCanSucceed()
+        {
+            asyncCall.StartDuplexStreamingCall();
+            var responseStream = new ClientResponseStream<string, string>(asyncCall);
+
+            asyncCall.Cancel();
+            Assert.IsTrue(fakeCall.IsCancelled);
+
+            var readTask1 = responseStream.MoveNext();
+            fakeCall.ReceivedMessageHandler(true, CreateResponsePayload());
+            Assert.IsTrue(readTask1.Result);
+            Assert.AreEqual("response1", responseStream.Current);
+
+            var readTask2 = responseStream.MoveNext();
+            fakeCall.ReceivedMessageHandler(true, null);
+            fakeCall.ReceivedStatusOnClientHandler(true, CreateClientSideStatus(StatusCode.Cancelled));
+
+            AssertStreamingResponseError(asyncCall, fakeCall, readTask2, StatusCode.Cancelled);
+        }
+
+        [Test]
+        public void DuplexStreaming_ReadStartedBeforeCancellationRequestCanSucceed()
+        {
+            asyncCall.StartDuplexStreamingCall();
+            var responseStream = new ClientResponseStream<string, string>(asyncCall);
+
+            var readTask1 = responseStream.MoveNext();  // initiate the read before cancel request
+            asyncCall.Cancel();
+            Assert.IsTrue(fakeCall.IsCancelled);
+
+            fakeCall.ReceivedMessageHandler(true, CreateResponsePayload());
+            Assert.IsTrue(readTask1.Result);
+            Assert.AreEqual("response1", responseStream.Current);
+
+            var readTask2 = responseStream.MoveNext();
+            fakeCall.ReceivedMessageHandler(true, null);
+            fakeCall.ReceivedStatusOnClientHandler(true, CreateClientSideStatus(StatusCode.Cancelled));
+
+            AssertStreamingResponseError(asyncCall, fakeCall, readTask2, StatusCode.Cancelled);
         }
 
         ClientSideStatus CreateClientSideStatus(StatusCode statusCode)
