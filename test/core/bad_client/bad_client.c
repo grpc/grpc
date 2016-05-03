@@ -75,9 +75,23 @@ static void server_setup_transport(void *ts, grpc_transport *transport) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
-                              const char *client_payload,
-                              size_t client_payload_length, uint32_t flags) {
+typedef struct {
+  grpc_bad_client_client_stream_validator validator;
+  gpr_slice_buffer incoming;
+  gpr_event read_done;
+} read_args;
+
+static void read_done(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+  read_args *a = arg;
+  a->validator(&a->incoming);
+  gpr_event_set(&a->read_done, (void *)1);
+}
+
+void grpc_run_bad_client_test(
+    grpc_bad_client_server_side_validator server_validator,
+    grpc_bad_client_client_stream_validator client_validator,
+    const char *client_payload,
+    size_t client_payload_length, uint32_t flags) {
   grpc_endpoint_pair sfd;
   thd_args a;
   gpr_thd_id id;
@@ -108,7 +122,7 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
   a.cq = grpc_completion_queue_create(NULL);
   gpr_event_init(&a.done_thd);
   gpr_event_init(&a.done_write);
-  a.validator = validator;
+  a.validator = server_validator;
   grpc_server_register_completion_queue(a.server, a.cq, NULL);
   a.registered_method =
       grpc_server_register_method(a.server, GRPC_BAD_CLIENT_REGISTERED_METHOD,
@@ -151,8 +165,23 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
 
   GPR_ASSERT(gpr_event_wait(&a.done_thd, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)));
 
-  /* Shutdown */
-  if (sfd.client) {
+  if (sfd.client != NULL) {
+    // Validate client stream, if requested.
+    if (client_validator != NULL) {
+      read_args args;
+      args.validator = client_validator;
+      gpr_slice_buffer_init(&args.incoming);
+      gpr_event_init(&args.read_done);
+      grpc_closure read_done_closure;
+      grpc_closure_init(&read_done_closure, read_done, &args);
+      grpc_endpoint_read(&exec_ctx, sfd.client, &args.incoming,
+                         &read_done_closure);
+      grpc_exec_ctx_finish(&exec_ctx);
+      GPR_ASSERT(gpr_event_wait(&args.read_done,
+                                GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)));
+      gpr_slice_buffer_destroy(&args.incoming);
+    }
+    // Shutdown.
     grpc_endpoint_shutdown(&exec_ctx, sfd.client);
     grpc_endpoint_destroy(&exec_ctx, sfd.client);
     grpc_exec_ctx_finish(&exec_ctx);

@@ -522,7 +522,7 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
                           [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
     *t->accepting_stream = s;
     grpc_chttp2_stream_map_add(&t->parsing_stream_map, s->global.id, s);
-    s->global.in_stream_map = 1;
+    s->global.in_stream_map = true;
   }
 
   grpc_chttp2_run_with_global_lock(exec_ctx, t, s, finish_init_stream_locked,
@@ -838,7 +838,7 @@ static void maybe_start_some_streams(
     grpc_chttp2_stream_map_add(
         &TRANSPORT_FROM_GLOBAL(transport_global)->new_stream_map,
         stream_global->id, STREAM_FROM_GLOBAL(stream_global));
-    stream_global->in_stream_map = 1;
+    stream_global->in_stream_map = true;
     transport_global->concurrent_stream_count++;
     grpc_chttp2_become_writable(transport_global, stream_global);
   }
@@ -944,8 +944,8 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
                                   [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE];
     if (metadata_size > metadata_peer_limit) {
       gpr_log(GPR_DEBUG,
-              "initial metadata size exceeds peer limit (%lu vs. %lu)",
-              metadata_size, metadata_peer_limit);
+              "to-be-sent initial metadata size exceeds peer limit "
+              "(%lu vs. %lu)", metadata_size, metadata_peer_limit);
       cancel_from_api(exec_ctx, transport_global, stream_global,
                       GRPC_STATUS_RESOURCE_EXHAUSTED);
     } else {
@@ -998,8 +998,8 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
                                   [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE];
     if (metadata_size > metadata_peer_limit) {
       gpr_log(GPR_DEBUG,
-              "trailing metadata size exceeds peer limit (%lu vs. %lu)",
-              metadata_size, metadata_peer_limit);
+              "to-be-sent trailing metadata size exceeds peer limit "
+              "(%lu vs. %lu)", metadata_size, metadata_peer_limit);
       cancel_from_api(exec_ctx, transport_global, stream_global,
                       GRPC_STATUS_RESOURCE_EXHAUSTED);
     } else {
@@ -1259,7 +1259,7 @@ static void remove_stream(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     s = grpc_chttp2_stream_map_delete(&t->new_stream_map, id);
   }
   GPR_ASSERT(s);
-  s->global.in_stream_map = 0;
+  s->global.in_stream_map = false;
   if (t->parsing.incoming_stream == &s->parsing) {
     t->parsing.incoming_stream = NULL;
     grpc_chttp2_parsing_become_skip_parser(exec_ctx, &t->parsing);
@@ -1339,7 +1339,7 @@ void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx,
               GRPC_MDSTR_GRPC_MESSAGE,
               grpc_mdstr_from_slice(gpr_slice_ref(*slice))));
     }
-    stream_global->published_trailing_metadata = 1;
+    stream_global->published_trailing_metadata = true;
     grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
   }
   if (slice) {
@@ -1369,13 +1369,13 @@ void grpc_chttp2_mark_stream_closed(
   }
   grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
   if (close_reads && !stream_global->read_closed) {
-    stream_global->read_closed = 1;
-    stream_global->published_initial_metadata = 1;
-    stream_global->published_trailing_metadata = 1;
+    stream_global->read_closed = true;
+    stream_global->published_initial_metadata = true;
+    stream_global->published_trailing_metadata = true;
     decrement_active_streams_locked(exec_ctx, transport_global, stream_global);
   }
   if (close_writes && !stream_global->write_closed) {
-    stream_global->write_closed = 1;
+    stream_global->write_closed = true;
     if (TRANSPORT_FROM_GLOBAL(transport_global)->executor.writing_active) {
       GRPC_CHTTP2_STREAM_REF(stream_global, "finish_writes");
       grpc_chttp2_list_add_closed_waiting_for_writing(transport_global,
