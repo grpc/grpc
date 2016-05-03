@@ -37,10 +37,9 @@ OUT_OF_DATE_MESSAGE = """file {} is out of date
 
 Have you called tools/distrib/python/make_grpcio_tools.py since upgrading protobuf?"""
 
-check_protoc_lib_deps_file = cStringIO.StringIO()
-make.write_deps(make.BAZEL_DEPS_PROTOC_LIB_QUERY, check_protoc_lib_deps_file)
+check_protoc_lib_deps_content = make.get_deps(make.BAZEL_DEPS_PROTOC_LIB_QUERY)
 
 with open(make.GRPC_PYTHON_PROTOC_LIB_DEPS, 'r') as protoc_lib_deps_file:
-  if protoc_lib_deps_file.read() != check_protoc_lib_deps_file.getvalue():
+  if protoc_lib_deps_file.read() != check_protoc_lib_deps_content:
     print(OUT_OF_DATE_MESSAGE.format(make.GRPC_PYTHON_PROTOC_LIB_DEPS))
     raise SystemExit(1)
