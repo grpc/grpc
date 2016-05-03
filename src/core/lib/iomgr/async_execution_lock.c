@@ -69,6 +69,7 @@ grpc_aelock *grpc_aelock_create(grpc_workqueue *optional_workqueue) {
 static void really_destroy(grpc_aelock *lock) {
   GPR_ASSERT(gpr_atm_no_barrier_load(&lock->state) == 0);
   gpr_mpscq_destroy(&lock->queue);
+  gpr_free(lock);
 }
 
 void grpc_aelock_destroy(grpc_aelock *lock) {
