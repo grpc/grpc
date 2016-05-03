@@ -40,6 +40,8 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/support/mpscq.h"
 
+typedef struct grpc_aelock grpc_aelock;
+
 // Provides serialized access to some resource.
 // Each action queued on an aelock is executed serially in a borrowed thread.
 // The actual thread executing actions may change over time (but there will only
@@ -47,21 +49,9 @@
 
 typedef void (*grpc_aelock_action)(grpc_exec_ctx *exec_ctx, void *arg);
 
-typedef struct grpc_aelock_qnode {
-  gpr_mpscq_node mpscq_node;
-  grpc_aelock_action action;
-  void *arg;
-} grpc_aelock_qnode;
-
-typedef struct grpc_aelock {
-  grpc_workqueue *optional_workqueue;
-  gpr_mpscq queue;
-  gpr_atm locked;
-} grpc_aelock;
-
 // Initialize the lock, with an optional workqueue to shift load to when
 // necessary
-void grpc_aelock_init(grpc_aelock *lock, grpc_workqueue *optional_workqueue);
+grpc_aelock *grpc_aelock_create(grpc_workqueue *optional_workqueue);
 // Destroy the lock
 void grpc_aelock_destroy(grpc_aelock *lock);
 // Execute \a action within the lock. \a arg is the argument to pass to \a

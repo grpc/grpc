@@ -42,10 +42,7 @@
 
 static void test_no_op(void) {
   gpr_log(GPR_DEBUG, "test_no_op");
-
-  grpc_aelock lock;
-  grpc_aelock_init(&lock, NULL);
-  grpc_aelock_destroy(&lock);
+  grpc_aelock_destroy(grpc_aelock_create(NULL));
 }
 
 static void set_bool_to_true(grpc_exec_ctx *exec_ctx, void *value) {
@@ -55,14 +52,13 @@ static void set_bool_to_true(grpc_exec_ctx *exec_ctx, void *value) {
 static void test_execute_one(void) {
   gpr_log(GPR_DEBUG, "test_execute_one");
 
-  grpc_aelock lock;
-  grpc_aelock_init(&lock, NULL);
+  grpc_aelock *lock = grpc_aelock_create(NULL);
   bool done = false;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_aelock_execute(&exec_ctx, &lock, set_bool_to_true, &done, 0);
+  grpc_aelock_execute(&exec_ctx, lock, set_bool_to_true, &done, 0);
   grpc_exec_ctx_finish(&exec_ctx);
   GPR_ASSERT(done);
-  grpc_aelock_destroy(&lock);
+  grpc_aelock_destroy(lock);
 }
 
 typedef struct {
@@ -100,21 +96,20 @@ static void execute_many_loop(void *a) {
 static void test_execute_many(void) {
   gpr_log(GPR_DEBUG, "test_execute_many");
 
-  grpc_aelock lock;
+  grpc_aelock *lock = grpc_aelock_create(NULL);
   gpr_thd_id thds[100];
   thd_args ta[GPR_ARRAY_SIZE(thds)];
-  grpc_aelock_init(&lock, NULL);
   for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
     gpr_thd_options options = gpr_thd_options_default();
     gpr_thd_options_set_joinable(&options);
     ta[i].ctr = 0;
-    ta[i].lock = &lock;
+    ta[i].lock = lock;
     GPR_ASSERT(gpr_thd_new(&thds[i], execute_many_loop, &ta[i], &options));
   }
   for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
     gpr_thd_join(thds[i]);
   }
-  grpc_aelock_destroy(&lock);
+  grpc_aelock_destroy(lock);
 }
 
 int main(int argc, char **argv) {

@@ -291,7 +291,7 @@ struct grpc_chttp2_transport_parsing {
   int64_t outgoing_window;
 };
 
-typedef void (*grpc_chttp2_locked_action)(grpc_exec_ctx *ctx,
+typedef void (*grpc_chttp2_locked_action)(grpc_exec_ctx *exec_ctx,
                                           grpc_chttp2_transport *t,
                                           grpc_chttp2_stream *s, void *arg);
 
