@@ -248,7 +248,6 @@ namespace Grpc.Core.Tests
 
             helper.ClientStreamingHandler = new ClientStreamingServerMethod<string, string>(async (requestStream, context) =>
             {
-                
                 handlerStartedBarrier.SetResult(null);
 
                 // wait for cancellation to be delivered.
