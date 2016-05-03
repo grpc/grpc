@@ -42,7 +42,7 @@ using NUnit.Framework;
 namespace Grpc.Core.Internal.Tests
 {
     /// <summary>
-    /// Uses fake native call to test interaction of wrapping code with C core in different situations.
+    /// Uses fake native call to test interaction of <c>AsyncCall</c> wrapping code with C core in different situations.
     /// </summary>
     public class AsyncCallTest
     {
@@ -480,139 +480,9 @@ namespace Grpc.Core.Internal.Tests
             Assert.IsTrue(fakeCall.IsDisposed);
 
             var ex = Assert.ThrowsAsync<RpcException>(async () => await moveNextTask);
+            Assert.AreEqual(expectedStatusCode, ex.Status.StatusCode);
             Assert.AreEqual(expectedStatusCode, asyncCall.GetStatus().StatusCode);
             Assert.AreEqual(0, asyncCall.GetTrailers().Count);
-        }
-
-        internal class FakeNativeCall : INativeCall
-        {
-            public UnaryResponseClientHandler UnaryResponseClientHandler
-            {
-                get;
-                set;
-            }
-
-            public ReceivedStatusOnClientHandler ReceivedStatusOnClientHandler
-            {
-                get;
-                set;
-            }
-
-            public ReceivedMessageHandler ReceivedMessageHandler
-            {
-                get;
-                set;
-            }
-
-            public ReceivedResponseHeadersHandler ReceivedResponseHeadersHandler
-            {
-                get;
-                set;
-            }
-
-            public SendCompletionHandler SendCompletionHandler
-            {
-                get;
-                set;
-            }
-
-            public ReceivedCloseOnServerHandler ReceivedCloseOnServerHandler
-            {
-                get;
-                set;
-            }
-
-            public bool IsCancelled
-            {
-                get;
-                set;
-            }
-
-            public bool IsDisposed
-            {
-                get;
-                set;
-            }
-
-            public void Cancel()
-            {
-                IsCancelled = true;
-            }
-
-            public void CancelWithStatus(Status status)
-            {
-                IsCancelled = true;
-            }
-
-            public string GetPeer()
-            {
-                return "PEER";
-            }
-
-            public void StartUnary(UnaryResponseClientHandler callback, byte[] payload, MetadataArraySafeHandle metadataArray, WriteFlags writeFlags)
-            {
-                UnaryResponseClientHandler = callback;
-            }
-
-            public void StartUnary(BatchContextSafeHandle ctx, byte[] payload, MetadataArraySafeHandle metadataArray, WriteFlags writeFlags)
-            {
-                throw new NotImplementedException();
-            }
-
-            public void StartClientStreaming(UnaryResponseClientHandler callback, MetadataArraySafeHandle metadataArray)
-            {
-                UnaryResponseClientHandler = callback;
-            }
-
-            public void StartServerStreaming(ReceivedStatusOnClientHandler callback, byte[] payload, MetadataArraySafeHandle metadataArray, WriteFlags writeFlags)
-            {
-                ReceivedStatusOnClientHandler = callback;
-            }
-
-            public void StartDuplexStreaming(ReceivedStatusOnClientHandler callback, MetadataArraySafeHandle metadataArray)
-            {
-                ReceivedStatusOnClientHandler = callback;
-            }
-
-            public void StartReceiveMessage(ReceivedMessageHandler callback)
-            {
-                ReceivedMessageHandler = callback;
-            }
-
-            public void StartReceiveInitialMetadata(ReceivedResponseHeadersHandler callback)
-            {
-                ReceivedResponseHeadersHandler = callback;
-            }
-
-            public void StartSendInitialMetadata(SendCompletionHandler callback, MetadataArraySafeHandle metadataArray)
-            {
-                SendCompletionHandler = callback;
-            }
-
-            public void StartSendMessage(SendCompletionHandler callback, byte[] payload, WriteFlags writeFlags, bool sendEmptyInitialMetadata)
-            {
-                SendCompletionHandler = callback;
-            }
-
-            public void StartSendCloseFromClient(SendCompletionHandler callback)
-            {
-                SendCompletionHandler = callback;
-            }
-
-            public void StartSendStatusFromServer(SendCompletionHandler callback, Status status, MetadataArraySafeHandle metadataArray, bool sendEmptyInitialMetadata)
-            {
-                SendCompletionHandler = callback;
-            }
-
-            public void StartServerSide(ReceivedCloseOnServerHandler callback)
-            {
-                ReceivedCloseOnServerHandler = callback;
-            }
-
-            public void Dispose()
-            {
-                IsDisposed = true;
-            }
         }
     }
 }

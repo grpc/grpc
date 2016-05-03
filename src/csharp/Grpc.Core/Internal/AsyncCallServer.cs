@@ -65,6 +65,15 @@ namespace Grpc.Core.Internal
         }
 
         /// <summary>
+        /// Only for testing purposes.
+        /// </summary>
+        public void InitializeForTesting(INativeCall call)
+        {
+            server.AddCallReference(this);
+            InitializeInternal(call);
+        }
+
+        /// <summary>
         /// Starts a server side call.
         /// </summary>
         public Task ServerSideCallAsync()
