@@ -51,6 +51,9 @@ exit_code=0
 
 $RUN_TESTS_COMMAND || exit_code=$?
 
+echo 'RUN_TESTS_OVER\n'
+echo $exit_code
+
 cd reports
 echo '<html><head></head><body>' > index.html
 find . -maxdepth 1 -mindepth 1 -type d | sort | while read d ; do
