@@ -67,23 +67,30 @@ static void finish(grpc_exec_ctx *exec_ctx, grpc_aelock *lock) {
                             NO_CONSUMER)) {
           return;
         }
+        // TODO(ctiller): consider sleeping
+        continue;
       } else {
+        // skip the tombstone: we'll re-add it later
         lock->tail = next;
         tail = next;
         next = (grpc_aelock_qnode *)gpr_atm_acq_load(&tail->next);
       }
     }
     if (next != NULL) {
+      // found a node
       lock->tail = next;
       tail->action(exec_ctx, tail->arg);
       gpr_free(tail);
     } else {
+      // nothing there: might be in an incosistant state
       grpc_aelock_qnode *head =
           (grpc_aelock_qnode *)gpr_atm_acq_load(&lock->head);
       if (head != tail) {
+        // non-empty list: spin for a bit
         // TODO(ctiller): consider sleeping?
         continue;
       }
+      // must have swallowed tombstone above: re-add it
       gpr_atm_no_barrier_store(&lock->tombstone.next, 0);
       while (!gpr_atm_rel_cas(&lock->head, (gpr_atm)head,
                               (gpr_atm)&lock->tombstone)) {
@@ -117,7 +124,7 @@ retry_top:
   } else {
     n->arg = arg;
   }
-  gpr_atm_no_barrier_store(&n->next, 0);
+  gpr_atm_rel_store(&n->next, 0);
   while (!gpr_atm_rel_cas(&lock->head, head, (gpr_atm)n)) {
   retry_queue_load:
     head = gpr_atm_acq_load(&lock->head);
@@ -132,5 +139,6 @@ retry_top:
       return;  // early out
     }
   }
-  gpr_atm_rel_store(&((grpc_aelock_qnode *)head)->next, (gpr_atm)n);
+  GPR_ASSERT(gpr_atm_rel_cas(&((grpc_aelock_qnode *)head)->next, 0, (gpr_atm)n));
+//  gpr_atm_rel_store(&((grpc_aelock_qnode *)head)->next, (gpr_atm)n);
 }

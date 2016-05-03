@@ -87,7 +87,7 @@ static void execute_many_loop(void *a) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   size_t n = 1;
   for (size_t i = 0; i < 10; i++) {
-    for (size_t j = 0; j < 1000; j++) {
+    for (size_t j = 0; j < 10000; j++) {
       ex_args c = {&args->ctr, n++};
       grpc_aelock_execute(&exec_ctx, args->lock, check_one, &c, sizeof(c));
       grpc_exec_ctx_flush(&exec_ctx);
