@@ -443,9 +443,9 @@ module GRPC
               c, mth = ac
               begin
                 rpc_descs[mth].run_server_method(c, rpc_handlers[mth])
-              rescue StandardError => e
-                c.send_status(code = GRPC::Core::StatusCodes::INTERNAL,
-                              details = "Server handler failed")
+              rescue StandardError
+                c.send_status(GRPC::Core::StatusCodes::INTERNAL,
+                              'Server handler failed')
               end
             end
           end
