@@ -63,4 +63,3 @@ void gpr_mpscq_push(gpr_mpscq *q, gpr_mpscq_node *n);
 gpr_mpscq_node *gpr_mpscq_pop(gpr_mpscq *q);
 
 #endif /* GRPC_CORE_LIB_SUPPORT_MPSCQ_H */
-
