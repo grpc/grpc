@@ -152,6 +152,7 @@ namespace Grpc.Core.Internal
                     call.StartSendStatusFromServer(HandleSendStatusFromServerFinished, status, metadataArray, !initialMetadataSent);
                 }
                 halfcloseRequested = true;
+                initialMetadataSent = true;
                 sendStatusFromServerTcs = new TaskCompletionSource<object>();
                 return sendStatusFromServerTcs.Task;
             }
