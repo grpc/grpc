@@ -69,8 +69,11 @@ RUN apt-get update && apt-get install -y time && apt-get clean
 # Install nvm
 RUN touch .profile
 RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.25.4/install.sh | bash
+# Install all versions of node that we want to test
 RUN /bin/bash -l -c "nvm install 0.12 && npm config set cache /tmp/npm-cache"
-
+RUN /bin/bash -l -c "nvm install 4 && npm config set cache /tmp/npm-cache"
+RUN /bin/bash -l -c "nvm install 5 && npm config set cache /tmp/npm-cache"
+RUN /bin/bash -l -c "nvm alias default 4"
 # Google Cloud platform API libraries
 RUN apt-get update && apt-get install -y python-pip && apt-get clean
 RUN pip install --upgrade google-api-python-client
