@@ -83,9 +83,12 @@ void grpc_chttp2_prepare_to_read(
   GPR_TIMER_BEGIN("grpc_chttp2_prepare_to_read", 0);
 
   transport_parsing->next_stream_id = transport_global->next_stream_id;
-  transport_parsing->last_sent_max_table_size =
-      transport_global->settings[GRPC_SENT_SETTINGS]
-                                [GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE];
+  memcpy(transport_parsing->last_sent_settings,
+         transport_global->settings[GRPC_SENT_SETTINGS],
+         sizeof(transport_parsing->last_sent_settings));
+  transport_parsing->max_frame_size =
+      transport_global->settings[GRPC_ACKED_SETTINGS]
+                                [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE];
 
   /* update the parsing view of incoming window */
   while (grpc_chttp2_list_pop_unannounced_incoming_window_available(
@@ -394,6 +397,12 @@ int grpc_chttp2_perform_read(grpc_exec_ctx *exec_ctx,
           return 1;
         }
         goto dts_fh_0; /* loop */
+      } else if (transport_parsing->incoming_frame_size >
+                 transport_parsing->max_frame_size) {
+        gpr_log(GPR_DEBUG, "Frame size %d is larger than max frame size %d",
+                transport_parsing->incoming_frame_size,
+                transport_parsing->max_frame_size);
+        return 0;
       }
       if (++cur == end) {
         return 1;
@@ -882,7 +891,11 @@ static int init_settings_frame_parser(
     transport_parsing->settings_ack_received = 1;
     grpc_chttp2_hptbl_set_max_bytes(
         &transport_parsing->hpack_parser.table,
-        transport_parsing->last_sent_max_table_size);
+        transport_parsing
+            ->last_sent_settings[GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE]);
+    transport_parsing->max_frame_size =
+        transport_parsing
+            ->last_sent_settings[GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE];
   }
   transport_parsing->parser = grpc_chttp2_settings_parser_parse;
   transport_parsing->parser_data = &transport_parsing->simple.settings;

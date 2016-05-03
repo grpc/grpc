@@ -236,9 +236,6 @@ struct grpc_chttp2_transport_parsing {
   /** was a goaway frame received? */
   uint8_t goaway_received;
 
-  /** the last sent max_table_size setting */
-  uint32_t last_sent_max_table_size;
-
   /** initial window change */
   int64_t initial_window_update;
 
@@ -272,6 +269,9 @@ struct grpc_chttp2_transport_parsing {
   uint32_t incoming_frame_size;
   uint32_t incoming_stream_id;
 
+  /* current max frame size */
+  uint32_t max_frame_size;
+
   /* active parser */
   void *parser_data;
   grpc_chttp2_stream_parsing *incoming_stream;
@@ -282,6 +282,8 @@ struct grpc_chttp2_transport_parsing {
 
   /* received settings */
   uint32_t settings[GRPC_CHTTP2_NUM_SETTINGS];
+  /* last settings that were sent */
+  uint32_t last_sent_settings[GRPC_CHTTP2_NUM_SETTINGS];
 
   /* goaway data */
   grpc_status_code goaway_error;
@@ -321,7 +323,8 @@ struct grpc_chttp2_transport {
     /** is a thread currently parsing */
     bool parsing_active;
 
-    grpc_chttp2_executor_action_header *pending_actions;
+    grpc_chttp2_executor_action_header *pending_actions_head;
+    grpc_chttp2_executor_action_header *pending_actions_tail;
   } executor;
 
   /** is the transport destroying itself? */
