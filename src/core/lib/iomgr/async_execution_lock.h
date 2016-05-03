@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef AEL_H
-#define AEL_H
+#ifndef GRPC_CORE_LIB_IOMGR_ASYNC_EXECUTION_LOCK_H
+#define GRPC_CORE_LIB_IOMGR_ASYNC_EXECUTION_LOCK_H
 
 #include <stddef.h>
 
@@ -60,4 +60,4 @@ void grpc_aelock_execute(grpc_exec_ctx *exec_ctx, grpc_aelock *lock,
                          grpc_aelock_action action, void *arg,
                          size_t sizeof_arg);
 
-#endif
+#endif /* GRPC_CORE_LIB_IOMGR_ASYNC_EXECUTION_LOCK_H */
