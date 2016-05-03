@@ -41,6 +41,7 @@ typedef struct gpr_mpscq_node { gpr_atm next; } gpr_mpscq_node;
 
 typedef struct gpr_mpscq {
   gpr_atm head;
+  char padding[GPR_CACHELINE_SIZE];
   gpr_mpscq_node *tail;
   gpr_mpscq_node stub;
 } gpr_mpscq;

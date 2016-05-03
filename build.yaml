@@ -1480,6 +1480,15 @@ targets:
   deps:
   - gpr_test_util
   - gpr
+- name: gpr_mpscq_test
+  cpu_cost: 10
+  build: test
+  language: c
+  src:
+  - test/core/support/mpscq_test.c
+  deps:
+  - gpr_test_util
+  - gpr
 - name: gpr_slice_buffer_test
   build: test
   language: c
