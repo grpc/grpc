@@ -167,6 +167,37 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
+        public async Task ServerStreamingCall_EndOfStreamIsIdempotent()
+        {
+            helper.ServerStreamingHandler = new ServerStreamingServerMethod<string, string>(async (request, responseStream, context) =>
+            {
+            });
+
+            var call = Calls.AsyncServerStreamingCall(helper.CreateServerStreamingCall(), "");
+
+            Assert.IsFalse(await call.ResponseStream.MoveNext());
+            Assert.IsFalse(await call.ResponseStream.MoveNext());
+        }
+
+        [Test]
+        public async Task ServerStreamingCall_ErrorCanBeAwaitedTwice()
+        {
+            helper.ServerStreamingHandler = new ServerStreamingServerMethod<string, string>(async (request, responseStream, context) =>
+            {
+                context.Status = new Status(StatusCode.InvalidArgument, "");
+            });
+
+            var call = Calls.AsyncServerStreamingCall(helper.CreateServerStreamingCall(), "");
+
+            var ex = Assert.ThrowsAsync<RpcException>(async () => await call.ResponseStream.MoveNext());
+            Assert.AreEqual(StatusCode.InvalidArgument, ex.Status.StatusCode);
+
+            // attempting MoveNext again should result in throwing the same exception.
+            var ex2 = Assert.ThrowsAsync<RpcException>(async () => await call.ResponseStream.MoveNext());
+            Assert.AreEqual(StatusCode.InvalidArgument, ex2.Status.StatusCode);
+        }
+
+        [Test]
         public async Task DuplexStreamingCall()
         {
             helper.DuplexStreamingHandler = new DuplexStreamingServerMethod<string, string>(async (requestStream, responseStream, context) =>
