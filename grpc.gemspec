@@ -123,6 +123,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/support/murmur_hash.c )
   s.files += %w( src/core/lib/support/slice.c )
   s.files += %w( src/core/lib/support/slice_buffer.c )
+  s.files += %w( src/core/lib/support/stack_lockfree.c )
   s.files += %w( src/core/lib/support/string.c )
   s.files += %w( src/core/lib/support/string_posix.c )
   s.files += %w( src/core/lib/support/string_util_win32.c )

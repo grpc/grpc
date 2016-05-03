@@ -5529,6 +5529,7 @@
       "src/core/lib/support/murmur_hash.h", 
       "src/core/lib/support/slice.c", 
       "src/core/lib/support/slice_buffer.c", 
+      "src/core/lib/support/stack_lockfree.c", 
       "src/core/lib/support/stack_lockfree.h", 
       "src/core/lib/support/string.c", 
       "src/core/lib/support/string.h", 

@@ -256,6 +256,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\slice_buffer.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\stack_lockfree.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\string.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\string_posix.c">

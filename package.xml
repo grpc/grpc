@@ -130,6 +130,7 @@
     <file baseinstalldir="/" name="src/core/lib/support/murmur_hash.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/slice.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/slice_buffer.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/stack_lockfree.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/support/string_util_win32.c" role="src" />

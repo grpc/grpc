@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,22 +37,21 @@
 #include <stddef.h>
 
 #include <grpc/support/atm.h>
+#include "src/core/lib/support/mpscq.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 typedef void (*grpc_aelock_action)(grpc_exec_ctx *exec_ctx, void *arg);
 
 typedef struct grpc_aelock_qnode {
+  gpr_mpscq_node mpscq_node;
   grpc_aelock_action action;
   void *arg;
-  gpr_atm next;
 } grpc_aelock_qnode;
 
 typedef struct grpc_aelock {
   grpc_workqueue *optional_workqueue;
-  // grpc_aelock_qnode*
-  gpr_atm head;
-  grpc_aelock_qnode *tail;
-  grpc_aelock_qnode tombstone;
+  gpr_mpscq queue;
+  gpr_atm locked;
 } grpc_aelock;
 
 void grpc_aelock_init(grpc_aelock *lock, grpc_workqueue *optional_workqueue);

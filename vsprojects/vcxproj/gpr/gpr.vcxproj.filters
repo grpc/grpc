@@ -76,6 +76,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\slice_buffer.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\stack_lockfree.c">
+      <Filter>src\core\lib\support</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\string.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
