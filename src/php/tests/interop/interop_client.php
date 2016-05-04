@@ -388,7 +388,7 @@ function timeoutOnSleepingServer($stub)
              'Call status was not DEADLINE_EXCEEDED');
 }
 
-function interop_main($args)
+function _makeStub($args)
 {
     if (!array_key_exists('server_host', $args)) {
         throw new Exception('Missing argument: --server_host is required');
@@ -474,7 +474,15 @@ function interop_main($args)
 
     $stub = new grpc\testing\TestServiceClient($server_address, $opts);
 
-    echo "Connecting to $server_address\n";
+    return $stub;
+}
+
+function interop_main($args, $stub = false) {
+    if (!$stub) {
+        $stub = _makeStub($args);
+    }
+
+    $test_case = $args['test_case'];
     echo "Running test case $test_case\n";
 
     switch ($test_case) {
@@ -524,6 +532,8 @@ function interop_main($args)
             echo "Unsupported test case $test_case\n";
             exit(1);
     }
+
+    return $stub;
 }
 
 if (isset($_SERVER['PHP_SELF']) && preg_match('/interop_client/', $_SERVER['PHP_SELF'])) {
