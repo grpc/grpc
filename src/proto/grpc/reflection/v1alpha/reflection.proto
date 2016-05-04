@@ -55,38 +55,64 @@ service ServerReflection {
 
   // Finds the tag numbers used by all known extensions of extendee_type, and
   // appends them to ExtensionNumberResponse in an undefined order.
+  // This method is best-effort: it's not guaranteed that the reflection service
+  // will implement this method, and it's not guaranteed that this method will
+  // provide all extensions. Returns StatusCode::UNIMPLEMENTED if it's not
+  // implemented.
   rpc GetAllExtensionNumbers(TypeRequest) returns (ExtensionNumberResponse) {
   }
 }
 
+// An empty message sent by the client when calling ListService method.
 message EmptyRequest {
 }
 
+// The filename sent by the client when calling GetFileByName method.
 message FileNameRequest {
+  // Name of the proto file.
   string filename = 1;
 }
 
+// The symbol name sent by the client when calling GetFileContainingSymbol
+// method.
 message SymbolRequest {
+  // Fully-qualified symbol name (e.g. <package>.<service>[.<method>] or
+  // <package>.<type>).
   string symbol = 1;
 }
 
+// The type name and extension number sent by the client when calling
+// GetFileContainingExtension method.
 message ExtensionRequest {
+  // Fully-qualified type name. The format should be <package>.<type>
   string containing_type = 1;
   int32 extension_number = 2;
 }
 
+// The type name sent by the client when calling GetAllExtensionNumbers method.
 message TypeRequest {
+  // Fully-qualified type name. The format should be <package>.<type>
   string type = 1;
 }
 
+// A list of service names sent by the server answering ListService method.
 message ListServiceResponse {
+  // Full names of registered services, including package names. The format
+  // is <package>.<service>
   repeated string services = 1;
 }
 
+// A serialized FileDescriptorProto sent by the server answering
+// GetFileByName, GetFileContainingSymbol, GetFileContainingExtension methods.
 message FileDescriptorProtoResponse {
+  // Serialized FileDescriptorProto message. Some languages have limited support
+  // for working with descriptors. The can only obtain an opaque binary blob
+  // that contains serialized FileDescriptorProto message.
   bytes file_descriptor_proto = 1;
 }
 
+// A list of extension numbers sent by the server answering
+// GetAllExtensionNumbers method.
 message ExtensionNumberResponse {
   repeated int32 extension_number = 1;
 }
