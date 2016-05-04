@@ -80,8 +80,6 @@ namespace Grpc.Core.Internal
             {
                 GrpcPreconditions.CheckArgument(await requestStream.MoveNext().ConfigureAwait(false));
                 var request = requestStream.Current;
-                // TODO(jtattermusch): we need to read the full stream so that native callhandle gets deallocated.
-                GrpcPreconditions.CheckArgument(!await requestStream.MoveNext().ConfigureAwait(false));
                 var result = await handler(request, context).ConfigureAwait(false);
                 status = context.Status;
                 await responseStream.WriteAsync(result).ConfigureAwait(false);
@@ -93,7 +91,7 @@ namespace Grpc.Core.Internal
             }
             try
             {
-                await responseStream.WriteStatusAsync(status, context.ResponseTrailers).ConfigureAwait(false);
+                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
@@ -136,8 +134,6 @@ namespace Grpc.Core.Internal
             {
                 GrpcPreconditions.CheckArgument(await requestStream.MoveNext().ConfigureAwait(false));
                 var request = requestStream.Current;
-                // TODO(jtattermusch): we need to read the full stream so that native callhandle gets deallocated.
-                GrpcPreconditions.CheckArgument(!await requestStream.MoveNext().ConfigureAwait(false));
                 await handler(request, responseStream, context).ConfigureAwait(false);
                 status = context.Status;
             }
@@ -149,7 +145,7 @@ namespace Grpc.Core.Internal
 
             try
             {
-                await responseStream.WriteStatusAsync(status, context.ResponseTrailers).ConfigureAwait(false);
+                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
@@ -209,7 +205,7 @@ namespace Grpc.Core.Internal
 
             try
             {
-                await responseStream.WriteStatusAsync(status, context.ResponseTrailers).ConfigureAwait(false);
+                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
@@ -260,7 +256,7 @@ namespace Grpc.Core.Internal
             }
             try
             {
-                await responseStream.WriteStatusAsync(status, context.ResponseTrailers).ConfigureAwait(false);
+                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
@@ -282,9 +278,7 @@ namespace Grpc.Core.Internal
             
             asyncCall.Initialize(newRpc.Call);
             var finishedTask = asyncCall.ServerSideCallAsync();
-            var responseStream = new ServerResponseStream<byte[], byte[]>(asyncCall);
-
-            await responseStream.WriteStatusAsync(new Status(StatusCode.Unimplemented, ""), Metadata.Empty).ConfigureAwait(false);
+            await asyncCall.SendStatusFromServerAsync(new Status(StatusCode.Unimplemented, ""), Metadata.Empty).ConfigureAwait(false);
             await finishedTask.ConfigureAwait(false);
         }
     }
@@ -300,7 +294,6 @@ namespace Grpc.Core.Internal
                 return rpcException.Status;
             }
 
-            // TODO(jtattermusch): what is the right status code here?
             return new Status(StatusCode.Unknown, "Exception was thrown by handler.");
         }
 

@@ -1,5 +1,6 @@
 {
   "Grpc.Core.Tests": [
+    "Grpc.Core.Internal.Tests.AsyncCallServerTest",
     "Grpc.Core.Internal.Tests.AsyncCallTest",
     "Grpc.Core.Internal.Tests.ChannelArgsSafeHandleTest",
     "Grpc.Core.Internal.Tests.CompletionQueueEventTest",

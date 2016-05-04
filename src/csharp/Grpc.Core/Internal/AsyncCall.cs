@@ -241,11 +241,10 @@ namespace Grpc.Core.Internal
 
         /// <summary>
         /// Receives a streaming response. Only one pending read action is allowed at any given time.
-        /// completionDelegate is called when the operation finishes.
         /// </summary>
-        public void StartReadMessage(AsyncCompletionDelegate<TResponse> completionDelegate)
+        public Task<TResponse> ReadMessageAsync()
         {
-            StartReadMessageInternal(completionDelegate);
+            return ReadMessageInternalAsync();
         }
 
         /// <summary>
