@@ -44,7 +44,7 @@ set -x
 #  BUILD_INTEROP_DOCKER_EXTRA_ARGS - optional args to be passed to the
 #    docker run command
 
-cd `dirname $0`/../..
+cd `dirname $0`/../../..
 GRPC_ROOT=`pwd`
 MOUNT_ARGS="-v $GRPC_ROOT:/var/local/jenkins/grpc:ro"
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,20 +28,28 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# Builds docker image and runs a command under it.
-# You should never need to call this script on your own.
+# This script is invoked by run_tests.py to accommodate "test under docker"
+# scenario. You should never need to call this script on your own.
 
 set -ex
 
-cd $(dirname $0)/../..
+cd $(dirname $0)/../../..
 git_root=$(pwd)
 cd -
+
+# Ensure existence of ccache directory
+mkdir -p /tmp/ccache
+
+# Ensure existence of the home directory for XDG caches (e.g. what pip uses for
+# its cache location now that --download-cache is deprecated).
+mkdir -p /tmp/xdg-cache-home
+
+# Create a local branch so the child Docker script won't complain
+git branch -f jenkins-docker
 
 # Inputs
 # DOCKERFILE_DIR - Directory in which Dockerfile file is located.
 # DOCKER_RUN_SCRIPT - Script to run under docker (relative to grpc repo root)
-# OUTPUT_DIR - Directory that will be copied from inside docker after finishing.
-# $@ - Extra args to pass to docker run
 
 # Use image name based on Dockerfile location checksum
 DOCKER_IMAGE_NAME=$(basename $DOCKERFILE_DIR)_$(sha1sum $DOCKERFILE_DIR/Dockerfile | cut -f1 -d\ )
@@ -50,29 +58,42 @@ DOCKER_IMAGE_NAME=$(basename $DOCKERFILE_DIR)_$(sha1sum $DOCKERFILE_DIR/Dockerfi
 docker build -t $DOCKER_IMAGE_NAME $DOCKERFILE_DIR
 
 # Choose random name for docker container
-CONTAINER_NAME="build_and_run_docker_$(uuidgen)"
+CONTAINER_NAME="run_tests_$(uuidgen)"
 
-# Run command inside docker
+# Git root as seen by the docker instance
+docker_instance_git_root=/var/local/jenkins/grpc
+
+# Run tests inside docker
 docker run \
-  "$@" \
-  -e EXTERNAL_GIT_ROOT="/var/local/jenkins/grpc" \
+  -e "RUN_TESTS_COMMAND=$RUN_TESTS_COMMAND" \
+  -e "config=$config" \
+  -e "arch=$arch" \
+  -e CCACHE_DIR=/tmp/ccache \
+  -e XDG_CACHE_HOME=/tmp/xdg-cache-home \
   -e THIS_IS_REALLY_NEEDED='see https://github.com/docker/docker/issues/14203 for why docker is awful' \
-  -v "$git_root:/var/local/jenkins/grpc:ro" \
+  -e HOST_GIT_ROOT=$git_root \
+  -e LOCAL_GIT_ROOT=$docker_instance_git_root \
+  -e "BUILD_ID=$BUILD_ID" \
+  -i $TTY_FLAG \
+  -v "$git_root:$docker_instance_git_root" \
+  -v /tmp/ccache:/tmp/ccache \
+  -v /tmp/npm-cache:/tmp/npm-cache \
+  -v /tmp/xdg-cache-home:/tmp/xdg-cache-home \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v $(which docker):/bin/docker \
   -w /var/local/git/grpc \
   --name=$CONTAINER_NAME \
   $DOCKER_IMAGE_NAME \
-  bash -l "/var/local/jenkins/grpc/$DOCKER_RUN_SCRIPT" || FAILED="true"
+  bash -l "/var/local/jenkins/grpc/$DOCKER_RUN_SCRIPT" || DOCKER_FAILED="true"
 
-# Copy output artifacts
-if [ "$OUTPUT_DIR" != "" ]
-then
-  docker cp "$CONTAINER_NAME:/var/local/git/grpc/$OUTPUT_DIR" "$git_root" || FAILED="true"
-fi
+docker cp "$CONTAINER_NAME:/var/local/git/grpc/reports.zip" $git_root || true
+unzip -o $git_root/reports.zip -d $git_root || true
+rm -f reports.zip
 
 # remove the container, possibly killing it first
 docker rm -f $CONTAINER_NAME || true
 
-if [ "$FAILED" != "" ]
+if [ "$DOCKER_FAILED" != "" ] && [ "$XML_REPORT" == "" ]
 then
   exit 1
 fi
