@@ -1,7 +1,7 @@
 {
   "dockerImages": {
     "grpc_stress_cxx_opt" : {
-      "buildScript": "tools/jenkins/build_interop_stress_image.sh",
+      "buildScript": "tools/run_tests/dockerize/build_interop_stress_image.sh",
       "dockerFileDir": "grpc_interop_stress_cxx",
       "buildType": "opt"
     }
@@ -16,8 +16,7 @@
           "num_channels_per_server":5,
           "num_stubs_per_channel":10,
           "test_cases": "empty_unary:1,large_unary:1,client_streaming:1,server_streaming:1,empty_stream:1",
-          "metrics_port": 8081,
-          "metrics_collection_interval_secs": 60
+          "metrics_port": 8081
         },
         "metricsPort": 8081,
         "metricsArgs": {

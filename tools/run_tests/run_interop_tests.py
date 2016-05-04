@@ -111,8 +111,7 @@ class CSharpLanguage:
     return {}
 
   def unimplemented_test_cases(self):
-    # TODO: status_code_and_message doesn't work against node_server
-    return _SKIP_COMPRESSION + ['status_code_and_message']
+    return _SKIP_COMPRESSION
 
   def unimplemented_test_cases_server(self):
     return _SKIP_COMPRESSION
@@ -543,7 +542,7 @@ def build_interop_image_jobspec(language, tag=None):
     env['BUILD_INTEROP_DOCKER_EXTRA_ARGS'] = \
       '-v %s:/root/.composer/auth.json:ro' % host_file
   build_job = jobset.JobSpec(
-          cmdline=['tools/jenkins/build_interop_image.sh'],
+          cmdline=['tools/run_tests/dockerize/build_interop_image.sh'],
           environ=env,
           shortname='build_docker_%s' % (language),
           timeout_seconds=30*60)

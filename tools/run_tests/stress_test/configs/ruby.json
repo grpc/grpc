@@ -1,0 +1,92 @@
+{
+  "dockerImages": {
+    "grpc_stress_ruby" : {
+      "buildScript": "tools/run_tests/dockerize/build_interop_stress_image.sh",
+      "dockerFileDir": "grpc_interop_stress_ruby"
+    }
+  },
+
+  "clientTemplates": {
+    "baseTemplates": {
+      "default": {
+        "wrapperScriptPath": "/var/local/git/grpc/tools/gcp/stress_test/run_client.py",
+        "pollIntervalSecs": 60,
+        "clientArgs": {
+          "num_channels_per_server":5,
+          "num_stubs_per_channel":10,
+          "test_cases": "empty_unary:1,large_unary:1,client_streaming:1,server_streaming:1,empty_stream:1",
+          "metrics_port": 8081
+        },
+        "metricsPort": 8081,
+        "metricsArgs": {
+          "metrics_server_address": "localhost:8081",
+          "total_only": "true"
+        }
+      }
+    },
+    "templates": {
+      "ruby_client": {
+        "baseTemplate": "default",
+        "stressClientCmd": [
+          "/var/local/git/grpc/tools/gcp/stress_test/run_ruby.sh",
+          "ruby",
+          "/var/local/git/grpc/src/ruby/stress/stress_client.rb"
+        ],
+        "metricsClientCmd": ["/var/local/git/grpc/bins/opt/metrics_client"]
+      }
+    }
+  },
+
+  "serverTemplates": {
+    "baseTemplates":{
+      "default": {
+        "wrapperScriptPath": "/var/local/git/grpc/tools/gcp/stress_test/run_server.py",
+        "serverPort": 8080,
+        "serverArgs": {
+          "port": 8080
+        }
+      }
+    },
+    "templates": {
+      "ruby_server": {
+        "baseTemplate": "default",
+        "stressServerCmd": [
+          "/var/local/git/grpc/tools/gcp/stress_test/run_ruby.sh",
+          "ruby",
+          "/var/local/git/grpc/src/ruby/pb/test/server.rb"
+        ]
+      }
+    }
+  },
+
+  "testMatrix": {
+    "serverPodSpecs": {
+      "stress-server-ruby": {
+        "serverTemplate": "ruby_server",
+        "dockerImage": "grpc_stress_ruby",
+        "numInstances": 1
+      }
+    },
+
+    "clientPodSpecs": {
+      "stress-client-ruby": {
+        "clientTemplate": "ruby_client",
+        "dockerImage": "grpc_stress_ruby",
+        "numInstances": 10,
+        "serverPodSpec": "stress-server-ruby"
+      }
+    }
+  },
+
+  "globalSettings": {
+    "buildDockerImages": true,
+    "pollIntervalSecs": 60,
+    "testDurationSecs": 7200,
+    "kubernetesProxyPort": 8001,
+    "datasetIdNamePrefix": "stress_test_ruby",
+    "summaryTableId": "summary",
+    "qpsTableId": "qps",
+    "podWarmupSecs": 60
+  }
+}
+

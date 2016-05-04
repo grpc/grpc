@@ -105,8 +105,12 @@ typedef struct {
   void (*set_pollset_or_pollset_set)(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem, grpc_pops *pops);
   /* Destroy per call data.
-     The filter does not need to do any chaining */
-  void (*destroy_call_elem)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem);
+     The filter does not need to do any chaining.
+     The bottom filter of a stack will be passed a non-NULL pointer to
+     \a and_free_memory that should be passed to gpr_free when destruction
+     is complete. */
+  void (*destroy_call_elem)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                            void *and_free_memory);
 
   /* sizeof(per channel data) */
   size_t sizeof_channel_data;
@@ -225,7 +229,8 @@ void grpc_call_stack_set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
 #endif
 
 /* Destroy a call stack */
-void grpc_call_stack_destroy(grpc_exec_ctx *exec_ctx, grpc_call_stack *stack);
+void grpc_call_stack_destroy(grpc_exec_ctx *exec_ctx, grpc_call_stack *stack,
+                             void *and_free_memory);
 
 /* Ignore set pollset{_set} - used by filters if they don't care about pollsets
  * at all. Does nothing. */

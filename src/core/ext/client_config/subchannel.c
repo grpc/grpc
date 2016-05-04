@@ -268,7 +268,7 @@ static void disconnect(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   con = GET_CONNECTED_SUBCHANNEL(c, no_barrier);
   if (con != NULL) {
     GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, con, "connection");
-    gpr_atm_no_barrier_store(&c->connected_subchannel, 0xdeadbeef);
+    gpr_atm_no_barrier_store(&c->connected_subchannel, (gpr_atm)0xdeadbeef);
   }
   gpr_mu_unlock(&c->mu);
 }
@@ -644,9 +644,9 @@ static void subchannel_call_destroy(grpc_exec_ctx *exec_ctx, void *call,
                                     bool success) {
   grpc_subchannel_call *c = call;
   GPR_TIMER_BEGIN("grpc_subchannel_call_unref.destroy", 0);
-  grpc_call_stack_destroy(exec_ctx, SUBCHANNEL_CALL_TO_CALL_STACK(c));
-  GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, c->connection, "subchannel_call");
-  gpr_free(c);
+  grpc_connected_subchannel *connection = c->connection;
+  grpc_call_stack_destroy(exec_ctx, SUBCHANNEL_CALL_TO_CALL_STACK(c), c);
+  GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, connection, "subchannel_call");
   GPR_TIMER_END("grpc_subchannel_call_unref.destroy", 0);
 }
 

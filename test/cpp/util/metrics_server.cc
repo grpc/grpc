@@ -42,16 +42,26 @@
 namespace grpc {
 namespace testing {
 
-Gauge::Gauge(long initial_val) : val_(initial_val) {}
+QpsGauge::QpsGauge()
+    : start_time_(gpr_now(GPR_CLOCK_REALTIME)), num_queries_(0) {}
 
-void Gauge::Set(long new_val) {
-  std::lock_guard<std::mutex> lock(val_mu_);
-  val_ = new_val;
+void QpsGauge::Reset() {
+  std::lock_guard<std::mutex> lock(num_queries_mu_);
+  num_queries_ = 0;
+  start_time_ = gpr_now(GPR_CLOCK_REALTIME);
 }
 
-long Gauge::Get() {
-  std::lock_guard<std::mutex> lock(val_mu_);
-  return val_;
+void QpsGauge::Incr() {
+  std::lock_guard<std::mutex> lock(num_queries_mu_);
+  num_queries_++;
+}
+
+long QpsGauge::Get() {
+  std::lock_guard<std::mutex> lock(num_queries_mu_);
+  gpr_timespec time_diff =
+      gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), start_time_);
+  long duration_secs = time_diff.tv_sec > 0 ? time_diff.tv_sec : 1;
+  return num_queries_ / duration_secs;
 }
 
 grpc::Status MetricsServiceImpl::GetAllGauges(
@@ -60,7 +70,7 @@ grpc::Status MetricsServiceImpl::GetAllGauges(
   gpr_log(GPR_DEBUG, "GetAllGauges called");
 
   std::lock_guard<std::mutex> lock(mu_);
-  for (auto it = gauges_.begin(); it != gauges_.end(); it++) {
+  for (auto it = qps_gauges_.begin(); it != qps_gauges_.end(); it++) {
     GaugeResponse resp;
     resp.set_name(it->first);                // Gauge name
     resp.set_long_value(it->second->Get());  // Gauge value
@@ -75,8 +85,8 @@ grpc::Status MetricsServiceImpl::GetGauge(ServerContext* context,
                                           GaugeResponse* response) {
   std::lock_guard<std::mutex> lock(mu_);
 
-  const auto it = gauges_.find(request->name());
-  if (it != gauges_.end()) {
+  const auto it = qps_gauges_.find(request->name());
+  if (it != qps_gauges_.end()) {
     response->set_name(it->first);
     response->set_long_value(it->second->Get());
   }
@@ -84,16 +94,17 @@ grpc::Status MetricsServiceImpl::GetGauge(ServerContext* context,
   return Status::OK;
 }
 
-std::shared_ptr<Gauge> MetricsServiceImpl::CreateGauge(const grpc::string& name,
-                                                       bool* already_present) {
+std::shared_ptr<QpsGauge> MetricsServiceImpl::CreateQpsGauge(
+    const grpc::string& name, bool* already_present) {
   std::lock_guard<std::mutex> lock(mu_);
 
-  std::shared_ptr<Gauge> gauge(new Gauge(0));
-  const auto p = gauges_.emplace(name, gauge);
+  std::shared_ptr<QpsGauge> qps_gauge(new QpsGauge());
+  const auto p = qps_gauges_.emplace(name, qps_gauge);
 
-  // p.first is an iterator pointing to <name, shared_ptr<Gauge>> pair. p.second
-  // is a boolean which is set to 'true' if the Gauge is inserted in the guages_
-  // map and 'false' if it is already present in the map
+  // p.first is an iterator pointing to <name, shared_ptr<QpsGauge>> pair.
+  // p.second is a boolean which is set to 'true' if the QpsGauge is
+  // successfully inserted in the guages_ map and 'false' if it is already
+  // present in the map
   *already_present = !p.second;
   return p.first->second;
 }
