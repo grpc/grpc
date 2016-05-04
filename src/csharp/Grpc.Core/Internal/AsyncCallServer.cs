@@ -149,7 +149,8 @@ namespace Grpc.Core.Internal
 
                 using (var metadataArray = MetadataArraySafeHandle.Create(trailers))
                 {
-                    call.StartSendStatusFromServer(HandleSendStatusFromServerFinished, status, metadataArray, !initialMetadataSent);
+                    call.StartSendStatusFromServer(HandleSendStatusFromServerFinished, status, metadataArray, !initialMetadataSent,
+                        null, new WriteFlags());
                 }
                 halfcloseRequested = true;
                 initialMetadataSent = true;
