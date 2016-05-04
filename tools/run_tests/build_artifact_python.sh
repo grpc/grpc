@@ -73,7 +73,7 @@ then
   for wheel in tools/distrib/python/grpcio_tools/dist/*.whl; do
     ${AUDITWHEEL} repair $wheel -w artifacts/
   done
-else
-  cp -r dist/* artifacts
-  cp -r tools/distrib/python/grpcio_tools/dist/* artifacts
 fi
+
+cp -r dist/* artifacts
+cp -r tools/distrib/python/grpcio_tools/dist/* artifacts
