@@ -948,15 +948,16 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
     stream_global->send_initial_metadata_finished =
         add_closure_barrier(on_complete);
     stream_global->send_initial_metadata = op->send_initial_metadata;
-    const size_t metadata_size = grpc_metadata_batch_size(
-        op->send_initial_metadata);
+    const size_t metadata_size =
+        grpc_metadata_batch_size(op->send_initial_metadata);
     const size_t metadata_peer_limit =
         transport_global->settings[GRPC_PEER_SETTINGS]
                                   [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE];
     if (metadata_size > metadata_peer_limit) {
       gpr_log(GPR_DEBUG,
               "to-be-sent initial metadata size exceeds peer limit "
-              "(%lu vs. %lu)", metadata_size, metadata_peer_limit);
+              "(%lu vs. %lu)",
+              metadata_size, metadata_peer_limit);
       cancel_from_api(exec_ctx, transport_global, stream_global,
                       GRPC_STATUS_RESOURCE_EXHAUSTED);
     } else {
@@ -1002,15 +1003,16 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
     stream_global->send_trailing_metadata_finished =
         add_closure_barrier(on_complete);
     stream_global->send_trailing_metadata = op->send_trailing_metadata;
-    const size_t metadata_size = grpc_metadata_batch_size(
-        op->send_trailing_metadata);
+    const size_t metadata_size =
+        grpc_metadata_batch_size(op->send_trailing_metadata);
     const size_t metadata_peer_limit =
         transport_global->settings[GRPC_PEER_SETTINGS]
                                   [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE];
     if (metadata_size > metadata_peer_limit) {
       gpr_log(GPR_DEBUG,
               "to-be-sent trailing metadata size exceeds peer limit "
-              "(%lu vs. %lu)", metadata_size, metadata_peer_limit);
+              "(%lu vs. %lu)",
+              metadata_size, metadata_peer_limit);
       cancel_from_api(exec_ctx, transport_global, stream_global,
                       GRPC_STATUS_RESOURCE_EXHAUSTED);
     } else {

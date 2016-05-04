@@ -639,8 +639,8 @@ static void on_initial_header(void *tp, grpc_mdelem *md) {
         gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), *cached_timeout));
     GRPC_MDELEM_UNREF(md);
   } else {
-    const size_t new_size = stream_parsing->metadata_buffer[0].size +
-                            GRPC_MDELEM_LENGTH(md);
+    const size_t new_size =
+        stream_parsing->metadata_buffer[0].size + GRPC_MDELEM_LENGTH(md);
     grpc_chttp2_transport_global *transport_global =
         &TRANSPORT_FROM_PARSING(transport_parsing)->global;
     const size_t metadata_size_limit =
@@ -685,8 +685,8 @@ static void on_trailing_header(void *tp, grpc_mdelem *md) {
     stream_parsing->seen_error = true;
   }
 
-  const size_t new_size = stream_parsing->metadata_buffer[1].size +
-                          GRPC_MDELEM_LENGTH(md);
+  const size_t new_size =
+      stream_parsing->metadata_buffer[1].size + GRPC_MDELEM_LENGTH(md);
   grpc_chttp2_transport_global *transport_global =
       &TRANSPORT_FROM_PARSING(transport_parsing)->global;
   const size_t metadata_size_limit =
