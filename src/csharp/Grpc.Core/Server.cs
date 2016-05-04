@@ -283,6 +283,8 @@ namespace Grpc.Core
         /// </summary>
         private void HandleNewServerRpc(bool success, BatchContextSafeHandle ctx)
         {
+            Task.Run(AllowOneRpc);
+
             if (success)
             {
                 ServerRpcNew newRpc = ctx.GetServerRpcNew(this);
@@ -290,11 +292,9 @@ namespace Grpc.Core
                 // after server shutdown, the callback returns with null call
                 if (!newRpc.Call.IsInvalid)
                 {
-                    Task.Run(async () => await HandleCallAsync(newRpc)).ConfigureAwait(false);
+                    HandleCallAsync(newRpc);  // we don't need to await.
                 }
             }
-
-            AllowOneRpc();
         }
 
         /// <summary>
