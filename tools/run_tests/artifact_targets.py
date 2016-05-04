@@ -151,7 +151,8 @@ class PythonArtifact:
     elif self.platform == 'windows':
       return create_jobspec(self.name,
                             ['tools\\run_tests\\build_artifact_python.bat',
-                             self.python_version
+                             self.python_version,
+                             '32' if self.arch == 'x86' else '64'
                             ],
                             shell=True)
     else:
