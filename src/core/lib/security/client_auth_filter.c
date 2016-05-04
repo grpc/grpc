@@ -54,11 +54,11 @@ typedef struct {
   grpc_call_credentials *creds;
   grpc_mdstr *host;
   grpc_mdstr *method;
-  /* pollset_set bound to this call; if we need to make external
+  /* pollset{_set} bound to this call; if we need to make external
      network requests, they should be done under a pollset added to this
      pollset_set so that work can progress when this call wants work to progress
   */
-  grpc_pollset_set *pollset_set;
+  grpc_pops *pops;
   grpc_transport_stream_op op;
   uint8_t security_context_set;
   grpc_linked_mdelem md_links[MAX_CREDENTIALS_METADATA_COUNT];
@@ -184,9 +184,9 @@ static void send_security_metadata(grpc_exec_ctx *exec_ctx,
   build_auth_metadata_context(&chand->security_connector->base,
                               chand->auth_context, calld);
   calld->op = *op; /* Copy op (originates from the caller's stack). */
-  GPR_ASSERT(calld->pollset_set);
+  GPR_ASSERT(calld->pops != NULL);
   grpc_call_credentials_get_request_metadata(
-      exec_ctx, calld->creds, calld->pollset_set, calld->auth_md_context,
+      exec_ctx, calld->creds, calld->pops, calld->auth_md_context,
       on_credentials_metadata, elem);
 }
 
@@ -268,22 +268,13 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                            grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
   memset(calld, 0, sizeof(*calld));
-  calld->pollset_set = grpc_pollset_set_create();
 }
 
-static void set_pollset_or_pollset_set(
-    grpc_exec_ctx *exec_ctx, grpc_call_element *elem, grpc_pollset *pollset,
-    grpc_pollset_set *pollset_set_alternative) {
-  GPR_ASSERT((pollset == NULL) + (pollset_set_alternative == NULL) == 1);
-  GPR_ASSERT(pollset != NULL || pollset_set_alternative != NULL);
-
+static void set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
+                                       grpc_call_element *elem,
+                                       grpc_pops *pops) {
   call_data *calld = elem->call_data;
-  if (pollset != NULL) {
-    grpc_pollset_set_add_pollset(exec_ctx, calld->pollset_set, pollset);
-  } else if (pollset_set_alternative != NULL) {
-    grpc_pollset_set_add_pollset_set(exec_ctx, calld->pollset_set,
-                                     pollset_set_alternative);
-  }
+  calld->pops = pops;
 }
 
 /* Destructor for call_data */
@@ -298,7 +289,6 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx,
     GRPC_MDSTR_UNREF(calld->method);
   }
   reset_auth_metadata_context(&calld->auth_md_context);
-  grpc_pollset_set_destroy(calld->pollset_set);
 }
 
 /* Constructor for channel_data */

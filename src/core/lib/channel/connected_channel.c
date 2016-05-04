@@ -93,22 +93,13 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   GPR_ASSERT(r == 0);
 }
 
-static void set_pollset_or_pollset_set(
-    grpc_exec_ctx *exec_ctx, grpc_call_element *elem, grpc_pollset *pollset,
-    grpc_pollset_set *pollset_set_alternative) {
-  GPR_ASSERT((pollset == NULL) + (pollset_set_alternative == NULL) == 1);
-  GPR_ASSERT(pollset != NULL || pollset_set_alternative != NULL);
-
+static void set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
+                                       grpc_call_element *elem,
+                                       grpc_pops *pops) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
-  if (pollset != NULL) {
-    grpc_transport_set_pollset(exec_ctx, chand->transport,
-                               TRANSPORT_STREAM_FROM_CALL_DATA(calld), pollset);
-  } else if (pollset_set_alternative != NULL) {
-    grpc_transport_set_pollset_set(exec_ctx, chand->transport,
-                                   TRANSPORT_STREAM_FROM_CALL_DATA(calld),
-                                   pollset_set_alternative);
-  }
+  grpc_transport_set_pops(exec_ctx, chand->transport,
+                          TRANSPORT_STREAM_FROM_CALL_DATA(calld), pops);
 }
 
 /* Destructor for call_data */

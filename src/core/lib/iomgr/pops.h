@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,18 +31,39 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_LB_POLICY_COMMON_H
-#define GRPC_CORE_EXT_LB_POLICY_COMMON_H
+#ifndef GRPC_CORE_LIB_IOMGR_POPS_H
+#define GRPC_CORE_LIB_IOMGR_POPS_H
 
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 
-void add_pollset_or_pollset_set_alternative(
-    grpc_exec_ctx *exec_ctx, grpc_pollset_set *interested_parties,
-    grpc_pollset *pollset, grpc_pollset_set *pollset_set_alternative);
+/* A grpc_pops is a pollset-or-pollset_set container. It allows functions that
+ * accept a pollset XOR a pollset_set to do so through an abstract interface.
+ * No ownership is taken. */
 
-void del_pollset_or_pollset_set_alternative(
-    grpc_exec_ctx *exec_ctx, grpc_pollset_set *interested_parties,
-    grpc_pollset *pollset, grpc_pollset_set *pollset_set_alternative);
+typedef struct grpc_pops grpc_pops;
 
-#endif /* GRPC_CORE_EXT_LB_POLICY_COMMON_H */
+grpc_pops *grpc_pops_create_from_pollset_set(grpc_pollset_set *pollset_set);
+grpc_pops *grpc_pops_create_from_pollset(grpc_pollset *pollset);
+
+/** If \a pops contains a pollset, return it. Otherwise, return NULL */
+grpc_pollset *grpc_pops_pollset(grpc_pops *pops);
+
+/** If \a pops contains a pollset_set, return it. Otherwise, return NULL */
+grpc_pollset_set *grpc_pops_pollset_set(grpc_pops *pops);
+
+void grpc_pops_destroy(grpc_pops *pops);
+
+/** Add the pollset or pollset_set in \a pops to the destination pollset_set \a
+ * pss_dst */
+void grpc_pops_add_to_pollset_set(grpc_exec_ctx *exec_ctx, grpc_pops *pops,
+                                  grpc_pollset_set *pss_dst);
+
+/** Delete the pollset or pollset_set in \a pops from the destination
+ * pollset_set \a
+ * pss_dst */
+void grpc_pops_del_to_pollset_set(grpc_exec_ctx *exec_ctx, grpc_pops *pops,
+                                  grpc_pollset_set *pss_dst);
+/* pollset_set specific */
+
+#endif /* GRPC_CORE_LIB_IOMGR_POPS_H */

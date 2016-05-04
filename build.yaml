@@ -177,6 +177,7 @@ filegroups:
   - src/core/lib/iomgr/pollset_set.h
   - src/core/lib/iomgr/pollset_set_windows.h
   - src/core/lib/iomgr/pollset_windows.h
+  - src/core/lib/iomgr/pops.h
   - src/core/lib/iomgr/resolve_address.h
   - src/core/lib/iomgr/sockaddr.h
   - src/core/lib/iomgr/sockaddr_posix.h
@@ -249,6 +250,7 @@ filegroups:
   - src/core/lib/iomgr/iomgr_windows.c
   - src/core/lib/iomgr/pollset_set_windows.c
   - src/core/lib/iomgr/pollset_windows.c
+  - src/core/lib/iomgr/pops.c
   - src/core/lib/iomgr/resolve_address_posix.c
   - src/core/lib/iomgr/resolve_address_windows.c
   - src/core/lib/iomgr/sockaddr_utils.c
@@ -358,13 +360,6 @@ filegroups:
   - include/grpc/impl/codegen/status.h
   uses:
   - gpr_codegen
-- name: grpc_lb_policy_common
-  headers:
-  - src/core/ext/lb_policy/common.h
-  src:
-  - src/core/ext/lb_policy/common.c
-  uses:
-  - grpc_base
 - name: grpc_lb_policy_grpclb
   headers:
   - src/core/ext/lb_policy/grpclb/load_balancer_api.h
@@ -376,7 +371,6 @@ filegroups:
   - grpc_base
   - grpc_client_config
   - nanopb
-  - grpc_lb_policy_common
 - name: grpc_lb_policy_pick_first
   src:
   - src/core/ext/lb_policy/pick_first/pick_first.c
@@ -384,7 +378,6 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_config
-  - grpc_lb_policy_common
 - name: grpc_lb_policy_round_robin
   src:
   - src/core/ext/lb_policy/round_robin/round_robin.c
@@ -392,7 +385,6 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_config
-  - grpc_lb_policy_common
 - name: grpc_resolver_dns_native
   src:
   - src/core/ext/resolver/dns/native/dns_resolver.c

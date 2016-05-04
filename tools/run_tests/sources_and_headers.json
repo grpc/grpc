@@ -5621,6 +5621,7 @@
       "src/core/lib/iomgr/pollset_set.h", 
       "src/core/lib/iomgr/pollset_set_windows.h", 
       "src/core/lib/iomgr/pollset_windows.h", 
+      "src/core/lib/iomgr/pops.h", 
       "src/core/lib/iomgr/resolve_address.h", 
       "src/core/lib/iomgr/sockaddr.h", 
       "src/core/lib/iomgr/sockaddr_posix.h", 
@@ -5730,6 +5731,8 @@
       "src/core/lib/iomgr/pollset_set_windows.h", 
       "src/core/lib/iomgr/pollset_windows.c", 
       "src/core/lib/iomgr/pollset_windows.h", 
+      "src/core/lib/iomgr/pops.c", 
+      "src/core/lib/iomgr/pops.h", 
       "src/core/lib/iomgr/resolve_address.h", 
       "src/core/lib/iomgr/resolve_address_posix.c", 
       "src/core/lib/iomgr/resolve_address_windows.c", 
@@ -5925,26 +5928,8 @@
   {
     "deps": [
       "gpr", 
-      "grpc_base"
-    ], 
-    "headers": [
-      "src/core/ext/lb_policy/common.h"
-    ], 
-    "language": "c", 
-    "name": "grpc_lb_policy_common", 
-    "src": [
-      "src/core/ext/lb_policy/common.c", 
-      "src/core/ext/lb_policy/common.h"
-    ], 
-    "third_party": false, 
-    "type": "filegroup"
-  }, 
-  {
-    "deps": [
-      "gpr", 
       "grpc_base", 
       "grpc_client_config", 
-      "grpc_lb_policy_common", 
       "nanopb"
     ], 
     "headers": [
@@ -5966,8 +5951,7 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_config", 
-      "grpc_lb_policy_common"
+      "grpc_client_config"
     ], 
     "headers": [], 
     "language": "c", 
@@ -5982,8 +5966,7 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_client_config", 
-      "grpc_lb_policy_common"
+      "grpc_client_config"
     ], 
     "headers": [], 
     "language": "c", 

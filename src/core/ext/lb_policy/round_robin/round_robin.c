@@ -36,7 +36,6 @@
 #include <grpc/support/alloc.h>
 
 #include "src/core/ext/client_config/lb_policy_registry.h"
-#include "src/core/ext/lb_policy/common.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
@@ -49,8 +48,7 @@ int grpc_lb_round_robin_trace = 0;
  * Once a pick is available, \a target is updated and \a on_complete called. */
 typedef struct pending_pick {
   struct pending_pick *next;
-  grpc_pollset *pollset;
-  grpc_pollset_set *pollset_set_alternative;
+  grpc_pops *pops;
   uint32_t initial_metadata_flags;
   grpc_connected_subchannel **target;
   grpc_closure *on_complete;
@@ -264,9 +262,8 @@ static void rr_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   while (pp != NULL) {
     pending_pick *next = pp->next;
     if (pp->target == target) {
-      del_pollset_or_pollset_set_alternative(
-          exec_ctx, p->base.interested_parties, pp->pollset,
-          pp->pollset_set_alternative);
+      grpc_pops_del_to_pollset_set(exec_ctx, pp->pops,
+                                   p->base.interested_parties);
       *target = NULL;
       grpc_exec_ctx_enqueue(exec_ctx, pp->on_complete, false, NULL);
       gpr_free(pp);
@@ -291,9 +288,8 @@ static void rr_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     pending_pick *next = pp->next;
     if ((pp->initial_metadata_flags & initial_metadata_flags_mask) ==
         initial_metadata_flags_eq) {
-      del_pollset_or_pollset_set_alternative(
-          exec_ctx, p->base.interested_parties, pp->pollset,
-          pp->pollset_set_alternative);
+      grpc_pops_del_to_pollset_set(exec_ctx, pp->pops,
+                                   p->base.interested_parties);
       *pp->target = NULL;
       grpc_exec_ctx_enqueue(exec_ctx, pp->on_complete, false, NULL);
       gpr_free(pp);
@@ -333,9 +329,7 @@ static void rr_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
 }
 
 static int rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
-                   grpc_pollset *pollset,
-                   grpc_pollset_set *pollset_set_alternative,
-                   grpc_metadata_batch *initial_metadata,
+                   grpc_pops *pops, grpc_metadata_batch *initial_metadata,
                    uint32_t initial_metadata_flags,
                    grpc_connected_subchannel **target,
                    grpc_closure *on_complete) {
@@ -358,12 +352,10 @@ static int rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     if (!p->started_picking) {
       start_picking(exec_ctx, p);
     }
-    add_pollset_or_pollset_set_alternative(exec_ctx, p->base.interested_parties,
-                                           pollset, pollset_set_alternative);
+    grpc_pops_add_to_pollset_set(exec_ctx, pops, p->base.interested_parties);
     pp = gpr_malloc(sizeof(*pp));
     pp->next = p->pending_picks;
-    pp->pollset = pollset;
-    pp->pollset_set_alternative = pollset_set_alternative;
+    pp->pops = pops;
     pp->target = target;
     pp->on_complete = on_complete;
     pp->initial_metadata_flags = initial_metadata_flags;
@@ -412,9 +404,8 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
                     "[RR CONN CHANGED] TARGET <-- SUBCHANNEL %p (NODE %p)",
                     selected->subchannel, selected);
           }
-          del_pollset_or_pollset_set_alternative(
-              exec_ctx, p->base.interested_parties, pp->pollset,
-              pp->pollset_set_alternative);
+          grpc_pops_del_to_pollset_set(exec_ctx, pp->pops,
+                                       p->base.interested_parties);
           grpc_exec_ctx_enqueue(exec_ctx, pp->on_complete, true, NULL);
           gpr_free(pp);
         }
