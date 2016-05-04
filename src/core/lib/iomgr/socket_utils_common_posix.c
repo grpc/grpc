@@ -88,8 +88,7 @@ grpc_error *grpc_set_socket_no_sigpipe_if_possible(int fd) {
     return GRPC_OS_ERROR(errno, "getsockopt(SO_NOSIGPIPE)");
   }
   if ((newval != 0) == val) {
-    return grpc_error_set_str(GRPC_ERROR_CREATE(), GRPC_ERROR_STR_grpc_os_error,
-                              "Failed to set SO_NOSIGPIPE");
+    return GRPC_ERROR_CREATE("Failed to set SO_NOSIGPIPE");
   }
 #endif
   return GRPC_ERROR_NONE;

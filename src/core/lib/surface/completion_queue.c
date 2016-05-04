@@ -89,7 +89,7 @@ static gpr_mu g_freelist_mu;
 static grpc_completion_queue *g_freelist;
 
 static void on_pollset_shutdown_done(grpc_exec_ctx *exec_ctx, void *cc,
-                                     bool success);
+                                     grpc_error *error);
 
 void grpc_cq_global_init(void) { gpr_mu_init(&g_freelist_mu); }
 
@@ -172,7 +172,7 @@ void grpc_cq_internal_ref(grpc_completion_queue *cc) {
 }
 
 static void on_pollset_shutdown_done(grpc_exec_ctx *exec_ctx, void *arg,
-                                     bool success) {
+                                     grpc_error *error) {
   grpc_completion_queue *cc = arg;
   GRPC_CQ_INTERNAL_UNREF(cc, "pollset_destroy");
 }
@@ -215,7 +215,7 @@ void grpc_cq_begin_op(grpc_completion_queue *cc, void *tag) {
    event, then enter shutdown mode */
 /* Queue a GRPC_OP_COMPLETED operation */
 void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
-                    void *tag, int success,
+                    void *tag, grpc_error *error,
                     void (*done)(grpc_exec_ctx *exec_ctx, void *done_arg,
                                  grpc_cq_completion *storage),
                     void *done_arg, grpc_cq_completion *storage) {
@@ -228,15 +228,15 @@ void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
 
   GPR_TIMER_BEGIN("grpc_cq_end_op", 0);
   GRPC_API_TRACE(
-      "grpc_cq_end_op(exec_ctx=%p, cc=%p, tag=%p, success=%d, done=%p, "
+      "grpc_cq_end_op(exec_ctx=%p, cc=%p, tag=%p, error=%p, done=%p, "
       "done_arg=%p, storage=%p)",
-      7, (exec_ctx, cc, tag, success, done, done_arg, storage));
+      7, (exec_ctx, cc, tag, error, done, done_arg, storage));
 
   storage->tag = tag;
   storage->done = done;
   storage->done_arg = done_arg;
-  storage->next =
-      ((uintptr_t)&cc->completed_head) | ((uintptr_t)(success != 0));
+  storage->next = ((uintptr_t)&cc->completed_head) |
+                  ((uintptr_t)(error == GRPC_ERROR_NONE));
 
   gpr_mu_lock(cc->mu);
 #ifndef NDEBUG

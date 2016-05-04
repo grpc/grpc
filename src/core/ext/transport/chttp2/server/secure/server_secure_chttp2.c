@@ -139,11 +139,12 @@ static void start(grpc_exec_ctx *exec_ctx, grpc_server *server, void *statep,
                         on_accept, state);
 }
 
-static void destroy_done(grpc_exec_ctx *exec_ctx, void *statep, bool success) {
+static void destroy_done(grpc_exec_ctx *exec_ctx, void *statep,
+                         grpc_error *error) {
   grpc_server_secure_state *state = statep;
   if (state->destroy_callback != NULL) {
     state->destroy_callback->cb(exec_ctx, state->destroy_callback->cb_arg,
-                                success);
+                                grpc_error_ref(error));
   }
   grpc_server_security_connector_shutdown(exec_ctx, state->sc);
   state_unref(state);

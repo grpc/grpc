@@ -216,7 +216,8 @@ void grpc_transport_destroy_stream(grpc_exec_ctx *exec_ctx,
                                    grpc_stream *stream, void *and_free_memory);
 
 void grpc_transport_stream_op_finish_with_failure(grpc_exec_ctx *exec_ctx,
-                                                  grpc_transport_stream_op *op);
+                                                  grpc_transport_stream_op *op,
+                                                  grpc_error *error);
 
 void grpc_transport_stream_op_add_cancellation(grpc_transport_stream_op *op,
                                                grpc_status_code status);
