@@ -33,8 +33,7 @@ set -ex
 cd $(dirname $0)
 
 # Pick up the source dist archive whatever its version is
-SDIST_ARCHIVE=$EXTERNAL_GIT_ROOT/input_artifacts/grpcio-*.tar.gz
-BDIST_DIR="file://$EXTERNAL_GIT_ROOT/input_artifacts"
+BDIST_ARCHIVES=$EXTERNAL_GIT_ROOT/input_artifacts/grpcio-*.whl
 
 if [ ! -f ${SDIST_ARCHIVE} ]
 then
@@ -48,11 +47,13 @@ PYTHON=python2
 which $PYTHON || PYTHON=python
 
 # TODO(jtattermusch): this shouldn't be required
-$PIP install --upgrade six
+$PIP install --upgrade six pip
 
-GRPC_PYTHON_BINARIES_REPOSITORY="${BDIST_DIR}" \
-    $PIP install \
-    ${SDIST_ARCHIVE}
+# At least one of the bdist packages has to succeed (whichever one matches the
+# test machine, anyway).
+for bdist in ${BDIST_ARCHIVES}; do
+  ($PIP install $bdist) || true
+done
 
 $PYTHON distribtest.py
 
