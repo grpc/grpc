@@ -303,7 +303,41 @@
     <file baseinstalldir="/" name="src/core/ext/client_config/subchannel_call_holder.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/subchannel_index.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/uri_parser.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/byte_buffer.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/grpc.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/alloc.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/atm.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_atomic.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_sync.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_win32.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/byte_buffer.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/compression_types.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/connectivity_state.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/grpc_types.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/log.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/port_platform.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/propagation_bits.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/slice.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/slice_buffer.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/status.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/sync.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_generic.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_posix.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_win32.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/time.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/status.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/support/alloc.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/support/atm.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/support/host_port.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/support/log.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/port_platform.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/support/slice.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/support/slice_buffer.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/support/string_util.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/support/sync.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/support/time.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/support/useful.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/support/string.h" role="src" />
     <file baseinstalldir="/" name="third_party/objective_c/Cronet/cronet_c_for_grpc.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/load_balancer_api.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h" role="src" />
