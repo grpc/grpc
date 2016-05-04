@@ -31,14 +31,14 @@
  *
  */
 
-var PROTO_PATH = __dirname + '/../../protos/route_guide.proto';
+var messages = require('./route_guide_pb');
+var services = require('./route_guide_grpc_pb');
 
 var fs = require('fs');
 var parseArgs = require('minimist');
 var path = require('path');
 var _ = require('lodash');
 var grpc = require('grpc');
-var routeguide = grpc.load(PROTO_PATH).routeguide;
 
 var COORD_FACTOR = 1e7;
 
@@ -65,16 +65,15 @@ function checkFeature(point) {
   // Check if there is already a feature object for the given point
   for (var i = 0; i < feature_list.length; i++) {
     feature = feature_list[i];
-    if (feature.location.latitude === point.latitude &&
-        feature.location.longitude === point.longitude) {
+    if (feature.getLocation().getLatitude() === point.getLatitude() &&
+        feature.getLocation().getLongitude() === point.getLongitude()) {
       return feature;
     }
   }
   var name = '';
-  feature = {
-    name: name,
-    location: point
-  };
+  feature = new messages.Feature();
+  feature.setName(name);
+  feature.setLocation(point);
   return feature;
 }
 
@@ -95,21 +94,21 @@ function getFeature(call, callback) {
  *     request property for the request value.
  */
 function listFeatures(call) {
-  var lo = call.request.lo;
-  var hi = call.request.hi;
-  var left = _.min([lo.longitude, hi.longitude]);
-  var right = _.max([lo.longitude, hi.longitude]);
-  var top = _.max([lo.latitude, hi.latitude]);
-  var bottom = _.min([lo.latitude, hi.latitude]);
+  var lo = call.request.getLo();
+  var hi = call.request.getHi();
+  var left = _.min([lo.getLongitude(), hi.getLongitude()]);
+  var right = _.max([lo.getLongitude(), hi.getLongitude()]);
+  var top = _.max([lo.getLatitude(), hi.getLatitude()]);
+  var bottom = _.min([lo.getLatitude(), hi.getLatitude()]);
   // For each feature, check if it is in the given bounding box
   _.each(feature_list, function(feature) {
-    if (feature.name === '') {
+    if (feature.getName() === '') {
       return;
     }
-    if (feature.location.longitude >= left &&
-        feature.location.longitude <= right &&
-        feature.location.latitude >= bottom &&
-        feature.location.latitude <= top) {
+    if (feature.getLocation().getLongitude() >= left &&
+        feature.getLocation().getLongitude() <= right &&
+        feature.getLocation().getLatitude() >= bottom &&
+        feature.getLocation().getLatitude() <= top) {
       call.write(feature);
     }
   });
@@ -127,10 +126,10 @@ function getDistance(start, end) {
   function toRadians(num) {
     return num * Math.PI / 180;
   }
-  var lat1 = start.latitude / COORD_FACTOR;
-  var lat2 = end.latitude / COORD_FACTOR;
-  var lon1 = start.longitude / COORD_FACTOR;
-  var lon2 = end.longitude / COORD_FACTOR;
+  var lat1 = start.getLatitude() / COORD_FACTOR;
+  var lat2 = end.getLatitude() / COORD_FACTOR;
+  var lon1 = start.getLongitude() / COORD_FACTOR;
+  var lon2 = end.getLongitude() / COORD_FACTOR;
   var R = 6371000; // metres
   var φ1 = toRadians(lat1);
   var φ2 = toRadians(lat2);
@@ -173,14 +172,14 @@ function recordRoute(call, callback) {
     previous = point;
   });
   call.on('end', function() {
-    callback(null, {
-      point_count: point_count,
-      feature_count: feature_count,
-      // Cast the distance to an integer
-      distance: distance|0,
-      // End the timer
-      elapsed_time: process.hrtime(start_time)[0]
-    });
+    var summary = new messages.RouteSummary();
+    summary.setPointCount(point_count);
+    summary.setFeatureCount(feature_count);
+    // Cast the distance to an integer
+    summary.setDistance(distance|0);
+    // End the timer
+    summary.setElapsedTime(process.hrtime(start_time)[0]);
+    callback(null, summary);
   });
 }
 
@@ -192,7 +191,7 @@ var route_notes = {};
  * @return {string} The key for an object
  */
 function pointKey(point) {
-  return point.latitude + ' ' + point.longitude;
+  return point.getLatitude() + ' ' + point.getLongitude();
 }
 
 /**
@@ -202,7 +201,7 @@ function pointKey(point) {
  */
 function routeChat(call) {
   call.on('data', function(note) {
-    var key = pointKey(note.location);
+    var key = pointKey(note.getLocation());
     /* For each note sent, respond with all previous notes that correspond to
      * the same point */
     if (route_notes.hasOwnProperty(key)) {
@@ -213,7 +212,7 @@ function routeChat(call) {
       route_notes[key] = [];
     }
     // Then add the new note to the list
-    route_notes[key].push(JSON.parse(JSON.stringify(note)));
+    route_notes[key].push(note);
   });
   call.on('end', function() {
     call.end();
@@ -227,7 +226,7 @@ function routeChat(call) {
  */
 function getServer() {
   var server = new grpc.Server();
-  server.addProtoService(routeguide.RouteGuide.service, {
+  server.addService(services.RouteGuideService, {
     getFeature: getFeature,
     listFeatures: listFeatures,
     recordRoute: recordRoute,
@@ -245,7 +244,16 @@ if (require.main === module) {
   });
   fs.readFile(path.resolve(argv.db_path), function(err, data) {
     if (err) throw err;
-    feature_list = JSON.parse(data);
+    // Transform the loaded features to Feature objects
+    feature_list = _.map(JSON.parse(data), function(value) {
+      var feature = new messages.Feature();
+      feature.setName(value.name);
+      var location = new messages.Point();
+      location.setLatitude(value.location.latitude);
+      location.setLongitude(value.location.longitude);
+      feature.setLocation(location);
+      return feature;
+    });
     routeServer.start();
   });
 }

@@ -22,18 +22,24 @@ INSTALL
 TRY IT!
 -------
 
+There are two variants of these examples: one with code dynamically generated at runtime using Protobuf.js and one with code statically generated using `protoc`. The examples behave identically, and either server can be used with either client.
+
  - Run the server
 
    ```sh
    $ # from this directory
-   $ node ./greeter_server.js &
+   $ node ./dynamic_codegen/greeter_server.js &
+   $ # OR
+   $ node ./static_codegen/greeter_server.js &
    ```
 
  - Run the client
 
    ```sh
    $ # from this directory
-   $ node ./greeter_client.js
+   $ node ./dynamic_codegen/greeter_client.js
+   $ # OR
+   $ node ./dynamic_codegen/greeter_client.js
    ```
 
 TUTORIAL
