@@ -47,17 +47,18 @@ void grpc_create_socketpair_if_unix(int sv[2]) {
   GPR_ASSERT(socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == 0);
 }
 
-grpc_resolved_addresses *grpc_resolve_unix_domain_address(const char *name) {
+grpc_error *grpc_resolve_unix_domain_address(const char *name,
+                                             grpc_resolved_addresses **addrs) {
   struct sockaddr_un *un;
 
-  grpc_resolved_addresses *addrs = gpr_malloc(sizeof(grpc_resolved_addresses));
-  addrs->naddrs = 1;
-  addrs->addrs = gpr_malloc(sizeof(grpc_resolved_address));
-  un = (struct sockaddr_un *)addrs->addrs->addr;
+  *addrs = gpr_malloc(sizeof(grpc_resolved_addresses));
+  (*addrs)->naddrs = 1;
+  (*addrs)->addrs = gpr_malloc(sizeof(grpc_resolved_address));
+  un = (struct sockaddr_un *)(*addrs)->addrs->addr;
   un->sun_family = AF_UNIX;
   strcpy(un->sun_path, name);
-  addrs->addrs->len = strlen(un->sun_path) + sizeof(un->sun_family) + 1;
-  return addrs;
+  (*addrs)->addrs->len = strlen(un->sun_path) + sizeof(un->sun_family) + 1;
+  return GRPC_ERROR_NONE;
 }
 
 int grpc_is_unix_socket(const struct sockaddr *addr) {

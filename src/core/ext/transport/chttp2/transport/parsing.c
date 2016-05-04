@@ -45,30 +45,30 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/transport/static_metadata.h"
 
-static int init_frame_parser(grpc_exec_ctx *exec_ctx,
-                             grpc_chttp2_transport_parsing *transport_parsing);
-static int init_header_frame_parser(
+static grpc_error *init_frame_parser(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_parsing *transport_parsing);
+static grpc_error *init_header_frame_parser(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_parsing *transport_parsing,
     int is_continuation);
-static int init_data_frame_parser(
+static grpc_error *init_data_frame_parser(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_parsing *transport_parsing);
-static int init_rst_stream_parser(
+static grpc_error *init_rst_stream_parser(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_parsing *transport_parsing);
-static int init_settings_frame_parser(
+static grpc_error *init_settings_frame_parser(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_parsing *transport_parsing);
-static int init_window_update_frame_parser(
+static grpc_error *init_window_update_frame_parser(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_parsing *transport_parsing);
-static int init_ping_parser(grpc_exec_ctx *exec_ctx,
-                            grpc_chttp2_transport_parsing *transport_parsing);
-static int init_goaway_parser(grpc_exec_ctx *exec_ctx,
-                              grpc_chttp2_transport_parsing *transport_parsing);
-static int init_skip_frame_parser(
+static grpc_error *init_ping_parser(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_parsing *transport_parsing);
+static grpc_error *init_goaway_parser(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_parsing *transport_parsing);
+static grpc_error *init_skip_frame_parser(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_parsing *transport_parsing,
     int is_header);
 
-static int parse_frame_slice(grpc_exec_ctx *exec_ctx,
-                             grpc_chttp2_transport_parsing *transport_parsing,
-                             gpr_slice slice, int is_last);
+static grpc_error *parse_frame_slice(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_parsing *transport_parsing,
+    gpr_slice slice, int is_last);
 
 void grpc_chttp2_prepare_to_read(
     grpc_chttp2_transport_global *transport_global,
@@ -83,8 +83,8 @@ void grpc_chttp2_prepare_to_read(
          transport_global->settings[GRPC_SENT_SETTINGS],
          sizeof(transport_parsing->last_sent_settings));
   transport_parsing->max_frame_size =
-      transport_global->settings[GRPC_ACKED_SETTINGS]
-                                [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE];
+      transport_global
+          ->settings[GRPC_ACKED_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE];
 
   /* update the parsing view of incoming window */
   while (grpc_chttp2_list_pop_unannounced_incoming_window_available(
@@ -248,14 +248,15 @@ void grpc_chttp2_publish_reads(
   }
 }
 
-int grpc_chttp2_perform_read(grpc_exec_ctx *exec_ctx,
-                             grpc_chttp2_transport_parsing *transport_parsing,
-                             gpr_slice slice) {
+grpc_error *grpc_chttp2_perform_read(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_parsing *transport_parsing,
+    gpr_slice slice) {
   uint8_t *beg = GPR_SLICE_START_PTR(slice);
   uint8_t *end = GPR_SLICE_END_PTR(slice);
   uint8_t *cur = beg;
+  grpc_error *err;
 
-  if (cur == end) return 1;
+  if (cur == end) return GRPC_ERROR_NONE;
 
   switch (transport_parsing->deframe_state) {
     case GRPC_DTS_CLIENT_PREFIX_0:
@@ -285,21 +286,25 @@ int grpc_chttp2_perform_read(grpc_exec_ctx *exec_ctx,
       while (cur != end && transport_parsing->deframe_state != GRPC_DTS_FH_0) {
         if (*cur != GRPC_CHTTP2_CLIENT_CONNECT_STRING[transport_parsing
                                                           ->deframe_state]) {
-          gpr_log(GPR_INFO,
-                  "Connect string mismatch: expected '%c' (%d) got '%c' (%d) "
-                  "at byte %d",
-                  GRPC_CHTTP2_CLIENT_CONNECT_STRING[transport_parsing
-                                                        ->deframe_state],
-                  (int)(uint8_t)GRPC_CHTTP2_CLIENT_CONNECT_STRING
-                      [transport_parsing->deframe_state],
-                  *cur, (int)*cur, transport_parsing->deframe_state);
-          return 0;
+          char *msg;
+          gpr_asprintf(
+              &msg,
+              "Connect string mismatch: expected '%c' (%d) got '%c' (%d) "
+              "at byte %d",
+              GRPC_CHTTP2_CLIENT_CONNECT_STRING[transport_parsing
+                                                    ->deframe_state],
+              (int)(uint8_t)GRPC_CHTTP2_CLIENT_CONNECT_STRING
+                  [transport_parsing->deframe_state],
+              *cur, (int)*cur, transport_parsing->deframe_state);
+          err = GRPC_ERROR_CREATE(msg);
+          gpr_free(msg);
+          return err;
         }
         ++cur;
         ++transport_parsing->deframe_state;
       }
       if (cur == end) {
-        return 1;
+        return GRPC_ERROR_NONE;
       }
     /* fallthrough */
     dts_fh_0:
@@ -308,7 +313,7 @@ int grpc_chttp2_perform_read(grpc_exec_ctx *exec_ctx,
       transport_parsing->incoming_frame_size = ((uint32_t)*cur) << 16;
       if (++cur == end) {
         transport_parsing->deframe_state = GRPC_DTS_FH_1;
-        return 1;
+        return GRPC_ERROR_NONE;
       }
     /* fallthrough */
     case GRPC_DTS_FH_1:
@@ -316,7 +321,7 @@ int grpc_chttp2_perform_read(grpc_exec_ctx *exec_ctx,
       transport_parsing->incoming_frame_size |= ((uint32_t)*cur) << 8;
       if (++cur == end) {
         transport_parsing->deframe_state = GRPC_DTS_FH_2;
-        return 1;
+        return GRPC_ERROR_NONE;
       }
     /* fallthrough */
     case GRPC_DTS_FH_2:
@@ -324,7 +329,7 @@ int grpc_chttp2_perform_read(grpc_exec_ctx *exec_ctx,
       transport_parsing->incoming_frame_size |= *cur;
       if (++cur == end) {
         transport_parsing->deframe_state = GRPC_DTS_FH_3;
-        return 1;
+        return GRPC_ERROR_NONE;
       }
     /* fallthrough */
     case GRPC_DTS_FH_3:
@@ -332,7 +337,7 @@ int grpc_chttp2_perform_read(grpc_exec_ctx *exec_ctx,
       transport_parsing->incoming_frame_type = *cur;
       if (++cur == end) {
         transport_parsing->deframe_state = GRPC_DTS_FH_4;
-        return 1;
+        return GRPC_ERROR_NONE;
       }
     /* fallthrough */
     case GRPC_DTS_FH_4:
@@ -340,7 +345,7 @@ int grpc_chttp2_perform_read(grpc_exec_ctx *exec_ctx,
       transport_parsing->incoming_frame_flags = *cur;
       if (++cur == end) {
         transport_parsing->deframe_state = GRPC_DTS_FH_5;
-        return 1;
+        return GRPC_ERROR_NONE;
       }
     /* fallthrough */
     case GRPC_DTS_FH_5:
@@ -348,7 +353,7 @@ int grpc_chttp2_perform_read(grpc_exec_ctx *exec_ctx,
       transport_parsing->incoming_stream_id = (((uint32_t)*cur) & 0x7f) << 24;
       if (++cur == end) {
         transport_parsing->deframe_state = GRPC_DTS_FH_6;
-        return 1;
+        return GRPC_ERROR_NONE;
       }
     /* fallthrough */
     case GRPC_DTS_FH_6:
@@ -356,7 +361,7 @@ int grpc_chttp2_perform_read(grpc_exec_ctx *exec_ctx,
       transport_parsing->incoming_stream_id |= ((uint32_t)*cur) << 16;
       if (++cur == end) {
         transport_parsing->deframe_state = GRPC_DTS_FH_7;
-        return 1;
+        return GRPC_ERROR_NONE;
       }
     /* fallthrough */
     case GRPC_DTS_FH_7:
@@ -364,15 +369,16 @@ int grpc_chttp2_perform_read(grpc_exec_ctx *exec_ctx,
       transport_parsing->incoming_stream_id |= ((uint32_t)*cur) << 8;
       if (++cur == end) {
         transport_parsing->deframe_state = GRPC_DTS_FH_8;
-        return 1;
+        return GRPC_ERROR_NONE;
       }
     /* fallthrough */
     case GRPC_DTS_FH_8:
       GPR_ASSERT(cur < end);
       transport_parsing->incoming_stream_id |= ((uint32_t)*cur);
       transport_parsing->deframe_state = GRPC_DTS_FRAME;
-      if (!init_frame_parser(exec_ctx, transport_parsing)) {
-        return 0;
+      err = init_frame_parser(exec_ctx, transport_parsing);
+      if (err != GRPC_ERROR_NONE) {
+        return err;
       }
       if (transport_parsing->incoming_stream_id != 0 &&
           transport_parsing->incoming_stream_id >
@@ -381,62 +387,69 @@ int grpc_chttp2_perform_read(grpc_exec_ctx *exec_ctx,
             transport_parsing->incoming_stream_id;
       }
       if (transport_parsing->incoming_frame_size == 0) {
-        if (!parse_frame_slice(exec_ctx, transport_parsing, gpr_empty_slice(),
-                               1)) {
-          return 0;
+        err = parse_frame_slice(exec_ctx, transport_parsing, gpr_empty_slice(),
+                                1);
+        if (err != GRPC_ERROR_NONE) {
+          return err;
         }
         transport_parsing->incoming_stream = NULL;
         if (++cur == end) {
           transport_parsing->deframe_state = GRPC_DTS_FH_0;
-          return 1;
+          return GRPC_ERROR_NONE;
         }
         goto dts_fh_0; /* loop */
       } else if (transport_parsing->incoming_frame_size >
                  transport_parsing->max_frame_size) {
-        gpr_log(GPR_DEBUG, "Frame size %d is larger than max frame size %d",
-                transport_parsing->incoming_frame_size,
-                transport_parsing->max_frame_size);
-        return 0;
+        char *msg;
+        gpr_asprintf(&msg, "Frame size %d is larger than max frame size %d",
+                     transport_parsing->incoming_frame_size,
+                     transport_parsing->max_frame_size);
+        err = GRPC_ERROR_CREATE(msg);
+        gpr_free(msg);
+        return err;
       }
       if (++cur == end) {
-        return 1;
+        return GRPC_ERROR_NONE;
       }
     /* fallthrough */
     case GRPC_DTS_FRAME:
       GPR_ASSERT(cur < end);
       if ((uint32_t)(end - cur) == transport_parsing->incoming_frame_size) {
-        if (!parse_frame_slice(exec_ctx, transport_parsing,
-                               gpr_slice_sub_no_ref(slice, (size_t)(cur - beg),
-                                                    (size_t)(end - beg)),
-                               1)) {
-          return 0;
+        err = parse_frame_slice(exec_ctx, transport_parsing,
+                                gpr_slice_sub_no_ref(slice, (size_t)(cur - beg),
+                                                     (size_t)(end - beg)),
+                                1);
+        if (err != GRPC_ERROR_NONE) {
+          return err;
         }
         transport_parsing->deframe_state = GRPC_DTS_FH_0;
         transport_parsing->incoming_stream = NULL;
-        return 1;
+        return GRPC_ERROR_NONE;
       } else if ((uint32_t)(end - cur) >
                  transport_parsing->incoming_frame_size) {
         size_t cur_offset = (size_t)(cur - beg);
-        if (!parse_frame_slice(
-                exec_ctx, transport_parsing,
-                gpr_slice_sub_no_ref(
-                    slice, cur_offset,
-                    cur_offset + transport_parsing->incoming_frame_size),
-                1)) {
-          return 0;
+        err = parse_frame_slice(
+            exec_ctx, transport_parsing,
+            gpr_slice_sub_no_ref(
+                slice, cur_offset,
+                cur_offset + transport_parsing->incoming_frame_size),
+            1);
+        if (err != GRPC_ERROR_NONE) {
+          return err;
         }
         cur += transport_parsing->incoming_frame_size;
         transport_parsing->incoming_stream = NULL;
         goto dts_fh_0; /* loop */
       } else {
-        if (!parse_frame_slice(exec_ctx, transport_parsing,
-                               gpr_slice_sub_no_ref(slice, (size_t)(cur - beg),
-                                                    (size_t)(end - beg)),
-                               0)) {
-          return 0;
+        err = parse_frame_slice(exec_ctx, transport_parsing,
+                                gpr_slice_sub_no_ref(slice, (size_t)(cur - beg),
+                                                     (size_t)(end - beg)),
+                                0);
+        if (err != GRPC_ERROR_NONE) {
+          return err;
         }
         transport_parsing->incoming_frame_size -= (uint32_t)(end - cur);
-        return 1;
+        return GRPC_ERROR_NONE;
       }
       GPR_UNREACHABLE_CODE(return 0);
   }
@@ -444,23 +457,30 @@ int grpc_chttp2_perform_read(grpc_exec_ctx *exec_ctx,
   GPR_UNREACHABLE_CODE(return 0);
 }
 
-static int init_frame_parser(grpc_exec_ctx *exec_ctx,
-                             grpc_chttp2_transport_parsing *transport_parsing) {
+static grpc_error *init_frame_parser(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_parsing *transport_parsing) {
   if (transport_parsing->expect_continuation_stream_id != 0) {
     if (transport_parsing->incoming_frame_type !=
         GRPC_CHTTP2_FRAME_CONTINUATION) {
-      gpr_log(GPR_ERROR, "Expected CONTINUATION frame, got frame type %02x",
-              transport_parsing->incoming_frame_type);
-      return 0;
+      char *msg;
+      gpr_asprintf(&msg, "Expected CONTINUATION frame, got frame type %02x",
+                   transport_parsing->incoming_frame_type);
+      grpc_error *err = GRPC_ERROR_CREATE(msg);
+      gpr_free(msg);
+      return err;
     }
     if (transport_parsing->expect_continuation_stream_id !=
         transport_parsing->incoming_stream_id) {
-      gpr_log(GPR_ERROR,
-              "Expected CONTINUATION frame for grpc_chttp2_stream %08x, got "
-              "grpc_chttp2_stream %08x",
-              transport_parsing->expect_continuation_stream_id,
-              transport_parsing->incoming_stream_id);
-      return 0;
+      char *msg;
+      gpr_asprintf(
+          &msg,
+          "Expected CONTINUATION frame for grpc_chttp2_stream %08x, got "
+          "grpc_chttp2_stream %08x",
+          transport_parsing->expect_continuation_stream_id,
+          transport_parsing->incoming_stream_id);
+      grpc_error *err = GRPC_ERROR_CREATE(msg);
+      gpr_free(msg);
+      return err;
     }
     return init_header_frame_parser(exec_ctx, transport_parsing, 1);
   }
@@ -483,22 +503,24 @@ static int init_frame_parser(grpc_exec_ctx *exec_ctx,
     case GRPC_CHTTP2_FRAME_GOAWAY:
       return init_goaway_parser(exec_ctx, transport_parsing);
     default:
-      gpr_log(GPR_ERROR, "Unknown frame type %02x",
-              transport_parsing->incoming_frame_type);
+      if (grpc_http_trace) {
+        gpr_log(GPR_ERROR, "Unknown frame type %02x",
+                transport_parsing->incoming_frame_type);
+      }
       return init_skip_frame_parser(exec_ctx, transport_parsing, 0);
   }
 }
 
-static grpc_chttp2_parse_error skip_parser(
-    grpc_exec_ctx *exec_ctx, void *parser,
-    grpc_chttp2_transport_parsing *transport_parsing,
-    grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
-  return GRPC_CHTTP2_PARSE_OK;
+static grpc_error *skip_parser(grpc_exec_ctx *exec_ctx, void *parser,
+                               grpc_chttp2_transport_parsing *transport_parsing,
+                               grpc_chttp2_stream_parsing *stream_parsing,
+                               gpr_slice slice, int is_last) {
+  return GRPC_ERROR_NONE;
 }
 
 static void skip_header(void *tp, grpc_mdelem *md) { GRPC_MDELEM_UNREF(md); }
 
-static int init_skip_frame_parser(
+static grpc_error *init_skip_frame_parser(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_parsing *transport_parsing,
     int is_header) {
   if (is_header) {
@@ -513,7 +535,7 @@ static int init_skip_frame_parser(
   } else {
     transport_parsing->parser = skip_parser;
   }
-  return 1;
+  return GRPC_ERROR_NONE;
 }
 
 void grpc_chttp2_parsing_become_skip_parser(
@@ -523,22 +545,28 @@ void grpc_chttp2_parsing_become_skip_parser(
       transport_parsing->parser == grpc_chttp2_header_parser_parse);
 }
 
-static grpc_chttp2_parse_error update_incoming_window(
+static grpc_error *update_incoming_window(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_parsing *transport_parsing,
     grpc_chttp2_stream_parsing *stream_parsing) {
   uint32_t incoming_frame_size = transport_parsing->incoming_frame_size;
   if (incoming_frame_size > transport_parsing->incoming_window) {
-    gpr_log(GPR_ERROR, "frame of size %d overflows incoming window of %d",
-            transport_parsing->incoming_frame_size,
-            transport_parsing->incoming_window);
-    return GRPC_CHTTP2_CONNECTION_ERROR;
+    char *msg;
+    gpr_asprintf(&msg, "frame of size %d overflows incoming window of %d",
+                 transport_parsing->incoming_frame_size,
+                 transport_parsing->incoming_window);
+    grpc_error *err = GRPC_ERROR_CREATE(msg);
+    gpr_free(msg);
+    return err;
   }
 
   if (incoming_frame_size > stream_parsing->incoming_window) {
-    gpr_log(GPR_ERROR, "frame of size %d overflows incoming window of %d",
-            transport_parsing->incoming_frame_size,
-            stream_parsing->incoming_window);
-    return GRPC_CHTTP2_CONNECTION_ERROR;
+    char *msg;
+    gpr_asprintf(&msg, "frame of size %d overflows incoming window of %d",
+                 transport_parsing->incoming_frame_size,
+                 stream_parsing->incoming_window);
+    grpc_error *err = GRPC_ERROR_CREATE(msg);
+    gpr_free(msg);
+    return err;
   }
 
   GRPC_CHTTP2_FLOW_DEBIT_TRANSPORT("parse", transport_parsing, incoming_window,
@@ -552,7 +580,7 @@ static grpc_chttp2_parse_error update_incoming_window(
   return GRPC_CHTTP2_PARSE_OK;
 }
 
-static int init_data_frame_parser(
+static grpc_error *init_data_frame_parser(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_parsing *transport_parsing) {
   grpc_chttp2_stream_parsing *stream_parsing =
       grpc_chttp2_parsing_lookup_stream(transport_parsing,
@@ -577,7 +605,7 @@ static int init_data_frame_parser(
       transport_parsing->incoming_stream = stream_parsing;
       transport_parsing->parser = grpc_chttp2_data_parser_parse;
       transport_parsing->parser_data = &stream_parsing->data_parser;
-      return 1;
+      return GRPC_ERROR_NONE;
     case GRPC_CHTTP2_STREAM_ERROR:
       stream_parsing->received_close = 1;
       stream_parsing->saw_rst_stream = 1;
@@ -669,7 +697,7 @@ static void on_trailing_header(void *tp, grpc_mdelem *md) {
   GPR_TIMER_END("on_trailing_header", 0);
 }
 
-static int init_header_frame_parser(
+static grpc_error *init_header_frame_parser(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_parsing *transport_parsing,
     int is_continuation) {
   uint8_t is_eoh = (transport_parsing->incoming_frame_flags &
@@ -764,10 +792,10 @@ static int init_header_frame_parser(
                            GRPC_CHTTP2_FLAG_HAS_PRIORITY)) {
     grpc_chttp2_hpack_parser_set_has_priority(&transport_parsing->hpack_parser);
   }
-  return 1;
+  return GRPC_ERROR_NONE;
 }
 
-static int init_window_update_frame_parser(
+static grpc_error *init_window_update_frame_parser(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_parsing *transport_parsing) {
   int ok = GRPC_CHTTP2_PARSE_OK == grpc_chttp2_window_update_parser_begin_frame(
                                        &transport_parsing->simple.window_update,

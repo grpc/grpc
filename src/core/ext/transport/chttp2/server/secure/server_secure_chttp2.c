@@ -195,15 +195,15 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   sc->channel_args = grpc_server_get_channel_args(server);
 
   /* resolve address */
-  resolved = grpc_blocking_resolve_address(addr, "https");
-  if (!resolved) {
+  err = grpc_blocking_resolve_address(addr, "https", &resolved);
+  if (err != GRPC_ERROR_NONE) {
     goto error;
   }
   state = gpr_malloc(sizeof(*state));
   memset(state, 0, sizeof(*state));
   grpc_closure_init(&state->destroy_closure, destroy_done, state);
-  tcp = grpc_tcp_server_create(&state->destroy_closure);
-  if (!tcp) {
+  err = grpc_tcp_server_create(&state->destroy_closure, &tcp);
+  if (err != GRPC_ERROR_NONE) {
     goto error;
   }
 

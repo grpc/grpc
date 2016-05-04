@@ -44,6 +44,7 @@ typedef enum {
   GRPC_ERROR_INT_ERRNO,
   GRPC_ERROR_INT_FILE_LINE,
   GRPC_ERROR_INT_STATUS_CODE,
+  GRPC_ERROR_INT_WARNING,
 } grpc_error_ints;
 
 typedef enum {
@@ -75,6 +76,7 @@ grpc_error *grpc_error_ref(grpc_error *err);
 void grpc_error_unref(grpc_error *err);
 grpc_error *grpc_error_set_int(grpc_error *src, grpc_error_ints which,
                                intptr_t value);
+const intptr_t *grpc_error_get_int(grpc_error *error, grpc_error_ints which);
 grpc_error *grpc_error_set_time(grpc_error *src, grpc_error_times which,
                                 gpr_timespec value);
 grpc_error *grpc_error_set_str(grpc_error *src, grpc_error_strs which,
