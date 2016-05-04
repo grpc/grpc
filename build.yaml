@@ -883,6 +883,20 @@ libs:
   - grpc++_codegen
   secure: check
   vs_project_guid: '{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}'
+- name: grpc++_reflection
+  build: all
+  language: c++
+  public_headers:
+  - extensions/include/grpc++/impl/proto_server_reflection_plugin.h
+  - extensions/include/grpc++/impl/reflection.grpc.pb.h
+  - extensions/include/grpc++/impl/reflection.pb.h
+  headers:
+  - extensions/reflection/proto_server_reflection.h
+  src:
+  - extensions/reflection/proto_server_reflection.cc
+  - extensions/reflection/proto_server_reflection_plugin.cc
+  - extensions/reflection/reflection.grpc.pb.cc
+  - extensions/reflection/reflection.pb.cc
 - name: grpc++_test_config
   build: private
   language: c++
@@ -2884,6 +2898,19 @@ targets:
   - gpr_test_util
   - gpr
   - grpc++_test_config
+- name: reflection_debug_test
+  build: test
+  language: c++
+  headers:
+  - test/cpp/util/proto_reflection_descriptor_database.h
+  src:
+  - test/cpp/util/proto_reflection_descriptor_database.cc
+  - test/cpp/util/reflection_debug/reflection_client.cc
+  deps:
+  - grpc++_reflection
+  - grpc++
+  - grpc
+  - gpr
 - name: secure_auth_context_test
   gtest: true
   build: test

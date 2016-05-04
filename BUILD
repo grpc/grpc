@@ -984,6 +984,30 @@ cc_library(
 
 
 cc_library(
+  name = "grpc++_reflection",
+  srcs = [
+    "extensions/reflection/proto_server_reflection.h",
+    "extensions/reflection/proto_server_reflection.cc",
+    "extensions/reflection/proto_server_reflection_plugin.cc",
+    "extensions/reflection/reflection.grpc.pb.cc",
+    "extensions/reflection/reflection.pb.cc",
+  ],
+  hdrs = [
+    "extensions/include/grpc++/impl/proto_server_reflection_plugin.h",
+    "extensions/include/grpc++/impl/reflection.grpc.pb.h",
+    "extensions/include/grpc++/impl/reflection.pb.h",
+  ],
+  includes = [
+    "include",
+    ".",
+  ],
+  deps = [
+  ],
+)
+
+
+
+cc_library(
   name = "grpc++_unsecure",
   srcs = [
     "src/cpp/client/create_channel_internal.h",

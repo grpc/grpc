@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\proto_reflection_descriptor_database.cc">
+      <Filter>test\cpp\util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\reflection_debug\reflection_client.cc">
+      <Filter>test\cpp\util\reflection_debug</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\proto_reflection_descriptor_database.h">
+      <Filter>test\cpp\util</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{fdf7e642-420d-9e18-7a3c-19dca964f218}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp">
+      <UniqueIdentifier>{562b3927-e256-190d-ab72-6b4b04ffb8b2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\util">
+      <UniqueIdentifier>{8ed08be4-a27c-d51c-d587-a02cf3dc5abc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\util\reflection_debug">
+      <UniqueIdentifier>{b84b1385-e0b2-239b-bac2-81a16bc90249}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

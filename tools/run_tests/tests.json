@@ -2419,6 +2419,27 @@
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
+    "gtest": false, 
+    "language": "c++", 
+    "name": "reflection_debug_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
     "gtest": true, 
     "language": "c++", 
     "name": "secure_auth_context_test", 

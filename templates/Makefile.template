@@ -100,6 +100,7 @@
   OBJDIR = $(BUILDDIR_ABSOLUTE)/objs
   LIBDIR = $(BUILDDIR_ABSOLUTE)/libs
   GENDIR = $(BUILDDIR_ABSOLUTE)/gens
+  EXTDIR = $(BUILDDIR_ABSOLUTE)/extensions
 
   # Configurations
 
@@ -237,7 +238,7 @@
   LDFLAGS += -fPIC
   endif
 
-  INCLUDES = . include $(GENDIR)
+  INCLUDES = . include $(GENDIR) $(EXTDIR) $(EXTDIR)/include
   LDFLAGS += -Llibs/$(CONFIG)
 
   ifeq ($(SYSTEM),Darwin)
@@ -1278,8 +1279,8 @@
 
   install-headers_cxx:
   	$(E) "[INSTALL] Installing public C++ headers"
-  	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX), $(INSTALL) -d $(prefix)/$(dir $(h)) && ) exit 0 || exit 1
-  	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX), $(INSTALL) $(h) $(prefix)/$(h) && ) exit 0 || exit 1
+  	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX), $(INSTALL) -d $(prefix)/$(patsubst extensions/%,%,$(dir $(h))) && ) exit 0 || exit 1
+  	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX), $(INSTALL) $(h) $(prefix)/$(patsubst extensions/%,%,$(h)) && ) exit 0 || exit 1
 
   install-static: install-static_c install-static_cxx
 

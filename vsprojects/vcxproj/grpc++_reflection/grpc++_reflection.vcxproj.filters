@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\extensions\reflection\proto_server_reflection.cc">
+      <Filter>extensions\reflection</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\extensions\reflection\proto_server_reflection_plugin.cc">
+      <Filter>extensions\reflection</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\extensions\reflection\reflection.grpc.pb.cc">
+      <Filter>extensions\reflection</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\extensions\reflection\reflection.pb.cc">
+      <Filter>extensions\reflection</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\extensions\include\grpc++\impl\proto_server_reflection_plugin.h">
+      <Filter>extensions\include\grpc++\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\extensions\include\grpc++\impl\reflection.grpc.pb.h">
+      <Filter>extensions\include\grpc++\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\extensions\include\grpc++\impl\reflection.pb.h">
+      <Filter>extensions\include\grpc++\impl</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\extensions\reflection\proto_server_reflection.h">
+      <Filter>extensions\reflection</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="extensions">
+      <UniqueIdentifier>{8fd45ce8-8f02-367f-e3f7-4c0ae0e36566}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="extensions\include">
+      <UniqueIdentifier>{1a18dfcc-bedf-226e-6929-377aba53249b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="extensions\include\grpc++">
+      <UniqueIdentifier>{83bf0cce-01da-a93c-0ff3-a1abca63ec5f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="extensions\include\grpc++\impl">
+      <UniqueIdentifier>{d34e8821-f67b-a793-3419-e2781ab9b3ee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="extensions\reflection">
+      <UniqueIdentifier>{11feb184-a1d9-5485-26f0-538ddb50deff}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+
