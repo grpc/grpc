@@ -93,6 +93,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "grpc++", "vcxproj\.\grpc++\
 		{29D16885-7228-4C31-81ED-5F9187C7F2A9} = {29D16885-7228-4C31-81ED-5F9187C7F2A9}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "grpc++_reflection", "vcxproj\.\grpc++_reflection\grpc++_reflection.vcxproj", "{5F575402-3F89-5D1A-6910-9DB8BF5D2BAB}"
+	ProjectSection(myProperties) = preProject
+        	lib = "True"
+	EndProjectSection
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "grpc++_unsecure", "vcxproj\.\grpc++_unsecure\grpc++_unsecure.vcxproj", "{6EE56155-DF7C-4F6E-BFC4-F6F776BEB211}"
 	ProjectSection(myProperties) = preProject
         	lib = "True"
@@ -343,6 +348,22 @@ Global
 		{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}.Release-DLL|Win32.Build.0 = Release-DLL|Win32
 		{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}.Release-DLL|x64.ActiveCfg = Release-DLL|x64
 		{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}.Release-DLL|x64.Build.0 = Release-DLL|x64
+		{5F575402-3F89-5D1A-6910-9DB8BF5D2BAB}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5F575402-3F89-5D1A-6910-9DB8BF5D2BAB}.Debug|x64.ActiveCfg = Debug|x64
+		{5F575402-3F89-5D1A-6910-9DB8BF5D2BAB}.Release|Win32.ActiveCfg = Release|Win32
+		{5F575402-3F89-5D1A-6910-9DB8BF5D2BAB}.Release|x64.ActiveCfg = Release|x64
+		{5F575402-3F89-5D1A-6910-9DB8BF5D2BAB}.Debug|Win32.Build.0 = Debug|Win32
+		{5F575402-3F89-5D1A-6910-9DB8BF5D2BAB}.Debug|x64.Build.0 = Debug|x64
+		{5F575402-3F89-5D1A-6910-9DB8BF5D2BAB}.Release|Win32.Build.0 = Release|Win32
+		{5F575402-3F89-5D1A-6910-9DB8BF5D2BAB}.Release|x64.Build.0 = Release|x64
+		{5F575402-3F89-5D1A-6910-9DB8BF5D2BAB}.Debug-DLL|Win32.ActiveCfg = Debug|Win32
+		{5F575402-3F89-5D1A-6910-9DB8BF5D2BAB}.Debug-DLL|Win32.Build.0 = Debug|Win32
+		{5F575402-3F89-5D1A-6910-9DB8BF5D2BAB}.Debug-DLL|x64.ActiveCfg = Debug|x64
+		{5F575402-3F89-5D1A-6910-9DB8BF5D2BAB}.Debug-DLL|x64.Build.0 = Debug|x64
+		{5F575402-3F89-5D1A-6910-9DB8BF5D2BAB}.Release-DLL|Win32.ActiveCfg = Release|Win32
+		{5F575402-3F89-5D1A-6910-9DB8BF5D2BAB}.Release-DLL|Win32.Build.0 = Release|Win32
+		{5F575402-3F89-5D1A-6910-9DB8BF5D2BAB}.Release-DLL|x64.ActiveCfg = Release|x64
+		{5F575402-3F89-5D1A-6910-9DB8BF5D2BAB}.Release-DLL|x64.Build.0 = Release|x64
 		{6EE56155-DF7C-4F6E-BFC4-F6F776BEB211}.Debug|Win32.ActiveCfg = Debug|Win32
 		{6EE56155-DF7C-4F6E-BFC4-F6F776BEB211}.Debug|x64.ActiveCfg = Debug|x64
 		{6EE56155-DF7C-4F6E-BFC4-F6F776BEB211}.Release|Win32.ActiveCfg = Release|Win32

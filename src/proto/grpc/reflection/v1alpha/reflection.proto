@@ -1,0 +1,118 @@
+// Copyright 2016, Google Inc.
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+// Service exported by server reflection
+
+syntax = "proto3";
+
+package grpc.reflection.v1alpha;
+
+service ServerReflection {
+  // List the full names of registered services.
+  rpc ListService(EmptyRequest) returns (ListServiceResponse) {
+  }
+
+  // Find a proto file by file name.
+  rpc GetFileByName(FileNameRequest) returns (FileDescriptorProtoResponse) {
+  }
+
+  // Find the proto file that declares the given fully-qualified symbol name.
+  rpc GetFileContainingSymbol(SymbolRequest)
+      returns (FileDescriptorProtoResponse) {
+  }
+
+  // Find the proto file which defines an extension extending the given message
+  // type with the given field number.
+  rpc GetFileContainingExtension(ExtensionRequest)
+      returns (FileDescriptorProtoResponse) {
+  }
+
+  // Finds the tag numbers used by all known extensions of extendee_type, and
+  // appends them to ExtensionNumberResponse in an undefined order.
+  // This method is best-effort: it's not guaranteed that the reflection service
+  // will implement this method, and it's not guaranteed that this method will
+  // provide all extensions. Returns StatusCode::UNIMPLEMENTED if it's not
+  // implemented.
+  rpc GetAllExtensionNumbers(TypeRequest) returns (ExtensionNumberResponse) {
+  }
+}
+
+// An empty message sent by the client when calling ListService method.
+message EmptyRequest {
+}
+
+// The filename sent by the client when calling GetFileByName method.
+message FileNameRequest {
+  // Name of the proto file.
+  string filename = 1;
+}
+
+// The symbol name sent by the client when calling GetFileContainingSymbol
+// method.
+message SymbolRequest {
+  // Fully-qualified symbol name (e.g. <package>.<service>[.<method>] or
+  // <package>.<type>).
+  string symbol = 1;
+}
+
+// The type name and extension number sent by the client when calling
+// GetFileContainingExtension method.
+message ExtensionRequest {
+  // Fully-qualified type name. The format should be <package>.<type>
+  string containing_type = 1;
+  int32 extension_number = 2;
+}
+
+// The type name sent by the client when calling GetAllExtensionNumbers method.
+message TypeRequest {
+  // Fully-qualified type name. The format should be <package>.<type>
+  string type = 1;
+}
+
+// A list of service names sent by the server answering ListService method.
+message ListServiceResponse {
+  // Full names of registered services, including package names. The format
+  // is <package>.<service>
+  repeated string services = 1;
+}
+
+// A serialized FileDescriptorProto sent by the server answering
+// GetFileByName, GetFileContainingSymbol, GetFileContainingExtension methods.
+message FileDescriptorProtoResponse {
+  // Serialized FileDescriptorProto message. Some languages have limited support
+  // for working with descriptors. The can only obtain an opaque binary blob
+  // that contains serialized FileDescriptorProto message.
+  bytes file_descriptor_proto = 1;
+}
+
+// A list of extension numbers sent by the server answering
+// GetAllExtensionNumbers method.
+message ExtensionNumberResponse {
+  repeated int32 extension_number = 1;
+}
