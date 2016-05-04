@@ -41,12 +41,11 @@ library, so we can build it in all environments */
 #include "third_party/objective_c/Cronet/cronet_c_for_grpc.h"
 
 #ifdef GRPC_COMPILE_WITH_CRONET
-  /* link with the real CRONET library in the build system */
+/* link with the real CRONET library in the build system */
 #else
-  /* Dummy implementation of cronet API just to test for build-ability */
+/* Dummy implementation of cronet API just to test for build-ability */
 cronet_bidirectional_stream* cronet_bidirectional_stream_create(
-    cronet_engine* engine,
-    void* annotation,
+    cronet_engine* engine, void* annotation,
     cronet_bidirectional_stream_callback* callback) {
   GPR_ASSERT(0);
   return NULL;
@@ -58,26 +57,21 @@ int cronet_bidirectional_stream_destroy(cronet_bidirectional_stream* stream) {
 }
 
 int cronet_bidirectional_stream_start(
-    cronet_bidirectional_stream* stream,
-    const char* url,
-    int priority,
-    const char* method,
-    const cronet_bidirectional_stream_header_array* headers,
+    cronet_bidirectional_stream* stream, const char* url, int priority,
+    const char* method, const cronet_bidirectional_stream_header_array* headers,
     bool end_of_stream) {
   GPR_ASSERT(0);
   return 0;
 }
 
 int cronet_bidirectional_stream_read(cronet_bidirectional_stream* stream,
-                                     char* buffer,
-                                     int capacity) {
+                                     char* buffer, int capacity) {
   GPR_ASSERT(0);
   return 0;
 }
 
 int cronet_bidirectional_stream_write(cronet_bidirectional_stream* stream,
-                                      const char* buffer,
-                                      int count,
+                                      const char* buffer, int count,
                                       bool end_of_stream) {
   GPR_ASSERT(0);
   return 0;
@@ -88,4 +82,4 @@ int cronet_bidirectional_stream_cancel(cronet_bidirectional_stream* stream) {
   return 0;
 }
 
-#endif  /* GRPC_COMPILE_WITH_CRONET */
+#endif /* GRPC_COMPILE_WITH_CRONET */

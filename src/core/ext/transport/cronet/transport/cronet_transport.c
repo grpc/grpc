@@ -621,7 +621,9 @@ static void destroy_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   gpr_free(s->write_buffer);
   gpr_free(s->url);
   gpr_mu_destroy(&s->recv_mu);
-  if (and_free_memory) { gpr_free(and_free_memory); }
+  if (and_free_memory) {
+    gpr_free(and_free_memory);
+  }
 }
 
 static void destroy_transport(grpc_exec_ctx *exec_ctx, grpc_transport *gt) {
