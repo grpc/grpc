@@ -399,6 +399,7 @@ filegroups:
   - grpc_client_config
 - name: grpc_secure
   public_headers:
+  - include/grpc/grpc_cronet.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
   headers:
@@ -546,6 +547,14 @@ filegroups:
   - grpc_transport_chttp2
   - grpc_base
   - grpc_secure
+- name: grpc_transport_cronet_client_secure
+  headers:
+  - include/grpc/support/port_platform.h
+  - third_party/objective_c/Cronet/cronet_c_for_grpc.h
+  src:
+  - src/core/ext/transport/cronet/client/secure/cronet_channel_create.c
+  - src/core/ext/transport/cronet/transport/cronet_api_dummy.c
+  - src/core/ext/transport/cronet/transport/cronet_transport.c
 - name: nanopb
   headers:
   - third_party/nanopb/pb.h
@@ -733,6 +742,7 @@ libs:
   - grpc_transport_chttp2_client_secure
   - grpc_transport_chttp2_server_insecure
   - grpc_transport_chttp2_client_insecure
+  - grpc_transport_cronet_client_secure
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin

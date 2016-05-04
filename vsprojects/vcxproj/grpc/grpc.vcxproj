@@ -292,6 +292,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_win32.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_cronet.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_security.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_security_constants.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\census.h" />
@@ -421,6 +422,8 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\subchannel_call_holder.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\subchannel_index.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\uri_parser.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\port_platform.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\objective_c\Cronet\cronet_c_for_grpc.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0\load_balancer.pb.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb.h" />
@@ -726,6 +729,12 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\insecure\server_chttp2.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\insecure\channel_create.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\cronet\client\secure\cronet_channel_create.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\cronet\transport\cronet_api_dummy.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\cronet\transport\cronet_transport.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.c">
     </ClCompile>

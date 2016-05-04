@@ -31,39 +31,61 @@
  *
  */
 
-#include <grpc/impl/codegen/port_platform.h>
+/* This file has empty implementation of all the functions exposed by the cronet
+library, so we can build it in all environments */
 
-#include <stdio.h>
-#include <string.h>
+#include <stdbool.h>
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/surface/channel.h"
-#include "src/core/lib/transport/transport_impl.h"
+#include "third_party/objective_c/Cronet/cronet_c_for_grpc.h"
 
-// Cronet transport object
-typedef struct cronet_transport {
-  grpc_transport base;  // must be first element in this structure
-  void *engine;
-  char *host;
-} cronet_transport;
-
-extern grpc_transport_vtable grpc_cronet_vtable;
-
-GRPCAPI grpc_channel *grpc_cronet_secure_channel_create(
-    void *engine, const char *target, const grpc_channel_args *args,
-    void *reserved) {
-  cronet_transport *ct = gpr_malloc(sizeof(cronet_transport));
-  ct->base.vtable = &grpc_cronet_vtable;
-  ct->engine = engine;
-  ct->host = gpr_malloc(strlen(target) + 1);
-  strcpy(ct->host, target);
-  gpr_log(GPR_DEBUG,
-          "grpc_create_cronet_transport: cronet_engine = %p, target=%s", engine,
-          ct->host);
-
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  return grpc_channel_create(&exec_ctx, target, args,
-                             GRPC_CLIENT_DIRECT_CHANNEL, (grpc_transport *)ct);
+#ifdef GRPC_COMPILE_WITH_CRONET
+  /* link with the real CRONET library in the build system */
+#else
+  /* Dummy implementation of cronet API just to test for build-ability */
+cronet_bidirectional_stream* cronet_bidirectional_stream_create(
+    cronet_engine* engine,
+    void* annotation,
+    cronet_bidirectional_stream_callback* callback) {
+  GPR_ASSERT(0);
+  return NULL;
 }
+
+int cronet_bidirectional_stream_destroy(cronet_bidirectional_stream* stream) {
+  GPR_ASSERT(0);
+  return 0;
+}
+
+int cronet_bidirectional_stream_start(
+    cronet_bidirectional_stream* stream,
+    const char* url,
+    int priority,
+    const char* method,
+    const cronet_bidirectional_stream_header_array* headers,
+    bool end_of_stream) {
+  GPR_ASSERT(0);
+  return 0;
+}
+
+int cronet_bidirectional_stream_read(cronet_bidirectional_stream* stream,
+                                     char* buffer,
+                                     int capacity) {
+  GPR_ASSERT(0);
+  return 0;
+}
+
+int cronet_bidirectional_stream_write(cronet_bidirectional_stream* stream,
+                                      const char* buffer,
+                                      int count,
+                                      bool end_of_stream) {
+  GPR_ASSERT(0);
+  return 0;
+}
+
+int cronet_bidirectional_stream_cancel(cronet_bidirectional_stream* stream) {
+  GPR_ASSERT(0);
+  return 0;
+}
+
+#endif  /* GRPC_COMPILE_WITH_CRONET */

@@ -439,6 +439,15 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\insecure\channel_create.c">
       <Filter>src\core\ext\transport\chttp2\client\insecure</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\cronet\client\secure\cronet_channel_create.c">
+      <Filter>src\core\ext\transport\cronet\client\secure</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\cronet\transport\cronet_api_dummy.c">
+      <Filter>src\core\ext\transport\cronet\transport</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\cronet\transport\cronet_transport.c">
+      <Filter>src\core\ext\transport\cronet\transport</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.c">
       <Filter>src\core\ext\lb_policy\grpclb</Filter>
     </ClCompile>
@@ -572,6 +581,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h">
       <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_cronet.h">
+      <Filter>include\grpc</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_security.h">
       <Filter>include\grpc</Filter>
@@ -956,6 +968,12 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\uri_parser.h">
       <Filter>src\core\ext\client_config</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\support\port_platform.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\objective_c\Cronet\cronet_c_for_grpc.h">
+      <Filter>third_party\objective_c\Cronet</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.h">
       <Filter>src\core\ext\lb_policy\grpclb</Filter>
     </ClInclude>
@@ -1006,6 +1024,9 @@
     </Filter>
     <Filter Include="include\grpc\impl\codegen">
       <UniqueIdentifier>{def748f5-ed2a-a9bb-40d9-c31d00f0e13b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc\support">
+      <UniqueIdentifier>{31de82ea-dc6c-73fb-a640-979b8a7b240c}</UniqueIdentifier>
     </Filter>
     <Filter Include="src">
       <UniqueIdentifier>{d538af37-07b2-062b-fa2a-d9f882cb2737}</UniqueIdentifier>
@@ -1088,6 +1109,18 @@
     <Filter Include="src\core\ext\transport\chttp2\transport">
       <UniqueIdentifier>{6f34254e-e69f-c9b4-156d-5024bade5408}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\core\ext\transport\cronet">
+      <UniqueIdentifier>{1e9c85e9-5522-7ef8-0017-7e19990a6194}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\transport\cronet\client">
+      <UniqueIdentifier>{d0530883-75d9-b5f7-d594-26735a70ac7b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\transport\cronet\client\secure">
+      <UniqueIdentifier>{4fa6fe90-b7a8-5c8f-d629-db1e68d89eed}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\transport\cronet\transport">
+      <UniqueIdentifier>{31518af8-5860-6d0d-ff78-4059fce29ec2}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\core\lib">
       <UniqueIdentifier>{5b2ded3f-84a5-f6b4-2060-286c7d1dc945}</UniqueIdentifier>
     </Filter>
@@ -1129,6 +1162,12 @@
     </Filter>
     <Filter Include="third_party\nanopb">
       <UniqueIdentifier>{93d6596d-330c-1d27-6f84-3c840e57869e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\objective_c">
+      <UniqueIdentifier>{3a56a516-857e-d2aa-95cc-11685baf4e8c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\objective_c\Cronet">
+      <UniqueIdentifier>{a165c6e3-0776-6f40-7351-d7865668e220}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
