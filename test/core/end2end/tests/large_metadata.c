@@ -97,7 +97,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-/* Request with a large amount of metadata. */
+// Request with a large amount of metadata.
 static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   grpc_call *c;
   grpc_call *s;
@@ -141,7 +141,7 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
-  /* Client: send request. */
+  // Client: send request.
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 1;
@@ -182,7 +182,7 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   cq_expect_completion(cqv, tag(101), 1);
   cq_verify(cqv);
 
-  /* Server: send initial metadata and receive request. */
+  // Server: send initial metadata and receive request.
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
@@ -200,8 +200,8 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   cq_expect_completion(cqv, tag(102), 1);
   cq_verify(cqv);
 
-  /* Server: receive close and send status.  This should trigger
-     completion of request on client. */
+  // Server: receive close and send status.  This should trigger
+  // completion of request on client.
   op = ops;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;

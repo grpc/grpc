@@ -54,8 +54,9 @@ typedef struct fullstack_secure_fixture_data {
   grpc_end2end_proxy *proxy;
 } fullstack_secure_fixture_data;
 
-static grpc_server *create_proxy_server(const char *port) {
-  grpc_server *s = grpc_server_create(NULL, NULL);
+static grpc_server *create_proxy_server(const char *port,
+                                        grpc_channel_args *server_args) {
+  grpc_server *s = grpc_server_create(server_args, NULL);
   grpc_ssl_pem_key_cert_pair pem_cert_key_pair = {test_server1_key,
                                                   test_server1_cert};
   grpc_server_credentials *ssl_creds =
@@ -65,18 +66,20 @@ static grpc_server *create_proxy_server(const char *port) {
   return s;
 }
 
-static grpc_channel *create_proxy_client(const char *target) {
+static grpc_channel *create_proxy_client(const char *target,
+                                         grpc_channel_args *client_args) {
   grpc_channel *channel;
   grpc_channel_credentials *ssl_creds =
       grpc_ssl_credentials_create(NULL, NULL, NULL);
   grpc_arg ssl_name_override = {GRPC_ARG_STRING,
                                 GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
                                 {"foo.test.google.fr"}};
-  grpc_channel_args client_args;
-  client_args.num_args = 1;
-  client_args.args = &ssl_name_override;
-  channel = grpc_secure_channel_create(ssl_creds, target, &client_args, NULL);
+  grpc_channel_args *new_client_args =
+      grpc_channel_args_copy_and_add(client_args, &ssl_name_override, 1);
+  channel = grpc_secure_channel_create(ssl_creds, target, new_client_args,
+                                       NULL);
   grpc_channel_credentials_release(ssl_creds);
+  grpc_channel_args_destroy(new_client_args);
   return channel;
 }
 
@@ -90,7 +93,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
       gpr_malloc(sizeof(fullstack_secure_fixture_data));
   memset(&f, 0, sizeof(f));
 
-  ffd->proxy = grpc_end2end_proxy_create(&proxy_def);
+  ffd->proxy = grpc_end2end_proxy_create(&proxy_def, client_args, server_args);
 
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create(NULL);

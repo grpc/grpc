@@ -56,6 +56,8 @@
 #define DEFAULT_CONNECTION_WINDOW_TARGET (1024 * 1024)
 #define MAX_WINDOW 0x7fffffffu
 
+#define DEFAULT_MAX_HEADER_LIST_SIZE (16 * 1024)
+
 #define MAX_CLIENT_STREAM_ID 0x7fffffffu
 
 int grpc_http_trace = 0;
@@ -311,6 +313,8 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     push_setting(t, GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, 0);
   }
   push_setting(t, GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE, DEFAULT_WINDOW);
+  push_setting(t, GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
+               DEFAULT_MAX_HEADER_LIST_SIZE);
 
   if (channel_args) {
     for (i = 0; i < channel_args->num_args; i++) {
