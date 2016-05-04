@@ -41,18 +41,18 @@ then
   exit 1
 fi
 
-PIP=pip2
-which $PIP || PIP=pip
 PYTHON=python2
+PIP=pip2
 which $PYTHON || PYTHON=python
+which $PIP || PIP=pip
 
 # TODO(jtattermusch): this shouldn't be required
-$PIP install --upgrade six pip
+${PIP} install --upgrade six pip
 
 # At least one of the bdist packages has to succeed (whichever one matches the
 # test machine, anyway).
 for bdist in ${BDIST_ARCHIVES}; do
-  ($PIP install $bdist) || true
+  ($PYTHON -m pip install $bdist) || true
 done
 
 $PYTHON distribtest.py
