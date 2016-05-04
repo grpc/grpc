@@ -36,6 +36,7 @@
 
 #include <grpc/support/port_platform.h>
 #include <grpc/support/slice.h>
+#include "src/core/lib/iomgr/error.h"
 
 /* Maximum length of a header string of the form 'Key: Value\r\n' */
 #define GRPC_HTTP_PARSER_MAX_HEADER_LENGTH 4096
@@ -61,7 +62,6 @@ typedef enum {
 typedef enum {
   GRPC_HTTP_RESPONSE,
   GRPC_HTTP_REQUEST,
-  GRPC_HTTP_UNKNOWN
 } grpc_http_type;
 
 /* A request */
@@ -97,8 +97,9 @@ typedef struct {
   grpc_http_type type;
 
   union {
-    grpc_http_response response;
-    grpc_http_request request;
+    grpc_http_response *response;
+    grpc_http_request *request;
+    void *request_or_response;
   } http;
   size_t body_capacity;
   size_t hdr_capacity;
@@ -108,11 +109,15 @@ typedef struct {
   size_t cur_line_end_length;
 } grpc_http_parser;
 
-void grpc_http_parser_init(grpc_http_parser *parser);
+void grpc_http_parser_init(grpc_http_parser *parser, grpc_http_type type,
+                           void *request_or_response);
 void grpc_http_parser_destroy(grpc_http_parser *parser);
 
-int grpc_http_parser_parse(grpc_http_parser *parser, gpr_slice slice);
-int grpc_http_parser_eof(grpc_http_parser *parser);
+grpc_error *grpc_http_parser_parse(grpc_http_parser *parser, gpr_slice slice);
+grpc_error *grpc_http_parser_eof(grpc_http_parser *parser);
+
+void grpc_http_request_destroy(grpc_http_request *request);
+void grpc_http_response_destroy(grpc_http_response *response);
 
 extern int grpc_http1_trace;
 

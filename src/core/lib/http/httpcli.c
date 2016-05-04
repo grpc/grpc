@@ -59,8 +59,7 @@ typedef struct {
   gpr_timespec deadline;
   int have_read_byte;
   const grpc_httpcli_handshaker *handshaker;
-  grpc_httpcli_response_cb on_response;
-  void *user_data;
+  grpc_closure *on_done;
   grpc_httpcli_context *context;
   grpc_pollset *pollset;
   grpc_iomgr_object iomgr_obj;
@@ -96,11 +95,10 @@ void grpc_httpcli_context_destroy(grpc_httpcli_context *context) {
 static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req);
 
 static void finish(grpc_exec_ctx *exec_ctx, internal_request *req,
-                   int success) {
+                   grpc_error *error) {
   grpc_pollset_set_del_pollset(exec_ctx, req->context->pollset_set,
                                req->pollset);
-  req->on_response(exec_ctx, req->user_data,
-                   success ? &req->parser.http.response : NULL);
+  grpc_exec_ctx_push(exec_ctx, req->on_done, error, NULL);
   grpc_http_parser_destroy(&req->parser);
   if (req->addresses != NULL) {
     grpc_resolved_addresses_destroy(req->addresses);
@@ -141,11 +139,11 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *user_data,
   } else if (!req->have_read_byte) {
     next_address(exec_ctx, req);
   } else {
-    int parse_success = grpc_http_parser_eof(&req->parser);
-    if (parse_success && (req->parser.type != GRPC_HTTP_RESPONSE)) {
-      parse_success = 0;
+    grpc_error *err = grpc_http_parser_eof(&req->parser);
+    if (err == GRPC_ERROR_NONE && (req->parser.type != GRPC_HTTP_RESPONSE)) {
+      err = GRPC_ERROR_CREATE("Expected http response, got http request");
     }
-    finish(exec_ctx, req, parse_success);
+    finish(exec_ctx, req, err);
   }
 }
 
@@ -208,29 +206,28 @@ static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req) {
       (struct sockaddr *)&addr->addr, addr->len, req->deadline);
 }
 
-static void on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
-                        grpc_resolved_addresses *addresses) {
+static void on_resolved(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   internal_request *req = arg;
-  if (!addresses) {
-    finish(exec_ctx, req, 0);
+  if (error != GRPC_ERROR_NONE) {
+    finish(exec_ctx, req, error);
     return;
   }
-  req->addresses = addresses;
   req->next_address = 0;
   next_address(exec_ctx, req);
 }
 
-static void internal_request_begin(
-    grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
-    grpc_pollset *pollset, const grpc_httpcli_request *request,
-    gpr_timespec deadline, grpc_httpcli_response_cb on_response,
-    void *user_data, const char *name, gpr_slice request_text) {
+static void internal_request_begin(grpc_exec_ctx *exec_ctx,
+                                   grpc_httpcli_context *context,
+                                   grpc_pollset *pollset,
+                                   const grpc_httpcli_request *request,
+                                   gpr_timespec deadline, grpc_closure *on_done,
+                                   grpc_httpcli_response *response,
+                                   const char *name, gpr_slice request_text) {
   internal_request *req = gpr_malloc(sizeof(internal_request));
   memset(req, 0, sizeof(*req));
   req->request_text = request_text;
-  grpc_http_parser_init(&req->parser);
-  req->on_response = on_response;
-  req->user_data = user_data;
+  grpc_http_parser_init(&req->parser, GRPC_HTTP_RESPONSE, response);
+  req->on_done = on_done;
   req->deadline = deadline;
   req->handshaker =
       request->handshaker ? request->handshaker : &grpc_httpcli_plaintext;
@@ -247,22 +244,22 @@ static void internal_request_begin(
   grpc_pollset_set_add_pollset(exec_ctx, req->context->pollset_set,
                                req->pollset);
   grpc_resolve_address(exec_ctx, request->host, req->handshaker->default_port,
-                       on_resolved, req);
+                       grpc_closure_create(on_resolved, req), &req->addresses);
 }
 
 void grpc_httpcli_get(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
                       grpc_pollset *pollset,
                       const grpc_httpcli_request *request,
-                      gpr_timespec deadline,
-                      grpc_httpcli_response_cb on_response, void *user_data) {
+                      gpr_timespec deadline, grpc_closure *on_done,
+                      grpc_httpcli_response *response) {
   char *name;
   if (g_get_override &&
-      g_get_override(exec_ctx, request, deadline, on_response, user_data)) {
+      g_get_override(exec_ctx, request, deadline, on_done, response)) {
     return;
   }
   gpr_asprintf(&name, "HTTP:GET:%s:%s", request->host, request->http.path);
-  internal_request_begin(exec_ctx, context, pollset, request, deadline,
-                         on_response, user_data, name,
+  internal_request_begin(exec_ctx, context, pollset, request, deadline, on_done,
+                         response, name,
                          grpc_httpcli_format_get_request(request));
   gpr_free(name);
 }
@@ -271,18 +268,18 @@ void grpc_httpcli_post(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
                        grpc_pollset *pollset,
                        const grpc_httpcli_request *request,
                        const char *body_bytes, size_t body_size,
-                       gpr_timespec deadline,
-                       grpc_httpcli_response_cb on_response, void *user_data) {
+                       gpr_timespec deadline, grpc_closure *on_done,
+                       grpc_httpcli_response *response) {
   char *name;
   if (g_post_override &&
       g_post_override(exec_ctx, request, body_bytes, body_size, deadline,
-                      on_response, user_data)) {
+                      on_done, response)) {
     return;
   }
   gpr_asprintf(&name, "HTTP:POST:%s:%s", request->host, request->http.path);
   internal_request_begin(
-      exec_ctx, context, pollset, request, deadline, on_response, user_data,
-      name, grpc_httpcli_format_post_request(request, body_bytes, body_size));
+      exec_ctx, context, pollset, request, deadline, on_done, response, name,
+      grpc_httpcli_format_post_request(request, body_bytes, body_size));
   gpr_free(name);
 }
 

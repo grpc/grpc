@@ -176,6 +176,7 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   grpc_security_status status = GRPC_SECURITY_ERROR;
   grpc_server_security_connector *sc = NULL;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_error *err = GRPC_ERROR_NONE;
 
   GRPC_API_TRACE(
       "grpc_server_add_secure_http2_port("
@@ -214,11 +215,12 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   gpr_mu_init(&state->mu);
   gpr_ref_init(&state->refcount, 1);
 
+  grpc_error **errs = gpr_malloc(sizeof(*errs) * resolved->naddrs);
   for (i = 0; i < resolved->naddrs; i++) {
-    port_temp = grpc_tcp_server_add_port(
+    errs[i] = grpc_tcp_server_add_port(
         tcp, (struct sockaddr *)&resolved->addrs[i].addr,
-        resolved->addrs[i].len);
-    if (port_temp > 0) {
+        resolved->addrs[i].len, &port_temp);
+    if (errs[i] != GRPC_ERROR_NONE) {
       if (port_num == -1) {
         port_num = port_temp;
       } else {
@@ -247,6 +249,7 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
 
 /* Error path: cleanup and return */
 error:
+  GPR_ASSERT(err != GRPC_ERROR_NONE);
   if (resolved) {
     grpc_resolved_addresses_destroy(resolved);
   }
