@@ -1138,6 +1138,7 @@ static int parse_string_prefix(grpc_chttp2_hpack_parser *p, const uint8_t *cur,
 /* append some bytes to a string */
 static void append_bytes(grpc_chttp2_hpack_parser_string *str,
                          const uint8_t *data, size_t length) {
+  if (length == 0) return;
   if (length + str->length > str->capacity) {
     GPR_ASSERT(str->length + length <= UINT32_MAX);
     str->capacity = (uint32_t)(str->length + length);
@@ -1445,6 +1446,10 @@ grpc_chttp2_parse_error grpc_chttp2_header_parser_parse(
        stream id on a header */
     if (stream_parsing != NULL) {
       if (parser->is_boundary) {
+        if (stream_parsing->header_frames_received == GPR_ARRAY_SIZE(stream_parsing->got_metadata_on_parse)) {
+          gpr_log(GPR_ERROR, "too many trailer frames");
+          return GRPC_CHTTP2_CONNECTION_ERROR;
+        }
         stream_parsing
             ->got_metadata_on_parse[stream_parsing->header_frames_received] = 1;
         stream_parsing->header_frames_received++;
