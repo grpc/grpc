@@ -156,7 +156,7 @@ struct grpc_chttp2_incoming_byte_stream {
   grpc_byte_stream base;
   gpr_refcount refs;
   struct grpc_chttp2_incoming_byte_stream *next_message;
-  int failed;
+  grpc_error *error;
 
   grpc_chttp2_transport *transport;
   grpc_chttp2_stream *stream;
@@ -275,10 +275,10 @@ struct grpc_chttp2_transport_parsing {
   /* active parser */
   void *parser_data;
   grpc_chttp2_stream_parsing *incoming_stream;
-  grpc_chttp2_parse_error (*parser)(
-      grpc_exec_ctx *exec_ctx, void *parser_user_data,
-      grpc_chttp2_transport_parsing *transport_parsing,
-      grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last);
+  grpc_error *(*parser)(grpc_exec_ctx *exec_ctx, void *parser_user_data,
+                        grpc_chttp2_transport_parsing *transport_parsing,
+                        grpc_chttp2_stream_parsing *stream_parsing,
+                        gpr_slice slice, int is_last);
 
   /* received settings */
   uint32_t settings[GRPC_CHTTP2_NUM_SETTINGS];
@@ -530,7 +530,7 @@ void grpc_chttp2_perform_writes(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_writing *transport_writing,
     grpc_endpoint *endpoint);
 void grpc_chttp2_terminate_writing(grpc_exec_ctx *exec_ctx,
-                                   void *transport_writing, bool success);
+                                   void *transport_writing, grpc_error *error);
 void grpc_chttp2_cleanup_writing(grpc_exec_ctx *exec_ctx,
                                  grpc_chttp2_transport_global *global,
                                  grpc_chttp2_transport_writing *writing);
@@ -539,9 +539,9 @@ void grpc_chttp2_prepare_to_read(grpc_chttp2_transport_global *global,
                                  grpc_chttp2_transport_parsing *parsing);
 /** Process one slice of incoming data; return 1 if the connection is still
     viable after reading, or 0 if the connection should be torn down */
-int grpc_chttp2_perform_read(grpc_exec_ctx *exec_ctx,
-                             grpc_chttp2_transport_parsing *transport_parsing,
-                             gpr_slice slice);
+grpc_error *grpc_chttp2_perform_read(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_parsing *transport_parsing,
+    gpr_slice slice);
 void grpc_chttp2_publish_reads(grpc_exec_ctx *exec_ctx,
                                grpc_chttp2_transport_global *global,
                                grpc_chttp2_transport_parsing *parsing);
