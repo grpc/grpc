@@ -215,12 +215,12 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   gpr_mu_init(&state->mu);
   gpr_ref_init(&state->refcount, 1);
 
-  grpc_error **errs = gpr_malloc(sizeof(*errs) * resolved->naddrs);
+  grpc_error **errors = gpr_malloc(sizeof(*errors) * resolved->naddrs);
   for (i = 0; i < resolved->naddrs; i++) {
-    errs[i] = grpc_tcp_server_add_port(
+    errors[i] = grpc_tcp_server_add_port(
         tcp, (struct sockaddr *)&resolved->addrs[i].addr,
         resolved->addrs[i].len, &port_temp);
-    if (errs[i] != GRPC_ERROR_NONE) {
+    if (errors[i] == GRPC_ERROR_NONE) {
       if (port_num == -1) {
         port_num = port_temp;
       } else {

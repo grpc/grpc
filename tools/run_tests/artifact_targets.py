@@ -43,10 +43,10 @@ def create_docker_jobspec(name, dockerfile_dir, shell_command, environ={},
   for k,v in environ.iteritems():
     docker_args += ['-e', '%s=%s' % (k, v)]
   docker_env = {'DOCKERFILE_DIR': dockerfile_dir,
-                'DOCKER_RUN_SCRIPT': 'tools/jenkins/docker_run.sh',
+                'DOCKER_RUN_SCRIPT': 'tools/run_tests/dockerize/docker_run.sh',
                 'OUTPUT_DIR': 'artifacts'}
   jobspec = jobset.JobSpec(
-          cmdline=['tools/jenkins/build_and_run_docker.sh'] + docker_args,
+          cmdline=['tools/run_tests/dockerize/build_and_run_docker.sh'] + docker_args,
           environ=docker_env,
           shortname='build_artifact.%s' % (name),
           timeout_seconds=30*60,
