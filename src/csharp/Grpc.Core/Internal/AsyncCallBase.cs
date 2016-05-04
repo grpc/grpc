@@ -155,7 +155,7 @@ namespace Grpc.Core.Internal
         {
             lock (myLock)
             {
-                CheckReadingAllowed();
+                GrpcPreconditions.CheckState(started);
                 if (readingDone)
                 {
                     // the last read that returns null or throws an exception is idempotent
@@ -222,11 +222,6 @@ namespace Grpc.Core.Internal
             GrpcPreconditions.CheckState(!halfcloseRequested, "Already halfclosed.");
             GrpcPreconditions.CheckState(!finished || allowFinished, "Already finished.");
             GrpcPreconditions.CheckState(sendCompletionDelegate == null, "Only one write can be pending at a time");
-        }
-
-        protected virtual void CheckReadingAllowed()
-        {
-            GrpcPreconditions.CheckState(started);
         }
 
         protected void CheckNotCancelled()
