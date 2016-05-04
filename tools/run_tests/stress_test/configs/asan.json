@@ -1,7 +1,7 @@
 {
   "dockerImages": {
     "grpc_stress_cxx_asan" : {
-      "buildScript": "tools/jenkins/build_interop_stress_image.sh",
+      "buildScript": "tools/run_tests/dockerize/build_interop_stress_image.sh",
       "dockerFileDir": "grpc_interop_stress_cxx",
       "buildType": "asan"
     }
