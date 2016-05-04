@@ -82,14 +82,22 @@ namespace Grpc.Core.Internal.Tests
         public void CancelNotificationAfterStartDisposes()
         {
             var finishedTask = asyncCallServer.ServerSideCallAsync();
+            fakeCall.ReceivedCloseOnServerHandler(true, cancelled: true);
+            AssertFinished(asyncCallServer, fakeCall, finishedTask);
+        }
+
+        [Test]
+        public void CancelNotificationAfterStartDisposesAfterPendingReadFinishes()
+        {
+            var finishedTask = asyncCallServer.ServerSideCallAsync();
             var requestStream = new ServerRequestStream<string, string>(asyncCallServer);
 
-            // Finishing requestStream is needed for dispose to happen.
             var moveNextTask = requestStream.MoveNext();
+
+            fakeCall.ReceivedCloseOnServerHandler(true, cancelled: true);
             fakeCall.ReceivedMessageHandler(true, null);
             Assert.IsFalse(moveNextTask.Result);
 
-            fakeCall.ReceivedCloseOnServerHandler(true, cancelled: true);
             AssertFinished(asyncCallServer, fakeCall, finishedTask);
         }
 
@@ -101,9 +109,8 @@ namespace Grpc.Core.Internal.Tests
 
             fakeCall.ReceivedCloseOnServerHandler(true, cancelled: true);
 
-            // Check that startin a read after cancel notification has been processed is legal.
+            // Check that starting a read after cancel notification has been processed is legal.
             var moveNextTask = requestStream.MoveNext();
-            fakeCall.ReceivedMessageHandler(true, null);
             Assert.IsFalse(moveNextTask.Result);
 
             AssertFinished(asyncCallServer, fakeCall, finishedTask);
@@ -136,12 +143,6 @@ namespace Grpc.Core.Internal.Tests
 
             // TODO(jtattermusch): should we throw a different exception type instead?
             Assert.Throws(typeof(InvalidOperationException), () => responseStream.WriteAsync("request1"));
-
-            // Finishing requestStream is needed for dispose to happen.
-            var moveNextTask = requestStream.MoveNext();
-            fakeCall.ReceivedMessageHandler(true, null);
-            Assert.IsFalse(moveNextTask.Result);
-
             AssertFinished(asyncCallServer, fakeCall, finishedTask);
         }
 
@@ -149,7 +150,6 @@ namespace Grpc.Core.Internal.Tests
         public void WriteCompletionFailureThrows()
         {
             var finishedTask = asyncCallServer.ServerSideCallAsync();
-            var requestStream = new ServerRequestStream<string, string>(asyncCallServer);
             var responseStream = new ServerResponseStream<string, string>(asyncCallServer);
 
             var writeTask = responseStream.WriteAsync("request1");
@@ -157,13 +157,7 @@ namespace Grpc.Core.Internal.Tests
             // TODO(jtattermusch): should we throw a different exception type instead?
             Assert.ThrowsAsync(typeof(InvalidOperationException), async () => await writeTask);
 
-            // Finishing requestStream is needed for dispose to happen.
-            var moveNextTask = requestStream.MoveNext();
-            fakeCall.ReceivedMessageHandler(true, null);
-            Assert.IsFalse(moveNextTask.Result);
-
             fakeCall.ReceivedCloseOnServerHandler(true, cancelled: true);
-
             AssertFinished(asyncCallServer, fakeCall, finishedTask);
         }
 
@@ -171,7 +165,6 @@ namespace Grpc.Core.Internal.Tests
         public void WriteAndWriteStatusCanRunConcurrently()
         {
             var finishedTask = asyncCallServer.ServerSideCallAsync();
-            var requestStream = new ServerRequestStream<string, string>(asyncCallServer);
             var responseStream = new ServerResponseStream<string, string>(asyncCallServer);
 
             var writeTask = responseStream.WriteAsync("request1");
@@ -182,11 +175,6 @@ namespace Grpc.Core.Internal.Tests
 
             Assert.DoesNotThrowAsync(async () => await writeTask);
             Assert.DoesNotThrowAsync(async () => await writeStatusTask);
-
-            // Finishing requestStream is needed for dispose to happen.
-            var moveNextTask = requestStream.MoveNext();
-            fakeCall.ReceivedMessageHandler(true, null);
-            Assert.IsFalse(moveNextTask.Result);
 
             fakeCall.ReceivedCloseOnServerHandler(true, cancelled: true);
 
