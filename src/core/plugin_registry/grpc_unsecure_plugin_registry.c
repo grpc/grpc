@@ -51,8 +51,10 @@ extern void census_grpc_plugin_init(void);
 extern void census_grpc_plugin_shutdown(void);
 
 void grpc_register_built_in_plugins(void) {
-  grpc_register_plugin(grpc_chttp2_plugin_init, grpc_chttp2_plugin_shutdown);
-  grpc_register_plugin(grpc_client_config_init, grpc_client_config_shutdown);
+  grpc_register_plugin(grpc_chttp2_plugin_init,
+                       grpc_chttp2_plugin_shutdown);
+  grpc_register_plugin(grpc_client_config_init,
+                       grpc_client_config_shutdown);
   grpc_register_plugin(grpc_resolver_dns_native_init,
                        grpc_resolver_dns_native_shutdown);
   grpc_register_plugin(grpc_resolver_sockaddr_init,
@@ -63,5 +65,6 @@ void grpc_register_built_in_plugins(void) {
                        grpc_lb_policy_pick_first_shutdown);
   grpc_register_plugin(grpc_lb_policy_round_robin_init,
                        grpc_lb_policy_round_robin_shutdown);
-  grpc_register_plugin(census_grpc_plugin_init, census_grpc_plugin_shutdown);
+  grpc_register_plugin(census_grpc_plugin_init,
+                       census_grpc_plugin_shutdown);
 }
