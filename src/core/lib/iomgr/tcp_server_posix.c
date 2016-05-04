@@ -132,7 +132,8 @@ struct grpc_tcp_server {
   size_t pollset_count;
 };
 
-grpc_tcp_server *grpc_tcp_server_create(grpc_closure *shutdown_complete) {
+grpc_error *grpc_tcp_server_create(grpc_closure *shutdown_complete,
+                                   grpc_tcp_server **server) {
   grpc_tcp_server *s = gpr_malloc(sizeof(grpc_tcp_server));
   gpr_ref_init(&s->refs, 1);
   gpr_mu_init(&s->mu);
@@ -147,7 +148,8 @@ grpc_tcp_server *grpc_tcp_server_create(grpc_closure *shutdown_complete) {
   s->head = NULL;
   s->tail = NULL;
   s->nports = 0;
-  return s;
+  *server = s;
+  return GRPC_ERROR_NONE;
 }
 
 static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
