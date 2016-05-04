@@ -80,7 +80,8 @@ struct grpc_channel {
 /* the protobuf library will (by default) start warning at 100megs */
 #define DEFAULT_MAX_MESSAGE_LENGTH (100 * 1024 * 1024)
 
-static void destroy_channel(grpc_exec_ctx *exec_ctx, void *arg, bool success);
+static void destroy_channel(grpc_exec_ctx *exec_ctx, void *arg,
+                            grpc_error *error);
 
 grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
                                   const grpc_channel_args *input_args,
@@ -267,7 +268,7 @@ void grpc_channel_internal_unref(grpc_exec_ctx *exec_ctx,
 }
 
 static void destroy_channel(grpc_exec_ctx *exec_ctx, void *arg,
-                            bool iomgr_success) {
+                            grpc_error *error) {
   grpc_channel *channel = arg;
   grpc_channel_stack_destroy(exec_ctx, CHANNEL_STACK_FROM_CHANNEL(channel));
   while (channel->registered_calls) {
