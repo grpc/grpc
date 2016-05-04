@@ -68,7 +68,7 @@ void grpc_subchannel_call_holder_init(
   holder->waiting_ops_capacity = 0;
   holder->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING;
   holder->owning_call = owning_call;
-  holder->pollset_set = NULL;
+  holder->pops = NULL;
 }
 
 void grpc_subchannel_call_holder_destroy(grpc_exec_ctx *exec_ctx,
@@ -158,7 +158,7 @@ retry:
     gpr_atm_rel_store(
         &holder->subchannel_call,
         (gpr_atm)(uintptr_t)grpc_connected_subchannel_create_call(
-            exec_ctx, holder->connected_subchannel, holder->pollset));
+            exec_ctx, holder->connected_subchannel, holder->pops));
     retry_waiting_locked(exec_ctx, holder);
     goto retry;
   }
@@ -183,7 +183,7 @@ static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
     gpr_atm_rel_store(
         &holder->subchannel_call,
         (gpr_atm)(uintptr_t)grpc_connected_subchannel_create_call(
-            exec_ctx, holder->connected_subchannel, holder->pollset));
+            exec_ctx, holder->connected_subchannel, holder->pops));
     retry_waiting_locked(exec_ctx, holder);
   }
   gpr_mu_unlock(&holder->mu);

@@ -2505,6 +2505,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/iomgr_windows.c \
     src/core/lib/iomgr/pollset_set_windows.c \
     src/core/lib/iomgr/pollset_windows.c \
+    src/core/lib/iomgr/pops.c \
     src/core/lib/iomgr/resolve_address_posix.c \
     src/core/lib/iomgr/resolve_address_windows.c \
     src/core/lib/iomgr/sockaddr_utils.c \
@@ -2628,7 +2629,6 @@ LIBGRPC_SRC = \
     third_party/nanopb/pb_common.c \
     third_party/nanopb/pb_decode.c \
     third_party/nanopb/pb_encode.c \
-    src/core/ext/lb_policy/common.c \
     src/core/ext/lb_policy/pick_first/pick_first.c \
     src/core/ext/lb_policy/round_robin/round_robin.c \
     src/core/ext/resolver/dns/native/dns_resolver.c \
@@ -2847,6 +2847,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/iomgr_windows.c \
     src/core/lib/iomgr/pollset_set_windows.c \
     src/core/lib/iomgr/pollset_windows.c \
+    src/core/lib/iomgr/pops.c \
     src/core/lib/iomgr/resolve_address_posix.c \
     src/core/lib/iomgr/resolve_address_windows.c \
     src/core/lib/iomgr/sockaddr_utils.c \
@@ -2951,7 +2952,6 @@ LIBGRPC_UNSECURE_SRC = \
     third_party/nanopb/pb_common.c \
     third_party/nanopb/pb_decode.c \
     third_party/nanopb/pb_encode.c \
-    src/core/ext/lb_policy/common.c \
     src/core/ext/lb_policy/pick_first/pick_first.c \
     src/core/ext/lb_policy/round_robin/round_robin.c \
     src/core/ext/census/context.c \

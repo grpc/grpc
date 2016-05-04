@@ -35,6 +35,7 @@
 #define GRPC_CORE_EXT_CLIENT_CONFIG_LB_POLICY_H
 
 #include "src/core/ext/client_config/subchannel.h"
+#include "src/core/lib/iomgr/pops.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 /** A load balancing policy: specified by a vtable and a struct (which
@@ -58,8 +59,7 @@ struct grpc_lb_policy_vtable {
   void (*shutdown)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy);
 
   /** implement grpc_lb_policy_pick */
-  int (*pick)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-              grpc_pollset *pollset, grpc_pollset_set *pollset_set_alternative,
+  int (*pick)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy, grpc_pops *pops,
               grpc_metadata_batch *initial_metadata,
               uint32_t initial_metadata_flags,
               grpc_connected_subchannel **target, grpc_closure *on_complete);
@@ -125,9 +125,7 @@ void grpc_lb_policy_init(grpc_lb_policy *policy,
     \a target.
     Picking can be asynchronous. Any IO should be done under \a pollset. */
 int grpc_lb_policy_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-                        grpc_pollset *pollset,
-                        grpc_pollset_set *pollset_set_alternative,
-                        grpc_metadata_batch *initial_metadata,
+                        grpc_pops *pops, grpc_metadata_batch *initial_metadata,
                         uint32_t initial_metadata_flags,
                         grpc_connected_subchannel **target,
                         grpc_closure *on_complete);
