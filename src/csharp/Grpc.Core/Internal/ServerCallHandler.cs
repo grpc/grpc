@@ -87,16 +87,20 @@ namespace Grpc.Core.Internal
             } 
             catch (Exception e)
             {
-                Logger.Error(e, "Exception occured in handler.");
+                if (!(e is RpcException))
+                {
+                    Logger.Warning(e, "Exception occured in handler.");
+                }
                 status = HandlerUtils.StatusFromException(e);
             }
             try
             {
                 await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseTuple).ConfigureAwait(false);
             }
-            catch (OperationCanceledException)
+            catch (Exception)
             {
-                // Call has been already cancelled.
+                asyncCall.Cancel();
+                throw;
             }
             await finishedTask.ConfigureAwait(false);
         }
@@ -140,7 +144,10 @@ namespace Grpc.Core.Internal
             }
             catch (Exception e)
             {
-                Logger.Error(e, "Exception occured in handler.");
+                if (!(e is RpcException))
+                {
+                    Logger.Warning(e, "Exception occured in handler.");
+                }
                 status = HandlerUtils.StatusFromException(e);
             }
 
@@ -148,9 +155,10 @@ namespace Grpc.Core.Internal
             {
                 await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, null).ConfigureAwait(false);
             }
-            catch (OperationCanceledException)
+            catch (Exception)
             {
-                // Call has been already cancelled.
+                asyncCall.Cancel();
+                throw;
             }
             await finishedTask.ConfigureAwait(false);
         }
@@ -194,7 +202,10 @@ namespace Grpc.Core.Internal
             }
             catch (Exception e)
             {
-                Logger.Error(e, "Exception occured in handler.");
+                if (!(e is RpcException))
+                {
+                    Logger.Warning(e, "Exception occured in handler.");
+                }
                 status = HandlerUtils.StatusFromException(e);
             }
 
@@ -202,9 +213,10 @@ namespace Grpc.Core.Internal
             {
                 await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseTuple).ConfigureAwait(false);
             }
-            catch (OperationCanceledException)
+            catch (Exception)
             {
-                // Call has been already cancelled.
+                asyncCall.Cancel();
+                throw;
             }
             await finishedTask.ConfigureAwait(false);
         }
@@ -246,16 +258,20 @@ namespace Grpc.Core.Internal
             }
             catch (Exception e)
             {
-                Logger.Error(e, "Exception occured in handler.");
+                if (!(e is RpcException))
+                {
+                    Logger.Warning(e, "Exception occured in handler.");
+                }
                 status = HandlerUtils.StatusFromException(e);
             }
             try
             {
                 await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, null).ConfigureAwait(false);
             }
-            catch (OperationCanceledException)
+            catch (Exception)
             {
-                // Call has been already cancelled.
+                asyncCall.Cancel();
+                throw;
             }
             await finishedTask.ConfigureAwait(false);
         }
