@@ -21,6 +21,7 @@ function stress_main($args) {
   $deadline = $args['test_duration_secs'] ?
               ($start_time + $args['test_duration_secs']) : false;
   $num_test_cases = count($args['test_cases']);
+  $stub = false;
 
   while (true) {
     $current_time = microtime(true);
@@ -37,7 +38,7 @@ function stress_main($args) {
       // do actual work, run one interop test case
       $args['test_case'] =
           $args['test_cases'][mt_rand(0, $num_test_cases - 1)];
-      @interop_main($args);
+      $stub = @interop_main($args, $stub);
       $count++;
     }
   }
