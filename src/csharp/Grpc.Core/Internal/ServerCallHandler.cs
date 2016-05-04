@@ -75,14 +75,15 @@ namespace Grpc.Core.Internal
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
+            Tuple<TResponse,WriteFlags> responseTuple = null;
             var context = HandlerUtils.NewContext(newRpc, asyncCall.Peer, responseStream, asyncCall.CancellationToken);
             try
             {
                 GrpcPreconditions.CheckArgument(await requestStream.MoveNext().ConfigureAwait(false));
                 var request = requestStream.Current;
-                var result = await handler(request, context).ConfigureAwait(false);
+                var response = await handler(request, context).ConfigureAwait(false);
                 status = context.Status;
-                await responseStream.WriteAsync(result).ConfigureAwait(false);
+                responseTuple = Tuple.Create(response, HandlerUtils.GetWriteFlags(context.WriteOptions));
             } 
             catch (Exception e)
             {
@@ -91,7 +92,7 @@ namespace Grpc.Core.Internal
             }
             try
             {
-                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers).ConfigureAwait(false);
+                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseTuple).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
@@ -145,7 +146,7 @@ namespace Grpc.Core.Internal
 
             try
             {
-                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers).ConfigureAwait(false);
+                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, null).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
@@ -183,19 +184,13 @@ namespace Grpc.Core.Internal
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
+            Tuple<TResponse,WriteFlags> responseTuple = null;
             var context = HandlerUtils.NewContext(newRpc, asyncCall.Peer, responseStream, asyncCall.CancellationToken);
             try
             {
-                var result = await handler(requestStream, context).ConfigureAwait(false);
+                var response = await handler(requestStream, context).ConfigureAwait(false);
                 status = context.Status;
-                try
-                {
-                    await responseStream.WriteAsync(result).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException)
-                {
-                    status = Status.DefaultCancelled;
-                }
+                responseTuple = Tuple.Create(response, HandlerUtils.GetWriteFlags(context.WriteOptions));
             }
             catch (Exception e)
             {
@@ -205,7 +200,7 @@ namespace Grpc.Core.Internal
 
             try
             {
-                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers).ConfigureAwait(false);
+                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseTuple).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
@@ -256,7 +251,7 @@ namespace Grpc.Core.Internal
             }
             try
             {
-                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers).ConfigureAwait(false);
+                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, null).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
@@ -278,7 +273,7 @@ namespace Grpc.Core.Internal
             
             asyncCall.Initialize(newRpc.Call);
             var finishedTask = asyncCall.ServerSideCallAsync();
-            await asyncCall.SendStatusFromServerAsync(new Status(StatusCode.Unimplemented, ""), Metadata.Empty).ConfigureAwait(false);
+            await asyncCall.SendStatusFromServerAsync(new Status(StatusCode.Unimplemented, ""), Metadata.Empty, null).ConfigureAwait(false);
             await finishedTask.ConfigureAwait(false);
         }
     }
@@ -295,6 +290,11 @@ namespace Grpc.Core.Internal
             }
 
             return new Status(StatusCode.Unknown, "Exception was thrown by handler.");
+        }
+
+        public static WriteFlags GetWriteFlags(WriteOptions writeOptions)
+        {
+            return writeOptions != null ? writeOptions.Flags : default(WriteFlags);
         }
 
         public static ServerCallContext NewContext<TRequest, TResponse>(ServerRpcNew newRpc, string peer, ServerResponseStream<TRequest, TResponse> serverResponseStream, CancellationToken cancellationToken)
