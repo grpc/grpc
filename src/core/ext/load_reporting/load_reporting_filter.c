@@ -32,6 +32,7 @@
  */
 
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
 #include <string.h>
 
 #include "src/core/ext/load_reporting/load_reporting.h"
@@ -40,7 +41,10 @@
 #include "src/core/lib/profiling/timers.h"
 
 typedef struct call_data { void *dummy; } call_data;
-typedef struct channel_data { grpc_load_reporting_config *lrc; } channel_data;
+typedef struct channel_data {
+  gpr_mu mu;
+  grpc_load_reporting_config *lrc;
+} channel_data;
 
 /* Constructor for call_data */
 static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
@@ -52,7 +56,9 @@ static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   channel_data *chand = elem->channel_data;
   if (chand->lrc != NULL) {
     GPR_TIMER_BEGIN("load_reporting_filter", 0);
+    gpr_mu_lock(&chand->mu);
     grpc_load_reporting_config_call(chand->lrc, stats);
+    gpr_mu_unlock(&chand->mu);
     GPR_TIMER_END("load_reporting_filter", 0);
   }
 }
@@ -66,6 +72,7 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
   channel_data *chand = elem->channel_data;
   memset(chand, 0, sizeof(channel_data));
 
+  gpr_mu_init(&chand->mu);
   for (size_t i = 0; i < args->channel_args->num_args; i++) {
     if (0 == strcmp(args->channel_args->args[i].key,
                     GRPC_ARG_ENABLE_LOAD_REPORTING)) {
@@ -83,6 +90,7 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
 static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem) {
   channel_data *chand = elem->channel_data;
+  gpr_mu_destroy(&chand->mu);
   grpc_load_reporting_config_destroy(chand->lrc);
 }
 
