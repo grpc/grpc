@@ -49,8 +49,6 @@
 #include "src/core/lib/transport/transport_impl.h"
 #include "third_party/objective_c/Cronet/cronet_c_for_grpc.h"
 
-#ifdef GRPC_COMPILE_WITH_CRONET
-
 #define GRPC_HEADER_SIZE_IN_BYTES 5
 
 // Global flag that gets set with GRPC_TRACE env variable
@@ -613,7 +611,7 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
 }
 
 static void destroy_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
-                           grpc_stream *gs) {
+                           grpc_stream *gs, void *and_free_memory) {
   if (grpc_cronet_trace) {
     gpr_log(GPR_DEBUG, "Destroy stream");
   }
@@ -623,6 +621,7 @@ static void destroy_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   gpr_free(s->write_buffer);
   gpr_free(s->url);
   gpr_mu_destroy(&s->recv_mu);
+  if (and_free_memory) { gpr_free(and_free_memory); }
 }
 
 static void destroy_transport(grpc_exec_ctx *exec_ctx, grpc_transport *gt) {
@@ -637,4 +636,3 @@ const grpc_transport_vtable grpc_cronet_vtable = {
     sizeof(stream_obj),     "cronet_http",     init_stream,
     set_pollset_do_nothing, perform_stream_op, NULL,
     destroy_stream,         destroy_transport, NULL};
-#endif  // GRPC_COMPILE_WITH_CRONET

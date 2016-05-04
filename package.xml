@@ -175,6 +175,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_posix.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_win32.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/time.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/grpc_cronet.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc_security.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc_security_constants.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/census.h" role="src" />
@@ -302,6 +303,8 @@
     <file baseinstalldir="/" name="src/core/ext/client_config/subchannel_call_holder.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/subchannel_index.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/uri_parser.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/support/port_platform.h" role="src" />
+    <file baseinstalldir="/" name="third_party/objective_c/Cronet/cronet_c_for_grpc.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/load_balancer_api.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb.h" role="src" />
@@ -460,6 +463,9 @@
     <file baseinstalldir="/" name="src/core/ext/client_config/uri_parser.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/insecure/server_chttp2.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/insecure/channel_create.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/cronet/client/secure/cronet_channel_create.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/cronet/transport/cronet_api_dummy.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/cronet/transport/cronet_transport.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/load_balancer_api.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_common.c" role="src" />

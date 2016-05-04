@@ -2623,6 +2623,9 @@ LIBGRPC_SRC = \
     src/core/ext/client_config/uri_parser.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
+    src/core/ext/transport/cronet/client/secure/cronet_channel_create.c \
+    src/core/ext/transport/cronet/transport/cronet_api_dummy.c \
+    src/core/ext/transport/cronet/transport/cronet_transport.c \
     src/core/ext/lb_policy/grpclb/load_balancer_api.c \
     src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c \
     third_party/nanopb/pb_common.c \
@@ -2669,6 +2672,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_win32.h \
     include/grpc/impl/codegen/time.h \
+    include/grpc/grpc_cronet.h \
     include/grpc/grpc_security.h \
     include/grpc/grpc_security_constants.h \
     include/grpc/census.h \
@@ -14313,6 +14317,9 @@ ifneq ($(OPENSSL_DEP),)
 # otherwise parallel compilation will fail if a source is compiled first.
 src/core/ext/transport/chttp2/client/secure/secure_channel_create.c: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c: $(OPENSSL_DEP)
+src/core/ext/transport/cronet/client/secure/cronet_channel_create.c: $(OPENSSL_DEP)
+src/core/ext/transport/cronet/transport/cronet_api_dummy.c: $(OPENSSL_DEP)
+src/core/ext/transport/cronet/transport/cronet_transport.c: $(OPENSSL_DEP)
 src/core/lib/http/httpcli_security_connector.c: $(OPENSSL_DEP)
 src/core/lib/security/b64.c: $(OPENSSL_DEP)
 src/core/lib/security/client_auth_filter.c: $(OPENSSL_DEP)
