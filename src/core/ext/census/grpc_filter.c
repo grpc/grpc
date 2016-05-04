@@ -155,7 +155,7 @@ static void server_init_call_elem(grpc_exec_ctx *exec_ctx,
 
 static void server_destroy_call_elem(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
-                                     const grpc_call_stats* stats,
+                                     const grpc_call_stats *stats,
                                      void *ignored) {
   call_data *d = elem->call_data;
   GPR_ASSERT(d != NULL);
