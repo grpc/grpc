@@ -183,12 +183,6 @@ namespace Grpc.Core.Internal
             get { return false; }
         }
 
-        protected override void CheckReadingAllowed()
-        {
-            base.CheckReadingAllowed();
-            GrpcPreconditions.CheckArgument(!cancelRequested);
-        }
-
         protected override void OnAfterReleaseResources()
         {
             server.RemoveCallReference(this);
@@ -204,6 +198,14 @@ namespace Grpc.Core.Internal
             lock (myLock)
             {
                 finished = true;
+                if (streamingReadTcs == null)
+                {
+                    // if there's no pending read, readingDone=true will dispose now.
+                    // if there is a pending read, we will dispose once that read finishes.
+                    readingDone = true;
+                    streamingReadTcs = new TaskCompletionSource<TRequest>();
+                    streamingReadTcs.SetResult(default(TRequest));
+                }
                 ReleaseResourcesIfPossible();
             }
 

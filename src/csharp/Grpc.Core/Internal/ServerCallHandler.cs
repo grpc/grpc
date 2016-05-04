@@ -80,8 +80,6 @@ namespace Grpc.Core.Internal
             {
                 GrpcPreconditions.CheckArgument(await requestStream.MoveNext().ConfigureAwait(false));
                 var request = requestStream.Current;
-                // TODO(jtattermusch): we need to read the full stream so that native callhandle gets deallocated.
-                GrpcPreconditions.CheckArgument(!await requestStream.MoveNext().ConfigureAwait(false));
                 var result = await handler(request, context).ConfigureAwait(false);
                 status = context.Status;
                 await responseStream.WriteAsync(result).ConfigureAwait(false);
@@ -136,8 +134,6 @@ namespace Grpc.Core.Internal
             {
                 GrpcPreconditions.CheckArgument(await requestStream.MoveNext().ConfigureAwait(false));
                 var request = requestStream.Current;
-                // TODO(jtattermusch): we need to read the full stream so that native callhandle gets deallocated.
-                GrpcPreconditions.CheckArgument(!await requestStream.MoveNext().ConfigureAwait(false));
                 await handler(request, responseStream, context).ConfigureAwait(false);
                 status = context.Status;
             }
@@ -298,7 +294,6 @@ namespace Grpc.Core.Internal
                 return rpcException.Status;
             }
 
-            // TODO(jtattermusch): what is the right status code here?
             return new Status(StatusCode.Unknown, "Exception was thrown by handler.");
         }
 
