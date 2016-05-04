@@ -32,6 +32,8 @@ set -ex
 
 cd $(dirname $0)/../..
 
+base=$(pwd)
+
 mkdir -p artifacts/
 
 # All the ruby packages have been built in the artifact phase already
@@ -41,3 +43,25 @@ cp -r $EXTERNAL_GIT_ROOT/architecture={x86,x64},language=ruby,platform={windows,
 # TODO: all the artifact builder configurations generate a grpc-VERSION.gem
 # source distribution package, and only one of them will end up
 # in the artifacts/ directory. They should be all equivalent though.
+
+for arch in {x86,x64}; do
+  case $arch in
+    x64)
+      ruby_arch=x86_64
+      ;;
+    *)
+      ruby_arch=$arch
+      ;;
+  esac
+  for plat in {windows,linux,macos}; do
+    input_dir="$EXTERNAL_GIT_ROOT/architecture=$arch,language=protoc,platform=$plat/artifacts"
+    output_dir="$base/src/ruby/tools/bin/${ruby_arch}-${plat}"
+    mkdir -p $output_dir
+    cp $input_dir/protoc* $output_dir/
+    cp $input_dir/grpc_ruby_plugin* $output_dir/
+  done
+done
+
+cd $base/src/ruby/tools
+gem build grpc-tools.gemspec
+cp ./grpc-tools*.gem $base/artifacts/

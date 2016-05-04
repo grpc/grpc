@@ -214,14 +214,16 @@ void grpc_call_stack_ignore_set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
                                                        grpc_call_element *elem,
                                                        grpc_pops *pops) {}
 
-void grpc_call_stack_destroy(grpc_exec_ctx *exec_ctx, grpc_call_stack *stack) {
+void grpc_call_stack_destroy(grpc_exec_ctx *exec_ctx, grpc_call_stack *stack,
+                             void *and_free_memory) {
   grpc_call_element *elems = CALL_ELEMS_FROM_STACK(stack);
   size_t count = stack->count;
   size_t i;
 
   /* destroy per-filter data */
   for (i = 0; i < count; i++) {
-    elems[i].filter->destroy_call_elem(exec_ctx, &elems[i]);
+    elems[i].filter->destroy_call_elem(exec_ctx, &elems[i],
+                                       i == count - 1 ? and_free_memory : NULL);
   }
 }
 

@@ -227,6 +227,10 @@ void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
 #endif
 
   GPR_TIMER_BEGIN("grpc_cq_end_op", 0);
+  GRPC_API_TRACE(
+      "grpc_cq_end_op(exec_ctx=%p, cc=%p, tag=%p, success=%d, done=%p, "
+      "done_arg=%p, storage=%p)",
+      7, (exec_ctx, cc, tag, success, done, done_arg, storage));
 
   storage->tag = tag;
   storage->done = done;

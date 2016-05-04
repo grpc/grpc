@@ -141,8 +141,9 @@ void grpc_transport_set_pops(grpc_exec_ctx *exec_ctx, grpc_transport *transport,
 
 void grpc_transport_destroy_stream(grpc_exec_ctx *exec_ctx,
                                    grpc_transport *transport,
-                                   grpc_stream *stream) {
-  transport->vtable->destroy_stream(exec_ctx, transport, stream);
+                                   grpc_stream *stream, void *and_free_memory) {
+  transport->vtable->destroy_stream(exec_ctx, transport, stream,
+                                    and_free_memory);
 }
 
 char *grpc_transport_get_peer(grpc_exec_ctx *exec_ctx,
