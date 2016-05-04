@@ -64,28 +64,115 @@ namespace Grpc.Core.Internal.Tests
         }
 
         [Test]
-        public void AsyncUnary_CompletionSuccess()
+        public void AsyncUnary_CanBeStartedOnlyOnce()
         {
-            var resultTask = asyncCall.UnaryCallAsync("abc");
-            fakeCall.UnaryResponseClientHandler(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()), new byte[] { 1, 2, 3 }, new Metadata());
-            Assert.IsTrue(resultTask.IsCompleted);
-            Assert.IsTrue(fakeCall.IsDisposed);
-            Assert.AreEqual(Status.DefaultSuccess, asyncCall.GetStatus());
+            asyncCall.UnaryCallAsync("request1");
+            Assert.Throws(typeof(InvalidOperationException),
+                () => asyncCall.UnaryCallAsync("abc"));
         }
 
         [Test]
-        public void AsyncUnary_CompletionFailure()
+        public void AsyncUnary_StreamingOperationsNotAllowed()
         {
-            var resultTask = asyncCall.UnaryCallAsync("abc");
-            fakeCall.UnaryResponseClientHandler(false, new ClientSideStatus(new Status(StatusCode.Internal, ""), null), new byte[] { 1, 2, 3 }, new Metadata());
+            asyncCall.UnaryCallAsync("request1");
+            Assert.Throws(typeof(InvalidOperationException),
+                () => asyncCall.StartReadMessage((x,y) => {}));
+            Assert.Throws(typeof(InvalidOperationException),
+                () => asyncCall.StartSendMessage("abc", new WriteFlags(), (x,y) => {}));
+        }
 
+        [Test]
+        public void AsyncUnary_Success()
+        {
+            var resultTask = asyncCall.UnaryCallAsync("request1");
+            fakeCall.UnaryResponseClientHandler(true,
+                new ClientSideStatus(Status.DefaultSuccess, new Metadata()),
+                CreateResponsePayload(),
+                new Metadata());
+
+            AssertUnaryResponseSuccess(asyncCall, fakeCall, resultTask);
+        }
+
+        [Test]
+        public void AsyncUnary_NonSuccessStatusCode()
+        {
+            var resultTask = asyncCall.UnaryCallAsync("request1");
+            fakeCall.UnaryResponseClientHandler(true,
+                CreateClientSideStatus(StatusCode.InvalidArgument),
+                CreateResponsePayload(),
+                new Metadata());
+
+            AssertUnaryResponseError(asyncCall, fakeCall, resultTask, StatusCode.InvalidArgument);
+        }
+
+        [Test]
+        public void AsyncUnary_NullResponsePayload()
+        {
+            var resultTask = asyncCall.UnaryCallAsync("request1");
+            fakeCall.UnaryResponseClientHandler(true,
+                new ClientSideStatus(Status.DefaultSuccess, new Metadata()),
+                null,
+                new Metadata());
+
+            // failure to deserialize will result in InvalidArgument status.
+            AssertUnaryResponseError(asyncCall, fakeCall, resultTask, StatusCode.Internal);
+        }
+
+        [Test]
+        public void ClientStreaming_NoRequest_Success()
+        {
+            var resultTask = asyncCall.ClientStreamingCallAsync();
+            fakeCall.UnaryResponseClientHandler(true,
+                new ClientSideStatus(Status.DefaultSuccess, new Metadata()),
+                CreateResponsePayload(),
+                new Metadata());
+
+            AssertUnaryResponseSuccess(asyncCall, fakeCall, resultTask);
+        }
+
+        [Test]
+        public void ClientStreaming_NoRequest_NonSuccessStatusCode()
+        {
+            var resultTask = asyncCall.ClientStreamingCallAsync();
+            fakeCall.UnaryResponseClientHandler(true,
+                CreateClientSideStatus(StatusCode.InvalidArgument),
+                CreateResponsePayload(),
+                new Metadata());
+
+            AssertUnaryResponseError(asyncCall, fakeCall, resultTask, StatusCode.InvalidArgument);
+        }
+
+        ClientSideStatus CreateClientSideStatus(StatusCode statusCode)
+        {
+            return new ClientSideStatus(new Status(statusCode, ""), new Metadata());
+        }
+
+        byte[] CreateResponsePayload()
+        {
+            return Marshallers.StringMarshaller.Serializer("response1");
+        }
+
+        static void AssertUnaryResponseSuccess(AsyncCall<string, string> asyncCall, FakeNativeCall fakeCall, Task<string> resultTask)
+        {
             Assert.IsTrue(resultTask.IsCompleted);
             Assert.IsTrue(fakeCall.IsDisposed);
 
-            Assert.AreEqual(StatusCode.Internal, asyncCall.GetStatus().StatusCode);
-            Assert.IsNull(asyncCall.GetTrailers());
+            Assert.AreEqual(Status.DefaultSuccess, asyncCall.GetStatus());
+            Assert.AreEqual(0, asyncCall.ResponseHeadersAsync.Result.Count);
+            Assert.AreEqual(0, asyncCall.GetTrailers().Count);
+            Assert.AreEqual("response1", resultTask.Result);
+        }
+
+        static void AssertUnaryResponseError(AsyncCall<string, string> asyncCall, FakeNativeCall fakeCall, Task<string> resultTask, StatusCode expectedStatusCode)
+        {
+            Assert.IsTrue(resultTask.IsCompleted);
+            Assert.IsTrue(fakeCall.IsDisposed);
+
+            Assert.AreEqual(expectedStatusCode, asyncCall.GetStatus().StatusCode);
             var ex = Assert.ThrowsAsync<RpcException>(async () => await resultTask);
-            Assert.AreEqual(StatusCode.Internal, ex.Status.StatusCode);
+            Assert.AreEqual(expectedStatusCode, ex.Status.StatusCode);
+            Assert.AreEqual(0, asyncCall.ResponseHeadersAsync.Result.Count);
+            Assert.AreEqual(0, asyncCall.GetTrailers().Count);
         }
 
         internal class FakeNativeCall : INativeCall
