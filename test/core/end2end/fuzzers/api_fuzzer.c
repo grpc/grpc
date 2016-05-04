@@ -418,17 +418,21 @@ static void add_to_free(call_state *call, void *p) {
 static void read_metadata(input_stream *inp, size_t *count,
                           grpc_metadata **metadata, call_state *cs) {
   *count = next_byte(inp);
-  *metadata = gpr_malloc(*count * sizeof(**metadata));
-  memset(*metadata, 0, *count * sizeof(**metadata));
-  for (size_t i = 0; i < *count; i++) {
-    (*metadata)[i].key = read_string(inp);
-    read_buffer(inp, (char **)&(*metadata)[i].value,
-                &(*metadata)[i].value_length);
-    (*metadata)[i].flags = read_uint32(inp);
-    add_to_free(cs, (void *)(*metadata)[i].key);
-    add_to_free(cs, (void *)(*metadata)[i].value);
+  if (*count) {
+    *metadata = gpr_malloc(*count * sizeof(**metadata));
+    memset(*metadata, 0, *count * sizeof(**metadata));
+    for (size_t i = 0; i < *count; i++) {
+      (*metadata)[i].key = read_string(inp);
+      read_buffer(inp, (char **)&(*metadata)[i].value,
+                  &(*metadata)[i].value_length);
+      (*metadata)[i].flags = read_uint32(inp);
+      add_to_free(cs, (void *)(*metadata)[i].key);
+      add_to_free(cs, (void *)(*metadata)[i].value);
+    }
+  } else {
+    *metadata = gpr_malloc(1);
   }
-  add_to_free(cs, *metadata);
+    add_to_free(cs, *metadata);
 }
 
 static call_state *destroy_call(call_state *call) {

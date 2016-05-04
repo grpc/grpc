@@ -132,7 +132,7 @@ grpc_channel_args *grpc_channel_args_normalize(const grpc_channel_args *a) {
   for (size_t i = 0; i < a->num_args; i++) {
     args[i] = &a->args[i];
   }
-  qsort(args, a->num_args, sizeof(grpc_arg *), cmp_key_stable);
+  if (a->num_args > 1) qsort(args, a->num_args, sizeof(grpc_arg *), cmp_key_stable);
 
   grpc_channel_args *b = gpr_malloc(sizeof(grpc_channel_args));
   b->num_args = a->num_args;

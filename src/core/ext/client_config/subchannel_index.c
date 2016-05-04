@@ -87,7 +87,9 @@ static grpc_subchannel_key *create_key(
   }
   k->args.addr_len = args->addr_len;
   k->args.addr = gpr_malloc(args->addr_len);
-  memcpy(k->args.addr, args->addr, k->args.addr_len);
+  if (k->args.addr_len > 0) {
+    memcpy(k->args.addr, args->addr, k->args.addr_len);
+  }
   k->args.args = copy_channel_args(args->args);
   return k;
 }
@@ -109,8 +111,10 @@ static int subchannel_key_compare(grpc_subchannel_key *a,
   if (c != 0) return c;
   c = GPR_ICMP(a->args.filter_count, b->args.filter_count);
   if (c != 0) return c;
+  if (a->args.addr_len) {
   c = memcmp(a->args.addr, b->args.addr, a->args.addr_len);
   if (c != 0) return c;
+  }
   if (a->args.filter_count > 0) {
     c = memcmp(a->args.filters, b->args.filters,
                a->args.filter_count * sizeof(*a->args.filters));

@@ -3247,6 +3247,8 @@ configs:
     LDFLAGS: -fsanitize=undefined
     LDXX: clang++
     compile_the_world: true
+    test_environ:
+      UBSAN_OPTIONS: halt_on_error=1
     timeout_multiplier: 1.5
 defaults:
   boringssl:

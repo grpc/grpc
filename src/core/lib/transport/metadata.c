@@ -373,7 +373,7 @@ grpc_mdstr *grpc_mdstr_from_buffer(const uint8_t *buf, size_t length) {
     ss = g_static_strtab[idx];
     if (ss == NULL) break;
     if (ss->hash == hash && GPR_SLICE_LENGTH(ss->slice) == length &&
-        0 == memcmp(buf, GPR_SLICE_START_PTR(ss->slice), length)) {
+        (length == 0 || 0 == memcmp(buf, GPR_SLICE_START_PTR(ss->slice), length))) {
       GPR_TIMER_END("grpc_mdstr_from_buffer", 0);
       return ss;
     }

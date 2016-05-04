@@ -199,5 +199,6 @@ void grpc_compression_options_disable_algorithm(
 int grpc_compression_options_is_algorithm_enabled(
     const grpc_compression_options *opts,
     grpc_compression_algorithm algorithm) {
+  if (algorithm >= GRPC_COMPRESS_ALGORITHMS_COUNT) return 0;
   return GPR_BITGET(opts->enabled_algorithms_bitset, algorithm);
 }
