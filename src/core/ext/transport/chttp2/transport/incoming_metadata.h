@@ -42,7 +42,7 @@ typedef struct {
   size_t capacity;
   gpr_timespec deadline;
   int published;
-  size_t size;  /* total size of metadata */
+  size_t size;  // total size of metadata
 } grpc_chttp2_incoming_metadata_buffer;
 
 /** assumes everything initially zeroed */

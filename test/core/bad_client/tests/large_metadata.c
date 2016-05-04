@@ -40,16 +40,19 @@
 #include "test/core/end2end/cq_verifier.h"
 
 #define PFX_TOO_MUCH_METADATA_FROM_CLIENT_STR                              \
-  "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"                                       \
-  /* settings frame */                                                     \
-  "\x00\x00\x00\x04\x00\x00\x00\x00\x00"                                   \
-  /* headers: generated from large_metadata.headers in this directory */   \
-  "\x00""5{\x01\x05\x00\x00\x00\x01"                                       \
+  "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"     /* settings frame */              \
+  "\x00\x00\x00\x04\x00\x00\x00\x00\x00" /* headers: generated from        \
+                                            large_metadata.headers in this \
+                                            directory */                   \
+  "\x00"                                                                   \
+  "5{\x01\x05\x00\x00\x00\x01"                                             \
   "\x10\x05:path\x08/foo/bar"                                              \
   "\x10\x07:scheme\x04http"                                                \
   "\x10\x07:method\x04POST"                                                \
   "\x10\x0a:authority\x09localhost"                                        \
-  "\x10\x0c""content-type\x10""application/grpc"                           \
+  "\x10\x0c"                                                               \
+  "content-type\x10"                                                       \
+  "application/grpc"                                                       \
   "\x10\x14grpc-accept-encoding\x15identity,deflate,gzip"                  \
   "\x10\x02te\x08trailers"                                                 \
   "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)"                 \
@@ -339,22 +342,27 @@
   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
   "aaaaaaaa"
 
-#define PFX_TOO_MUCH_METADATA_FROM_SERVER_STR                              \
-  "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"                                       \
-  /* settings frame: sets MAX_HEADER_LIST_SIZE to 16K */                   \
-  "\x00\x00\x06\x04\x00\x00\x00\x00\x00\x00\x06\x00\x00\x40\x00"           \
-  /* headers: generated from simple_request.headers in this directory */   \
-  "\x00\x00\xc9\x01\x04\x00\x00\x00\x01"                                   \
-  "\x10\x05:path\x08/foo/bar"                                              \
-  "\x10\x07:scheme\x04http"                                                \
-  "\x10\x07:method\x04POST"                                                \
-  "\x10\x0a:authority\x09localhost"                                        \
-  "\x10\x0c"                                                               \
-  "content-type\x10"                                                       \
-  "application/grpc"                                                       \
-  "\x10\x14grpc-accept-encoding\x15"                                       \
-  "deflate,identity,gzip"                                                  \
-  "\x10\x02te\x08trailers"                                                 \
+#define PFX_TOO_MUCH_METADATA_FROM_SERVER_STR                                              \
+  "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n" /* settings frame: sets                               \
+                                        MAX_HEADER_LIST_SIZE to 16K */                     \
+  "\x00\x00\x06\x04\x00\x00\x00\x00\x00\x00\x06\x00\x00\x40\x00" /* headers:               \
+                                                                    generated              \
+                                                                    from                   \
+                                                                    simple_request.headers \
+                                                                    in this                \
+                                                                    directory              \
+                                                                    */                     \
+  "\x00\x00\xc9\x01\x04\x00\x00\x00\x01"                                                   \
+  "\x10\x05:path\x08/foo/bar"                                                              \
+  "\x10\x07:scheme\x04http"                                                                \
+  "\x10\x07:method\x04POST"                                                                \
+  "\x10\x0a:authority\x09localhost"                                                        \
+  "\x10\x0c"                                                                               \
+  "content-type\x10"                                                                       \
+  "application/grpc"                                                                       \
+  "\x10\x14grpc-accept-encoding\x15"                                                       \
+  "deflate,identity,gzip"                                                                  \
+  "\x10\x02te\x08trailers"                                                                 \
   "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)"
 
 static void *tag(intptr_t t) { return (void *)t; }
@@ -385,8 +393,9 @@ static void server_verifier(grpc_server *server, grpc_completion_queue *cq,
   cq_verifier_destroy(cqv);
 }
 
-static void server_verifier_sends_too_much_metadata(
-    grpc_server *server, grpc_completion_queue *cq, void *registered_method) {
+static void server_verifier_sends_too_much_metadata(grpc_server *server,
+                                                    grpc_completion_queue *cq,
+                                                    void *registered_method) {
   grpc_call_error error;
   grpc_call *s;
   grpc_call_details call_details;

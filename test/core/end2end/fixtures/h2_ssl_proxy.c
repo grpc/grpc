@@ -76,8 +76,8 @@ static grpc_channel *create_proxy_client(const char *target,
                                 {"foo.test.google.fr"}};
   grpc_channel_args *new_client_args =
       grpc_channel_args_copy_and_add(client_args, &ssl_name_override, 1);
-  channel = grpc_secure_channel_create(ssl_creds, target, new_client_args,
-                                       NULL);
+  channel =
+      grpc_secure_channel_create(ssl_creds, target, new_client_args, NULL);
   grpc_channel_credentials_release(ssl_creds);
   grpc_channel_args_destroy(new_client_args);
   return channel;

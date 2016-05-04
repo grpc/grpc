@@ -90,8 +90,7 @@ static void read_done(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
 void grpc_run_bad_client_test(
     grpc_bad_client_server_side_validator server_validator,
     grpc_bad_client_client_stream_validator client_validator,
-    const char *client_payload,
-    size_t client_payload_length, uint32_t flags) {
+    const char *client_payload, size_t client_payload_length, uint32_t flags) {
   grpc_endpoint_pair sfd;
   thd_args a;
   gpr_thd_id id;
@@ -177,8 +176,8 @@ void grpc_run_bad_client_test(
       grpc_endpoint_read(&exec_ctx, sfd.client, &args.incoming,
                          &read_done_closure);
       grpc_exec_ctx_finish(&exec_ctx);
-      GPR_ASSERT(gpr_event_wait(&args.read_done,
-                                GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)));
+      GPR_ASSERT(
+          gpr_event_wait(&args.read_done, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)));
       gpr_slice_buffer_destroy(&args.incoming);
     }
     // Shutdown.
