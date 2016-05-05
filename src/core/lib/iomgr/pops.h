@@ -41,10 +41,16 @@
  * accept a pollset XOR a pollset_set to do so through an abstract interface.
  * No ownership is taken. */
 
-typedef struct grpc_pops grpc_pops;
+typedef struct grpc_pops {
+  union {
+    grpc_pollset *pollset;
+    grpc_pollset_set *pollset_set;
+  } pops;
+  enum pops_tag { POPS_NONE, POPS_POLLSET, POPS_POLLSET_SET } tag;
+} grpc_pops;
 
-grpc_pops *grpc_pops_create_from_pollset_set(grpc_pollset_set *pollset_set);
-grpc_pops *grpc_pops_create_from_pollset(grpc_pollset *pollset);
+grpc_pops grpc_pops_create_from_pollset_set(grpc_pollset_set *pollset_set);
+grpc_pops grpc_pops_create_from_pollset(grpc_pollset *pollset);
 
 /** If \a pops contains a pollset, return it. Otherwise, return NULL */
 grpc_pollset *grpc_pops_pollset(grpc_pops *pops);
@@ -52,7 +58,7 @@ grpc_pollset *grpc_pops_pollset(grpc_pops *pops);
 /** If \a pops contains a pollset_set, return it. Otherwise, return NULL */
 grpc_pollset_set *grpc_pops_pollset_set(grpc_pops *pops);
 
-void grpc_pops_destroy(grpc_pops *pops);
+bool grpc_pops_is_empty(const grpc_pops *pops);
 
 /** Add the pollset or pollset_set in \a pops to the destination pollset_set \a
  * pss_dst */

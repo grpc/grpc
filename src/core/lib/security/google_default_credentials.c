@@ -61,7 +61,7 @@ static gpr_once g_once = GPR_ONCE_INIT;
 static void init_default_credentials(void) { gpr_mu_init(&g_state_mu); }
 
 typedef struct {
-  grpc_pops *pops;
+  grpc_pops pops;
   int is_done;
   int success;
 } compute_engine_detector;
@@ -85,7 +85,7 @@ static void on_compute_engine_detection_http_response(
   }
   gpr_mu_lock(g_polling_mu);
   detector->is_done = 1;
-  grpc_pollset_kick(grpc_pops_pollset(detector->pops), NULL);
+  grpc_pollset_kick(grpc_pops_pollset(&detector->pops), NULL);
   gpr_mu_unlock(g_polling_mu);
 }
 
@@ -117,7 +117,7 @@ static int is_stack_running_on_compute_engine(void) {
   grpc_httpcli_context_init(&context);
 
   grpc_httpcli_get(
-      &exec_ctx, &context, detector.pops, &request,
+      &exec_ctx, &context, &detector.pops, &request,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), max_detection_delay),
       on_compute_engine_detection_http_response, &detector);
 
@@ -128,7 +128,7 @@ static int is_stack_running_on_compute_engine(void) {
   gpr_mu_lock(g_polling_mu);
   while (!detector.is_done) {
     grpc_pollset_worker *worker = NULL;
-    grpc_pollset_work(&exec_ctx, grpc_pops_pollset(detector.pops), &worker,
+    grpc_pollset_work(&exec_ctx, grpc_pops_pollset(&detector.pops), &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC),
                       gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
@@ -136,14 +136,13 @@ static int is_stack_running_on_compute_engine(void) {
 
   grpc_httpcli_context_destroy(&context);
   grpc_closure_init(&destroy_closure, destroy_pollset,
-                    grpc_pops_pollset(detector.pops));
-  grpc_pollset_shutdown(&exec_ctx, grpc_pops_pollset(detector.pops),
+                    grpc_pops_pollset(&detector.pops));
+  grpc_pollset_shutdown(&exec_ctx, grpc_pops_pollset(&detector.pops),
                         &destroy_closure);
   grpc_exec_ctx_finish(&exec_ctx);
   g_polling_mu = NULL;
 
-  gpr_free(grpc_pops_pollset(detector.pops));
-  grpc_pops_destroy(detector.pops);
+  gpr_free(grpc_pops_pollset(&detector.pops));
 
   return detector.success;
 }

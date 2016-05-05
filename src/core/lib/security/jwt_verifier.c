@@ -322,7 +322,7 @@ grpc_jwt_verifier_status grpc_jwt_claims_check(const grpc_jwt_claims *claims,
 
 typedef struct {
   grpc_jwt_verifier *verifier;
-  grpc_pops *pops;
+  grpc_pops pops;
   jose_header *header;
   grpc_jwt_claims *claims;
   char *audience;
@@ -360,7 +360,6 @@ void verifier_cb_ctx_destroy(verifier_cb_ctx *ctx) {
   gpr_slice_unref(ctx->signature);
   gpr_slice_unref(ctx->signed_data);
   jose_header_destroy(ctx->header);
-  grpc_pops_destroy(ctx->pops);
   /* TODO: see what to do with claims... */
   gpr_free(ctx);
 }
@@ -646,7 +645,7 @@ static void on_openid_config_retrieved(grpc_exec_ctx *exec_ctx, void *user_data,
     *(req.host + (req.http.path - jwks_uri)) = '\0';
   }
   grpc_httpcli_get(
-      exec_ctx, &ctx->verifier->http_ctx, ctx->pops, &req,
+      exec_ctx, &ctx->verifier->http_ctx, &ctx->pops, &req,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_max_delay),
       on_keys_retrieved, ctx);
   grpc_json_destroy(json);
@@ -749,7 +748,7 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
   }
 
   grpc_httpcli_get(
-      exec_ctx, &ctx->verifier->http_ctx, ctx->pops, &req,
+      exec_ctx, &ctx->verifier->http_ctx, &ctx->pops, &req,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_max_delay),
       http_cb, ctx);
   gpr_free(req.host);
