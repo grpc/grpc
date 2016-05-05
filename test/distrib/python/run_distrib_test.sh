@@ -34,6 +34,7 @@ cd $(dirname $0)
 
 # Pick up the source dist archive whatever its version is
 BDIST_ARCHIVES=$EXTERNAL_GIT_ROOT/input_artifacts/grpcio-*.whl
+TOOLS_BDIST_ARCHIVES=$EXTERNAL_GIT_ROOT/input_artifacts/grpcio_tools-*.whl
 
 if [ ! -f ${SDIST_ARCHIVE} ]
 then
@@ -51,9 +52,12 @@ ${PIP} install --upgrade six pip
 
 # At least one of the bdist packages has to succeed (whichever one matches the
 # test machine, anyway).
-for bdist in ${BDIST_ARCHIVES}; do
+for bdist in ${BDIST_ARCHIVES} ${TOOLS_BDIST_ARCHIVES}; do
   ($PYTHON -m pip install $bdist) || true
 done
 
-$PYTHON distribtest.py
+# TODO(jtattermusch): add a .proto file to the distribtest, generate python
+# code from it and then use the generated code from distribtest.py
+$PYTHON -m grpc.protoc.compiler
 
+$PYTHON distribtest.py
