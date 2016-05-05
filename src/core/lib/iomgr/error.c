@@ -102,6 +102,8 @@ static const char *error_int_name(grpc_error_ints key) {
       return "index";
     case GRPC_ERROR_INT_SIZE:
       return "size";
+    case GRPC_ERROR_INT_HTTP2_ERROR:
+      return "http2_error";
   }
   GPR_UNREACHABLE_CODE(return "unknown");
 }

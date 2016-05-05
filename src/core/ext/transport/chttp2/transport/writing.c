@@ -187,7 +187,8 @@ void grpc_chttp2_perform_writes(
     grpc_endpoint_write(exec_ctx, endpoint, &transport_writing->outbuf,
                         &transport_writing->done_cb);
   } else {
-    grpc_exec_ctx_enqueue(exec_ctx, &transport_writing->done_cb, true, NULL);
+    grpc_exec_ctx_push(exec_ctx, &transport_writing->done_cb, GRPC_ERROR_NONE,
+                       NULL);
   }
 }
 
@@ -335,24 +336,26 @@ void grpc_chttp2_cleanup_writing(
     if (stream_writing->sent_initial_metadata) {
       grpc_chttp2_complete_closure_step(
           exec_ctx, stream_global,
-          &stream_global->send_initial_metadata_finished, 1);
+          &stream_global->send_initial_metadata_finished, GRPC_ERROR_NONE);
     }
     grpc_transport_move_one_way_stats(&stream_writing->stats,
                                       &stream_global->stats.outgoing);
     if (stream_writing->sent_message) {
       GPR_ASSERT(stream_writing->send_message == NULL);
-      grpc_chttp2_complete_closure_step(
-          exec_ctx, stream_global, &stream_global->send_message_finished, 1);
+      grpc_chttp2_complete_closure_step(exec_ctx, stream_global,
+                                        &stream_global->send_message_finished,
+                                        GRPC_ERROR_NONE);
       stream_writing->sent_message = 0;
     }
     if (stream_writing->sent_trailing_metadata) {
       grpc_chttp2_complete_closure_step(
           exec_ctx, stream_global,
-          &stream_global->send_trailing_metadata_finished, 1);
+          &stream_global->send_trailing_metadata_finished, GRPC_ERROR_NONE);
     }
     if (stream_writing->sent_trailing_metadata) {
       grpc_chttp2_mark_stream_closed(exec_ctx, transport_global, stream_global,
-                                     !transport_global->is_client, 1);
+                                     !transport_global->is_client, 1,
+                                     GRPC_ERROR_NONE);
     }
     GRPC_CHTTP2_STREAM_UNREF(exec_ctx, stream_global, "chttp2_writing");
   }

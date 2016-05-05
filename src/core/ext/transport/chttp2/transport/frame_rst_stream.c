@@ -97,11 +97,12 @@ grpc_error *grpc_chttp2_rst_stream_parser_parse(
   if (p->byte == 4) {
     GPR_ASSERT(is_last);
     stream_parsing->received_close = 1;
-    stream_parsing->saw_rst_stream = 1;
-    stream_parsing->rst_stream_reason = (((uint32_t)p->reason_bytes[0]) << 24) |
-                                        (((uint32_t)p->reason_bytes[1]) << 16) |
-                                        (((uint32_t)p->reason_bytes[2]) << 8) |
-                                        (((uint32_t)p->reason_bytes[3]));
+    stream_parsing->forced_close_error = grpc_error_set_int(
+        GRPC_ERROR_CREATE("RST_STREAM"), GRPC_ERROR_INT_HTTP2_ERROR,
+        (((uint32_t)p->reason_bytes[0]) << 24) |
+            (((uint32_t)p->reason_bytes[1]) << 16) |
+            (((uint32_t)p->reason_bytes[2]) << 8) |
+            (((uint32_t)p->reason_bytes[3])));
   }
 
   return GRPC_ERROR_NONE;

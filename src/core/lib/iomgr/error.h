@@ -50,6 +50,7 @@ typedef enum {
   GRPC_ERROR_INT_OFFSET,
   GRPC_ERROR_INT_INDEX,
   GRPC_ERROR_INT_SIZE,
+  GRPC_ERROR_INT_HTTP2_ERROR,
 } grpc_error_ints;
 
 typedef enum {
