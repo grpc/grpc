@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/lib/security/json_token.h"
+#include "src/core/lib/security/credentials/jwt/json_token.h"
 
 #include <openssl/evp.h>
 #include <string.h>
@@ -42,7 +42,8 @@
 #include <grpc/support/slice.h>
 
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/security/b64.h"
+#include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
+#include "src/core/lib/security/util/b64.h"
 #include "test/core/util/test_config.h"
 
 /* This JSON key was generated with the GCE console and revoked immediately.

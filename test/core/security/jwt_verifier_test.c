@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/lib/security/jwt_verifier.h"
+#include "src/core/lib/security/credentials/jwt/jwt_verifier.h"
 
 #include <string.h>
 
@@ -43,8 +43,8 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/http/httpcli.h"
-#include "src/core/lib/security/b64.h"
-#include "src/core/lib/security/json_token.h"
+#include "src/core/lib/security/util/b64.h"
+#include "src/core/lib/security/credentials/jwt/json_token.h"
 #include "test/core/util/test_config.h"
 
 /* This JSON key was generated with the GCE console and revoked immediately.
