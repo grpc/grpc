@@ -1430,7 +1430,7 @@ static grpc_error *parse_value_string(grpc_chttp2_hpack_parser *p,
 
 static grpc_error *parse_value_string_with_indexed_key(
     grpc_chttp2_hpack_parser *p, const uint8_t *cur, const uint8_t *end) {
-  bool is_binary;
+  bool is_binary = false;
   grpc_error *err = is_binary_indexed_header(p, &is_binary);
   if (err != GRPC_ERROR_NONE) return err;
   return parse_value_string(p, cur, end, is_binary);
