@@ -40,8 +40,8 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/lib/security/security_connector.h"
-#include "src/core/lib/security/security_context.h"
+#include "src/core/lib/security/context/security_context.h"
+#include "src/core/lib/security/transport/security_connector.h"
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/support/tmpfile.h"

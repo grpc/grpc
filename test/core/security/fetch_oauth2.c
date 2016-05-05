@@ -42,7 +42,7 @@
 #include <grpc/support/slice.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/security/credentials.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/support/load_file.h"
 #include "test/core/security/oauth2_utils.h"
 

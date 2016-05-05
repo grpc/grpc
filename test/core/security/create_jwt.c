@@ -34,8 +34,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/lib/security/credentials.h"
-#include "src/core/lib/security/json_token.h"
+#include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 #include "src/core/lib/support/load_file.h"
 
 #include <grpc/support/alloc.h>
