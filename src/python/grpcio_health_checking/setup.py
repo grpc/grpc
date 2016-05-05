@@ -40,7 +40,7 @@ import setuptools
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # Break import-style to ensure we can actually find our commands module.
-import commands
+import health_commands
 
 _PACKAGES = (
     setuptools.find_packages('.')
@@ -51,19 +51,21 @@ _PACKAGE_DIRECTORIES = {
 }
 
 _INSTALL_REQUIRES = (
-    'grpcio>=0.11.0b0',
+    'grpcio>=grpcio-0.14.0.dev0',
 )
 
 _SETUP_REQUIRES = _INSTALL_REQUIRES
 
 _COMMAND_CLASS = {
-    'build_proto_modules': commands.BuildProtoModules,
-    'build_py': commands.BuildPy,
+    'copy_proto_modules': health_commands.CopyProtoModules,
+    'build_proto_modules': health_commands.BuildProtoModules,
+    'build_py': health_commands.BuildPy,
+    'sdist': health_commands.SDist,
 }
 
 setuptools.setup(
     name='grpcio_health_checking',
-    version='0.11.0b0',
+    version='0.14.0b1',
     packages=list(_PACKAGES),
     package_dir=_PACKAGE_DIRECTORIES,
     install_requires=_INSTALL_REQUIRES,
