@@ -91,7 +91,8 @@ static void push_setting(grpc_chttp2_transport *t, grpc_chttp2_setting_id id,
                          uint32_t value);
 
 /** Start disconnection chain */
-static void drop_connection(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t);
+static void drop_connection(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
+                            grpc_error *error);
 
 /** Perform a transport_op */
 static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
@@ -128,7 +129,7 @@ static void finish_global_actions(grpc_exec_ctx *exec_ctx,
 
 static void connectivity_state_set(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
-    grpc_connectivity_state state, const char *reason);
+    grpc_connectivity_state state, grpc_error *error, const char *reason);
 
 static void check_read_ops(grpc_exec_ctx *exec_ctx,
                            grpc_chttp2_transport_global *transport_global);
@@ -387,7 +388,7 @@ static void destroy_transport_locked(grpc_exec_ctx *exec_ctx,
                                      grpc_chttp2_stream *s_ignored,
                                      void *arg_ignored) {
   t->destroying = 1;
-  drop_connection(exec_ctx, t);
+  drop_connection(exec_ctx, t, GRPC_ERROR_CREATE("Transport destroyed"));
 }
 
 static void destroy_transport(grpc_exec_ctx *exec_ctx, grpc_transport *gt) {
@@ -423,12 +424,11 @@ static void destroy_endpoint(grpc_exec_ctx *exec_ctx,
 
 static void close_transport_locked(grpc_exec_ctx *exec_ctx,
                                    grpc_chttp2_transport *t,
-                                   grpc_chttp2_stream *s_ignored,
-                                   void *arg_ignored) {
+                                   grpc_error *error) {
   if (!t->closed) {
     t->closed = 1;
     connectivity_state_set(exec_ctx, &t->global, GRPC_CHANNEL_FATAL_FAILURE,
-                           "close_transport");
+                           error, "close_transport");
     if (t->ep) {
       allow_endpoint_shutdown_locked(exec_ctx, t);
     }
@@ -529,7 +529,9 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx,
              s->global.id == 0);
   GPR_ASSERT(!s->global.in_stream_map);
   if (grpc_chttp2_unregister_stream(t, s) && t->global.sent_goaway) {
-    close_transport_locked(exec_ctx, t, NULL, NULL);
+    close_transport_locked(
+        exec_ctx, t,
+        GRPC_ERROR_CREATE("Last stream closed after sending goaway"));
   }
   if (!t->executor.parsing_active && s->global.id) {
     GPR_ASSERT(grpc_chttp2_stream_map_find(&t->parsing_stream_map,
@@ -739,7 +741,7 @@ static void terminate_writing_with_lock(grpc_exec_ctx *exec_ctx,
   allow_endpoint_shutdown_locked(exec_ctx, t);
 
   if (error != GRPC_ERROR_NONE) {
-    drop_connection(exec_ctx, t);
+    drop_connection(exec_ctx, t, grpc_error_ref(error));
   }
 
   grpc_chttp2_cleanup_writing(exec_ctx, &t->global, &t->writing);
@@ -782,11 +784,16 @@ void grpc_chttp2_add_incoming_goaway(
     uint32_t goaway_error, gpr_slice goaway_text) {
   char *msg = gpr_dump_slice(goaway_text, GPR_DUMP_HEX | GPR_DUMP_ASCII);
   gpr_log(GPR_DEBUG, "got goaway [%d]: %s", goaway_error, msg);
-  gpr_free(msg);
   gpr_slice_unref(goaway_text);
   transport_global->seen_goaway = 1;
-  connectivity_state_set(exec_ctx, transport_global, GRPC_CHANNEL_FATAL_FAILURE,
-                         "got_goaway");
+  connectivity_state_set(
+      exec_ctx, transport_global, GRPC_CHANNEL_FATAL_FAILURE,
+      grpc_error_set_str(
+          grpc_error_set_int(GRPC_ERROR_CREATE("GOAWAY received"),
+                             GRPC_ERROR_INT_HTTP2_ERROR, goaway_error),
+          GRPC_ERROR_STR_RAW_BYTES, msg),
+      "got_goaway");
+  gpr_free(msg);
 }
 
 static void maybe_start_some_streams(
@@ -815,9 +822,9 @@ static void maybe_start_some_streams(
     transport_global->next_stream_id += 2;
 
     if (transport_global->next_stream_id >= MAX_CLIENT_STREAM_ID) {
-      connectivity_state_set(exec_ctx, transport_global,
-                             GRPC_CHANNEL_TRANSIENT_FAILURE,
-                             "no_more_stream_ids");
+      connectivity_state_set(
+          exec_ctx, transport_global, GRPC_CHANNEL_TRANSIENT_FAILURE,
+          GRPC_ERROR_CREATE("Stream IDs exhausted"), "no_more_stream_ids");
     }
 
     stream_global->outgoing_window =
@@ -1085,7 +1092,7 @@ static void perform_transport_op_locked(grpc_exec_ctx *exec_ctx,
                                         grpc_chttp2_stream *s_unused,
                                         void *stream_op) {
   grpc_transport_op *op = stream_op;
-  bool close_transport = op->disconnect;
+  grpc_error *close_transport = op->disconnect_with_error;
 
   /* If there's a set_accept_stream ensure that we're not parsing
      to avoid changing things out from underneath */
@@ -1110,7 +1117,9 @@ static void perform_transport_op_locked(grpc_exec_ctx *exec_ctx,
         t->global.last_incoming_stream_id,
         (uint32_t)grpc_chttp2_grpc_status_to_http2_error(op->goaway_status),
         gpr_slice_ref(*op->goaway_message), &t->global.qbuf);
-    close_transport = !grpc_chttp2_has_streams(t);
+    close_transport = grpc_chttp2_has_streams(t)
+                          ? GRPC_ERROR_NONE
+                          : GRPC_ERROR_CREATE("GOAWAY sent");
   }
 
   if (op->set_accept_stream) {
@@ -1131,8 +1140,8 @@ static void perform_transport_op_locked(grpc_exec_ctx *exec_ctx,
     send_ping_locked(t, op->send_ping);
   }
 
-  if (close_transport) {
-    close_transport_locked(exec_ctx, t, NULL, NULL);
+  if (close_transport != GRPC_ERROR_NONE) {
+    close_transport_locked(exec_ctx, t, close_transport);
   }
 }
 
@@ -1231,7 +1240,9 @@ static void remove_stream(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   }
 
   if (grpc_chttp2_unregister_stream(t, s) && t->global.sent_goaway) {
-    close_transport_locked(exec_ctx, t, NULL, NULL);
+    close_transport_locked(
+        exec_ctx, t,
+        GRPC_ERROR_CREATE("Last stream closed after sending GOAWAY"));
   }
   if (grpc_chttp2_list_remove_writable_stream(&t->global, &s->global)) {
     GRPC_CHTTP2_STREAM_UNREF(exec_ctx, &s->global, "chttp2_writing");
@@ -1490,8 +1501,9 @@ static void end_all_the_calls(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_for_all_streams(&t->global, exec_ctx, cancel_stream_cb);
 }
 
-static void drop_connection(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t) {
-  close_transport_locked(exec_ctx, t, NULL, NULL);
+static void drop_connection(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
+                            grpc_error *error) {
+  close_transport_locked(exec_ctx, t, error);
   end_all_the_calls(exec_ctx, t);
 }
 
@@ -1625,10 +1637,13 @@ static void post_reading_action_locked(grpc_exec_ctx *exec_ctx,
                                        grpc_chttp2_transport *t,
                                        grpc_chttp2_stream *s_unused,
                                        void *arg) {
-  bool success = (bool)(uintptr_t)arg;
+  grpc_error *error = arg;
   bool keep_reading = false;
-  if (!success || t->closed) {
-    drop_connection(exec_ctx, t);
+  if (error == GRPC_ERROR_NONE && t->closed) {
+    error = GRPC_ERROR_CREATE("Transport closed");
+  }
+  if (error != GRPC_ERROR_NONE) {
+    drop_connection(exec_ctx, t, error);
     t->endpoint_reading = 0;
     if (!t->executor.writing_active && t->ep) {
       grpc_endpoint_destroy(exec_ctx, t->ep);
@@ -1658,13 +1673,13 @@ static void post_reading_action_locked(grpc_exec_ctx *exec_ctx,
 
 static void connectivity_state_set(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
-    grpc_connectivity_state state, const char *reason) {
+    grpc_connectivity_state state, grpc_error *error, const char *reason) {
   GRPC_CHTTP2_IF_TRACING(
       gpr_log(GPR_DEBUG, "set connectivity_state=%d", state));
   grpc_connectivity_state_set(
       exec_ctx,
       &TRANSPORT_FROM_GLOBAL(transport_global)->channel_callback.state_tracker,
-      state, reason);
+      state, error, reason);
 }
 
 /*******************************************************************************

@@ -69,6 +69,7 @@ void grpc_connectivity_state_destroy(grpc_exec_ctx *exec_ctx,
                                      grpc_connectivity_state_tracker *tracker) {
   grpc_error *error;
   grpc_connectivity_state_watcher *w;
+  grpc_error_unref(tracker->current_error);
   while ((w = tracker->watchers)) {
     tracker->watchers = w->next;
 
@@ -85,10 +86,13 @@ void grpc_connectivity_state_destroy(grpc_exec_ctx *exec_ctx,
 }
 
 grpc_connectivity_state grpc_connectivity_state_check(
-    grpc_connectivity_state_tracker *tracker) {
+    grpc_connectivity_state_tracker *tracker, grpc_error **error) {
   if (grpc_connectivity_state_trace) {
     gpr_log(GPR_DEBUG, "CONWATCH: %p %s: get %s", tracker, tracker->name,
             grpc_connectivity_state_name(tracker->current_state));
+  }
+  if (error != NULL) {
+    *error = grpc_error_ref(tracker->current_error);
   }
   return tracker->current_state;
 }
@@ -143,13 +147,26 @@ int grpc_connectivity_state_notify_on_state_change(
 void grpc_connectivity_state_set(grpc_exec_ctx *exec_ctx,
                                  grpc_connectivity_state_tracker *tracker,
                                  grpc_connectivity_state state,
-                                 const char *reason) {
+                                 grpc_error *error, const char *reason) {
   grpc_connectivity_state_watcher *w;
   if (grpc_connectivity_state_trace) {
     gpr_log(GPR_DEBUG, "SET: %p %s: %s --> %s [%s]", tracker, tracker->name,
             grpc_connectivity_state_name(tracker->current_state),
             grpc_connectivity_state_name(state), reason);
   }
+  switch (state) {
+    case GRPC_CHANNEL_CONNECTING:
+    case GRPC_CHANNEL_IDLE:
+    case GRPC_CHANNEL_READY:
+      GPR_ASSERT(error == GRPC_ERROR_NONE);
+      break;
+    case GRPC_CHANNEL_FATAL_FAILURE:
+    case GRPC_CHANNEL_TRANSIENT_FAILURE:
+      GPR_ASSERT(error != GRPC_ERROR_NONE);
+      break;
+  }
+  grpc_error_unref(tracker->current_error);
+  tracker->current_error = error;
   if (tracker->current_state == state) {
     return;
   }
@@ -158,7 +175,8 @@ void grpc_connectivity_state_set(grpc_exec_ctx *exec_ctx,
   while ((w = tracker->watchers) != NULL) {
     *w->current = tracker->current_state;
     tracker->watchers = w->next;
-    grpc_exec_ctx_push(exec_ctx, w->notify, GRPC_ERROR_NONE, NULL);
+    grpc_exec_ctx_push(exec_ctx, w->notify,
+                       grpc_error_ref(tracker->current_error), NULL);
     gpr_free(w);
   }
 }

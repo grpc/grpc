@@ -138,6 +138,8 @@ void grpc_lb_policy_notify_on_state_change(grpc_exec_ctx *exec_ctx,
 }
 
 grpc_connectivity_state grpc_lb_policy_check_connectivity(
-    grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy) {
-  return policy->vtable->check_connectivity(exec_ctx, policy);
+    grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
+    grpc_error **connectivity_error) {
+  return policy->vtable->check_connectivity(exec_ctx, policy,
+                                            connectivity_error);
 }

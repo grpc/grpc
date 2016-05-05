@@ -329,6 +329,7 @@ typedef struct {
   gpr_slice signed_data;
   void *user_data;
   grpc_jwt_verification_done_cb user_cb;
+  grpc_http_response response;
 } verifier_cb_ctx;
 
 /* Takes ownership of the header, claims and signature. */
@@ -571,9 +572,9 @@ end:
 }
 
 static void on_keys_retrieved(grpc_exec_ctx *exec_ctx, void *user_data,
-                              const grpc_httpcli_response *response) {
-  grpc_json *json = json_from_http(response);
+                              grpc_error *error) {
   verifier_cb_ctx *ctx = (verifier_cb_ctx *)user_data;
+  grpc_json *json = json_from_http(&ctx->response);
   EVP_PKEY *verification_key = NULL;
   grpc_jwt_verifier_status status = GRPC_JWT_VERIFIER_GENERIC_ERROR;
   grpc_jwt_claims *claims = NULL;
@@ -612,10 +613,11 @@ end:
 }
 
 static void on_openid_config_retrieved(grpc_exec_ctx *exec_ctx, void *user_data,
-                                       const grpc_httpcli_response *response) {
+                                       grpc_error *error) {
   const grpc_json *cur;
-  grpc_json *json = json_from_http(response);
   verifier_cb_ctx *ctx = (verifier_cb_ctx *)user_data;
+  const grpc_http_response *response = &ctx->response;
+  grpc_json *json = json_from_http(response);
   grpc_httpcli_request req;
   const char *jwks_uri;
 
@@ -644,7 +646,7 @@ static void on_openid_config_retrieved(grpc_exec_ctx *exec_ctx, void *user_data,
   grpc_httpcli_get(
       exec_ctx, &ctx->verifier->http_ctx, ctx->pollset, &req,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_max_delay),
-      on_keys_retrieved, ctx);
+      grpc_closure_create(on_keys_retrieved, ctx), &ctx->response);
   grpc_json_destroy(json);
   gpr_free(req.host);
   return;
@@ -686,7 +688,7 @@ static void verifier_put_mapping(grpc_jwt_verifier *v, const char *email_domain,
 static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
                                     verifier_cb_ctx *ctx) {
   const char *at_sign;
-  grpc_httpcli_response_cb http_cb;
+  grpc_closure *http_cb;
   char *path_prefix = NULL;
   const char *iss;
   grpc_httpcli_request req;
@@ -730,7 +732,7 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
       *(path_prefix++) = '\0';
       gpr_asprintf(&req.http.path, "/%s/%s", path_prefix, iss);
     }
-    http_cb = on_keys_retrieved;
+    http_cb = grpc_closure_create(on_keys_retrieved, ctx);
   } else {
     req.host = gpr_strdup(strstr(iss, "https://") == iss ? iss + 8 : iss);
     path_prefix = strchr(req.host, '/');
@@ -741,13 +743,13 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
       gpr_asprintf(&req.http.path, "/%s%s", path_prefix,
                    GRPC_OPENID_CONFIG_URL_SUFFIX);
     }
-    http_cb = on_openid_config_retrieved;
+    http_cb = grpc_closure_create(on_openid_config_retrieved, ctx);
   }
 
   grpc_httpcli_get(
       exec_ctx, &ctx->verifier->http_ctx, ctx->pollset, &req,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_max_delay),
-      http_cb, ctx);
+      http_cb, &ctx->response);
   gpr_free(req.host);
   gpr_free(req.http.path);
   return;

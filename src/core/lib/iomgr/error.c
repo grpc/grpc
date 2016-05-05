@@ -104,6 +104,10 @@ static const char *error_int_name(grpc_error_ints key) {
       return "size";
     case GRPC_ERROR_INT_HTTP2_ERROR:
       return "http2_error";
+    case GRPC_ERROR_INT_TSI_CODE:
+      return "tsi_code";
+    case GRPC_ERROR_INT_SECURITY_STATUS:
+      return "security_status";
   }
   GPR_UNREACHABLE_CODE(return "unknown");
 }
@@ -124,6 +128,8 @@ static const char *error_str_name(grpc_error_strs key) {
       return "grpc_message";
     case GRPC_ERROR_STR_RAW_BYTES:
       return "raw_bytes";
+    case GRPC_ERROR_STR_TSI_ERROR:
+      return "tsi_error";
   }
   GPR_UNREACHABLE_CODE(return "unknown");
 }

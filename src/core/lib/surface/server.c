@@ -273,7 +273,7 @@ static void shutdown_cleanup(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 static void send_shutdown(grpc_exec_ctx *exec_ctx, grpc_channel *channel,
-                          int send_goaway, int send_disconnect) {
+                          int send_goaway, grpc_error *send_disconnect) {
   grpc_transport_op op;
   struct shutdown_cleanup_args *sc;
   grpc_channel_element *elem;
@@ -284,7 +284,7 @@ static void send_shutdown(grpc_exec_ctx *exec_ctx, grpc_channel *channel,
   sc->slice = gpr_slice_from_copied_string("Server shutdown");
   op.goaway_message = &sc->slice;
   op.goaway_status = GRPC_STATUS_OK;
-  op.disconnect = send_disconnect;
+  op.disconnect_with_error = send_disconnect;
   grpc_closure_init(&sc->closure, shutdown_cleanup, sc);
   op.on_consumed = &sc->closure;
 
@@ -295,7 +295,7 @@ static void send_shutdown(grpc_exec_ctx *exec_ctx, grpc_channel *channel,
 static void channel_broadcaster_shutdown(grpc_exec_ctx *exec_ctx,
                                          channel_broadcaster *cb,
                                          int send_goaway,
-                                         int force_disconnect) {
+                                         grpc_error *force_disconnect) {
   size_t i;
 
   for (i = 0; i < cb->num_channels; i++) {
@@ -1100,7 +1100,9 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
   op.set_accept_stream_user_data = chand;
   op.on_connectivity_state_change = &chand->channel_connectivity_changed;
   op.connectivity_state = &chand->connectivity_state;
-  op.disconnect = gpr_atm_acq_load(&s->shutdown_flag) != 0;
+  if (gpr_atm_acq_load(&s->shutdown_flag) != 0) {
+    op.disconnect_with_error = GRPC_ERROR_CREATE("Server shutdown");
+  }
   grpc_transport_perform_op(exec_ctx, transport, &op);
 }
 
@@ -1185,7 +1187,8 @@ void grpc_server_cancel_all_calls(grpc_server *server) {
   channel_broadcaster_init(server, &broadcaster);
   gpr_mu_unlock(&server->mu_global);
 
-  channel_broadcaster_shutdown(&exec_ctx, &broadcaster, 0, 1);
+  channel_broadcaster_shutdown(&exec_ctx, &broadcaster, 0,
+                               GRPC_ERROR_CREATE("Cancelling all calls"));
   grpc_exec_ctx_finish(&exec_ctx);
 }
 

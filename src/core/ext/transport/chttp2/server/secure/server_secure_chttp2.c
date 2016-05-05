@@ -37,6 +37,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
@@ -230,15 +231,28 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
     }
   }
   if (count == 0) {
-    gpr_log(GPR_ERROR, "No address added out of total %d resolved",
-            resolved->naddrs);
+    char *msg;
+    gpr_asprintf(&msg, "No address added out of total %d resolved",
+                 resolved->naddrs);
+    err = GRPC_ERROR_CREATE_REFERENCING(msg, errors, resolved->naddrs);
     goto error;
+  } else if (count != resolved->naddrs) {
+    char *msg;
+    gpr_asprintf(&msg, "Only %d addresses added out of total %d resolved",
+                 count, resolved->naddrs);
+    err = GRPC_ERROR_CREATE_REFERENCING(msg, errors, resolved->naddrs);
+    gpr_free(msg);
+
+    const char *warning_message = grpc_error_string(err);
+    gpr_log(GPR_INFO, "WARNING: %s", warning_message);
+    grpc_error_free_string(warning_message);
+    /* we managed to bind some addresses: continue */
+  } else {
+    for (i = 0; i < resolved->naddrs; i++) {
+      grpc_error_unref(errors[i]);
+    }
   }
-  if (count != resolved->naddrs) {
-    gpr_log(GPR_ERROR, "Only %d addresses added out of total %d resolved",
-            count, resolved->naddrs);
-    /* if it's an error, don't we want to goto error; here ? */
-  }
+  gpr_free(errors);
   grpc_resolved_addresses_destroy(resolved);
 
   /* Register with the server only upon success */
