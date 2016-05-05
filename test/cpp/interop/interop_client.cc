@@ -746,14 +746,9 @@ bool InteropClient::DoTimeoutOnSleepingServer() {
 
   StreamingOutputCallRequest request;
   request.mutable_payload()->set_body(grpc::string(27182, '\0'));
-
-  if (!stream->Write(request)) {
-    gpr_log(GPR_ERROR, "DoTimeoutOnSleepingServer(): stream->Write() failed");
-    return TransientFailureOrAbort();
-  }
+  stream->Write(request);
 
   Status s = stream->Finish();
-
   if (!AssertStatusCode(s, StatusCode::DEADLINE_EXCEEDED)) {
     return false;
   }
