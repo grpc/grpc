@@ -833,6 +833,7 @@ include/grpc++/impl/codegen/sync_no_cxx11.h \
 include/grpc++/impl/codegen/sync_stream.h \
 include/grpc++/impl/codegen/time.h \
 include/grpc/impl/codegen/byte_buffer.h \
+include/grpc/impl/codegen/byte_buffer_reader.h \
 include/grpc/impl/codegen/compression_types.h \
 include/grpc/impl/codegen/connectivity_state.h \
 include/grpc/impl/codegen/grpc_types.h \
