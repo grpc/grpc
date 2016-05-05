@@ -474,13 +474,13 @@ struct grpc_chttp2_stream_parsing {
   uint32_t id;
   /** has this stream received a close */
   uint8_t received_close;
-  /** saw a rst_stream */
-  uint8_t saw_rst_stream;
   /** how many header frames have we received? */
   uint8_t header_frames_received;
   /** which metadata did we get (on this parse) */
   uint8_t got_metadata_on_parse[2];
-  /** should we raise the seen_error flag in transport_global */
+  /** saw some stream level error */
+  grpc_error *forced_close_error;
+  /** should we raise the seen_error flag in stream_global */
   uint8_t seen_error;
   /** window available for peer to send to us */
   int64_t incoming_window;
