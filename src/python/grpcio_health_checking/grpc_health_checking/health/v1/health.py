@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,34 +27,40 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+"""Reference implementation for health checking in gRPC Python."""
 
-# change to grpc repo root
-cd $(dirname $0)/../..
+import threading
 
-TOX_PYTHON_ENV="$1"
+from grpc_health_checking.health.v1 import health_pb2
 
-ROOT=`pwd`
-export LD_LIBRARY_PATH=$ROOT/libs/$CONFIG
-export DYLD_LIBRARY_PATH=$ROOT/libs/$CONFIG
-export PATH=$ROOT/bins/$CONFIG:$ROOT/bins/$CONFIG/protobuf:$PATH
-export CFLAGS="-I$ROOT/include -std=gnu99"
-export LDFLAGS="-L$ROOT/libs/$CONFIG"
-export GRPC_PYTHON_BUILD_WITH_CYTHON=1
-export GRPC_PYTHON_USE_PRECOMPILED_BINARIES=0
 
-if [ "$CONFIG" = "gcov" ]
-then
-  export GRPC_PYTHON_ENABLE_CYTHON_TRACING=1
-fi
+class HealthServicer(health_pb2.BetaHealthServicer):
+  """Servicer handling RPCs for service statuses."""
 
-tox -e ${TOX_PYTHON_ENV} --notest
+  def __init__(self):
+    self._server_status_lock = threading.Lock()
+    self._server_status = {}
 
-$ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/setup.py build
-$ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/setup.py build_py
-$ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/setup.py build_ext --inplace
-$ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/setup.py gather --test
+  def Check(self, request, context):
+    with self._server_status_lock:
+      if request.service not in self._server_status:
+        # TODO(atash): once the Python API has a way of setting the server
+        # status, bring us into conformance with the health check spec by
+        # returning the NOT_FOUND status here.
+        raise NotImplementedError()
+      else:
+        return health_pb2.HealthCheckResponse(
+            status=self._server_status[request.service])
 
-# Build the health checker
-$ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/src/python/grpcio_health_checking/setup.py build
-$ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/src/python/grpcio_health_checking/setup.py build_py
+  def set(self, service, status):
+    """Sets the status of a service.
+
+    Args:
+        service: string, the name of the service.
+            NOTE, '' must be set.
+        status: HealthCheckResponse.status enum value indicating
+            the status of the service
+    """
+    with self._server_status_lock:
+      self._server_status[service] = status
+

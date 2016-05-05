@@ -33,11 +33,16 @@ import distutils
 import glob
 import os
 import os.path
+import shutil
 import subprocess
 import sys
 
 import setuptools
 from setuptools.command import build_py
+from setuptools.command import sdist
+
+ROOT_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
+HEALTH_PROTO = os.path.join(ROOT_DIR, '../../proto/grpc/health/v1/health.proto')
 
 
 class BuildProtoModules(setuptools.Command):
@@ -76,9 +81,34 @@ class BuildProtoModules(setuptools.Command):
       raise Exception('{}\nOutput:\n{}'.format(e.message, e.output))
 
 
+class CopyProtoModules(setuptools.Command):
+  """Command to copy proto modules from grpc/src/proto."""
+
+  def initialize_options(self):
+    pass
+
+  def finalize_options(self):
+    pass
+
+  def run(self):
+    if os.path.isfile(HEALTH_PROTO):
+      shutil.copyfile(
+          HEALTH_PROTO,
+          os.path.join(ROOT_DIR, 'grpc_health_checking/health/v1/health.proto'))
+
+
 class BuildPy(build_py.build_py):
   """Custom project build command."""
 
   def run(self):
+    self.run_command('copy_proto_modules')
     self.run_command('build_proto_modules')
     build_py.build_py.run(self)
+
+
+class SDist(sdist.sdist):
+  """Custom project build command."""
+
+  def run(self):
+    self.run_command('copy_proto_modules')
+    sdist.sdist.run(self)
