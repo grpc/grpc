@@ -49,7 +49,6 @@ namespace testing {
 using std::pair;
 using std::vector;
 
-// TODO(sreek): Add more test cases here in future
 enum TestCaseType {
   UNKNOWN_TEST = -1,
   EMPTY_UNARY = 0,
@@ -57,7 +56,16 @@ enum TestCaseType {
   LARGE_COMPRESSED_UNARY = 2,
   CLIENT_STREAMING = 3,
   SERVER_STREAMING = 4,
-  EMPTY_STREAM = 5
+  SERVER_COMPRESSED_STREAMING = 5,
+  SLOW_CONSUMER = 6,
+  HALF_DUPLEX = 7,
+  PING_PONG = 8,
+  CANCEL_AFTER_BEGIN = 9,
+  CANCEL_AFTER_FIRST_RESPONSE = 10,
+  TIMEOUT_ON_SLEEPING_SERVER = 11,
+  EMPTY_STREAM = 12,
+  STATUS_CODE_AND_MESSAGE = 13,
+  CUSTOM_METADATA = 14
 };
 
 const vector<pair<TestCaseType, grpc::string>> kTestCaseList = {
@@ -66,7 +74,16 @@ const vector<pair<TestCaseType, grpc::string>> kTestCaseList = {
     {LARGE_COMPRESSED_UNARY, "large_compressed_unary"},
     {CLIENT_STREAMING, "client_streaming"},
     {SERVER_STREAMING, "server_streaming"},
-    {EMPTY_STREAM, "empty_stream"}};
+    {SERVER_COMPRESSED_STREAMING, "server_compressed_streaming"},
+    {SLOW_CONSUMER, "slow_consumer"},
+    {HALF_DUPLEX, "half_duplex"},
+    {PING_PONG, "ping_pong"},
+    {CANCEL_AFTER_BEGIN, "cancel_after_begin"},
+    {CANCEL_AFTER_FIRST_RESPONSE, "cancel_after_first_response"},
+    {TIMEOUT_ON_SLEEPING_SERVER, "timeout_on_sleeping_server"},
+    {EMPTY_STREAM, "empty_stream"},
+    {STATUS_CODE_AND_MESSAGE, "status_code_and_message"},
+    {CUSTOM_METADATA, "custom_metadata"}};
 
 class WeightedRandomTestSelector {
  public:
@@ -95,7 +112,7 @@ class StressTestInteropClient {
   void MainLoop(std::shared_ptr<QpsGauge> qps_gauge);
 
  private:
-  void RunTest(TestCaseType test_case);
+  bool RunTest(TestCaseType test_case);
 
   int test_id_;
   const grpc::string& server_address_;

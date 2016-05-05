@@ -127,31 +127,67 @@ void StressTestInteropClient::MainLoop(std::shared_ptr<QpsGauge> qps_gauge) {
   }
 }
 
-// TODO(sree): Add all interop tests
-void StressTestInteropClient::RunTest(TestCaseType test_case) {
+bool StressTestInteropClient::RunTest(TestCaseType test_case) {
+  bool is_success = false;
   switch (test_case) {
     case EMPTY_UNARY: {
-      interop_client_->DoEmpty();
+      is_success = interop_client_->DoEmpty();
       break;
     }
     case LARGE_UNARY: {
-      interop_client_->DoLargeUnary();
+      is_success = interop_client_->DoLargeUnary();
       break;
     }
     case LARGE_COMPRESSED_UNARY: {
-      interop_client_->DoLargeCompressedUnary();
+      is_success = interop_client_->DoLargeCompressedUnary();
       break;
     }
     case CLIENT_STREAMING: {
-      interop_client_->DoRequestStreaming();
+      is_success = interop_client_->DoRequestStreaming();
       break;
     }
     case SERVER_STREAMING: {
-      interop_client_->DoResponseStreaming();
+      is_success = interop_client_->DoResponseStreaming();
+      break;
+    }
+    case SERVER_COMPRESSED_STREAMING: {
+      is_success = interop_client_->DoResponseCompressedStreaming();
+      break;
+    }
+    case SLOW_CONSUMER: {
+      is_success = interop_client_->DoResponseStreamingWithSlowConsumer();
+      break;
+    }
+    case HALF_DUPLEX: {
+      is_success = interop_client_->DoHalfDuplex();
+      break;
+    }
+    case PING_PONG: {
+      is_success = interop_client_->DoPingPong();
+      break;
+    }
+    case CANCEL_AFTER_BEGIN: {
+      is_success = interop_client_->DoCancelAfterBegin();
+      break;
+    }
+    case CANCEL_AFTER_FIRST_RESPONSE: {
+      is_success = interop_client_->DoCancelAfterFirstResponse();
+      break;
+    }
+    case TIMEOUT_ON_SLEEPING_SERVER: {
+      is_success = interop_client_->DoTimeoutOnSleepingServer();
       break;
     }
     case EMPTY_STREAM: {
-      interop_client_->DoEmptyStream();
+      is_success = interop_client_->DoEmptyStream();
+      break;
+    }
+    case STATUS_CODE_AND_MESSAGE: {
+      is_success = interop_client_->DoStatusWithMessage();
+      break;
+    }
+    case CUSTOM_METADATA: {
+      is_success = interop_client_->DoCustomMetadata();
       break;
     }
     default: {
@@ -160,6 +196,8 @@ void StressTestInteropClient::RunTest(TestCaseType test_case) {
       break;
     }
   }
+
+  return is_success;
 }
 
 }  // namespace testing
