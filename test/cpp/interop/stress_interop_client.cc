@@ -84,11 +84,12 @@ StressTestInteropClient::StressTestInteropClient(
     int test_id, const grpc::string& server_address,
     std::shared_ptr<Channel> channel,
     const WeightedRandomTestSelector& test_selector, long test_duration_secs,
-    long sleep_duration_ms)
+    long sleep_duration_ms, bool do_not_abort_on_transient_failures)
     : test_id_(test_id),
       server_address_(server_address),
       channel_(channel),
-      interop_client_(new InteropClient(channel, false)),
+      interop_client_(new InteropClient(channel, false,
+                                        do_not_abort_on_transient_failures)),
       test_selector_(test_selector),
       test_duration_secs_(test_duration_secs),
       sleep_duration_ms_(sleep_duration_ms) {}
