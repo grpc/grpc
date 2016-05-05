@@ -44,32 +44,32 @@
 
 struct grpc_load_reporting_config {
   grpc_load_reporting_fn fn;
-  void *data;
+  void *user_data;
 };
 
 grpc_load_reporting_config *grpc_load_reporting_config_create(
-    grpc_load_reporting_fn fn, void *data) {
+    grpc_load_reporting_fn fn, void *user_data) {
+  GPR_ASSERT(fn != NULL);
   grpc_load_reporting_config *lrc =
       gpr_malloc(sizeof(grpc_load_reporting_config));
   lrc->fn = fn;
-  lrc->data = data;
+  lrc->user_data = user_data;
   return lrc;
 }
 
 grpc_load_reporting_config *grpc_load_reporting_config_copy(
     grpc_load_reporting_config *src) {
-  return grpc_load_reporting_config_create(src->fn, src->data);
+  return grpc_load_reporting_config_create(src->fn, src->user_data);
 }
 
 void grpc_load_reporting_config_destroy(grpc_load_reporting_config *lrc) {
   gpr_free(lrc);
 }
 
-void grpc_load_reporting_config_call(grpc_load_reporting_config *lrc,
-                                     const grpc_call_stats *stats) {
-  if (lrc->fn != NULL) {
-    lrc->fn(stats, lrc->data);
-  }
+void grpc_load_reporting_config_call(
+    grpc_load_reporting_config *lrc,
+    const grpc_load_reporting_call_data *call_data) {
+  lrc->fn(call_data, lrc->user_data);
 }
 
 static bool is_load_reporting_enabled(const grpc_channel_args *a) {
@@ -102,7 +102,7 @@ static void *lrd_arg_copy(void *p) {
 static int lrd_arg_cmp(void *a, void *b) {
   grpc_load_reporting_config *lhs = a;
   grpc_load_reporting_config *rhs = b;
-  return !(lhs->fn == rhs->fn && lhs->data == rhs->data);
+  return !(lhs->fn == rhs->fn && lhs->user_data == rhs->user_data);
 }
 
 static const grpc_arg_pointer_vtable lrd_ptr_vtable = {

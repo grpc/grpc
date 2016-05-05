@@ -76,15 +76,26 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
 
 typedef struct {
   int64_t total_bytes;
-  bool processed;
+  bool fully_processed;
+  uint32_t initial_token;
+  uint32_t final_token;
 } aggregated_bw_stats;
 
-static void sample_fn(const grpc_call_stats *stats, void *lr_data) {
-  aggregated_bw_stats *custom_stats = (aggregated_bw_stats *)lr_data;
-  custom_stats->total_bytes =
-      (int64_t)(stats->transport_stream_stats.outgoing.data_bytes +
-                stats->transport_stream_stats.incoming.data_bytes);
-  custom_stats->processed = true;
+static void sample_fn(const grpc_load_reporting_call_data *call_data,
+                      void *user_data) {
+  GPR_ASSERT(user_data != NULL);
+  aggregated_bw_stats *custom_stats = (aggregated_bw_stats *)user_data;
+  if (call_data == NULL) {
+    /* initial invocation */
+    custom_stats->initial_token = 0xDEADBEEF;
+  } else {
+    /* final invocation */
+    custom_stats->total_bytes =
+        (int64_t)(call_data->stats->transport_stream_stats.outgoing.data_bytes +
+                  call_data->stats->transport_stream_stats.incoming.data_bytes);
+    custom_stats->final_token = 0xCAFED00D;
+    custom_stats->fully_processed = true;
+  }
 }
 
 void chttp2_init_client_fullstack(grpc_end2end_test_fixture *f,
@@ -131,11 +142,11 @@ int main(int argc, char **argv) {
   aggregated_bw_stats *aggr_stats_client =
       gpr_malloc(sizeof(aggregated_bw_stats));
   aggr_stats_client->total_bytes = -1;
-  aggr_stats_client->processed = false;
+  aggr_stats_client->fully_processed = false;
   aggregated_bw_stats *aggr_stats_server =
       gpr_malloc(sizeof(aggregated_bw_stats));
   aggr_stats_server->total_bytes = -1;
-  aggr_stats_server->processed = false;
+  aggr_stats_server->fully_processed = false;
 
   g_client_lrc =
       grpc_load_reporting_config_create(sample_fn, aggr_stats_client);
@@ -155,11 +166,15 @@ int main(int argc, char **argv) {
   grpc_load_reporting_config_destroy(g_client_lrc);
   grpc_load_reporting_config_destroy(g_server_lrc);
 
-  if (aggr_stats_client->processed) {
+  if (aggr_stats_client->fully_processed) {
     GPR_ASSERT(aggr_stats_client->total_bytes >= 0);
+    GPR_ASSERT(aggr_stats_client->initial_token == 0xDEADBEEF);
+    GPR_ASSERT(aggr_stats_client->final_token == 0xCAFED00D);
   }
-  if (aggr_stats_server->processed) {
+  if (aggr_stats_server->fully_processed) {
     GPR_ASSERT(aggr_stats_server->total_bytes >= 0);
+    GPR_ASSERT(aggr_stats_server->initial_token == 0xDEADBEEF);
+    GPR_ASSERT(aggr_stats_server->final_token == 0xCAFED00D);
   }
 
   gpr_free(aggr_stats_client);

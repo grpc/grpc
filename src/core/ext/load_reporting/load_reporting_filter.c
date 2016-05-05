@@ -32,6 +32,7 @@
  */
 
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <string.h>
 
@@ -39,28 +40,40 @@
 #include "src/core/ext/load_reporting/load_reporting_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/transport/static_metadata.h"
 
-typedef struct call_data { void *dummy; } call_data;
+typedef struct call_data { const char *trailing_md_string; } call_data;
 typedef struct channel_data {
   gpr_mu mu;
   grpc_load_reporting_config *lrc;
 } channel_data;
 
+static void invoke_lr_fn_locked(grpc_load_reporting_config *lrc,
+                                grpc_load_reporting_call_data *lr_call_data) {
+  GPR_TIMER_BEGIN("load_reporting_config_fn", 0);
+  grpc_load_reporting_config_call(lrc, lr_call_data);
+  GPR_TIMER_END("load_reporting_config_fn", 0);
+}
+
 /* Constructor for call_data */
 static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                           grpc_call_element_args *args) {}
+                           grpc_call_element_args *args) {
+  call_data *calld = elem->call_data;
+  memset(calld, 0, sizeof(call_data));
+}
 
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                               const grpc_call_stats *stats, void *ignored) {
   channel_data *chand = elem->channel_data;
-  if (chand->lrc != NULL) {
-    GPR_TIMER_BEGIN("load_reporting_filter", 0);
-    gpr_mu_lock(&chand->mu);
-    grpc_load_reporting_config_call(chand->lrc, stats);
-    gpr_mu_unlock(&chand->mu);
-    GPR_TIMER_END("load_reporting_filter", 0);
-  }
+  call_data *calld = elem->call_data;
+
+  grpc_load_reporting_call_data lr_call_data = {stats,
+                                                calld->trailing_md_string};
+
+  gpr_mu_lock(&chand->mu);
+  invoke_lr_fn_locked(chand->lrc, &lr_call_data);
+  gpr_mu_unlock(&chand->mu);
 }
 
 /* Constructor for channel_data */
@@ -84,6 +97,10 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
     }
   }
   GPR_ASSERT(chand->lrc != NULL); /* arg actually found */
+
+  gpr_mu_lock(&chand->mu);
+  invoke_lr_fn_locked(chand->lrc, NULL);
+  gpr_mu_unlock(&chand->mu);
 }
 
 /* Destructor for channel data */
@@ -94,8 +111,34 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   grpc_load_reporting_config_destroy(chand->lrc);
 }
 
+static grpc_mdelem *lr_trailing_md_filter(void *user_data, grpc_mdelem *md) {
+  grpc_call_element *elem = user_data;
+  call_data *calld = elem->call_data;
+
+  if (md->key == GRPC_MDSTR_LOAD_REPORTING) {
+    calld->trailing_md_string = gpr_strdup(grpc_mdstr_as_c_string(md->value));
+    return NULL;
+  }
+
+  return md;
+}
+
+static void lr_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
+                                         grpc_call_element *elem,
+                                         grpc_transport_stream_op *op) {
+  GPR_TIMER_BEGIN("lr_start_transport_stream_op", 0);
+
+  if (op->send_trailing_metadata) {
+    grpc_metadata_batch_filter(op->send_trailing_metadata,
+                               lr_trailing_md_filter, elem);
+  }
+  grpc_call_next_op(exec_ctx, elem, op);
+
+  GPR_TIMER_END("lr_start_transport_stream_op", 0);
+}
+
 const grpc_channel_filter grpc_load_reporting_filter = {
-    grpc_call_next_op,
+    lr_start_transport_stream_op,
     grpc_channel_next_op,
     sizeof(call_data),
     init_call_elem,
