@@ -108,6 +108,7 @@ CONFIG = [
     ('if-range', ''),
     ('if-unmodified-since', ''),
     ('last-modified', ''),
+    ('load-reporting', ''),
     ('link', ''),
     ('location', ''),
     ('max-forwards', ''),

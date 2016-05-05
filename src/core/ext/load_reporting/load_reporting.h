@@ -39,24 +39,35 @@
 
 typedef struct grpc_load_reporting_config grpc_load_reporting_config;
 
-/** Custom function to be called by the load reporting filter. */
-typedef void (*grpc_load_reporting_fn)(const grpc_call_stats *stats,
-                                       void *data);
+/** Call information to be passed to the provided load reporting function upon
+ * completion of the call */
+typedef struct grpc_load_reporting_call_data {
+  const grpc_call_stats *stats;   /**< Stats for the call */
+  const char *trailing_md_string; /**< LR trailing metadata info */
+} grpc_load_reporting_call_data;
 
-/** Register \a fn as the function to be invoked by the load reporting filter,
- * passing \a data alongisde the call stats */
+/** Custom function to be called by the load reporting filter. */
+typedef void (*grpc_load_reporting_fn)(
+    const grpc_load_reporting_call_data *call_data, void *user_data);
+
+/** Register \a fn as the function to be invoked by the load reporting filter.
+ * \a fn will be invoked at the beginning and at the end of the call.
+ *
+ * For the first invocation, \a fn's first argument
+ * (grpc_load_reporting_call_data*) will be NULL. \a user_data is always passed
+ * as-is. */
 grpc_load_reporting_config *grpc_load_reporting_config_create(
-    grpc_load_reporting_fn fn, void *data);
+    grpc_load_reporting_fn fn, void *user_data);
 
 grpc_load_reporting_config *grpc_load_reporting_config_copy(
     grpc_load_reporting_config *src);
 
 void grpc_load_reporting_config_destroy(grpc_load_reporting_config *lrc);
 
-/** Invoke the function registered by \a grpc_load_reporting_init, passing it \a
- * stats as one of the arguments (see \a load_reporting_fn). */
-void grpc_load_reporting_config_call(grpc_load_reporting_config *lrc,
-                                     const grpc_call_stats *stats);
+/** Invoke the function registered by \a grpc_load_reporting_init. */
+void grpc_load_reporting_config_call(
+    grpc_load_reporting_config *lrc,
+    const grpc_load_reporting_call_data *call_data);
 
 /** Return a \a grpc_arg enabling load reporting */
 grpc_arg grpc_load_reporting_config_create_arg(grpc_load_reporting_config *lrc);
