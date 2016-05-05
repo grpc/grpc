@@ -629,9 +629,10 @@ static void finish_global_actions(grpc_exec_ctx *exec_ctx,
     check_read_ops(exec_ctx, &t->global);
 
     gpr_mu_lock(&t->executor.mu);
-    if (t->executor.pending_actions != NULL) {
-      hdr = t->executor.pending_actions;
-      t->executor.pending_actions = NULL;
+    if (t->executor.pending_actions_head != NULL) {
+      hdr = t->executor.pending_actions_head;
+      t->executor.pending_actions_head = t->executor.pending_actions_tail =
+          NULL;
       gpr_mu_unlock(&t->executor.mu);
       while (hdr != NULL) {
         hdr->action(exec_ctx, t, hdr->stream, hdr->arg);
@@ -686,8 +687,14 @@ void grpc_chttp2_run_with_global_lock(grpc_exec_ctx *exec_ctx,
         gpr_free(hdr);
         continue;
       }
-      hdr->next = t->executor.pending_actions;
-      t->executor.pending_actions = hdr;
+      hdr->next = NULL;
+      if (t->executor.pending_actions_head != NULL) {
+        t->executor.pending_actions_tail =
+            t->executor.pending_actions_tail->next = hdr;
+      } else {
+        t->executor.pending_actions_tail = t->executor.pending_actions_head =
+            hdr;
+      }
       REF_TRANSPORT(t, "pending_action");
       gpr_mu_unlock(&t->executor.mu);
     }

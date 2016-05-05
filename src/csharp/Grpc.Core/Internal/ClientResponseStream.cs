@@ -68,9 +68,7 @@ namespace Grpc.Core.Internal
             {
                 throw new InvalidOperationException("Cancellation of individual reads is not supported.");
             }
-            var taskSource = new AsyncCompletionTaskSource<TResponse>();
-            call.StartReadMessage(taskSource.CompletionDelegate);
-            var result = await taskSource.Task.ConfigureAwait(false);
+            var result = await call.ReadMessageAsync().ConfigureAwait(false);
             this.current = result;
 
             if (result == null)

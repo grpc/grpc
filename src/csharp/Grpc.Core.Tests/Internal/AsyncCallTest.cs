@@ -32,6 +32,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
@@ -40,6 +41,9 @@ using NUnit.Framework;
 
 namespace Grpc.Core.Internal.Tests
 {
+    /// <summary>
+    /// Uses fake native call to test interaction of <c>AsyncCall</c> wrapping code with C core in different situations.
+    /// </summary>
     public class AsyncCallTest
     {
         Channel channel;
@@ -64,159 +68,421 @@ namespace Grpc.Core.Internal.Tests
         }
 
         [Test]
-        public void AsyncUnary_CompletionSuccess()
+        public void AsyncUnary_CanBeStartedOnlyOnce()
         {
-            var resultTask = asyncCall.UnaryCallAsync("abc");
-            fakeCall.UnaryResponseClientHandler(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()), new byte[] { 1, 2, 3 }, new Metadata());
-            Assert.IsTrue(resultTask.IsCompleted);
-            Assert.IsTrue(fakeCall.IsDisposed);
-            Assert.AreEqual(Status.DefaultSuccess, asyncCall.GetStatus());
+            asyncCall.UnaryCallAsync("request1");
+            Assert.Throws(typeof(InvalidOperationException),
+                () => asyncCall.UnaryCallAsync("abc"));
         }
 
         [Test]
-        public void AsyncUnary_CompletionFailure()
+        public void AsyncUnary_StreamingOperationsNotAllowed()
         {
-            var resultTask = asyncCall.UnaryCallAsync("abc");
-            fakeCall.UnaryResponseClientHandler(false, new ClientSideStatus(new Status(StatusCode.Internal, ""), null), new byte[] { 1, 2, 3 }, new Metadata());
+            asyncCall.UnaryCallAsync("request1");
+            Assert.ThrowsAsync(typeof(InvalidOperationException),
+                async () => await asyncCall.ReadMessageAsync());
+            Assert.Throws(typeof(InvalidOperationException),
+                () => asyncCall.StartSendMessage("abc", new WriteFlags(), (x,y) => {}));
+        }
 
+        [Test]
+        public void AsyncUnary_Success()
+        {
+            var resultTask = asyncCall.UnaryCallAsync("request1");
+            fakeCall.UnaryResponseClientHandler(true,
+                new ClientSideStatus(Status.DefaultSuccess, new Metadata()),
+                CreateResponsePayload(),
+                new Metadata());
+
+            AssertUnaryResponseSuccess(asyncCall, fakeCall, resultTask);
+        }
+
+        [Test]
+        public void AsyncUnary_NonSuccessStatusCode()
+        {
+            var resultTask = asyncCall.UnaryCallAsync("request1");
+            fakeCall.UnaryResponseClientHandler(true,
+                CreateClientSideStatus(StatusCode.InvalidArgument),
+                CreateResponsePayload(),
+                new Metadata());
+
+            AssertUnaryResponseError(asyncCall, fakeCall, resultTask, StatusCode.InvalidArgument);
+        }
+
+        [Test]
+        public void AsyncUnary_NullResponsePayload()
+        {
+            var resultTask = asyncCall.UnaryCallAsync("request1");
+            fakeCall.UnaryResponseClientHandler(true,
+                new ClientSideStatus(Status.DefaultSuccess, new Metadata()),
+                null,
+                new Metadata());
+
+            // failure to deserialize will result in InvalidArgument status.
+            AssertUnaryResponseError(asyncCall, fakeCall, resultTask, StatusCode.Internal);
+        }
+
+        [Test]
+        public void ClientStreaming_StreamingReadNotAllowed()
+        {
+            asyncCall.ClientStreamingCallAsync();
+            Assert.ThrowsAsync(typeof(InvalidOperationException),
+                async () => await asyncCall.ReadMessageAsync());
+        }
+
+        [Test]
+        public void ClientStreaming_NoRequest_Success()
+        {
+            var resultTask = asyncCall.ClientStreamingCallAsync();
+            fakeCall.UnaryResponseClientHandler(true,
+                new ClientSideStatus(Status.DefaultSuccess, new Metadata()),
+                CreateResponsePayload(),
+                new Metadata());
+
+            AssertUnaryResponseSuccess(asyncCall, fakeCall, resultTask);
+        }
+
+        [Test]
+        public void ClientStreaming_NoRequest_NonSuccessStatusCode()
+        {
+            var resultTask = asyncCall.ClientStreamingCallAsync();
+            fakeCall.UnaryResponseClientHandler(true,
+                CreateClientSideStatus(StatusCode.InvalidArgument),
+                CreateResponsePayload(),
+                new Metadata());
+
+            AssertUnaryResponseError(asyncCall, fakeCall, resultTask, StatusCode.InvalidArgument);
+        }
+
+        [Test]
+        public void ClientStreaming_MoreRequests_Success()
+        {
+            var resultTask = asyncCall.ClientStreamingCallAsync();
+            var requestStream = new ClientRequestStream<string, string>(asyncCall);
+
+            var writeTask = requestStream.WriteAsync("request1");
+            fakeCall.SendCompletionHandler(true);
+            writeTask.Wait();
+
+            var writeTask2 = requestStream.WriteAsync("request2");
+            fakeCall.SendCompletionHandler(true);
+            writeTask2.Wait();
+
+            var completeTask = requestStream.CompleteAsync();
+            fakeCall.SendCompletionHandler(true);
+            completeTask.Wait();
+
+            fakeCall.UnaryResponseClientHandler(true,
+                new ClientSideStatus(Status.DefaultSuccess, new Metadata()),
+                CreateResponsePayload(),
+                new Metadata());
+
+            AssertUnaryResponseSuccess(asyncCall, fakeCall, resultTask);
+        }
+
+        [Test]
+        public void ClientStreaming_WriteFailure()
+        {
+            var resultTask = asyncCall.ClientStreamingCallAsync();
+            var requestStream = new ClientRequestStream<string, string>(asyncCall);
+
+            var writeTask = requestStream.WriteAsync("request1");
+            fakeCall.SendCompletionHandler(false);
+            Assert.ThrowsAsync(typeof(InvalidOperationException), async () => await writeTask);
+
+            fakeCall.UnaryResponseClientHandler(true,
+                CreateClientSideStatus(StatusCode.Internal),
+                CreateResponsePayload(),
+                new Metadata());
+
+            AssertUnaryResponseError(asyncCall, fakeCall, resultTask, StatusCode.Internal);
+        }
+
+        [Test]
+        public void ClientStreaming_WriteAfterReceivingStatusFails()
+        {
+            var resultTask = asyncCall.ClientStreamingCallAsync();
+            var requestStream = new ClientRequestStream<string, string>(asyncCall);
+
+            fakeCall.UnaryResponseClientHandler(true,
+                new ClientSideStatus(Status.DefaultSuccess, new Metadata()),
+                CreateResponsePayload(),
+                new Metadata());
+
+            AssertUnaryResponseSuccess(asyncCall, fakeCall, resultTask);
+            Assert.Throws(typeof(InvalidOperationException), () => requestStream.WriteAsync("request1"));
+        }
+
+        [Test]
+        public void ClientStreaming_CompleteAfterReceivingStatusSucceeds()
+        {
+            var resultTask = asyncCall.ClientStreamingCallAsync();
+            var requestStream = new ClientRequestStream<string, string>(asyncCall);
+
+            fakeCall.UnaryResponseClientHandler(true,
+                new ClientSideStatus(Status.DefaultSuccess, new Metadata()),
+                CreateResponsePayload(),
+                new Metadata());
+
+            AssertUnaryResponseSuccess(asyncCall, fakeCall, resultTask);
+            Assert.DoesNotThrowAsync(async () => await requestStream.CompleteAsync());
+        }
+
+        [Test]
+        public void ClientStreaming_WriteAfterCancellationRequestFails()
+        {
+            var resultTask = asyncCall.ClientStreamingCallAsync();
+            var requestStream = new ClientRequestStream<string, string>(asyncCall);
+
+            asyncCall.Cancel();
+            Assert.IsTrue(fakeCall.IsCancelled);
+
+            Assert.Throws(typeof(OperationCanceledException), () => requestStream.WriteAsync("request1"));
+
+            fakeCall.UnaryResponseClientHandler(true,
+                CreateClientSideStatus(StatusCode.Cancelled),
+                CreateResponsePayload(),
+                new Metadata());
+
+            AssertUnaryResponseError(asyncCall, fakeCall, resultTask, StatusCode.Cancelled);
+        }
+
+        [Test]
+        public void ServerStreaming_StreamingSendNotAllowed()
+        {
+            asyncCall.StartServerStreamingCall("request1");
+            Assert.Throws(typeof(InvalidOperationException),
+                () => asyncCall.StartSendMessage("abc", new WriteFlags(), (x,y) => {}));
+        }
+
+        [Test]
+        public void ServerStreaming_NoResponse_Success1()
+        {
+            asyncCall.StartServerStreamingCall("request1");
+            var responseStream = new ClientResponseStream<string, string>(asyncCall);
+            var readTask = responseStream.MoveNext();
+
+            fakeCall.ReceivedResponseHeadersHandler(true, new Metadata());
+            Assert.AreEqual(0, asyncCall.ResponseHeadersAsync.Result.Count);
+
+            fakeCall.ReceivedMessageHandler(true, null);
+            fakeCall.ReceivedStatusOnClientHandler(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
+
+            AssertStreamingResponseSuccess(asyncCall, fakeCall, readTask);
+        }
+
+        [Test]
+        public void ServerStreaming_NoResponse_Success2()
+        {
+            asyncCall.StartServerStreamingCall("request1");
+            var responseStream = new ClientResponseStream<string, string>(asyncCall);
+            var readTask = responseStream.MoveNext();
+
+            // try alternative order of completions
+            fakeCall.ReceivedStatusOnClientHandler(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
+            fakeCall.ReceivedMessageHandler(true, null);
+
+            AssertStreamingResponseSuccess(asyncCall, fakeCall, readTask);
+        }
+
+        [Test]
+        public void ServerStreaming_NoResponse_ReadFailure()
+        {
+            asyncCall.StartServerStreamingCall("request1");
+            var responseStream = new ClientResponseStream<string, string>(asyncCall);
+            var readTask = responseStream.MoveNext();
+
+            fakeCall.ReceivedMessageHandler(false, null);  // after a failed read, we rely on C core to deliver appropriate status code.
+            fakeCall.ReceivedStatusOnClientHandler(true, CreateClientSideStatus(StatusCode.Internal));
+
+            AssertStreamingResponseError(asyncCall, fakeCall, readTask, StatusCode.Internal);
+        }
+
+        [Test]
+        public void ServerStreaming_MoreResponses_Success()
+        {
+            asyncCall.StartServerStreamingCall("request1");
+            var responseStream = new ClientResponseStream<string, string>(asyncCall);
+
+            var readTask1 = responseStream.MoveNext();
+            fakeCall.ReceivedMessageHandler(true, CreateResponsePayload());
+            Assert.IsTrue(readTask1.Result);
+            Assert.AreEqual("response1", responseStream.Current);
+
+            var readTask2 = responseStream.MoveNext();
+            fakeCall.ReceivedMessageHandler(true, CreateResponsePayload());
+            Assert.IsTrue(readTask2.Result);
+            Assert.AreEqual("response1", responseStream.Current);
+
+            var readTask3 = responseStream.MoveNext();
+            fakeCall.ReceivedStatusOnClientHandler(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
+            fakeCall.ReceivedMessageHandler(true, null);
+
+            AssertStreamingResponseSuccess(asyncCall, fakeCall, readTask3);
+        }
+
+        [Test]
+        public void DuplexStreaming_NoRequestNoResponse_Success()
+        {
+            asyncCall.StartDuplexStreamingCall();
+            var requestStream = new ClientRequestStream<string, string>(asyncCall);
+            var responseStream = new ClientResponseStream<string, string>(asyncCall);
+
+            var writeTask1 = requestStream.CompleteAsync();
+            fakeCall.SendCompletionHandler(true);
+            Assert.DoesNotThrowAsync(async () => await writeTask1);
+
+            var readTask = responseStream.MoveNext();
+            fakeCall.ReceivedMessageHandler(true, null);
+            fakeCall.ReceivedStatusOnClientHandler(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
+
+            AssertStreamingResponseSuccess(asyncCall, fakeCall, readTask);
+        }
+
+        [Test]
+        public void DuplexStreaming_WriteAfterReceivingStatusFails()
+        {
+            asyncCall.StartDuplexStreamingCall();
+            var requestStream = new ClientRequestStream<string, string>(asyncCall);
+            var responseStream = new ClientResponseStream<string, string>(asyncCall);
+
+            var readTask = responseStream.MoveNext();
+            fakeCall.ReceivedMessageHandler(true, null);
+            fakeCall.ReceivedStatusOnClientHandler(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
+
+            AssertStreamingResponseSuccess(asyncCall, fakeCall, readTask);
+
+            Assert.ThrowsAsync(typeof(InvalidOperationException), async () => await requestStream.WriteAsync("request1"));
+        }
+
+        [Test]
+        public void DuplexStreaming_CompleteAfterReceivingStatusFails()
+        {
+            asyncCall.StartDuplexStreamingCall();
+            var requestStream = new ClientRequestStream<string, string>(asyncCall);
+            var responseStream = new ClientResponseStream<string, string>(asyncCall);
+
+            var readTask = responseStream.MoveNext();
+            fakeCall.ReceivedMessageHandler(true, null);
+            fakeCall.ReceivedStatusOnClientHandler(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
+
+            AssertStreamingResponseSuccess(asyncCall, fakeCall, readTask);
+
+            Assert.DoesNotThrowAsync(async () => await requestStream.CompleteAsync());
+        }
+
+        [Test]
+        public void DuplexStreaming_WriteAfterCancellationRequestFails()
+        {
+            asyncCall.StartDuplexStreamingCall();
+            var requestStream = new ClientRequestStream<string, string>(asyncCall);
+            var responseStream = new ClientResponseStream<string, string>(asyncCall);
+
+            asyncCall.Cancel();
+            Assert.IsTrue(fakeCall.IsCancelled);
+            Assert.Throws(typeof(OperationCanceledException), () => requestStream.WriteAsync("request1"));
+
+            var readTask = responseStream.MoveNext();
+            fakeCall.ReceivedMessageHandler(true, null);
+            fakeCall.ReceivedStatusOnClientHandler(true, CreateClientSideStatus(StatusCode.Cancelled));
+
+            AssertStreamingResponseError(asyncCall, fakeCall, readTask, StatusCode.Cancelled);
+        }
+
+        [Test]
+        public void DuplexStreaming_ReadAfterCancellationRequestCanSucceed()
+        {
+            asyncCall.StartDuplexStreamingCall();
+            var responseStream = new ClientResponseStream<string, string>(asyncCall);
+
+            asyncCall.Cancel();
+            Assert.IsTrue(fakeCall.IsCancelled);
+
+            var readTask1 = responseStream.MoveNext();
+            fakeCall.ReceivedMessageHandler(true, CreateResponsePayload());
+            Assert.IsTrue(readTask1.Result);
+            Assert.AreEqual("response1", responseStream.Current);
+
+            var readTask2 = responseStream.MoveNext();
+            fakeCall.ReceivedMessageHandler(true, null);
+            fakeCall.ReceivedStatusOnClientHandler(true, CreateClientSideStatus(StatusCode.Cancelled));
+
+            AssertStreamingResponseError(asyncCall, fakeCall, readTask2, StatusCode.Cancelled);
+        }
+
+        [Test]
+        public void DuplexStreaming_ReadStartedBeforeCancellationRequestCanSucceed()
+        {
+            asyncCall.StartDuplexStreamingCall();
+            var responseStream = new ClientResponseStream<string, string>(asyncCall);
+
+            var readTask1 = responseStream.MoveNext();  // initiate the read before cancel request
+            asyncCall.Cancel();
+            Assert.IsTrue(fakeCall.IsCancelled);
+
+            fakeCall.ReceivedMessageHandler(true, CreateResponsePayload());
+            Assert.IsTrue(readTask1.Result);
+            Assert.AreEqual("response1", responseStream.Current);
+
+            var readTask2 = responseStream.MoveNext();
+            fakeCall.ReceivedMessageHandler(true, null);
+            fakeCall.ReceivedStatusOnClientHandler(true, CreateClientSideStatus(StatusCode.Cancelled));
+
+            AssertStreamingResponseError(asyncCall, fakeCall, readTask2, StatusCode.Cancelled);
+        }
+
+        ClientSideStatus CreateClientSideStatus(StatusCode statusCode)
+        {
+            return new ClientSideStatus(new Status(statusCode, ""), new Metadata());
+        }
+
+        byte[] CreateResponsePayload()
+        {
+            return Marshallers.StringMarshaller.Serializer("response1");
+        }
+
+        static void AssertUnaryResponseSuccess(AsyncCall<string, string> asyncCall, FakeNativeCall fakeCall, Task<string> resultTask)
+        {
             Assert.IsTrue(resultTask.IsCompleted);
             Assert.IsTrue(fakeCall.IsDisposed);
 
-            Assert.AreEqual(StatusCode.Internal, asyncCall.GetStatus().StatusCode);
-            Assert.IsNull(asyncCall.GetTrailers());
-            var ex = Assert.ThrowsAsync<RpcException>(async () => await resultTask);
-            Assert.AreEqual(StatusCode.Internal, ex.Status.StatusCode);
+            Assert.AreEqual(Status.DefaultSuccess, asyncCall.GetStatus());
+            Assert.AreEqual(0, asyncCall.ResponseHeadersAsync.Result.Count);
+            Assert.AreEqual(0, asyncCall.GetTrailers().Count);
+            Assert.AreEqual("response1", resultTask.Result);
         }
 
-        internal class FakeNativeCall : INativeCall
+        static void AssertStreamingResponseSuccess(AsyncCall<string, string> asyncCall, FakeNativeCall fakeCall, Task<bool> moveNextTask)
         {
-            public UnaryResponseClientHandler UnaryResponseClientHandler
-            {
-                get;
-                set;
-            }
+            Assert.IsTrue(moveNextTask.IsCompleted);
+            Assert.IsTrue(fakeCall.IsDisposed);
 
-            public ReceivedStatusOnClientHandler ReceivedStatusOnClientHandler
-            {
-                get;
-                set;
-            }
+            Assert.IsFalse(moveNextTask.Result);
+            Assert.AreEqual(Status.DefaultSuccess, asyncCall.GetStatus());
+            Assert.AreEqual(0, asyncCall.GetTrailers().Count);
+        }
 
-            public ReceivedMessageHandler ReceivedMessageHandler
-            {
-                get;
-                set;
-            }
+        static void AssertUnaryResponseError(AsyncCall<string, string> asyncCall, FakeNativeCall fakeCall, Task<string> resultTask, StatusCode expectedStatusCode)
+        {
+            Assert.IsTrue(resultTask.IsCompleted);
+            Assert.IsTrue(fakeCall.IsDisposed);
 
-            public ReceivedResponseHeadersHandler ReceivedResponseHeadersHandler
-            {
-                get;
-                set;
-            }
+            Assert.AreEqual(expectedStatusCode, asyncCall.GetStatus().StatusCode);
+            var ex = Assert.ThrowsAsync<RpcException>(async () => await resultTask);
+            Assert.AreEqual(expectedStatusCode, ex.Status.StatusCode);
+            Assert.AreEqual(0, asyncCall.ResponseHeadersAsync.Result.Count);
+            Assert.AreEqual(0, asyncCall.GetTrailers().Count);
+        }
 
-            public SendCompletionHandler SendCompletionHandler
-            {
-                get;
-                set;
-            }
+        static void AssertStreamingResponseError(AsyncCall<string, string> asyncCall, FakeNativeCall fakeCall, Task<bool> moveNextTask, StatusCode expectedStatusCode)
+        {
+            Assert.IsTrue(moveNextTask.IsCompleted);
+            Assert.IsTrue(fakeCall.IsDisposed);
 
-            public ReceivedCloseOnServerHandler ReceivedCloseOnServerHandler
-            {
-                get;
-                set;
-            }
-
-            public bool IsCancelled
-            {
-                get;
-                set;
-            }
-
-            public bool IsDisposed
-            {
-                get;
-                set;
-            }
-
-            public void Cancel()
-            {
-                IsCancelled = true;
-            }
-
-            public void CancelWithStatus(Status status)
-            {
-                IsCancelled = true;
-            }
-
-            public string GetPeer()
-            {
-                return "PEER";
-            }
-
-            public void StartUnary(UnaryResponseClientHandler callback, byte[] payload, MetadataArraySafeHandle metadataArray, WriteFlags writeFlags)
-            {
-                UnaryResponseClientHandler = callback;
-            }
-
-            public void StartUnary(BatchContextSafeHandle ctx, byte[] payload, MetadataArraySafeHandle metadataArray, WriteFlags writeFlags)
-            {
-                throw new NotImplementedException();
-            }
-
-            public void StartClientStreaming(UnaryResponseClientHandler callback, MetadataArraySafeHandle metadataArray)
-            {
-                UnaryResponseClientHandler = callback;
-            }
-
-            public void StartServerStreaming(ReceivedStatusOnClientHandler callback, byte[] payload, MetadataArraySafeHandle metadataArray, WriteFlags writeFlags)
-            {
-                ReceivedStatusOnClientHandler = callback;
-            }
-
-            public void StartDuplexStreaming(ReceivedStatusOnClientHandler callback, MetadataArraySafeHandle metadataArray)
-            {
-                ReceivedStatusOnClientHandler = callback;
-            }
-
-            public void StartReceiveMessage(ReceivedMessageHandler callback)
-            {
-                ReceivedMessageHandler = callback;
-            }
-
-            public void StartReceiveInitialMetadata(ReceivedResponseHeadersHandler callback)
-            {
-                ReceivedResponseHeadersHandler = callback;
-            }
-
-            public void StartSendInitialMetadata(SendCompletionHandler callback, MetadataArraySafeHandle metadataArray)
-            {
-                SendCompletionHandler = callback;
-            }
-
-            public void StartSendMessage(SendCompletionHandler callback, byte[] payload, WriteFlags writeFlags, bool sendEmptyInitialMetadata)
-            {
-                SendCompletionHandler = callback;
-            }
-
-            public void StartSendCloseFromClient(SendCompletionHandler callback)
-            {
-                SendCompletionHandler = callback;
-            }
-
-            public void StartSendStatusFromServer(SendCompletionHandler callback, Status status, MetadataArraySafeHandle metadataArray, bool sendEmptyInitialMetadata)
-            {
-                SendCompletionHandler = callback;
-            }
-
-            public void StartServerSide(ReceivedCloseOnServerHandler callback)
-            {
-                ReceivedCloseOnServerHandler = callback;
-            }
-
-            public void Dispose()
-            {
-                IsDisposed = true;
-            }
+            var ex = Assert.ThrowsAsync<RpcException>(async () => await moveNextTask);
+            Assert.AreEqual(expectedStatusCode, ex.Status.StatusCode);
+            Assert.AreEqual(expectedStatusCode, asyncCall.GetStatus().StatusCode);
+            Assert.AreEqual(0, asyncCall.GetTrailers().Count);
         }
     }
 }
