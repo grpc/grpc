@@ -182,18 +182,40 @@ bool GetModuleAndMessagePath(const Descriptor* type,
   return true;
 }
 
+// Get all comments (leading, leading_detached, trailing) and print them as a
+// docstring. Any leading space of a line will be removed, but the line wrapping
+// will not be changed.
+template <typename DescriptorType>
+static void PrintAllComments(const DescriptorType* desc, Printer* printer) {
+  std::vector<grpc::string> comments;
+  grpc_generator::GetComment(desc, grpc_generator::COMMENTTYPE_LEADING_DETACHED,
+                             &comments);
+  grpc_generator::GetComment(desc, grpc_generator::COMMENTTYPE_LEADING,
+                             &comments);
+  grpc_generator::GetComment(desc, grpc_generator::COMMENTTYPE_TRAILING,
+                             &comments);
+  if (comments.empty()) {
+    return;
+  }
+  printer->Print("\"\"\"");
+  for (auto it = comments.begin(); it != comments.end(); ++it) {
+    size_t start_pos = it->find_first_not_of(' ');
+    if (start_pos != grpc::string::npos) {
+      printer->Print(it->c_str() + start_pos);
+    }
+    printer->Print("\n");
+  }
+  printer->Print("\"\"\"\n");
+}
+
 bool PrintBetaServicer(const ServiceDescriptor* service,
                        Printer* out) {
-  grpc::string doc = "<fill me in later!>";
-  map<grpc::string, grpc::string> dict = ListToDict({
-        "Service", service->name(),
-        "Documentation", doc,
-      });
   out->Print("\n");
-  out->Print(dict, "class Beta$Service$Servicer(object):\n");
+  out->Print("class Beta$Service$Servicer(object):\n", "Service",
+             service->name());
   {
     IndentScope raii_class_indent(out);
-    out->Print(dict, "\"\"\"$Documentation$\"\"\"\n");
+    PrintAllComments(service, out);
     for (int i = 0; i < service->method_count(); ++i) {
       auto meth = service->method(i);
       grpc::string arg_name = meth->client_streaming() ?
@@ -202,6 +224,7 @@ bool PrintBetaServicer(const ServiceDescriptor* service,
                  "Method", meth->name(), "ArgName", arg_name);
       {
         IndentScope raii_method_indent(out);
+        PrintAllComments(meth, out);
         out->Print("context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)\n");
       }
     }
@@ -211,16 +234,11 @@ bool PrintBetaServicer(const ServiceDescriptor* service,
 
 bool PrintBetaStub(const ServiceDescriptor* service,
                    Printer* out) {
-  grpc::string doc = "The interface to which stubs will conform.";
-  map<grpc::string, grpc::string> dict = ListToDict({
-        "Service", service->name(),
-        "Documentation", doc,
-      });
   out->Print("\n");
-  out->Print(dict, "class Beta$Service$Stub(object):\n");
+  out->Print("class Beta$Service$Stub(object):\n", "Service", service->name());
   {
     IndentScope raii_class_indent(out);
-    out->Print(dict, "\"\"\"$Documentation$\"\"\"\n");
+    PrintAllComments(service, out);
     for (int i = 0; i < service->method_count(); ++i) {
       const MethodDescriptor* meth = service->method(i);
       grpc::string arg_name = meth->client_streaming() ?
@@ -229,6 +247,7 @@ bool PrintBetaStub(const ServiceDescriptor* service,
       out->Print(methdict, "def $Method$(self, $ArgName$, timeout):\n");
       {
         IndentScope raii_method_indent(out);
+        PrintAllComments(meth, out);
         out->Print("raise NotImplementedError()\n");
       }
       if (!meth->server_streaming()) {
