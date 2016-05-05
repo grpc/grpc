@@ -46,7 +46,7 @@
 
 typedef struct {
   gpr_mu *mu;
-  grpc_pops *pops;
+  grpc_pops pops;
   int is_done;
   char *token;
 } oauth2_request;
@@ -70,7 +70,7 @@ static void on_oauth2_response(grpc_exec_ctx *exec_ctx, void *user_data,
   gpr_mu_lock(request->mu);
   request->is_done = 1;
   request->token = token;
-  grpc_pollset_kick(grpc_pops_pollset(request->pops), NULL);
+  grpc_pollset_kick(grpc_pops_pollset(&request->pops), NULL);
   gpr_mu_unlock(request->mu);
 }
 
@@ -90,23 +90,22 @@ char *grpc_test_fetch_oauth2_token_with_credentials(
   grpc_closure_init(&do_nothing_closure, do_nothing, NULL);
 
   grpc_call_credentials_get_request_metadata(
-      &exec_ctx, creds, request.pops, null_ctx, on_oauth2_response, &request);
+      &exec_ctx, creds, &request.pops, null_ctx, on_oauth2_response, &request);
 
   grpc_exec_ctx_finish(&exec_ctx);
 
   gpr_mu_lock(request.mu);
   while (!request.is_done) {
     grpc_pollset_worker *worker = NULL;
-    grpc_pollset_work(&exec_ctx, grpc_pops_pollset(request.pops), &worker,
+    grpc_pollset_work(&exec_ctx, grpc_pops_pollset(&request.pops), &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC),
                       gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
   gpr_mu_unlock(request.mu);
 
-  grpc_pollset_shutdown(&exec_ctx, grpc_pops_pollset(request.pops),
+  grpc_pollset_shutdown(&exec_ctx, grpc_pops_pollset(&request.pops),
                         &do_nothing_closure);
   grpc_exec_ctx_finish(&exec_ctx);
-  gpr_free(grpc_pops_pollset(request.pops));
-  grpc_pops_destroy(request.pops);
+  gpr_free(grpc_pops_pollset(&request.pops));
   return request.token;
 }

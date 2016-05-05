@@ -36,50 +36,44 @@
 
 #include "src/core/lib/iomgr/pops.h"
 
-struct grpc_pops {
-  union {
-    grpc_pollset *pollset;
-    grpc_pollset_set *pollset_set;
-  } pops;
-  enum pops_tag { POLLSET, POLLSET_SET } tag;
-};
-
-grpc_pops *grpc_pops_create_from_pollset_set(grpc_pollset_set *pollset_set) {
-  grpc_pops *pops = gpr_malloc(sizeof(grpc_pops));
-  pops->pops.pollset_set = pollset_set;
-  pops->tag = POLLSET_SET;
+grpc_pops grpc_pops_create_from_pollset_set(grpc_pollset_set *pollset_set) {
+  grpc_pops pops;
+  pops.pops.pollset_set = pollset_set;
+  pops.tag = POPS_POLLSET_SET;
   return pops;
 }
 
-grpc_pops *grpc_pops_create_from_pollset(grpc_pollset *pollset) {
-  grpc_pops *pops = gpr_malloc(sizeof(grpc_pops));
-  pops->pops.pollset = pollset;
-  pops->tag = POLLSET;
+grpc_pops grpc_pops_create_from_pollset(grpc_pollset *pollset) {
+  grpc_pops pops;
+  pops.pops.pollset = pollset;
+  pops.tag = POPS_POLLSET;
   return pops;
 }
-
-void grpc_pops_destroy(grpc_pops *pops) { gpr_free(pops); }
 
 grpc_pollset *grpc_pops_pollset(grpc_pops *pops) {
-  if (pops->tag == POLLSET) {
+  if (pops->tag == POPS_POLLSET) {
     return pops->pops.pollset;
   }
   return NULL;
 }
 
 grpc_pollset_set *grpc_pops_pollset_set(grpc_pops *pops) {
-  if (pops->tag == POLLSET_SET) {
+  if (pops->tag == POPS_POLLSET_SET) {
     return pops->pops.pollset_set;
   }
   return NULL;
 }
 
+bool grpc_pops_is_empty(const grpc_pops *pops) {
+  return pops->tag == POPS_NONE;
+}
+
 void grpc_pops_add_to_pollset_set(grpc_exec_ctx *exec_ctx, grpc_pops *pops,
                                   grpc_pollset_set *pss_dst) {
-  if (pops->tag == POLLSET) {
+  if (pops->tag == POPS_POLLSET) {
     GPR_ASSERT(pops->pops.pollset != NULL);
     grpc_pollset_set_add_pollset(exec_ctx, pss_dst, pops->pops.pollset);
-  } else if (pops->tag == POLLSET_SET) {
+  } else if (pops->tag == POPS_POLLSET_SET) {
     GPR_ASSERT(pops->pops.pollset_set != NULL);
     grpc_pollset_set_add_pollset_set(exec_ctx, pss_dst, pops->pops.pollset_set);
   } else {
@@ -90,10 +84,10 @@ void grpc_pops_add_to_pollset_set(grpc_exec_ctx *exec_ctx, grpc_pops *pops,
 
 void grpc_pops_del_to_pollset_set(grpc_exec_ctx *exec_ctx, grpc_pops *pops,
                                   grpc_pollset_set *pss_dst) {
-  if (pops->tag == POLLSET) {
+  if (pops->tag == POPS_POLLSET) {
     GPR_ASSERT(pops->pops.pollset != NULL);
     grpc_pollset_set_del_pollset(exec_ctx, pss_dst, pops->pops.pollset);
-  } else if (pops->tag == POLLSET_SET) {
+  } else if (pops->tag == POPS_POLLSET_SET) {
     GPR_ASSERT(pops->pops.pollset_set != NULL);
     grpc_pollset_set_del_pollset_set(exec_ctx, pss_dst, pops->pops.pollset_set);
   } else {

@@ -135,7 +135,7 @@ typedef struct batch_control {
 
 struct grpc_call {
   grpc_completion_queue *cq;
-  grpc_pops *pops;
+  grpc_pops pops;
   grpc_channel *channel;
   grpc_call *parent;
   grpc_call *first_child;
@@ -292,9 +292,9 @@ grpc_call *grpc_call_create(
   if (pollset_set_alternative != NULL) {
     call->pops = grpc_pops_create_from_pollset_set(pollset_set_alternative);
   }
-  if (call->pops != NULL) {
+  if (!grpc_pops_is_empty(&call->pops)) {
     grpc_call_stack_set_pollset_or_pollset_set(
-        &exec_ctx, CALL_STACK_FROM_CALL(call), call->pops);
+        &exec_ctx, CALL_STACK_FROM_CALL(call), &call->pops);
   }
   if (parent_call != NULL) {
     GRPC_CALL_INTERNAL_REF(parent_call, "child");
@@ -350,18 +350,15 @@ void grpc_call_set_completion_queue(grpc_exec_ctx *exec_ctx, grpc_call *call,
                                     grpc_completion_queue *cq) {
   GPR_ASSERT(cq);
 
-  if (call->pops != NULL && grpc_pops_pollset_set(call->pops) != NULL) {
+  if (grpc_pops_pollset_set(&call->pops) != NULL) {
     gpr_log(GPR_ERROR, "A pollset_set is already registered for this call.");
     abort();
   }
   call->cq = cq;
   GRPC_CQ_INTERNAL_REF(cq, "bind");
-  if (call->pops != NULL) {
-    grpc_pops_destroy(call->pops);
-  }
   call->pops = grpc_pops_create_from_pollset(grpc_cq_pollset(cq));
   grpc_call_stack_set_pollset_or_pollset_set(
-      exec_ctx, CALL_STACK_FROM_CALL(call), call->pops);
+      exec_ctx, CALL_STACK_FROM_CALL(call), &call->pops);
 }
 
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
@@ -407,7 +404,6 @@ static void destroy_call(grpc_exec_ctx *exec_ctx, void *call, bool success) {
   if (c->cq) {
     GRPC_CQ_INTERNAL_UNREF(c->cq, "bind");
   }
-  grpc_pops_destroy(c->pops);
   grpc_channel *channel = c->channel;
   grpc_call_stack_destroy(exec_ctx, CALL_STACK_FROM_CALL(c), c);
   GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, channel, "call");
