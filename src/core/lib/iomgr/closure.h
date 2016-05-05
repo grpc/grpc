@@ -66,12 +66,12 @@ struct grpc_closure {
   /** Arguments to be passed to "cb". */
   void *cb_arg;
 
-  union {
-    grpc_error *error;
-    uintptr_t scratch;
-  } final_data;
+  grpc_error *error;
 
-  grpc_closure *next;
+  union {
+    grpc_closure *next;
+    uintptr_t scratch;
+  } next_data;
 };
 
 /** Initializes \a closure with \a cb and \a cb_arg. */

@@ -90,6 +90,18 @@ static const char *error_int_name(grpc_error_ints key) {
       return "errno";
     case GRPC_ERROR_INT_FILE_LINE:
       return "file_line";
+    case GRPC_ERROR_INT_WARNING:
+      return "warning";
+    case GRPC_ERROR_INT_STREAM_ID:
+      return "stream_id";
+    case GRPC_ERROR_INT_GRPC_STATUS:
+      return "grpc_status";
+    case GRPC_ERROR_INT_OFFSET:
+      return "offset";
+    case GRPC_ERROR_INT_INDEX:
+      return "index";
+    case GRPC_ERROR_INT_SIZE:
+      return "size";
   }
   GPR_UNREACHABLE_CODE(return "unknown");
 }
@@ -106,6 +118,10 @@ static const char *error_str_name(grpc_error_strs key) {
       return "syscall";
     case GRPC_ERROR_STR_FILE:
       return "file";
+    case GRPC_ERROR_STR_GRPC_MESSAGE:
+      return "grpc_message";
+    case GRPC_ERROR_STR_RAW_BYTES:
+      return "raw_bytes";
   }
   GPR_UNREACHABLE_CODE(return "unknown");
 }

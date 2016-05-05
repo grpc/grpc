@@ -34,7 +34,9 @@
 #include "src/core/ext/transport/chttp2/transport/frame_window_update.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 gpr_slice grpc_chttp2_window_update_create(
     uint32_t id, uint32_t window_update, grpc_transport_one_way_stats *stats) {
@@ -62,19 +64,22 @@ gpr_slice grpc_chttp2_window_update_create(
   return slice;
 }
 
-grpc_chttp2_parse_error grpc_chttp2_window_update_parser_begin_frame(
+grpc_error *grpc_chttp2_window_update_parser_begin_frame(
     grpc_chttp2_window_update_parser *parser, uint32_t length, uint8_t flags) {
   if (flags || length != 4) {
-    gpr_log(GPR_ERROR, "invalid window update: length=%d, flags=%02x", length,
-            flags);
-    return GRPC_CHTTP2_CONNECTION_ERROR;
+    char *msg;
+    gpr_asprintf(&msg, "invalid window update: length=%d, flags=%02x", length,
+                 flags);
+    grpc_error *err = GRPC_ERROR_CREATE(msg);
+    gpr_free(msg);
+    return err;
   }
   parser->byte = 0;
   parser->amount = 0;
-  return GRPC_CHTTP2_PARSE_OK;
+  return GRPC_ERROR_NONE;
 }
 
-grpc_chttp2_parse_error grpc_chttp2_window_update_parser_parse(
+grpc_error *grpc_chttp2_window_update_parser_parse(
     grpc_exec_ctx *exec_ctx, void *parser,
     grpc_chttp2_transport_parsing *transport_parsing,
     grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
@@ -96,8 +101,11 @@ grpc_chttp2_parse_error grpc_chttp2_window_update_parser_parse(
   if (p->byte == 4) {
     uint32_t received_update = p->amount;
     if (received_update == 0 || (received_update & 0x80000000u)) {
-      gpr_log(GPR_ERROR, "invalid window update bytes: %d", p->amount);
-      return GRPC_CHTTP2_CONNECTION_ERROR;
+      char *msg;
+      gpr_asprintf(&msg, "invalid window update bytes: %d", p->amount);
+      grpc_error *err = GRPC_ERROR_CREATE(msg);
+      gpr_free(msg);
+      return err;
     }
     GPR_ASSERT(is_last);
 
@@ -115,5 +123,5 @@ grpc_chttp2_parse_error grpc_chttp2_window_update_parser_parse(
     }
   }
 
-  return GRPC_CHTTP2_PARSE_OK;
+  return GRPC_ERROR_NONE;
 }
