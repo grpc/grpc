@@ -51,10 +51,8 @@ _PACKAGE_DIRECTORIES = {
 }
 
 _INSTALL_REQUIRES = (
-    'grpcio>=grpcio-0.14.0.dev0',
+    'grpcio>=0.13.1',
 )
-
-_SETUP_REQUIRES = _INSTALL_REQUIRES
 
 _COMMAND_CLASS = {
     'copy_proto_modules': health_commands.CopyProtoModules,
@@ -69,6 +67,5 @@ setuptools.setup(
     packages=list(_PACKAGES),
     package_dir=_PACKAGE_DIRECTORIES,
     install_requires=_INSTALL_REQUIRES,
-    setup_requires=_SETUP_REQUIRES,
     cmdclass=_COMMAND_CLASS
 )
