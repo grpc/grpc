@@ -51,6 +51,8 @@ typedef enum {
   GRPC_ERROR_INT_INDEX,
   GRPC_ERROR_INT_SIZE,
   GRPC_ERROR_INT_HTTP2_ERROR,
+  GRPC_ERROR_INT_TSI_CODE,
+  GRPC_ERROR_INT_SECURITY_STATUS,
 } grpc_error_ints;
 
 typedef enum {
@@ -61,6 +63,7 @@ typedef enum {
   GRPC_ERROR_STR_TARGET_ADDRESS,
   GRPC_ERROR_STR_GRPC_MESSAGE,
   GRPC_ERROR_STR_RAW_BYTES,
+  GRPC_ERROR_STR_TSI_ERROR,
 } grpc_error_strs;
 
 typedef enum {

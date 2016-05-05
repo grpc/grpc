@@ -116,19 +116,19 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   notify = c->notify;
   c->notify = NULL;
   /* look at c->args which are connector args. */
-  notify->cb(exec_ctx, notify->cb_arg, 1);
+  notify->cb(exec_ctx, notify->cb_arg, GRPC_ERROR_NONE);
   if (args_copy != NULL) grpc_channel_args_destroy(args_copy);
 }
 
 static void on_initial_connect_string_sent(grpc_exec_ctx *exec_ctx, void *arg,
-                                           bool success) {
+                                           grpc_error *error) {
   connector *c = arg;
   grpc_channel_security_connector_do_handshake(exec_ctx, c->security_connector,
                                                c->connecting_endpoint,
                                                on_secure_handshake_done, c);
 }
 
-static void connected(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   connector *c = arg;
   grpc_closure *notify;
   grpc_endpoint *tcp = c->newly_connecting_endpoint;
@@ -153,7 +153,7 @@ static void connected(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
     memset(c->result, 0, sizeof(*c->result));
     notify = c->notify;
     c->notify = NULL;
-    notify->cb(exec_ctx, notify->cb_arg, 1);
+    notify->cb(exec_ctx, notify->cb_arg, GRPC_ERROR_NONE);
   }
 }
 

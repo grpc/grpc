@@ -128,7 +128,7 @@ static void on_md_processing_done(
     grpc_metadata_batch_filter(calld->recv_initial_metadata, remove_consumed_md,
                                elem);
     grpc_metadata_array_destroy(&calld->md);
-    calld->on_done_recv->cb(&exec_ctx, calld->on_done_recv->cb_arg, 1);
+    grpc_exec_ctx_push(&exec_ctx, calld->on_done_recv, GRPC_ERROR_NONE, NULL);
   } else {
     gpr_slice message;
     grpc_transport_stream_op close_op;
@@ -146,18 +146,21 @@ static void on_md_processing_done(
     calld->transport_op.send_trailing_metadata = NULL;
     grpc_transport_stream_op_add_close(&close_op, status, &message);
     grpc_call_next_op(&exec_ctx, elem, &close_op);
-    calld->on_done_recv->cb(&exec_ctx, calld->on_done_recv->cb_arg, 0);
+    grpc_exec_ctx_push(&exec_ctx, calld->on_done_recv,
+                       grpc_error_set_int(GRPC_ERROR_CREATE(error_details),
+                                          GRPC_ERROR_INT_GRPC_STATUS, status),
+                       NULL);
   }
 
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void auth_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
-                         bool success) {
+                         grpc_error *error) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
-  if (success) {
+  if (error == GRPC_ERROR_NONE) {
     if (chand->creds->processor.process != NULL) {
       calld->md = metadata_batch_to_md_array(calld->recv_initial_metadata);
       chand->creds->processor.process(
@@ -166,7 +169,8 @@ static void auth_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
       return;
     }
   }
-  calld->on_done_recv->cb(exec_ctx, calld->on_done_recv->cb_arg, success);
+  grpc_exec_ctx_push(exec_ctx, calld->on_done_recv, grpc_error_ref(error),
+                     NULL);
 }
 
 static void set_recv_ops_md_callbacks(grpc_call_element *elem,

@@ -41,6 +41,7 @@
 #include <grpc/support/slice_buffer.h>
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
+#include "src/core/lib/security/transport/tsi_error.h"
 
 #define GRPC_INITIAL_HANDSHAKE_BUFFER_SIZE 256
 
@@ -63,10 +64,11 @@ typedef struct {
 } grpc_security_handshake;
 
 static void on_handshake_data_received_from_peer(grpc_exec_ctx *exec_ctx,
-                                                 void *setup, bool success);
+                                                 void *setup,
+                                                 grpc_error *error);
 
 static void on_handshake_data_sent_to_peer(grpc_exec_ctx *exec_ctx, void *setup,
-                                           bool success);
+                                           grpc_error *error);
 
 static void security_connector_remove_handshake(grpc_security_handshake *h) {
   GPR_ASSERT(!h->is_client_side);
@@ -97,11 +99,11 @@ static void security_connector_remove_handshake(grpc_security_handshake *h) {
 
 static void security_handshake_done(grpc_exec_ctx *exec_ctx,
                                     grpc_security_handshake *h,
-                                    int is_success) {
+                                    grpc_error *error) {
   if (!h->is_client_side) {
     security_connector_remove_handshake(h);
   }
-  if (is_success) {
+  if (error == GRPC_ERROR_NONE) {
     h->cb(exec_ctx, h->user_data, GRPC_SECURITY_OK, h->secure_endpoint,
           h->auth_context);
   } else {
@@ -130,17 +132,20 @@ static void on_peer_checked(grpc_exec_ctx *exec_ctx, void *user_data,
   tsi_frame_protector *protector;
   tsi_result result;
   if (status != GRPC_SECURITY_OK) {
-    gpr_log(GPR_ERROR, "Error checking peer.");
-    security_handshake_done(exec_ctx, h, 0);
+    security_handshake_done(
+        exec_ctx, h,
+        grpc_error_set_int(GRPC_ERROR_CREATE("Error checking peer."),
+                           GRPC_ERROR_INT_SECURITY_STATUS, status));
     return;
   }
   h->auth_context = GRPC_AUTH_CONTEXT_REF(auth_context, "handshake");
   result =
       tsi_handshaker_create_frame_protector(h->handshaker, NULL, &protector);
   if (result != TSI_OK) {
-    gpr_log(GPR_ERROR, "Frame protector creation failed with error %s.",
-            tsi_result_to_string(result));
-    security_handshake_done(exec_ctx, h, 0);
+    security_handshake_done(
+        exec_ctx, h,
+        grpc_set_tsi_error_bits(
+            GRPC_ERROR_CREATE("Frame protector creation failed"), result));
     return;
   }
   h->secure_endpoint =
@@ -148,7 +153,7 @@ static void on_peer_checked(grpc_exec_ctx *exec_ctx, void *user_data,
                                   h->left_overs.slices, h->left_overs.count);
   h->left_overs.count = 0;
   h->left_overs.length = 0;
-  security_handshake_done(exec_ctx, h, 1);
+  security_handshake_done(exec_ctx, h, GRPC_ERROR_NONE);
   return;
 }
 
@@ -157,9 +162,9 @@ static void check_peer(grpc_exec_ctx *exec_ctx, grpc_security_handshake *h) {
   tsi_result result = tsi_handshaker_extract_peer(h->handshaker, &peer);
 
   if (result != TSI_OK) {
-    gpr_log(GPR_ERROR, "Peer extraction failed with error %s",
-            tsi_result_to_string(result));
-    security_handshake_done(exec_ctx, h, 0);
+    security_handshake_done(
+        exec_ctx, h, grpc_set_tsi_error_bits(
+                         GRPC_ERROR_CREATE("Peer extraction failed"), result));
     return;
   }
   grpc_security_connector_check_peer(exec_ctx, h->connector, peer,
@@ -185,9 +190,9 @@ static void send_handshake_bytes_to_peer(grpc_exec_ctx *exec_ctx,
   } while (result == TSI_INCOMPLETE_DATA);
 
   if (result != TSI_OK) {
-    gpr_log(GPR_ERROR, "Handshake failed with error %s",
-            tsi_result_to_string(result));
-    security_handshake_done(exec_ctx, h, 0);
+    security_handshake_done(
+        exec_ctx, h,
+        grpc_set_tsi_error_bits(GRPC_ERROR_CREATE("Handshake failed"), result));
     return;
   }
 
@@ -203,7 +208,7 @@ static void send_handshake_bytes_to_peer(grpc_exec_ctx *exec_ctx,
 
 static void on_handshake_data_received_from_peer(grpc_exec_ctx *exec_ctx,
                                                  void *handshake,
-                                                 bool success) {
+                                                 grpc_error *error) {
   grpc_security_handshake *h = handshake;
   size_t consumed_slice_size = 0;
   tsi_result result = TSI_OK;
@@ -211,9 +216,10 @@ static void on_handshake_data_received_from_peer(grpc_exec_ctx *exec_ctx,
   size_t num_left_overs;
   int has_left_overs_in_current_slice = 0;
 
-  if (!success) {
-    gpr_log(GPR_ERROR, "Read failed.");
-    security_handshake_done(exec_ctx, h, 0);
+  if (error != GRPC_ERROR_NONE) {
+    security_handshake_done(
+        exec_ctx, h,
+        GRPC_ERROR_CREATE_REFERENCING("Handshake read failed", &error, 1));
     return;
   }
 
@@ -238,9 +244,9 @@ static void on_handshake_data_received_from_peer(grpc_exec_ctx *exec_ctx,
   }
 
   if (result != TSI_OK) {
-    gpr_log(GPR_ERROR, "Handshake failed with error %s",
-            tsi_result_to_string(result));
-    security_handshake_done(exec_ctx, h, 0);
+    security_handshake_done(
+        exec_ctx, h,
+        grpc_set_tsi_error_bits(GRPC_ERROR_CREATE("Handshake failed"), result));
     return;
   }
 
@@ -270,13 +276,15 @@ static void on_handshake_data_received_from_peer(grpc_exec_ctx *exec_ctx,
 
 /* If handshake is NULL, the handshake is done. */
 static void on_handshake_data_sent_to_peer(grpc_exec_ctx *exec_ctx,
-                                           void *handshake, bool success) {
+                                           void *handshake, grpc_error *error) {
   grpc_security_handshake *h = handshake;
 
   /* Make sure that write is OK. */
-  if (!success) {
-    gpr_log(GPR_ERROR, "Write failed.");
-    if (handshake != NULL) security_handshake_done(exec_ctx, h, 0);
+  if (error != GRPC_ERROR_NONE) {
+    if (handshake != NULL)
+      security_handshake_done(
+          exec_ctx, h,
+          GRPC_ERROR_CREATE_REFERENCING("Handshake write failed", &error, 1));
     return;
   }
 

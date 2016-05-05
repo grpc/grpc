@@ -82,6 +82,9 @@ typedef struct {
   grpc_timer retry_timer;
   /** retry backoff state */
   gpr_backoff backoff_state;
+
+  /** currently resolving addresses */
+  grpc_resolved_addresses *addresses;
 } dns_resolver;
 
 static void dns_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *r);
@@ -108,7 +111,8 @@ static void dns_shutdown(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver) {
   }
   if (r->next_completion != NULL) {
     *r->target_config = NULL;
-    grpc_exec_ctx_enqueue(exec_ctx, r->next_completion, true, NULL);
+    grpc_exec_ctx_push(exec_ctx, r->next_completion,
+                       GRPC_ERROR_CREATE("Resolver Shutdown"), NULL);
     r->next_completion = NULL;
   }
   gpr_mu_unlock(&r->mu);
@@ -143,12 +147,12 @@ static void dns_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
 }
 
 static void dns_on_retry_timer(grpc_exec_ctx *exec_ctx, void *arg,
-                               bool success) {
+                               grpc_error *error) {
   dns_resolver *r = arg;
 
   gpr_mu_lock(&r->mu);
   r->have_retry_timer = false;
-  if (success) {
+  if (error == GRPC_ERROR_NONE) {
     if (!r->resolving) {
       dns_start_resolving_locked(exec_ctx, r);
     }
@@ -159,13 +163,14 @@ static void dns_on_retry_timer(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
-                            grpc_resolved_addresses *addresses) {
+                            grpc_error *error) {
   dns_resolver *r = arg;
   grpc_client_config *config = NULL;
   grpc_lb_policy *lb_policy;
   gpr_mu_lock(&r->mu);
   GPR_ASSERT(r->resolving);
   r->resolving = 0;
+  grpc_resolved_addresses *addresses = r->addresses;
   if (addresses != NULL) {
     grpc_lb_policy_args lb_policy_args;
     config = grpc_client_config_create();
@@ -183,8 +188,10 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     gpr_timespec next_try = gpr_backoff_step(&r->backoff_state, now);
     gpr_timespec timeout = gpr_time_sub(next_try, now);
-    gpr_log(GPR_DEBUG, "dns resolution failed: retrying in %d.%09d seconds",
-            timeout.tv_sec, timeout.tv_nsec);
+    const char *msg = grpc_error_string(error);
+    gpr_log(GPR_DEBUG, "dns resolution failed: retrying in %d.%09d seconds: %s",
+            timeout.tv_sec, timeout.tv_nsec, msg);
+    grpc_error_free_string(msg);
     GPR_ASSERT(!r->have_retry_timer);
     r->have_retry_timer = true;
     GRPC_RESOLVER_REF(&r->base, "retry-timer");
@@ -207,7 +214,8 @@ static void dns_start_resolving_locked(grpc_exec_ctx *exec_ctx,
   GRPC_RESOLVER_REF(&r->base, "dns-resolving");
   GPR_ASSERT(!r->resolving);
   r->resolving = 1;
-  grpc_resolve_address(exec_ctx, r->name, r->default_port, dns_on_resolved, r);
+  grpc_resolve_address(exec_ctx, r->name, r->default_port,
+                       grpc_closure_create(dns_on_resolved, r), &r->addresses);
 }
 
 static void dns_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
@@ -218,7 +226,7 @@ static void dns_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
     if (r->resolved_config) {
       grpc_client_config_ref(r->resolved_config);
     }
-    grpc_exec_ctx_enqueue(exec_ctx, r->next_completion, true, NULL);
+    grpc_exec_ctx_push(exec_ctx, r->next_completion, GRPC_ERROR_NONE, NULL);
     r->next_completion = NULL;
     r->published_version = r->resolved_version;
   }

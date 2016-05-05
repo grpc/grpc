@@ -41,8 +41,8 @@
 
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/parser.h"
-#include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
+#include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/support/load_file.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -65,18 +65,20 @@ typedef struct {
   grpc_pollset *pollset;
   int is_done;
   int success;
+  grpc_http_response response;
 } compute_engine_detector;
 
-static void on_compute_engine_detection_http_response(
-    grpc_exec_ctx *exec_ctx, void *user_data,
-    const grpc_http_response *response) {
+static void on_compute_engine_detection_http_response(grpc_exec_ctx *exec_ctx,
+                                                      void *user_data,
+                                                      grpc_error *error) {
   compute_engine_detector *detector = (compute_engine_detector *)user_data;
-  if (response != NULL && response->status == 200 && response->hdr_count > 0) {
+  if (error == GRPC_ERROR_NONE && detector->response.status == 200 &&
+      detector->response.hdr_count > 0) {
     /* Internet providers can return a generic response to all requests, so
        it is necessary to check that metadata header is present also. */
     size_t i;
-    for (i = 0; i < response->hdr_count; i++) {
-      grpc_http_header *header = &response->hdrs[i];
+    for (i = 0; i < detector->response.hdr_count; i++) {
+      grpc_http_header *header = &detector->response.hdrs[i];
       if (strcmp(header->key, "Metadata-Flavor") == 0 &&
           strcmp(header->value, "Google") == 0) {
         detector->success = 1;
@@ -90,7 +92,7 @@ static void on_compute_engine_detection_http_response(
   gpr_mu_unlock(g_polling_mu);
 }
 
-static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, bool s) {
+static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, grpc_error *e) {
   grpc_pollset_destroy(p);
 }
 
@@ -119,9 +121,10 @@ static int is_stack_running_on_compute_engine(void) {
   grpc_httpcli_get(
       &exec_ctx, &context, detector.pollset, &request,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), max_detection_delay),
-      on_compute_engine_detection_http_response, &detector);
+      grpc_closure_create(on_compute_engine_detection_http_response, &detector),
+      &detector.response);
 
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_exec_ctx_flush(&exec_ctx);
 
   /* Block until we get the response. This is not ideal but this should only be
      called once for the lifetime of the process by the default credentials. */
