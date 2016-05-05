@@ -51,14 +51,12 @@ using google::protobuf::FileDescriptor;
 using google::protobuf::FieldDescriptor;
 using google::protobuf::DescriptorPool;
 using google::protobuf::FileDescriptorProto;
-using grpc::reflection::v1alpha::EmptyRequest;
-using grpc::reflection::v1alpha::ListServiceResponse;
-using grpc::reflection::v1alpha::FileNameRequest;
-using grpc::reflection::v1alpha::SymbolRequest;
+using grpc::reflection::v1alpha::DescriptorDatabaseRequest;
 using grpc::reflection::v1alpha::ExtensionRequest;
-using grpc::reflection::v1alpha::TypeRequest;
-using grpc::reflection::v1alpha::FileDescriptorProtoResponse;
+using grpc::reflection::v1alpha::DescriptorDatabaseResponse;
+using grpc::reflection::v1alpha::ListServiceResponse;
 using grpc::reflection::v1alpha::ExtensionNumberResponse;
+using grpc::reflection::v1alpha::ErrorResponse;
 
 namespace grpc {
 
@@ -70,55 +68,101 @@ void ProtoServerReflection::SetServiceList(
   services_ = services;
 }
 
+Status ProtoServerReflection::DescriptorDatabaseInfo(
+    ServerContext* context,
+    ServerReaderWriter<DescriptorDatabaseResponse, DescriptorDatabaseRequest>*
+        stream) {
+  DescriptorDatabaseRequest request;
+  DescriptorDatabaseResponse response;
+  Status status;
+  while (stream->Read(&request)) {
+    switch (request.message_request_case()) {
+      case DescriptorDatabaseRequest::MessageRequestCase::kFileByFilename:
+        status = GetFileByName(context, request.file_by_filename(), &response);
+        break;
+      case DescriptorDatabaseRequest::MessageRequestCase::kFileContainingSymbol:
+        status = GetFileContainingSymbol(
+            context, request.file_containing_symbol(), &response);
+        break;
+      case DescriptorDatabaseRequest::MessageRequestCase::
+          kFileContainingExtension:
+        status = GetFileContainingExtension(
+            context, &request.file_containing_extension(), &response);
+        break;
+      case DescriptorDatabaseRequest::MessageRequestCase::
+          kAllExtensionNumbersOfType:
+        status = GetAllExtensionNumbers(
+            context, request.all_extension_numbers_of_type(),
+            response.mutable_all_extension_numbers_response());
+        break;
+      case DescriptorDatabaseRequest::MessageRequestCase::kListServices:
+        status =
+            ListService(context, response.mutable_list_services_response());
+        break;
+      default:
+        status = Status(StatusCode::UNIMPLEMENTED, "");
+    }
+
+    response.set_valid_host(request.host());
+    response.set_allocated_original_request(
+        new DescriptorDatabaseRequest(request));
+    stream->Write(response);
+  }
+
+  return Status::OK;
+}
+
+void ProtoServerReflection::FillErrorResponse(Status* status,
+                                              ErrorResponse* error_response) {
+  error_response->set_error_code(status->error_code());
+  error_response->set_error_message(status->error_message());
+}
+
 Status ProtoServerReflection::ListService(ServerContext* context,
-                                          const EmptyRequest* request,
                                           ListServiceResponse* response) {
   if (services_ == nullptr) {
     return Status(StatusCode::NOT_FOUND, "Services not found.");
   }
   for (auto it = services_->begin(); it != services_->end(); ++it) {
-    response->add_services(*it);
+    response->add_service(*it);
   }
   return Status::OK;
 }
 
 Status ProtoServerReflection::GetFileByName(
-    ServerContext* context, const FileNameRequest* request,
-    FileDescriptorProtoResponse* response) {
+    ServerContext* context, const grpc::string& filename,
+    DescriptorDatabaseResponse* response) {
   if (descriptor_pool_ == nullptr) {
     return Status::CANCELLED;
   }
 
-  const FileDescriptor* file_desc =
-      descriptor_pool_->FindFileByName(request->filename());
+  const FileDescriptor* file_desc = descriptor_pool_->FindFileByName(filename);
   if (file_desc == nullptr) {
     return Status(StatusCode::NOT_FOUND, "File not found.");
   }
   FillFileDescriptorProtoResponse(file_desc, response);
-  // file_desc->CopyTo(response->mutable_file_descriptor_proto());
   return Status::OK;
 }
 
 Status ProtoServerReflection::GetFileContainingSymbol(
-    ServerContext* context, const SymbolRequest* request,
-    FileDescriptorProtoResponse* response) {
+    ServerContext* context, const grpc::string& symbol,
+    DescriptorDatabaseResponse* response) {
   if (descriptor_pool_ == nullptr) {
     return Status::CANCELLED;
   }
 
   const FileDescriptor* file_desc =
-      descriptor_pool_->FindFileContainingSymbol(request->symbol());
+      descriptor_pool_->FindFileContainingSymbol(symbol);
   if (file_desc == nullptr) {
     return Status(StatusCode::NOT_FOUND, "Symbol not found.");
   }
   FillFileDescriptorProtoResponse(file_desc, response);
-  // file_desc->CopyTo(response->mutable_file_descriptor_proto());
   return Status::OK;
 }
 
 Status ProtoServerReflection::GetFileContainingExtension(
     ServerContext* context, const ExtensionRequest* request,
-    FileDescriptorProtoResponse* response) {
+    DescriptorDatabaseResponse* response) {
   if (descriptor_pool_ == nullptr) {
     return Status::CANCELLED;
   }
@@ -135,19 +179,17 @@ Status ProtoServerReflection::GetFileContainingExtension(
     return Status(StatusCode::NOT_FOUND, "Extension not found.");
   }
   FillFileDescriptorProtoResponse(field_desc->file(), response);
-  // field_desc->file()->CopyTo(response->mutable_file_descriptor_proto());
   return Status::OK;
 }
 
 Status ProtoServerReflection::GetAllExtensionNumbers(
-    ServerContext* context, const TypeRequest* request,
+    ServerContext* context, const grpc::string& type,
     ExtensionNumberResponse* response) {
   if (descriptor_pool_ == nullptr) {
     return Status::CANCELLED;
   }
 
-  const Descriptor* desc =
-      descriptor_pool_->FindMessageTypeByName(request->type());
+  const Descriptor* desc = descriptor_pool_->FindMessageTypeByName(type);
   if (desc == nullptr) {
     return Status(StatusCode::NOT_FOUND, "Type not found.");
   }
@@ -157,11 +199,12 @@ Status ProtoServerReflection::GetAllExtensionNumbers(
   for (auto extension : extensions) {
     response->add_extension_number(extension->number());
   }
+  response->set_base_type_name(type);
   return Status::OK;
 }
 
 void ProtoServerReflection::FillFileDescriptorProtoResponse(
-    const FileDescriptor* file_desc, FileDescriptorProtoResponse* response) {
+    const FileDescriptor* file_desc, DescriptorDatabaseResponse* response) {
   FileDescriptorProto file_desc_proto;
   grpc::string data;
   file_desc->CopyTo(&file_desc_proto);

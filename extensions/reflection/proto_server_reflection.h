@@ -52,36 +52,41 @@ class ProtoServerReflection GRPC_FINAL
  public:
   ProtoServerReflection();
 
-  ProtoServerReflection(const Server* server);
-
   void SetServiceList(const std::vector<grpc::string>* services);
 
-  Status ListService(
-      ServerContext* context, const reflection::v1alpha::EmptyRequest* request,
-      reflection::v1alpha::ListServiceResponse* response) GRPC_OVERRIDE;
+  Status DescriptorDatabaseInfo(
+      ServerContext* context,
+      ServerReaderWriter<reflection::v1alpha::DescriptorDatabaseResponse,
+                         reflection::v1alpha::DescriptorDatabaseRequest>*
+          stream) GRPC_OVERRIDE;
+
+ private:
+  Status ListService(ServerContext* context,
+                     reflection::v1alpha::ListServiceResponse* response);
 
   Status GetFileByName(
-      ServerContext* context,
-      const reflection::v1alpha::FileNameRequest* request,
-      reflection::v1alpha::FileDescriptorProtoResponse* response) GRPC_OVERRIDE;
+      ServerContext* context, const grpc::string& file_name,
+      reflection::v1alpha::DescriptorDatabaseResponse* response);
 
   Status GetFileContainingSymbol(
-      ServerContext* context, const reflection::v1alpha::SymbolRequest* request,
-      reflection::v1alpha::FileDescriptorProtoResponse* response) GRPC_OVERRIDE;
+      ServerContext* context, const grpc::string& symbol,
+      reflection::v1alpha::DescriptorDatabaseResponse* response);
 
   Status GetFileContainingExtension(
       ServerContext* context,
       const reflection::v1alpha::ExtensionRequest* request,
-      reflection::v1alpha::FileDescriptorProtoResponse* response) GRPC_OVERRIDE;
+      reflection::v1alpha::DescriptorDatabaseResponse* response);
 
   Status GetAllExtensionNumbers(
-      ServerContext* context, const reflection::v1alpha::TypeRequest* request,
-      reflection::v1alpha::ExtensionNumberResponse* response) GRPC_OVERRIDE;
+      ServerContext* context, const grpc::string& type,
+      reflection::v1alpha::ExtensionNumberResponse* response);
 
- private:
   void FillFileDescriptorProtoResponse(
       const google::protobuf::FileDescriptor* file_desc,
-      reflection::v1alpha::FileDescriptorProtoResponse* response);
+      reflection::v1alpha::DescriptorDatabaseResponse* response);
+
+  void FillErrorResponse(Status* status,
+                         reflection::v1alpha::ErrorResponse* error_response);
 
   const google::protobuf::DescriptorPool* descriptor_pool_;
   const std::vector<string>* services_;

@@ -80,9 +80,18 @@ class ProtoReflectionDescriptorDatabase
   }
 
  private:
-  const google::protobuf::FileDescriptorProto ParseFileDescriptorProtoResponse(
-      reflection::v1alpha::FileDescriptorProtoResponse* response);
+  typedef ClientReaderWriter<
+      grpc::reflection::v1alpha::DescriptorDatabaseRequest,
+      grpc::reflection::v1alpha::DescriptorDatabaseResponse>
+      ClientStream;
 
+  const google::protobuf::FileDescriptorProto ParseFileDescriptorProtoResponse(
+      const std::string& byte_fd_proto);
+
+  const std::shared_ptr<ClientStream> GetStream();
+
+  std::shared_ptr<ClientStream> stream_;
+  grpc::ClientContext ctx_;
   std::unique_ptr<grpc::reflection::v1alpha::ServerReflection::Stub> stub_;
   std::unordered_set<string> known_files_;
   std::unordered_set<string> missing_symbols_;
