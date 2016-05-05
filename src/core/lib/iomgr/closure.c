@@ -44,21 +44,21 @@ void grpc_closure_init(grpc_closure *closure, grpc_iomgr_cb_func cb,
 void grpc_closure_list_append(grpc_closure_list *closure_list,
                               grpc_closure *closure, grpc_error *error) {
   if (closure == NULL) return;
-  closure->final_data.error = error;
-  closure->next = NULL;
+  closure->error = error;
+  closure->next_data.next = NULL;
   if (closure_list->head == NULL) {
     closure_list->head = closure;
   } else {
-    closure_list->tail->next = closure;
+    closure_list->tail->next_data.next = closure;
   }
   closure_list->tail = closure;
 }
 
 void grpc_closure_list_fail_all(grpc_closure_list *list,
                                 grpc_error *forced_failure) {
-  for (grpc_closure *c = list->head; c != NULL; c = c->next) {
-    if (c->final_data.error == NULL) {
-      c->final_data.error = grpc_error_ref(forced_failure);
+  for (grpc_closure *c = list->head; c != NULL; c = c->next_data.next) {
+    if (c->error == GRPC_ERROR_NONE) {
+      c->error = grpc_error_ref(forced_failure);
     }
   }
   grpc_error_unref(forced_failure);
@@ -75,7 +75,7 @@ void grpc_closure_list_move(grpc_closure_list *src, grpc_closure_list *dst) {
   if (dst->head == NULL) {
     *dst = *src;
   } else {
-    dst->tail->next = src->head;
+    dst->tail->next_data.next = src->head;
     dst->tail = src->tail;
   }
   src->head = src->tail = NULL;

@@ -48,9 +48,9 @@ typedef struct {
 gpr_slice grpc_chttp2_window_update_create(uint32_t id, uint32_t window_delta,
                                            grpc_transport_one_way_stats *stats);
 
-grpc_chttp2_parse_error grpc_chttp2_window_update_parser_begin_frame(
+grpc_error *grpc_chttp2_window_update_parser_begin_frame(
     grpc_chttp2_window_update_parser *parser, uint32_t length, uint8_t flags);
-grpc_chttp2_parse_error grpc_chttp2_window_update_parser_parse(
+grpc_error *grpc_chttp2_window_update_parser_parse(
     grpc_exec_ctx *exec_ctx, void *parser,
     grpc_chttp2_transport_parsing *transport_parsing,
     grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last);

@@ -38,6 +38,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 gpr_slice grpc_chttp2_ping_create(uint8_t ack, uint8_t *opaque_8bytes) {
   gpr_slice slice = gpr_slice_malloc(9 + 8);
@@ -57,18 +58,22 @@ gpr_slice grpc_chttp2_ping_create(uint8_t ack, uint8_t *opaque_8bytes) {
   return slice;
 }
 
-grpc_chttp2_parse_error grpc_chttp2_ping_parser_begin_frame(
-    grpc_chttp2_ping_parser *parser, uint32_t length, uint8_t flags) {
+grpc_error *grpc_chttp2_ping_parser_begin_frame(grpc_chttp2_ping_parser *parser,
+                                                uint32_t length,
+                                                uint8_t flags) {
   if (flags & 0xfe || length != 8) {
-    gpr_log(GPR_ERROR, "invalid ping: length=%d, flags=%02x", length, flags);
-    return GRPC_CHTTP2_CONNECTION_ERROR;
+    char *msg;
+    gpr_asprintf(&msg, "invalid ping: length=%d, flags=%02x", length, flags);
+    grpc_error *error = GRPC_ERROR_CREATE(msg);
+    gpr_free(msg);
+    return error;
   }
   parser->byte = 0;
   parser->is_ack = flags;
-  return GRPC_CHTTP2_PARSE_OK;
+  return GRPC_ERROR_NONE;
 }
 
-grpc_chttp2_parse_error grpc_chttp2_ping_parser_parse(
+grpc_error *grpc_chttp2_ping_parser_parse(
     grpc_exec_ctx *exec_ctx, void *parser,
     grpc_chttp2_transport_parsing *transport_parsing,
     grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
@@ -93,5 +98,5 @@ grpc_chttp2_parse_error grpc_chttp2_ping_parser_parse(
     }
   }
 
-  return GRPC_CHTTP2_PARSE_OK;
+  return GRPC_ERROR_NONE;
 }
