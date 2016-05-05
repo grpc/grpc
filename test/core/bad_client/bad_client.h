@@ -60,8 +60,8 @@ void grpc_run_bad_client_test(
     const char *client_payload, size_t client_payload_length, uint32_t flags);
 
 #define GRPC_RUN_BAD_CLIENT_TEST(server_validator, client_validator, payload, \
-                                 flags) \
-  grpc_run_bad_client_test(server_validator, client_validator, payload, \
+                                 flags)                                       \
+  grpc_run_bad_client_test(server_validator, client_validator, payload,       \
                            sizeof(payload) - 1, flags)
 
 #endif /* GRPC_TEST_CORE_BAD_CLIENT_BAD_CLIENT_H */

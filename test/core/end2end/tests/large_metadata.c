@@ -109,7 +109,7 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   const size_t large_size = 64 * 1024;
   grpc_arg arg = {GRPC_ARG_INTEGER,
                   GRPC_ARG_MAX_METADATA_SIZE,
-                  {.integer=(int)large_size + 1024}};
+                  {.integer = (int)large_size + 1024}};
   grpc_channel_args args = {1, &arg};
   grpc_end2end_test_fixture f =
       begin_test(config, "test_request_with_large_metadata", &args, &args);
