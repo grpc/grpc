@@ -30,11 +30,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+
+#include <limits.h>
+#include <string.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
-#include <limits.h>
+
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -99,6 +103,8 @@ static void prepare_test(int is_client) {
     grpc_call_details_init(&g_state.call_details);
     op = g_state.ops;
     op->op = GRPC_OP_SEND_INITIAL_METADATA;
+    memset(&op->data.send_initial_metadata, 0,
+           sizeof(op->data.send_initial_metadata));
     op->data.send_initial_metadata.count = 0;
     op->flags = 0;
     op->reserved = NULL;
@@ -161,6 +167,8 @@ static void test_non_null_reserved_on_op() {
 
   op = g_state.ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  memset(&op->data.send_initial_metadata, 0,
+         sizeof(op->data.send_initial_metadata));
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
   op->reserved = tag(2);
@@ -179,6 +187,8 @@ static void test_send_initial_metadata_more_than_once() {
 
   op = g_state.ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  memset(&op->data.send_initial_metadata, 0,
+         sizeof(op->data.send_initial_metadata));
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
   op->reserved = NULL;
@@ -191,6 +201,8 @@ static void test_send_initial_metadata_more_than_once() {
 
   op = g_state.ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  memset(&op->data.send_initial_metadata, 0,
+         sizeof(op->data.send_initial_metadata));
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
   op->reserved = NULL;
@@ -209,6 +221,8 @@ static void test_too_many_metadata() {
 
   op = g_state.ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  memset(&op->data.send_initial_metadata, 0,
+         sizeof(op->data.send_initial_metadata));
   op->data.send_initial_metadata.count = (size_t)INT_MAX + 1;
   op->flags = 0;
   op->reserved = NULL;
@@ -227,6 +241,8 @@ static void test_send_null_message() {
 
   op = g_state.ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  memset(&op->data.send_initial_metadata, 0,
+         sizeof(op->data.send_initial_metadata));
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
   op->reserved = NULL;
@@ -252,6 +268,8 @@ static void test_send_messages_at_the_same_time() {
   prepare_test(1);
   op = g_state.ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  memset(&op->data.send_initial_metadata, 0,
+         sizeof(op->data.send_initial_metadata));
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
   op->reserved = NULL;

@@ -110,6 +110,8 @@ static void do_request_and_shutdown_server(grpc_end2end_test_fixture *f,
 
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  memset(&op->data.send_initial_metadata, 0,
+         sizeof(op->data.send_initial_metadata));
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
   op->reserved = NULL;
@@ -147,6 +149,8 @@ static void do_request_and_shutdown_server(grpc_end2end_test_fixture *f,
 
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  memset(&op->data.send_initial_metadata, 0,
+         sizeof(op->data.send_initial_metadata));
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
   op->reserved = NULL;

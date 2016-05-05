@@ -68,6 +68,8 @@ static void init_ping_pong_request(void) {
   op = ops;
 
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  memset(&op->data.send_initial_metadata, 0,
+         sizeof(op->data.send_initial_metadata));
   op->data.send_initial_metadata.count = 0;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;

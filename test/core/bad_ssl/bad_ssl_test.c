@@ -86,6 +86,8 @@ static void run_test(const char *target, size_t nops) {
 
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  memset(&op->data.send_initial_metadata, 0,
+         sizeof(op->data.send_initial_metadata));
   op->data.send_initial_metadata.count = 0;
   op->flags = GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY;
   op->reserved = NULL;

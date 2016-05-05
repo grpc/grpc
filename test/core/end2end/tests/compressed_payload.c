@@ -155,6 +155,8 @@ static void request_with_payload_template(
 
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  memset(&op->data.send_initial_metadata, 0,
+         sizeof(op->data.send_initial_metadata));
   if (client_metadata != NULL) {
     op->data.send_initial_metadata.count = 1;
     op->data.send_initial_metadata.metadata = client_metadata;
@@ -207,7 +209,10 @@ static void request_with_payload_template(
 
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  memset(&op->data.send_initial_metadata, 0,
+         sizeof(op->data.send_initial_metadata));
   op->data.send_initial_metadata.count = 0;
+  op->data.send_initial_metadata.compression_level = GRPC_COMPRESS_LEVEL_HIGH;
   op->flags = 0;
   op->reserved = NULL;
   op++;

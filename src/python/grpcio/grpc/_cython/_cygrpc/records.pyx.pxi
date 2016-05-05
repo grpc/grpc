@@ -559,6 +559,7 @@ def operation_send_initial_metadata(Metadata metadata):
   op.c_op.data.send_initial_metadata.count = metadata.c_metadata_array.count
   op.c_op.data.send_initial_metadata.metadata = (
       metadata.c_metadata_array.metadata)
+  op.c_op.data.send_initial_metadata.compression_level = 0;
   op.references.append(metadata)
   op.is_valid = True
   return op

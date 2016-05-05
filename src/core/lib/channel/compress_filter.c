@@ -237,7 +237,7 @@ static void compress_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
 
   GPR_TIMER_BEGIN("compress_start_transport_stream_op", 0);
 
-  if (op->send_initial_metadata) {
+  if (op->send_initial_metadata != NULL) {
     process_send_initial_metadata(elem, op->send_initial_metadata);
   }
   if (op->send_message != NULL && !skip_compression(elem) &&

@@ -134,6 +134,8 @@ static void start_rpc(int use_creds, int target_port) {
       state.channel, NULL, GRPC_PROPAGATE_DEFAULTS, state.cq, "/Service/Method",
       "localhost", gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
   state.op.op = GRPC_OP_SEND_INITIAL_METADATA;
+  memset(&state.op.data.send_initial_metadata, 0,
+         sizeof(state.op.data.send_initial_metadata));
   state.op.data.send_initial_metadata.count = 0;
   state.op.flags = 0;
   state.op.reserved = NULL;

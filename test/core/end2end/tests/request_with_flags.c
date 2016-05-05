@@ -133,6 +133,8 @@ static void test_invoke_request_with_flags(
 
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  memset(&op->data.send_initial_metadata, 0,
+         sizeof(op->data.send_initial_metadata));
   op->data.send_initial_metadata.count = 0;
   op->flags = flags_for_op[op->op];
   op->reserved = NULL;

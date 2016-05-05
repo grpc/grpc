@@ -194,6 +194,8 @@ class CallOpSendInitialMetadata {
     if (!send_) return;
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_SEND_INITIAL_METADATA;
+    memset(&op->data.send_initial_metadata, 0,
+           sizeof(op->data.send_initial_metadata));
     op->flags = flags_;
     op->reserved = NULL;
     op->data.send_initial_metadata.count = initial_metadata_count_;

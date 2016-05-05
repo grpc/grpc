@@ -134,6 +134,8 @@ int main(int argc, char **argv) {
   /* send initial metadata to probe connectivity */
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  memset(&op->data.send_initial_metadata, 0,
+         sizeof(op->data.send_initial_metadata));
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
   op->reserved = NULL;
@@ -207,6 +209,8 @@ int main(int argc, char **argv) {
   /* send initial metadata to probe connectivity */
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  memset(&op->data.send_initial_metadata, 0,
+         sizeof(op->data.send_initial_metadata));
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
   op->reserved = NULL;
