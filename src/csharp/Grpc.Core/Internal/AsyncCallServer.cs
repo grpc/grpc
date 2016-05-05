@@ -65,6 +65,15 @@ namespace Grpc.Core.Internal
         }
 
         /// <summary>
+        /// Only for testing purposes.
+        /// </summary>
+        public void InitializeForTesting(INativeCall call)
+        {
+            server.AddCallReference(this);
+            InitializeInternal(call);
+        }
+
+        /// <summary>
         /// Starts a server side call.
         /// </summary>
         public Task ServerSideCallAsync()
@@ -91,11 +100,10 @@ namespace Grpc.Core.Internal
 
         /// <summary>
         /// Receives a streaming request. Only one pending read action is allowed at any given time.
-        /// completionDelegate is called when the operation finishes.
         /// </summary>
-        public void StartReadMessage(AsyncCompletionDelegate<TRequest> completionDelegate)
+        public Task<TRequest> ReadMessageAsync()
         {
-            StartReadMessageInternal(completionDelegate);
+            return ReadMessageInternalAsync();
         }
 
         /// <summary>
@@ -128,24 +136,25 @@ namespace Grpc.Core.Internal
         }
 
         /// <summary>
-        /// Sends call result status, also indicating server is done with streaming responses.
-        /// Only one pending send action is allowed at any given time.
-        /// completionDelegate is called when the operation finishes.
+        /// Sends call result status, indicating we are done with writes.
+        /// Sending a status different from StatusCode.OK will also implicitly cancel the call.
         /// </summary>
-        public void StartSendStatusFromServer(Status status, Metadata trailers, AsyncCompletionDelegate<object> completionDelegate)
+        public Task SendStatusFromServerAsync(Status status, Metadata trailers)
         {
             lock (myLock)
             {
-                GrpcPreconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
-                CheckSendingAllowed(allowFinished: false);
+                GrpcPreconditions.CheckState(started);
+                GrpcPreconditions.CheckState(!disposed);
+                GrpcPreconditions.CheckState(!halfcloseRequested, "Can only send status from server once.");
 
                 using (var metadataArray = MetadataArraySafeHandle.Create(trailers))
                 {
                     call.StartSendStatusFromServer(HandleSendStatusFromServerFinished, status, metadataArray, !initialMetadataSent);
                 }
                 halfcloseRequested = true;
-                readingDone = true;
-                sendCompletionDelegate = completionDelegate;
+                initialMetadataSent = true;
+                sendStatusFromServerTcs = new TaskCompletionSource<object>();
+                return sendStatusFromServerTcs.Task;
             }
         }
 
@@ -174,12 +183,6 @@ namespace Grpc.Core.Internal
             get { return false; }
         }
 
-        protected override void CheckReadingAllowed()
-        {
-            base.CheckReadingAllowed();
-            GrpcPreconditions.CheckArgument(!cancelRequested);
-        }
-
         protected override void OnAfterReleaseResources()
         {
             server.RemoveCallReference(this);
@@ -190,12 +193,21 @@ namespace Grpc.Core.Internal
         /// </summary>
         private void HandleFinishedServerside(bool success, bool cancelled)
         {
+            // NOTE: because this event is a result of batch containing GRPC_OP_RECV_CLOSE_ON_SERVER,
+            // success will be always set to true.
             lock (myLock)
             {
                 finished = true;
+                if (streamingReadTcs == null)
+                {
+                    // if there's no pending read, readingDone=true will dispose now.
+                    // if there is a pending read, we will dispose once that read finishes.
+                    readingDone = true;
+                    streamingReadTcs = new TaskCompletionSource<TRequest>();
+                    streamingReadTcs.SetResult(default(TRequest));
+                }
                 ReleaseResourcesIfPossible();
             }
-            // TODO(jtattermusch): handle error
 
             if (cancelled)
             {
