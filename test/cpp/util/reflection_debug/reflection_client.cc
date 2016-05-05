@@ -48,8 +48,8 @@ using grpc::ClientContext;
 using grpc::Status;
 using grpc::ProtoReflectionDescriptorDatabase;
 using grpc::reflection::v1alpha::ServerReflection;
-using grpc::reflection::v1alpha::EmptyRequest;
-using grpc::reflection::v1alpha::ListServiceResponse;
+// using grpc::reflection::v1alpha::EmptyRequest;
+// using grpc::reflection::v1alpha::ListServiceResponse;
 using google::protobuf::FileDescriptorProto;
 using google::protobuf::DescriptorPool;
 using google::protobuf::ServiceDescriptor;
@@ -65,28 +65,22 @@ class ReflectionClient {
         desc_pool_(new DescriptorPool(db_.get())) {}
 
   void PrintInfo() {
-    EmptyRequest request;
-    ListServiceResponse response;
-    ClientContext context;
-    Status status = db_->stub()->ListService(&context, request, &response);
-    if (status.ok()) {
+    std::vector<std::string> services;
+    bool found_services = db_->GetServices(&services);
+    if (found_services) {
       std::string padding = "";
-      std::cout << "Service amount:" << response.services_size() << std::endl;
-      for (int i = 0; i < response.services_size(); ++i) {
-        if (i != response.services_size() - 1) {
+      std::cout << "Service amount:" << services.size() << std::endl;
+      for (auto it = services.begin(); it != services.end(); ++it) {
+        if (it != services.end() - 1) {
           std::cout << padding << "│ " << std::endl;
-          std::cout << padding << "├─" << response.services(i) << std::endl;
-          PrintService(desc_pool_->FindServiceByName(response.services(i)),
-                       padding + "│ ");
+          std::cout << padding << "├─" << *it << std::endl;
+          PrintService(desc_pool_->FindServiceByName(*it), padding + "│ ");
         } else {
           std::cout << padding << "│ " << std::endl;
-          std::cout << padding << "└─" << response.services(i) << std::endl;
-          PrintService(desc_pool_->FindServiceByName(response.services(i)),
-                       padding + "  ");
+          std::cout << padding << "└─" << *it << std::endl;
+          PrintService(desc_pool_->FindServiceByName(*it), padding + "  ");
         }
       }
-    } else {
-      std::cout << status.error_message();
     }
   }
 
@@ -158,6 +152,15 @@ class ReflectionClient {
 
   void Test() {
     {
+      std::vector<std::string> services;
+      bool found = db_->GetServices(&services);
+      if (found) {
+        for (auto it : services) {
+          std::cout << it << std::endl;
+        }
+      }
+    }
+    {
       FileDescriptorProto output;
       bool found = db_->FindFileByName("helloworld.proto", &output);
       if (found) std::cout << output.name() << std::endl;
@@ -176,9 +179,9 @@ class ReflectionClient {
           "helloworld.Greeter.HelloRequest", 1, &output);
       if (found) std::cout << output.name() << std::endl;
     }
-    DescriptorPool pool(db_.get());
-    std::cout << pool.FindServiceByName("helloworld.Greeter")->name()
-              << std::endl;
+    // DescriptorPool pool(db_.get());
+    // std::cout << pool.FindServiceByName("helloworld.Greeter")->name()
+    //           << std::endl;
   }
 
  private:
