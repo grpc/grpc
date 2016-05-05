@@ -22,7 +22,7 @@ INSTALL
 TRY IT!
 -------
 
-There are two variants of these examples: one with code dynamically generated at runtime using Protobuf.js and one with code statically generated using `protoc`. The examples behave identically, and either server can be used with either client.
+There are two ways to generate the code needed to work with protocol buffers in Node.js - one approach uses [Protobuf.js](https://github.com/dcodeIO/ProtoBuf.js/) to dynamically generate the code at runtime, the other uses code statically generated using the protocol buffer compiler `protoc`. The examples behave identically, and either server can be used with either client.
 
  - Run the server
 
