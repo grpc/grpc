@@ -329,8 +329,9 @@ class CallOpGenericRecvMessage {
 
   template <class R>
   void RecvMessage(R* message) {
-    deserialize_.reset(
-        new CallOpGenericRecvMessageHelper::DeserializeFuncType<R>(message));
+    CallOpGenericRecvMessageHelper::DeserializeFunc* func =
+        new CallOpGenericRecvMessageHelper::DeserializeFuncType<R>(message);
+    deserialize_.reset(func);
   }
 
   bool got_message;
