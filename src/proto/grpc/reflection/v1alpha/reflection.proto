@@ -34,85 +34,98 @@ syntax = "proto3";
 package grpc.reflection.v1alpha;
 
 service ServerReflection {
-  // List the full names of registered services.
-  rpc ListService(EmptyRequest) returns (ListServiceResponse) {
-  }
+  // The reflection service is structured as a bidirectional stream, ensuring
+  // all related requests go to a single server.
+  rpc DescriptorDatabaseInfo(stream DescriptorDatabaseRequest)
+      returns (stream DescriptorDatabaseResponse);
+}
 
-  // Find a proto file by file name.
-  rpc GetFileByName(FileNameRequest) returns (FileDescriptorProtoResponse) {
-  }
+// The message sent by the client when calling DescriptorDatabaseInfo method.
+message DescriptorDatabaseRequest {
+  string host = 1;
+  // To use reflection service, the client should set one of the following
+  // fields in message_request. The server distinguishes requests by their
+  // defined field and then handles them using corresponding methods.
+  oneof message_request {
+    // Find a proto file by the file name.
+    string file_by_filename = 3;
 
-  // Find the proto file that declares the given fully-qualified symbol name.
-  rpc GetFileContainingSymbol(SymbolRequest)
-      returns (FileDescriptorProtoResponse) {
-  }
+    // Find the proto file that declares the given fully-qualified symbol name.
+    // This field should be a fully-qualified symbol name
+    // (e.g. <package>.<service>[.<method>] or <package>.<type>).
+    string file_containing_symbol = 4;
 
-  // Find the proto file which defines an extension extending the given message
-  // type with the given field number.
-  rpc GetFileContainingExtension(ExtensionRequest)
-      returns (FileDescriptorProtoResponse) {
-  }
+    // Find the proto file which defines an extension extending the given
+    // message type with the given field number.
+    ExtensionRequest file_containing_extension = 5;
 
-  // Finds the tag numbers used by all known extensions of extendee_type, and
-  // appends them to ExtensionNumberResponse in an undefined order.
-  // This method is best-effort: it's not guaranteed that the reflection service
-  // will implement this method, and it's not guaranteed that this method will
-  // provide all extensions. Returns StatusCode::UNIMPLEMENTED if it's not
-  // implemented.
-  rpc GetAllExtensionNumbers(TypeRequest) returns (ExtensionNumberResponse) {
+    // Finds the tag numbers used by all known extensions of extendee_type, and
+    // appends them to ExtensionNumberResponse in an undefined order.
+    // Its corresponding method is best-effort: it's not guaranteed that the
+    // reflection service will implement this method, and it's not guaranteed
+    // that this method will provide all extensions. Returns
+    // StatusCode::UNIMPLEMENTED if it's not implemented.
+    // This field should be a fully-qualified type name. The format is
+    // <package>.<type>
+    string all_extension_numbers_of_type = 6;
+
+    // List the full names of registered services. The content will not be
+    // checked.
+    string list_services = 7;
   }
 }
 
-// An empty message sent by the client when calling ListService method.
-message EmptyRequest {
-}
-
-// The filename sent by the client when calling GetFileByName method.
-message FileNameRequest {
-  // Name of the proto file.
-  string filename = 1;
-}
-
-// The symbol name sent by the client when calling GetFileContainingSymbol
-// method.
-message SymbolRequest {
-  // Fully-qualified symbol name (e.g. <package>.<service>[.<method>] or
-  // <package>.<type>).
-  string symbol = 1;
-}
-
-// The type name and extension number sent by the client when calling
-// GetFileContainingExtension method.
+// The type name and extension number sent by the client when requesting
+// file_containing_extension.
 message ExtensionRequest {
   // Fully-qualified type name. The format should be <package>.<type>
   string containing_type = 1;
   int32 extension_number = 2;
 }
 
-// The type name sent by the client when calling GetAllExtensionNumbers method.
-message TypeRequest {
-  // Fully-qualified type name. The format should be <package>.<type>
-  string type = 1;
-}
+// The message sent by the server to answer DescriptorDatabaseInfo method.
+message DescriptorDatabaseResponse {
+  string valid_host = 1;
+  DescriptorDatabaseRequest original_request = 2;
+  // The server set one of the following fields accroding to the message_request
+  // in the request.
+  oneof message_response {
+    // A serialized FileDescriptorProto message. We avoid taking a dependency on
+    // descriptor.proto, which uses proto2 only features, by making them opaque
+    // bytes instead. This message is used to answer file_by_filename,
+    // file_containing_symbol, file_containing_extension requests.
+    bytes file_descriptor_proto = 4;
 
-// A list of service names sent by the server answering ListService method.
-message ListServiceResponse {
-  // Full names of registered services, including package names. The format
-  // is <package>.<service>
-  repeated string services = 1;
-}
+    // This message is used to answer all_extension_numbers_of_type requst.
+    ExtensionNumberResponse all_extension_numbers_response = 5;
 
-// A serialized FileDescriptorProto sent by the server answering
-// GetFileByName, GetFileContainingSymbol, GetFileContainingExtension methods.
-message FileDescriptorProtoResponse {
-  // Serialized FileDescriptorProto message. Some languages have limited support
-  // for working with descriptors. The can only obtain an opaque binary blob
-  // that contains serialized FileDescriptorProto message.
-  bytes file_descriptor_proto = 1;
+    // This message is used to answer list_services request.
+    ListServiceResponse list_services_response = 6;
+
+    // This message is used when an error occurs.
+    ErrorResponse error_response = 7;
+  }
 }
 
 // A list of extension numbers sent by the server answering
-// GetAllExtensionNumbers method.
+// all_extension_numbers_of_type request.
 message ExtensionNumberResponse {
-  repeated int32 extension_number = 1;
+  // Full name of the base type, including the package name. The format
+  // is <package>.<type>
+  string base_type_name = 1;
+  repeated int32 extension_number = 2;
+}
+
+// A list of service names sent by the server answering list_services request.
+message ListServiceResponse {
+  // Full names of registered services, including package names. The format
+  // is <package>.<service>
+  repeated string service = 1;
+}
+
+// The error code and error message sent by the server when an error occurs.
+message ErrorResponse {
+  // This field uses the error codes defined in grpc::StatusCode.
+  int32 error_code = 1;
+  string error_message = 2;
 }
