@@ -305,6 +305,7 @@ Pod::Spec.new do |s|
                       'include/grpc/grpc.h',
                       'include/grpc/status.h',
                       'include/grpc/impl/codegen/byte_buffer.h',
+                      'include/grpc/impl/codegen/byte_buffer_reader.h',
                       'include/grpc/impl/codegen/compression_types.h',
                       'include/grpc/impl/codegen/connectivity_state.h',
                       'include/grpc/impl/codegen/grpc_types.h',
