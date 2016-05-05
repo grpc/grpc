@@ -31,6 +31,7 @@
 
 import argparse
 import os
+import os.path
 import re
 import sys
 import subprocess
@@ -187,6 +188,8 @@ filename_list = []
 try:
   filename_list = subprocess.check_output(FILE_LIST_COMMAND,
                                           shell=True).splitlines()
+  # Filter out non-existent files (ie, file removed or renamed)
+  filename_list = (f for f in filename_list if os.path.isfile(f))
 except subprocess.CalledProcessError:
   sys.exit(0)
 
