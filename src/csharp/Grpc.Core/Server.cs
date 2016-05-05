@@ -48,6 +48,7 @@ namespace Grpc.Core
     /// </summary>
     public class Server
     {
+        const int InitialAllowRpcTokenCount = 10;
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<Server>();
 
         readonly AtomicCounter activeCallCounter = new AtomicCounter();
@@ -129,7 +130,13 @@ namespace Grpc.Core
                 startRequested = true;
                 
                 handle.Start();
-                AllowOneRpc();
+
+                // Starting with more than one AllowOneRpc tokens can significantly increase
+                // unary RPC throughput.
+                for (int i = 0; i < InitialAllowRpcTokenCount; i++)
+                {
+                    AllowOneRpc();
+                }
             }
         }
 
