@@ -1,5 +1,6 @@
-#!/bin/bash
-# Copyright 2016, Google Inc.
+#!/usr/bin/env python
+
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,52 +29,17 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+import cStringIO
 
-cd $(dirname $0)/../..
+import make_grpcio_tools as make
 
-export GRPC_PYTHON_USE_CUSTOM_BDIST=0
-export GRPC_PYTHON_BUILD_WITH_CYTHON=1
-export PYTHON=${PYTHON:-python}
-export PIP=${PIP:-pip}
-export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
+OUT_OF_DATE_MESSAGE = """file {} is out of date
 
+Have you called tools/distrib/python/make_grpcio_tools.py since upgrading protobuf?"""
 
-if [ "$SKIP_PIP_INSTALL" == "" ]
-then
-  ${PIP} install --upgrade six
-  # There's a bug in newer versions of setuptools (see
-  # https://bitbucket.org/pypa/setuptools/issues/503/pkg_resources_vendorpackagingrequirementsi)
-  ${PIP} pip install --upgrade 'setuptools==18'
-  ${PIP} install -rrequirements.txt
-fi
+check_protoc_lib_deps_content = make.get_deps(make.BAZEL_DEPS_PROTOC_LIB_QUERY)
 
-# Build the source distribution first because MANIFEST.in cannot override
-# exclusion of built shared objects among package resources (for some
-# inexplicable reason).
-${SETARCH_CMD} ${PYTHON} setup.py  \
-    sdist
-
-# Wheel has a bug where directories don't get excluded.
-# https://bitbucket.org/pypa/wheel/issues/99/cannot-exclude-directory
-${SETARCH_CMD} ${PYTHON} setup.py  \
-    bdist_wheel
-
-# Build gRPC tools package
-${PYTHON} tools/distrib/python/make_grpcio_tools.py
-CFLAGS="$CFLAGS -fno-wrapv" ${SETARCH_CMD} \
-  ${PYTHON} tools/distrib/python/grpcio_tools/setup.py bdist_wheel
-
-mkdir -p artifacts
-if command -v ${AUDITWHEEL}
-then
-  for wheel in dist/*.whl; do
-    ${AUDITWHEEL} repair $wheel -w artifacts/
-  done
-  for wheel in tools/distrib/python/grpcio_tools/dist/*.whl; do
-    ${AUDITWHEEL} repair $wheel -w artifacts/
-  done
-fi
-
-cp -r dist/* artifacts
-cp -r tools/distrib/python/grpcio_tools/dist/* artifacts
+with open(make.GRPC_PYTHON_PROTOC_LIB_DEPS, 'r') as protoc_lib_deps_file:
+  if protoc_lib_deps_file.read() != check_protoc_lib_deps_content:
+    print(OUT_OF_DATE_MESSAGE.format(make.GRPC_PYTHON_PROTOC_LIB_DEPS))
+    raise SystemExit(1)

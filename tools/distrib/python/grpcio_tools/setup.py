@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -28,52 +27,58 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+from distutils import extension
+import os
+import os.path
+import sys
 
-cd $(dirname $0)/../..
+import setuptools
+from setuptools.command import build_ext
 
-export GRPC_PYTHON_USE_CUSTOM_BDIST=0
-export GRPC_PYTHON_BUILD_WITH_CYTHON=1
-export PYTHON=${PYTHON:-python}
-export PIP=${PIP:-pip}
-export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
+# TODO(atash) add flag to disable Cython use
 
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.abspath('.'))
 
-if [ "$SKIP_PIP_INSTALL" == "" ]
-then
-  ${PIP} install --upgrade six
-  # There's a bug in newer versions of setuptools (see
-  # https://bitbucket.org/pypa/setuptools/issues/503/pkg_resources_vendorpackagingrequirementsi)
-  ${PIP} pip install --upgrade 'setuptools==18'
-  ${PIP} install -rrequirements.txt
-fi
+import protoc_lib_deps
+import grpc_version
 
-# Build the source distribution first because MANIFEST.in cannot override
-# exclusion of built shared objects among package resources (for some
-# inexplicable reason).
-${SETARCH_CMD} ${PYTHON} setup.py  \
-    sdist
+def protoc_ext_module():
+  plugin_sources = [
+      'grpc/protoc/main.cc',
+      'grpc_root/src/compiler/python_generator.cc'] + [
+      os.path.join('third_party/protobuf/src', cc_file)
+      for cc_file in protoc_lib_deps.CC_FILES]
+  plugin_ext = extension.Extension(
+      name='grpc.protoc.protoc_compiler',
+      sources=['grpc/protoc/protoc_compiler.pyx'] + plugin_sources,
+      include_dirs=[
+          '.',
+          'grpc_root',
+          'grpc_root/include',
+          'third_party/protobuf/src',
+      ],
+      language='c++',
+      define_macros=[('HAVE_PTHREAD', 1)],
+      extra_compile_args=['-lpthread', '-frtti', '-std=c++11'],
+  )
+  return plugin_ext
 
-# Wheel has a bug where directories don't get excluded.
-# https://bitbucket.org/pypa/wheel/issues/99/cannot-exclude-directory
-${SETARCH_CMD} ${PYTHON} setup.py  \
-    bdist_wheel
+def maybe_cythonize(exts):
+  from Cython import Build
+  return Build.cythonize(exts)
 
-# Build gRPC tools package
-${PYTHON} tools/distrib/python/make_grpcio_tools.py
-CFLAGS="$CFLAGS -fno-wrapv" ${SETARCH_CMD} \
-  ${PYTHON} tools/distrib/python/grpcio_tools/setup.py bdist_wheel
-
-mkdir -p artifacts
-if command -v ${AUDITWHEEL}
-then
-  for wheel in dist/*.whl; do
-    ${AUDITWHEEL} repair $wheel -w artifacts/
-  done
-  for wheel in tools/distrib/python/grpcio_tools/dist/*.whl; do
-    ${AUDITWHEEL} repair $wheel -w artifacts/
-  done
-fi
-
-cp -r dist/* artifacts
-cp -r tools/distrib/python/grpcio_tools/dist/* artifacts
+setuptools.setup(
+  name='grpcio_tools',
+  version=grpc_version.VERSION,
+  license='',
+  ext_modules=maybe_cythonize([
+      protoc_ext_module(),
+  ]),
+  packages=setuptools.find_packages('.'),
+  # TODO(atash): Figure out why auditwheel doesn't like namespace packages.
+  #namespace_packages=['grpc'],
+  install_requires=[
+    'protobuf>=3.0.0a3',
+  ],
+)
