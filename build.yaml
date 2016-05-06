@@ -7,7 +7,7 @@ settings:
   '#3': Use "-preN" suffixes to identify pre-release versions
   '#4': Per-language overrides are possible with (eg) ruby_version tag here
   '#5': See the expand_version.py for all the quirks here
-  version: 0.14.0-dev
+  version: 0.14.0-pre1
 filegroups:
 - name: census
   public_headers:
