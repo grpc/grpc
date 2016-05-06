@@ -113,37 +113,7 @@ class PythonArtifact:
       # defines ourselves.
       # TODO(atash) get better platform-detection support in core so we don't
       # need to do this manually...
-      environ['CFLAGS'] = " ".join([
-        '-DGPR_NO_AUTODETECT_PLATFORM',
-        '-DGPR_PLATFORM_STRING=\\"manylinux\\"',
-        '-DGPR_POSIX_CRASH_HANDLER=1',
-        '-DGPR_CPU_LINUX=1',
-        '-DGPR_GCC_ATOMIC=1',
-        '-DGPR_GCC_TLS=1',
-        '-DGPR_LINUX=1',
-        '-DGPR_LINUX_LOG=1',
-        #'-DGPR_LINUX_MULTIPOLL_WITH_EPOLL=1',
-        '-DGPR_POSIX_SOCKET=1',
-        '-DGPR_POSIX_WAKEUP_FD=1',
-        '-DGPR_POSIX_SOCKETADDR=1',
-        #'-DGPR_LINUX_EVENTFD=1',
-        '-DGPR_POSIX_NO_SPECIAL_WAKEUP_FD=1',
-        #'-DGPR_LINUX_SOCKETUTILS=1',
-        '-DGPR_POSIX_SOCKETUTILS=1',
-        '-DGPR_HAVE_UNIX_SOCKET=1',
-        '-DGPR_HAVE_IP_PKTINFO=1',
-        '-DGPR_HAVE_IPV6_RECVPKTINFO=1',
-        '-DGPR_LINUX_ENV=1',
-        '-DGPR_POSIX_FILE=1',
-        '-DGPR_POSIX_TMPFILE=1',
-        '-DGPR_POSIX_STRING=1',
-        '-DGPR_POSIX_SUBPROCESS=1',
-        '-DGPR_POSIX_SYNC=1',
-        '-DGPR_POSIX_TIME=1',
-        '-DGPR_GETPID_IN_UNISTD_H=1',
-        '-DGPR_HAVE_MSG_NOSIGNAL=1',
-        '-DGPR_ARCH_{arch}=1'.format(arch=('32' if self.arch == 'x86' else '64')),
-      ])
+      environ['CFLAGS'] = '-DGPR_MANYLINUX1=1'
       return create_docker_jobspec(self.name,
           'tools/dockerfile/grpc_artifact_python_manylinux_%s' % self.arch,
           'tools/run_tests/build_artifact_python.sh',
