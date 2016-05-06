@@ -76,6 +76,14 @@ def _get_secargs(is_secure):
     return None
 
 
+def remove_nonproto_fields(scenario):
+  """Remove special-purpose that contains some extra info about the scenario
+  but don't belong to the ScenarioConfig protobuf message"""
+  scenario.pop('CATEGORIES', None)
+  scenario.pop('SERVER_LANGUAGE', None)
+  return scenario
+
+
 def _ping_pong_scenario(name, rpc_type,
                         client_type, server_type,
                         secure=True,
@@ -84,7 +92,8 @@ def _ping_pong_scenario(name, rpc_type,
                         server_language=None,
                         server_core_limit=0,
                         async_server_threads=0,
-                        warmup_seconds=WARMUP_SECONDS):
+                        warmup_seconds=WARMUP_SECONDS,
+                        categories=[]):
   """Creates a basic ping pong scenario."""
   scenario = {
     'name': name,
@@ -135,6 +144,8 @@ def _ping_pong_scenario(name, rpc_type,
   if server_language:
     # the SERVER_LANGUAGE field is recognized by run_performance_tests.py
     scenario['SERVER_LANGUAGE'] = server_language
+  if categories:
+    scenario['CATEGORIES'] = categories
   return scenario
 
 
