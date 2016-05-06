@@ -41,7 +41,7 @@ copy /Y vsprojects\Release\grpc_dll.dll src\python\grpcio\grpc\_cython\_windows\
 copy /Y vsprojects\x64\Release\grpc_dll.dll src\python\grpcio\grpc\_cython\_windows\grpc_c.64.python || goto :error
 
 
-set PATH=C:\%1;C:\%1\scripts;%PATH%
+set PATH=C:\%1;C:\%1\scripts;C:\msys64\mingw%2\bin;%PATH%
 
 pip install --upgrade six
 pip install --upgrade setuptools
@@ -55,19 +55,27 @@ set GRPC_PYTHON_BUILD_WITH_CYTHON=1
 python setup.py bdist_wheel
 
 @rem Build gRPC Python tools
-set PATH=C:\msys64\mingw%2\bin;%PATH%
-set CC=C:\msys64\mingw%2\bin\g++.exe
-set CFLAGS=-fno-wrapv
+@rem
+@rem Because this is windows and *everything seems to hate Windows* we have to
+@rem set all of these flags ourselves because Python won't help us (see the
+@rem setup.py of the grpcio_tools project).
+set GRPC_PYTHON_CFLAGS=-fno-wrapv -frtti -std=c++11
+@rem Further confusing things, MSYS2's mingw64 tries to dynamically link
+@rem libgcc, libstdc++, and winpthreads. We have to override this or our
+@rem extensions end up linking to MSYS2 DLLs, which the normal Python on
+@rem Windows user won't have.
+set GRPC_PYTHON_LDFLAGS=-static-libgcc -static-libstdc++ -static -lpthread
+@rem We know we're in a MinGW shell; kill MSVCR because MinGW (MSYS?) will end
+@rem up linking us to its choice of MSVCRT anyway (and this doesn't harm the
+@rem process).
+set GRPC_PYTHON_KILL_MSVCR=1
 python tools\distrib\python\make_grpcio_tools.py
-@rem The following commands *must* be run with the right version of python
-@rem otherwise the build get SNAFU'd (so we use the .exe suffix to invoke the python
-@rem we set in the %PATH% variable above).
 if %2 == 32 (
-  python.exe tools\distrib\python\grpcio_tools\setup.py build_ext -c mingw32
+  python tools\distrib\python\grpcio_tools\setup.py build_ext -c mingw32
 ) else (
-  python.exe tools\distrib\python\grpcio_tools\setup.py build_ext -c mingw32 -DMS_WIN64
+  python tools\distrib\python\grpcio_tools\setup.py build_ext -c mingw32 -DMS_WIN64
 )
-python.exe tools\distrib\python\grpcio_tools\setup.py bdist_wheel
+python tools\distrib\python\grpcio_tools\setup.py bdist_wheel
 
 mkdir artifacts
 xcopy /Y /I /S dist\* artifacts\ || goto :error
