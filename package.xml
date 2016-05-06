@@ -13,8 +13,8 @@
  <date>2016-04-19</date>
  <time>16:06:07</time>
  <version>
-  <release>0.14.0</release>
-  <api>0.14.0</api>
+  <release>0.15.0</release>
+  <api>0.15.0</api>
  </version>
  <stability>
   <release>beta</release>
@@ -1054,8 +1054,8 @@ Update to wrap gRPC C Core version 0.10.0
   </release>
   <release>
    <version>
-    <release>0.14.0</release>
-    <api>0.14.0</api>
+    <release>0.15.0</release>
+    <api>0.15.0</api>
    </version>
    <stability>
     <release>beta</release>
