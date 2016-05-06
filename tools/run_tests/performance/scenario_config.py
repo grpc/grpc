@@ -34,6 +34,8 @@ WARMUP_SECONDS=5
 JAVA_WARMUP_SECONDS=15  # Java needs more warmup time for JIT to kick in.
 BENCHMARK_SECONDS=30
 
+SMOKETEST='smoketest'
+
 SECURE_SECARGS = {'use_test_ca': True,
                   'server_host_override': 'foo.test.google.fr'}
 
@@ -164,12 +166,14 @@ class CXXLanguage:
     # TODO(ctiller): add 70% load latency test
     for secure in [True, False]:
       secstr = 'secure' if secure else 'insecure'
+      smoketest_categories = [SMOKETEST] if secure else None
 
       yield _ping_pong_scenario(
           'cpp_generic_async_streaming_ping_pong_%s' % secstr, rpc_type='STREAMING',
           client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
           use_generic_payload=True, server_core_limit=1, async_server_threads=1,
-          secure=secure)
+          secure=secure,
+          categories=smoketest_categories)
 
       yield _ping_pong_scenario(
           'cpp_protobuf_async_streaming_ping_pong_%s' % secstr, rpc_type='STREAMING',
@@ -181,7 +185,8 @@ class CXXLanguage:
           'cpp_protobuf_async_unary_ping_pong_%s' % secstr, rpc_type='UNARY',
           client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
           server_core_limit=1, async_server_threads=1,
-          secure=secure)
+          secure=secure,
+          categories=smoketest_categories)
 
       yield _ping_pong_scenario(
           'cpp_protobuf_sync_unary_ping_pong_%s' % secstr, rpc_type='UNARY',
@@ -194,7 +199,8 @@ class CXXLanguage:
           client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
           server_core_limit=SINGLE_MACHINE_CORES/2,
           use_unconstrained_client=True,
-          secure=secure)
+          secure=secure,
+          categories=smoketest_categories)
 
       yield _ping_pong_scenario(
           'cpp_protobuf_async_streaming_qps_unconstrained_%s' % secstr, rpc_type='STREAMING',
@@ -208,7 +214,8 @@ class CXXLanguage:
           client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
           use_unconstrained_client=True, use_generic_payload=True,
           server_core_limit=SINGLE_MACHINE_CORES/2,
-          secure=secure)
+          secure=secure,
+          categories=smoketest_categories)
 
       yield _ping_pong_scenario(
           'cpp_generic_async_streaming_qps_one_server_core_%s' % secstr, rpc_type='STREAMING',
@@ -236,7 +243,8 @@ class CSharpLanguage:
     yield _ping_pong_scenario(
         'csharp_generic_async_streaming_ping_pong', rpc_type='STREAMING',
         client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
-        use_generic_payload=True)
+        use_generic_payload=True,
+        categories=[SMOKETEST])
 
     yield _ping_pong_scenario(
         'csharp_protobuf_async_streaming_ping_pong', rpc_type='STREAMING',
@@ -244,7 +252,8 @@ class CSharpLanguage:
 
     yield _ping_pong_scenario(
         'csharp_protobuf_async_unary_ping_pong', rpc_type='UNARY',
-        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER')
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+        categories=[SMOKETEST])
 
     yield _ping_pong_scenario(
         'csharp_protobuf_sync_to_async_unary_ping_pong', rpc_type='UNARY',
@@ -253,7 +262,8 @@ class CSharpLanguage:
     yield _ping_pong_scenario(
         'csharp_protobuf_async_unary_qps_unconstrained', rpc_type='UNARY',
         client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
-        use_unconstrained_client=True)
+        use_unconstrained_client=True,
+        categories=[SMOKETEST])
 
     yield _ping_pong_scenario(
         'csharp_protobuf_async_streaming_qps_unconstrained', rpc_type='STREAMING',
@@ -263,7 +273,8 @@ class CSharpLanguage:
     yield _ping_pong_scenario(
         'csharp_to_cpp_protobuf_sync_unary_ping_pong', rpc_type='UNARY',
         client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
-        server_language='c++', server_core_limit=1, async_server_threads=1)
+        server_language='c++', server_core_limit=1, async_server_threads=1,
+        categories=[SMOKETEST])
 
     yield _ping_pong_scenario(
         'csharp_to_cpp_protobuf_async_streaming_ping_pong', rpc_type='STREAMING',
@@ -300,12 +311,14 @@ class NodeLanguage:
 
     yield _ping_pong_scenario(
         'node_protobuf_unary_ping_pong', rpc_type='UNARY',
-        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER')
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+        categories=[SMOKETEST])
 
     yield _ping_pong_scenario(
         'node_protobuf_async_unary_qps_unconstrained', rpc_type='UNARY',
         client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
-        use_unconstrained_client=True)
+        use_unconstrained_client=True,
+        categories=[SMOKETEST])
 
     # TODO(jtattermusch): make this scenario work
     #yield _ping_pong_scenario(
@@ -344,7 +357,8 @@ class PythonLanguage:
     yield _ping_pong_scenario(
         'python_generic_async_streaming_ping_pong', rpc_type='STREAMING',
         client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
-        use_generic_payload=True)
+        use_generic_payload=True,
+        categories=[SMOKETEST])
 
     # TODO(jtattermusch): make this scenario work
     #yield _ping_pong_scenario(
@@ -358,7 +372,8 @@ class PythonLanguage:
 
     yield _ping_pong_scenario(
         'python_protobuf_sync_unary_ping_pong', rpc_type='UNARY',
-        client_type='SYNC_CLIENT', server_type='SYNC_SERVER')
+        client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+        categories=[SMOKETEST])
 
     # TODO(jtattermusch): make this scenario work
     #yield _ping_pong_scenario(
@@ -375,7 +390,8 @@ class PythonLanguage:
     yield _ping_pong_scenario(
         'python_to_cpp_protobuf_sync_unary_ping_pong', rpc_type='UNARY',
         client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
-        server_language='c++', server_core_limit=1, async_server_threads=1)
+        server_language='c++', server_core_limit=1, async_server_threads=1,
+        categories=[SMOKETEST])
 
     # TODO(jtattermusch): make this scenario work
     #yield _ping_pong_scenario(
@@ -401,11 +417,13 @@ class RubyLanguage:
   def scenarios(self):
     yield _ping_pong_scenario(
         'ruby_protobuf_sync_streaming_ping_pong', rpc_type='STREAMING',
-        client_type='SYNC_CLIENT', server_type='SYNC_SERVER')
+        client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+        categories=[SMOKETEST])
 
     yield _ping_pong_scenario(
         'ruby_protobuf_unary_ping_pong', rpc_type='UNARY',
-        client_type='SYNC_CLIENT', server_type='SYNC_SERVER')
+        client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+        categories=[SMOKETEST])
 
     # TODO: scenario reports QPS of 0.0
     #yield _ping_pong_scenario(
@@ -448,12 +466,14 @@ class JavaLanguage:
   def scenarios(self):
     for secure in [True, False]:
       secstr = 'secure' if secure else 'insecure'
+      smoketest_categories = [SMOKETEST] if secure else None
 
       yield _ping_pong_scenario(
           'java_generic_async_streaming_ping_pong_%s' % secstr, rpc_type='STREAMING',
           client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
           use_generic_payload=True, async_server_threads=1,
-          secure=secure, warmup_seconds=JAVA_WARMUP_SECONDS)
+          secure=secure, warmup_seconds=JAVA_WARMUP_SECONDS,
+          categories=smoketest_categories)
 
       yield _ping_pong_scenario(
           'java_protobuf_async_streaming_ping_pong_%s' % secstr, rpc_type='STREAMING',
@@ -465,7 +485,8 @@ class JavaLanguage:
           'java_protobuf_async_unary_ping_pong_%s' % secstr, rpc_type='UNARY',
           client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
           async_server_threads=1,
-          secure=secure, warmup_seconds=JAVA_WARMUP_SECONDS)
+          secure=secure, warmup_seconds=JAVA_WARMUP_SECONDS,
+          categories=smoketest_categories)
 
       yield _ping_pong_scenario(
           'java_protobuf_unary_ping_pong_%s' % secstr, rpc_type='UNARY',
@@ -477,7 +498,8 @@ class JavaLanguage:
           'java_protobuf_async_unary_qps_unconstrained_%s' % secstr, rpc_type='UNARY',
           client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
           use_unconstrained_client=True,
-          secure=secure, warmup_seconds=JAVA_WARMUP_SECONDS)
+          secure=secure, warmup_seconds=JAVA_WARMUP_SECONDS,
+          categories=smoketest_categories)
 
       yield _ping_pong_scenario(
           'java_protobuf_async_streaming_qps_unconstrained_%s' % secstr, rpc_type='STREAMING',

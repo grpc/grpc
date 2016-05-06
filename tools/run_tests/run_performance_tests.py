@@ -244,7 +244,7 @@ def start_qpsworkers(languages, worker_hosts):
 
 
 def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*',
-                     bq_result_table=None):
+                     category='all', bq_result_table=None):
   """Create jobspecs for scenarios to run."""
   all_workers = [worker
                  for workers in workers_by_lang.values()
@@ -253,25 +253,26 @@ def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*',
   for language in languages:
     for scenario_json in language.scenarios():
       if re.search(args.regex, scenario_json['name']):
-        workers = workers_by_lang[str(language)]
-        # 'SERVER_LANGUAGE' is an indicator for this script to pick
-        # a server in different language.
-        custom_server_lang = scenario_json.get('SERVER_LANGUAGE', None)
-        scenario_json = scenario_config.remove_nonproto_fields(scenario_json)
-        if custom_server_lang:
-          if not workers_by_lang.get(custom_server_lang, []):
-            print 'Warning: Skipping scenario %s as' % scenario_json['name']
-            print('SERVER_LANGUAGE is set to %s yet the language has '
-                  'not been selected with -l' % custom_server_lang)
-            continue
-          for idx in range(0, scenario_json['num_servers']):
-            # replace first X workers by workers of a different language
-            workers[idx] = workers_by_lang[custom_server_lang][idx]
-        scenario = create_scenario_jobspec(scenario_json,
-                                           workers,
-                                           remote_host=remote_host,
-                                           bq_result_table=bq_result_table)
-        scenarios.append(scenario)
+        if category in scenario_json.get('CATEGORIES', []) or category == 'all':
+          workers = workers_by_lang[str(language)]
+          # 'SERVER_LANGUAGE' is an indicator for this script to pick
+          # a server in different language.
+          custom_server_lang = scenario_json.get('SERVER_LANGUAGE', None)
+          scenario_json = scenario_config.remove_nonproto_fields(scenario_json)
+          if custom_server_lang:
+            if not workers_by_lang.get(custom_server_lang, []):
+              print 'Warning: Skipping scenario %s as' % scenario_json['name']
+              print('SERVER_LANGUAGE is set to %s yet the language has '
+                    'not been selected with -l' % custom_server_lang)
+              continue
+            for idx in range(0, scenario_json['num_servers']):
+              # replace first X workers by workers of a different language
+              workers[idx] = workers_by_lang[custom_server_lang][idx]
+          scenario = create_scenario_jobspec(scenario_json,
+                                             workers,
+                                             remote_host=remote_host,
+                                             bq_result_table=bq_result_table)
+          scenarios.append(scenario)
 
   # the very last scenario requests shutting down the workers.
   scenarios.append(create_quit_jobspec(all_workers, remote_host=remote_host))
@@ -298,7 +299,7 @@ argp = argparse.ArgumentParser(description='Run performance tests.')
 argp.add_argument('-l', '--language',
                   choices=['all'] + sorted(scenario_config.LANGUAGES.keys()),
                   nargs='+',
-                  default=['all'],
+                  required=True,
                   help='Languages to benchmark.')
 argp.add_argument('--remote_driver_host',
                   default=None,
@@ -311,6 +312,10 @@ argp.add_argument('-r', '--regex', default='.*', type=str,
                   help='Regex to select scenarios to run.')
 argp.add_argument('--bq_result_table', default=None, type=str,
                   help='Bigquery "dataset.table" to upload results to.')
+argp.add_argument('--category',
+                  choices=['smoketest','all'],
+                  default='smoketest',
+                  help='Select a category of tests to run. Smoketest runs by default.')
 
 args = argp.parse_args()
 
@@ -354,6 +359,7 @@ try:
                                workers_by_lang=worker_addresses,
                                remote_host=args.remote_driver_host,
                                regex=args.regex,
+                               category=args.category,
                                bq_result_table=args.bq_result_table)
   if not scenarios:
     raise Exception('No scenarios to run')
