@@ -64,8 +64,8 @@ static int server_port;
 static struct rpc_state state;
 static grpc_closure on_read;
 
-static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
-  GPR_ASSERT(success);
+static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
   gpr_slice_buffer_move_into(&state.temp_incoming_buffer,
                              &state.incoming_buffer);
   if (state.incoming_buffer.length > strlen(magic_connect_string)) {

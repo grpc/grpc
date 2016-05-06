@@ -52,7 +52,7 @@ bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
       did_something = true;
       GPR_TIMER_BEGIN("grpc_exec_ctx_flush.cb", 0);
       c->cb(exec_ctx, c->cb_arg, error);
-      grpc_error_unref(error);
+      GRPC_ERROR_UNREF(error);
       GPR_TIMER_END("grpc_exec_ctx_flush.cb", 0);
       c = next;
     }

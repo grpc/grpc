@@ -69,4 +69,3 @@ typedef struct {
 } grpc_composite_call_credentials;
 
 #endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_COMPOSITE_CREDENTIALS_H
-

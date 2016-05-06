@@ -146,10 +146,10 @@ char *grpc_transport_get_peer(grpc_exec_ctx *exec_ctx,
 void grpc_transport_stream_op_finish_with_failure(grpc_exec_ctx *exec_ctx,
                                                   grpc_transport_stream_op *op,
                                                   grpc_error *error) {
-  grpc_exec_ctx_push(exec_ctx, op->recv_message_ready, grpc_error_ref(error),
+  grpc_exec_ctx_push(exec_ctx, op->recv_message_ready, GRPC_ERROR_REF(error),
                      NULL);
   grpc_exec_ctx_push(exec_ctx, op->recv_initial_metadata_ready,
-                     grpc_error_ref(error), NULL);
+                     GRPC_ERROR_REF(error), NULL);
   grpc_exec_ctx_push(exec_ctx, op->on_complete, error, NULL);
 }
 
@@ -178,7 +178,7 @@ static void free_message(grpc_exec_ctx *exec_ctx, void *p, grpc_error *error) {
   close_message_data *cmd = p;
   gpr_slice_unref(cmd->message);
   if (cmd->then_call != NULL) {
-    cmd->then_call->cb(exec_ctx, cmd->then_call->cb_arg, grpc_error_ref(error));
+    cmd->then_call->cb(exec_ctx, cmd->then_call->cb_arg, GRPC_ERROR_REF(error));
   }
   gpr_free(cmd);
 }

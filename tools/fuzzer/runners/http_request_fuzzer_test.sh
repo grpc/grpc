@@ -42,4 +42,4 @@ then
   flags="-use_traces=1 $flags"
 fi
 
-bins/$config/http_fuzzer_test $flags fuzzer_output test/core/http/corpus
+bins/$config/http_request_fuzzer_test $flags fuzzer_output test/core/http/corpus

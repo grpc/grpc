@@ -516,8 +516,8 @@ done:
   gpr_free(allocated_addr);
   if (sp != NULL) {
     *out_port = sp->port;
-    grpc_error_unref(errs[0]);
-    grpc_error_unref(errs[1]);
+    GRPC_ERROR_UNREF(errs[0]);
+    GRPC_ERROR_UNREF(errs[1]);
     return GRPC_ERROR_NONE;
   } else {
     *out_port = -1;

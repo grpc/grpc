@@ -145,7 +145,7 @@ static void destroy_done(grpc_exec_ctx *exec_ctx, void *statep,
   grpc_server_secure_state *state = statep;
   if (state->destroy_callback != NULL) {
     state->destroy_callback->cb(exec_ctx, state->destroy_callback->cb_arg,
-                                grpc_error_ref(error));
+                                GRPC_ERROR_REF(error));
   }
   grpc_server_security_connector_shutdown(exec_ctx, state->sc);
   state_unref(state);
@@ -249,7 +249,7 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
     /* we managed to bind some addresses: continue */
   } else {
     for (i = 0; i < resolved->naddrs; i++) {
-      grpc_error_unref(errors[i]);
+      GRPC_ERROR_UNREF(errors[i]);
     }
   }
   gpr_free(errors);

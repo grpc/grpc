@@ -602,7 +602,7 @@ static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   if (c->disconnected) {
     error = GRPC_ERROR_CREATE_REFERENCING("Disconnected", &error, 1);
   } else {
-    grpc_error_ref(error);
+    GRPC_ERROR_REF(error);
   }
   if (error != GRPC_ERROR_NONE) {
     c->next_attempt =

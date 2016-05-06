@@ -60,4 +60,3 @@ grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
     grpc_auth_json_key key, gpr_timespec token_lifetime);
 
 #endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_CREDENTIALS_H
-

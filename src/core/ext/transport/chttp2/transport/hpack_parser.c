@@ -1004,14 +1004,14 @@ static grpc_error *parse_max_tbl_size_x(grpc_chttp2_hpack_parser *p,
 static grpc_error *parse_error(grpc_chttp2_hpack_parser *p, const uint8_t *cur,
                                const uint8_t *end, grpc_error *err) {
   GPR_ASSERT(err != GRPC_ERROR_NONE);
-  p->last_error = grpc_error_ref(err);
+  p->last_error = GRPC_ERROR_REF(err);
   p->state = still_parse_error;
   return err;
 }
 
 static grpc_error *still_parse_error(grpc_chttp2_hpack_parser *p,
                                      const uint8_t *cur, const uint8_t *end) {
-  return grpc_error_ref(p->last_error);
+  return GRPC_ERROR_REF(p->last_error);
 }
 
 static grpc_error *parse_illegal_op(grpc_chttp2_hpack_parser *p,

@@ -58,10 +58,10 @@ void grpc_closure_list_fail_all(grpc_closure_list *list,
                                 grpc_error *forced_failure) {
   for (grpc_closure *c = list->head; c != NULL; c = c->next_data.next) {
     if (c->error == GRPC_ERROR_NONE) {
-      c->error = grpc_error_ref(forced_failure);
+      c->error = GRPC_ERROR_REF(forced_failure);
     }
   }
-  grpc_error_unref(forced_failure);
+  GRPC_ERROR_UNREF(forced_failure);
 }
 
 bool grpc_closure_list_empty(grpc_closure_list closure_list) {

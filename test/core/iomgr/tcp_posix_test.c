@@ -139,12 +139,13 @@ static size_t count_slices(gpr_slice *slices, size_t nslices,
   return num_bytes;
 }
 
-static void read_cb(grpc_exec_ctx *exec_ctx, void *user_data, bool success) {
+static void read_cb(grpc_exec_ctx *exec_ctx, void *user_data,
+                    grpc_error *error) {
   struct read_socket_state *state = (struct read_socket_state *)user_data;
   size_t read_bytes;
   int current_data;
 
-  GPR_ASSERT(success);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
 
   gpr_mu_lock(g_mu);
   current_data = state->read_bytes % 256;
@@ -281,7 +282,8 @@ static gpr_slice *allocate_blocks(size_t num_bytes, size_t slice_size,
 }
 
 static void write_done(grpc_exec_ctx *exec_ctx,
-                       void *user_data /* write_socket_state */, bool success) {
+                       void *user_data /* write_socket_state */,
+                       grpc_error *error) {
   struct write_socket_state *state = (struct write_socket_state *)user_data;
   gpr_log(GPR_INFO, "Write done callback called");
   gpr_mu_lock(g_mu);
@@ -384,7 +386,7 @@ static void write_test(size_t num_bytes, size_t slice_size) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-void on_fd_released(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+void on_fd_released(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *errors) {
   int *done = arg;
   *done = 1;
   grpc_pollset_kick(g_pollset, NULL);
@@ -504,7 +506,8 @@ static grpc_endpoint_test_config configs[] = {
     {"tcp/tcp_socketpair", create_fixture_tcp_socketpair, clean_up},
 };
 
-static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, bool success) {
+static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
+                            grpc_error *error) {
   grpc_pollset_destroy(p);
 }
 

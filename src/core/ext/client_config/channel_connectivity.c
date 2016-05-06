@@ -131,13 +131,13 @@ static void partly_done(grpc_exec_ctx *exec_ctx, state_watcher *w,
 
   gpr_mu_lock(&w->mu);
   if (due_to_completion) {
-    grpc_error_unref(w->error);
+    GRPC_ERROR_UNREF(w->error);
     w->error = GRPC_ERROR_NONE;
   }
   switch (w->phase) {
     case WAITING:
       w->phase = CALLING_BACK;
-      grpc_cq_end_op(exec_ctx, w->cq, w->tag, grpc_error_ref(w->error),
+      grpc_cq_end_op(exec_ctx, w->cq, w->tag, GRPC_ERROR_REF(w->error),
                      finished_completion, w, &w->completion_storage);
       break;
     case CALLING_BACK:

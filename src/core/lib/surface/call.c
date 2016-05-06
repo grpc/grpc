@@ -1082,7 +1082,7 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
   gpr_mu_lock(&call->mu);
 
   if (error != GRPC_ERROR_NONE) {
-    bctl->error = grpc_error_ref(error);
+    bctl->error = GRPC_ERROR_REF(error);
   } else {
     grpc_metadata_batch *md =
         &call->metadata_batch[1 /* is_receiving */][0 /* is_trailing */];
@@ -1167,10 +1167,10 @@ static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp,
                        call->final_op.server.cancelled);
     }
 
-    grpc_error_unref(error);
+    GRPC_ERROR_UNREF(error);
     error = GRPC_ERROR_NONE;
   }
-  bctl->error = grpc_error_ref(error);
+  bctl->error = GRPC_ERROR_REF(error);
   gpr_mu_unlock(&call->mu);
   if (gpr_unref(&bctl->steps_to_complete)) {
     post_batch_completion(exec_ctx, bctl);

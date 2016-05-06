@@ -54,9 +54,9 @@ static void destroy_string(void *str) { gpr_free(str); }
 
 static void *copy_string(void *str) { return gpr_strdup(str); }
 
-static void destroy_err(void *err) { grpc_error_unref(err); }
+static void destroy_err(void *err) { GRPC_ERROR_UNREF(err); }
 
-static void *copy_err(void *err) { return grpc_error_ref(err); }
+static void *copy_err(void *err) { return GRPC_ERROR_REF(err); }
 
 static void destroy_time(void *tm) { gpr_free(tm); }
 
@@ -156,8 +156,9 @@ static bool is_special(grpc_error *err) {
          err == GRPC_ERROR_CANCELLED;
 }
 
-grpc_error *grpc_error_ref(grpc_error *err) {
+grpc_error *grpc_error_ref(grpc_error *err, const char *file, int line) {
   if (is_special(err)) return err;
+  gpr_log(GPR_DEBUG, "%p: %d -> %d [%s:%d]", err, err->refs.count, err->refs.count + 1, file, line);
   gpr_ref(&err->refs);
   return err;
 }
@@ -168,10 +169,13 @@ static void error_destroy(grpc_error *err) {
   gpr_avl_unref(err->strs);
   gpr_avl_unref(err->errs);
   gpr_avl_unref(err->times);
+  gpr_free(err);
 }
 
-void grpc_error_unref(grpc_error *err) {
-  if (!is_special(err) && gpr_unref(&err->refs)) {
+void grpc_error_unref(grpc_error *err, const char *file, int line) {
+  if (is_special(err)) return;
+  gpr_log(GPR_DEBUG, "%p: %d -> %d [%s:%d]", err, err->refs.count, err->refs.count - 1, file, line);
+  if (gpr_unref(&err->refs)) {
     error_destroy(err);
   }
 }
@@ -188,13 +192,13 @@ grpc_error *grpc_error_create(const char *file, int line, const char *desc,
                           (void *)(uintptr_t)line);
   err->strs = gpr_avl_add(
       gpr_avl_add(gpr_avl_create(&avl_vtable_strs),
-                  (void *)(uintptr_t)GRPC_ERROR_STR_FILE, (void *)file),
-      (void *)(uintptr_t)GRPC_ERROR_STR_DESCRIPTION, (void *)desc);
+                  (void *)(uintptr_t)GRPC_ERROR_STR_FILE, gpr_strdup(file)),
+      (void *)(uintptr_t)GRPC_ERROR_STR_DESCRIPTION, gpr_strdup(desc));
   err->errs = gpr_avl_create(&avl_vtable_errs);
   for (size_t i = 0; i < num_referencing; i++) {
     if (referencing[i] == GRPC_ERROR_NONE) continue;
     err->errs =
-        gpr_avl_add(err->errs, (void *)(err->next_err++), referencing[i]);
+        gpr_avl_add(err->errs, (void *)(err->next_err++), GRPC_ERROR_REF(referencing[i]));
   }
   err->times = gpr_avl_add(gpr_avl_create(&avl_vtable_times),
                            (void *)(uintptr_t)GRPC_ERROR_TIME_CREATED,
@@ -218,7 +222,7 @@ static grpc_error *copy_error_and_unref(grpc_error *in) {
   out->times = gpr_avl_ref(in->times);
   out->next_err = in->next_err;
   gpr_ref_init(&out->refs, 1);
-  grpc_error_unref(in);
+  GRPC_ERROR_UNREF(in);
   return out;
 }
 
