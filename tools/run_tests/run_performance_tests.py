@@ -255,9 +255,9 @@ def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*',
       if re.search(args.regex, scenario_json['name']):
         workers = workers_by_lang[str(language)]
         # 'SERVER_LANGUAGE' is an indicator for this script to pick
-        # a server in different language. It doesn't belong to the Scenario
-        # schema, so we also need to remove it.
-        custom_server_lang = scenario_json.pop('SERVER_LANGUAGE', None)
+        # a server in different language.
+        custom_server_lang = scenario_json.get('SERVER_LANGUAGE', None)
+        scenario_json = scenario_config.remove_nonproto_fields(scenario_json)
         if custom_server_lang:
           if not workers_by_lang.get(custom_server_lang, []):
             print 'Warning: Skipping scenario %s as' % scenario_json['name']
