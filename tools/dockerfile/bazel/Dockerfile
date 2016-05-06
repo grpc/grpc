@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,52 +27,26 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+FROM ubuntu:wily
+RUN apt-get update
+RUN apt-get -y install software-properties-common python-software-properties
+RUN add-apt-repository ppa:webupd8team/java
+RUN apt-get update
+RUN apt-get -y install \
+	vim            \
+	wget           \
+	openjdk-8-jdk  \
+	pkg-config     \
+	zip            \
+	g++            \
+	zlib1g-dev     \
+	unzip          \
+	git
 
-cd $(dirname $0)/../..
+RUN git clone https://github.com/bazelbuild/bazel.git /bazel
+RUN cd /bazel && ./compile.sh
 
-export GRPC_PYTHON_USE_CUSTOM_BDIST=0
-export GRPC_PYTHON_BUILD_WITH_CYTHON=1
-export PYTHON=${PYTHON:-python}
-export PIP=${PIP:-pip}
-export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
+RUN ln -s /bazel/output/bazel /bin/
 
-
-if [ "$SKIP_PIP_INSTALL" == "" ]
-then
-  ${PIP} install --upgrade six
-  # There's a bug in newer versions of setuptools (see
-  # https://bitbucket.org/pypa/setuptools/issues/503/pkg_resources_vendorpackagingrequirementsi)
-  ${PIP} pip install --upgrade 'setuptools==18'
-  ${PIP} install -rrequirements.txt
-fi
-
-# Build the source distribution first because MANIFEST.in cannot override
-# exclusion of built shared objects among package resources (for some
-# inexplicable reason).
-${SETARCH_CMD} ${PYTHON} setup.py  \
-    sdist
-
-# Wheel has a bug where directories don't get excluded.
-# https://bitbucket.org/pypa/wheel/issues/99/cannot-exclude-directory
-${SETARCH_CMD} ${PYTHON} setup.py  \
-    bdist_wheel
-
-# Build gRPC tools package
-${PYTHON} tools/distrib/python/make_grpcio_tools.py
-CFLAGS="$CFLAGS -fno-wrapv" ${SETARCH_CMD} \
-  ${PYTHON} tools/distrib/python/grpcio_tools/setup.py bdist_wheel
-
-mkdir -p artifacts
-if command -v ${AUDITWHEEL}
-then
-  for wheel in dist/*.whl; do
-    ${AUDITWHEEL} repair $wheel -w artifacts/
-  done
-  for wheel in tools/distrib/python/grpcio_tools/dist/*.whl; do
-    ${AUDITWHEEL} repair $wheel -w artifacts/
-  done
-fi
-
-cp -r dist/* artifacts
-cp -r tools/distrib/python/grpcio_tools/dist/* artifacts
+# ensure the installation has been extracted
+RUN bazel

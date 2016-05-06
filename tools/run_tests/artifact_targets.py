@@ -84,12 +84,16 @@ python_version_arch_map = {
 class PythonArtifact:
   """Builds Python artifacts."""
 
-  def __init__(self, platform, arch):
-    self.name = 'python_%s_%s' % (platform, arch)
+  def __init__(self, platform, arch, manylinux_build=None):
+    if manylinux_build:
+      self.name = 'python_%s_%s_%s' % (platform, arch, manylinux_build)
+    else:
+      self.name = 'python_%s_%s' % (platform, arch)
     self.platform = platform
     self.arch = arch
     self.labels = ['artifact', 'python', platform, arch]
     self.python_version = python_version_arch_map[arch]
+    self.manylinux_build = manylinux_build
 
   def pre_build_jobspecs(self):
       return []
@@ -99,14 +103,56 @@ class PythonArtifact:
     if self.platform == 'linux':
       if self.arch == 'x86':
         environ['SETARCH_CMD'] = 'linux32'
+      # Inside the manylinux container, the python installations are located in
+      # special places...
+      environ['PYTHON'] = '/opt/python/{}/bin/python'.format(self.manylinux_build)
+      environ['PIP'] = '/opt/python/{}/bin/pip'.format(self.manylinux_build)
+      # Our docker image has all the prerequisites pip-installed already.
+      environ['SKIP_PIP_INSTALL'] = '1'
+      # Platform autodetection for the manylinux1 image breaks so we set the
+      # defines ourselves.
+      # TODO(atash) get better platform-detection support in core so we don't
+      # need to do this manually...
+      environ['CFLAGS'] = " ".join([
+        '-DGPR_NO_AUTODETECT_PLATFORM',
+        '-DGPR_PLATFORM_STRING=\\"manylinux\\"',
+        '-DGPR_POSIX_CRASH_HANDLER=1',
+        '-DGPR_CPU_LINUX=1',
+        '-DGPR_GCC_ATOMIC=1',
+        '-DGPR_GCC_TLS=1',
+        '-DGPR_LINUX=1',
+        '-DGPR_LINUX_LOG=1',
+        #'-DGPR_LINUX_MULTIPOLL_WITH_EPOLL=1',
+        '-DGPR_POSIX_SOCKET=1',
+        '-DGPR_POSIX_WAKEUP_FD=1',
+        '-DGPR_POSIX_SOCKETADDR=1',
+        #'-DGPR_LINUX_EVENTFD=1',
+        '-DGPR_POSIX_NO_SPECIAL_WAKEUP_FD=1',
+        #'-DGPR_LINUX_SOCKETUTILS=1',
+        '-DGPR_POSIX_SOCKETUTILS=1',
+        '-DGPR_HAVE_UNIX_SOCKET=1',
+        '-DGPR_HAVE_IP_PKTINFO=1',
+        '-DGPR_HAVE_IPV6_RECVPKTINFO=1',
+        '-DGPR_LINUX_ENV=1',
+        '-DGPR_POSIX_FILE=1',
+        '-DGPR_POSIX_TMPFILE=1',
+        '-DGPR_POSIX_STRING=1',
+        '-DGPR_POSIX_SUBPROCESS=1',
+        '-DGPR_POSIX_SYNC=1',
+        '-DGPR_POSIX_TIME=1',
+        '-DGPR_GETPID_IN_UNISTD_H=1',
+        '-DGPR_HAVE_MSG_NOSIGNAL=1',
+        '-DGPR_ARCH_{arch}=1'.format(arch=('32' if self.arch == 'x86' else '64')),
+      ])
       return create_docker_jobspec(self.name,
-          'tools/dockerfile/grpc_artifact_linux_%s' % self.arch,
+          'tools/dockerfile/grpc_artifact_python_manylinux_%s' % self.arch,
           'tools/run_tests/build_artifact_python.sh',
           environ=environ)
     elif self.platform == 'windows':
       return create_jobspec(self.name,
                             ['tools\\run_tests\\build_artifact_python.bat',
-                             self.python_version
+                             self.python_version,
+                             '32' if self.arch == 'x86' else '64'
                             ],
                             shell=True)
     else:
@@ -307,8 +353,10 @@ def targets():
            for Cls in (CSharpExtArtifact, NodeExtArtifact, ProtocArtifact)
            for platform in ('linux', 'macos', 'windows')
            for arch in ('x86', 'x64')] +
-          [PythonArtifact('linux', 'x86'),
-           PythonArtifact('linux', 'x64'),
+          [PythonArtifact('linux', 'x86', 'cp27-cp27m'),
+           PythonArtifact('linux', 'x86', 'cp27-cp27mu'),
+           PythonArtifact('linux', 'x64', 'cp27-cp27m'),
+           PythonArtifact('linux', 'x64', 'cp27-cp27mu'),
            PythonArtifact('macos', 'x64'),
            PythonArtifact('windows', 'x86'),
            PythonArtifact('windows', 'x64'),
