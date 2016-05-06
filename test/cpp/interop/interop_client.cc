@@ -153,7 +153,7 @@ bool InteropClient::AssertStatusOk(const Status& s) {
 }
 
 bool InteropClient::AssertStatusCode(const Status& s,
-                                            StatusCode expected_code) {
+                                     StatusCode expected_code) {
   if (s.error_code() == expected_code) {
     return true;
   }
