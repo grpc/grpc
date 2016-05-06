@@ -84,6 +84,7 @@ static void run_test(const char *target, size_t nops) {
                                "/foo", "foo.test.google.fr:1234", deadline,
                                NULL);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;

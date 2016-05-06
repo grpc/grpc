@@ -193,6 +193,7 @@ static void request_response_with_payload_and_call_creds(
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
@@ -248,6 +249,7 @@ static void request_response_with_payload_and_call_creds(
   /* Cannot set creds on the server call object. */
   GPR_ASSERT(grpc_call_set_credentials(s, NULL) != GRPC_CALL_OK);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
@@ -265,6 +267,7 @@ static void request_response_with_payload_and_call_creds(
   cq_expect_completion(cqv, tag(102), 1);
   cq_verify(cqv);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
@@ -410,6 +413,7 @@ static void test_request_with_server_rejecting_client_creds(
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;

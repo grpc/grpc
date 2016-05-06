@@ -330,6 +330,7 @@ typedef struct grpc_op {
     struct {
       size_t count;
       grpc_metadata *metadata;
+      grpc_compression_level compression_level;
     } send_initial_metadata;
     grpc_byte_buffer *send_message;
     struct {
