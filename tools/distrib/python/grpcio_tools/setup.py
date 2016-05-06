@@ -30,6 +30,7 @@
 from distutils import extension
 import os
 import os.path
+import shlex
 import sys
 
 import setuptools
@@ -39,6 +40,16 @@ from setuptools.command import build_ext
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.abspath('.'))
+
+# There are some situations (like on Windows) where CC, CFLAGS, and LDFLAGS are
+# entirely ignored/dropped/forgotten by distutils and its Cygwin/MinGW support.
+# We use these environment variables to thus get around that without locking
+# ourselves in w.r.t. the multitude of operating systems this ought to build on.
+# By default we assume a GCC-like compiler.
+EXTRA_COMPILE_ARGS = shlex.split(os.environ.get('GRPC_PYTHON_CFLAGS',
+                                                '-frtti -std=c++11'))
+EXTRA_LINK_ARGS = shlex.split(os.environ.get('GRPC_PYTHON_LDFLAGS',
+                                             '-lpthread'))
 
 import protoc_lib_deps
 import grpc_version
@@ -60,7 +71,8 @@ def protoc_ext_module():
       ],
       language='c++',
       define_macros=[('HAVE_PTHREAD', 1)],
-      extra_compile_args=['-lpthread', '-frtti', '-std=c++11'],
+      extra_compile_args=EXTRA_COMPILE_ARGS,
+      extra_link_args=EXTRA_LINK_ARGS,
   )
   return plugin_ext
 
