@@ -189,8 +189,10 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
       char *algo_name;
       GPR_ASSERT(grpc_compression_algorithm_name(calld->compression_algorithm,
                                                  &algo_name));
-      gpr_log(GPR_DEBUG, "Algorithm '%s' enabled but decided not to compress.",
-              algo_name);
+      gpr_log(
+          GPR_DEBUG,
+          "Algorithm '%s' enabled but decided not to compress. Input size: %d",
+          algo_name, calld->slices.length);
     }
   }
 

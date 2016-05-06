@@ -62,12 +62,19 @@ void grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
     case GRPC_BB_RAW:
       gpr_slice_buffer_init(&decompressed_slices_buffer);
       if (is_compressed(reader->buffer_in)) {
-        grpc_msg_decompress(reader->buffer_in->data.raw.compression,
-                            &reader->buffer_in->data.raw.slice_buffer,
-                            &decompressed_slices_buffer);
-        reader->buffer_out =
-            grpc_raw_byte_buffer_create(decompressed_slices_buffer.slices,
-                                        decompressed_slices_buffer.count);
+        if (grpc_msg_decompress(reader->buffer_in->data.raw.compression,
+                                &reader->buffer_in->data.raw.slice_buffer,
+                                &decompressed_slices_buffer) < 0) {
+          gpr_log(GPR_ERROR,
+                  "Unexpected error decompressing data for algorithm with enum "
+                  "value '%d'. Reading data as if it were uncompressed.",
+                  reader->buffer_in->data.raw.compression);
+          reader->buffer_out = reader->buffer_in;
+        } else { /* all fine */
+          reader->buffer_out =
+              grpc_raw_byte_buffer_create(decompressed_slices_buffer.slices,
+                                          decompressed_slices_buffer.count);
+        }
         gpr_slice_buffer_destroy(&decompressed_slices_buffer);
       } else { /* not compressed, use the input buffer as output */
         reader->buffer_out = reader->buffer_in;

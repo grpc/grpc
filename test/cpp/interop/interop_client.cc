@@ -60,7 +60,7 @@ static const char* kRandomFile = "test/cpp/interop/rnd.dat";
 namespace {
 // The same value is defined by the Java client.
 const std::vector<int> request_stream_sizes = {27182, 8, 1828, 45904};
-const std::vector<int> response_stream_sizes = {31415, 9, 2653, 58979};
+const std::vector<int> response_stream_sizes = {31415, 59, 2653, 58979};
 const int kNumResponseMessages = 2000;
 const int kResponseMessageSize = 1030;
 const int kReceiveDelayMilliSeconds = 20;

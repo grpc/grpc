@@ -194,5 +194,5 @@ int grpc_msg_decompress(grpc_compression_algorithm algorithm,
       break;
   }
   gpr_log(GPR_ERROR, "invalid compression algorithm %d", algorithm);
-  return 0;
+  return -1; /* to distinguish it from GRPC_COMPRESS_NONE */
 }
