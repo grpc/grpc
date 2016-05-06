@@ -49,18 +49,6 @@ namespace grpc {
 /// \warning This interface should be considered internal and private.
 class CoreCodegenInterface {
  public:
-  // Serialize the msg into a buffer created inside the function. The caller
-  // should destroy the returned buffer when done with it. If serialization
-  // fails,
-  // false is returned and buffer is left unchanged.
-  virtual Status SerializeProto(const grpc::protobuf::Message& msg,
-                                grpc_byte_buffer** buffer) = 0;
-
-  // The caller keeps ownership of buffer and msg.
-  virtual Status DeserializeProto(grpc_byte_buffer* buffer,
-                                  grpc::protobuf::Message* msg,
-                                  int max_message_size) = 0;
-
   /// Upon a failed assertion, log the error.
   virtual void assert_fail(const char* failed_assertion) = 0;
 
@@ -76,8 +64,28 @@ class CoreCodegenInterface {
   virtual void gpr_free(void* p) = 0;
 
   virtual void grpc_byte_buffer_destroy(grpc_byte_buffer* bb) = 0;
+
+  virtual void grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,
+                                            grpc_byte_buffer* buffer) = 0;
+  virtual void grpc_byte_buffer_reader_destroy(
+      grpc_byte_buffer_reader* reader) = 0;
+  virtual int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader* reader,
+                                           gpr_slice* slice) = 0;
+
+  virtual grpc_byte_buffer* grpc_raw_byte_buffer_create(gpr_slice* slice,
+                                                        size_t nslices) = 0;
+
+  virtual gpr_slice gpr_slice_malloc(size_t length) = 0;
+  virtual void gpr_slice_unref(gpr_slice slice) = 0;
+  virtual gpr_slice gpr_slice_split_tail(gpr_slice* s, size_t split) = 0;
+  virtual void gpr_slice_buffer_add(gpr_slice_buffer* sb, gpr_slice slice) = 0;
+  virtual void gpr_slice_buffer_pop(gpr_slice_buffer* sb) = 0;
+
   virtual void grpc_metadata_array_init(grpc_metadata_array* array) = 0;
   virtual void grpc_metadata_array_destroy(grpc_metadata_array* array) = 0;
+
+  virtual const Status& ok() = 0;
+  virtual const Status& cancelled() = 0;
 
   virtual gpr_timespec gpr_inf_future(gpr_clock_type type) = 0;
 };

@@ -4,7 +4,6 @@
   "dependencies": {
     "async": "^1.5.2",
     "grpc": "0.13.0",
-    "google-protobuf": "*",
     "lodash": "^4.6.1",
     "minimist": "^1.2.0"
   }
