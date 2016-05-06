@@ -188,9 +188,13 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   if (creds == NULL) goto error;
   status = grpc_server_credentials_create_security_connector(creds, &sc);
   if (status != GRPC_SECURITY_OK) {
-    gpr_log(GPR_ERROR,
-            "Unable to create secure server with credentials of type %s.",
-            creds->type);
+    char *msg;
+    gpr_asprintf(&msg,
+                 "Unable to create secure server with credentials of type %s.",
+                 creds->type);
+    err = grpc_error_set_int(GRPC_ERROR_CREATE(msg),
+                             GRPC_ERROR_INT_SECURITY_STATUS, status);
+    gpr_free(msg);
     goto error;
   }
   sc->channel_args = grpc_server_get_channel_args(server);
@@ -278,5 +282,9 @@ error:
     }
   }
   grpc_exec_ctx_finish(&exec_ctx);
+  const char *msg = grpc_error_string(err);
+  GRPC_ERROR_UNREF(err);
+  gpr_log(GPR_ERROR, "%s", msg);
+  grpc_error_free_string(msg);
   return 0;
 }

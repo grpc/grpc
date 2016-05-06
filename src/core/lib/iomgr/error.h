@@ -38,6 +38,17 @@
 
 #include <grpc/support/time.h>
 
+// Opaque representation of an error.
+// Errors are refcounted objects that represent the result of an operation.
+// Ownership laws:
+//  if a grpc_error is returned by a function, the caller owns a ref to that
+//    instance
+//  if a grpc_error is passed to a grpc_closure callback function (functions
+//    with the signature:
+//      void (*f)(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error))
+//    then those functions do not automatically own a ref to error
+//  if a grpc_error is passed to *ANY OTHER FUNCTION* then that function takes
+//    ownership of the error
 typedef struct grpc_error grpc_error;
 
 typedef enum {
@@ -53,6 +64,7 @@ typedef enum {
   GRPC_ERROR_INT_HTTP2_ERROR,
   GRPC_ERROR_INT_TSI_CODE,
   GRPC_ERROR_INT_SECURITY_STATUS,
+  GRPC_ERROR_INT_FD,
 } grpc_error_ints;
 
 typedef enum {
