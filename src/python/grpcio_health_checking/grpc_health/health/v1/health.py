@@ -31,7 +31,7 @@
 
 import threading
 
-from grpc_health_checking.health.v1 import health_pb2
+from grpc_health.health.v1 import health_pb2
 
 
 class HealthServicer(health_pb2.BetaHealthServicer):

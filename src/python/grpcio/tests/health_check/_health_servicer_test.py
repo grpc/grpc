@@ -27,12 +27,12 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Tests of grpc_health_checking.health.v1.health."""
+"""Tests of grpc_health.health.v1.health."""
 
 import unittest
 
-from grpc_health_checking.health.v1 import health
-from grpc_health_checking.health.v1 import health_pb2
+from grpc_health.health.v1 import health
+from grpc_health.health.v1 import health_pb2
 
 
 class HealthServicerTest(unittest.TestCase):
