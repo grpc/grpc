@@ -975,6 +975,31 @@ TEST_P(End2endTest, NonExistingService) {
   EXPECT_EQ("", s.error_message());
 }
 
+// Ask the server to send back a serialized proto in trailer.
+// This is an example of setting error details.
+TEST_P(End2endTest, BinaryTrailerTest) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+
+  request.mutable_param()->set_echo_metadata(true);
+  DebugInfo* info = request.mutable_param()->mutable_debug_info();
+  info->add_stack_entries("stack_entry_1");
+  info->add_stack_entries("stack_entry_2");
+  info->add_stack_entries("stack_entry_3");
+  info->set_detail("detailed debug info");
+  grpc::string expected_string = info->SerializeAsString();
+  request.set_message("Hello");
+
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_FALSE(s.ok());
+  auto trailers = context.GetServerTrailingMetadata();
+  EXPECT_EQ(1, trailers.count(kDebugInfoTrailerKey));
+  auto iter = trailers.find(kDebugInfoTrailerKey);
+  EXPECT_EQ(expected_string, iter->second);
+}
+
 //////////////////////////////////////////////////////////////////////////
 // Test with and without a proxy.
 class ProxyEnd2endTest : public End2endTest {

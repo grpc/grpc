@@ -32,6 +32,12 @@ syntax = "proto3";
 
 package grpc.testing;
 
+// Message to be echoed back serialized in trailer.
+message DebugInfo {
+  repeated string stack_entries = 1;
+  string detail = 2;
+}
+
 message RequestParams {
   bool echo_deadline = 1;
   int32 client_cancel_after_us = 2;
@@ -43,6 +49,7 @@ message RequestParams {
   string expected_client_identity = 8; // will force check_auth_context.
   bool skip_cancelled_check = 9;
   string expected_transport_security_type = 10;
+  DebugInfo debug_info = 11;
 }
 
 message EchoRequest {
