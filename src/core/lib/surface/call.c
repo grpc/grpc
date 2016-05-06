@@ -420,7 +420,7 @@ grpc_compression_algorithm grpc_call_test_only_get_compression_algorithm(
   return algorithm;
 }
 
-static grpc_compression_algorithm call_compression_for_level_locked(
+static grpc_compression_algorithm compression_algorithm_for_level_locked(
     grpc_call *call, grpc_compression_level level) {
   /* Establish a "ranking" or compression algorithms in increasing order of
    * compression.
@@ -647,7 +647,7 @@ static int prepare_application_metadata(grpc_call *call, int count,
   if (i != total_count) {
     for (int j = 0; j <= i; j++) {
       const grpc_metadata *md =
-          get_md_elem(metadata, additional_metadata, i, count);
+          get_md_elem(metadata, additional_metadata, j, count);
       grpc_linked_mdelem *l = (grpc_linked_mdelem *)&md->internal_data;
       GRPC_MDELEM_UNREF(l->md);
     }
@@ -1330,7 +1330,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
             goto done_with_error;
           }
           const grpc_compression_algorithm calgo =
-              call_compression_for_level_locked(
+              compression_algorithm_for_level_locked(
                   call, op->data.send_initial_metadata.compression_level);
           char *calgo_name;
           grpc_compression_algorithm_name(calgo, &calgo_name);
@@ -1623,6 +1623,15 @@ void *grpc_call_context_get(grpc_call *call, grpc_context_index elem) {
 }
 
 uint8_t grpc_call_is_client(grpc_call *call) { return call->is_client; }
+
+grpc_compression_algorithm grpc_call_compression_for_level(
+    grpc_call *call, grpc_compression_level level) {
+  gpr_mu_lock(&call->mu);
+  grpc_compression_algorithm algo =
+      compression_algorithm_for_level_locked(call, level);
+  gpr_mu_unlock(&call->mu);
+  return algo;
+}
 
 const char *grpc_call_error_to_string(grpc_call_error error) {
   switch (error) {
