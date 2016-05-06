@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 0.14.0-dev
+PROJECT_NUMBER         = 0.15.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -786,6 +786,7 @@ include/grpc/impl/codegen/sync_generic.h \
 include/grpc/impl/codegen/sync_posix.h \
 include/grpc/impl/codegen/sync_win32.h \
 include/grpc/impl/codegen/time.h \
+include/grpc/grpc_cronet.h \
 include/grpc/grpc_security.h \
 include/grpc/grpc_security_constants.h \
 include/grpc/census.h \
