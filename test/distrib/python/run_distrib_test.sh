@@ -48,7 +48,10 @@ which $PYTHON || PYTHON=python
 which $PIP || PIP=pip
 
 # TODO(jtattermusch): this shouldn't be required
-${PIP} install --upgrade six pip
+# TODO(jtattermusch): run the command twice to workaround docker-on-overlay
+# issue https://github.com/docker/docker/issues/12327
+# (first attempt will fail when using docker with overlayFS)
+${PIP} install --upgrade six pip || ${PIP} install --upgrade six pip
 
 # At least one of the bdist packages has to succeed (whichever one matches the
 # test machine, anyway).
