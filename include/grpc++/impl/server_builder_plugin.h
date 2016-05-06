@@ -64,6 +64,4 @@ class ServerBuilderPlugin {
 
 }  // namespace grpc
 
-
-
 #endif  // GRPCXX_IMPL_SERVER_BUILDER_PLUGIN_H

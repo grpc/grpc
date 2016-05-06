@@ -115,10 +115,7 @@ class InsertPluginServerBuilderOption : public ServerBuilderOption {
   void UpdatePlugins(
       std::map<grpc::string, std::unique_ptr<ServerBuilderPlugin>>* plugins)
       GRPC_OVERRIDE {
-    auto it = plugins->begin();
-    while (it != plugins->end()) {
-      plugins->erase(it++);
-    }
+    plugins->clear();
 
     std::unique_ptr<TestServerBuilderPlugin> plugin(
         new TestServerBuilderPlugin());
@@ -136,7 +133,7 @@ std::unique_ptr<ServerBuilderPlugin> CreateTestServerBuilderPlugin() {
   return std::unique_ptr<ServerBuilderPlugin>(new TestServerBuilderPlugin());
 }
 
-void grpc_AddServerBuilderPlugin_reflection() {
+void AddTestServerBuilderPlugin() {
   static bool already_here = false;
   if (already_here) return;
   already_here = true;
@@ -145,12 +142,13 @@ void grpc_AddServerBuilderPlugin_reflection() {
 }
 
 // Force AddServerBuilderPlugin() to be called at static initialization time.
-struct StaticPluginInitializer_reflection {
-  StaticPluginInitializer_reflection() {
-    grpc_AddServerBuilderPlugin_reflection();
-  }
-} static_plugin_initializer_reflection_;
+struct StaticTestPluginInitializer {
+  StaticTestPluginInitializer() { AddTestServerBuilderPlugin(); }
+} static_plugin_initializer_test_;
 
+// When the param boolean is true, the ServerBuilder plugin will be added at the
+// time of static initialization. When it's false, the ServerBuilder plugin will
+// be added using ServerBuilder::SetOption().
 class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
  public:
   ServerBuilderPluginTest() {}
