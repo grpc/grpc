@@ -52,7 +52,7 @@ module GRPC
 
     def wait_for_signals
       t = Thread.new do
-        sleep 1 until GRPC::Core.signal_received? || @interpreter_exiting
+        sleep 0.1 until GRPC::Core.signal_received? || @interpreter_exiting
         unless @interpreter_exiting
           @handlers_mutex.synchronize do
             @signal_handlers.each(&:call)
