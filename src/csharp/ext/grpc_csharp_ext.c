@@ -506,8 +506,8 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_unary(
   /* TODO: don't use magic number */
   grpc_op ops[6];
   ops[0].op = GRPC_OP_SEND_INITIAL_METADATA;
-  memset(ops[0].op.data.send_initial_metadata, 0,
-         sizeof(ops[0].op.data.send_initial_metadata));
+  memset(&ops[0].data.send_initial_metadata, 0,
+         sizeof(ops[0].data.send_initial_metadata));
   grpcsharp_metadata_array_move(&(ctx->send_initial_metadata),
                                 initial_metadata);
   ops[0].data.send_initial_metadata.count = ctx->send_initial_metadata.count;
