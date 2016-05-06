@@ -78,9 +78,11 @@ output_dir = File.expand_path(RbConfig::CONFIG['topdir'])
 grpc_lib_dir = File.join(output_dir, 'libs', grpc_config)
 ENV['BUILDDIR'] = output_dir
 
-puts 'Building internal gRPC into ' + grpc_lib_dir
-system("make -j -C #{grpc_root} #{grpc_lib_dir}/libgrpc.a CONFIG=#{grpc_config}")
-exit 1 unless $? == 0
+unless windows
+  puts 'Building internal gRPC into ' + grpc_lib_dir
+  system("make -j -C #{grpc_root} #{grpc_lib_dir}/libgrpc.a CONFIG=#{grpc_config}")
+  exit 1 unless $? == 0
+end
 
 $CFLAGS << ' -I' + File.join(grpc_root, 'include')
 $LDFLAGS << ' ' + File.join(grpc_lib_dir, 'libgrpc.a') unless windows
