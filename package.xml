@@ -290,6 +290,7 @@
     <file baseinstalldir="/" name="src/core/lib/security/transport/handshake.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/secure_endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/security_connector.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/transport/tsi_error.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/util/b64.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/util/json_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/tsi/fake_transport_security.h" role="src" />
@@ -452,6 +453,7 @@
     <file baseinstalldir="/" name="src/core/lib/security/transport/secure_endpoint.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/security_connector.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/server_auth_filter.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/transport/tsi_error.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/util/b64.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/util/json_util.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/init_secure.c" role="src" />

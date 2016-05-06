@@ -382,6 +382,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\server_auth_filter.c">
       <Filter>src\core\lib\security\transport</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\tsi_error.c">
+      <Filter>src\core\lib\security\transport</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\util\b64.c">
       <Filter>src\core\lib\security\util</Filter>
     </ClCompile>
@@ -945,6 +948,9 @@
       <Filter>src\core\lib\security\transport</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\security_connector.h">
+      <Filter>src\core\lib\security\transport</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\tsi_error.h">
       <Filter>src\core\lib\security\transport</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\util\b64.h">

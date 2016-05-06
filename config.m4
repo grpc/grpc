@@ -209,6 +209,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/transport/secure_endpoint.c \
     src/core/lib/security/transport/security_connector.c \
     src/core/lib/security/transport/server_auth_filter.c \
+    src/core/lib/security/transport/tsi_error.c \
     src/core/lib/security/util/b64.c \
     src/core/lib/security/util/json_util.c \
     src/core/lib/surface/init_secure.c \

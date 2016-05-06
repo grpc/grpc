@@ -229,6 +229,10 @@ grpc_error *grpc_error_set_int(grpc_error *src, grpc_error_ints which,
   return new;
 }
 
+const intptr_t *grpc_error_get_int(grpc_error *err, grpc_error_ints which) {
+  return gpr_avl_get(err->ints, (void *)(uintptr_t)which);
+}
+
 grpc_error *grpc_error_set_str(grpc_error *src, grpc_error_strs which,
                                const char *value) {
   grpc_error *new = copy_error_and_unref(src);
@@ -417,6 +421,13 @@ static const char *finish_kvs(kv_pairs *kvs) {
 
   gpr_free(kvs->kvs);
   return s;
+}
+
+void grpc_error_free_string(const char *str) {
+  if (str == no_error_string) return;
+  if (str == oom_error_string) return;
+  if (str == cancelled_error_string) return;
+  gpr_free((char *)str);
 }
 
 const char *grpc_error_string(grpc_error *err) {
