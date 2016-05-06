@@ -55,13 +55,6 @@ GRPCAPI int grpc_compression_algorithm_parse(
 GRPCAPI int grpc_compression_algorithm_name(
     grpc_compression_algorithm algorithm, char **name);
 
-/** Returns the compression algorithm corresponding to \a level for the
- * compression algorithms encoded in the \a accepted_encodings bitset.
- *
- * It abort()s for unknown levels . */
-GRPCAPI grpc_compression_algorithm grpc_compression_algorithm_for_level(
-    grpc_compression_level level, uint32_t accepted_encodings);
-
 GRPCAPI void grpc_compression_options_init(grpc_compression_options *opts);
 
 /** Mark \a algorithm as enabled in \a opts. */

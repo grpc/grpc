@@ -125,62 +125,6 @@ grpc_mdelem *grpc_compression_encoding_mdelem(
   return NULL;
 }
 
-/* TODO(dgq): Add the ability to specify parameters to the individual
- * compression algorithms */
-grpc_compression_algorithm grpc_compression_algorithm_for_level(
-    grpc_compression_level level, uint32_t accepted_encodings) {
-  GRPC_API_TRACE("grpc_compression_algorithm_for_level(level=%d)", 1,
-                 ((int)level));
-  if (level > GRPC_COMPRESS_LEVEL_HIGH) {
-    gpr_log(GPR_ERROR, "Unknown compression level %d.", (int)level);
-    abort();
-  }
-
-  const size_t num_supported =
-      GPR_BITCOUNT(accepted_encodings) - 1; /* discard NONE */
-  if (level == GRPC_COMPRESS_LEVEL_NONE || num_supported == 0) {
-    return GRPC_COMPRESS_NONE;
-  }
-
-  GPR_ASSERT(level > 0);
-
-  /* Establish a "ranking" or compression algorithms in increasing order of
-   * compression.
-   * This is simplistic and we will probably want to introduce other dimensions
-   * in the future (cpu/memory cost, etc). */
-  const grpc_compression_algorithm algos_ranking[] = {GRPC_COMPRESS_GZIP,
-                                                      GRPC_COMPRESS_DEFLATE};
-
-  /* intersect algos_ranking with the supported ones keeping the ranked order */
-  grpc_compression_algorithm
-      sorted_supported_algos[GRPC_COMPRESS_ALGORITHMS_COUNT];
-  size_t algos_supported_idx = 0;
-  for (size_t i = 0; i < GPR_ARRAY_SIZE(algos_ranking); i++) {
-    const grpc_compression_algorithm alg = algos_ranking[i];
-    for (size_t j = 0; j < num_supported; j++) {
-      if (GPR_BITGET(accepted_encodings, alg) == 1) {
-        /* if \a alg in supported */
-        sorted_supported_algos[algos_supported_idx++] = alg;
-        break;
-      }
-    }
-    if (algos_supported_idx == num_supported) break;
-  }
-
-  switch (level) {
-    case GRPC_COMPRESS_LEVEL_NONE:
-      abort(); /* should have been handled already */
-    case GRPC_COMPRESS_LEVEL_LOW:
-      return sorted_supported_algos[0];
-    case GRPC_COMPRESS_LEVEL_MED:
-      return sorted_supported_algos[num_supported / 2];
-    case GRPC_COMPRESS_LEVEL_HIGH:
-      return sorted_supported_algos[num_supported - 1];
-    default:
-      abort();
-  };
-}
-
 void grpc_compression_options_init(grpc_compression_options *opts) {
   opts->enabled_algorithms_bitset = (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1;
   opts->default_compression_algorithm = GRPC_COMPRESS_NONE;

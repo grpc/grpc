@@ -72,7 +72,6 @@ census_view_get_data_type census_view_get_data_import;
 census_view_reset_type census_view_reset_import;
 grpc_compression_algorithm_parse_type grpc_compression_algorithm_parse_import;
 grpc_compression_algorithm_name_type grpc_compression_algorithm_name_import;
-grpc_compression_algorithm_for_level_type grpc_compression_algorithm_for_level_import;
 grpc_compression_options_init_type grpc_compression_options_init_import;
 grpc_compression_options_enable_algorithm_type grpc_compression_options_enable_algorithm_import;
 grpc_compression_options_disable_algorithm_type grpc_compression_options_disable_algorithm_import;
@@ -339,7 +338,6 @@ void grpc_rb_load_imports(HMODULE library) {
   census_view_reset_import = (census_view_reset_type) GetProcAddress(library, "census_view_reset");
   grpc_compression_algorithm_parse_import = (grpc_compression_algorithm_parse_type) GetProcAddress(library, "grpc_compression_algorithm_parse");
   grpc_compression_algorithm_name_import = (grpc_compression_algorithm_name_type) GetProcAddress(library, "grpc_compression_algorithm_name");
-  grpc_compression_algorithm_for_level_import = (grpc_compression_algorithm_for_level_type) GetProcAddress(library, "grpc_compression_algorithm_for_level");
   grpc_compression_options_init_import = (grpc_compression_options_init_type) GetProcAddress(library, "grpc_compression_options_init");
   grpc_compression_options_enable_algorithm_import = (grpc_compression_options_enable_algorithm_type) GetProcAddress(library, "grpc_compression_options_enable_algorithm");
   grpc_compression_options_disable_algorithm_import = (grpc_compression_options_disable_algorithm_type) GetProcAddress(library, "grpc_compression_options_disable_algorithm");

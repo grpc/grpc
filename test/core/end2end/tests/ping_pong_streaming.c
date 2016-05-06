@@ -135,6 +135,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
@@ -164,6 +165,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   cq_expect_completion(cqv, tag(100), 1);
   cq_verify(cqv);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
@@ -182,6 +184,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
     request_payload = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
     response_payload = grpc_raw_byte_buffer_create(&response_payload_slice, 1);
 
+    memset(ops, 0, sizeof(ops));
     op = ops;
     op->op = GRPC_OP_SEND_MESSAGE;
     op->data.send_message = request_payload;
@@ -196,6 +199,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
     error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(2), NULL);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
+    memset(ops, 0, sizeof(ops));
     op = ops;
     op->op = GRPC_OP_RECV_MESSAGE;
     op->data.recv_message = &request_payload_recv;
@@ -207,6 +211,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
     cq_expect_completion(cqv, tag(102), 1);
     cq_verify(cqv);
 
+    memset(ops, 0, sizeof(ops));
     op = ops;
     op->op = GRPC_OP_SEND_MESSAGE;
     op->data.send_message = response_payload;
@@ -228,6 +233,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   gpr_slice_unref(request_payload_slice);
   gpr_slice_unref(response_payload_slice);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op->flags = 0;
@@ -236,6 +242,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(3), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;

@@ -47,7 +47,9 @@
 #include <grpc++/impl/codegen/serialization_traits.h>
 #include <grpc++/impl/codegen/status.h>
 #include <grpc++/impl/codegen/string_ref.h>
+
 #include <grpc/impl/codegen/alloc.h>
+#include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
 
 struct grpc_byte_buffer;
@@ -187,6 +189,8 @@ class CallOpSendInitialMetadata {
     flags_ = flags;
     initial_metadata_count_ = metadata.size();
     initial_metadata_ = FillMetadataArray(metadata);
+    // TODO(dgq): expose compression level in API so it can be properly set.
+    compression_level_ = GRPC_COMPRESS_LEVEL_NONE;
   }
 
  protected:
@@ -198,6 +202,7 @@ class CallOpSendInitialMetadata {
     op->reserved = NULL;
     op->data.send_initial_metadata.count = initial_metadata_count_;
     op->data.send_initial_metadata.metadata = initial_metadata_;
+    op->data.send_initial_metadata.compression_level = compression_level_;
   }
   void FinishOp(bool* status, int max_message_size) {
     if (!send_) return;
@@ -209,6 +214,7 @@ class CallOpSendInitialMetadata {
   uint32_t flags_;
   size_t initial_metadata_count_;
   grpc_metadata* initial_metadata_;
+  grpc_compression_level compression_level_;
 };
 
 class CallOpSendMessage {

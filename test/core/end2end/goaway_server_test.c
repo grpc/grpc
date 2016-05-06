@@ -132,6 +132,7 @@ int main(int argc, char **argv) {
       chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq, "/foo", "127.0.0.1",
       GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20), NULL);
   /* send initial metadata to probe connectivity */
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
@@ -142,6 +143,7 @@ int main(int argc, char **argv) {
                                                    (size_t)(op - ops),
                                                    tag(0x101), NULL));
   /* and receive status to probe termination */
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv1;
@@ -183,6 +185,7 @@ int main(int argc, char **argv) {
                                         tag(0x9999));
 
   /* listen for close on the server call to probe for finishing */
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled1;
@@ -205,6 +208,7 @@ int main(int argc, char **argv) {
       chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq, "/foo", "127.0.0.1",
       GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20), NULL);
   /* send initial metadata to probe connectivity */
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
@@ -215,6 +219,7 @@ int main(int argc, char **argv) {
                                                    (size_t)(op - ops),
                                                    tag(0x201), NULL));
   /* and receive status to probe termination */
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv2;
@@ -249,6 +254,7 @@ int main(int argc, char **argv) {
   cq_verify(cqv);
 
   /* listen for close on the server call to probe for finishing */
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled2;
