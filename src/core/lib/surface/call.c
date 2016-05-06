@@ -408,6 +408,7 @@ static void set_status_code(grpc_call *call, status_source source,
 
 static void set_compression_algorithm(grpc_call *call,
                                       grpc_compression_algorithm algo) {
+  GPR_ASSERT(algo < GRPC_COMPRESS_ALGORITHMS_COUNT);
   call->compression_algorithm = algo;
 }
 
@@ -828,12 +829,16 @@ static uint32_t decode_status(grpc_mdelem *md) {
   return status;
 }
 
-static uint32_t decode_compression(grpc_mdelem *md) {
+static grpc_compression_algorithm decode_compression(grpc_mdelem *md) {
   grpc_compression_algorithm algorithm =
       grpc_compression_algorithm_from_mdstr(md->value);
   if (algorithm == GRPC_COMPRESS_ALGORITHMS_COUNT) {
     const char *md_c_str = grpc_mdstr_as_c_string(md->value);
-    gpr_log(GPR_ERROR, "Invalid compression algorithm: '%s'", md_c_str);
+    gpr_log(GPR_ERROR,
+            "Invalid incoming compression algorithm: '%s'. Interpreting "
+            "incoming data as uncompressed.",
+            md_c_str);
+    return GRPC_COMPRESS_NONE;
   }
   return algorithm;
 }

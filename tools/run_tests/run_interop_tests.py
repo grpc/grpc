@@ -82,10 +82,10 @@ class CXXLanguage:
     return {}
 
   def unimplemented_test_cases(self):
-    return _SKIP_ADVANCED + _SKIP_COMPRESSION
+    return _SKIP_ADVANCED
 
   def unimplemented_test_cases_server(self):
-    return _SKIP_ADVANCED + _SKIP_COMPRESSION
+    return _SKIP_ADVANCED
 
   def __str__(self):
     return 'c++'
