@@ -263,23 +263,26 @@ static int get_max_accept_queue_size(void) {
 }
 
 /* Prepare a recently-created socket for listening. */
-static int prepare_socket(int fd, const struct sockaddr *addr,
-                          size_t addr_len) {
+static grpc_error *prepare_socket(int fd, const struct sockaddr *addr,
+                                  size_t addr_len, int *port) {
   struct sockaddr_storage sockname_temp;
   socklen_t sockname_len;
+  grpc_error *err = GRPC_ERROR_NONE;
 
-  if (fd < 0) {
-    goto error;
-  }
+  GPR_ASSERT(fd >= 0);
 
-  if (!grpc_set_socket_nonblocking(fd, 1) || !grpc_set_socket_cloexec(fd, 1) ||
-      (!grpc_is_unix_socket(addr) && (!grpc_set_socket_low_latency(fd, 1) ||
-                                      !grpc_set_socket_reuse_addr(fd, 1))) ||
-      !grpc_set_socket_no_sigpipe_if_possible(fd)) {
-    gpr_log(GPR_ERROR, "Unable to configure socket %d: %s", fd,
-            strerror(errno));
-    goto error;
+  err = grpc_set_socket_nonblocking(fd, 1);
+  if (err != GRPC_ERROR_NONE) goto error;
+  err = grpc_set_socket_cloexec(fd, 1);
+  if (err != GRPC_ERROR_NONE) goto error;
+  if (!grpc_is_unix_socket(addr)) {
+    err = grpc_set_socket_low_latency(fd, 1);
+    if (err != GRPC_ERROR_NONE) goto error;
+    err = grpc_set_socket_reuse_addr(fd, 1);
+    if (err != GRPC_ERROR_NONE) goto error;
   }
+  err = grpc_set_socket_no_sigpipe_if_possible(fd);
+  if (err != GRPC_ERROR_NONE) goto error;
 
   GPR_ASSERT(addr_len < ~(socklen_t)0);
   if (bind(fd, addr, (socklen_t)addr_len) < 0) {
@@ -291,22 +294,27 @@ static int prepare_socket(int fd, const struct sockaddr *addr,
   }
 
   if (listen(fd, get_max_accept_queue_size()) < 0) {
-    gpr_log(GPR_ERROR, "listen: %s", strerror(errno));
+    err = GRPC_OS_ERROR(errno, "listen");
     goto error;
   }
 
   sockname_len = sizeof(sockname_temp);
   if (getsockname(fd, (struct sockaddr *)&sockname_temp, &sockname_len) < 0) {
+    err = GRPC_OS_ERROR(errno, "getsockname");
     goto error;
   }
 
-  return grpc_sockaddr_get_port((struct sockaddr *)&sockname_temp);
+  *port = grpc_sockaddr_get_port((struct sockaddr *)&sockname_temp);
+  return GRPC_ERROR_NONE;
 
 error:
+  GPR_ASSERT(err == GRPC_ERROR_NONE);
   if (fd >= 0) {
     close(fd);
   }
-  return -1;
+  return grpc_error_set_int(
+      GRPC_ERROR_CREATE_REFERENCING("Unable to configure socket", &err, 1),
+      GRPC_ERROR_INT_FD, fd);
 }
 
 /* event manager callback when reads are ready */
@@ -380,18 +388,18 @@ error:
   }
 }
 
-static grpc_tcp_listener *add_socket_to_server(grpc_tcp_server *s, int fd,
-                                               const struct sockaddr *addr,
-                                               size_t addr_len,
-                                               unsigned port_index,
-                                               unsigned fd_index) {
+static grpc_error *add_socket_to_server(grpc_tcp_server *s, int fd,
+                                        const struct sockaddr *addr,
+                                        size_t addr_len, unsigned port_index,
+                                        unsigned fd_index,
+                                        grpc_tcp_listener **listener) {
   grpc_tcp_listener *sp = NULL;
   int port;
   char *addr_str;
   char *name;
 
-  port = prepare_socket(fd, addr, addr_len);
-  if (port >= 0) {
+  grpc_error *err = prepare_socket(fd, addr, addr_len, &port);
+  if (err == GRPC_ERROR_NONE) {
     grpc_sockaddr_to_string(&addr_str, (struct sockaddr *)&addr, 1);
     gpr_asprintf(&name, "tcp-server-listener:%s", addr_str);
     gpr_mu_lock(&s->mu);
@@ -421,7 +429,8 @@ static grpc_tcp_listener *add_socket_to_server(grpc_tcp_server *s, int fd,
     gpr_free(name);
   }
 
-  return sp;
+  *listener = sp;
+  return err;
 }
 
 grpc_error *grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
@@ -481,7 +490,8 @@ grpc_error *grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
     addr_len = sizeof(wild6);
     errs[0] = grpc_create_dualstack_socket(addr, SOCK_STREAM, 0, &dsmode, &fd);
     if (errs[0] == GRPC_ERROR_NONE) {
-      sp = add_socket_to_server(s, fd, addr, addr_len, port_index, fd_index);
+      errs[0] = add_socket_to_server(s, fd, addr, addr_len, port_index,
+                                     fd_index, &sp);
       if (fd >= 0 && dsmode == GRPC_DSMODE_DUALSTACK) {
         goto done;
       }
@@ -505,7 +515,8 @@ grpc_error *grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
       addr_len = sizeof(addr4_copy);
     }
     sp2 = sp;
-    sp = add_socket_to_server(s, fd, addr, addr_len, port_index, fd_index);
+    errs[1] =
+        add_socket_to_server(s, fd, addr, addr_len, port_index, fd_index, &sp);
     if (sp2 != NULL && sp != NULL) {
       sp2->sibling = sp;
       sp->is_sibling = 1;

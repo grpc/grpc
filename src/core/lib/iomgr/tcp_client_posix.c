@@ -74,9 +74,7 @@ typedef struct {
 static grpc_error *prepare_socket(const struct sockaddr *addr, int fd) {
   grpc_error *err = GRPC_ERROR_NONE;
 
-  if (fd < 0) {
-    goto error;
-  }
+  GPR_ASSERT(fd >= 0);
 
   if (!grpc_set_socket_nonblocking(fd, 1) || !grpc_set_socket_cloexec(fd, 1) ||
       (!grpc_is_unix_socket(addr) && !grpc_set_socket_low_latency(fd, 1)) ||

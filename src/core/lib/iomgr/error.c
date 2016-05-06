@@ -108,6 +108,8 @@ static const char *error_int_name(grpc_error_ints key) {
       return "tsi_code";
     case GRPC_ERROR_INT_SECURITY_STATUS:
       return "security_status";
+    case GRPC_ERROR_INT_FD:
+      return "fd";
   }
   GPR_UNREACHABLE_CODE(return "unknown");
 }
@@ -158,7 +160,8 @@ static bool is_special(grpc_error *err) {
 
 grpc_error *grpc_error_ref(grpc_error *err, const char *file, int line) {
   if (is_special(err)) return err;
-  gpr_log(GPR_DEBUG, "%p: %d -> %d [%s:%d]", err, err->refs.count, err->refs.count + 1, file, line);
+  gpr_log(GPR_DEBUG, "%p: %d -> %d [%s:%d]", err, err->refs.count,
+          err->refs.count + 1, file, line);
   gpr_ref(&err->refs);
   return err;
 }
@@ -174,7 +177,8 @@ static void error_destroy(grpc_error *err) {
 
 void grpc_error_unref(grpc_error *err, const char *file, int line) {
   if (is_special(err)) return;
-  gpr_log(GPR_DEBUG, "%p: %d -> %d [%s:%d]", err, err->refs.count, err->refs.count - 1, file, line);
+  gpr_log(GPR_DEBUG, "%p: %d -> %d [%s:%d]", err, err->refs.count,
+          err->refs.count - 1, file, line);
   if (gpr_unref(&err->refs)) {
     error_destroy(err);
   }
@@ -197,8 +201,8 @@ grpc_error *grpc_error_create(const char *file, int line, const char *desc,
   err->errs = gpr_avl_create(&avl_vtable_errs);
   for (size_t i = 0; i < num_referencing; i++) {
     if (referencing[i] == GRPC_ERROR_NONE) continue;
-    err->errs =
-        gpr_avl_add(err->errs, (void *)(err->next_err++), GRPC_ERROR_REF(referencing[i]));
+    err->errs = gpr_avl_add(err->errs, (void *)(err->next_err++),
+                            GRPC_ERROR_REF(referencing[i]));
   }
   err->times = gpr_avl_add(gpr_avl_create(&avl_vtable_times),
                            (void *)(uintptr_t)GRPC_ERROR_TIME_CREATED,
@@ -240,7 +244,8 @@ const intptr_t *grpc_error_get_int(grpc_error *err, grpc_error_ints which) {
 grpc_error *grpc_error_set_str(grpc_error *src, grpc_error_strs which,
                                const char *value) {
   grpc_error *new = copy_error_and_unref(src);
-  new->strs = gpr_avl_add(new->strs, (void *)(uintptr_t)which, (void *)value);
+  new->strs =
+      gpr_avl_add(new->strs, (void *)(uintptr_t)which, gpr_strdup(value));
   return new;
 }
 
@@ -350,7 +355,6 @@ static void append_esc_str(const char *str, char **s, size_t *sz, size_t *cap) {
     }
   }
   append_chr('"', s, sz, cap);
-  append_chr(0, s, sz, cap);
 }
 
 static char *fmt_str(void *p) {
@@ -358,6 +362,7 @@ static char *fmt_str(void *p) {
   size_t sz = 0;
   size_t cap = 0;
   append_esc_str(p, &s, &sz, &cap);
+  append_chr(0, &s, &sz, &cap);
   return s;
 }
 
@@ -399,6 +404,7 @@ static char *errs_string(grpc_error *err) {
   append_chr('[', &s, &sz, &cap);
   add_errs(err->errs.root, &s, &sz, &cap);
   append_chr(']', &s, &sz, &cap);
+  append_chr(0, &s, &sz, &cap);
   return s;
 }
 
@@ -415,6 +421,7 @@ static const char *finish_kvs(kv_pairs *kvs) {
 
   append_chr('{', &s, &sz, &cap);
   for (size_t i = 0; i < kvs->num_kvs; i++) {
+    if (i != 0) append_chr(',', &s, &sz, &cap);
     append_esc_str(kvs->kvs[i].key, &s, &sz, &cap);
     gpr_free(kvs->kvs[i].key);
     append_chr(':', &s, &sz, &cap);
@@ -422,6 +429,7 @@ static const char *finish_kvs(kv_pairs *kvs) {
     gpr_free(kvs->kvs[i].value);
   }
   append_chr('}', &s, &sz, &cap);
+  append_chr(0, &s, &sz, &cap);
 
   gpr_free(kvs->kvs);
   return s;
