@@ -29,7 +29,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 source ~/.nvm/nvm.sh
-nvm use 0.12
+nvm use 4
 
 set -ex
 

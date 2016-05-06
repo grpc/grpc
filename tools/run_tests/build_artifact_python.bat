@@ -52,8 +52,21 @@ set GRPC_PYTHON_BUILD_WITH_CYTHON=1
 
 python setup.py bdist_wheel
 
+@rem Build gRPC Python tools
+set PATH=C:\msys64\mingw%2\bin;%PATH%
+set CC=C:\msys64\mingw%2\bin\g++.exe
+set CFLAGS=-fno-wrapv
+python tools\distrib\python\make_grpcio_tools.py
+if %2 == 32 (
+  python tools\distrib\python\grpcio_tools\setup.py build_ext -c mingw32
+) else (
+  python tools\distrib\python\grpcio_tools\setup.py build_ext -c mingw32 -DMS_WIN64
+)
+python tools\distrib\python\grpcio_tools\setup.py bdist_wheel
+
 mkdir artifacts
 xcopy /Y /I /S dist\* artifacts\ || goto :error
+xcopy /Y /I /S tools\distrib\python\grpcio_tools\dist\* artifacts\ || goto :error
 
 goto :EOF
 

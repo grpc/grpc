@@ -64,12 +64,13 @@ def headers_under(directory):
 
 def mako_plugin(dictionary):
   apis = []
+  headers = []
 
-#  for lib in dictionary['libs']:
-#    if lib['name'] == 'grpc':
-#      apis.extend(list_c_apis(lib['public_headers']))
-  apis.extend(list_c_apis(sorted(headers_under('include/grpc'))))
+  for lib in dictionary['libs']:
+    if lib['name'] in ['grpc', 'gpr']:
+      headers.extend(lib['public_headers'])
 
+  apis.extend(list_c_apis(sorted(set(headers))))
   dictionary['c_apis'] = apis
 
 

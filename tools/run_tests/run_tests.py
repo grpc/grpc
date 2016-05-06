@@ -272,12 +272,17 @@ class NodeLanguage(object):
 
   def __init__(self):
     self.platform = platform_string()
-    self.node_version = '0.12'
 
   def configure(self, config, args):
     self.config = config
     self.args = args
-    _check_compiler(self.args.compiler, ['default'])
+    _check_compiler(self.args.compiler, ['default', 'node0.12',
+                                         'node4', 'node5'])
+    if self.args.compiler == 'default':
+      self.node_version = '4'
+    else:
+      # Take off the word "node"
+      self.node_version = self.args.compiler[4:]
 
   def test_specs(self):
     if self.platform == 'windows':
@@ -802,7 +807,8 @@ argp.add_argument('--compiler',
                            'gcc4.4', 'gcc4.9', 'gcc5.3',
                            'clang3.4', 'clang3.6',
                            'vs2010', 'vs2013', 'vs2015',
-                           'python2.7', 'python3.4'],
+                           'python2.7', 'python3.4',
+                           'node0.12', 'node4', 'node5'],
                   default='default',
                   help='Selects compiler to use. Allowed values depend on the platform and language.')
 argp.add_argument('--build_only',
@@ -906,13 +912,13 @@ if args.use_docker:
   env = os.environ.copy()
   env['RUN_TESTS_COMMAND'] = run_tests_cmd
   env['DOCKERFILE_DIR'] = dockerfile_dir
-  env['DOCKER_RUN_SCRIPT'] = 'tools/jenkins/docker_run_tests.sh'
+  env['DOCKER_RUN_SCRIPT'] = 'tools/run_tests/dockerize/docker_run_tests.sh'
   if args.xml_report:
     env['XML_REPORT'] = args.xml_report
   if not args.travis:
     env['TTY_FLAG'] = '-t'  # enables Ctrl-C when not on Jenkins.
 
-  subprocess.check_call(['tools/jenkins/build_docker_and_run_tests.sh'],
+  subprocess.check_call(['tools/run_tests/dockerize/build_docker_and_run_tests.sh'],
                         shell=True,
                         env=env)
   sys.exit(0)
