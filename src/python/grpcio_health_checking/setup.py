@@ -63,7 +63,7 @@ _COMMAND_CLASS = {
 
 setuptools.setup(
     name='grpcio_health_checking',
-    version='0.14.0b1',
+    version='0.14.0b0',
     packages=list(_PACKAGES),
     package_dir=_PACKAGE_DIRECTORIES,
     install_requires=_INSTALL_REQUIRES,
