@@ -128,30 +128,30 @@ struct read_and_write_test_state {
 };
 
 static void read_and_write_test_read_handler(grpc_exec_ctx *exec_ctx,
-                                             void *data, bool success) {
+                                             void *data, grpc_error *error) {
   struct read_and_write_test_state *state = data;
 
   state->bytes_read += count_slices(
       state->incoming.slices, state->incoming.count, &state->current_read_data);
-  if (state->bytes_read == state->target_bytes || !success) {
+  if (state->bytes_read == state->target_bytes || error != GRPC_ERROR_NONE) {
     gpr_log(GPR_INFO, "Read handler done");
     gpr_mu_lock(g_mu);
-    state->read_done = 1 + success;
+    state->read_done = 1 + (error == GRPC_ERROR_NONE);
     grpc_pollset_kick(g_pollset, NULL);
     gpr_mu_unlock(g_mu);
-  } else if (success) {
+  } else if (error == GRPC_ERROR_NONE) {
     grpc_endpoint_read(exec_ctx, state->read_ep, &state->incoming,
                        &state->done_read);
   }
 }
 
 static void read_and_write_test_write_handler(grpc_exec_ctx *exec_ctx,
-                                              void *data, bool success) {
+                                              void *data, grpc_error *error) {
   struct read_and_write_test_state *state = data;
   gpr_slice *slices = NULL;
   size_t nslices;
 
-  if (success) {
+  if (error != GRPC_ERROR_NONE) {
     state->bytes_written += state->current_write_size;
     if (state->target_bytes - state->bytes_written <
         state->current_write_size) {
@@ -171,7 +171,7 @@ static void read_and_write_test_write_handler(grpc_exec_ctx *exec_ctx,
 
   gpr_log(GPR_INFO, "Write handler done");
   gpr_mu_lock(g_mu);
-  state->write_done = 1 + success;
+  state->write_done = 1 + (error != GRPC_ERROR_NONE);
   grpc_pollset_kick(g_pollset, NULL);
   gpr_mu_unlock(g_mu);
 }
@@ -219,7 +219,7 @@ static void read_and_write_test(grpc_endpoint_test_config config,
      for the first iteration as for later iterations. It does the right thing
      even when bytes_written is unsigned. */
   state.bytes_written -= state.current_write_size;
-  read_and_write_test_write_handler(&exec_ctx, &state, 1);
+  read_and_write_test_write_handler(&exec_ctx, &state, GRPC_ERROR_NONE);
   grpc_exec_ctx_finish(&exec_ctx);
 
   grpc_endpoint_read(&exec_ctx, state.read_ep, &state.incoming,

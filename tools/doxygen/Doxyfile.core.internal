@@ -900,6 +900,7 @@ src/core/lib/security/transport/auth_filters.h \
 src/core/lib/security/transport/handshake.h \
 src/core/lib/security/transport/secure_endpoint.h \
 src/core/lib/security/transport/security_connector.h \
+src/core/lib/security/transport/tsi_error.h \
 src/core/lib/security/util/b64.h \
 src/core/lib/security/util/json_util.h \
 src/core/lib/tsi/fake_transport_security.h \
@@ -1062,6 +1063,7 @@ src/core/lib/security/transport/handshake.c \
 src/core/lib/security/transport/secure_endpoint.c \
 src/core/lib/security/transport/security_connector.c \
 src/core/lib/security/transport/server_auth_filter.c \
+src/core/lib/security/transport/tsi_error.c \
 src/core/lib/security/util/b64.c \
 src/core/lib/security/util/json_util.c \
 src/core/lib/surface/init_secure.c \

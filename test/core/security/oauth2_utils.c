@@ -74,7 +74,8 @@ static void on_oauth2_response(grpc_exec_ctx *exec_ctx, void *user_data,
   gpr_mu_unlock(request->mu);
 }
 
-static void do_nothing(grpc_exec_ctx *exec_ctx, void *unused, bool success) {}
+static void do_nothing(grpc_exec_ctx *exec_ctx, void *unused,
+                       grpc_error *error) {}
 
 char *grpc_test_fetch_oauth2_token_with_credentials(
     grpc_call_credentials *creds) {

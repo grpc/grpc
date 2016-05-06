@@ -51,7 +51,7 @@ static void me_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   gpr_mu_lock(&m->mu);
   if (m->read_buffer.count > 0) {
     gpr_slice_buffer_swap(&m->read_buffer, slices);
-    grpc_exec_ctx_enqueue(exec_ctx, cb, true, NULL);
+    grpc_exec_ctx_push(exec_ctx, cb, GRPC_ERROR_NONE, NULL);
   } else {
     m->on_read = cb;
     m->on_read_out = slices;
@@ -65,7 +65,7 @@ static void me_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   for (size_t i = 0; i < slices->count; i++) {
     m->on_write(slices->slices[i]);
   }
-  grpc_exec_ctx_enqueue(exec_ctx, cb, true, NULL);
+  grpc_exec_ctx_push(exec_ctx, cb, GRPC_ERROR_NONE, NULL);
 }
 
 static void me_add_to_pollset(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
@@ -78,7 +78,8 @@ static void me_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   grpc_mock_endpoint *m = (grpc_mock_endpoint *)ep;
   gpr_mu_lock(&m->mu);
   if (m->on_read) {
-    grpc_exec_ctx_enqueue(exec_ctx, m->on_read, false, NULL);
+    grpc_exec_ctx_push(exec_ctx, m->on_read,
+                       GRPC_ERROR_CREATE("Endpoint Shutdown"), NULL);
     m->on_read = NULL;
   }
   gpr_mu_unlock(&m->mu);
@@ -115,7 +116,7 @@ void grpc_mock_endpoint_put_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   gpr_mu_lock(&m->mu);
   if (m->on_read != NULL) {
     gpr_slice_buffer_add(m->on_read_out, slice);
-    grpc_exec_ctx_enqueue(exec_ctx, m->on_read, true, NULL);
+    grpc_exec_ctx_push(exec_ctx, m->on_read, GRPC_ERROR_NONE, NULL);
     m->on_read = NULL;
   } else {
     gpr_slice_buffer_add(&m->read_buffer, slice);
