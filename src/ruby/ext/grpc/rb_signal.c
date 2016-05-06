@@ -44,6 +44,10 @@ static void (*old_sigterm_handler)(int);
 
 static volatile bool signal_received = false;
 
+/* This has to be handled at the C level instead of Ruby, because Ruby signal
+ * handlers are constrained to run in the main interpreter thread. If that main
+ * thread is blocked on grpc_completion_queue_pluck, the signal handlers will
+ * never run */
 static void handle_signal(int signum) {
   signal_received = true;
   if (signum == SIGINT) {
