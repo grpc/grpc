@@ -998,6 +998,9 @@ TEST_P(End2endTest, BinaryTrailerTest) {
   EXPECT_EQ(1, trailers.count(kDebugInfoTrailerKey));
   auto iter = trailers.find(kDebugInfoTrailerKey);
   EXPECT_EQ(expected_string, iter->second);
+  // Parse the returned trailer into a DebugInfo proto.
+  DebugInfo returned_info;
+  EXPECT_TRUE(returned_info.ParseFromString(ToString(iter->second)));
 }
 
 //////////////////////////////////////////////////////////////////////////
