@@ -50,6 +50,8 @@ pip install -rrequirements.txt
 set GRPC_PYTHON_USE_CUSTOM_BDIST=0
 set GRPC_PYTHON_BUILD_WITH_CYTHON=1
 
+@rem TODO(atash): maybe we could avoid the grpc_c.(32|64).python shim above if
+@rem this used the right python build?
 python setup.py bdist_wheel
 
 @rem Build gRPC Python tools
@@ -57,12 +59,15 @@ set PATH=C:\msys64\mingw%2\bin;%PATH%
 set CC=C:\msys64\mingw%2\bin\g++.exe
 set CFLAGS=-fno-wrapv
 python tools\distrib\python\make_grpcio_tools.py
+@rem The following commands *must* be run with the right version of python
+@rem otherwise the build get SNAFU'd (so we use the .exe suffix to invoke the python
+@rem we set in the %PATH% variable above).
 if %2 == 32 (
-  python tools\distrib\python\grpcio_tools\setup.py build_ext -c mingw32
+  python.exe tools\distrib\python\grpcio_tools\setup.py build_ext -c mingw32
 ) else (
-  python tools\distrib\python\grpcio_tools\setup.py build_ext -c mingw32 -DMS_WIN64
+  python.exe tools\distrib\python\grpcio_tools\setup.py build_ext -c mingw32 -DMS_WIN64
 )
-python tools\distrib\python\grpcio_tools\setup.py bdist_wheel
+python.exe tools\distrib\python\grpcio_tools\setup.py bdist_wheel
 
 mkdir artifacts
 xcopy /Y /I /S dist\* artifacts\ || goto :error
