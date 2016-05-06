@@ -212,7 +212,6 @@ static void request_with_payload_template(
   memset(&op->data.send_initial_metadata, 0,
          sizeof(op->data.send_initial_metadata));
   op->data.send_initial_metadata.count = 0;
-  op->data.send_initial_metadata.compression_level = GRPC_COMPRESS_LEVEL_HIGH;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -305,19 +304,21 @@ static void test_invoke_request_with_compressed_payload(
 static void test_invoke_request_with_compressed_payload_md_override(
     grpc_end2end_test_config config) {
   grpc_metadata gzip_compression_override;
-  grpc_metadata none_compression_override;
+  grpc_metadata identity_compression_override;
 
   gzip_compression_override.key = GRPC_COMPRESS_REQUEST_ALGORITHM_KEY;
   gzip_compression_override.value = "gzip";
-  gzip_compression_override.value_length = 4;
+  gzip_compression_override.value_length =
+      strlen(gzip_compression_override.value);
   memset(&gzip_compression_override.internal_data, 0,
          sizeof(gzip_compression_override.internal_data));
 
-  none_compression_override.key = GRPC_COMPRESS_REQUEST_ALGORITHM_KEY;
-  none_compression_override.value = "identity";
-  none_compression_override.value_length = 4;
-  memset(&none_compression_override.internal_data, 0,
-         sizeof(none_compression_override.internal_data));
+  identity_compression_override.key = GRPC_COMPRESS_REQUEST_ALGORITHM_KEY;
+  identity_compression_override.value = "identity";
+  identity_compression_override.value_length =
+      strlen(identity_compression_override.value);
+  memset(&identity_compression_override.internal_data, 0,
+         sizeof(identity_compression_override.internal_data));
 
   /* Channel default NONE (aka IDENTITY), call override to GZIP */
   request_with_payload_template(
@@ -332,7 +333,8 @@ static void test_invoke_request_with_compressed_payload_md_override(
   /* Channel default DEFLATE, call override to NONE (aka IDENTITY) */
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload_md_override_3", 0,
-      GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_NONE, &none_compression_override);
+      GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_NONE,
+      &identity_compression_override);
 }
 
 void compressed_payload(grpc_end2end_test_config config) {
