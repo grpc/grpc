@@ -110,6 +110,9 @@ module GRPC
         rpc_descs[name] = RpcDesc.new(name, input, output,
                                       marshal_class_method,
                                       unmarshal_class_method)
+        define_method(name) do
+          fail GRPC::BadStatus, GRPC::Core::StatusCodes::UNIMPLEMENTED
+        end
       end
 
       def inherited(subclass)
@@ -197,19 +200,6 @@ module GRPC
               end
             end
           end
-        end
-      end
-
-      # Asserts that the appropriate methods are defined for each added rpc
-      # spec. Is intended to aid verifying that server classes are correctly
-      # implemented.
-      def assert_rpc_descs_have_methods
-        rpc_descs.each_pair do |m, spec|
-          mth_name = GenericService.underscore(m.to_s).to_sym
-          unless instance_methods.include?(mth_name)
-            fail "#{self} does not provide instance method '#{mth_name}'"
-          end
-          spec.assert_arity_matches(instance_method(mth_name))
         end
       end
     end

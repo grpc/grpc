@@ -503,10 +503,8 @@ module GRPC
       unless cls.include?(GenericService)
         fail "#{cls} must 'include GenericService'"
       end
-      if cls.rpc_descs.size.zero?
-        fail "#{cls} should specify some rpc descriptions"
-      end
-      cls.assert_rpc_descs_have_methods
+      fail "#{cls} should specify some rpc descriptions" if
+        cls.rpc_descs.size.zero?
     end
 
     # This should be called while holding @run_mutex
