@@ -1,3 +1,4 @@
+include grpc_version.py
 include protoc_deps.py
 include protoc_lib_deps.py
 graft grpc
