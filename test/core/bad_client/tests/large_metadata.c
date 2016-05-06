@@ -433,6 +433,7 @@ static void server_verifier_sends_too_much_metadata(grpc_server *server,
   cq_expect_completion(cqv, tag(102), 0);  // Operation fails.
   cq_verify(cqv);
 
+  gpr_free((char *)meta.value);
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
   grpc_call_destroy(s);
@@ -469,6 +470,7 @@ static void client_validator(gpr_slice_buffer *incoming) {
   *p++ = 11;
   // Compare actual and expected.
   GPR_ASSERT(gpr_slice_cmp(last_frame, expected) == 0);
+  gpr_slice_buffer_destroy(&last_frame_buffer);
 }
 
 int main(int argc, char **argv) {
