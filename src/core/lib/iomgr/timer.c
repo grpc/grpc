@@ -307,7 +307,7 @@ static size_t pop_timers(grpc_exec_ctx *exec_ctx, shard_type *shard,
   grpc_timer *timer;
   gpr_mu_lock(&shard->mu);
   while ((timer = pop_one(shard, now))) {
-    grpc_exec_ctx_push(exec_ctx, &timer->closure, grpc_error_ref(error), NULL);
+    grpc_exec_ctx_push(exec_ctx, &timer->closure, GRPC_ERROR_REF(error), NULL);
     n++;
   }
   *new_min_deadline = compute_min_deadline(shard);
@@ -362,7 +362,7 @@ static int run_some_expired_timers(grpc_exec_ctx *exec_ctx, gpr_timespec now,
         *next, gpr_time_add(now, gpr_time_from_millis(1, GPR_TIMESPAN)));
   }
 
-  grpc_error_unref(error);
+  GRPC_ERROR_UNREF(error);
 
   return (int)n;
 }

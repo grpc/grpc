@@ -169,7 +169,7 @@ static void auth_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
       return;
     }
   }
-  grpc_exec_ctx_push(exec_ctx, calld->on_done_recv, grpc_error_ref(error),
+  grpc_exec_ctx_push(exec_ctx, calld->on_done_recv, GRPC_ERROR_REF(error),
                      NULL);
 }
 

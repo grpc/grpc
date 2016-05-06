@@ -139,7 +139,7 @@ int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
     /* we managed to bind some addresses: continue */
   } else {
     for (i = 0; i < resolved->naddrs; i++) {
-      grpc_error_unref(errors[i]);
+      GRPC_ERROR_UNREF(errors[i]);
     }
   }
   gpr_free(errors);

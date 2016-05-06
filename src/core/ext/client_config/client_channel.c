@@ -193,7 +193,7 @@ static void cc_on_config_changed(grpc_exec_ctx *exec_ctx, void *arg,
     if (lb_policy != NULL) {
       GRPC_LB_POLICY_REF(lb_policy, "channel");
       GRPC_LB_POLICY_REF(lb_policy, "config_change");
-      grpc_error_unref(state_error);
+      GRPC_ERROR_UNREF(state_error);
       state =
           grpc_lb_policy_check_connectivity(exec_ctx, lb_policy, &state_error);
     }
@@ -308,7 +308,7 @@ static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
   if (op->disconnect_with_error != GRPC_ERROR_NONE && chand->resolver != NULL) {
     set_channel_connectivity_state_locked(
         exec_ctx, chand, GRPC_CHANNEL_FATAL_FAILURE,
-        grpc_error_ref(op->disconnect_with_error), "disconnect");
+        GRPC_ERROR_REF(op->disconnect_with_error), "disconnect");
     grpc_resolver_shutdown(exec_ctx, chand->resolver);
     GRPC_RESOLVER_UNREF(exec_ctx, chand->resolver, "channel");
     chand->resolver = NULL;
@@ -350,7 +350,7 @@ static void continue_picking(grpc_exec_ctx *exec_ctx, void *arg,
   if (cpa->connected_subchannel == NULL) {
     /* cancelled, do nothing */
   } else if (error != GRPC_ERROR_NONE) {
-    grpc_exec_ctx_push(exec_ctx, cpa->on_ready, grpc_error_ref(error), NULL);
+    grpc_exec_ctx_push(exec_ctx, cpa->on_ready, GRPC_ERROR_REF(error), NULL);
   } else if (cc_pick_subchannel(exec_ctx, cpa->elem, cpa->initial_metadata,
                                 cpa->initial_metadata_flags,
                                 cpa->connected_subchannel, cpa->on_ready)) {

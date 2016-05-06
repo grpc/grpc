@@ -260,4 +260,3 @@ grpc_channel_credentials *grpc_composite_channel_credentials_create(
   c->call_creds = grpc_call_credentials_ref(call_creds);
   return &c->base;
 }
-

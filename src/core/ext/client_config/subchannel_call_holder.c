@@ -255,10 +255,10 @@ static void fail_locked(grpc_exec_ctx *exec_ctx,
   size_t i;
   for (i = 0; i < holder->waiting_ops_count; i++) {
     grpc_transport_stream_op_finish_with_failure(
-        exec_ctx, &holder->waiting_ops[i], grpc_error_ref(error));
+        exec_ctx, &holder->waiting_ops[i], GRPC_ERROR_REF(error));
   }
   holder->waiting_ops_count = 0;
-  grpc_error_unref(error);
+  GRPC_ERROR_UNREF(error);
 }
 
 char *grpc_subchannel_call_holder_get_peer(

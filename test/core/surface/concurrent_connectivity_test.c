@@ -111,10 +111,13 @@ void bad_server_thread(void *vargs) {
   struct sockaddr_storage addr;
   socklen_t addr_len = sizeof(addr);
   int port;
-  grpc_tcp_server *s = grpc_tcp_server_create(NULL);
+  grpc_tcp_server *s;
+  grpc_error *error = grpc_tcp_server_create(NULL, &s);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
   memset(&addr, 0, sizeof(addr));
   addr.ss_family = AF_INET;
-  port = grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, addr_len);
+  error =
+      grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, addr_len, &port);
   GPR_ASSERT(port > 0);
   gpr_asprintf(&args->addr, "localhost:%d", port);
 
@@ -143,7 +146,7 @@ void bad_server_thread(void *vargs) {
 }
 
 static void done_pollset_shutdown(grpc_exec_ctx *exec_ctx, void *pollset,
-                                  bool success) {
+                                  grpc_error *error) {
   grpc_pollset_destroy(pollset);
   gpr_free(pollset);
 }

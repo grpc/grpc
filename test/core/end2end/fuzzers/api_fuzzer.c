@@ -50,7 +50,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // logging
 
-static const bool squelch = true;
+static const bool squelch = !true;
 
 static void dont_log(gpr_log_func_args *args) {}
 
@@ -202,7 +202,7 @@ static void finish_resolve(grpc_exec_ctx *exec_ctx, void *arg,
     *r->addrs = addrs;
     grpc_exec_ctx_push(exec_ctx, r->on_done, GRPC_ERROR_NONE, NULL);
   } else {
-    grpc_error_ref(error);
+    GRPC_ERROR_REF(error);
     grpc_exec_ctx_push(
         exec_ctx, r->on_done,
         GRPC_ERROR_CREATE_REFERENCING("Resolution failed", &error, 1), NULL);
@@ -248,7 +248,7 @@ static void do_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   future_connect *fc = arg;
   if (error != GRPC_ERROR_NONE) {
     *fc->ep = NULL;
-    grpc_exec_ctx_push(exec_ctx, fc->closure, grpc_error_ref(error), NULL);
+    grpc_exec_ctx_push(exec_ctx, fc->closure, GRPC_ERROR_REF(error), NULL);
   } else if (g_server != NULL) {
     grpc_endpoint *client;
     grpc_endpoint *server;

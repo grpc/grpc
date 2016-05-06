@@ -42,8 +42,8 @@
 static gpr_mu *g_mu;
 static grpc_pollset *g_pollset;
 
-static void must_succeed(grpc_exec_ctx *exec_ctx, void *p, bool success) {
-  GPR_ASSERT(success == 1);
+static void must_succeed(grpc_exec_ctx *exec_ctx, void *p, grpc_error *error) {
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
   gpr_mu_lock(g_mu);
   *(int *)p = 1;
   grpc_pollset_kick(g_pollset, NULL);
@@ -68,7 +68,7 @@ static void test_add_closure(void) {
   grpc_pollset_worker *worker = NULL;
   grpc_closure_init(&c, must_succeed, &done);
 
-  grpc_workqueue_push(wq, &c, 1);
+  grpc_workqueue_push(wq, &c, GRPC_ERROR_NONE);
   grpc_workqueue_add_to_pollset(&exec_ctx, wq, g_pollset);
 
   gpr_mu_lock(g_mu);
@@ -92,7 +92,7 @@ static void test_flush(void) {
   grpc_pollset_worker *worker = NULL;
   grpc_closure_init(&c, must_succeed, &done);
 
-  grpc_exec_ctx_enqueue(&exec_ctx, &c, true, NULL);
+  grpc_exec_ctx_push(&exec_ctx, &c, GRPC_ERROR_NONE, NULL);
   grpc_workqueue_flush(&exec_ctx, wq);
   grpc_workqueue_add_to_pollset(&exec_ctx, wq, g_pollset);
 
@@ -108,7 +108,8 @@ static void test_flush(void) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, bool success) {
+static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
+                            grpc_error *error) {
   grpc_pollset_destroy(p);
 }
 

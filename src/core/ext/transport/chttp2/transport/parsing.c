@@ -922,7 +922,7 @@ static grpc_error *parse_frame_slice(
                                         GRPC_CHTTP2_PROTOCOL_ERROR,
                                         &stream_parsing->stats.outgoing));
     } else {
-      grpc_error_unref(err);
+      GRPC_ERROR_UNREF(err);
     }
   }
   return err;

@@ -54,12 +54,11 @@ static gpr_timespec n_seconds_time(int seconds) {
   return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(seconds);
 }
 
-static void on_finish(grpc_exec_ctx *exec_ctx, void *arg,
-                      const grpc_httpcli_response *response) {
+static void on_finish(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   const char *expect =
       "<html><head><title>Hello world!</title></head>"
       "<body><p>This is a test</p></body></html>";
-  GPR_ASSERT(arg == (void *)42);
+  grpc_http_response *response = arg;
   GPR_ASSERT(response);
   GPR_ASSERT(response->status == 200);
   GPR_ASSERT(response->body_length == strlen(expect));
@@ -87,8 +86,10 @@ static void test_get(int port) {
   req.http.path = "/get";
   req.handshaker = &grpc_httpcli_ssl;
 
+  grpc_http_response response;
+  memset(&response, 0, sizeof(response));
   grpc_httpcli_get(&exec_ctx, &g_context, g_pollset, &req, n_seconds_time(15),
-                   on_finish, (void *)42);
+                   grpc_closure_create(on_finish, &response), &response);
   gpr_mu_lock(g_mu);
   while (!g_done) {
     grpc_pollset_worker *worker = NULL;
@@ -119,8 +120,11 @@ static void test_post(int port) {
   req.http.path = "/post";
   req.handshaker = &grpc_httpcli_ssl;
 
+  grpc_http_response response;
+  memset(&response, 0, sizeof(response));
   grpc_httpcli_post(&exec_ctx, &g_context, g_pollset, &req, "hello", 5,
-                    n_seconds_time(15), on_finish, (void *)42);
+                    n_seconds_time(15),
+                    grpc_closure_create(on_finish, &response), &response);
   gpr_mu_lock(g_mu);
   while (!g_done) {
     grpc_pollset_worker *worker = NULL;
@@ -134,7 +138,8 @@ static void test_post(int port) {
   gpr_free(host);
 }
 
-static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, bool success) {
+static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
+                            grpc_error *error) {
   grpc_pollset_destroy(p);
 }
 

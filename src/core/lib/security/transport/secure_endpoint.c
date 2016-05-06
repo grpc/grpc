@@ -138,7 +138,7 @@ static void call_read_cb(grpc_exec_ctx *exec_ctx, secure_endpoint *ep,
     }
   }
   ep->read_buffer = NULL;
-  grpc_exec_ctx_push(exec_ctx, ep->read_cb, grpc_error_ref(error), NULL);
+  grpc_exec_ctx_push(exec_ctx, ep->read_cb, GRPC_ERROR_REF(error), NULL);
   SECURE_ENDPOINT_UNREF(exec_ctx, ep, "read");
 }
 

@@ -127,5 +127,3 @@ grpc_call_credentials *grpc_metadata_credentials_create_from_plugin(
   c->plugin = plugin;
   return &c->base;
 }
-
-

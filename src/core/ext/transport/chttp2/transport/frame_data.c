@@ -167,7 +167,7 @@ grpc_error *grpc_chttp2_data_parser_parse(
   switch (p->state) {
     case GRPC_CHTTP2_DATA_ERROR:
       p->state = GRPC_CHTTP2_DATA_ERROR;
-      return grpc_error_ref(p->error);
+      return GRPC_ERROR_REF(p->error);
     fh_0:
     case GRPC_CHTTP2_DATA_FH_0:
       stream_parsing->stats.incoming.framing_bytes++;
@@ -192,7 +192,7 @@ grpc_error *grpc_chttp2_data_parser_parse(
           p->error =
               grpc_error_set_int(p->error, GRPC_ERROR_INT_OFFSET, cur - beg);
           p->state = GRPC_CHTTP2_DATA_ERROR;
-          return grpc_error_ref(p->error);
+          return GRPC_ERROR_REF(p->error);
       }
       if (++cur == end) {
         p->state = GRPC_CHTTP2_DATA_FH_1;

@@ -62,7 +62,7 @@ static void thd_func(void *arg) {
   gpr_event_set(&a->done_thd, (void *)1);
 }
 
-static void done_write(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+static void done_write(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   thd_args *a = arg;
   gpr_event_set(&a->done_write, (void *)1);
 }

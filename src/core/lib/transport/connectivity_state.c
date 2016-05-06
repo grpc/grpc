@@ -61,6 +61,7 @@ void grpc_connectivity_state_init(grpc_connectivity_state_tracker *tracker,
                                   grpc_connectivity_state init_state,
                                   const char *name) {
   tracker->current_state = init_state;
+  tracker->current_error = GRPC_ERROR_NONE;
   tracker->watchers = NULL;
   tracker->name = gpr_strdup(name);
 }
@@ -69,7 +70,6 @@ void grpc_connectivity_state_destroy(grpc_exec_ctx *exec_ctx,
                                      grpc_connectivity_state_tracker *tracker) {
   grpc_error *error;
   grpc_connectivity_state_watcher *w;
-  grpc_error_unref(tracker->current_error);
   while ((w = tracker->watchers)) {
     tracker->watchers = w->next;
 
@@ -82,6 +82,7 @@ void grpc_connectivity_state_destroy(grpc_exec_ctx *exec_ctx,
     grpc_exec_ctx_push(exec_ctx, w->notify, error, NULL);
     gpr_free(w);
   }
+  GRPC_ERROR_UNREF(tracker->current_error);
   gpr_free(tracker->name);
 }
 
@@ -92,7 +93,7 @@ grpc_connectivity_state grpc_connectivity_state_check(
             grpc_connectivity_state_name(tracker->current_state));
   }
   if (error != NULL) {
-    *error = grpc_error_ref(tracker->current_error);
+    *error = GRPC_ERROR_REF(tracker->current_error);
   }
   return tracker->current_state;
 }
@@ -132,7 +133,7 @@ int grpc_connectivity_state_notify_on_state_change(
   } else {
     if (tracker->current_state != *current) {
       *current = tracker->current_state;
-      grpc_exec_ctx_push(exec_ctx, notify, GRPC_ERROR_NONE, NULL);
+      grpc_exec_ctx_push(exec_ctx, notify, GRPC_ERROR_REF(tracker->current_error), NULL);
     } else {
       grpc_connectivity_state_watcher *w = gpr_malloc(sizeof(*w));
       w->current = current;
@@ -165,7 +166,7 @@ void grpc_connectivity_state_set(grpc_exec_ctx *exec_ctx,
       GPR_ASSERT(error != GRPC_ERROR_NONE);
       break;
   }
-  grpc_error_unref(tracker->current_error);
+  GRPC_ERROR_UNREF(tracker->current_error);
   tracker->current_error = error;
   if (tracker->current_state == state) {
     return;
@@ -176,7 +177,7 @@ void grpc_connectivity_state_set(grpc_exec_ctx *exec_ctx,
     *w->current = tracker->current_state;
     tracker->watchers = w->next;
     grpc_exec_ctx_push(exec_ctx, w->notify,
-                       grpc_error_ref(tracker->current_error), NULL);
+                       GRPC_ERROR_REF(tracker->current_error), NULL);
     gpr_free(w);
   }
 }

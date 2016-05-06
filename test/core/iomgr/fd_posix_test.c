@@ -133,14 +133,14 @@ static void session_shutdown_cb(grpc_exec_ctx *exec_ctx, void *arg, /*session */
 
 /* Called when data become readable in a session. */
 static void session_read_cb(grpc_exec_ctx *exec_ctx, void *arg, /*session */
-                            bool success) {
+                            grpc_error *error) {
   session *se = arg;
   int fd = grpc_fd_wrapped_fd(se->em_fd);
 
   ssize_t read_once = 0;
   ssize_t read_total = 0;
 
-  if (!success) {
+  if (error != GRPC_ERROR_NONE) {
     session_shutdown_cb(exec_ctx, arg, 1);
     return;
   }
@@ -191,7 +191,7 @@ static void listen_shutdown_cb(grpc_exec_ctx *exec_ctx, void *arg /*server */,
 
 /* Called when a new TCP connection request arrives in the listening port. */
 static void listen_cb(grpc_exec_ctx *exec_ctx, void *arg, /*=sv_arg*/
-                      bool success) {
+                      grpc_error *error) {
   server *sv = arg;
   int fd;
   int flags;
@@ -200,7 +200,7 @@ static void listen_cb(grpc_exec_ctx *exec_ctx, void *arg, /*=sv_arg*/
   socklen_t slen = sizeof(ss);
   grpc_fd *listen_em_fd = sv->em_fd;
 
-  if (!success) {
+  if (error != GRPC_ERROR_NONE) {
     listen_shutdown_cb(exec_ctx, arg, 1);
     return;
   }
@@ -305,12 +305,12 @@ static void client_session_shutdown_cb(grpc_exec_ctx *exec_ctx,
 
 /* Write as much as possible, then register notify_on_write. */
 static void client_session_write(grpc_exec_ctx *exec_ctx, void *arg, /*client */
-                                 bool success) {
+                                 grpc_error *error) {
   client *cl = arg;
   int fd = grpc_fd_wrapped_fd(cl->em_fd);
   ssize_t write_once = 0;
 
-  if (!success) {
+  if (error != GRPC_ERROR_NONE) {
     gpr_mu_lock(g_mu);
     client_session_shutdown_cb(exec_ctx, arg, 1);
     gpr_mu_unlock(g_mu);
@@ -363,7 +363,7 @@ static void client_start(grpc_exec_ctx *exec_ctx, client *cl, int port) {
   cl->em_fd = grpc_fd_create(fd, "client");
   grpc_pollset_add_fd(exec_ctx, g_pollset, cl->em_fd);
 
-  client_session_write(exec_ctx, cl, 1);
+  client_session_write(exec_ctx, cl, GRPC_ERROR_NONE);
 }
 
 /* Wait for the signal to shutdown a client. */
@@ -411,7 +411,8 @@ void init_change_data(fd_change_data *fdc) { fdc->cb_that_ran = NULL; }
 void destroy_change_data(fd_change_data *fdc) {}
 
 static void first_read_callback(grpc_exec_ctx *exec_ctx,
-                                void *arg /* fd_change_data */, bool success) {
+                                void *arg /* fd_change_data */,
+                                grpc_error *error) {
   fd_change_data *fdc = arg;
 
   gpr_mu_lock(g_mu);
@@ -421,7 +422,8 @@ static void first_read_callback(grpc_exec_ctx *exec_ctx,
 }
 
 static void second_read_callback(grpc_exec_ctx *exec_ctx,
-                                 void *arg /* fd_change_data */, bool success) {
+                                 void *arg /* fd_change_data */,
+                                 grpc_error *error) {
   fd_change_data *fdc = arg;
 
   gpr_mu_lock(g_mu);
@@ -514,7 +516,8 @@ static void test_grpc_fd_change(void) {
   close(sv[1]);
 }
 
-static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, bool success) {
+static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
+                            grpc_error *error) {
   grpc_pollset_destroy(p);
 }
 

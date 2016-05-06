@@ -265,7 +265,7 @@ static void pf_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
   pending_pick *pp;
   grpc_connected_subchannel *selected;
 
-  grpc_error_ref(error);
+  GRPC_ERROR_REF(error);
 
   gpr_mu_lock(&p->mu);
 
@@ -281,7 +281,7 @@ static void pf_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
       p->checking_connectivity = GRPC_CHANNEL_FATAL_FAILURE;
     }
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
-                                p->checking_connectivity, grpc_error_ref(error),
+                                p->checking_connectivity, GRPC_ERROR_REF(error),
                                 "selected_changed");
     if (p->checking_connectivity != GRPC_CHANNEL_FATAL_FAILURE) {
       grpc_connected_subchannel_notify_on_state_change(
@@ -328,9 +328,9 @@ static void pf_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
           /* only trigger transient failure when we've tried all alternatives */
           grpc_connectivity_state_set(
               exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
-              grpc_error_ref(error), "connecting_transient_failure");
+              GRPC_ERROR_REF(error), "connecting_transient_failure");
         }
-        grpc_error_unref(error);
+        GRPC_ERROR_UNREF(error);
         p->checking_connectivity = grpc_subchannel_check_connectivity(
             p->subchannels[p->checking_subchannel], &error);
         if (p->checking_connectivity == GRPC_CHANNEL_TRANSIENT_FAILURE) {
@@ -346,7 +346,7 @@ static void pf_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
       case GRPC_CHANNEL_IDLE:
         grpc_connectivity_state_set(
             exec_ctx, &p->state_tracker, GRPC_CHANNEL_CONNECTING,
-            grpc_error_ref(error), "connecting_changed");
+            GRPC_ERROR_REF(error), "connecting_changed");
         grpc_subchannel_notify_on_state_change(
             exec_ctx, p->subchannels[p->checking_subchannel],
             p->base.interested_parties, &p->checking_connectivity,
@@ -359,7 +359,7 @@ static void pf_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
         GRPC_SUBCHANNEL_UNREF(exec_ctx, p->subchannels[p->num_subchannels],
                               "pick_first");
         if (p->num_subchannels == 0) {
-          grpc_error_ref(error);
+          GRPC_ERROR_REF(error);
           grpc_connectivity_state_set(
               exec_ctx, &p->state_tracker, GRPC_CHANNEL_FATAL_FAILURE,
               GRPC_ERROR_CREATE_REFERENCING("Pick first exhausted channels",
@@ -377,9 +377,9 @@ static void pf_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
         } else {
           grpc_connectivity_state_set(
               exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
-              grpc_error_ref(error), "subchannel_failed");
+              GRPC_ERROR_REF(error), "subchannel_failed");
           p->checking_subchannel %= p->num_subchannels;
-          grpc_error_unref(error);
+          GRPC_ERROR_UNREF(error);
           p->checking_connectivity = grpc_subchannel_check_connectivity(
               p->subchannels[p->checking_subchannel], &error);
           goto loop;
@@ -389,7 +389,7 @@ static void pf_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
 
   gpr_mu_unlock(&p->mu);
 
-  grpc_error_unref(error);
+  GRPC_ERROR_UNREF(error);
 }
 
 static grpc_connectivity_state pf_check_connectivity(grpc_exec_ctx *exec_ctx,

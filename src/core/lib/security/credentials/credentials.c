@@ -53,10 +53,9 @@
 
 /* -- Common. -- */
 
-grpc_credentials_metadata_request *
-grpc_credentials_metadata_request_create(grpc_call_credentials *creds,
-                                         grpc_credentials_metadata_cb cb,
-                                         void *user_data) {
+grpc_credentials_metadata_request *grpc_credentials_metadata_request_create(
+    grpc_call_credentials *creds, grpc_credentials_metadata_cb cb,
+    void *user_data) {
   grpc_credentials_metadata_request *r =
       gpr_malloc(sizeof(grpc_credentials_metadata_request));
   r->creds = grpc_call_credentials_ref(creds);
@@ -230,4 +229,3 @@ grpc_server_credentials *grpc_find_server_credentials_in_args(
   }
   return NULL;
 }
-

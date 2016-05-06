@@ -376,7 +376,7 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
 
   int unref = 0;
 
-  grpc_error_ref(error);
+  GRPC_ERROR_REF(error);
   gpr_mu_lock(&p->mu);
 
   if (p->shutdown) {
@@ -385,7 +385,7 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
     switch (sd->connectivity_state) {
       case GRPC_CHANNEL_READY:
         grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
-                                    GRPC_CHANNEL_READY, grpc_error_ref(error),
+                                    GRPC_CHANNEL_READY, GRPC_ERROR_REF(error),
                                     "connecting_ready");
         /* add the newly connected subchannel to the list of connected ones.
          * Note that it goes to the "end of the line". */
@@ -421,7 +421,7 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
       case GRPC_CHANNEL_IDLE:
         grpc_connectivity_state_set(
             exec_ctx, &p->state_tracker, sd->connectivity_state,
-            grpc_error_ref(error), "connecting_changed");
+            GRPC_ERROR_REF(error), "connecting_changed");
         grpc_subchannel_notify_on_state_change(
             exec_ctx, sd->subchannel, p->base.interested_parties,
             &sd->connectivity_state, &sd->connectivity_changed_closure);
@@ -439,7 +439,7 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
         }
         grpc_connectivity_state_set(
             exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
-            grpc_error_ref(error), "connecting_transient_failure");
+            GRPC_ERROR_REF(error), "connecting_transient_failure");
         break;
       case GRPC_CHANNEL_FATAL_FAILURE:
         if (sd->ready_list_node != NULL) {
@@ -456,7 +456,7 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
 
         unref = 1;
         if (p->num_subchannels == 0) {
-          grpc_error_ref(error);
+          GRPC_ERROR_REF(error);
           grpc_connectivity_state_set(
               exec_ctx, &p->state_tracker, GRPC_CHANNEL_FATAL_FAILURE,
               GRPC_ERROR_CREATE_REFERENCING("Round Robin Channels Exhausted",
@@ -472,7 +472,7 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
         } else {
           grpc_connectivity_state_set(
               exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
-              grpc_error_ref(error), "subchannel_failed");
+              GRPC_ERROR_REF(error), "subchannel_failed");
         }
     } /* switch */
   }   /* !unref */
@@ -483,7 +483,7 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
     GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &p->base, "round_robin_connectivity");
   }
 
-  grpc_error_unref(error);
+  GRPC_ERROR_UNREF(error);
 }
 
 static grpc_connectivity_state rr_check_connectivity(grpc_exec_ctx *exec_ctx,

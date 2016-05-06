@@ -202,10 +202,11 @@ typedef struct { grpc_closure *recv_im_ready; } call_data;
 
 typedef struct { uint8_t unused; } channel_data;
 
-static void recv_im_ready(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+static void recv_im_ready(grpc_exec_ctx *exec_ctx, void *arg,
+                          grpc_error *error) {
   grpc_call_element *elem = arg;
   call_data *calld = elem->call_data;
-  if (success) {
+  if (error == GRPC_ERROR_NONE) {
     // close the stream with an error.
     gpr_slice message =
         gpr_slice_from_copied_string("Random failure that's not preventable.");
