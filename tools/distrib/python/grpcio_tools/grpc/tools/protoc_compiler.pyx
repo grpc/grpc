@@ -29,7 +29,7 @@
 
 from libc cimport stdlib
 
-cdef extern from "grpc/protoc/main.h":
+cdef extern from "grpc/tools/main.h":
   int protoc_main(int argc, char *argv[])
 
 def run_main(list args not None):
