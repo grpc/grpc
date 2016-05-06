@@ -61,6 +61,6 @@ done
 
 # TODO(jtattermusch): add a .proto file to the distribtest, generate python
 # code from it and then use the generated code from distribtest.py
-$PYTHON -m grpc.protoc.compiler
+$PYTHON -m grpc.tools.protoc
 
 $PYTHON distribtest.py

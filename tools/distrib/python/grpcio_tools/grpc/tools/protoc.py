@@ -31,7 +31,7 @@
 
 import sys
 
-from grpc.protoc import protoc_compiler
+from grpc.tools import protoc_compiler
 
 
 if __name__ == '__main__':
