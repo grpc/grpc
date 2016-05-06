@@ -1,7 +1,7 @@
 @rem Builds gRPC NuGet packages
 
 @rem Current package versions
-set VERSION=0.14.0-dev
+set VERSION=0.14.0-pre1
 set PROTOBUF_VERSION=3.0.0-beta2
 
 @rem Packages that depend on prerelease packages (like Google.Protobuf) need to have prerelease suffix as well.
