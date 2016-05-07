@@ -30,6 +30,7 @@
 from distutils import extension
 import os
 import os.path
+import shlex
 import sys
 
 import setuptools
@@ -40,10 +41,32 @@ from setuptools.command import build_ext
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.abspath('.'))
 
+# There are some situations (like on Windows) where CC, CFLAGS, and LDFLAGS are
+# entirely ignored/dropped/forgotten by distutils and its Cygwin/MinGW support.
+# We use these environment variables to thus get around that without locking
+# ourselves in w.r.t. the multitude of operating systems this ought to build on.
+# By default we assume a GCC-like compiler.
+EXTRA_COMPILE_ARGS = shlex.split(os.environ.get('GRPC_PYTHON_CFLAGS',
+                                                '-frtti -std=c++11'))
+EXTRA_LINK_ARGS = shlex.split(os.environ.get('GRPC_PYTHON_LDFLAGS',
+                                             '-lpthread'))
+# There is *also* the situation where on Windows compiling via distutils on
+# MinGW32/64 some runtime libraries are unnecessarily linked by Python 2.7,
+# causing crashes (see http://bugs.python.org/issue16472). We get around this by
+# doing something a tad hacky, similar to how setuptools monkeypatches
+# distutils.
+KILL_MSVCR_LINKAGE = os.environ.get('GRPC_PYTHON_KILL_MSVCR', False)
+
 import protoc_lib_deps
 import grpc_version
 
 def protoc_ext_module():
+  if KILL_MSVCR_LINKAGE:
+    import distutils.cygwinccompiler
+    # get_msvcr is supposed to return a list of library names; because we've
+    # been asked to kill Python's choice of MSVCR, we do so by emptying the list
+    # here.
+    distutils.cygwinccompiler.get_msvcr = lambda: []
   plugin_sources = [
       'grpc/protoc/main.cc',
       'grpc_root/src/compiler/python_generator.cc'] + [
@@ -60,7 +83,8 @@ def protoc_ext_module():
       ],
       language='c++',
       define_macros=[('HAVE_PTHREAD', 1)],
-      extra_compile_args=['-lpthread', '-frtti', '-std=c++11'],
+      extra_compile_args=EXTRA_COMPILE_ARGS,
+      extra_link_args=EXTRA_LINK_ARGS,
   )
   return plugin_ext
 
