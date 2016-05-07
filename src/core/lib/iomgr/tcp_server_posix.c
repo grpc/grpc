@@ -308,7 +308,7 @@ static grpc_error *prepare_socket(int fd, const struct sockaddr *addr,
   return GRPC_ERROR_NONE;
 
 error:
-  GPR_ASSERT(err == GRPC_ERROR_NONE);
+  GPR_ASSERT(err != GRPC_ERROR_NONE);
   if (fd >= 0) {
     close(fd);
   }
