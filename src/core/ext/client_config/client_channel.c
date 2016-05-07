@@ -128,8 +128,8 @@ static void set_channel_connectivity_state_locked(grpc_exec_ctx *exec_ctx,
         /* mask= */ GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY,
         /* check= */ 0);
   }
-  grpc_connectivity_state_set(exec_ctx, &chand->state_tracker, state, error,
-                              reason);
+  grpc_connectivity_state_set(exec_ctx, &chand->state_tracker, state,
+                              GRPC_ERROR_REF(error), reason);
 }
 
 static void on_lb_policy_state_changed_locked(grpc_exec_ctx *exec_ctx,

@@ -484,7 +484,8 @@ static void subchannel_on_child_state_changed(grpc_exec_ctx *exec_ctx, void *p,
     sw->connectivity_state = GRPC_CHANNEL_FATAL_FAILURE;
   }
   grpc_connectivity_state_set(exec_ctx, &c->state_tracker,
-                              sw->connectivity_state, error, "reflect_child");
+                              sw->connectivity_state, GRPC_ERROR_REF(error),
+                              "reflect_child");
   if (sw->connectivity_state != GRPC_CHANNEL_FATAL_FAILURE) {
     grpc_connected_subchannel_notify_on_state_change(
         exec_ctx, GET_CONNECTED_SUBCHANNEL(c, no_barrier), NULL,
