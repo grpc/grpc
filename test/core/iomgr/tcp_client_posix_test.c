@@ -63,7 +63,8 @@ static gpr_timespec test_deadline(void) {
 static void finish_connection() {
   gpr_mu_lock(g_mu);
   g_connections_complete++;
-  grpc_pollset_kick(g_pollset, NULL);
+  GPR_ASSERT(
+      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
   gpr_mu_unlock(g_mu);
 }
 
@@ -126,9 +127,11 @@ void test_succeeds(void) {
 
   while (g_connections_complete == connections_complete_before) {
     grpc_pollset_worker *worker = NULL;
-    grpc_pollset_work(&exec_ctx, g_pollset, &worker,
-                      gpr_now(GPR_CLOCK_MONOTONIC),
-                      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "pollset_work",
+        grpc_pollset_work(&exec_ctx, g_pollset, &worker,
+                          gpr_now(GPR_CLOCK_MONOTONIC),
+                          GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5))));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_flush(&exec_ctx);
     gpr_mu_lock(g_mu);
@@ -169,7 +172,9 @@ void test_fails(void) {
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     gpr_timespec polling_deadline = test_deadline();
     if (!grpc_timer_check(&exec_ctx, now, &polling_deadline)) {
-      grpc_pollset_work(&exec_ctx, g_pollset, &worker, now, polling_deadline);
+      GPR_ASSERT(GRPC_LOG_IF_ERROR(
+          "pollset_work", grpc_pollset_work(&exec_ctx, g_pollset, &worker, now,
+                                            polling_deadline)));
     }
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_flush(&exec_ctx);

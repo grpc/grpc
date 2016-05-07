@@ -193,8 +193,10 @@ static void read_test(size_t num_bytes, size_t slice_size) {
   gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {
     grpc_pollset_worker *worker = NULL;
-    grpc_pollset_work(&exec_ctx, g_pollset, &worker,
-                      gpr_now(GPR_CLOCK_MONOTONIC), deadline);
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "pollset_work",
+        grpc_pollset_work(&exec_ctx, g_pollset, &worker,
+                          gpr_now(GPR_CLOCK_MONOTONIC), deadline)));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
     gpr_mu_lock(g_mu);
@@ -239,8 +241,10 @@ static void large_read_test(size_t slice_size) {
   gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {
     grpc_pollset_worker *worker = NULL;
-    grpc_pollset_work(&exec_ctx, g_pollset, &worker,
-                      gpr_now(GPR_CLOCK_MONOTONIC), deadline);
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "pollset_work",
+        grpc_pollset_work(&exec_ctx, g_pollset, &worker,
+                          gpr_now(GPR_CLOCK_MONOTONIC), deadline)));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
     gpr_mu_lock(g_mu);
@@ -289,7 +293,8 @@ static void write_done(grpc_exec_ctx *exec_ctx,
   gpr_mu_lock(g_mu);
   gpr_log(GPR_INFO, "Signalling write done");
   state->write_done = 1;
-  grpc_pollset_kick(g_pollset, NULL);
+  GPR_ASSERT(
+      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
   gpr_mu_unlock(g_mu);
 }
 
@@ -308,9 +313,11 @@ void drain_socket_blocking(int fd, size_t num_bytes, size_t read_size) {
   for (;;) {
     grpc_pollset_worker *worker = NULL;
     gpr_mu_lock(g_mu);
-    grpc_pollset_work(&exec_ctx, g_pollset, &worker,
-                      gpr_now(GPR_CLOCK_MONOTONIC),
-                      GRPC_TIMEOUT_MILLIS_TO_DEADLINE(10));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "pollset_work",
+        grpc_pollset_work(&exec_ctx, g_pollset, &worker,
+                          gpr_now(GPR_CLOCK_MONOTONIC),
+                          GRPC_TIMEOUT_MILLIS_TO_DEADLINE(10))));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
     do {
@@ -372,8 +379,10 @@ static void write_test(size_t num_bytes, size_t slice_size) {
     if (state.write_done) {
       break;
     }
-    grpc_pollset_work(&exec_ctx, g_pollset, &worker,
-                      gpr_now(GPR_CLOCK_MONOTONIC), deadline);
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "pollset_work",
+        grpc_pollset_work(&exec_ctx, g_pollset, &worker,
+                          gpr_now(GPR_CLOCK_MONOTONIC), deadline)));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
     gpr_mu_lock(g_mu);
@@ -389,7 +398,8 @@ static void write_test(size_t num_bytes, size_t slice_size) {
 void on_fd_released(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *errors) {
   int *done = arg;
   *done = 1;
-  grpc_pollset_kick(g_pollset, NULL);
+  GPR_ASSERT(
+      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
 }
 
 /* Do a read_test, then release fd and try to read/write again. Verify that
@@ -429,8 +439,10 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {
     grpc_pollset_worker *worker = NULL;
-    grpc_pollset_work(&exec_ctx, g_pollset, &worker,
-                      gpr_now(GPR_CLOCK_MONOTONIC), deadline);
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "pollset_work",
+        grpc_pollset_work(&exec_ctx, g_pollset, &worker,
+                          gpr_now(GPR_CLOCK_MONOTONIC), deadline)));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
     gpr_mu_lock(g_mu);
@@ -443,8 +455,10 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   gpr_mu_lock(g_mu);
   while (!fd_released_done) {
     grpc_pollset_worker *worker = NULL;
-    grpc_pollset_work(&exec_ctx, g_pollset, &worker,
-                      gpr_now(GPR_CLOCK_MONOTONIC), deadline);
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "pollset_work",
+        grpc_pollset_work(&exec_ctx, g_pollset, &worker,
+                          gpr_now(GPR_CLOCK_MONOTONIC), deadline)));
   }
   gpr_mu_unlock(g_mu);
   GPR_ASSERT(fd_released_done == 1);

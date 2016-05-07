@@ -133,7 +133,8 @@ int grpc_connectivity_state_notify_on_state_change(
   } else {
     if (tracker->current_state != *current) {
       *current = tracker->current_state;
-      grpc_exec_ctx_push(exec_ctx, notify, GRPC_ERROR_REF(tracker->current_error), NULL);
+      grpc_exec_ctx_push(exec_ctx, notify,
+                         GRPC_ERROR_REF(tracker->current_error), NULL);
     } else {
       grpc_connectivity_state_watcher *w = gpr_malloc(sizeof(*w));
       w->current = current;

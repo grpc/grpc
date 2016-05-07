@@ -103,9 +103,10 @@ static void test_code(void) {
   grpc_pollset_shutdown(NULL, NULL, NULL);
   grpc_pollset_reset(NULL);
   grpc_pollset_destroy(NULL);
-  grpc_pollset_work(NULL, NULL, NULL, gpr_now(GPR_CLOCK_REALTIME),
-                    gpr_now(GPR_CLOCK_MONOTONIC));
-  grpc_pollset_kick(NULL, NULL);
+  GRPC_ERROR_UNREF(grpc_pollset_work(NULL, NULL, NULL,
+                                     gpr_now(GPR_CLOCK_REALTIME),
+                                     gpr_now(GPR_CLOCK_MONOTONIC)));
+  GRPC_ERROR_UNREF(grpc_pollset_kick(NULL, NULL));
 }
 
 int main(void) {
