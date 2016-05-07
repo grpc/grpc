@@ -469,3 +469,13 @@ grpc_error *grpc_os_error(const char *file, int line, int err,
           GRPC_ERROR_STR_OS_ERROR, strerror(err)),
       GRPC_ERROR_STR_SYSCALL, call_name);
 }
+
+bool grpc_log_if_error(const char *what, grpc_error *error, const char *file,
+                       int line) {
+  if (error == GRPC_ERROR_NONE) return true;
+  const char *msg = grpc_error_string(error);
+  gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "%s: %s", what, msg);
+  grpc_error_free_string(msg);
+  GRPC_ERROR_UNREF(error);
+  return false;
+}

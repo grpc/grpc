@@ -45,7 +45,7 @@
 
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 
-static void pipe_init(grpc_wakeup_fd* fd_info) {
+static grpc_error* pipe_init(grpc_wakeup_fd* fd_info) {
   int pipefd[2];
   /* TODO(klempner): Make this nonfatal */
   int r = pipe(pipefd);
@@ -53,36 +53,40 @@ static void pipe_init(grpc_wakeup_fd* fd_info) {
     gpr_log(GPR_ERROR, "pipe creation failed (%d): %s", errno, strerror(errno));
     abort();
   }
-  GPR_ASSERT(grpc_set_socket_nonblocking(pipefd[0], 1));
-  GPR_ASSERT(grpc_set_socket_nonblocking(pipefd[1], 1));
+  grpc_error* err;
+  err = grpc_set_socket_nonblocking(pipefd[0], 1);
+  if (err != GRPC_ERROR_NONE) return err;
+  err = grpc_set_socket_nonblocking(pipefd[1], 1);
+  if (err != GRPC_ERROR_NONE) return err;
   fd_info->read_fd = pipefd[0];
   fd_info->write_fd = pipefd[1];
+  return GRPC_ERROR_NONE;
 }
 
-static void pipe_consume(grpc_wakeup_fd* fd_info) {
+static grpc_error* pipe_consume(grpc_wakeup_fd* fd_info) {
   char buf[128];
   ssize_t r;
 
   for (;;) {
     r = read(fd_info->read_fd, buf, sizeof(buf));
     if (r > 0) continue;
-    if (r == 0) return;
+    if (r == 0) return GRPC_ERROR_NONE;
     switch (errno) {
       case EAGAIN:
-        return;
+        return GRPC_ERROR_NONE;
       case EINTR:
         continue;
       default:
-        gpr_log(GPR_ERROR, "error reading pipe: %s", strerror(errno));
-        return;
+        return GRPC_OS_ERROR(errno, "read");
     }
   }
 }
 
-static void pipe_wakeup(grpc_wakeup_fd* fd_info) {
+static grpc_error* pipe_wakeup(grpc_wakeup_fd* fd_info) {
   char c = 0;
   while (write(fd_info->write_fd, &c, 1) != 1 && errno == EINTR)
     ;
+  return GRPC_ERROR_NONE;
 }
 
 static void pipe_destroy(grpc_wakeup_fd* fd_info) {

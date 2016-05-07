@@ -76,13 +76,16 @@ static grpc_error *prepare_socket(const struct sockaddr *addr, int fd) {
 
   GPR_ASSERT(fd >= 0);
 
-  if (!grpc_set_socket_nonblocking(fd, 1) || !grpc_set_socket_cloexec(fd, 1) ||
-      (!grpc_is_unix_socket(addr) && !grpc_set_socket_low_latency(fd, 1)) ||
-      !grpc_set_socket_no_sigpipe_if_possible(fd)) {
-    gpr_log(GPR_ERROR, "Unable to configure socket %d: %s", fd,
-            strerror(errno));
-    goto error;
+  err = grpc_set_socket_nonblocking(fd, 1);
+  if (err != GRPC_ERROR_NONE) goto error;
+  err = grpc_set_socket_cloexec(fd, 1);
+  if (err != GRPC_ERROR_NONE) goto error;
+  if (!grpc_is_unix_socket(addr)) {
+    err = grpc_set_socket_low_latency(fd, 1);
+    if (err != GRPC_ERROR_NONE) goto error;
   }
+  err = grpc_set_socket_no_sigpipe_if_possible(fd);
+  if (err != GRPC_ERROR_NONE) goto error;
   goto done;
 
 error:

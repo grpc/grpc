@@ -50,9 +50,11 @@
 /* grpc_workqueue is forward declared in exec_ctx.h */
 
 /** Create a work queue */
-grpc_workqueue *grpc_workqueue_create(grpc_exec_ctx *exec_ctx);
+grpc_error *grpc_workqueue_create(grpc_exec_ctx *exec_ctx,
+                                  grpc_workqueue **workqueue);
 
-void grpc_workqueue_flush(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue);
+grpc_error *grpc_workqueue_flush(
+    grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) GRPC_MUST_USE_RESULT;
 
 #define GRPC_WORKQUEUE_REFCOUNT_DEBUG
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
@@ -77,7 +79,7 @@ void grpc_workqueue_add_to_pollset(grpc_exec_ctx *exec_ctx,
                                    grpc_pollset *pollset);
 
 /** Add a work item to a workqueue */
-void grpc_workqueue_push(grpc_workqueue *workqueue, grpc_closure *closure,
-                         grpc_error *error);
+void grpc_workqueue_push(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
+                         grpc_closure *closure, grpc_error *error);
 
 #endif /* GRPC_CORE_LIB_IOMGR_WORKQUEUE_H */

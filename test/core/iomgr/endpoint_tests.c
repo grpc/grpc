@@ -137,7 +137,7 @@ static void read_and_write_test_read_handler(grpc_exec_ctx *exec_ctx,
     gpr_log(GPR_INFO, "Read handler done");
     gpr_mu_lock(g_mu);
     state->read_done = 1 + (error == GRPC_ERROR_NONE);
-    grpc_pollset_kick(g_pollset, NULL);
+    GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL));
     gpr_mu_unlock(g_mu);
   } else if (error == GRPC_ERROR_NONE) {
     grpc_endpoint_read(exec_ctx, state->read_ep, &state->incoming,
@@ -172,7 +172,7 @@ static void read_and_write_test_write_handler(grpc_exec_ctx *exec_ctx,
   gpr_log(GPR_INFO, "Write handler done");
   gpr_mu_lock(g_mu);
   state->write_done = 1 + (error != GRPC_ERROR_NONE);
-  grpc_pollset_kick(g_pollset, NULL);
+  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL));
   gpr_mu_unlock(g_mu);
 }
 
@@ -237,8 +237,10 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   while (!state.read_done || !state.write_done) {
     grpc_pollset_worker *worker = NULL;
     GPR_ASSERT(gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), deadline) < 0);
-    grpc_pollset_work(&exec_ctx, g_pollset, &worker,
-                      gpr_now(GPR_CLOCK_MONOTONIC), deadline);
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "pollset_work",
+        grpc_pollset_work(&exec_ctx, g_pollset, &worker,
+                          gpr_now(GPR_CLOCK_MONOTONIC), deadline)));
   }
   gpr_mu_unlock(g_mu);
   grpc_exec_ctx_finish(&exec_ctx);
