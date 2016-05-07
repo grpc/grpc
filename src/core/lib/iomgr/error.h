@@ -34,6 +34,7 @@
 #ifndef GRPC_CORE_LIB_IOMGR_ERROR_H
 #define GRPC_CORE_LIB_IOMGR_ERROR_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include <grpc/support/time.h>
@@ -113,5 +114,10 @@ grpc_error *grpc_os_error(const char *file, int line, int err,
                           const char *call_name);
 #define GRPC_OS_ERROR(err, call_name) \
   grpc_os_error(__FILE__, __LINE__, err, call_name)
+
+bool grpc_log_if_error(const char *what, grpc_error *error, const char *file,
+                       int line);
+#define GRPC_LOG_IF_ERROR(what, error) \
+  grpc_log_if_error((what), (error), __FILE__, __LINE__)
 
 #endif /* GRPC_CORE_LIB_IOMGR_ERROR_H */

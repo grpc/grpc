@@ -263,8 +263,15 @@ void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
         break;
       }
     }
-    grpc_pollset_kick(POLLSET_FROM_CQ(cc), pluck_worker);
+    grpc_error *kick_error =
+        grpc_pollset_kick(POLLSET_FROM_CQ(cc), pluck_worker);
     gpr_mu_unlock(cc->mu);
+    if (kick_error != GRPC_ERROR_NONE) {
+      const char *msg = grpc_error_string(kick_error);
+      gpr_log(GPR_ERROR, "Kick failed: %s", msg);
+      grpc_error_free_string(msg);
+      GRPC_ERROR_UNREF(kick_error);
+    }
   } else {
     cc->completed_tail->next =
         ((uintptr_t)storage) | (1u & (uintptr_t)cc->completed_tail->next);
@@ -343,8 +350,18 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
       gpr_mu_lock(cc->mu);
       continue;
     } else {
-      grpc_pollset_work(&exec_ctx, POLLSET_FROM_CQ(cc), &worker, now,
-                        iteration_deadline);
+      grpc_error *err = grpc_pollset_work(&exec_ctx, POLLSET_FROM_CQ(cc),
+                                          &worker, now, iteration_deadline);
+      if (err != GRPC_ERROR_NONE) {
+        gpr_mu_unlock(cc->mu);
+        const char *msg = grpc_error_string(err);
+        gpr_log(GPR_ERROR, "Completion queue next failed: %s", msg);
+        grpc_error_free_string(msg);
+        GRPC_ERROR_UNREF(err);
+        memset(&ret, 0, sizeof(ret));
+        ret.type = GRPC_QUEUE_TIMEOUT;
+        break;
+      }
     }
   }
   GRPC_SURFACE_TRACE_RETURNED_EVENT(cc, &ret);
@@ -460,8 +477,19 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
       grpc_exec_ctx_flush(&exec_ctx);
       gpr_mu_lock(cc->mu);
     } else {
-      grpc_pollset_work(&exec_ctx, POLLSET_FROM_CQ(cc), &worker, now,
-                        iteration_deadline);
+      grpc_error *err = grpc_pollset_work(&exec_ctx, POLLSET_FROM_CQ(cc),
+                                          &worker, now, iteration_deadline);
+      if (err != GRPC_ERROR_NONE) {
+        del_plucker(cc, tag, &worker);
+        gpr_mu_unlock(cc->mu);
+        const char *msg = grpc_error_string(err);
+        gpr_log(GPR_ERROR, "Completion queue next failed: %s", msg);
+        grpc_error_free_string(msg);
+        GRPC_ERROR_UNREF(err);
+        memset(&ret, 0, sizeof(ret));
+        ret.type = GRPC_QUEUE_TIMEOUT;
+        break;
+      }
     }
     del_plucker(cc, tag, &worker);
   }
