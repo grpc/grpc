@@ -104,6 +104,7 @@ static void lame_start_transport_op(grpc_exec_ctx *exec_ctx,
     op->send_ping->cb(exec_ctx, op->send_ping->cb_arg,
                       GRPC_ERROR_CREATE("lame client channel"));
   }
+  GRPC_ERROR_UNREF(op->disconnect_with_error);
 }
 
 static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,

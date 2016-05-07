@@ -88,5 +88,7 @@ GPRAPI gpr_avl gpr_avl_remove(gpr_avl avl, void *key);
     does not mutate avl.
     returns NULL if key is not found. */
 GPRAPI void *gpr_avl_get(gpr_avl avl, void *key);
+/** Return 1 if avl is empty, 0 otherwise */
+GPRAPI int gpr_avl_is_empty(gpr_avl avl);
 
 #endif /* GRPC_SUPPORT_AVL_H */

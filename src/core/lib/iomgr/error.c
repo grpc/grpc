@@ -453,7 +453,9 @@ const char *grpc_error_string(grpc_error *err) {
   collect_kvs(err->ints.root, key_int, fmt_int, &kvs);
   collect_kvs(err->strs.root, key_str, fmt_str, &kvs);
   collect_kvs(err->times.root, key_time, fmt_time, &kvs);
-  append_kv(&kvs, gpr_strdup("referenced_errors"), errs_string(err));
+  if (!gpr_avl_is_empty(err->errs)) {
+    append_kv(&kvs, gpr_strdup("referenced_errors"), errs_string(err));
+  }
 
   qsort(kvs.kvs, kvs.num_kvs, sizeof(kv_pair), cmp_kvs);
 

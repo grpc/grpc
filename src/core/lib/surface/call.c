@@ -780,7 +780,7 @@ static void call_alarm(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   grpc_call *call = arg;
   gpr_mu_lock(&call->mu);
   call->have_alarm = 0;
-  if (error != GRPC_ERROR_NONE) {
+  if (error != GRPC_ERROR_CANCELLED) {
     cancel_with_status(exec_ctx, call, GRPC_STATUS_DEADLINE_EXCEEDED,
                        "Deadline Exceeded");
   }

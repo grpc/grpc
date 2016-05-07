@@ -286,3 +286,5 @@ gpr_avl gpr_avl_ref(gpr_avl avl) {
 }
 
 void gpr_avl_unref(gpr_avl avl) { unref_node(avl.vtable, avl.root); }
+
+int gpr_avl_is_empty(gpr_avl avl) { return avl.root == NULL; }
