@@ -1655,7 +1655,7 @@ static void multipoll_with_epoll_pollset_add_fd(grpc_exec_ctx *exec_ctx,
 /* TODO(klempner): We probably want to turn this down a bit */
 #define GRPC_EPOLL_MAX_EVENTS 1000
 
-static void multipoll_with_epoll_pollset_maybe_work_and_unlock(
+static grpc_error *multipoll_with_epoll_pollset_maybe_work_and_unlock(
     grpc_exec_ctx *exec_ctx, grpc_pollset *pollset, grpc_pollset_worker *worker,
     gpr_timespec deadline, gpr_timespec now) {
   struct epoll_event ep_ev[GRPC_EPOLL_MAX_EVENTS];
@@ -1664,6 +1664,7 @@ static void multipoll_with_epoll_pollset_maybe_work_and_unlock(
   epoll_hdr *h = pollset->data.ptr;
   int timeout_ms;
   struct pollfd pfds[2];
+  grpc_error *error = GRPC_ERROR_NONE;
 
   /* If you want to ignore epoll's ability to sanely handle parallel pollers,
    * for a more apples-to-apples performance comparison with poll, add a
@@ -1698,7 +1699,7 @@ static void multipoll_with_epoll_pollset_maybe_work_and_unlock(
     /* do nothing */
   } else {
     if (pfds[0].revents) {
-      grpc_wakeup_fd_consume_wakeup(&worker->wakeup_fd->fd);
+      work_combine_error(&error, grpc_wakeup_fd_consume_wakeup(&worker->wakeup_fd->fd));
     }
     if (pfds[1].revents) {
       do {
@@ -1706,7 +1707,7 @@ static void multipoll_with_epoll_pollset_maybe_work_and_unlock(
         ep_rv = epoll_wait(h->epoll_fd, ep_ev, GRPC_EPOLL_MAX_EVENTS, 0);
         if (ep_rv < 0) {
           if (errno != EINTR) {
-            gpr_log(GPR_ERROR, "epoll_wait() failed: %s", strerror(errno));
+            work_combine_error(&error, GRPC_OS_ERROR(errno, "epoll_wait"));
           }
         } else {
           int i;
@@ -1718,7 +1719,7 @@ static void multipoll_with_epoll_pollset_maybe_work_and_unlock(
             int read_ev = ep_ev[i].events & (EPOLLIN | EPOLLPRI);
             int write_ev = ep_ev[i].events & EPOLLOUT;
             if (fd == NULL) {
-              grpc_wakeup_fd_consume_wakeup(&grpc_global_wakeup_fd);
+              work_combine_error(&error, grpc_wakeup_fd_consume_wakeup(&grpc_global_wakeup_fd));
             } else {
               if (read_ev || cancel) {
                 fd_become_readable(exec_ctx, fd);
@@ -1732,6 +1733,7 @@ static void multipoll_with_epoll_pollset_maybe_work_and_unlock(
       } while (ep_rv == GRPC_EPOLL_MAX_EVENTS);
     }
   }
+  return error;
 }
 
 static void multipoll_with_epoll_pollset_finish_shutdown(
