@@ -120,7 +120,8 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
   gpr_mu_lock(g_mu);
   on_connect_result_set(&g_result, acceptor);
   g_nconnects++;
-  grpc_pollset_kick(g_pollset, NULL);
+  GPR_ASSERT(
+      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
   gpr_mu_unlock(g_mu);
 }
 
@@ -196,8 +197,10 @@ static void tcp_connect(grpc_exec_ctx *exec_ctx, const struct sockaddr *remote,
   while (g_nconnects == nconnects_before &&
          gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0) {
     grpc_pollset_worker *worker = NULL;
-    grpc_pollset_work(exec_ctx, g_pollset, &worker,
-                      gpr_now(GPR_CLOCK_MONOTONIC), deadline);
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "pollset_work",
+        grpc_pollset_work(exec_ctx, g_pollset, &worker,
+                          gpr_now(GPR_CLOCK_MONOTONIC), deadline)));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(exec_ctx);
     gpr_mu_lock(g_mu);

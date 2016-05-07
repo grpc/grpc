@@ -1699,7 +1699,8 @@ static grpc_error *multipoll_with_epoll_pollset_maybe_work_and_unlock(
     /* do nothing */
   } else {
     if (pfds[0].revents) {
-      work_combine_error(&error, grpc_wakeup_fd_consume_wakeup(&worker->wakeup_fd->fd));
+      work_combine_error(&error,
+                         grpc_wakeup_fd_consume_wakeup(&worker->wakeup_fd->fd));
     }
     if (pfds[1].revents) {
       do {
@@ -1719,7 +1720,8 @@ static grpc_error *multipoll_with_epoll_pollset_maybe_work_and_unlock(
             int read_ev = ep_ev[i].events & (EPOLLIN | EPOLLPRI);
             int write_ev = ep_ev[i].events & EPOLLOUT;
             if (fd == NULL) {
-              work_combine_error(&error, grpc_wakeup_fd_consume_wakeup(&grpc_global_wakeup_fd));
+              work_combine_error(&error, grpc_wakeup_fd_consume_wakeup(
+                                             &grpc_global_wakeup_fd));
             } else {
               if (read_ev || cancel) {
                 fd_become_readable(exec_ctx, fd);

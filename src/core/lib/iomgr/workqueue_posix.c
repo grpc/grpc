@@ -106,16 +106,10 @@ void grpc_workqueue_add_to_pollset(grpc_exec_ctx *exec_ctx,
   grpc_pollset_add_fd(exec_ctx, pollset, workqueue->wakeup_read_fd);
 }
 
-grpc_error *grpc_workqueue_flush(grpc_exec_ctx *exec_ctx,
-                                 grpc_workqueue *workqueue) {
-  grpc_error *error = GRPC_ERROR_NONE;
+void grpc_workqueue_flush(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {
   gpr_mu_lock(&workqueue->mu);
-  if (grpc_closure_list_empty(workqueue->closure_list)) {
-    error = grpc_wakeup_fd_wakeup(&workqueue->wakeup_fd);
-  }
   grpc_exec_ctx_enqueue_list(exec_ctx, &workqueue->closure_list, NULL);
   gpr_mu_unlock(&workqueue->mu);
-  return error;
 }
 
 static void on_readable(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {

@@ -54,7 +54,7 @@ static grpc_error* eventfd_create(grpc_wakeup_fd* fd_info) {
   return GRPC_ERROR_NONE;
 }
 
-static grpc_error *eventfd_consume(grpc_wakeup_fd* fd_info) {
+static grpc_error* eventfd_consume(grpc_wakeup_fd* fd_info) {
   eventfd_t value;
   int err;
   do {

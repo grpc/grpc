@@ -101,7 +101,7 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *vargs, grpc_endpoint *tcp,
   (void)acceptor;
   grpc_endpoint_shutdown(exec_ctx, tcp);
   grpc_endpoint_destroy(exec_ctx, tcp);
-  grpc_pollset_kick(args->pollset, NULL);
+  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, NULL));
 }
 
 void bad_server_thread(void *vargs) {
@@ -131,7 +131,11 @@ void bad_server_thread(void *vargs) {
         gpr_time_add(now, gpr_time_from_millis(100, GPR_TIMESPAN));
 
     grpc_pollset_worker *worker = NULL;
-    grpc_pollset_work(&exec_ctx, args->pollset, &worker, now, deadline);
+    if (!GRPC_LOG_IF_ERROR("pollset_work",
+                           grpc_pollset_work(&exec_ctx, args->pollset, &worker,
+                                             now, deadline))) {
+      gpr_atm_rel_store(&args->stop, 1);
+    }
     gpr_mu_unlock(args->mu);
     grpc_exec_ctx_finish(&exec_ctx);
     gpr_mu_lock(args->mu);

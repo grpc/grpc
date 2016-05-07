@@ -94,8 +94,9 @@ void test_tcp_server_poll(test_tcp_server *server, int seconds) {
                    gpr_time_from_seconds(seconds, GPR_TIMESPAN));
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   gpr_mu_lock(server->mu);
-  grpc_pollset_work(&exec_ctx, server->pollset, &worker,
-                    gpr_now(GPR_CLOCK_MONOTONIC), deadline);
+  GRPC_LOG_IF_ERROR("pollset_work",
+                    grpc_pollset_work(&exec_ctx, server->pollset, &worker,
+                                      gpr_now(GPR_CLOCK_MONOTONIC), deadline));
   gpr_mu_unlock(server->mu);
   grpc_exec_ctx_finish(&exec_ctx);
 }
