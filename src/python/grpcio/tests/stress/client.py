@@ -117,7 +117,10 @@ def run_test(args):
   for runner in runners:
     runner.start()
   try:
-    raise exception_queue.get(block=True, timeout=args.test_duration_secs)
+    timeout_secs = args.test_duration_secs
+    if timeout_secs < 0:
+      timeout_secs = None
+    raise exception_queue.get(block=True, timeout=timeout_secs)
   except Queue.Empty:
     # No exceptions thrown, success
     pass

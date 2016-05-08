@@ -1,8 +1,8 @@
 {
   "dockerImages": {
-    "grpc_stress_csharp" : {
+    "grpc_stress_python" : {
       "buildScript": "tools/run_tests/dockerize/build_interop_stress_image.sh",
-      "dockerFileDir": "grpc_interop_stress_csharp"
+      "dockerFileDir": "grpc_interop_stress_python"
     }
   },
 
@@ -21,16 +21,20 @@
         "metricsArgs": {
           "metrics_server_address": "localhost:8081",
           "total_only": "true"
+        },
+		"env": {
+          "PYTHONPATH": "/var/local/git/grpc/src/python/gens:/var/local/git/grpc/src/python/grpcio",
+          "LD_LIBRARY_PATH":"/var/local/git/grpc/libs/opt"
         }
       }
     },
     "templates": {
-      "csharp_client": {
+      "python_client": {
         "baseTemplate": "default",
         "stressClientCmd": [
-          "mono",
-          "/var/local/git/grpc/src/csharp/Grpc.IntegrationTesting.StressClient/bin/Debug/Grpc.IntegrationTesting.StressClient.exe"
-		],
+          "python",
+          "/var/local/git/grpc/src/python/grpcio/tests/stress/client.py"
+        ],
         "metricsClientCmd": ["/var/local/git/grpc/bins/opt/metrics_client"]
       }
     }
@@ -43,35 +47,39 @@
         "serverPort": 8080,
         "serverArgs": {
           "port": 8080
+        },
+        "env": {
+          "PYTHONPATH": "/var/local/git/grpc/src/python/gens:/var/local/git/grpc/src/python/grpcio",
+          "LD_LIBRARY_PATH":"/var/local/git/grpc/libs/opt"
         }
       }
     },
     "templates": {
-      "csharp_server": {
+      "python_server": {
         "baseTemplate": "default",
         "stressServerCmd": [
-          "mono",
-          "/var/local/git/grpc/src/csharp/Grpc.IntegrationTesting.Server/bin/Debug/Grpc.IntegrationTesting.Server.exe"
-		]
+          "python",
+          "/var/local/git/grpc/src/python/grpcio/tests/interop/server.py"
+        ]
       }
     }
   },
 
   "testMatrix": {
     "serverPodSpecs": {
-      "stress-server-csharp": {
-        "serverTemplate": "csharp_server",
-        "dockerImage": "grpc_stress_csharp",
+      "python-stress-server": {
+        "serverTemplate": "python_server",
+        "dockerImage": "grpc_stress_python",
         "numInstances": 1
       }
     },
 
     "clientPodSpecs": {
-      "stress-client-csharp": {
-        "clientTemplate": "csharp_client",
-        "dockerImage": "grpc_stress_csharp",
-        "numInstances": 10,
-        "serverPodSpec": "stress-server-csharp"
+      "python-stress-client": {
+        "clientTemplate": "python_client",
+        "dockerImage": "grpc_stress_python",
+        "numInstances": 5,
+        "serverPodSpec": "python-stress-server"
       }
     }
   },
@@ -80,8 +88,8 @@
     "buildDockerImages": true,
     "pollIntervalSecs": 60,
     "testDurationSecs": 7200,
-    "kubernetesProxyPort": 8009,
-    "datasetIdNamePrefix": "stress_test_csharp",
+    "kubernetesProxyPort": 8011,
+    "datasetIdNamePrefix": "stress_test_python",
     "summaryTableId": "summary",
     "qpsTableId": "qps",
     "podWarmupSecs": 60

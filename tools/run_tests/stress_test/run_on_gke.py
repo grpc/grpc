@@ -69,7 +69,7 @@ class ClientTemplate:
 
   def __init__(self, name, stress_client_cmd, metrics_client_cmd, metrics_port,
                wrapper_script_path, poll_interval_secs, client_args_dict,
-               metrics_args_dict, will_run_forever):
+               metrics_args_dict, will_run_forever, env_dict):
     self.name = name
     self.stress_client_cmd = stress_client_cmd
     self.metrics_client_cmd = metrics_client_cmd
@@ -79,19 +79,21 @@ class ClientTemplate:
     self.client_args_dict = client_args_dict
     self.metrics_args_dict = metrics_args_dict
     self.will_run_forever = will_run_forever
+    self.env_dict = env_dict
 
 
 class ServerTemplate:
   """ Contains all the common settings used by a stress server """
 
   def __init__(self, name, server_cmd, wrapper_script_path, server_port,
-               server_args_dict, will_run_forever):
+               server_args_dict, will_run_forever, env_dict):
     self.name = name
     self.server_cmd = server_cmd
     self.wrapper_script_path = wrapper_script_path
     self.server_port = server_port
     self.server_args_dict = server_args_dict
     self.will_run_forever = will_run_forever
+    self.env_dict = env_dict
 
 
 class DockerImage:
@@ -240,6 +242,7 @@ class Gke:
     # server_pod_spec.template.wrapper_script_path) are are injected into the
     # container via environment variables
     server_env = self.gke_env.copy()
+    server_env.update(server_pod_spec.template.env_dict)
     server_env.update({
         'STRESS_TEST_IMAGE_TYPE': 'SERVER',
         'STRESS_TEST_CMD': server_pod_spec.template.server_cmd,
@@ -283,6 +286,7 @@ class Gke:
     # client_pod_spec.template.wrapper_script_path) are are injected into the
     # container via environment variables
     client_env = self.gke_env.copy()
+    client_env.update(client_pod_spec.template.env_dict)
     client_env.update({
         'STRESS_TEST_IMAGE_TYPE': 'CLIENT',
         'STRESS_TEST_CMD': client_pod_spec.template.stress_client_cmd,
@@ -425,7 +429,8 @@ class Config:
           template_name, stress_client_cmd, metrics_client_cmd,
           temp_dict['metricsPort'], temp_dict['wrapperScriptPath'],
           temp_dict['pollIntervalSecs'], temp_dict['clientArgs'].copy(),
-          temp_dict['metricsArgs'].copy(), temp_dict.get('willRunForever', 1))
+          temp_dict['metricsArgs'].copy(), temp_dict.get('willRunForever', 1),
+          temp_dict.get('env', {}).copy())
 
     return client_templates_dict
 
@@ -461,7 +466,7 @@ class Config:
       server_templates_dict[template_name] = ServerTemplate(
           template_name, stress_server_cmd, temp_dict['wrapperScriptPath'],
           temp_dict['serverPort'], temp_dict['serverArgs'].copy(),
-          temp_dict.get('willRunForever', 1))
+          temp_dict.get('willRunForever', 1), temp_dict.get('env', {}).copy())
 
     return server_templates_dict
 
