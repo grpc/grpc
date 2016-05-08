@@ -866,6 +866,7 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
                                        grpc_error *error) {
   grpc_closure *closure = *pclosure;
   if (closure == NULL) {
+    GRPC_ERROR_UNREF(error);
     return;
   }
   closure->next_data.scratch -= CLOSURE_BARRIER_FIRST_REF_BIT;

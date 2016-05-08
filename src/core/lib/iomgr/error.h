@@ -107,7 +107,7 @@ void grpc_error_unref(grpc_error *err, const char *file, int line,
 
 grpc_error *grpc_error_set_int(grpc_error *src, grpc_error_ints which,
                                intptr_t value);
-const intptr_t *grpc_error_get_int(grpc_error *error, grpc_error_ints which);
+bool grpc_error_get_int(grpc_error *error, grpc_error_ints which, intptr_t *p);
 grpc_error *grpc_error_set_time(grpc_error *src, grpc_error_times which,
                                 gpr_timespec value);
 grpc_error *grpc_error_set_str(grpc_error *src, grpc_error_strs which,
