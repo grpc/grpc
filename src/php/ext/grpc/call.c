@@ -65,6 +65,7 @@ void free_wrapped_grpc_call(void *object TSRMLS_DC) {
   if (call->owned && call->wrapped != NULL) {
     grpc_call_destroy(call->wrapped);
   }
+  zend_object_std_dtor(&call->std TSRMLS_CC);
   efree(call);
 }
 
@@ -96,6 +97,7 @@ zval *grpc_php_wrap_call(grpc_call *wrapped, bool owned) {
   wrapped_grpc_call *call =
       (wrapped_grpc_call *)zend_object_store_get_object(call_object TSRMLS_CC);
   call->wrapped = wrapped;
+  call->owned = owned;
   return call_object;
 }
 
