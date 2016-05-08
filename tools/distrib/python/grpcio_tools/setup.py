@@ -45,13 +45,13 @@ import grpc_version
 
 def protoc_ext_module():
   plugin_sources = [
-      'grpc/protoc/main.cc',
+      'grpc/tools/main.cc',
       'grpc_root/src/compiler/python_generator.cc'] + [
       os.path.join('third_party/protobuf/src', cc_file)
       for cc_file in protoc_lib_deps.CC_FILES]
   plugin_ext = extension.Extension(
-      name='grpc.protoc.protoc_compiler',
-      sources=['grpc/protoc/protoc_compiler.pyx'] + plugin_sources,
+      name='grpc.tools.protoc_compiler',
+      sources=['grpc/tools/protoc_compiler.pyx'] + plugin_sources,
       include_dirs=[
           '.',
           'grpc_root',
