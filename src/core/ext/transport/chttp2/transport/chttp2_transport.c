@@ -428,7 +428,7 @@ static void close_transport_locked(grpc_exec_ctx *exec_ctx,
   if (!t->closed) {
     t->closed = 1;
     connectivity_state_set(exec_ctx, &t->global, GRPC_CHANNEL_FATAL_FAILURE,
-                           error, "close_transport");
+                           GRPC_ERROR_REF(error), "close_transport");
     if (t->ep) {
       allow_endpoint_shutdown_locked(exec_ctx, t);
     }
@@ -441,6 +441,7 @@ static void close_transport_locked(grpc_exec_ctx *exec_ctx,
       GRPC_CHTTP2_STREAM_UNREF(exec_ctx, stream_global, "chttp2_writing");
     }
   }
+  GRPC_ERROR_UNREF(error);
 }
 
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
@@ -1587,6 +1588,9 @@ static void parsing_action(grpc_exec_ctx *exec_ctx, void *arg,
           ? GRPC_ERROR_NONE
           : GRPC_ERROR_CREATE_REFERENCING("Failed parsing HTTP/2", errors,
                                           GPR_ARRAY_SIZE(errors));
+  for (i = 0; i < GPR_ARRAY_SIZE(errors); i++) {
+    GRPC_ERROR_UNREF(errors[i]);
+  }
   GPR_TIMER_END("reading_action.parse", 0);
   grpc_chttp2_run_with_global_lock(exec_ctx, t, NULL, post_parse_locked, err,
                                    0);
