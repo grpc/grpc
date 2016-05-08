@@ -225,14 +225,15 @@ void grpc_chttp2_publish_reads(
     }
 
     if (stream_parsing->forced_close_error != GRPC_ERROR_NONE) {
-      const intptr_t *reason = grpc_error_get_int(
-          stream_parsing->forced_close_error, GRPC_ERROR_INT_HTTP2_ERROR);
-      if (reason == NULL || *reason != GRPC_CHTTP2_NO_ERROR) {
+      intptr_t reason;
+      bool has_reason = grpc_error_get_int(stream_parsing->forced_close_error,
+                                           GRPC_ERROR_INT_HTTP2_ERROR, &reason);
+      if (has_reason || reason != GRPC_CHTTP2_NO_ERROR) {
         grpc_status_code status_code =
-            reason == NULL ? GRPC_STATUS_INTERNAL
-                           : grpc_chttp2_http2_error_to_grpc_status(
-                                 (grpc_chttp2_error_code)
-                                     stream_parsing->rst_stream_reason);
+            has_reason
+                ? grpc_chttp2_http2_error_to_grpc_status(
+                      (grpc_chttp2_error_code)stream_parsing->rst_stream_reason)
+                : GRPC_STATUS_INTERNAL;
         const char *status_details =
             grpc_error_string(stream_parsing->forced_close_error);
         gpr_slice slice_details = gpr_slice_from_copied_string(status_details);
@@ -609,7 +610,7 @@ static grpc_error *init_data_frame_parser(
     transport_parsing->parser = grpc_chttp2_data_parser_parse;
     transport_parsing->parser_data = &stream_parsing->data_parser;
     return GRPC_ERROR_NONE;
-  } else if (grpc_error_get_int(err, GRPC_ERROR_INT_STREAM_ID)) {
+  } else if (grpc_error_get_int(err, GRPC_ERROR_INT_STREAM_ID, NULL)) {
     /* handle stream errors by closing the stream */
     stream_parsing->received_close = 1;
     stream_parsing->forced_close_error = err;
@@ -907,7 +908,7 @@ static grpc_error *parse_frame_slice(
                                                stream_parsing);
     }
     return GRPC_ERROR_NONE;
-  } else if (grpc_error_get_int(err, GRPC_ERROR_INT_STREAM_ID) != NULL) {
+  } else if (grpc_error_get_int(err, GRPC_ERROR_INT_STREAM_ID, NULL)) {
     if (grpc_http_trace) {
       const char *msg = grpc_error_string(err);
       gpr_log(GPR_ERROR, "%s", msg);

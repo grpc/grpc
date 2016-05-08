@@ -240,8 +240,13 @@ grpc_error *grpc_error_set_int(grpc_error *src, grpc_error_ints which,
   return new;
 }
 
-const intptr_t *grpc_error_get_int(grpc_error *err, grpc_error_ints which) {
-  return gpr_avl_get(err->ints, (void *)(uintptr_t)which);
+bool grpc_error_get_int(grpc_error *err, grpc_error_ints which, intptr_t *p) {
+  void *pp;
+  if (gpr_avl_maybe_get(err->ints, (void *)(uintptr_t)which, &pp)) {
+    if (p != NULL) *p = (intptr_t)pp;
+    return true;
+  }
+  return false;
 }
 
 grpc_error *grpc_error_set_str(grpc_error *src, grpc_error_strs which,
