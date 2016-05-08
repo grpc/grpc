@@ -95,6 +95,7 @@ static void delete_state_watcher(grpc_exec_ctx *exec_ctx, state_watcher *w) {
     abort();
   }
   gpr_mu_destroy(&w->mu);
+  GRPC_ERROR_UNREF(w->error);
   gpr_free(w);
 }
 
