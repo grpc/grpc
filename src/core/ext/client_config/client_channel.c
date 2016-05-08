@@ -128,8 +128,8 @@ static void set_channel_connectivity_state_locked(grpc_exec_ctx *exec_ctx,
         /* mask= */ GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY,
         /* check= */ 0);
   }
-  grpc_connectivity_state_set(exec_ctx, &chand->state_tracker, state,
-                              error, reason);
+  grpc_connectivity_state_set(exec_ctx, &chand->state_tracker, state, error,
+                              reason);
 }
 
 static void on_lb_policy_state_changed_locked(grpc_exec_ctx *exec_ctx,
@@ -228,8 +228,8 @@ static void cc_on_config_changed(grpc_exec_ctx *exec_ctx, void *arg,
   }
 
   if (error == GRPC_ERROR_NONE && chand->resolver) {
-    set_channel_connectivity_state_locked(exec_ctx, chand, state, GRPC_ERROR_REF(state_error),
-                                          "new_lb+resolver");
+    set_channel_connectivity_state_locked(
+        exec_ctx, chand, state, GRPC_ERROR_REF(state_error), "new_lb+resolver");
     if (lb_policy != NULL) {
       watch_lb_policy(exec_ctx, chand, lb_policy, state);
     }
@@ -269,6 +269,7 @@ static void cc_on_config_changed(grpc_exec_ctx *exec_ctx, void *arg,
   }
 
   GRPC_CHANNEL_STACK_UNREF(exec_ctx, chand->owning_stack, "resolver");
+  GRPC_ERROR_UNREF(state_error);
 }
 
 static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
@@ -316,8 +317,8 @@ static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
       if (!chand->started_resolving) {
         grpc_closure_list_fail_all(&chand->waiting_for_config_closures,
                                    GRPC_ERROR_REF(op->disconnect_with_error));
-        grpc_exec_ctx_enqueue_list(exec_ctx, &chand->waiting_for_config_closures,
-                                   NULL);
+        grpc_exec_ctx_enqueue_list(exec_ctx,
+                                   &chand->waiting_for_config_closures, NULL);
       }
       if (chand->lb_policy != NULL) {
         grpc_pollset_set_del_pollset_set(exec_ctx,

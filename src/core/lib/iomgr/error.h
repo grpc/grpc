@@ -97,10 +97,13 @@ grpc_error *grpc_error_create(const char *file, int line, const char *desc,
 #define GRPC_ERROR_CREATE_REFERENCING(desc, errs, count) \
   grpc_error_create(__FILE__, __LINE__, desc, errs, count)
 
-grpc_error *grpc_error_ref(grpc_error *err, const char *file, int line);
-void grpc_error_unref(grpc_error *err, const char *file, int line);
-#define GRPC_ERROR_REF(err) grpc_error_ref(err, __FILE__, __LINE__)
-#define GRPC_ERROR_UNREF(err) grpc_error_unref(err, __FILE__, __LINE__)
+grpc_error *grpc_error_ref(grpc_error *err, const char *file, int line,
+                           const char *func);
+void grpc_error_unref(grpc_error *err, const char *file, int line,
+                      const char *func);
+#define GRPC_ERROR_REF(err) grpc_error_ref(err, __FILE__, __LINE__, __func__)
+#define GRPC_ERROR_UNREF(err) \
+  grpc_error_unref(err, __FILE__, __LINE__, __func__)
 
 grpc_error *grpc_error_set_int(grpc_error *src, grpc_error_ints which,
                                intptr_t value);

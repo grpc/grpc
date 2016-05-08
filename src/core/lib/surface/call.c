@@ -1119,6 +1119,8 @@ static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp,
   grpc_call *child_call;
   grpc_call *next_child_call;
 
+  GRPC_ERROR_REF(error);
+
   gpr_mu_lock(&call->mu);
   if (bctl->send_initial_metadata) {
     if (error != GRPC_ERROR_NONE) {
@@ -1170,7 +1172,7 @@ static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp,
     GRPC_ERROR_UNREF(error);
     error = GRPC_ERROR_NONE;
   }
-  bctl->error = GRPC_ERROR_REF(error);
+  bctl->error = error;
   gpr_mu_unlock(&call->mu);
   if (gpr_unref(&bctl->steps_to_complete)) {
     post_batch_completion(exec_ctx, bctl);

@@ -43,7 +43,10 @@ void grpc_closure_init(grpc_closure *closure, grpc_iomgr_cb_func cb,
 
 void grpc_closure_list_append(grpc_closure_list *closure_list,
                               grpc_closure *closure, grpc_error *error) {
-  if (closure == NULL) return;
+  if (closure == NULL) {
+    GRPC_ERROR_UNREF(error);
+    return;
+  }
   closure->error = error;
   closure->next_data.next = NULL;
   if (closure_list->head == NULL) {

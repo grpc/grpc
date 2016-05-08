@@ -158,10 +158,11 @@ static bool is_special(grpc_error *err) {
          err == GRPC_ERROR_CANCELLED;
 }
 
-grpc_error *grpc_error_ref(grpc_error *err, const char *file, int line) {
+grpc_error *grpc_error_ref(grpc_error *err, const char *file, int line,
+                           const char *func) {
   if (is_special(err)) return err;
-  gpr_log(GPR_DEBUG, "%p: %d -> %d [%s:%d]", err, err->refs.count,
-          err->refs.count + 1, file, line);
+  gpr_log(GPR_DEBUG, "%p: %d -> %d [%s:%d %s]", err, err->refs.count,
+          err->refs.count + 1, file, line, func);
   gpr_ref(&err->refs);
   return err;
 }
@@ -175,10 +176,11 @@ static void error_destroy(grpc_error *err) {
   gpr_free(err);
 }
 
-void grpc_error_unref(grpc_error *err, const char *file, int line) {
+void grpc_error_unref(grpc_error *err, const char *file, int line,
+                      const char *func) {
   if (is_special(err)) return;
-  gpr_log(GPR_DEBUG, "%p: %d -> %d [%s:%d]", err, err->refs.count,
-          err->refs.count - 1, file, line);
+  gpr_log(GPR_DEBUG, "%p: %d -> %d [%s:%d %s]", err, err->refs.count,
+          err->refs.count - 1, file, line, func);
   if (gpr_unref(&err->refs)) {
     error_destroy(err);
   }
@@ -191,6 +193,7 @@ grpc_error *grpc_error_create(const char *file, int line, const char *desc,
   if (err == NULL) {  // TODO(ctiller): make gpr_malloc return NULL
     return GRPC_ERROR_OOM;
   }
+  gpr_log(GPR_DEBUG, "%p create [%s:%d]", err, file, line);
   err->ints = gpr_avl_add(gpr_avl_create(&avl_vtable_ints),
                           (void *)(uintptr_t)GRPC_ERROR_INT_FILE_LINE,
                           (void *)(uintptr_t)line);
