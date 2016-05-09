@@ -38,7 +38,7 @@
 
 #define GRPC_COMPRESS_REQUEST_ALGORITHM_KEY "grpc-internal-encoding-request"
 
-extern int grpc_compress_filter_trace;
+extern int grpc_compression_trace;
 
 /** Compression filter for outgoing data.
  *
