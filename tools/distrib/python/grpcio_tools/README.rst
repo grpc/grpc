@@ -46,7 +46,9 @@ From Source
 ~~~~~~~~~~~
 
 Building from source requires that you have the Python headers (usually a
-package named :code:`python-dev`) and Cython installed.
+package named :code:`python-dev`) and Cython installed. It further requires a
+GCC-like compiler to go smoothly; you can probably get it to work without
+GCC-like stuff, but you may end up having a bad time.
 
 ::
 
