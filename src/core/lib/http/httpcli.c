@@ -39,12 +39,14 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <grpc/support/useful.h>
 
 #include "src/core/lib/http/format_request.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/support/string.h"
 
@@ -68,6 +70,7 @@ typedef struct {
   grpc_closure on_read;
   grpc_closure done_write;
   grpc_closure connected;
+  grpc_error *overall_error;
 } internal_request;
 
 static grpc_httpcli_get_override g_get_override = NULL;
@@ -92,7 +95,8 @@ void grpc_httpcli_context_destroy(grpc_httpcli_context *context) {
   grpc_pollset_set_destroy(context->pollset_set);
 }
 
-static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req);
+static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req,
+                         grpc_error *due_to_error);
 
 static void finish(grpc_exec_ctx *exec_ctx, internal_request *req,
                    grpc_error *error) {
@@ -112,7 +116,20 @@ static void finish(grpc_exec_ctx *exec_ctx, internal_request *req,
   grpc_iomgr_unregister_object(&req->iomgr_obj);
   gpr_slice_buffer_destroy(&req->incoming);
   gpr_slice_buffer_destroy(&req->outgoing);
+  GRPC_ERROR_UNREF(req->overall_error);
   gpr_free(req);
+}
+
+static void append_error(internal_request *req, grpc_error *error) {
+  if (req->overall_error == GRPC_ERROR_NONE) {
+    req->overall_error = GRPC_ERROR_CREATE("Failed HTTP/1 client request");
+  }
+  grpc_resolved_address *addr = &req->addresses->addrs[req->next_address - 1];
+  char *addr_text = grpc_sockaddr_to_uri((struct sockaddr *)addr->addr);
+  req->overall_error = grpc_error_add_child(
+      req->overall_error,
+      grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS, addr_text));
+  gpr_free(addr_text);
 }
 
 static void do_read(grpc_exec_ctx *exec_ctx, internal_request *req) {
@@ -124,27 +141,25 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *user_data,
   internal_request *req = user_data;
   size_t i;
 
-  for (i = 0; i < req->incoming.count; i++) {
+  GRPC_ERROR_REF(error);
+
+  for (i = 0; error == GRPC_ERROR_NONE && i < req->incoming.count; i++) {
     if (GPR_SLICE_LENGTH(req->incoming.slices[i])) {
       req->have_read_byte = 1;
-      if (!grpc_http_parser_parse(&req->parser, req->incoming.slices[i])) {
-        finish(exec_ctx, req, 0);
-        return;
-      }
+      error = grpc_http_parser_parse(&req->parser, req->incoming.slices[i]);
     }
   }
 
   if (error == GRPC_ERROR_NONE) {
     do_read(exec_ctx, req);
   } else if (!req->have_read_byte) {
-    next_address(exec_ctx, req);
+    next_address(exec_ctx, req, GRPC_ERROR_REF(error));
   } else {
-    grpc_error *err = grpc_http_parser_eof(&req->parser);
-    if (err == GRPC_ERROR_NONE && (req->parser.type != GRPC_HTTP_RESPONSE)) {
-      err = GRPC_ERROR_CREATE("Expected http response, got http request");
-    }
-    finish(exec_ctx, req, err);
+    append_error(req, GRPC_ERROR_REF(error));
+    finish(exec_ctx, req, error);
   }
+
+  GRPC_ERROR_UNREF(error);
 }
 
 static void on_written(grpc_exec_ctx *exec_ctx, internal_request *req) {
@@ -156,7 +171,7 @@ static void done_write(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   if (error == GRPC_ERROR_NONE) {
     on_written(exec_ctx, req);
   } else {
-    next_address(exec_ctx, req);
+    next_address(exec_ctx, req, GRPC_ERROR_REF(error));
   }
 }
 
@@ -171,7 +186,8 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   internal_request *req = arg;
 
   if (!ep) {
-    next_address(exec_ctx, req);
+    next_address(exec_ctx, req,
+                 GRPC_ERROR_CREATE("Unexplained handshake failure"));
     return;
   }
 
@@ -184,7 +200,7 @@ static void on_connected(grpc_exec_ctx *exec_ctx, void *arg,
   internal_request *req = arg;
 
   if (!req->ep) {
-    next_address(exec_ctx, req);
+    next_address(exec_ctx, req, GRPC_ERROR_REF(error));
     return;
   }
   req->handshaker->handshake(
@@ -193,10 +209,16 @@ static void on_connected(grpc_exec_ctx *exec_ctx, void *arg,
       on_handshake_done);
 }
 
-static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req) {
+static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req,
+                         grpc_error *error) {
   grpc_resolved_address *addr;
+  if (error != GRPC_ERROR_NONE) {
+    append_error(req, error);
+  }
   if (req->next_address == req->addresses->naddrs) {
-    finish(exec_ctx, req, 0);
+    finish(exec_ctx, req,
+           GRPC_ERROR_CREATE_REFERENCING("Failed HTTP requests to all targets",
+                                         &req->overall_error, 1));
     return;
   }
   addr = &req->addresses->addrs[req->next_address++];
@@ -213,7 +235,7 @@ static void on_resolved(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     return;
   }
   req->next_address = 0;
-  next_address(exec_ctx, req);
+  next_address(exec_ctx, req, GRPC_ERROR_NONE);
 }
 
 static void internal_request_begin(grpc_exec_ctx *exec_ctx,
@@ -233,6 +255,7 @@ static void internal_request_begin(grpc_exec_ctx *exec_ctx,
       request->handshaker ? request->handshaker : &grpc_httpcli_plaintext;
   req->context = context;
   req->pollset = pollset;
+  req->overall_error = GRPC_ERROR_NONE;
   grpc_closure_init(&req->on_read, on_read, req);
   grpc_closure_init(&req->done_write, done_write, req);
   gpr_slice_buffer_init(&req->incoming);

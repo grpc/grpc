@@ -103,6 +103,7 @@ static void test_get(int port) {
   }
   gpr_mu_unlock(g_mu);
   gpr_free(host);
+  grpc_http_response_destroy(&response);
 }
 
 static void test_post(int port) {
@@ -139,6 +140,7 @@ static void test_post(int port) {
   }
   gpr_mu_unlock(g_mu);
   gpr_free(host);
+  grpc_http_response_destroy(&response);
 }
 
 static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
