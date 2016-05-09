@@ -83,7 +83,7 @@ def maybe_cythonize(exts):
 setuptools.setup(
   name='grpcio_tools',
   version=grpc_version.VERSION,
-  license='',
+  license='3-clause BSD',
   ext_modules=maybe_cythonize([
       protoc_ext_module(),
   ]),
