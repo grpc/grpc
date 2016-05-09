@@ -214,10 +214,10 @@ std::string GetMethodReturnTypeServer(const MethodDescriptor *method) {
   switch (GetMethodType(method)) {
     case METHODTYPE_NO_STREAMING:
     case METHODTYPE_CLIENT_STREAMING:
-      return "Task<" + GetClassName(method->output_type()) + ">";
+      return "global::System.Threading.Tasks.Task<" + GetClassName(method->output_type()) + ">";
     case METHODTYPE_SERVER_STREAMING:
     case METHODTYPE_BIDI_STREAMING:
-      return "Task";
+      return "global::System.Threading.Tasks.Task";
   }
   GOOGLE_LOG(FATAL)<< "Can't get here.";
   return "";
