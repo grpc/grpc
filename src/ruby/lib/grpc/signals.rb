@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,26 +27,43 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-ssl_roots_path = File.expand_path('../../../../etc/roots.pem', __FILE__)
+require 'thread'
+require_relative 'grpc'
 
-require_relative 'grpc/errors'
-require_relative 'grpc/grpc'
-require_relative 'grpc/logconfig'
-require_relative 'grpc/notifier'
-require_relative 'grpc/signals'
-require_relative 'grpc/version'
-require_relative 'grpc/core/time_consts'
-require_relative 'grpc/generic/active_call'
-require_relative 'grpc/generic/client_stub'
-require_relative 'grpc/generic/service'
-require_relative 'grpc/generic/rpc_server'
+# GRPC contains the General RPC module.
+module GRPC
+  # Signals contains gRPC functions related to signal handling
+  module Signals
+    @interpreter_exiting = false
+    @signal_handlers = []
+    @handlers_mutex = Mutex.new
 
-begin
-  file = File.open(ssl_roots_path)
-  roots = file.read
-  GRPC::Core::ChannelCredentials.set_default_roots_pem roots
-ensure
-  file.close
+    def register_handler(&handler)
+      @handlers_mutex.synchronize do
+        @signal_handlers.push(handler)
+        handler.call if @exit_signal_received
+      end
+      # Returns a function to remove the handler
+      lambda do
+        @handlers_mutex.synchronize { @signal_handlers.delete(handler) }
+      end
+    end
+    module_function :register_handler
+
+    def wait_for_signals
+      t = Thread.new do
+        sleep 0.1 until GRPC::Core.signal_received? || @interpreter_exiting
+        unless @interpreter_exiting
+          @handlers_mutex.synchronize do
+            @signal_handlers.each(&:call)
+          end
+        end
+      end
+      at_exit do
+        @interpreter_exiting = true
+        t.join
+      end
+    end
+    module_function :wait_for_signals
+  end
 end
-
-GRPC::Signals.wait_for_signals
