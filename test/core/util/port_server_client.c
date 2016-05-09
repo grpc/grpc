@@ -117,6 +117,7 @@ void grpc_free_port_using_server(char *server, int port) {
   grpc_pollset_shutdown(&exec_ctx, pr.pollset, shutdown_closure);
   grpc_exec_ctx_finish(&exec_ctx);
   gpr_free(path);
+  grpc_http_response_destroy(&rsp);
 }
 
 typedef struct portreq {
