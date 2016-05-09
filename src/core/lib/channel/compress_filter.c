@@ -47,7 +47,7 @@
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/static_metadata.h"
 
-int grpc_compress_filter_trace = 0;
+int grpc_compression_trace = 0;
 
 typedef struct call_data {
   gpr_slice_buffer slices; /**< Buffers up input slices to be compressed */
@@ -171,7 +171,7 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
   did_compress =
       grpc_msg_compress(calld->compression_algorithm, &calld->slices, &tmp);
   if (did_compress) {
-    if (grpc_compress_filter_trace) {
+    if (grpc_compression_trace) {
       char *algo_name;
       const size_t before_size = calld->slices.length;
       const size_t after_size = tmp.length;
@@ -185,7 +185,7 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
     gpr_slice_buffer_swap(&calld->slices, &tmp);
     calld->send_flags |= GRPC_WRITE_INTERNAL_COMPRESS;
   } else {
-    if (grpc_compress_filter_trace) {
+    if (grpc_compression_trace) {
       char *algo_name;
       GPR_ASSERT(grpc_compression_algorithm_name(calld->compression_algorithm,
                                                  &algo_name));

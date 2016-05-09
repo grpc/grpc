@@ -261,6 +261,8 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_call *parent_call,
   call->channel = channel;
   call->cq = cq;
   call->parent = parent_call;
+  /* Always support no compression */
+  GPR_BITSET(&call->encodings_accepted_by_peer, GRPC_COMPRESS_NONE);
   call->is_client = server_transport_data == NULL;
   if (call->is_client) {
     GPR_ASSERT(add_initial_metadata_count < MAX_SEND_EXTRA_METADATA_COUNT);
@@ -1087,6 +1089,24 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
         &call->metadata_batch[1 /* is_receiving */][0 /* is_trailing */];
     grpc_metadata_batch_filter(md, recv_initial_filter, call);
 
+    /* make sure the received grpc-encoding is amongst the ones listed in
+     * grpc-accept-encoding */
+
+    GPR_ASSERT(call->encodings_accepted_by_peer != 0);
+    if (!GPR_BITGET(call->encodings_accepted_by_peer,
+                    call->compression_algorithm)) {
+      extern int grpc_compression_trace;
+      if (grpc_compression_trace) {
+        char *algo_name;
+        grpc_compression_algorithm_name(call->compression_algorithm,
+                                        &algo_name);
+        gpr_log(GPR_ERROR,
+                "Compression algorithm (grpc-encoding = '%s') not present in "
+                "the bitset of accepted encodings (grpc-accept-encodings: "
+                "'0x%x')",
+                algo_name, call->encodings_accepted_by_peer);
+      }
+    }
     if (gpr_time_cmp(md->deadline, gpr_inf_future(md->deadline.clock_type)) !=
             0 &&
         !call->is_client) {
@@ -1474,7 +1494,8 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
   grpc_call_error err;
 
   GRPC_API_TRACE(
-      "grpc_call_start_batch(call=%p, ops=%p, nops=%lu, tag=%p, reserved=%p)",
+      "grpc_call_start_batch(call=%p, ops=%p, nops=%lu, tag=%p, "
+      "reserved=%p)",
       5, (call, ops, (unsigned long)nops, tag, reserved));
 
   if (reserved != NULL) {
