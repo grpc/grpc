@@ -175,7 +175,7 @@ static void test_request(grpc_end2end_test_config config) {
   cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_PERMISSION_DENIED);
-  GPR_ASSERT(0 == strcmp(details, "Random failure that's not preventable."));
+  GPR_ASSERT(0 == strcmp(details, "Failure that's not preventable."));
 
   gpr_free(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -209,14 +209,16 @@ static void recv_im_ready(grpc_exec_ctx *exec_ctx, void *arg,
   if (error == GRPC_ERROR_NONE) {
     // close the stream with an error.
     gpr_slice message =
-        gpr_slice_from_copied_string("Random failure that's not preventable.");
+        gpr_slice_from_copied_string("Failure that's not preventable.");
     grpc_transport_stream_op op;
     memset(&op, 0, sizeof(op));
     grpc_transport_stream_op_add_close(&op, GRPC_STATUS_PERMISSION_DENIED,
                                        &message);
     grpc_call_next_op(exec_ctx, elem, &op);
   }
-  calld->recv_im_ready->cb(exec_ctx, calld->recv_im_ready->cb_arg, false);
+  grpc_exec_ctx_push(
+      exec_ctx, calld->recv_im_ready,
+      GRPC_ERROR_CREATE_REFERENCING("Forced call to close", &error, 1), NULL);
 }
 
 static void start_transport_stream_op(grpc_exec_ctx *exec_ctx,

@@ -392,7 +392,7 @@ static char *fmt_time(void *p) {
       pfx = "";
       break;
   }
-  gpr_asprintf(&out, "%s%d.%09d", pfx, tm.tv_sec, tm.tv_nsec);
+  gpr_asprintf(&out, "\"%s%d.%09d\"", pfx, tm.tv_sec, tm.tv_nsec);
   return out;
 }
 
