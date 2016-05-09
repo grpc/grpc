@@ -443,6 +443,19 @@ namespace Grpc.Core.Internal
             }
         }
 
+        protected override void CheckSendingAllowed(bool allowFinished)
+        {
+            base.CheckSendingAllowed(true);
+
+            // throwing RpcException if we already received status on client
+            // side makes the most sense.
+            // Note that this throws even for StatusCode.OK.
+            if (!allowFinished && finishedStatus.HasValue)
+            {
+                throw new RpcException(finishedStatus.Value.Status);
+            }
+        }
+
         /// <summary>
         /// Handles receive status completion for calls with streaming response.
         /// </summary>
