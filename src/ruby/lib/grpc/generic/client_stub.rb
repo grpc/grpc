@@ -49,7 +49,12 @@ module GRPC
         fail(TypeError, '!Channel') unless alt_chan.is_a?(Core::Channel)
         return alt_chan
       end
-      kw['grpc.primary_user_agent'] = "grpc-ruby/#{VERSION}"
+      if kw['grpc.primary_user_agent'].nil?
+        kw['grpc.primary_user_agent'] = ''
+      else
+        kw['grpc.primary_user_agent'] += ' '
+      end
+      kw['grpc.primary_user_agent'] += "grpc-ruby/#{VERSION}"
       unless creds.is_a?(Core::ChannelCredentials) || creds.is_a?(Symbol)
         fail(TypeError, '!ChannelCredentials or Symbol')
       end
