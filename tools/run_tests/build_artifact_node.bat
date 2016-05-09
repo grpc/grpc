@@ -43,7 +43,7 @@ for %%v in (%node_versions%) do (
 @rem Try again after removing openssl headers
   rmdir "%HOMEDRIVE%%HOMEPATH%\.node-gyp\%%v\include\node\openssl" /S /Q
   rmdir "%HOMEDRIVE%%HOMEPATH%\.node-gyp\iojs-%%v\include\node\openssl" /S /Q
-  call .\node_modules\.bin\node-pre-gyp.cmd configure build --target=%%v --target_arch=%1 || goto :error
+  call .\node_modules\.bin\node-pre-gyp.cmd build package testpackage --target=%%v --target_arch=%1 || goto :error
 
   xcopy /Y /I /S build\stage\* artifacts\ || goto :error
 )
