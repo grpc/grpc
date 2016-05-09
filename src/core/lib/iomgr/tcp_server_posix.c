@@ -394,12 +394,13 @@ static grpc_error *add_socket_to_server(grpc_tcp_server *s, int fd,
                                         unsigned fd_index,
                                         grpc_tcp_listener **listener) {
   grpc_tcp_listener *sp = NULL;
-  int port;
+  int port = -1;
   char *addr_str;
   char *name;
 
   grpc_error *err = prepare_socket(fd, addr, addr_len, &port);
   if (err == GRPC_ERROR_NONE) {
+    GPR_ASSERT(port > 0);
     grpc_sockaddr_to_string(&addr_str, (struct sockaddr *)&addr, 1);
     gpr_asprintf(&name, "tcp-server-listener:%s", addr_str);
     gpr_mu_lock(&s->mu);
