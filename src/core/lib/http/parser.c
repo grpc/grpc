@@ -174,14 +174,15 @@ static grpc_error *add_header(grpc_http_parser *parser) {
   GPR_ASSERT((size_t)(end - cur) >= parser->cur_line_end_length);
   hdr.value = buf2str(cur, (size_t)(end - cur) - parser->cur_line_end_length);
 
-  if (parser->type == GRPC_HTTP_RESPONSE) {
-    hdr_count = &parser->http.response->hdr_count;
-    hdrs = &parser->http.response->hdrs;
-  } else if (parser->type == GRPC_HTTP_REQUEST) {
-    hdr_count = &parser->http.request->hdr_count;
-    hdrs = &parser->http.request->hdrs;
-  } else {
-    return 0;
+  switch (parser->type) {
+    case GRPC_HTTP_RESPONSE:
+      hdr_count = &parser->http.response->hdr_count;
+      hdrs = &parser->http.response->hdrs;
+      break;
+    case GRPC_HTTP_REQUEST:
+      hdr_count = &parser->http.request->hdr_count;
+      hdrs = &parser->http.request->hdrs;
+      break;
   }
 
   if (*hdr_count == parser->hdr_capacity) {
@@ -212,12 +213,13 @@ static grpc_error *finish_line(grpc_http_parser *parser) {
         parser->state = GRPC_HTTP_BODY;
         break;
       }
-      if (!add_header(parser)) {
-        return 0;
+      err = add_header(parser);
+      if (err != GRPC_ERROR_NONE) {
+        return err;
       }
       break;
     case GRPC_HTTP_BODY:
-      GPR_UNREACHABLE_CODE(return 0);
+      GPR_UNREACHABLE_CODE(return GRPC_ERROR_CREATE("Should never reach here"));
   }
 
   parser->cur_line_length = 0;
@@ -248,29 +250,28 @@ static grpc_error *addbyte_body(grpc_http_parser *parser, uint8_t byte) {
   return GRPC_ERROR_NONE;
 }
 
-static grpc_error *check_line(grpc_http_parser *parser) {
+static bool check_line(grpc_http_parser *parser) {
   if (parser->cur_line_length >= 2 &&
       parser->cur_line[parser->cur_line_length - 2] == '\r' &&
       parser->cur_line[parser->cur_line_length - 1] == '\n') {
-    return GRPC_ERROR_NONE;
+    return true;
   }
 
   // HTTP request with \n\r line termiantors.
   else if (parser->cur_line_length >= 2 &&
            parser->cur_line[parser->cur_line_length - 2] == '\n' &&
            parser->cur_line[parser->cur_line_length - 1] == '\r') {
-    return GRPC_ERROR_NONE;
+    return true;
   }
 
   // HTTP request with only \n line terminators.
   else if (parser->cur_line_length >= 1 &&
            parser->cur_line[parser->cur_line_length - 1] == '\n') {
     parser->cur_line_end_length = 1;
-    return GRPC_ERROR_NONE;
+    return true;
   }
 
-  return GRPC_ERROR_CREATE(
-      "Expected line ending (one of \\r\\n, \\n\\r, or \\n)");
+  return false;
 }
 
 static grpc_error *addbyte(grpc_http_parser *parser, uint8_t byte) {

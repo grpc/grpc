@@ -222,15 +222,14 @@ static void tcp_continue_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
       /* We've consumed the edge, request a new one */
       grpc_fd_notify_on_read(exec_ctx, tcp->em_fd, &tcp->read_closure);
     } else {
-      /* TODO(klempner): Log interesting errors */
       gpr_slice_buffer_reset_and_unref(tcp->incoming_buffer);
-      call_read_cb(exec_ctx, tcp, 0);
+      call_read_cb(exec_ctx, tcp, GRPC_OS_ERROR(errno, "recvmsg"));
       TCP_UNREF(exec_ctx, tcp, "read");
     }
   } else if (read_bytes == 0) {
     /* 0 read size ==> end of stream */
     gpr_slice_buffer_reset_and_unref(tcp->incoming_buffer);
-    call_read_cb(exec_ctx, tcp, 0);
+    call_read_cb(exec_ctx, tcp, GRPC_ERROR_CREATE("EOF"));
     TCP_UNREF(exec_ctx, tcp, "read");
   } else {
     GPR_ASSERT((size_t)read_bytes <= tcp->incoming_buffer->length);
@@ -257,7 +256,7 @@ static void tcp_handle_read(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
 
   if (error != GRPC_ERROR_NONE) {
     gpr_slice_buffer_reset_and_unref(tcp->incoming_buffer);
-    call_read_cb(exec_ctx, tcp, 0);
+    call_read_cb(exec_ctx, tcp, GRPC_ERROR_REF(error));
     TCP_UNREF(exec_ctx, tcp, "read");
   } else {
     tcp_continue_read(exec_ctx, tcp);
