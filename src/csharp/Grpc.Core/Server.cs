@@ -66,7 +66,7 @@ namespace Grpc.Core
         readonly TaskCompletionSource<object> shutdownTcs = new TaskCompletionSource<object>();
 
         bool startRequested;
-        bool shutdownRequested;
+        volatile bool shutdownRequested;
 
         /// <summary>
         /// Create a new server.
@@ -246,12 +246,9 @@ namespace Grpc.Core
         /// </summary>
         private void AllowOneRpc()
         {
-            lock (myLock)
+            if (!shutdownRequested)
             {
-                if (!shutdownRequested)
-                {
-                    handle.RequestCall(HandleNewServerRpc, environment);
-                }
+                handle.RequestCall(HandleNewServerRpc, environment);
             }
         }
 
