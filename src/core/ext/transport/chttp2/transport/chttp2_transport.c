@@ -143,6 +143,7 @@ static void incoming_byte_stream_destroy_locked(grpc_exec_ctx *exec_ctx,
                                                 grpc_chttp2_stream *s,
                                                 void *byte_stream);
 static void fail_pending_writes(grpc_exec_ctx *exec_ctx,
+                                grpc_chttp2_transport_global *transport_global,
                                 grpc_chttp2_stream_global *stream_global,
                                 grpc_error *error);
 
@@ -750,7 +751,8 @@ static void terminate_writing_with_lock(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_stream_global *stream_global;
   while (grpc_chttp2_list_pop_closed_waiting_for_writing(&t->global,
                                                          &stream_global)) {
-    fail_pending_writes(exec_ctx, stream_global, GRPC_ERROR_REF(error));
+    fail_pending_writes(exec_ctx, &t->global, stream_global,
+                        GRPC_ERROR_REF(error));
     GRPC_CHTTP2_STREAM_UNREF(exec_ctx, stream_global, "finish_writes");
   }
 
@@ -860,10 +862,10 @@ static grpc_closure *add_closure_barrier(grpc_closure *closure) {
   return closure;
 }
 
-void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
-                                       grpc_chttp2_stream_global *stream_global,
-                                       grpc_closure **pclosure,
-                                       grpc_error *error) {
+void grpc_chttp2_complete_closure_step(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global, grpc_closure **pclosure,
+    grpc_error *error) {
   grpc_closure *closure = *pclosure;
   if (closure == NULL) {
     GRPC_ERROR_UNREF(error);
@@ -874,6 +876,9 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
     if (closure->error == GRPC_ERROR_NONE) {
       closure->error =
           GRPC_ERROR_CREATE("Error in HTTP transport completing operation");
+      closure->error = grpc_error_set_str(
+          closure->error, GRPC_ERROR_STR_TARGET_ADDRESS,
+          TRANSPORT_FROM_GLOBAL(transport_global)->peer_string);
     }
     closure->error = grpc_error_add_child(closure->error, error);
   }
@@ -919,6 +924,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
   /* use final_data as a barrier until enqueue time; the inital counter is
      dropped at the end of this function */
   on_complete->next_data.scratch = CLOSURE_BARRIER_FIRST_REF_BIT;
+  on_complete->error = GRPC_ERROR_NONE;
 
   if (op->collect_stats != NULL) {
     GPR_ASSERT(stream_global->collecting_stats == NULL);
@@ -957,7 +963,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
       }
     } else {
       grpc_chttp2_complete_closure_step(
-          exec_ctx, stream_global,
+          exec_ctx, transport_global, stream_global,
           &stream_global->send_initial_metadata_finished,
           GRPC_ERROR_CREATE(
               "Attempt to send initial metadata after stream was closed"));
@@ -970,7 +976,8 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
     stream_global->send_message_finished = add_closure_barrier(on_complete);
     if (stream_global->write_closed) {
       grpc_chttp2_complete_closure_step(
-          exec_ctx, stream_global, &stream_global->send_message_finished,
+          exec_ctx, transport_global, stream_global,
+          &stream_global->send_message_finished,
           GRPC_ERROR_CREATE("Attempt to send message after stream was closed"));
     } else {
       stream_global->send_message = op->send_message;
@@ -991,7 +998,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
     }
     if (stream_global->write_closed) {
       grpc_chttp2_complete_closure_step(
-          exec_ctx, stream_global,
+          exec_ctx, transport_global, stream_global,
           &stream_global->send_trailing_metadata_finished,
           grpc_metadata_batch_is_empty(op->send_trailing_metadata)
               ? GRPC_ERROR_NONE
@@ -1034,8 +1041,8 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
     grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
   }
 
-  grpc_chttp2_complete_closure_step(exec_ctx, stream_global, &on_complete,
-                                    GRPC_ERROR_NONE);
+  grpc_chttp2_complete_closure_step(exec_ctx, transport_global, stream_global,
+                                    &on_complete, GRPC_ERROR_NONE);
 
   GPR_TIMER_END("perform_stream_op_locked", 0);
 }
@@ -1205,7 +1212,7 @@ static void check_read_ops(grpc_exec_ctx *exec_ctx,
             &stream_global->received_trailing_metadata,
             stream_global->recv_trailing_metadata);
         grpc_chttp2_complete_closure_step(
-            exec_ctx, stream_global,
+            exec_ctx, transport_global, stream_global,
             &stream_global->recv_trailing_metadata_finished, GRPC_ERROR_NONE);
       }
     }
@@ -1323,16 +1330,18 @@ void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx,
 }
 
 static void fail_pending_writes(grpc_exec_ctx *exec_ctx,
+                                grpc_chttp2_transport_global *transport_global,
                                 grpc_chttp2_stream_global *stream_global,
                                 grpc_error *error) {
   grpc_chttp2_complete_closure_step(
-      exec_ctx, stream_global, &stream_global->send_initial_metadata_finished,
-      GRPC_ERROR_REF(error));
+      exec_ctx, transport_global, stream_global,
+      &stream_global->send_initial_metadata_finished, GRPC_ERROR_REF(error));
   grpc_chttp2_complete_closure_step(
-      exec_ctx, stream_global, &stream_global->send_trailing_metadata_finished,
-      GRPC_ERROR_REF(error));
-  grpc_chttp2_complete_closure_step(
-      exec_ctx, stream_global, &stream_global->send_message_finished, error);
+      exec_ctx, transport_global, stream_global,
+      &stream_global->send_trailing_metadata_finished, GRPC_ERROR_REF(error));
+  grpc_chttp2_complete_closure_step(exec_ctx, transport_global, stream_global,
+                                    &stream_global->send_message_finished,
+                                    error);
 }
 
 void grpc_chttp2_mark_stream_closed(
@@ -1358,7 +1367,8 @@ void grpc_chttp2_mark_stream_closed(
       grpc_chttp2_list_add_closed_waiting_for_writing(transport_global,
                                                       stream_global);
     } else {
-      fail_pending_writes(exec_ctx, stream_global, GRPC_ERROR_REF(error));
+      fail_pending_writes(exec_ctx, transport_global, stream_global,
+                          GRPC_ERROR_REF(error));
     }
   }
   if (stream_global->read_closed && stream_global->write_closed) {

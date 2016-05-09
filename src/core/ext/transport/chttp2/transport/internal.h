@@ -671,10 +671,10 @@ void grpc_chttp2_for_all_streams(
 void grpc_chttp2_parsing_become_skip_parser(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_parsing *transport_parsing);
 
-void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
-                                       grpc_chttp2_stream_global *stream_global,
-                                       grpc_closure **pclosure,
-                                       grpc_error *error);
+void grpc_chttp2_complete_closure_step(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global, grpc_closure **pclosure,
+    grpc_error *error);
 
 void grpc_chttp2_run_with_global_lock(grpc_exec_ctx *exec_ctx,
                                       grpc_chttp2_transport *transport,
