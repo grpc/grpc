@@ -174,7 +174,7 @@ static void call_read_cb(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
 
   tcp->read_cb = NULL;
   tcp->incoming_buffer = NULL;
-  cb->cb(exec_ctx, cb->cb_arg, error);
+  grpc_exec_ctx_push(exec_ctx, cb, error, NULL);
 }
 
 #define MAX_READ_IOVEC 4

@@ -141,12 +141,15 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *user_data,
   internal_request *req = user_data;
   size_t i;
 
-  GRPC_ERROR_REF(error);
-
-  for (i = 0; error == GRPC_ERROR_NONE && i < req->incoming.count; i++) {
+  for (i = 0; i < req->incoming.count; i++) {
     if (GPR_SLICE_LENGTH(req->incoming.slices[i])) {
       req->have_read_byte = 1;
-      error = grpc_http_parser_parse(&req->parser, req->incoming.slices[i]);
+      grpc_error *err =
+          grpc_http_parser_parse(&req->parser, req->incoming.slices[i]);
+      if (err != GRPC_ERROR_NONE) {
+        finish(exec_ctx, req, err);
+        return;
+      }
     }
   }
 
@@ -155,11 +158,8 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *user_data,
   } else if (!req->have_read_byte) {
     next_address(exec_ctx, req, GRPC_ERROR_REF(error));
   } else {
-    append_error(req, GRPC_ERROR_REF(error));
-    finish(exec_ctx, req, error);
+    finish(exec_ctx, req, grpc_http_parser_eof(&req->parser));
   }
-
-  GRPC_ERROR_UNREF(error);
 }
 
 static void on_written(grpc_exec_ctx *exec_ctx, internal_request *req) {
