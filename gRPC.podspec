@@ -36,7 +36,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC'
-  version = '0.12.0'
+  version = '0.14.0'
   s.version  = version
   s.summary  = 'gRPC client library for iOS/OSX'
   s.homepage = 'http://www.grpc.io'
@@ -44,7 +44,8 @@ Pod::Spec.new do |s|
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
   s.source = { :git => 'https://github.com/grpc/grpc.git',
-               :tag => "release-#{version.gsub(/\./, '_')}-objectivec-#{version}" }
+               :tag => "release-#{version.gsub(/\./, '_')}-objectivec-#{version}",
+               :submodules => true }
 
 
   s.ios.deployment_target = '7.1'
@@ -297,7 +298,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/client_config/subchannel_index.h',
                       'src/core/ext/client_config/uri_parser.h',
                       'src/core/ext/lb_policy/grpclb/load_balancer_api.h',
-                      'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h',
+                      'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h',
                       'third_party/nanopb/pb.h',
                       'third_party/nanopb/pb_common.h',
                       'third_party/nanopb/pb_decode.h',
@@ -314,6 +315,7 @@ Pod::Spec.new do |s|
                       'include/grpc/grpc.h',
                       'include/grpc/status.h',
                       'include/grpc/impl/codegen/byte_buffer.h',
+                      'include/grpc/impl/codegen/byte_buffer_reader.h',
                       'include/grpc/impl/codegen/compression_types.h',
                       'include/grpc/impl/codegen/connectivity_state.h',
                       'include/grpc/impl/codegen/grpc_types.h',
@@ -491,7 +493,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/server/insecure/server_chttp2.c',
                       'src/core/ext/transport/chttp2/client/insecure/channel_create.c',
                       'src/core/ext/lb_policy/grpclb/load_balancer_api.c',
-                      'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c',
+                      'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c',
                       'third_party/nanopb/pb_common.c',
                       'third_party/nanopb/pb_decode.c',
                       'third_party/nanopb/pb_encode.c',
@@ -656,7 +658,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/client_config/subchannel_index.h',
                               'src/core/ext/client_config/uri_parser.h',
                               'src/core/ext/lb_policy/grpclb/load_balancer_api.h',
-                              'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h',
+                              'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h',
                               'third_party/nanopb/pb.h',
                               'third_party/nanopb/pb_common.h',
                               'third_party/nanopb/pb_decode.h',
@@ -680,7 +682,7 @@ Pod::Spec.new do |s|
 
     ss.requires_arc = false
     ss.libraries = 'z'
-    ss.dependency 'BoringSSL', '~> 2.0'
+    ss.dependency 'BoringSSL', '~> 3.0'
 
     # ss.compiler_flags = '-GCC_WARN_INHIBIT_ALL_WARNINGS', '-w'
   end

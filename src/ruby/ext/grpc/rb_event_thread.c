@@ -32,12 +32,12 @@
  */
 
 #include <ruby/ruby.h>
+
 #include "rb_grpc_imports.generated.h"
 #include "rb_event_thread.h"
 
 #include <stdbool.h>
 
-#include <ruby/ruby.h>
 #include <ruby/thread.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/sync.h>

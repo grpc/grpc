@@ -388,8 +388,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.c">
       <Filter>src\core\ext\lb_policy\grpclb</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0\load_balancer.pb.c">
-      <Filter>src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v1\load_balancer.pb.c">
+      <Filter>src\core\ext\lb_policy\grpclb\proto\grpc\lb\v1</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_common.c">
       <Filter>third_party\nanopb</Filter>
@@ -454,6 +454,9 @@
       <Filter>include\grpc</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer.h">
+      <Filter>include\grpc\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer_reader.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\compression_types.h">
@@ -851,8 +854,8 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.h">
       <Filter>src\core\ext\lb_policy\grpclb</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0\load_balancer.pb.h">
-      <Filter>src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v1\load_balancer.pb.h">
+      <Filter>src\core\ext\lb_policy\grpclb\proto\grpc\lb\v1</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb.h">
       <Filter>third_party\nanopb</Filter>
@@ -929,8 +932,8 @@
     <Filter Include="src\core\ext\lb_policy\grpclb\proto\grpc\lb">
       <UniqueIdentifier>{21858d9d-30b5-8847-5882-6b47df0fa293}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0">
-      <UniqueIdentifier>{1795a20b-3e7c-e27d-eae1-96582fa9a958}</UniqueIdentifier>
+    <Filter Include="src\core\ext\lb_policy\grpclb\proto\grpc\lb\v1">
+      <UniqueIdentifier>{e9256e96-ea3d-c1fd-6426-9d53d9f08f66}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\ext\lb_policy\pick_first">
       <UniqueIdentifier>{e27f9ecf-97bb-1a2e-3135-a41f732dcf55}</UniqueIdentifier>

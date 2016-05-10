@@ -42,14 +42,15 @@ CLOUD_PROJECT=grpc-testing
 ZONE=us-central1-b  # this zone allows 32core machines
 
 INSTANCE_NAME="${1:-grpc-performance-server1}"
-MACHINE_TYPE=n1-standard-32
+MACHINE_TYPE=n1-standard-8
 
 gcloud compute instances create $INSTANCE_NAME \
     --project="$CLOUD_PROJECT" \
     --zone "$ZONE" \
     --machine-type $MACHINE_TYPE \
     --image ubuntu-15-10 \
-    --boot-disk-size 300
+    --boot-disk-size 300 \
+    --scope https://www.googleapis.com/auth/bigquery
 
 echo 'Created GCE instance, waiting 60 seconds for it to come online.'
 sleep 60
