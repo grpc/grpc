@@ -359,7 +359,6 @@ static void pf_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
         GRPC_SUBCHANNEL_UNREF(exec_ctx, p->subchannels[p->num_subchannels],
                               "pick_first");
         if (p->num_subchannels == 0) {
-          GRPC_ERROR_REF(error);
           grpc_connectivity_state_set(
               exec_ctx, &p->state_tracker, GRPC_CHANNEL_FATAL_FAILURE,
               GRPC_ERROR_CREATE_REFERENCING("Pick first exhausted channels",
