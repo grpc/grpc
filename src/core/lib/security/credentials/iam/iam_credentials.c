@@ -83,5 +83,3 @@ grpc_call_credentials *grpc_google_iam_credentials_create(
       c->iam_md, GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY, authority_selector);
   return &c->base;
 }
-
-

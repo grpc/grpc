@@ -59,4 +59,3 @@ bool grpc_copy_json_string_property(const grpc_json *json,
   *copied_value = gpr_strdup(prop_value);
   return true;
 }
-

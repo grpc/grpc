@@ -45,3 +45,7 @@ service EchoTestService {
 service UnimplementedService {
   rpc Unimplemented(EchoRequest) returns (EchoResponse);
 }
+
+// A service without any rpc defined to test coverage.
+service NoRpcService {
+}

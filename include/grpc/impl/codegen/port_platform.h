@@ -114,6 +114,38 @@
 #define GPR_WIN32_ATOMIC 1
 #define GPR_MSVC_TLS 1
 #endif
+#elif defined(GPR_MANYLINUX1)
+// TODO(atash): manylinux1 is just another __linux__ but with ancient
+// libraries; it should be integrated with the `__linux__` definitions below.
+#define GPR_PLATFORM_STRING "manylinux"
+#define GPR_POSIX_CRASH_HANDLER 1
+#define GPR_CPU_LINUX 1
+#define GPR_GCC_ATOMIC 1
+#define GPR_GCC_TLS 1
+#define GPR_LINUX 1
+#define GPR_LINUX_LOG 1
+#define GPR_POSIX_SOCKET 1
+#define GPR_POSIX_WAKEUP_FD 1
+#define GPR_POSIX_SOCKETADDR 1
+#define GPR_POSIX_NO_SPECIAL_WAKEUP_FD 1
+#define GPR_POSIX_SOCKETUTILS 1
+#define GPR_HAVE_UNIX_SOCKET 1
+#define GPR_HAVE_IP_PKTINFO 1
+#define GPR_HAVE_IPV6_RECVPKTINFO 1
+#define GPR_LINUX_ENV 1
+#define GPR_POSIX_FILE 1
+#define GPR_POSIX_TMPFILE 1
+#define GPR_POSIX_STRING 1
+#define GPR_POSIX_SUBPROCESS 1
+#define GPR_POSIX_SYNC 1
+#define GPR_POSIX_TIME 1
+#define GPR_GETPID_IN_UNISTD_H 1
+#define GPR_HAVE_MSG_NOSIGNAL 1
+#ifdef _LP64
+#define GPR_ARCH_64 1
+#else /* _LP64 */
+#define GPR_ARCH_32 1
+#endif /* _LP64 */
 #elif defined(ANDROID) || defined(__ANDROID__)
 #define GPR_PLATFORM_STRING "android"
 #define GPR_ANDROID 1

@@ -32,6 +32,7 @@ RUN apt-get update
 RUN apt-get -y install wget
 RUN echo deb http://llvm.org/apt/wily/ llvm-toolchain-wily-3.8 main >> /etc/apt/sources.list
 RUN echo deb-src http://llvm.org/apt/wily/ llvm-toolchain-wily-3.8 main >> /etc/apt/sources.list
+RUN wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key| apt-key add -
 RUN apt-get update
 RUN apt-get -y install clang-format-3.8
 ADD clang_format_all_the_things.sh /
