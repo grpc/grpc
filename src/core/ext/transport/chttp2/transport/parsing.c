@@ -45,6 +45,10 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/transport/static_metadata.h"
 
+#define TRANSPORT_FROM_PARSING(tp)                                        \
+  ((grpc_chttp2_transport *)((char *)(tp)-offsetof(grpc_chttp2_transport, \
+                                                   parsing)))
+
 static int init_frame_parser(grpc_exec_ctx *exec_ctx,
                              grpc_chttp2_transport_parsing *transport_parsing);
 static int init_header_frame_parser(
@@ -170,7 +174,9 @@ void grpc_chttp2_publish_reads(
   while (grpc_chttp2_list_pop_parsing_seen_stream(
       transport_global, transport_parsing, &stream_global, &stream_parsing)) {
     if (stream_parsing->seen_error) {
-      stream_global->seen_error = 1;
+      stream_global->seen_error = true;
+      stream_global->exceeded_metadata_size =
+          stream_parsing->exceeded_metadata_size;
       grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
     }
 
@@ -612,7 +618,7 @@ static void on_initial_header(void *tp, grpc_mdelem *md) {
 
   if (md->key == GRPC_MDSTR_GRPC_STATUS && md != GRPC_MDELEM_GRPC_STATUS_0) {
     /* TODO(ctiller): check for a status like " 0" */
-    stream_parsing->seen_error = 1;
+    stream_parsing->seen_error = true;
   }
 
   if (md->key == GRPC_MDSTR_GRPC_TIMEOUT) {
@@ -633,8 +639,26 @@ static void on_initial_header(void *tp, grpc_mdelem *md) {
         gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), *cached_timeout));
     GRPC_MDELEM_UNREF(md);
   } else {
-    grpc_chttp2_incoming_metadata_buffer_add(
-        &stream_parsing->metadata_buffer[0], md);
+    const size_t new_size =
+        stream_parsing->metadata_buffer[0].size + GRPC_MDELEM_LENGTH(md);
+    grpc_chttp2_transport_global *transport_global =
+        &TRANSPORT_FROM_PARSING(transport_parsing)->global;
+    const size_t metadata_size_limit =
+        transport_global->settings[GRPC_LOCAL_SETTINGS]
+                                  [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE];
+    if (new_size > metadata_size_limit) {
+      if (!stream_parsing->exceeded_metadata_size) {
+        gpr_log(GPR_DEBUG,
+                "received initial metadata size exceeds limit (%lu vs. %lu)",
+                new_size, metadata_size_limit);
+        stream_parsing->seen_error = true;
+        stream_parsing->exceeded_metadata_size = true;
+      }
+      GRPC_MDELEM_UNREF(md);
+    } else {
+      grpc_chttp2_incoming_metadata_buffer_add(
+          &stream_parsing->metadata_buffer[0], md);
+    }
   }
 
   grpc_chttp2_list_add_parsing_seen_stream(transport_parsing, stream_parsing);
@@ -658,11 +682,29 @@ static void on_trailing_header(void *tp, grpc_mdelem *md) {
 
   if (md->key == GRPC_MDSTR_GRPC_STATUS && md != GRPC_MDELEM_GRPC_STATUS_0) {
     /* TODO(ctiller): check for a status like " 0" */
-    stream_parsing->seen_error = 1;
+    stream_parsing->seen_error = true;
   }
 
-  grpc_chttp2_incoming_metadata_buffer_add(&stream_parsing->metadata_buffer[1],
-                                           md);
+  const size_t new_size =
+      stream_parsing->metadata_buffer[1].size + GRPC_MDELEM_LENGTH(md);
+  grpc_chttp2_transport_global *transport_global =
+      &TRANSPORT_FROM_PARSING(transport_parsing)->global;
+  const size_t metadata_size_limit =
+      transport_global->settings[GRPC_LOCAL_SETTINGS]
+                                [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE];
+  if (new_size > metadata_size_limit) {
+    if (!stream_parsing->exceeded_metadata_size) {
+      gpr_log(GPR_DEBUG,
+              "received trailing metadata size exceeds limit (%lu vs. %lu)",
+              new_size, metadata_size_limit);
+      stream_parsing->seen_error = true;
+      stream_parsing->exceeded_metadata_size = true;
+    }
+    GRPC_MDELEM_UNREF(md);
+  } else {
+    grpc_chttp2_incoming_metadata_buffer_add(
+        &stream_parsing->metadata_buffer[1], md);
+  }
 
   grpc_chttp2_list_add_parsing_seen_stream(transport_parsing, stream_parsing);
 

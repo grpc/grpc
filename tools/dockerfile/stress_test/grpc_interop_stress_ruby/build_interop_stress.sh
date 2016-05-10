@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,51 +28,21 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# Builds docker image and runs a command under it.
-# You should never need to call this script on your own.
+# Builds Ruby interop server and client in a base image.
+set -e
 
-set -ex
+mkdir -p /var/local/git
+git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
 
-cd $(dirname $0)/../..
-git_root=$(pwd)
-cd -
+# Copy service account keys if available
+cp -r /var/local/jenkins/service_account $HOME || true
 
-# Inputs
-# DOCKERFILE_DIR - Directory in which Dockerfile file is located.
-# DOCKER_RUN_SCRIPT - Script to run under docker (relative to grpc repo root)
-# OUTPUT_DIR - Directory that will be copied from inside docker after finishing.
-# $@ - Extra args to pass to docker run
+cd /var/local/git/grpc
+rvm --default use ruby-2.1
 
-# Use image name based on Dockerfile location checksum
-DOCKER_IMAGE_NAME=$(basename $DOCKERFILE_DIR)_$(sha1sum $DOCKERFILE_DIR/Dockerfile | cut -f1 -d\ )
+# Build Ruby interop client and server
+(cd src/ruby && gem update bundler && bundle && rake compile)
 
-# Make sure docker image has been built. Should be instantaneous if so.
-docker build -t $DOCKER_IMAGE_NAME $DOCKERFILE_DIR
+# Build c++ metrics client to query the metrics from ruby stress client
+make metrics_client -j
 
-# Choose random name for docker container
-CONTAINER_NAME="build_and_run_docker_$(uuidgen)"
-
-# Run command inside docker
-docker run \
-  "$@" \
-  -e EXTERNAL_GIT_ROOT="/var/local/jenkins/grpc" \
-  -e THIS_IS_REALLY_NEEDED='see https://github.com/docker/docker/issues/14203 for why docker is awful' \
-  -v "$git_root:/var/local/jenkins/grpc:ro" \
-  -w /var/local/git/grpc \
-  --name=$CONTAINER_NAME \
-  $DOCKER_IMAGE_NAME \
-  bash -l "/var/local/jenkins/grpc/$DOCKER_RUN_SCRIPT" || FAILED="true"
-
-# Copy output artifacts
-if [ "$OUTPUT_DIR" != "" ]
-then
-  docker cp "$CONTAINER_NAME:/var/local/git/grpc/$OUTPUT_DIR" "$git_root" || FAILED="true"
-fi
-
-# remove the container, possibly killing it first
-docker rm -f $CONTAINER_NAME || true
-
-if [ "$FAILED" != "" ]
-then
-  exit 1
-fi
