@@ -107,6 +107,10 @@ static void security_handshake_done(grpc_exec_ctx *exec_ctx,
     h->cb(exec_ctx, h->user_data, GRPC_SECURITY_OK, h->secure_endpoint,
           h->auth_context);
   } else {
+    const char *msg = grpc_error_string(error);
+    gpr_log(GPR_ERROR, "Security handshake failed: %s", msg);
+    grpc_error_free_string(msg);
+
     if (h->secure_endpoint != NULL) {
       grpc_endpoint_shutdown(exec_ctx, h->secure_endpoint);
       grpc_endpoint_destroy(exec_ctx, h->secure_endpoint);
@@ -123,6 +127,7 @@ static void security_handshake_done(grpc_exec_ctx *exec_ctx,
   GRPC_AUTH_CONTEXT_UNREF(h->auth_context, "handshake");
   GRPC_SECURITY_CONNECTOR_UNREF(h->connector, "handshake");
   gpr_free(h);
+  GRPC_ERROR_UNREF(error);
 }
 
 static void on_peer_checked(grpc_exec_ctx *exec_ctx, void *user_data,

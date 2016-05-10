@@ -606,6 +606,10 @@ static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     GRPC_ERROR_REF(error);
   }
   if (error != GRPC_ERROR_NONE) {
+    const char *msg = grpc_error_string(error);
+    gpr_log(GPR_INFO, "Failed to connect to channel, retrying: %s", msg);
+    grpc_error_free_string(msg);
+
     c->next_attempt =
         gpr_backoff_step(&c->backoff_state, gpr_now(GPR_CLOCK_MONOTONIC));
     continue_connect(exec_ctx, c);
@@ -614,6 +618,7 @@ static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     gpr_mu_unlock(&c->mu);
     GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
   }
+  GRPC_ERROR_UNREF(error);
 }
 
 static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,

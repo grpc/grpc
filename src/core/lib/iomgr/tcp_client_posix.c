@@ -128,6 +128,8 @@ static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
   grpc_closure *closure = ac->closure;
   grpc_fd *fd;
 
+  GRPC_ERROR_REF(error);
+
   if (grpc_tcp_trace) {
     const char *str = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: on_writable: error=%s",
