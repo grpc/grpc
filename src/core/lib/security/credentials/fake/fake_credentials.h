@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_CREDENTIALS_H
-#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_CREDENTIALS_H
+#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H
+#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H
 
 #include "src/core/lib/security/credentials/credentials.h"
 
@@ -40,6 +40,7 @@
 
 /* Creates a fake transport security credentials object for testing. */
 grpc_channel_credentials *grpc_fake_transport_security_credentials_create(void);
+
 /* Creates a fake server transport security credentials object for testing. */
 grpc_server_credentials *grpc_fake_transport_security_server_credentials_create(
     void);
@@ -52,5 +53,4 @@ typedef struct {
   int is_async;
 } grpc_md_only_test_credentials;
 
-#endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_CREDENTIALS_H
-
+#endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H */
