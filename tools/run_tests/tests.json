@@ -2726,6 +2726,27 @@
     "flaky": false, 
     "gtest": false, 
     "language": "c", 
+    "name": "large_metadata_bad_client_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c", 
     "name": "server_registered_method_bad_client_test", 
     "platforms": [
       "linux", 
