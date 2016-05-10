@@ -1874,15 +1874,15 @@ $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc:
 	$(Q) echo "$(GRPCXX_UNSECURE_PC_FILE)" | tr , '\n' >$@
 
 ifeq ($(NO_PROTOC),true)
-$(GENDIR)/src/proto/grpc/lb/v0/load_balancer.pb.cc: protoc_dep_error
-$(GENDIR)/src/proto/grpc/lb/v0/load_balancer.grpc.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc: protoc_dep_error
 else
-$(GENDIR)/src/proto/grpc/lb/v0/load_balancer.pb.cc: src/proto/grpc/lb/v0/load_balancer.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+$(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc: src/proto/grpc/lb/v1/load_balancer.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/src/proto/grpc/lb/v0/load_balancer.grpc.pb.cc: src/proto/grpc/lb/v0/load_balancer.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+$(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc: src/proto/grpc/lb/v1/load_balancer.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
@@ -2628,7 +2628,7 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
     src/core/ext/lb_policy/grpclb/load_balancer_api.c \
-    src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c \
+    src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
     third_party/nanopb/pb_common.c \
     third_party/nanopb/pb_decode.c \
     third_party/nanopb/pb_encode.c \
@@ -2951,7 +2951,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/resolver/dns/native/dns_resolver.c \
     src/core/ext/resolver/sockaddr/sockaddr_resolver.c \
     src/core/ext/lb_policy/grpclb/load_balancer_api.c \
-    src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c \
+    src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
     third_party/nanopb/pb_common.c \
     third_party/nanopb/pb_decode.c \
     third_party/nanopb/pb_encode.c \
@@ -10750,7 +10750,7 @@ endif
 
 
 GRPCLB_API_TEST_SRC = \
-    $(GENDIR)/src/proto/grpc/lb/v0/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v0/load_balancer.grpc.pb.cc \
+    $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc \
     test/cpp/grpclb/grpclb_api_test.cc \
 
 GRPCLB_API_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPCLB_API_TEST_SRC))))
@@ -10782,7 +10782,7 @@ endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/src/proto/grpc/lb/v0/load_balancer.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/lb/v1/load_balancer.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a
 
 $(OBJDIR)/$(CONFIG)/test/cpp/grpclb/grpclb_api_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a
 
@@ -10793,7 +10793,7 @@ ifneq ($(NO_DEPS),true)
 -include $(GRPCLB_API_TEST_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/grpclb/grpclb_api_test.o: $(GENDIR)/src/proto/grpc/lb/v0/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v0/load_balancer.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/grpclb/grpclb_api_test.o: $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
 
 
 HYBRID_END2END_TEST_SRC = \
