@@ -1589,7 +1589,7 @@ static void parsing_action(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_chttp2_transport *t = arg;
   GPR_TIMER_BEGIN("reading_action.parse", 0);
   size_t i = 0;
-  grpc_error *errors[2] = {error, GRPC_ERROR_NONE};
+  grpc_error *errors[2] = {GRPC_ERROR_REF(error), GRPC_ERROR_NONE};
   for (; i < t->read_buffer.count && errors[1] == GRPC_ERROR_NONE; i++) {
     errors[1] = grpc_chttp2_perform_read(exec_ctx, &t->parsing,
                                          t->read_buffer.slices[i]);
