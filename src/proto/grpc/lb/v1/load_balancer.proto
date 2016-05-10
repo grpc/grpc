@@ -29,7 +29,7 @@
 
 syntax = "proto3";
 
-package grpc.lb.v0;
+package grpc.lb.v1;
 
 message Duration {
 
@@ -94,9 +94,8 @@ message LoadBalanceResponse {
 
 message InitialLoadBalanceResponse {
   oneof initial_response_type {
-    // Contains gRPC config options like RPC deadline or flow control.
-    // TODO(yetianx): Change to ClientConfig after it is defined.
-    string client_config = 1;
+    // TODO(zhangkun83): ClientConfig not yet defined
+    //ClientConfig client_config = 1;
 
     // This is an application layer redirect that indicates the client should
     // use the specified server for load balancing. When this field is set in
@@ -134,9 +133,7 @@ message Server {
   // An opaque token that is passed from the client to the server in metadata.
   // The server may expect this token to indicate that the request from the
   // client was load balanced.
-  // TODO(yetianx): Not used right now, and will be used after implementing
-  // load report.
-  bytes load_balance_token = 3;
+  string load_balance_token = 3;
 
   // Indicates whether this particular request should be dropped by the client
   // when this server is chosen from the list.
