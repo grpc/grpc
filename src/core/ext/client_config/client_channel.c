@@ -147,7 +147,7 @@ static void on_lb_policy_state_changed_locked(grpc_exec_ctx *exec_ctx,
     w->chand->lb_policy = NULL;
   }
   set_channel_connectivity_state_locked(exec_ctx, w->chand, publish_state,
-                                        error, "lb_changed");
+                                        GRPC_ERROR_REF(error), "lb_changed");
   if (w->state != GRPC_CHANNEL_FATAL_FAILURE) {
     watch_lb_policy(exec_ctx, w->chand, w->lb_policy, w->state);
   }

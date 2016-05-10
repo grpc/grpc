@@ -152,9 +152,11 @@ void grpc_connectivity_state_set(grpc_exec_ctx *exec_ctx,
                                  grpc_error *error, const char *reason) {
   grpc_connectivity_state_watcher *w;
   if (grpc_connectivity_state_trace) {
-    gpr_log(GPR_DEBUG, "SET: %p %s: %s --> %s [%s]", tracker, tracker->name,
-            grpc_connectivity_state_name(tracker->current_state),
-            grpc_connectivity_state_name(state), reason);
+    const char *error_string = grpc_error_string(error);
+    gpr_log(GPR_DEBUG, "SET: %p %s: %s --> %s [%s] error=%p %s", tracker,
+            tracker->name, grpc_connectivity_state_name(tracker->current_state),
+            grpc_connectivity_state_name(state), reason, error, error_string);
+    grpc_error_free_string(error_string);
   }
   switch (state) {
     case GRPC_CHANNEL_CONNECTING:
