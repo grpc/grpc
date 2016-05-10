@@ -1172,11 +1172,14 @@ static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp,
     GRPC_ERROR_UNREF(error);
     error = GRPC_ERROR_NONE;
   }
+  GRPC_ERROR_UNREF(bctl->error);
   bctl->error = error;
   gpr_mu_unlock(&call->mu);
   if (gpr_unref(&bctl->steps_to_complete)) {
     post_batch_completion(exec_ctx, bctl);
   }
+
+  GRPC_ERROR_UNREF(error);
 }
 
 static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,

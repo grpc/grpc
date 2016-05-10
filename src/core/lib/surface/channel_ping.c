@@ -55,8 +55,8 @@ static void ping_destroy(grpc_exec_ctx *exec_ctx, void *arg,
 
 static void ping_done(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   ping_result *pr = arg;
-  grpc_cq_end_op(exec_ctx, pr->cq, pr->tag, error, ping_destroy, pr,
-                 &pr->completion_storage);
+  grpc_cq_end_op(exec_ctx, pr->cq, pr->tag, GRPC_ERROR_REF(error), ping_destroy,
+                 pr, &pr->completion_storage);
 }
 
 void grpc_channel_ping(grpc_channel *channel, grpc_completion_queue *cq,
