@@ -223,6 +223,7 @@ static grpc_error *copy_error_and_unref(grpc_error *in) {
     return GRPC_ERROR_CREATE("unknown");
   }
   grpc_error *out = gpr_malloc(sizeof(*out));
+  gpr_log(GPR_DEBUG, "%p create copying", out);
   out->ints = gpr_avl_ref(in->ints);
   out->strs = gpr_avl_ref(in->strs);
   out->errs = gpr_avl_ref(in->errs);
