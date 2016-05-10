@@ -94,6 +94,7 @@ sudo pip install tox
 # Node dependencies (nvm has to be installed under user jenkins)
 touch .profile
 curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.25.4/install.sh | bash
+source ~/.nvm/nvm.sh
 nvm install 0.12 && npm config set cache /tmp/npm-cache
 nvm install 4 && npm config set cache /tmp/npm-cache
 nvm install 5 && npm config set cache /tmp/npm-cache
@@ -115,3 +116,6 @@ source ~/.rvm/scripts/rvm
 gem install bundler
 
 # Java dependencies - nothing as we already have Java JDK 8
+
+# Go dependencies
+sudo apt-get install -y golang-go
