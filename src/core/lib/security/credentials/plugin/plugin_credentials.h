@@ -43,4 +43,3 @@ typedef struct {
 } grpc_plugin_credentials;
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_PLUGIN_PLUGIN_CREDENTIALS_H */
-

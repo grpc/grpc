@@ -160,7 +160,6 @@ static void ssl_server_destruct(grpc_server_credentials *creds) {
   if (c->config.pem_root_certs != NULL) gpr_free(c->config.pem_root_certs);
 }
 
-
 static grpc_security_status ssl_server_create_security_connector(
     grpc_server_credentials *creds, grpc_server_security_connector **sc) {
   grpc_ssl_server_credentials *c = (grpc_ssl_server_credentials *)creds;
@@ -169,7 +168,6 @@ static grpc_security_status ssl_server_create_security_connector(
 
 static grpc_server_credentials_vtable ssl_server_vtable = {
     ssl_server_destruct, ssl_server_create_security_connector};
-
 
 static void ssl_build_server_config(
     const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
@@ -206,7 +204,6 @@ static void ssl_build_server_config(
   }
 }
 
-
 grpc_server_credentials *grpc_ssl_server_credentials_create(
     const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
     size_t num_key_cert_pairs, int force_client_auth, void *reserved) {
@@ -241,4 +238,3 @@ grpc_server_credentials *grpc_ssl_server_credentials_create_ex(
                           &c->config);
   return &c->base;
 }
-

@@ -136,4 +136,3 @@ grpc_call_credentials *grpc_md_only_test_credentials_create(
   c->is_async = is_async;
   return &c->base;
 }
-

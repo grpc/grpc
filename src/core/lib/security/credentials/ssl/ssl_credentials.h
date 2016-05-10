@@ -46,4 +46,3 @@ typedef struct {
 } grpc_ssl_server_credentials;
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_SSL_SSL_CREDENTIALS_H */
-

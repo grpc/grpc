@@ -42,4 +42,3 @@ typedef struct {
 } grpc_google_iam_credentials;
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_IAM_IAM_CREDENTIALS_H */
-

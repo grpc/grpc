@@ -426,5 +426,3 @@ grpc_call_credentials *grpc_access_token_credentials_create(
   gpr_free(token_md_value);
   return &c->base;
 }
-
-

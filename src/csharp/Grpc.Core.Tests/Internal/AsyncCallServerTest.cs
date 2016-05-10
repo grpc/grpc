@@ -168,7 +168,7 @@ namespace Grpc.Core.Internal.Tests
             var responseStream = new ServerResponseStream<string, string>(asyncCallServer);
 
             var writeTask = responseStream.WriteAsync("request1");
-            var writeStatusTask = asyncCallServer.SendStatusFromServerAsync(Status.DefaultSuccess, new Metadata());
+            var writeStatusTask = asyncCallServer.SendStatusFromServerAsync(Status.DefaultSuccess, new Metadata(), null);
 
             fakeCall.SendCompletionHandler(true);
             fakeCall.SendStatusFromServerHandler(true);
