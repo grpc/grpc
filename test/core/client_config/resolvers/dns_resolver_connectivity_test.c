@@ -77,7 +77,7 @@ static grpc_error *my_resolve_address(const char *name, const char *addr,
     return GRPC_ERROR_CREATE("Forced Failure");
   } else {
     gpr_mu_unlock(&g_mu);
-    *addrs = gpr_malloc(sizeof(*addrs));
+    *addrs = gpr_malloc(sizeof(**addrs));
     (*addrs)->naddrs = 1;
     (*addrs)->addrs = gpr_malloc(sizeof(*(*addrs)->addrs));
     (*addrs)->addrs[0].len = 123;
