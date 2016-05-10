@@ -318,4 +318,3 @@ void grpc_jwt_encode_and_sign_set_override(
     grpc_jwt_encode_and_sign_override func) {
   g_jwt_encode_and_sign_override = func;
 }
-

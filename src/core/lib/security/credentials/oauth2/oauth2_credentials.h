@@ -82,7 +82,6 @@ typedef struct {
   grpc_fetch_oauth2_func fetch_func;
 } grpc_oauth2_token_fetcher_credentials;
 
-
 // Google refresh token credentials.
 typedef struct {
   grpc_oauth2_token_fetcher_credentials base;
@@ -108,4 +107,3 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
     grpc_credentials_md_store **token_md, gpr_timespec *token_lifetime);
 
 #endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_OAUTH2_CREDENTIALS_H
-

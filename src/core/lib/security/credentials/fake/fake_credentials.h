@@ -53,4 +53,3 @@ typedef struct {
 } grpc_md_only_test_credentials;
 
 #endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_CREDENTIALS_H
-
