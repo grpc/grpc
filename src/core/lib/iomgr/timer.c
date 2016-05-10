@@ -105,7 +105,8 @@ void grpc_timer_list_init(gpr_timespec now) {
 
 void grpc_timer_list_shutdown(grpc_exec_ctx *exec_ctx) {
   int i;
-  run_some_expired_timers(exec_ctx, gpr_inf_future(g_clock_type), NULL, 0);
+  run_some_expired_timers(exec_ctx, gpr_inf_future(g_clock_type), NULL,
+                          GRPC_ERROR_CREATE("Timer list shutdown"));
   for (i = 0; i < NUM_SHARDS; i++) {
     shard_type *shard = &g_shards[i];
     gpr_mu_destroy(&shard->mu);
