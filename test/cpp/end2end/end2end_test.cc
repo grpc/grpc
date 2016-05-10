@@ -995,7 +995,7 @@ TEST_P(End2endTest, BinaryTrailerTest) {
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_FALSE(s.ok());
   auto trailers = context.GetServerTrailingMetadata();
-  EXPECT_EQ(1, trailers.count(kDebugInfoTrailerKey));
+  EXPECT_EQ(1u, trailers.count(kDebugInfoTrailerKey));
   auto iter = trailers.find(kDebugInfoTrailerKey);
   EXPECT_EQ(expected_string, iter->second);
   // Parse the returned trailer into a DebugInfo proto.
