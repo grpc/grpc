@@ -173,7 +173,9 @@ static void do_request_thread(grpc_exec_ctx *exec_ctx, void *rp,
 }
 
 void grpc_resolved_addresses_destroy(grpc_resolved_addresses *addrs) {
-  gpr_free(addrs->addrs);
+  if (addrs != NULL) {
+    gpr_free(addrs->addrs);
+  }
   gpr_free(addrs);
 }
 

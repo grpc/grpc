@@ -62,7 +62,7 @@ static void must_succeed(grpc_exec_ctx *exec_ctx, void *argsp,
   args_struct *args = argsp;
   GPR_ASSERT(err == GRPC_ERROR_NONE);
   GPR_ASSERT(args->addrs != NULL);
-  GPR_ASSERT(args->addrs->naddrs > 1);
+  GPR_ASSERT(args->addrs->naddrs > 0);
   gpr_event_set(&args->ev, (void *)1);
 }
 
