@@ -235,7 +235,7 @@ struct grpc_server {
 static void publish_new_rpc(grpc_exec_ctx *exec_ctx, void *calld,
                             grpc_error *error);
 static void fail_call(grpc_exec_ctx *exec_ctx, grpc_server *server,
-                      requested_call *rc);
+                      requested_call *rc, grpc_error *error);
 /* Before calling maybe_finish_shutdown, we must hold mu_global and not
    hold mu_call */
 static void maybe_finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_server *server);
@@ -344,11 +344,14 @@ static void request_matcher_zombify_all_pending_calls(grpc_exec_ctx *exec_ctx,
 
 static void request_matcher_kill_requests(grpc_exec_ctx *exec_ctx,
                                           grpc_server *server,
-                                          request_matcher *rm) {
+                                          request_matcher *rm,
+                                          grpc_error *error) {
   int request_id;
   while ((request_id = gpr_stack_lockfree_pop(rm->requests)) != -1) {
-    fail_call(exec_ctx, server, &server->requested_calls[request_id]);
+    fail_call(exec_ctx, server, &server->requested_calls[request_id],
+              GRPC_ERROR_REF(error));
   }
+  GRPC_ERROR_UNREF(error);
 }
 
 /*
@@ -641,16 +644,19 @@ static int num_channels(grpc_server *server) {
 }
 
 static void kill_pending_work_locked(grpc_exec_ctx *exec_ctx,
-                                     grpc_server *server) {
+                                     grpc_server *server, grpc_error *error) {
   registered_method *rm;
   request_matcher_kill_requests(exec_ctx, server,
-                                &server->unregistered_request_matcher);
+                                &server->unregistered_request_matcher,
+                                GRPC_ERROR_REF(error));
   request_matcher_zombify_all_pending_calls(
       exec_ctx, &server->unregistered_request_matcher);
   for (rm = server->registered_methods; rm; rm = rm->next) {
-    request_matcher_kill_requests(exec_ctx, server, &rm->request_matcher);
+    request_matcher_kill_requests(exec_ctx, server, &rm->request_matcher,
+                                  GRPC_ERROR_REF(error));
     request_matcher_zombify_all_pending_calls(exec_ctx, &rm->request_matcher);
   }
+  GRPC_ERROR_UNREF(error);
 }
 
 static void maybe_finish_shutdown(grpc_exec_ctx *exec_ctx,
@@ -660,7 +666,8 @@ static void maybe_finish_shutdown(grpc_exec_ctx *exec_ctx,
     return;
   }
 
-  kill_pending_work_locked(exec_ctx, server);
+  kill_pending_work_locked(exec_ctx, server,
+                           GRPC_ERROR_CREATE("Server Shutdown"));
 
   if (server->root_channel_data.next != &server->root_channel_data ||
       server->listeners_destroyed < num_listeners(server)) {
@@ -1159,7 +1166,8 @@ void grpc_server_shutdown_and_notify(grpc_server *server,
 
   /* collect all unregistered then registered calls */
   gpr_mu_lock(&server->mu_call);
-  kill_pending_work_locked(&exec_ctx, server);
+  kill_pending_work_locked(&exec_ctx, server,
+                           GRPC_ERROR_CREATE("Server Shutdown"));
   gpr_mu_unlock(&server->mu_call);
 
   maybe_finish_shutdown(&exec_ctx, server);
@@ -1235,13 +1243,13 @@ static grpc_call_error queue_call_request(grpc_exec_ctx *exec_ctx,
   request_matcher *rm = NULL;
   int request_id;
   if (gpr_atm_acq_load(&server->shutdown_flag)) {
-    fail_call(exec_ctx, server, rc);
+    fail_call(exec_ctx, server, rc, GRPC_ERROR_CREATE("Server Shutdown"));
     return GRPC_CALL_OK;
   }
   request_id = gpr_stack_lockfree_pop(server->request_freelist);
   if (request_id == -1) {
     /* out of request ids: just fail this one */
-    fail_call(exec_ctx, server, rc);
+    fail_call(exec_ctx, server, rc, GRPC_ERROR_CREATE("Server Shutdown"));
     return GRPC_CALL_OK;
   }
   switch (rc->type) {
@@ -1365,12 +1373,13 @@ done:
 }
 
 static void fail_call(grpc_exec_ctx *exec_ctx, grpc_server *server,
-                      requested_call *rc) {
+                      requested_call *rc, grpc_error *error) {
   *rc->call = NULL;
   rc->initial_metadata->count = 0;
+  GPR_ASSERT(error != GRPC_ERROR_NONE);
 
   server_ref(server);
-  grpc_cq_end_op(exec_ctx, rc->cq_for_notification, rc->tag, 0,
+  grpc_cq_end_op(exec_ctx, rc->cq_for_notification, rc->tag, error,
                  done_request_event, rc, &rc->completion);
 }
 

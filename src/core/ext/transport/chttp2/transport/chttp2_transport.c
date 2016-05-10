@@ -1561,7 +1561,7 @@ static void reading_action(grpc_exec_ctx *exec_ctx, void *tp,
        (parse_unlocked -> post_parse_locked)? ->
        post_reading_action_locked */
   grpc_chttp2_run_with_global_lock(exec_ctx, tp, NULL, reading_action_locked,
-                                   error, 0);
+                                   GRPC_ERROR_REF(error), 0);
 }
 
 static void reading_action_locked(grpc_exec_ctx *exec_ctx,
@@ -1658,7 +1658,7 @@ static void post_reading_action_locked(grpc_exec_ctx *exec_ctx,
     error = GRPC_ERROR_CREATE("Transport closed");
   }
   if (error != GRPC_ERROR_NONE) {
-    drop_connection(exec_ctx, t, error);
+    drop_connection(exec_ctx, t, GRPC_ERROR_REF(error));
     t->endpoint_reading = 0;
     if (!t->executor.writing_active && t->ep) {
       grpc_endpoint_destroy(exec_ctx, t->ep);
@@ -1680,6 +1680,8 @@ static void post_reading_action_locked(grpc_exec_ctx *exec_ctx,
   } else {
     UNREF_TRANSPORT(exec_ctx, t, "reading_action");
   }
+
+  GRPC_ERROR_UNREF(error);
 }
 
 /*******************************************************************************

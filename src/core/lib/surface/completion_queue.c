@@ -285,6 +285,8 @@ void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
   }
 
   GPR_TIMER_END("grpc_cq_end_op", 0);
+
+  GRPC_ERROR_UNREF(error);
 }
 
 grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
