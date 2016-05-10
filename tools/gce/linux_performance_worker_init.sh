@@ -116,3 +116,6 @@ source ~/.rvm/scripts/rvm
 gem install bundler
 
 # Java dependencies - nothing as we already have Java JDK 8
+
+# Go dependencies
+sudo apt-get install golang-go
