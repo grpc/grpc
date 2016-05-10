@@ -38,6 +38,8 @@
 import json
 import sys
 
+set_end_stream = len(sys.argv) > 1 and sys.argv[1] == '--set_end_stream'
+
 # parse input, fill in vals
 vals = []
 for line in sys.stdin:
@@ -65,6 +67,9 @@ for key, value in vals:
   payload_bytes.append(payload_line)
 
 # fill in header
+flags = 0x04  # END_HEADERS
+if set_end_stream:
+  flags |= 0x01  # END_STREAM
 payload_bytes[0].extend([
     (payload_len >> 16) & 0xff,
     (payload_len >> 8) & 0xff,
@@ -72,7 +77,7 @@ payload_bytes[0].extend([
     # header frame
     0x01,
     # flags
-    0x04,
+    flags,
     # stream id
     0x00,
     0x00,

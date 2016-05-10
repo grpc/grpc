@@ -66,6 +66,9 @@ void grpc_metadata_batch_destroy(grpc_metadata_batch *batch);
 void grpc_metadata_batch_clear(grpc_metadata_batch *batch);
 int grpc_metadata_batch_is_empty(grpc_metadata_batch *batch);
 
+/* Returns the transport size of the batch. */
+size_t grpc_metadata_batch_size(grpc_metadata_batch *batch);
+
 /** Moves the metadata information from \a src to \a dst. Upon return, \a src is
  * zeroed. */
 void grpc_metadata_batch_move(grpc_metadata_batch *dst,

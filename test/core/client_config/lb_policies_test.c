@@ -438,9 +438,9 @@ static grpc_call **perform_multirequest(servers_fixture *f,
   return calls;
 }
 
-static void assert_channel_connectivity(
-    grpc_channel *ch, size_t num_accepted_conn_states,
-    grpc_connectivity_state accepted_conn_state, ...) {
+static void assert_channel_connectivity(grpc_channel *ch,
+                                        size_t num_accepted_conn_states,
+                                        int accepted_conn_state, ...) {
   size_t i;
   grpc_channel_stack *client_stack;
   grpc_channel_element *client_channel_filter;
@@ -456,7 +456,7 @@ static void assert_channel_connectivity(
   grpc_exec_ctx_finish(&exec_ctx);
   va_start(ap, accepted_conn_state);
   for (i = 0; i < num_accepted_conn_states; i++) {
-    if (actual_conn_state == accepted_conn_state) {
+    if ((int)actual_conn_state == accepted_conn_state) {
       break;
     }
     accepted_conn_state = va_arg(ap, grpc_connectivity_state);
