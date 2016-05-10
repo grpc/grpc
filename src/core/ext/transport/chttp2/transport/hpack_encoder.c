@@ -63,6 +63,8 @@
 /* don't consider adding anything bigger than this to the hpack table */
 #define MAX_DECODER_SPACE_USAGE 512
 
+extern int grpc_http_trace;
+
 typedef struct {
   int is_first_frame;
   /* number of bytes in 'output' when we started the frame - used to calculate
@@ -532,7 +534,9 @@ void grpc_chttp2_hpack_compressor_set_max_table_size(
     }
   }
   c->advertise_table_size_change = 1;
-  gpr_log(GPR_DEBUG, "set max table size from encoder to %d", max_table_size);
+  if (grpc_http_trace) {
+    gpr_log(GPR_DEBUG, "set max table size from encoder to %d", max_table_size);
+  }
 }
 
 void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor *c,
