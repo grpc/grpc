@@ -287,7 +287,7 @@ namespace Grpc.Core
         /// </summary>
         private void HandleNewServerRpc(bool success, BatchContextSafeHandle ctx)
         {
-            Task.Run(AllowOneRpc);
+			Task.Run(() => AllowOneRpc());
 
             if (success)
             {
