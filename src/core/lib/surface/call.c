@@ -962,6 +962,7 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx,
                                   batch_control *bctl) {
   grpc_call *call = bctl->call;
   if (bctl->is_notify_tag_closure) {
+    /* unrefs bctl->error */
     grpc_exec_ctx_push(exec_ctx, bctl->notify_tag, bctl->error, NULL);
     gpr_mu_lock(&call->mu);
     bctl->call->used_batches =
@@ -970,6 +971,7 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx,
     gpr_mu_unlock(&call->mu);
     GRPC_CALL_INTERNAL_UNREF(exec_ctx, call, "completion");
   } else {
+    /* unrefs bctl->error */
     grpc_cq_end_op(exec_ctx, bctl->call->cq, bctl->notify_tag, bctl->error,
                    finish_batch_completion, bctl, &bctl->cq_completion);
   }
@@ -1173,7 +1175,7 @@ static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp,
     error = GRPC_ERROR_NONE;
   }
   GRPC_ERROR_UNREF(bctl->error);
-  bctl->error = error;
+  bctl->error = GRPC_ERROR_REF(error);
   gpr_mu_unlock(&call->mu);
   if (gpr_unref(&bctl->steps_to_complete)) {
     post_batch_completion(exec_ctx, bctl);
