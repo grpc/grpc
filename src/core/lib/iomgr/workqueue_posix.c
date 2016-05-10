@@ -62,7 +62,7 @@ grpc_error *grpc_workqueue_create(grpc_exec_ctx *exec_ctx,
   sprintf(name, "workqueue:%p", (void *)(*workqueue));
   (*workqueue)->wakeup_read_fd = grpc_fd_create(
       GRPC_WAKEUP_FD_GET_READ_FD(&(*workqueue)->wakeup_fd), name);
-  grpc_closure_init(&(*workqueue)->read_closure, on_readable, workqueue);
+  grpc_closure_init(&(*workqueue)->read_closure, on_readable, *workqueue);
   grpc_fd_notify_on_read(exec_ctx, (*workqueue)->wakeup_read_fd,
                          &(*workqueue)->read_closure);
   return GRPC_ERROR_NONE;
