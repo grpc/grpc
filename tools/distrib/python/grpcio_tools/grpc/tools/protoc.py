@@ -1,4 +1,6 @@
-# Copyright 2015, Google Inc.
+#!/usr/bin/env python
+
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,26 +29,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-ssl_roots_path = File.expand_path('../../../../etc/roots.pem', __FILE__)
+import sys
 
-require_relative 'grpc/errors'
-require_relative 'grpc/grpc'
-require_relative 'grpc/logconfig'
-require_relative 'grpc/notifier'
-require_relative 'grpc/signals'
-require_relative 'grpc/version'
-require_relative 'grpc/core/time_consts'
-require_relative 'grpc/generic/active_call'
-require_relative 'grpc/generic/client_stub'
-require_relative 'grpc/generic/service'
-require_relative 'grpc/generic/rpc_server'
+from grpc.tools import protoc_compiler
 
-begin
-  file = File.open(ssl_roots_path)
-  roots = file.read
-  GRPC::Core::ChannelCredentials.set_default_roots_pem roots
-ensure
-  file.close
-end
 
-GRPC::Signals.wait_for_signals
+if __name__ == '__main__':
+  protoc_compiler.run_main(sys.argv)

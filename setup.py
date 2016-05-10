@@ -54,7 +54,6 @@ sys.path.insert(0, os.path.abspath(PYTHON_STEM))
 
 # Break import-style to ensure we can actually find our in-repo dependencies.
 import commands
-import precompiled
 import grpc_core_dependencies
 import grpc_version
 
@@ -173,7 +172,6 @@ COMMAND_CLASS = {
     'build_project_metadata': commands.BuildProjectMetadata,
     'build_py': commands.BuildPy,
     'build_ext': commands.BuildExt,
-    'build_tagged_ext': precompiled.BuildTaggedExt,
     'gather': commands.Gather,
     'run_interop': commands.RunInterop,
     'test_lite': commands.TestLite
@@ -229,25 +227,21 @@ else:
   PACKAGES = setuptools.find_packages(
       PYTHON_STEM, exclude=['tests', 'tests.*'])
 
-setup_arguments = {
-    'name': 'grpcio',
-    'version': grpc_version.VERSION,
-    'license': LICENSE,
-    'ext_modules': CYTHON_EXTENSION_MODULES,
-    'packages': list(PACKAGES),
-    'package_dir': PACKAGE_DIRECTORIES,
-    # TODO(atash): Figure out why auditwheel doesn't like namespace packages.
-    #'namespace_packages': ['grpc'],
-    'package_data': PACKAGE_DATA,
-    'install_requires': INSTALL_REQUIRES,
-    'setup_requires': SETUP_REQUIRES,
-    'cmdclass': COMMAND_CLASS,
-    'tests_require': TESTS_REQUIRE,
-    'test_suite': TEST_SUITE,
-    'test_loader': TEST_LOADER,
-    'test_runner': TEST_RUNNER,
-}
-
-precompiled.update_setup_arguments(setup_arguments)
-
-setuptools.setup(**setup_arguments)
+setuptools.setup(
+  name='grpcio',
+  version=grpc_version.VERSION,
+  license=LICENSE,
+  ext_modules=CYTHON_EXTENSION_MODULES,
+  packages=list(PACKAGES),
+  package_dir=PACKAGE_DIRECTORIES,
+  # TODO(atash): Figure out why auditwheel doesn't like namespace packages.
+  #namespace_packages=['grpc'],
+  package_data=PACKAGE_DATA,
+  install_requires=INSTALL_REQUIRES,
+  setup_requires=SETUP_REQUIRES,
+  cmdclass=COMMAND_CLASS,
+  tests_require=TESTS_REQUIRE,
+  test_suite=TEST_SUITE,
+  test_loader=TEST_LOADER,
+  test_runner=TEST_RUNNER,
+)
