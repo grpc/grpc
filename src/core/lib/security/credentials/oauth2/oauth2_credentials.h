@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_OAUTH2_CREDENTIALS_H
-#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_OAUTH2_CREDENTIALS_H
+#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_OAUTH2_OAUTH2_CREDENTIALS_H
+#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_OAUTH2_OAUTH2_CREDENTIALS_H
 
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -107,5 +107,5 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
     const struct grpc_http_response *response,
     grpc_credentials_md_store **token_md, gpr_timespec *token_lifetime);
 
-#endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_OAUTH2_CREDENTIALS_H
+#endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_OAUTH2_OAUTH2_CREDENTIALS_H */
 
