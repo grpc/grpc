@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 0.14.0-dev
+PROJECT_NUMBER         = 0.15.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -766,6 +766,7 @@ include/grpc/compression.h \
 include/grpc/grpc.h \
 include/grpc/status.h \
 include/grpc/impl/codegen/byte_buffer.h \
+include/grpc/impl/codegen/byte_buffer_reader.h \
 include/grpc/impl/codegen/compression_types.h \
 include/grpc/impl/codegen/connectivity_state.h \
 include/grpc/impl/codegen/grpc_types.h \
@@ -913,7 +914,7 @@ src/core/ext/client_config/subchannel_call_holder.h \
 src/core/ext/client_config/subchannel_index.h \
 src/core/ext/client_config/uri_parser.h \
 src/core/ext/lb_policy/grpclb/load_balancer_api.h \
-src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h \
+src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h \
 third_party/nanopb/pb.h \
 third_party/nanopb/pb_common.h \
 third_party/nanopb/pb_decode.h \
@@ -1071,7 +1072,7 @@ src/core/ext/client_config/uri_parser.c \
 src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
 src/core/ext/transport/chttp2/client/insecure/channel_create.c \
 src/core/ext/lb_policy/grpclb/load_balancer_api.c \
-src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c \
+src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
 third_party/nanopb/pb_common.c \
 third_party/nanopb/pb_decode.c \
 third_party/nanopb/pb_encode.c \

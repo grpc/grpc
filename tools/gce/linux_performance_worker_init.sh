@@ -95,6 +95,9 @@ sudo pip install tox
 touch .profile
 curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.25.4/install.sh | bash
 nvm install 0.12 && npm config set cache /tmp/npm-cache
+nvm install 4 && npm config set cache /tmp/npm-cache
+nvm install 5 && npm config set cache /tmp/npm-cache
+nvm alias default 4
 
 # C# dependencies (http://www.mono-project.com/docs/getting-started/install/linux/#debian-ubuntu-and-derivatives)
 

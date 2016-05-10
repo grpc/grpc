@@ -151,25 +151,25 @@ namespace Math {
       ///  Div divides args.dividend by args.divisor and returns the quotient and
       ///  remainder.
       /// </summary>
-      Task<global::Math.DivReply> Div(global::Math.DivArgs request, ServerCallContext context);
+      global::System.Threading.Tasks.Task<global::Math.DivReply> Div(global::Math.DivArgs request, ServerCallContext context);
       /// <summary>
       ///  DivMany accepts an arbitrary number of division args from the client stream
       ///  and sends back the results in the reply stream.  The stream continues until
       ///  the client closes its end; the server does the same after sending all the
       ///  replies.  The stream ends immediately if either end aborts.
       /// </summary>
-      Task DivMany(IAsyncStreamReader<global::Math.DivArgs> requestStream, IServerStreamWriter<global::Math.DivReply> responseStream, ServerCallContext context);
+      global::System.Threading.Tasks.Task DivMany(IAsyncStreamReader<global::Math.DivArgs> requestStream, IServerStreamWriter<global::Math.DivReply> responseStream, ServerCallContext context);
       /// <summary>
       ///  Fib generates numbers in the Fibonacci sequence.  If args.limit > 0, Fib
       ///  generates up to limit numbers; otherwise it continues until the call is
       ///  canceled.  Unlike Fib above, Fib has no final FibReply.
       /// </summary>
-      Task Fib(global::Math.FibArgs request, IServerStreamWriter<global::Math.Num> responseStream, ServerCallContext context);
+      global::System.Threading.Tasks.Task Fib(global::Math.FibArgs request, IServerStreamWriter<global::Math.Num> responseStream, ServerCallContext context);
       /// <summary>
       ///  Sum sums a stream of numbers, returning the final result once the stream
       ///  is closed.
       /// </summary>
-      Task<global::Math.Num> Sum(IAsyncStreamReader<global::Math.Num> requestStream, ServerCallContext context);
+      global::System.Threading.Tasks.Task<global::Math.Num> Sum(IAsyncStreamReader<global::Math.Num> requestStream, ServerCallContext context);
     }
 
     /// <summary>Base class for server-side implementations of Math</summary>
@@ -179,7 +179,7 @@ namespace Math {
       ///  Div divides args.dividend by args.divisor and returns the quotient and
       ///  remainder.
       /// </summary>
-      public virtual Task<global::Math.DivReply> Div(global::Math.DivArgs request, ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task<global::Math.DivReply> Div(global::Math.DivArgs request, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }
@@ -190,7 +190,7 @@ namespace Math {
       ///  the client closes its end; the server does the same after sending all the
       ///  replies.  The stream ends immediately if either end aborts.
       /// </summary>
-      public virtual Task DivMany(IAsyncStreamReader<global::Math.DivArgs> requestStream, IServerStreamWriter<global::Math.DivReply> responseStream, ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task DivMany(IAsyncStreamReader<global::Math.DivArgs> requestStream, IServerStreamWriter<global::Math.DivReply> responseStream, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }
@@ -200,7 +200,7 @@ namespace Math {
       ///  generates up to limit numbers; otherwise it continues until the call is
       ///  canceled.  Unlike Fib above, Fib has no final FibReply.
       /// </summary>
-      public virtual Task Fib(global::Math.FibArgs request, IServerStreamWriter<global::Math.Num> responseStream, ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task Fib(global::Math.FibArgs request, IServerStreamWriter<global::Math.Num> responseStream, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }
@@ -209,7 +209,7 @@ namespace Math {
       ///  Sum sums a stream of numbers, returning the final result once the stream
       ///  is closed.
       /// </summary>
-      public virtual Task<global::Math.Num> Sum(IAsyncStreamReader<global::Math.Num> requestStream, ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task<global::Math.Num> Sum(IAsyncStreamReader<global::Math.Num> requestStream, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }
