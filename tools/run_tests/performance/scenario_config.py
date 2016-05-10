@@ -29,7 +29,6 @@
 
 # performance scenario configuration for various languages
 
-SINGLE_MACHINE_CORES=8
 WARMUP_SECONDS=5
 JAVA_WARMUP_SECONDS=15  # Java needs more warmup time for JIT to kick in.
 BENCHMARK_SECONDS=30
@@ -197,7 +196,6 @@ class CXXLanguage:
       yield _ping_pong_scenario(
           'cpp_protobuf_async_unary_qps_unconstrained_%s' % secstr, rpc_type='UNARY',
           client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
-          server_core_limit=SINGLE_MACHINE_CORES/2,
           use_unconstrained_client=True,
           secure=secure,
           categories=smoketest_categories)
@@ -205,7 +203,6 @@ class CXXLanguage:
       yield _ping_pong_scenario(
           'cpp_protobuf_async_streaming_qps_unconstrained_%s' % secstr, rpc_type='STREAMING',
           client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
-          server_core_limit=SINGLE_MACHINE_CORES/2,
           use_unconstrained_client=True,
           secure=secure)
 
@@ -213,7 +210,6 @@ class CXXLanguage:
           'cpp_generic_async_streaming_qps_unconstrained_%s' % secstr, rpc_type='STREAMING',
           client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
           use_unconstrained_client=True, use_generic_payload=True,
-          server_core_limit=SINGLE_MACHINE_CORES/2,
           secure=secure,
           categories=smoketest_categories)
 
