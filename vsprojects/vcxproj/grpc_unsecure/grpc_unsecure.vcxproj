@@ -466,7 +466,7 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_windows.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\network_monitor_apple.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\network_monitor_darwin.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_set_windows.c">
     </ClCompile>

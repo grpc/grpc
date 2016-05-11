@@ -335,7 +335,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/iomgr.c )
   s.files += %w( src/core/lib/iomgr/iomgr_posix.c )
   s.files += %w( src/core/lib/iomgr/iomgr_windows.c )
-  s.files += %w( src/core/lib/iomgr/network_monitor_apple.c )
+  s.files += %w( src/core/lib/iomgr/network_monitor_darwin.c )
   s.files += %w( src/core/lib/iomgr/pollset_set_windows.c )
   s.files += %w( src/core/lib/iomgr/pollset_windows.c )
   s.files += %w( src/core/lib/iomgr/resolve_address_posix.c )

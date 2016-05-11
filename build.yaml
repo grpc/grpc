@@ -248,7 +248,7 @@ filegroups:
   - src/core/lib/iomgr/iomgr.c
   - src/core/lib/iomgr/iomgr_posix.c
   - src/core/lib/iomgr/iomgr_windows.c
-  - src/core/lib/iomgr/network_monitor_apple.c
+  - src/core/lib/iomgr/network_monitor_darwin.c
   - src/core/lib/iomgr/pollset_set_windows.c
   - src/core/lib/iomgr/pollset_windows.c
   - src/core/lib/iomgr/resolve_address_posix.c
@@ -727,6 +727,7 @@ libs:
   language: c
   src:
   - src/core/lib/surface/init.c
+  LDFLAGS: $(if $(subst Darwin,,$(SYSTEM)),,-framework CoreFoundation -framework SystemConfiguration)
   baselib: true
   deps_linkage: static
   dll: true
@@ -806,6 +807,7 @@ libs:
   src:
   - src/core/lib/surface/init.c
   - src/core/lib/surface/init_unsecure.c
+  LDFLAGS: $(if $(subst Darwin,,$(SYSTEM)),,-framework CoreFoundation -framework SystemConfiguration)
   baselib: true
   deps_linkage: static
   dll: true

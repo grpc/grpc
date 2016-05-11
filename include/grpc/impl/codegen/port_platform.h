@@ -230,7 +230,7 @@
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
 #endif
-#define GPR_APPLE_CONFIG
+#define GPR_DARWIN
 #define GPR_MSG_IOVLEN_TYPE int
 #if TARGET_OS_IPHONE
 #define GPR_FORBID_UNREACHABLE_CODE 1

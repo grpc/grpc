@@ -33,7 +33,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_APPLE_CONFIG
+#ifdef GPR_DARWIN
 
 #include "src/core/lib/iomgr/network_monitor.h"
 
@@ -153,4 +153,4 @@ bool grpc_stop_connectivity_monitor(void) {
   return true;
 }
 
-#endif /* GPR_APPLE_CONFIG */
+#endif /* GPR_DARWIN */

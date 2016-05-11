@@ -342,7 +342,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_windows.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/network_monitor_apple.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/network_monitor_darwin.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_set_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_posix.c" role="src" />
