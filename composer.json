@@ -2,7 +2,7 @@
   "name": "grpc/grpc",
   "type": "library",
   "description": "gRPC library for PHP",
-  "version": "0.14.1",
+  "version": "0.14.2",
   "keywords": ["rpc"],
   "homepage": "http://grpc.io",
   "license": "BSD-3-Clause",
