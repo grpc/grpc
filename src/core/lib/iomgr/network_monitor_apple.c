@@ -48,7 +48,8 @@ struct grpc_connectivity_monitor {
   void (*loss_connection_handler)(void);
 };
 
-static struct grpc_connectivity_monitor monitor;
+static struct grpc_connectivity_monitor g_monitor;
+static gpr_once g_monitor_mu_once = GPR_ONCE_INIT;
 
 static bool is_host_reachable(SCNetworkReachabilityFlags flags) {
   return !!(flags & kSCNetworkReachabilityFlagsReachable) &&
@@ -79,11 +80,9 @@ static bool start_monitor(struct grpc_connectivity_monitor* monitor) {
     .version = 0,
     .info = (void*)monitor,
   };
-  gpr_mu_lock(&monitor->mu);
   bool result = is_monitor_initialized(monitor) &&
          SCNetworkReachabilitySetCallback(monitor->reachability_ref, reachability_callback, &context) &&
          SCNetworkReachabilitySetDispatchQueue(monitor->reachability_ref, monitor->dispatch_queue);
-  gpr_mu_unlock(&monitor->mu);
   return result;
 }
 
@@ -91,66 +90,68 @@ static bool stop_monitor(struct grpc_connectivity_monitor* monitor) {
   if (monitor == NULL) {
     return false;
   }
-  gpr_mu_lock(&monitor->mu);
   bool result =  is_monitor_initialized(monitor) &&
-         SCNetworkReachabilitySetCallback(monitor->reachability_ref, NULL, NULL) &&
+          SCNetworkReachabilitySetCallback(monitor->reachability_ref, NULL, NULL) &&
          SCNetworkReachabilitySetDispatchQueue(monitor->reachability_ref, NULL);
-  gpr_mu_unlock(&monitor->mu);
   return result;
 }
 
 static bool init_connectivity_monitor(struct grpc_connectivity_monitor* monitor, const char* addr, void (*handler)(void)) {
-  gpr_mu_lock(&monitor->mu);
-  if (monitor == NULL || monitor->reachability_ref != NULL) {
-    gpr_mu_unlock(&monitor->mu);
+  // Check if monitor has already been initialized.
+  if (monitor->reachability_ref != NULL) {
     return false;
   }
   if (!(monitor->dispatch_queue = dispatch_get_main_queue())) {
-    gpr_mu_unlock(&monitor->mu);
     return false;
   }
   if (!(monitor->reachability_ref = SCNetworkReachabilityCreateWithName(NULL, addr))) {
     monitor->dispatch_queue = NULL;
-    gpr_mu_lock(&monitor->mu);
     return false;
   }
   monitor->loss_connection_handler = handler;
-  gpr_mu_unlock(&monitor->mu);
   return true;
 }
 
-static void destory_connectivity_monitor(struct grpc_connectivity_monitor* monitor) {
-  gpr_mu_lock(&monitor->mu);
-  if (monitor == NULL) {
-    gpr_mu_unlock(&monitor->mu);
-    return;
-  }
+static void clear_connectivity_monitor(struct grpc_connectivity_monitor* monitor) {
   if (monitor->reachability_ref != NULL) {
     CFRelease(monitor->reachability_ref);
   }
   monitor->reachability_ref = NULL;
   monitor->dispatch_queue = NULL;
   monitor->loss_connection_handler = NULL;
-  gpr_mu_unlock(&monitor->mu);
+}
+
+static void connectivity_monitor_mu_init(void) {
+  gpr_mu_init(&g_monitor.mu);
+  clear_connectivity_monitor(&g_monitor);
 }
 
 bool grpc_start_connectivity_monitor(const char* addr, void (*handler)(void)) {
-  init_connectivity_monitor(&monitor, addr, handler);
-  SCNetworkReachabilityFlags flags;
-  if (SCNetworkReachabilityGetFlags(monitor.reachability_ref, &flags))
-    reachability_callback(monitor.reachability_ref, flags, &monitor);
-  if (!start_monitor(&monitor)) {
-    destory_connectivity_monitor(&monitor);
+  gpr_once_init(&g_monitor_mu_once, &connectivity_monitor_mu_init);
+  gpr_mu_lock(&g_monitor.mu);
+  init_connectivity_monitor(&g_monitor, addr, handler);
+  // TODO(zyc): Should we check connectivity at the beginning
+  // SCNetworkReachabilityFlags flags;
+  // if (SCNetworkReachabilityGetFlags(g_monitor.reachability_ref, &flags)) {
+  //   reachability_callback(g_monitor.reachability_ref, flags, &monitor);
+  // }
+  if (!start_monitor(&g_monitor)) {
+    clear_connectivity_monitor(&g_monitor);
+    gpr_mu_unlock(&g_monitor.mu);
     return false;
   }
+  gpr_mu_unlock(&g_monitor.mu);
   return true;
 }
 
-bool grpc_stop_connectivity_monitor() {
-  if (!stop_monitor(&monitor)) {
+bool grpc_stop_connectivity_monitor(void) {
+  gpr_mu_lock(&g_monitor.mu);
+  if (!stop_monitor(&g_monitor)) {
+    gpr_mu_unlock(&g_monitor.mu);
     return false;
   }
-  destory_connectivity_monitor(&monitor);
+  clear_connectivity_monitor(&g_monitor);
+  gpr_mu_unlock(&g_monitor.mu);
   return true;
 }
 
