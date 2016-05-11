@@ -30,6 +30,7 @@
 from distutils import extension
 import os
 import os.path
+import shlex
 import sys
 
 import setuptools
@@ -40,18 +41,28 @@ from setuptools.command import build_ext
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.abspath('.'))
 
+# There are some situations (like on Windows) where CC, CFLAGS, and LDFLAGS are
+# entirely ignored/dropped/forgotten by distutils and its Cygwin/MinGW support.
+# We use these environment variables to thus get around that without locking
+# ourselves in w.r.t. the multitude of operating systems this ought to build on.
+# By default we assume a GCC-like compiler.
+EXTRA_COMPILE_ARGS = shlex.split(os.environ.get('GRPC_PYTHON_CFLAGS',
+                                                '-frtti -std=c++11'))
+EXTRA_LINK_ARGS = shlex.split(os.environ.get('GRPC_PYTHON_LDFLAGS',
+                                             '-lpthread'))
+
 import protoc_lib_deps
 import grpc_version
 
 def protoc_ext_module():
   plugin_sources = [
-      'grpc/protoc/main.cc',
+      'grpc/tools/main.cc',
       'grpc_root/src/compiler/python_generator.cc'] + [
       os.path.join('third_party/protobuf/src', cc_file)
       for cc_file in protoc_lib_deps.CC_FILES]
   plugin_ext = extension.Extension(
-      name='grpc.protoc.protoc_compiler',
-      sources=['grpc/protoc/protoc_compiler.pyx'] + plugin_sources,
+      name='grpc.tools.protoc_compiler',
+      sources=['grpc/tools/protoc_compiler.pyx'] + plugin_sources,
       include_dirs=[
           '.',
           'grpc_root',
@@ -60,7 +71,8 @@ def protoc_ext_module():
       ],
       language='c++',
       define_macros=[('HAVE_PTHREAD', 1)],
-      extra_compile_args=['-lpthread', '-frtti', '-std=c++11'],
+      extra_compile_args=EXTRA_COMPILE_ARGS,
+      extra_link_args=EXTRA_LINK_ARGS,
   )
   return plugin_ext
 
@@ -71,7 +83,7 @@ def maybe_cythonize(exts):
 setuptools.setup(
   name='grpcio_tools',
   version=grpc_version.VERSION,
-  license='',
+  license='3-clause BSD',
   ext_modules=maybe_cythonize([
       protoc_ext_module(),
   ]),

@@ -112,11 +112,11 @@ namespace Grpc.Testing {
       ///  Returns the values of all the gauges that are currently being maintained by
       ///  the service
       /// </summary>
-      Task GetAllGauges(global::Grpc.Testing.EmptyMessage request, IServerStreamWriter<global::Grpc.Testing.GaugeResponse> responseStream, ServerCallContext context);
+      global::System.Threading.Tasks.Task GetAllGauges(global::Grpc.Testing.EmptyMessage request, IServerStreamWriter<global::Grpc.Testing.GaugeResponse> responseStream, ServerCallContext context);
       /// <summary>
       ///  Returns the value of one gauge
       /// </summary>
-      Task<global::Grpc.Testing.GaugeResponse> GetGauge(global::Grpc.Testing.GaugeRequest request, ServerCallContext context);
+      global::System.Threading.Tasks.Task<global::Grpc.Testing.GaugeResponse> GetGauge(global::Grpc.Testing.GaugeRequest request, ServerCallContext context);
     }
 
     /// <summary>Base class for server-side implementations of MetricsService</summary>
@@ -126,7 +126,7 @@ namespace Grpc.Testing {
       ///  Returns the values of all the gauges that are currently being maintained by
       ///  the service
       /// </summary>
-      public virtual Task GetAllGauges(global::Grpc.Testing.EmptyMessage request, IServerStreamWriter<global::Grpc.Testing.GaugeResponse> responseStream, ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task GetAllGauges(global::Grpc.Testing.EmptyMessage request, IServerStreamWriter<global::Grpc.Testing.GaugeResponse> responseStream, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }
@@ -134,7 +134,7 @@ namespace Grpc.Testing {
       /// <summary>
       ///  Returns the value of one gauge
       /// </summary>
-      public virtual Task<global::Grpc.Testing.GaugeResponse> GetGauge(global::Grpc.Testing.GaugeRequest request, ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.GaugeResponse> GetGauge(global::Grpc.Testing.GaugeRequest request, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }

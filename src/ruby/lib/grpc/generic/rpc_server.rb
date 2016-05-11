@@ -28,46 +28,13 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require_relative '../grpc'
+require_relative '../signals'
 require_relative 'active_call'
 require_relative 'service'
 require 'thread'
 
-# A global that contains signals the gRPC servers should respond to.
-$grpc_signals = []
-
 # GRPC contains the General RPC module.
 module GRPC
-  # Handles the signals in $grpc_signals.
-  #
-  # @return false if the server should exit, true if not.
-  def handle_signals
-    loop do
-      sig = $grpc_signals.shift
-      case sig
-      when 'INT'
-        return false
-      when 'TERM'
-        return false
-      when nil
-        return true
-      end
-    end
-    true
-  end
-  module_function :handle_signals
-
-  # Sets up a signal handler that adds signals to the signal handling global.
-  #
-  # Signal handlers should do as little as humanly possible.
-  # Here, they just add themselves to $grpc_signals
-  #
-  # RpcServer (and later other parts of gRPC) monitors the signals
-  # $grpc_signals in its own non-signal context.
-  def trap_signals
-    %w(INT TERM).each { |sig| trap(sig) { $grpc_signals << sig } }
-  end
-  module_function :trap_signals
-
   # Pool is a simple thread pool.
   class Pool
     # Default keep alive period is 1s
@@ -328,23 +295,6 @@ module GRPC
       end
     end
 
-    # Runs the server in its own thread, then waits for signal INT or TERM on
-    # the current thread to terminate it.
-    def run_till_terminated
-      GRPC.trap_signals
-      t = Thread.new do
-        run
-      end
-      t.abort_on_exception = true
-      wait_till_running
-      until running_state == :stopped
-        sleep SIGNAL_CHECK_PERIOD
-        break unless GRPC.handle_signals
-      end
-      stop
-      t.join
-    end
-
     # handle registration of classes
     #
     # service is either a class that includes GRPC::GenericService and whose
@@ -403,8 +353,13 @@ module GRPC
         transition_running_state(:running)
         @run_cond.broadcast
       end
+      remove_signal_handler = GRPC::Signals.register_handler { stop }
       loop_handle_server_calls
+      # Remove signal handler when server stops
+      remove_signal_handler.call
     end
+
+    alias_method :run_till_terminated, :run
 
     # Sends RESOURCE_EXHAUSTED if there are too many unprocessed jobs
     def available?(an_rpc)
@@ -503,10 +458,8 @@ module GRPC
       unless cls.include?(GenericService)
         fail "#{cls} must 'include GenericService'"
       end
-      if cls.rpc_descs.size.zero?
-        fail "#{cls} should specify some rpc descriptions"
-      end
-      cls.assert_rpc_descs_have_methods
+      fail "#{cls} should specify some rpc descriptions" if
+        cls.rpc_descs.size.zero?
     end
 
     # This should be called while holding @run_mutex
