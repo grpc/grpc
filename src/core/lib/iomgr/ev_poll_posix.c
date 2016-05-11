@@ -924,10 +924,10 @@ static void pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
         for (i = 2; i < pfd_count; i++) {
           if (watchers[i].fd == NULL) {
             fd_end_poll(exec_ctx, &watchers[i], 0, 0);
-            continue;
+          } else {
+            fd_end_poll(exec_ctx, &watchers[i], pfds[i].revents & POLLIN_CHECK,
+                        pfds[i].revents & POLLOUT_CHECK);
           }
-          fd_end_poll(exec_ctx, &watchers[i], pfds[i].revents & POLLIN_CHECK,
-                      pfds[i].revents & POLLOUT_CHECK);
         }
       }
 
@@ -962,6 +962,9 @@ static void pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
         deadline = gpr_inf_past(GPR_CLOCK_MONOTONIC);
       }
       keep_polling = 1;
+    }
+    if (keep_polling) {
+      now = gpr_now(now.clock_type);
     }
   }
   if (added_worker) {
