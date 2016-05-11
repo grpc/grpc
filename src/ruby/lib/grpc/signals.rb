@@ -27,13 +27,43 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from libc cimport stdlib
+require 'thread'
+require_relative 'grpc'
 
-cdef extern from "grpc/protoc/main.h":
-  int protoc_main(int argc, char *argv[])
+# GRPC contains the General RPC module.
+module GRPC
+  # Signals contains gRPC functions related to signal handling
+  module Signals
+    @interpreter_exiting = false
+    @signal_handlers = []
+    @handlers_mutex = Mutex.new
 
-def run_main(list args not None):
-  cdef char **argv = <char **>stdlib.malloc(len(args)*sizeof(char *))
-  for i in range(len(args)):
-    argv[i] = args[i]
-  return protoc_main(len(args), argv)
+    def register_handler(&handler)
+      @handlers_mutex.synchronize do
+        @signal_handlers.push(handler)
+        handler.call if @exit_signal_received
+      end
+      # Returns a function to remove the handler
+      lambda do
+        @handlers_mutex.synchronize { @signal_handlers.delete(handler) }
+      end
+    end
+    module_function :register_handler
+
+    def wait_for_signals
+      t = Thread.new do
+        sleep 0.1 until GRPC::Core.signal_received? || @interpreter_exiting
+        unless @interpreter_exiting
+          @handlers_mutex.synchronize do
+            @signal_handlers.each(&:call)
+          end
+        end
+      end
+      at_exit do
+        @interpreter_exiting = true
+        t.join
+      end
+    end
+    module_function :wait_for_signals
+  end
+end

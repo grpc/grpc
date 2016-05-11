@@ -1,3 +1,4 @@
+<?php
 /*
  *
  * Copyright 2016, Google Inc.
@@ -31,55 +32,18 @@
  *
  */
 
-/* This file has empty implementation of all the functions exposed by the cronet
-library, so we can build it in all environments */
+$args = getopt('', ['metrics_server_address:', 'total_only::']);
+$parts = explode(':', $args['metrics_server_address']);
+$server_host = $parts[0];
+$server_port = (count($parts) == 2) ? $parts[1] : '';
 
-#include <stdbool.h>
-
-#include <grpc/support/log.h>
-
-#include "third_party/objective_c/Cronet/cronet_c_for_grpc.h"
-
-#ifdef GRPC_COMPILE_WITH_CRONET
-/* link with the real CRONET library in the build system */
-#else
-/* Dummy implementation of cronet API just to test for build-ability */
-cronet_bidirectional_stream* cronet_bidirectional_stream_create(
-    cronet_engine* engine, void* annotation,
-    cronet_bidirectional_stream_callback* callback) {
-  GPR_ASSERT(0);
-  return NULL;
+$socket = socket_create(AF_INET, SOCK_STREAM, 0);
+if (@!socket_connect($socket, $server_host, $server_port)) {
+  echo "Cannot connect to merics server...\n";
+  exit(1);
 }
-
-int cronet_bidirectional_stream_destroy(cronet_bidirectional_stream* stream) {
-  GPR_ASSERT(0);
-  return 0;
+socket_write($socket, 'qps');
+while ($out = socket_read($socket, 1024)) {
+  echo "$out\n";
 }
-
-int cronet_bidirectional_stream_start(
-    cronet_bidirectional_stream* stream, const char* url, int priority,
-    const char* method, const cronet_bidirectional_stream_header_array* headers,
-    bool end_of_stream) {
-  GPR_ASSERT(0);
-  return 0;
-}
-
-int cronet_bidirectional_stream_read(cronet_bidirectional_stream* stream,
-                                     char* buffer, int capacity) {
-  GPR_ASSERT(0);
-  return 0;
-}
-
-int cronet_bidirectional_stream_write(cronet_bidirectional_stream* stream,
-                                      const char* buffer, int count,
-                                      bool end_of_stream) {
-  GPR_ASSERT(0);
-  return 0;
-}
-
-int cronet_bidirectional_stream_cancel(cronet_bidirectional_stream* stream) {
-  GPR_ASSERT(0);
-  return 0;
-}
-
-#endif /* GRPC_COMPILE_WITH_CRONET */
+socket_close($socket);

@@ -29,7 +29,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-"""Generates the appropriate build.json data for all the end2end tests."""
+"""Generates the appropriate build.json data for all the bad_client tests."""
 
 
 import collections
@@ -45,6 +45,7 @@ BAD_CLIENT_TESTS = {
     'headers': default_test_options._replace(cpu_cost=0.2),
     'initial_settings_frame': default_test_options._replace(cpu_cost=0.2),
     'head_of_line_blocking': default_test_options,
+    'large_metadata': default_test_options,
     'server_registered_method': default_test_options,
     'simple_request': default_test_options,
     'window_overflow': default_test_options,

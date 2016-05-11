@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -29,10 +27,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import sys
+from libc cimport stdlib
 
-from grpc.protoc import protoc_compiler
+cdef extern from "grpc/tools/main.h":
+  int protoc_main(int argc, char *argv[])
 
-
-if __name__ == '__main__':
-  protoc_compiler.run_main(sys.argv)
+def run_main(list args not None):
+  cdef char **argv = <char **>stdlib.malloc(len(args)*sizeof(char *))
+  for i in range(len(args)):
+    argv[i] = args[i]
+  return protoc_main(len(args), argv)

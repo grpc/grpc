@@ -31,21 +31,9 @@
  *
  */
 
-#ifndef GRPC_GRPC_CRONET_H
-#define GRPC_GRPC_CRONET_H
+#ifndef GRPC_RB_SIGNAL_H_
+#define GRPC_RB_SIGNAL_H_
 
-#include <grpc/grpc.h>
+void Init_grpc_signals();
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-GRPCAPI grpc_channel *grpc_cronet_secure_channel_create(
-    void *engine, const char *target, const grpc_channel_args *args,
-    void *reserved);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* GRPC_GRPC_CRONET_H */
+#endif  /* GRPC_RB_SIGNAL_H_ */
