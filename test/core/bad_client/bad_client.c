@@ -81,7 +81,7 @@ typedef struct {
   gpr_event read_done;
 } read_args;
 
-static void read_done(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+static void read_done(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   read_args *a = arg;
   a->validator(&a->incoming);
   gpr_event_set(&a->read_done, (void *)1);
