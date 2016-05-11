@@ -94,6 +94,9 @@ grpc_error *grpc_error_create(const char *file, int line, const char *desc,
                               grpc_error **referencing, size_t num_referencing);
 #define GRPC_ERROR_CREATE(desc) \
   grpc_error_create(__FILE__, __LINE__, desc, NULL, 0)
+
+// Create an error that references some other errors. This function adds a
+// reference to each error in errs - it does not consume an existing reference
 #define GRPC_ERROR_CREATE_REFERENCING(desc, errs, count) \
   grpc_error_create(__FILE__, __LINE__, desc, errs, count)
 
