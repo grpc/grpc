@@ -28,6 +28,7 @@
   "_crust_over_core_over_links_face_interface_test.GenericInvokerFutureInvocationAsynchronousEventServiceTest", 
   "_crust_over_core_over_links_face_interface_test.MultiCallableInvokerBlockingInvocationInlineServiceTest", 
   "_crust_over_core_over_links_face_interface_test.MultiCallableInvokerFutureInvocationAsynchronousEventServiceTest", 
+  "_empty_message_test.EmptyMessageTest",
   "_face_interface_test.DynamicInvokerBlockingInvocationInlineServiceTest", 
   "_face_interface_test.DynamicInvokerFutureInvocationAsynchronousEventServiceTest", 
   "_face_interface_test.GenericInvokerBlockingInvocationInlineServiceTest", 
