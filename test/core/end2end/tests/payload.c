@@ -268,3 +268,5 @@ void payload(grpc_end2end_test_config config) {
   test_invoke_request_response_with_payload(config);
   test_invoke_10_request_response_with_payload(config);
 }
+
+void payload_pre_init(void) {}

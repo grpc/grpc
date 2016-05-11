@@ -29,6 +29,127 @@
 
 # performance scenario configuration for various languages
 
+WARMUP_SECONDS=5
+JAVA_WARMUP_SECONDS=15  # Java needs more warmup time for JIT to kick in.
+BENCHMARK_SECONDS=30
+
+SMOKETEST='smoketest'
+
+SECURE_SECARGS = {'use_test_ca': True,
+                  'server_host_override': 'foo.test.google.fr'}
+
+HISTOGRAM_PARAMS = {
+  'resolution': 0.01,
+  'max_possible': 60e9,
+}
+
+EMPTY_GENERIC_PAYLOAD = {
+  'bytebuf_params': {
+    'req_size': 0,
+    'resp_size': 0,
+  }
+}
+EMPTY_PROTO_PAYLOAD = {
+  'simple_params': {
+    'req_size': 0,
+    'resp_size': 0,
+  }
+}
+BIG_GENERIC_PAYLOAD = {
+  'bytebuf_params': {
+    'req_size': 65536,
+    'resp_size': 65536,
+  }
+}
+
+# deep is the number of RPCs outstanding on a channel in non-ping-pong tests
+# (the value used is 1 otherwise)
+DEEP=100
+
+# wide is the number of client channels in multi-channel tests (1 otherwise)
+WIDE=64
+
+
+def _get_secargs(is_secure):
+  if is_secure:
+    return SECURE_SECARGS
+  else:
+    return None
+
+
+def remove_nonproto_fields(scenario):
+  """Remove special-purpose that contains some extra info about the scenario
+  but don't belong to the ScenarioConfig protobuf message"""
+  scenario.pop('CATEGORIES', None)
+  scenario.pop('SERVER_LANGUAGE', None)
+  return scenario
+
+
+def _ping_pong_scenario(name, rpc_type,
+                        client_type, server_type,
+                        secure=True,
+                        use_generic_payload=False,
+                        use_unconstrained_client=False,
+                        server_language=None,
+                        server_core_limit=0,
+                        async_server_threads=0,
+                        warmup_seconds=WARMUP_SECONDS,
+                        categories=[]):
+  """Creates a basic ping pong scenario."""
+  scenario = {
+    'name': name,
+    'num_servers': 1,
+    'num_clients': 1,
+    'client_config': {
+      'client_type': client_type,
+      'security_params': _get_secargs(secure),
+      'outstanding_rpcs_per_channel': 1,
+      'client_channels': 1,
+      'async_client_threads': 1,
+      'rpc_type': rpc_type,
+      'load_params': {
+        'closed_loop': {}
+      },
+      'histogram_params': HISTOGRAM_PARAMS,
+    },
+    'server_config': {
+      'server_type': server_type,
+      'security_params': _get_secargs(secure),
+      'core_limit': server_core_limit,
+      'async_server_threads': async_server_threads,
+    },
+    'warmup_seconds': warmup_seconds,
+    'benchmark_seconds': BENCHMARK_SECONDS
+  }
+  if use_generic_payload:
+    if server_type != 'ASYNC_GENERIC_SERVER':
+      raise Exception('Use ASYNC_GENERIC_SERVER for generic payload.')
+    scenario['client_config']['payload_config'] = EMPTY_GENERIC_PAYLOAD
+    scenario['server_config']['payload_config'] = EMPTY_GENERIC_PAYLOAD
+  else:
+    # For proto payload, only the client should get the config.
+    scenario['client_config']['payload_config'] = EMPTY_PROTO_PAYLOAD
+
+  if use_unconstrained_client:
+    scenario['num_clients'] = 0  # use as many client as available.
+    # TODO(jtattermusch): for SYNC_CLIENT, this will create 100*64 threads
+    # and that's probably too much (at least for wrapped languages).
+    scenario['client_config']['outstanding_rpcs_per_channel'] = DEEP
+    scenario['client_config']['client_channels'] = WIDE
+    scenario['client_config']['async_client_threads'] = 0
+  else:
+    scenario['client_config']['outstanding_rpcs_per_channel'] = 1
+    scenario['client_config']['client_channels'] = 1
+    scenario['client_config']['async_client_threads'] = 1
+
+  if server_language:
+    # the SERVER_LANGUAGE field is recognized by run_performance_tests.py
+    scenario['SERVER_LANGUAGE'] = server_language
+  if categories:
+    scenario['CATEGORIES'] = categories
+  return scenario
+
+
 class CXXLanguage:
 
   def __init__(self):
@@ -41,38 +162,63 @@ class CXXLanguage:
     return 0
 
   def scenarios(self):
-    # TODO(jtattermusch): add more scenarios
-    return {
-            # Scenario 1: generic async streaming ping-pong (contentionless latency)
-            'cpp_async_generic_streaming_ping_pong': [
-                '--rpc_type=STREAMING',
-                '--client_type=ASYNC_CLIENT',
-                '--server_type=ASYNC_GENERIC_SERVER',
-                '--outstanding_rpcs_per_channel=1',
-                '--client_channels=1',
-                '--bbuf_req_size=0',
-                '--bbuf_resp_size=0',
-                '--async_client_threads=1',
-                '--async_server_threads=1',
-                '--secure_test=true',
-                '--num_servers=1',
-                '--num_clients=1',
-                '--server_core_limit=0',
-                '--client_core_limit=0'],
-            # Scenario 5: Sync unary ping-pong with protobufs
-            'cpp_sync_unary_ping_pong_protobuf': [
-                '--rpc_type=UNARY',
-                '--client_type=SYNC_CLIENT',
-                '--server_type=SYNC_SERVER',
-                '--outstanding_rpcs_per_channel=1',
-                '--client_channels=1',
-                '--simple_req_size=0',
-                '--simple_resp_size=0',
-                '--secure_test=true',
-                '--num_servers=1',
-                '--num_clients=1',
-                '--server_core_limit=0',
-                '--client_core_limit=0']}
+    # TODO(ctiller): add 70% load latency test
+    for secure in [True, False]:
+      secstr = 'secure' if secure else 'insecure'
+      smoketest_categories = [SMOKETEST] if secure else None
+
+      yield _ping_pong_scenario(
+          'cpp_generic_async_streaming_ping_pong_%s' % secstr, rpc_type='STREAMING',
+          client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
+          use_generic_payload=True, server_core_limit=1, async_server_threads=1,
+          secure=secure,
+          categories=smoketest_categories)
+
+      yield _ping_pong_scenario(
+          'cpp_protobuf_async_streaming_ping_pong_%s' % secstr, rpc_type='STREAMING',
+          client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+          server_core_limit=1, async_server_threads=1,
+          secure=secure)
+
+      yield _ping_pong_scenario(
+          'cpp_protobuf_async_unary_ping_pong_%s' % secstr, rpc_type='UNARY',
+          client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+          server_core_limit=1, async_server_threads=1,
+          secure=secure,
+          categories=smoketest_categories)
+
+      yield _ping_pong_scenario(
+          'cpp_protobuf_sync_unary_ping_pong_%s' % secstr, rpc_type='UNARY',
+          client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+          server_core_limit=1, async_server_threads=1,
+          secure=secure)
+
+      yield _ping_pong_scenario(
+          'cpp_protobuf_async_unary_qps_unconstrained_%s' % secstr, rpc_type='UNARY',
+          client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+          use_unconstrained_client=True,
+          secure=secure,
+          categories=smoketest_categories)
+
+      yield _ping_pong_scenario(
+          'cpp_protobuf_async_streaming_qps_unconstrained_%s' % secstr, rpc_type='STREAMING',
+          client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+          use_unconstrained_client=True,
+          secure=secure)
+
+      yield _ping_pong_scenario(
+          'cpp_generic_async_streaming_qps_unconstrained_%s' % secstr, rpc_type='STREAMING',
+          client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
+          use_unconstrained_client=True, use_generic_payload=True,
+          secure=secure,
+          categories=smoketest_categories)
+
+      yield _ping_pong_scenario(
+          'cpp_generic_async_streaming_qps_one_server_core_%s' % secstr, rpc_type='STREAMING',
+          client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
+          use_unconstrained_client=True, use_generic_payload=True,
+          server_core_limit=1, async_server_threads=1,
+          secure=secure)
 
   def __str__(self):
     return 'c++'
@@ -90,24 +236,46 @@ class CSharpLanguage:
     return 100
 
   def scenarios(self):
-    # TODO(jtattermusch): add more scenarios
-    return {
-            # Scenario 1: generic async streaming ping-pong (contentionless latency)
-            'csharp_async_generic_streaming_ping_pong': [
-                '--rpc_type=STREAMING',
-                '--client_type=ASYNC_CLIENT',
-                '--server_type=ASYNC_GENERIC_SERVER',
-                '--outstanding_rpcs_per_channel=1',
-                '--client_channels=1',
-                '--bbuf_req_size=0',
-                '--bbuf_resp_size=0',
-                '--async_client_threads=1',
-                '--async_server_threads=1',
-                '--secure_test=true',
-                '--num_servers=1',
-                '--num_clients=1',
-                '--server_core_limit=0',
-                '--client_core_limit=0']}
+    yield _ping_pong_scenario(
+        'csharp_generic_async_streaming_ping_pong', rpc_type='STREAMING',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
+        use_generic_payload=True,
+        categories=[SMOKETEST])
+
+    yield _ping_pong_scenario(
+        'csharp_protobuf_async_streaming_ping_pong', rpc_type='STREAMING',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER')
+
+    yield _ping_pong_scenario(
+        'csharp_protobuf_async_unary_ping_pong', rpc_type='UNARY',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+        categories=[SMOKETEST])
+
+    yield _ping_pong_scenario(
+        'csharp_protobuf_sync_to_async_unary_ping_pong', rpc_type='UNARY',
+        client_type='SYNC_CLIENT', server_type='ASYNC_SERVER')
+
+    yield _ping_pong_scenario(
+        'csharp_protobuf_async_unary_qps_unconstrained', rpc_type='UNARY',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+        use_unconstrained_client=True,
+        categories=[SMOKETEST])
+
+    yield _ping_pong_scenario(
+        'csharp_protobuf_async_streaming_qps_unconstrained', rpc_type='STREAMING',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+        use_unconstrained_client=True)
+
+    yield _ping_pong_scenario(
+        'csharp_to_cpp_protobuf_sync_unary_ping_pong', rpc_type='UNARY',
+        client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+        server_language='c++', server_core_limit=1, async_server_threads=1,
+        categories=[SMOKETEST])
+
+    yield _ping_pong_scenario(
+        'csharp_to_cpp_protobuf_async_streaming_ping_pong', rpc_type='STREAMING',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+        server_language='c++', server_core_limit=1, async_server_threads=1)
 
   def __str__(self):
     return 'csharp'
@@ -126,28 +294,239 @@ class NodeLanguage:
     return 200
 
   def scenarios(self):
-    # TODO(jtattermusch): add more scenarios
-    return {
-             'node_sync_unary_ping_pong_protobuf': [
-                '--rpc_type=UNARY',
-                '--client_type=ASYNC_CLIENT',
-                '--server_type=ASYNC_SERVER',
-                '--outstanding_rpcs_per_channel=1',
-                '--client_channels=1',
-                '--simple_req_size=0',
-                '--simple_resp_size=0',
-                '--secure_test=false',
-                '--num_servers=1',
-                '--num_clients=1',
-                '--server_core_limit=0',
-                '--client_core_limit=0']}
+    # TODO(jtattermusch): make this scenario work
+    #yield _ping_pong_scenario(
+    #    'node_generic_async_streaming_ping_pong', rpc_type='STREAMING',
+    #    client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
+    #    use_generic_payload=True)
+
+    # TODO(jtattermusch): make this scenario work
+    #yield _ping_pong_scenario(
+    #    'node_protobuf_async_streaming_ping_pong', rpc_type='STREAMING',
+    #    client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER')
+
+    yield _ping_pong_scenario(
+        'node_protobuf_unary_ping_pong', rpc_type='UNARY',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+        categories=[SMOKETEST])
+
+    yield _ping_pong_scenario(
+        'node_protobuf_async_unary_qps_unconstrained', rpc_type='UNARY',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+        use_unconstrained_client=True,
+        categories=[SMOKETEST])
+
+    # TODO(jtattermusch): make this scenario work
+    #yield _ping_pong_scenario(
+    #    'node_protobuf_async_streaming_qps_unconstrained', rpc_type='STREAMING',
+    #    client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+    #    use_unconstrained_client=True)
+
+    # TODO(jtattermusch): make this scenario work
+    #yield _ping_pong_scenario(
+    #    'node_to_cpp_protobuf_async_unary_ping_pong', rpc_type='UNARY',
+    #    client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+    #    server_language='c++', server_core_limit=1, async_server_threads=1)
+
+    # TODO(jtattermusch): make this scenario work
+    #yield _ping_pong_scenario(
+    #    'node_to_cpp_protobuf_async_streaming_ping_pong', rpc_type='STREAMING',
+    #    client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+    #    server_language='c++', server_core_limit=1, async_server_threads=1)
 
   def __str__(self):
     return 'node'
+
+class PythonLanguage:
+
+  def __init__(self):
+    self.safename = 'python'
+
+  def worker_cmdline(self):
+    return ['tools/run_tests/performance/run_worker_python.sh']
+
+  def worker_port_offset(self):
+    return 500
+
+  def scenarios(self):
+    # TODO(jtattermusch): this scenario reports QPS 0.0
+    yield _ping_pong_scenario(
+        'python_generic_async_streaming_ping_pong', rpc_type='STREAMING',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
+        use_generic_payload=True,
+        categories=[SMOKETEST])
+
+    # TODO(jtattermusch): make this scenario work
+    #yield _ping_pong_scenario(
+    #    'python_protobuf_async_streaming_ping_pong', rpc_type='STREAMING',
+    #    client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER')
+
+    # TODO(jtattermusch): make this scenario work
+    #yield _ping_pong_scenario(
+    #    'python_protobuf_async_unary_ping_pong', rpc_type='UNARY',
+    #    client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER')
+
+    yield _ping_pong_scenario(
+        'python_protobuf_sync_unary_ping_pong', rpc_type='UNARY',
+        client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+        categories=[SMOKETEST])
+
+    # TODO(jtattermusch): make this scenario work
+    #yield _ping_pong_scenario(
+    #    'python_protobuf_sync_unary_qps_unconstrained', rpc_type='UNARY',
+    #    client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+    #    use_unconstrained_client=True)
+
+    # TODO(jtattermusch): make this scenario work
+    #yield _ping_pong_scenario(
+    #    'python_protobuf_async_streaming_qps_unconstrained', rpc_type='STREAMING',
+    #    client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+    #    use_unconstrained_client=True)
+
+    yield _ping_pong_scenario(
+        'python_to_cpp_protobuf_sync_unary_ping_pong', rpc_type='UNARY',
+        client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+        server_language='c++', server_core_limit=1, async_server_threads=1,
+        categories=[SMOKETEST])
+
+    # TODO(jtattermusch): make this scenario work
+    #yield _ping_pong_scenario(
+    #    'python_to_cpp_protobuf_sync_streaming_ping_pong', rpc_type='STREAMING',
+    #    client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+    #    server_language='c++', server_core_limit=1, async_server_threads=1)
+
+  def __str__(self):
+    return 'python'
+
+class RubyLanguage:
+
+  def __init__(self):
+    pass
+    self.safename = str(self)
+
+  def worker_cmdline(self):
+    return ['tools/run_tests/performance/run_worker_ruby.sh']
+
+  def worker_port_offset(self):
+    return 300
+
+  def scenarios(self):
+    yield _ping_pong_scenario(
+        'ruby_protobuf_sync_streaming_ping_pong', rpc_type='STREAMING',
+        client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+        categories=[SMOKETEST])
+
+    yield _ping_pong_scenario(
+        'ruby_protobuf_unary_ping_pong', rpc_type='UNARY',
+        client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+        categories=[SMOKETEST])
+
+    # TODO: scenario reports QPS of 0.0
+    #yield _ping_pong_scenario(
+    #    'ruby_protobuf_sync_unary_qps_unconstrained', rpc_type='UNARY',
+    #    client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+    #    use_unconstrained_client=True)
+
+    # TODO: scenario reports QPS of 0.0
+    #yield _ping_pong_scenario(
+    #    'ruby_protobuf_sync_streaming_qps_unconstrained', rpc_type='STREAMING',
+    #    client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+    #    use_unconstrained_client=True)
+
+    yield _ping_pong_scenario(
+        'ruby_to_cpp_protobuf_sync_unary_ping_pong', rpc_type='UNARY',
+        client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+        server_language='c++', server_core_limit=1, async_server_threads=1)
+
+    yield _ping_pong_scenario(
+        'ruby_to_cpp_protobuf_sync_streaming_ping_pong', rpc_type='STREAMING',
+        client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+        server_language='c++', server_core_limit=1, async_server_threads=1)
+
+  def __str__(self):
+    return 'ruby'
+
+
+class JavaLanguage:
+
+  def __init__(self):
+    pass
+    self.safename = str(self)
+
+  def worker_cmdline(self):
+    return ['tools/run_tests/performance/run_worker_java.sh']
+
+  def worker_port_offset(self):
+    return 400
+
+  def scenarios(self):
+    for secure in [True, False]:
+      secstr = 'secure' if secure else 'insecure'
+      smoketest_categories = [SMOKETEST] if secure else None
+
+      yield _ping_pong_scenario(
+          'java_generic_async_streaming_ping_pong_%s' % secstr, rpc_type='STREAMING',
+          client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
+          use_generic_payload=True, async_server_threads=1,
+          secure=secure, warmup_seconds=JAVA_WARMUP_SECONDS,
+          categories=smoketest_categories)
+
+      yield _ping_pong_scenario(
+          'java_protobuf_async_streaming_ping_pong_%s' % secstr, rpc_type='STREAMING',
+          client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+          async_server_threads=1,
+          secure=secure, warmup_seconds=JAVA_WARMUP_SECONDS)
+
+      yield _ping_pong_scenario(
+          'java_protobuf_async_unary_ping_pong_%s' % secstr, rpc_type='UNARY',
+          client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+          async_server_threads=1,
+          secure=secure, warmup_seconds=JAVA_WARMUP_SECONDS,
+          categories=smoketest_categories)
+
+      yield _ping_pong_scenario(
+          'java_protobuf_unary_ping_pong_%s' % secstr, rpc_type='UNARY',
+          client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+          async_server_threads=1,
+          secure=secure, warmup_seconds=JAVA_WARMUP_SECONDS)
+
+      yield _ping_pong_scenario(
+          'java_protobuf_async_unary_qps_unconstrained_%s' % secstr, rpc_type='UNARY',
+          client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+          use_unconstrained_client=True,
+          secure=secure, warmup_seconds=JAVA_WARMUP_SECONDS,
+          categories=smoketest_categories)
+
+      yield _ping_pong_scenario(
+          'java_protobuf_async_streaming_qps_unconstrained_%s' % secstr, rpc_type='STREAMING',
+          client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+          use_unconstrained_client=True,
+          secure=secure, warmup_seconds=JAVA_WARMUP_SECONDS)
+
+      yield _ping_pong_scenario(
+          'java_generic_async_streaming_qps_unconstrained_%s' % secstr, rpc_type='STREAMING',
+          client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
+          use_unconstrained_client=True, use_generic_payload=True,
+          secure=secure, warmup_seconds=JAVA_WARMUP_SECONDS)
+
+      yield _ping_pong_scenario(
+          'java_generic_async_streaming_qps_one_server_core_%s' % secstr, rpc_type='STREAMING',
+          client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
+          use_unconstrained_client=True, use_generic_payload=True,
+          async_server_threads=1,
+          secure=secure, warmup_seconds=JAVA_WARMUP_SECONDS)
+
+      # TODO(jtattermusch): add scenarios java vs C++ 
+
+  def __str__(self):
+    return 'java'
 
 
 LANGUAGES = {
     'c++' : CXXLanguage(),
     'csharp' : CSharpLanguage(),
     'node' : NodeLanguage(),
+    'ruby' : RubyLanguage(),
+    'java' : JavaLanguage(),
+    'python' : PythonLanguage(),
 }

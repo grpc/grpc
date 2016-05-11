@@ -55,11 +55,11 @@ namespace {
 // Prints out the method using the ruby gRPC DSL.
 void PrintMethod(const MethodDescriptor *method, const grpc::string &package,
                  Printer *out) {
-  grpc::string input_type = RubyTypeOf(method->input_type()->name(), package);
+  grpc::string input_type = RubyTypeOf(method->input_type()->full_name(), package);
   if (method->client_streaming()) {
     input_type = "stream(" + input_type + ")";
   }
-  grpc::string output_type = RubyTypeOf(method->output_type()->name(), package);
+  grpc::string output_type = RubyTypeOf(method->output_type()->full_name(), package);
   if (method->server_streaming()) {
     output_type = "stream(" + output_type + ")";
   }
@@ -98,8 +98,8 @@ void PrintService(const ServiceDescriptor *service, const grpc::string &package,
   out->Print("self.marshal_class_method = :encode\n");
   out->Print("self.unmarshal_class_method = :decode\n");
   std::map<grpc::string, grpc::string> pkg_vars =
-      ListToDict({"service.name", service->name(), "pkg.name", package, });
-  out->Print(pkg_vars, "self.service_name = '$pkg.name$.$service.name$'\n");
+      ListToDict({"service_full_name", service->full_name()});
+  out->Print(pkg_vars, "self.service_name = '$service_full_name$'\n");
   out->Print("\n");
   for (int i = 0; i < service->method_count(); ++i) {
     PrintMethod(service->method(i), package, out);

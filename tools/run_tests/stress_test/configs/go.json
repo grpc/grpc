@@ -1,0 +1,96 @@
+{
+  "dockerImages": {
+    "grpc_stress_go" : {
+      "buildScript": "tools/run_tests/dockerize/build_interop_stress_image.sh",
+      "dockerFileDir": "grpc_interop_stress_go"
+    }
+  },
+
+  "clientTemplates": {
+    "baseTemplates": {
+      "default": {
+        "wrapperScriptPath": "/var/local/git/grpc/tools/gcp/stress_test/run_client.py",
+        "pollIntervalSecs": 60,
+        "clientArgs": {
+          "num_channels_per_server":5,
+          "num_stubs_per_channel":10,
+          "test_cases": "empty_unary:1,large_unary:1,client_streaming:1,server_streaming:1,empty_stream:1",
+          "metrics_port": 8081
+        },
+        "metricsPort": 8081,
+        "metricsArgs": {
+          "metrics_server_address": "localhost:8081",
+          "total_only": "true"
+        }
+      }
+    },
+    "templates": {
+      "go_client": {
+        "baseTemplate": "default",
+        "stressClientCmd": [
+          "go",
+          "run",
+          "/go/src/google.golang.org/grpc/stress/client/main.go"
+        ],
+        "metricsClientCmd": [
+          "go",
+          "run",
+          "/go/src/google.golang.org/grpc/stress/metrics_client/main.go"
+        ]
+      }
+    }
+  },
+
+  "serverTemplates": {
+    "baseTemplates":{
+      "default": {
+        "wrapperScriptPath": "/var/local/git/grpc/tools/gcp/stress_test/run_server.py",
+        "serverPort": 8080,
+        "serverArgs": {
+          "port": 8080
+        }
+      }
+    },
+    "templates": {
+      "go_server": {
+        "baseTemplate": "default",
+        "stressServerCmd": [
+          "go",
+          "run",
+          "/go/src/google.golang.org/grpc/interop/server/server.go"
+        ]
+      }
+    }
+  },
+
+  "testMatrix": {
+    "serverPodSpecs": {
+      "go-stress-server": {
+        "serverTemplate": "go_server",
+        "dockerImage": "grpc_stress_go",
+        "numInstances": 1
+      }
+    },
+
+    "clientPodSpecs": {
+      "go-stress-client": {
+        "clientTemplate": "go_client",
+        "dockerImage": "grpc_stress_go",
+        "numInstances": 15,
+        "serverPodSpec": "go-stress-server"
+      }
+    }
+  },
+
+  "globalSettings": {
+    "buildDockerImages": true,
+    "pollIntervalSecs": 60,
+    "testDurationSecs": 7200,
+    "kubernetesProxyPort": 8007,
+    "datasetIdNamePrefix": "stress_test_go",
+    "summaryTableId": "summary",
+    "qpsTableId": "qps",
+    "podWarmupSecs": 60
+  }
+}
+

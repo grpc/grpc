@@ -56,10 +56,6 @@ grpc_channel_args *grpc_channel_args_merge(const grpc_channel_args *a,
 /** Destroy arguments created by \a grpc_channel_args_copy */
 void grpc_channel_args_destroy(grpc_channel_args *a);
 
-/** Reads census_enabled settings from channel args. Returns 1 if census_enabled
- * is specified in channel args, otherwise returns 0. */
-int grpc_channel_args_is_census_enabled(const grpc_channel_args *a);
-
 /** Returns the compression algorithm set in \a a. */
 grpc_compression_algorithm grpc_channel_args_get_compression_algorithm(
     const grpc_channel_args *a);

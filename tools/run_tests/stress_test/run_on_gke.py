@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -67,29 +67,33 @@ class GlobalSettings:
 class ClientTemplate:
   """ Contains all the common settings that are used by a stress client """
 
-  def __init__(self, name, client_image_path, metrics_client_image_path,
-               metrics_port, wrapper_script_path, poll_interval_secs,
-               client_args_dict, metrics_args_dict):
+  def __init__(self, name, stress_client_cmd, metrics_client_cmd, metrics_port,
+               wrapper_script_path, poll_interval_secs, client_args_dict,
+               metrics_args_dict, will_run_forever, env_dict):
     self.name = name
-    self.client_image_path = client_image_path
-    self.metrics_client_image_path = metrics_client_image_path
+    self.stress_client_cmd = stress_client_cmd
+    self.metrics_client_cmd = metrics_client_cmd
     self.metrics_port = metrics_port
     self.wrapper_script_path = wrapper_script_path
     self.poll_interval_secs = poll_interval_secs
     self.client_args_dict = client_args_dict
     self.metrics_args_dict = metrics_args_dict
+    self.will_run_forever = will_run_forever
+    self.env_dict = env_dict
 
 
 class ServerTemplate:
   """ Contains all the common settings used by a stress server """
 
-  def __init__(self, name, server_image_path, wrapper_script_path, server_port,
-               server_args_dict):
+  def __init__(self, name, server_cmd, wrapper_script_path, server_port,
+               server_args_dict, will_run_forever, env_dict):
     self.name = name
-    self.server_image_path = server_image_path
+    self.server_cmd = server_cmd
     self.wrapper_script_path = wrapper_script_path
     self.server_port = server_port
     self.server_args_dict = server_args_dict
+    self.will_run_forever = will_run_forever
+    self.env_dict = env_dict
 
 
 class DockerImage:
@@ -238,11 +242,13 @@ class Gke:
     # server_pod_spec.template.wrapper_script_path) are are injected into the
     # container via environment variables
     server_env = self.gke_env.copy()
+    server_env.update(server_pod_spec.template.env_dict)
     server_env.update({
         'STRESS_TEST_IMAGE_TYPE': 'SERVER',
-        'STRESS_TEST_IMAGE': server_pod_spec.template.server_image_path,
+        'STRESS_TEST_CMD': server_pod_spec.template.server_cmd,
         'STRESS_TEST_ARGS_STR': self._args_dict_to_str(
-            server_pod_spec.template.server_args_dict)
+            server_pod_spec.template.server_args_dict),
+        'WILL_RUN_FOREVER': str(server_pod_spec.template.will_run_forever)
     })
 
     for pod_name in server_pod_spec.pod_names():
@@ -280,16 +286,17 @@ class Gke:
     # client_pod_spec.template.wrapper_script_path) are are injected into the
     # container via environment variables
     client_env = self.gke_env.copy()
+    client_env.update(client_pod_spec.template.env_dict)
     client_env.update({
         'STRESS_TEST_IMAGE_TYPE': 'CLIENT',
-        'STRESS_TEST_IMAGE': client_pod_spec.template.client_image_path,
+        'STRESS_TEST_CMD': client_pod_spec.template.stress_client_cmd,
         'STRESS_TEST_ARGS_STR': self._args_dict_to_str(
             client_pod_spec.get_client_args_dict()),
-        'METRICS_CLIENT_IMAGE':
-            client_pod_spec.template.metrics_client_image_path,
+        'METRICS_CLIENT_CMD': client_pod_spec.template.metrics_client_cmd,
         'METRICS_CLIENT_ARGS_STR': self._args_dict_to_str(
             client_pod_spec.template.metrics_args_dict),
-        'POLL_INTERVAL_SECS': str(client_pod_spec.template.poll_interval_secs)
+        'POLL_INTERVAL_SECS': str(client_pod_spec.template.poll_interval_secs),
+        'WILL_RUN_FOREVER': str(client_pod_spec.template.will_run_forever)
     })
 
     for pod_name in client_pod_spec.pod_names():
@@ -383,7 +390,7 @@ class Config:
     for image_name in docker_config_dict.keys():
       build_script_path = docker_config_dict[image_name]['buildScript']
       dockerfile_dir = docker_config_dict[image_name]['dockerFileDir']
-      build_type = docker_config_dict[image_name]['buildType']
+      build_type = docker_config_dict[image_name].get('buildType', 'opt')
       docker_images_dict[image_name] = DockerImage(gcp_project_id, image_name,
                                                    build_script_path,
                                                    dockerfile_dir, build_type)
@@ -416,11 +423,14 @@ class Config:
       temp_dict.update(templates_dict[template_name])
 
       # Create and add ClientTemplate object to the final client_templates_dict
+      stress_client_cmd = ' '.join(temp_dict['stressClientCmd'])
+      metrics_client_cmd = ' '.join(temp_dict['metricsClientCmd'])
       client_templates_dict[template_name] = ClientTemplate(
-          template_name, temp_dict['clientImagePath'],
-          temp_dict['metricsClientImagePath'], temp_dict['metricsPort'],
-          temp_dict['wrapperScriptPath'], temp_dict['pollIntervalSecs'],
-          temp_dict['clientArgs'].copy(), temp_dict['metricsArgs'].copy())
+          template_name, stress_client_cmd, metrics_client_cmd,
+          temp_dict['metricsPort'], temp_dict['wrapperScriptPath'],
+          temp_dict['pollIntervalSecs'], temp_dict['clientArgs'].copy(),
+          temp_dict['metricsArgs'].copy(), temp_dict.get('willRunForever', 1),
+          temp_dict.get('env', {}).copy())
 
     return client_templates_dict
 
@@ -452,10 +462,11 @@ class Config:
       temp_dict.update(templates_dict[template_name])
 
       # Create and add ServerTemplate object to the final server_templates_dict
+      stress_server_cmd = ' '.join(temp_dict['stressServerCmd'])
       server_templates_dict[template_name] = ServerTemplate(
-          template_name, temp_dict['serverImagePath'],
-          temp_dict['wrapperScriptPath'], temp_dict['serverPort'],
-          temp_dict['serverArgs'].copy())
+          template_name, stress_server_cmd, temp_dict['wrapperScriptPath'],
+          temp_dict['serverPort'], temp_dict['serverArgs'].copy(),
+          temp_dict.get('willRunForever', 1), temp_dict.get('env', {}).copy())
 
     return server_templates_dict
 
@@ -529,6 +540,8 @@ def run_tests(config):
   # run id. This is useful in debugging when looking at records in Biq query)
   run_id = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
   dataset_id = '%s_%s' % (config.global_settings.dataset_id_prefix, run_id)
+  print 'Run id:', run_id
+  print 'Dataset id:', dataset_id
 
   bq_helper = BigQueryHelper(run_id, '', '',
                              config.global_settings.gcp_project_id, dataset_id,
@@ -601,6 +614,17 @@ def run_tests(config):
   return is_success
 
 
+def tear_down(config):
+  gke = Gke(config.global_settings.gcp_project_id, '', '',
+            config.global_settings.summary_table_id,
+            config.global_settings.qps_table_id,
+            config.global_settings.kubernetes_proxy_port)
+  for name, server_pod_spec in config.server_pod_specs_dict.iteritems():
+    gke.delete_servers(server_pod_spec)
+  for name, client_pod_spec in config.client_pod_specs_dict.iteritems():
+    gke.delete_clients(client_pod_spec)
+
+
 argp = argparse.ArgumentParser(
     description='Launch stress tests in GKE',
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -611,6 +635,7 @@ argp.add_argument('--config_file',
                   required=True,
                   type=str,
                   help='The test config file')
+argp.add_argument('--tear_down', action='store_true', default=False)
 
 if __name__ == '__main__':
   args = argp.parse_args()
@@ -632,6 +657,12 @@ if __name__ == '__main__':
   grpc_root = os.path.abspath(os.path.join(
       os.path.dirname(sys.argv[0]), '../../..'))
   os.chdir(grpc_root)
+
+  # Note that tear_down is only in cases where we want to manually tear down a
+  # test that for some reason run_tests() could not cleanup
+  if args.tear_down:
+    tear_down(config)
+    sys.exit(1)
 
   if not run_tests(config):
     sys.exit(1)

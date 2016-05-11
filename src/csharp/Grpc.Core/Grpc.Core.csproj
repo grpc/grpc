@@ -58,6 +58,7 @@
     <Compile Include="IServerStreamWriter.cs" />
     <Compile Include="IAsyncStreamWriter.cs" />
     <Compile Include="IAsyncStreamReader.cs" />
+    <Compile Include="Logging\TextWriterLogger.cs" />
     <Compile Include="Logging\NullLogger.cs" />
     <Compile Include="ServerPort.cs" />
     <Compile Include="Version.cs" />
@@ -140,9 +141,7 @@
   </ItemGroup>
   <Import Project="NativeDeps.targets" />
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <ItemGroup>
-    <Folder Include="Resources\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <EmbeddedResource Include="..\..\..\etc\roots.pem">
       <Link>Resources\roots.pem</Link>

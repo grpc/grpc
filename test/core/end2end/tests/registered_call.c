@@ -231,3 +231,5 @@ void registered_call(grpc_end2end_test_config config) {
   test_invoke_simple_request(config);
   test_invoke_10_simple_requests(config);
 }
+
+void registered_call_pre_init(void) {}

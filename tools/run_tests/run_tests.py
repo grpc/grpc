@@ -284,12 +284,17 @@ class NodeLanguage(object):
 
   def __init__(self):
     self.platform = platform_string()
-    self.node_version = '0.12'
 
   def configure(self, config, args):
     self.config = config
     self.args = args
-    _check_compiler(self.args.compiler, ['default'])
+    _check_compiler(self.args.compiler, ['default', 'node0.12',
+                                         'node4', 'node5'])
+    if self.args.compiler == 'default':
+      self.node_version = '4'
+    else:
+      # Take off the word "node"
+      self.node_version = self.args.compiler[4:]
 
   def test_specs(self):
     if self.platform == 'windows':
@@ -368,24 +373,20 @@ class PhpLanguage(object):
 
 class PythonLanguage(object):
 
-  def __init__(self):
-    self._build_python_versions = ['2.7']
-    self._has_python_versions = []
-
   def configure(self, config, args):
     self.config = config
     self.args = args
-    _check_compiler(self.args.compiler, ['default'])
+    self._tox_env = self._get_tox_env(self.args.compiler)
 
   def test_specs(self):
     # load list of known test suites
     with open('src/python/grpcio/tests/tests.json') as tests_json_file:
       tests_json = json.load(tests_json_file)
     environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
-    environment['PYVER'] = '2.7'
+    environment['PYTHONPATH'] = os.path.abspath('src/python/gens')
     if self.config.build_config != 'gcov':
       return [self.config.job_spec(
-          ['tools/run_tests/run_python.sh'],
+          ['tools/run_tests/run_python.sh', self._tox_env],
           None,
           environ=dict(environment.items() +
                        [('GRPC_PYTHON_TESTRUNNER_FILTER', suite_name)]),
@@ -410,18 +411,7 @@ class PythonLanguage(object):
     return []
 
   def build_steps(self):
-    commands = []
-    for python_version in self._build_python_versions:
-      try:
-        with open(os.devnull, 'w') as output:
-          subprocess.check_call(['which', 'python' + python_version],
-                                stdout=output, stderr=output)
-        commands.append(['tools/run_tests/build_python.sh', python_version])
-        self._has_python_versions.append(python_version)
-      except:
-        jobset.message('WARNING', 'Missing Python ' + python_version,
-                       do_newline=True)
-    return commands
+    return [['tools/run_tests/build_python.sh', self._tox_env]]
 
   def post_tests_steps(self):
     return []
@@ -431,6 +421,15 @@ class PythonLanguage(object):
 
   def dockerfile_dir(self):
     return 'tools/dockerfile/test/python_jessie_%s' % _docker_arch_suffix(self.args.arch)
+
+  def _get_tox_env(self, compiler):
+    """Returns name of tox environment based on selected compiler."""
+    if compiler == 'python2.7' or compiler == 'default':
+      return 'py27'
+    elif compiler == 'python3.4':
+      return 'py34'
+    else:
+      raise Exception('Compiler %s not supported.' % compiler)
 
   def __str__(self):
     return 'python'
@@ -498,41 +497,48 @@ class CSharpLanguage(object):
 
   def test_specs(self):
     with open('src/csharp/tests.json') as f:
-      tests_json = json.load(f)
-    assemblies = tests_json['assemblies']
-    tests = tests_json['tests']
+      tests_by_assembly = json.load(f)
 
     msbuild_config = _MSBUILD_CONFIG[self.config.build_config]
-    assembly_files = ['%s/bin/%s/%s.dll' % (a, msbuild_config, a)
-                      for a in assemblies]
-
-    extra_args = ['-labels'] + assembly_files
-
+    nunit_args = ['--labels=All',
+                  '--noresult',
+                  '--workers=1']
     if self.platform == 'windows':
-      script_name = 'tools\\run_tests\\run_csharp.bat'
-      extra_args += ['-domain=None']
+      runtime_cmd = []
     else:
-      script_name = 'tools/run_tests/run_csharp.sh'
+      runtime_cmd = ['mono']
 
-    if self.config.build_config == 'gcov':
-      # On Windows, we only collect C# code coverage.
-      # On Linux, we only collect coverage for native extension.
-      # For code coverage all tests need to run as one suite.
-      return [self.config.job_spec([script_name] + extra_args, None,
-                                    shortname='csharp.coverage',
-                                    environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
-    else:
-      specs = []
-      for test in tests:
-        cmdline = [script_name, '-run=%s' % test] + extra_args
-        if self.platform == 'windows':
-          # use different output directory for each test to prevent
-          # TestResult.xml clash between parallel test runs.
-          cmdline += ['-work=test-result/%s' % uuid.uuid4()]
-        specs.append(self.config.job_spec(cmdline, None,
-                                          shortname='csharp.%s' % test,
+    specs = []
+    for assembly in tests_by_assembly.iterkeys():
+      assembly_file = 'src/csharp/%s/bin/%s/%s.exe' % (assembly, msbuild_config, assembly)
+      if self.config.build_config != 'gcov' or self.platform != 'windows':
+        # normally, run each test as a separate process
+        for test in tests_by_assembly[assembly]:
+          cmdline = runtime_cmd + [assembly_file, '--test=%s' % test] + nunit_args
+          specs.append(self.config.job_spec(cmdline,
+                                            None,
+                                            shortname='csharp.%s' % test,
+                                            environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+      else:
+        # For C# test coverage, run all tests from the same assembly at once
+        # using OpenCover.Console (only works on Windows).
+        cmdline = ['src\\csharp\\packages\\OpenCover.4.6.519\\tools\\OpenCover.Console.exe',
+                   '-target:%s' % assembly_file,
+                   '-targetdir:src\\csharp',
+                   '-targetargs:%s' % ' '.join(nunit_args),
+                   '-filter:+[Grpc.Core]*',
+                   '-register:user',
+                   '-output:src\\csharp\\coverage_csharp_%s.xml' % assembly]
+
+        # set really high cpu_cost to make sure instances of OpenCover.Console run exclusively
+        # to prevent problems with registering the profiler.
+        run_exclusive = 1000000
+        specs.append(self.config.job_spec(cmdline,
+                                          None,
+                                          shortname='csharp.coverage.%s' % assembly,
+                                          cpu_cost=run_exclusive,
                                           environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-      return specs
+    return specs
 
   def pre_build_steps(self):
     if self.platform == 'windows':
@@ -555,7 +561,10 @@ class CSharpLanguage(object):
       return [['tools/run_tests/build_csharp.sh']]
 
   def post_tests_steps(self):
-    return []
+    if self.platform == 'windows':
+      return [['tools\\run_tests\\post_tests_csharp.bat']]
+    else:
+      return [['tools/run_tests/post_tests_csharp.sh']]
 
   def makefile_name(self):
     return 'Makefile'
@@ -809,7 +818,9 @@ argp.add_argument('--compiler',
                   choices=['default',
                            'gcc4.4', 'gcc4.9', 'gcc5.3',
                            'clang3.4', 'clang3.6',
-                           'vs2010', 'vs2013', 'vs2015'],
+                           'vs2010', 'vs2013', 'vs2015',
+                           'python2.7', 'python3.4',
+                           'node0.12', 'node4', 'node5'],
                   default='default',
                   help='Selects compiler to use. Allowed values depend on the platform and language.')
 argp.add_argument('--build_only',
@@ -913,13 +924,13 @@ if args.use_docker:
   env = os.environ.copy()
   env['RUN_TESTS_COMMAND'] = run_tests_cmd
   env['DOCKERFILE_DIR'] = dockerfile_dir
-  env['DOCKER_RUN_SCRIPT'] = 'tools/jenkins/docker_run_tests.sh'
+  env['DOCKER_RUN_SCRIPT'] = 'tools/run_tests/dockerize/docker_run_tests.sh'
   if args.xml_report:
     env['XML_REPORT'] = args.xml_report
   if not args.travis:
     env['TTY_FLAG'] = '-t'  # enables Ctrl-C when not on Jenkins.
 
-  subprocess.check_call(['tools/jenkins/build_docker_and_run_tests.sh'],
+  subprocess.check_call(['tools/run_tests/dockerize/build_docker_and_run_tests.sh'],
                         shell=True,
                         env=env)
   sys.exit(0)

@@ -39,6 +39,7 @@
 #include <vector>
 
 #include <grpc++/support/byte_buffer.h>
+#include <grpc++/support/channel_arguments.h>
 #include <grpc++/support/slice.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -173,20 +174,6 @@ class Client {
         random_dist.reset(
             new ExpDist(load.poisson().offered_load() / num_threads));
         break;
-      case LoadParams::kUniform:
-        random_dist.reset(
-            new UniformDist(load.uniform().interarrival_lo() * num_threads,
-                            load.uniform().interarrival_hi() * num_threads));
-        break;
-      case LoadParams::kDeterm:
-        random_dist.reset(
-            new DetDist(num_threads / load.determ().offered_load()));
-        break;
-      case LoadParams::kPareto:
-        random_dist.reset(
-            new ParetoDist(load.pareto().interarrival_base() * num_threads,
-                           load.pareto().alpha()));
-        break;
       default:
         GPR_ASSERT(false);
     }
@@ -294,7 +281,7 @@ class ClientImpl : public Client {
         create_stub_(create_stub) {
     for (int i = 0; i < config.client_channels(); i++) {
       channels_[i].init(config.server_targets(i % config.server_targets_size()),
-                        config, create_stub_);
+                        config, create_stub_, i);
     }
 
     ClientRequestCreator<RequestType> create_req(&request_,
@@ -317,14 +304,17 @@ class ClientImpl : public Client {
     }
     void init(const grpc::string& target, const ClientConfig& config,
               std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)>
-                  create_stub) {
+                  create_stub,
+              int shard) {
       // We have to use a 2-phase init like this with a default
       // constructor followed by an initializer function to make
       // old compilers happy with using this in std::vector
+      ChannelArguments args;
+      args.SetInt("shard_to_ensure_no_subchannel_merges", shard);
       channel_ = CreateTestChannel(
           target, config.security_params().server_host_override(),
-          config.has_security_params(),
-          !config.security_params().use_test_ca());
+          config.has_security_params(), !config.security_params().use_test_ca(),
+          std::shared_ptr<CallCredentials>(), args);
       stub_ = create_stub(channel_);
     }
     Channel* get_channel() { return channel_.get(); }

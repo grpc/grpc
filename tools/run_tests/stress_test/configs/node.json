@@ -1,0 +1,96 @@
+{
+  "dockerImages": {
+    "grpc_stress_node" : {
+      "buildScript": "tools/run_tests/dockerize/build_interop_stress_image.sh",
+      "dockerFileDir": "grpc_interop_stress_node"
+    }
+  },
+
+  "clientTemplates": {
+    "baseTemplates": {
+      "default": {
+        "wrapperScriptPath": "/var/local/git/grpc/tools/gcp/stress_test/run_client.py",
+        "pollIntervalSecs": 60,
+        "clientArgs": {
+          "num_channels_per_server":5,
+          "num_stubs_per_channel":10,
+          "test_cases": "empty_unary:1,large_unary:1,client_streaming:1,server_streaming:1,empty_stream:1",
+          "metrics_port": 8081
+        },
+        "metricsPort": 8081,
+        "metricsArgs": {
+          "metrics_server_address": "localhost:8081",
+          "total_only": "true"
+        }
+      }
+    },
+    "templates": {
+      "node_client": {
+        "baseTemplate": "default",
+        "stressClientCmd": [
+          "/var/local/git/grpc/tools/gcp/stress_test/run_node.sh",
+          "node",
+          "/var/local/git/grpc/src/node/stress/stress_client.js"
+        ],
+        "metricsClientCmd": [
+          "/var/local/git/grpc/tools/gcp/stress_test/run_node.sh",
+          "node",
+          "/var/local/git/grpc/src/node/stress/metrics_client.js"
+        ]
+      }
+    }
+  },
+
+  "serverTemplates": {
+    "baseTemplates":{
+      "default": {
+        "wrapperScriptPath": "/var/local/git/grpc/tools/gcp/stress_test/run_server.py",
+        "serverPort": 8080,
+        "serverArgs": {
+          "port": 8080
+        }
+      }
+    },
+    "templates": {
+      "node_server": {
+        "baseTemplate": "default",
+        "stressServerCmd": [
+          "/var/local/git/grpc/tools/gcp/stress_test/run_node.sh",
+          "node",
+          "/var/local/git/grpc/src/node/interop/interop_server.js"
+        ]
+      }
+    }
+  },
+
+  "testMatrix": {
+    "serverPodSpecs": {
+      "node-stress-server": {
+        "serverTemplate": "node_server",
+        "dockerImage": "grpc_stress_node",
+        "numInstances": 1
+      }
+    },
+
+    "clientPodSpecs": {
+      "node-stress-client": {
+        "clientTemplate": "node_client",
+        "dockerImage": "grpc_stress_node",
+        "numInstances": 15,
+        "serverPodSpec": "node-stress-server"
+      }
+    }
+  },
+
+  "globalSettings": {
+    "buildDockerImages": true,
+    "pollIntervalSecs": 60,
+    "testDurationSecs": 7200,
+    "kubernetesProxyPort": 8005,
+    "datasetIdNamePrefix": "stress_test_node",
+    "summaryTableId": "summary",
+    "qpsTableId": "qps",
+    "podWarmupSecs": 60
+  }
+}
+

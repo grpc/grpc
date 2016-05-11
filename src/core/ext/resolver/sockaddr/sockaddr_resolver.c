@@ -41,6 +41,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/client_config/lb_policy_registry.h"
+#include "src/core/ext/client_config/parse_address.h"
 #include "src/core/ext/client_config/resolver_registry.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
@@ -162,87 +163,12 @@ static char *ipv6_get_default_authority(grpc_resolver_factory *factory,
   return ip_get_default_authority(uri);
 }
 
-static int parse_ipv4(grpc_uri *uri, struct sockaddr_storage *addr,
-                      size_t *len) {
-  const char *host_port = uri->path;
-  char *host;
-  char *port;
-  int port_num;
-  int result = 0;
-  struct sockaddr_in *in = (struct sockaddr_in *)addr;
-
-  if (*host_port == '/') ++host_port;
-  if (!gpr_split_host_port(host_port, &host, &port)) {
-    return 0;
-  }
-
-  memset(in, 0, sizeof(*in));
-  *len = sizeof(*in);
-  in->sin_family = AF_INET;
-  if (inet_pton(AF_INET, host, &in->sin_addr) == 0) {
-    gpr_log(GPR_ERROR, "invalid ipv4 address: '%s'", host);
-    goto done;
-  }
-
-  if (port != NULL) {
-    if (sscanf(port, "%d", &port_num) != 1 || port_num < 0 ||
-        port_num > 65535) {
-      gpr_log(GPR_ERROR, "invalid ipv4 port: '%s'", port);
-      goto done;
-    }
-    in->sin_port = htons((uint16_t)port_num);
-  } else {
-    gpr_log(GPR_ERROR, "no port given for ipv4 scheme");
-    goto done;
-  }
-
-  result = 1;
-done:
-  gpr_free(host);
-  gpr_free(port);
-  return result;
+#ifdef GPR_HAVE_UNIX_SOCKET
+char *unix_get_default_authority(grpc_resolver_factory *factory,
+                                 grpc_uri *uri) {
+  return gpr_strdup("localhost");
 }
-
-static int parse_ipv6(grpc_uri *uri, struct sockaddr_storage *addr,
-                      size_t *len) {
-  const char *host_port = uri->path;
-  char *host;
-  char *port;
-  int port_num;
-  int result = 0;
-  struct sockaddr_in6 *in6 = (struct sockaddr_in6 *)addr;
-
-  if (*host_port == '/') ++host_port;
-  if (!gpr_split_host_port(host_port, &host, &port)) {
-    return 0;
-  }
-
-  memset(in6, 0, sizeof(*in6));
-  *len = sizeof(*in6);
-  in6->sin6_family = AF_INET6;
-  if (inet_pton(AF_INET6, host, &in6->sin6_addr) == 0) {
-    gpr_log(GPR_ERROR, "invalid ipv6 address: '%s'", host);
-    goto done;
-  }
-
-  if (port != NULL) {
-    if (sscanf(port, "%d", &port_num) != 1 || port_num < 0 ||
-        port_num > 65535) {
-      gpr_log(GPR_ERROR, "invalid ipv6 port: '%s'", port);
-      goto done;
-    }
-    in6->sin6_port = htons((uint16_t)port_num);
-  } else {
-    gpr_log(GPR_ERROR, "no port given for ipv6 scheme");
-    goto done;
-  }
-
-  result = 1;
-done:
-  gpr_free(host);
-  gpr_free(port);
-  return result;
-}
+#endif
 
 static void do_nothing(void *ignored) {}
 
@@ -334,23 +260,22 @@ static void sockaddr_factory_ref(grpc_resolver_factory *factory) {}
 
 static void sockaddr_factory_unref(grpc_resolver_factory *factory) {}
 
-#define DECL_FACTORY(name, prefix)                                          \
+#define DECL_FACTORY(name)                                                  \
   static grpc_resolver *name##_factory_create_resolver(                     \
       grpc_resolver_factory *factory, grpc_resolver_args *args) {           \
-    return sockaddr_create(args, "pick_first", prefix##parse_##name);       \
+    return sockaddr_create(args, "pick_first", parse_##name);               \
   }                                                                         \
   static const grpc_resolver_factory_vtable name##_factory_vtable = {       \
       sockaddr_factory_ref, sockaddr_factory_unref,                         \
-      name##_factory_create_resolver, prefix##name##_get_default_authority, \
-      #name};                                                               \
+      name##_factory_create_resolver, name##_get_default_authority, #name}; \
   static grpc_resolver_factory name##_resolver_factory = {                  \
       &name##_factory_vtable}
 
 #ifdef GPR_HAVE_UNIX_SOCKET
-DECL_FACTORY(unix, grpc_);
+DECL_FACTORY(unix);
 #endif
-DECL_FACTORY(ipv4, );
-DECL_FACTORY(ipv6, );
+DECL_FACTORY(ipv4);
+DECL_FACTORY(ipv6);
 
 void grpc_resolver_sockaddr_init(void) {
   grpc_register_resolver_type(&ipv4_resolver_factory);

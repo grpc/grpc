@@ -172,3 +172,5 @@ void connectivity(grpc_end2end_test_config config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
   test_connectivity(config);
 }
+
+void connectivity_pre_init(void) {}

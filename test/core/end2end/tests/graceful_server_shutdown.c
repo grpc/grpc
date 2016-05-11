@@ -210,3 +210,5 @@ static void test_early_server_shutdown_finishes_inflight_calls(
 void graceful_server_shutdown(grpc_end2end_test_config config) {
   test_early_server_shutdown_finishes_inflight_calls(config);
 }
+
+void graceful_server_shutdown_pre_init(void) {}

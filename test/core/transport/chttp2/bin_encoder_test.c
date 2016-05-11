@@ -83,7 +83,7 @@ static void expect_combined_equiv(const char *s, size_t len, int line) {
   gpr_slice input = gpr_slice_from_copied_buffer(s, len);
   gpr_slice base64 = grpc_chttp2_base64_encode(input);
   gpr_slice expect = grpc_chttp2_huffman_compress(base64);
-  gpr_slice got = grpc_chttp2_base64_encode_and_huffman_compress(input);
+  gpr_slice got = grpc_chttp2_base64_encode_and_huffman_compress_impl(input);
   if (0 != gpr_slice_cmp(expect, got)) {
     char *t = gpr_dump_slice(input, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     char *e = gpr_dump_slice(expect, GPR_DUMP_HEX | GPR_DUMP_ASCII);

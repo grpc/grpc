@@ -33,12 +33,16 @@
 import argparse
 import itertools
 import jobset
+import json
 import multiprocessing
 import os
+import pipes
+import re
 import subprocess
 import sys
 import tempfile
 import time
+import traceback
 import uuid
 import performance.scenario_config as scenario_config
 
@@ -80,35 +84,82 @@ def create_qpsworker_job(language, shortname=None,
   else:
     host_and_port='localhost:%s' % port
 
+  # TODO(jtattermusch): with some care, we can calculate the right timeout
+  # of a worker from the sum of warmup + benchmark times for all the scenarios
   jobspec = jobset.JobSpec(
       cmdline=cmdline,
       shortname=shortname,
-      timeout_seconds=15*60)
+      timeout_seconds=2*60*60)
   return QpsWorkerJob(jobspec, language, host_and_port)
 
 
-def create_scenario_jobspec(scenario_name, driver_args, workers, remote_host=None):
+def create_scenario_jobspec(scenario_json, workers, remote_host=None,
+                            bq_result_table=None):
   """Runs one scenario using QPS driver."""
   # setting QPS_WORKERS env variable here makes sure it works with SSH too.
-  cmd = 'QPS_WORKERS="%s" bins/opt/qps_driver ' % ','.join(workers)
-  cmd += ' '.join(driver_args)
+  cmd = 'QPS_WORKERS="%s" ' % ','.join(workers)
+  if bq_result_table:
+    cmd += 'BQ_RESULT_TABLE="%s" ' % bq_result_table
+  cmd += 'tools/run_tests/performance/run_qps_driver.sh '
+  cmd += '--scenarios_json=%s ' % pipes.quote(json.dumps({'scenarios': [scenario_json]}))
+  cmd += '--scenario_result_file=scenario_result.json'
   if remote_host:
     user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, remote_host)
-    cmd = 'ssh %s "cd ~/performance_workspace/grpc/ && %s"' % (user_at_host, cmd)
+    cmd = 'ssh %s "cd ~/performance_workspace/grpc/ && "%s' % (user_at_host, pipes.quote(cmd))
 
   return jobset.JobSpec(
       cmdline=[cmd],
-      shortname='qps_driver.%s' % scenario_name,
+      shortname='qps_json_driver.%s' % scenario_json['name'],
       timeout_seconds=3*60,
       shell=True,
       verbose_success=True)
 
 
-def archive_repo():
+def create_quit_jobspec(workers, remote_host=None):
+  """Runs quit using QPS driver."""
+  # setting QPS_WORKERS env variable here makes sure it works with SSH too.
+  cmd = 'QPS_WORKERS="%s" bins/opt/qps_json_driver --quit' % ','.join(workers)
+  if remote_host:
+    user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, remote_host)
+    cmd = 'ssh %s "cd ~/performance_workspace/grpc/ && "%s' % (user_at_host, pipes.quote(cmd))
+
+  return jobset.JobSpec(
+      cmdline=[cmd],
+      shortname='qps_json_driver.quit',
+      timeout_seconds=3*60,
+      shell=True,
+      verbose_success=True)
+
+
+def create_netperf_jobspec(server_host='localhost', client_host=None,
+                           bq_result_table=None):
+  """Runs netperf benchmark."""
+  cmd = 'NETPERF_SERVER_HOST="%s" ' % server_host
+  if bq_result_table:
+    cmd += 'BQ_RESULT_TABLE="%s" ' % bq_result_table
+  cmd += 'tools/run_tests/performance/run_netperf.sh'
+  if client_host:
+    user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, client_host)
+    cmd = 'ssh %s "cd ~/performance_workspace/grpc/ && "%s' % (user_at_host, pipes.quote(cmd))
+
+  return jobset.JobSpec(
+      cmdline=[cmd],
+      shortname='netperf',
+      timeout_seconds=60,
+      shell=True,
+      verbose_success=True)
+
+
+def archive_repo(languages):
   """Archives local version of repo including submodules."""
-  # TODO: also archive grpc-go and grpc-java repos
+  cmdline=['tar', '-cf', '../grpc.tar', '../grpc/']
+  if 'java' in languages:
+    cmdline.append('../grpc-java')
+  if 'go' in languages:
+    cmdline.append('../grpc-go')
+
   archive_job = jobset.JobSpec(
-      cmdline=['tar', '-cf', '../grpc.tar', '../grpc/'],
+      cmdline=cmdline,
       shortname='archive_repo',
       timeout_seconds=3*60)
 
@@ -117,7 +168,7 @@ def archive_repo():
       [archive_job], newline_on_success=True, maxjobs=1)
   if num_failures == 0:
     jobset.message('SUCCESS',
-                   'Archive with local repository create successfully.',
+                   'Archive with local repository created successfully.',
                    do_newline=True)
   else:
     jobset.message('FAILED', 'Failed to archive local repository.',
@@ -125,8 +176,9 @@ def archive_repo():
     sys.exit(1)
 
 
-def prepare_remote_hosts(hosts):
-  """Prepares remote hosts."""
+def prepare_remote_hosts(hosts, prepare_local=False):
+  """Prepares remote hosts (and maybe prepare localhost as well)."""
+  prepare_timeout = 5*60
   prepare_jobs = []
   for host in hosts:
     user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, host)
@@ -135,13 +187,20 @@ def prepare_remote_hosts(hosts):
             cmdline=['tools/run_tests/performance/remote_host_prepare.sh'],
             shortname='remote_host_prepare.%s' % host,
             environ = {'USER_AT_HOST': user_at_host},
-            timeout_seconds=5*60))
-  jobset.message('START', 'Preparing remote hosts.', do_newline=True)
+            timeout_seconds=prepare_timeout))
+  if prepare_local:
+    # Prepare localhost as well
+    prepare_jobs.append(
+        jobset.JobSpec(
+            cmdline=['tools/run_tests/performance/kill_workers.sh'],
+            shortname='local_prepare',
+            timeout_seconds=prepare_timeout))
+  jobset.message('START', 'Preparing hosts.', do_newline=True)
   num_failures, _ = jobset.run(
       prepare_jobs, newline_on_success=True, maxjobs=10)
   if num_failures == 0:
     jobset.message('SUCCESS',
-                   'Remote hosts ready to start build.',
+                   'Prepare step completed successfully.',
                    do_newline=True)
   else:
     jobset.message('FAILED', 'Failed to prepare remote hosts.',
@@ -203,25 +262,55 @@ def start_qpsworkers(languages, worker_hosts):
           for worker_idx, worker in enumerate(workers)]
 
 
-def create_scenarios(languages, workers_by_lang, remote_host=None):
+def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*',
+                     category='all', bq_result_table=None,
+                     netperf=False, netperf_hosts=[]):
   """Create jobspecs for scenarios to run."""
-  scenarios = []
-  for language in languages:
-    for scenario_name, driver_args in language.scenarios().iteritems():
-      scenario = create_scenario_jobspec(scenario_name,
-                                         driver_args,
-                                         workers_by_lang[str(language)],
-                                         remote_host=remote_host)
-      scenarios.append(scenario)
-
-  # the very last scenario requests shutting down the workers.
   all_workers = [worker
                  for workers in workers_by_lang.values()
                  for worker in workers]
-  scenarios.append(create_scenario_jobspec('quit_workers',
-                                           ['--quit=true'],
-                                           all_workers,
-                                           remote_host=remote_host))
+  scenarios = []
+
+  if netperf:
+    if not netperf_hosts:
+      netperf_server='localhost'
+      netperf_client=None
+    elif len(netperf_hosts) == 1:
+      netperf_server=netperf_hosts[0]
+      netperf_client=netperf_hosts[0]
+    else:
+      netperf_server=netperf_hosts[0]
+      netperf_client=netperf_hosts[1]
+    scenarios.append(create_netperf_jobspec(server_host=netperf_server,
+                                            client_host=netperf_client,
+                                            bq_result_table=bq_result_table))
+
+  for language in languages:
+    for scenario_json in language.scenarios():
+      if re.search(args.regex, scenario_json['name']):
+        if category in scenario_json.get('CATEGORIES', []) or category == 'all':
+          workers = workers_by_lang[str(language)]
+          # 'SERVER_LANGUAGE' is an indicator for this script to pick
+          # a server in different language.
+          custom_server_lang = scenario_json.get('SERVER_LANGUAGE', None)
+          scenario_json = scenario_config.remove_nonproto_fields(scenario_json)
+          if custom_server_lang:
+            if not workers_by_lang.get(custom_server_lang, []):
+              print 'Warning: Skipping scenario %s as' % scenario_json['name']
+              print('SERVER_LANGUAGE is set to %s yet the language has '
+                    'not been selected with -l' % custom_server_lang)
+              continue
+            for idx in range(0, scenario_json['num_servers']):
+              # replace first X workers by workers of a different language
+              workers[idx] = workers_by_lang[custom_server_lang][idx]
+          scenario = create_scenario_jobspec(scenario_json,
+                                             workers,
+                                             remote_host=remote_host,
+                                             bq_result_table=bq_result_table)
+          scenarios.append(scenario)
+
+  # the very last scenario requests shutting down the workers.
+  scenarios.append(create_quit_jobspec(all_workers, remote_host=remote_host))
   return scenarios
 
 
@@ -245,7 +334,7 @@ argp = argparse.ArgumentParser(description='Run performance tests.')
 argp.add_argument('-l', '--language',
                   choices=['all'] + sorted(scenario_config.LANGUAGES.keys()),
                   nargs='+',
-                  default=['all'],
+                  required=True,
                   help='Languages to benchmark.')
 argp.add_argument('--remote_driver_host',
                   default=None,
@@ -254,6 +343,19 @@ argp.add_argument('--remote_worker_host',
                   nargs='+',
                   default=[],
                   help='Worker hosts where to start QPS workers.')
+argp.add_argument('-r', '--regex', default='.*', type=str,
+                  help='Regex to select scenarios to run.')
+argp.add_argument('--bq_result_table', default=None, type=str,
+                  help='Bigquery "dataset.table" to upload results to.')
+argp.add_argument('--category',
+                  choices=['smoketest','all'],
+                  default='smoketest',
+                  help='Select a category of tests to run. Smoketest runs by default.')
+argp.add_argument('--netperf',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Run netperf benchmark as one of the scenarios.')
 
 args = argp.parse_args()
 
@@ -261,6 +363,7 @@ languages = set(scenario_config.LANGUAGES[l]
                 for l in itertools.chain.from_iterable(
                       scenario_config.LANGUAGES.iterkeys() if x == 'all' else [x]
                       for x in args.language))
+
 
 # Put together set of remote hosts where to run and build
 remote_hosts = set()
@@ -271,8 +374,10 @@ if args.remote_driver_host:
   remote_hosts.add(args.remote_driver_host)
 
 if remote_hosts:
-  archive_repo()
-  prepare_remote_hosts(remote_hosts)
+  archive_repo(languages=[str(l) for l in languages])
+  prepare_remote_hosts(remote_hosts, prepare_local=True)
+else:
+  prepare_remote_hosts([], prepare_local=True)
 
 build_local = False
 if not args.remote_driver_host:
@@ -280,6 +385,9 @@ if not args.remote_driver_host:
 build_on_remote_hosts(remote_hosts, languages=[str(l) for l in languages], build_local=build_local)
 
 qpsworker_jobs = start_qpsworkers(languages, args.remote_worker_host)
+
+# TODO(jtattermusch): see https://github.com/grpc/grpc/issues/6174
+time.sleep(5)
 
 # get list of worker addresses for each language.
 worker_addresses = dict([(str(language), []) for language in languages])
@@ -289,7 +397,13 @@ for job in qpsworker_jobs:
 try:
   scenarios = create_scenarios(languages,
                                workers_by_lang=worker_addresses,
-                               remote_host=args.remote_driver_host)
+                               remote_host=args.remote_driver_host,
+                               regex=args.regex,
+                               category=args.category,
+                               bq_result_table=args.bq_result_table,
+                               netperf=args.netperf,
+                               netperf_hosts=args.remote_worker_host)
+
   if not scenarios:
     raise Exception('No scenarios to run')
 
@@ -304,5 +418,8 @@ try:
     jobset.message('FAILED', 'Some of the scenarios failed.',
                    do_newline=True)
     sys.exit(1)
+except:
+  traceback.print_exc()
+  raise
 finally:
   finish_qps_workers(qpsworker_jobs)

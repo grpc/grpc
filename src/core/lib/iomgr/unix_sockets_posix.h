@@ -38,8 +38,6 @@
 
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/client_config/resolver_factory.h"
-#include "src/core/ext/client_config/uri_parser.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
@@ -50,11 +48,6 @@ grpc_resolved_addresses *grpc_resolve_unix_domain_address(const char *name);
 int grpc_is_unix_socket(const struct sockaddr *addr);
 
 void grpc_unlink_if_unix_domain_socket(const struct sockaddr *addr);
-
-int grpc_parse_unix(grpc_uri *uri, struct sockaddr_storage *addr, size_t *len);
-
-char *grpc_unix_get_default_authority(grpc_resolver_factory *factory,
-                                      grpc_uri *uri);
 
 char *grpc_sockaddr_to_uri_unix_if_possible(const struct sockaddr *addr);
 
