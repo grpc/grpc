@@ -131,6 +131,10 @@ static void partly_done(grpc_exec_ctx *exec_ctx, state_watcher *w,
   }
 
   gpr_mu_lock(&w->mu);
+  const char *msg = grpc_error_string(error);
+  gpr_log(GPR_DEBUG, "partly_done: d2c=%d phs=%d err=%s", due_to_completion, w->phase, msg);
+  grpc_error_free_string(msg);
+
   if (due_to_completion) {
     GRPC_ERROR_UNREF(w->error);
     w->error = GRPC_ERROR_NONE;
@@ -155,16 +159,18 @@ static void partly_done(grpc_exec_ctx *exec_ctx, state_watcher *w,
   if (delete) {
     delete_state_watcher(exec_ctx, w);
   }
+
+  GRPC_ERROR_UNREF(error);
 }
 
 static void watch_complete(grpc_exec_ctx *exec_ctx, void *pw,
                            grpc_error *error) {
-  partly_done(exec_ctx, pw, true, error);
+  partly_done(exec_ctx, pw, true, GRPC_ERROR_REF(error));
 }
 
 static void timeout_complete(grpc_exec_ctx *exec_ctx, void *pw,
                              grpc_error *error) {
-  partly_done(exec_ctx, pw, false, error);
+  partly_done(exec_ctx, pw, false, GRPC_ERROR_REF(error));
 }
 
 void grpc_channel_watch_connectivity_state(
@@ -189,7 +195,7 @@ void grpc_channel_watch_connectivity_state(
   grpc_closure_init(&w->on_complete, watch_complete, w);
   w->phase = WAITING;
   w->state = last_observed_state;
-  w->error = GRPC_ERROR_CREATE("Some error");
+  w->error = GRPC_ERROR_CREATE("Timeout waiting for channel state");
   w->cq = cq;
   w->tag = tag;
   w->channel = channel;
