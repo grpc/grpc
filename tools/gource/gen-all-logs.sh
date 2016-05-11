@@ -28,13 +28,20 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-gource                          \
-  --multi-sampling              \
-  -s 0.1                        \
-  --max-file-lag 0.05           \
-  --max-files 0                 \
-  -e 0.01                       \
-  --hide filenames,dirnames     \
-  --disable-auto-rotate         \
-  --file-filter '/grpc/doc/ref' \
-  $*
+set -ex
+
+outdir=`pwd`
+
+tmpdir=`mktemp -d`
+mkdir -p $tmpdir/logs
+repos="grpc grpc-common grpc-go grpc-java grpc.github.io grpc-tools homebrew-grpc grpc-docker-library"
+for repo in $repos
+do
+  cd $tmpdir
+  git clone https://github.com/grpc/$repo.git
+  cd $repo
+  gource --output-custom-log $tmpdir/logs/$repo
+  sed -i .backup "s,\|/,\|/$repo/,g" $tmpdir/logs/$repo
+done
+rm $tmpdir/logs/*.backup
+cat $tmpdir/logs/* | sort -n > $outdir/all-logs.txt
