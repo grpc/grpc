@@ -37,8 +37,8 @@
 
 #include "src/core/lib/iomgr/network_monitor.h"
 
-#include <SystemConfiguration/SystemConfiguration.h>
 #include <CoreFoundation/CoreFoundation.h>
+#include <SystemConfiguration/SystemConfiguration.h>
 #include <grpc/support/sync.h>
 
 struct grpc_connectivity_monitor {

@@ -40,4 +40,4 @@ bool grpc_start_connectivity_monitor(const char* addr, void (*handler)(void));
 
 bool grpc_stop_connectivity_monitor();
 
-#endif  /* GRPC_CORE_LIB_IOMGR_NETWORK_MONITOR_APPLE_H */
+#endif /* GRPC_CORE_LIB_IOMGR_NETWORK_MONITOR_H */
