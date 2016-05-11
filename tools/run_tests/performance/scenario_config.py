@@ -538,56 +538,47 @@ class GoLanguage:
       secstr = 'secure' if secure else 'insecure'
       smoketest_categories = [SMOKETEST] if secure else None
 
+      # ASYNC_GENERIC_SERVER for Go actually uses a sync streaming server,
+      # but that's mostly because of lack of better name of the enum value. 
       yield _ping_pong_scenario(
-          'go_generic_async_streaming_ping_pong_%s' % secstr, rpc_type='STREAMING',
-          client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
+          'go_generic_sync_streaming_ping_pong_%s' % secstr, rpc_type='STREAMING',
+          client_type='SYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
           use_generic_payload=True, async_server_threads=1,
           secure=secure,
           categories=smoketest_categories)
 
       yield _ping_pong_scenario(
-          'go_protobuf_async_streaming_ping_pong_%s' % secstr, rpc_type='STREAMING',
-          client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
-          async_server_threads=1,
-          secure=secure)
-
-      yield _ping_pong_scenario(
-          'go_protobuf_async_unary_ping_pong_%s' % secstr, rpc_type='UNARY',
-          client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
-          async_server_threads=1,
-          secure=secure,
-          categories=smoketest_categories)
-
-      yield _ping_pong_scenario(
-          'go_protobuf_unary_ping_pong_%s' % secstr, rpc_type='UNARY',
+          'go_protobuf_sync_streaming_ping_pong_%s' % secstr, rpc_type='STREAMING',
           client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
           async_server_threads=1,
           secure=secure)
 
       yield _ping_pong_scenario(
-          'go_protobuf_async_unary_qps_unconstrained_%s' % secstr, rpc_type='UNARY',
-          client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+          'go_protobuf_sync_unary_ping_pong_%s' % secstr, rpc_type='UNARY',
+          client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+          async_server_threads=1,
+          secure=secure,
+          categories=smoketest_categories)
+
+      yield _ping_pong_scenario(
+          'go_protobuf_sync_unary_qps_unconstrained_%s' % secstr, rpc_type='UNARY',
+          client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
           use_unconstrained_client=True,
           secure=secure,
           categories=smoketest_categories)
 
       yield _ping_pong_scenario(
-          'go_protobuf_async_streaming_qps_unconstrained_%s' % secstr, rpc_type='STREAMING',
-          client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+          'go_protobuf_sync_streaming_qps_unconstrained_%s' % secstr, rpc_type='STREAMING',
+          client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
           use_unconstrained_client=True,
-          secure=secure,)
-
-      yield _ping_pong_scenario(
-          'go_generic_async_streaming_qps_unconstrained_%s' % secstr, rpc_type='STREAMING',
-          client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
-          use_unconstrained_client=True, use_generic_payload=True,
           secure=secure)
 
+      # ASYNC_GENERIC_SERVER for Go actually uses a sync streaming server,
+      # but that's mostly because of lack of better name of the enum value.
       yield _ping_pong_scenario(
-          'go_generic_async_streaming_qps_one_server_core_%s' % secstr, rpc_type='STREAMING',
-          client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
+          'go_generic_sync_streaming_qps_unconstrained_%s' % secstr, rpc_type='STREAMING',
+          client_type='SYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
           use_unconstrained_client=True, use_generic_payload=True,
-          async_server_threads=1,
           secure=secure)
 
       # TODO(jtattermusch): add scenarios go vs C++ 
