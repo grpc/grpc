@@ -39,6 +39,7 @@ except ImportError:
 from concurrent import futures
 
 from grpc.beta import implementations
+from grpc.framework.interfaces.face import face
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import services_pb2
 from tests.unit import resources
@@ -141,10 +142,10 @@ class UnaryAsyncBenchmarkClient(BenchmarkClient):
     self._stub = None
 
 
-class StreamingAsyncBenchmarkClient(BenchmarkClient):
+class StreamingSyncBenchmarkClient(BenchmarkClient):
 
   def __init__(self, server, config, hist):
-    super(StreamingAsyncBenchmarkClient, self).__init__(server, config, hist)
+    super(StreamingSyncBenchmarkClient, self).__init__(server, config, hist)
     self._is_streaming = False
     self._pool = futures.ThreadPoolExecutor(max_workers=1)
     # Use a thread-safe queue to put requests on the stream
@@ -167,12 +168,12 @@ class StreamingAsyncBenchmarkClient(BenchmarkClient):
   def _request_stream(self):
     self._is_streaming = True
     if self._generic:
-      response_stream = self._stub.inline_stream_stream(
-          'grpc.testing.BenchmarkService', 'StreamingCall',
-          self._request_generator(), _TIMEOUT)
+      stream_callable = self._stub.stream_stream(
+          'grpc.testing.BenchmarkService', 'StreamingCall')
     else:
-      response_stream = self._stub.StreamingCall(self._request_generator(),
-                                                 _TIMEOUT)
+      stream_callable = self._stub.StreamingCall
+
+    response_stream = stream_callable(self._request_generator(), _TIMEOUT)
     for _ in response_stream:
       end_time = time.time()
       self._handle_response(end_time - self._send_time_queue.get_nowait())
@@ -184,3 +185,48 @@ class StreamingAsyncBenchmarkClient(BenchmarkClient):
         yield request
       except queue.Empty:
         pass
+
+
+class AsyncReceiver(face.ResponseReceiver):
+  """Receiver for async stream responses."""
+
+  def __init__(self, send_time_queue, response_handler):
+    self._send_time_queue = send_time_queue
+    self._response_handler = response_handler
+
+  def initial_metadata(self, initial_mdetadata):
+    pass
+
+  def response(self, response):
+    end_time = time.time()
+    self._response_handler(end_time - self._send_time_queue.get_nowait())
+
+  def complete(self, terminal_metadata, code, details):
+    pass
+
+
+class StreamingAsyncBenchmarkClient(BenchmarkClient):
+
+  def __init__(self, server, config, hist):
+    super(StreamingAsyncBenchmarkClient, self).__init__(server, config, hist)
+    self._send_time_queue = queue.Queue()
+    self._receiver = AsyncReceiver(self._send_time_queue, self._handle_response)
+    self._rendezvous = None
+
+  def send_request(self):
+    if self._rendezvous is not None:
+      self._send_time_queue.put(time.time())
+      self._rendezvous.consume(self._request)
+
+  def start(self):
+    if self._generic:
+      stream_callable = self._stub.stream_stream(
+          'grpc.testing.BenchmarkService', 'StreamingCall')
+    else:
+      stream_callable = self._stub.StreamingCall
+    self._rendezvous = stream_callable.event(
+        self._receiver, lambda *args: None, _TIMEOUT)
+
+  def stop(self):
+    self._rendezvous.terminate()
+    self._rendezvous = None
