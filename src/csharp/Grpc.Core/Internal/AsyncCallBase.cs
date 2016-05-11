@@ -213,7 +213,7 @@ namespace Grpc.Core.Internal
         {
         }
 
-        protected void CheckSendingAllowed(bool allowFinished)
+        protected virtual void CheckSendingAllowed(bool allowFinished)
         {
             GrpcPreconditions.CheckState(started);
             CheckNotCancelled();

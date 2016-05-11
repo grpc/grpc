@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -27,13 +28,18 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-FROM ubuntu:wily
-RUN apt-get update
-RUN apt-get -y install wget
-RUN echo deb http://llvm.org/apt/wily/ llvm-toolchain-wily-3.8 main >> /etc/apt/sources.list
-RUN echo deb-src http://llvm.org/apt/wily/ llvm-toolchain-wily-3.8 main >> /etc/apt/sources.list
-RUN wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key| apt-key add -
-RUN apt-get update
-RUN apt-get -y install clang-format-3.8
-ADD clang_format_all_the_things.sh /
-CMD ["echo 'Run with tools/distrib/clang_format_code.sh'"]
+set -ex
+
+cd $(dirname $0)/../../..
+
+netperf >netperf_latency.txt -P 0 -t TCP_RR -H "$NETPERF_SERVER_HOST" -- -r 1,1 -o P50_LATENCY,P90_LATENCY,P99_LATENCY
+
+cat netperf_latency.txt
+
+if [ "$BQ_RESULT_TABLE" != "" ]
+then
+  tools/run_tests/performance/bq_upload_result.py \
+      --file_to_upload=netperf_latency.txt \
+      --file_format=netperf_latency_csv \
+      --bq_result_table="$BQ_RESULT_TABLE"
+fi
