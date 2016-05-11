@@ -28,13 +28,20 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-gource                          \
-  --multi-sampling              \
-  -s 0.1                        \
-  --max-file-lag 0.05           \
-  --max-files 0                 \
-  -e 0.01                       \
-  --hide filenames,dirnames     \
-  --disable-auto-rotate         \
-  --file-filter '/grpc/doc/ref' \
-  $*
+set -ex
+
+dst=$1
+shift
+$(dirname $0)/gource.sh \
+  --disable-progress    \
+  --stop-at-end         \
+  --output-ppm-stream - \
+  $@ |                  \
+ffmpeg                  \
+  -y                    \
+  -r 60                 \
+  -f image2pipe         \
+  -vcodec ppm           \
+  -i -                  \
+  -vcodec libx264       \
+  $dst
