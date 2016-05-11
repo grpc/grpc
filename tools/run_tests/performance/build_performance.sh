@@ -33,8 +33,6 @@ set -ex
 
 cd $(dirname $0)/../../..
 
-#TODO(jtattermusch): add support for more languages
-
 CONFIG=${CONFIG:-opt}
 
 # build C++ qps worker & driver always - we need at least the driver to
@@ -52,6 +50,9 @@ do
   "java")
     (cd ../grpc-java/ &&
       ./gradlew -PskipCodegen=true :grpc-benchmarks:installDist)
+    ;;
+  "go")
+    tools/run_tests/performance/build_performance_go.sh
     ;;
   *)
     tools/run_tests/run_tests.py -l $language -c $CONFIG --build_only -j 8

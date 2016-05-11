@@ -639,9 +639,11 @@ static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
         exec_ctx, &c->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
         GRPC_ERROR_CREATE_REFERENCING("Connect Failed", &error, 1),
         "connect_failed");
-    gpr_timespec time_til_next = gpr_time_sub(c->next_attempt, gpr_now(c->next_attempt.clock_type));
+    gpr_timespec time_til_next =
+        gpr_time_sub(c->next_attempt, gpr_now(c->next_attempt.clock_type));
     const char *errmsg = grpc_error_string(error);
-    gpr_log(GPR_INFO, "Connect failed, retry in %d.%09d seconds: %s", time_til_next.tv_sec, time_til_next.tv_nsec, errmsg);
+    gpr_log(GPR_INFO, "Connect failed, retry in %d.%09d seconds: %s",
+            time_til_next.tv_sec, time_til_next.tv_nsec, errmsg);
     grpc_error_free_string(errmsg);
     grpc_timer_init(exec_ctx, &c->alarm, c->next_attempt, on_alarm, c, now);
   }

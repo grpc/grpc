@@ -2264,8 +2264,8 @@
       "grpc_test_util"
     ], 
     "headers": [
-      "src/proto/grpc/lb/v0/load_balancer.grpc.pb.h", 
-      "src/proto/grpc/lb/v0/load_balancer.pb.h"
+      "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h", 
+      "src/proto/grpc/lb/v1/load_balancer.pb.h"
     ], 
     "language": "c++", 
     "name": "grpclb_api_test", 
@@ -3399,6 +3399,23 @@
     "name": "initial_settings_frame_bad_client_test", 
     "src": [
       "test/core/bad_client/tests/initial_settings_frame.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "bad_client_test", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "large_metadata_bad_client_test", 
+    "src": [
+      "test/core/bad_client/tests/large_metadata.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5969,15 +5986,15 @@
     ], 
     "headers": [
       "src/core/ext/lb_policy/grpclb/load_balancer_api.h", 
-      "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h"
+      "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
     ], 
     "language": "c", 
     "name": "grpc_lb_policy_grpclb", 
     "src": [
       "src/core/ext/lb_policy/grpclb/load_balancer_api.c", 
       "src/core/ext/lb_policy/grpclb/load_balancer_api.h", 
-      "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c", 
-      "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h"
+      "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c", 
+      "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
     ], 
     "third_party": false, 
     "type": "filegroup"

@@ -132,7 +132,8 @@ static void partly_done(grpc_exec_ctx *exec_ctx, state_watcher *w,
 
   gpr_mu_lock(&w->mu);
   const char *msg = grpc_error_string(error);
-  gpr_log(GPR_DEBUG, "partly_done: d2c=%d phs=%d err=%s", due_to_completion, w->phase, msg);
+  gpr_log(GPR_DEBUG, "partly_done: d2c=%d phs=%d err=%s", due_to_completion,
+          w->phase, msg);
   grpc_error_free_string(msg);
 
   if (due_to_completion) {
