@@ -51,6 +51,7 @@ execFile(protoc, process.argv.slice(2), function(error, stdout, stderr) {
   if (error) {
     throw error;
   }
-  console.log(stdout);
-  console.log(stderr);
 });
+
+child_process.stdout.pipe(process.stdout);
+child_process.stderr.pipe(process.stderr);
