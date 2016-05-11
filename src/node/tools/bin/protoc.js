@@ -47,7 +47,7 @@ var exe_ext = process.platform === 'win32' ? '.exe' : '';
 
 var protoc = path.resolve(__dirname, 'protoc' + exe_ext);
 
-execFile(protoc, process.argv.slice(2), function(error, stdout, stderr) {
+var child_process = execFile(protoc, process.argv.slice(2), function(error, stdout, stderr) {
   if (error) {
     throw error;
   }
