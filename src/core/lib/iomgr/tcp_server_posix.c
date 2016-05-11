@@ -286,10 +286,7 @@ static grpc_error *prepare_socket(int fd, const struct sockaddr *addr,
 
   GPR_ASSERT(addr_len < ~(socklen_t)0);
   if (bind(fd, addr, (socklen_t)addr_len) < 0) {
-    char *addr_str;
-    grpc_sockaddr_to_string(&addr_str, addr, 0);
-    gpr_log(GPR_ERROR, "bind addr=%s: %s", addr_str, strerror(errno));
-    gpr_free(addr_str);
+    err = GRPC_OS_ERROR(errno, "bind");
     goto error;
   }
 
@@ -312,9 +309,11 @@ error:
   if (fd >= 0) {
     close(fd);
   }
-  return grpc_error_set_int(
+  grpc_error *ret = grpc_error_set_int(
       GRPC_ERROR_CREATE_REFERENCING("Unable to configure socket", &err, 1),
       GRPC_ERROR_INT_FD, fd);
+  GRPC_ERROR_UNREF(err);
+  return ret;
 }
 
 /* event manager callback when reads are ready */
@@ -538,6 +537,8 @@ done:
         GRPC_ERROR_CREATE_REFERENCING("Failed to add port to server", errs,
                                       GPR_ARRAY_SIZE(errs)),
         GRPC_ERROR_STR_TARGET_ADDRESS, addr_str);
+    GRPC_ERROR_UNREF(errs[0]);
+    GRPC_ERROR_UNREF(errs[1]);
     gpr_free(addr_str);
     return err;
   }
