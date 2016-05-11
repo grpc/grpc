@@ -31,6 +31,7 @@
 
 import argparse
 import os
+import os.path
 import re
 import sys
 import subprocess
@@ -95,6 +96,8 @@ class GuardValidator(object):
     fcontents = load(fpath)
 
     match = self.ifndef_re.search(fcontents)
+    if not match:
+      print 'something drastically wrong with: %s' % fpath
     if match.lastindex is None:
       # No ifndef. Request manual addition with hints
       self.fail(fpath, match.re, match.string, '', '', False)
@@ -167,7 +170,7 @@ argp.add_argument('--precommit',
 args = argp.parse_args()
 
 KNOWN_BAD = set([
-    'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h',
+    'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h',
 ])
 
 
@@ -185,6 +188,8 @@ filename_list = []
 try:
   filename_list = subprocess.check_output(FILE_LIST_COMMAND,
                                           shell=True).splitlines()
+  # Filter out non-existent files (ie, file removed or renamed)
+  filename_list = (f for f in filename_list if os.path.isfile(f))
 except subprocess.CalledProcessError:
   sys.exit(0)
 

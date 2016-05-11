@@ -99,13 +99,18 @@ static void lame_start_transport_op(grpc_exec_ctx *exec_ctx,
   if (op->on_consumed != NULL) {
     op->on_consumed->cb(exec_ctx, op->on_consumed->cb_arg, 1);
   }
+  if (op->send_ping != NULL) {
+    op->send_ping->cb(exec_ctx, op->send_ping->cb_arg, 0);
+  }
 }
 
 static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                            grpc_call_element_args *args) {}
 
-static void destroy_call_elem(grpc_exec_ctx *exec_ctx,
-                              grpc_call_element *elem) {}
+static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                              void *and_free_memory) {
+  gpr_free(and_free_memory);
+}
 
 static void init_channel_elem(grpc_exec_ctx *exec_ctx,
                               grpc_channel_element *elem,

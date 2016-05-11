@@ -467,7 +467,7 @@ int grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
                            (struct sockaddr *)&sockname_temp, &sockname_len)) {
         port = grpc_sockaddr_get_port((struct sockaddr *)&sockname_temp);
         if (port > 0) {
-          allocated_addr = malloc(addr_len);
+          allocated_addr = gpr_malloc(addr_len);
           memcpy(allocated_addr, addr, addr_len);
           grpc_sockaddr_set_port(allocated_addr, port);
           addr = allocated_addr;
@@ -503,34 +503,6 @@ int grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
 
   if (sp) {
     return sp->port;
-  } else {
-    return -1;
-  }
-}
-
-unsigned grpc_tcp_server_port_fd_count(grpc_tcp_server *s,
-                                       unsigned port_index) {
-  grpc_tcp_listener *sp;
-  for (sp = s->head; sp && port_index != 0; sp = sp->next, --port_index)
-    ;
-  if (sp) {
-    return 1;
-  } else {
-    return 0;
-  }
-}
-
-int grpc_tcp_server_port_fd(grpc_tcp_server *s, unsigned port_index,
-                            unsigned fd_index) {
-  grpc_tcp_listener *sp;
-  if (fd_index != 0) {
-    /* Windows implementation has only one fd per port_index. */
-    return -1;
-  }
-  for (sp = s->head; sp && port_index != 0; sp = sp->next, --port_index)
-    ;
-  if (sp) {
-    return _open_osfhandle((intptr_t)sp->socket->socket, 0);
   } else {
     return -1;
   }

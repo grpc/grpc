@@ -40,7 +40,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/client_config/resolver_registry.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -84,14 +83,26 @@ struct grpc_channel {
 static void destroy_channel(grpc_exec_ctx *exec_ctx, void *arg, bool success);
 
 grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
-                                  const grpc_channel_args *args,
+                                  const grpc_channel_args *input_args,
                                   grpc_channel_stack_type channel_stack_type,
                                   grpc_transport *optional_transport) {
   bool is_client = grpc_channel_stack_type_is_client(channel_stack_type);
 
-  grpc_channel *channel = grpc_channel_init_create_stack(
-      exec_ctx, channel_stack_type, sizeof(grpc_channel), args, 1,
-      destroy_channel, NULL, optional_transport);
+  grpc_channel_stack_builder *builder = grpc_channel_stack_builder_create();
+  grpc_channel_stack_builder_set_channel_arguments(builder, input_args);
+  grpc_channel_stack_builder_set_target(builder, target);
+  grpc_channel_stack_builder_set_transport(builder, optional_transport);
+  grpc_channel *channel;
+  grpc_channel_args *args;
+  if (!grpc_channel_init_create_stack(exec_ctx, builder, channel_stack_type)) {
+    grpc_channel_stack_builder_destroy(builder);
+    return NULL;
+  } else {
+    args = grpc_channel_args_copy(
+        grpc_channel_stack_builder_get_channel_arguments(builder));
+    channel = grpc_channel_stack_builder_finish(
+        exec_ctx, builder, sizeof(grpc_channel), 1, destroy_channel, NULL);
+  }
 
   memset(channel, 0, sizeof(*channel));
   channel->target = gpr_strdup(target);
@@ -142,16 +153,7 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
         }
       }
     }
-  }
-
-  if (channel->is_client && channel->default_authority == NULL &&
-      target != NULL) {
-    char *default_authority = grpc_get_default_authority(target);
-    if (default_authority) {
-      channel->default_authority =
-          grpc_mdelem_from_strings(":authority", default_authority);
-    }
-    gpr_free(default_authority);
+    grpc_channel_args_destroy(args);
   }
 
   return channel;

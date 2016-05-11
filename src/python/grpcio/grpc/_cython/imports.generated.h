@@ -322,6 +322,9 @@ extern grpc_header_nonbin_value_is_legal_type grpc_header_nonbin_value_is_legal_
 typedef int(*grpc_is_binary_header_type)(const char *key, size_t length);
 extern grpc_is_binary_header_type grpc_is_binary_header_import;
 #define grpc_is_binary_header grpc_is_binary_header_import
+typedef const char *(*grpc_call_error_to_string_type)(grpc_call_error error);
+extern grpc_call_error_to_string_type grpc_call_error_to_string_import;
+#define grpc_call_error_to_string grpc_call_error_to_string_import
 typedef const grpc_auth_property *(*grpc_auth_property_iterator_next_type)(grpc_auth_property_iterator *it);
 extern grpc_auth_property_iterator_next_type grpc_auth_property_iterator_next_import;
 #define grpc_auth_property_iterator_next grpc_auth_property_iterator_next_import
@@ -406,6 +409,9 @@ extern grpc_server_credentials_release_type grpc_server_credentials_release_impo
 typedef grpc_server_credentials *(*grpc_ssl_server_credentials_create_type)(const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs, size_t num_key_cert_pairs, int force_client_auth, void *reserved);
 extern grpc_ssl_server_credentials_create_type grpc_ssl_server_credentials_create_import;
 #define grpc_ssl_server_credentials_create grpc_ssl_server_credentials_create_import
+typedef grpc_server_credentials *(*grpc_ssl_server_credentials_create_ex_type)(const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs, size_t num_key_cert_pairs, grpc_ssl_client_certificate_request_type client_certificate_request, void *reserved);
+extern grpc_ssl_server_credentials_create_ex_type grpc_ssl_server_credentials_create_ex_import;
+#define grpc_ssl_server_credentials_create_ex grpc_ssl_server_credentials_create_ex_import
 typedef int(*grpc_server_add_secure_http2_port_type)(grpc_server *server, const char *addr, grpc_server_credentials *creds);
 extern grpc_server_add_secure_http2_port_type grpc_server_add_secure_http2_port_import;
 #define grpc_server_add_secure_http2_port grpc_server_add_secure_http2_port_import
@@ -472,6 +478,12 @@ extern gpr_log_type gpr_log_import;
 typedef void(*gpr_log_message_type)(const char *file, int line, gpr_log_severity severity, const char *message);
 extern gpr_log_message_type gpr_log_message_import;
 #define gpr_log_message gpr_log_message_import
+typedef void(*gpr_set_log_verbosity_type)(gpr_log_severity min_severity_to_print);
+extern gpr_set_log_verbosity_type gpr_set_log_verbosity_import;
+#define gpr_set_log_verbosity gpr_set_log_verbosity_import
+typedef void(*gpr_log_verbosity_init_type)();
+extern gpr_log_verbosity_init_type gpr_log_verbosity_init_import;
+#define gpr_log_verbosity_init gpr_log_verbosity_init_import
 typedef void(*gpr_set_log_function_type)(gpr_log_func func);
 extern gpr_set_log_function_type gpr_set_log_function_import;
 #define gpr_set_log_function gpr_set_log_function_import

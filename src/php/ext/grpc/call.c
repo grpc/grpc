@@ -492,6 +492,14 @@ cleanup:
   if (status_details != NULL) {
     gpr_free(status_details);
   }
+  for (int i = 0; i < op_num; i++) {
+    if (ops[i].op == GRPC_OP_SEND_MESSAGE) {
+      grpc_byte_buffer_destroy(ops[i].data.send_message);
+    }
+    if (ops[i].op == GRPC_OP_RECV_MESSAGE) {
+      grpc_byte_buffer_destroy(message);
+    }
+  }
   RETURN_DESTROY_ZVAL(result);
 }
 

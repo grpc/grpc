@@ -28,7 +28,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'forwardable'
-require 'grpc/generic/bidi_call'
+require 'weakref'
+require_relative 'bidi_call'
+require_relative '../signals'
 
 class Struct
   # BatchResult is the struct returned by calls to call#start_batch.
@@ -59,7 +61,8 @@ module GRPC
     include Core::CallOps
     extend Forwardable
     attr_reader(:deadline)
-    def_delegators :@call, :cancel, :metadata, :write_flag, :write_flag=
+    def_delegators :@call, :cancel, :metadata, :write_flag, :write_flag=,
+                   :peer, :peer_cert
 
     # client_invoke begins a client invocation.
     #
@@ -120,6 +123,10 @@ module GRPC
       @unmarshal = unmarshal
       @metadata_tag = metadata_tag
       @op_notifier = nil
+      weak_self = WeakRef.new(self)
+      remove_handler = GRPC::Signals.register_handler(&weak_self
+                                                        .method(:cancel))
+      ObjectSpace.define_finalizer(self, remove_handler)
     end
 
     # output_metadata are provides access to hash that can be used to
@@ -472,7 +479,7 @@ module GRPC
     # SingleReqView limits access to an ActiveCall's methods for use in server
     # handlers that receive just one request.
     SingleReqView = view_class(:cancelled, :deadline, :metadata,
-                               :output_metadata)
+                               :output_metadata, :peer, :peer_cert)
 
     # MultiReqView limits access to an ActiveCall's methods for use in
     # server client_streamer handlers.

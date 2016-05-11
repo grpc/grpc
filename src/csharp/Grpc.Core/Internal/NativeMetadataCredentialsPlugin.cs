@@ -87,7 +87,7 @@ namespace Grpc.Core.Internal
             }
         }
 
-        private async void StartGetMetadata(AuthInterceptorContext context, IntPtr callbackPtr, IntPtr userDataPtr)
+        private async Task StartGetMetadata(AuthInterceptorContext context, IntPtr callbackPtr, IntPtr userDataPtr)
         {
             try
             {

@@ -685,10 +685,14 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
   if (md->key == GRPC_MDSTR_PATH) {
-    calld->path = GRPC_MDSTR_REF(md->value);
+    if (calld->path == NULL) {
+      calld->path = GRPC_MDSTR_REF(md->value);
+    }
     return NULL;
   } else if (md->key == GRPC_MDSTR_AUTHORITY) {
-    calld->host = GRPC_MDSTR_REF(md->value);
+    if (calld->host == NULL) {
+      calld->host = GRPC_MDSTR_REF(md->value);
+    }
     return NULL;
   }
   return md;
@@ -816,8 +820,8 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   server_ref(chand->server);
 }
 
-static void destroy_call_elem(grpc_exec_ctx *exec_ctx,
-                              grpc_call_element *elem) {
+static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                              void *ignored) {
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
 

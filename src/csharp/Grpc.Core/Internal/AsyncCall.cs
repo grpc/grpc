@@ -57,7 +57,7 @@ namespace Grpc.Core.Internal
         // Completion of a pending unary response if not null.
         TaskCompletionSource<TResponse> unaryResponseTcs;
 
-        // Indicates that steaming call has finished.
+        // Indicates that response streaming call has finished.
         TaskCompletionSource<object> streamingCallFinishedTcs = new TaskCompletionSource<object>();
 
         // Response headers set here once received.
@@ -241,11 +241,10 @@ namespace Grpc.Core.Internal
 
         /// <summary>
         /// Receives a streaming response. Only one pending read action is allowed at any given time.
-        /// completionDelegate is called when the operation finishes.
         /// </summary>
-        public void StartReadMessage(AsyncCompletionDelegate<TResponse> completionDelegate)
+        public Task<TResponse> ReadMessageAsync()
         {
-            StartReadMessageInternal(completionDelegate);
+            return ReadMessageInternalAsync();
         }
 
         /// <summary>
@@ -409,10 +408,13 @@ namespace Grpc.Core.Internal
         /// </summary>
         private void HandleUnaryResponse(bool success, ClientSideStatus receivedStatus, byte[] receivedMessage, Metadata responseHeaders)
         {
+            // NOTE: because this event is a result of batch containing GRPC_OP_RECV_STATUS_ON_CLIENT,
+            // success will be always set to true.
+
             using (Profilers.ForCurrentThread().NewScope("AsyncCall.HandleUnaryResponse"))
             {
                 TResponse msg = default(TResponse);
-                var deserializeException = success ? TryDeserialize(receivedMessage, out msg) : null;
+                var deserializeException = TryDeserialize(receivedMessage, out msg);
 
                 lock (myLock)
                 {
@@ -425,14 +427,13 @@ namespace Grpc.Core.Internal
                     finishedStatus = receivedStatus;
 
                     ReleaseResourcesIfPossible();
-
                 }
 
                 responseHeadersTcs.SetResult(responseHeaders);
 
                 var status = receivedStatus.Status;
 
-                if (!success || status.StatusCode != StatusCode.OK)
+                if (status.StatusCode != StatusCode.OK)
                 {
                     unaryResponseTcs.SetException(new RpcException(status));
                     return;
@@ -442,11 +443,27 @@ namespace Grpc.Core.Internal
             }
         }
 
+        protected override void CheckSendingAllowed(bool allowFinished)
+        {
+            base.CheckSendingAllowed(true);
+
+            // throwing RpcException if we already received status on client
+            // side makes the most sense.
+            // Note that this throws even for StatusCode.OK.
+            if (!allowFinished && finishedStatus.HasValue)
+            {
+                throw new RpcException(finishedStatus.Value.Status);
+            }
+        }
+
         /// <summary>
         /// Handles receive status completion for calls with streaming response.
         /// </summary>
         private void HandleFinished(bool success, ClientSideStatus receivedStatus)
         {
+            // NOTE: because this event is a result of batch containing GRPC_OP_RECV_STATUS_ON_CLIENT,
+            // success will be always set to true.
+
             lock (myLock)
             {
                 finished = true;
@@ -457,7 +474,7 @@ namespace Grpc.Core.Internal
 
             var status = receivedStatus.Status;
 
-            if (!success || status.StatusCode != StatusCode.OK)
+            if (status.StatusCode != StatusCode.OK)
             {
                 streamingCallFinishedTcs.SetException(new RpcException(status));
                 return;

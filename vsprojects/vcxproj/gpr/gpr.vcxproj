@@ -147,20 +147,6 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\alloc.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_atomic.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_sync.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_win32.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\log.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice_buffer.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_generic.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_win32.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\alloc.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\atm.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\atm_gcc_atomic.h" />
@@ -189,6 +175,20 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\tls_msvc.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\tls_pthread.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\support\useful.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\alloc.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_atomic.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_sync.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_win32.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\log.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice_buffer.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_generic.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_win32.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\profiling\timers.h" />
@@ -259,6 +259,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\string_posix.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\string_util_win32.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\string_win32.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\subprocess_posix.c">
@@ -286,6 +288,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\time_win32.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\tls_pthread.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\tmpfile_msys.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\tmpfile_posix.c">
     </ClCompile>

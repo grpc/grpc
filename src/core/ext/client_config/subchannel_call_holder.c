@@ -174,6 +174,7 @@ static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
              GRPC_SUBCHANNEL_CALL_HOLDER_PICKING_SUBCHANNEL);
   holder->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING;
   if (holder->connected_subchannel == NULL) {
+    gpr_atm_no_barrier_store(&holder->subchannel_call, 1);
     fail_locked(exec_ctx, holder);
   } else if (1 == gpr_atm_acq_load(&holder->subchannel_call)) {
     /* already cancelled before subchannel became ready */
@@ -252,9 +253,9 @@ char *grpc_subchannel_call_holder_get_peer(
     grpc_exec_ctx *exec_ctx, grpc_subchannel_call_holder *holder) {
   grpc_subchannel_call *subchannel_call = GET_CALL(holder);
 
-  if (subchannel_call) {
-    return grpc_subchannel_call_get_peer(exec_ctx, subchannel_call);
-  } else {
+  if (subchannel_call == NULL || subchannel_call == CANCELLED_CALL) {
     return NULL;
+  } else {
+    return grpc_subchannel_call_get_peer(exec_ctx, subchannel_call);
   }
 }
