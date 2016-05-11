@@ -55,7 +55,7 @@ npm pack
 cp grpc-tools-*.tgz $artifacts/
 tools_version=$(npm list | grep -oP '(?<=grpc-tools@)\S+')
 
-output_dir=$artifacts/grpc-precompiled-binaries/node/grpc-tools/$tools_version
+output_dir=$artifacts/grpc-precompiled-binaries/node/grpc-tools/v$tools_version
 mkdir -p $output_dir
 
 for arch in {x86,x64}; do
