@@ -53,14 +53,15 @@ static gpr_once g_monitor_mu_once = GPR_ONCE_INIT;
 
 static bool is_host_reachable(SCNetworkReachabilityFlags flags) {
   return !!(flags & kSCNetworkReachabilityFlagsReachable) &&
-  !(flags & kSCNetworkReachabilityFlagsInterventionRequired) &&
-  !(flags & kSCNetworkReachabilityFlagsConnectionOnDemand);
+         !(flags & kSCNetworkReachabilityFlagsInterventionRequired) &&
+         !(flags & kSCNetworkReachabilityFlagsConnectionOnDemand);
 }
 
 static void reachability_callback(SCNetworkReachabilityRef target,
-                                        SCNetworkReachabilityFlags flags,
-                                        void* info) {
-  struct grpc_connectivity_monitor* monitor = (struct grpc_connectivity_monitor *)info;
+                                  SCNetworkReachabilityFlags flags,
+                                  void* info) {
+  struct grpc_connectivity_monitor* monitor =
+      (struct grpc_connectivity_monitor*)info;
   if (!is_host_reachable(flags)) {
     monitor->loss_connection_handler();
   }
@@ -68,35 +69,30 @@ static void reachability_callback(SCNetworkReachabilityRef target,
 
 static bool is_monitor_initialized(struct grpc_connectivity_monitor* monitor) {
   return monitor != NULL && monitor->reachability_ref != NULL &&
-                     monitor->dispatch_queue != NULL &&
-                     monitor->loss_connection_handler != NULL;
+         monitor->dispatch_queue != NULL &&
+         monitor->loss_connection_handler != NULL;
 }
 
 static bool start_monitor(struct grpc_connectivity_monitor* monitor) {
-  if (monitor == NULL) {
-    return false;
-  }
   SCNetworkReachabilityContext context = {
-    .version = 0,
-    .info = (void*)monitor,
+      .version = 0, .info = (void*)monitor,
   };
-  bool result = is_monitor_initialized(monitor) &&
-         SCNetworkReachabilitySetCallback(monitor->reachability_ref, reachability_callback, &context) &&
-         SCNetworkReachabilitySetDispatchQueue(monitor->reachability_ref, monitor->dispatch_queue);
-  return result;
+  return is_monitor_initialized(monitor) &&
+         SCNetworkReachabilitySetCallback(monitor->reachability_ref,
+                                          reachability_callback, &context) &&
+         SCNetworkReachabilitySetDispatchQueue(monitor->reachability_ref,
+                                               monitor->dispatch_queue);
 }
 
 static bool stop_monitor(struct grpc_connectivity_monitor* monitor) {
-  if (monitor == NULL) {
-    return false;
-  }
-  bool result =  is_monitor_initialized(monitor) &&
-          SCNetworkReachabilitySetCallback(monitor->reachability_ref, NULL, NULL) &&
+  return is_monitor_initialized(monitor) &&
+         SCNetworkReachabilitySetCallback(monitor->reachability_ref, NULL,
+                                          NULL) &&
          SCNetworkReachabilitySetDispatchQueue(monitor->reachability_ref, NULL);
-  return result;
 }
 
-static bool init_connectivity_monitor(struct grpc_connectivity_monitor* monitor, const char* addr, void (*handler)(void)) {
+static bool init_connectivity_monitor(struct grpc_connectivity_monitor* monitor,
+                                      const char* addr, void (*handler)(void)) {
   // Check if monitor has already been initialized.
   if (monitor->reachability_ref != NULL) {
     return false;
@@ -104,7 +100,8 @@ static bool init_connectivity_monitor(struct grpc_connectivity_monitor* monitor,
   if (!(monitor->dispatch_queue = dispatch_get_main_queue())) {
     return false;
   }
-  if (!(monitor->reachability_ref = SCNetworkReachabilityCreateWithName(NULL, addr))) {
+  if (!(monitor->reachability_ref =
+            SCNetworkReachabilityCreateWithName(NULL, addr))) {
     monitor->dispatch_queue = NULL;
     return false;
   }
@@ -112,7 +109,8 @@ static bool init_connectivity_monitor(struct grpc_connectivity_monitor* monitor,
   return true;
 }
 
-static void clear_connectivity_monitor(struct grpc_connectivity_monitor* monitor) {
+static void clear_connectivity_monitor(
+    struct grpc_connectivity_monitor* monitor) {
   if (monitor->reachability_ref != NULL) {
     CFRelease(monitor->reachability_ref);
   }
