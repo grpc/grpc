@@ -288,7 +288,7 @@ static grpc_error *prepare_socket(int fd, const struct sockaddr *addr,
   if (bind(fd, addr, (socklen_t)addr_len) < 0) {
     char *addr_str;
     grpc_sockaddr_to_string(&addr_str, addr, 0);
-    gpr_log(GPR_ERROR, "bind addr=%s: %s", addr_str, strerror(errno));
+    err = GRPC_OS_ERROR(errno, "bind");
     gpr_free(addr_str);
     goto error;
   }
