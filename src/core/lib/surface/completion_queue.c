@@ -228,12 +228,12 @@ void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
 
   GPR_TIMER_BEGIN("grpc_cq_end_op", 0);
   if (grpc_api_trace) {
-  const char *errmsg = grpc_error_string(error);
+    const char *errmsg = grpc_error_string(error);
     GRPC_API_TRACE(
-      "grpc_cq_end_op(exec_ctx=%p, cc=%p, tag=%p, error=%s, done=%p, "
-      "done_arg=%p, storage=%p)",
-      7, (exec_ctx, cc, tag, errmsg, done, done_arg, storage));
-  grpc_error_free_string(errmsg);
+        "grpc_cq_end_op(exec_ctx=%p, cc=%p, tag=%p, error=%s, done=%p, "
+        "done_arg=%p, storage=%p)",
+        7, (exec_ctx, cc, tag, errmsg, done, done_arg, storage));
+    grpc_error_free_string(errmsg);
   }
 
   storage->tag = tag;

@@ -139,42 +139,42 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
 
   /* basic request: check that things are working */
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR, 0);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR_UNUSUAL, 0);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR_UNUSUAL2, 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, NULL, PFX_STR, 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, NULL, PFX_STR_UNUSUAL, 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, NULL, PFX_STR_UNUSUAL2, 0);
 
   /* push an illegal data frame */
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, NULL, PFX_STR
                            "\x00\x00\x05\x00\x00\x00\x00\x00\x01"
                            "\x34\x00\x00\x00\x00",
                            0);
 
   /* push a data frame with bad flags */
-  GRPC_RUN_BAD_CLIENT_TEST(verifier,
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, NULL,
                            PFX_STR "\x00\x00\x00\x00\x02\x00\x00\x00\x01", 0);
   /* push a window update with a bad length */
-  GRPC_RUN_BAD_CLIENT_TEST(failure_verifier,
+  GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, NULL,
                            PFX_STR "\x00\x00\x01\x08\x00\x00\x00\x00\x01", 0);
   /* push a window update with bad flags */
-  GRPC_RUN_BAD_CLIENT_TEST(failure_verifier,
+  GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, NULL,
                            PFX_STR "\x00\x00\x00\x08\x10\x00\x00\x00\x01", 0);
   /* push a window update with bad data */
-  GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, PFX_STR
+  GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, NULL, PFX_STR
                            "\x00\x00\x04\x08\x00\x00\x00\x00\x01"
                            "\xff\xff\xff\xff",
                            0);
   /* push a short goaway */
-  GRPC_RUN_BAD_CLIENT_TEST(failure_verifier,
+  GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, NULL,
                            PFX_STR "\x00\x00\x04\x07\x00\x00\x00\x00\x00", 0);
   /* disconnect before sending goaway */
-  GRPC_RUN_BAD_CLIENT_TEST(failure_verifier,
+  GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, NULL,
                            PFX_STR "\x00\x01\x12\x07\x00\x00\x00\x00\x00",
                            GRPC_BAD_CLIENT_DISCONNECT);
   /* push a rst_stream with a bad length */
-  GRPC_RUN_BAD_CLIENT_TEST(failure_verifier,
+  GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, NULL,
                            PFX_STR "\x00\x00\x01\x03\x00\x00\x00\x00\x01", 0);
   /* push a rst_stream with bad flags */
-  GRPC_RUN_BAD_CLIENT_TEST(failure_verifier,
+  GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, NULL,
                            PFX_STR "\x00\x00\x00\x03\x10\x00\x00\x00\x01", 0);
 
   return 0;

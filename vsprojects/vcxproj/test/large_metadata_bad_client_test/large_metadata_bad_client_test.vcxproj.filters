@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\bad_client\tests\large_metadata.c">
+      <Filter>test\core\bad_client\tests</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{6c1eb0cb-9d82-f961-7220-1f6edc913666}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{79d5006f-93a1-aa0e-2568-37aa63eef567}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\bad_client">
+      <UniqueIdentifier>{dbde5995-24a0-2332-4bee-0540ed3aa848}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\bad_client\tests">
+      <UniqueIdentifier>{5cf4a13f-ae24-fd98-eb59-b5301f30367c}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

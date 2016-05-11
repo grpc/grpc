@@ -39,7 +39,7 @@ ssh "${USER_AT_HOST}" "rm -rf ~/performance_workspace && mkdir -p ~/performance_
 # mess with the results, be rough and reboot the slave here
 # and wait for it to come back online.
 # could also kill jenkins.
-ssh "${USER_AT_HOST}" "killall -9 qps_worker mono node ruby || true"
+ssh "${USER_AT_HOST}" "killall -9 qps_worker mono node ruby worker || true"
 
 # push the current sources to the slave and unpack it.
 scp ../grpc.tar "${USER_AT_HOST}:~/performance_workspace"
