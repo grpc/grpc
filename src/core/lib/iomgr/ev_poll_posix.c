@@ -768,6 +768,7 @@ static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   }
   pollset->fds[pollset->fd_count++] = fd;
   GRPC_FD_REF(fd, "multipoller");
+  pollset_kick(pollset, NULL);
 exit:
   gpr_mu_unlock(&pollset->mu);
 }
