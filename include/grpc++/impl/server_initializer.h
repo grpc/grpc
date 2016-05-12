@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,29 +31,40 @@
  *
  */
 
-#ifndef GRPCXX_IMPL_SERVER_BUILDER_OPTION_H
-#define GRPCXX_IMPL_SERVER_BUILDER_OPTION_H
+#ifndef GRPCXX_IMPL_SERVER_INITIALIZER_H
+#define GRPCXX_IMPL_SERVER_INITIALIZER_H
 
-#include <map>
 #include <memory>
+#include <vector>
 
-#include <grpc++/impl/server_builder_plugin.h>
-#include <grpc++/support/channel_arguments.h>
+#include <grpc++/server.h>
 
 namespace grpc {
 
-/// Interface to pass an option to a \a ServerBuilder.
-class ServerBuilderOption {
+class Server;
+class Service;
+
+class ServerInitializer {
  public:
-  virtual ~ServerBuilderOption() {}
-  /// Alter the \a ChannelArguments used to create the gRPC server.
-  virtual void UpdateArguments(ChannelArguments* args) = 0;
-  /// Alter the ServerBuilderPlugin map that will be added into ServerBuilder.
-  virtual void UpdatePlugins(
-      std::map<grpc::string, std::unique_ptr<ServerBuilderPlugin> >*
-          plugins) = 0;
+  ServerInitializer(Server* server) : server_(server) {}
+
+  bool RegisterService(std::shared_ptr<Service> service) {
+    if (!server_->RegisterService(nullptr, service.get())) {
+      return false;
+    }
+    default_services_.push_back(service);
+    return true;
+  }
+
+  const std::vector<grpc::string>* GetServiceList() {
+    return &server_->services_;
+  }
+
+ private:
+  Server* server_;
+  std::vector<std::shared_ptr<Service> > default_services_;
 };
 
 }  // namespace grpc
 
-#endif  // GRPCXX_IMPL_SERVER_BUILDER_OPTION_H
+#endif  // GRPCXX_IMPL_SERVER_INITIALIZER_H
