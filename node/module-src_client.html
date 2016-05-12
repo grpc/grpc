@@ -199,7 +199,7 @@ var call = client.unaryMethod(arguments, callback);</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line722">line 722</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line839">line 839</a>
     </li></ul></dd>
     
 
@@ -261,7 +261,70 @@ var call = client.unaryMethod(arguments, callback);</div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line717">line 717</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line834">line 834</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="~deprecated_request_wrap"><span class="type-signature">(inner) </span>deprecated_request_wrap<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Map with wrappers for each type of requester function to make it use the old
+argument order with optional arguments after the callback.
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line664">line 664</a>
     </li></ul></dd>
     
 
@@ -324,7 +387,7 @@ makeClientConstructor
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line582">line 582</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line646">line 646</a>
     </li></ul></dd>
     
 
@@ -451,7 +514,7 @@ makeClientConstructor
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line663">line 663</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line776">line 776</a>
     </li></ul></dd>
     
 
@@ -504,7 +567,7 @@ makeClientConstructor
 
     
 
-    <h4 class="name" id=".makeClientConstructor"><span class="type-signature">(static) </span>makeClientConstructor<span class="signature">(methods, serviceName)</span><span class="type-signature"> &rarr; {function}</span></h4>
+    <h4 class="name" id=".makeClientConstructor"><span class="type-signature">(static) </span>makeClientConstructor<span class="signature">(methods, serviceName, class_options)</span><span class="type-signature"> &rarr; {function}</span></h4>
 
     
 
@@ -597,6 +660,34 @@ responseDeserialize: function to deserialize response objects
         </tr>
 
     
+
+        <tr>
+            
+                <td class="name"><code>class_options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">An options object. Currently only uses the key
+    deprecatedArgumentOrder, a boolean that Indicates that the old argument
+    order should be used for methods, with optional arguments at the end
+    instead of the callback at the end. Defaults to false. This option is
+    only a temporary stopgap measure to smooth an API breakage.
+    It is deprecated, and new code should not use it.</td>
+        </tr>
+
+    
     </tbody>
 </table>
 
@@ -634,7 +725,7 @@ responseDeserialize: function to deserialize response objects
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line602">line 602</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line706">line 706</a>
     </li></ul></dd>
     
 
@@ -831,7 +922,7 @@ responseDeserialize: function to deserialize response objects
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line704">line 704</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line817">line 817</a>
     </li></ul></dd>
     
 
@@ -1039,7 +1130,305 @@ start connecting if it has not already done so.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line679">line 679</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line792">line 792</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="~_emitStatusIfDone"><span class="type-signature">(inner) </span>_emitStatusIfDone<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    If we have both processed all incoming messages and received the status from
+the server, emit the status. Otherwise, do nothing.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line178">line 178</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="~_readsDone"><span class="type-signature">(inner) </span>_readsDone<span class="signature">(status<span class="signature-attributes">non-null</span>)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Called when all messages from the server have been processed. The status
+parameter indicates that the call should end with that status. status
+defaults to OK if not provided.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>status</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The status that the call should end with</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line148">line 148</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="~_receiveStatus"><span class="type-signature">(inner) </span>_receiveStatus<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Called to indicate that we have received a status from the server.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line166">line 166</a>
     </li></ul></dd>
     
 
@@ -1121,7 +1510,7 @@ start connecting if it has not already done so.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line214">line 214</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line290">line 290</a>
     </li></ul></dd>
     
 
@@ -1254,7 +1643,7 @@ and overrides the hostname to connect to.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line242">line 242</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line318">line 318</a>
     </li></ul></dd>
     
 
@@ -1336,7 +1725,7 @@ and overrides the hostname to connect to.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line227">line 227</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line303">line 303</a>
     </li></ul></dd>
     
 
@@ -1537,7 +1926,7 @@ method.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line521">line 521</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line593">line 593</a>
     </li></ul></dd>
     
 
@@ -1737,7 +2126,7 @@ method.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line363">line 363</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line441">line 441</a>
     </li></ul></dd>
     
 
@@ -1937,7 +2326,7 @@ method.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line447">line 447</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line527">line 527</a>
     </li></ul></dd>
     
 
@@ -2137,7 +2526,7 @@ method.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line274">line 274</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line350">line 350</a>
     </li></ul></dd>
     
 
@@ -2207,7 +2596,7 @@ method.
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Tue Mar 08 2016 10:29:45 GMT-0800 (PST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Wed May 11 2016 18:17:25 GMT-0700 (PDT)
 </footer>
 
 <script> prettyPrint(); </script>
