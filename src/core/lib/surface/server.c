@@ -299,10 +299,12 @@ static void channel_broadcaster_shutdown(grpc_exec_ctx *exec_ctx,
   size_t i;
 
   for (i = 0; i < cb->num_channels; i++) {
-    send_shutdown(exec_ctx, cb->channels[i], send_goaway, force_disconnect);
+    send_shutdown(exec_ctx, cb->channels[i], send_goaway,
+                  GRPC_ERROR_REF(force_disconnect));
     GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, cb->channels[i], "broadcast");
   }
   gpr_free(cb->channels);
+  GRPC_ERROR_UNREF(force_disconnect);
 }
 
 /*

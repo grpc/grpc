@@ -1942,12 +1942,27 @@ void grpc_chttp2_incoming_byte_stream_push(grpc_exec_ctx *exec_ctx,
                                    sizeof(arg));
 }
 
+typedef struct {
+  grpc_chttp2_incoming_byte_stream *bs;
+  grpc_error *error;
+} bs_fail_args;
+
+static bs_fail_args *make_bs_fail_args(grpc_chttp2_incoming_byte_stream *bs,
+                                       grpc_error *error) {
+  bs_fail_args *a = gpr_malloc(sizeof(*a));
+  a->bs = bs;
+  a->error = error;
+  return a;
+}
+
 static void incoming_byte_stream_finished_failed_locked(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t, grpc_chttp2_stream *s,
     void *argp) {
-  grpc_chttp2_incoming_byte_stream *bs = argp;
-  grpc_error *error = argp;
-  grpc_exec_ctx_push(exec_ctx, bs->on_next, GRPC_ERROR_REF(error), NULL);
+  bs_fail_args *a = argp;
+  grpc_chttp2_incoming_byte_stream *bs = a->bs;
+  grpc_error *error = a->error;
+  gpr_free(a);
+  grpc_exec_ctx_push(exec_ctx, bs->on_next, error, NULL);
   bs->on_next = NULL;
   bs->error = error;
   incoming_byte_stream_unref(exec_ctx, bs);
@@ -1962,25 +1977,26 @@ static void incoming_byte_stream_finished_ok_locked(grpc_exec_ctx *exec_ctx,
 }
 
 void grpc_chttp2_incoming_byte_stream_finished(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_byte_stream *bs, int success,
-    int from_parsing_thread) {
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_byte_stream *bs,
+    grpc_error *error, int from_parsing_thread) {
   if (from_parsing_thread) {
-    if (success) {
+    if (error == GRPC_ERROR_NONE) {
       grpc_chttp2_run_with_global_lock(exec_ctx, bs->transport, bs->stream,
                                        incoming_byte_stream_finished_ok_locked,
                                        bs, 0);
     } else {
-      incoming_byte_stream_finished_ok_locked(exec_ctx, bs->transport,
-                                              bs->stream, bs);
-    }
-  } else {
-    if (success) {
       grpc_chttp2_run_with_global_lock(
           exec_ctx, bs->transport, bs->stream,
-          incoming_byte_stream_finished_failed_locked, bs, 0);
+          incoming_byte_stream_finished_failed_locked,
+          make_bs_fail_args(bs, error), 0);
+    }
+  } else {
+    if (error == GRPC_ERROR_NONE) {
+      incoming_byte_stream_finished_ok_locked(exec_ctx, bs->transport,
+                                              bs->stream, bs);
     } else {
-      incoming_byte_stream_finished_failed_locked(exec_ctx, bs->transport,
-                                                  bs->stream, bs);
+      incoming_byte_stream_finished_failed_locked(
+          exec_ctx, bs->transport, bs->stream, make_bs_fail_args(bs, error));
     }
   }
 }

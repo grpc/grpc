@@ -159,8 +159,10 @@ error:
 
 done:
   grpc_exec_ctx_finish(&exec_ctx);
-  for (i = 0; i < naddrs; i++) {
-    GRPC_ERROR_UNREF(errors[i]);
+  if (errors != NULL) {
+    for (i = 0; i < naddrs; i++) {
+      GRPC_ERROR_UNREF(errors[i]);
+    }
   }
   GRPC_ERROR_UNREF(err);
   gpr_free(errors);
