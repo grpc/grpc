@@ -31,49 +31,55 @@
  *
  */
 
-#include <grpc/byte_buffer.h>
-#include <grpc/byte_buffer_reader.h>
-#include <grpc/census.h>
-#include <grpc/compression.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_cronet.h>
-#include <grpc/grpc_security.h>
-#include <grpc/grpc_security_constants.h>
-#include <grpc/impl/codegen/alloc.h>
-#include <grpc/impl/codegen/atm.h>
-#include <grpc/impl/codegen/byte_buffer.h>
-#include <grpc/impl/codegen/byte_buffer_reader.h>
-#include <grpc/impl/codegen/compression_types.h>
-#include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/impl/codegen/log.h>
-#include <grpc/impl/codegen/port_platform.h>
-#include <grpc/impl/codegen/propagation_bits.h>
-#include <grpc/impl/codegen/slice.h>
-#include <grpc/impl/codegen/slice_buffer.h>
-#include <grpc/impl/codegen/status.h>
-#include <grpc/impl/codegen/sync.h>
-#include <grpc/impl/codegen/sync_generic.h>
-#include <grpc/impl/codegen/time.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/atm.h>
-#include <grpc/support/avl.h>
-#include <grpc/support/cmdline.h>
-#include <grpc/support/cpu.h>
-#include <grpc/support/histogram.h>
-#include <grpc/support/host_port.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/slice.h>
-#include <grpc/support/slice_buffer.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/subprocess.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/sync_generic.h>
-#include <grpc/support/thd.h>
-#include <grpc/support/time.h>
-#include <grpc/support/tls.h>
-#include <grpc/support/useful.h>
+/* This file has empty implementation of all the functions exposed by the cronet
+library, so we can build it in all environments */
 
-int main(int argc, char **argv) { return 0; }
+#include <stdbool.h>
+
+#include <grpc/support/log.h>
+
+#include "third_party/objective_c/Cronet/cronet_c_for_grpc.h"
+
+#ifdef GRPC_COMPILE_WITH_CRONET
+/* link with the real CRONET library in the build system */
+#else
+/* Dummy implementation of cronet API just to test for build-ability */
+cronet_bidirectional_stream* cronet_bidirectional_stream_create(
+    cronet_engine* engine, void* annotation,
+    cronet_bidirectional_stream_callback* callback) {
+  GPR_ASSERT(0);
+  return NULL;
+}
+
+int cronet_bidirectional_stream_destroy(cronet_bidirectional_stream* stream) {
+  GPR_ASSERT(0);
+  return 0;
+}
+
+int cronet_bidirectional_stream_start(
+    cronet_bidirectional_stream* stream, const char* url, int priority,
+    const char* method, const cronet_bidirectional_stream_header_array* headers,
+    bool end_of_stream) {
+  GPR_ASSERT(0);
+  return 0;
+}
+
+int cronet_bidirectional_stream_read(cronet_bidirectional_stream* stream,
+                                     char* buffer, int capacity) {
+  GPR_ASSERT(0);
+  return 0;
+}
+
+int cronet_bidirectional_stream_write(cronet_bidirectional_stream* stream,
+                                      const char* buffer, int count,
+                                      bool end_of_stream) {
+  GPR_ASSERT(0);
+  return 0;
+}
+
+int cronet_bidirectional_stream_cancel(cronet_bidirectional_stream* stream) {
+  GPR_ASSERT(0);
+  return 0;
+}
+
+#endif /* GRPC_COMPILE_WITH_CRONET */
