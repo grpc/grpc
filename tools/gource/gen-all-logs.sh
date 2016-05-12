@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,34 +28,20 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-source ~/.rvm/scripts/rvm
 set -ex
 
-cd $(dirname $0)/../../..
+outdir=`pwd`
 
-CONFIG=${CONFIG:-opt}
-
-# build C++ qps worker & driver always - we need at least the driver to
-# run any of the scenarios.
-# TODO(jtattermusch): not embedding OpenSSL breaks the C# build because
-# grpc_csharp_ext needs OpenSSL embedded and some intermediate files from
-# this build will be reused.
-make CONFIG=${CONFIG} EMBED_OPENSSL=true EMBED_ZLIB=true qps_worker qps_json_driver -j8
-
-for language in $@
+tmpdir=`mktemp -d`
+mkdir -p $tmpdir/logs
+repos="grpc grpc-common grpc-go grpc-java grpc.github.io grpc-tools homebrew-grpc grpc-docker-library"
+for repo in $repos
 do
-  case "$language" in
-  "c++")
-    ;;  # C++ has already been built.
-  "java")
-    (cd ../grpc-java/ &&
-      ./gradlew -PskipCodegen=true :grpc-benchmarks:installDist)
-    ;;
-  "go")
-    tools/run_tests/performance/build_performance_go.sh
-    ;;
-  *)
-    tools/run_tests/run_tests.py -l $language -c $CONFIG --build_only -j 8
-    ;;
-  esac
+  cd $tmpdir
+  git clone https://github.com/grpc/$repo.git
+  cd $repo
+  gource --output-custom-log $tmpdir/logs/$repo
+  sed -i .backup "s,\|/,\|/$repo/,g" $tmpdir/logs/$repo
 done
+rm $tmpdir/logs/*.backup
+cat $tmpdir/logs/* | sort -n > $outdir/all-logs.txt
