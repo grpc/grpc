@@ -51,6 +51,8 @@ Request-Headers are delivered as HTTP2 headers in HEADERS + CONTINUATION frames.
 
 HTTP2 requires that reserved headers, ones starting with ":" appear before all other headers. Additionally implementations should send **Timeout** immediately after the reserved headers and they should send the **Call-Definition** headers before sending **Custom-Metadata**.
 
+**Path** must be a valid URI path as specified in https://tools.ietf.org/html/rfc3986#section-3.3.
+
 If **Timeout** is omitted a server should assume an infinite timeout. Client implementations are free to send a default minimum timeout based on their deployment requirements.
 
 **Custom-Metadata** is an arbitrary set of key-value pairs defined by the application layer. Header names starting with "grpc-" but not listed here are reserved for future GRPC use and should not be used by applications as **Custom-Metadata**.
