@@ -47,14 +47,14 @@ int main(int argc, char **argv) {
   sock = socket(PF_INET, SOCK_STREAM, 0);
   GPR_ASSERT(sock > 0);
 
-  GPR_ASSERT(grpc_set_socket_nonblocking(sock, 1));
-  GPR_ASSERT(grpc_set_socket_nonblocking(sock, 0));
-  GPR_ASSERT(grpc_set_socket_cloexec(sock, 1));
-  GPR_ASSERT(grpc_set_socket_cloexec(sock, 0));
-  GPR_ASSERT(grpc_set_socket_reuse_addr(sock, 1));
-  GPR_ASSERT(grpc_set_socket_reuse_addr(sock, 0));
-  GPR_ASSERT(grpc_set_socket_low_latency(sock, 1));
-  GPR_ASSERT(grpc_set_socket_low_latency(sock, 0));
+  GPR_ASSERT(grpc_set_socket_nonblocking(sock, 1) == GRPC_ERROR_NONE);
+  GPR_ASSERT(grpc_set_socket_nonblocking(sock, 0) == GRPC_ERROR_NONE);
+  GPR_ASSERT(grpc_set_socket_cloexec(sock, 1) == GRPC_ERROR_NONE);
+  GPR_ASSERT(grpc_set_socket_cloexec(sock, 0) == GRPC_ERROR_NONE);
+  GPR_ASSERT(grpc_set_socket_reuse_addr(sock, 1) == GRPC_ERROR_NONE);
+  GPR_ASSERT(grpc_set_socket_reuse_addr(sock, 0) == GRPC_ERROR_NONE);
+  GPR_ASSERT(grpc_set_socket_low_latency(sock, 1) == GRPC_ERROR_NONE);
+  GPR_ASSERT(grpc_set_socket_low_latency(sock, 0) == GRPC_ERROR_NONE);
 
   close(sock);
 
