@@ -3255,14 +3255,16 @@ configs:
     timeout_multiplier: 5
   ubsan:
     CC: clang
-    CPPFLAGS: -O1 -fsanitize-coverage=edge -fsanitize=undefined -fno-omit-frame-pointer
-      -Wno-unused-command-line-argument
+    CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=undefined,unsigned-integer-overflow
+      -fno-omit-frame-pointer -Wno-unused-command-line-argument -Wvarargs
     CXX: clang++
     DEFINES: NDEBUG
     LD: clang
-    LDFLAGS: -fsanitize=undefined
+    LDFLAGS: -fsanitize=undefined,unsigned-integer-overflow
     LDXX: clang++
     compile_the_world: true
+    test_environ:
+      UBSAN_OPTIONS: print_stacktrace=1
     timeout_multiplier: 1.5
 defaults:
   boringssl:
