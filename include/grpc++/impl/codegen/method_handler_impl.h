@@ -44,10 +44,10 @@ namespace grpc {
 template <class ServiceType, class RequestType, class ResponseType>
 class RpcMethodHandler : public MethodHandler {
  public:
-  RpcMethodHandler(
-      std::function<Status(ServiceType*, ServerContext*, const RequestType*,
-                           ResponseType*)> func,
-      ServiceType* service)
+  RpcMethodHandler(std::function<Status(ServiceType*, ServerContext*,
+                                        const RequestType*, ResponseType*)>
+                       func,
+                   ServiceType* service)
       : func_(func), service_(service) {}
 
   void RunHandler(const HandlerParameter& param) GRPC_FINAL {
@@ -88,7 +88,8 @@ class ClientStreamingHandler : public MethodHandler {
  public:
   ClientStreamingHandler(
       std::function<Status(ServiceType*, ServerContext*,
-                           ServerReader<RequestType>*, ResponseType*)> func,
+                           ServerReader<RequestType>*, ResponseType*)>
+          func,
       ServiceType* service)
       : func_(func), service_(service) {}
 
@@ -124,7 +125,8 @@ class ServerStreamingHandler : public MethodHandler {
  public:
   ServerStreamingHandler(
       std::function<Status(ServiceType*, ServerContext*, const RequestType*,
-                           ServerWriter<ResponseType>*)> func,
+                           ServerWriter<ResponseType>*)>
+          func,
       ServiceType* service)
       : func_(func), service_(service) {}
 
