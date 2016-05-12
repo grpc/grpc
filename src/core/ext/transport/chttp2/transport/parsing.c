@@ -500,8 +500,7 @@ static grpc_error *init_frame_parser(
     case GRPC_CHTTP2_FRAME_HEADER:
       return init_header_frame_parser(exec_ctx, transport_parsing, 0);
     case GRPC_CHTTP2_FRAME_CONTINUATION:
-      gpr_log(GPR_ERROR, "Unexpected CONTINUATION frame");
-      return 0;
+      return GRPC_ERROR_CREATE("Unexpected CONTINUATION frame");
     case GRPC_CHTTP2_FRAME_RST_STREAM:
       return init_rst_stream_parser(exec_ctx, transport_parsing);
     case GRPC_CHTTP2_FRAME_SETTINGS:
