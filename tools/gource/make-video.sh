@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,8 +30,18 @@
 
 set -ex
 
-cd $(dirname $0)/../../..
-
-export GOPATH=$(pwd)/../gopath
-
-${GOPATH}/bin/worker $@
+dst=$1
+shift
+$(dirname $0)/gource.sh \
+  --disable-progress    \
+  --stop-at-end         \
+  --output-ppm-stream - \
+  $@ |                  \
+ffmpeg                  \
+  -y                    \
+  -r 60                 \
+  -f image2pipe         \
+  -vcodec ppm           \
+  -i -                  \
+  -vcodec libx264       \
+  $dst
