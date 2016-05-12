@@ -31,49 +31,39 @@
  *
  */
 
-#include <grpc/byte_buffer.h>
-#include <grpc/byte_buffer_reader.h>
-#include <grpc/census.h>
-#include <grpc/compression.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_cronet.h>
-#include <grpc/grpc_security.h>
-#include <grpc/grpc_security_constants.h>
-#include <grpc/impl/codegen/alloc.h>
-#include <grpc/impl/codegen/atm.h>
-#include <grpc/impl/codegen/byte_buffer.h>
-#include <grpc/impl/codegen/byte_buffer_reader.h>
-#include <grpc/impl/codegen/compression_types.h>
-#include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/impl/codegen/log.h>
 #include <grpc/impl/codegen/port_platform.h>
-#include <grpc/impl/codegen/propagation_bits.h>
-#include <grpc/impl/codegen/slice.h>
-#include <grpc/impl/codegen/slice_buffer.h>
-#include <grpc/impl/codegen/status.h>
-#include <grpc/impl/codegen/sync.h>
-#include <grpc/impl/codegen/sync_generic.h>
-#include <grpc/impl/codegen/time.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/atm.h>
-#include <grpc/support/avl.h>
-#include <grpc/support/cmdline.h>
-#include <grpc/support/cpu.h>
-#include <grpc/support/histogram.h>
-#include <grpc/support/host_port.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/slice.h>
-#include <grpc/support/slice_buffer.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/subprocess.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/sync_generic.h>
-#include <grpc/support/thd.h>
-#include <grpc/support/time.h>
-#include <grpc/support/tls.h>
-#include <grpc/support/useful.h>
 
-int main(int argc, char **argv) { return 0; }
+#include <stdio.h>
+#include <string.h>
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+
+#include "src/core/lib/surface/channel.h"
+#include "src/core/lib/transport/transport_impl.h"
+
+// Cronet transport object
+typedef struct cronet_transport {
+  grpc_transport base;  // must be first element in this structure
+  void *engine;
+  char *host;
+} cronet_transport;
+
+extern grpc_transport_vtable grpc_cronet_vtable;
+
+GRPCAPI grpc_channel *grpc_cronet_secure_channel_create(
+    void *engine, const char *target, const grpc_channel_args *args,
+    void *reserved) {
+  cronet_transport *ct = gpr_malloc(sizeof(cronet_transport));
+  ct->base.vtable = &grpc_cronet_vtable;
+  ct->engine = engine;
+  ct->host = gpr_malloc(strlen(target) + 1);
+  strcpy(ct->host, target);
+  gpr_log(GPR_DEBUG,
+          "grpc_create_cronet_transport: cronet_engine = %p, target=%s", engine,
+          ct->host);
+
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  return grpc_channel_create(&exec_ctx, target, args,
+                             GRPC_CLIENT_DIRECT_CHANNEL, (grpc_transport *)ct);
+}

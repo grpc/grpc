@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,23 +31,21 @@
  *
  */
 
-var PROTO_PATH = __dirname + '/../protos/helloworld.proto';
+#ifndef GRPC_GRPC_CRONET_H
+#define GRPC_GRPC_CRONET_H
 
-var grpc = require('grpc');
-var hello_proto = grpc.load(PROTO_PATH).helloworld;
+#include <grpc/grpc.h>
 
-function main() {
-  var client = new hello_proto.Greeter('localhost:50051',
-                                       grpc.credentials.createInsecure());
-  var user;
-  if (process.argv.length >= 3) {
-    user = process.argv[2];
-  } else {
-    user = 'world';
-  }
-  client.sayHello({name: user}, function(err, response) {
-    console.log('Greeting:', response.message);
-  });
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+GRPCAPI grpc_channel *grpc_cronet_secure_channel_create(
+    void *engine, const char *target, const grpc_channel_args *args,
+    void *reserved);
+
+#ifdef __cplusplus
 }
+#endif
 
-main();
+#endif /* GRPC_GRPC_CRONET_H */
