@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,8 +30,18 @@
 
 set -ex
 
-cd $(dirname $0)/../../..
+outdir=`pwd`
 
-export GOPATH=$(pwd)/../gopath
-
-${GOPATH}/bin/worker $@
+tmpdir=`mktemp -d`
+mkdir -p $tmpdir/logs
+repos="grpc grpc-common grpc-go grpc-java grpc.github.io grpc-tools homebrew-grpc grpc-docker-library"
+for repo in $repos
+do
+  cd $tmpdir
+  git clone https://github.com/grpc/$repo.git
+  cd $repo
+  gource --output-custom-log $tmpdir/logs/$repo
+  sed -i .backup "s,\|/,\|/$repo/,g" $tmpdir/logs/$repo
+done
+rm $tmpdir/logs/*.backup
+cat $tmpdir/logs/* | sort -n > $outdir/all-logs.txt
