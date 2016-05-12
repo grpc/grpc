@@ -202,7 +202,6 @@ static void finish_resolve(grpc_exec_ctx *exec_ctx, void *arg,
     *r->addrs = addrs;
     grpc_exec_ctx_push(exec_ctx, r->on_done, GRPC_ERROR_NONE, NULL);
   } else {
-    GRPC_ERROR_REF(error);
     grpc_exec_ctx_push(
         exec_ctx, r->on_done,
         GRPC_ERROR_CREATE_REFERENCING("Resolution failed", &error, 1), NULL);
