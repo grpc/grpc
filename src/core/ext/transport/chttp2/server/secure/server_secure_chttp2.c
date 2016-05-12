@@ -239,6 +239,7 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
     gpr_asprintf(&msg, "No address added out of total %d resolved",
                  resolved->naddrs);
     err = GRPC_ERROR_CREATE_REFERENCING(msg, errors, resolved->naddrs);
+    gpr_free(msg);
     goto error;
   } else if (count != resolved->naddrs) {
     char *msg;
@@ -257,6 +258,7 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
     }
   }
   gpr_free(errors);
+  errors = NULL;
   grpc_resolved_addresses_destroy(resolved);
 
   /* Register with the server only upon success */
@@ -268,6 +270,12 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
 /* Error path: cleanup and return */
 error:
   GPR_ASSERT(err != GRPC_ERROR_NONE);
+  if (errors != NULL) {
+    for (i = 0; i < resolved->naddrs; i++) {
+      GRPC_ERROR_UNREF(errors[i]);
+    }
+    gpr_free(errors);
+  }
   if (resolved) {
     grpc_resolved_addresses_destroy(resolved);
   }
