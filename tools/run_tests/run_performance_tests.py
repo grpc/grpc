@@ -131,6 +131,36 @@ def create_quit_jobspec(workers, remote_host=None):
       verbose_success=True)
 
 
+def create_netperf_jobspec(server_host='localhost', client_host=None,
+                           bq_result_table=None):
+  """Runs netperf benchmark."""
+  cmd = 'NETPERF_SERVER_HOST="%s" ' % server_host
+  if bq_result_table:
+    cmd += 'BQ_RESULT_TABLE="%s" ' % bq_result_table
+  if client_host:
+    # If netperf is running remotely, the env variables populated by Jenkins
+    # won't be available on the client, but we need them for uploading results
+    # to BigQuery.
+    jenkins_job_name = os.getenv('JOB_NAME')
+    if jenkins_job_name:
+      cmd += 'JOB_NAME="%s" ' % jenkins_job_name
+    jenkins_build_number = os.getenv('BUILD_NUMBER')
+    if jenkins_build_number:
+      cmd += 'BUILD_NUMBER="%s" ' % jenkins_build_number
+
+  cmd += 'tools/run_tests/performance/run_netperf.sh'
+  if client_host:
+    user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, client_host)
+    cmd = 'ssh %s "cd ~/performance_workspace/grpc/ && "%s' % (user_at_host, pipes.quote(cmd))
+
+  return jobset.JobSpec(
+      cmdline=[cmd],
+      shortname='netperf',
+      timeout_seconds=60,
+      shell=True,
+      verbose_success=True)
+
+
 def archive_repo(languages):
   """Archives local version of repo including submodules."""
   cmdline=['tar', '-cf', '../grpc.tar', '../grpc/']
@@ -244,12 +274,28 @@ def start_qpsworkers(languages, worker_hosts):
 
 
 def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*',
-                     category='all', bq_result_table=None):
+                     category='all', bq_result_table=None,
+                     netperf=False, netperf_hosts=[]):
   """Create jobspecs for scenarios to run."""
   all_workers = [worker
                  for workers in workers_by_lang.values()
                  for worker in workers]
   scenarios = []
+
+  if netperf:
+    if not netperf_hosts:
+      netperf_server='localhost'
+      netperf_client=None
+    elif len(netperf_hosts) == 1:
+      netperf_server=netperf_hosts[0]
+      netperf_client=netperf_hosts[0]
+    else:
+      netperf_server=netperf_hosts[0]
+      netperf_client=netperf_hosts[1]
+    scenarios.append(create_netperf_jobspec(server_host=netperf_server,
+                                            client_host=netperf_client,
+                                            bq_result_table=bq_result_table))
+
   for language in languages:
     for scenario_json in language.scenarios():
       if re.search(args.regex, scenario_json['name']):
@@ -316,6 +362,11 @@ argp.add_argument('--category',
                   choices=['smoketest','all'],
                   default='smoketest',
                   help='Select a category of tests to run. Smoketest runs by default.')
+argp.add_argument('--netperf',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Run netperf benchmark as one of the scenarios.')
 
 args = argp.parse_args()
 
@@ -360,7 +411,10 @@ try:
                                remote_host=args.remote_driver_host,
                                regex=args.regex,
                                category=args.category,
-                               bq_result_table=args.bq_result_table)
+                               bq_result_table=args.bq_result_table,
+                               netperf=args.netperf,
+                               netperf_hosts=args.remote_worker_host)
+
   if not scenarios:
     raise Exception('No scenarios to run')
 

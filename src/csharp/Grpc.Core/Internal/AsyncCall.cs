@@ -57,7 +57,7 @@ namespace Grpc.Core.Internal
         // Completion of a pending unary response if not null.
         TaskCompletionSource<TResponse> unaryResponseTcs;
 
-        // Indicates that steaming call has finished.
+        // Indicates that response streaming call has finished.
         TaskCompletionSource<object> streamingCallFinishedTcs = new TaskCompletionSource<object>();
 
         // Response headers set here once received.
@@ -440,6 +440,19 @@ namespace Grpc.Core.Internal
                 }
 
                 unaryResponseTcs.SetResult(msg);
+            }
+        }
+
+        protected override void CheckSendingAllowed(bool allowFinished)
+        {
+            base.CheckSendingAllowed(true);
+
+            // throwing RpcException if we already received status on client
+            // side makes the most sense.
+            // Note that this throws even for StatusCode.OK.
+            if (!allowFinished && finishedStatus.HasValue)
+            {
+                throw new RpcException(finishedStatus.Value.Status);
             }
         }
 

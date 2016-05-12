@@ -77,6 +77,9 @@ sudo apt-get install -y \
 # perftools
 sudo apt-get install -y google-perftools libgoogle-perftools-dev
 
+# netperf
+sudo apt-get install -y netperf
+
 # C++ dependencies
 sudo apt-get install -y libgflags-dev libgtest-dev libc++-dev clang
 

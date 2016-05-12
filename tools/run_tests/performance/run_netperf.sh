@@ -28,34 +28,18 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-source ~/.rvm/scripts/rvm
 set -ex
 
 cd $(dirname $0)/../../..
 
-CONFIG=${CONFIG:-opt}
+netperf >netperf_latency.txt -P 0 -t TCP_RR -H "$NETPERF_SERVER_HOST" -- -r 1,1 -o P50_LATENCY,P90_LATENCY,P99_LATENCY
 
-# build C++ qps worker & driver always - we need at least the driver to
-# run any of the scenarios.
-# TODO(jtattermusch): not embedding OpenSSL breaks the C# build because
-# grpc_csharp_ext needs OpenSSL embedded and some intermediate files from
-# this build will be reused.
-make CONFIG=${CONFIG} EMBED_OPENSSL=true EMBED_ZLIB=true qps_worker qps_json_driver -j8
+cat netperf_latency.txt
 
-for language in $@
-do
-  case "$language" in
-  "c++")
-    ;;  # C++ has already been built.
-  "java")
-    (cd ../grpc-java/ &&
-      ./gradlew -PskipCodegen=true :grpc-benchmarks:installDist)
-    ;;
-  "go")
-    tools/run_tests/performance/build_performance_go.sh
-    ;;
-  *)
-    tools/run_tests/run_tests.py -l $language -c $CONFIG --build_only -j 8
-    ;;
-  esac
-done
+if [ "$BQ_RESULT_TABLE" != "" ]
+then
+  tools/run_tests/performance/bq_upload_result.py \
+      --file_to_upload=netperf_latency.txt \
+      --file_format=netperf_latency_csv \
+      --bq_result_table="$BQ_RESULT_TABLE"
+fi
