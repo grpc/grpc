@@ -56,7 +56,7 @@ class GuardValidator(object):
   def __init__(self):
     self.ifndef_re = re.compile(r'#ifndef ([A-Z][A-Z_1-9]*)')
     self.define_re = re.compile(r'#define ([A-Z][A-Z_1-9]*)')
-    self.endif_c_re = re.compile(r'#endif /\* ([A-Z][A-Z_1-9]*) \*/')
+    self.endif_c_re = re.compile(r'#endif /\* ([A-Z][A-Z_1-9]*) (?:\\ *\n *)?\*/')
     self.endif_cpp_re = re.compile(r'#endif  // ([A-Z][A-Z_1-9]*)')
     self.failed = False
 
@@ -132,7 +132,7 @@ class GuardValidator(object):
     # Is there a properly commented #endif?
     endif_re = self.endif_cpp_re if cpp_header else self.endif_c_re
     flines = fcontents.rstrip().splitlines()
-    match = endif_re.search(flines[-1])
+    match = endif_re.search('\n'.join(flines[-2:]))
     if not match:
       # No endif. Check if we have the last line as just '#endif' and if so
       # replace it with a properly commented one.
