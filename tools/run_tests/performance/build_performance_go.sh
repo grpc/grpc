@@ -28,34 +28,17 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-source ~/.rvm/scripts/rvm
 set -ex
 
 cd $(dirname $0)/../../..
 
-CONFIG=${CONFIG:-opt}
+export GOPATH=$(pwd)/../gopath
 
-# build C++ qps worker & driver always - we need at least the driver to
-# run any of the scenarios.
-# TODO(jtattermusch): not embedding OpenSSL breaks the C# build because
-# grpc_csharp_ext needs OpenSSL embedded and some intermediate files from
-# this build will be reused.
-make CONFIG=${CONFIG} EMBED_OPENSSL=true EMBED_ZLIB=true qps_worker qps_json_driver -j8
+# Get grpc-go and the dependencies but get rid of the upstream/master version
+go get google.golang.org/grpc
+rm -rf "${GOPATH}/src/google.golang.org/grpc"
 
-for language in $@
-do
-  case "$language" in
-  "c++")
-    ;;  # C++ has already been built.
-  "java")
-    (cd ../grpc-java/ &&
-      ./gradlew -PskipCodegen=true :grpc-benchmarks:installDist)
-    ;;
-  "go")
-    tools/run_tests/performance/build_performance_go.sh
-    ;;
-  *)
-    tools/run_tests/run_tests.py -l $language -c $CONFIG --build_only -j 8
-    ;;
-  esac
-done
+# Get the revision of grpc-go we want to test
+git clone --recursive ../grpc-go ${GOPATH}/src/google.golang.org/grpc
+
+(cd ${GOPATH}/src/google.golang.org/grpc/benchmark/worker && go install)
