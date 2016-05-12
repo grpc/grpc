@@ -324,10 +324,10 @@ static void test_jwt_verifier_google_email_issuer_success(void) {
   GPR_ASSERT(jwt != NULL);
   grpc_jwt_verifier_verify(&exec_ctx, verifier, NULL, jwt, expected_audience,
                            on_verification_success, (void *)expected_user_data);
+  grpc_exec_ctx_finish(&exec_ctx);
   gpr_free(jwt);
   grpc_jwt_verifier_destroy(verifier);
   grpc_httpcli_set_override(NULL, NULL);
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static int httpcli_get_custom_keys_for_email(
@@ -358,10 +358,10 @@ static void test_jwt_verifier_custom_email_issuer_success(void) {
   GPR_ASSERT(jwt != NULL);
   grpc_jwt_verifier_verify(&exec_ctx, verifier, NULL, jwt, expected_audience,
                            on_verification_success, (void *)expected_user_data);
+  grpc_exec_ctx_finish(&exec_ctx);
   gpr_free(jwt);
   grpc_jwt_verifier_destroy(verifier);
   grpc_httpcli_set_override(NULL, NULL);
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static int httpcli_get_jwk_set(grpc_exec_ctx *exec_ctx,
@@ -407,10 +407,10 @@ static void test_jwt_verifier_url_issuer_success(void) {
   GPR_ASSERT(jwt != NULL);
   grpc_jwt_verifier_verify(&exec_ctx, verifier, NULL, jwt, expected_audience,
                            on_verification_success, (void *)expected_user_data);
+  grpc_exec_ctx_finish(&exec_ctx);
   gpr_free(jwt);
   grpc_jwt_verifier_destroy(verifier);
   grpc_httpcli_set_override(NULL, NULL);
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void on_verification_key_retrieval_error(void *user_data,
@@ -448,10 +448,10 @@ static void test_jwt_verifier_url_issuer_bad_config(void) {
   grpc_jwt_verifier_verify(&exec_ctx, verifier, NULL, jwt, expected_audience,
                            on_verification_key_retrieval_error,
                            (void *)expected_user_data);
+  grpc_exec_ctx_finish(&exec_ctx);
   gpr_free(jwt);
   grpc_jwt_verifier_destroy(verifier);
   grpc_httpcli_set_override(NULL, NULL);
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_jwt_verifier_bad_json_key(void) {
@@ -471,10 +471,10 @@ static void test_jwt_verifier_bad_json_key(void) {
   grpc_jwt_verifier_verify(&exec_ctx, verifier, NULL, jwt, expected_audience,
                            on_verification_key_retrieval_error,
                            (void *)expected_user_data);
+  grpc_exec_ctx_finish(&exec_ctx);
   gpr_free(jwt);
   grpc_jwt_verifier_destroy(verifier);
   grpc_httpcli_set_override(NULL, NULL);
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void corrupt_jwt_sig(char *jwt) {
@@ -520,10 +520,10 @@ static void test_jwt_verifier_bad_signature(void) {
   grpc_jwt_verifier_verify(&exec_ctx, verifier, NULL, jwt, expected_audience,
                            on_verification_bad_signature,
                            (void *)expected_user_data);
+  grpc_exec_ctx_finish(&exec_ctx);
   gpr_free(jwt);
   grpc_jwt_verifier_destroy(verifier);
   grpc_httpcli_set_override(NULL, NULL);
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static int httpcli_get_should_not_be_called(grpc_exec_ctx *exec_ctx,
@@ -551,9 +551,9 @@ static void test_jwt_verifier_bad_format(void) {
   grpc_jwt_verifier_verify(&exec_ctx, verifier, NULL, "bad jwt",
                            expected_audience, on_verification_bad_format,
                            (void *)expected_user_data);
+  grpc_exec_ctx_finish(&exec_ctx);
   grpc_jwt_verifier_destroy(verifier);
   grpc_httpcli_set_override(NULL, NULL);
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 /* find verification key: bad jks, cannot find key in jks */
