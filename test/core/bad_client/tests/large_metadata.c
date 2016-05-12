@@ -33,10 +33,11 @@
 
 #include "test/core/bad_client/bad_client.h"
 
-#include <stdio.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
+#include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/server.h"
 #include "test/core/end2end/cq_verifier.h"
 
@@ -64,23 +65,22 @@
 
 // Each large-metadata header is constructed from these start and end
 // strings, with a two-digit number in between.
-#define PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_START_STR                 \
-  "\x10\x0duser-header"
+#define PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_START_STR "\x10\x0duser-header"
 #define PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_END_STR                   \
   "~aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
 // The size of each large-metadata header string.
-#define PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_SIZE              \
+#define PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_SIZE                     \
   ((sizeof(PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_START_STR) - 1) + 2 + \
    (sizeof(PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_END_STR) - 1))
 
 // The number of headers we're adding and the total size of the client
 // payload.
 #define NUM_HEADERS 95
-#define PFX_TOO_MUCH_METADATA_FROM_CLIENT_PAYLOAD_SIZE \
-  ((sizeof(PFX_TOO_MUCH_METADATA_FROM_CLIENT_PREFIX_STR) - 1) \
-  + (NUM_HEADERS * PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_SIZE) + 1)
+#define PFX_TOO_MUCH_METADATA_FROM_CLIENT_PAYLOAD_SIZE          \
+  ((sizeof(PFX_TOO_MUCH_METADATA_FROM_CLIENT_PREFIX_STR) - 1) + \
+   (NUM_HEADERS * PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_SIZE) + 1)
 
 #define PFX_TOO_MUCH_METADATA_FROM_SERVER_STR                                              \
   "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n" /* settings frame: sets                               \
@@ -217,19 +217,26 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
 
   // Test sending more metadata than the server will accept.
+  gpr_strvec headers;
+  gpr_strvec_init(&headers);
+  for (int i = 0; i < NUM_HEADERS; ++i) {
+    char *str;
+    gpr_asprintf(&str, "%s%02d%s",
+                 PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_START_STR, i,
+                 PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_END_STR);
+    gpr_strvec_add(&headers, str);
+  }
+  size_t headers_len;
+  const char *client_headers = gpr_strvec_flatten(&headers, &headers_len);
+  gpr_strvec_destroy(&headers);
   char client_payload[PFX_TOO_MUCH_METADATA_FROM_CLIENT_PAYLOAD_SIZE] =
       PFX_TOO_MUCH_METADATA_FROM_CLIENT_PREFIX_STR;
-  size_t offset = sizeof(PFX_TOO_MUCH_METADATA_FROM_CLIENT_PREFIX_STR);
-  for (int i = 0; i < NUM_HEADERS; ++i) {
-    snprintf(client_payload + offset,
-             PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_SIZE,
-             "%s%02d%s",
-             PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_START_STR, i,
-             PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_END_STR);
-    offset += PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_SIZE;
-  }
-  GRPC_RUN_BAD_CLIENT_TEST(server_verifier, client_validator,
-                           client_payload, 0);
+  memcpy(
+      client_payload + sizeof(PFX_TOO_MUCH_METADATA_FROM_CLIENT_PREFIX_STR) - 1,
+      client_headers, headers_len);
+  GRPC_RUN_BAD_CLIENT_TEST(server_verifier, client_validator, client_payload,
+                           0);
+  gpr_free((void *)client_headers);
 
   // Test sending more metadata than the client will accept.
   GRPC_RUN_BAD_CLIENT_TEST(server_verifier_sends_too_much_metadata,
