@@ -54,10 +54,10 @@ class ProtoServerReflection GRPC_FINAL
 
   void SetServiceList(const std::vector<grpc::string>* services);
 
-  Status DescriptorDatabaseInfo(
+  Status ServerReflectionInfo(
       ServerContext* context,
-      ServerReaderWriter<reflection::v1alpha::DescriptorDatabaseResponse,
-                         reflection::v1alpha::DescriptorDatabaseRequest>*
+      ServerReaderWriter<reflection::v1alpha::ServerReflectionResponse,
+                         reflection::v1alpha::ServerReflectionRequest>*
           stream) GRPC_OVERRIDE;
 
  private:
@@ -66,16 +66,16 @@ class ProtoServerReflection GRPC_FINAL
 
   Status GetFileByName(
       ServerContext* context, const grpc::string& file_name,
-      reflection::v1alpha::DescriptorDatabaseResponse* response);
+      reflection::v1alpha::ServerReflectionResponse* response);
 
   Status GetFileContainingSymbol(
       ServerContext* context, const grpc::string& symbol,
-      reflection::v1alpha::DescriptorDatabaseResponse* response);
+      reflection::v1alpha::ServerReflectionResponse* response);
 
   Status GetFileContainingExtension(
       ServerContext* context,
       const reflection::v1alpha::ExtensionRequest* request,
-      reflection::v1alpha::DescriptorDatabaseResponse* response);
+      reflection::v1alpha::ServerReflectionResponse* response);
 
   Status GetAllExtensionNumbers(
       ServerContext* context, const grpc::string& type,
@@ -83,7 +83,7 @@ class ProtoServerReflection GRPC_FINAL
 
   void FillFileDescriptorProtoResponse(
       const google::protobuf::FileDescriptor* file_desc,
-      reflection::v1alpha::DescriptorDatabaseResponse* response);
+      reflection::v1alpha::ServerReflectionResponse* response);
 
   void FillErrorResponse(Status* status,
                          reflection::v1alpha::ErrorResponse* error_response);

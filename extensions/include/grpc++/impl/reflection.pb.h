@@ -72,29 +72,31 @@ void protobuf_AddDesc_reflection_2eproto();
 void protobuf_AssignDesc_reflection_2eproto();
 void protobuf_ShutdownFile_reflection_2eproto();
 
-class DescriptorDatabaseRequest;
-class DescriptorDatabaseResponse;
 class ErrorResponse;
 class ExtensionNumberResponse;
 class ExtensionRequest;
+class FileDescriptorResponse;
 class ListServiceResponse;
+class ServerReflectionRequest;
+class ServerReflectionResponse;
+class ServiceResponse;
 
 // ===================================================================
 
-class DescriptorDatabaseRequest : public ::google::protobuf::Message {
+class ServerReflectionRequest : public ::google::protobuf::Message {
  public:
-  DescriptorDatabaseRequest();
-  virtual ~DescriptorDatabaseRequest();
+  ServerReflectionRequest();
+  virtual ~ServerReflectionRequest();
 
-  DescriptorDatabaseRequest(const DescriptorDatabaseRequest& from);
+  ServerReflectionRequest(const ServerReflectionRequest& from);
 
-  inline DescriptorDatabaseRequest& operator=(const DescriptorDatabaseRequest& from) {
+  inline ServerReflectionRequest& operator=(const ServerReflectionRequest& from) {
     CopyFrom(from);
     return *this;
   }
 
   static const ::google::protobuf::Descriptor* descriptor();
-  static const DescriptorDatabaseRequest& default_instance();
+  static const ServerReflectionRequest& default_instance();
 
   enum MessageRequestCase {
     kFileByFilename = 3,
@@ -105,17 +107,17 @@ class DescriptorDatabaseRequest : public ::google::protobuf::Message {
     MESSAGE_REQUEST_NOT_SET = 0,
   };
 
-  void Swap(DescriptorDatabaseRequest* other);
+  void Swap(ServerReflectionRequest* other);
 
   // implements Message ----------------------------------------------
 
-  inline DescriptorDatabaseRequest* New() const { return New(NULL); }
+  inline ServerReflectionRequest* New() const { return New(NULL); }
 
-  DescriptorDatabaseRequest* New(::google::protobuf::Arena* arena) const;
+  ServerReflectionRequest* New(::google::protobuf::Arena* arena) const;
   void CopyFrom(const ::google::protobuf::Message& from);
   void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const DescriptorDatabaseRequest& from);
-  void MergeFrom(const DescriptorDatabaseRequest& from);
+  void CopyFrom(const ServerReflectionRequest& from);
+  void MergeFrom(const ServerReflectionRequest& from);
   void Clear();
   bool IsInitialized() const;
 
@@ -130,7 +132,7 @@ class DescriptorDatabaseRequest : public ::google::protobuf::Message {
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const;
-  void InternalSwap(DescriptorDatabaseRequest* other);
+  void InternalSwap(ServerReflectionRequest* other);
   private:
   inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
     return _internal_metadata_.arena();
@@ -223,7 +225,7 @@ class DescriptorDatabaseRequest : public ::google::protobuf::Message {
   void set_allocated_list_services(::std::string* list_services);
 
   MessageRequestCase message_request_case() const;
-  // @@protoc_insertion_point(class_scope:grpc.reflection.v1alpha.DescriptorDatabaseRequest)
+  // @@protoc_insertion_point(class_scope:grpc.reflection.v1alpha.ServerReflectionRequest)
  private:
   inline void set_has_file_by_filename();
   inline void set_has_file_containing_symbol();
@@ -254,7 +256,7 @@ class DescriptorDatabaseRequest : public ::google::protobuf::Message {
   friend void protobuf_ShutdownFile_reflection_2eproto();
 
   void InitAsDefaultInstance();
-  static DescriptorDatabaseRequest* default_instance_;
+  static ServerReflectionRequest* default_instance_;
 };
 // -------------------------------------------------------------------
 
@@ -348,40 +350,40 @@ class ExtensionRequest : public ::google::protobuf::Message {
 };
 // -------------------------------------------------------------------
 
-class DescriptorDatabaseResponse : public ::google::protobuf::Message {
+class ServerReflectionResponse : public ::google::protobuf::Message {
  public:
-  DescriptorDatabaseResponse();
-  virtual ~DescriptorDatabaseResponse();
+  ServerReflectionResponse();
+  virtual ~ServerReflectionResponse();
 
-  DescriptorDatabaseResponse(const DescriptorDatabaseResponse& from);
+  ServerReflectionResponse(const ServerReflectionResponse& from);
 
-  inline DescriptorDatabaseResponse& operator=(const DescriptorDatabaseResponse& from) {
+  inline ServerReflectionResponse& operator=(const ServerReflectionResponse& from) {
     CopyFrom(from);
     return *this;
   }
 
   static const ::google::protobuf::Descriptor* descriptor();
-  static const DescriptorDatabaseResponse& default_instance();
+  static const ServerReflectionResponse& default_instance();
 
   enum MessageResponseCase {
-    kFileDescriptorProto = 4,
+    kFileDescriptorResponse = 4,
     kAllExtensionNumbersResponse = 5,
     kListServicesResponse = 6,
     kErrorResponse = 7,
     MESSAGE_RESPONSE_NOT_SET = 0,
   };
 
-  void Swap(DescriptorDatabaseResponse* other);
+  void Swap(ServerReflectionResponse* other);
 
   // implements Message ----------------------------------------------
 
-  inline DescriptorDatabaseResponse* New() const { return New(NULL); }
+  inline ServerReflectionResponse* New() const { return New(NULL); }
 
-  DescriptorDatabaseResponse* New(::google::protobuf::Arena* arena) const;
+  ServerReflectionResponse* New(::google::protobuf::Arena* arena) const;
   void CopyFrom(const ::google::protobuf::Message& from);
   void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const DescriptorDatabaseResponse& from);
-  void MergeFrom(const DescriptorDatabaseResponse& from);
+  void CopyFrom(const ServerReflectionResponse& from);
+  void MergeFrom(const ServerReflectionResponse& from);
   void Clear();
   bool IsInitialized() const;
 
@@ -396,7 +398,7 @@ class DescriptorDatabaseResponse : public ::google::protobuf::Message {
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const;
-  void InternalSwap(DescriptorDatabaseResponse* other);
+  void InternalSwap(ServerReflectionResponse* other);
   private:
   inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
     return _internal_metadata_.arena();
@@ -423,28 +425,23 @@ class DescriptorDatabaseResponse : public ::google::protobuf::Message {
   ::std::string* release_valid_host();
   void set_allocated_valid_host(::std::string* valid_host);
 
-  // optional .grpc.reflection.v1alpha.DescriptorDatabaseRequest original_request = 2;
+  // optional .grpc.reflection.v1alpha.ServerReflectionRequest original_request = 2;
   bool has_original_request() const;
   void clear_original_request();
   static const int kOriginalRequestFieldNumber = 2;
-  const ::grpc::reflection::v1alpha::DescriptorDatabaseRequest& original_request() const;
-  ::grpc::reflection::v1alpha::DescriptorDatabaseRequest* mutable_original_request();
-  ::grpc::reflection::v1alpha::DescriptorDatabaseRequest* release_original_request();
-  void set_allocated_original_request(::grpc::reflection::v1alpha::DescriptorDatabaseRequest* original_request);
+  const ::grpc::reflection::v1alpha::ServerReflectionRequest& original_request() const;
+  ::grpc::reflection::v1alpha::ServerReflectionRequest* mutable_original_request();
+  ::grpc::reflection::v1alpha::ServerReflectionRequest* release_original_request();
+  void set_allocated_original_request(::grpc::reflection::v1alpha::ServerReflectionRequest* original_request);
 
-  // optional bytes file_descriptor_proto = 4;
-  private:
-  bool has_file_descriptor_proto() const;
-  public:
-  void clear_file_descriptor_proto();
-  static const int kFileDescriptorProtoFieldNumber = 4;
-  const ::std::string& file_descriptor_proto() const;
-  void set_file_descriptor_proto(const ::std::string& value);
-  void set_file_descriptor_proto(const char* value);
-  void set_file_descriptor_proto(const void* value, size_t size);
-  ::std::string* mutable_file_descriptor_proto();
-  ::std::string* release_file_descriptor_proto();
-  void set_allocated_file_descriptor_proto(::std::string* file_descriptor_proto);
+  // optional .grpc.reflection.v1alpha.FileDescriptorResponse file_descriptor_response = 4;
+  bool has_file_descriptor_response() const;
+  void clear_file_descriptor_response();
+  static const int kFileDescriptorResponseFieldNumber = 4;
+  const ::grpc::reflection::v1alpha::FileDescriptorResponse& file_descriptor_response() const;
+  ::grpc::reflection::v1alpha::FileDescriptorResponse* mutable_file_descriptor_response();
+  ::grpc::reflection::v1alpha::FileDescriptorResponse* release_file_descriptor_response();
+  void set_allocated_file_descriptor_response(::grpc::reflection::v1alpha::FileDescriptorResponse* file_descriptor_response);
 
   // optional .grpc.reflection.v1alpha.ExtensionNumberResponse all_extension_numbers_response = 5;
   bool has_all_extension_numbers_response() const;
@@ -474,9 +471,9 @@ class DescriptorDatabaseResponse : public ::google::protobuf::Message {
   void set_allocated_error_response(::grpc::reflection::v1alpha::ErrorResponse* error_response);
 
   MessageResponseCase message_response_case() const;
-  // @@protoc_insertion_point(class_scope:grpc.reflection.v1alpha.DescriptorDatabaseResponse)
+  // @@protoc_insertion_point(class_scope:grpc.reflection.v1alpha.ServerReflectionResponse)
  private:
-  inline void set_has_file_descriptor_proto();
+  inline void set_has_file_descriptor_response();
   inline void set_has_all_extension_numbers_response();
   inline void set_has_list_services_response();
   inline void set_has_error_response();
@@ -488,10 +485,10 @@ class DescriptorDatabaseResponse : public ::google::protobuf::Message {
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
   bool _is_default_instance_;
   ::google::protobuf::internal::ArenaStringPtr valid_host_;
-  ::grpc::reflection::v1alpha::DescriptorDatabaseRequest* original_request_;
+  ::grpc::reflection::v1alpha::ServerReflectionRequest* original_request_;
   union MessageResponseUnion {
     MessageResponseUnion() {}
-    ::google::protobuf::internal::ArenaStringPtr file_descriptor_proto_;
+    ::grpc::reflection::v1alpha::FileDescriptorResponse* file_descriptor_response_;
     ::grpc::reflection::v1alpha::ExtensionNumberResponse* all_extension_numbers_response_;
     ::grpc::reflection::v1alpha::ListServiceResponse* list_services_response_;
     ::grpc::reflection::v1alpha::ErrorResponse* error_response_;
@@ -504,7 +501,95 @@ class DescriptorDatabaseResponse : public ::google::protobuf::Message {
   friend void protobuf_ShutdownFile_reflection_2eproto();
 
   void InitAsDefaultInstance();
-  static DescriptorDatabaseResponse* default_instance_;
+  static ServerReflectionResponse* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class FileDescriptorResponse : public ::google::protobuf::Message {
+ public:
+  FileDescriptorResponse();
+  virtual ~FileDescriptorResponse();
+
+  FileDescriptorResponse(const FileDescriptorResponse& from);
+
+  inline FileDescriptorResponse& operator=(const FileDescriptorResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const FileDescriptorResponse& default_instance();
+
+  void Swap(FileDescriptorResponse* other);
+
+  // implements Message ----------------------------------------------
+
+  inline FileDescriptorResponse* New() const { return New(NULL); }
+
+  FileDescriptorResponse* New(::google::protobuf::Arena* arena) const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const FileDescriptorResponse& from);
+  void MergeFrom(const FileDescriptorResponse& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  void InternalSwap(FileDescriptorResponse* other);
+  private:
+  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
+    return _internal_metadata_.arena();
+  }
+  inline void* MaybeArenaPtr() const {
+    return _internal_metadata_.raw_arena_ptr();
+  }
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // repeated bytes file_descriptor_proto = 1;
+  int file_descriptor_proto_size() const;
+  void clear_file_descriptor_proto();
+  static const int kFileDescriptorProtoFieldNumber = 1;
+  const ::std::string& file_descriptor_proto(int index) const;
+  ::std::string* mutable_file_descriptor_proto(int index);
+  void set_file_descriptor_proto(int index, const ::std::string& value);
+  void set_file_descriptor_proto(int index, const char* value);
+  void set_file_descriptor_proto(int index, const void* value, size_t size);
+  ::std::string* add_file_descriptor_proto();
+  void add_file_descriptor_proto(const ::std::string& value);
+  void add_file_descriptor_proto(const char* value);
+  void add_file_descriptor_proto(const void* value, size_t size);
+  const ::google::protobuf::RepeatedPtrField< ::std::string>& file_descriptor_proto() const;
+  ::google::protobuf::RepeatedPtrField< ::std::string>* mutable_file_descriptor_proto();
+
+  // @@protoc_insertion_point(class_scope:grpc.reflection.v1alpha.FileDescriptorResponse)
+ private:
+
+  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  bool _is_default_instance_;
+  ::google::protobuf::RepeatedPtrField< ::std::string> file_descriptor_proto_;
+  mutable int _cached_size_;
+  friend void  protobuf_AddDesc_reflection_2eproto();
+  friend void protobuf_AssignDesc_reflection_2eproto();
+  friend void protobuf_ShutdownFile_reflection_2eproto();
+
+  void InitAsDefaultInstance();
+  static FileDescriptorResponse* default_instance_;
 };
 // -------------------------------------------------------------------
 
@@ -661,28 +746,24 @@ class ListServiceResponse : public ::google::protobuf::Message {
 
   // accessors -------------------------------------------------------
 
-  // repeated string service = 1;
+  // repeated .grpc.reflection.v1alpha.ServiceResponse service = 1;
   int service_size() const;
   void clear_service();
   static const int kServiceFieldNumber = 1;
-  const ::std::string& service(int index) const;
-  ::std::string* mutable_service(int index);
-  void set_service(int index, const ::std::string& value);
-  void set_service(int index, const char* value);
-  void set_service(int index, const char* value, size_t size);
-  ::std::string* add_service();
-  void add_service(const ::std::string& value);
-  void add_service(const char* value);
-  void add_service(const char* value, size_t size);
-  const ::google::protobuf::RepeatedPtrField< ::std::string>& service() const;
-  ::google::protobuf::RepeatedPtrField< ::std::string>* mutable_service();
+  const ::grpc::reflection::v1alpha::ServiceResponse& service(int index) const;
+  ::grpc::reflection::v1alpha::ServiceResponse* mutable_service(int index);
+  ::grpc::reflection::v1alpha::ServiceResponse* add_service();
+  ::google::protobuf::RepeatedPtrField< ::grpc::reflection::v1alpha::ServiceResponse >*
+      mutable_service();
+  const ::google::protobuf::RepeatedPtrField< ::grpc::reflection::v1alpha::ServiceResponse >&
+      service() const;
 
   // @@protoc_insertion_point(class_scope:grpc.reflection.v1alpha.ListServiceResponse)
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
   bool _is_default_instance_;
-  ::google::protobuf::RepeatedPtrField< ::std::string> service_;
+  ::google::protobuf::RepeatedPtrField< ::grpc::reflection::v1alpha::ServiceResponse > service_;
   mutable int _cached_size_;
   friend void  protobuf_AddDesc_reflection_2eproto();
   friend void protobuf_AssignDesc_reflection_2eproto();
@@ -690,6 +771,89 @@ class ListServiceResponse : public ::google::protobuf::Message {
 
   void InitAsDefaultInstance();
   static ListServiceResponse* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class ServiceResponse : public ::google::protobuf::Message {
+ public:
+  ServiceResponse();
+  virtual ~ServiceResponse();
+
+  ServiceResponse(const ServiceResponse& from);
+
+  inline ServiceResponse& operator=(const ServiceResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const ServiceResponse& default_instance();
+
+  void Swap(ServiceResponse* other);
+
+  // implements Message ----------------------------------------------
+
+  inline ServiceResponse* New() const { return New(NULL); }
+
+  ServiceResponse* New(::google::protobuf::Arena* arena) const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const ServiceResponse& from);
+  void MergeFrom(const ServiceResponse& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  void InternalSwap(ServiceResponse* other);
+  private:
+  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
+    return _internal_metadata_.arena();
+  }
+  inline void* MaybeArenaPtr() const {
+    return _internal_metadata_.raw_arena_ptr();
+  }
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // optional string name = 1;
+  void clear_name();
+  static const int kNameFieldNumber = 1;
+  const ::std::string& name() const;
+  void set_name(const ::std::string& value);
+  void set_name(const char* value);
+  void set_name(const char* value, size_t size);
+  ::std::string* mutable_name();
+  ::std::string* release_name();
+  void set_allocated_name(::std::string* name);
+
+  // @@protoc_insertion_point(class_scope:grpc.reflection.v1alpha.ServiceResponse)
+ private:
+
+  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  bool _is_default_instance_;
+  ::google::protobuf::internal::ArenaStringPtr name_;
+  mutable int _cached_size_;
+  friend void  protobuf_AddDesc_reflection_2eproto();
+  friend void protobuf_AssignDesc_reflection_2eproto();
+  friend void protobuf_ShutdownFile_reflection_2eproto();
+
+  void InitAsDefaultInstance();
+  static ServiceResponse* default_instance_;
 };
 // -------------------------------------------------------------------
 
@@ -787,82 +951,82 @@ class ErrorResponse : public ::google::protobuf::Message {
 // ===================================================================
 
 #if !PROTOBUF_INLINE_NOT_IN_HEADERS
-// DescriptorDatabaseRequest
+// ServerReflectionRequest
 
 // optional string host = 1;
-inline void DescriptorDatabaseRequest::clear_host() {
+inline void ServerReflectionRequest::clear_host() {
   host_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline const ::std::string& DescriptorDatabaseRequest::host() const {
-  // @@protoc_insertion_point(field_get:grpc.reflection.v1alpha.DescriptorDatabaseRequest.host)
+inline const ::std::string& ServerReflectionRequest::host() const {
+  // @@protoc_insertion_point(field_get:grpc.reflection.v1alpha.ServerReflectionRequest.host)
   return host_.GetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline void DescriptorDatabaseRequest::set_host(const ::std::string& value) {
+inline void ServerReflectionRequest::set_host(const ::std::string& value) {
   
   host_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:grpc.reflection.v1alpha.DescriptorDatabaseRequest.host)
+  // @@protoc_insertion_point(field_set:grpc.reflection.v1alpha.ServerReflectionRequest.host)
 }
-inline void DescriptorDatabaseRequest::set_host(const char* value) {
+inline void ServerReflectionRequest::set_host(const char* value) {
   
   host_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:grpc.reflection.v1alpha.DescriptorDatabaseRequest.host)
+  // @@protoc_insertion_point(field_set_char:grpc.reflection.v1alpha.ServerReflectionRequest.host)
 }
-inline void DescriptorDatabaseRequest::set_host(const char* value, size_t size) {
+inline void ServerReflectionRequest::set_host(const char* value, size_t size) {
   
   host_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:grpc.reflection.v1alpha.DescriptorDatabaseRequest.host)
+  // @@protoc_insertion_point(field_set_pointer:grpc.reflection.v1alpha.ServerReflectionRequest.host)
 }
-inline ::std::string* DescriptorDatabaseRequest::mutable_host() {
+inline ::std::string* ServerReflectionRequest::mutable_host() {
   
-  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1alpha.DescriptorDatabaseRequest.host)
+  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1alpha.ServerReflectionRequest.host)
   return host_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline ::std::string* DescriptorDatabaseRequest::release_host() {
+inline ::std::string* ServerReflectionRequest::release_host() {
   
   return host_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline void DescriptorDatabaseRequest::set_allocated_host(::std::string* host) {
+inline void ServerReflectionRequest::set_allocated_host(::std::string* host) {
   if (host != NULL) {
     
   } else {
     
   }
   host_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), host);
-  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1alpha.DescriptorDatabaseRequest.host)
+  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1alpha.ServerReflectionRequest.host)
 }
 
 // optional string file_by_filename = 3;
-inline bool DescriptorDatabaseRequest::has_file_by_filename() const {
+inline bool ServerReflectionRequest::has_file_by_filename() const {
   return message_request_case() == kFileByFilename;
 }
-inline void DescriptorDatabaseRequest::set_has_file_by_filename() {
+inline void ServerReflectionRequest::set_has_file_by_filename() {
   _oneof_case_[0] = kFileByFilename;
 }
-inline void DescriptorDatabaseRequest::clear_file_by_filename() {
+inline void ServerReflectionRequest::clear_file_by_filename() {
   if (has_file_by_filename()) {
     message_request_.file_by_filename_.DestroyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
     clear_has_message_request();
   }
 }
-inline const ::std::string& DescriptorDatabaseRequest::file_by_filename() const {
-  // @@protoc_insertion_point(field_get:grpc.reflection.v1alpha.DescriptorDatabaseRequest.file_by_filename)
+inline const ::std::string& ServerReflectionRequest::file_by_filename() const {
+  // @@protoc_insertion_point(field_get:grpc.reflection.v1alpha.ServerReflectionRequest.file_by_filename)
   if (has_file_by_filename()) {
     return message_request_.file_by_filename_.GetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   }
   return *&::google::protobuf::internal::GetEmptyStringAlreadyInited();
 }
-inline void DescriptorDatabaseRequest::set_file_by_filename(const ::std::string& value) {
-  // @@protoc_insertion_point(field_set:grpc.reflection.v1alpha.DescriptorDatabaseRequest.file_by_filename)
+inline void ServerReflectionRequest::set_file_by_filename(const ::std::string& value) {
+  // @@protoc_insertion_point(field_set:grpc.reflection.v1alpha.ServerReflectionRequest.file_by_filename)
   if (!has_file_by_filename()) {
     clear_message_request();
     set_has_file_by_filename();
     message_request_.file_by_filename_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   }
   message_request_.file_by_filename_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:grpc.reflection.v1alpha.DescriptorDatabaseRequest.file_by_filename)
+  // @@protoc_insertion_point(field_set:grpc.reflection.v1alpha.ServerReflectionRequest.file_by_filename)
 }
-inline void DescriptorDatabaseRequest::set_file_by_filename(const char* value) {
+inline void ServerReflectionRequest::set_file_by_filename(const char* value) {
   if (!has_file_by_filename()) {
     clear_message_request();
     set_has_file_by_filename();
@@ -870,9 +1034,9 @@ inline void DescriptorDatabaseRequest::set_file_by_filename(const char* value) {
   }
   message_request_.file_by_filename_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:grpc.reflection.v1alpha.DescriptorDatabaseRequest.file_by_filename)
+  // @@protoc_insertion_point(field_set_char:grpc.reflection.v1alpha.ServerReflectionRequest.file_by_filename)
 }
-inline void DescriptorDatabaseRequest::set_file_by_filename(const char* value, size_t size) {
+inline void ServerReflectionRequest::set_file_by_filename(const char* value, size_t size) {
   if (!has_file_by_filename()) {
     clear_message_request();
     set_has_file_by_filename();
@@ -880,18 +1044,18 @@ inline void DescriptorDatabaseRequest::set_file_by_filename(const char* value, s
   }
   message_request_.file_by_filename_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(
       reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:grpc.reflection.v1alpha.DescriptorDatabaseRequest.file_by_filename)
+  // @@protoc_insertion_point(field_set_pointer:grpc.reflection.v1alpha.ServerReflectionRequest.file_by_filename)
 }
-inline ::std::string* DescriptorDatabaseRequest::mutable_file_by_filename() {
+inline ::std::string* ServerReflectionRequest::mutable_file_by_filename() {
   if (!has_file_by_filename()) {
     clear_message_request();
     set_has_file_by_filename();
     message_request_.file_by_filename_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   }
-  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1alpha.DescriptorDatabaseRequest.file_by_filename)
+  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1alpha.ServerReflectionRequest.file_by_filename)
   return message_request_.file_by_filename_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline ::std::string* DescriptorDatabaseRequest::release_file_by_filename() {
+inline ::std::string* ServerReflectionRequest::release_file_by_filename() {
   if (has_file_by_filename()) {
     clear_has_message_request();
     return message_request_.file_by_filename_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
@@ -899,7 +1063,7 @@ inline ::std::string* DescriptorDatabaseRequest::release_file_by_filename() {
     return NULL;
   }
 }
-inline void DescriptorDatabaseRequest::set_allocated_file_by_filename(::std::string* file_by_filename) {
+inline void ServerReflectionRequest::set_allocated_file_by_filename(::std::string* file_by_filename) {
   if (!has_file_by_filename()) {
     message_request_.file_by_filename_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   }
@@ -909,40 +1073,40 @@ inline void DescriptorDatabaseRequest::set_allocated_file_by_filename(::std::str
     message_request_.file_by_filename_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
         file_by_filename);
   }
-  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1alpha.DescriptorDatabaseRequest.file_by_filename)
+  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1alpha.ServerReflectionRequest.file_by_filename)
 }
 
 // optional string file_containing_symbol = 4;
-inline bool DescriptorDatabaseRequest::has_file_containing_symbol() const {
+inline bool ServerReflectionRequest::has_file_containing_symbol() const {
   return message_request_case() == kFileContainingSymbol;
 }
-inline void DescriptorDatabaseRequest::set_has_file_containing_symbol() {
+inline void ServerReflectionRequest::set_has_file_containing_symbol() {
   _oneof_case_[0] = kFileContainingSymbol;
 }
-inline void DescriptorDatabaseRequest::clear_file_containing_symbol() {
+inline void ServerReflectionRequest::clear_file_containing_symbol() {
   if (has_file_containing_symbol()) {
     message_request_.file_containing_symbol_.DestroyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
     clear_has_message_request();
   }
 }
-inline const ::std::string& DescriptorDatabaseRequest::file_containing_symbol() const {
-  // @@protoc_insertion_point(field_get:grpc.reflection.v1alpha.DescriptorDatabaseRequest.file_containing_symbol)
+inline const ::std::string& ServerReflectionRequest::file_containing_symbol() const {
+  // @@protoc_insertion_point(field_get:grpc.reflection.v1alpha.ServerReflectionRequest.file_containing_symbol)
   if (has_file_containing_symbol()) {
     return message_request_.file_containing_symbol_.GetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   }
   return *&::google::protobuf::internal::GetEmptyStringAlreadyInited();
 }
-inline void DescriptorDatabaseRequest::set_file_containing_symbol(const ::std::string& value) {
-  // @@protoc_insertion_point(field_set:grpc.reflection.v1alpha.DescriptorDatabaseRequest.file_containing_symbol)
+inline void ServerReflectionRequest::set_file_containing_symbol(const ::std::string& value) {
+  // @@protoc_insertion_point(field_set:grpc.reflection.v1alpha.ServerReflectionRequest.file_containing_symbol)
   if (!has_file_containing_symbol()) {
     clear_message_request();
     set_has_file_containing_symbol();
     message_request_.file_containing_symbol_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   }
   message_request_.file_containing_symbol_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:grpc.reflection.v1alpha.DescriptorDatabaseRequest.file_containing_symbol)
+  // @@protoc_insertion_point(field_set:grpc.reflection.v1alpha.ServerReflectionRequest.file_containing_symbol)
 }
-inline void DescriptorDatabaseRequest::set_file_containing_symbol(const char* value) {
+inline void ServerReflectionRequest::set_file_containing_symbol(const char* value) {
   if (!has_file_containing_symbol()) {
     clear_message_request();
     set_has_file_containing_symbol();
@@ -950,9 +1114,9 @@ inline void DescriptorDatabaseRequest::set_file_containing_symbol(const char* va
   }
   message_request_.file_containing_symbol_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:grpc.reflection.v1alpha.DescriptorDatabaseRequest.file_containing_symbol)
+  // @@protoc_insertion_point(field_set_char:grpc.reflection.v1alpha.ServerReflectionRequest.file_containing_symbol)
 }
-inline void DescriptorDatabaseRequest::set_file_containing_symbol(const char* value, size_t size) {
+inline void ServerReflectionRequest::set_file_containing_symbol(const char* value, size_t size) {
   if (!has_file_containing_symbol()) {
     clear_message_request();
     set_has_file_containing_symbol();
@@ -960,18 +1124,18 @@ inline void DescriptorDatabaseRequest::set_file_containing_symbol(const char* va
   }
   message_request_.file_containing_symbol_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(
       reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:grpc.reflection.v1alpha.DescriptorDatabaseRequest.file_containing_symbol)
+  // @@protoc_insertion_point(field_set_pointer:grpc.reflection.v1alpha.ServerReflectionRequest.file_containing_symbol)
 }
-inline ::std::string* DescriptorDatabaseRequest::mutable_file_containing_symbol() {
+inline ::std::string* ServerReflectionRequest::mutable_file_containing_symbol() {
   if (!has_file_containing_symbol()) {
     clear_message_request();
     set_has_file_containing_symbol();
     message_request_.file_containing_symbol_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   }
-  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1alpha.DescriptorDatabaseRequest.file_containing_symbol)
+  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1alpha.ServerReflectionRequest.file_containing_symbol)
   return message_request_.file_containing_symbol_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline ::std::string* DescriptorDatabaseRequest::release_file_containing_symbol() {
+inline ::std::string* ServerReflectionRequest::release_file_containing_symbol() {
   if (has_file_containing_symbol()) {
     clear_has_message_request();
     return message_request_.file_containing_symbol_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
@@ -979,7 +1143,7 @@ inline ::std::string* DescriptorDatabaseRequest::release_file_containing_symbol(
     return NULL;
   }
 }
-inline void DescriptorDatabaseRequest::set_allocated_file_containing_symbol(::std::string* file_containing_symbol) {
+inline void ServerReflectionRequest::set_allocated_file_containing_symbol(::std::string* file_containing_symbol) {
   if (!has_file_containing_symbol()) {
     message_request_.file_containing_symbol_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   }
@@ -989,38 +1153,38 @@ inline void DescriptorDatabaseRequest::set_allocated_file_containing_symbol(::st
     message_request_.file_containing_symbol_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
         file_containing_symbol);
   }
-  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1alpha.DescriptorDatabaseRequest.file_containing_symbol)
+  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1alpha.ServerReflectionRequest.file_containing_symbol)
 }
 
 // optional .grpc.reflection.v1alpha.ExtensionRequest file_containing_extension = 5;
-inline bool DescriptorDatabaseRequest::has_file_containing_extension() const {
+inline bool ServerReflectionRequest::has_file_containing_extension() const {
   return message_request_case() == kFileContainingExtension;
 }
-inline void DescriptorDatabaseRequest::set_has_file_containing_extension() {
+inline void ServerReflectionRequest::set_has_file_containing_extension() {
   _oneof_case_[0] = kFileContainingExtension;
 }
-inline void DescriptorDatabaseRequest::clear_file_containing_extension() {
+inline void ServerReflectionRequest::clear_file_containing_extension() {
   if (has_file_containing_extension()) {
     delete message_request_.file_containing_extension_;
     clear_has_message_request();
   }
 }
-inline  const ::grpc::reflection::v1alpha::ExtensionRequest& DescriptorDatabaseRequest::file_containing_extension() const {
-  // @@protoc_insertion_point(field_get:grpc.reflection.v1alpha.DescriptorDatabaseRequest.file_containing_extension)
+inline  const ::grpc::reflection::v1alpha::ExtensionRequest& ServerReflectionRequest::file_containing_extension() const {
+  // @@protoc_insertion_point(field_get:grpc.reflection.v1alpha.ServerReflectionRequest.file_containing_extension)
   return has_file_containing_extension()
       ? *message_request_.file_containing_extension_
       : ::grpc::reflection::v1alpha::ExtensionRequest::default_instance();
 }
-inline ::grpc::reflection::v1alpha::ExtensionRequest* DescriptorDatabaseRequest::mutable_file_containing_extension() {
+inline ::grpc::reflection::v1alpha::ExtensionRequest* ServerReflectionRequest::mutable_file_containing_extension() {
   if (!has_file_containing_extension()) {
     clear_message_request();
     set_has_file_containing_extension();
     message_request_.file_containing_extension_ = new ::grpc::reflection::v1alpha::ExtensionRequest;
   }
-  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1alpha.DescriptorDatabaseRequest.file_containing_extension)
+  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1alpha.ServerReflectionRequest.file_containing_extension)
   return message_request_.file_containing_extension_;
 }
-inline ::grpc::reflection::v1alpha::ExtensionRequest* DescriptorDatabaseRequest::release_file_containing_extension() {
+inline ::grpc::reflection::v1alpha::ExtensionRequest* ServerReflectionRequest::release_file_containing_extension() {
   if (has_file_containing_extension()) {
     clear_has_message_request();
     ::grpc::reflection::v1alpha::ExtensionRequest* temp = message_request_.file_containing_extension_;
@@ -1030,46 +1194,46 @@ inline ::grpc::reflection::v1alpha::ExtensionRequest* DescriptorDatabaseRequest:
     return NULL;
   }
 }
-inline void DescriptorDatabaseRequest::set_allocated_file_containing_extension(::grpc::reflection::v1alpha::ExtensionRequest* file_containing_extension) {
+inline void ServerReflectionRequest::set_allocated_file_containing_extension(::grpc::reflection::v1alpha::ExtensionRequest* file_containing_extension) {
   clear_message_request();
   if (file_containing_extension) {
     set_has_file_containing_extension();
     message_request_.file_containing_extension_ = file_containing_extension;
   }
-  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1alpha.DescriptorDatabaseRequest.file_containing_extension)
+  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1alpha.ServerReflectionRequest.file_containing_extension)
 }
 
 // optional string all_extension_numbers_of_type = 6;
-inline bool DescriptorDatabaseRequest::has_all_extension_numbers_of_type() const {
+inline bool ServerReflectionRequest::has_all_extension_numbers_of_type() const {
   return message_request_case() == kAllExtensionNumbersOfType;
 }
-inline void DescriptorDatabaseRequest::set_has_all_extension_numbers_of_type() {
+inline void ServerReflectionRequest::set_has_all_extension_numbers_of_type() {
   _oneof_case_[0] = kAllExtensionNumbersOfType;
 }
-inline void DescriptorDatabaseRequest::clear_all_extension_numbers_of_type() {
+inline void ServerReflectionRequest::clear_all_extension_numbers_of_type() {
   if (has_all_extension_numbers_of_type()) {
     message_request_.all_extension_numbers_of_type_.DestroyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
     clear_has_message_request();
   }
 }
-inline const ::std::string& DescriptorDatabaseRequest::all_extension_numbers_of_type() const {
-  // @@protoc_insertion_point(field_get:grpc.reflection.v1alpha.DescriptorDatabaseRequest.all_extension_numbers_of_type)
+inline const ::std::string& ServerReflectionRequest::all_extension_numbers_of_type() const {
+  // @@protoc_insertion_point(field_get:grpc.reflection.v1alpha.ServerReflectionRequest.all_extension_numbers_of_type)
   if (has_all_extension_numbers_of_type()) {
     return message_request_.all_extension_numbers_of_type_.GetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   }
   return *&::google::protobuf::internal::GetEmptyStringAlreadyInited();
 }
-inline void DescriptorDatabaseRequest::set_all_extension_numbers_of_type(const ::std::string& value) {
-  // @@protoc_insertion_point(field_set:grpc.reflection.v1alpha.DescriptorDatabaseRequest.all_extension_numbers_of_type)
+inline void ServerReflectionRequest::set_all_extension_numbers_of_type(const ::std::string& value) {
+  // @@protoc_insertion_point(field_set:grpc.reflection.v1alpha.ServerReflectionRequest.all_extension_numbers_of_type)
   if (!has_all_extension_numbers_of_type()) {
     clear_message_request();
     set_has_all_extension_numbers_of_type();
     message_request_.all_extension_numbers_of_type_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   }
   message_request_.all_extension_numbers_of_type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:grpc.reflection.v1alpha.DescriptorDatabaseRequest.all_extension_numbers_of_type)
+  // @@protoc_insertion_point(field_set:grpc.reflection.v1alpha.ServerReflectionRequest.all_extension_numbers_of_type)
 }
-inline void DescriptorDatabaseRequest::set_all_extension_numbers_of_type(const char* value) {
+inline void ServerReflectionRequest::set_all_extension_numbers_of_type(const char* value) {
   if (!has_all_extension_numbers_of_type()) {
     clear_message_request();
     set_has_all_extension_numbers_of_type();
@@ -1077,9 +1241,9 @@ inline void DescriptorDatabaseRequest::set_all_extension_numbers_of_type(const c
   }
   message_request_.all_extension_numbers_of_type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:grpc.reflection.v1alpha.DescriptorDatabaseRequest.all_extension_numbers_of_type)
+  // @@protoc_insertion_point(field_set_char:grpc.reflection.v1alpha.ServerReflectionRequest.all_extension_numbers_of_type)
 }
-inline void DescriptorDatabaseRequest::set_all_extension_numbers_of_type(const char* value, size_t size) {
+inline void ServerReflectionRequest::set_all_extension_numbers_of_type(const char* value, size_t size) {
   if (!has_all_extension_numbers_of_type()) {
     clear_message_request();
     set_has_all_extension_numbers_of_type();
@@ -1087,18 +1251,18 @@ inline void DescriptorDatabaseRequest::set_all_extension_numbers_of_type(const c
   }
   message_request_.all_extension_numbers_of_type_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(
       reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:grpc.reflection.v1alpha.DescriptorDatabaseRequest.all_extension_numbers_of_type)
+  // @@protoc_insertion_point(field_set_pointer:grpc.reflection.v1alpha.ServerReflectionRequest.all_extension_numbers_of_type)
 }
-inline ::std::string* DescriptorDatabaseRequest::mutable_all_extension_numbers_of_type() {
+inline ::std::string* ServerReflectionRequest::mutable_all_extension_numbers_of_type() {
   if (!has_all_extension_numbers_of_type()) {
     clear_message_request();
     set_has_all_extension_numbers_of_type();
     message_request_.all_extension_numbers_of_type_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   }
-  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1alpha.DescriptorDatabaseRequest.all_extension_numbers_of_type)
+  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1alpha.ServerReflectionRequest.all_extension_numbers_of_type)
   return message_request_.all_extension_numbers_of_type_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline ::std::string* DescriptorDatabaseRequest::release_all_extension_numbers_of_type() {
+inline ::std::string* ServerReflectionRequest::release_all_extension_numbers_of_type() {
   if (has_all_extension_numbers_of_type()) {
     clear_has_message_request();
     return message_request_.all_extension_numbers_of_type_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
@@ -1106,7 +1270,7 @@ inline ::std::string* DescriptorDatabaseRequest::release_all_extension_numbers_o
     return NULL;
   }
 }
-inline void DescriptorDatabaseRequest::set_allocated_all_extension_numbers_of_type(::std::string* all_extension_numbers_of_type) {
+inline void ServerReflectionRequest::set_allocated_all_extension_numbers_of_type(::std::string* all_extension_numbers_of_type) {
   if (!has_all_extension_numbers_of_type()) {
     message_request_.all_extension_numbers_of_type_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   }
@@ -1116,40 +1280,40 @@ inline void DescriptorDatabaseRequest::set_allocated_all_extension_numbers_of_ty
     message_request_.all_extension_numbers_of_type_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
         all_extension_numbers_of_type);
   }
-  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1alpha.DescriptorDatabaseRequest.all_extension_numbers_of_type)
+  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1alpha.ServerReflectionRequest.all_extension_numbers_of_type)
 }
 
 // optional string list_services = 7;
-inline bool DescriptorDatabaseRequest::has_list_services() const {
+inline bool ServerReflectionRequest::has_list_services() const {
   return message_request_case() == kListServices;
 }
-inline void DescriptorDatabaseRequest::set_has_list_services() {
+inline void ServerReflectionRequest::set_has_list_services() {
   _oneof_case_[0] = kListServices;
 }
-inline void DescriptorDatabaseRequest::clear_list_services() {
+inline void ServerReflectionRequest::clear_list_services() {
   if (has_list_services()) {
     message_request_.list_services_.DestroyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
     clear_has_message_request();
   }
 }
-inline const ::std::string& DescriptorDatabaseRequest::list_services() const {
-  // @@protoc_insertion_point(field_get:grpc.reflection.v1alpha.DescriptorDatabaseRequest.list_services)
+inline const ::std::string& ServerReflectionRequest::list_services() const {
+  // @@protoc_insertion_point(field_get:grpc.reflection.v1alpha.ServerReflectionRequest.list_services)
   if (has_list_services()) {
     return message_request_.list_services_.GetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   }
   return *&::google::protobuf::internal::GetEmptyStringAlreadyInited();
 }
-inline void DescriptorDatabaseRequest::set_list_services(const ::std::string& value) {
-  // @@protoc_insertion_point(field_set:grpc.reflection.v1alpha.DescriptorDatabaseRequest.list_services)
+inline void ServerReflectionRequest::set_list_services(const ::std::string& value) {
+  // @@protoc_insertion_point(field_set:grpc.reflection.v1alpha.ServerReflectionRequest.list_services)
   if (!has_list_services()) {
     clear_message_request();
     set_has_list_services();
     message_request_.list_services_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   }
   message_request_.list_services_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:grpc.reflection.v1alpha.DescriptorDatabaseRequest.list_services)
+  // @@protoc_insertion_point(field_set:grpc.reflection.v1alpha.ServerReflectionRequest.list_services)
 }
-inline void DescriptorDatabaseRequest::set_list_services(const char* value) {
+inline void ServerReflectionRequest::set_list_services(const char* value) {
   if (!has_list_services()) {
     clear_message_request();
     set_has_list_services();
@@ -1157,9 +1321,9 @@ inline void DescriptorDatabaseRequest::set_list_services(const char* value) {
   }
   message_request_.list_services_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:grpc.reflection.v1alpha.DescriptorDatabaseRequest.list_services)
+  // @@protoc_insertion_point(field_set_char:grpc.reflection.v1alpha.ServerReflectionRequest.list_services)
 }
-inline void DescriptorDatabaseRequest::set_list_services(const char* value, size_t size) {
+inline void ServerReflectionRequest::set_list_services(const char* value, size_t size) {
   if (!has_list_services()) {
     clear_message_request();
     set_has_list_services();
@@ -1167,18 +1331,18 @@ inline void DescriptorDatabaseRequest::set_list_services(const char* value, size
   }
   message_request_.list_services_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(
       reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:grpc.reflection.v1alpha.DescriptorDatabaseRequest.list_services)
+  // @@protoc_insertion_point(field_set_pointer:grpc.reflection.v1alpha.ServerReflectionRequest.list_services)
 }
-inline ::std::string* DescriptorDatabaseRequest::mutable_list_services() {
+inline ::std::string* ServerReflectionRequest::mutable_list_services() {
   if (!has_list_services()) {
     clear_message_request();
     set_has_list_services();
     message_request_.list_services_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   }
-  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1alpha.DescriptorDatabaseRequest.list_services)
+  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1alpha.ServerReflectionRequest.list_services)
   return message_request_.list_services_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline ::std::string* DescriptorDatabaseRequest::release_list_services() {
+inline ::std::string* ServerReflectionRequest::release_list_services() {
   if (has_list_services()) {
     clear_has_message_request();
     return message_request_.list_services_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
@@ -1186,7 +1350,7 @@ inline ::std::string* DescriptorDatabaseRequest::release_list_services() {
     return NULL;
   }
 }
-inline void DescriptorDatabaseRequest::set_allocated_list_services(::std::string* list_services) {
+inline void ServerReflectionRequest::set_allocated_list_services(::std::string* list_services) {
   if (!has_list_services()) {
     message_request_.list_services_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   }
@@ -1196,17 +1360,17 @@ inline void DescriptorDatabaseRequest::set_allocated_list_services(::std::string
     message_request_.list_services_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
         list_services);
   }
-  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1alpha.DescriptorDatabaseRequest.list_services)
+  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1alpha.ServerReflectionRequest.list_services)
 }
 
-inline bool DescriptorDatabaseRequest::has_message_request() const {
+inline bool ServerReflectionRequest::has_message_request() const {
   return message_request_case() != MESSAGE_REQUEST_NOT_SET;
 }
-inline void DescriptorDatabaseRequest::clear_has_message_request() {
+inline void ServerReflectionRequest::clear_has_message_request() {
   _oneof_case_[0] = MESSAGE_REQUEST_NOT_SET;
 }
-inline DescriptorDatabaseRequest::MessageRequestCase DescriptorDatabaseRequest::message_request_case() const {
-  return DescriptorDatabaseRequest::MessageRequestCase(_oneof_case_[0]);
+inline ServerReflectionRequest::MessageRequestCase ServerReflectionRequest::message_request_case() const {
+  return ServerReflectionRequest::MessageRequestCase(_oneof_case_[0]);
 }
 // -------------------------------------------------------------------
 
@@ -1271,78 +1435,78 @@ inline void ExtensionRequest::set_extension_number(::google::protobuf::int32 val
 
 // -------------------------------------------------------------------
 
-// DescriptorDatabaseResponse
+// ServerReflectionResponse
 
 // optional string valid_host = 1;
-inline void DescriptorDatabaseResponse::clear_valid_host() {
+inline void ServerReflectionResponse::clear_valid_host() {
   valid_host_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline const ::std::string& DescriptorDatabaseResponse::valid_host() const {
-  // @@protoc_insertion_point(field_get:grpc.reflection.v1alpha.DescriptorDatabaseResponse.valid_host)
+inline const ::std::string& ServerReflectionResponse::valid_host() const {
+  // @@protoc_insertion_point(field_get:grpc.reflection.v1alpha.ServerReflectionResponse.valid_host)
   return valid_host_.GetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline void DescriptorDatabaseResponse::set_valid_host(const ::std::string& value) {
+inline void ServerReflectionResponse::set_valid_host(const ::std::string& value) {
   
   valid_host_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:grpc.reflection.v1alpha.DescriptorDatabaseResponse.valid_host)
+  // @@protoc_insertion_point(field_set:grpc.reflection.v1alpha.ServerReflectionResponse.valid_host)
 }
-inline void DescriptorDatabaseResponse::set_valid_host(const char* value) {
+inline void ServerReflectionResponse::set_valid_host(const char* value) {
   
   valid_host_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:grpc.reflection.v1alpha.DescriptorDatabaseResponse.valid_host)
+  // @@protoc_insertion_point(field_set_char:grpc.reflection.v1alpha.ServerReflectionResponse.valid_host)
 }
-inline void DescriptorDatabaseResponse::set_valid_host(const char* value, size_t size) {
+inline void ServerReflectionResponse::set_valid_host(const char* value, size_t size) {
   
   valid_host_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:grpc.reflection.v1alpha.DescriptorDatabaseResponse.valid_host)
+  // @@protoc_insertion_point(field_set_pointer:grpc.reflection.v1alpha.ServerReflectionResponse.valid_host)
 }
-inline ::std::string* DescriptorDatabaseResponse::mutable_valid_host() {
+inline ::std::string* ServerReflectionResponse::mutable_valid_host() {
   
-  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1alpha.DescriptorDatabaseResponse.valid_host)
+  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1alpha.ServerReflectionResponse.valid_host)
   return valid_host_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline ::std::string* DescriptorDatabaseResponse::release_valid_host() {
+inline ::std::string* ServerReflectionResponse::release_valid_host() {
   
   return valid_host_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline void DescriptorDatabaseResponse::set_allocated_valid_host(::std::string* valid_host) {
+inline void ServerReflectionResponse::set_allocated_valid_host(::std::string* valid_host) {
   if (valid_host != NULL) {
     
   } else {
     
   }
   valid_host_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), valid_host);
-  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1alpha.DescriptorDatabaseResponse.valid_host)
+  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1alpha.ServerReflectionResponse.valid_host)
 }
 
-// optional .grpc.reflection.v1alpha.DescriptorDatabaseRequest original_request = 2;
-inline bool DescriptorDatabaseResponse::has_original_request() const {
+// optional .grpc.reflection.v1alpha.ServerReflectionRequest original_request = 2;
+inline bool ServerReflectionResponse::has_original_request() const {
   return !_is_default_instance_ && original_request_ != NULL;
 }
-inline void DescriptorDatabaseResponse::clear_original_request() {
+inline void ServerReflectionResponse::clear_original_request() {
   if (GetArenaNoVirtual() == NULL && original_request_ != NULL) delete original_request_;
   original_request_ = NULL;
 }
-inline const ::grpc::reflection::v1alpha::DescriptorDatabaseRequest& DescriptorDatabaseResponse::original_request() const {
-  // @@protoc_insertion_point(field_get:grpc.reflection.v1alpha.DescriptorDatabaseResponse.original_request)
+inline const ::grpc::reflection::v1alpha::ServerReflectionRequest& ServerReflectionResponse::original_request() const {
+  // @@protoc_insertion_point(field_get:grpc.reflection.v1alpha.ServerReflectionResponse.original_request)
   return original_request_ != NULL ? *original_request_ : *default_instance_->original_request_;
 }
-inline ::grpc::reflection::v1alpha::DescriptorDatabaseRequest* DescriptorDatabaseResponse::mutable_original_request() {
+inline ::grpc::reflection::v1alpha::ServerReflectionRequest* ServerReflectionResponse::mutable_original_request() {
   
   if (original_request_ == NULL) {
-    original_request_ = new ::grpc::reflection::v1alpha::DescriptorDatabaseRequest;
+    original_request_ = new ::grpc::reflection::v1alpha::ServerReflectionRequest;
   }
-  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1alpha.DescriptorDatabaseResponse.original_request)
+  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1alpha.ServerReflectionResponse.original_request)
   return original_request_;
 }
-inline ::grpc::reflection::v1alpha::DescriptorDatabaseRequest* DescriptorDatabaseResponse::release_original_request() {
+inline ::grpc::reflection::v1alpha::ServerReflectionRequest* ServerReflectionResponse::release_original_request() {
   
-  ::grpc::reflection::v1alpha::DescriptorDatabaseRequest* temp = original_request_;
+  ::grpc::reflection::v1alpha::ServerReflectionRequest* temp = original_request_;
   original_request_ = NULL;
   return temp;
 }
-inline void DescriptorDatabaseResponse::set_allocated_original_request(::grpc::reflection::v1alpha::DescriptorDatabaseRequest* original_request) {
+inline void ServerReflectionResponse::set_allocated_original_request(::grpc::reflection::v1alpha::ServerReflectionRequest* original_request) {
   delete original_request_;
   original_request_ = original_request;
   if (original_request) {
@@ -1350,118 +1514,85 @@ inline void DescriptorDatabaseResponse::set_allocated_original_request(::grpc::r
   } else {
     
   }
-  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1alpha.DescriptorDatabaseResponse.original_request)
+  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1alpha.ServerReflectionResponse.original_request)
 }
 
-// optional bytes file_descriptor_proto = 4;
-inline bool DescriptorDatabaseResponse::has_file_descriptor_proto() const {
-  return message_response_case() == kFileDescriptorProto;
+// optional .grpc.reflection.v1alpha.FileDescriptorResponse file_descriptor_response = 4;
+inline bool ServerReflectionResponse::has_file_descriptor_response() const {
+  return message_response_case() == kFileDescriptorResponse;
 }
-inline void DescriptorDatabaseResponse::set_has_file_descriptor_proto() {
-  _oneof_case_[0] = kFileDescriptorProto;
+inline void ServerReflectionResponse::set_has_file_descriptor_response() {
+  _oneof_case_[0] = kFileDescriptorResponse;
 }
-inline void DescriptorDatabaseResponse::clear_file_descriptor_proto() {
-  if (has_file_descriptor_proto()) {
-    message_response_.file_descriptor_proto_.DestroyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+inline void ServerReflectionResponse::clear_file_descriptor_response() {
+  if (has_file_descriptor_response()) {
+    delete message_response_.file_descriptor_response_;
     clear_has_message_response();
   }
 }
-inline const ::std::string& DescriptorDatabaseResponse::file_descriptor_proto() const {
-  // @@protoc_insertion_point(field_get:grpc.reflection.v1alpha.DescriptorDatabaseResponse.file_descriptor_proto)
-  if (has_file_descriptor_proto()) {
-    return message_response_.file_descriptor_proto_.GetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  }
-  return *&::google::protobuf::internal::GetEmptyStringAlreadyInited();
+inline  const ::grpc::reflection::v1alpha::FileDescriptorResponse& ServerReflectionResponse::file_descriptor_response() const {
+  // @@protoc_insertion_point(field_get:grpc.reflection.v1alpha.ServerReflectionResponse.file_descriptor_response)
+  return has_file_descriptor_response()
+      ? *message_response_.file_descriptor_response_
+      : ::grpc::reflection::v1alpha::FileDescriptorResponse::default_instance();
 }
-inline void DescriptorDatabaseResponse::set_file_descriptor_proto(const ::std::string& value) {
-  // @@protoc_insertion_point(field_set:grpc.reflection.v1alpha.DescriptorDatabaseResponse.file_descriptor_proto)
-  if (!has_file_descriptor_proto()) {
+inline ::grpc::reflection::v1alpha::FileDescriptorResponse* ServerReflectionResponse::mutable_file_descriptor_response() {
+  if (!has_file_descriptor_response()) {
     clear_message_response();
-    set_has_file_descriptor_proto();
-    message_response_.file_descriptor_proto_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+    set_has_file_descriptor_response();
+    message_response_.file_descriptor_response_ = new ::grpc::reflection::v1alpha::FileDescriptorResponse;
   }
-  message_response_.file_descriptor_proto_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:grpc.reflection.v1alpha.DescriptorDatabaseResponse.file_descriptor_proto)
+  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1alpha.ServerReflectionResponse.file_descriptor_response)
+  return message_response_.file_descriptor_response_;
 }
-inline void DescriptorDatabaseResponse::set_file_descriptor_proto(const char* value) {
-  if (!has_file_descriptor_proto()) {
-    clear_message_response();
-    set_has_file_descriptor_proto();
-    message_response_.file_descriptor_proto_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  }
-  message_response_.file_descriptor_proto_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-      ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:grpc.reflection.v1alpha.DescriptorDatabaseResponse.file_descriptor_proto)
-}
-inline void DescriptorDatabaseResponse::set_file_descriptor_proto(const void* value, size_t size) {
-  if (!has_file_descriptor_proto()) {
-    clear_message_response();
-    set_has_file_descriptor_proto();
-    message_response_.file_descriptor_proto_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  }
-  message_response_.file_descriptor_proto_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(
-      reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:grpc.reflection.v1alpha.DescriptorDatabaseResponse.file_descriptor_proto)
-}
-inline ::std::string* DescriptorDatabaseResponse::mutable_file_descriptor_proto() {
-  if (!has_file_descriptor_proto()) {
-    clear_message_response();
-    set_has_file_descriptor_proto();
-    message_response_.file_descriptor_proto_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  }
-  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1alpha.DescriptorDatabaseResponse.file_descriptor_proto)
-  return message_response_.file_descriptor_proto_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline ::std::string* DescriptorDatabaseResponse::release_file_descriptor_proto() {
-  if (has_file_descriptor_proto()) {
+inline ::grpc::reflection::v1alpha::FileDescriptorResponse* ServerReflectionResponse::release_file_descriptor_response() {
+  if (has_file_descriptor_response()) {
     clear_has_message_response();
-    return message_response_.file_descriptor_proto_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+    ::grpc::reflection::v1alpha::FileDescriptorResponse* temp = message_response_.file_descriptor_response_;
+    message_response_.file_descriptor_response_ = NULL;
+    return temp;
   } else {
     return NULL;
   }
 }
-inline void DescriptorDatabaseResponse::set_allocated_file_descriptor_proto(::std::string* file_descriptor_proto) {
-  if (!has_file_descriptor_proto()) {
-    message_response_.file_descriptor_proto_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  }
+inline void ServerReflectionResponse::set_allocated_file_descriptor_response(::grpc::reflection::v1alpha::FileDescriptorResponse* file_descriptor_response) {
   clear_message_response();
-  if (file_descriptor_proto != NULL) {
-    set_has_file_descriptor_proto();
-    message_response_.file_descriptor_proto_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-        file_descriptor_proto);
+  if (file_descriptor_response) {
+    set_has_file_descriptor_response();
+    message_response_.file_descriptor_response_ = file_descriptor_response;
   }
-  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1alpha.DescriptorDatabaseResponse.file_descriptor_proto)
+  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1alpha.ServerReflectionResponse.file_descriptor_response)
 }
 
 // optional .grpc.reflection.v1alpha.ExtensionNumberResponse all_extension_numbers_response = 5;
-inline bool DescriptorDatabaseResponse::has_all_extension_numbers_response() const {
+inline bool ServerReflectionResponse::has_all_extension_numbers_response() const {
   return message_response_case() == kAllExtensionNumbersResponse;
 }
-inline void DescriptorDatabaseResponse::set_has_all_extension_numbers_response() {
+inline void ServerReflectionResponse::set_has_all_extension_numbers_response() {
   _oneof_case_[0] = kAllExtensionNumbersResponse;
 }
-inline void DescriptorDatabaseResponse::clear_all_extension_numbers_response() {
+inline void ServerReflectionResponse::clear_all_extension_numbers_response() {
   if (has_all_extension_numbers_response()) {
     delete message_response_.all_extension_numbers_response_;
     clear_has_message_response();
   }
 }
-inline  const ::grpc::reflection::v1alpha::ExtensionNumberResponse& DescriptorDatabaseResponse::all_extension_numbers_response() const {
-  // @@protoc_insertion_point(field_get:grpc.reflection.v1alpha.DescriptorDatabaseResponse.all_extension_numbers_response)
+inline  const ::grpc::reflection::v1alpha::ExtensionNumberResponse& ServerReflectionResponse::all_extension_numbers_response() const {
+  // @@protoc_insertion_point(field_get:grpc.reflection.v1alpha.ServerReflectionResponse.all_extension_numbers_response)
   return has_all_extension_numbers_response()
       ? *message_response_.all_extension_numbers_response_
       : ::grpc::reflection::v1alpha::ExtensionNumberResponse::default_instance();
 }
-inline ::grpc::reflection::v1alpha::ExtensionNumberResponse* DescriptorDatabaseResponse::mutable_all_extension_numbers_response() {
+inline ::grpc::reflection::v1alpha::ExtensionNumberResponse* ServerReflectionResponse::mutable_all_extension_numbers_response() {
   if (!has_all_extension_numbers_response()) {
     clear_message_response();
     set_has_all_extension_numbers_response();
     message_response_.all_extension_numbers_response_ = new ::grpc::reflection::v1alpha::ExtensionNumberResponse;
   }
-  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1alpha.DescriptorDatabaseResponse.all_extension_numbers_response)
+  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1alpha.ServerReflectionResponse.all_extension_numbers_response)
   return message_response_.all_extension_numbers_response_;
 }
-inline ::grpc::reflection::v1alpha::ExtensionNumberResponse* DescriptorDatabaseResponse::release_all_extension_numbers_response() {
+inline ::grpc::reflection::v1alpha::ExtensionNumberResponse* ServerReflectionResponse::release_all_extension_numbers_response() {
   if (has_all_extension_numbers_response()) {
     clear_has_message_response();
     ::grpc::reflection::v1alpha::ExtensionNumberResponse* temp = message_response_.all_extension_numbers_response_;
@@ -1471,44 +1602,44 @@ inline ::grpc::reflection::v1alpha::ExtensionNumberResponse* DescriptorDatabaseR
     return NULL;
   }
 }
-inline void DescriptorDatabaseResponse::set_allocated_all_extension_numbers_response(::grpc::reflection::v1alpha::ExtensionNumberResponse* all_extension_numbers_response) {
+inline void ServerReflectionResponse::set_allocated_all_extension_numbers_response(::grpc::reflection::v1alpha::ExtensionNumberResponse* all_extension_numbers_response) {
   clear_message_response();
   if (all_extension_numbers_response) {
     set_has_all_extension_numbers_response();
     message_response_.all_extension_numbers_response_ = all_extension_numbers_response;
   }
-  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1alpha.DescriptorDatabaseResponse.all_extension_numbers_response)
+  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1alpha.ServerReflectionResponse.all_extension_numbers_response)
 }
 
 // optional .grpc.reflection.v1alpha.ListServiceResponse list_services_response = 6;
-inline bool DescriptorDatabaseResponse::has_list_services_response() const {
+inline bool ServerReflectionResponse::has_list_services_response() const {
   return message_response_case() == kListServicesResponse;
 }
-inline void DescriptorDatabaseResponse::set_has_list_services_response() {
+inline void ServerReflectionResponse::set_has_list_services_response() {
   _oneof_case_[0] = kListServicesResponse;
 }
-inline void DescriptorDatabaseResponse::clear_list_services_response() {
+inline void ServerReflectionResponse::clear_list_services_response() {
   if (has_list_services_response()) {
     delete message_response_.list_services_response_;
     clear_has_message_response();
   }
 }
-inline  const ::grpc::reflection::v1alpha::ListServiceResponse& DescriptorDatabaseResponse::list_services_response() const {
-  // @@protoc_insertion_point(field_get:grpc.reflection.v1alpha.DescriptorDatabaseResponse.list_services_response)
+inline  const ::grpc::reflection::v1alpha::ListServiceResponse& ServerReflectionResponse::list_services_response() const {
+  // @@protoc_insertion_point(field_get:grpc.reflection.v1alpha.ServerReflectionResponse.list_services_response)
   return has_list_services_response()
       ? *message_response_.list_services_response_
       : ::grpc::reflection::v1alpha::ListServiceResponse::default_instance();
 }
-inline ::grpc::reflection::v1alpha::ListServiceResponse* DescriptorDatabaseResponse::mutable_list_services_response() {
+inline ::grpc::reflection::v1alpha::ListServiceResponse* ServerReflectionResponse::mutable_list_services_response() {
   if (!has_list_services_response()) {
     clear_message_response();
     set_has_list_services_response();
     message_response_.list_services_response_ = new ::grpc::reflection::v1alpha::ListServiceResponse;
   }
-  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1alpha.DescriptorDatabaseResponse.list_services_response)
+  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1alpha.ServerReflectionResponse.list_services_response)
   return message_response_.list_services_response_;
 }
-inline ::grpc::reflection::v1alpha::ListServiceResponse* DescriptorDatabaseResponse::release_list_services_response() {
+inline ::grpc::reflection::v1alpha::ListServiceResponse* ServerReflectionResponse::release_list_services_response() {
   if (has_list_services_response()) {
     clear_has_message_response();
     ::grpc::reflection::v1alpha::ListServiceResponse* temp = message_response_.list_services_response_;
@@ -1518,44 +1649,44 @@ inline ::grpc::reflection::v1alpha::ListServiceResponse* DescriptorDatabaseRespo
     return NULL;
   }
 }
-inline void DescriptorDatabaseResponse::set_allocated_list_services_response(::grpc::reflection::v1alpha::ListServiceResponse* list_services_response) {
+inline void ServerReflectionResponse::set_allocated_list_services_response(::grpc::reflection::v1alpha::ListServiceResponse* list_services_response) {
   clear_message_response();
   if (list_services_response) {
     set_has_list_services_response();
     message_response_.list_services_response_ = list_services_response;
   }
-  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1alpha.DescriptorDatabaseResponse.list_services_response)
+  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1alpha.ServerReflectionResponse.list_services_response)
 }
 
 // optional .grpc.reflection.v1alpha.ErrorResponse error_response = 7;
-inline bool DescriptorDatabaseResponse::has_error_response() const {
+inline bool ServerReflectionResponse::has_error_response() const {
   return message_response_case() == kErrorResponse;
 }
-inline void DescriptorDatabaseResponse::set_has_error_response() {
+inline void ServerReflectionResponse::set_has_error_response() {
   _oneof_case_[0] = kErrorResponse;
 }
-inline void DescriptorDatabaseResponse::clear_error_response() {
+inline void ServerReflectionResponse::clear_error_response() {
   if (has_error_response()) {
     delete message_response_.error_response_;
     clear_has_message_response();
   }
 }
-inline  const ::grpc::reflection::v1alpha::ErrorResponse& DescriptorDatabaseResponse::error_response() const {
-  // @@protoc_insertion_point(field_get:grpc.reflection.v1alpha.DescriptorDatabaseResponse.error_response)
+inline  const ::grpc::reflection::v1alpha::ErrorResponse& ServerReflectionResponse::error_response() const {
+  // @@protoc_insertion_point(field_get:grpc.reflection.v1alpha.ServerReflectionResponse.error_response)
   return has_error_response()
       ? *message_response_.error_response_
       : ::grpc::reflection::v1alpha::ErrorResponse::default_instance();
 }
-inline ::grpc::reflection::v1alpha::ErrorResponse* DescriptorDatabaseResponse::mutable_error_response() {
+inline ::grpc::reflection::v1alpha::ErrorResponse* ServerReflectionResponse::mutable_error_response() {
   if (!has_error_response()) {
     clear_message_response();
     set_has_error_response();
     message_response_.error_response_ = new ::grpc::reflection::v1alpha::ErrorResponse;
   }
-  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1alpha.DescriptorDatabaseResponse.error_response)
+  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1alpha.ServerReflectionResponse.error_response)
   return message_response_.error_response_;
 }
-inline ::grpc::reflection::v1alpha::ErrorResponse* DescriptorDatabaseResponse::release_error_response() {
+inline ::grpc::reflection::v1alpha::ErrorResponse* ServerReflectionResponse::release_error_response() {
   if (has_error_response()) {
     clear_has_message_response();
     ::grpc::reflection::v1alpha::ErrorResponse* temp = message_response_.error_response_;
@@ -1565,24 +1696,82 @@ inline ::grpc::reflection::v1alpha::ErrorResponse* DescriptorDatabaseResponse::r
     return NULL;
   }
 }
-inline void DescriptorDatabaseResponse::set_allocated_error_response(::grpc::reflection::v1alpha::ErrorResponse* error_response) {
+inline void ServerReflectionResponse::set_allocated_error_response(::grpc::reflection::v1alpha::ErrorResponse* error_response) {
   clear_message_response();
   if (error_response) {
     set_has_error_response();
     message_response_.error_response_ = error_response;
   }
-  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1alpha.DescriptorDatabaseResponse.error_response)
+  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1alpha.ServerReflectionResponse.error_response)
 }
 
-inline bool DescriptorDatabaseResponse::has_message_response() const {
+inline bool ServerReflectionResponse::has_message_response() const {
   return message_response_case() != MESSAGE_RESPONSE_NOT_SET;
 }
-inline void DescriptorDatabaseResponse::clear_has_message_response() {
+inline void ServerReflectionResponse::clear_has_message_response() {
   _oneof_case_[0] = MESSAGE_RESPONSE_NOT_SET;
 }
-inline DescriptorDatabaseResponse::MessageResponseCase DescriptorDatabaseResponse::message_response_case() const {
-  return DescriptorDatabaseResponse::MessageResponseCase(_oneof_case_[0]);
+inline ServerReflectionResponse::MessageResponseCase ServerReflectionResponse::message_response_case() const {
+  return ServerReflectionResponse::MessageResponseCase(_oneof_case_[0]);
 }
+// -------------------------------------------------------------------
+
+// FileDescriptorResponse
+
+// repeated bytes file_descriptor_proto = 1;
+inline int FileDescriptorResponse::file_descriptor_proto_size() const {
+  return file_descriptor_proto_.size();
+}
+inline void FileDescriptorResponse::clear_file_descriptor_proto() {
+  file_descriptor_proto_.Clear();
+}
+inline const ::std::string& FileDescriptorResponse::file_descriptor_proto(int index) const {
+  // @@protoc_insertion_point(field_get:grpc.reflection.v1alpha.FileDescriptorResponse.file_descriptor_proto)
+  return file_descriptor_proto_.Get(index);
+}
+inline ::std::string* FileDescriptorResponse::mutable_file_descriptor_proto(int index) {
+  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1alpha.FileDescriptorResponse.file_descriptor_proto)
+  return file_descriptor_proto_.Mutable(index);
+}
+inline void FileDescriptorResponse::set_file_descriptor_proto(int index, const ::std::string& value) {
+  // @@protoc_insertion_point(field_set:grpc.reflection.v1alpha.FileDescriptorResponse.file_descriptor_proto)
+  file_descriptor_proto_.Mutable(index)->assign(value);
+}
+inline void FileDescriptorResponse::set_file_descriptor_proto(int index, const char* value) {
+  file_descriptor_proto_.Mutable(index)->assign(value);
+  // @@protoc_insertion_point(field_set_char:grpc.reflection.v1alpha.FileDescriptorResponse.file_descriptor_proto)
+}
+inline void FileDescriptorResponse::set_file_descriptor_proto(int index, const void* value, size_t size) {
+  file_descriptor_proto_.Mutable(index)->assign(
+    reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:grpc.reflection.v1alpha.FileDescriptorResponse.file_descriptor_proto)
+}
+inline ::std::string* FileDescriptorResponse::add_file_descriptor_proto() {
+  return file_descriptor_proto_.Add();
+}
+inline void FileDescriptorResponse::add_file_descriptor_proto(const ::std::string& value) {
+  file_descriptor_proto_.Add()->assign(value);
+  // @@protoc_insertion_point(field_add:grpc.reflection.v1alpha.FileDescriptorResponse.file_descriptor_proto)
+}
+inline void FileDescriptorResponse::add_file_descriptor_proto(const char* value) {
+  file_descriptor_proto_.Add()->assign(value);
+  // @@protoc_insertion_point(field_add_char:grpc.reflection.v1alpha.FileDescriptorResponse.file_descriptor_proto)
+}
+inline void FileDescriptorResponse::add_file_descriptor_proto(const void* value, size_t size) {
+  file_descriptor_proto_.Add()->assign(reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_add_pointer:grpc.reflection.v1alpha.FileDescriptorResponse.file_descriptor_proto)
+}
+inline const ::google::protobuf::RepeatedPtrField< ::std::string>&
+FileDescriptorResponse::file_descriptor_proto() const {
+  // @@protoc_insertion_point(field_list:grpc.reflection.v1alpha.FileDescriptorResponse.file_descriptor_proto)
+  return file_descriptor_proto_;
+}
+inline ::google::protobuf::RepeatedPtrField< ::std::string>*
+FileDescriptorResponse::mutable_file_descriptor_proto() {
+  // @@protoc_insertion_point(field_mutable_list:grpc.reflection.v1alpha.FileDescriptorResponse.file_descriptor_proto)
+  return &file_descriptor_proto_;
+}
+
 // -------------------------------------------------------------------
 
 // ExtensionNumberResponse
@@ -1664,58 +1853,81 @@ ExtensionNumberResponse::mutable_extension_number() {
 
 // ListServiceResponse
 
-// repeated string service = 1;
+// repeated .grpc.reflection.v1alpha.ServiceResponse service = 1;
 inline int ListServiceResponse::service_size() const {
   return service_.size();
 }
 inline void ListServiceResponse::clear_service() {
   service_.Clear();
 }
-inline const ::std::string& ListServiceResponse::service(int index) const {
+inline const ::grpc::reflection::v1alpha::ServiceResponse& ListServiceResponse::service(int index) const {
   // @@protoc_insertion_point(field_get:grpc.reflection.v1alpha.ListServiceResponse.service)
   return service_.Get(index);
 }
-inline ::std::string* ListServiceResponse::mutable_service(int index) {
+inline ::grpc::reflection::v1alpha::ServiceResponse* ListServiceResponse::mutable_service(int index) {
   // @@protoc_insertion_point(field_mutable:grpc.reflection.v1alpha.ListServiceResponse.service)
   return service_.Mutable(index);
 }
-inline void ListServiceResponse::set_service(int index, const ::std::string& value) {
-  // @@protoc_insertion_point(field_set:grpc.reflection.v1alpha.ListServiceResponse.service)
-  service_.Mutable(index)->assign(value);
-}
-inline void ListServiceResponse::set_service(int index, const char* value) {
-  service_.Mutable(index)->assign(value);
-  // @@protoc_insertion_point(field_set_char:grpc.reflection.v1alpha.ListServiceResponse.service)
-}
-inline void ListServiceResponse::set_service(int index, const char* value, size_t size) {
-  service_.Mutable(index)->assign(
-    reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_set_pointer:grpc.reflection.v1alpha.ListServiceResponse.service)
-}
-inline ::std::string* ListServiceResponse::add_service() {
+inline ::grpc::reflection::v1alpha::ServiceResponse* ListServiceResponse::add_service() {
+  // @@protoc_insertion_point(field_add:grpc.reflection.v1alpha.ListServiceResponse.service)
   return service_.Add();
 }
-inline void ListServiceResponse::add_service(const ::std::string& value) {
-  service_.Add()->assign(value);
-  // @@protoc_insertion_point(field_add:grpc.reflection.v1alpha.ListServiceResponse.service)
+inline ::google::protobuf::RepeatedPtrField< ::grpc::reflection::v1alpha::ServiceResponse >*
+ListServiceResponse::mutable_service() {
+  // @@protoc_insertion_point(field_mutable_list:grpc.reflection.v1alpha.ListServiceResponse.service)
+  return &service_;
 }
-inline void ListServiceResponse::add_service(const char* value) {
-  service_.Add()->assign(value);
-  // @@protoc_insertion_point(field_add_char:grpc.reflection.v1alpha.ListServiceResponse.service)
-}
-inline void ListServiceResponse::add_service(const char* value, size_t size) {
-  service_.Add()->assign(reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_add_pointer:grpc.reflection.v1alpha.ListServiceResponse.service)
-}
-inline const ::google::protobuf::RepeatedPtrField< ::std::string>&
+inline const ::google::protobuf::RepeatedPtrField< ::grpc::reflection::v1alpha::ServiceResponse >&
 ListServiceResponse::service() const {
   // @@protoc_insertion_point(field_list:grpc.reflection.v1alpha.ListServiceResponse.service)
   return service_;
 }
-inline ::google::protobuf::RepeatedPtrField< ::std::string>*
-ListServiceResponse::mutable_service() {
-  // @@protoc_insertion_point(field_mutable_list:grpc.reflection.v1alpha.ListServiceResponse.service)
-  return &service_;
+
+// -------------------------------------------------------------------
+
+// ServiceResponse
+
+// optional string name = 1;
+inline void ServiceResponse::clear_name() {
+  name_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline const ::std::string& ServiceResponse::name() const {
+  // @@protoc_insertion_point(field_get:grpc.reflection.v1alpha.ServiceResponse.name)
+  return name_.GetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void ServiceResponse::set_name(const ::std::string& value) {
+  
+  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:grpc.reflection.v1alpha.ServiceResponse.name)
+}
+inline void ServiceResponse::set_name(const char* value) {
+  
+  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:grpc.reflection.v1alpha.ServiceResponse.name)
+}
+inline void ServiceResponse::set_name(const char* value, size_t size) {
+  
+  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:grpc.reflection.v1alpha.ServiceResponse.name)
+}
+inline ::std::string* ServiceResponse::mutable_name() {
+  
+  // @@protoc_insertion_point(field_mutable:grpc.reflection.v1alpha.ServiceResponse.name)
+  return name_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* ServiceResponse::release_name() {
+  
+  return name_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void ServiceResponse::set_allocated_name(::std::string* name) {
+  if (name != NULL) {
+    
+  } else {
+    
+  }
+  name_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), name);
+  // @@protoc_insertion_point(field_set_allocated:grpc.reflection.v1alpha.ServiceResponse.name)
 }
 
 // -------------------------------------------------------------------
@@ -1780,6 +1992,10 @@ inline void ErrorResponse::set_allocated_error_message(::std::string* error_mess
 }
 
 #endif  // !PROTOBUF_INLINE_NOT_IN_HEADERS
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------
