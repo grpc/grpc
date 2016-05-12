@@ -100,31 +100,31 @@ class ServerReflection GRPC_FINAL {
     virtual ~StubInterface() {}
     // The reflection service is structured as a bidirectional stream, ensuring
     // all related requests go to a single server.
-    std::unique_ptr< ::grpc::ClientReaderWriterInterface< ::grpc::reflection::v1alpha::DescriptorDatabaseRequest, ::grpc::reflection::v1alpha::DescriptorDatabaseResponse>> DescriptorDatabaseInfo(::grpc::ClientContext* context) {
-      return std::unique_ptr< ::grpc::ClientReaderWriterInterface< ::grpc::reflection::v1alpha::DescriptorDatabaseRequest, ::grpc::reflection::v1alpha::DescriptorDatabaseResponse>>(DescriptorDatabaseInfoRaw(context));
+    std::unique_ptr< ::grpc::ClientReaderWriterInterface< ::grpc::reflection::v1alpha::ServerReflectionRequest, ::grpc::reflection::v1alpha::ServerReflectionResponse>> ServerReflectionInfo(::grpc::ClientContext* context) {
+      return std::unique_ptr< ::grpc::ClientReaderWriterInterface< ::grpc::reflection::v1alpha::ServerReflectionRequest, ::grpc::reflection::v1alpha::ServerReflectionResponse>>(ServerReflectionInfoRaw(context));
     }
-    std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::grpc::reflection::v1alpha::DescriptorDatabaseRequest, ::grpc::reflection::v1alpha::DescriptorDatabaseResponse>> AsyncDescriptorDatabaseInfo(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
-      return std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::grpc::reflection::v1alpha::DescriptorDatabaseRequest, ::grpc::reflection::v1alpha::DescriptorDatabaseResponse>>(AsyncDescriptorDatabaseInfoRaw(context, cq, tag));
+    std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::grpc::reflection::v1alpha::ServerReflectionRequest, ::grpc::reflection::v1alpha::ServerReflectionResponse>> AsyncServerReflectionInfo(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
+      return std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::grpc::reflection::v1alpha::ServerReflectionRequest, ::grpc::reflection::v1alpha::ServerReflectionResponse>>(AsyncServerReflectionInfoRaw(context, cq, tag));
     }
   private:
-    virtual ::grpc::ClientReaderWriterInterface< ::grpc::reflection::v1alpha::DescriptorDatabaseRequest, ::grpc::reflection::v1alpha::DescriptorDatabaseResponse>* DescriptorDatabaseInfoRaw(::grpc::ClientContext* context) = 0;
-    virtual ::grpc::ClientAsyncReaderWriterInterface< ::grpc::reflection::v1alpha::DescriptorDatabaseRequest, ::grpc::reflection::v1alpha::DescriptorDatabaseResponse>* AsyncDescriptorDatabaseInfoRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) = 0;
+    virtual ::grpc::ClientReaderWriterInterface< ::grpc::reflection::v1alpha::ServerReflectionRequest, ::grpc::reflection::v1alpha::ServerReflectionResponse>* ServerReflectionInfoRaw(::grpc::ClientContext* context) = 0;
+    virtual ::grpc::ClientAsyncReaderWriterInterface< ::grpc::reflection::v1alpha::ServerReflectionRequest, ::grpc::reflection::v1alpha::ServerReflectionResponse>* AsyncServerReflectionInfoRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) = 0;
   };
   class Stub GRPC_FINAL : public StubInterface {
    public:
     Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel);
-    std::unique_ptr< ::grpc::ClientReaderWriter< ::grpc::reflection::v1alpha::DescriptorDatabaseRequest, ::grpc::reflection::v1alpha::DescriptorDatabaseResponse>> DescriptorDatabaseInfo(::grpc::ClientContext* context) {
-      return std::unique_ptr< ::grpc::ClientReaderWriter< ::grpc::reflection::v1alpha::DescriptorDatabaseRequest, ::grpc::reflection::v1alpha::DescriptorDatabaseResponse>>(DescriptorDatabaseInfoRaw(context));
+    std::unique_ptr< ::grpc::ClientReaderWriter< ::grpc::reflection::v1alpha::ServerReflectionRequest, ::grpc::reflection::v1alpha::ServerReflectionResponse>> ServerReflectionInfo(::grpc::ClientContext* context) {
+      return std::unique_ptr< ::grpc::ClientReaderWriter< ::grpc::reflection::v1alpha::ServerReflectionRequest, ::grpc::reflection::v1alpha::ServerReflectionResponse>>(ServerReflectionInfoRaw(context));
     }
-    std::unique_ptr<  ::grpc::ClientAsyncReaderWriter< ::grpc::reflection::v1alpha::DescriptorDatabaseRequest, ::grpc::reflection::v1alpha::DescriptorDatabaseResponse>> AsyncDescriptorDatabaseInfo(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
-      return std::unique_ptr< ::grpc::ClientAsyncReaderWriter< ::grpc::reflection::v1alpha::DescriptorDatabaseRequest, ::grpc::reflection::v1alpha::DescriptorDatabaseResponse>>(AsyncDescriptorDatabaseInfoRaw(context, cq, tag));
+    std::unique_ptr<  ::grpc::ClientAsyncReaderWriter< ::grpc::reflection::v1alpha::ServerReflectionRequest, ::grpc::reflection::v1alpha::ServerReflectionResponse>> AsyncServerReflectionInfo(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
+      return std::unique_ptr< ::grpc::ClientAsyncReaderWriter< ::grpc::reflection::v1alpha::ServerReflectionRequest, ::grpc::reflection::v1alpha::ServerReflectionResponse>>(AsyncServerReflectionInfoRaw(context, cq, tag));
     }
 
    private:
     std::shared_ptr< ::grpc::ChannelInterface> channel_;
-    ::grpc::ClientReaderWriter< ::grpc::reflection::v1alpha::DescriptorDatabaseRequest, ::grpc::reflection::v1alpha::DescriptorDatabaseResponse>* DescriptorDatabaseInfoRaw(::grpc::ClientContext* context) GRPC_OVERRIDE;
-    ::grpc::ClientAsyncReaderWriter< ::grpc::reflection::v1alpha::DescriptorDatabaseRequest, ::grpc::reflection::v1alpha::DescriptorDatabaseResponse>* AsyncDescriptorDatabaseInfoRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) GRPC_OVERRIDE;
-    const ::grpc::RpcMethod rpcmethod_DescriptorDatabaseInfo_;
+    ::grpc::ClientReaderWriter< ::grpc::reflection::v1alpha::ServerReflectionRequest, ::grpc::reflection::v1alpha::ServerReflectionResponse>* ServerReflectionInfoRaw(::grpc::ClientContext* context) GRPC_OVERRIDE;
+    ::grpc::ClientAsyncReaderWriter< ::grpc::reflection::v1alpha::ServerReflectionRequest, ::grpc::reflection::v1alpha::ServerReflectionResponse>* AsyncServerReflectionInfoRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) GRPC_OVERRIDE;
+    const ::grpc::RpcMethod rpcmethod_ServerReflectionInfo_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
 
@@ -134,42 +134,42 @@ class ServerReflection GRPC_FINAL {
     virtual ~Service();
     // The reflection service is structured as a bidirectional stream, ensuring
     // all related requests go to a single server.
-    virtual ::grpc::Status DescriptorDatabaseInfo(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::grpc::reflection::v1alpha::DescriptorDatabaseResponse, ::grpc::reflection::v1alpha::DescriptorDatabaseRequest>* stream);
+    virtual ::grpc::Status ServerReflectionInfo(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::grpc::reflection::v1alpha::ServerReflectionResponse, ::grpc::reflection::v1alpha::ServerReflectionRequest>* stream);
   };
   template <class BaseClass>
-  class WithAsyncMethod_DescriptorDatabaseInfo : public BaseClass {
+  class WithAsyncMethod_ServerReflectionInfo : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
-    WithAsyncMethod_DescriptorDatabaseInfo() {
+    WithAsyncMethod_ServerReflectionInfo() {
       ::grpc::Service::MarkMethodAsync(0);
     }
-    ~WithAsyncMethod_DescriptorDatabaseInfo() GRPC_OVERRIDE {
+    ~WithAsyncMethod_ServerReflectionInfo() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status DescriptorDatabaseInfo(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::grpc::reflection::v1alpha::DescriptorDatabaseResponse, ::grpc::reflection::v1alpha::DescriptorDatabaseRequest>* stream) GRPC_FINAL GRPC_OVERRIDE {
+    ::grpc::Status ServerReflectionInfo(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::grpc::reflection::v1alpha::ServerReflectionResponse, ::grpc::reflection::v1alpha::ServerReflectionRequest>* stream) GRPC_FINAL GRPC_OVERRIDE {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestDescriptorDatabaseInfo(::grpc::ServerContext* context, ::grpc::ServerAsyncReaderWriter< ::grpc::reflection::v1alpha::DescriptorDatabaseResponse, ::grpc::reflection::v1alpha::DescriptorDatabaseRequest>* stream, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestServerReflectionInfo(::grpc::ServerContext* context, ::grpc::ServerAsyncReaderWriter< ::grpc::reflection::v1alpha::ServerReflectionResponse, ::grpc::reflection::v1alpha::ServerReflectionRequest>* stream, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncBidiStreaming(0, context, stream, new_call_cq, notification_cq, tag);
     }
   };
-  typedef WithAsyncMethod_DescriptorDatabaseInfo<Service > AsyncService;
+  typedef WithAsyncMethod_ServerReflectionInfo<Service > AsyncService;
   template <class BaseClass>
-  class WithGenericMethod_DescriptorDatabaseInfo : public BaseClass {
+  class WithGenericMethod_ServerReflectionInfo : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
-    WithGenericMethod_DescriptorDatabaseInfo() {
+    WithGenericMethod_ServerReflectionInfo() {
       ::grpc::Service::MarkMethodGeneric(0);
     }
-    ~WithGenericMethod_DescriptorDatabaseInfo() GRPC_OVERRIDE {
+    ~WithGenericMethod_ServerReflectionInfo() GRPC_OVERRIDE {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status DescriptorDatabaseInfo(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::grpc::reflection::v1alpha::DescriptorDatabaseResponse, ::grpc::reflection::v1alpha::DescriptorDatabaseRequest>* stream) GRPC_FINAL GRPC_OVERRIDE {
+    ::grpc::Status ServerReflectionInfo(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::grpc::reflection::v1alpha::ServerReflectionResponse, ::grpc::reflection::v1alpha::ServerReflectionRequest>* stream) GRPC_FINAL GRPC_OVERRIDE {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }

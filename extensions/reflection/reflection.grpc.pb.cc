@@ -52,7 +52,7 @@ namespace reflection {
 namespace v1alpha {
 
 static const char* ServerReflection_method_names[] = {
-  "/grpc.reflection.v1alpha.ServerReflection/DescriptorDatabaseInfo",
+  "/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo",
 };
 
 std::unique_ptr< ServerReflection::Stub> ServerReflection::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
@@ -61,15 +61,15 @@ std::unique_ptr< ServerReflection::Stub> ServerReflection::NewStub(const std::sh
 }
 
 ServerReflection::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel)
-  : channel_(channel), rpcmethod_DescriptorDatabaseInfo_(ServerReflection_method_names[0], ::grpc::RpcMethod::BIDI_STREAMING, channel)
+  : channel_(channel), rpcmethod_ServerReflectionInfo_(ServerReflection_method_names[0], ::grpc::RpcMethod::BIDI_STREAMING, channel)
   {}
 
-::grpc::ClientReaderWriter< ::grpc::reflection::v1alpha::DescriptorDatabaseRequest, ::grpc::reflection::v1alpha::DescriptorDatabaseResponse>* ServerReflection::Stub::DescriptorDatabaseInfoRaw(::grpc::ClientContext* context) {
-  return new ::grpc::ClientReaderWriter< ::grpc::reflection::v1alpha::DescriptorDatabaseRequest, ::grpc::reflection::v1alpha::DescriptorDatabaseResponse>(channel_.get(), rpcmethod_DescriptorDatabaseInfo_, context);
+::grpc::ClientReaderWriter< ::grpc::reflection::v1alpha::ServerReflectionRequest, ::grpc::reflection::v1alpha::ServerReflectionResponse>* ServerReflection::Stub::ServerReflectionInfoRaw(::grpc::ClientContext* context) {
+  return new ::grpc::ClientReaderWriter< ::grpc::reflection::v1alpha::ServerReflectionRequest, ::grpc::reflection::v1alpha::ServerReflectionResponse>(channel_.get(), rpcmethod_ServerReflectionInfo_, context);
 }
 
-::grpc::ClientAsyncReaderWriter< ::grpc::reflection::v1alpha::DescriptorDatabaseRequest, ::grpc::reflection::v1alpha::DescriptorDatabaseResponse>* ServerReflection::Stub::AsyncDescriptorDatabaseInfoRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
-  return new ::grpc::ClientAsyncReaderWriter< ::grpc::reflection::v1alpha::DescriptorDatabaseRequest, ::grpc::reflection::v1alpha::DescriptorDatabaseResponse>(channel_.get(), cq, rpcmethod_DescriptorDatabaseInfo_, context, tag);
+::grpc::ClientAsyncReaderWriter< ::grpc::reflection::v1alpha::ServerReflectionRequest, ::grpc::reflection::v1alpha::ServerReflectionResponse>* ServerReflection::Stub::AsyncServerReflectionInfoRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
+  return new ::grpc::ClientAsyncReaderWriter< ::grpc::reflection::v1alpha::ServerReflectionRequest, ::grpc::reflection::v1alpha::ServerReflectionResponse>(channel_.get(), cq, rpcmethod_ServerReflectionInfo_, context, tag);
 }
 
 ServerReflection::Service::Service() {
@@ -77,14 +77,14 @@ ServerReflection::Service::Service() {
   AddMethod(new ::grpc::RpcServiceMethod(
       ServerReflection_method_names[0],
       ::grpc::RpcMethod::BIDI_STREAMING,
-      new ::grpc::BidiStreamingHandler< ServerReflection::Service, ::grpc::reflection::v1alpha::DescriptorDatabaseRequest, ::grpc::reflection::v1alpha::DescriptorDatabaseResponse>(
-          std::mem_fn(&ServerReflection::Service::DescriptorDatabaseInfo), this)));
+      new ::grpc::BidiStreamingHandler< ServerReflection::Service, ::grpc::reflection::v1alpha::ServerReflectionRequest, ::grpc::reflection::v1alpha::ServerReflectionResponse>(
+          std::mem_fn(&ServerReflection::Service::ServerReflectionInfo), this)));
 }
 
 ServerReflection::Service::~Service() {
 }
 
-::grpc::Status ServerReflection::Service::DescriptorDatabaseInfo(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::grpc::reflection::v1alpha::DescriptorDatabaseResponse, ::grpc::reflection::v1alpha::DescriptorDatabaseRequest>* stream) {
+::grpc::Status ServerReflection::Service::ServerReflectionInfo(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::grpc::reflection::v1alpha::ServerReflectionResponse, ::grpc::reflection::v1alpha::ServerReflectionRequest>* stream) {
   (void) context;
   (void) stream;
   return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
