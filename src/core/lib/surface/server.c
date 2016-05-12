@@ -719,6 +719,7 @@ static void server_on_recv_initial_metadata(grpc_exec_ctx *exec_ctx, void *ptr,
   call_data *calld = elem->call_data;
   gpr_timespec op_deadline;
 
+  GRPC_ERROR_REF(error);
   grpc_metadata_batch_filter(calld->recv_initial_metadata, server_filter, elem);
   op_deadline = calld->recv_initial_metadata->deadline;
   if (0 != gpr_time_cmp(op_deadline, gpr_inf_future(op_deadline.clock_type))) {
@@ -727,12 +728,12 @@ static void server_on_recv_initial_metadata(grpc_exec_ctx *exec_ctx, void *ptr,
   if (calld->host && calld->path) {
     /* do nothing */
   } else {
+    GRPC_ERROR_UNREF(error);
     error =
         GRPC_ERROR_CREATE_REFERENCING("Missing :authority or :path", &error, 1);
   }
 
-  calld->on_done_recv_initial_metadata->cb(
-      exec_ctx, calld->on_done_recv_initial_metadata->cb_arg, error);
+  grpc_exec_ctx_push(exec_ctx, calld->on_done_recv_initial_metadata, error, NULL);
 }
 
 static void server_mutate_op(grpc_call_element *elem,
