@@ -195,16 +195,6 @@ struct grpc_pollset {
   grpc_cached_wakeup_fd *local_wakeup_cache;
 };
 
-struct grpc_pollset_vtable {
-  void (*add_fd)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
-                 struct grpc_fd *fd, int and_unlock_pollset);
-  void (*maybe_work_and_unlock)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
-                                grpc_pollset_worker *worker,
-                                gpr_timespec deadline, gpr_timespec now);
-  void (*finish_shutdown)(grpc_pollset *pollset);
-  void (*destroy)(grpc_pollset *pollset);
-};
-
 /* Add an fd to a pollset */
 static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                            struct grpc_fd *fd);
