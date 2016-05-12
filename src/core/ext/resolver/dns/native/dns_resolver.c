@@ -214,6 +214,7 @@ static void dns_start_resolving_locked(grpc_exec_ctx *exec_ctx,
   GRPC_RESOLVER_REF(&r->base, "dns-resolving");
   GPR_ASSERT(!r->resolving);
   r->resolving = 1;
+  r->addresses = NULL;
   grpc_resolve_address(exec_ctx, r->name, r->default_port,
                        grpc_closure_create(dns_on_resolved, r), &r->addresses);
 }
