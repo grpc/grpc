@@ -54,7 +54,7 @@
 #define STRONG_REF_MASK (~(gpr_atm)((1 << INTERNAL_REF_BITS) - 1))
 
 #define GRPC_SUBCHANNEL_MIN_CONNECT_TIMEOUT_SECONDS 20
-#define GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS 2
+#define GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_SUBCHANNEL_RECONNECT_BACKOFF_MULTIPLIER 1.6
 #define GRPC_SUBCHANNEL_RECONNECT_MAX_BACKOFF_SECONDS 120
 #define GRPC_SUBCHANNEL_RECONNECT_JITTER 0.2
@@ -606,12 +606,8 @@ static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     GRPC_ERROR_REF(error);
   }
   if (error == GRPC_ERROR_NONE) {
-    const char *msg = grpc_error_string(error);
-    gpr_log(GPR_INFO, "Failed to connect to channel, retrying: %s", msg);
-    grpc_error_free_string(msg);
-
-    c->next_attempt =
-        gpr_backoff_step(&c->backoff_state, gpr_now(GPR_CLOCK_MONOTONIC));
+    gpr_log(GPR_INFO, "Failed to connect to channel, retrying");
+    c->next_attempt = gpr_backoff_step(&c->backoff_state, gpr_now(GPR_CLOCK_MONOTONIC));
     continue_connect(exec_ctx, c);
     gpr_mu_unlock(&c->mu);
   } else {
@@ -639,8 +635,7 @@ static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
         exec_ctx, &c->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
         GRPC_ERROR_CREATE_REFERENCING("Connect Failed", &error, 1),
         "connect_failed");
-    gpr_timespec time_til_next =
-        gpr_time_sub(c->next_attempt, gpr_now(c->next_attempt.clock_type));
+    gpr_timespec time_til_next = gpr_time_sub(c->next_attempt, now);
     const char *errmsg = grpc_error_string(error);
     gpr_log(GPR_INFO, "Connect failed, retry in %d.%09d seconds: %s",
             time_til_next.tv_sec, time_til_next.tv_nsec, errmsg);

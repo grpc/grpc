@@ -781,13 +781,14 @@ static void terminate_writing_with_lock(grpc_exec_ctx *exec_ctx,
   }
 
   UNREF_TRANSPORT(exec_ctx, t, "writing");
+  GRPC_ERROR_UNREF(error);
 }
 
 void grpc_chttp2_terminate_writing(grpc_exec_ctx *exec_ctx,
                                    void *transport_writing, grpc_error *error) {
   grpc_chttp2_transport *t = TRANSPORT_FROM_WRITING(transport_writing);
   grpc_chttp2_run_with_global_lock(exec_ctx, t, NULL,
-                                   terminate_writing_with_lock, error, 0);
+                                   terminate_writing_with_lock, GRPC_ERROR_REF(error), 0);
 }
 
 static void writing_action(grpc_exec_ctx *exec_ctx, void *gt,

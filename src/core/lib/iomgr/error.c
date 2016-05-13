@@ -158,6 +158,7 @@ static bool is_special(grpc_error *err) {
          err == GRPC_ERROR_CANCELLED;
 }
 
+#ifdef GRPC_ERROR_REFCOUNT_DEBUG
 grpc_error *grpc_error_ref(grpc_error *err, const char *file, int line,
                            const char *func) {
   if (is_special(err)) return err;
@@ -166,6 +167,13 @@ grpc_error *grpc_error_ref(grpc_error *err, const char *file, int line,
   gpr_ref(&err->refs);
   return err;
 }
+#else
+grpc_error *grpc_error_ref(grpc_error *err) {
+  if (is_special(err)) return err;
+  gpr_ref(&err->refs);
+  return err;
+}
+#endif
 
 static void error_destroy(grpc_error *err) {
   GPR_ASSERT(!is_special(err));
@@ -176,6 +184,7 @@ static void error_destroy(grpc_error *err) {
   gpr_free(err);
 }
 
+#ifdef GRPC_ERROR_REFCOUNT_DEBUG
 void grpc_error_unref(grpc_error *err, const char *file, int line,
                       const char *func) {
   if (is_special(err)) return;
@@ -185,6 +194,14 @@ void grpc_error_unref(grpc_error *err, const char *file, int line,
     error_destroy(err);
   }
 }
+#else
+void grpc_error_unref(grpc_error *err) {
+  if (is_special(err)) return;
+  if (gpr_unref(&err->refs)) {
+    error_destroy(err);
+  }
+}
+#endif
 
 grpc_error *grpc_error_create(const char *file, int line, const char *desc,
                               grpc_error **referencing,
@@ -193,7 +210,9 @@ grpc_error *grpc_error_create(const char *file, int line, const char *desc,
   if (err == NULL) {  // TODO(ctiller): make gpr_malloc return NULL
     return GRPC_ERROR_OOM;
   }
+#ifdef GRPC_ERROR_REFCOUNT_DEBUG
   gpr_log(GPR_DEBUG, "%p create [%s:%d]", err, file, line);
+#endif
   err->ints = gpr_avl_add(gpr_avl_create(&avl_vtable_ints),
                           (void *)(uintptr_t)GRPC_ERROR_INT_FILE_LINE,
                           (void *)(uintptr_t)line);
@@ -223,7 +242,9 @@ static grpc_error *copy_error_and_unref(grpc_error *in) {
     return GRPC_ERROR_CREATE("unknown");
   }
   grpc_error *out = gpr_malloc(sizeof(*out));
+#ifdef GRPC_ERROR_REFCOUNT_DEBUG
   gpr_log(GPR_DEBUG, "%p create copying", out);
+#endif
   out->ints = gpr_avl_ref(in->ints);
   out->strs = gpr_avl_ref(in->strs);
   out->errs = gpr_avl_ref(in->errs);
