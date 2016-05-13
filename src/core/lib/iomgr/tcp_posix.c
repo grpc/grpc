@@ -38,6 +38,7 @@
 #include "src/core/lib/iomgr/tcp_posix.h"
 
 #include <errno.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -74,7 +75,7 @@ typedef struct {
   grpc_endpoint base;
   grpc_fd *em_fd;
   int fd;
-  int finished_edge;
+  bool finished_edge;
   msg_iovlen_type iov_size; /* Number of slices to allocate per read attempt */
   size_t slice_size;
   gpr_refcount refcount;
@@ -273,7 +274,7 @@ static void tcp_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   gpr_slice_buffer_swap(incoming_buffer, &tcp->last_read_buffer);
   TCP_REF(tcp, "read");
   if (tcp->finished_edge) {
-    tcp->finished_edge = 0;
+    tcp->finished_edge = false;
     grpc_fd_notify_on_read(exec_ctx, tcp->em_fd, &tcp->read_closure);
   } else {
     grpc_exec_ctx_push(exec_ctx, &tcp->read_closure, GRPC_ERROR_NONE, NULL);
@@ -370,7 +371,7 @@ static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
   if (error != GRPC_ERROR_NONE) {
     cb = tcp->write_cb;
     tcp->write_cb = NULL;
-    cb->cb(exec_ctx, cb->cb_arg, 0);
+    cb->cb(exec_ctx, cb->cb_arg, GRPC_ERROR_REF(error));
     TCP_UNREF(exec_ctx, tcp, "write");
     return;
   }
@@ -381,7 +382,7 @@ static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
     cb = tcp->write_cb;
     tcp->write_cb = NULL;
     GPR_TIMER_BEGIN("tcp_handle_write.cb", 0);
-    cb->cb(exec_ctx, cb->cb_arg, error);
+    cb->cb(exec_ctx, cb->cb_arg, GRPC_ERROR_REF(error));
     GPR_TIMER_END("tcp_handle_write.cb", 0);
     TCP_UNREF(exec_ctx, tcp, "write");
   }
@@ -460,7 +461,7 @@ grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd, size_t slice_size,
   tcp->incoming_buffer = NULL;
   tcp->slice_size = slice_size;
   tcp->iov_size = 1;
-  tcp->finished_edge = 1;
+  tcp->finished_edge = true;
   /* paired with unref in grpc_tcp_destroy */
   gpr_ref_init(&tcp->refcount, 1);
   tcp->em_fd = em_fd;
