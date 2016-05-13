@@ -41,10 +41,11 @@ extern "C" {
 #endif
 
 /** To be used in channel arguments */
-#define GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM "grpc.compression_algorithm"
-#define GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL "grpc.compression_level"
+#define GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM \
+  "grpc.default_compression_algorithm"
+#define GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL "grpc.default_compression_level"
 #define GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET \
-  "grpc.compression_algorithm_state"
+  "grpc.compression_enabled_algorithms_bitset"
 
 /* The various compression algorithms supported by gRPC */
 typedef enum {
