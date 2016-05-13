@@ -109,7 +109,7 @@ static void test_no_op_with_port(void) {
   grpc_udp_server_destroy(&exec_ctx, s, NULL);
   grpc_exec_ctx_finish(&exec_ctx);
 
-  /* The server had a single FD, which should be orphaned. */
+  /* The server had a single FD, which should have been orphaned. */
   GPR_ASSERT(g_number_of_orphan_calls == 1);
 }
 
@@ -130,7 +130,7 @@ static void test_no_op_with_port_and_start(void) {
   grpc_udp_server_destroy(&exec_ctx, s, NULL);
   grpc_exec_ctx_finish(&exec_ctx);
 
-  /* The server had a single FD which should be orphaned. */
+  /* The server had a single FD, which should have been orphaned. */
   GPR_ASSERT(g_number_of_orphan_calls == 1);
 }
 
@@ -193,7 +193,8 @@ static void test_receive(int number_of_clients) {
   grpc_udp_server_destroy(&exec_ctx, s, NULL);
   grpc_exec_ctx_finish(&exec_ctx);
 
-  GPR_ASSERT(g_number_of_orphan_calls == 5);
+  /* The server had a single FD, which should have been orphaned. */
+  GPR_ASSERT(g_number_of_orphan_calls == 1);
 }
 
 static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, bool success) {
