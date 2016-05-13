@@ -828,9 +828,6 @@ static void pollset_reset(grpc_pollset *pollset) {
   GPR_ASSERT(pollset->in_flight_cbs == 0);
   GPR_ASSERT(!pollset_has_workers(pollset));
   GPR_ASSERT(pollset->idle_jobs.head == pollset->idle_jobs.tail);
-
-  multipoll_with_epoll_pollset_destroy(pollset);
-
   pollset->shutting_down = 0;
   pollset->called_shutdown = 0;
   pollset->kicked_without_pollers = 0;
