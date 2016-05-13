@@ -29,11 +29,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#
 # Example usage:
 #   tools/codegen/core/gen_nano_proto.sh \
-#     src/proto/grpc/lb/v0/load_balancer.proto
-#     $PWD/src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0
+#     src/proto/grpc/lb/v1/load_balancer.proto \
+#     $PWD/src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1 \
+#     src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1
 #
 # Exit statuses:
 # 1: Incorrect number of arguments

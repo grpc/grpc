@@ -41,9 +41,23 @@
 
 namespace grpc {
 
+static std::vector<std::unique_ptr<ServerBuilderPlugin> (*)()>*
+    g_plugin_factory_list;
+static gpr_once once_init_plugin_list = GPR_ONCE_INIT;
+
+static void do_plugin_list_init(void) {
+  g_plugin_factory_list =
+      new std::vector<std::unique_ptr<ServerBuilderPlugin> (*)()>();
+}
+
 ServerBuilder::ServerBuilder()
     : max_message_size_(-1), generic_service_(nullptr) {
   grpc_compression_options_init(&compression_options_);
+  gpr_once_init(&once_init_plugin_list, do_plugin_list_init);
+  for (auto factory : (*g_plugin_factory_list)) {
+    std::unique_ptr<ServerBuilderPlugin> plugin = factory();
+    plugins_[plugin->name()] = std::move(plugin);
+  }
 }
 
 std::unique_ptr<ServerCompletionQueue> ServerBuilder::AddCompletionQueue() {
@@ -96,6 +110,15 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   ChannelArguments args;
   for (auto option = options_.begin(); option != options_.end(); ++option) {
     (*option)->UpdateArguments(&args);
+    (*option)->UpdatePlugins(&plugins_);
+  }
+  if (thread_pool == nullptr) {
+    for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
+      if ((*plugin).second->has_sync_methods()) {
+        thread_pool.reset(CreateDefaultThreadPool());
+        break;
+      }
+    }
   }
   if (max_message_size_ > 0) {
     args.SetInt(GRPC_ARG_MAX_MESSAGE_LENGTH, max_message_size_);
@@ -104,6 +127,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
               compression_options_.enabled_algorithms_bitset);
   std::unique_ptr<Server> server(
       new Server(thread_pool.release(), true, max_message_size_, &args));
+  ServerInitializer* initializer = server->initializer();
   for (auto cq = cqs_.begin(); cq != cqs_.end(); ++cq) {
     grpc_server_register_completion_queue(server->server_, (*cq)->cq(),
                                           nullptr);
@@ -113,6 +137,9 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     if (!server->RegisterService((*service)->host.get(), (*service)->service)) {
       return nullptr;
     }
+  }
+  for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
+    (*plugin).second->InitServer(initializer);
   }
   if (generic_service_) {
     server->RegisterAsyncGenericService(generic_service_);
@@ -137,7 +164,16 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   if (!server->Start(cqs_data, cqs_.size())) {
     return nullptr;
   }
+  for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
+    (*plugin).second->Finish(initializer);
+  }
   return server;
+}
+
+void ServerBuilder::InternalAddPluginFactory(
+    std::unique_ptr<ServerBuilderPlugin> (*CreatePlugin)()) {
+  gpr_once_init(&once_init_plugin_list, do_plugin_list_init);
+  (*g_plugin_factory_list).push_back(CreatePlugin);
 }
 
 }  // namespace grpc
