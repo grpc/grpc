@@ -45,6 +45,12 @@ int grpc_pick_unused_port();
    on failure. */
 int grpc_pick_unused_port_or_die();
 
+/* Return a port which was previously returned by grpc_pick_unused_port().
+ * Implementations of grpc_pick_unused_port() backed by a portserver may limit
+ * the total number of ports available; this lets a binary return its allocated
+ * ports back to the server if it is going to allocate a large number. */
+void grpc_recycle_unused_port();
+
 #ifdef __cplusplus
 }
 #endif

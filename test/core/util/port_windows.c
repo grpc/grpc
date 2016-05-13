@@ -71,6 +71,31 @@ static int has_port_been_chosen(int port) {
   return 0;
 }
 
+static int free_chosen_port(int port) {
+  size_t i;
+  int found = 0;
+  size_t found_at = 0;
+  char *env = gpr_getenv("GRPC_TEST_PORT_SERVER");
+  if (env != NULL) {
+    /* Find the port and erase it from the list, then tell the server it can be
+       freed. */
+    for (i = 0; i < num_chosen_ports; i++) {
+      if (chosen_ports[i] == port) {
+        GPR_ASSERT(found == 0);
+        found = 1;
+        found_at = i;
+      }
+    }
+    if (found) {
+      chosen_ports[found_at] = chosen_ports[num_chosen_ports - 1];
+      grpc_free_port_using_server(env, port);
+      num_chosen_ports--;
+      chosen_ports = gpr_realloc(chosen_ports, sizeof(int) * num_chosen_ports);
+    }
+  }
+  return found;
+}
+
 static void free_chosen_ports(void) {
   char *env = gpr_getenv("GRPC_TEST_PORT_SERVER");
   if (env != NULL) {
@@ -214,6 +239,10 @@ int grpc_pick_unused_port_or_die(void) {
   int port = grpc_pick_unused_port();
   GPR_ASSERT(port > 0);
   return port;
+}
+
+void grpc_recycle_unused_port(int port) {
+  GPR_ASSERT(free_chosen_port(port));
 }
 
 #endif /* GPR_WINSOCK_SOCKET && GRPC_TEST_PICK_PORT */
