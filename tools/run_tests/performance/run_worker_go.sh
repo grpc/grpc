@@ -32,4 +32,6 @@ set -ex
 
 cd $(dirname $0)/../../..
 
-../gopath/bin/worker $@
+export GOPATH=$(pwd)/../gopath
+
+${GOPATH}/bin/worker $@
