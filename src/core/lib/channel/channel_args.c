@@ -170,7 +170,7 @@ grpc_compression_algorithm grpc_channel_args_get_compression_algorithm(
   if (a == NULL) return 0;
   for (i = 0; i < a->num_args; ++i) {
     if (a->args[i].type == GRPC_ARG_INTEGER &&
-        !strcmp(GRPC_COMPRESSION_ALGORITHM_ARG, a->args[i].key)) {
+        !strcmp(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM, a->args[i].key)) {
       return (grpc_compression_algorithm)a->args[i].value.integer;
       break;
     }
@@ -182,7 +182,7 @@ grpc_channel_args *grpc_channel_args_set_compression_algorithm(
     grpc_channel_args *a, grpc_compression_algorithm algorithm) {
   grpc_arg tmp;
   tmp.type = GRPC_ARG_INTEGER;
-  tmp.key = GRPC_COMPRESSION_ALGORITHM_ARG;
+  tmp.key = GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM;
   tmp.value.integer = algorithm;
   return grpc_channel_args_copy_and_add(a, &tmp, 1);
 }
@@ -196,7 +196,8 @@ static int find_compression_algorithm_states_bitset(const grpc_channel_args *a,
     size_t i;
     for (i = 0; i < a->num_args; ++i) {
       if (a->args[i].type == GRPC_ARG_INTEGER &&
-          !strcmp(GRPC_COMPRESSION_ALGORITHM_STATE_ARG, a->args[i].key)) {
+          !strcmp(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
+                  a->args[i].key)) {
         *states_arg = &a->args[i].value.integer;
         return 1; /* GPR_TRUE */
       }
@@ -222,7 +223,7 @@ grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
     /* create a new arg */
     grpc_arg tmp;
     tmp.type = GRPC_ARG_INTEGER;
-    tmp.key = GRPC_COMPRESSION_ALGORITHM_STATE_ARG;
+    tmp.key = GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET;
     /* all enabled by default */
     tmp.value.integer = (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1;
     if (state != 0) {
