@@ -151,7 +151,7 @@ static void read_and_write_test_write_handler(grpc_exec_ctx *exec_ctx,
   gpr_slice *slices = NULL;
   size_t nslices;
 
-  if (error != GRPC_ERROR_NONE) {
+  if (error == GRPC_ERROR_NONE) {
     state->bytes_written += state->current_write_size;
     if (state->target_bytes - state->bytes_written <
         state->current_write_size) {
@@ -171,7 +171,7 @@ static void read_and_write_test_write_handler(grpc_exec_ctx *exec_ctx,
 
   gpr_log(GPR_INFO, "Write handler done");
   gpr_mu_lock(g_mu);
-  state->write_done = 1 + (error != GRPC_ERROR_NONE);
+  state->write_done = 1 + (error == GRPC_ERROR_NONE);
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL));
   gpr_mu_unlock(g_mu);
 }

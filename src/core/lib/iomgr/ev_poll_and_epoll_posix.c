@@ -1400,7 +1400,7 @@ static grpc_error *multipoll_with_poll_pollset_maybe_work_and_unlock(
 
   if (r < 0) {
     if (errno != EINTR) {
-      gpr_log(GPR_ERROR, "poll() failed: %s", strerror(errno));
+      work_combine_error(&error, GRPC_OS_ERROR(errno, "poll"));
     }
     for (i = 2; i < pfd_count; i++) {
       fd_end_poll(exec_ctx, &watchers[i], 0, 0);
@@ -1693,7 +1693,7 @@ static grpc_error *multipoll_with_epoll_pollset_maybe_work_and_unlock(
 
   if (poll_rv < 0) {
     if (errno != EINTR) {
-      gpr_log(GPR_ERROR, "poll() failed: %s", strerror(errno));
+      work_combine_error(&error, GRPC_OS_ERROR(errno, "poll"));
     }
   } else if (poll_rv == 0) {
     /* do nothing */
