@@ -96,6 +96,7 @@ zval *grpc_php_wrap_call(grpc_call *wrapped, bool owned) {
   wrapped_grpc_call *call =
       (wrapped_grpc_call *)zend_object_store_get_object(call_object TSRMLS_CC);
   call->wrapped = wrapped;
+  call->owned = owned;
   return call_object;
 }
 

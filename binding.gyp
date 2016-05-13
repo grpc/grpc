@@ -713,7 +713,7 @@
         'src/core/ext/transport/cronet/transport/cronet_api_dummy.c',
         'src/core/ext/transport/cronet/transport/cronet_transport.c',
         'src/core/ext/lb_policy/grpclb/load_balancer_api.c',
-        'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c',
+        'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c',
         'third_party/nanopb/pb_common.c',
         'third_party/nanopb/pb_decode.c',
         'third_party/nanopb/pb_encode.c',

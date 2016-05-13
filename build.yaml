@@ -362,10 +362,10 @@ filegroups:
 - name: grpc_lb_policy_grpclb
   headers:
   - src/core/ext/lb_policy/grpclb/load_balancer_api.h
-  - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h
+  - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h
   src:
   - src/core/ext/lb_policy/grpclb/load_balancer_api.c
-  - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c
+  - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
   uses:
   - grpc_base
   - grpc_client_config
@@ -550,61 +550,14 @@ filegroups:
   - grpc_secure
 - name: grpc_transport_cronet_client_secure
   headers:
-  - include/grpc/byte_buffer.h
-  - include/grpc/grpc.h
-  - include/grpc/impl/codegen/alloc.h
-  - include/grpc/impl/codegen/atm.h
-  - include/grpc/impl/codegen/atm_gcc_atomic.h
-  - include/grpc/impl/codegen/atm_gcc_sync.h
-  - include/grpc/impl/codegen/atm_win32.h
-  - include/grpc/impl/codegen/byte_buffer.h
-  - include/grpc/impl/codegen/compression_types.h
-  - include/grpc/impl/codegen/connectivity_state.h
-  - include/grpc/impl/codegen/grpc_types.h
-  - include/grpc/impl/codegen/log.h
-  - include/grpc/impl/codegen/port_platform.h
-  - include/grpc/impl/codegen/propagation_bits.h
-  - include/grpc/impl/codegen/slice.h
-  - include/grpc/impl/codegen/slice_buffer.h
-  - include/grpc/impl/codegen/status.h
-  - include/grpc/impl/codegen/sync.h
-  - include/grpc/impl/codegen/sync_generic.h
-  - include/grpc/impl/codegen/sync_posix.h
-  - include/grpc/impl/codegen/sync_win32.h
-  - include/grpc/impl/codegen/time.h
-  - include/grpc/status.h
-  - include/grpc/support/alloc.h
-  - include/grpc/support/atm.h
-  - include/grpc/support/host_port.h
-  - include/grpc/support/log.h
-  - include/grpc/support/port_platform.h
-  - include/grpc/support/slice.h
-  - include/grpc/support/slice_buffer.h
-  - include/grpc/support/string_util.h
-  - include/grpc/support/sync.h
-  - include/grpc/support/time.h
-  - include/grpc/support/useful.h
-  - src/core/ext/transport/chttp2/transport/incoming_metadata.h
-  - src/core/lib/channel/channel_stack.h
-  - src/core/lib/channel/context.h
-  - src/core/lib/debug/trace.h
-  - src/core/lib/iomgr/closure.h
-  - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/pollset.h
-  - src/core/lib/iomgr/pollset_set.h
-  - src/core/lib/support/string.h
-  - src/core/lib/surface/channel.h
-  - src/core/lib/surface/channel_stack_type.h
-  - src/core/lib/transport/byte_stream.h
-  - src/core/lib/transport/metadata.h
-  - src/core/lib/transport/metadata_batch.h
-  - src/core/lib/transport/transport.h
-  - src/core/lib/transport/transport_impl.h
   - third_party/objective_c/Cronet/cronet_c_for_grpc.h
   src:
   - src/core/ext/transport/cronet/client/secure/cronet_channel_create.c
   - src/core/ext/transport/cronet/transport/cronet_api_dummy.c
   - src/core/ext/transport/cronet/transport/cronet_transport.c
+  filegroups:
+  - grpc_base
+  - grpc_transport_chttp2
 - name: nanopb
   headers:
   - third_party/nanopb/pb.h
@@ -649,6 +602,8 @@ filegroups:
   - include/grpc++/impl/rpc_service_method.h
   - include/grpc++/impl/serialization_traits.h
   - include/grpc++/impl/server_builder_option.h
+  - include/grpc++/impl/server_builder_plugin.h
+  - include/grpc++/impl/server_initializer.h
   - include/grpc++/impl/service_type.h
   - include/grpc++/impl/sync.h
   - include/grpc++/impl/sync_cxx11.h
@@ -2702,7 +2657,7 @@ targets:
   build: test
   language: c++
   src:
-  - src/proto/grpc/lb/v0/load_balancer.proto
+  - src/proto/grpc/lb/v1/load_balancer.proto
   - test/cpp/grpclb/grpclb_api_test.cc
   deps:
   - grpc++_test_util
@@ -2974,6 +2929,19 @@ targets:
   - mac
   - linux
   - posix
+- name: server_builder_plugin_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/end2end/server_builder_plugin_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: server_crash_test
   gtest: true
   cpu_cost: 0.1
@@ -3311,7 +3279,7 @@ configs:
 defaults:
   boringssl:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas
-      -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare
+      -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
     CPPFLAGS: -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM
       -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
   global:

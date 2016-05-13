@@ -2248,8 +2248,8 @@
       "grpc_test_util"
     ], 
     "headers": [
-      "src/proto/grpc/lb/v0/load_balancer.grpc.pb.h", 
-      "src/proto/grpc/lb/v0/load_balancer.pb.h"
+      "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h", 
+      "src/proto/grpc/lb/v1/load_balancer.pb.h"
     ], 
     "language": "c++", 
     "name": "grpclb_api_test", 
@@ -2584,6 +2584,24 @@
     "name": "secure_sync_unary_ping_pong_test", 
     "src": [
       "test/cpp/qps/secure_sync_unary_ping_pong_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "server_builder_plugin_test", 
+    "src": [
+      "test/cpp/end2end/server_builder_plugin_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -3383,6 +3401,23 @@
     "name": "initial_settings_frame_bad_client_test", 
     "src": [
       "test/core/bad_client/tests/initial_settings_frame.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "bad_client_test", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "large_metadata_bad_client_test", 
+    "src": [
+      "test/core/bad_client/tests/large_metadata.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5934,15 +5969,15 @@
     ], 
     "headers": [
       "src/core/ext/lb_policy/grpclb/load_balancer_api.h", 
-      "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h"
+      "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
     ], 
     "language": "c", 
     "name": "grpc_lb_policy_grpclb", 
     "src": [
       "src/core/ext/lb_policy/grpclb/load_balancer_api.c", 
       "src/core/ext/lb_policy/grpclb/load_balancer_api.h", 
-      "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c", 
-      "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h"
+      "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c", 
+      "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -6268,116 +6303,19 @@
     "type": "filegroup"
   }, 
   {
-    "deps": [], 
+    "deps": [
+      "grpc_base", 
+      "grpc_transport_chttp2"
+    ], 
     "headers": [
-      "include/grpc/byte_buffer.h", 
-      "include/grpc/grpc.h", 
-      "include/grpc/impl/codegen/alloc.h", 
-      "include/grpc/impl/codegen/atm.h", 
-      "include/grpc/impl/codegen/atm_gcc_atomic.h", 
-      "include/grpc/impl/codegen/atm_gcc_sync.h", 
-      "include/grpc/impl/codegen/atm_win32.h", 
-      "include/grpc/impl/codegen/byte_buffer.h", 
-      "include/grpc/impl/codegen/compression_types.h", 
-      "include/grpc/impl/codegen/connectivity_state.h", 
-      "include/grpc/impl/codegen/grpc_types.h", 
-      "include/grpc/impl/codegen/log.h", 
-      "include/grpc/impl/codegen/port_platform.h", 
-      "include/grpc/impl/codegen/propagation_bits.h", 
-      "include/grpc/impl/codegen/slice.h", 
-      "include/grpc/impl/codegen/slice_buffer.h", 
-      "include/grpc/impl/codegen/status.h", 
-      "include/grpc/impl/codegen/sync.h", 
-      "include/grpc/impl/codegen/sync_generic.h", 
-      "include/grpc/impl/codegen/sync_posix.h", 
-      "include/grpc/impl/codegen/sync_win32.h", 
-      "include/grpc/impl/codegen/time.h", 
-      "include/grpc/status.h", 
-      "include/grpc/support/alloc.h", 
-      "include/grpc/support/atm.h", 
-      "include/grpc/support/host_port.h", 
-      "include/grpc/support/log.h", 
-      "include/grpc/support/port_platform.h", 
-      "include/grpc/support/slice.h", 
-      "include/grpc/support/slice_buffer.h", 
-      "include/grpc/support/string_util.h", 
-      "include/grpc/support/sync.h", 
-      "include/grpc/support/time.h", 
-      "include/grpc/support/useful.h", 
-      "src/core/ext/transport/chttp2/transport/incoming_metadata.h", 
-      "src/core/lib/channel/channel_stack.h", 
-      "src/core/lib/channel/context.h", 
-      "src/core/lib/debug/trace.h", 
-      "src/core/lib/iomgr/closure.h", 
-      "src/core/lib/iomgr/exec_ctx.h", 
-      "src/core/lib/iomgr/pollset.h", 
-      "src/core/lib/iomgr/pollset_set.h", 
-      "src/core/lib/support/string.h", 
-      "src/core/lib/surface/channel.h", 
-      "src/core/lib/surface/channel_stack_type.h", 
-      "src/core/lib/transport/byte_stream.h", 
-      "src/core/lib/transport/metadata.h", 
-      "src/core/lib/transport/metadata_batch.h", 
-      "src/core/lib/transport/transport.h", 
-      "src/core/lib/transport/transport_impl.h", 
       "third_party/objective_c/Cronet/cronet_c_for_grpc.h"
     ], 
     "language": "c", 
     "name": "grpc_transport_cronet_client_secure", 
     "src": [
-      "include/grpc/byte_buffer.h", 
-      "include/grpc/grpc.h", 
-      "include/grpc/impl/codegen/alloc.h", 
-      "include/grpc/impl/codegen/atm.h", 
-      "include/grpc/impl/codegen/atm_gcc_atomic.h", 
-      "include/grpc/impl/codegen/atm_gcc_sync.h", 
-      "include/grpc/impl/codegen/atm_win32.h", 
-      "include/grpc/impl/codegen/byte_buffer.h", 
-      "include/grpc/impl/codegen/compression_types.h", 
-      "include/grpc/impl/codegen/connectivity_state.h", 
-      "include/grpc/impl/codegen/grpc_types.h", 
-      "include/grpc/impl/codegen/log.h", 
-      "include/grpc/impl/codegen/port_platform.h", 
-      "include/grpc/impl/codegen/propagation_bits.h", 
-      "include/grpc/impl/codegen/slice.h", 
-      "include/grpc/impl/codegen/slice_buffer.h", 
-      "include/grpc/impl/codegen/status.h", 
-      "include/grpc/impl/codegen/sync.h", 
-      "include/grpc/impl/codegen/sync_generic.h", 
-      "include/grpc/impl/codegen/sync_posix.h", 
-      "include/grpc/impl/codegen/sync_win32.h", 
-      "include/grpc/impl/codegen/time.h", 
-      "include/grpc/status.h", 
-      "include/grpc/support/alloc.h", 
-      "include/grpc/support/atm.h", 
-      "include/grpc/support/host_port.h", 
-      "include/grpc/support/log.h", 
-      "include/grpc/support/port_platform.h", 
-      "include/grpc/support/slice.h", 
-      "include/grpc/support/slice_buffer.h", 
-      "include/grpc/support/string_util.h", 
-      "include/grpc/support/sync.h", 
-      "include/grpc/support/time.h", 
-      "include/grpc/support/useful.h", 
-      "src/core/ext/transport/chttp2/transport/incoming_metadata.h", 
       "src/core/ext/transport/cronet/client/secure/cronet_channel_create.c", 
       "src/core/ext/transport/cronet/transport/cronet_api_dummy.c", 
-      "src/core/ext/transport/cronet/transport/cronet_transport.c", 
-      "src/core/lib/channel/channel_stack.h", 
-      "src/core/lib/channel/context.h", 
-      "src/core/lib/debug/trace.h", 
-      "src/core/lib/iomgr/closure.h", 
-      "src/core/lib/iomgr/exec_ctx.h", 
-      "src/core/lib/iomgr/pollset.h", 
-      "src/core/lib/iomgr/pollset_set.h", 
-      "src/core/lib/support/string.h", 
-      "src/core/lib/surface/channel.h", 
-      "src/core/lib/surface/channel_stack_type.h", 
-      "src/core/lib/transport/byte_stream.h", 
-      "src/core/lib/transport/metadata.h", 
-      "src/core/lib/transport/metadata_batch.h", 
-      "src/core/lib/transport/transport.h", 
-      "src/core/lib/transport/transport_impl.h"
+      "src/core/ext/transport/cronet/transport/cronet_transport.c"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -6446,6 +6384,8 @@
       "include/grpc++/impl/rpc_service_method.h", 
       "include/grpc++/impl/serialization_traits.h", 
       "include/grpc++/impl/server_builder_option.h", 
+      "include/grpc++/impl/server_builder_plugin.h", 
+      "include/grpc++/impl/server_initializer.h", 
       "include/grpc++/impl/service_type.h", 
       "include/grpc++/impl/sync.h", 
       "include/grpc++/impl/sync_cxx11.h", 
@@ -6496,6 +6436,8 @@
       "include/grpc++/impl/rpc_service_method.h", 
       "include/grpc++/impl/serialization_traits.h", 
       "include/grpc++/impl/server_builder_option.h", 
+      "include/grpc++/impl/server_builder_plugin.h", 
+      "include/grpc++/impl/server_initializer.h", 
       "include/grpc++/impl/service_type.h", 
       "include/grpc++/impl/sync.h", 
       "include/grpc++/impl/sync_cxx11.h", 

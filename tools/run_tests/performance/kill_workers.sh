@@ -52,3 +52,6 @@ ps -C python -o pid=,cmd= | grep 'qps_worker.py' | awk '{print $1}' | xargs kill
 
 # Java
 jps | grep LoadWorker | awk '{print $1}' | xargs kill -9
+
+# Go
+killall -9 worker || true
