@@ -787,8 +787,8 @@ static void terminate_writing_with_lock(grpc_exec_ctx *exec_ctx,
 void grpc_chttp2_terminate_writing(grpc_exec_ctx *exec_ctx,
                                    void *transport_writing, grpc_error *error) {
   grpc_chttp2_transport *t = TRANSPORT_FROM_WRITING(transport_writing);
-  grpc_chttp2_run_with_global_lock(exec_ctx, t, NULL,
-                                   terminate_writing_with_lock, GRPC_ERROR_REF(error), 0);
+  grpc_chttp2_run_with_global_lock(
+      exec_ctx, t, NULL, terminate_writing_with_lock, GRPC_ERROR_REF(error), 0);
 }
 
 static void writing_action(grpc_exec_ctx *exec_ctx, void *gt,
@@ -1306,7 +1306,8 @@ static void remove_stream(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   }
   if (s->parsing.data_parser.parsing_frame != NULL) {
     grpc_chttp2_incoming_byte_stream_finished(
-        exec_ctx, s->parsing.data_parser.parsing_frame, GRPC_ERROR_CREATE_REFERENCING("Stream removed", &error, 1), 0);
+        exec_ctx, s->parsing.data_parser.parsing_frame,
+        GRPC_ERROR_CREATE_REFERENCING("Stream removed", &error, 1), 0);
     s->parsing.data_parser.parsing_frame = NULL;
   }
 
@@ -1704,7 +1705,8 @@ static void post_parse_locked(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     GPR_ASSERT(stream_global->in_stream_map);
     GPR_ASSERT(stream_global->write_closed);
     GPR_ASSERT(stream_global->read_closed);
-    remove_stream(exec_ctx, t, stream_global->id, GRPC_ERROR_CREATE("Stream removed"));
+    remove_stream(exec_ctx, t, stream_global->id,
+                  GRPC_ERROR_CREATE("Stream removed"));
     GRPC_CHTTP2_STREAM_UNREF(exec_ctx, stream_global, "chttp2");
   }
 
