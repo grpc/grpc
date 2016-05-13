@@ -49,7 +49,7 @@ namespace grpc {
 
 extern CoreCodegenInterface* g_core_codegen_interface;
 
-namespace {
+namespace internal {
 
 const int kGrpcBufferWriterMaxBufferLength = 8192;
 
@@ -166,7 +166,7 @@ class GrpcBufferReader GRPC_FINAL
   grpc_byte_buffer_reader reader_;
   gpr_slice slice_;
 };
-}  // namespace
+}  // namespace internal
 
 template <class T>
 class SerializationTraits<T, typename std::enable_if<std::is_base_of<
@@ -176,7 +176,7 @@ class SerializationTraits<T, typename std::enable_if<std::is_base_of<
                           grpc_byte_buffer** bp, bool* own_buffer) {
     *own_buffer = true;
     int byte_size = msg.ByteSize();
-    if (byte_size <= kGrpcBufferWriterMaxBufferLength) {
+    if (byte_size <= internal::kGrpcBufferWriterMaxBufferLength) {
       gpr_slice slice = g_core_codegen_interface->gpr_slice_malloc(byte_size);
       GPR_CODEGEN_ASSERT(
           GPR_SLICE_END_PTR(slice) ==
@@ -185,7 +185,8 @@ class SerializationTraits<T, typename std::enable_if<std::is_base_of<
       g_core_codegen_interface->gpr_slice_unref(slice);
       return g_core_codegen_interface->ok();
     } else {
-      GrpcBufferWriter writer(bp, kGrpcBufferWriterMaxBufferLength);
+      internal::GrpcBufferWriter writer(
+          bp, internal::kGrpcBufferWriterMaxBufferLength);
       return msg.SerializeToZeroCopyStream(&writer)
                  ? g_core_codegen_interface->ok()
                  : Status(StatusCode::INTERNAL, "Failed to serialize message");
@@ -200,7 +201,7 @@ class SerializationTraits<T, typename std::enable_if<std::is_base_of<
     }
     Status result = g_core_codegen_interface->ok();
     {
-      GrpcBufferReader reader(buffer);
+      internal::GrpcBufferReader reader(buffer);
       ::grpc::protobuf::io::CodedInputStream decoder(&reader);
       if (max_message_size > 0) {
         decoder.SetTotalBytesLimit(max_message_size, max_message_size);
