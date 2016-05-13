@@ -371,7 +371,7 @@ static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
   if (error != GRPC_ERROR_NONE) {
     cb = tcp->write_cb;
     tcp->write_cb = NULL;
-    cb->cb(exec_ctx, cb->cb_arg, GRPC_ERROR_REF(error));
+    cb->cb(exec_ctx, cb->cb_arg, error);
     TCP_UNREF(exec_ctx, tcp, "write");
     return;
   }
@@ -382,7 +382,7 @@ static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
     cb = tcp->write_cb;
     tcp->write_cb = NULL;
     GPR_TIMER_BEGIN("tcp_handle_write.cb", 0);
-    cb->cb(exec_ctx, cb->cb_arg, GRPC_ERROR_REF(error));
+    cb->cb(exec_ctx, cb->cb_arg, error);
     GPR_TIMER_END("tcp_handle_write.cb", 0);
     TCP_UNREF(exec_ctx, tcp, "write");
   }
