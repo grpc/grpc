@@ -81,6 +81,7 @@ def remove_nonproto_fields(scenario):
   """Remove special-purpose that contains some extra info about the scenario
   but don't belong to the ScenarioConfig protobuf message"""
   scenario.pop('CATEGORIES', None)
+  scenario.pop('CLIENT_LANGUAGE', None)
   scenario.pop('SERVER_LANGUAGE', None)
   return scenario
 
@@ -90,6 +91,7 @@ def _ping_pong_scenario(name, rpc_type,
                         secure=True,
                         use_generic_payload=False,
                         use_unconstrained_client=False,
+                        client_language=None,
                         server_language=None,
                         server_core_limit=0,
                         async_server_threads=0,
@@ -142,6 +144,9 @@ def _ping_pong_scenario(name, rpc_type,
     scenario['client_config']['client_channels'] = 1
     scenario['client_config']['async_client_threads'] = 1
 
+  if client_language:
+    # the CLIENT_LANGUAGE field is recognized by run_performance_tests.py
+    scenario['CLIENT_LANGUAGE'] = client_language
   if server_language:
     # the SERVER_LANGUAGE field is recognized by run_performance_tests.py
     scenario['SERVER_LANGUAGE'] = server_language
@@ -276,6 +281,11 @@ class CSharpLanguage:
         'csharp_to_cpp_protobuf_async_streaming_ping_pong', rpc_type='STREAMING',
         client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
         server_language='c++', server_core_limit=1, async_server_threads=1)
+
+    yield _ping_pong_scenario(
+        'cpp_to_csharp_protobuf_async_unary_qps_unconstrained', rpc_type='UNARY',
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
+        use_unconstrained_client=True, client_language='c++')
 
   def __str__(self):
     return 'csharp'
