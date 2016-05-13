@@ -41,9 +41,10 @@ extern "C" {
 #endif
 
 /** To be used in channel arguments */
-#define GRPC_COMPRESSION_ALGORITHM_ARG "grpc.compression_algorithm"
-#define GRPC_COMPRESSION_LEVEL_ARG "grpc.compression_level"
-#define GRPC_COMPRESSION_ALGORITHM_STATE_ARG "grpc.compression_algorithm_state"
+#define GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM "grpc.compression_algorithm"
+#define GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL "grpc.compression_level"
+#define GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET \
+  "grpc.compression_algorithm_state"
 
 /* The various compression algorithms supported by gRPC */
 typedef enum {
@@ -68,17 +69,18 @@ typedef enum {
 
 typedef struct grpc_compression_options {
   /** All algs are enabled by default. This option corresponds to the channel
-   * argument key behind \a GRPC_COMPRESSION_ALGORITHM_STATE_ARG */
+   * argument key behind \a GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET
+   */
   uint32_t enabled_algorithms_bitset;
 
   /** The default channel compression algorithm. It'll be used in the absence of
    * call specific settings. This option corresponds to the channel argument key
-   * behind \a GRPC_COMPRESSION_ALGORITHM_ARG */
+   * behind \a GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM */
   grpc_compression_algorithm default_compression_algorithm;
 
   /** The default channel compression level. It'll be used in the absence of
    * call specific settings. This option corresponds to the channel argument key
-   * behind \a GRPC_COMPRESSION_ALGORITHM_ARG */
+   * behind \a GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL */
   grpc_compression_algorithm default_compression_level;
 } grpc_compression_options;
 
