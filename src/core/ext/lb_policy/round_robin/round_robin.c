@@ -458,7 +458,6 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
 
         unref = 1;
         if (p->num_subchannels == 0) {
-          GRPC_ERROR_REF(error);
           grpc_connectivity_state_set(
               exec_ctx, &p->state_tracker, GRPC_CHANNEL_FATAL_FAILURE,
               GRPC_ERROR_CREATE_REFERENCING("Round Robin Channels Exhausted",
