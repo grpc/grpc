@@ -33,6 +33,7 @@
 
 #include "test/core/iomgr/endpoint_tests.h"
 
+#include <stdbool.h>
 #include <sys/types.h>
 
 #include <grpc/support/alloc.h>
@@ -182,7 +183,7 @@ static void read_and_write_test_write_handler(grpc_exec_ctx *exec_ctx,
  */
 static void read_and_write_test(grpc_endpoint_test_config config,
                                 size_t num_bytes, size_t write_size,
-                                size_t slice_size, int shutdown) {
+                                size_t slice_size, bool shutdown) {
   struct read_and_write_test_state state;
   gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20);
   grpc_endpoint_test_fixture f =
@@ -258,11 +259,11 @@ void grpc_endpoint_tests(grpc_endpoint_test_config config,
   size_t i;
   g_pollset = pollset;
   g_mu = mu;
-  read_and_write_test(config, 10000000, 100000, 8192, 0);
-  read_and_write_test(config, 1000000, 100000, 1, 0);
-  read_and_write_test(config, 100000000, 100000, 1, 1);
+  read_and_write_test(config, 10000000, 100000, 8192, false);
+  read_and_write_test(config, 1000000, 100000, 1, false);
+  read_and_write_test(config, 100000000, 100000, 1, true);
   for (i = 1; i < 1000; i = GPR_MAX(i + 1, i * 5 / 4)) {
-    read_and_write_test(config, 40320, i, i, 0);
+    read_and_write_test(config, 40320, i, i, false);
   }
   g_pollset = NULL;
 }
