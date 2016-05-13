@@ -384,6 +384,7 @@ static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
     cb->cb(exec_ctx, cb->cb_arg, error);
     GPR_TIMER_END("tcp_handle_write.cb", 0);
     TCP_UNREF(exec_ctx, tcp, "write");
+    GRPC_ERROR_UNREF(error);
   }
 }
 
