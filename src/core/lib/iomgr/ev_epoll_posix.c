@@ -187,7 +187,7 @@ struct grpc_pollset_worker {
 struct grpc_pollset {
   gpr_mu mu;
   grpc_pollset_worker root_worker;
-  int in_flight_cbs;
+  int in_flight_cbs; /* TODO (sreek): Most likely this isn't needed anymore */
   int shutting_down;
   int called_shutdown;
   int kicked_without_pollers;
@@ -839,13 +839,12 @@ static void pollset_reset(grpc_pollset *pollset) {
 /* TODO (sreek): Remove multipoll_with_epoll_add_fd declaration*/
 static void multipoll_with_epoll_pollset_add_fd(grpc_exec_ctx *exec_ctx,
                                                 grpc_pollset *pollset,
-                                                grpc_fd *fd,
-                                                int and_unlock_pollset);
+                                                grpc_fd *fd);
 
 static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                            grpc_fd *fd) {
   gpr_mu_lock(&pollset->mu);
-  multipoll_with_epoll_pollset_add_fd(exec_ctx, pollset, fd, 1);
+  multipoll_with_epoll_pollset_add_fd(exec_ctx, pollset, fd);
 /* the following (enabled only in debug) will reacquire and then release
    our lock - meaning that if the unlocking flag passed to add_fd above is
    not respected, the code will deadlock (in a way that we have a chance of
@@ -1121,12 +1120,6 @@ static void remove_fd_from_all_epoll_sets(int fd) {
   gpr_mu_unlock(&epoll_fd_list_mu);
 }
 
-typedef struct {
-  grpc_pollset *pollset;
-  grpc_fd *fd;
-  grpc_closure closure;
-} delayed_add;
-
 typedef struct { int epoll_fd; } epoll_hdr;
 
 static void finally_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
@@ -1139,6 +1132,13 @@ static void finally_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   /* We pretend to be polling whilst adding an fd to keep the fd from being
      closed during the add. This may result in a spurious wakeup being assigned
      to this pollset whilst adding, but that should be benign. */
+  /* TODO (sreek). This fd_begin_poll() really seem to accomplish adding
+   * GRPC_FD_REF() (i.e adding a refcount to the fd) and checking that the
+   * fd is not shutting down (in which case watcher.fd will be NULL and no
+   * refcount is added). The ref count is added only durng hte duration of
+   * adding it to the epoll set (after which fd_end_poll would be called and
+   * the fd's ref count is decremented by 1. So do we still need fd_begin_poll
+   * ??? */
   GPR_ASSERT(fd_begin_poll(fd, pollset, NULL, 0, 0, &watcher) == 0);
   if (watcher.fd != NULL) {
     ev.events = (uint32_t)(EPOLLIN | EPOLLOUT | EPOLLET);
@@ -1153,30 +1153,6 @@ static void finally_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     }
   }
   fd_end_poll(exec_ctx, &watcher, 0, 0);
-}
-
-static void perform_delayed_add(grpc_exec_ctx *exec_ctx, void *arg,
-                                bool iomgr_status) {
-  delayed_add *da = arg;
-
-  if (!fd_is_orphaned(da->fd)) {
-    finally_add_fd(exec_ctx, da->pollset, da->fd);
-  }
-
-  gpr_mu_lock(&da->pollset->mu);
-  da->pollset->in_flight_cbs--;
-  if (da->pollset->shutting_down) {
-    /* We don't care about this pollset anymore. */
-    if (da->pollset->in_flight_cbs == 0 && !da->pollset->called_shutdown) {
-      da->pollset->called_shutdown = 1;
-      grpc_exec_ctx_enqueue(exec_ctx, da->pollset->shutdown_done, true, NULL);
-    }
-  }
-  gpr_mu_unlock(&da->pollset->mu);
-
-  GRPC_FD_UNREF(da->fd, "delayed_add");
-
-  gpr_free(da);
 }
 
 /* Creates an epoll fd and initializes the pollset */
@@ -1214,25 +1190,14 @@ static void multipoll_with_epoll_pollset_create_efd(grpc_exec_ctx *exec_ctx,
 
 static void multipoll_with_epoll_pollset_add_fd(grpc_exec_ctx *exec_ctx,
                                                 grpc_pollset *pollset,
-                                                grpc_fd *fd,
-                                                int and_unlock_pollset) {
+                                                grpc_fd *fd) {
   /* If there is no epoll fd on the pollset, create one */
   if (pollset->data.ptr == NULL) {
     multipoll_with_epoll_pollset_create_efd(exec_ctx, pollset);
   }
 
-  if (and_unlock_pollset) {
-    gpr_mu_unlock(&pollset->mu);
-    finally_add_fd(exec_ctx, pollset, fd);
-  } else {
-    delayed_add *da = gpr_malloc(sizeof(*da));
-    da->pollset = pollset;
-    da->fd = fd;
-    GRPC_FD_REF(fd, "delayed_add");
-    grpc_closure_init(&da->closure, perform_delayed_add, da);
-    pollset->in_flight_cbs++;
-    grpc_exec_ctx_enqueue(exec_ctx, &da->closure, true, NULL);
-  }
+  gpr_mu_unlock(&pollset->mu);
+  finally_add_fd(exec_ctx, pollset, fd);
 }
 
 /* TODO(klempner): We probably want to turn this down a bit */
