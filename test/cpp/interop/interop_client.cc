@@ -413,7 +413,7 @@ bool InteropClient::DoRequestStreaming() {
 }
 
 bool InteropClient::DoResponseStreaming() {
-  gpr_log(GPR_DEBUG, "Receiving response steaming rpc ...");
+  gpr_log(GPR_DEBUG, "Receiving response streaming rpc ...");
 
   ClientContext context;
   StreamingOutputCallRequest request;
@@ -465,7 +465,7 @@ bool InteropClient::DoResponseCompressedStreaming() {
                    CompressionType_Name(compression_types[j]).c_str(),
                    PayloadType_Name(payload_types[i]).c_str());
 
-      gpr_log(GPR_DEBUG, "Receiving response steaming rpc %s.", log_suffix);
+      gpr_log(GPR_DEBUG, "Receiving response streaming rpc %s.", log_suffix);
 
       request.set_response_type(payload_types[i]);
       request.set_response_compression(compression_types[j]);
@@ -544,7 +544,7 @@ bool InteropClient::DoResponseCompressedStreaming() {
 }
 
 bool InteropClient::DoResponseStreamingWithSlowConsumer() {
-  gpr_log(GPR_DEBUG, "Receiving response steaming rpc with slow consumer ...");
+  gpr_log(GPR_DEBUG, "Receiving response streaming rpc with slow consumer ...");
 
   ClientContext context;
   StreamingOutputCallRequest request;
@@ -677,7 +677,7 @@ bool InteropClient::DoPingPong() {
 }
 
 bool InteropClient::DoCancelAfterBegin() {
-  gpr_log(GPR_DEBUG, "Sending request steaming rpc ...");
+  gpr_log(GPR_DEBUG, "Sending request streaming rpc ...");
 
   ClientContext context;
   StreamingInputCallRequest request;
