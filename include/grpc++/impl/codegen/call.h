@@ -202,7 +202,9 @@ class CallOpSendInitialMetadata {
     op->reserved = NULL;
     op->data.send_initial_metadata.count = initial_metadata_count_;
     op->data.send_initial_metadata.metadata = initial_metadata_;
-    op->data.send_initial_metadata.compression_level = compression_level_;
+    op->data.send_initial_metadata.maybe_compression_level.is_set = true;
+    op->data.send_initial_metadata.maybe_compression_level.compression_level =
+        compression_level_;
   }
   void FinishOp(bool* status, int max_message_size) {
     if (!send_) return;
