@@ -37,7 +37,6 @@
 #include <grpc/impl/codegen/byte_buffer.h>
 #include <grpc/impl/codegen/status.h>
 
-#include <stdbool.h>
 #include <stddef.h>
 
 #ifdef __cplusplus
@@ -336,7 +335,7 @@ typedef struct grpc_op {
       /** If \a is_set, \a compression_level will be used for the call.
        * Otherwise, \a compression_level won't be considered */
       struct {
-        bool is_set;
+        uint8_t is_set;
         grpc_compression_level compression_level;
       } maybe_compression_level;
     } send_initial_metadata;
