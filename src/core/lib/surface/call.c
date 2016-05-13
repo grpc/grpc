@@ -1323,15 +1323,17 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         grpc_metadata compression_md;
         memset(&compression_md, 0, sizeof(grpc_metadata));
         size_t additional_metadata_count = 0;
-        if (op->data.send_initial_metadata.compression_level >
-            GRPC_COMPRESS_LEVEL_NONE) {
+        if (op->data.send_initial_metadata.maybe_compression_level.is_set &&
+            op->data.send_initial_metadata.maybe_compression_level
+                    .compression_level > GRPC_COMPRESS_LEVEL_NONE) {
           if (call->is_client) {
             error = GRPC_CALL_ERROR_NOT_ON_CLIENT;
             goto done_with_error;
           }
           const grpc_compression_algorithm calgo =
               compression_algorithm_for_level_locked(
-                  call, op->data.send_initial_metadata.compression_level);
+                  call, op->data.send_initial_metadata.maybe_compression_level
+                            .compression_level);
           char *calgo_name;
           grpc_compression_algorithm_name(calgo, &calgo_name);
           compression_md.key = "grpc-internal-encoding-request";
