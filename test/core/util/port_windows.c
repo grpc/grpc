@@ -90,7 +90,6 @@ static int free_chosen_port(int port) {
       chosen_ports[found_at] = chosen_ports[num_chosen_ports - 1];
       grpc_free_port_using_server(env, port);
       num_chosen_ports--;
-      chosen_ports = gpr_realloc(chosen_ports, sizeof(int) * num_chosen_ports);
     }
   }
   return found;
