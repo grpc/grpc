@@ -48,6 +48,9 @@ typedef struct grpc_udp_server grpc_udp_server;
 typedef void (*grpc_udp_server_read_cb)(grpc_exec_ctx *exec_ctx, grpc_fd *emfd,
                                         struct grpc_server *server);
 
+/* Called when the grpc_fd is about to be orphaned (and the FD closed). */
+typedef void (*grpc_udp_server_orphan_cb)(grpc_fd *emfd);
+
 /* Create a server, initially not bound to any ports */
 grpc_udp_server *grpc_udp_server_create(void);
 
@@ -69,7 +72,8 @@ int grpc_udp_server_get_fd(grpc_udp_server *s, unsigned index);
 /* TODO(ctiller): deprecate this, and make grpc_udp_server_add_ports to handle
                   all of the multiple socket port matching logic in one place */
 int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr,
-                             size_t addr_len, grpc_udp_server_read_cb read_cb);
+                             size_t addr_len, grpc_udp_server_read_cb read_cb,
+                             grpc_udp_server_orphan_cb orphan_cb);
 
 void grpc_udp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_udp_server *server,
                              grpc_closure *on_done);

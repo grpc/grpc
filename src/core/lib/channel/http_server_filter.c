@@ -182,8 +182,11 @@ static void hs_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
       /* Error this call out */
       grpc_call_element_send_cancel(exec_ctx, elem);
     }
+  } else {
+    GRPC_ERROR_REF(err);
   }
   calld->on_done_recv->cb(exec_ctx, calld->on_done_recv->cb_arg, err);
+  GRPC_ERROR_UNREF(err);
 }
 
 static void hs_mutate_op(grpc_call_element *elem,

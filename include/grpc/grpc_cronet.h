@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,27 +31,21 @@
  *
  */
 
-var PROTO_PATH = __dirname + '/../protos/helloworld.proto';
+#ifndef GRPC_GRPC_CRONET_H
+#define GRPC_GRPC_CRONET_H
 
-var grpc = require('grpc');
-var hello_proto = grpc.load(PROTO_PATH).helloworld;
+#include <grpc/grpc.h>
 
-/**
- * Implements the SayHello RPC method.
- */
-function sayHello(call, callback) {
-  callback(null, {message: 'Hello ' + call.request.name});
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+GRPCAPI grpc_channel *grpc_cronet_secure_channel_create(
+    void *engine, const char *target, const grpc_channel_args *args,
+    void *reserved);
+
+#ifdef __cplusplus
 }
+#endif
 
-/**
- * Starts an RPC server that receives requests for the Greeter service at the
- * sample server port
- */
-function main() {
-  var server = new grpc.Server();
-  server.addProtoService(hello_proto.Greeter.service, {sayHello: sayHello});
-  server.bind('0.0.0.0:50051', grpc.ServerCredentials.createInsecure());
-  server.start();
-}
-
-main();
+#endif /* GRPC_GRPC_CRONET_H */

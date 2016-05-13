@@ -36,6 +36,7 @@
 #include <grpc/census.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
+#include <grpc/grpc_cronet.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/impl/codegen/alloc.h>

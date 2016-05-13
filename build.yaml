@@ -402,6 +402,7 @@ filegroups:
   - grpc_client_config
 - name: grpc_secure
   public_headers:
+  - include/grpc/grpc_cronet.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
   headers:
@@ -568,6 +569,16 @@ filegroups:
   - grpc_transport_chttp2
   - grpc_base
   - grpc_secure
+- name: grpc_transport_cronet_client_secure
+  headers:
+  - third_party/objective_c/Cronet/cronet_c_for_grpc.h
+  src:
+  - src/core/ext/transport/cronet/client/secure/cronet_channel_create.c
+  - src/core/ext/transport/cronet/transport/cronet_api_dummy.c
+  - src/core/ext/transport/cronet/transport/cronet_transport.c
+  filegroups:
+  - grpc_base
+  - grpc_transport_chttp2
 - name: nanopb
   headers:
   - third_party/nanopb/pb.h
@@ -612,6 +623,8 @@ filegroups:
   - include/grpc++/impl/rpc_service_method.h
   - include/grpc++/impl/serialization_traits.h
   - include/grpc++/impl/server_builder_option.h
+  - include/grpc++/impl/server_builder_plugin.h
+  - include/grpc++/impl/server_initializer.h
   - include/grpc++/impl/service_type.h
   - include/grpc++/impl/sync.h
   - include/grpc++/impl/sync_cxx11.h
@@ -755,6 +768,7 @@ libs:
   - grpc_transport_chttp2_client_secure
   - grpc_transport_chttp2_server_insecure
   - grpc_transport_chttp2_client_insecure
+  - grpc_transport_cronet_client_secure
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
@@ -2949,6 +2963,19 @@ targets:
   - mac
   - linux
   - posix
+- name: server_builder_plugin_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/end2end/server_builder_plugin_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: server_crash_test
   gtest: true
   cpu_cost: 0.1
