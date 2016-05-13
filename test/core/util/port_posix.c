@@ -73,21 +73,20 @@ static int free_chosen_port(int port) {
   int found = 0;
   size_t found_at = 0;
   char *env = gpr_getenv("GRPC_TEST_PORT_SERVER");
-  if (env != NULL) {
-    /* Find the port and erase it from the list, then tell the server it can be
-       freed. */
-    for (i = 0; i < num_chosen_ports; i++) {
-      if (chosen_ports[i] == port) {
-        GPR_ASSERT(found == 0);
-        found = 1;
-        found_at = i;
-      }
+  /* Find the port and erase it from the list, then tell the server it can be
+     freed. */
+  for (i = 0; i < num_chosen_ports; i++) {
+    if (chosen_ports[i] == port) {
+      GPR_ASSERT(found == 0);
+      found = 1;
+      found_at = i;
     }
-    if (found) {
-      chosen_ports[found_at] = chosen_ports[num_chosen_ports - 1];
+  }
+  if (found) {
+    chosen_ports[found_at] = chosen_ports[num_chosen_ports - 1];
+    num_chosen_ports--;
+    if (env) {
       grpc_free_port_using_server(env, port);
-      num_chosen_ports--;
-      chosen_ports = gpr_realloc(chosen_ports, sizeof(int) * num_chosen_ports);
     }
   }
   return found;
