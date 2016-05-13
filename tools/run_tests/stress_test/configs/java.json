@@ -23,7 +23,7 @@
           "total_only": "true"
         },
         "env": {
-          "STRESSTEST_CLIENT_OPTS":"-Xmx3g -Xms3g -XX:NewSize=1.5g -XX:MaxNewSize=1.5g"
+          "STRESSTEST_CLIENT_OPTS":"-Xmx3g -Xms3g -XX:NewSize=1500m -XX:MaxNewSize=1500m -XX:+UseConcMarkSweepGC"
         }
       }
     },
@@ -50,7 +50,7 @@
           "use_tls": "false"
         },
         "env": {
-          "TEST_SERVER_OPTS":"-Xmx3g -Xms3g -XX:NewSize=1.5g -XX:MaxNewSize=1.5g"
+          "TEST_SERVER_OPTS":"-Xmx3g -Xms3g -XX:NewSize=1500m -XX:MaxNewSize=1500m  -XX:+UseConcMarkSweepGC"
         }
       }
     },

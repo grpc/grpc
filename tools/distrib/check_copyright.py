@@ -71,6 +71,7 @@ with open('LICENSE') as f:
 # that given a line of license text, returns what should
 # be in the file
 LICENSE_PREFIX = {
+  '.bat':       r'@rem\s*',
   '.c':         r'\s*(?://|\*)\s*',
   '.cc':        r'\s*(?://|\*)\s*',
   '.h':         r'\s*(?://|\*)\s*',
