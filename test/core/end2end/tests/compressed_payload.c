@@ -212,7 +212,9 @@ static void request_with_payload_template(
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
-  op->data.send_initial_metadata.compression_level = server_compression_level;
+  op->data.send_initial_metadata.maybe_compression_level.is_set = true;
+  op->data.send_initial_metadata.maybe_compression_level.compression_level =
+      server_compression_level;
   op->flags = 0;
   op->reserved = NULL;
   op++;
