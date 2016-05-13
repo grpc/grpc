@@ -1798,6 +1798,7 @@ static void set_pollset(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
 static void incoming_byte_stream_unref(grpc_exec_ctx *exec_ctx,
                                        grpc_chttp2_incoming_byte_stream *bs) {
   if (gpr_unref(&bs->refs)) {
+    GRPC_ERROR_UNREF(bs->error);
     gpr_slice_buffer_destroy(&bs->slices);
     gpr_free(bs);
   }
@@ -1964,8 +1965,9 @@ static void incoming_byte_stream_finished_failed_locked(
   grpc_chttp2_incoming_byte_stream *bs = a->bs;
   grpc_error *error = a->error;
   gpr_free(a);
-  grpc_exec_ctx_push(exec_ctx, bs->on_next, error, NULL);
+  grpc_exec_ctx_push(exec_ctx, bs->on_next, GRPC_ERROR_REF(error), NULL);
   bs->on_next = NULL;
+  GRPC_ERROR_UNREF(bs->error);
   bs->error = error;
   incoming_byte_stream_unref(exec_ctx, bs);
 }
