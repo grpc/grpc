@@ -607,7 +607,8 @@ static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   }
   if (error == GRPC_ERROR_NONE) {
     gpr_log(GPR_INFO, "Failed to connect to channel, retrying");
-    c->next_attempt = gpr_backoff_step(&c->backoff_state, gpr_now(GPR_CLOCK_MONOTONIC));
+    c->next_attempt =
+        gpr_backoff_step(&c->backoff_state, gpr_now(GPR_CLOCK_MONOTONIC));
     continue_connect(exec_ctx, c);
     gpr_mu_unlock(&c->mu);
   } else {
