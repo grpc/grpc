@@ -274,6 +274,7 @@ static void pf_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
   if (p->shutdown) {
     gpr_mu_unlock(&p->mu);
     GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &p->base, "pick_first_connectivity");
+    GRPC_ERROR_UNREF(error);
     return;
   } else if (selected != NULL) {
     if (p->checking_connectivity == GRPC_CHANNEL_TRANSIENT_FAILURE) {
