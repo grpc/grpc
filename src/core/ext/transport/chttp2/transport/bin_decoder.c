@@ -62,7 +62,7 @@ static uint8_t decode_table[] = {
 
 static const uint8_t tail_xtra[4] = {0, 0, 1, 2};
 
-static inline bool input_is_valid(uint8_t *input_ptr, size_t length) {
+static __inline bool input_is_valid(uint8_t *input_ptr, size_t length) {
   size_t i;
 
   for (i = 0; i < length; ++i) {
