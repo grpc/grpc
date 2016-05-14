@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -333,6 +333,15 @@ GRPCAPI grpc_server *grpc_server_create(const grpc_channel_args *args,
 GRPCAPI void grpc_server_register_completion_queue(grpc_server *server,
                                                    grpc_completion_queue *cq,
                                                    void *reserved);
+
+/** Register a non-listening completion queue with the server. This API is
+    similar to grpc_server_register_completion_queue except that the server will
+    not use this completion_queue to listen to any incoming channels.
+
+    Registering a non-listening completion queue will have negative performance
+    impact and hence this API is not recommended for production use cases. */
+GRPCAPI void grpc_server_register_non_listening_completion_queue(
+    grpc_server *server, grpc_completion_queue *q, void *reserved);
 
 /** Add a HTTP2 over plaintext over tcp listener.
     Returns bound port number on success, 0 on failure.

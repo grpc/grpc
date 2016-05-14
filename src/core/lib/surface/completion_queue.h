@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -82,6 +82,8 @@ void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
 
 grpc_pollset *grpc_cq_pollset(grpc_completion_queue *cc);
 
+void grpc_cq_mark_non_listening_server_cq(grpc_completion_queue *cc);
+bool grpc_cq_is_non_listening_server_cq(grpc_completion_queue *cc);
 void grpc_cq_mark_server_cq(grpc_completion_queue *cc);
 int grpc_cq_is_server_cq(grpc_completion_queue *cc);
 
