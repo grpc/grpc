@@ -78,10 +78,12 @@ static void test_add_closure(void) {
 
   gpr_mu_lock(g_mu);
   GPR_ASSERT(!done);
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "pollset_work",
-      grpc_pollset_work(&exec_ctx, g_pollset, &worker,
-                        gpr_now(deadline.clock_type), deadline)));
+  while (!done) {
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "pollset_work",
+        grpc_pollset_work(&exec_ctx, g_pollset, &worker,
+                          gpr_now(deadline.clock_type), deadline)));
+  }
   gpr_mu_unlock(g_mu);
   grpc_exec_ctx_finish(&exec_ctx);
   GPR_ASSERT(done);
@@ -107,10 +109,12 @@ static void test_flush(void) {
 
   gpr_mu_lock(g_mu);
   GPR_ASSERT(!done);
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "pollset_work",
-      grpc_pollset_work(&exec_ctx, g_pollset, &worker,
-                        gpr_now(deadline.clock_type), deadline)));
+  while (!done) {
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "pollset_work",
+        grpc_pollset_work(&exec_ctx, g_pollset, &worker,
+                          gpr_now(deadline.clock_type), deadline)));
+  }
   gpr_mu_unlock(g_mu);
   grpc_exec_ctx_finish(&exec_ctx);
   GPR_ASSERT(done);

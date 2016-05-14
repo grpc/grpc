@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,26 +31,11 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#ifndef GRPC_CORE_LIB_IOMGR_EV_POLL_POSIX_H
+#define GRPC_CORE_LIB_IOMGR_EV_POLL_POSIX_H
 
-#ifdef GPR_POSIX_SOCKET
-
-#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/ev_posix.h"
-#include "src/core/lib/iomgr/iomgr_posix.h"
-#include "src/core/lib/iomgr/tcp_posix.h"
 
-void grpc_iomgr_platform_init(void) {
-  grpc_wakeup_fd_global_init();
-  grpc_event_engine_init();
-  grpc_register_tracer("tcp", &grpc_tcp_trace);
-}
+const grpc_event_engine_vtable *grpc_init_poll_posix(void);
 
-void grpc_iomgr_platform_flush(void) {}
-
-void grpc_iomgr_platform_shutdown(void) {
-  grpc_event_engine_shutdown();
-  grpc_wakeup_fd_global_destroy();
-}
-
-#endif /* GRPC_POSIX_SOCKET */
+#endif /* GRPC_CORE_LIB_IOMGR_EV_POLL_POSIX_H */

@@ -187,8 +187,8 @@ CC_ubsan = clang
 CXX_ubsan = clang++
 LD_ubsan = clang
 LDXX_ubsan = clang++
-CPPFLAGS_ubsan = -O1 -fsanitize-coverage=edge -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument
-LDFLAGS_ubsan = -fsanitize=undefined
+CPPFLAGS_ubsan = -O0 -fsanitize-coverage=edge -fsanitize=undefined,unsigned-integer-overflow -fno-omit-frame-pointer -Wno-unused-command-line-argument -Wvarargs
+LDFLAGS_ubsan = -fsanitize=undefined,unsigned-integer-overflow
 DEFINES_ubsan = NDEBUG
 DEFINES_ubsan += GRPC_TEST_SLOWDOWN_BUILD_FACTOR=1.5
 
@@ -2515,6 +2515,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
     src/core/lib/iomgr/ev_poll_and_epoll_posix.c \
+    src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
     src/core/lib/iomgr/executor.c \
@@ -2871,6 +2872,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
     src/core/lib/iomgr/ev_poll_and_epoll_posix.c \
+    src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
     src/core/lib/iomgr/executor.c \
