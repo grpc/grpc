@@ -169,8 +169,6 @@ static void fd_global_shutdown(void);
  * pollset declarations
  */
 
-typedef struct grpc_pollset_vtable grpc_pollset_vtable;
-
 typedef struct grpc_cached_wakeup_fd {
   grpc_wakeup_fd fd;
   struct grpc_cached_wakeup_fd *next;
@@ -187,28 +185,16 @@ struct grpc_pollset_worker {
 struct grpc_pollset {
   gpr_mu mu;
   grpc_pollset_worker root_worker;
-  int in_flight_cbs; /* TODO (sreek): Most likely this isn't needed anymore */
   int shutting_down;
   int called_shutdown;
   int kicked_without_pollers;
   grpc_closure *shutdown_done;
-  grpc_closure_list idle_jobs;
   union {
     int fd;
     void *ptr;
   } data;
   /* Local cache of eventfds for workers */
   grpc_cached_wakeup_fd *local_wakeup_cache;
-};
-
-struct grpc_pollset_vtable {
-  void (*add_fd)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
-                 struct grpc_fd *fd, int and_unlock_pollset);
-  void (*maybe_work_and_unlock)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
-                                grpc_pollset_worker *worker,
-                                gpr_timespec deadline, gpr_timespec now);
-  void (*finish_shutdown)(grpc_pollset *pollset);
-  void (*destroy)(grpc_pollset *pollset);
 };
 
 /* Add an fd to a pollset */
@@ -796,11 +782,9 @@ static void pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
   gpr_mu_init(&pollset->mu);
   *mu = &pollset->mu;
   pollset->root_worker.next = pollset->root_worker.prev = &pollset->root_worker;
-  pollset->in_flight_cbs = 0;
   pollset->shutting_down = 0;
   pollset->called_shutdown = 0;
   pollset->kicked_without_pollers = 0;
-  pollset->idle_jobs.head = pollset->idle_jobs.tail = NULL;
   pollset->local_wakeup_cache = NULL;
   pollset->kicked_without_pollers = 0;
 
@@ -813,9 +797,7 @@ static void pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
 static void multipoll_with_epoll_pollset_destroy(grpc_pollset *pollset);
 
 static void pollset_destroy(grpc_pollset *pollset) {
-  GPR_ASSERT(pollset->in_flight_cbs == 0);
   GPR_ASSERT(!pollset_has_workers(pollset));
-  GPR_ASSERT(pollset->idle_jobs.head == pollset->idle_jobs.tail);
 
   multipoll_with_epoll_pollset_destroy(pollset);
 
@@ -830,9 +812,7 @@ static void pollset_destroy(grpc_pollset *pollset) {
 
 static void pollset_reset(grpc_pollset *pollset) {
   GPR_ASSERT(pollset->shutting_down);
-  GPR_ASSERT(pollset->in_flight_cbs == 0);
   GPR_ASSERT(!pollset_has_workers(pollset));
-  GPR_ASSERT(pollset->idle_jobs.head == pollset->idle_jobs.tail);
   pollset->shutting_down = 0;
   pollset->called_shutdown = 0;
   pollset->kicked_without_pollers = 0;
@@ -861,7 +841,6 @@ static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 static void multipoll_with_epoll_pollset_finish_shutdown(grpc_pollset *pollset);
 
 static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
-  GPR_ASSERT(grpc_closure_list_empty(pollset->idle_jobs));
   multipoll_with_epoll_pollset_finish_shutdown(pollset);
   grpc_exec_ctx_enqueue(exec_ctx, pollset->shutdown_done, true, NULL);
 }
@@ -895,24 +874,9 @@ static void pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     grpc_wakeup_fd_init(&worker.wakeup_fd->fd);
   }
   worker.kicked_specifically = 0;
-  /* If there's work waiting for the pollset to be idle, and the
-     pollset is idle, then do that work */
-  if (!pollset_has_workers(pollset) &&
-      !grpc_closure_list_empty(pollset->idle_jobs)) {
-    GPR_TIMER_MARK("pollset_work.idle_jobs", 0);
-    grpc_exec_ctx_enqueue_list(exec_ctx, &pollset->idle_jobs, NULL);
-    goto done;
-  }
   /* If we're shutting down then we don't execute any extended work */
   if (pollset->shutting_down) {
     GPR_TIMER_MARK("pollset_work.shutting_down", 0);
-    goto done;
-  }
-  /* Give do_promote priority so we don't starve it out */
-  if (pollset->in_flight_cbs) {
-    GPR_TIMER_MARK("pollset_work.in_flight_cbs", 0);
-    gpr_mu_unlock(&pollset->mu);
-    locked = 0;
     goto done;
   }
   /* Start polling, and keep doing so while we're being asked to
@@ -975,7 +939,7 @@ static void pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   if (pollset->shutting_down) {
     if (pollset_has_workers(pollset)) {
       pollset_kick(pollset, NULL);
-    } else if (!pollset->called_shutdown && pollset->in_flight_cbs == 0) {
+    } else if (!pollset->called_shutdown) {
       pollset->called_shutdown = 1;
       gpr_mu_unlock(&pollset->mu);
       finish_shutdown(exec_ctx, pollset);
@@ -984,11 +948,6 @@ static void pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
        * responsibility to not destroy when it has outstanding calls to
        * pollset_work.
        * TODO(dklempner): Can we refactor the shutdown logic to avoid this? */
-      gpr_mu_lock(&pollset->mu);
-    } else if (!grpc_closure_list_empty(pollset->idle_jobs)) {
-      grpc_exec_ctx_enqueue_list(exec_ctx, &pollset->idle_jobs, NULL);
-      gpr_mu_unlock(&pollset->mu);
-      grpc_exec_ctx_flush(exec_ctx);
       gpr_mu_lock(&pollset->mu);
     }
   }
@@ -1002,11 +961,8 @@ static void pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   pollset->shutting_down = 1;
   pollset->shutdown_done = closure;
   pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
-  if (!pollset_has_workers(pollset)) {
-    grpc_exec_ctx_enqueue_list(exec_ctx, &pollset->idle_jobs, NULL);
-  }
-  if (!pollset->called_shutdown && pollset->in_flight_cbs == 0 &&
-      !pollset_has_workers(pollset)) {
+
+  if (!pollset->called_shutdown && !pollset_has_workers(pollset)) {
     pollset->called_shutdown = 1;
     finish_shutdown(exec_ctx, pollset);
   }
