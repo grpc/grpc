@@ -157,16 +157,16 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *user_data, bool success) {
 
   /* TODO(yangg) check error, maybe bail out early */
   for (i = 0; i < ep->source_buffer.count; i++) {
-    if (ep->protector == NULL) break;
-    
+    if (ep->protector == NULL || cur == NULL) break;
+ 
     gpr_slice encrypted = ep->source_buffer.slices[i];
     uint8_t *message_bytes = GPR_SLICE_START_PTR(encrypted);
     if (message_bytes == NULL) break;
+
     size_t message_size = GPR_SLICE_LENGTH(encrypted);
 
     while (message_size > 0 || keep_looping) {
       size_t unprotected_buffer_size_written = (size_t)(end - cur);
-      if (cur == NULL) break;
       size_t processed_message_size = message_size;
       gpr_mu_lock(&ep->protector_mu);
       result = tsi_frame_protector_unprotect(ep->protector, message_bytes,
