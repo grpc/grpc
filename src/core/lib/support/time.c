@@ -105,7 +105,7 @@ typedef enum {
                                  GPR_NS_PER_SEC / n);      \
     }                                                      \
   } while (0);                                             \
-  return result
+  break; 
 
 #define GET_TIMESPEC_BY_HOUR_OR_MINTE_UNIT(t, n)           \
   do {                                                     \
@@ -118,11 +118,13 @@ typedef enum {
       result.tv_nsec = 0;                                  \
     }                                                      \
   } while (0);                                             \
-  return result
+  break; 
 
 static gpr_timespec gpr_time_by_unit_type(int64_t t,
     gpr_clock_type type, gpr_time_unit_type unit) {
   gpr_timespec result;
+  result.tv_sec = 0;
+  result.tv_nsec = 0;
   result.clock_type = type;
   GPR_ASSERT(unit >= GPR_NANOSECOND && unit <= GPR_HOURS);
   switch (unit) {
@@ -139,6 +141,7 @@ static gpr_timespec gpr_time_by_unit_type(int64_t t,
     case GPR_HOURS:
       GET_TIMESPEC_BY_HOUR_OR_MINTE_UNIT(t, 3600);
   }
+  return result;
 }
 
 gpr_timespec gpr_time_from_nanos(int64_t ns, gpr_clock_type type) {
