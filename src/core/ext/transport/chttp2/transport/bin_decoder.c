@@ -34,7 +34,6 @@
 #include "src/core/ext/transport/chttp2/transport/bin_decoder.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <stdio.h>
 #include "src/core/lib/support/string.h"
 
 static uint8_t decode_table[] = {
@@ -206,7 +205,7 @@ gpr_slice grpc_chttp2_base64_decode_with_length(gpr_slice input,
   if (output_length > input_length / 4 * 3 + tail_xtra[input_length % 4]) {
     gpr_log(GPR_ERROR,
             "Base64 decoding failed, output_length %zu is longer "
-            "than the max possible output length %zu./\n",
+            "than the max possible output length %zu.\n",
             output_length, input_length / 4 * 3 + tail_xtra[input_length % 4]);
     gpr_slice_unref(output);
     return gpr_empty_slice();
