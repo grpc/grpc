@@ -787,6 +787,9 @@ static void pollset_global_shutdown(void) {
 
 static void kick_poller(void) { grpc_wakeup_fd_wakeup(&grpc_global_wakeup_fd); }
 
+/* TODO: sreek. Try to Remove this forward declaration*/
+static void multipoll_with_epoll_pollset_create_efd(grpc_pollset *pollset);
+
 /* main interface */
 
 static void pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
@@ -800,7 +803,9 @@ static void pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
   pollset->idle_jobs.head = pollset->idle_jobs.tail = NULL;
   pollset->local_wakeup_cache = NULL;
   pollset->kicked_without_pollers = 0;
+
   pollset->data.ptr = NULL;
+  multipoll_with_epoll_pollset_create_efd(pollset);
 }
 
 /* TODO(sreek): Maybe merge multipoll_*_destroy() with pollset_destroy()
@@ -1153,13 +1158,15 @@ static void finally_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 }
 
 /* Creates an epoll fd and initializes the pollset */
-static void multipoll_with_epoll_pollset_create_efd(grpc_exec_ctx *exec_ctx,
-                                                    grpc_pollset *pollset) {
+/* TODO: This has to be called ONLY from pollset_init function. and hence it
+ * does not acquire any lock */
+static void multipoll_with_epoll_pollset_create_efd(grpc_pollset *pollset) {
   epoll_hdr *h = gpr_malloc(sizeof(epoll_hdr));
   struct epoll_event ev;
   int err;
 
-  /* Ensuring that the pollset is infact empty (with no epoll fd either) */
+  /* TODO (sreek). remove this assert. Currently added this just to ensure that
+   * we do not overwrite h->epoll_fd without freeing the older one*/
   GPR_ASSERT(pollset->data.ptr == NULL);
 
   pollset->data.ptr = h;
@@ -1188,10 +1195,10 @@ static void multipoll_with_epoll_pollset_create_efd(grpc_exec_ctx *exec_ctx,
 static void multipoll_with_epoll_pollset_add_fd(grpc_exec_ctx *exec_ctx,
                                                 grpc_pollset *pollset,
                                                 grpc_fd *fd) {
-  /* If there is no epoll fd on the pollset, create one */
-  if (pollset->data.ptr == NULL) {
-    multipoll_with_epoll_pollset_create_efd(exec_ctx, pollset);
-  }
+  GPR_ASSERT(pollset->data.ptr != NULL);
+
+  /* TODO(sreek). Remove this unlock code (and also the code that acquires the
+   * lock before calling multipoll_with_epoll_add_fd() function */
 
   gpr_mu_unlock(&pollset->mu);
   finally_add_fd(exec_ctx, pollset, fd);
