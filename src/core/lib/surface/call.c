@@ -987,6 +987,10 @@ static void continue_receiving_slices(grpc_exec_ctx *exec_ctx,
       if (gpr_unref(&bctl->steps_to_complete)) {
         post_batch_completion(exec_ctx, bctl);
       }
+      if (call->status[STATUS_FROM_API_OVERRIDE].code != GRPC_STATUS_OK) {
+        grpc_byte_buffer_destroy(*call->receiving_buffer);
+        *call->receiving_buffer = NULL;
+      }
       return;
     }
     if (grpc_byte_stream_next(exec_ctx, call->receiving_stream,
