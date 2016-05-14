@@ -310,12 +310,14 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   grpc_tcp_listener *sp = arg;
   grpc_tcp_server_acceptor acceptor = {sp->server, sp->port_index,
                                        sp->fd_index};
+  grpc_pollset *read_notifier_pollset = NULL;
   grpc_fd *fdobj;
-  size_t i;
 
   if (!success) {
     goto error;
   }
+
+  read_notifier_pollset = grpc_fd_get_read_notifier_pollset(exec_ctx, sp->emfd);
 
   /* loop until accept4 returns EAGAIN, and then re-arm notification */
   for (;;) {
@@ -349,12 +351,14 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
     }
 
     fdobj = grpc_fd_create(fd, name);
-    /* TODO(ctiller): revise this when we have server-side sharding
-       of channels -- we certainly should not be automatically adding every
-       incoming channel to every pollset owned by the server */
-    for (i = 0; i < sp->server->pollset_count; i++) {
-      grpc_pollset_add_fd(exec_ctx, sp->server->pollsets[i], fdobj);
+
+    if (read_notifier_pollset == NULL) {
+      gpr_log(GPR_ERROR, "Read notifier pollset is not set on the fd");
+      goto error;
     }
+
+    grpc_pollset_add_fd(exec_ctx, read_notifier_pollset, fdobj);
+
     sp->server->on_accept_cb(
         exec_ctx, sp->server->on_accept_cb_arg,
         grpc_tcp_create(fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, addr_str),
