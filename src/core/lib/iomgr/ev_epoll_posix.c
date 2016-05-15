@@ -617,16 +617,13 @@ static void multipoll_with_epoll_pollset_add_fd(grpc_exec_ctx *exec_ctx,
 
 static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                            grpc_fd *fd) {
+  /* TODO (sreek) - Does reading pollset->data.ptr need pollset->mu lock ?
+   * because finally_add_fd() also reads it but without the lock! */
   gpr_mu_lock(&pollset->mu);
-  multipoll_with_epoll_pollset_add_fd(exec_ctx, pollset, fd);
-/* the following (enabled only in debug) will reacquire and then release
-   our lock - meaning that if the unlocking flag passed to add_fd above is
-   not respected, the code will deadlock (in a way that we have a chance of
-   debugging) */
-#ifndef NDEBUG
-  gpr_mu_lock(&pollset->mu);
+  GPR_ASSERT(pollset->data.ptr != NULL);
   gpr_mu_unlock(&pollset->mu);
-#endif
+
+  multipoll_with_epoll_pollset_add_fd(exec_ctx, pollset, fd);
 }
 
 /* TODO (sreek): Remove multipoll_with_epoll_finish_shutdown() declaration */
@@ -874,6 +871,8 @@ typedef struct { int epoll_fd; } epoll_hdr;
 
 static void finally_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                            grpc_fd *fd) {
+  /*TODO: (sree) Shouldn't this read (pollset->data.ptr) be done under a
+    pollset lock - i.e pollset->mu ? */
   epoll_hdr *h = pollset->data.ptr;
   struct epoll_event ev;
   int err;
@@ -941,9 +940,6 @@ static void multipoll_with_epoll_pollset_create_efd(grpc_pollset *pollset) {
   ev.events = (uint32_t)(EPOLLIN | EPOLLET);
   ev.data.ptr = NULL;
 
-  /* TODO (sreek): Double-check the use of grpc_global_wakeup_fd here (right now
-   * I do not know why this is used. I just copied this code from
-   * epoll_become_mutipoller() function in ev_poll_and_epoll_posix.c file */
   err = epoll_ctl(h->epoll_fd, EPOLL_CTL_ADD,
                   GRPC_WAKEUP_FD_GET_READ_FD(&grpc_global_wakeup_fd), &ev);
   if (err < 0) {
@@ -956,12 +952,6 @@ static void multipoll_with_epoll_pollset_create_efd(grpc_pollset *pollset) {
 static void multipoll_with_epoll_pollset_add_fd(grpc_exec_ctx *exec_ctx,
                                                 grpc_pollset *pollset,
                                                 grpc_fd *fd) {
-  GPR_ASSERT(pollset->data.ptr != NULL);
-
-  /* TODO(sreek). Remove this unlock code (and also the code that acquires the
-   * lock before calling multipoll_with_epoll_add_fd() function */
-
-  gpr_mu_unlock(&pollset->mu);
   finally_add_fd(exec_ctx, pollset, fd);
 }
 
