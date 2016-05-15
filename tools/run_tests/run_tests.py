@@ -892,7 +892,7 @@ for l in languages:
 
 language_make_options=[]
 if any(language.make_options() for language in languages):
-  if not 'gcov' in args.config and len(languages) != 1:
+  if len(languages) != 1:
     print 'languages with custom make options cannot be built simultaneously with other languages'
     sys.exit(1)
   else:
