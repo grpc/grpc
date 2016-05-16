@@ -142,7 +142,9 @@ static VALUE grpc_rb_completion_queue_alloc(VALUE cls) {
 /* Blocks until the next event for given tag is available, and returns the
  * event. */
 grpc_event grpc_rb_completion_queue_pluck_event(VALUE self, VALUE tag,
-                                                VALUE timeout) {
+                                                VALUE timeout,
+                                                rb_unblock_function_t *ubf,
+                                                void *unblock_arg) {
   next_call_stack next_call;
   MEMZERO(&next_call, next_call_stack, 1);
   TypedData_Get_Struct(self, grpc_completion_queue,
@@ -159,7 +161,7 @@ grpc_event grpc_rb_completion_queue_pluck_event(VALUE self, VALUE tag,
   }
   next_call.event.type = GRPC_QUEUE_TIMEOUT;
   rb_thread_call_without_gvl(grpc_rb_completion_queue_pluck_no_gil,
-                             (void *)&next_call, NULL, NULL);
+                             (void *)&next_call, ubf, unblock_arg);
   return next_call.event;
 }
 
