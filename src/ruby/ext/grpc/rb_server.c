@@ -60,6 +60,7 @@ typedef struct grpc_rb_server {
   VALUE mark;
   /* The actual server */
   grpc_server *wrapped;
+  grpc_completion_queue *queue;
 } grpc_rb_server;
 
 /* Destroys server instances. */
@@ -145,6 +146,7 @@ static VALUE grpc_rb_server_init(VALUE self, VALUE cqueue, VALUE channel_args) {
   }
   grpc_server_register_completion_queue(srv, cq, NULL);
   wrapper->wrapped = srv;
+  wrapper->queue = cq;
 
   /* Add the cq as the server's mark object. This ensures the ruby cq can't be
      GCed before the server */
@@ -205,6 +207,11 @@ static void grpc_request_call_stack_cleanup(request_call_stack* st) {
   grpc_call_details_destroy(&st->details);
 }
 
+static void request_call_unblock_func(void *ptr) {
+  grpc_rb_server *rb_srv = (grpc_rb_server*)ptr;
+  grpc_server_shutdown_and_notify(rb_srv->wrapped, rb_srv->queue, rb_srv);
+}
+
 /* call-seq:
    cq = CompletionQueue.new
    tag = Object.new
@@ -242,7 +249,9 @@ static VALUE grpc_rb_server_request_call(VALUE self, VALUE cqueue,
       return Qnil;
     }
 
-    ev = grpc_rb_completion_queue_pluck_event(cqueue, tag_new, timeout);
+    ev = grpc_rb_completion_queue_pluck_event(cqueue, tag_new, timeout,
+                                              request_call_unblock_func,
+                                              (void*)s);
     if (ev.type == GRPC_QUEUE_TIMEOUT) {
       grpc_request_call_stack_cleanup(&st);
       return Qnil;
@@ -305,7 +314,8 @@ static VALUE grpc_rb_server_destroy(int argc, VALUE *argv, VALUE self) {
 
   if (s->wrapped != NULL) {
     grpc_server_shutdown_and_notify(s->wrapped, cq, NULL);
-    ev = grpc_rb_completion_queue_pluck_event(cqueue, Qnil, timeout);
+    ev = grpc_rb_completion_queue_pluck_event(cqueue, Qnil, timeout,
+                                              NULL, NULL);
     if (!ev.success) {
       rb_warn("server shutdown failed, cancelling the calls, objects may leak");
       grpc_server_cancel_all_calls(s->wrapped);

@@ -46,8 +46,10 @@ grpc_completion_queue *grpc_rb_get_wrapped_completion_queue(VALUE v);
  *
  * This avoids having code that holds the GIL repeated at multiple sites.
  */
-grpc_event grpc_rb_completion_queue_pluck_event(VALUE cqueue, VALUE tag,
-                                                VALUE timeout);
+grpc_event grpc_rb_completion_queue_pluck_event(VALUE self, VALUE tag,
+                                                VALUE timeout,
+                                                rb_unblock_function_t *ubf,
+                                                void *unblock_arg);
 
 /* Initializes the CompletionQueue class. */
 void Init_grpc_completion_queue();
