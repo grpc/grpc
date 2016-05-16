@@ -82,7 +82,7 @@ zend_object_value create_wrapped_grpc_channel_credentials(
   return retval;
 }
 
-zval *grpc_php_wrap_channel_credentials(grpc_channel_credentials *wrapped) {
+zval *grpc_php_wrap_channel_credentials(grpc_channel_credentials *wrapped TSRMLS_DC) {
   zval *credentials_object;
   MAKE_STD_ZVAL(credentials_object);
   object_init_ex(credentials_object, grpc_ce_channel_credentials);
@@ -99,7 +99,7 @@ zval *grpc_php_wrap_channel_credentials(grpc_channel_credentials *wrapped) {
  */
 PHP_METHOD(ChannelCredentials, createDefault) {
   grpc_channel_credentials *creds = grpc_google_default_credentials_create();
-  zval *creds_object = grpc_php_wrap_channel_credentials(creds);
+  zval *creds_object = grpc_php_wrap_channel_credentials(creds TSRMLS_CC);
   RETURN_DESTROY_ZVAL(creds_object);
 }
 
@@ -134,7 +134,7 @@ PHP_METHOD(ChannelCredentials, createSsl) {
   grpc_channel_credentials *creds = grpc_ssl_credentials_create(
       pem_root_certs,
       pem_key_cert_pair.private_key == NULL ? NULL : &pem_key_cert_pair, NULL);
-  zval *creds_object = grpc_php_wrap_channel_credentials(creds);
+  zval *creds_object = grpc_php_wrap_channel_credentials(creds TSRMLS_CC);
   RETURN_DESTROY_ZVAL(creds_object);
 }
 
@@ -165,7 +165,7 @@ PHP_METHOD(ChannelCredentials, createComposite) {
   grpc_channel_credentials *creds =
       grpc_composite_channel_credentials_create(cred1->wrapped, cred2->wrapped,
                                                 NULL);
-  zval *creds_object = grpc_php_wrap_channel_credentials(creds);
+  zval *creds_object = grpc_php_wrap_channel_credentials(creds TSRMLS_CC);
   RETURN_DESTROY_ZVAL(creds_object);
 }
 

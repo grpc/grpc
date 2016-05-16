@@ -63,6 +63,6 @@ void grpc_init_timeval(TSRMLS_D);
 void grpc_shutdown_timeval(TSRMLS_D);
 
 /* Creates a Timeval object that wraps the given timeval struct */
-zval *grpc_php_wrap_timeval(gpr_timespec wrapped);
+zval *grpc_php_wrap_timeval(gpr_timespec wrapped TSRMLS_DC);
 
 #endif /* NET_GRPC_PHP_GRPC_TIMEVAL_H_ */
