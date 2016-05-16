@@ -111,7 +111,7 @@ PHP_METHOD(Server, __construct) {
   if (args_array == NULL) {
     server->wrapped = grpc_server_create(NULL, NULL);
   } else {
-    php_grpc_read_args_array(args_array, &args);
+    php_grpc_read_args_array(args_array, &args TSRMLS_CC);
     server->wrapped = grpc_server_create(&args, NULL);
     efree(args.args);
   }
@@ -154,12 +154,12 @@ PHP_METHOD(Server, requestCall) {
                          1 TSRMLS_CC);
     goto cleanup;
   }
-  add_property_zval(result, "call", grpc_php_wrap_call(call, true));
+  add_property_zval(result, "call", grpc_php_wrap_call(call, true TSRMLS_CC));
   add_property_string(result, "method", details.method, true);
   add_property_string(result, "host", details.host, true);
   add_property_zval(result, "absolute_deadline",
-                    grpc_php_wrap_timeval(details.deadline));
-  add_property_zval(result, "metadata", grpc_parse_metadata_array(&metadata));
+                    grpc_php_wrap_timeval(details.deadline TSRMLS_CC));
+  add_property_zval(result, "metadata", grpc_parse_metadata_array(&metadata TSRMLS_CC));
 cleanup:
   grpc_call_details_destroy(&details);
   grpc_metadata_array_destroy(&metadata);
