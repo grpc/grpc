@@ -240,12 +240,6 @@ GRPCAPI char *grpc_channel_get_target(grpc_channel *channel);
 GRPCAPI grpc_channel *grpc_insecure_channel_create(
     const char *target, const grpc_channel_args *args, void *reserved);
 
-/** Create a client channel to 'target' using file descriptor 'fd'. The 'target'
-    argument will be used to indicate the name for this channel. See the comment
-    for grpc_insecure_channel_create for description of 'args' argument. */
-GRPCAPI grpc_channel *grpc_insecure_channel_create_from_fd(
-    const char *target, int fd, const grpc_channel_args *args);
-
 /** Create a lame client: this client fails every operation attempted on it. */
 GRPCAPI grpc_channel *grpc_lame_client_channel_create(
     const char *target, grpc_status_code error_code, const char *error_message);
