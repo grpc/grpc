@@ -105,6 +105,7 @@ grpc_census_call_set_context_type grpc_census_call_set_context_import;
 grpc_census_call_get_context_type grpc_census_call_get_context_import;
 grpc_channel_get_target_type grpc_channel_get_target_import;
 grpc_insecure_channel_create_type grpc_insecure_channel_create_import;
+grpc_insecure_channel_create_from_fd_type grpc_insecure_channel_create_from_fd_import;
 grpc_lame_client_channel_create_type grpc_lame_client_channel_create_import;
 grpc_channel_destroy_type grpc_channel_destroy_import;
 grpc_call_cancel_type grpc_call_cancel_import;
@@ -372,6 +373,7 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_census_call_get_context_import = (grpc_census_call_get_context_type) GetProcAddress(library, "grpc_census_call_get_context");
   grpc_channel_get_target_import = (grpc_channel_get_target_type) GetProcAddress(library, "grpc_channel_get_target");
   grpc_insecure_channel_create_import = (grpc_insecure_channel_create_type) GetProcAddress(library, "grpc_insecure_channel_create");
+  grpc_insecure_channel_create_from_fd_import = (grpc_insecure_channel_create_from_fd_type) GetProcAddress(library, "grpc_insecure_channel_create_from_fd");
   grpc_lame_client_channel_create_import = (grpc_lame_client_channel_create_type) GetProcAddress(library, "grpc_lame_client_channel_create");
   grpc_channel_destroy_import = (grpc_channel_destroy_type) GetProcAddress(library, "grpc_channel_destroy");
   grpc_call_cancel_import = (grpc_call_cancel_type) GetProcAddress(library, "grpc_call_cancel");
