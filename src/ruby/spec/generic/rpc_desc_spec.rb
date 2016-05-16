@@ -93,7 +93,7 @@ describe GRPC::RpcDesc do
         expect(@call).to receive(:remote_send).once.with(@ok_response)
         expect(@call).to receive(:output_metadata).and_return(fake_md)
         expect(@call).to receive(:send_status).once.with(OK, 'OK', true,
-                                                         **fake_md)
+                                                         fake_md)
         this_desc.run_server_method(@call, method(:fake_reqresp))
       end
     end
@@ -128,7 +128,7 @@ describe GRPC::RpcDesc do
         expect(@call).to receive(:remote_send).once.with(@ok_response)
         expect(@call).to receive(:output_metadata).and_return(fake_md)
         expect(@call).to receive(:send_status).once.with(OK, 'OK', true,
-                                                         **fake_md)
+                                                         fake_md)
         @client_streamer.run_server_method(@call, method(:fake_clstream))
       end
     end
@@ -148,7 +148,7 @@ describe GRPC::RpcDesc do
         expect(@call).to receive(:remote_send).twice.with(@ok_response)
         expect(@call).to receive(:output_metadata).and_return(fake_md)
         expect(@call).to receive(:send_status).once.with(OK, 'OK', true,
-                                                         **fake_md)
+                                                         fake_md)
         @server_streamer.run_server_method(@call, method(:fake_svstream))
       end
     end
@@ -180,7 +180,7 @@ describe GRPC::RpcDesc do
         expect(@call).to receive(:run_server_bidi)
         expect(@call).to receive(:output_metadata).and_return(fake_md)
         expect(@call).to receive(:send_status).once.with(OK, 'OK', true,
-                                                         **fake_md)
+                                                         fake_md)
         @bidi_streamer.run_server_method(@call, method(:fake_bidistream))
       end
     end

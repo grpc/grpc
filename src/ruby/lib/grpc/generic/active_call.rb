@@ -45,7 +45,7 @@ class Struct
         # raise BadStatus, propagating the metadata if present.
         md = status.metadata
         with_sym_keys = Hash[md.each_pair.collect { |x, y| [x.to_sym, y] }]
-        fail GRPC::BadStatus.new(status.code, status.details, **with_sym_keys)
+        fail GRPC::BadStatus.new(status.code, status.details, with_sym_keys)
       end
       status
     end
@@ -77,14 +77,15 @@ module GRPC
     #
     # @param call [Call] a call on which to start and invocation
     # @param q [CompletionQueue] the completion queue
-    def self.client_invoke(call, q, **kw)
+    # @param metadata [Hash] the metadata
+    def self.client_invoke(call, q, metadata = {})
       fail(TypeError, '!Core::Call') unless call.is_a? Core::Call
       unless q.is_a? Core::CompletionQueue
         fail(TypeError, '!Core::CompletionQueue')
       end
       metadata_tag = Object.new
       call.run_batch(q, metadata_tag, INFINITE_FUTURE,
-                     SEND_INITIAL_METADATA => kw)
+                     SEND_INITIAL_METADATA => metadata)
       metadata_tag
     end
 
@@ -216,13 +217,12 @@ module GRPC
     # @param details [String] details
     # @param assert_finished [true, false] when true(default), waits for
     # FINISHED.
-    #
-    # == Keyword Arguments ==
-    # any keyword arguments are treated as metadata to be sent to the server
-    # if a keyword value is a list, multiple metadata for it's key are sent
-    def send_status(code = OK, details = '', assert_finished = false, **kw)
+    # @param metadata [Hash] metadata to send to the server. If a value is a
+    # list, mulitple metadata for its key are sent
+    def send_status(code = OK, details = '', assert_finished = false,
+                    metadata: {})
       ops = {
-        SEND_STATUS_FROM_SERVER => Struct::Status.new(code, details, kw)
+        SEND_STATUS_FROM_SERVER => Struct::Status.new(code, details, metadata)
       }
       ops[RECV_CLOSE_ON_SERVER] = nil if assert_finished
       @call.run_batch(@cq, self, INFINITE_FUTURE, ops)
@@ -316,14 +316,12 @@ module GRPC
     # request_response sends a request to a GRPC server, and returns the
     # response.
     #
-    # == Keyword Arguments ==
-    # any keyword arguments are treated as metadata to be sent to the server
-    # if a keyword value is a list, multiple metadata for it's key are sent
-    #
     # @param req [Object] the request sent to the server
+    # @param metadata [Hash] metadata to be sent to the server. If a value is
+    # a list, multiple metadata for its key are sent
     # @return [Object] the response received from the server
-    def request_response(req, **kw)
-      start_call(**kw) unless @started
+    def request_response(req, metadata: {})
+      start_call(metadata) unless @started
       remote_send(req)
       writes_done(false)
       response = remote_read
@@ -342,14 +340,12 @@ module GRPC
     # array of marshallable objects; in typical case it will be an Enumerable
     # that allows dynamic construction of the marshallable objects.
     #
-    # == Keyword Arguments ==
-    # any keyword arguments are treated as metadata to be sent to the server
-    # if a keyword value is a list, multiple metadata for it's key are sent
-    #
     # @param requests [Object] an Enumerable of requests to send
+    # @param metadata [Hash] metadata to be sent to the server. If a value is
+    # a list, multiple metadata for its key are sent
     # @return [Object] the response received from the server
-    def client_streamer(requests, **kw)
-      start_call(**kw) unless @started
+    def client_streamer(requests, metadata: {})
+      start_call(metadata) unless @started
       requests.each { |r| remote_send(r) }
       writes_done(false)
       response = remote_read
@@ -370,15 +366,12 @@ module GRPC
     # it is executed with each response as the argument and no result is
     # returned.
     #
-    # == Keyword Arguments ==
-    # any keyword arguments are treated as metadata to be sent to the server
-    # if a keyword value is a list, multiple metadata for it's key are sent
-    # any keyword arguments are treated as metadata to be sent to the server.
-    #
     # @param req [Object] the request sent to the server
+    # @param metadata [Hash] metadata to be sent to the server. If a value is
+    # a list, multiple metadata for its key are sent
     # @return [Enumerator|nil] a response Enumerator
-    def server_streamer(req, **kw)
-      start_call(**kw) unless @started
+    def server_streamer(req, metadata: {})
+      start_call(metadata) unless @started
       remote_send(req)
       writes_done(false)
       replies = enum_for(:each_remote_read_then_finish)
@@ -412,14 +405,12 @@ module GRPC
     # the_call#writes_done has been called, otherwise the block will loop
     # forever.
     #
-    # == Keyword Arguments ==
-    # any keyword arguments are treated as metadata to be sent to the server
-    # if a keyword value is a list, multiple metadata for it's key are sent
-    #
     # @param requests [Object] an Enumerable of requests to send
+    # @param metadata [Hash] metadata to be sent to the server. If a value is
+    # a list, multiple metadata for its key are sent
     # @return [Enumerator, nil] a response Enumerator
-    def bidi_streamer(requests, **kw, &blk)
-      start_call(**kw) unless @started
+    def bidi_streamer(requests, metadata: {}, &blk)
+      start_call(metadata) unless @started
       bd = BidiCall.new(@call, @cq, @marshal, @unmarshal,
                         metadata_tag: @metadata_tag)
       @metadata_tag = nil  # run_on_client ensures metadata is read
@@ -458,9 +449,11 @@ module GRPC
     private
 
     # Starts the call if not already started
-    def start_call(**kw)
+    # @param metadata [Hash] metadata to be sent to the server. If a value is
+    # a list, multiple metadata for its key are sent
+    def start_call(metadata = {})
       return if @started
-      @metadata_tag = ActiveCall.client_invoke(@call, @cq, **kw)
+      @metadata_tag = ActiveCall.client_invoke(@call, @cq, metadata)
       @started = true
     end
 

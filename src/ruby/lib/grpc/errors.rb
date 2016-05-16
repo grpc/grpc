@@ -40,11 +40,12 @@ module GRPC
 
     # @param code [Numeric] the status code
     # @param details [String] the details of the exception
-    def initialize(code, details = 'unknown cause', **kw)
+    # @param metadata [Hash] the error's metadata
+    def initialize(code, details = 'unknown cause', metadata = {})
       super("#{code}:#{details}")
       @code = code
       @details = details
-      @metadata = kw
+      @metadata = metadata
     end
 
     # Converts the exception to a GRPC::Status for use in the networking
