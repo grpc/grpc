@@ -68,15 +68,7 @@ describe 'ClientStub' do
   describe '#new' do
     let(:fake_host) { 'localhost:0' }
     it 'can be created from a host and args' do
-      opts = { a_channel_arg: 'an_arg' }
-      blk = proc do
-        GRPC::ClientStub.new(fake_host, @cq, :this_channel_is_insecure, **opts)
-      end
-      expect(&blk).not_to raise_error
-    end
-
-    it 'can be created with a default deadline' do
-      opts = { a_channel_arg: 'an_arg', deadline: 5 }
+      opts = { channel_args: { a_channel_arg: 'an_arg' } }
       blk = proc do
         GRPC::ClientStub.new(fake_host, @cq, :this_channel_is_insecure, **opts)
       end
@@ -84,7 +76,10 @@ describe 'ClientStub' do
     end
 
     it 'can be created with an channel override' do
-      opts = { a_channel_arg: 'an_arg', channel_override: @ch }
+      opts = {
+        channel_args: { a_channel_arg: 'an_arg' },
+        channel_override: @ch
+      }
       blk = proc do
         GRPC::ClientStub.new(fake_host, @cq, :this_channel_is_insecure, **opts)
       end
@@ -93,7 +88,10 @@ describe 'ClientStub' do
 
     it 'cannot be created with a bad channel override' do
       blk = proc do
-        opts = { a_channel_arg: 'an_arg', channel_override: Object.new }
+        opts = {
+          channel_args: { a_channel_arg: 'an_arg' },
+          channel_override: Object.new
+        }
         GRPC::ClientStub.new(fake_host, @cq, :this_channel_is_insecure, **opts)
       end
       expect(&blk).to raise_error
@@ -101,7 +99,7 @@ describe 'ClientStub' do
 
     it 'cannot be created with bad credentials' do
       blk = proc do
-        opts = { a_channel_arg: 'an_arg' }
+        opts = { channel_args: { a_channel_arg: 'an_arg' } }
         GRPC::ClientStub.new(fake_host, @cq, Object.new, **opts)
       end
       expect(&blk).to raise_error
@@ -111,8 +109,10 @@ describe 'ClientStub' do
       certs = load_test_certs
       blk = proc do
         opts = {
-          GRPC::Core::Channel::SSL_TARGET => 'foo.test.google.fr',
-          a_channel_arg: 'an_arg'
+          channel_args: {
+            GRPC::Core::Channel::SSL_TARGET => 'foo.test.google.fr',
+            a_channel_arg: 'an_arg'
+          }
         }
         creds = GRPC::Core::ChannelCredentials.new(certs[0], nil, nil)
         GRPC::ClientStub.new(fake_host, @cq, creds,  **opts)
@@ -140,7 +140,7 @@ describe 'ClientStub' do
         server_port = create_test_server
         host = "localhost:#{server_port}"
         th = run_request_response(@sent_msg, @resp, @pass,
-                                  k1: 'v1', k2: 'v2')
+                                  metadata: { k1: 'v1', k2: 'v2' })
         stub = GRPC::ClientStub.new(host, @cq, :this_channel_is_insecure)
         expect(get_response(stub)).to eq(@resp)
         th.join
@@ -172,7 +172,7 @@ describe 'ClientStub' do
     describe 'without a call operation' do
       def get_response(stub)
         stub.request_response(@method, @sent_msg, noop, noop,
-                              k1: 'v1', k2: 'v2')
+                              metadata: { k1: 'v1', k2: 'v2' })
       end
 
       it_behaves_like 'request response'
@@ -181,7 +181,8 @@ describe 'ClientStub' do
     describe 'via a call operation' do
       def get_response(stub)
         op = stub.request_response(@method, @sent_msg, noop, noop,
-                                   return_op: true, k1: 'v1', k2: 'v2')
+                                   return_op: true,
+                                   metadata: { k1: 'v1', k2: 'v2' })
         expect(op).to be_a(GRPC::ActiveCall::Operation)
         op.execute
       end
@@ -196,7 +197,7 @@ describe 'ClientStub' do
         server_port = create_test_server
         host = "localhost:#{server_port}"
         @stub = GRPC::ClientStub.new(host, @cq, :this_channel_is_insecure)
-        @options = { k1: 'v1', k2: 'v2' }
+        @options = { metadata: { k1: 'v1', k2: 'v2' } }
         @sent_msgs = Array.new(3) { |i| 'msg_' + (i + 1).to_s }
         @resp = 'a_reply'
       end
@@ -208,7 +209,7 @@ describe 'ClientStub' do
       end
 
       it 'should send metadata to the server ok' do
-        th = run_client_streamer(@sent_msgs, @resp, @pass, @options)
+        th = run_client_streamer(@sent_msgs, @resp, @pass, **@options)
         expect(get_response(@stub)).to eq(@resp)
         th.join
       end
@@ -231,7 +232,7 @@ describe 'ClientStub' do
 
     describe 'without a call operation' do
       def get_response(stub)
-        stub.client_streamer(@method, @sent_msgs, noop, noop, @options)
+        stub.client_streamer(@method, @sent_msgs, noop, noop, **@options)
       end
 
       it_behaves_like 'client streaming'
@@ -240,7 +241,7 @@ describe 'ClientStub' do
     describe 'via a call operation' do
       def get_response(stub)
         op = stub.client_streamer(@method, @sent_msgs, noop, noop,
-                                  @options.merge(return_op: true))
+                                  return_op: true, **@options)
         expect(op).to be_a(GRPC::ActiveCall::Operation)
         op.execute
       end
@@ -301,7 +302,8 @@ describe 'ClientStub' do
     describe 'via a call operation' do
       def get_responses(stub)
         op = stub.server_streamer(@method, @sent_msg, noop, noop,
-                                  return_op: true, k1: 'v1', k2: 'v2')
+                                  return_op: true,
+                                  metadata: { k1: 'v1', k2: 'v2' })
         expect(op).to be_a(GRPC::ActiveCall::Operation)
         e = op.execute
         expect(e).to be_a(Enumerator)
@@ -383,7 +385,7 @@ describe 'ClientStub' do
         stub = GRPC::ClientStub.new(@host, @cq, :this_channel_is_insecure)
         blk = proc do
           e = stub.bidi_streamer(@method, @sent_msgs, noop, noop,
-                                 timeout: 0.001)
+                                 deadline: from_relative_time(0.001))
           e.collect { |r| r }
         end
         expect(&blk).to raise_error GRPC::BadStatus, /Deadline Exceeded/

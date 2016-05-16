@@ -170,14 +170,6 @@ module GRPC
       alt_cq
     end
 
-    # setup_srv is used by #initialize to constuct a Core::Server from its
-    # arguments.
-    def self.setup_srv(alt_srv, cq, **kw)
-      return Core::Server.new(cq, kw) if alt_srv.nil?
-      fail(TypeError, '!Server') unless alt_srv.is_a? Core::Server
-      alt_srv
-    end
-
     # setup_connect_md_proc is used by #initialize to validate the
     # connect_md_proc.
     def self.setup_connect_md_proc(a_proc)
@@ -193,9 +185,6 @@ module GRPC
     # There are some specific keyword args used to configure the RpcServer
     # instance, however other arbitrary are allowed and when present are used
     # to configure the listeninng connection set up by the RpcServer.
-    #
-    # * server_override: which if passed must be a [GRPC::Core::Server].  When
-    # present.
     #
     # * poll_period: when present, the server polls for new events with this
     # period
@@ -218,13 +207,15 @@ module GRPC
     # when non-nil is a proc for determining metadata to to send back the client
     # on receiving an invocation req.  The proc signature is:
     # {key: val, ..} func(method_name, {key: val, ...})
+    #
+    # * server_args:
+    # A server arguments hash to be passed down to the underlying core server
     def initialize(pool_size:DEFAULT_POOL_SIZE,
                    max_waiting_requests:DEFAULT_MAX_WAITING_REQUESTS,
                    poll_period:DEFAULT_POLL_PERIOD,
                    completion_queue_override:nil,
-                   server_override:nil,
                    connect_md_proc:nil,
-                   **kw)
+                   server_args:{})
       @connect_md_proc = RpcServer.setup_connect_md_proc(connect_md_proc)
       @cq = RpcServer.setup_cq(completion_queue_override)
       @max_waiting_requests = max_waiting_requests
@@ -236,7 +227,7 @@ module GRPC
       # running_state can take 4 values: :not_started, :running, :stopping, and
       # :stopped. State transitions can only proceed in that order.
       @running_state = :not_started
-      @server = RpcServer.setup_srv(server_override, @cq, **kw)
+      @server = Core::Server.new(cq, server_args)
     end
 
     # stops a running server
