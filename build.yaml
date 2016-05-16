@@ -3246,8 +3246,8 @@ configs:
     compile_the_world: true
     timeout_multiplier: 4
   mutrace:
-    CPPFLAGS: -O0
-    DEFINES: _DEBUG DEBUG
+    CPPFLAGS: -O3 -fno-omit-frame-pointer
+    DEFINES: NDEBUG
     LDFLAGS: -rdynamic
   opt:
     CPPFLAGS: -O2

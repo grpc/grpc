@@ -215,9 +215,9 @@ CC_mutrace = $(DEFAULT_CC)
 CXX_mutrace = $(DEFAULT_CXX)
 LD_mutrace = $(DEFAULT_CC)
 LDXX_mutrace = $(DEFAULT_CXX)
-CPPFLAGS_mutrace = -O0
+CPPFLAGS_mutrace = -O3 -fno-omit-frame-pointer
 LDFLAGS_mutrace = -rdynamic
-DEFINES_mutrace = _DEBUG DEBUG
+DEFINES_mutrace = NDEBUG
 
 VALID_CONFIG_memcheck = 1
 CC_memcheck = $(DEFAULT_CC)
