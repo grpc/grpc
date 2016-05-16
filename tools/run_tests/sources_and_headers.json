@@ -3501,6 +3501,23 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "h2_fd_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_fd.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "h2_full_test", 
     "src": [
       "test/core/end2end/fixtures/h2_full.c"
@@ -3742,6 +3759,23 @@
     "name": "h2_compress_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_compress.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_fd_nosec_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_fd.c"
     ], 
     "third_party": false, 
     "type": "target"
