@@ -146,13 +146,13 @@ class TestCase(six.with_metaclass(abc.ABCMeta, test_coverage.Coverage, unittest.
         test_messages.verify(second_request, second_response, self)
 
   def testParallelInvocations(self):
-    pool = logging_pool.pool(test_constants.PARALLELISM)
+    pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
     for (group, method), test_messages_sequence in (
         six.iteritems(self._digest.unary_unary_messages_sequences)):
       for test_messages in test_messages_sequence:
         requests = []
         response_futures = []
-        for _ in range(test_constants.PARALLELISM):
+        for _ in range(test_constants.THREAD_CONCURRENCY):
           request = test_messages.request()
           response_future = pool.submit(
               self._invoker.blocking(group, method), request,
@@ -168,13 +168,13 @@ class TestCase(six.with_metaclass(abc.ABCMeta, test_coverage.Coverage, unittest.
     pool.shutdown(wait=True)
 
   def testWaitingForSomeButNotAllParallelInvocations(self):
-    pool = logging_pool.pool(test_constants.PARALLELISM)
+    pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
     for (group, method), test_messages_sequence in (
         six.iteritems(self._digest.unary_unary_messages_sequences)):
       for test_messages in test_messages_sequence:
         requests = []
         response_futures_to_indices = {}
-        for index in range(test_constants.PARALLELISM):
+        for index in range(test_constants.THREAD_CONCURRENCY):
           request = test_messages.request()
           response_future = pool.submit(
               self._invoker.blocking(group, method), request,
@@ -184,7 +184,7 @@ class TestCase(six.with_metaclass(abc.ABCMeta, test_coverage.Coverage, unittest.
 
         some_completed_response_futures_iterator = itertools.islice(
             futures.as_completed(response_futures_to_indices),
-            test_constants.PARALLELISM // 2)
+            test_constants.THREAD_CONCURRENCY // 2)
         for response_future in some_completed_response_futures_iterator:
           index = response_futures_to_indices[response_future]
           test_messages.verify(requests[index], response_future.result(), self)
