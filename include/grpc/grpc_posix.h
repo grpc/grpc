@@ -34,7 +34,10 @@
 #ifndef GRPC_GRPC_POSIX_H
 #define GRPC_GRPC_POSIX_H
 
+
 #include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/port_platform.h>
+
 #include <stddef.h>
 
 #ifdef __cplusplus
@@ -46,7 +49,6 @@ extern "C" {
  * The GRPC Core POSIX library provides some POSIX-specific low-level
  * functionality on top of GRPC Core.
  */
-
 
 #ifdef GPR_POSIX_SOCKET
 

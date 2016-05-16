@@ -31,28 +31,22 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #ifdef GPR_POSIX_SOCKET
 
 #include <grpc/grpc.h>
 
-// #include <fcntl.h>
-// #include <stdlib.h>
-// #include <string.h>
+#include <fcntl.h>
 
-// #include <grpc/support/alloc.h>
-// #include <grpc/support/slice.h>
-// #include <grpc/support/slice_buffer.h>
-
-// #include "src/core/ext/client_config/client_channel.h"
-// #include "src/core/ext/client_config/resolver_registry.h"
-// #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-// #include "src/core/lib/channel/channel_args.h"
-// #include "src/core/lib/channel/compress_filter.h"
-// #include "src/core/lib/channel/http_client_filter.h"
-// #include "src/core/lib/iomgr/tcp_client.h"
-// #include "src/core/lib/iomgr/tcp_posix.h"
-// #include "src/core/lib/surface/api_trace.h"
-// #include "src/core/lib/surface/channel.h"
+#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/transport/transport.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/tcp_posix.h"
+#include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/surface/channel.h"
 
 
 grpc_channel *grpc_insecure_channel_create_from_fd(
