@@ -354,6 +354,7 @@ typedef struct call_state {
   int cancelled;
   int pending_ops;
   grpc_call_details call_details;
+  grpc_byte_buffer *send_message;
   // starts at 0, individual flags from DONE_FLAG_xxx are set
   // as different operations are completed
   uint64_t done_flags;
@@ -465,6 +466,15 @@ static void finished_batch(void *p, bool success) {
   if ((bi->has_ops & (1u << GRPC_OP_RECV_MESSAGE)) &&
       (bi->cs->done_flags & DONE_FLAG_CALL_CLOSED)) {
     GPR_ASSERT(bi->cs->recv_message == NULL);
+  }
+  if ((bi->has_ops & (1u << GRPC_OP_RECV_MESSAGE) &&
+       bi->cs->recv_message != NULL)) {
+    grpc_byte_buffer_destroy(bi->cs->recv_message);
+    bi->cs->recv_message = NULL;
+  }
+  if ((bi->has_ops & (1u << GRPC_OP_SEND_MESSAGE))) {
+    grpc_byte_buffer_destroy(bi->cs->send_message);
+    bi->cs->send_message = NULL;
   }
   if ((bi->has_ops & (1u << GRPC_OP_RECV_STATUS_ON_CLIENT)) ||
       (bi->has_ops & (1u << GRPC_OP_RECV_CLOSE_ON_SERVER))) {
@@ -746,8 +756,13 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
               break;
             case GRPC_OP_SEND_MESSAGE:
               op->op = GRPC_OP_SEND_MESSAGE;
-              has_ops |= 1 << GRPC_OP_SEND_MESSAGE;
-              op->data.send_message = read_message(&inp);
+              if (g_active_call->send_message != NULL) {
+                ok = false;
+              } else {
+                has_ops |= 1 << GRPC_OP_SEND_MESSAGE;
+                g_active_call->send_message = op->data.send_message =
+                    read_message(&inp);
+              }
               break;
             case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
               op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
@@ -808,17 +823,18 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         } else {
           end(&inp);
         }
+        if (!ok && (has_ops & (1 << GRPC_OP_SEND_MESSAGE))) {
+          grpc_byte_buffer_destroy(g_active_call->send_message);
+          g_active_call->send_message = NULL;
+        }
         for (i = 0; i < num_ops; i++) {
           op = &ops[i];
           switch (op->op) {
-            case GRPC_OP_SEND_INITIAL_METADATA:
-              break;
-            case GRPC_OP_SEND_MESSAGE:
-              grpc_byte_buffer_destroy(op->data.send_message);
-              break;
             case GRPC_OP_SEND_STATUS_FROM_SERVER:
               gpr_free((void *)op->data.send_status_from_server.status_details);
               break;
+            case GRPC_OP_SEND_MESSAGE:
+            case GRPC_OP_SEND_INITIAL_METADATA:
             case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
             case GRPC_OP_RECV_INITIAL_METADATA:
             case GRPC_OP_RECV_MESSAGE:
