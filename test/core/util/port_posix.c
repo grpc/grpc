@@ -234,8 +234,6 @@ int grpc_pick_unused_port_or_die(void) {
   return port;
 }
 
-void grpc_recycle_unused_port(int port) {
-  GPR_ASSERT(free_chosen_port(port));
-}
+void grpc_recycle_unused_port(int port) { GPR_ASSERT(free_chosen_port(port)); }
 
 #endif /* GPR_POSIX_SOCKET && GRPC_TEST_PICK_PORT */
