@@ -2599,6 +2599,24 @@
     ], 
     "headers": [], 
     "language": "c++", 
+    "name": "server_builder_plugin_test", 
+    "src": [
+      "test/cpp/end2end/server_builder_plugin_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
     "name": "server_crash_test", 
     "src": [
       "test/cpp/end2end/server_crash_test.cc"
@@ -4157,7 +4175,8 @@
       "grpc_transport_chttp2_client_insecure", 
       "grpc_transport_chttp2_client_secure", 
       "grpc_transport_chttp2_server_insecure", 
-      "grpc_transport_chttp2_server_secure"
+      "grpc_transport_chttp2_server_secure", 
+      "grpc_transport_cronet_client_secure"
     ], 
     "headers": [], 
     "language": "c", 
@@ -5627,6 +5646,7 @@
       "src/core/lib/iomgr/endpoint.h", 
       "src/core/lib/iomgr/endpoint_pair.h", 
       "src/core/lib/iomgr/ev_poll_and_epoll_posix.h", 
+      "src/core/lib/iomgr/ev_poll_posix.h", 
       "src/core/lib/iomgr/ev_posix.h", 
       "src/core/lib/iomgr/exec_ctx.h", 
       "src/core/lib/iomgr/executor.h", 
@@ -5727,6 +5747,8 @@
       "src/core/lib/iomgr/endpoint_pair_windows.c", 
       "src/core/lib/iomgr/ev_poll_and_epoll_posix.c", 
       "src/core/lib/iomgr/ev_poll_and_epoll_posix.h", 
+      "src/core/lib/iomgr/ev_poll_posix.c", 
+      "src/core/lib/iomgr/ev_poll_posix.h", 
       "src/core/lib/iomgr/ev_posix.c", 
       "src/core/lib/iomgr/ev_posix.h", 
       "src/core/lib/iomgr/exec_ctx.c", 
@@ -6031,6 +6053,7 @@
       "tsi"
     ], 
     "headers": [
+      "include/grpc/grpc_cronet.h", 
       "include/grpc/grpc_security.h", 
       "include/grpc/grpc_security_constants.h", 
       "src/core/lib/security/auth_filters.h", 
@@ -6046,6 +6069,7 @@
     "language": "c", 
     "name": "grpc_secure", 
     "src": [
+      "include/grpc/grpc_cronet.h", 
       "include/grpc/grpc_security.h", 
       "include/grpc/grpc_security_constants.h", 
       "src/core/lib/http/httpcli_security_connector.c", 
@@ -6282,6 +6306,24 @@
     "type": "filegroup"
   }, 
   {
+    "deps": [
+      "grpc_base", 
+      "grpc_transport_chttp2"
+    ], 
+    "headers": [
+      "third_party/objective_c/Cronet/cronet_c_for_grpc.h"
+    ], 
+    "language": "c", 
+    "name": "grpc_transport_cronet_client_secure", 
+    "src": [
+      "src/core/ext/transport/cronet/client/secure/cronet_channel_create.c", 
+      "src/core/ext/transport/cronet/transport/cronet_api_dummy.c", 
+      "src/core/ext/transport/cronet/transport/cronet_transport.c"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
     "deps": [], 
     "headers": [
       "third_party/nanopb/pb.h", 
@@ -6345,6 +6387,8 @@
       "include/grpc++/impl/rpc_service_method.h", 
       "include/grpc++/impl/serialization_traits.h", 
       "include/grpc++/impl/server_builder_option.h", 
+      "include/grpc++/impl/server_builder_plugin.h", 
+      "include/grpc++/impl/server_initializer.h", 
       "include/grpc++/impl/service_type.h", 
       "include/grpc++/impl/sync.h", 
       "include/grpc++/impl/sync_cxx11.h", 
@@ -6395,6 +6439,8 @@
       "include/grpc++/impl/rpc_service_method.h", 
       "include/grpc++/impl/serialization_traits.h", 
       "include/grpc++/impl/server_builder_option.h", 
+      "include/grpc++/impl/server_builder_plugin.h", 
+      "include/grpc++/impl/server_initializer.h", 
       "include/grpc++/impl/service_type.h", 
       "include/grpc++/impl/sync.h", 
       "include/grpc++/impl/sync_cxx11.h", 

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,27 +31,11 @@
  *
  */
 
-var PROTO_PATH = __dirname + '/../protos/helloworld.proto';
+#ifndef GRPC_CORE_LIB_IOMGR_EV_POLL_POSIX_H
+#define GRPC_CORE_LIB_IOMGR_EV_POLL_POSIX_H
 
-var grpc = require('grpc');
-var hello_proto = grpc.load(PROTO_PATH).helloworld;
+#include "src/core/lib/iomgr/ev_posix.h"
 
-/**
- * Implements the SayHello RPC method.
- */
-function sayHello(call, callback) {
-  callback(null, {message: 'Hello ' + call.request.name});
-}
+const grpc_event_engine_vtable *grpc_init_poll_posix(void);
 
-/**
- * Starts an RPC server that receives requests for the Greeter service at the
- * sample server port
- */
-function main() {
-  var server = new grpc.Server();
-  server.addProtoService(hello_proto.Greeter.service, {sayHello: sayHello});
-  server.bind('0.0.0.0:50051', grpc.ServerCredentials.createInsecure());
-  server.start();
-}
-
-main();
+#endif /* GRPC_CORE_LIB_IOMGR_EV_POLL_POSIX_H */

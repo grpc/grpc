@@ -349,39 +349,39 @@ class PythonLanguage:
     return 500
 
   def scenarios(self):
-    # TODO(jtattermusch): this scenario reports QPS 0.0
+    # TODO(issue #6522): Empty streaming requests does not work for python
+    #yield _ping_pong_scenario(
+    #    'python_generic_async_streaming_ping_pong', rpc_type='STREAMING',
+    #    client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
+    #    use_generic_payload=True,
+    #    categories=[SMOKETEST])
+
     yield _ping_pong_scenario(
-        'python_generic_async_streaming_ping_pong', rpc_type='STREAMING',
-        client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
-        use_generic_payload=True,
-        categories=[SMOKETEST])
+        'python_protobuf_async_streaming_ping_pong', rpc_type='STREAMING',
+        client_type='ASYNC_CLIENT', server_type='SYNC_SERVER')
 
-    # TODO(jtattermusch): make this scenario work
-    #yield _ping_pong_scenario(
-    #    'python_protobuf_async_streaming_ping_pong', rpc_type='STREAMING',
-    #    client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER')
-
-    # TODO(jtattermusch): make this scenario work
-    #yield _ping_pong_scenario(
-    #    'python_protobuf_async_unary_ping_pong', rpc_type='UNARY',
-    #    client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER')
+    yield _ping_pong_scenario(
+        'python_protobuf_async_unary_ping_pong', rpc_type='UNARY',
+        client_type='ASYNC_CLIENT', server_type='SYNC_SERVER')
 
     yield _ping_pong_scenario(
         'python_protobuf_sync_unary_ping_pong', rpc_type='UNARY',
         client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
         categories=[SMOKETEST])
 
-    # TODO(jtattermusch): make this scenario work
+    # TODO(jtattermusch): 
+    # The qps_worker server gets thread starved with ~6400 threads, the GIL
+    # enforces that a single thread runs at a time, with no way to set thread
+    # priority.  Re-evaluate after changing DEEP and WIDE.
     #yield _ping_pong_scenario(
     #    'python_protobuf_sync_unary_qps_unconstrained', rpc_type='UNARY',
     #    client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
     #    use_unconstrained_client=True)
 
-    # TODO(jtattermusch): make this scenario work
-    #yield _ping_pong_scenario(
-    #    'python_protobuf_async_streaming_qps_unconstrained', rpc_type='STREAMING',
-    #    client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
-    #    use_unconstrained_client=True)
+    yield _ping_pong_scenario(
+        'python_protobuf_async_streaming_qps_unconstrained', rpc_type='STREAMING',
+        client_type='ASYNC_CLIENT', server_type='SYNC_SERVER',
+        use_unconstrained_client=True)
 
     yield _ping_pong_scenario(
         'python_to_cpp_protobuf_sync_unary_ping_pong', rpc_type='UNARY',
@@ -389,11 +389,10 @@ class PythonLanguage:
         server_language='c++', server_core_limit=1, async_server_threads=1,
         categories=[SMOKETEST])
 
-    # TODO(jtattermusch): make this scenario work
-    #yield _ping_pong_scenario(
-    #    'python_to_cpp_protobuf_sync_streaming_ping_pong', rpc_type='STREAMING',
-    #    client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
-    #    server_language='c++', server_core_limit=1, async_server_threads=1)
+    yield _ping_pong_scenario(
+        'python_to_cpp_protobuf_sync_streaming_ping_pong', rpc_type='STREAMING',
+        client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+        server_language='c++', server_core_limit=1, async_server_threads=1)
 
   def __str__(self):
     return 'python'
@@ -522,6 +521,72 @@ class JavaLanguage:
     return 'java'
 
 
+class GoLanguage:
+
+  def __init__(self):
+    pass
+    self.safename = str(self)
+
+  def worker_cmdline(self):
+    return ['tools/run_tests/performance/run_worker_go.sh']
+
+  def worker_port_offset(self):
+    return 600
+
+  def scenarios(self):
+    for secure in [True, False]:
+      secstr = 'secure' if secure else 'insecure'
+      smoketest_categories = [SMOKETEST] if secure else None
+
+      # ASYNC_GENERIC_SERVER for Go actually uses a sync streaming server,
+      # but that's mostly because of lack of better name of the enum value. 
+      yield _ping_pong_scenario(
+          'go_generic_sync_streaming_ping_pong_%s' % secstr, rpc_type='STREAMING',
+          client_type='SYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
+          use_generic_payload=True, async_server_threads=1,
+          secure=secure,
+          categories=smoketest_categories)
+
+      yield _ping_pong_scenario(
+          'go_protobuf_sync_streaming_ping_pong_%s' % secstr, rpc_type='STREAMING',
+          client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+          async_server_threads=1,
+          secure=secure)
+
+      yield _ping_pong_scenario(
+          'go_protobuf_sync_unary_ping_pong_%s' % secstr, rpc_type='UNARY',
+          client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+          async_server_threads=1,
+          secure=secure,
+          categories=smoketest_categories)
+
+      yield _ping_pong_scenario(
+          'go_protobuf_sync_unary_qps_unconstrained_%s' % secstr, rpc_type='UNARY',
+          client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+          use_unconstrained_client=True,
+          secure=secure,
+          categories=smoketest_categories)
+
+      yield _ping_pong_scenario(
+          'go_protobuf_sync_streaming_qps_unconstrained_%s' % secstr, rpc_type='STREAMING',
+          client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+          use_unconstrained_client=True,
+          secure=secure)
+
+      # ASYNC_GENERIC_SERVER for Go actually uses a sync streaming server,
+      # but that's mostly because of lack of better name of the enum value.
+      yield _ping_pong_scenario(
+          'go_generic_sync_streaming_qps_unconstrained_%s' % secstr, rpc_type='STREAMING',
+          client_type='SYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
+          use_unconstrained_client=True, use_generic_payload=True,
+          secure=secure)
+
+      # TODO(jtattermusch): add scenarios go vs C++ 
+
+  def __str__(self):
+    return 'go'
+
+
 LANGUAGES = {
     'c++' : CXXLanguage(),
     'csharp' : CSharpLanguage(),
@@ -529,4 +594,5 @@ LANGUAGES = {
     'ruby' : RubyLanguage(),
     'java' : JavaLanguage(),
     'python' : PythonLanguage(),
+    'go' : GoLanguage(),
 }

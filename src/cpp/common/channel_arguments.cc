@@ -85,7 +85,7 @@ void ChannelArguments::Swap(ChannelArguments& other) {
 
 void ChannelArguments::SetCompressionAlgorithm(
     grpc_compression_algorithm algorithm) {
-  SetInt(GRPC_COMPRESSION_ALGORITHM_ARG, algorithm);
+  SetInt(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM, algorithm);
 }
 
 // Note: a second call to this will add in front the result of the first call.

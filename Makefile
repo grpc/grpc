@@ -187,8 +187,8 @@ CC_ubsan = clang
 CXX_ubsan = clang++
 LD_ubsan = clang
 LDXX_ubsan = clang++
-CPPFLAGS_ubsan = -O1 -fsanitize-coverage=edge -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument
-LDFLAGS_ubsan = -fsanitize=undefined
+CPPFLAGS_ubsan = -O0 -fsanitize-coverage=edge -fsanitize=undefined,unsigned-integer-overflow -fno-omit-frame-pointer -Wno-unused-command-line-argument -Wvarargs
+LDFLAGS_ubsan = -fsanitize=undefined,unsigned-integer-overflow
 DEFINES_ubsan = NDEBUG
 DEFINES_ubsan += GRPC_TEST_SLOWDOWN_BUILD_FACTOR=1.5
 
@@ -1042,6 +1042,7 @@ reconnect_interop_client: $(BINDIR)/$(CONFIG)/reconnect_interop_client
 reconnect_interop_server: $(BINDIR)/$(CONFIG)/reconnect_interop_server
 secure_auth_context_test: $(BINDIR)/$(CONFIG)/secure_auth_context_test
 secure_sync_unary_ping_pong_test: $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test
+server_builder_plugin_test: $(BINDIR)/$(CONFIG)/server_builder_plugin_test
 server_crash_test: $(BINDIR)/$(CONFIG)/server_crash_test
 server_crash_test_client: $(BINDIR)/$(CONFIG)/server_crash_test_client
 shutdown_test: $(BINDIR)/$(CONFIG)/shutdown_test
@@ -1410,6 +1411,7 @@ buildtests_cxx: buildtests_zookeeper privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/reconnect_interop_server \
   $(BINDIR)/$(CONFIG)/secure_auth_context_test \
   $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test \
+  $(BINDIR)/$(CONFIG)/server_builder_plugin_test \
   $(BINDIR)/$(CONFIG)/server_crash_test \
   $(BINDIR)/$(CONFIG)/server_crash_test_client \
   $(BINDIR)/$(CONFIG)/shutdown_test \
@@ -1743,6 +1745,8 @@ test_cxx: test_zookeeper buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/secure_auth_context_test || ( echo test secure_auth_context_test failed ; exit 1 )
 	$(E) "[RUN]     Testing secure_sync_unary_ping_pong_test"
 	$(Q) $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test || ( echo test secure_sync_unary_ping_pong_test failed ; exit 1 )
+	$(E) "[RUN]     Testing server_builder_plugin_test"
+	$(Q) $(BINDIR)/$(CONFIG)/server_builder_plugin_test || ( echo test server_builder_plugin_test failed ; exit 1 )
 	$(E) "[RUN]     Testing server_crash_test"
 	$(Q) $(BINDIR)/$(CONFIG)/server_crash_test || ( echo test server_crash_test failed ; exit 1 )
 	$(E) "[RUN]     Testing shutdown_test"
@@ -2507,6 +2511,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/endpoint_pair_posix.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/ev_poll_and_epoll_posix.c \
+    src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
     src/core/lib/iomgr/executor.c \
@@ -2634,6 +2639,9 @@ LIBGRPC_SRC = \
     src/core/ext/client_config/uri_parser.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
+    src/core/ext/transport/cronet/client/secure/cronet_channel_create.c \
+    src/core/ext/transport/cronet/transport/cronet_api_dummy.c \
+    src/core/ext/transport/cronet/transport/cronet_transport.c \
     src/core/ext/lb_policy/grpclb/load_balancer_api.c \
     src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
     third_party/nanopb/pb_common.c \
@@ -2681,6 +2689,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_win32.h \
     include/grpc/impl/codegen/time.h \
+    include/grpc/grpc_cronet.h \
     include/grpc/grpc_security.h \
     include/grpc/grpc_security_constants.h \
     include/grpc/census.h \
@@ -2849,6 +2858,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/endpoint_pair_posix.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/ev_poll_and_epoll_posix.c \
+    src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
     src/core/lib/iomgr/executor.c \
@@ -3213,6 +3223,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/rpc_service_method.h \
     include/grpc++/impl/serialization_traits.h \
     include/grpc++/impl/server_builder_option.h \
+    include/grpc++/impl/server_builder_plugin.h \
+    include/grpc++/impl/server_initializer.h \
     include/grpc++/impl/service_type.h \
     include/grpc++/impl/sync.h \
     include/grpc++/impl/sync_cxx11.h \
@@ -3517,6 +3529,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/rpc_service_method.h \
     include/grpc++/impl/serialization_traits.h \
     include/grpc++/impl/server_builder_option.h \
+    include/grpc++/impl/server_builder_plugin.h \
+    include/grpc++/impl/server_initializer.h \
     include/grpc++/impl/service_type.h \
     include/grpc++/impl/sync.h \
     include/grpc++/impl/sync_cxx11.h \
@@ -11494,6 +11508,49 @@ endif
 endif
 
 
+SERVER_BUILDER_PLUGIN_TEST_SRC = \
+    test/cpp/end2end/server_builder_plugin_test.cc \
+
+SERVER_BUILDER_PLUGIN_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERVER_BUILDER_PLUGIN_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/server_builder_plugin_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/server_builder_plugin_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/server_builder_plugin_test: $(PROTOBUF_DEP) $(SERVER_BUILDER_PLUGIN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(SERVER_BUILDER_PLUGIN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/server_builder_plugin_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/server_builder_plugin_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_server_builder_plugin_test: $(SERVER_BUILDER_PLUGIN_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SERVER_BUILDER_PLUGIN_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 SERVER_CRASH_TEST_SRC = \
     test/cpp/end2end/server_crash_test.cc \
 
@@ -14348,6 +14405,9 @@ ifneq ($(OPENSSL_DEP),)
 # otherwise parallel compilation will fail if a source is compiled first.
 src/core/ext/transport/chttp2/client/secure/secure_channel_create.c: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c: $(OPENSSL_DEP)
+src/core/ext/transport/cronet/client/secure/cronet_channel_create.c: $(OPENSSL_DEP)
+src/core/ext/transport/cronet/transport/cronet_api_dummy.c: $(OPENSSL_DEP)
+src/core/ext/transport/cronet/transport/cronet_transport.c: $(OPENSSL_DEP)
 src/core/lib/http/httpcli_security_connector.c: $(OPENSSL_DEP)
 src/core/lib/security/b64.c: $(OPENSSL_DEP)
 src/core/lib/security/client_auth_filter.c: $(OPENSSL_DEP)
