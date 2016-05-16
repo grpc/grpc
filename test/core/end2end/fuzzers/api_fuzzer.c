@@ -606,6 +606,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         } else {
           end(&inp);
         }
+        break;
       }
       // begin server shutdown
       case 5: {
