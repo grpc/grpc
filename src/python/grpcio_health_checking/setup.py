@@ -57,8 +57,10 @@ _INSTALL_REQUIRES = (
 _SETUP_REQUIRES = _INSTALL_REQUIRES
 
 _COMMAND_CLASS = {
+    'copy_proto_modules': commands.CopyProtoModules,
     'build_proto_modules': commands.BuildProtoModules,
     'build_py': commands.BuildPy,
+    'sdist': commands.SDist,
 }
 
 setuptools.setup(
