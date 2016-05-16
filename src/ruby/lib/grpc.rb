@@ -47,5 +47,3 @@ begin
 ensure
   file.close
 end
-
-GRPC::Signals.wait_for_signals
