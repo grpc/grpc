@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,23 +31,37 @@
  *
  */
 
-var PROTO_PATH = __dirname + '/../protos/helloworld.proto';
+#ifndef GRPCXX_IMPL_SERVER_BUILDER_PLUGIN_H
+#define GRPCXX_IMPL_SERVER_BUILDER_PLUGIN_H
 
-var grpc = require('grpc');
-var hello_proto = grpc.load(PROTO_PATH).helloworld;
+#include <memory>
 
-function main() {
-  var client = new hello_proto.Greeter('localhost:50051',
-                                       grpc.credentials.createInsecure());
-  var user;
-  if (process.argv.length >= 3) {
-    user = process.argv[2];
-  } else {
-    user = 'world';
-  }
-  client.sayHello({name: user}, function(err, response) {
-    console.log('Greeting:', response.message);
-  });
-}
+#include <grpc++/support/config.h>
 
-main();
+namespace grpc {
+
+class ServerInitializer;
+
+class ServerBuilderPlugin {
+ public:
+  virtual ~ServerBuilderPlugin() {}
+  virtual grpc::string name() = 0;
+
+  // InitServer will be called in ServerBuilder::BuildAndStart(), after the
+  // Server instance is created.
+  virtual void InitServer(ServerInitializer* si) = 0;
+
+  // Finish will be called at the end of ServerBuilder::BuildAndStart().
+  virtual void Finish(ServerInitializer* si) = 0;
+
+  // ChangeArguments is an interface that can be used in
+  // ServerBuilderOption::UpdatePlugins
+  virtual void ChangeArguments(const grpc::string& name, void* value) = 0;
+
+  virtual bool has_sync_methods() const { return false; }
+  virtual bool has_async_methods() const { return false; }
+};
+
+}  // namespace grpc
+
+#endif  // GRPCXX_IMPL_SERVER_BUILDER_PLUGIN_H

@@ -37,6 +37,7 @@
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
+#include <grpc/support/thd.h>
 
 #include "src/core/ext/client_config/initial_connect_string.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -56,7 +57,7 @@ struct rpc_state {
   gpr_slice_buffer incoming_buffer;
   gpr_slice_buffer temp_incoming_buffer;
   grpc_endpoint *tcp;
-  int done;
+  gpr_atm done_atm;
 };
 
 static const char *magic_connect_string = "magic initial string";
@@ -69,7 +70,7 @@ static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   gpr_slice_buffer_move_into(&state.temp_incoming_buffer,
                              &state.incoming_buffer);
   if (state.incoming_buffer.length > strlen(magic_connect_string)) {
-    state.done = 1;
+    gpr_atm_rel_store(&state.done_atm, 1);
     grpc_endpoint_shutdown(exec_ctx, state.tcp);
     grpc_endpoint_destroy(exec_ctx, state.tcp);
   } else {
@@ -116,7 +117,7 @@ static gpr_timespec n_sec_deadline(int seconds) {
 }
 
 static void start_rpc(int use_creds, int target_port) {
-  state.done = 0;
+  gpr_atm_rel_store(&state.done_atm, 0);
   state.cq = grpc_completion_queue_create(NULL);
   if (use_creds) {
     state.creds = grpc_fake_transport_security_credentials_create();
@@ -139,7 +140,7 @@ static void start_rpc(int use_creds, int target_port) {
   state.op.reserved = NULL;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(state.call, &state.op,
                                                    (size_t)(1), NULL, NULL));
-  grpc_completion_queue_next(state.cq, n_sec_deadline(1), NULL);
+  grpc_completion_queue_next(state.cq, n_sec_deadline(5), NULL);
 }
 
 static void cleanup_rpc(void) {
@@ -157,12 +158,29 @@ static void cleanup_rpc(void) {
   gpr_free(state.target);
 }
 
-static void poll_server_until_read_done(test_tcp_server *server) {
-  gpr_timespec deadline = n_sec_deadline(5);
-  while (state.done == 0 &&
+typedef struct {
+  test_tcp_server *server;
+  gpr_event *signal_when_done;
+} poll_args;
+
+static void actually_poll_server(void *arg) {
+  poll_args *pa = arg;
+  gpr_timespec deadline = n_sec_deadline(10);
+  while (gpr_atm_acq_load(&state.done_atm) == 0 &&
          gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0) {
-    test_tcp_server_poll(server, 1);
+    test_tcp_server_poll(pa->server, 1);
   }
+  gpr_event_set(pa->signal_when_done, (void *)1);
+  gpr_free(pa);
+}
+
+static void poll_server_until_read_done(test_tcp_server *server,
+                                        gpr_event *signal_when_done) {
+  gpr_thd_id id;
+  poll_args *pa = gpr_malloc(sizeof(*pa));
+  pa->server = server;
+  pa->signal_when_done = signal_when_done;
+  gpr_thd_new(&id, actually_poll_server, pa, NULL);
 }
 
 static void match_initial_magic_string(gpr_slice_buffer *buffer) {
@@ -180,20 +198,26 @@ static void match_initial_magic_string(gpr_slice_buffer *buffer) {
 }
 
 static void test_initial_string(test_tcp_server *server, int secure) {
+  gpr_event ev;
+  gpr_event_init(&ev);
   grpc_test_set_initial_connect_string_function(set_magic_initial_string);
+  poll_server_until_read_done(server, &ev);
   start_rpc(secure, server_port);
-  poll_server_until_read_done(server);
+  gpr_event_wait(&ev, gpr_inf_future(GPR_CLOCK_REALTIME));
   match_initial_magic_string(&state.incoming_buffer);
   cleanup_rpc();
 }
 
 static void test_initial_string_with_redirect(test_tcp_server *server,
                                               int secure) {
+  gpr_event ev;
+  gpr_event_init(&ev);
   int another_port = grpc_pick_unused_port_or_die();
   grpc_test_set_initial_connect_string_function(
       reset_addr_and_set_magic_string);
+  poll_server_until_read_done(server, &ev);
   start_rpc(secure, another_port);
-  poll_server_until_read_done(server);
+  gpr_event_wait(&ev, gpr_inf_future(GPR_CLOCK_REALTIME));
   match_initial_magic_string(&state.incoming_buffer);
   cleanup_rpc();
 }

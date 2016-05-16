@@ -311,7 +311,7 @@ namespace Grpc.IntegrationTesting
                 var snapshot = histogram.GetSnapshot(true);
                 var elapsedSnapshot = wallClockStopwatch.GetElapsedSnapshot(true);
 
-                return (long) (snapshot.Count / elapsedSnapshot.Seconds);
+                return (long) (snapshot.Count / elapsedSnapshot.TotalSeconds);
             }
         }
     }

@@ -32,19 +32,21 @@
  */
 
 #include "src/core/lib/iomgr/udp_server.h"
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-#include "src/core/lib/iomgr/ev_posix.h"
-#include "src/core/lib/iomgr/iomgr.h"
-#include "test/core/util/test_config.h"
 
 #include <netinet/in.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
+
+#include "src/core/lib/iomgr/ev_posix.h"
+#include "src/core/lib/iomgr/iomgr.h"
+#include "test/core/util/test_config.h"
 
 #ifdef GRPC_NEED_UDP
 
@@ -54,6 +56,7 @@ static grpc_pollset *g_pollset;
 static gpr_mu *g_mu;
 static int g_number_of_reads = 0;
 static int g_number_of_bytes_read = 0;
+static int g_number_of_orphan_calls = 0;
 
 static void on_read(grpc_exec_ctx *exec_ctx, grpc_fd *emfd,
                     grpc_server *server) {
@@ -69,6 +72,12 @@ static void on_read(grpc_exec_ctx *exec_ctx, grpc_fd *emfd,
 
   grpc_pollset_kick(g_pollset, NULL);
   gpr_mu_unlock(g_mu);
+}
+
+static void on_fd_orphaned(grpc_fd *emfd) {
+  gpr_log(GPR_INFO, "gRPC FD about to be orphaned: %d",
+          grpc_fd_wrapped_fd(emfd));
+  g_number_of_orphan_calls++;
 }
 
 static void test_no_op(void) {
@@ -88,6 +97,7 @@ static void test_no_op_with_start(void) {
 }
 
 static void test_no_op_with_port(void) {
+  g_number_of_orphan_calls = 0;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   struct sockaddr_in addr;
   grpc_udp_server *s = grpc_udp_server_create();
@@ -96,13 +106,17 @@ static void test_no_op_with_port(void) {
   memset(&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
   GPR_ASSERT(grpc_udp_server_add_port(s, (struct sockaddr *)&addr, sizeof(addr),
-                                      on_read));
+                                      on_read, on_fd_orphaned));
 
   grpc_udp_server_destroy(&exec_ctx, s, NULL);
   grpc_exec_ctx_finish(&exec_ctx);
+
+  /* The server had a single FD, which should be orphaned. */
+  GPR_ASSERT(g_number_of_orphan_calls == 1);
 }
 
 static void test_no_op_with_port_and_start(void) {
+  g_number_of_orphan_calls = 0;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   struct sockaddr_in addr;
   grpc_udp_server *s = grpc_udp_server_create();
@@ -111,12 +125,15 @@ static void test_no_op_with_port_and_start(void) {
   memset(&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
   GPR_ASSERT(grpc_udp_server_add_port(s, (struct sockaddr *)&addr, sizeof(addr),
-                                      on_read));
+                                      on_read, on_fd_orphaned));
 
   grpc_udp_server_start(&exec_ctx, s, NULL, 0, NULL);
 
   grpc_udp_server_destroy(&exec_ctx, s, NULL);
   grpc_exec_ctx_finish(&exec_ctx);
+
+  /* The server had a single FD which should be orphaned. */
+  GPR_ASSERT(g_number_of_orphan_calls == 1);
 }
 
 static void test_receive(int number_of_clients) {
@@ -133,11 +150,12 @@ static void test_receive(int number_of_clients) {
   gpr_log(GPR_INFO, "clients=%d", number_of_clients);
 
   g_number_of_bytes_read = 0;
+  g_number_of_orphan_calls = 0;
 
   memset(&addr, 0, sizeof(addr));
   addr.ss_family = AF_INET;
-  GPR_ASSERT(
-      grpc_udp_server_add_port(s, (struct sockaddr *)&addr, addr_len, on_read));
+  GPR_ASSERT(grpc_udp_server_add_port(s, (struct sockaddr *)&addr, addr_len,
+                                      on_read, on_fd_orphaned));
 
   svrfd = grpc_udp_server_get_fd(s, 0);
   GPR_ASSERT(svrfd >= 0);
@@ -176,6 +194,8 @@ static void test_receive(int number_of_clients) {
 
   grpc_udp_server_destroy(&exec_ctx, s, NULL);
   grpc_exec_ctx_finish(&exec_ctx);
+
+  GPR_ASSERT(g_number_of_orphan_calls == 5);
 }
 
 static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, bool success) {
