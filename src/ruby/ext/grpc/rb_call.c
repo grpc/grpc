@@ -722,10 +722,6 @@ static VALUE grpc_run_batch_stack_build_result(run_batch_stack *st) {
   return result;
 }
 
-static void run_batch_unblock_func(void *call) {
-  grpc_call_cancel((grpc_call*)call, NULL);
-}
-
 /* call-seq:
    cq = CompletionQueue.new
    ops = {
@@ -776,9 +772,7 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE cqueue, VALUE tag,
              grpc_call_error_detail_of(err), err);
     return Qnil;
   }
-  ev = grpc_rb_completion_queue_pluck_event(cqueue, tag, timeout,
-                                            run_batch_unblock_func,
-                                            (void*)call);
+  ev = grpc_rb_completion_queue_pluck_event(cqueue, tag, timeout);
   if (ev.type == GRPC_QUEUE_TIMEOUT) {
     grpc_run_batch_stack_cleanup(&st);
     rb_raise(grpc_rb_eOutOfTime, "grpc_call_start_batch timed out");
