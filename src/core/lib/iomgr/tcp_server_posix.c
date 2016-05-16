@@ -362,7 +362,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
     sp->server->on_accept_cb(
         exec_ctx, sp->server->on_accept_cb_arg,
         grpc_tcp_create(fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, addr_str),
-        &acceptor);
+        read_notifier_pollset, &acceptor);
 
     gpr_free(name);
     gpr_free(addr_str);
