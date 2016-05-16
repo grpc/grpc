@@ -44,6 +44,7 @@
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_cronet.h>
+#include <grpc/grpc_posix.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/alloc.h>
 #include <grpc/impl/codegen/byte_buffer.h>
@@ -332,6 +333,9 @@ extern grpc_call_error_to_string_type grpc_call_error_to_string_import;
 typedef grpc_channel *(*grpc_cronet_secure_channel_create_type)(void *engine, const char *target, const grpc_channel_args *args, void *reserved);
 extern grpc_cronet_secure_channel_create_type grpc_cronet_secure_channel_create_import;
 #define grpc_cronet_secure_channel_create grpc_cronet_secure_channel_create_import
+typedef grpc_channel *(*grpc_insecure_channel_create_from_fd_type)(const char *target, int fd, const grpc_channel_args *args);
+extern grpc_insecure_channel_create_from_fd_type grpc_insecure_channel_create_from_fd_import;
+#define grpc_insecure_channel_create_from_fd grpc_insecure_channel_create_from_fd_import
 typedef const grpc_auth_property *(*grpc_auth_property_iterator_next_type)(grpc_auth_property_iterator *it);
 extern grpc_auth_property_iterator_next_type grpc_auth_property_iterator_next_import;
 #define grpc_auth_property_iterator_next grpc_auth_property_iterator_next_import

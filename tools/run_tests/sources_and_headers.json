@@ -5661,6 +5661,7 @@
       "include/grpc/byte_buffer_reader.h", 
       "include/grpc/compression.h", 
       "include/grpc/grpc.h", 
+      "include/grpc/grpc_posix.h", 
       "include/grpc/status.h", 
       "src/core/lib/channel/channel_args.h", 
       "src/core/lib/channel/channel_stack.h", 
@@ -5744,6 +5745,7 @@
       "include/grpc/byte_buffer_reader.h", 
       "include/grpc/compression.h", 
       "include/grpc/grpc.h", 
+      "include/grpc/grpc_posix.h", 
       "include/grpc/status.h", 
       "src/core/lib/channel/channel_args.c", 
       "src/core/lib/channel/channel_args.h", 
@@ -6286,7 +6288,8 @@
     "language": "c", 
     "name": "grpc_transport_chttp2_client_insecure", 
     "src": [
-      "src/core/ext/transport/chttp2/client/insecure/channel_create.c"
+      "src/core/ext/transport/chttp2/client/insecure/channel_create.c", 
+      "src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c"
     ], 
     "third_party": false, 
     "type": "filegroup"

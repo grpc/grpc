@@ -229,6 +229,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/client_config/uri_parser.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
+    src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c \
     src/core/ext/transport/cronet/client/secure/cronet_channel_create.c \
     src/core/ext/transport/cronet/transport/cronet_api_dummy.c \
     src/core/ext/transport/cronet/transport/cronet_transport.c \
