@@ -340,6 +340,8 @@ static void free_non_null(void *p) {
 
 typedef enum { ROOT, CLIENT, SERVER, PENDING_SERVER } call_state_type;
 
+#define DONE_FLAG_CALL_CLOSED ((uint64_t)(1 << 0))
+
 typedef struct call_state {
   call_state_type type;
   grpc_call *call;
@@ -352,6 +354,9 @@ typedef struct call_state {
   int cancelled;
   int pending_ops;
   grpc_call_details call_details;
+  // starts at 0, individual flags from DONE_FLAG_xxx are set
+  // as different operations are completed
+  uint64_t done_flags;
 
   // array of pointers to free later
   size_t num_to_free;
@@ -449,10 +454,32 @@ static void finished_request_call(void *csp, bool success) {
   }
 }
 
-static void finished_batch(void *csp, bool success) {
-  call_state *cs = csp;
-  --cs->pending_ops;
-  maybe_delete_call_state(cs);
+typedef struct {
+  call_state *cs;
+  uint8_t has_ops;
+} batch_info;
+
+static void finished_batch(void *p, bool success) {
+  batch_info *bi = p;
+  --bi->cs->pending_ops;
+  if ((bi->has_ops & (1u << GRPC_OP_RECV_MESSAGE)) &&
+      (bi->cs->done_flags & DONE_FLAG_CALL_CLOSED)) {
+    GPR_ASSERT(bi->cs->recv_message == NULL);
+  }
+  if ((bi->has_ops & (1u << GRPC_OP_RECV_STATUS_ON_CLIENT)) ||
+      (bi->has_ops & (1u << GRPC_OP_RECV_CLOSE_ON_SERVER))) {
+    bi->cs->done_flags |= DONE_FLAG_CALL_CLOSED;
+  }
+  maybe_delete_call_state(bi->cs);
+  gpr_free(bi);
+}
+
+static validator *make_finished_batch_validator(call_state *cs,
+                                                uint8_t has_ops) {
+  batch_info *bi = gpr_malloc(sizeof(*bi));
+  bi->cs = cs;
+  bi->has_ops = has_ops;
+  return create_validator(finished_batch, bi);
 }
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
@@ -700,6 +727,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         bool ok = true;
         size_t i;
         grpc_op *op;
+        uint8_t has_ops = 0;
         for (i = 0; i < num_ops; i++) {
           op = &ops[i];
           switch (next_byte(&inp)) {
@@ -710,19 +738,23 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
               break;
             case GRPC_OP_SEND_INITIAL_METADATA:
               op->op = GRPC_OP_SEND_INITIAL_METADATA;
+              has_ops |= 1 << GRPC_OP_SEND_INITIAL_METADATA;
               read_metadata(&inp, &op->data.send_initial_metadata.count,
                             &op->data.send_initial_metadata.metadata,
                             g_active_call);
               break;
             case GRPC_OP_SEND_MESSAGE:
               op->op = GRPC_OP_SEND_MESSAGE;
+              has_ops |= 1 << GRPC_OP_SEND_MESSAGE;
               op->data.send_message = read_message(&inp);
               break;
             case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
               op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+              has_ops |= 1 << GRPC_OP_SEND_CLOSE_FROM_CLIENT;
               break;
             case GRPC_OP_SEND_STATUS_FROM_SERVER:
               op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
+              has_ops |= 1 << GRPC_OP_SEND_STATUS_FROM_SERVER;
               read_metadata(
                   &inp,
                   &op->data.send_status_from_server.trailing_metadata_count,
@@ -734,11 +766,13 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
               break;
             case GRPC_OP_RECV_INITIAL_METADATA:
               op->op = GRPC_OP_RECV_INITIAL_METADATA;
+              has_ops |= 1 << GRPC_OP_RECV_INITIAL_METADATA;
               op->data.recv_initial_metadata =
                   &g_active_call->recv_initial_metadata;
               break;
             case GRPC_OP_RECV_MESSAGE:
               op->op = GRPC_OP_RECV_MESSAGE;
+              has_ops |= 1 << GRPC_OP_RECV_MESSAGE;
               op->data.recv_message = &g_active_call->recv_message;
               break;
             case GRPC_OP_RECV_STATUS_ON_CLIENT:
@@ -753,6 +787,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
               break;
             case GRPC_OP_RECV_CLOSE_ON_SERVER:
               op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+              has_ops |= 1 << GRPC_OP_RECV_CLOSE_ON_SERVER;
               op->data.recv_close_on_server.cancelled =
                   &g_active_call->cancelled;
               break;
@@ -761,7 +796,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           op->flags = read_uint32(&inp);
         }
         if (ok) {
-          validator *v = create_validator(finished_batch, g_active_call);
+          validator *v = make_finished_batch_validator(g_active_call, has_ops);
           g_active_call->pending_ops++;
           grpc_call_error error =
               grpc_call_start_batch(g_active_call->call, ops, num_ops, v, NULL);
