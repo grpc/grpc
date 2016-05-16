@@ -33,7 +33,6 @@
 
 #include <grpc/grpc.h>
 
-#include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -48,7 +47,6 @@
 #include "src/core/lib/channel/compress_filter.h"
 #include "src/core/lib/channel/http_client_filter.h"
 #include "src/core/lib/iomgr/tcp_client.h"
-#include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
 
@@ -234,40 +232,6 @@ grpc_channel *grpc_insecure_channel_create(const char *target,
     GRPC_CHANNEL_INTERNAL_REF(f->master, "grpc_insecure_channel_create");
   }
   grpc_client_channel_factory_unref(&exec_ctx, &f->base);
-
-  grpc_exec_ctx_finish(&exec_ctx);
-
-  return channel; /* may be NULL */
-}
-
-grpc_channel *grpc_insecure_channel_create_from_fd(
-    const char *target, int fd, const grpc_channel_args *args) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  GRPC_API_TRACE(
-      "grpc_insecure_channel_create(target=%p, fd=%d, args=%p)", 3,
-      (target, fd, args));
-
-  grpc_arg default_authority_arg;
-  default_authority_arg.type = GRPC_ARG_STRING;
-  default_authority_arg.key = GRPC_ARG_DEFAULT_AUTHORITY;
-  default_authority_arg.value.string = "test.authority";
-  grpc_channel_args *final_args = grpc_channel_args_copy_and_add(
-      args, &default_authority_arg, 1);
-
-  int flags = fcntl(fd, F_GETFL, 0);
-  GPR_ASSERT(fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0);
-
-  grpc_endpoint *client = grpc_tcp_create(
-      grpc_fd_create(fd, "client"), GRPC_TCP_DEFAULT_READ_SLICE_SIZE,
-      "fd-client");
-
-  grpc_transport *transport =
-      grpc_create_chttp2_transport(&exec_ctx, final_args, client, 1);
-  GPR_ASSERT(transport);
-  grpc_channel *channel = grpc_channel_create(
-      &exec_ctx, target, final_args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
-  grpc_channel_args_destroy(final_args);
-  grpc_chttp2_transport_start_reading(&exec_ctx, transport, NULL, 0);
 
   grpc_exec_ctx_finish(&exec_ctx);
 
