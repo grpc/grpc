@@ -172,6 +172,8 @@ static void on_p2s_recv_initial_metadata(void *arg, int success) {
 
   if (!pc->proxy->shutdown) {
     op.op = GRPC_OP_SEND_INITIAL_METADATA;
+    memset(&op.data.send_initial_metadata, 0,
+           sizeof(op.data.send_initial_metadata));
     op.flags = 0;
     op.reserved = NULL;
     op.data.send_initial_metadata.count = pc->p2s_initial_metadata.count;
@@ -350,6 +352,8 @@ static void on_new_call(void *arg, int success) {
     GPR_ASSERT(err == GRPC_CALL_OK);
 
     op.op = GRPC_OP_SEND_INITIAL_METADATA;
+    memset(&op.data.send_initial_metadata, 0,
+           sizeof(op.data.send_initial_metadata));
     op.flags = proxy->new_call_details.flags;
     op.data.send_initial_metadata.count = pc->c2p_initial_metadata.count;
     op.data.send_initial_metadata.metadata = pc->c2p_initial_metadata.metadata;

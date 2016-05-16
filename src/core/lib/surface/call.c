@@ -420,6 +420,65 @@ grpc_compression_algorithm grpc_call_test_only_get_compression_algorithm(
   return algorithm;
 }
 
+static grpc_compression_algorithm compression_algorithm_for_level_locked(
+    grpc_call *call, grpc_compression_level level) {
+  /* Establish a "ranking" or compression algorithms in increasing order of
+   * compression.
+   * This is simplistic and we will probably want to introduce other
+   * dimensions
+   * in the future (cpu/memory cost, etc). */
+  const grpc_compression_algorithm algos_ranking[] = {GRPC_COMPRESS_GZIP,
+                                                      GRPC_COMPRESS_DEFLATE};
+  const uint32_t accepted_encodings = call->encodings_accepted_by_peer;
+  if (level > GRPC_COMPRESS_LEVEL_HIGH) {
+    extern int grpc_compress_filter_trace;
+    if (grpc_compress_filter_trace) {
+      gpr_log(GPR_ERROR,
+              "Unknown compression level %d. Compression will be disabled.",
+              (int)level);
+    }
+    return GRPC_COMPRESS_NONE;
+  }
+
+  const size_t num_supported =
+      GPR_BITCOUNT(accepted_encodings) - 1; /* discard NONE */
+  if (level == GRPC_COMPRESS_LEVEL_NONE || num_supported == 0) {
+    return GRPC_COMPRESS_NONE;
+  }
+
+  GPR_ASSERT(level > 0);
+
+  /* intersect algos_ranking with the supported ones keeping the ranked order
+   */
+  grpc_compression_algorithm
+      sorted_supported_algos[GRPC_COMPRESS_ALGORITHMS_COUNT];
+  size_t algos_supported_idx = 0;
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(algos_ranking); i++) {
+    const grpc_compression_algorithm alg = algos_ranking[i];
+    for (size_t j = 0; j < num_supported; j++) {
+      if (GPR_BITGET(accepted_encodings, alg) == 1) {
+        /* if \a alg in supported */
+        sorted_supported_algos[algos_supported_idx++] = alg;
+        break;
+      }
+    }
+    if (algos_supported_idx == num_supported) break;
+  }
+
+  switch (level) {
+    case GRPC_COMPRESS_LEVEL_NONE:
+      abort(); /* should have been handled already */
+    case GRPC_COMPRESS_LEVEL_LOW:
+      return sorted_supported_algos[0];
+    case GRPC_COMPRESS_LEVEL_MED:
+      return sorted_supported_algos[num_supported / 2];
+    case GRPC_COMPRESS_LEVEL_HIGH:
+      return sorted_supported_algos[num_supported - 1];
+    default:
+      abort();
+  };
+}
+
 uint32_t grpc_call_test_only_get_message_flags(grpc_call *call) {
   uint32_t flags;
   gpr_mu_lock(&call->mu);
@@ -545,15 +604,28 @@ static grpc_linked_mdelem *linked_from_md(grpc_metadata *md) {
   return (grpc_linked_mdelem *)&md->internal_data;
 }
 
+static grpc_metadata *get_md_elem(grpc_metadata *metadata,
+                                  grpc_metadata *additional_metadata, int i,
+                                  int count) {
+  grpc_metadata *res =
+      i < count ? &metadata[i] : &additional_metadata[i - count];
+  GPR_ASSERT(res);
+  return res;
+}
+
 static int prepare_application_metadata(grpc_call *call, int count,
                                         grpc_metadata *metadata,
                                         int is_trailing,
-                                        int prepend_extra_metadata) {
+                                        int prepend_extra_metadata,
+                                        grpc_metadata *additional_metadata,
+                                        int additional_metadata_count) {
+  int total_count = count + additional_metadata_count;
   int i;
   grpc_metadata_batch *batch =
       &call->metadata_batch[0 /* is_receiving */][is_trailing];
-  for (i = 0; i < count; i++) {
-    grpc_metadata *md = &metadata[i];
+  for (i = 0; i < total_count; i++) {
+    const grpc_metadata *md =
+        get_md_elem(metadata, additional_metadata, i, count);
     grpc_linked_mdelem *l = (grpc_linked_mdelem *)&md->internal_data;
     GPR_ASSERT(sizeof(grpc_linked_mdelem) == sizeof(md->internal_data));
     l->md = grpc_mdelem_from_string_and_buffer(
@@ -572,9 +644,10 @@ static int prepare_application_metadata(grpc_call *call, int count,
       break;
     }
   }
-  if (i != count) {
+  if (i != total_count) {
     for (int j = 0; j <= i; j++) {
-      grpc_metadata *md = &metadata[j];
+      const grpc_metadata *md =
+          get_md_elem(metadata, additional_metadata, j, count);
       grpc_linked_mdelem *l = (grpc_linked_mdelem *)&md->internal_data;
       GRPC_MDELEM_UNREF(l->md);
     }
@@ -595,24 +668,36 @@ static int prepare_application_metadata(grpc_call *call, int count,
       }
     }
   }
-  for (i = 1; i < count; i++) {
-    linked_from_md(&metadata[i])->prev = linked_from_md(&metadata[i - 1]);
+  for (i = 1; i < total_count; i++) {
+    grpc_metadata *md = get_md_elem(metadata, additional_metadata, i, count);
+    grpc_metadata *prev_md =
+        get_md_elem(metadata, additional_metadata, i - 1, count);
+    linked_from_md(md)->prev = linked_from_md(prev_md);
   }
-  for (i = 0; i < count - 1; i++) {
-    linked_from_md(&metadata[i])->next = linked_from_md(&metadata[i + 1]);
+  for (i = 0; i < total_count - 1; i++) {
+    grpc_metadata *md = get_md_elem(metadata, additional_metadata, i, count);
+    grpc_metadata *next_md =
+        get_md_elem(metadata, additional_metadata, i + 1, count);
+    linked_from_md(md)->next = linked_from_md(next_md);
   }
-  switch (prepend_extra_metadata * 2 + (count != 0)) {
+
+  switch (prepend_extra_metadata * 2 + (total_count != 0)) {
     case 0:
       /* no prepend, no metadata => nothing to do */
       batch->list.head = batch->list.tail = NULL;
       break;
-    case 1:
+    case 1: {
       /* metadata, but no prepend */
-      batch->list.head = linked_from_md(&metadata[0]);
-      batch->list.tail = linked_from_md(&metadata[count - 1]);
+      grpc_metadata *first_md =
+          get_md_elem(metadata, additional_metadata, 0, count);
+      grpc_metadata *last_md =
+          get_md_elem(metadata, additional_metadata, total_count - 1, count);
+      batch->list.head = linked_from_md(first_md);
+      batch->list.tail = linked_from_md(last_md);
       batch->list.head->prev = NULL;
       batch->list.tail->next = NULL;
       break;
+    }
     case 2:
       /* prepend, but no md */
       batch->list.head = &call->send_extra_metadata[0];
@@ -621,17 +706,22 @@ static int prepare_application_metadata(grpc_call *call, int count,
       batch->list.head->prev = NULL;
       batch->list.tail->next = NULL;
       break;
-    case 3:
+    case 3: {
       /* prepend AND md */
+      grpc_metadata *first_md =
+          get_md_elem(metadata, additional_metadata, 0, count);
+      grpc_metadata *last_md =
+          get_md_elem(metadata, additional_metadata, total_count - 1, count);
       batch->list.head = &call->send_extra_metadata[0];
       call->send_extra_metadata[call->send_extra_metadata_count - 1].next =
-          linked_from_md(&metadata[0]);
-      linked_from_md(&metadata[0])->prev =
+          linked_from_md(first_md);
+      linked_from_md(first_md)->prev =
           &call->send_extra_metadata[call->send_extra_metadata_count - 1];
-      batch->list.tail = linked_from_md(&metadata[count - 1]);
+      batch->list.tail = linked_from_md(last_md);
       batch->list.head->prev = NULL;
       batch->list.tail->next = NULL;
       break;
+    }
     default:
       GPR_UNREACHABLE_CODE(return 0);
   }
@@ -1229,7 +1319,29 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
-        if (op->data.send_initial_metadata.count > INT_MAX) {
+        /* process compression level */
+        grpc_metadata compression_md;
+        memset(&compression_md, 0, sizeof(grpc_metadata));
+        size_t additional_metadata_count = 0;
+        if (op->data.send_initial_metadata.compression_level >
+            GRPC_COMPRESS_LEVEL_NONE) {
+          if (call->is_client) {
+            error = GRPC_CALL_ERROR_NOT_ON_CLIENT;
+            goto done_with_error;
+          }
+          const grpc_compression_algorithm calgo =
+              compression_algorithm_for_level_locked(
+                  call, op->data.send_initial_metadata.compression_level);
+          char *calgo_name;
+          grpc_compression_algorithm_name(calgo, &calgo_name);
+          compression_md.key = "grpc-internal-encoding-request";
+          compression_md.value = calgo_name;
+          compression_md.value_length = strlen(calgo_name);
+          additional_metadata_count++;
+        }
+
+        if (op->data.send_initial_metadata.count + additional_metadata_count >
+            INT_MAX) {
           error = GRPC_CALL_ERROR_INVALID_METADATA;
           goto done_with_error;
         }
@@ -1237,7 +1349,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         call->sent_initial_metadata = 1;
         if (!prepare_application_metadata(
                 call, (int)op->data.send_initial_metadata.count,
-                op->data.send_initial_metadata.metadata, 0, call->is_client)) {
+                op->data.send_initial_metadata.metadata, 0, call->is_client,
+                &compression_md, (int)additional_metadata_count)) {
           error = GRPC_CALL_ERROR_INVALID_METADATA;
           goto done_with_error;
         }
@@ -1325,7 +1438,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         if (!prepare_application_metadata(
                 call,
                 (int)op->data.send_status_from_server.trailing_metadata_count,
-                op->data.send_status_from_server.trailing_metadata, 1, 1)) {
+                op->data.send_status_from_server.trailing_metadata, 1, 1, NULL,
+                0)) {
           error = GRPC_CALL_ERROR_INVALID_METADATA;
           goto done_with_error;
         }
@@ -1513,9 +1627,10 @@ uint8_t grpc_call_is_client(grpc_call *call) { return call->is_client; }
 grpc_compression_algorithm grpc_call_compression_for_level(
     grpc_call *call, grpc_compression_level level) {
   gpr_mu_lock(&call->mu);
-  const uint32_t accepted_encodings = call->encodings_accepted_by_peer;
+  grpc_compression_algorithm algo =
+      compression_algorithm_for_level_locked(call, level);
   gpr_mu_unlock(&call->mu);
-  return grpc_compression_algorithm_for_level(level, accepted_encodings);
+  return algo;
 }
 
 const char *grpc_call_error_to_string(grpc_call_error error) {

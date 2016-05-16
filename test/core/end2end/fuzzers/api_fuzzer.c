@@ -710,6 +710,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
               break;
             case GRPC_OP_SEND_INITIAL_METADATA:
               op->op = GRPC_OP_SEND_INITIAL_METADATA;
+              memset(&op->data.send_initial_metadata, 0,
+                     sizeof(op->data.send_initial_metadata));
               read_metadata(&inp, &op->data.send_initial_metadata.count,
                             &op->data.send_initial_metadata.metadata,
                             g_active_call);

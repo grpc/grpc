@@ -117,6 +117,8 @@ static void test_early_server_shutdown_finishes_inflight_calls(
 
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  memset(&op->data.send_initial_metadata, 0,
+         sizeof(op->data.send_initial_metadata));
   op->data.send_initial_metadata.count = 0;
   op->data.send_initial_metadata.metadata = NULL;
   op->flags = 0;

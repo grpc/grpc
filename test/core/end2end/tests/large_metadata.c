@@ -145,6 +145,8 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   // Client: send request.
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  memset(&op->data.send_initial_metadata, 0,
+         sizeof(op->data.send_initial_metadata));
   op->data.send_initial_metadata.count = 1;
   op->data.send_initial_metadata.metadata = &meta;
   op->flags = 0;
@@ -186,6 +188,8 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   // Server: send initial metadata and receive request.
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  memset(&op->data.send_initial_metadata, 0,
+         sizeof(op->data.send_initial_metadata));
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
   op->reserved = NULL;

@@ -34,7 +34,6 @@ EXPORTS
     census_view_reset
     grpc_compression_algorithm_parse
     grpc_compression_algorithm_name
-    grpc_compression_algorithm_for_level
     grpc_compression_options_init
     grpc_compression_options_enable_algorithm
     grpc_compression_options_disable_algorithm

@@ -143,6 +143,8 @@ static void test_request_response_with_metadata_and_payload(
 
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  memset(&op->data.send_initial_metadata, 0,
+         sizeof(op->data.send_initial_metadata));
   op->data.send_initial_metadata.count = 2;
   op->data.send_initial_metadata.metadata = meta_c;
   op->flags = 0;
@@ -187,6 +189,8 @@ static void test_request_response_with_metadata_and_payload(
 
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  memset(&op->data.send_initial_metadata, 0,
+         sizeof(op->data.send_initial_metadata));
   op->data.send_initial_metadata.count = 2;
   op->data.send_initial_metadata.metadata = meta_s;
   op->flags = 0;

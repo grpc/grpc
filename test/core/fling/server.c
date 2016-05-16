@@ -104,6 +104,8 @@ static void handle_unary_method(void) {
 
   op = unary_ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  memset(&op->data.send_initial_metadata, 0,
+         sizeof(op->data.send_initial_metadata));
   op->data.send_initial_metadata.count = 0;
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
@@ -134,6 +136,8 @@ static void send_initial_metadata(void) {
   void *tagarg = tag(FLING_SERVER_SEND_INIT_METADATA_FOR_STREAMING);
   grpc_metadata_array_init(&initial_metadata_send);
   metadata_send_op.op = GRPC_OP_SEND_INITIAL_METADATA;
+  memset(&metadata_send_op.data.send_initial_metadata, 0,
+         sizeof(metadata_send_op.data.send_initial_metadata));
   metadata_send_op.data.send_initial_metadata.count = 0;
   error = grpc_call_start_batch(call, &metadata_send_op, 1, tagarg, NULL);
 
