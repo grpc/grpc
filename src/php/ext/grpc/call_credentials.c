@@ -83,7 +83,7 @@ zend_object_value create_wrapped_grpc_call_credentials(
   return retval;
 }
 
-zval *grpc_php_wrap_call_credentials(grpc_call_credentials *wrapped) {
+zval *grpc_php_wrap_call_credentials(grpc_call_credentials *wrapped TSRMLS_DC) {
   zval *credentials_object;
   MAKE_STD_ZVAL(credentials_object);
   object_init_ex(credentials_object, grpc_ce_call_credentials);
@@ -122,7 +122,7 @@ PHP_METHOD(CallCredentials, createComposite) {
   grpc_call_credentials *creds =
       grpc_composite_call_credentials_create(cred1->wrapped, cred2->wrapped,
                                              NULL);
-  zval *creds_object = grpc_php_wrap_call_credentials(creds);
+  zval *creds_object = grpc_php_wrap_call_credentials(creds TSRMLS_CC);
   RETURN_DESTROY_ZVAL(creds_object);
 }
 
@@ -141,7 +141,7 @@ PHP_METHOD(CallCredentials, createFromPlugin) {
   memset(fci_cache, 0, sizeof(zend_fcall_info_cache));
 
   /* "f" == 1 function */
-  if (zend_parse_parameters(ZEND_NUM_ARGS(), "f", fci,
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "f", fci,
                             fci_cache,
                             fci->params,
                             fci->param_count) == FAILURE) {
@@ -167,7 +167,7 @@ PHP_METHOD(CallCredentials, createFromPlugin) {
 
   grpc_call_credentials *creds = grpc_metadata_credentials_create_from_plugin(
       plugin, NULL);
-  zval *creds_object = grpc_php_wrap_call_credentials(creds);
+  zval *creds_object = grpc_php_wrap_call_credentials(creds TSRMLS_CC);
   RETURN_DESTROY_ZVAL(creds_object);
 }
 
@@ -175,6 +175,8 @@ PHP_METHOD(CallCredentials, createFromPlugin) {
 void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
                          grpc_credentials_plugin_metadata_cb cb,
                          void *user_data) {
+  TSRMLS_FETCH();
+
   plugin_state *state = (plugin_state *)ptr;
 
   /* prepare to call the user callback function with info from the
@@ -192,7 +194,7 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
   state->fci->retval_ptr_ptr = &retval;
 
   /* call the user callback function */
-  zend_call_function(state->fci, state->fci_cache);
+  zend_call_function(state->fci, state->fci_cache TSRMLS_CC);
 
   if (Z_TYPE_P(retval) != IS_ARRAY) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
