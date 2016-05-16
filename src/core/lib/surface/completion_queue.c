@@ -41,6 +41,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
@@ -55,8 +56,16 @@ typedef struct {
   void *tag;
 } plucker;
 
+typedef struct {
+  gpr_mu mu;
+  int refs;
+  grpc_completion_queue *freelist;
+  grpc_iomgr_object iomgr_object;
+} cq_arena;
+
 /* Completion queue structure */
 struct grpc_completion_queue {
+  cq_arena *arena;
   /** owned by pollset */
   gpr_mu *mu;
   /** completed events */
@@ -83,27 +92,43 @@ struct grpc_completion_queue {
   grpc_completion_queue *next_free;
 };
 
-#define POLLSET_FROM_CQ(cq) ((grpc_pollset *)(cq + 1))
+static cq_arena *g_current_arena;
 
-static gpr_mu g_freelist_mu;
-static grpc_completion_queue *g_freelist;
+#define POLLSET_FROM_CQ(cq) ((grpc_pollset *)(cq + 1))
 
 static void on_pollset_shutdown_done(grpc_exec_ctx *exec_ctx, void *cc,
                                      bool success);
 
-void grpc_cq_global_init(void) { gpr_mu_init(&g_freelist_mu); }
+void grpc_cq_global_init(void) {
+  g_current_arena = gpr_malloc(sizeof(*g_current_arena));
+  g_current_arena->refs = 1;
+  gpr_mu_init(&g_current_arena->mu);
+  grpc_iomgr_register_object(&g_current_arena->iomgr_object,
+                             "completion_queue_arena");
+  g_current_arena->freelist = NULL;
+}
+
+static void delete_arena(cq_arena *arena) {
+  while (arena->freelist) {
+    grpc_completion_queue *next = arena->freelist->next_free;
+    grpc_pollset_destroy(POLLSET_FROM_CQ(arena->freelist));
+#ifndef NDEBUG
+    gpr_free(arena->freelist->outstanding_tags);
+#endif
+    gpr_free(arena->freelist);
+    arena->freelist = next;
+  }
+  gpr_mu_destroy(&arena->mu);
+  grpc_iomgr_unregister_object(&arena->iomgr_object);
+  gpr_free(arena);
+}
 
 void grpc_cq_global_shutdown(void) {
-  gpr_mu_destroy(&g_freelist_mu);
-  while (g_freelist) {
-    grpc_completion_queue *next = g_freelist->next_free;
-    grpc_pollset_destroy(POLLSET_FROM_CQ(g_freelist));
-#ifndef NDEBUG
-    gpr_free(g_freelist->outstanding_tags);
-#endif
-    gpr_free(g_freelist);
-    g_freelist = next;
-  }
+  gpr_mu_lock(&g_current_arena->mu);
+  bool delete = 0 == --g_current_arena->refs;
+  gpr_mu_unlock(&g_current_arena->mu);
+  if (delete) delete_arena(g_current_arena);
+  g_current_arena = NULL;
 }
 
 struct grpc_cq_alarm {
@@ -123,9 +148,10 @@ grpc_completion_queue *grpc_completion_queue_create(void *reserved) {
 
   GRPC_API_TRACE("grpc_completion_queue_create(reserved=%p)", 1, (reserved));
 
-  gpr_mu_lock(&g_freelist_mu);
-  if (g_freelist == NULL) {
-    gpr_mu_unlock(&g_freelist_mu);
+  gpr_mu_lock(&g_current_arena->mu);
+  g_current_arena->refs++;
+  if (g_current_arena->freelist == NULL) {
+    gpr_mu_unlock(&g_current_arena->mu);
 
     cc = gpr_malloc(sizeof(grpc_completion_queue) + grpc_pollset_size());
     grpc_pollset_init(POLLSET_FROM_CQ(cc), &cc->mu);
@@ -134,11 +160,13 @@ grpc_completion_queue *grpc_completion_queue_create(void *reserved) {
     cc->outstanding_tag_capacity = 0;
 #endif
   } else {
-    cc = g_freelist;
-    g_freelist = g_freelist->next_free;
-    gpr_mu_unlock(&g_freelist_mu);
+    cc = g_current_arena->freelist;
+    g_current_arena->freelist = g_current_arena->freelist->next_free;
+    gpr_mu_unlock(&g_current_arena->mu);
     /* pollset already initialized */
   }
+
+  cc->arena = g_current_arena;
 
   /* Initial ref is dropped by grpc_completion_queue_shutdown */
   gpr_ref_init(&cc->pending_events, 1);
@@ -188,10 +216,12 @@ void grpc_cq_internal_unref(grpc_completion_queue *cc) {
   if (gpr_unref(&cc->owning_refs)) {
     GPR_ASSERT(cc->completed_head.next == (uintptr_t)&cc->completed_head);
     grpc_pollset_reset(POLLSET_FROM_CQ(cc));
-    gpr_mu_lock(&g_freelist_mu);
-    cc->next_free = g_freelist;
-    g_freelist = cc;
-    gpr_mu_unlock(&g_freelist_mu);
+    gpr_mu_lock(&cc->arena->mu);
+    cc->next_free = cc->arena->freelist;
+    cc->arena->freelist = cc;
+    bool delete = 0 == --cc->arena->refs;
+    gpr_mu_unlock(&cc->arena->mu);
+    if (delete) delete_arena(cc->arena);
   }
 }
 
