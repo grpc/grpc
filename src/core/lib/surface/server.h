@@ -53,6 +53,7 @@ void grpc_server_add_listener(
    server */
 void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *server,
                                  grpc_transport *transport,
+                                 grpc_pollset *accepting_pollset,
                                  const grpc_channel_args *args);
 
 const grpc_channel_args *grpc_server_get_channel_args(grpc_server *server);
