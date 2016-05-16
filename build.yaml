@@ -154,6 +154,7 @@ filegroups:
   - include/grpc/byte_buffer_reader.h
   - include/grpc/compression.h
   - include/grpc/grpc.h
+  - include/grpc/grpc_posix.h
   - include/grpc/status.h
   headers:
   - src/core/lib/channel/channel_args.h
@@ -561,6 +562,7 @@ filegroups:
 - name: grpc_transport_chttp2_client_insecure
   src:
   - src/core/ext/transport/chttp2/client/insecure/channel_create.c
+  - src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
   uses:
   - grpc_transport_chttp2
   - grpc_base
