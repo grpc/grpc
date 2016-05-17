@@ -150,7 +150,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   // TODO: (sreek) - Find a good way to determine whether the server is a Sync
   // server or an Async server. In case of Async server, return an error if all
   // the completion queues are non-listening
-  if (num_non_listening_cqs >= 0) {
+  if (num_non_listening_cqs > 0) {
     gpr_log(GPR_INFO, "Number of non listening completion queues: %d out of %d",
             num_non_listening_cqs, cqs_.size());
   }
