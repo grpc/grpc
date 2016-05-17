@@ -69,6 +69,8 @@
       "src/node/ext",
       "include/grpc",
       "src/core",
+      "src/boringssl",
+      "src/zlib",
       "third_party/nanopb",
       "third_party/zlib",
       "third_party/boringssl",

@@ -161,8 +161,9 @@ static int add_header(grpc_http_parser *parser) {
     cur++;
   }
   if (cur == end) {
-    if (grpc_http1_trace)
+    if (grpc_http1_trace) {
       gpr_log(GPR_ERROR, "Didn't find ':' in header string");
+    }
     goto error;
   }
   GPR_ASSERT(cur >= beg);

@@ -790,7 +790,6 @@ static void pollset_kick(grpc_pollset *p,
 static void pollset_global_init(void) {
   gpr_tls_init(&g_current_thread_poller);
   gpr_tls_init(&g_current_thread_worker);
-  grpc_wakeup_fd_global_init();
   grpc_wakeup_fd_init(&grpc_global_wakeup_fd);
 }
 
@@ -798,7 +797,6 @@ static void pollset_global_shutdown(void) {
   grpc_wakeup_fd_destroy(&grpc_global_wakeup_fd);
   gpr_tls_destroy(&g_current_thread_poller);
   gpr_tls_destroy(&g_current_thread_worker);
-  grpc_wakeup_fd_global_destroy();
 }
 
 static void kick_poller(void) { grpc_wakeup_fd_wakeup(&grpc_global_wakeup_fd); }

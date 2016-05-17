@@ -492,6 +492,10 @@ namespace Grpc.IntegrationTesting
                 {
                     // Deadline was reached before write has started. Eat the exception and continue.
                 }
+                catch (RpcException)
+                {
+                    // Deadline was reached before write has started. Eat the exception and continue.
+                }
 
                 var ex = Assert.ThrowsAsync<RpcException>(async () => await call.ResponseStream.MoveNext());
                 // We can't guarantee the status code always DeadlineExceeded. See issue #2685.
