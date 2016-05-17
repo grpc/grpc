@@ -68,7 +68,7 @@ static __inline bool input_is_valid(uint8_t *input_ptr, size_t length) {
   for (i = 0; i < length; ++i) {
     if ((decode_table[input_ptr[i]] & 0xC0) != 0) {
       gpr_log(GPR_ERROR,
-              "Base64 decoding failed, invalid charactor '%c' in base64 "
+              "Base64 decoding failed, invalid character '%c' in base64 "
               "input.\n",
               (char)(*input_ptr));
       return false;
@@ -96,6 +96,7 @@ bool grpc_base64_decode_partial(struct grpc_base64_decode_context *ctx) {
     return false;
   }
 
+  // Process a block of 4 input characters and 3 output bytes
   while (ctx->input_end >= ctx->input_cur + 4 &&
          ctx->output_end >= ctx->output_cur + 3) {
     if (!input_is_valid(ctx->input_cur, 4)) return false;
@@ -106,6 +107,7 @@ bool grpc_base64_decode_partial(struct grpc_base64_decode_context *ctx) {
     ctx->input_cur += 4;
   }
 
+  // Process the tail of input data
   input_tail = (size_t)(ctx->input_end - ctx->input_cur);
   if (input_tail == 4) {
     // Process the input data with pad chars
