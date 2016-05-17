@@ -120,6 +120,7 @@ void grpc_mdelem_set_user_data(grpc_mdelem *md, void (*destroy_func)(void *),
                                void *user_data);
 
 /* Reference counting */
+//#define GRPC_METADATA_REFCOUNT_DEBUG
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
 #define GRPC_MDSTR_REF(s) grpc_mdstr_ref((s), __FILE__, __LINE__)
 #define GRPC_MDSTR_UNREF(s) grpc_mdstr_unref((s), __FILE__, __LINE__)
@@ -145,6 +146,10 @@ void grpc_mdelem_unref(grpc_mdelem *md);
 const char *grpc_mdstr_as_c_string(grpc_mdstr *s);
 
 #define GRPC_MDSTR_LENGTH(s) (GPR_SLICE_LENGTH(s->slice))
+
+/* We add 32 bytes of padding as per RFC-7540 section 6.5.2. */
+#define GRPC_MDELEM_LENGTH(e) \
+  (GRPC_MDSTR_LENGTH((e)->key) + GRPC_MDSTR_LENGTH((e)->value) + 32)
 
 int grpc_mdstr_is_legal_header(grpc_mdstr *s);
 int grpc_mdstr_is_legal_nonbin_header(grpc_mdstr *s);

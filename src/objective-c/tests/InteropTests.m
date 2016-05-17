@@ -272,8 +272,14 @@
     XCTAssertEqual(error.code, GRPC_STATUS_CANCELLED);
     [expectation fulfill];
   }];
+  XCTAssertEqual(call.state, GRXWriterStateNotStarted);
+
   [call start];
+  XCTAssertEqual(call.state, GRXWriterStateStarted);
+
   [call cancel];
+  XCTAssertEqual(call.state, GRXWriterStateFinished);
+
   [self waitForExpectationsWithTimeout:1 handler:nil];
 }
 

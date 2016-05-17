@@ -105,6 +105,7 @@ typedef struct {
 
   uint8_t cur_line[GRPC_HTTP_PARSER_MAX_HEADER_LENGTH];
   size_t cur_line_length;
+  size_t cur_line_end_length;
 } grpc_http_parser;
 
 void grpc_http_parser_init(grpc_http_parser *parser);

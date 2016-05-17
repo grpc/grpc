@@ -160,13 +160,13 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\lb\v0\load_balancer.pb.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\lb\v1\load_balancer.pb.cc">
     </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\lb\v0\load_balancer.pb.h">
+    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\lb\v1\load_balancer.pb.h">
     </ClInclude>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\lb\v0\load_balancer.grpc.pb.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\lb\v1\load_balancer.grpc.pb.cc">
     </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\lb\v0\load_balancer.grpc.pb.h">
+    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\lb\v1\load_balancer.grpc.pb.h">
     </ClInclude>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\grpclb\grpclb_api_test.cc">
     </ClCompile>

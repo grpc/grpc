@@ -639,7 +639,7 @@ static int on_hdr(grpc_chttp2_hpack_parser *p, grpc_mdelem *md,
     }
   }
   if (p->on_header == NULL) {
-    grpc_mdelem_unref(md);
+    GRPC_MDELEM_UNREF(md);
     return 0;
   }
   p->on_header(p->on_header_user_data, md);

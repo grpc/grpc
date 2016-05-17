@@ -40,26 +40,6 @@
 
 #import "GRPCCompletionQueue.h"
 
-/**
- * Returns @c grpc_channel_credentials from the specified @c path. If the file at the path could not
- * be read then NULL is returned. If NULL is returned, @c errorPtr may not be NULL if there are
- * details available describing what went wrong.
- */
-static grpc_channel_credentials *CertificatesAtPath(NSString *path, NSError **errorPtr) {
-  // Files in PEM format can have non-ASCII characters in their comments (e.g. for the name of the
-  // issuer). Load them as UTF8 and produce an ASCII equivalent.
-  NSString *contentInUTF8 = [NSString stringWithContentsOfFile:path
-                                                      encoding:NSUTF8StringEncoding
-                                                         error:errorPtr];
-  NSData *contentInASCII = [contentInUTF8 dataUsingEncoding:NSASCIIStringEncoding
-                                       allowLossyConversion:YES];
-  if (!contentInASCII.bytes) {
-    // Passing NULL to grpc_ssl_credentials_create produces behavior we don't want, so return.
-    return NULL;
-  }
-  return grpc_ssl_credentials_create(contentInASCII.bytes, NULL, NULL);
-}
-
 void freeChannelArgs(grpc_channel_args *channel_args) {
   for (size_t i = 0; i < channel_args->num_args; ++i) {
     grpc_arg *arg = &channel_args->args[i];
@@ -156,38 +136,6 @@ grpc_channel_args * buildChannelArgs(NSDictionary *dictionary) {
 + (GRPCChannel *)secureChannelWithHost:(NSString *)host {
   return [[GRPCChannel alloc] initWithHost:host secure:YES credentials:NULL channelArgs:NULL];
 }
-
-+ (GRPCChannel *)secureChannelWithHost:(NSString *)host
-                    pathToCertificates:(NSString *)path
-                           channelArgs:(NSDictionary *)channelArgs {
-  // Load default SSL certificates once.
-  static grpc_channel_credentials *kDefaultCertificates;
-  static dispatch_once_t loading;
-  dispatch_once(&loading, ^{
-    NSString *defaultPath = @"gRPCCertificates.bundle/roots"; // .pem
-    // Do not use NSBundle.mainBundle, as it's nil for tests of library projects.
-    NSBundle *bundle = [NSBundle bundleForClass:self.class];
-    NSString *path = [bundle pathForResource:defaultPath ofType:@"pem"];
-    NSError *error;
-    kDefaultCertificates = CertificatesAtPath(path, &error);
-    NSAssert(kDefaultCertificates, @"Could not read %@/%@.pem. This file, with the root "
-             "certificates, is needed to establish secure (TLS) connections. Because the file is "
-             "distributed with the gRPC library, this error is usually a sign that the library "
-             "wasn't configured correctly for your project. Error: %@",
-             bundle.bundlePath, defaultPath, error);
-  });
-
-  //TODO(jcanizales): Add NSError** parameter to the initializer.
-  grpc_channel_credentials *certificates = path
-      ? CertificatesAtPath(path, NULL)
-      : kDefaultCertificates;
-
-  return [[GRPCChannel alloc] initWithHost:host
-                                    secure:YES
-                               credentials:certificates
-                               channelArgs:channelArgs];
-}
-
 
 + (GRPCChannel *)secureChannelWithHost:(NSString *)host
                            credentials:(struct grpc_channel_credentials *)credentials

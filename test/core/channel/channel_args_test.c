@@ -77,7 +77,8 @@ static void test_set_compression_algorithm(void) {
   ch_args =
       grpc_channel_args_set_compression_algorithm(NULL, GRPC_COMPRESS_GZIP);
   GPR_ASSERT(ch_args->num_args == 1);
-  GPR_ASSERT(strcmp(ch_args->args[0].key, GRPC_COMPRESSION_ALGORITHM_ARG) == 0);
+  GPR_ASSERT(strcmp(ch_args->args[0].key,
+                    GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM) == 0);
   GPR_ASSERT(ch_args->args[0].type == GRPC_ARG_INTEGER);
 
   grpc_channel_args_destroy(ch_args);

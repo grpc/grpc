@@ -35,11 +35,15 @@
 //
 
 #include <memory>
+#include <sstream>
 
 #include "src/compiler/config.h"
 
 #include "src/compiler/cpp_generator.h"
 #include "src/compiler/cpp_generator_helpers.h"
+#include "src/compiler/generator_helpers.h"
+
+using grpc_generator::GetCppComments;
 
 class ProtoBufMethod : public grpc_cpp_generator::Method {
  public:
@@ -71,6 +75,14 @@ class ProtoBufMethod : public grpc_cpp_generator::Method {
     return method_->client_streaming() && method_->server_streaming();
   }
 
+  grpc::string GetLeadingComments() const {
+    return GetCppComments(method_, true);
+  }
+
+  grpc::string GetTrailingComments() const {
+    return GetCppComments(method_, false);
+  }
+
  private:
   const grpc::protobuf::MethodDescriptor *method_;
 };
@@ -87,6 +99,14 @@ class ProtoBufService : public grpc_cpp_generator::Service {
     return std::unique_ptr<const grpc_cpp_generator::Method>(
           new ProtoBufMethod(service_->method(i)));
   };
+
+  grpc::string GetLeadingComments() const {
+    return GetCppComments(service_, true);
+  }
+
+  grpc::string GetTrailingComments() const {
+    return GetCppComments(service_, false);
+  }
 
  private:
   const grpc::protobuf::ServiceDescriptor *service_;
@@ -120,10 +140,15 @@ class ProtoBufFile : public grpc_cpp_generator::File {
     return grpc_generator::StripProto(filename());
   }
 
+  grpc::string message_header_ext() const { return ".pb.h"; }
+  grpc::string service_header_ext() const { return ".grpc.pb.h"; }
+
   grpc::string package() const { return file_->package(); }
   std::vector<grpc::string> package_parts() const {
     return grpc_generator::tokenize(package(), ".");
   }
+
+  grpc::string additional_headers() const { return ""; }
 
   int service_count() const { return file_->service_count(); };
   std::unique_ptr<const grpc_cpp_generator::Service> service(int i) const {
@@ -134,6 +159,14 @@ class ProtoBufFile : public grpc_cpp_generator::File {
   std::unique_ptr<grpc_cpp_generator::Printer> CreatePrinter(grpc::string *str) const {
     return std::unique_ptr<grpc_cpp_generator::Printer>(
           new ProtoBufPrinter(str));
+  }
+
+  grpc::string GetLeadingComments() const {
+    return GetCppComments(file_, true);
+  }
+
+  grpc::string GetTrailingComments() const {
+    return GetCppComments(file_, false);
   }
 
  private:

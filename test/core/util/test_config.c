@@ -50,7 +50,7 @@ static unsigned seed(void) { return (unsigned)getpid(); }
 
 #if GPR_GETPID_IN_PROCESS_H
 #include <process.h>
-static unsigned seed(void) { return _getpid(); }
+static unsigned seed(void) { return (unsigned)_getpid(); }
 #endif
 
 #if GPR_WINDOWS_CRASH_HANDLER
@@ -210,7 +210,7 @@ static void install_crash_handler() {
 #include <stdio.h>
 #include <string.h>
 
-static char g_alt_stack[MINSIGSTKSZ];
+static char g_alt_stack[GPR_MAX(MINSIGSTKSZ, 65536)];
 
 #define MAX_FRAMES 32
 

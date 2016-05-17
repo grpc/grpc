@@ -59,8 +59,9 @@ typedef void (*grpc_resolve_cb)(grpc_exec_ctx *exec_ctx, void *arg,
 /* Asynchronously resolve addr. Use default_port if a port isn't designated
    in addr, otherwise use the port in addr. */
 /* TODO(ctiller): add a timeout here */
-void grpc_resolve_address(const char *addr, const char *default_port,
-                          grpc_resolve_cb cb, void *arg);
+extern void (*grpc_resolve_address)(grpc_exec_ctx *exec_ctx, const char *addr,
+                                    const char *default_port,
+                                    grpc_resolve_cb cb, void *arg);
 /* Destroy resolved addresses */
 void grpc_resolved_addresses_destroy(grpc_resolved_addresses *addresses);
 

@@ -253,7 +253,9 @@ void grpc_chttp2_hptbl_set_max_bytes(grpc_chttp2_hptbl *tbl,
   if (tbl->max_bytes == max_bytes) {
     return;
   }
-  gpr_log(GPR_DEBUG, "Update hpack parser max size to %d", max_bytes);
+  if (grpc_http_trace) {
+    gpr_log(GPR_DEBUG, "Update hpack parser max size to %d", max_bytes);
+  }
   while (tbl->mem_used > max_bytes) {
     evict1(tbl);
   }

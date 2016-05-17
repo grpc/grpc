@@ -111,43 +111,43 @@ int main(int argc, char **argv) {
 
   /* body generated with
    * tools/codegen/core/gen_server_registered_method_bad_client_test_body.py */
-  GRPC_RUN_BAD_CLIENT_TEST(verifier_fails,
+  GRPC_RUN_BAD_CLIENT_TEST(verifier_fails, NULL,
                            PFX_STR "\x00\x00\x00\x00\x00\x00\x00\x00\x01",
                            GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier_fails,
+  GRPC_RUN_BAD_CLIENT_TEST(verifier_fails, NULL,
                            PFX_STR "\x00\x00\x01\x00\x00\x00\x00\x00\x01\x00",
                            GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier_fails, PFX_STR
+  GRPC_RUN_BAD_CLIENT_TEST(verifier_fails, NULL, PFX_STR
                            "\x00\x00\x02\x00\x00\x00\x00\x00\x01\x00\x00",
                            GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier_fails, PFX_STR
+  GRPC_RUN_BAD_CLIENT_TEST(verifier_fails, NULL, PFX_STR
                            "\x00\x00\x03\x00\x00\x00\x00\x00\x01\x00\x00\x00",
                            GRPC_BAD_CLIENT_DISCONNECT);
   GRPC_RUN_BAD_CLIENT_TEST(
-      verifier_fails,
+      verifier_fails, NULL,
       PFX_STR "\x00\x00\x04\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00",
       GRPC_BAD_CLIENT_DISCONNECT);
   GRPC_RUN_BAD_CLIENT_TEST(
-      verifier_succeeds,
+      verifier_succeeds, NULL,
       PFX_STR "\x00\x00\x05\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\x00", 0);
   GRPC_RUN_BAD_CLIENT_TEST(
-      verifier_fails,
+      verifier_fails, NULL,
       PFX_STR "\x00\x00\x05\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x01",
       GRPC_BAD_CLIENT_DISCONNECT);
   GRPC_RUN_BAD_CLIENT_TEST(
-      verifier_succeeds,
+      verifier_succeeds, NULL,
       PFX_STR "\x00\x00\x06\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\x01\x00",
       0);
   GRPC_RUN_BAD_CLIENT_TEST(
-      verifier_fails,
+      verifier_fails, NULL,
       PFX_STR "\x00\x00\x05\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x02",
       GRPC_BAD_CLIENT_DISCONNECT);
   GRPC_RUN_BAD_CLIENT_TEST(
-      verifier_fails,
+      verifier_fails, NULL,
       PFX_STR "\x00\x00\x06\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x02\x00",
       GRPC_BAD_CLIENT_DISCONNECT);
   GRPC_RUN_BAD_CLIENT_TEST(
-      verifier_succeeds, PFX_STR
+      verifier_succeeds, NULL, PFX_STR
       "\x00\x00\x07\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\x02\x00\x00",
       0);
 
