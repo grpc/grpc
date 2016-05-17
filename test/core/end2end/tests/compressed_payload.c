@@ -496,11 +496,11 @@ static void test_invoke_request_with_compressed_payload_md_override(
       GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_NONE, &none_compression_override);
 }
 
-static void test_invoke_request_with_invalid_algorithm(
+static void test_invoke_request_with_disabled_algorithm(
     grpc_end2end_test_config config) {
   request_for_disabled_algorithm(
-      config, "test_invoke_request_with_invalid_algorithm", 0,
-      GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP, GRPC_STATUS_INTERNAL, NULL);
+      config, "test_invoke_request_with_disabled_algorithm", 0,
+      GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP, GRPC_STATUS_UNIMPLEMENTED, NULL);
 }
 
 void compressed_payload(grpc_end2end_test_config config) {
@@ -508,7 +508,7 @@ void compressed_payload(grpc_end2end_test_config config) {
   test_invoke_request_with_uncompressed_payload(config);
   test_invoke_request_with_compressed_payload(config);
   test_invoke_request_with_compressed_payload_md_override(config);
-  test_invoke_request_with_invalid_algorithm(config);
+  test_invoke_request_with_disabled_algorithm(config);
 }
 
 void compressed_payload_pre_init(void) {}
