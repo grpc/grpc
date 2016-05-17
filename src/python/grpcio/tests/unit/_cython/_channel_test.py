@@ -60,7 +60,7 @@ def _create_loop_destroy():
 def _in_parallel(behavior, arguments):
   threads = tuple(
       threading.Thread(target=behavior, args=arguments)
-      for _ in range(test_constants.PARALLELISM))
+      for _ in range(test_constants.THREAD_CONCURRENCY))
   for thread in threads:
     thread.start()
   for thread in threads:
