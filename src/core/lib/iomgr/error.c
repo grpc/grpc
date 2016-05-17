@@ -110,6 +110,8 @@ static const char *error_int_name(grpc_error_ints key) {
       return "security_status";
     case GRPC_ERROR_INT_FD:
       return "fd";
+    case GRPC_ERROR_INT_WSA_ERROR:
+      return "wsa_error";
   }
   GPR_UNREACHABLE_CODE(return "unknown");
 }
@@ -492,6 +494,7 @@ const char *grpc_error_string(grpc_error *err) {
   return finish_kvs(&kvs);
 }
 
+#ifdef GPR_POSIX_SOCKET
 grpc_error *grpc_os_error(const char *file, int line, int err,
                           const char *call_name) {
   return grpc_error_set_str(
@@ -501,6 +504,22 @@ grpc_error *grpc_os_error(const char *file, int line, int err,
           GRPC_ERROR_STR_OS_ERROR, strerror(err)),
       GRPC_ERROR_STR_SYSCALL, call_name);
 }
+#endif
+
+#ifdef GPR_WIN32
+grpc_error *grpc_wsa_error(const char *file, int line, int err,
+                          const char *call_name) {
+  char *utf8_message = gpr_format_message(err);
+  grpc_error *error = grpc_error_set_str(
+    grpc_error_set_str(
+    grpc_error_set_int(grpc_error_create(file, line, "OS Error", NULL, 0),
+    GRPC_ERROR_INT_WSA_ERROR, err),
+    GRPC_ERROR_STR_OS_ERROR, utf8_message),
+    GRPC_ERROR_STR_SYSCALL, call_name);
+  gpr_free(utf8_message);
+  return error;
+}
+#endif
 
 bool grpc_log_if_error(const char *what, grpc_error *error, const char *file,
                        int line) {

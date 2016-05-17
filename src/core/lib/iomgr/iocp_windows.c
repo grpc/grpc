@@ -121,7 +121,7 @@ grpc_iocp_work_status grpc_iocp_work(grpc_exec_ctx *exec_ctx,
     info->has_pending_iocp = 1;
   }
   gpr_mu_unlock(&socket->state_mu);
-  grpc_exec_ctx_enqueue(exec_ctx, closure, true, NULL);
+  grpc_exec_ctx_push(exec_ctx, closure, GRPC_ERROR_NONE, NULL);
   return GRPC_IOCP_WORK_WORK;
 }
 
@@ -187,7 +187,7 @@ static void socket_notify_on_iocp(grpc_exec_ctx *exec_ctx,
   gpr_mu_lock(&socket->state_mu);
   if (info->has_pending_iocp) {
     info->has_pending_iocp = 0;
-    grpc_exec_ctx_enqueue(exec_ctx, closure, true, NULL);
+    grpc_exec_ctx_push(exec_ctx, closure, GRPC_ERROR_NONE, NULL);
   } else {
     info->closure = closure;
   }

@@ -65,6 +65,7 @@ typedef enum {
   GRPC_ERROR_INT_HTTP2_ERROR,
   GRPC_ERROR_INT_TSI_CODE,
   GRPC_ERROR_INT_SECURITY_STATUS,
+  GRPC_ERROR_INT_WSA_ERROR,
   GRPC_ERROR_INT_FD,
 } grpc_error_ints;
 
@@ -128,6 +129,10 @@ grpc_error *grpc_os_error(const char *file, int line, int err,
                           const char *call_name);
 #define GRPC_OS_ERROR(err, call_name) \
   grpc_os_error(__FILE__, __LINE__, err, call_name)
+grpc_error *grpc_wsa_error(const char *file, int line, int err,
+                          const char *call_name);
+#define GRPC_WSA_ERROR(err, call_name) \
+  grpc_wsa_error(__FILE__, __LINE__, err, call_name)
 
 bool grpc_log_if_error(const char *what, grpc_error *error, const char *file,
                        int line);
