@@ -112,7 +112,7 @@ static void server_weak_ref_set(server_weak_ref *weak_ref,
   weak_ref->server = server;
 }
 
-static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
+static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp, grpc_pollset *pollset,
                        grpc_tcp_server_acceptor *acceptor) {
   grpc_endpoint_shutdown(exec_ctx, tcp);
   grpc_endpoint_destroy(exec_ctx, tcp);

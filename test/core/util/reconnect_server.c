@@ -70,7 +70,7 @@ static void pretty_print_backoffs(reconnect_server *server) {
   }
 }
 
-static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
+static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp, grpc_pollset *accepting_pollset,
                        grpc_tcp_server_acceptor *acceptor) {
   char *peer;
   char *last_colon;
