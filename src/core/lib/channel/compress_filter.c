@@ -73,8 +73,8 @@ typedef struct call_data {
 typedef struct channel_data {
   /** The default, channel-level, compression algorithm */
   grpc_compression_algorithm default_compression_algorithm;
-  /** Compression options for the channel */
-  grpc_compression_options compression_options;
+  /** Bitset of enabled algorithms */
+  uint32_t enabled_algorithms_bitset;
   /** Supported compression algorithms */
   uint32_t supported_compression_algorithms;
 } channel_data;
@@ -96,9 +96,8 @@ static grpc_mdelem *compression_md_filter(void *user_data, grpc_mdelem *md) {
               md_c_str);
       calld->compression_algorithm = GRPC_COMPRESS_NONE;
     }
-    if (grpc_compression_options_is_algorithm_enabled(
-            &channeld->compression_options, calld->compression_algorithm) ==
-        0) {
+    if (!GPR_BITGET(channeld->enabled_algorithms_bitset,
+                    calld->compression_algorithm)) {
       gpr_log(GPR_ERROR,
               "Invalid compression algorithm: '%s' (previously disabled). "
               "Ignoring.",
@@ -280,32 +279,26 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
                               grpc_channel_element *elem,
                               grpc_channel_element_args *args) {
   channel_data *channeld = elem->channel_data;
-  grpc_compression_algorithm algo_idx;
 
-  grpc_compression_options_init(&channeld->compression_options);
-  channeld->compression_options.enabled_algorithms_bitset =
-      (uint32_t)grpc_channel_args_compression_algorithm_get_states(
-          args->channel_args);
+  channeld->enabled_algorithms_bitset =
+      grpc_channel_args_compression_algorithm_get_states(args->channel_args);
 
   channeld->default_compression_algorithm =
       grpc_channel_args_get_compression_algorithm(args->channel_args);
   /* Make sure the default isn't disabled. */
-  if (!grpc_compression_options_is_algorithm_enabled(
-          &channeld->compression_options,
-          channeld->default_compression_algorithm)) {
+  if (!GPR_BITGET(channeld->enabled_algorithms_bitset,
+                  channeld->default_compression_algorithm)) {
     gpr_log(GPR_DEBUG,
             "compression algorithm %d not enabled: switching to none",
             channeld->default_compression_algorithm);
     channeld->default_compression_algorithm = GRPC_COMPRESS_NONE;
   }
-  channeld->compression_options.default_compression_algorithm =
-      channeld->default_compression_algorithm;
 
   channeld->supported_compression_algorithms = 0;
-  for (algo_idx = 0; algo_idx < GRPC_COMPRESS_ALGORITHMS_COUNT; ++algo_idx) {
+  for (grpc_compression_algorithm algo_idx = 0;
+       algo_idx < GRPC_COMPRESS_ALGORITHMS_COUNT; ++algo_idx) {
     /* skip disabled algorithms */
-    if (grpc_compression_options_is_algorithm_enabled(
-            &channeld->compression_options, algo_idx) == 0) {
+    if (!GPR_BITGET(channeld->enabled_algorithms_bitset, algo_idx)) {
       continue;
     }
     channeld->supported_compression_algorithms |= 1u << algo_idx;

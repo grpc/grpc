@@ -33,15 +33,14 @@
 
 #include <grpc++/client_context.h>
 
-#include <grpc++/security/credentials.h>
-#include <grpc++/server_context.h>
-#include <grpc++/support/time.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/channel/compress_filter.h"
+#include <grpc++/security/credentials.h>
+#include <grpc++/server_context.h>
+#include <grpc++/support/time.h>
 
 namespace grpc {
 
@@ -112,7 +111,7 @@ void ClientContext::set_compression_algorithm(
     abort();
   }
   GPR_ASSERT(algorithm_name != nullptr);
-  AddMetadata(GRPC_COMPRESS_REQUEST_ALGORITHM_KEY, algorithm_name);
+  AddMetadata(GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY, algorithm_name);
 }
 
 void ClientContext::TryCancel() {
