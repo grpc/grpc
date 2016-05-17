@@ -434,7 +434,7 @@ static void set_compression_algorithm(grpc_call *call,
     gpr_asprintf(&error_msg, "Compression algorithm '%s' is disabled.",
                  algo_name);
     gpr_log(GPR_ERROR, error_msg);
-    close_with_status(&exec_ctx, call, GRPC_STATUS_INTERNAL, error_msg);
+    close_with_status(&exec_ctx, call, GRPC_STATUS_UNIMPLEMENTED, error_msg);
   } else {
     call->compression_algorithm = algo;
   }
