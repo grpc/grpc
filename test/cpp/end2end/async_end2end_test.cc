@@ -245,8 +245,8 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
   void SetUp() GRPC_OVERRIDE {
     poll_overrider_.reset(new PollingOverrider(!GetParam().disable_blocking));
 
-    int port = grpc_pick_unused_port_or_die();
-    server_address_ << "localhost:" << port;
+    port_ = grpc_pick_unused_port_or_die();
+    server_address_ << "localhost:" << port_;
 
     // Setup server
     ServerBuilder builder;
@@ -274,6 +274,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
       ;
     poll_overrider_.reset();
     gpr_tls_set(&g_is_async_end2end_test, 0);
+    grpc_recycle_unused_port(port_);
   }
 
   void ResetStub() {
@@ -325,6 +326,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
   std::unique_ptr<Server> server_;
   grpc::testing::EchoTestService::AsyncService service_;
   std::ostringstream server_address_;
+  int port_;
 
   std::unique_ptr<PollingOverrider> poll_overrider_;
 };
