@@ -238,11 +238,11 @@ grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
   return result;
 }
 
-int grpc_channel_args_compression_algorithm_get_states(
+uint32_t grpc_channel_args_compression_algorithm_get_states(
     const grpc_channel_args *a) {
   int *states_arg;
   if (find_compression_algorithm_states_bitset(a, &states_arg)) {
-    return *states_arg;
+    return (uint32_t)*states_arg;
   } else {
     return (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1; /* All algs. enabled */
   }
