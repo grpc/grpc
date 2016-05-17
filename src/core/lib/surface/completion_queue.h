@@ -81,6 +81,7 @@ void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
                     void *done_arg, grpc_cq_completion *storage);
 
 grpc_pollset *grpc_cq_pollset(grpc_completion_queue *cc);
+grpc_completion_queue *grpc_cq_from_pollset(grpc_pollset *ps);
 
 void grpc_cq_mark_non_listening_server_cq(grpc_completion_queue *cc);
 bool grpc_cq_is_non_listening_server_cq(grpc_completion_queue *cc);
