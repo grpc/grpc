@@ -2809,28 +2809,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
-      "grpc_test_util", 
-      "grpc_zookeeper"
-    ], 
-    "headers": [
-      "src/proto/grpc/testing/echo.grpc.pb.h", 
-      "src/proto/grpc/testing/echo.pb.h"
-    ], 
-    "language": "c++", 
-    "name": "zookeeper_test", 
-    "src": [
-      "test/cpp/end2end/zookeeper_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
       "grpc"
     ], 
     "headers": [], 
@@ -4291,23 +4269,6 @@
     "src": [
       "src/core/lib/surface/init.c", 
       "src/core/lib/surface/init_unsecure.c"
-    ], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "grpc"
-    ], 
-    "headers": [
-      "include/grpc/grpc_zookeeper.h"
-    ], 
-    "language": "c", 
-    "name": "grpc_zookeeper", 
-    "src": [
-      "include/grpc/grpc_zookeeper.h", 
-      "src/core/ext/resolver/zookeeper/zookeeper_resolver.c"
     ], 
     "third_party": false, 
     "type": "lib"
