@@ -55,7 +55,7 @@ namespace Grpc.IntegrationTesting
         {
             var serverConfig = new ServerConfig
             {
-                ServerType = ServerType.ASYNC_SERVER
+                ServerType = ServerType.AsyncServer
             };
             serverRunner = ServerRunners.CreateStarted(serverConfig);
         }
@@ -75,7 +75,7 @@ namespace Grpc.IntegrationTesting
             var config = new ClientConfig
             {
                 ServerTargets = { string.Format("{0}:{1}", "localhost", serverRunner.BoundPort) },
-                RpcType = RpcType.UNARY,
+                RpcType = RpcType.Unary,
                 LoadParams = new LoadParams { ClosedLoop = new ClosedLoopParams() },
                 PayloadConfig = new PayloadConfig
                 {
