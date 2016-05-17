@@ -273,8 +273,8 @@ namespace Grpc.IntegrationTesting
         {
             if (payloadConfig.PayloadCase == PayloadConfig.PayloadOneofCase.BytebufParams)
             {
-                GrpcPreconditions.CheckArgument(clientType == ClientType.ASYNC_CLIENT, "Generic client only supports async API");
-                GrpcPreconditions.CheckArgument(rpcType == RpcType.STREAMING, "Generic client only supports streaming calls");
+                GrpcPreconditions.CheckArgument(clientType == ClientType.AsyncClient, "Generic client only supports async API");
+                GrpcPreconditions.CheckArgument(rpcType == RpcType.Streaming, "Generic client only supports streaming calls");
                 return () =>
                 {
                     RunGenericStreamingAsync(channel, timer).Wait();
@@ -282,21 +282,21 @@ namespace Grpc.IntegrationTesting
             }
 
             GrpcPreconditions.CheckNotNull(payloadConfig.SimpleParams);
-            if (clientType == ClientType.SYNC_CLIENT)
+            if (clientType == ClientType.SyncClient)
             {
-                GrpcPreconditions.CheckArgument(rpcType == RpcType.UNARY, "Sync client can only be used for Unary calls in C#");
+                GrpcPreconditions.CheckArgument(rpcType == RpcType.Unary, "Sync client can only be used for Unary calls in C#");
                 return () => RunUnary(channel, timer);
             }
-            else if (clientType == ClientType.ASYNC_CLIENT)
+            else if (clientType == ClientType.AsyncClient)
             {
                 switch (rpcType)
                 {
-                    case RpcType.UNARY:
+                    case RpcType.Unary:
                         return () =>
                         {
                             RunUnaryAsync(channel, timer).Wait();
                         };
-                    case RpcType.STREAMING:
+                    case RpcType.Streaming:
                         return () =>
                         {
                             RunStreamingPingPongAsync(channel, timer).Wait();
