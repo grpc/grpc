@@ -40,6 +40,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <poll.h>
+#include <signal.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -120,6 +121,7 @@ struct grpc_pollset_worker {
   grpc_cached_wakeup_fd *wakeup_fd;
   int reevaluate_polling_on_wakeup;
   int kicked_specifically;
+  pthread_t pt_id;
   struct grpc_pollset_worker *next;
   struct grpc_pollset_worker *prev;
 };
@@ -506,6 +508,8 @@ static void pollset_kick_ext(grpc_pollset *p,
       }
       specific_worker->kicked_specifically = 1;
       grpc_wakeup_fd_wakeup(&specific_worker->wakeup_fd->fd);
+      /* TODO (sreek): Refactor this into a separate file*/
+      pthread_kill(specific_worker->pt_id, SIGUSR1);
     } else if ((flags & GRPC_POLLSET_CAN_KICK_SELF) != 0) {
       GPR_TIMER_MARK("kick_yoself", 0);
       if ((flags & GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP) != 0) {
@@ -551,10 +555,15 @@ static void pollset_kick(grpc_pollset *p,
 
 /* global state management */
 
+static void sig_handler(int sig_num) {
+  gpr_log(GPR_INFO, "Received signal %d", sig_num);
+}
+
 static void pollset_global_init(void) {
   gpr_tls_init(&g_current_thread_poller);
   gpr_tls_init(&g_current_thread_worker);
   grpc_wakeup_fd_init(&grpc_global_wakeup_fd);
+  signal(SIGUSR1, sig_handler);
 }
 
 static void pollset_global_shutdown(void) {
@@ -663,6 +672,9 @@ static void pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     grpc_wakeup_fd_init(&worker.wakeup_fd->fd);
   }
   worker.kicked_specifically = 0;
+
+  /* TODO(sreek): Abstract this thread id stuff out into a separate file */
+  worker.pt_id = pthread_self();
   /* If we're shutting down then we don't execute any extended work */
   if (pollset->shutting_down) {
     GPR_TIMER_MARK("pollset_work.shutting_down", 0);
