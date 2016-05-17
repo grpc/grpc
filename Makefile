@@ -1053,7 +1053,6 @@ stress_test: $(BINDIR)/$(CONFIG)/stress_test
 sync_streaming_ping_pong_test: $(BINDIR)/$(CONFIG)/sync_streaming_ping_pong_test
 sync_unary_ping_pong_test: $(BINDIR)/$(CONFIG)/sync_unary_ping_pong_test
 thread_stress_test: $(BINDIR)/$(CONFIG)/thread_stress_test
-zookeeper_test: $(BINDIR)/$(CONFIG)/zookeeper_test
 public_headers_must_be_c89: $(BINDIR)/$(CONFIG)/public_headers_must_be_c89
 boringssl_aes_test: $(BINDIR)/$(CONFIG)/boringssl_aes_test
 boringssl_asn1_test: $(BINDIR)/$(CONFIG)/boringssl_asn1_test
@@ -1182,8 +1181,8 @@ shared_cxx: pc_cxx pc_cxx_unsecure cache.mk $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)
 
 shared_csharp: shared_c  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION).$(SHARED_EXT)
 ifeq ($(HAS_ZOOKEEPER),true)
-static_zookeeper_libs: $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper.a
-shared_zookeeper_libs: $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_zookeeper$(SHARED_VERSION).$(SHARED_EXT)
+static_zookeeper_libs:
+shared_zookeeper_libs:
 else
 
 static_zookeeper_libs:
@@ -1466,7 +1465,6 @@ buildtests_cxx: buildtests_zookeeper privatelibs_cxx \
 
 ifeq ($(HAS_ZOOKEEPER),true)
 buildtests_zookeeper: privatelibs_zookeeper \
- $(BINDIR)/$(CONFIG)/zookeeper_test \
 
 else
 buildtests_zookeeper:
@@ -1817,8 +1815,6 @@ ifeq ($(CONFIG),opt)
 	$(E) "[STRIP]   Stripping libgrpc_unsecure.a"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
 ifeq ($(HAS_ZOOKEEPER),true)
-	$(E) "[STRIP]   Stripping libgrpc_zookeeper.a"
-	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper.a
 endif
 endif
 
@@ -1839,8 +1835,6 @@ ifeq ($(CONFIG),opt)
 	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION).$(SHARED_EXT)"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION).$(SHARED_EXT)
 ifeq ($(HAS_ZOOKEEPER),true)
-	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc_zookeeper$(SHARED_VERSION).$(SHARED_EXT)"
-	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_zookeeper$(SHARED_VERSION).$(SHARED_EXT)
 endif
 endif
 
@@ -2165,9 +2159,6 @@ install-static_c: static_c strip-static_c install-pkg-config_c
 	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(prefix)/lib/libgrpc_unsecure.a
 ifeq ($(HAS_ZOOKEEPER),true)
-	$(E) "[INSTALL] Installing libgrpc_zookeeper.a"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper.a $(prefix)/lib/libgrpc_zookeeper.a
 endif
 
 install-static_cxx: static_cxx strip-static_cxx install-pkg-config_cxx
@@ -2209,15 +2200,6 @@ else ifneq ($(SYSTEM),Darwin)
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc_unsecure.so
 endif
 ifeq ($(HAS_ZOOKEEPER),true)
-	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc_zookeeper$(SHARED_VERSION).$(SHARED_EXT)"
-	$(Q) $(INSTALL) -d $(prefix)/lib
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_zookeeper$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/$(SHARED_PREFIX)grpc_zookeeper$(SHARED_VERSION).$(SHARED_EXT)
-ifeq ($(SYSTEM),MINGW32)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper-imp.a $(prefix)/lib/libgrpc_zookeeper-imp.a
-else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_zookeeper$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc_zookeeper.so.0
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_zookeeper$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc_zookeeper.so
-endif
 endif
 ifneq ($(SYSTEM),MINGW32)
 ifneq ($(SYSTEM),Darwin)
@@ -3062,49 +3044,6 @@ endif
 
 ifneq ($(NO_DEPS),true)
 -include $(LIBGRPC_UNSECURE_OBJS:.o=.dep)
-endif
-
-
-LIBGRPC_ZOOKEEPER_SRC = \
-    src/core/ext/resolver/zookeeper/zookeeper_resolver.c \
-
-PUBLIC_HEADERS_C += \
-    include/grpc/grpc_zookeeper.h \
-
-LIBGRPC_ZOOKEEPER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_ZOOKEEPER_SRC))))
-
-
-$(LIBDIR)/$(CONFIG)/libgrpc_zookeeper.a: $(ZLIB_DEP)  $(LIBGRPC_ZOOKEEPER_OBJS) 
-	$(E) "[AR]      Creating $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper.a
-	$(Q) $(AR) $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper.a $(LIBGRPC_ZOOKEEPER_OBJS) 
-ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper.a
-endif
-
-
-
-ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc_zookeeper$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC_ZOOKEEPER_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/gpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/grpc.$(SHARED_EXT)
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared grpc_zookeeper.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_zookeeper$(SHARED_VERSION).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_zookeeper$(SHARED_VERSION)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_zookeeper$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC_ZOOKEEPER_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) -lgpr-imp -lgrpc-imp
-else
-$(LIBDIR)/$(CONFIG)/libgrpc_zookeeper$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC_ZOOKEEPER_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT)
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_zookeeper$(SHARED_VERSION).$(SHARED_EXT) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC_ZOOKEEPER_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) -lgpr -lgrpc -lzookeeper_mt
-else
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_zookeeper.so.0 -o $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC_ZOOKEEPER_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) -lgpr -lgrpc -lzookeeper_mt
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_zookeeper$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper$(SHARED_VERSION).so.0
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_zookeeper$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper$(SHARED_VERSION).so
-endif
-endif
-
-ifneq ($(NO_DEPS),true)
--include $(LIBGRPC_ZOOKEEPER_OBJS:.o=.dep)
 endif
 
 
@@ -12007,53 +11946,6 @@ ifneq ($(NO_DEPS),true)
 -include $(THREAD_STRESS_TEST_OBJS:.o=.dep)
 endif
 endif
-
-
-ZOOKEEPER_TEST_SRC = \
-    $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc \
-    test/cpp/end2end/zookeeper_test.cc \
-
-ZOOKEEPER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ZOOKEEPER_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/zookeeper_test: openssl_dep_error
-
-else
-
-
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
-
-$(BINDIR)/$(CONFIG)/zookeeper_test: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/zookeeper_test: $(PROTOBUF_DEP) $(ZOOKEEPER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(ZOOKEEPER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a -lzookeeper_mt $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/zookeeper_test
-
-endif
-
-endif
-
-$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/echo.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-$(OBJDIR)/$(CONFIG)/test/cpp/end2end/zookeeper_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc_zookeeper.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_zookeeper_test: $(ZOOKEEPER_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(ZOOKEEPER_TEST_OBJS:.o=.dep)
-endif
-endif
-$(OBJDIR)/$(CONFIG)/test/cpp/end2end/zookeeper_test.o: $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc
 
 
 PUBLIC_HEADERS_MUST_BE_C89_SRC = \

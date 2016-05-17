@@ -857,21 +857,6 @@ libs:
   generate_plugin_registry: true
   secure: false
   vs_project_guid: '{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}'
-- name: grpc_zookeeper
-  build: all
-  language: c
-  public_headers:
-  - include/grpc/grpc_zookeeper.h
-  src:
-  - src/core/ext/resolver/zookeeper/zookeeper_resolver.c
-  deps:
-  - gpr
-  - grpc
-  external_deps:
-  - zookeeper
-  platforms:
-  - linux
-  secure: false
 - name: reconnect_server
   build: private
   language: c
@@ -3124,26 +3109,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: zookeeper_test
-  gtest: true
-  build: test
-  run: false
-  language: c++
-  src:
-  - src/proto/grpc/testing/echo.proto
-  - test/cpp/end2end/zookeeper_test.cc
-  deps:
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc_zookeeper
-  - grpc
-  - gpr_test_util
-  - gpr
-  external_deps:
-  - zookeeper
-  platforms:
-  - linux
 - name: public_headers_must_be_c89
   build: test
   language: c89
