@@ -170,7 +170,8 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
                &ConnectEx, sizeof(ConnectEx), &ioctl_num_bytes, NULL, NULL);
 
   if (status != 0) {
-    error = GRPC_WSA_ERROR(WSAGetLastError(), "WSAIoctl(SIO_GET_EXTENSION_FUNCTION_POINTER)");
+    error = GRPC_WSA_ERROR(WSAGetLastError(),
+                           "WSAIoctl(SIO_GET_EXTENSION_FUNCTION_POINTER)");
     goto failure;
   }
 
@@ -214,8 +215,9 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
 failure:
   GPR_ASSERT(error != GRPC_ERROR_NONE);
   char *target_uri = grpc_sockaddr_to_uri(addr);
-  grpc_error *final_error = grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING("Failed to connect", &error, 1),
-                                               GRPC_ERROR_STR_TARGET_ADDRESS, target_uri);
+  grpc_error *final_error = grpc_error_set_str(
+      GRPC_ERROR_CREATE_REFERENCING("Failed to connect", &error, 1),
+      GRPC_ERROR_STR_TARGET_ADDRESS, target_uri);
   GRPC_ERROR_UNREF(error);
   if (socket != NULL) {
     grpc_winsocket_destroy(socket);

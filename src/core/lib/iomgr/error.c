@@ -508,14 +508,14 @@ grpc_error *grpc_os_error(const char *file, int line, int err,
 
 #ifdef GPR_WIN32
 grpc_error *grpc_wsa_error(const char *file, int line, int err,
-                          const char *call_name) {
+                           const char *call_name) {
   char *utf8_message = gpr_format_message(err);
   grpc_error *error = grpc_error_set_str(
-    grpc_error_set_str(
-    grpc_error_set_int(grpc_error_create(file, line, "OS Error", NULL, 0),
-    GRPC_ERROR_INT_WSA_ERROR, err),
-    GRPC_ERROR_STR_OS_ERROR, utf8_message),
-    GRPC_ERROR_STR_SYSCALL, call_name);
+      grpc_error_set_str(
+          grpc_error_set_int(grpc_error_create(file, line, "OS Error", NULL, 0),
+                             GRPC_ERROR_INT_WSA_ERROR, err),
+          GRPC_ERROR_STR_OS_ERROR, utf8_message),
+      GRPC_ERROR_STR_SYSCALL, call_name);
   gpr_free(utf8_message);
   return error;
 }
