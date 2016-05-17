@@ -862,6 +862,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
      re-evaluate our pollers (this allows poll() based pollers to
      ensure they don't miss wakeups) */
   keep_polling = 1;
+  gpr_tls_set(&g_current_thread_poller, (intptr_t)pollset);
   while (keep_polling) {
     keep_polling = 0;
     if (!pollset->kicked_without_pollers) {
@@ -870,7 +871,6 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
         added_worker = 1;
         gpr_tls_set(&g_current_thread_worker, (intptr_t)&worker);
       }
-      gpr_tls_set(&g_current_thread_poller, (intptr_t)pollset);
       GPR_TIMER_BEGIN("maybe_work_and_unlock", 0);
 #define POLLOUT_CHECK (POLLOUT | POLLHUP | POLLERR)
 #define POLLIN_CHECK (POLLIN | POLLHUP | POLLERR)
@@ -966,7 +966,6 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
       gpr_free(watchers);
       GPR_TIMER_END("maybe_work_and_unlock", 0);
       locked = 0;
-      gpr_tls_set(&g_current_thread_poller, 0);
     } else {
       GPR_TIMER_MARK("pollset_work.kicked_without_pollers", 0);
       pollset->kicked_without_pollers = 0;
@@ -998,6 +997,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
       now = gpr_now(now.clock_type);
     }
   }
+  gpr_tls_set(&g_current_thread_poller, 0);
   if (added_worker) {
     remove_worker(pollset, &worker);
     gpr_tls_set(&g_current_thread_worker, 0);
