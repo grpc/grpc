@@ -102,9 +102,7 @@ static grpc_error *blocking_resolve_address_impl(
   s = getaddrinfo(host, port, &hints, &result);
   GRPC_SCHEDULING_END_BLOCKING_REGION;
   if (s != 0) {
-    char *error_message = gpr_format_message(s);
-    gpr_log(GPR_ERROR, "getaddrinfo: %s", error_message);
-    gpr_free(error_message);
+    error = GRPC_WSA_ERROR(WSAGetLastError(), "getaddrinfo");
     goto done;
   }
 
@@ -163,7 +161,9 @@ static void do_request_thread(grpc_exec_ctx *exec_ctx, void *rp,
 }
 
 void grpc_resolved_addresses_destroy(grpc_resolved_addresses *addrs) {
-  gpr_free(addrs->addrs);
+  if (addrs != NULL) {
+    gpr_free(addrs->addrs);
+  }
   gpr_free(addrs);
 }
 
