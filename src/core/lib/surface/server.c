@@ -197,6 +197,7 @@ struct grpc_server {
   grpc_completion_queue **cqs;
   grpc_pollset **pollsets;
   size_t cq_count;
+  bool started;
 
   /* The two following mutexes control access to server-state
      mu_global controls access to non-call-related state (e.g., channel state)
@@ -369,17 +370,21 @@ static void server_delete(grpc_exec_ctx *exec_ctx, grpc_server *server) {
   gpr_mu_destroy(&server->mu_call);
   while ((rm = server->registered_methods) != NULL) {
     server->registered_methods = rm->next;
-    for (i = 0; i < server->cq_count; i++) {
-      request_matcher_destroy(&rm->request_matchers[i]);
+    if (server->started) {
+      for (i = 0; i < server->cq_count; i++) {
+        request_matcher_destroy(&rm->request_matchers[i]);
+      }
+      gpr_free(rm->request_matchers);
     }
-    gpr_free(rm->request_matchers);
     gpr_free(rm->method);
     gpr_free(rm->host);
     gpr_free(rm);
   }
   for (i = 0; i < server->cq_count; i++) {
     GRPC_CQ_INTERNAL_UNREF(server->cqs[i], "server");
-    request_matcher_destroy(&server->unregistered_request_matchers[i]);
+    if (server->started) {
+      request_matcher_destroy(&server->unregistered_request_matchers[i]);
+    }
   }
   gpr_stack_lockfree_destroy(server->request_freelist);
   gpr_free(server->unregistered_request_matchers);
@@ -649,16 +654,19 @@ static int num_channels(grpc_server *server) {
 
 static void kill_pending_work_locked(grpc_exec_ctx *exec_ctx,
                                      grpc_server *server) {
-  for (size_t i = 0; i < server->cq_count; i++) {
-    request_matcher_kill_requests(exec_ctx, server,
-                                  &server->unregistered_request_matchers[i]);
-    request_matcher_zombify_all_pending_calls(
-        exec_ctx, &server->unregistered_request_matchers[i]);
-    for (registered_method *rm = server->registered_methods; rm;
-         rm = rm->next) {
-      request_matcher_kill_requests(exec_ctx, server, &rm->request_matchers[i]);
-      request_matcher_zombify_all_pending_calls(exec_ctx,
-                                                &rm->request_matchers[i]);
+  if (server->started) {
+    for (size_t i = 0; i < server->cq_count; i++) {
+      request_matcher_kill_requests(exec_ctx, server,
+                                    &server->unregistered_request_matchers[i]);
+      request_matcher_zombify_all_pending_calls(
+          exec_ctx, &server->unregistered_request_matchers[i]);
+      for (registered_method *rm = server->registered_methods; rm;
+           rm = rm->next) {
+        request_matcher_kill_requests(exec_ctx, server,
+                                      &rm->request_matchers[i]);
+        request_matcher_zombify_all_pending_calls(exec_ctx,
+                                                  &rm->request_matchers[i]);
+      }
     }
   }
 }
@@ -1036,6 +1044,7 @@ void grpc_server_start(grpc_server *server) {
 
   GRPC_API_TRACE("grpc_server_start(server=%p)", 1, (server));
 
+  server->started = true;
   server->pollsets = gpr_malloc(sizeof(grpc_pollset *) * server->cq_count);
   server->unregistered_request_matchers = gpr_malloc(
       sizeof(*server->unregistered_request_matchers) * server->cq_count);
