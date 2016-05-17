@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
 
   /* test adding prioritization data */
-  GRPC_RUN_BAD_CLIENT_TEST(verifier,
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, NULL,
                            PFX_STR "\x00\x00\x00\x88\x00\x00\x00\x00\x01",
                            GRPC_BAD_CLIENT_DISCONNECT);
 

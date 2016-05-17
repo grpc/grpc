@@ -386,10 +386,18 @@ grpc_mdstr *grpc_mdstr_from_buffer(const uint8_t *buf, size_t length) {
   for (s = shard->strs[idx]; s; s = s->bucket_next) {
     if (s->hash == hash && GPR_SLICE_LENGTH(s->slice) == length &&
         0 == memcmp(buf, GPR_SLICE_START_PTR(s->slice), length)) {
-      GRPC_MDSTR_REF((grpc_mdstr *)s);
-      gpr_mu_unlock(&shard->mu);
-      GPR_TIMER_END("grpc_mdstr_from_buffer", 0);
-      return (grpc_mdstr *)s;
+      if (gpr_atm_full_fetch_add(&s->refcnt, 1) == 0) {
+        /* If we get here, we've added a ref to something that was about to
+         * die - drop it immediately.
+         * The *only* possible path here (given the shard mutex) should be to
+         * drop from one ref back to zero - assert that with a CAS */
+        GPR_ASSERT(gpr_atm_rel_cas(&s->refcnt, 1, 0));
+        /* and treat this as if we were never here... sshhh */
+      } else {
+        gpr_mu_unlock(&shard->mu);
+        GPR_TIMER_END("grpc_mdstr_from_buffer", 0);
+        return (grpc_mdstr *)s;
+      }
     }
   }
 
@@ -397,7 +405,7 @@ grpc_mdstr *grpc_mdstr_from_buffer(const uint8_t *buf, size_t length) {
   if (length + 1 < GPR_SLICE_INLINED_SIZE) {
     /* string data goes directly into the slice */
     s = gpr_malloc(sizeof(internal_string));
-    gpr_atm_rel_store(&s->refcnt, 2);
+    gpr_atm_rel_store(&s->refcnt, 1);
     s->slice.refcount = NULL;
     memcpy(s->slice.data.inlined.bytes, buf, length);
     s->slice.data.inlined.bytes[length] = 0;
@@ -406,7 +414,7 @@ grpc_mdstr *grpc_mdstr_from_buffer(const uint8_t *buf, size_t length) {
     /* string data goes after the internal_string header, and we +1 for null
        terminator */
     s = gpr_malloc(sizeof(internal_string) + length + 1);
-    gpr_atm_rel_store(&s->refcnt, 2);
+    gpr_atm_rel_store(&s->refcnt, 1);
     s->refcount.ref = slice_ref;
     s->refcount.unref = slice_unref;
     s->slice.refcount = &s->refcount;
@@ -675,20 +683,19 @@ const char *grpc_mdstr_as_c_string(grpc_mdstr *s) {
 grpc_mdstr *grpc_mdstr_ref(grpc_mdstr *gs DEBUG_ARGS) {
   internal_string *s = (internal_string *)gs;
   if (is_mdstr_static(gs)) return gs;
-  GPR_ASSERT(gpr_atm_full_fetch_add(&s->refcnt, 1) != 0);
+  GPR_ASSERT(gpr_atm_full_fetch_add(&s->refcnt, 1) > 0);
   return gs;
 }
 
 void grpc_mdstr_unref(grpc_mdstr *gs DEBUG_ARGS) {
   internal_string *s = (internal_string *)gs;
   if (is_mdstr_static(gs)) return;
-  if (2 == gpr_atm_full_fetch_add(&s->refcnt, -1)) {
+  if (1 == gpr_atm_full_fetch_add(&s->refcnt, -1)) {
     strtab_shard *shard =
         &g_strtab_shard[SHARD_IDX(s->hash, LOG2_STRTAB_SHARD_COUNT)];
     gpr_mu_lock(&shard->mu);
-    if (1 == gpr_atm_no_barrier_load(&s->refcnt)) {
-      internal_destroy_string(shard, s);
-    }
+    GPR_ASSERT(0 == gpr_atm_no_barrier_load(&s->refcnt));
+    internal_destroy_string(shard, s);
     gpr_mu_unlock(&shard->mu);
   }
 }

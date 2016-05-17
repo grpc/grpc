@@ -56,9 +56,6 @@ extern void gpr_default_log(gpr_log_func_args* args);
 
 DEFINE_int32(metrics_port, 8081, "The metrics server port.");
 
-DEFINE_int32(metrics_collection_interval_secs, 5,
-             "How often (in seconds) should metrics be recorded.");
-
 DEFINE_int32(sleep_duration_ms, 0,
              "The duration (in millisec) between two"
              " consecutive test calls (per server) issued by the server.");
@@ -92,7 +89,16 @@ DEFINE_string(test_cases, "",
               "   large_compressed_unary\n"
               "   client_streaming\n"
               "   server_streaming\n"
+              "   server_compressed_streaming\n"
+              "   slow_consumer\n"
+              "   half_duplex\n"
+              "   ping_pong\n"
+              "   cancel_after_begin\n"
+              "   cancel_after_first_response\n"
+              "   timeout_on_sleeping_server\n"
               "   empty_stream\n"
+              "   status_code_and_message\n"
+              "   custom_metadata\n"
               " Example: \"empty_unary:20,large_unary:10,empty_stream:70\"\n"
               " The above will execute 'empty_unary', 20% of the time,"
               " 'large_unary', 10% of the time and 'empty_stream' the remaining"
@@ -103,6 +109,10 @@ DEFINE_int32(log_level, GPR_LOG_SEVERITY_INFO,
              "greater than or equal to the level set here will be logged. "
              "The choices are: 0 (GPR_LOG_SEVERITY_DEBUG), 1 "
              "(GPR_LOG_SEVERITY_INFO) and 2 (GPR_LOG_SEVERITY_ERROR)");
+
+DEFINE_bool(do_not_abort_on_transient_failures, true,
+            "If set to 'true', abort() is not called in case of transient "
+            "failures like temporary connection failures.");
 
 using grpc::testing::kTestCaseList;
 using grpc::testing::MetricsService;
@@ -192,6 +202,12 @@ void LogParameterInfo(const std::vector<grpc::string>& addresses,
   gpr_log(GPR_INFO, "test_cases : %s", FLAGS_test_cases.c_str());
   gpr_log(GPR_INFO, "sleep_duration_ms: %d", FLAGS_sleep_duration_ms);
   gpr_log(GPR_INFO, "test_duration_secs: %d", FLAGS_test_duration_secs);
+  gpr_log(GPR_INFO, "num_channels_per_server: %d",
+          FLAGS_num_channels_per_server);
+  gpr_log(GPR_INFO, "num_stubs_per_channel: %d", FLAGS_num_stubs_per_channel);
+  gpr_log(GPR_INFO, "log_level: %d", FLAGS_log_level);
+  gpr_log(GPR_INFO, "do_not_abort_on_transient_failures: %s",
+          FLAGS_do_not_abort_on_transient_failures ? "true" : "false");
 
   int num = 0;
   for (auto it = addresses.begin(); it != addresses.end(); it++) {
@@ -275,19 +291,19 @@ int main(int argc, char** argv) {
            stub_idx++) {
         StressTestInteropClient* client = new StressTestInteropClient(
             ++thread_idx, *it, channel, test_selector, FLAGS_test_duration_secs,
-            FLAGS_sleep_duration_ms, FLAGS_metrics_collection_interval_secs);
+            FLAGS_sleep_duration_ms, FLAGS_do_not_abort_on_transient_failures);
 
-        bool is_already_created;
-        // Gauge name
+        bool is_already_created = false;
+        // QpsGauge name
         std::snprintf(buffer, sizeof(buffer),
                       "/stress_test/server_%d/channel_%d/stub_%d/qps",
                       server_idx, channel_idx, stub_idx);
 
         test_threads.emplace_back(grpc::thread(
             &StressTestInteropClient::MainLoop, client,
-            metrics_service.CreateGauge(buffer, &is_already_created)));
+            metrics_service.CreateQpsGauge(buffer, &is_already_created)));
 
-        // The Gauge should not have been already created
+        // The QpsGauge should not have been already created
         GPR_ASSERT(!is_already_created);
       }
     }

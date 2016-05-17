@@ -33,6 +33,7 @@
 
 #include <grpc++/server.h>
 
+#include <sstream>
 #include <utility>
 
 #include <grpc++/completion_queue.h>
@@ -41,6 +42,7 @@
 #include <grpc++/impl/grpc_library.h>
 #include <grpc++/impl/method_handler_impl.h>
 #include <grpc++/impl/rpc_service_method.h>
+#include <grpc++/impl/server_initializer.h>
 #include <grpc++/impl/service_type.h>
 #include <grpc++/security/server_credentials.h>
 #include <grpc++/server_context.h>
@@ -284,7 +286,8 @@ Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
       has_generic_service_(false),
       server_(nullptr),
       thread_pool_(thread_pool),
-      thread_pool_owned_(thread_pool_owned) {
+      thread_pool_owned_(thread_pool_owned),
+      server_initializer_(new ServerInitializer(this)) {
   g_gli_initializer.summon();
   gpr_once_init(&g_once_init_callbacks, InitGlobalCallbacks);
   global_callbacks_ = g_callbacks;
@@ -341,6 +344,7 @@ bool Server::RegisterService(const grpc::string* host, Service* service) {
                "Can only register an asynchronous service against one server.");
     service->server_ = this;
   }
+  const char* method_name = nullptr;
   for (auto it = service->methods_.begin(); it != service->methods_.end();
        ++it) {
     if (it->get() == nullptr) {  // Handled by generic service if any.
@@ -359,6 +363,17 @@ bool Server::RegisterService(const grpc::string* host, Service* service) {
       method->set_server_tag(tag);
     } else {
       sync_methods_->emplace_back(method, tag);
+    }
+    method_name = method->name();
+  }
+
+  // Parse service name.
+  if (method_name != nullptr) {
+    std::stringstream ss(method_name);
+    grpc::string service_name;
+    if (std::getline(ss, service_name, '/') &&
+        std::getline(ss, service_name, '/')) {
+      services_.push_back(service_name);
     }
   }
   return true;
@@ -597,5 +612,7 @@ void Server::RunRpc() {
     }
   }
 }
+
+ServerInitializer* Server::initializer() { return server_initializer_.get(); }
 
 }  // namespace grpc

@@ -51,6 +51,11 @@
 #include "src/core/lib/support/env.h"
 #include "test/core/util/port_server_client.h"
 
+#if GPR_GETPID_IN_UNISTD_H
+#include <sys/unistd.h>
+static int _getpid() { return getpid(); }
+#endif
+
 #define NUM_RANDOM_PORTS_TO_PICK 100
 
 static int *chosen_ports = NULL;
@@ -64,6 +69,30 @@ static int has_port_been_chosen(int port) {
     }
   }
   return 0;
+}
+
+static int free_chosen_port(int port) {
+  size_t i;
+  int found = 0;
+  size_t found_at = 0;
+  char *env = gpr_getenv("GRPC_TEST_PORT_SERVER");
+  if (env != NULL) {
+    /* Find the port and erase it from the list, then tell the server it can be
+       freed. */
+    for (i = 0; i < num_chosen_ports; i++) {
+      if (chosen_ports[i] == port) {
+        GPR_ASSERT(found == 0);
+        found = 1;
+        found_at = i;
+      }
+    }
+    if (found) {
+      chosen_ports[found_at] = chosen_ports[num_chosen_ports - 1];
+      grpc_free_port_using_server(env, port);
+      num_chosen_ports--;
+    }
+  }
+  return found;
 }
 
 static void free_chosen_ports(void) {
@@ -114,7 +143,7 @@ static int is_port_available(int *port, int is_tcp) {
   /* Try binding to port */
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = INADDR_ANY;
-  addr.sin_port = htons(*port);
+  addr.sin_port = htons((u_short)*port);
   if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
     gpr_log(GPR_DEBUG, "bind(port=%d) failed: %s", *port, strerror(errno));
     closesocket(fd);
@@ -127,7 +156,7 @@ static int is_port_available(int *port, int is_tcp) {
     closesocket(fd);
     return 0;
   }
-  GPR_ASSERT(alen <= sizeof(addr));
+  GPR_ASSERT(alen <= (socklen_t)sizeof(addr));
   actual_port = ntohs(addr.sin_port);
   GPR_ASSERT(actual_port > 0);
   if (*port == 0) {
@@ -210,5 +239,7 @@ int grpc_pick_unused_port_or_die(void) {
   GPR_ASSERT(port > 0);
   return port;
 }
+
+void grpc_recycle_unused_port(int port) { GPR_ASSERT(free_chosen_port(port)); }
 
 #endif /* GPR_WINSOCK_SOCKET && GRPC_TEST_PICK_PORT */

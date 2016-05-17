@@ -33,10 +33,10 @@ import argparse
 from oauth2client import client as oauth2client_client
 
 from grpc.beta import implementations
+from src.proto.grpc.testing import test_pb2
 
 from tests.interop import methods
 from tests.interop import resources
-from tests.interop import test_pb2
 from tests.unit.beta import test_utilities
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24

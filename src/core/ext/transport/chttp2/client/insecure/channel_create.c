@@ -235,5 +235,7 @@ grpc_channel *grpc_insecure_channel_create(const char *target,
 
   grpc_exec_ctx_finish(&exec_ctx);
 
-  return channel; /* may be NULL */
+  return channel != NULL ? channel : grpc_lame_client_channel_create(
+                                         target, GRPC_STATUS_INTERNAL,
+                                         "Failed to create client channel");
 }

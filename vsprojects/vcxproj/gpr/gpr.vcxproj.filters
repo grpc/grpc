@@ -82,6 +82,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\string_posix.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\string_util_win32.c">
+      <Filter>src\core\lib\support</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\string_win32.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
@@ -122,6 +125,9 @@
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\tls_pthread.c">
+      <Filter>src\core\lib\support</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\tmpfile_msys.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\tmpfile_posix.c">

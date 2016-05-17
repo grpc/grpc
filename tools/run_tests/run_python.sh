@@ -33,6 +33,8 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../..
 
+TOX_PYTHON_ENV="$1"
+
 ROOT=`pwd`
 export LD_LIBRARY_PATH=$ROOT/libs/$CONFIG
 export DYLD_LIBRARY_PATH=$ROOT/libs/$CONFIG
@@ -45,9 +47,9 @@ export GRPC_PYTHON_USE_PRECOMPILED_BINARIES=0
 if [ "$CONFIG" = "gcov" ]
 then
   export GRPC_PYTHON_ENABLE_CYTHON_TRACING=1
-  tox
+  tox -e ${TOX_PYTHON_ENV}
 else
-  $ROOT/.tox/py27/bin/python $ROOT/setup.py test_lite
+  $ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/setup.py test_lite
 fi
 
 mkdir -p $ROOT/reports

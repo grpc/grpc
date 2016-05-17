@@ -92,7 +92,7 @@ namespace Math.Tests
         public void DivByZero()
         {
             var ex = Assert.Throws<RpcException>(() => client.Div(new DivArgs { Dividend = 0, Divisor = 0 }));
-            Assert.AreEqual(StatusCode.Unknown, ex.Status.StatusCode);
+            Assert.AreEqual(StatusCode.InvalidArgument, ex.Status.StatusCode);
         }
 
         [Test]
