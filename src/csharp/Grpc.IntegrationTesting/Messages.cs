@@ -55,18 +55,18 @@ namespace Grpc.Testing {
             "TkUQABIICgRHWklQEAESCwoHREVGTEFURRACYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
-          new pbr::GeneratedCodeInfo(new[] {typeof(global::Grpc.Testing.PayloadType), typeof(global::Grpc.Testing.CompressionType), }, new pbr::GeneratedCodeInfo[] {
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.Payload), global::Grpc.Testing.Payload.Parser, new[]{ "Type", "Body" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.EchoStatus), global::Grpc.Testing.EchoStatus.Parser, new[]{ "Code", "Message" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.SimpleRequest), global::Grpc.Testing.SimpleRequest.Parser, new[]{ "ResponseType", "ResponseSize", "Payload", "FillUsername", "FillOauthScope", "ResponseCompression", "ResponseStatus" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.SimpleResponse), global::Grpc.Testing.SimpleResponse.Parser, new[]{ "Payload", "Username", "OauthScope" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.StreamingInputCallRequest), global::Grpc.Testing.StreamingInputCallRequest.Parser, new[]{ "Payload" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.StreamingInputCallResponse), global::Grpc.Testing.StreamingInputCallResponse.Parser, new[]{ "AggregatedPayloadSize" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ResponseParameters), global::Grpc.Testing.ResponseParameters.Parser, new[]{ "Size", "IntervalUs" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.StreamingOutputCallRequest), global::Grpc.Testing.StreamingOutputCallRequest.Parser, new[]{ "ResponseType", "ResponseParameters", "Payload", "ResponseCompression", "ResponseStatus" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.StreamingOutputCallResponse), global::Grpc.Testing.StreamingOutputCallResponse.Parser, new[]{ "Payload" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ReconnectParams), global::Grpc.Testing.ReconnectParams.Parser, new[]{ "MaxReconnectBackoffMs" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ReconnectInfo), global::Grpc.Testing.ReconnectInfo.Parser, new[]{ "Passed", "BackoffMs" }, null, null, null)
+          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Grpc.Testing.PayloadType), typeof(global::Grpc.Testing.CompressionType), }, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.Payload), global::Grpc.Testing.Payload.Parser, new[]{ "Type", "Body" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.EchoStatus), global::Grpc.Testing.EchoStatus.Parser, new[]{ "Code", "Message" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.SimpleRequest), global::Grpc.Testing.SimpleRequest.Parser, new[]{ "ResponseType", "ResponseSize", "Payload", "FillUsername", "FillOauthScope", "ResponseCompression", "ResponseStatus" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.SimpleResponse), global::Grpc.Testing.SimpleResponse.Parser, new[]{ "Payload", "Username", "OauthScope" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.StreamingInputCallRequest), global::Grpc.Testing.StreamingInputCallRequest.Parser, new[]{ "Payload" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.StreamingInputCallResponse), global::Grpc.Testing.StreamingInputCallResponse.Parser, new[]{ "AggregatedPayloadSize" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ResponseParameters), global::Grpc.Testing.ResponseParameters.Parser, new[]{ "Size", "IntervalUs" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.StreamingOutputCallRequest), global::Grpc.Testing.StreamingOutputCallRequest.Parser, new[]{ "ResponseType", "ResponseParameters", "Payload", "ResponseCompression", "ResponseStatus" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.StreamingOutputCallResponse), global::Grpc.Testing.StreamingOutputCallResponse.Parser, new[]{ "Payload" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ReconnectParams), global::Grpc.Testing.ReconnectParams.Parser, new[]{ "MaxReconnectBackoffMs" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ReconnectInfo), global::Grpc.Testing.ReconnectInfo.Parser, new[]{ "Passed", "BackoffMs" }, null, null, null)
           }));
     }
     #endregion
@@ -80,15 +80,15 @@ namespace Grpc.Testing {
     /// <summary>
     ///  Compressable text format.
     /// </summary>
-    COMPRESSABLE = 0,
+    [pbr::OriginalName("COMPRESSABLE")] Compressable = 0,
     /// <summary>
     ///  Uncompressable binary format.
     /// </summary>
-    UNCOMPRESSABLE = 1,
+    [pbr::OriginalName("UNCOMPRESSABLE")] Uncompressable = 1,
     /// <summary>
     ///  Randomly chosen from all other formats defined in this enum.
     /// </summary>
-    RANDOM = 2,
+    [pbr::OriginalName("RANDOM")] Random = 2,
   }
 
   /// <summary>
@@ -98,9 +98,9 @@ namespace Grpc.Testing {
     /// <summary>
     ///  No compression
     /// </summary>
-    NONE = 0,
-    GZIP = 1,
-    DEFLATE = 2,
+    [pbr::OriginalName("NONE")] None = 0,
+    [pbr::OriginalName("GZIP")] Gzip = 1,
+    [pbr::OriginalName("DEFLATE")] Deflate = 2,
   }
 
   #endregion
@@ -139,7 +139,7 @@ namespace Grpc.Testing {
 
     /// <summary>Field number for the "type" field.</summary>
     public const int TypeFieldNumber = 1;
-    private global::Grpc.Testing.PayloadType type_ = global::Grpc.Testing.PayloadType.COMPRESSABLE;
+    private global::Grpc.Testing.PayloadType type_ = 0;
     /// <summary>
     ///  The type of data in body.
     /// </summary>
@@ -159,7 +159,7 @@ namespace Grpc.Testing {
     public pb::ByteString Body {
       get { return body_; }
       set {
-        body_ = pb::Preconditions.CheckNotNull(value, "value");
+        body_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
@@ -181,7 +181,7 @@ namespace Grpc.Testing {
 
     public override int GetHashCode() {
       int hash = 1;
-      if (Type != global::Grpc.Testing.PayloadType.COMPRESSABLE) hash ^= Type.GetHashCode();
+      if (Type != 0) hash ^= Type.GetHashCode();
       if (Body.Length != 0) hash ^= Body.GetHashCode();
       return hash;
     }
@@ -191,7 +191,7 @@ namespace Grpc.Testing {
     }
 
     public void WriteTo(pb::CodedOutputStream output) {
-      if (Type != global::Grpc.Testing.PayloadType.COMPRESSABLE) {
+      if (Type != 0) {
         output.WriteRawTag(8);
         output.WriteEnum((int) Type);
       }
@@ -203,7 +203,7 @@ namespace Grpc.Testing {
 
     public int CalculateSize() {
       int size = 0;
-      if (Type != global::Grpc.Testing.PayloadType.COMPRESSABLE) {
+      if (Type != 0) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Type);
       }
       if (Body.Length != 0) {
@@ -216,7 +216,7 @@ namespace Grpc.Testing {
       if (other == null) {
         return;
       }
-      if (other.Type != global::Grpc.Testing.PayloadType.COMPRESSABLE) {
+      if (other.Type != 0) {
         Type = other.Type;
       }
       if (other.Body.Length != 0) {
@@ -293,7 +293,7 @@ namespace Grpc.Testing {
     public string Message {
       get { return message_; }
       set {
-        message_ = pb::Preconditions.CheckNotNull(value, "value");
+        message_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
@@ -417,7 +417,7 @@ namespace Grpc.Testing {
 
     /// <summary>Field number for the "response_type" field.</summary>
     public const int ResponseTypeFieldNumber = 1;
-    private global::Grpc.Testing.PayloadType responseType_ = global::Grpc.Testing.PayloadType.COMPRESSABLE;
+    private global::Grpc.Testing.PayloadType responseType_ = 0;
     /// <summary>
     ///  Desired payload type in the response from the server.
     ///  If response_type is RANDOM, server randomly chooses one from other formats.
@@ -484,7 +484,7 @@ namespace Grpc.Testing {
 
     /// <summary>Field number for the "response_compression" field.</summary>
     public const int ResponseCompressionFieldNumber = 6;
-    private global::Grpc.Testing.CompressionType responseCompression_ = global::Grpc.Testing.CompressionType.NONE;
+    private global::Grpc.Testing.CompressionType responseCompression_ = 0;
     /// <summary>
     ///  Compression algorithm to be used by the server for the response (stream)
     /// </summary>
@@ -531,12 +531,12 @@ namespace Grpc.Testing {
 
     public override int GetHashCode() {
       int hash = 1;
-      if (ResponseType != global::Grpc.Testing.PayloadType.COMPRESSABLE) hash ^= ResponseType.GetHashCode();
+      if (ResponseType != 0) hash ^= ResponseType.GetHashCode();
       if (ResponseSize != 0) hash ^= ResponseSize.GetHashCode();
       if (payload_ != null) hash ^= Payload.GetHashCode();
       if (FillUsername != false) hash ^= FillUsername.GetHashCode();
       if (FillOauthScope != false) hash ^= FillOauthScope.GetHashCode();
-      if (ResponseCompression != global::Grpc.Testing.CompressionType.NONE) hash ^= ResponseCompression.GetHashCode();
+      if (ResponseCompression != 0) hash ^= ResponseCompression.GetHashCode();
       if (responseStatus_ != null) hash ^= ResponseStatus.GetHashCode();
       return hash;
     }
@@ -546,7 +546,7 @@ namespace Grpc.Testing {
     }
 
     public void WriteTo(pb::CodedOutputStream output) {
-      if (ResponseType != global::Grpc.Testing.PayloadType.COMPRESSABLE) {
+      if (ResponseType != 0) {
         output.WriteRawTag(8);
         output.WriteEnum((int) ResponseType);
       }
@@ -566,7 +566,7 @@ namespace Grpc.Testing {
         output.WriteRawTag(40);
         output.WriteBool(FillOauthScope);
       }
-      if (ResponseCompression != global::Grpc.Testing.CompressionType.NONE) {
+      if (ResponseCompression != 0) {
         output.WriteRawTag(48);
         output.WriteEnum((int) ResponseCompression);
       }
@@ -578,7 +578,7 @@ namespace Grpc.Testing {
 
     public int CalculateSize() {
       int size = 0;
-      if (ResponseType != global::Grpc.Testing.PayloadType.COMPRESSABLE) {
+      if (ResponseType != 0) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) ResponseType);
       }
       if (ResponseSize != 0) {
@@ -593,7 +593,7 @@ namespace Grpc.Testing {
       if (FillOauthScope != false) {
         size += 1 + 1;
       }
-      if (ResponseCompression != global::Grpc.Testing.CompressionType.NONE) {
+      if (ResponseCompression != 0) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) ResponseCompression);
       }
       if (responseStatus_ != null) {
@@ -606,7 +606,7 @@ namespace Grpc.Testing {
       if (other == null) {
         return;
       }
-      if (other.ResponseType != global::Grpc.Testing.PayloadType.COMPRESSABLE) {
+      if (other.ResponseType != 0) {
         ResponseType = other.ResponseType;
       }
       if (other.ResponseSize != 0) {
@@ -624,7 +624,7 @@ namespace Grpc.Testing {
       if (other.FillOauthScope != false) {
         FillOauthScope = other.FillOauthScope;
       }
-      if (other.ResponseCompression != global::Grpc.Testing.CompressionType.NONE) {
+      if (other.ResponseCompression != 0) {
         ResponseCompression = other.ResponseCompression;
       }
       if (other.responseStatus_ != null) {
@@ -737,7 +737,7 @@ namespace Grpc.Testing {
     public string Username {
       get { return username_; }
       set {
-        username_ = pb::Preconditions.CheckNotNull(value, "value");
+        username_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
@@ -750,7 +750,7 @@ namespace Grpc.Testing {
     public string OauthScope {
       get { return oauthScope_; }
       set {
-        oauthScope_ = pb::Preconditions.CheckNotNull(value, "value");
+        oauthScope_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
@@ -1259,7 +1259,7 @@ namespace Grpc.Testing {
 
     /// <summary>Field number for the "response_type" field.</summary>
     public const int ResponseTypeFieldNumber = 1;
-    private global::Grpc.Testing.PayloadType responseType_ = global::Grpc.Testing.PayloadType.COMPRESSABLE;
+    private global::Grpc.Testing.PayloadType responseType_ = 0;
     /// <summary>
     ///  Desired payload type in the response from the server.
     ///  If response_type is RANDOM, the payload from each response in the stream
@@ -1300,7 +1300,7 @@ namespace Grpc.Testing {
 
     /// <summary>Field number for the "response_compression" field.</summary>
     public const int ResponseCompressionFieldNumber = 6;
-    private global::Grpc.Testing.CompressionType responseCompression_ = global::Grpc.Testing.CompressionType.NONE;
+    private global::Grpc.Testing.CompressionType responseCompression_ = 0;
     /// <summary>
     ///  Compression algorithm to be used by the server for the response (stream)
     /// </summary>
@@ -1345,10 +1345,10 @@ namespace Grpc.Testing {
 
     public override int GetHashCode() {
       int hash = 1;
-      if (ResponseType != global::Grpc.Testing.PayloadType.COMPRESSABLE) hash ^= ResponseType.GetHashCode();
+      if (ResponseType != 0) hash ^= ResponseType.GetHashCode();
       hash ^= responseParameters_.GetHashCode();
       if (payload_ != null) hash ^= Payload.GetHashCode();
-      if (ResponseCompression != global::Grpc.Testing.CompressionType.NONE) hash ^= ResponseCompression.GetHashCode();
+      if (ResponseCompression != 0) hash ^= ResponseCompression.GetHashCode();
       if (responseStatus_ != null) hash ^= ResponseStatus.GetHashCode();
       return hash;
     }
@@ -1358,7 +1358,7 @@ namespace Grpc.Testing {
     }
 
     public void WriteTo(pb::CodedOutputStream output) {
-      if (ResponseType != global::Grpc.Testing.PayloadType.COMPRESSABLE) {
+      if (ResponseType != 0) {
         output.WriteRawTag(8);
         output.WriteEnum((int) ResponseType);
       }
@@ -1367,7 +1367,7 @@ namespace Grpc.Testing {
         output.WriteRawTag(26);
         output.WriteMessage(Payload);
       }
-      if (ResponseCompression != global::Grpc.Testing.CompressionType.NONE) {
+      if (ResponseCompression != 0) {
         output.WriteRawTag(48);
         output.WriteEnum((int) ResponseCompression);
       }
@@ -1379,14 +1379,14 @@ namespace Grpc.Testing {
 
     public int CalculateSize() {
       int size = 0;
-      if (ResponseType != global::Grpc.Testing.PayloadType.COMPRESSABLE) {
+      if (ResponseType != 0) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) ResponseType);
       }
       size += responseParameters_.CalculateSize(_repeated_responseParameters_codec);
       if (payload_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Payload);
       }
-      if (ResponseCompression != global::Grpc.Testing.CompressionType.NONE) {
+      if (ResponseCompression != 0) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) ResponseCompression);
       }
       if (responseStatus_ != null) {
@@ -1399,7 +1399,7 @@ namespace Grpc.Testing {
       if (other == null) {
         return;
       }
-      if (other.ResponseType != global::Grpc.Testing.PayloadType.COMPRESSABLE) {
+      if (other.ResponseType != 0) {
         ResponseType = other.ResponseType;
       }
       responseParameters_.Add(other.responseParameters_);
@@ -1409,7 +1409,7 @@ namespace Grpc.Testing {
         }
         Payload.MergeFrom(other.Payload);
       }
-      if (other.ResponseCompression != global::Grpc.Testing.CompressionType.NONE) {
+      if (other.ResponseCompression != 0) {
         ResponseCompression = other.ResponseCompression;
       }
       if (other.responseStatus_ != null) {
