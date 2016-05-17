@@ -485,8 +485,6 @@ struct grpc_chttp2_stream_parsing {
   int64_t incoming_window;
   /** parsing state for data frames */
   grpc_chttp2_data_parser data_parser;
-  /** reason give to rst_stream */
-  uint32_t rst_stream_reason;
   /** amount of window given */
   int64_t outgoing_window;
   /** number of bytes received - reset at end of parse thread execution */

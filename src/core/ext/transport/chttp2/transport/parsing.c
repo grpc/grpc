@@ -87,8 +87,8 @@ void grpc_chttp2_prepare_to_read(
          transport_global->settings[GRPC_SENT_SETTINGS],
          sizeof(transport_parsing->last_sent_settings));
   transport_parsing->max_frame_size =
-      transport_global->settings[GRPC_ACKED_SETTINGS]
-                                [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE];
+      transport_global
+          ->settings[GRPC_ACKED_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE];
 
   /* update the parsing view of incoming window */
   while (grpc_chttp2_list_pop_unannounced_incoming_window_available(
@@ -236,10 +236,9 @@ void grpc_chttp2_publish_reads(
                                            GRPC_ERROR_INT_HTTP2_ERROR, &reason);
       if (has_reason && reason != GRPC_CHTTP2_NO_ERROR) {
         grpc_status_code status_code =
-            has_reason
-                ? grpc_chttp2_http2_error_to_grpc_status(
-                      (grpc_chttp2_error_code)stream_parsing->rst_stream_reason)
-                : GRPC_STATUS_INTERNAL;
+            has_reason ? grpc_chttp2_http2_error_to_grpc_status(
+                             (grpc_chttp2_error_code)reason)
+                       : GRPC_STATUS_INTERNAL;
         const char *status_details =
             grpc_error_string(stream_parsing->forced_close_error);
         gpr_slice slice_details = gpr_slice_from_copied_string(status_details);
