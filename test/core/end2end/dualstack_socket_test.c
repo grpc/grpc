@@ -88,9 +88,11 @@ void test_connect(const char *server_host, const char *client_host, int port,
   int was_cancelled = 2;
   grpc_call_details call_details;
   char *peer;
+  int picked_port = 0;
 
   if (port == 0) {
     port = grpc_pick_unused_port_or_die();
+    picked_port = 1;
   }
 
   gpr_join_host_port(&server_hostport, server_host, port);
@@ -263,6 +265,9 @@ void test_connect(const char *server_host, const char *client_host, int port,
 
   grpc_call_details_destroy(&call_details);
   gpr_free(details);
+  if (picked_port) {
+    grpc_recycle_unused_port(port);
+  }
 }
 
 int external_dns_works(const char *host) {
