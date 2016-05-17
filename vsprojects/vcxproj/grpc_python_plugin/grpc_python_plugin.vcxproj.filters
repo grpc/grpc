@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\src\compiler\python_plugin.cc">
+      <Filter>src\compiler</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{493af5ff-4d2b-df8c-1cf2-28c895efe1a3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\compiler">
+      <UniqueIdentifier>{2517f73e-aa8f-108a-2a6d-b68ab23f7838}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

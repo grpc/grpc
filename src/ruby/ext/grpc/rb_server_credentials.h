@@ -34,12 +34,9 @@
 #ifndef GRPC_RB_SERVER_CREDENTIALS_H_
 #define GRPC_RB_SERVER_CREDENTIALS_H_
 
-#include <ruby.h>
-#include <grpc/grpc_security.h>
+#include <ruby/ruby.h>
 
-/* rb_cServerCredentials is the ruby class whose instances proxy
-   grpc_server_credentials. */
-extern VALUE rb_cServerCredentials;
+#include <grpc/grpc_security.h>
 
 /* Initializes the ruby ServerCredentials class. */
 void Init_grpc_server_credentials();

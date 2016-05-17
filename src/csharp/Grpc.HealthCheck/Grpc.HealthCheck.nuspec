@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package>
+  <metadata>
+    <id>Grpc.HealthCheck</id>
+    <title>gRPC C# Healthchecking</title>
+    <summary>Implementation of gRPC health service</summary>
+    <description>Example implementation of grpc.health.v1 service that can be used for health-checking.</description>
+    <version>$version$</version>
+    <authors>Google Inc.</authors>
+    <owners>grpc-packages</owners>
+    <licenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/grpc/grpc</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <copyright>Copyright 2015, Google Inc.</copyright>
+    <tags>gRPC health check</tags>
+	<dependencies>
+	  <dependency id="Google.Protobuf" version="$ProtobufVersion$" />
+	  <dependency id="Grpc.Core" version="$version$" />
+	  <dependency id="Ix-Async" version="1.2.3" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="bin/ReleaseSigned/Grpc.HealthCheck.dll" target="lib/net45" />
+	<file src="bin/ReleaseSigned/Grpc.HealthCheck.pdb" target="lib/net45" />
+	<file src="bin/ReleaseSigned/Grpc.HealthCheck.xml" target="lib/net45" />
+	<file src="**\*.cs" target="src" />
+  </files>
+</package>

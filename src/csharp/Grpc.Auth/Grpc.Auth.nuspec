@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package>
+  <metadata>
+    <id>Grpc.Auth</id>
+    <title>gRPC C# Auth</title>
+    <summary>Auth library for C# implementation of gRPC - an RPC library and framework</summary>
+    <description>Auth library for C# implementation of gRPC - an RPC library and framework. See project site for more info.</description>
+    <version>$version$</version>
+    <authors>Google Inc.</authors>
+    <owners>grpc-packages</owners>
+    <licenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/grpc/grpc</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <releaseNotes>Release $version$ of gRPC C#</releaseNotes>
+    <copyright>Copyright 2015, Google Inc.</copyright>
+    <tags>gRPC RPC Protocol HTTP/2 Auth OAuth2</tags>
+	<dependencies>
+	  <dependency id="Google.Apis.Auth" version="1.11.1" />
+	  <dependency id="Grpc.Core" version="$version$" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="bin/ReleaseSigned/Grpc.Auth.dll" target="lib/net45" />
+	<file src="bin/ReleaseSigned/Grpc.Auth.pdb" target="lib/net45" />
+	<file src="bin/ReleaseSigned/Grpc.Auth.xml" target="lib/net45" />
+	<file src="**\*.cs" target="src" />
+  </files>
+</package>

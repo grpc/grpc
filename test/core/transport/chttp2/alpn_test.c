@@ -31,15 +31,13 @@
  *
  */
 
-#include "src/core/transport/chttp2/alpn.h"
+#include "src/core/ext/transport/chttp2/alpn/alpn.h"
 
 #include <grpc/support/log.h>
 #include "test/core/util/test_config.h"
 
 static void test_alpn_success(void) {
-  GPR_ASSERT(grpc_chttp2_is_alpn_version_supported("h2-16", 5));
-  GPR_ASSERT(grpc_chttp2_is_alpn_version_supported("h2-15", 5));
-  GPR_ASSERT(grpc_chttp2_is_alpn_version_supported("h2-14", 5));
+  GPR_ASSERT(grpc_chttp2_is_alpn_version_supported("h2", 2));
 }
 
 static void test_alpn_failure(void) {

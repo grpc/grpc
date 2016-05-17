@@ -5,5 +5,4 @@ Python, PHP, NodeJS, Objective-C) are layered on top of this library.
 
 #Status
 
-Alpha : Ready for early adopters
-
+Beta

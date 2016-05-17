@@ -32,20 +32,87 @@
  */
 
 #include <grpc/support/port_platform.h>
-#ifdef GPR_POSIX_SOCKET
+#include "test/core/util/test_config.h"
+#if defined(GPR_POSIX_SOCKET) && defined(GRPC_TEST_PICK_PORT)
 
 #include "test/core/util/port.h"
 
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <stdio.h>
 #include <errno.h>
+#include <netinet/in.h>
+#include <stdio.h>
 #include <string.h>
+#include <sys/socket.h>
 #include <unistd.h>
 
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
+
+#include "src/core/lib/http/httpcli.h"
+#include "src/core/lib/support/env.h"
+#include "test/core/util/port_server_client.h"
 
 #define NUM_RANDOM_PORTS_TO_PICK 100
+
+static int *chosen_ports = NULL;
+static size_t num_chosen_ports = 0;
+
+static int has_port_been_chosen(int port) {
+  size_t i;
+  for (i = 0; i < num_chosen_ports; i++) {
+    if (chosen_ports[i] == port) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+static int free_chosen_port(int port) {
+  size_t i;
+  int found = 0;
+  size_t found_at = 0;
+  char *env = gpr_getenv("GRPC_TEST_PORT_SERVER");
+  /* Find the port and erase it from the list, then tell the server it can be
+     freed. */
+  for (i = 0; i < num_chosen_ports; i++) {
+    if (chosen_ports[i] == port) {
+      GPR_ASSERT(found == 0);
+      found = 1;
+      found_at = i;
+    }
+  }
+  if (found) {
+    chosen_ports[found_at] = chosen_ports[num_chosen_ports - 1];
+    num_chosen_ports--;
+    if (env) {
+      grpc_free_port_using_server(env, port);
+    }
+  }
+  return found;
+}
+
+static void free_chosen_ports(void) {
+  char *env = gpr_getenv("GRPC_TEST_PORT_SERVER");
+  if (env != NULL) {
+    size_t i;
+    for (i = 0; i < num_chosen_ports; i++) {
+      grpc_free_port_using_server(env, chosen_ports[i]);
+    }
+    gpr_free(env);
+  }
+
+  gpr_free(chosen_ports);
+}
+
+static void chose_port(int port) {
+  if (chosen_ports == NULL) {
+    atexit(free_chosen_ports);
+  }
+  num_chosen_ports++;
+  chosen_ports = gpr_realloc(chosen_ports, sizeof(int) * num_chosen_ports);
+  chosen_ports[num_chosen_ports - 1] = port;
+}
 
 static int is_port_available(int *port, int is_tcp) {
   const int proto = is_tcp ? IPPROTO_TCP : 0;
@@ -72,7 +139,7 @@ static int is_port_available(int *port, int is_tcp) {
   /* Try binding to port */
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = INADDR_ANY;
-  addr.sin_port = htons(*port);
+  addr.sin_port = htons((uint16_t)*port);
   if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
     gpr_log(GPR_DEBUG, "bind(port=%d) failed: %s", *port, strerror(errno));
     close(fd);
@@ -107,25 +174,39 @@ int grpc_pick_unused_port(void) {
      races with other processes on kernels that want to reuse the same
      port numbers over and over. */
 
-  /* In alternating iterations we try UDP ports before TCP ports UDP
+  /* In alternating iterations we trial UDP ports before TCP ports UDP
      ports -- it could be the case that this machine has been using up
      UDP ports and they are scarcer. */
 
   /* Type of port to first pick in next iteration */
   int is_tcp = 1;
-  int try = 0;
+  int trial = 0;
+
+  char *env = gpr_getenv("GRPC_TEST_PORT_SERVER");
+  if (env) {
+    int port = grpc_pick_port_using_server(env);
+    gpr_free(env);
+    if (port != 0) {
+      chose_port(port);
+    }
+    return port;
+  }
 
   for (;;) {
     int port;
-    try++;
-    if (try == 1) {
+    trial++;
+    if (trial == 1) {
       port = getpid() % (65536 - 30000) + 30000;
-    } else if (try <= NUM_RANDOM_PORTS_TO_PICK) {
+    } else if (trial <= NUM_RANDOM_PORTS_TO_PICK) {
       port = rand() % (65536 - 30000) + 30000;
     } else {
       port = 0;
     }
-    
+
+    if (has_port_been_chosen(port)) {
+      continue;
+    }
+
     if (!is_port_available(&port, is_tcp)) {
       continue;
     }
@@ -133,15 +214,13 @@ int grpc_pick_unused_port(void) {
     GPR_ASSERT(port > 0);
     /* Check that the port # is free for the other type of socket also */
     if (!is_port_available(&port, !is_tcp)) {
-      /* In the next iteration try to bind to the other type first
+      /* In the next iteration trial to bind to the other type first
          because perhaps it is more rare. */
       is_tcp = !is_tcp;
       continue;
     }
 
-    /* TODO(ctiller): consider caching this port in some structure, to avoid
-                      handing it out again */
-
+    chose_port(port);
     return port;
   }
 
@@ -155,4 +234,6 @@ int grpc_pick_unused_port_or_die(void) {
   return port;
 }
 
-#endif /* GPR_POSIX_SOCKET */
+void grpc_recycle_unused_port(int port) { GPR_ASSERT(free_chosen_port(port)); }
+
+#endif /* GPR_POSIX_SOCKET && GRPC_TEST_PICK_PORT */

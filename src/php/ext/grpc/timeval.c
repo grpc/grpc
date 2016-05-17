@@ -37,18 +37,20 @@
 #include "config.h"
 #endif
 
-#include "php.h"
-#include "php_ini.h"
-#include "ext/standard/info.h"
-#include "ext/spl/spl_exceptions.h"
+#include <php.h>
+#include <php_ini.h>
+#include <ext/standard/info.h>
+#include <ext/spl/spl_exceptions.h>
 #include "php_grpc.h"
 
-#include "zend_exceptions.h"
+#include <zend_exceptions.h>
 
 #include <stdbool.h>
 
-#include "grpc/grpc.h"
-#include "grpc/support/time.h"
+#include <grpc/grpc.h>
+#include <grpc/support/time.h>
+
+zend_class_entry *grpc_ce_timeval;
 
 /* Frees and destroys an instance of wrapped_grpc_call */
 void free_wrapped_grpc_timeval(void *object TSRMLS_DC) { efree(object); }
@@ -96,7 +98,7 @@ PHP_METHOD(Timeval, __construct) {
                          "Timeval expects a long", 1 TSRMLS_CC);
     return;
   }
-  gpr_timespec time = gpr_time_from_micros(microseconds);
+  gpr_timespec time = gpr_time_from_micros(microseconds, GPR_TIMESPAN);
   memcpy(&timeval->wrapped, &time, sizeof(gpr_timespec));
 }
 
@@ -206,7 +208,7 @@ PHP_METHOD(Timeval, similar) {
  * @return Timeval The current time
  */
 PHP_METHOD(Timeval, now) {
-  zval *now = grpc_php_wrap_timeval(gpr_now());
+  zval *now = grpc_php_wrap_timeval(gpr_now(GPR_CLOCK_REALTIME));
   RETURN_DESTROY_ZVAL(now);
 }
 
@@ -215,7 +217,8 @@ PHP_METHOD(Timeval, now) {
  * @return Timeval Zero length time interval
  */
 PHP_METHOD(Timeval, zero) {
-  zval *grpc_php_timeval_zero = grpc_php_wrap_timeval(gpr_time_0);
+  zval *grpc_php_timeval_zero =
+      grpc_php_wrap_timeval(gpr_time_0(GPR_CLOCK_REALTIME));
   RETURN_ZVAL(grpc_php_timeval_zero,
               false, /* Copy original before returning? */
               true /* Destroy original before returning */);
@@ -225,8 +228,9 @@ PHP_METHOD(Timeval, zero) {
  * Returns the infinite future time value as a timeval object
  * @return Timeval Infinite future time value
  */
-PHP_METHOD(Timeval, inf_future) {
-  zval *grpc_php_timeval_inf_future = grpc_php_wrap_timeval(gpr_inf_future);
+PHP_METHOD(Timeval, infFuture) {
+  zval *grpc_php_timeval_inf_future =
+      grpc_php_wrap_timeval(gpr_inf_future(GPR_CLOCK_REALTIME));
   RETURN_DESTROY_ZVAL(grpc_php_timeval_inf_future);
 }
 
@@ -234,8 +238,9 @@ PHP_METHOD(Timeval, inf_future) {
  * Returns the infinite past time value as a timeval object
  * @return Timeval Infinite past time value
  */
-PHP_METHOD(Timeval, inf_past) {
-  zval *grpc_php_timeval_inf_past = grpc_php_wrap_timeval(gpr_inf_past);
+PHP_METHOD(Timeval, infPast) {
+  zval *grpc_php_timeval_inf_past =
+      grpc_php_wrap_timeval(gpr_inf_past(GPR_CLOCK_REALTIME));
   RETURN_DESTROY_ZVAL(grpc_php_timeval_inf_past);
 }
 
@@ -243,7 +248,7 @@ PHP_METHOD(Timeval, inf_past) {
  * Sleep until this time, interpreted as an absolute timeout
  * @return void
  */
-PHP_METHOD(Timeval, sleep_until) {
+PHP_METHOD(Timeval, sleepUntil) {
   wrapped_grpc_timeval *this =
       (wrapped_grpc_timeval *)zend_object_store_get_object(getThis() TSRMLS_CC);
   gpr_sleep_until(this->wrapped);
@@ -253,11 +258,11 @@ static zend_function_entry timeval_methods[] = {
     PHP_ME(Timeval, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
     PHP_ME(Timeval, add, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Timeval, compare, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-    PHP_ME(Timeval, inf_future, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-    PHP_ME(Timeval, inf_past, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+    PHP_ME(Timeval, infFuture, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+    PHP_ME(Timeval, infPast, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     PHP_ME(Timeval, now, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     PHP_ME(Timeval, similar, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-    PHP_ME(Timeval, sleep_until, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Timeval, sleepUntil, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Timeval, subtract, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Timeval, zero, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC) PHP_FE_END};
 

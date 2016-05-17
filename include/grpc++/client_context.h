@@ -31,124 +31,24 @@
  *
  */
 
+/// A ClientContext allows the person implementing a service client to:
+///
+/// - Add custom metadata key-value pairs that will propagated to the server
+/// side.
+/// - Control call settings such as compression and authentication.
+/// - Initial and trailing metadata coming from the server.
+/// - Get performance metrics (ie, census).
+///
+/// Context settings are only relevant to the call they are invoked with, that
+/// is to say, they aren't sticky. Some of these settings, such as the
+/// compression options, can be made persistant at channel construction time
+/// (see \a grpc::CreateCustomChannel).
+///
+/// \warning ClientContext instances should \em not be reused across rpcs.
+
 #ifndef GRPCXX_CLIENT_CONTEXT_H
 #define GRPCXX_CLIENT_CONTEXT_H
 
-#include <chrono>
-#include <map>
-#include <string>
-
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
-#include <grpc++/config.h>
-
-using std::chrono::system_clock;
-
-struct grpc_call;
-struct grpc_completion_queue;
-
-namespace google {
-namespace protobuf {
-class Message;
-}  // namespace protobuf
-}  // namespace google
-
-namespace grpc {
-
-class CallOpBuffer;
-class ChannelInterface;
-class CompletionQueue;
-class RpcMethod;
-class Status;
-template <class R>
-class ClientReader;
-template <class W>
-class ClientWriter;
-template <class R, class W>
-class ClientReaderWriter;
-template <class R>
-class ClientAsyncReader;
-template <class W>
-class ClientAsyncWriter;
-template <class R, class W>
-class ClientAsyncReaderWriter;
-template <class R>
-class ClientAsyncResponseReader;
-
-class ClientContext {
- public:
-  ClientContext();
-  ~ClientContext();
-
-  void AddMetadata(const grpc::string &meta_key,
-                   const grpc::string &meta_value);
-
-  const std::multimap<grpc::string, grpc::string>& GetServerInitialMetadata() {
-    GPR_ASSERT(initial_metadata_received_);
-    return recv_initial_metadata_;
-  }
-
-  const std::multimap<grpc::string, grpc::string>& GetServerTrailingMetadata() {
-    // TODO(yangg) check finished
-    return trailing_metadata_;
-  }
-
-  void set_absolute_deadline(const system_clock::time_point &deadline);
-  system_clock::time_point absolute_deadline();
-
-  void set_authority(const grpc::string& authority) {
-    authority_ = authority;
-  }
-
-  void TryCancel();
-
- private:
-  // Disallow copy and assign.
-  ClientContext(const ClientContext &);
-  ClientContext &operator=(const ClientContext &);
-
-  friend class CallOpBuffer;
-  friend class Channel;
-  template <class R>
-  friend class ::grpc::ClientReader;
-  template <class W>
-  friend class ::grpc::ClientWriter;
-  template <class R, class W>
-  friend class ::grpc::ClientReaderWriter;
-  template <class R>
-  friend class ::grpc::ClientAsyncReader;
-  template <class W>
-  friend class ::grpc::ClientAsyncWriter;
-  template <class R, class W>
-  friend class ::grpc::ClientAsyncReaderWriter;
-  template <class R>
-  friend class ::grpc::ClientAsyncResponseReader;
-
-  grpc_call *call() { return call_; }
-  void set_call(grpc_call *call) {
-    GPR_ASSERT(call_ == nullptr);
-    call_ = call;
-  }
-
-  grpc_completion_queue *cq() { return cq_; }
-  void set_cq(grpc_completion_queue *cq) { cq_ = cq; }
-
-  gpr_timespec RawDeadline() { return absolute_deadline_; }
-
-  grpc::string authority() {
-    return authority_;
-  }
-
-  bool initial_metadata_received_;
-  grpc_call *call_;
-  grpc_completion_queue *cq_;
-  gpr_timespec absolute_deadline_;
-  grpc::string authority_;
-  std::multimap<grpc::string, grpc::string> send_initial_metadata_;
-  std::multimap<grpc::string, grpc::string> recv_initial_metadata_;
-  std::multimap<grpc::string, grpc::string> trailing_metadata_;
-};
-
-}  // namespace grpc
+#include <grpc++/impl/codegen/client_context.h>
 
 #endif  // GRPCXX_CLIENT_CONTEXT_H

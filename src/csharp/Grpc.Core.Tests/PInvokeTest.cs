@@ -33,37 +33,21 @@
 
 using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Internal;
 using Grpc.Core.Utils;
 using NUnit.Framework;
-using System.Runtime.InteropServices;
 
 namespace Grpc.Core.Tests
 {
     public class PInvokeTest
     {
+        static readonly NativeMethods Native = NativeMethods.Get();
+
         int counter;
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern GRPCCallError grpcsharp_test_callback([MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern IntPtr grpcsharp_test_nop(IntPtr ptr);
-
-        [TestFixtureSetUp]
-        public void Init()
-        {
-            GrpcEnvironment.Initialize();
-        }
-
-        [TestFixtureTearDown]
-        public void Cleanup()
-        {
-            GrpcEnvironment.Shutdown();
-        }
 
         /// <summary>
         /// (~1.26us .NET Windows)
@@ -71,15 +55,18 @@ namespace Grpc.Core.Tests
         [Test]
         public void CompletionQueueCreateDestroyBenchmark()
         {
+            GrpcEnvironment.AddRef();  // completion queue requires gRPC environment being initialized.
+
             BenchmarkUtil.RunBenchmark(
-                100000, 1000000,
-                () => {
+                10, 10,
+                () =>
+                {
                     CompletionQueueSafeHandle cq = CompletionQueueSafeHandle.Create();
                     cq.Dispose();
-                }
-            );
-        }
+                });
 
+            GrpcEnvironment.Release();
+        }
 
         /// <summary>
         /// Approximate results:
@@ -87,17 +74,19 @@ namespace Grpc.Core.Tests
         /// (~110ns .NET Windows)
         /// </summary>
         [Test]
+        [Category("Performance")]
+        [Ignore("Prevent running on Jenkins")]
         public void NativeCallbackBenchmark()
         {
-            CompletionCallbackDelegate handler = Handler;
+            OpCompletionDelegate handler = Handler;
 
             counter = 0;
             BenchmarkUtil.RunBenchmark(
                 1000000, 10000000,
-                () => {
-                    grpcsharp_test_callback(handler);
-                }
-            );
+                () =>
+                {
+                    Native.grpcsharp_test_callback(handler);
+                });
             Assert.AreNotEqual(0, counter);
         }
 
@@ -108,15 +97,17 @@ namespace Grpc.Core.Tests
         /// (~1.1us on .NET Windows)
         /// </summary>
         [Test]
+        [Category("Performance")]
+        [Ignore("Prevent running on Jenkins")]
         public void NewNativeCallbackBenchmark()
         {
             counter = 0;
             BenchmarkUtil.RunBenchmark(
                 10000, 10000,
-                () => {
-                grpcsharp_test_callback(new CompletionCallbackDelegate(Handler));
-            }
-            );
+                () =>
+                {
+                    Native.grpcsharp_test_callback(new OpCompletionDelegate(Handler));
+                });
             Assert.AreNotEqual(0, counter);
         }
 
@@ -125,21 +116,21 @@ namespace Grpc.Core.Tests
         /// (~46ns .NET Windows)
         /// </summary>
         [Test]
+        [Category("Performance")]
+        [Ignore("Prevent running on Jenkins")]
         public void NopPInvokeBenchmark()
         {
-            CompletionCallbackDelegate handler = Handler;
-
             BenchmarkUtil.RunBenchmark(
                 1000000, 100000000,
-                () => {
-                    grpcsharp_test_nop(IntPtr.Zero);
-                }
-            );
+                () =>
+                {
+                    Native.grpcsharp_test_nop(IntPtr.Zero);
+                });
         }
 
-        private void Handler(GRPCOpError op, IntPtr ptr) {
-            counter ++;
+        private void Handler(bool success)
+        {
+            counter++;
         }
     }
 }
-

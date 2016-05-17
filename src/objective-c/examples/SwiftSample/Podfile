@@ -1,0 +1,10 @@
+source 'https://github.com/CocoaPods/Specs.git'
+platform :ios, '8.0'
+
+pod 'Protobuf', :path => "../../../../third_party/protobuf"
+pod 'BoringSSL', :podspec => "../.."
+pod 'gRPC', :path => "../../../.."
+pod 'RemoteTest', :path => "../RemoteTestClient"
+
+target 'SwiftSample' do
+end

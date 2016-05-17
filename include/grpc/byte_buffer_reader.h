@@ -34,16 +34,6 @@
 #ifndef GRPC_BYTE_BUFFER_READER_H
 #define GRPC_BYTE_BUFFER_READER_H
 
-#include <grpc/grpc.h>
-#include <grpc/byte_buffer.h>
+#include <grpc/impl/codegen/byte_buffer_reader.h>
 
-struct grpc_byte_buffer_reader {
-  grpc_byte_buffer *buffer;
-  /* Different current objects correspond to different types of byte buffers */
-  union {
-    /* Index into a slice buffer's array of slices */
-    unsigned index;
-  } current;
-};
-
-#endif  /* GRPC_BYTE_BUFFER_READER_H */
+#endif /* GRPC_BYTE_BUFFER_READER_H */

@@ -34,89 +34,155 @@
 #ifndef GRPCXX_SERVER_H
 #define GRPCXX_SERVER_H
 
-#include <condition_variable>
 #include <list>
 #include <memory>
-#include <mutex>
+#include <vector>
 
 #include <grpc++/completion_queue.h>
-#include <grpc++/config.h>
 #include <grpc++/impl/call.h>
-#include <grpc++/impl/service_type.h>
-#include <grpc++/status.h>
+#include <grpc++/impl/codegen/grpc_library.h>
+#include <grpc++/impl/codegen/server_interface.h>
+#include <grpc++/impl/rpc_service_method.h>
+#include <grpc++/impl/sync.h>
+#include <grpc++/security/server_credentials.h>
+#include <grpc++/support/channel_arguments.h>
+#include <grpc++/support/config.h>
+#include <grpc++/support/status.h>
+#include <grpc/compression.h>
 
 struct grpc_server;
 
-namespace google {
-namespace protobuf {
-class Message;
-}  // namespace protobuf
-}  // namespace google
-
 namespace grpc {
-class AsynchronousService;
-class RpcService;
-class RpcServiceMethod;
-class ServerCredentials;
+
+class GenericServerContext;
+class AsyncGenericService;
+class ServerAsyncStreamingInterface;
+class ServerContext;
+class ServerInitializer;
 class ThreadPoolInterface;
 
-// Currently it only supports handling rpcs in a single thread.
-class Server GRPC_FINAL : private CallHook,
-                          private AsynchronousService::DispatchImpl {
+/// Models a gRPC server.
+///
+/// Servers are configured and started via \a grpc::ServerBuilder.
+class Server GRPC_FINAL : public ServerInterface, private GrpcLibraryCodegen {
  public:
   ~Server();
 
-  // Shutdown the server, block until all rpc processing finishes.
-  void Shutdown();
+  /// Block waiting for all work to complete.
+  ///
+  /// \warning The server must be either shutting down or some other thread must
+  /// call \a Shutdown for this function to ever return.
+  void Wait() GRPC_OVERRIDE;
 
-  // Block waiting for all work to complete (the server must either
-  // be shutting down or some other thread must call Shutdown for this
-  // function to ever return)
-  void Wait();
+  /// Global Callbacks
+  ///
+  /// Can be set exactly once per application to install hooks whenever
+  /// a server event occurs
+  class GlobalCallbacks {
+   public:
+    virtual ~GlobalCallbacks() {}
+    /// Called before server is created.
+    virtual void UpdateArguments(ChannelArguments* args) {}
+    /// Called before application callback for each synchronous server request
+    virtual void PreSynchronousRequest(ServerContext* context) = 0;
+    /// Called after application callback for each synchronous server request
+    virtual void PostSynchronousRequest(ServerContext* context) = 0;
+  };
+  /// Set the global callback object. Can only be called once. Does not take
+  /// ownership of callbacks, and expects the pointed to object to be alive
+  /// until all server objects in the process have been destroyed.
+  static void SetGlobalCallbacks(GlobalCallbacks* callbacks);
 
  private:
+  friend class AsyncGenericService;
   friend class ServerBuilder;
+  friend class ServerInitializer;
 
   class SyncRequest;
   class AsyncRequest;
+  class ShutdownRequest;
 
-  // ServerBuilder use only
+  class UnimplementedAsyncRequestContext;
+  class UnimplementedAsyncRequest;
+  class UnimplementedAsyncResponse;
+
+  /// Server constructors. To be used by \a ServerBuilder only.
+  ///
+  /// \param thread_pool The threadpool instance to use for call processing.
+  /// \param thread_pool_owned Does the server own the \a thread_pool instance?
+  /// \param max_message_size Maximum message length that the channel can
+  /// receive.
   Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
-         ServerCredentials* creds);
-  Server();
-  // Register a service. This call does not take ownership of the service.
-  // The service must exist for the lifetime of the Server instance.
-  bool RegisterService(RpcService* service);
-  bool RegisterAsyncService(AsynchronousService* service);
-  // Add a listening port. Can be called multiple times.
-  int AddPort(const grpc::string& addr);
-  // Start the server.
-  bool Start();
+         int max_message_size, ChannelArguments* args);
 
-  void HandleQueueClosed();
-  void RunRpc();
-  void ScheduleCallback();
+  /// Register a service. This call does not take ownership of the service.
+  /// The service must exist for the lifetime of the Server instance.
+  bool RegisterService(const grpc::string* host,
+                       Service* service) GRPC_OVERRIDE;
 
-  void PerformOpsOnCall(CallOpBuffer* ops, Call* call) GRPC_OVERRIDE;
+  /// Register a generic service. This call does not take ownership of the
+  /// service. The service must exist for the lifetime of the Server instance.
+  void RegisterAsyncGenericService(AsyncGenericService* service) GRPC_OVERRIDE;
 
-  // DispatchImpl
-  void RequestAsyncCall(void* registered_method, ServerContext* context,
-                        ::google::protobuf::Message* request,
-                        ServerAsyncStreamingInterface* stream,
-                        CompletionQueue* cq, void* tag);
+  /// Tries to bind \a server to the given \a addr.
+  ///
+  /// It can be invoked multiple times.
+  ///
+  /// \param addr The address to try to bind to the server (eg, localhost:1234,
+  /// 192.168.1.1:31416, [::1]:27182, etc.).
+  /// \params creds The credentials associated with the server.
+  ///
+  /// \return bound port number on sucess, 0 on failure.
+  ///
+  /// \warning It's an error to call this method on an already started server.
+  int AddListeningPort(const grpc::string& addr,
+                       ServerCredentials* creds) GRPC_OVERRIDE;
+
+  /// Start the server.
+  ///
+  /// \param cqs Completion queues for handling asynchronous services. The
+  /// caller is required to keep all completion queues live until the server is
+  /// destroyed.
+  /// \param num_cqs How many completion queues does \a cqs hold.
+  ///
+  /// \return true on a successful shutdown.
+  bool Start(ServerCompletionQueue** cqs, size_t num_cqs) GRPC_OVERRIDE;
+
+  /// Process one or more incoming calls.
+  void RunRpc() GRPC_OVERRIDE;
+
+  /// Schedule \a RunRpc to run in the threadpool.
+  void ScheduleCallback() GRPC_OVERRIDE;
+
+  void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) GRPC_OVERRIDE;
+
+  void ShutdownInternal(gpr_timespec deadline) GRPC_OVERRIDE;
+
+  int max_message_size() const GRPC_OVERRIDE { return max_message_size_; };
+
+  grpc_server* server() GRPC_OVERRIDE { return server_; };
+
+  ServerInitializer* initializer();
+
+  const int max_message_size_;
 
   // Completion queue.
   CompletionQueue cq_;
 
   // Sever status
-  std::mutex mu_;
+  grpc::mutex mu_;
   bool started_;
   bool shutdown_;
   // The number of threads which are running callbacks.
   int num_running_cb_;
-  std::condition_variable callback_cv_;
+  grpc::condition_variable callback_cv_;
 
-  std::list<SyncRequest> sync_methods_;
+  std::shared_ptr<GlobalCallbacks> global_callbacks_;
+
+  std::list<SyncRequest>* sync_methods_;
+  std::vector<grpc::string> services_;
+  std::unique_ptr<RpcServiceMethod> unknown_method_;
+  bool has_generic_service_;
 
   // Pointer to the c grpc server.
   grpc_server* server_;
@@ -124,8 +190,8 @@ class Server GRPC_FINAL : private CallHook,
   ThreadPoolInterface* thread_pool_;
   // Whether the thread pool is created and owned by the server.
   bool thread_pool_owned_;
-  // Whether the server is created with credentials.
-  bool secure_;
+
+  std::unique_ptr<ServerInitializer> server_initializer_;
 };
 
 }  // namespace grpc

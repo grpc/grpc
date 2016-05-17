@@ -33,7 +33,10 @@
 
 using System;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Grpc.Core.Internal;
+using Grpc.Core.Logging;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core
 {
@@ -42,46 +45,48 @@ namespace Grpc.Core
     /// </summary>
     public class GrpcEnvironment
     {
-        const int THREAD_POOL_SIZE = 4;
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_init();
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_shutdown();
+        const int MinDefaultThreadPoolSize = 4;
 
         static object staticLock = new object();
-        static volatile GrpcEnvironment instance;
+        static GrpcEnvironment instance;
+        static int refCount;
+        static int? customThreadPoolSize;
+
+        static ILogger logger = new ConsoleLogger();
 
         readonly GrpcThreadPool threadPool;
+        readonly CompletionRegistry completionRegistry;
+        readonly DebugStats debugStats = new DebugStats();
         bool isClosed;
 
         /// <summary>
-        /// Makes sure GRPC environment is initialized. Subsequent invocations don't have any
-        /// effect unless you call Shutdown first.
-        /// Although normal use cases assume you will call this just once in your application's
-        /// lifetime (and call Shutdown once you're done), for the sake of easier testing it's
-        /// allowed to initialize the environment again after it has been successfully shutdown.
+        /// Returns a reference-counted instance of initialized gRPC environment.
+        /// Subsequent invocations return the same instance unless reference count has dropped to zero previously.
         /// </summary>
-        public static void Initialize() {
-            lock(staticLock)
+        internal static GrpcEnvironment AddRef()
+        {
+            lock (staticLock)
             {
+                refCount++;
                 if (instance == null)
                 {
                     instance = new GrpcEnvironment();
                 }
+                return instance;
             }
         }
 
         /// <summary>
-        /// Shuts down the GRPC environment if it was initialized before.
-        /// Repeated invocations have no effect.
+        /// Decrements the reference count for currently active environment and shuts down the gRPC environment if reference count drops to zero.
+        /// (and blocks until the environment has been fully shutdown).
         /// </summary>
-        public static void Shutdown()
+        internal static void Release()
         {
-            lock(staticLock)
+            lock (staticLock)
             {
-                if (instance != null)
+                GrpcPreconditions.CheckState(refCount > 0);
+                refCount--;
+                if (refCount == 0)
                 {
                     instance.Close();
                     instance = null;
@@ -89,16 +94,49 @@ namespace Grpc.Core
             }
         }
 
-        internal static GrpcThreadPool ThreadPool
+        internal static int GetRefCount()
+        {
+            lock (staticLock)
+            {
+                return refCount;
+            }
+        }
+
+        /// <summary>
+        /// Gets application-wide logger used by gRPC.
+        /// </summary>
+        /// <value>The logger.</value>
+        public static ILogger Logger
         {
             get
             {
-                var inst = instance;
-                if (inst == null)
-                {
-                    throw new InvalidOperationException("GRPC environment not initialized");
-                }
-                return inst.threadPool;
+                return logger;
+            }
+        }
+
+        /// <summary>
+        /// Sets the application-wide logger that should be used by gRPC.
+        /// </summary>
+        public static void SetLogger(ILogger customLogger)
+        {
+            GrpcPreconditions.CheckNotNull(customLogger, "customLogger");
+            logger = customLogger;
+        }
+
+        /// <summary>
+        /// Sets the number of threads in the gRPC thread pool that polls for internal RPC events.
+        /// Can be only invoke before the <c>GrpcEnviroment</c> is started and cannot be changed afterwards.
+        /// Setting thread pool size is an advanced setting and you should only use it if you know what you are doing.
+        /// Most users should rely on the default value provided by gRPC library.
+        /// Note: this method is part of an experimental API that can change or be removed without any prior notice.
+        /// </summary>
+        public static void SetThreadPoolSize(int threadCount)
+        {
+            lock (staticLock)
+            {
+                GrpcPreconditions.CheckState(instance == null, "Can only be set before GrpcEnvironment is initialized");
+                GrpcPreconditions.CheckArgument(threadCount > 0, "threadCount needs to be a positive number");
+                customThreadPoolSize = threadCount;
             }
         }
 
@@ -107,12 +145,62 @@ namespace Grpc.Core
         /// </summary>
         private GrpcEnvironment()
         {
-            GrpcLog.RedirectNativeLogs(Console.Error);
-            grpcsharp_init();
-            threadPool = new GrpcThreadPool(THREAD_POOL_SIZE);
+            GrpcNativeInit();
+            completionRegistry = new CompletionRegistry(this);
+            threadPool = new GrpcThreadPool(this, GetThreadPoolSizeOrDefault());
             threadPool.Start();
-            // TODO: use proper logging here
-            Console.WriteLine("GRPC initialized.");
+        }
+
+        /// <summary>
+        /// Gets the completion registry used by this gRPC environment.
+        /// </summary>
+        internal CompletionRegistry CompletionRegistry
+        {
+            get
+            {
+                return this.completionRegistry;
+            }
+        }
+
+        /// <summary>
+        /// Gets the completion queue used by this gRPC environment.
+        /// </summary>
+        internal CompletionQueueSafeHandle CompletionQueue
+        {
+            get
+            {
+                return this.threadPool.CompletionQueue;
+            }
+        }
+
+        /// <summary>
+        /// Gets the completion queue used by this gRPC environment.
+        /// </summary>
+        internal DebugStats DebugStats
+        {
+            get
+            {
+                return this.debugStats;
+            }
+        }
+
+        /// <summary>
+        /// Gets version of gRPC C core.
+        /// </summary>
+        internal static string GetCoreVersionString()
+        {
+            var ptr = NativeMethods.Get().grpcsharp_version_string();  // the pointer is not owned
+            return Marshal.PtrToStringAnsi(ptr);
+        }
+
+        internal static void GrpcNativeInit()
+        {
+            NativeMethods.Get().grpcsharp_init();
+        }
+
+        internal static void GrpcNativeShutdown()
+        {
+            NativeMethods.Get().grpcsharp_shutdown();
         }
 
         /// <summary>
@@ -125,12 +213,22 @@ namespace Grpc.Core
                 throw new InvalidOperationException("Close has already been called");
             }
             threadPool.Stop();
-            grpcsharp_shutdown();
+            GrpcNativeShutdown();
             isClosed = true;
 
-            // TODO: use proper logging here
-            Console.WriteLine("GRPC shutdown.");
+            debugStats.CheckOK();
+        }
+
+        private int GetThreadPoolSizeOrDefault()
+        {
+            if (customThreadPoolSize.HasValue)
+            {
+                return customThreadPoolSize.Value;
+            }
+            // In systems with many cores, use half of the cores for GrpcThreadPool
+            // and the other half for .NET thread pool. This heuristic definitely needs
+            // more work, but seems to work reasonably well for a start.
+            return Math.Max(MinDefaultThreadPoolSize, Environment.ProcessorCount / 2);
         }
     }
 }
-

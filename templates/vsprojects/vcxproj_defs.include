@@ -1,0 +1,256 @@
+﻿<%namespace file="packages.include" import="gen_package_props,gen_package_targets,gen_package_ensure"/>\
+<%def name="to_windows_path(path)">${path.replace('/','\\')}</%def>\
+<%def name="get_subsystem(is_library)">${'Windows' if is_library else 'Console'}</%def>\
+<%def name="item_definition_group(project, target, debug, dll, _64bit)">\
+<%
+  repo_root = '$(SolutionDir)\..'
+%>\
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='${'%s%s|%s' % ('Debug' if debug else 'Release', '-DLL' if dll else '', 'x64' if _64bit else 'Win32')}'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>${'Disabled' if debug else 'MaxSpeed'}</Optimization>
+      <PreprocessorDefinitions>WIN32;${'_DEBUG' if debug else 'NDEBUG'};_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+% if not debug:
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+% endif
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>${'MultiThreadedDebug' if debug else 'MultiThreaded'}</RuntimeLibrary>
+      <TreatWarningAsError>${'false' if target.boringssl else 'true'}</TreatWarningAsError>
+      <DebugInformationFormat Condition="$(Jenkins)">None</DebugInformationFormat>
+## Silence D9007 warning. See #4508
+      <MinimalRebuild Condition="$(Jenkins)">false</MinimalRebuild>
+    </ClCompile>
+    <Link>
+      <SubSystem>${get_subsystem(project.is_library)}</SubSystem>
+      <GenerateDebugInformation Condition="!$(Jenkins)">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="$(Jenkins)">false</GenerateDebugInformation>
+% if project.get("noentry", False):
+      <NoEntryPoint>true</NoEntryPoint>
+% endif
+% if project.get("dll_def", None):
+      <ModuleDefinitionFile>${repo_root}\${to_windows_path(project.dll_def)}</ModuleDefinitionFile>
+% endif
+% if not debug:
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+% endif
+    </Link>
+  </ItemDefinitionGroup>
+</%def>\
+<%def name="gen_project(name, collection)">\
+<%
+  target = None
+  for p in vsprojects:
+    if p.name == name:
+      project = p
+  for t in collection:
+    if t.name == name:
+      target = t
+  props = project.vs_props
+  packages = project.vs_packages
+  configuration_type = project.vs_config_type
+  project_guid = project.vs_project_guid
+  if target.build == 'test' and target.language == 'c++':
+    props.extend(['cpptest'])
+  if configuration_type == 'Application':
+    if target.build == 'protoc':
+      props.extend(['protoc', 'protobuf'])
+    else:
+      if target.language == 'c++':
+        props.extend(['protobuf'])
+      props.extend(['winsock', 'zlib'])
+      packages.extend(['grpc.dependencies.zlib'])
+      if target.get('secure', 'check'):
+        props.extend(['openssl'])
+        packages.extend(['grpc.dependencies.openssl'])
+  else:
+    props.extend(['winsock'])
+  props.extend(['global'])
+  props = sorted(list(set(props)))
+  packages = sorted(list(set(packages)))
+  dll = project.get('dll', False)
+  repo_root = '$(SolutionDir)\..'
+%>\
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+${gen_package_props(packages, repo_root)}\
+  <ItemGroup Label="ProjectConfigurations">
+% if dll and dll != 'only':
+    <ProjectConfiguration Include="Debug-DLL|Win32">
+      <Configuration>Debug-DLL</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug-DLL|x64">
+      <Configuration>Debug-DLL</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release-DLL|Win32">
+      <Configuration>Release-DLL</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release-DLL|x64">
+      <Configuration>Release-DLL</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+% endif
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>${project_guid if project_guid else project.vs_project_guid}</ProjectGuid>
+## Silence MSB8029 warning. See #4506
+    <IgnoreWarnIntDirInTempDetected>true</IgnoreWarnIntDirInTempDetected>
+## Use different location for intermediate directory to make path shorter than 260 characters.
+    <IntDir>$(SolutionDir)IntDir\$(MSBuildProjectName)\</IntDir>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '10.0'" Label="Configuration">
+    <PlatformToolset>v100</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '11.0'" Label="Configuration">
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '12.0'" Label="Configuration">
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '14.0'" Label="Configuration">
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
+    <ConfigurationType>${configuration_type}</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
+    <ConfigurationType>${configuration_type}</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+% if dll and dll != 'only':
+  <PropertyGroup Condition="'$(Configuration)'=='Debug-DLL'" Label="Configuration">
+    <ConfigurationType>${configuration_type}</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release-DLL'" Label="Configuration">
+    <ConfigurationType>${configuration_type}</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+% endif
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    % for prop in props:
+    <Import Project="${repo_root}\vsprojects\${prop}.props" />
+    % endfor
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+% for config in ['Debug', 'Release']:# + (['Debug-DLL', 'Release-DLL'] if dll and dll != 'only' else []):
+  <PropertyGroup Condition="'$(Configuration)'=='${config}'">
+    <TargetName>${name}</TargetName>
+    % for package in vspackages:
+    %  if packages == 'all' or package.name in packages:
+    %   if package.get('linkage', None) is not None:
+    <Linkage-${package.name.replace('.', '_')}>${package.linkage}</Linkage-${package.name.replace('.', '_')}>
+    %   endif
+    <Configuration-${package.name.replace('.', '_')}>${config}</Configuration-${package.name.replace('.', '_')}>
+    %  endif
+    % endfor
+  </PropertyGroup>
+% endfor
+% if dll and dll != 'only':
+  ${item_definition_group(project, target, True, True, False)}
+  ${item_definition_group(project, target, True, True, True)}
+  ${item_definition_group(project, target, False, True, False)}
+  ${item_definition_group(project, target, False, True, True)}
+% endif
+  ${item_definition_group(project, target, True, False, False)}
+  ${item_definition_group(project, target, True, False, True)}
+  ${item_definition_group(project, target, False, False, False)}
+  ${item_definition_group(project, target, False, False, True)}
+  % if project.get('public_headers',[]):
+  <ItemGroup>
+    % for public_header in project.public_headers:
+    <ClInclude Include="${repo_root}\${to_windows_path(public_header)}" />
+    % endfor
+  </ItemGroup>
+  % endif
+  % if project.get('headers',[]):
+  <ItemGroup>
+    % for header in project.headers:
+    <ClInclude Include="${repo_root}\${to_windows_path(header)}" />
+    % endfor
+  </ItemGroup>
+  % endif
+  % if project.get('dll_def', None):
+  <ItemGroup>
+    <None Include="${repo_root}\${to_windows_path(project.dll_def)}" />
+  </ItemGroup>
+  % endif
+  % if project.get('src',[]):
+  <ItemGroup>
+    % for src_name in project.src:
+      % if src_name.endswith(".proto"):
+<% src_name_parts = src_name.split(".") %>\
+    <ClCompile Include="${repo_root}\${to_windows_path(src_name_parts[0] + ".pb.cc")}">
+    </ClCompile>
+    <ClInclude Include="${repo_root}\${to_windows_path(src_name_parts[0] + ".pb.h")}">
+    </ClInclude>
+    <ClCompile Include="${repo_root}\${to_windows_path(src_name_parts[0] + ".grpc.pb.cc")}">
+    </ClCompile>
+    <ClInclude Include="${repo_root}\${to_windows_path(src_name_parts[0] + ".grpc.pb.h")}">
+    </ClInclude>
+      % else:
+    <ClCompile Include="${repo_root}\${to_windows_path(src_name)}">
+    </ClCompile>
+      % endif
+    % endfor
+  </ItemGroup>
+  % else:
+  <ItemGroup>
+    <ClCompile Include="${repo_root}\${to_windows_path('vsprojects/dummy.c')}">
+    </ClCompile>
+  </ItemGroup>
+  % endif
+  % if project.get('deps',[]):
+  <ItemGroup>
+    % for dep in project.deps:
+    <ProjectReference Include="${repo_root}\vsprojects\vcxproj\${vsproject_dict[dep].vs_proj_dir}\${dep}\${dep}.vcxproj">
+      <Project>${vsproject_dict[dep].vs_project_guid}</Project>
+    </ProjectReference>
+    % endfor
+  </ItemGroup>
+  % endif
+  %if packages:
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  %endif
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+${gen_package_targets(packages, repo_root)}\
+  </ImportGroup>
+${gen_package_ensure(packages, repo_root)}\
+</Project>
+</%def>\

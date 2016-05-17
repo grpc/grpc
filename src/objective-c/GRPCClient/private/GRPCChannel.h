@@ -33,18 +33,42 @@
 
 #import <Foundation/Foundation.h>
 
-struct grpc_channel;
+#include <grpc/grpc.h>
 
-// Each separate instance of this class represents at least one TCP
-// connection to the provided host. To create a grpc_call, pass the
-// value of the unmanagedChannel property to grpc_channel_create_call.
-// Release this object when the call is finished.
+@class GRPCCompletionQueue;
+struct grpc_channel_credentials;
+
+
+/**
+ * Each separate instance of this class represents at least one TCP connection to the provided host.
+ */
 @interface GRPCChannel : NSObject
-@property(nonatomic, readonly) struct grpc_channel *unmanagedChannel;
 
-// Convenience constructor to allow for reuse of connections.
-+ (instancetype)channelToHost:(NSString *)host;
+@property(nonatomic, readonly, nonnull) struct grpc_channel *unmanagedChannel;
 
-// Designated initializer
-- (instancetype)initWithHost:(NSString *)host;
+- (nullable instancetype)init NS_UNAVAILABLE;
+
+/**
+ * Creates a secure channel to the specified @c host using default credentials and channel
+ * arguments. If certificates could not be found to create a secure channel, then @c nil is
+ * returned.
+ */
++ (nullable GRPCChannel *)secureChannelWithHost:(nonnull NSString *)host;
+
+/**
+ * Creates a secure channel to the specified @c host using the specified @c credentials and
+ * @c channelArgs. Only in tests should @c GRPC_SSL_TARGET_NAME_OVERRIDE_ARG channel arg be set.
+ */
++ (nonnull GRPCChannel *)secureChannelWithHost:(nonnull NSString *)host
+    credentials:(nonnull struct grpc_channel_credentials *)credentials
+    channelArgs:(nullable NSDictionary *)channelArgs;
+
+/**
+ * Creates an insecure channel to the specified @c host using the specified @c channelArgs.
+ */
++ (nonnull GRPCChannel *)insecureChannelWithHost:(nonnull NSString *)host
+                                     channelArgs:(nullable NSDictionary *)channelArgs;
+
+- (nullable grpc_call *)unmanagedCallWithPath:(nonnull NSString *)path
+                              completionQueue:(nonnull GRPCCompletionQueue *)queue;
 @end

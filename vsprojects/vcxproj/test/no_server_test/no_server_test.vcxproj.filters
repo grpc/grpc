@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\no_server_test.c">
+      <Filter>test\core\end2end</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{ae863d60-2a18-0a8a-c3b4-3798f985fa3c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{8c3a98b8-4b97-4da8-7520-456c3886a966}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\end2end">
+      <UniqueIdentifier>{abcc83d9-0f40-3f13-3e9f-48dce7eddbc7}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

@@ -1,13 +1,10 @@
 source 'https://github.com/CocoaPods/Specs.git'
 platform :ios, '8.0'
 
-pod 'RxLibrary', :path => "../../RxLibrary"
-pod 'GRPCClient', :path => "../../GRPCClient"
+pod 'Protobuf', :path => "../../../../third_party/protobuf"
+pod 'BoringSSL', :podspec => "../.."
+pod 'gRPC', :path => "../../../.."
+pod 'RemoteTest', :path => "../RemoteTestClient"
 
 target 'Sample' do
-
-end
-
-target 'SampleTests' do
-
 end

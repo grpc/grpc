@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package>
+  <metadata>
+    <id>grpc.native.csharp</id>
+    <version>$version$</version>
+    <authors>Google Inc.</authors>
+    <owners>grpc-packages</owners>
+    <licenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</licenseUrl>
+    <projectUrl>http://github.com/grpc/grpc</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Native extension needed by gRPC C# library. This is not the package you are looking for, it is only meant to be used as a dependency.</description>
+    <releaseNotes>Release of gRPC C core $version$ libraries.</releaseNotes>
+    <copyright>Copyright 2015</copyright>
+    <title>gRPC C# Native Extension</title>
+    <summary>Native library required by gRPC C#</summary>
+    <tags>gRPC native</tags>
+  </metadata>
+  <files>
+    <file src="grpc.native.csharp.targets" target="\build\portable-net45+netcore45+wpa81+wp8\grpc.native.csharp.targets" />
+    <file src="windows_x86/grpc_csharp_ext.dll" target="/build/native/bin/windows_x86/grpc_csharp_ext.dll" />
+    <file src="windows_x64/grpc_csharp_ext.dll" target="/build/native/bin/windows_x64/grpc_csharp_ext.dll" />
+    <file src="linux_x86/libgrpc_csharp_ext.so" target="/build/native/bin/linux_x86/libgrpc_csharp_ext.so" />
+    <file src="linux_x64/libgrpc_csharp_ext.so" target="/build/native/bin/linux_x64/libgrpc_csharp_ext.so" />
+    <file src="macosx_x86/libgrpc_csharp_ext.dylib" target="/build/native/bin/macosx_x86/libgrpc_csharp_ext.dylib" />
+    <file src="macosx_x64/libgrpc_csharp_ext.dylib" target="/build/native/bin/macosx_x64/libgrpc_csharp_ext.dylib" />
+  </files>
+</package>

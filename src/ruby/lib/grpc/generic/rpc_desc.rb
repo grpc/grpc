@@ -27,7 +27,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-require 'grpc/grpc'
+require_relative '../grpc'
 
 # GRPC contains the General RPC module.
 module GRPC
@@ -80,30 +80,26 @@ module GRPC
       else  # is a bidi_stream
         active_call.run_server_bidi(mth)
       end
-      send_status(active_call, OK, 'OK')
+      send_status(active_call, OK, 'OK', **active_call.output_metadata)
     rescue BadStatus => e
-      # this is raised by handlers that want GRPC to send an application
-      # error code and detail message.
-      logger.debug("app err: #{active_call}, status:#{e.code}:#{e.details}")
-      send_status(active_call, e.code, e.details)
+      # this is raised by handlers that want GRPC to send an application error
+      # code and detail message and some additional app-specific metadata.
+      GRPC.logger.debug("app err:#{active_call}, status:#{e.code}:#{e.details}")
+      send_status(active_call, e.code, e.details, **e.metadata)
     rescue Core::CallError => e
       # This is raised by GRPC internals but should rarely, if ever happen.
       # Log it, but don't notify the other endpoint..
-      logger.warn("failed call: #{active_call}\n#{e}")
-    rescue OutOfTime
+      GRPC.logger.warn("failed call: #{active_call}\n#{e}")
+    rescue Core::OutOfTime
       # This is raised when active_call#method.call exceeeds the deadline
       # event.  Send a status of deadline exceeded
-      logger.warn("late call: #{active_call}")
+      GRPC.logger.warn("late call: #{active_call}")
       send_status(active_call, DEADLINE_EXCEEDED, 'late')
-    rescue Core::EventError => e
-      # This is raised by GRPC internals but should rarely, if ever happen.
-      # Log it, but don't notify the other endpoint..
-      logger.warn("failed call: #{active_call}\n#{e}")
     rescue StandardError => e
       # This will usuaally be an unhandled error in the handling code.
       # Send back a UNKNOWN status to the client
-      logger.warn("failed handler: #{active_call}; sending status:UNKNOWN")
-      logger.warn(e)
+      GRPC.logger.warn("failed handler: #{active_call}; sending status:UNKNOWN")
+      GRPC.logger.warn(e)
       send_status(active_call, UNKNOWN, 'no reason given')
     end
 
@@ -139,12 +135,13 @@ module GRPC
       "##{mth.name}: bad arg count; got:#{mth.arity}, want:#{want}, #{msg}"
     end
 
-    def send_status(active_client, code, details)
+    def send_status(active_client, code, details, **kw)
       details = 'Not sure why' if details.nil?
-      active_client.send_status(code, details)
+      GRPC.logger.debug("Sending status  #{code}:#{details}")
+      active_client.send_status(code, details, code == OK, **kw)
     rescue StandardError => e
-      logger.warn("Could not send status #{code}:#{details}")
-      logger.warn(e)
+      GRPC.logger.warn("Could not send status #{code}:#{details}")
+      GRPC.logger.warn(e)
     end
   end
 end

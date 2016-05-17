@@ -31,175 +31,193 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-class SecureEndToEndTest extends PHPUnit_Framework_TestCase{
-  public function setUp() {
-    $this->client_queue = new Grpc\CompletionQueue();
-    $this->server_queue = new Grpc\CompletionQueue();
-    $credentials = Grpc\Credentials::createSsl(
-        file_get_contents(dirname(__FILE__) . '/../data/ca.pem'));
-    $server_credentials = Grpc\ServerCredentials::createSsl(
-        null,
-        file_get_contents(dirname(__FILE__) . '/../data/server1.key'),
-        file_get_contents(dirname(__FILE__) . '/../data/server1.pem'));
-    $this->server = new Grpc\Server($this->server_queue,
-                                    ['credentials' => $server_credentials]);
-    $port = $this->server->add_secure_http2_port('0.0.0.0:0');
-    $this->channel = new Grpc\Channel(
-        'localhost:' . $port,
-        [
-            'grpc.ssl_target_name_override' => 'foo.test.google.fr',
-            'credentials' => $credentials
-         ]);
-  }
+class SecureEndToEndTest extends PHPUnit_Framework_TestCase
+{
+    public function setUp()
+    {
+        $credentials = Grpc\ChannelCredentials::createSsl(
+            file_get_contents(dirname(__FILE__).'/../data/ca.pem'));
+        $server_credentials = Grpc\ServerCredentials::createSsl(
+            null,
+            file_get_contents(dirname(__FILE__).'/../data/server1.key'),
+            file_get_contents(dirname(__FILE__).'/../data/server1.pem'));
+        $this->server = new Grpc\Server();
+        $this->port = $this->server->addSecureHttp2Port('0.0.0.0:0',
+                                              $server_credentials);
+        $this->server->start();
+        $this->host_override = 'foo.test.google.fr';
+        $this->channel = new Grpc\Channel(
+            'localhost:'.$this->port,
+            [
+            'grpc.ssl_target_name_override' => $this->host_override,
+            'grpc.default_authority' => $this->host_override,
+            'credentials' => $credentials,
+            ]
+        );
+    }
 
-  public function tearDown() {
-    unset($this->channel);
-    unset($this->server);
-    unset($this->client_queue);
-    unset($this->server_queue);
-  }
+    public function tearDown()
+    {
+        unset($this->channel);
+        unset($this->server);
+    }
 
-  public function testSimpleRequestBody() {
-    $this->server->start();
-    $deadline = Grpc\Timeval::inf_future();
-    $status_text = 'xyz';
-    $call = new Grpc\Call($this->channel,
-                          'dummy_method',
-                          $deadline);
-    $tag = 1;
-    $call->invoke($this->client_queue, $tag, $tag);
-    $server_tag = 2;
+    public function testSimpleRequestBody()
+    {
+        $deadline = Grpc\Timeval::infFuture();
+        $status_text = 'xyz';
+        $call = new Grpc\Call($this->channel,
+                              'dummy_method',
+                              $deadline,
+                              $this->host_override);
 
-    $call->writes_done($tag);
-    $event = $this->client_queue->next($deadline);
-    $this->assertNotNull($event);
-    $this->assertSame(Grpc\FINISH_ACCEPTED, $event->type);
-    $this->assertSame(Grpc\OP_OK, $event->data);
+        $event = $call->startBatch([
+            Grpc\OP_SEND_INITIAL_METADATA => [],
+            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
+        ]);
 
-    // check that a server rpc new was received
-    $this->server->request_call($server_tag);
-    $event = $this->server_queue->next($deadline);
-    $this->assertNotNull($event);
-    $this->assertSame(Grpc\SERVER_RPC_NEW, $event->type);
-    $server_call = $event->call;
-    $this->assertNotNull($server_call);
-    $server_call->server_accept($this->server_queue, $server_tag);
+        $this->assertTrue($event->send_metadata);
+        $this->assertTrue($event->send_close);
 
-    $server_call->server_end_initial_metadata();
+        $event = $this->server->requestCall();
+        $this->assertSame('dummy_method', $event->method);
+        $server_call = $event->call;
 
-    // the server sends the status
-    $server_call->start_write_status(Grpc\STATUS_OK, $status_text, $server_tag);
-    $event = $this->server_queue->next($deadline);
-    $this->assertNotNull($event);
-    $this->assertSame(Grpc\FINISH_ACCEPTED, $event->type);
-    $this->assertSame(Grpc\OP_OK, $event->data);
+        $event = $server_call->startBatch([
+            Grpc\OP_SEND_INITIAL_METADATA => [],
+            Grpc\OP_SEND_STATUS_FROM_SERVER => [
+                'metadata' => [],
+                'code' => Grpc\STATUS_OK,
+                'details' => $status_text,
+            ],
+            Grpc\OP_RECV_CLOSE_ON_SERVER => true,
+        ]);
 
-    // the client gets CLIENT_METADATA_READ
-    $event = $this->client_queue->next($deadline);
-    $this->assertNotNull($event);
-    $this->assertSame(Grpc\CLIENT_METADATA_READ, $event->type);
+        $this->assertTrue($event->send_metadata);
+        $this->assertTrue($event->send_status);
+        $this->assertFalse($event->cancelled);
 
-    // the client gets FINISHED
-    $event = $this->client_queue->next($deadline);
-    $this->assertNotNull($event);
-    $this->assertSame(Grpc\FINISHED, $event->type);
-    $status = $event->data;
-    $this->assertSame(Grpc\STATUS_OK, $status->code);
-    $this->assertSame($status_text, $status->details);
+        $event = $call->startBatch([
+            Grpc\OP_RECV_INITIAL_METADATA => true,
+            Grpc\OP_RECV_STATUS_ON_CLIENT => true,
+        ]);
 
-    // and the server gets FINISHED
-    $event = $this->server_queue->next($deadline);
-    $this->assertNotNull($event);
-    $this->assertSame(Grpc\FINISHED, $event->type);
-    $status = $event->data;
+        $this->assertSame([], $event->metadata);
+        $status = $event->status;
+        $this->assertSame([], $status->metadata);
+        $this->assertSame(Grpc\STATUS_OK, $status->code);
+        $this->assertSame($status_text, $status->details);
 
-    unset($call);
-    unset($server_call);
-  }
+        unset($call);
+        unset($server_call);
+    }
 
-  public function testClientServerFullRequestResponse() {
-    $this->server->start();
-    $deadline = Grpc\Timeval::inf_future();
-    $req_text = 'client_server_full_request_response';
-    $reply_text = 'reply:client_server_full_request_response';
-    $status_text = 'status:client_server_full_response_text';
+    public function testMessageWriteFlags()
+    {
+        $deadline = Grpc\Timeval::infFuture();
+        $req_text = 'message_write_flags_test';
+        $status_text = 'xyz';
+        $call = new Grpc\Call($this->channel,
+                              'dummy_method',
+                              $deadline,
+                              $this->host_override);
 
-    $call = new Grpc\Call($this->channel,
-                          'dummy_method',
-                          $deadline);
-    $tag = 1;
-    $call->invoke($this->client_queue, $tag, $tag);
+        $event = $call->startBatch([
+            Grpc\OP_SEND_INITIAL_METADATA => [],
+            Grpc\OP_SEND_MESSAGE => ['message' => $req_text,
+                                     'flags' => Grpc\WRITE_NO_COMPRESS, ],
+            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
+        ]);
 
-    $server_tag = 2;
+        $this->assertTrue($event->send_metadata);
+        $this->assertTrue($event->send_close);
 
-    // the client writes
-    $call->start_write($req_text, $tag);
-    $event = $this->client_queue->next($deadline);
-    $this->assertNotNull($event);
-    $this->assertSame(Grpc\WRITE_ACCEPTED, $event->type);
+        $event = $this->server->requestCall();
+        $this->assertSame('dummy_method', $event->method);
+        $server_call = $event->call;
 
-    // check that a server rpc new was received
-    $this->server->request_call($server_tag);
-    $event = $this->server_queue->next($deadline);
-    $this->assertNotNull($event);
-    $this->assertSame(Grpc\SERVER_RPC_NEW, $event->type);
-    $server_call = $event->call;
-    $this->assertNotNull($server_call);
-    $server_call->server_accept($this->server_queue, $server_tag);
+        $event = $server_call->startBatch([
+            Grpc\OP_SEND_INITIAL_METADATA => [],
+            Grpc\OP_SEND_STATUS_FROM_SERVER => [
+                'metadata' => [],
+                'code' => Grpc\STATUS_OK,
+                'details' => $status_text,
+            ],
+        ]);
 
-    $server_call->server_end_initial_metadata();
+        $event = $call->startBatch([
+            Grpc\OP_RECV_INITIAL_METADATA => true,
+            Grpc\OP_RECV_STATUS_ON_CLIENT => true,
+        ]);
 
-    // start the server read
-    $server_call->start_read($server_tag);
-    $event = $this->server_queue->next($deadline);
-    $this->assertNotNull($event);
-    $this->assertSame(Grpc\READ, $event->type);
-    $this->assertSame($req_text, $event->data);
+        $this->assertSame([], $event->metadata);
+        $status = $event->status;
+        $this->assertSame([], $status->metadata);
+        $this->assertSame(Grpc\STATUS_OK, $status->code);
+        $this->assertSame($status_text, $status->details);
 
-    // the server replies
-    $server_call->start_write($reply_text, $server_tag);
-    $event = $this->server_queue->next($deadline);
-    $this->assertNotNull($event);
-    $this->assertSame(Grpc\WRITE_ACCEPTED, $event->type);
+        unset($call);
+        unset($server_call);
+    }
 
-    // the client reads the metadata
-    $event = $this->client_queue->next($deadline);
-    $this->assertNotNull($event);
-    $this->assertSame(Grpc\CLIENT_METADATA_READ, $event->type);
+    public function testClientServerFullRequestResponse()
+    {
+        $deadline = Grpc\Timeval::infFuture();
+        $req_text = 'client_server_full_request_response';
+        $reply_text = 'reply:client_server_full_request_response';
+        $status_text = 'status:client_server_full_response_text';
 
-    // the client reads the reply
-    $call->start_read($tag);
-    $event = $this->client_queue->next($deadline);
-    $this->assertNotNull($event);
-    $this->assertSame(Grpc\READ, $event->type);
-    $this->assertSame($reply_text, $event->data);
+        $call = new Grpc\Call($this->channel,
+                              'dummy_method',
+                              $deadline,
+                              $this->host_override);
 
-    // the client sends writes done
-    $call->writes_done($tag);
-    $event = $this->client_queue->next($deadline);
-    $this->assertSame(Grpc\FINISH_ACCEPTED, $event->type);
-    $this->assertSame(Grpc\OP_OK, $event->data);
+        $event = $call->startBatch([
+            Grpc\OP_SEND_INITIAL_METADATA => [],
+            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
+            Grpc\OP_SEND_MESSAGE => ['message' => $req_text],
+        ]);
 
-    // the server sends the status
-    $server_call->start_write_status(GRPC\STATUS_OK, $status_text, $server_tag);
-    $event = $this->server_queue->next($deadline);
-    $this->assertSame(Grpc\FINISH_ACCEPTED, $event->type);
-    $this->assertSame(Grpc\OP_OK, $event->data);
+        $this->assertTrue($event->send_metadata);
+        $this->assertTrue($event->send_close);
+        $this->assertTrue($event->send_message);
 
-    // the client gets FINISHED
-    $event = $this->client_queue->next($deadline);
-    $this->assertNotNull($event);
-    $this->assertSame(Grpc\FINISHED, $event->type);
-    $status = $event->data;
-    $this->assertSame(Grpc\STATUS_OK, $status->code);
-    $this->assertSame($status_text, $status->details);
+        $event = $this->server->requestCall();
+        $this->assertSame('dummy_method', $event->method);
+        $server_call = $event->call;
 
-    // and the server gets FINISHED
-    $event = $this->server_queue->next($deadline);
-    $this->assertNotNull($event);
-    $this->assertSame(Grpc\FINISHED, $event->type);
+        $event = $server_call->startBatch([
+            Grpc\OP_SEND_INITIAL_METADATA => [],
+            Grpc\OP_SEND_MESSAGE => ['message' => $reply_text],
+            Grpc\OP_SEND_STATUS_FROM_SERVER => [
+                'metadata' => [],
+                'code' => Grpc\STATUS_OK,
+                'details' => $status_text,
+            ],
+            Grpc\OP_RECV_MESSAGE => true,
+            Grpc\OP_RECV_CLOSE_ON_SERVER => true,
+        ]);
 
-    unset($call);
-    unset($server_call);
-  }
+        $this->assertTrue($event->send_metadata);
+        $this->assertTrue($event->send_status);
+        $this->assertTrue($event->send_message);
+        $this->assertFalse($event->cancelled);
+        $this->assertSame($req_text, $event->message);
+
+        $event = $call->startBatch([
+            Grpc\OP_RECV_INITIAL_METADATA => true,
+            Grpc\OP_RECV_MESSAGE => true,
+            Grpc\OP_RECV_STATUS_ON_CLIENT => true,
+        ]);
+
+        $this->assertSame([], $event->metadata);
+        $this->assertSame($reply_text, $event->message);
+        $status = $event->status;
+        $this->assertSame([], $status->metadata);
+        $this->assertSame(Grpc\STATUS_OK, $status->code);
+        $this->assertSame($status_text, $status->details);
+
+        unset($call);
+        unset($server_call);
+    }
 }

@@ -28,11 +28,10 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'grpc'
-require 'xray/thread_dump_signal_handler'
 
-Pool = GRPC::RpcServer::Pool
+describe GRPC::Pool do
+  Pool = GRPC::Pool
 
-describe Pool do
   describe '#new' do
     it 'raises if a non-positive size is used' do
       expect { Pool.new(0) }.to raise_error
@@ -75,11 +74,11 @@ describe Pool do
   end
 
   describe '#schedule' do
-    it 'throws if the pool is already stopped' do
+    it 'return if the pool is already stopped' do
       p = Pool.new(1)
       p.stop
       job = proc {}
-      expect { p.schedule(&job) }.to raise_error
+      expect { p.schedule(&job) }.to_not raise_error
     end
 
     it 'adds jobs that get run by the pool' do

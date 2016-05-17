@@ -1,6 +1,5 @@
 #region Copyright notice and license
-
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -28,104 +27,125 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 #endregion
 
 using System;
 using System.Collections.Generic;
-using System.Reactive.Linq;
 using System.Threading.Tasks;
+using Grpc.Core;
 using Grpc.Core.Utils;
 
-namespace math
+namespace Math
 {
-	public static class MathExamples
-	{
-		public static void DivExample(MathGrpc.IMathServiceClient stub)
-		{
-			DivReply result = stub.Div(new DivArgs.Builder { Dividend = 10, Divisor = 3 }.Build());
-			Console.WriteLine("Div Result: " + result);
-		}
+    public static class MathExamples
+    {
+        public static void DivExample(Math.MathClient client)
+        {
+            DivReply result = client.Div(new DivArgs { Dividend = 10, Divisor = 3 });
+            Console.WriteLine("Div Result: " + result);
+        }
 
-		public static void DivAsyncExample(MathGrpc.IMathServiceClient stub)
-		{
-			Task<DivReply> call = stub.DivAsync(new DivArgs.Builder { Dividend = 4, Divisor = 5 }.Build());
-			DivReply result = call.Result;
-			Console.WriteLine(result);
-		}
+        public static async Task DivAsyncExample(Math.MathClient client)
+        {
+            DivReply result = await client.DivAsync(new DivArgs { Dividend = 4, Divisor = 5 });
+            Console.WriteLine("DivAsync Result: " + result);
+        }
 
-		public static void DivAsyncWithCancellationExample(MathGrpc.IMathServiceClient stub)
-		{
-			Task<DivReply> call = stub.DivAsync(new DivArgs.Builder { Dividend = 4, Divisor = 5 }.Build());
-			DivReply result = call.Result;
-			Console.WriteLine(result);
-		}
-
-		public static void FibExample(MathGrpc.IMathServiceClient stub)
-		{
-            var recorder = new RecordingObserver<Num>();
-            stub.Fib(new FibArgs.Builder { Limit = 5 }.Build(), recorder);
-
-			List<Num> numbers = recorder.ToList().Result;
-            Console.WriteLine("Fib Result: " + string.Join("|", recorder.ToList().Result));
-		}
-
-		public static void SumExample(MathGrpc.IMathServiceClient stub)
-		{
-			List<Num> numbers = new List<Num>{new Num.Builder { Num_ = 1 }.Build(),
-				new Num.Builder { Num_ = 2 }.Build(),
-				new Num.Builder { Num_ = 3 }.Build()};
-
-            var res = stub.Sum();
-            foreach (var num in numbers) {
-                res.Inputs.OnNext(num);
-            }
-            res.Inputs.OnCompleted();
-
-			Console.WriteLine("Sum Result: " + res.Task.Result);
-		}
-
-		public static void DivManyExample(MathGrpc.IMathServiceClient stub)
-		{
-			List<DivArgs> divArgsList = new List<DivArgs>{
-				new DivArgs.Builder { Dividend = 10, Divisor = 3 }.Build(),
-				new DivArgs.Builder { Dividend = 100, Divisor = 21 }.Build(),
-				new DivArgs.Builder { Dividend = 7, Divisor = 2 }.Build()
-			};
-
-            var recorder = new RecordingObserver<DivReply>();
-
-            var inputs = stub.DivMany(recorder);
-            foreach (var input in divArgsList)
+        public static async Task FibExample(Math.MathClient client)
+        {
+            using (var call = client.Fib(new FibArgs { Limit = 5 }))
             {
-                inputs.OnNext(input);
+                List<Num> result = await call.ResponseStream.ToListAsync();
+                Console.WriteLine("Fib Result: " + string.Join("|", result));
             }
-            inputs.OnCompleted();
+        }
 
-			Console.WriteLine("DivMany Result: " + string.Join("|", recorder.ToList().Result));
-		}
+        public static async Task SumExample(Math.MathClient client)
+        {
+            var numbers = new List<Num>
+            {
+                new Num { Num_ = 1 },
+                new Num { Num_ = 2 },
+                new Num { Num_ = 3 }
+            };
 
-		public static void DependendRequestsExample(MathGrpc.IMathServiceClient stub)
-		{
-			var numberList = new List<Num>
-			{ new Num.Builder{ Num_ = 1 }.Build(),
-				new Num.Builder{ Num_ = 2 }.Build(), new Num.Builder{ Num_ = 3 }.Build()
-			};
+            using (var call = client.Sum())
+            {
+                await call.RequestStream.WriteAllAsync(numbers);
+                Console.WriteLine("Sum Result: " + await call.ResponseAsync);
+            }
+        }
 
-			numberList.ToObservable();
+        public static async Task DivManyExample(Math.MathClient client)
+        {
+            var divArgsList = new List<DivArgs>
+            {
+                new DivArgs { Dividend = 10, Divisor = 3 },
+                new DivArgs { Dividend = 100, Divisor = 21 },
+                new DivArgs { Dividend = 7, Divisor = 2 }
+            };
+            using (var call = client.DivMany())
+            { 
+                await call.RequestStream.WriteAllAsync(divArgsList);
+                Console.WriteLine("DivMany Result: " + string.Join("|", await call.ResponseStream.ToListAsync()));
+            }
+        }
 
-			//IObserver<Num> numbers;
-			//Task<Num> call = stub.Sum(out numbers);
-			//foreach (var num in numberList)
-			//{
-			//	numbers.OnNext(num);
-			//}
-			//numbers.OnCompleted();
+        public static async Task DependendRequestsExample(Math.MathClient client)
+        {
+            var numbers = new List<Num>
+            {
+                new Num { Num_ = 1 }, 
+                new Num { Num_ = 2 },
+                new Num { Num_ = 3 }
+            };
 
-			//Num sum = call.Result;
+            Num sum;
+            using (var sumCall = client.Sum())
+            {
+                await sumCall.RequestStream.WriteAllAsync(numbers);
+                sum = await sumCall.ResponseAsync;
+            }
 
-			//DivReply result = stub.Div(new DivArgs.Builder { Dividend = sum.Num_, Divisor = numberList.Count }.Build());
-		}
-	}
+            DivReply result = await client.DivAsync(new DivArgs { Dividend = sum.Num_, Divisor = numbers.Count });
+            Console.WriteLine("Avg Result: " + result);
+        }
+
+        /// <summary>
+        /// Shows how to handle a call ending with non-OK status.
+        /// </summary>
+        public static async Task HandleErrorExample(Math.MathClient client)
+        {
+            try
+            {
+                 DivReply result = await client.DivAsync(new DivArgs { Dividend = 5, Divisor = 0 });
+            }
+            catch (RpcException ex)
+            {
+                Console.WriteLine(string.Format("RPC ended with status {0}", ex.Status));
+            }
+        }
+
+        /// <summary>
+        /// Shows how to send request headers and how to access response headers
+        /// and response trailers.
+        /// </summary>
+        public static async Task MetadataExample(Math.MathClient client)
+        {
+            var requestHeaders = new Metadata
+            {
+                { "custom-header", "custom-value" }
+            };
+
+            var call = client.DivAsync(new DivArgs { Dividend = 5, Divisor = 0 }, requestHeaders);
+
+            // Get response headers
+            Metadata responseHeaders = await call.ResponseHeadersAsync;
+
+            var result = await call;
+
+            // Get response trailers after the call has finished.
+            Metadata responseTrailers = call.GetTrailers();
+        }
+    }
 }
-

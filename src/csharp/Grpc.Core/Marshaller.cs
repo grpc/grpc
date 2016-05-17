@@ -32,23 +32,32 @@
 #endregion
 
 using System;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core
 {
     /// <summary>
-    /// For serializing and deserializing messages.
+    /// Encapsulates the logic for serializing and deserializing messages.
     /// </summary>
-    public struct Marshaller<T>
+    public class Marshaller<T>
     {
-        readonly Func<T,byte[]> serializer;
-        readonly Func<byte[],T> deserializer;
+        readonly Func<T, byte[]> serializer;
+        readonly Func<byte[], T> deserializer;
 
+        /// <summary>
+        /// Initializes a new marshaller.
+        /// </summary>
+        /// <param name="serializer">Function that will be used to serialize messages.</param>
+        /// <param name="deserializer">Function that will be used to deserialize messages.</param>
         public Marshaller(Func<T, byte[]> serializer, Func<byte[], T> deserializer)
         {
-            this.serializer = serializer;
-            this.deserializer = deserializer;
+            this.serializer = GrpcPreconditions.CheckNotNull(serializer, "serializer");
+            this.deserializer = GrpcPreconditions.CheckNotNull(deserializer, "deserializer");
         }
 
+        /// <summary>
+        /// Gets the serializer function.
+        /// </summary>
         public Func<T, byte[]> Serializer
         {
             get
@@ -57,6 +66,9 @@ namespace Grpc.Core
             }
         }
 
+        /// <summary>
+        /// Gets the deserializer function.
+        /// </summary>
         public Func<byte[], T> Deserializer
         {
             get
@@ -66,13 +78,22 @@ namespace Grpc.Core
         }
     }
 
-    public static class Marshallers {
-
-        public static Marshaller<T> Create<T>(Func<T,byte[]> serializer, Func<byte[],T> deserializer)
+    /// <summary>
+    /// Utilities for creating marshallers.
+    /// </summary>
+    public static class Marshallers
+    {
+        /// <summary>
+        /// Creates a marshaller from specified serializer and deserializer.
+        /// </summary>
+        public static Marshaller<T> Create<T>(Func<T, byte[]> serializer, Func<byte[], T> deserializer)
         {
             return new Marshaller<T>(serializer, deserializer);
         }
 
+        /// <summary>
+        /// Returns a marshaller for <c>string</c> type. This is useful for testing.
+        /// </summary>
         public static Marshaller<string> StringMarshaller
         {
             get
@@ -81,7 +102,5 @@ namespace Grpc.Core
                                               System.Text.Encoding.UTF8.GetString);
             }
         }
-
     }
 }
-

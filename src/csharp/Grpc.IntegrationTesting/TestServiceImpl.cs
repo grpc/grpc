@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -33,108 +33,104 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Google.ProtocolBuffers;
+using Google.Protobuf;
+using Grpc.Core;
 using Grpc.Core.Utils;
 
-namespace grpc.testing
+namespace Grpc.Testing
 {
     /// <summary>
     /// Implementation of TestService server
     /// </summary>
-    public class TestServiceImpl : TestServiceGrpc.ITestService
+    public class TestServiceImpl : TestService.TestServiceBase
     {
-        public void EmptyCall(Empty request, IObserver<Empty> responseObserver)
+        public override Task<Empty> EmptyCall(Empty request, ServerCallContext context)
         {
-            responseObserver.OnNext(Empty.DefaultInstance);
-            responseObserver.OnCompleted();
+            return Task.FromResult(new Empty());
         }
 
-        public void UnaryCall(SimpleRequest request, IObserver<SimpleResponse> responseObserver)
+        public override async Task<SimpleResponse> UnaryCall(SimpleRequest request, ServerCallContext context)
         {
-            var response = SimpleResponse.CreateBuilder()
-                .SetPayload(CreateZerosPayload(request.ResponseSize)).Build();
-            //TODO: check we support ReponseType
-            responseObserver.OnNext(response);
-            responseObserver.OnCompleted();
+            await EnsureEchoMetadataAsync(context);
+            EnsureEchoStatus(request.ResponseStatus, context);
+
+            var response = new SimpleResponse { Payload = CreateZerosPayload(request.ResponseSize) };
+            return response;
         }
 
-        public void StreamingOutputCall(StreamingOutputCallRequest request, IObserver<StreamingOutputCallResponse> responseObserver)
+        public override async Task StreamingOutputCall(StreamingOutputCallRequest request, IServerStreamWriter<StreamingOutputCallResponse> responseStream, ServerCallContext context)
         {
-            foreach(var responseParam in request.ResponseParametersList)
+            await EnsureEchoMetadataAsync(context);
+            EnsureEchoStatus(request.ResponseStatus, context);
+
+            foreach (var responseParam in request.ResponseParameters)
             {
-                var response = StreamingOutputCallResponse.CreateBuilder()
-                    .SetPayload(CreateZerosPayload(responseParam.Size)).Build();
-                responseObserver.OnNext(response);
+                var response = new StreamingOutputCallResponse { Payload = CreateZerosPayload(responseParam.Size) };
+                await responseStream.WriteAsync(response);
             }
-            responseObserver.OnCompleted();
         }
 
-        public IObserver<StreamingInputCallRequest> StreamingInputCall(IObserver<StreamingInputCallResponse> responseObserver)
+        public override async Task<StreamingInputCallResponse> StreamingInputCall(IAsyncStreamReader<StreamingInputCallRequest> requestStream, ServerCallContext context)
         {
-            var recorder = new RecordingObserver<StreamingInputCallRequest>();
-            Task.Run(() => {
-                int sum = 0;
-                foreach(var req in recorder.ToList().Result)
-                {
-                    sum += req.Payload.Body.Length;
-                }
-                var response = StreamingInputCallResponse.CreateBuilder()
-                    .SetAggregatedPayloadSize(sum).Build();
-                responseObserver.OnNext(response);
-                responseObserver.OnCompleted();
+            await EnsureEchoMetadataAsync(context);
+
+            int sum = 0;
+            await requestStream.ForEachAsync(async request =>
+            {
+                sum += request.Payload.Body.Length;
             });
-            return recorder;
+            return new StreamingInputCallResponse { AggregatedPayloadSize = sum };
         }
 
-        public IObserver<StreamingOutputCallRequest> FullDuplexCall(IObserver<StreamingOutputCallResponse> responseObserver)
+        public override async Task FullDuplexCall(IAsyncStreamReader<StreamingOutputCallRequest> requestStream, IServerStreamWriter<StreamingOutputCallResponse> responseStream, ServerCallContext context)
         {
-            return new FullDuplexObserver(responseObserver);
+            await EnsureEchoMetadataAsync(context);
+
+            await requestStream.ForEachAsync(async request =>
+            {
+                EnsureEchoStatus(request.ResponseStatus, context);
+                foreach (var responseParam in request.ResponseParameters)
+                {
+                    var response = new StreamingOutputCallResponse { Payload = CreateZerosPayload(responseParam.Size) };
+                    await responseStream.WriteAsync(response);
+                }
+            });
         }
 
-        public IObserver<StreamingOutputCallRequest> HalfDuplexCall(IObserver<StreamingOutputCallResponse> responseObserver)
+        public override async Task HalfDuplexCall(IAsyncStreamReader<StreamingOutputCallRequest> requestStream, IServerStreamWriter<StreamingOutputCallResponse> responseStream, ServerCallContext context)
         {
             throw new NotImplementedException();
         }
 
-        private class FullDuplexObserver : IObserver<StreamingOutputCallRequest> {
+        private static Payload CreateZerosPayload(int size)
+        {
+            return new Payload { Body = ByteString.CopyFrom(new byte[size]) };
+        }
 
-            readonly IObserver<StreamingOutputCallResponse> responseObserver;
-
-            public FullDuplexObserver(IObserver<StreamingOutputCallResponse> responseObserver)
-            {
-                this.responseObserver = responseObserver;
+        private static async Task EnsureEchoMetadataAsync(ServerCallContext context)
+        {
+            var echoInitialList = context.RequestHeaders.Where((entry) => entry.Key == "x-grpc-test-echo-initial").ToList();
+            if (echoInitialList.Any()) {
+                var entry = echoInitialList.Single();
+                await context.WriteResponseHeadersAsync(new Metadata { entry });
             }
 
-            public void OnCompleted()
-            {
-                responseObserver.OnCompleted();
-            }
-
-            public void OnError(Exception error)
-            {
-                throw new NotImplementedException();
-            }
-
-            public void OnNext(StreamingOutputCallRequest value)
-            {
-                // TODO: this is not in order!!!
-                //Task.Factory.StartNew(() => {
-
-                    foreach(var responseParam in value.ResponseParametersList)
-                    {
-                        var response = StreamingOutputCallResponse.CreateBuilder()
-                            .SetPayload(CreateZerosPayload(responseParam.Size)).Build();
-                        responseObserver.OnNext(response);
-                    }
-                //});
+            var echoTrailingList = context.RequestHeaders.Where((entry) => entry.Key == "x-grpc-test-echo-trailing-bin").ToList();
+            if (echoTrailingList.Any()) {
+                context.ResponseTrailers.Add(echoTrailingList.Single());
             }
         }
 
-        private static Payload CreateZerosPayload(int size) {
-            return Payload.CreateBuilder().SetBody(ByteString.CopyFrom(new byte[size])).Build();
+        private static void EnsureEchoStatus(EchoStatus responseStatus, ServerCallContext context)
+        {
+            if (responseStatus != null)
+            {
+                var statusCode = (StatusCode)responseStatus.Code;
+                context.Status = new Status(statusCode, responseStatus.Message);
+            }
         }
     }
 }
-

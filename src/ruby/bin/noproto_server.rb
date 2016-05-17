@@ -63,7 +63,7 @@ class NoProto < NoProtoService
   end
 
   def an_rpc(req, _call)
-    logger.info('echo service received a request')
+    GRPC.logger.info('echo service received a request')
     req
   end
 end
@@ -77,7 +77,8 @@ end
 
 def test_server_creds
   certs = load_test_certs
-  GRPC::Core::ServerCredentials.new(nil, certs[1], certs[2])
+  GRPC::Core::ServerCredentials.new(
+    nil, [{ private_key: certs[1], cert_chain: certs[2] }], false)
 end
 
 def main
@@ -95,18 +96,17 @@ def main
     end
   end.parse!
 
+  s = GRPC::RpcServer.new
   if options['secure']
-    s = GRPC::RpcServer.new(creds: test_server_creds)
-    s.add_http2_port(options['host'], true)
-    logger.info("... running securely on #{options['host']}")
+    s.add_http2_port(options['host'], test_server_creds)
+    GRPC.logger.info("... running securely on #{options['host']}")
   else
-    s = GRPC::RpcServer.new
-    s.add_http2_port(options['host'])
-    logger.info("... running insecurely on #{options['host']}")
+    s.add_http2_port(options['host'], :this_port_is_insecure)
+    GRPC.logger.info("... running insecurely on #{options['host']}")
   end
 
   s.handle(NoProto)
-  s.run
+  s.run_till_terminated
 end
 
 main

@@ -29,6 +29,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+NODE_VERSION=$1
+source ~/.nvm/nvm.sh
+
+nvm use $NODE_VERSION
 set -ex
 
 CONFIG=${CONFIG:-opt}
@@ -36,13 +40,4 @@ CONFIG=${CONFIG:-opt}
 # change to grpc repo root
 cd $(dirname $0)/../..
 
-# tells npm install to look for files in that directory
-export GRPC_ROOT=`pwd`
-# tells npm install the subdirectory with library files
-export GRPC_LIB_SUBDIR=libs/$CONFIG
-# tells npm install not to use default locations
-export GRPC_NO_INSTALL=yes
-
-cd src/node
-
-npm install
+npm install --unsafe-perm --build-from-source

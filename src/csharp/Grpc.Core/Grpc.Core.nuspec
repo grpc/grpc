@@ -1,23 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
-<package >
+<package>
   <metadata>
     <id>Grpc.Core</id>
-    <title>gRPC Core</title>
+    <title>gRPC C# Core</title>
     <summary>Core C# implementation of gRPC - an RPC library and framework</summary>
-    <description>Core C# implementation of gRPC - an RPC library and framework. See project site for more info.
-     This is an experimental release, not ready to use.
-    </description>
-    <version>0.1.0</version>
+    <description>Core C# implementation of gRPC - an RPC library and framework. See project site for more info.</description>
+    <version>$version$</version>
     <authors>Google Inc.</authors>
-    <owners>jtattermusch</owners>
+    <owners>grpc-packages</owners>
     <licenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</licenseUrl>
     <projectUrl>https://github.com/grpc/grpc</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <releaseNotes>The first experimental release. Not ready to use.</releaseNotes>
+    <releaseNotes>Release $version$ of gRPC C#</releaseNotes>
     <copyright>Copyright 2015, Google Inc.</copyright>
     <tags>gRPC RPC Protocol HTTP/2</tags>
+    <dependencies>
+      <dependency id="Ix-Async" version="1.2.5" />
+    </dependencies>
   </metadata>
   <files>
-    <file src="bin/Release/Grpc.Core.dll" target="lib/net45" />
+    <file src="bin/ReleaseSigned/Grpc.Core.dll" target="lib/net45" />
+    <file src="bin/ReleaseSigned/Grpc.Core.pdb" target="lib/net45" />
+    <file src="bin/ReleaseSigned/Grpc.Core.xml" target="lib/net45" />
+    <file src="**\*.cs" target="src" />
+    <file src="Grpc.Core.targets" target="\build\net45\Grpc.Core.targets" />
+    <file src="windows_x86/grpc_csharp_ext.dll" target="/build/native/bin/windows_x86/grpc_csharp_ext.dll" />
+    <file src="windows_x64/grpc_csharp_ext.dll" target="/build/native/bin/windows_x64/grpc_csharp_ext.dll" />
+    <file src="linux_x86/libgrpc_csharp_ext.so" target="/build/native/bin/linux_x86/libgrpc_csharp_ext.so" />
+    <file src="linux_x64/libgrpc_csharp_ext.so" target="/build/native/bin/linux_x64/libgrpc_csharp_ext.so" />
+    <file src="macosx_x86/libgrpc_csharp_ext.dylib" target="/build/native/bin/macosx_x86/libgrpc_csharp_ext.dylib" />
+    <file src="macosx_x64/libgrpc_csharp_ext.dylib" target="/build/native/bin/macosx_x64/libgrpc_csharp_ext.dylib" />
   </files>
 </package>

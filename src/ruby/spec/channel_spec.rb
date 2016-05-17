@@ -36,19 +36,19 @@ def load_test_certs
 end
 
 describe GRPC::Core::Channel do
-  FAKE_HOST = 'localhost:0'
+  let(:fake_host) { 'localhost:0' }
+  let(:cq) { GRPC::Core::CompletionQueue.new }
 
   def create_test_cert
-    GRPC::Core::Credentials.new(load_test_certs[0])
-  end
-
-  before(:each) do
-    @cq = GRPC::Core::CompletionQueue.new
+    GRPC::Core::ChannelCredentials.new(load_test_certs[0])
   end
 
   shared_examples '#new' do
     it 'take a host name without channel args' do
-      expect { GRPC::Core::Channel.new('dummy_host', nil) }.not_to raise_error
+      blk = proc do
+        GRPC::Core::Channel.new('dummy_host', nil, :this_channel_is_insecure)
+      end
+      expect(&blk).not_to raise_error
     end
 
     it 'does not take a hash with bad keys as channel args' do
@@ -61,7 +61,7 @@ describe GRPC::Core::Channel do
     it 'does not take a hash with bad values as channel args' do
       blk = construct_with_args(symbol: Object.new)
       expect(&blk).to raise_error TypeError
-      blk = construct_with_args('1' => Hash.new)
+      blk = construct_with_args('1' => {})
       expect(&blk).to raise_error TypeError
     end
 
@@ -109,31 +109,31 @@ describe GRPC::Core::Channel do
     it_behaves_like '#new'
 
     def construct_with_args(a)
-      proc { GRPC::Core::Channel.new('dummy_host', a) }
+      proc do
+        GRPC::Core::Channel.new('dummy_host', a, :this_channel_is_insecure)
+      end
     end
   end
 
   describe '#create_call' do
     it 'creates a call OK' do
-      host = FAKE_HOST
-      ch = GRPC::Core::Channel.new(host, nil)
+      ch = GRPC::Core::Channel.new(fake_host, nil, :this_channel_is_insecure)
 
       deadline = Time.now + 5
 
       blk = proc do
-        ch.create_call('dummy_method', 'dummy_host', deadline)
+        ch.create_call(cq, nil, nil, 'dummy_method', nil, deadline)
       end
       expect(&blk).to_not raise_error
     end
 
     it 'raises an error if called on a closed channel' do
-      host = FAKE_HOST
-      ch = GRPC::Core::Channel.new(host, nil)
+      ch = GRPC::Core::Channel.new(fake_host, nil, :this_channel_is_insecure)
       ch.close
 
       deadline = Time.now + 5
       blk = proc do
-        ch.create_call('dummy_method', 'dummy_host', deadline)
+        ch.create_call(cq, nil, nil, 'dummy_method', nil, deadline)
       end
       expect(&blk).to raise_error(RuntimeError)
     end
@@ -141,15 +141,13 @@ describe GRPC::Core::Channel do
 
   describe '#destroy' do
     it 'destroys a channel ok' do
-      host = FAKE_HOST
-      ch = GRPC::Core::Channel.new(host, nil)
+      ch = GRPC::Core::Channel.new(fake_host, nil, :this_channel_is_insecure)
       blk = proc { ch.destroy }
       expect(&blk).to_not raise_error
     end
 
     it 'can be called more than once without error' do
-      host = FAKE_HOST
-      ch = GRPC::Core::Channel.new(host, nil)
+      ch = GRPC::Core::Channel.new(fake_host, nil, :this_channel_is_insecure)
       blk = proc { ch.destroy }
       blk.call
       expect(&blk).to_not raise_error
@@ -164,15 +162,13 @@ describe GRPC::Core::Channel do
 
   describe '#close' do
     it 'closes a channel ok' do
-      host = FAKE_HOST
-      ch = GRPC::Core::Channel.new(host, nil)
+      ch = GRPC::Core::Channel.new(fake_host, nil, :this_channel_is_insecure)
       blk = proc { ch.close }
       expect(&blk).to_not raise_error
     end
 
     it 'can be called more than once without error' do
-      host = FAKE_HOST
-      ch = GRPC::Core::Channel.new(host, nil)
+      ch = GRPC::Core::Channel.new(fake_host, nil, :this_channel_is_insecure)
       blk = proc { ch.close }
       blk.call
       expect(&blk).to_not raise_error

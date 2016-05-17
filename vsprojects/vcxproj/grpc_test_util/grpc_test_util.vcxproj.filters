@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\data\client_certs.c">
+      <Filter>test\core\end2end\data</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\data\server1_cert.c">
+      <Filter>test\core\end2end\data</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\data\server1_key.c">
+      <Filter>test\core\end2end\data</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\data\test_root_cert.c">
+      <Filter>test\core\end2end\data</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\security\oauth2_utils.c">
+      <Filter>test\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\cq_verifier.c">
+      <Filter>test\core\end2end</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\fixtures\proxy.c">
+      <Filter>test\core\end2end\fixtures</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\iomgr\endpoint_tests.c">
+      <Filter>test\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\grpc_profiler.c">
+      <Filter>test\core\util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\memory_counters.c">
+      <Filter>test\core\util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\mock_endpoint.c">
+      <Filter>test\core\util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\parse_hexstring.c">
+      <Filter>test\core\util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\passthru_endpoint.c">
+      <Filter>test\core\util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\port_posix.c">
+      <Filter>test\core\util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\port_server_client.c">
+      <Filter>test\core\util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\port_windows.c">
+      <Filter>test\core\util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\slice_splitter.c">
+      <Filter>test\core\util</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\data\ssl_test_data.h">
+      <Filter>test\core\end2end\data</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\core\security\oauth2_utils.h">
+      <Filter>test\core\security</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\cq_verifier.h">
+      <Filter>test\core\end2end</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fixtures\proxy.h">
+      <Filter>test\core\end2end\fixtures</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\core\iomgr\endpoint_tests.h">
+      <Filter>test\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\core\util\grpc_profiler.h">
+      <Filter>test\core\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\core\util\memory_counters.h">
+      <Filter>test\core\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\core\util\mock_endpoint.h">
+      <Filter>test\core\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\core\util\parse_hexstring.h">
+      <Filter>test\core\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\core\util\passthru_endpoint.h">
+      <Filter>test\core\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\core\util\port.h">
+      <Filter>test\core\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\core\util\port_server_client.h">
+      <Filter>test\core\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\core\util\slice_splitter.h">
+      <Filter>test\core\util</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{a2783de3-4fcf-718d-a859-c2108350ff33}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{f95a0dc5-2e57-c168-6128-fe07e1bd58a9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\end2end">
+      <UniqueIdentifier>{7004f7a6-a821-a581-1df5-94c7d22c6850}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\end2end\data">
+      <UniqueIdentifier>{c0da5050-98b1-e4af-71a7-6317af6338e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\end2end\fixtures">
+      <UniqueIdentifier>{1daa14ff-cf54-5a38-9104-46ed9882784b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\iomgr">
+      <UniqueIdentifier>{d3dce584-6111-9ff2-affe-5933a9291c17}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\security">
+      <UniqueIdentifier>{b0938b31-f9d5-21d7-de41-08107caafd80}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\util">
+      <UniqueIdentifier>{6e9f8de1-258c-578f-aa3d-7da9320a3171}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

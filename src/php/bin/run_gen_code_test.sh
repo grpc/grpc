@@ -1,4 +1,4 @@
-# Runs the generated code test against the ruby server
+#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,7 +28,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+set -e
 cd $(dirname $0)
-GRPC_TEST_HOST=localhost:7070 php -d extension_dir=../ext/grpc/modules/ \
-  -d extension=grpc.so /usr/local/bin/phpunit -v --debug --strict \
+source ./determine_extension_dir.sh
+export GRPC_TEST_HOST=localhost:50051
+php $extension_dir -d max_execution_time=300 $(which phpunit) -v --debug \
   ../tests/generated_code/GeneratedCodeTest.php
+php $extension_dir -d max_execution_time=300 $(which phpunit) -v --debug \
+  ../tests/generated_code/GeneratedCodeWithCallbackTest.php

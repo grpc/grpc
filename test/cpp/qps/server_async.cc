@@ -33,148 +33,151 @@
 
 #include <forward_list>
 #include <functional>
-#include <sys/time.h>
-#include <sys/resource.h>
-#include <sys/signal.h>
+#include <memory>
+#include <mutex>
 #include <thread>
 
 #include <gflags/gflags.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
-#include <grpc++/async_unary_call.h>
-#include <grpc++/config.h>
+#include <grpc++/generic/async_generic_service.h>
+#include <grpc++/security/server_credentials.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
-#include <grpc++/status.h>
-#include <gtest/gtest.h>
-#include "src/cpp/server/thread_pool.h"
-#include "test/core/util/grpc_profiler.h"
-#include "test/cpp/qps/qpstest.pb.h"
-
+#include <grpc++/support/config.h>
 #include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
+#include <gtest/gtest.h>
 
-DEFINE_bool(enable_ssl, false, "Whether to use ssl/tls.");
-DEFINE_int32(port, 0, "Server port.");
-DEFINE_int32(server_threads, 4, "Number of server threads.");
+#include "src/proto/grpc/testing/services.grpc.pb.h"
+#include "test/core/util/test_config.h"
+#include "test/cpp/qps/server.h"
 
-using grpc::CompletionQueue;
-using grpc::Server;
-using grpc::ServerBuilder;
-using grpc::ServerContext;
-using grpc::ThreadPool;
-using grpc::testing::Payload;
-using grpc::testing::PayloadType;
-using grpc::testing::ServerStats;
-using grpc::testing::SimpleRequest;
-using grpc::testing::SimpleResponse;
-using grpc::testing::StatsRequest;
-using grpc::testing::TestService;
-using grpc::Status;
+namespace grpc {
+namespace testing {
 
-// In some distros, gflags is in the namespace google, and in some others,
-// in gflags. This hack is enabling us to find both.
-namespace google {}
-namespace gflags {}
-using namespace google;
-using namespace gflags;
-
-static bool got_sigint = false;
-
-static void sigint_handler(int x) { got_sigint = 1; }
-
-static double time_double(struct timeval *tv) {
-  return tv->tv_sec + 1e-6 * tv->tv_usec;
-}
-
-static bool SetPayload(PayloadType type, int size, Payload *payload) {
-  PayloadType response_type = type;
-  // TODO(yangg): Support UNCOMPRESSABLE payload.
-  if (type != PayloadType::COMPRESSABLE) {
-    return false;
-  }
-  payload->set_type(response_type);
-  std::unique_ptr<char[]> body(new char[size]());
-  payload->set_body(body.get(), size);
-  return true;
-}
-
-namespace {
-
-class AsyncQpsServerTest {
+template <class RequestType, class ResponseType, class ServiceType,
+          class ServerContextType>
+class AsyncQpsServerTest : public Server {
  public:
-  AsyncQpsServerTest() : srv_cq_(), async_service_(&srv_cq_), server_(nullptr) {
+  AsyncQpsServerTest(
+      const ServerConfig &config,
+      std::function<void(ServerBuilder *, ServiceType *)> register_service,
+      std::function<void(ServiceType *, ServerContextType *, RequestType *,
+                         ServerAsyncResponseWriter<ResponseType> *,
+                         CompletionQueue *, ServerCompletionQueue *, void *)>
+          request_unary_function,
+      std::function<void(ServiceType *, ServerContextType *,
+                         ServerAsyncReaderWriter<ResponseType, RequestType> *,
+                         CompletionQueue *, ServerCompletionQueue *, void *)>
+          request_streaming_function,
+      std::function<grpc::Status(const PayloadConfig &, const RequestType *,
+                                 ResponseType *)>
+          process_rpc)
+      : Server(config) {
     char *server_address = NULL;
-    gpr_join_host_port(&server_address, "::", FLAGS_port);
+
+    gpr_join_host_port(&server_address, "::", port());
 
     ServerBuilder builder;
-    builder.AddPort(server_address);
-
-    builder.RegisterAsyncService(&async_service_);
-
-    server_ = builder.BuildAndStart();
-    gpr_log(GPR_INFO, "Server listening on %s\n", server_address);
+    builder.AddListeningPort(server_address,
+                             Server::CreateServerCredentials(config));
     gpr_free(server_address);
 
+    register_service(&builder, &async_service_);
+
+    int num_threads = config.async_server_threads();
+    if (num_threads <= 0) {  // dynamic sizing
+      num_threads = cores();
+      gpr_log(GPR_INFO, "Sizing async server to %d threads", num_threads);
+    }
+
+    for (int i = 0; i < num_threads; i++) {
+      srv_cqs_.emplace_back(builder.AddCompletionQueue());
+    }
+
+    server_ = builder.BuildAndStart();
+
     using namespace std::placeholders;
-    request_unary_ = std::bind(&TestService::AsyncService::RequestUnaryCall,
-                               &async_service_, _1, _2, _3, &srv_cq_, _4);
-    request_stats_ =
-        std::bind(&TestService::AsyncService::RequestCollectServerStats,
-                  &async_service_, _1, _2, _3, &srv_cq_, _4);
-    for (int i = 0; i < 100; i++) {
-      contexts_.push_front(
-          new ServerRpcContextUnaryImpl<SimpleRequest, SimpleResponse>(
-              request_unary_, UnaryCall));
-      contexts_.push_front(
-          new ServerRpcContextUnaryImpl<StatsRequest, ServerStats>(
-              request_stats_, CollectServerStats));
+
+    auto process_rpc_bound =
+        std::bind(process_rpc, config.payload_config(), _1, _2);
+
+    for (int i = 0; i < 10000 / num_threads; i++) {
+      for (int j = 0; j < num_threads; j++) {
+        if (request_unary_function) {
+          auto request_unary =
+              std::bind(request_unary_function, &async_service_, _1, _2, _3,
+                        srv_cqs_[j].get(), srv_cqs_[j].get(), _4);
+          contexts_.push_front(
+              new ServerRpcContextUnaryImpl(request_unary, process_rpc_bound));
+        }
+        if (request_streaming_function) {
+          auto request_streaming =
+              std::bind(request_streaming_function, &async_service_, _1, _2,
+                        srv_cqs_[j].get(), srv_cqs_[j].get(), _3);
+          contexts_.push_front(new ServerRpcContextStreamingImpl(
+              request_streaming, process_rpc_bound));
+        }
+      }
+    }
+
+    for (int i = 0; i < num_threads; i++) {
+      shutdown_state_.emplace_back(new PerThreadShutdownState());
+    }
+    for (int i = 0; i < num_threads; i++) {
+      threads_.emplace_back(&AsyncQpsServerTest::ThreadFunc, this, i);
     }
   }
   ~AsyncQpsServerTest() {
     server_->Shutdown();
-    void *ignored_tag;
-    bool ignored_ok;
-    srv_cq_.Shutdown();
-    while (srv_cq_.Next(&ignored_tag, &ignored_ok)) {
+    for (auto ss = shutdown_state_.begin(); ss != shutdown_state_.end(); ++ss) {
+      (*ss)->set_shutdown();
+    }
+    for (auto thr = threads_.begin(); thr != threads_.end(); thr++) {
+      thr->join();
+    }
+    for (auto cq = srv_cqs_.begin(); cq != srv_cqs_.end(); ++cq) {
+      (*cq)->Shutdown();
+      bool ok;
+      void *got_tag;
+      while ((*cq)->Next(&got_tag, &ok))
+        ;
     }
     while (!contexts_.empty()) {
       delete contexts_.front();
       contexts_.pop_front();
     }
   }
-  void ServeRpcs(int num_threads) {
-    std::vector<std::thread> threads;
-    for (int i = 0; i < num_threads; i++) {
-      threads.push_back(std::thread([=]() {
-        // Wait until work is available or we are shutting down
-        bool ok;
-        void *got_tag;
-        while (srv_cq_.Next(&got_tag, &ok)) {
-          EXPECT_EQ(ok, true);
-          ServerRpcContext *ctx = detag(got_tag);
-          // The tag is a pointer to an RPC context to invoke
-          if (ctx->RunNextState() == false) {
-            // this RPC context is done, so refresh it
-            ctx->Reset();
-          }
-        }
-        return;
-      }));
-    }
-    while (!got_sigint) {
-      std::this_thread::sleep_for(std::chrono::seconds(5));
-    }
-  }
 
  private:
+  void ThreadFunc(int rank) {
+    // Wait until work is available or we are shutting down
+    bool ok;
+    void *got_tag;
+    while (srv_cqs_[rank]->Next(&got_tag, &ok)) {
+      ServerRpcContext *ctx = detag(got_tag);
+      // The tag is a pointer to an RPC context to invoke
+      const bool still_going = ctx->RunNextState(ok);
+      if (!shutdown_state_[rank]->shutdown()) {
+        // this RPC context is done, so refresh it
+        if (!still_going) {
+          ctx->Reset();
+        }
+      } else {
+        return;
+      }
+    }
+    return;
+  }
+
   class ServerRpcContext {
    public:
     ServerRpcContext() {}
     virtual ~ServerRpcContext(){};
-    virtual bool RunNextState() = 0;// do next state, return false if all done
-    virtual void Reset() = 0;     // start this back at a clean state
+    virtual bool RunNextState(bool) = 0;  // next state, return false if done
+    virtual void Reset() = 0;             // start this back at a clean state
   };
   static void *tag(ServerRpcContext *func) {
     return reinterpret_cast<void *>(func);
@@ -183,39 +186,46 @@ class AsyncQpsServerTest {
     return reinterpret_cast<ServerRpcContext *>(tag);
   }
 
-  template <class RequestType, class ResponseType>
-  class ServerRpcContextUnaryImpl : public ServerRpcContext {
+  class ServerRpcContextUnaryImpl GRPC_FINAL : public ServerRpcContext {
    public:
     ServerRpcContextUnaryImpl(
-        std::function<void(ServerContext *, RequestType *,
+        std::function<void(ServerContextType *, RequestType *,
                            grpc::ServerAsyncResponseWriter<ResponseType> *,
-                           void *)> request_method,
+                           void *)>
+            request_method,
         std::function<grpc::Status(const RequestType *, ResponseType *)>
             invoke_method)
-        : next_state_(&ServerRpcContextUnaryImpl::invoker),
+        : srv_ctx_(new ServerContextType),
+          next_state_(&ServerRpcContextUnaryImpl::invoker),
           request_method_(request_method),
           invoke_method_(invoke_method),
-          response_writer_(&srv_ctx_) {
-      request_method_(&srv_ctx_, &req_, &response_writer_,
+          response_writer_(srv_ctx_.get()) {
+      request_method_(srv_ctx_.get(), &req_, &response_writer_,
                       AsyncQpsServerTest::tag(this));
     }
     ~ServerRpcContextUnaryImpl() GRPC_OVERRIDE {}
-    bool RunNextState() GRPC_OVERRIDE { return (this->*next_state_)(); }
+    bool RunNextState(bool ok) GRPC_OVERRIDE {
+      return (this->*next_state_)(ok);
+    }
     void Reset() GRPC_OVERRIDE {
-      srv_ctx_ = ServerContext();
+      srv_ctx_.reset(new ServerContextType);
       req_ = RequestType();
       response_writer_ =
-          grpc::ServerAsyncResponseWriter<ResponseType>(&srv_ctx_);
+          grpc::ServerAsyncResponseWriter<ResponseType>(srv_ctx_.get());
 
       // Then request the method
       next_state_ = &ServerRpcContextUnaryImpl::invoker;
-      request_method_(&srv_ctx_, &req_, &response_writer_,
+      request_method_(srv_ctx_.get(), &req_, &response_writer_,
                       AsyncQpsServerTest::tag(this));
     }
 
    private:
-    bool finisher() { return false; }
-    bool invoker() {
+    bool finisher(bool) { return false; }
+    bool invoker(bool ok) {
+      if (!ok) {
+        return false;
+      }
+
       ResponseType response;
 
       // Call the RPC processing function
@@ -226,10 +236,10 @@ class AsyncQpsServerTest {
       response_writer_.Finish(response, status, AsyncQpsServerTest::tag(this));
       return true;
     }
-    ServerContext srv_ctx_;
+    std::unique_ptr<ServerContextType> srv_ctx_;
     RequestType req_;
-    bool (ServerRpcContextUnaryImpl::*next_state_)();
-    std::function<void(ServerContext *, RequestType *,
+    bool (ServerRpcContextUnaryImpl::*next_state_)(bool);
+    std::function<void(ServerContextType *, RequestType *,
                        grpc::ServerAsyncResponseWriter<ResponseType> *, void *)>
         request_method_;
     std::function<grpc::Status(const RequestType *, ResponseType *)>
@@ -237,63 +247,164 @@ class AsyncQpsServerTest {
     grpc::ServerAsyncResponseWriter<ResponseType> response_writer_;
   };
 
-  static Status CollectServerStats(const StatsRequest *,
-                                   ServerStats *response) {
-    struct rusage usage;
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    getrusage(RUSAGE_SELF, &usage);
-    response->set_time_now(time_double(&tv));
-    response->set_time_user(time_double(&usage.ru_utime));
-    response->set_time_system(time_double(&usage.ru_stime));
-    return Status::OK;
-  }
-  static Status UnaryCall(const SimpleRequest *request,
-                          SimpleResponse *response) {
-    if (request->has_response_size() && request->response_size() > 0) {
-      if (!SetPayload(request->response_type(), request->response_size(),
-                      response->mutable_payload())) {
-        return Status(grpc::StatusCode::INTERNAL, "Error creating payload.");
-      }
+  class ServerRpcContextStreamingImpl GRPC_FINAL : public ServerRpcContext {
+   public:
+    ServerRpcContextStreamingImpl(
+        std::function<void(
+            ServerContextType *,
+            grpc::ServerAsyncReaderWriter<ResponseType, RequestType> *, void *)>
+            request_method,
+        std::function<grpc::Status(const RequestType *, ResponseType *)>
+            invoke_method)
+        : srv_ctx_(new ServerContextType),
+          next_state_(&ServerRpcContextStreamingImpl::request_done),
+          request_method_(request_method),
+          invoke_method_(invoke_method),
+          stream_(srv_ctx_.get()) {
+      request_method_(srv_ctx_.get(), &stream_, AsyncQpsServerTest::tag(this));
     }
-    return Status::OK;
-  }
-  CompletionQueue srv_cq_;
-  TestService::AsyncService async_service_;
-  std::unique_ptr<Server> server_;
-  std::function<void(ServerContext *, SimpleRequest *,
-                     grpc::ServerAsyncResponseWriter<SimpleResponse> *, void *)>
-      request_unary_;
-  std::function<void(ServerContext *, StatsRequest *,
-                     grpc::ServerAsyncResponseWriter<ServerStats> *, void *)>
-      request_stats_;
+    ~ServerRpcContextStreamingImpl() GRPC_OVERRIDE {}
+    bool RunNextState(bool ok) GRPC_OVERRIDE {
+      return (this->*next_state_)(ok);
+    }
+    void Reset() GRPC_OVERRIDE {
+      srv_ctx_.reset(new ServerContextType);
+      req_ = RequestType();
+      stream_ = grpc::ServerAsyncReaderWriter<ResponseType, RequestType>(
+          srv_ctx_.get());
+
+      // Then request the method
+      next_state_ = &ServerRpcContextStreamingImpl::request_done;
+      request_method_(srv_ctx_.get(), &stream_, AsyncQpsServerTest::tag(this));
+    }
+
+   private:
+    bool request_done(bool ok) {
+      if (!ok) {
+        return false;
+      }
+      stream_.Read(&req_, AsyncQpsServerTest::tag(this));
+      next_state_ = &ServerRpcContextStreamingImpl::read_done;
+      return true;
+    }
+
+    bool read_done(bool ok) {
+      if (ok) {
+        // invoke the method
+        ResponseType response;
+        // Call the RPC processing function
+        grpc::Status status = invoke_method_(&req_, &response);
+        // initiate the write
+        stream_.Write(response, AsyncQpsServerTest::tag(this));
+        next_state_ = &ServerRpcContextStreamingImpl::write_done;
+      } else {  // client has sent writes done
+        // finish the stream
+        stream_.Finish(Status::OK, AsyncQpsServerTest::tag(this));
+        next_state_ = &ServerRpcContextStreamingImpl::finish_done;
+      }
+      return true;
+    }
+    bool write_done(bool ok) {
+      // now go back and get another streaming read!
+      if (ok) {
+        stream_.Read(&req_, AsyncQpsServerTest::tag(this));
+        next_state_ = &ServerRpcContextStreamingImpl::read_done;
+      } else {
+        stream_.Finish(Status::OK, AsyncQpsServerTest::tag(this));
+        next_state_ = &ServerRpcContextStreamingImpl::finish_done;
+      }
+      return true;
+    }
+    bool finish_done(bool ok) { return false; /* reset the context */ }
+
+    std::unique_ptr<ServerContextType> srv_ctx_;
+    RequestType req_;
+    bool (ServerRpcContextStreamingImpl::*next_state_)(bool);
+    std::function<void(
+        ServerContextType *,
+        grpc::ServerAsyncReaderWriter<ResponseType, RequestType> *, void *)>
+        request_method_;
+    std::function<grpc::Status(const RequestType *, ResponseType *)>
+        invoke_method_;
+    grpc::ServerAsyncReaderWriter<ResponseType, RequestType> stream_;
+  };
+
+  std::vector<std::thread> threads_;
+  std::unique_ptr<grpc::Server> server_;
+  std::vector<std::unique_ptr<grpc::ServerCompletionQueue>> srv_cqs_;
+  ServiceType async_service_;
   std::forward_list<ServerRpcContext *> contexts_;
+
+  class PerThreadShutdownState {
+   public:
+    PerThreadShutdownState() : shutdown_(false) {}
+
+    bool shutdown() const {
+      std::lock_guard<std::mutex> lock(mutex_);
+      return shutdown_;
+    }
+
+    void set_shutdown() {
+      std::lock_guard<std::mutex> lock(mutex_);
+      shutdown_ = true;
+    }
+
+   private:
+    mutable std::mutex mutex_;
+    bool shutdown_;
+  };
+  std::vector<std::unique_ptr<PerThreadShutdownState>> shutdown_state_;
 };
 
-}  // namespace
-
-static void RunServer() {
-  AsyncQpsServerTest server;
-
-  grpc_profiler_start("qps_server_async.prof");
-
-  server.ServeRpcs(FLAGS_server_threads);
-
-  grpc_profiler_stop();
+static void RegisterBenchmarkService(ServerBuilder *builder,
+                                     BenchmarkService::AsyncService *service) {
+  builder->RegisterService(service);
+}
+static void RegisterGenericService(ServerBuilder *builder,
+                                   grpc::AsyncGenericService *service) {
+  builder->RegisterAsyncGenericService(service);
 }
 
-int main(int argc, char **argv) {
-  grpc_init();
-  ParseCommandLineFlags(&argc, &argv, true);
-  GPR_ASSERT(FLAGS_port != 0);
-  GPR_ASSERT(!FLAGS_enable_ssl);
-
-  signal(SIGINT, sigint_handler);
-
-  RunServer();
-
-  grpc_shutdown();
-  google::protobuf::ShutdownProtobufLibrary();
-
-  return 0;
+static Status ProcessSimpleRPC(const PayloadConfig &,
+                               const SimpleRequest *request,
+                               SimpleResponse *response) {
+  if (request->response_size() > 0) {
+    if (!Server::SetPayload(request->response_type(), request->response_size(),
+                            response->mutable_payload())) {
+      return Status(grpc::StatusCode::INTERNAL, "Error creating payload.");
+    }
+  }
+  return Status::OK;
 }
+
+static Status ProcessGenericRPC(const PayloadConfig &payload_config,
+                                const ByteBuffer *request,
+                                ByteBuffer *response) {
+  int resp_size = payload_config.bytebuf_params().resp_size();
+  std::unique_ptr<char[]> buf(new char[resp_size]);
+  gpr_slice s = gpr_slice_from_copied_buffer(buf.get(), resp_size);
+  Slice slice(s, Slice::STEAL_REF);
+  *response = ByteBuffer(&slice, 1);
+  return Status::OK;
+}
+
+std::unique_ptr<Server> CreateAsyncServer(const ServerConfig &config) {
+  return std::unique_ptr<Server>(
+      new AsyncQpsServerTest<SimpleRequest, SimpleResponse,
+                             BenchmarkService::AsyncService,
+                             grpc::ServerContext>(
+          config, RegisterBenchmarkService,
+          &BenchmarkService::AsyncService::RequestUnaryCall,
+          &BenchmarkService::AsyncService::RequestStreamingCall,
+          ProcessSimpleRPC));
+}
+std::unique_ptr<Server> CreateAsyncGenericServer(const ServerConfig &config) {
+  return std::unique_ptr<Server>(
+      new AsyncQpsServerTest<ByteBuffer, ByteBuffer, grpc::AsyncGenericService,
+                             grpc::GenericServerContext>(
+          config, RegisterGenericService, nullptr,
+          &grpc::AsyncGenericService::RequestCall, ProcessGenericRPC));
+}
+
+}  // namespace testing
+}  // namespace grpc

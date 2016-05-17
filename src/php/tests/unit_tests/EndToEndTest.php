@@ -31,164 +31,572 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-class EndToEndTest extends PHPUnit_Framework_TestCase{
-  public function setUp() {
-    $this->client_queue = new Grpc\CompletionQueue();
-    $this->server_queue = new Grpc\CompletionQueue();
-    $this->server = new Grpc\Server($this->server_queue, []);
-    $port = $this->server->add_http2_port('0.0.0.0:0');
-    $this->channel = new Grpc\Channel('localhost:' . $port, []);
-  }
+class EndToEndTest extends PHPUnit_Framework_TestCase
+{
+    public function setUp()
+    {
+        $this->server = new Grpc\Server([]);
+        $this->port = $this->server->addHttp2Port('0.0.0.0:0');
+        $this->channel = new Grpc\Channel('localhost:'.$this->port, []);
+        $this->server->start();
+    }
 
-  public function tearDown() {
-    unset($this->channel);
-    unset($this->server);
-    unset($this->client_queue);
-    unset($this->server_queue);
-  }
+    public function tearDown()
+    {
+        unset($this->channel);
+        unset($this->server);
+    }
 
-  public function testSimpleRequestBody() {
-    $deadline = Grpc\Timeval::inf_future();
-    $status_text = 'xyz';
-    $call = new Grpc\Call($this->channel,
-                          'dummy_method',
-                          $deadline);
-    $tag = 1;
-    $call->invoke($this->client_queue, $tag, $tag);
-    $server_tag = 2;
+    public function testSimpleRequestBody()
+    {
+        $deadline = Grpc\Timeval::infFuture();
+        $status_text = 'xyz';
+        $call = new Grpc\Call($this->channel,
+                              'dummy_method',
+                              $deadline);
 
-    $call->writes_done($tag);
-    $event = $this->client_queue->next($deadline);
-    $this->assertNotNull($event);
-    $this->assertSame(Grpc\FINISH_ACCEPTED, $event->type);
-    $this->assertSame(Grpc\OP_OK, $event->data);
+        $event = $call->startBatch([
+            Grpc\OP_SEND_INITIAL_METADATA => [],
+            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
+        ]);
 
-    // check that a server rpc new was received
-    $this->server->start();
-    $this->server->request_call($server_tag);
-    $event = $this->server_queue->next($deadline);
-    $this->assertNotNull($event);
-    $this->assertSame(Grpc\SERVER_RPC_NEW, $event->type);
-    $server_call = $event->call;
-    $this->assertNotNull($server_call);
-    $server_call->server_accept($this->server_queue, $server_tag);
+        $this->assertTrue($event->send_metadata);
+        $this->assertTrue($event->send_close);
 
-    $server_call->server_end_initial_metadata();
+        $event = $this->server->requestCall();
+        $this->assertSame('dummy_method', $event->method);
+        $server_call = $event->call;
 
+        $event = $server_call->startBatch([
+            Grpc\OP_SEND_INITIAL_METADATA => [],
+            Grpc\OP_SEND_STATUS_FROM_SERVER => [
+                'metadata' => [],
+                'code' => Grpc\STATUS_OK,
+                'details' => $status_text,
+            ],
+            Grpc\OP_RECV_CLOSE_ON_SERVER => true,
+        ]);
 
-    // the server sends the status
-    $server_call->start_write_status(Grpc\STATUS_OK, $status_text, $server_tag);
-    $event = $this->server_queue->next($deadline);
-    $this->assertNotNull($event);
-    $this->assertSame(Grpc\FINISH_ACCEPTED, $event->type);
-    $this->assertSame(Grpc\OP_OK, $event->data);
+        $this->assertTrue($event->send_metadata);
+        $this->assertTrue($event->send_status);
+        $this->assertFalse($event->cancelled);
 
-    // the client gets CLIENT_METADATA_READ
-    $event = $this->client_queue->next($deadline);
-    $this->assertNotNull($event);
-    $this->assertSame(Grpc\CLIENT_METADATA_READ, $event->type);
+        $event = $call->startBatch([
+            Grpc\OP_RECV_INITIAL_METADATA => true,
+            Grpc\OP_RECV_STATUS_ON_CLIENT => true,
+        ]);
 
-    // the client gets FINISHED
-    $event = $this->client_queue->next($deadline);
-    $this->assertNotNull($event);
-    $this->assertSame(Grpc\FINISHED, $event->type);
-    $status = $event->data;
-    $this->assertSame(Grpc\STATUS_OK, $status->code);
-    $this->assertSame($status_text, $status->details);
+        $status = $event->status;
+        $this->assertSame([], $status->metadata);
+        $this->assertSame(Grpc\STATUS_OK, $status->code);
+        $this->assertSame($status_text, $status->details);
 
-    // and the server gets FINISHED
-    $event = $this->server_queue->next($deadline);
-    $this->assertNotNull($event);
-    $this->assertSame(Grpc\FINISHED, $event->type);
-    $status = $event->data;
+        unset($call);
+        unset($server_call);
+    }
 
-    unset($call);
-    unset($server_call);
-  }
+    public function testMessageWriteFlags()
+    {
+        $deadline = Grpc\Timeval::infFuture();
+        $req_text = 'message_write_flags_test';
+        $status_text = 'xyz';
+        $call = new Grpc\Call($this->channel,
+                              'dummy_method',
+                              $deadline);
 
-  public function testClientServerFullRequestResponse() {
-    $deadline = Grpc\Timeval::inf_future();
-    $req_text = 'client_server_full_request_response';
-    $reply_text = 'reply:client_server_full_request_response';
-    $status_text = 'status:client_server_full_response_text';
+        $event = $call->startBatch([
+            Grpc\OP_SEND_INITIAL_METADATA => [],
+            Grpc\OP_SEND_MESSAGE => ['message' => $req_text,
+                                     'flags' => Grpc\WRITE_NO_COMPRESS, ],
+            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
+        ]);
 
-    $call = new Grpc\Call($this->channel,
-                          'dummy_method',
-                          $deadline);
-    $tag = 1;
-    $call->invoke($this->client_queue, $tag, $tag);
+        $this->assertTrue($event->send_metadata);
+        $this->assertTrue($event->send_close);
 
-    $server_tag = 2;
+        $event = $this->server->requestCall();
+        $this->assertSame('dummy_method', $event->method);
+        $server_call = $event->call;
 
-    // the client writes
-    $call->start_write($req_text, $tag);
-    $event = $this->client_queue->next($deadline);
-    $this->assertNotNull($event);
-    $this->assertSame(Grpc\WRITE_ACCEPTED, $event->type);
+        $event = $server_call->startBatch([
+            Grpc\OP_SEND_INITIAL_METADATA => [],
+            Grpc\OP_SEND_STATUS_FROM_SERVER => [
+                'metadata' => [],
+                'code' => Grpc\STATUS_OK,
+                'details' => $status_text,
+            ],
+        ]);
 
-    // check that a server rpc new was received
-    $this->server->start();
-    $this->server->request_call($server_tag);
-    $event = $this->server_queue->next($deadline);
-    $this->assertNotNull($event);
-    $this->assertSame(Grpc\SERVER_RPC_NEW, $event->type);
-    $server_call = $event->call;
-    $this->assertNotNull($server_call);
-    $server_call->server_accept($this->server_queue, $server_tag);
+        $event = $call->startBatch([
+            Grpc\OP_RECV_INITIAL_METADATA => true,
+            Grpc\OP_RECV_STATUS_ON_CLIENT => true,
+        ]);
 
-    $server_call->server_end_initial_metadata();
+        $status = $event->status;
+        $this->assertSame([], $status->metadata);
+        $this->assertSame(Grpc\STATUS_OK, $status->code);
+        $this->assertSame($status_text, $status->details);
 
-    // start the server read
-    $server_call->start_read($server_tag);
-    $event = $this->server_queue->next($deadline);
-    $this->assertNotNull($event);
-    $this->assertSame(Grpc\READ, $event->type);
-    $this->assertSame($req_text, $event->data);
+        unset($call);
+        unset($server_call);
+    }
 
-    // the server replies
-    $server_call->start_write($reply_text, $server_tag);
-    $event = $this->server_queue->next($deadline);
-    $this->assertNotNull($event);
-    $this->assertSame(Grpc\WRITE_ACCEPTED, $event->type);
+    public function testClientServerFullRequestResponse()
+    {
+        $deadline = Grpc\Timeval::infFuture();
+        $req_text = 'client_server_full_request_response';
+        $reply_text = 'reply:client_server_full_request_response';
+        $status_text = 'status:client_server_full_response_text';
 
-    // the client reads the metadata
-    $event = $this->client_queue->next($deadline);
-    $this->assertNotNull($event);
-    $this->assertSame(Grpc\CLIENT_METADATA_READ, $event->type);
+        $call = new Grpc\Call($this->channel,
+                              'dummy_method',
+                              $deadline);
 
-    // the client reads the reply
-    $call->start_read($tag);
-    $event = $this->client_queue->next($deadline);
-    $this->assertNotNull($event);
-    $this->assertSame(Grpc\READ, $event->type);
-    $this->assertSame($reply_text, $event->data);
+        $event = $call->startBatch([
+            Grpc\OP_SEND_INITIAL_METADATA => [],
+            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
+            Grpc\OP_SEND_MESSAGE => ['message' => $req_text],
+        ]);
 
-    // the client sends writes done
-    $call->writes_done($tag);
-    $event = $this->client_queue->next($deadline);
-    $this->assertSame(Grpc\FINISH_ACCEPTED, $event->type);
-    $this->assertSame(Grpc\OP_OK, $event->data);
+        $this->assertTrue($event->send_metadata);
+        $this->assertTrue($event->send_close);
+        $this->assertTrue($event->send_message);
 
-    // the server sends the status
-    $server_call->start_write_status(GRPC\STATUS_OK, $status_text, $server_tag);
-    $event = $this->server_queue->next($deadline);
-    $this->assertSame(Grpc\FINISH_ACCEPTED, $event->type);
-    $this->assertSame(Grpc\OP_OK, $event->data);
+        $event = $this->server->requestCall();
+        $this->assertSame('dummy_method', $event->method);
+        $server_call = $event->call;
 
-    // the client gets FINISHED
-    $event = $this->client_queue->next($deadline);
-    $this->assertNotNull($event);
-    $this->assertSame(Grpc\FINISHED, $event->type);
-    $status = $event->data;
-    $this->assertSame(Grpc\STATUS_OK, $status->code);
-    $this->assertSame($status_text, $status->details);
+        $event = $server_call->startBatch([
+            Grpc\OP_SEND_INITIAL_METADATA => [],
+            Grpc\OP_SEND_MESSAGE => ['message' => $reply_text],
+            Grpc\OP_SEND_STATUS_FROM_SERVER => [
+                'metadata' => [],
+                'code' => Grpc\STATUS_OK,
+                'details' => $status_text,
+            ],
+            Grpc\OP_RECV_MESSAGE => true,
+            Grpc\OP_RECV_CLOSE_ON_SERVER => true,
+        ]);
 
-    // and the server gets FINISHED
-    $event = $this->server_queue->next($deadline);
-    $this->assertNotNull($event);
-    $this->assertSame(Grpc\FINISHED, $event->type);
+        $this->assertTrue($event->send_metadata);
+        $this->assertTrue($event->send_status);
+        $this->assertTrue($event->send_message);
+        $this->assertFalse($event->cancelled);
+        $this->assertSame($req_text, $event->message);
 
-    unset($call);
-    unset($server_call);
-  }
+        $event = $call->startBatch([
+            Grpc\OP_RECV_INITIAL_METADATA => true,
+            Grpc\OP_RECV_MESSAGE => true,
+            Grpc\OP_RECV_STATUS_ON_CLIENT => true,
+        ]);
+
+        $this->assertSame([], $event->metadata);
+        $this->assertSame($reply_text, $event->message);
+        $status = $event->status;
+        $this->assertSame([], $status->metadata);
+        $this->assertSame(Grpc\STATUS_OK, $status->code);
+        $this->assertSame($status_text, $status->details);
+
+        unset($call);
+        unset($server_call);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidClientMessageArray()
+    {
+        $deadline = Grpc\Timeval::infFuture();
+        $req_text = 'client_server_full_request_response';
+        $reply_text = 'reply:client_server_full_request_response';
+        $status_text = 'status:client_server_full_response_text';
+
+        $call = new Grpc\Call($this->channel,
+                              'dummy_method',
+                              $deadline);
+
+        $event = $call->startBatch([
+            Grpc\OP_SEND_INITIAL_METADATA => [],
+            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
+            Grpc\OP_SEND_MESSAGE => 'invalid',
+        ]);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidClientMessageString()
+    {
+        $deadline = Grpc\Timeval::infFuture();
+        $req_text = 'client_server_full_request_response';
+        $reply_text = 'reply:client_server_full_request_response';
+        $status_text = 'status:client_server_full_response_text';
+
+        $call = new Grpc\Call($this->channel,
+                              'dummy_method',
+                              $deadline);
+
+        $event = $call->startBatch([
+            Grpc\OP_SEND_INITIAL_METADATA => [],
+            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
+            Grpc\OP_SEND_MESSAGE => ['message' => 0],
+        ]);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidClientMessageFlags()
+    {
+        $deadline = Grpc\Timeval::infFuture();
+        $req_text = 'client_server_full_request_response';
+        $reply_text = 'reply:client_server_full_request_response';
+        $status_text = 'status:client_server_full_response_text';
+
+        $call = new Grpc\Call($this->channel,
+                              'dummy_method',
+                              $deadline);
+
+        $event = $call->startBatch([
+            Grpc\OP_SEND_INITIAL_METADATA => [],
+            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
+            Grpc\OP_SEND_MESSAGE => ['message' => 'abc',
+                                     'flags' => 'invalid',
+                                     ],
+        ]);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidServerStatusMetadata()
+    {
+        $deadline = Grpc\Timeval::infFuture();
+        $req_text = 'client_server_full_request_response';
+        $reply_text = 'reply:client_server_full_request_response';
+        $status_text = 'status:client_server_full_response_text';
+
+        $call = new Grpc\Call($this->channel,
+                              'dummy_method',
+                              $deadline);
+
+        $event = $call->startBatch([
+            Grpc\OP_SEND_INITIAL_METADATA => [],
+            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
+            Grpc\OP_SEND_MESSAGE => ['message' => $req_text],
+        ]);
+
+        $this->assertTrue($event->send_metadata);
+        $this->assertTrue($event->send_close);
+        $this->assertTrue($event->send_message);
+
+        $event = $this->server->requestCall();
+        $this->assertSame('dummy_method', $event->method);
+        $server_call = $event->call;
+
+        $event = $server_call->startBatch([
+            Grpc\OP_SEND_INITIAL_METADATA => [],
+            Grpc\OP_SEND_MESSAGE => ['message' => $reply_text],
+            Grpc\OP_SEND_STATUS_FROM_SERVER => [
+                'metadata' => 'invalid',
+                'code' => Grpc\STATUS_OK,
+                'details' => $status_text,
+            ],
+            Grpc\OP_RECV_MESSAGE => true,
+            Grpc\OP_RECV_CLOSE_ON_SERVER => true,
+        ]);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidServerStatusCode()
+    {
+        $deadline = Grpc\Timeval::infFuture();
+        $req_text = 'client_server_full_request_response';
+        $reply_text = 'reply:client_server_full_request_response';
+        $status_text = 'status:client_server_full_response_text';
+
+        $call = new Grpc\Call($this->channel,
+                              'dummy_method',
+                              $deadline);
+
+        $event = $call->startBatch([
+            Grpc\OP_SEND_INITIAL_METADATA => [],
+            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
+            Grpc\OP_SEND_MESSAGE => ['message' => $req_text],
+        ]);
+
+        $this->assertTrue($event->send_metadata);
+        $this->assertTrue($event->send_close);
+        $this->assertTrue($event->send_message);
+
+        $event = $this->server->requestCall();
+        $this->assertSame('dummy_method', $event->method);
+        $server_call = $event->call;
+
+        $event = $server_call->startBatch([
+            Grpc\OP_SEND_INITIAL_METADATA => [],
+            Grpc\OP_SEND_MESSAGE => ['message' => $reply_text],
+            Grpc\OP_SEND_STATUS_FROM_SERVER => [
+                'metadata' => [],
+                'code' => 'invalid',
+                'details' => $status_text,
+            ],
+            Grpc\OP_RECV_MESSAGE => true,
+            Grpc\OP_RECV_CLOSE_ON_SERVER => true,
+        ]);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testMissingServerStatusCode()
+    {
+        $deadline = Grpc\Timeval::infFuture();
+        $req_text = 'client_server_full_request_response';
+        $reply_text = 'reply:client_server_full_request_response';
+        $status_text = 'status:client_server_full_response_text';
+
+        $call = new Grpc\Call($this->channel,
+                              'dummy_method',
+                              $deadline);
+
+        $event = $call->startBatch([
+            Grpc\OP_SEND_INITIAL_METADATA => [],
+            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
+            Grpc\OP_SEND_MESSAGE => ['message' => $req_text],
+        ]);
+
+        $this->assertTrue($event->send_metadata);
+        $this->assertTrue($event->send_close);
+        $this->assertTrue($event->send_message);
+
+        $event = $this->server->requestCall();
+        $this->assertSame('dummy_method', $event->method);
+        $server_call = $event->call;
+
+        $event = $server_call->startBatch([
+            Grpc\OP_SEND_INITIAL_METADATA => [],
+            Grpc\OP_SEND_MESSAGE => ['message' => $reply_text],
+            Grpc\OP_SEND_STATUS_FROM_SERVER => [
+                'metadata' => [],
+                'details' => $status_text,
+            ],
+            Grpc\OP_RECV_MESSAGE => true,
+            Grpc\OP_RECV_CLOSE_ON_SERVER => true,
+        ]);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidServerStatusDetails()
+    {
+        $deadline = Grpc\Timeval::infFuture();
+        $req_text = 'client_server_full_request_response';
+        $reply_text = 'reply:client_server_full_request_response';
+        $status_text = 'status:client_server_full_response_text';
+
+        $call = new Grpc\Call($this->channel,
+                              'dummy_method',
+                              $deadline);
+
+        $event = $call->startBatch([
+            Grpc\OP_SEND_INITIAL_METADATA => [],
+            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
+            Grpc\OP_SEND_MESSAGE => ['message' => $req_text],
+        ]);
+
+        $this->assertTrue($event->send_metadata);
+        $this->assertTrue($event->send_close);
+        $this->assertTrue($event->send_message);
+
+        $event = $this->server->requestCall();
+        $this->assertSame('dummy_method', $event->method);
+        $server_call = $event->call;
+
+        $event = $server_call->startBatch([
+            Grpc\OP_SEND_INITIAL_METADATA => [],
+            Grpc\OP_SEND_MESSAGE => ['message' => $reply_text],
+            Grpc\OP_SEND_STATUS_FROM_SERVER => [
+                'metadata' => [],
+                'code' => Grpc\STATUS_OK,
+                'details' => 0,
+            ],
+            Grpc\OP_RECV_MESSAGE => true,
+            Grpc\OP_RECV_CLOSE_ON_SERVER => true,
+        ]);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testMissingServerStatusDetails()
+    {
+        $deadline = Grpc\Timeval::infFuture();
+        $req_text = 'client_server_full_request_response';
+        $reply_text = 'reply:client_server_full_request_response';
+        $status_text = 'status:client_server_full_response_text';
+
+        $call = new Grpc\Call($this->channel,
+                              'dummy_method',
+                              $deadline);
+
+        $event = $call->startBatch([
+            Grpc\OP_SEND_INITIAL_METADATA => [],
+            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
+            Grpc\OP_SEND_MESSAGE => ['message' => $req_text],
+        ]);
+
+        $this->assertTrue($event->send_metadata);
+        $this->assertTrue($event->send_close);
+        $this->assertTrue($event->send_message);
+
+        $event = $this->server->requestCall();
+        $this->assertSame('dummy_method', $event->method);
+        $server_call = $event->call;
+
+        $event = $server_call->startBatch([
+            Grpc\OP_SEND_INITIAL_METADATA => [],
+            Grpc\OP_SEND_MESSAGE => ['message' => $reply_text],
+            Grpc\OP_SEND_STATUS_FROM_SERVER => [
+                'metadata' => [],
+                'code' => Grpc\STATUS_OK,
+            ],
+            Grpc\OP_RECV_MESSAGE => true,
+            Grpc\OP_RECV_CLOSE_ON_SERVER => true,
+        ]);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidStartBatchKey()
+    {
+        $deadline = Grpc\Timeval::infFuture();
+        $req_text = 'client_server_full_request_response';
+        $reply_text = 'reply:client_server_full_request_response';
+        $status_text = 'status:client_server_full_response_text';
+
+        $call = new Grpc\Call($this->channel,
+                              'dummy_method',
+                              $deadline);
+
+        $event = $call->startBatch([
+            9999999 => [],
+        ]);
+    }
+
+    /**
+     * @expectedException LogicException
+     */
+    public function testInvalidStartBatch()
+    {
+        $deadline = Grpc\Timeval::infFuture();
+        $req_text = 'client_server_full_request_response';
+        $reply_text = 'reply:client_server_full_request_response';
+        $status_text = 'status:client_server_full_response_text';
+
+        $call = new Grpc\Call($this->channel,
+                              'dummy_method',
+                              $deadline);
+
+        $event = $call->startBatch([
+            Grpc\OP_SEND_INITIAL_METADATA => [],
+            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
+            Grpc\OP_SEND_MESSAGE => ['message' => $req_text],
+            Grpc\OP_SEND_STATUS_FROM_SERVER => [
+                'metadata' => [],
+                'code' => Grpc\STATUS_OK,
+                'details' => 'abc',
+            ],
+        ]);
+    }
+
+    public function testGetTarget()
+    {
+        $this->assertTrue(is_string($this->channel->getTarget()));
+    }
+
+    public function testGetConnectivityState()
+    {
+        $this->assertTrue($this->channel->getConnectivityState() == Grpc\CHANNEL_IDLE);
+    }
+
+    public function testWatchConnectivityStateFailed()
+    {
+        $idle_state = $this->channel->getConnectivityState();
+        $this->assertTrue($idle_state == Grpc\CHANNEL_IDLE);
+
+        $now = Grpc\Timeval::now();
+        $delta = new Grpc\Timeval(500000); // should timeout
+        $deadline = $now->add($delta);
+
+        $this->assertFalse($this->channel->watchConnectivityState(
+        $idle_state, $deadline));
+    }
+
+    public function testWatchConnectivityStateSuccess()
+    {
+        $idle_state = $this->channel->getConnectivityState(true);
+        $this->assertTrue($idle_state == Grpc\CHANNEL_IDLE);
+
+        $now = Grpc\Timeval::now();
+        $delta = new Grpc\Timeval(3000000); // should finish well before
+        $deadline = $now->add($delta);
+
+        $this->assertTrue($this->channel->watchConnectivityState(
+        $idle_state, $deadline));
+
+        $new_state = $this->channel->getConnectivityState();
+        $this->assertTrue($idle_state != $new_state);
+    }
+
+    public function testWatchConnectivityStateDoNothing()
+    {
+        $idle_state = $this->channel->getConnectivityState();
+        $this->assertTrue($idle_state == Grpc\CHANNEL_IDLE);
+
+        $now = Grpc\Timeval::now();
+        $delta = new Grpc\Timeval(100000);
+        $deadline = $now->add($delta);
+
+        $this->assertFalse($this->channel->watchConnectivityState(
+        $idle_state, $deadline));
+
+        $new_state = $this->channel->getConnectivityState();
+        $this->assertTrue($new_state == Grpc\CHANNEL_IDLE);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testGetConnectivityStateInvalidParam()
+    {
+        $this->assertTrue($this->channel->getConnectivityState(
+            new Grpc\Timeval()));
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testWatchConnectivityStateInvalidParam()
+    {
+        $this->assertTrue($this->channel->watchConnectivityState(
+            0, 1000));
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testChannelConstructorInvalidParam()
+    {
+        $this->channel = new Grpc\Channel('localhost:'.$this->port, null);
+    }
+
+    public function testClose()
+    {
+        $this->assertNull($this->channel->close());
+    }
 }

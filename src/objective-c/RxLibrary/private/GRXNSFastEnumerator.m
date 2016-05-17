@@ -59,7 +59,6 @@
 
 // Designated initializer.
 - (instancetype)initWithContainer:(id<NSFastEnumeration>)container {
-  NSAssert(container, @"container can't be nil");
   if ((self = [super init])) {
     _container = container;
   }

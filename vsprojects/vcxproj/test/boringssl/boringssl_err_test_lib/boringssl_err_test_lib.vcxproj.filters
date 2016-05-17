@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\err\err_test.cc">
+      <Filter>third_party\boringssl\crypto\err</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{1c12770a-24ce-cd11-bb90-f3b2e9216e03}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl">
+      <UniqueIdentifier>{f790f27a-bb2c-6ed0-ef88-abeb2a27a513}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto">
+      <UniqueIdentifier>{be436245-b188-a1ee-4e2b-d27f6cee0d88}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto\err">
+      <UniqueIdentifier>{027082a4-6859-7319-0e4a-c7b47e736762}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

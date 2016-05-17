@@ -33,71 +33,147 @@
 
 #include <grpc++/server_builder.h>
 
-#include <grpc/support/cpu.h>
-#include <grpc/support/log.h>
 #include <grpc++/impl/service_type.h>
 #include <grpc++/server.h>
-#include "src/cpp/server/thread_pool.h"
+#include <grpc/support/cpu.h>
+#include <grpc/support/log.h>
+#include "src/cpp/server/thread_pool_interface.h"
 
 namespace grpc {
 
-ServerBuilder::ServerBuilder() : thread_pool_(nullptr) {}
+static std::vector<std::unique_ptr<ServerBuilderPlugin> (*)()>*
+    g_plugin_factory_list;
+static gpr_once once_init_plugin_list = GPR_ONCE_INIT;
 
-void ServerBuilder::RegisterService(SynchronousService* service) {
-  services_.push_back(service->service());
+static void do_plugin_list_init(void) {
+  g_plugin_factory_list =
+      new std::vector<std::unique_ptr<ServerBuilderPlugin> (*)()>();
 }
 
-void ServerBuilder::RegisterAsyncService(AsynchronousService* service) {
-  async_services_.push_back(service);
+ServerBuilder::ServerBuilder()
+    : max_message_size_(-1), generic_service_(nullptr) {
+  grpc_compression_options_init(&compression_options_);
+  gpr_once_init(&once_init_plugin_list, do_plugin_list_init);
+  for (auto factory : (*g_plugin_factory_list)) {
+    std::unique_ptr<ServerBuilderPlugin> plugin = factory();
+    plugins_[plugin->name()] = std::move(plugin);
+  }
 }
 
-void ServerBuilder::AddPort(const grpc::string& addr) {
-  ports_.push_back(addr);
+std::unique_ptr<ServerCompletionQueue> ServerBuilder::AddCompletionQueue() {
+  ServerCompletionQueue* cq = new ServerCompletionQueue();
+  cqs_.push_back(cq);
+  return std::unique_ptr<ServerCompletionQueue>(cq);
 }
 
-void ServerBuilder::SetCredentials(
-    const std::shared_ptr<ServerCredentials>& creds) {
-  GPR_ASSERT(!creds_);
-  creds_ = creds;
+void ServerBuilder::RegisterService(Service* service) {
+  services_.emplace_back(new NamedService(service));
 }
 
-void ServerBuilder::SetThreadPool(ThreadPoolInterface* thread_pool) {
-  thread_pool_ = thread_pool;
+void ServerBuilder::RegisterService(const grpc::string& addr,
+                                    Service* service) {
+  services_.emplace_back(new NamedService(addr, service));
+}
+
+void ServerBuilder::RegisterAsyncGenericService(AsyncGenericService* service) {
+  if (generic_service_) {
+    gpr_log(GPR_ERROR,
+            "Adding multiple AsyncGenericService is unsupported for now. "
+            "Dropping the service %p",
+            service);
+    return;
+  }
+  generic_service_ = service;
+}
+
+void ServerBuilder::SetOption(std::unique_ptr<ServerBuilderOption> option) {
+  options_.push_back(std::move(option));
+}
+
+void ServerBuilder::AddListeningPort(const grpc::string& addr,
+                                     std::shared_ptr<ServerCredentials> creds,
+                                     int* selected_port) {
+  Port port = {addr, creds, selected_port};
+  ports_.push_back(port);
 }
 
 std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
-  bool thread_pool_owned = false;
-  if (!async_services_.empty() && !services_.empty()) {
-    gpr_log(GPR_ERROR, "Mixing async and sync services is unsupported for now");
-    return nullptr;
+  std::unique_ptr<ThreadPoolInterface> thread_pool;
+  for (auto it = services_.begin(); it != services_.end(); ++it) {
+    if ((*it)->service->has_synchronous_methods()) {
+      if (thread_pool == nullptr) {
+        thread_pool.reset(CreateDefaultThreadPool());
+        break;
+      }
+    }
   }
-  if (!thread_pool_ && services_.size()) {
-    int cores = gpr_cpu_num_cores();
-    if (!cores) cores = 4;
-    thread_pool_ = new ThreadPool(cores);
-    thread_pool_owned = true;
+  ChannelArguments args;
+  for (auto option = options_.begin(); option != options_.end(); ++option) {
+    (*option)->UpdateArguments(&args);
+    (*option)->UpdatePlugins(&plugins_);
   }
+  if (thread_pool == nullptr) {
+    for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
+      if ((*plugin).second->has_sync_methods()) {
+        thread_pool.reset(CreateDefaultThreadPool());
+        break;
+      }
+    }
+  }
+  if (max_message_size_ > 0) {
+    args.SetInt(GRPC_ARG_MAX_MESSAGE_LENGTH, max_message_size_);
+  }
+  args.SetInt(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
+              compression_options_.enabled_algorithms_bitset);
   std::unique_ptr<Server> server(
-      new Server(thread_pool_, thread_pool_owned, creds_.get()));
-  for (auto* service : services_) {
-    if (!server->RegisterService(service)) {
+      new Server(thread_pool.release(), true, max_message_size_, &args));
+  ServerInitializer* initializer = server->initializer();
+  for (auto cq = cqs_.begin(); cq != cqs_.end(); ++cq) {
+    grpc_server_register_completion_queue(server->server_, (*cq)->cq(),
+                                          nullptr);
+  }
+  for (auto service = services_.begin(); service != services_.end();
+       service++) {
+    if (!server->RegisterService((*service)->host.get(), (*service)->service)) {
       return nullptr;
     }
   }
-  for (auto* service : async_services_) {
-    if (!server->RegisterAsyncService(service)) {
-      return nullptr;
+  for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
+    (*plugin).second->InitServer(initializer);
+  }
+  if (generic_service_) {
+    server->RegisterAsyncGenericService(generic_service_);
+  } else {
+    for (auto it = services_.begin(); it != services_.end(); ++it) {
+      if ((*it)->service->has_generic_methods()) {
+        gpr_log(GPR_ERROR,
+                "Some methods were marked generic but there is no "
+                "generic service registered.");
+        return nullptr;
+      }
     }
   }
-  for (auto& port : ports_) {
-    if (!server->AddPort(port)) {
-      return nullptr;
+  for (auto port = ports_.begin(); port != ports_.end(); port++) {
+    int r = server->AddListeningPort(port->addr, port->creds.get());
+    if (!r) return nullptr;
+    if (port->selected_port != nullptr) {
+      *port->selected_port = r;
     }
   }
-  if (!server->Start()) {
+  auto cqs_data = cqs_.empty() ? nullptr : &cqs_[0];
+  if (!server->Start(cqs_data, cqs_.size())) {
     return nullptr;
+  }
+  for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
+    (*plugin).second->Finish(initializer);
   }
   return server;
+}
+
+void ServerBuilder::InternalAddPluginFactory(
+    std::unique_ptr<ServerBuilderPlugin> (*CreatePlugin)()) {
+  gpr_once_init(&once_init_plugin_list, do_plugin_list_init);
+  (*g_plugin_factory_list).push_back(CreatePlugin);
 }
 
 }  // namespace grpc

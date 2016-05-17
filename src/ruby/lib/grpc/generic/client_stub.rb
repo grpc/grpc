@@ -27,24 +27,53 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-require 'grpc/generic/active_call'
-require 'xray/thread_dump_signal_handler'
+require_relative 'active_call'
+require_relative '../version'
 
 # GRPC contains the General RPC module.
 module GRPC
+  # rubocop:disable Metrics/ParameterLists
+
   # ClientStub represents an endpoint used to send requests to GRPC servers.
   class ClientStub
     include Core::StatusCodes
+    include Core::TimeConsts
 
-    # Default deadline is 5 seconds.
-    DEFAULT_DEADLINE = 5
+    # Default timeout is infinity.
+    DEFAULT_TIMEOUT = INFINITE_FUTURE
+
+    # setup_channel is used by #initialize to constuct a channel from its
+    # arguments.
+    def self.setup_channel(alt_chan, host, creds, **kw)
+      unless alt_chan.nil?
+        fail(TypeError, '!Channel') unless alt_chan.is_a?(Core::Channel)
+        return alt_chan
+      end
+      if kw['grpc.primary_user_agent'].nil?
+        kw['grpc.primary_user_agent'] = ''
+      else
+        kw['grpc.primary_user_agent'] += ' '
+      end
+      kw['grpc.primary_user_agent'] += "grpc-ruby/#{VERSION}"
+      unless creds.is_a?(Core::ChannelCredentials) || creds.is_a?(Symbol)
+        fail(TypeError, '!ChannelCredentials or Symbol')
+      end
+      Core::Channel.new(host, kw, creds)
+    end
+
+    # Allows users of the stub to modify the propagate mask.
+    #
+    # This is an advanced feature for use when making calls to another gRPC
+    # server whilst running in the handler of an existing one.
+    attr_writer :propagate_mask
 
     # Creates a new ClientStub.
     #
     # Minimally, a stub is created with the just the host of the gRPC service
     # it wishes to access, e.g.,
     #
-    # my_stub = ClientStub.new(example.host.com:50505)
+    # my_stub = ClientStub.new(example.host.com:50505,
+    #                          :this_channel_is_insecure)
     #
     # Any arbitrary keyword arguments are treated as channel arguments used to
     # configure the RPC connection to the host.
@@ -57,57 +86,28 @@ module GRPC
     # present the host and arbitrary keyword arg areignored, and the RPC
     # connection uses this channel.
     #
-    # - :deadline
-    # when present, this is the default deadline used for calls
-    #
-    # - :update_metadata
-    # when present, this a func that takes a hash and returns a hash
-    # it can be used to update metadata, i.e, remove, change or update
-    # amend metadata values.
+    # - :timeout
+    # when present, this is the default timeout used for calls
     #
     # @param host [String] the host the stub connects to
-    # @param q [Core::CompletionQueue] used to wait for events
+    # @param q [Core::CompletionQueue] used to wait for events - now deprecated
+    #        since each new active call gets its own separately
+    # @param creds [Core::ChannelCredentials|Symbol] the channel credentials, or
+    #     :this_channel_is_insecure
     # @param channel_override [Core::Channel] a pre-created channel
-    # @param deadline [Number] the default deadline to use in requests
-    # @param creds [Core::Credentials] the channel
-    # @param update_metadata a func that updates metadata as described above
+    # @param timeout [Number] the default timeout to use in requests
     # @param kw [KeywordArgs]the channel arguments
-    def initialize(host, q,
-                   channel_override:nil,
-                   deadline: DEFAULT_DEADLINE,
-                   creds: nil,
-                   update_metadata: nil,
+    def initialize(host, q, creds,
+                   channel_override: nil,
+                   timeout: nil,
+                   propagate_mask: nil,
                    **kw)
-      unless q.is_a? Core::CompletionQueue
-        fail(ArgumentError, 'not a CompletionQueue')
-      end
-      @queue = q
-
-      # set the channel instance
-      if !channel_override.nil?
-        ch = channel_override
-        fail(ArgumentError, 'not a Channel') unless ch.is_a? Core::Channel
-      else
-        if creds.nil?
-          ch = Core::Channel.new(host, kw)
-        elsif !creds.is_a?(Core::Credentials)
-          fail(ArgumentError, 'not a Credentials')
-        else
-          ch = Core::Channel.new(host, kw, creds)
-        end
-      end
-      @ch = ch
-
-      @update_metadata = nil
-      unless update_metadata.nil?
-        unless update_metadata.is_a? Proc
-          fail(ArgumentError, 'update_metadata is not a Proc')
-        end
-        @update_metadata = update_metadata
-      end
-
-      @host = host
-      @deadline = deadline
+      fail(TypeError, '!CompletionQueue') unless q.is_a?(Core::CompletionQueue)
+      @ch = ClientStub.setup_channel(channel_override, host, creds, **kw)
+      alt_host = kw[Core::Channel::SSL_TARGET]
+      @host = alt_host.nil? ? host : alt_host
+      @propagate_mask = propagate_mask
+      @timeout = timeout.nil? ? DEFAULT_TIMEOUT : timeout
     end
 
     # request_response sends a request to a GRPC server, and returns the
@@ -144,20 +144,33 @@ module GRPC
     # @param req [Object] the request sent to the server
     # @param marshal [Function] f(obj)->string that marshals requests
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
-    # @param deadline [Numeric] (optional) the max completion time in seconds
+    # @param timeout [Numeric] (optional) the max completion time in seconds
+    # @param deadline [Time] (optional) the time the request should complete
+    # @param parent [Core::Call] a prior call whose reserved metadata
+    #   will be propagated by this one.
+    # @param credentials [Core::CallCredentials] credentials to use when making
+    #   the call
     # @param return_op [true|false] return an Operation if true
     # @return [Object] the response received from the server
-    def request_response(method, req, marshal, unmarshal, deadline = nil,
-                         return_op: false, **kw)
-      c = new_active_call(method, marshal, unmarshal, deadline || @deadline)
-      md = @update_metadata.nil? ? kw : @update_metadata.call(kw.clone)
-      return c.request_response(req, **md) unless return_op
+    def request_response(method, req, marshal, unmarshal,
+                         deadline: nil,
+                         timeout: nil,
+                         return_op: false,
+                         parent: nil,
+                         credentials: nil,
+                         **kw)
+      c = new_active_call(method, marshal, unmarshal,
+                          deadline: deadline,
+                          timeout: timeout,
+                          parent: parent,
+                          credentials: credentials)
+      return c.request_response(req, **kw) unless return_op
 
       # return the operation view of the active_call; define #execute as a
       # new method for this instance that invokes #request_response.
       op = c.operation
       op.define_singleton_method(:execute) do
-        c.request_response(req, **md)
+        c.request_response(req, **kw)
       end
       op
     end
@@ -201,20 +214,33 @@ module GRPC
     # @param requests [Object] an Enumerable of requests to send
     # @param marshal [Function] f(obj)->string that marshals requests
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
-    # @param deadline [Numeric] the max completion time in seconds
+    # @param timeout [Numeric] (optional) the max completion time in seconds
+    # @param deadline [Time] (optional) the time the request should complete
     # @param return_op [true|false] return an Operation if true
+    # @param parent [Core::Call] a prior call whose reserved metadata
+    #   will be propagated by this one.
+    # @param credentials [Core::CallCredentials] credentials to use when making
+    #   the call
     # @return [Object|Operation] the response received from the server
-    def client_streamer(method, requests, marshal, unmarshal, deadline = nil,
-                        return_op: false, **kw)
-      c = new_active_call(method, marshal, unmarshal, deadline || @deadline)
-      md = @update_metadata.nil? ? kw : @update_metadata.call(kw.clone)
-      return c.client_streamer(requests, **md) unless return_op
+    def client_streamer(method, requests, marshal, unmarshal,
+                        deadline: nil,
+                        timeout: nil,
+                        return_op: false,
+                        parent: nil,
+                        credentials: nil,
+                        **kw)
+      c = new_active_call(method, marshal, unmarshal,
+                          deadline: deadline,
+                          timeout: timeout,
+                          parent: parent,
+                          credentials: credentials)
+      return c.client_streamer(requests, **kw) unless return_op
 
       # return the operation view of the active_call; define #execute as a
       # new method for this instance that invokes #client_streamer.
       op = c.operation
       op.define_singleton_method(:execute) do
-        c.client_streamer(requests, **md)
+        c.client_streamer(requests, **kw)
       end
       op
     end
@@ -266,21 +292,35 @@ module GRPC
     # @param req [Object] the request sent to the server
     # @param marshal [Function] f(obj)->string that marshals requests
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
-    # @param deadline [Numeric] the max completion time in seconds
+    # @param timeout [Numeric] (optional) the max completion time in seconds
+    # @param deadline [Time] (optional) the time the request should complete
     # @param return_op [true|false]return an Operation if true
+    # @param parent [Core::Call] a prior call whose reserved metadata
+    #   will be propagated by this one.
+    # @param credentials [Core::CallCredentials] credentials to use when making
+    #   the call
     # @param blk [Block] when provided, is executed for each response
     # @return [Enumerator|Operation|nil] as discussed above
-    def server_streamer(method, req, marshal, unmarshal, deadline = nil,
-                        return_op: false, **kw, &blk)
-      c = new_active_call(method, marshal, unmarshal, deadline || @deadline)
-      md = @update_metadata.nil? ? kw : @update_metadata.call(kw.clone)
-      return c.server_streamer(req, **md, &blk) unless return_op
+    def server_streamer(method, req, marshal, unmarshal,
+                        deadline: nil,
+                        timeout: nil,
+                        return_op: false,
+                        parent: nil,
+                        credentials: nil,
+                        **kw,
+                        &blk)
+      c = new_active_call(method, marshal, unmarshal,
+                          deadline: deadline,
+                          timeout: timeout,
+                          parent: parent,
+                          credentials: credentials)
+      return c.server_streamer(req, **kw, &blk) unless return_op
 
       # return the operation view of the active_call; define #execute
       # as a new method for this instance that invokes #server_streamer
       op = c.operation
       op.define_singleton_method(:execute) do
-        c.server_streamer(req, **md, &blk)
+        c.server_streamer(req, **kw, &blk)
       end
       op
     end
@@ -371,21 +411,36 @@ module GRPC
     # @param requests [Object] an Enumerable of requests to send
     # @param marshal [Function] f(obj)->string that marshals requests
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
-    # @param deadline [Numeric] (optional) the max completion time in seconds
-    # @param blk [Block] when provided, is executed for each response
+    # @param timeout [Numeric] (optional) the max completion time in seconds
+    # @param deadline [Time] (optional) the time the request should complete
+    # @param parent [Core::Call] a prior call whose reserved metadata
+    #   will be propagated by this one.
+    # @param credentials [Core::CallCredentials] credentials to use when making
+    #   the call
     # @param return_op [true|false] return an Operation if true
+    # @param blk [Block] when provided, is executed for each response
     # @return [Enumerator|nil|Operation] as discussed above
-    def bidi_streamer(method, requests, marshal, unmarshal, deadline = nil,
-                      return_op: false, **kw, &blk)
-      c = new_active_call(method, marshal, unmarshal, deadline || @deadline)
-      md = @update_metadata.nil? ? kw : @update_metadata.call(kw.clone)
-      return c.bidi_streamer(requests, **md, &blk) unless return_op
+    def bidi_streamer(method, requests, marshal, unmarshal,
+                      deadline: nil,
+                      timeout: nil,
+                      return_op: false,
+                      parent: nil,
+                      credentials: nil,
+                      **kw,
+                      &blk)
+      c = new_active_call(method, marshal, unmarshal,
+                          deadline: deadline,
+                          timeout: timeout,
+                          parent: parent,
+                          credentials: credentials)
+
+      return c.bidi_streamer(requests, **kw, &blk) unless return_op
 
       # return the operation view of the active_call; define #execute
       # as a new method for this instance that invokes #bidi_streamer
       op = c.operation
       op.define_singleton_method(:execute) do
-        c.bidi_streamer(requests, **md, &blk)
+        c.bidi_streamer(requests, **kw, &blk)
       end
       op
     end
@@ -394,19 +449,30 @@ module GRPC
 
     # Creates a new active stub
     #
-    # @param ch [GRPC::Channel] the channel used to create the stub.
+    # @param method [string] the method being called.
     # @param marshal [Function] f(obj)->string that marshals requests
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
-    # @param deadline [TimeConst]
-    def new_active_call(ch, marshal, unmarshal, deadline = nil)
-      absolute_deadline = Core::TimeConsts.from_relative_time(deadline)
-      # It should be OK to to pass the hostname:port to create_call, but at
-      # the moment this fails a security check.  This will be corrected.
-      #
-      # TODO: # remove this after create_call is updated
-      host = @host.split(':')[0]
-      call = @ch.create_call(ch, host, absolute_deadline)
-      ActiveCall.new(call, @queue, marshal, unmarshal, absolute_deadline,
+    # @param parent [Grpc::Call] a parent call, available when calls are
+    #   made from server
+    # @param timeout [TimeConst]
+    def new_active_call(method, marshal, unmarshal,
+                        deadline: nil,
+                        timeout: nil,
+                        parent: nil,
+                        credentials: nil)
+      if deadline.nil?
+        deadline = from_relative_time(timeout.nil? ? @timeout : timeout)
+      end
+      # Provide each new client call with its own completion queue
+      call_queue = Core::CompletionQueue.new
+      call = @ch.create_call(call_queue,
+                             parent, # parent call
+                             @propagate_mask, # propagation options
+                             method,
+                             nil, # host use nil,
+                             deadline)
+      call.set_credentials! credentials unless credentials.nil?
+      ActiveCall.new(call, call_queue, marshal, unmarshal, deadline,
                      started: false)
     end
   end

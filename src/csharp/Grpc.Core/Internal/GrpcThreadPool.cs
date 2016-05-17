@@ -36,7 +36,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Grpc.Core.Internal;
+using Grpc.Core.Logging;
 
 namespace Grpc.Core.Internal
 {
@@ -45,18 +45,23 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal class GrpcThreadPool
     {
+        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<GrpcThreadPool>();
+
+        readonly GrpcEnvironment environment;
         readonly object myLock = new object();
         readonly List<Thread> threads = new List<Thread>();
         readonly int poolSize;
 
         CompletionQueueSafeHandle cq;
 
-        public GrpcThreadPool(int poolSize) {
+        public GrpcThreadPool(GrpcEnvironment environment, int poolSize)
+        {
+            this.environment = environment;
             this.poolSize = poolSize;
         }
 
-        public void Start() {
-
+        public void Start()
+        {
             lock (myLock)
             {
                 if (cq != null)
@@ -73,20 +78,17 @@ namespace Grpc.Core.Internal
             }
         }
 
-        public void Stop() {
-
+        public void Stop()
+        {
             lock (myLock)
             {
                 cq.Shutdown();
-
-                Console.WriteLine("Waiting for GPRC threads to finish.");
                 foreach (var thread in threads)
                 {
                     thread.Join();
                 }
 
                 cq.Dispose();
-
             }
         }
 
@@ -112,14 +114,26 @@ namespace Grpc.Core.Internal
         /// </summary>
         private void RunHandlerLoop()
         {
-            GRPCCompletionType completionType;
+            CompletionQueueEvent ev;
             do
             {
-                completionType = cq.NextWithCallback();
-            } while(completionType != GRPCCompletionType.GRPC_QUEUE_SHUTDOWN);
-            Console.WriteLine("Completion queue has shutdown successfully, thread " + Thread.CurrentThread.Name + " exiting.");
+                ev = cq.Next();
+                if (ev.type == GRPCCompletionType.OpComplete)
+                {
+                    bool success = (ev.success != 0);
+                    IntPtr tag = ev.tag;
+                    try
+                    {
+                        var callback = environment.CompletionRegistry.Extract(tag);
+                        callback(success);
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.Error(e, "Exception occured while invoking completion delegate");
+                    }
+                }
+            }
+            while (ev.type != GRPCCompletionType.Shutdown);
         }
     }
-
 }
-

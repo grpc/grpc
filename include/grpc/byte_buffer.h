@@ -34,17 +34,6 @@
 #ifndef GRPC_BYTE_BUFFER_H
 #define GRPC_BYTE_BUFFER_H
 
-#include <grpc/grpc.h>
-#include <grpc/support/slice_buffer.h>
+#include <grpc/impl/codegen/byte_buffer.h>
 
-typedef enum { GRPC_BB_SLICE_BUFFER } grpc_byte_buffer_type;
-
-/* byte buffers are containers for messages passed in from the public api's */
-struct grpc_byte_buffer {
-  grpc_byte_buffer_type type;
-  union {
-    gpr_slice_buffer slice_buffer;
-  } data;
-};
-
-#endif  /* GRPC_BYTE_BUFFER_H */
+#endif /* GRPC_BYTE_BUFFER_H */

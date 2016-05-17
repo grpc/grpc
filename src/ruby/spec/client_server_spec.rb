@@ -28,177 +28,193 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'grpc'
-require 'spec_helper'
 
-include GRPC::Core::CompletionType
 include GRPC::Core
 
-def load_test_certs
-  test_root = File.join(File.dirname(__FILE__), 'testdata')
-  files = ['ca.pem', 'server1.key', 'server1.pem']
-  files.map { |f| File.open(File.join(test_root, f)).read }
-end
-
 shared_context 'setup: tags' do
+  let(:sent_message) { 'sent message' }
+  let(:reply_text) { 'the reply' }
   before(:example) do
-    @server_finished_tag = Object.new
-    @client_finished_tag = Object.new
-    @client_metadata_tag = Object.new
+    @client_tag = Object.new
     @server_tag = Object.new
-    @tag = Object.new
   end
 
   def deadline
-    Time.now + 2
-  end
-
-  def expect_next_event_on(queue, type, tag)
-    ev = queue.pluck(tag, deadline)
-    if type.nil?
-      expect(ev).to be_nil
-    else
-      expect(ev).to_not be_nil
-      expect(ev.type).to be(type)
-    end
-    ev
+    Time.now + 5
   end
 
   def server_allows_client_to_proceed
-    @server.request_call(@server_tag)
-    ev = @server_queue.pluck(@server_tag, deadline)
-    expect(ev).not_to be_nil
-    expect(ev.type).to be(SERVER_RPC_NEW)
-    server_call = ev.call
-    server_call.server_accept(@server_queue, @server_finished_tag)
-    server_call.server_end_initial_metadata
+    recvd_rpc = @server.request_call(@server_queue, @server_tag, deadline)
+    expect(recvd_rpc).to_not eq nil
+    server_call = recvd_rpc.call
+    ops = { CallOps::SEND_INITIAL_METADATA => {} }
+    svr_batch = server_call.run_batch(@server_queue, @server_tag, deadline, ops)
+    expect(svr_batch.send_metadata).to be true
     server_call
   end
 
-  def server_responds_with(server_call, reply_text)
-    reply = ByteBuffer.new(reply_text)
-    server_call.start_read(@server_tag)
-    ev = @server_queue.pluck(@server_tag, TimeConsts::INFINITE_FUTURE)
-    expect(ev.type).to be(READ)
-    server_call.start_write(reply, @server_tag)
-    ev = @server_queue.pluck(@server_tag, TimeConsts::INFINITE_FUTURE)
-    expect(ev).not_to be_nil
-    expect(ev.type).to be(WRITE_ACCEPTED)
-  end
-
-  def client_sends(call, sent = 'a message')
-    req = ByteBuffer.new(sent)
-    call.start_write(req, @tag)
-    ev = @client_queue.pluck(@tag, TimeConsts::INFINITE_FUTURE)
-    expect(ev).not_to be_nil
-    expect(ev.type).to be(WRITE_ACCEPTED)
-    sent
-  end
-
   def new_client_call
-    @ch.create_call('/method', 'localhost', deadline)
+    @ch.create_call(@client_queue, nil, nil, '/method', nil, deadline)
   end
 end
 
 shared_examples 'basic GRPC message delivery is OK' do
+  include GRPC::Core
   include_context 'setup: tags'
 
-  it 'servers receive requests from clients and start responding' do
-    reply = ByteBuffer.new('the server payload')
+  context 'the test channel' do
+    it 'should have a target' do
+      expect(@ch.target).to be_a(String)
+    end
+  end
+
+  context 'a client call' do
+    it 'should have a peer' do
+      expect(new_client_call.peer).to be_a(String)
+    end
+  end
+
+  it 'calls have peer info' do
     call = new_client_call
-    call.invoke(@client_queue, @client_metadata_tag, @client_finished_tag)
+    expect(call.peer).to be_a(String)
+  end
 
-    # check the server rpc new was received
-    # @server.request_call(@server_tag)
-    # ev = expect_next_event_on(@server_queue, SERVER_RPC_NEW, @server_tag)
+  it 'servers receive requests from clients and can respond' do
+    call = new_client_call
+    server_call = nil
 
-    # accept the call
-    # server_call = ev.call
-    # server_call.server_accept(@server_queue, @server_finished_tag)
-    # server_call.server_end_initial_metadata
-    server_call = server_allows_client_to_proceed
+    server_thread = Thread.new do
+      server_call = server_allows_client_to_proceed
+    end
 
-    # client sends a message
-    msg = client_sends(call)
+    client_ops = {
+      CallOps::SEND_INITIAL_METADATA => {},
+      CallOps::SEND_MESSAGE => sent_message
+    }
+    batch_result = call.run_batch(@client_queue, @client_tag, deadline,
+                                  client_ops)
+    expect(batch_result.send_metadata).to be true
+    expect(batch_result.send_message).to be true
 
     # confirm the server can read the inbound message
-    server_call.start_read(@server_tag)
-    ev = expect_next_event_on(@server_queue, READ, @server_tag)
-    expect(ev.result.to_s).to eq(msg)
-
-    #  the server response
-    server_call.start_write(reply, @server_tag)
-    expect_next_event_on(@server_queue, WRITE_ACCEPTED, @server_tag)
+    server_thread.join
+    server_ops = {
+      CallOps::RECV_MESSAGE => nil
+    }
+    svr_batch = server_call.run_batch(@server_queue, @server_tag, deadline,
+                                      server_ops)
+    expect(svr_batch.message).to eq(sent_message)
   end
 
   it 'responses written by servers are received by the client' do
     call = new_client_call
-    call.invoke(@client_queue, @client_metadata_tag, @client_finished_tag)
-    server_call = server_allows_client_to_proceed
-    client_sends(call)
-    server_responds_with(server_call, 'server_response')
+    server_call = nil
 
-    call.start_read(@tag)
-    ev = expect_next_event_on(@client_queue, READ, @tag)
-    expect(ev.result.to_s).to eq('server_response')
+    server_thread = Thread.new do
+      server_call = server_allows_client_to_proceed
+    end
+
+    client_ops = {
+      CallOps::SEND_INITIAL_METADATA => {},
+      CallOps::SEND_MESSAGE => sent_message
+    }
+    batch_result = call.run_batch(@client_queue, @client_tag, deadline,
+                                  client_ops)
+    expect(batch_result.send_metadata).to be true
+    expect(batch_result.send_message).to be true
+
+    # confirm the server can read the inbound message
+    server_thread.join
+    server_ops = {
+      CallOps::RECV_MESSAGE => nil,
+      CallOps::SEND_MESSAGE => reply_text
+    }
+    svr_batch = server_call.run_batch(@server_queue, @server_tag, deadline,
+                                      server_ops)
+    expect(svr_batch.message).to eq(sent_message)
+    expect(svr_batch.send_message).to be true
   end
 
   it 'servers can ignore a client write and send a status' do
     call = new_client_call
-    call.invoke(@client_queue, @client_metadata_tag, @client_finished_tag)
+    server_call = nil
 
-    # check the server rpc new was received
-    @server.request_call(@server_tag)
-    ev = expect_next_event_on(@server_queue, SERVER_RPC_NEW, @server_tag)
-    expect(ev.tag).to be(@server_tag)
+    server_thread = Thread.new do
+      server_call = server_allows_client_to_proceed
+    end
 
-    # accept the call - need to do this to sent status.
-    server_call = ev.call
-    server_call.server_accept(@server_queue, @server_finished_tag)
-    server_call.server_end_initial_metadata
-    server_call.start_write_status(StatusCodes::NOT_FOUND, 'not found',
-                                   @server_tag)
+    client_ops = {
+      CallOps::SEND_INITIAL_METADATA => {},
+      CallOps::SEND_MESSAGE => sent_message
+    }
+    batch_result = call.run_batch(@client_queue, @client_tag, deadline,
+                                  client_ops)
+    expect(batch_result.send_metadata).to be true
+    expect(batch_result.send_message).to be true
 
-    # Client sends some data
-    client_sends(call)
-
-    # client gets an empty response for the read, preceeded by some metadata.
-    call.start_read(@tag)
-    expect_next_event_on(@client_queue, CLIENT_METADATA_READ,
-                         @client_metadata_tag)
-    ev = expect_next_event_on(@client_queue, READ, @tag)
-    expect(ev.tag).to be(@tag)
-    expect(ev.result.to_s).to eq('')
-
-    # finally, after client sends writes_done, they get the finished.
-    call.writes_done(@tag)
-    expect_next_event_on(@client_queue, FINISH_ACCEPTED, @tag)
-    ev = expect_next_event_on(@client_queue, FINISHED, @client_finished_tag)
-    expect(ev.result.code).to eq(StatusCodes::NOT_FOUND)
+    # confirm the server can read the inbound message
+    the_status = Struct::Status.new(StatusCodes::OK, 'OK')
+    server_thread.join
+    server_ops = {
+      CallOps::SEND_STATUS_FROM_SERVER => the_status
+    }
+    svr_batch = server_call.run_batch(@server_queue, @server_tag, deadline,
+                                      server_ops)
+    expect(svr_batch.message).to eq nil
+    expect(svr_batch.send_status).to be true
   end
 
   it 'completes calls by sending status to client and server' do
     call = new_client_call
-    call.invoke(@client_queue, @client_metadata_tag, @client_finished_tag)
-    server_call = server_allows_client_to_proceed
-    client_sends(call)
-    server_responds_with(server_call, 'server_response')
-    server_call.start_write_status(10_101, 'status code is 10101', @server_tag)
+    server_call = nil
 
-    # first the client says writes are done
-    call.start_read(@tag)
-    expect_next_event_on(@client_queue, READ, @tag)
-    call.writes_done(@tag)
+    server_thread = Thread.new do
+      server_call = server_allows_client_to_proceed
+    end
 
-    # but nothing happens until the server sends a status
-    expect_next_event_on(@server_queue, FINISH_ACCEPTED, @server_tag)
-    ev = expect_next_event_on(@server_queue, FINISHED, @server_finished_tag)
-    expect(ev.result).to be_a(Struct::Status)
+    client_ops = {
+      CallOps::SEND_INITIAL_METADATA => {},
+      CallOps::SEND_MESSAGE => sent_message
+    }
+    batch_result = call.run_batch(@client_queue, @client_tag, deadline,
+                                  client_ops)
+    expect(batch_result.send_metadata).to be true
+    expect(batch_result.send_message).to be true
 
-    # client gets FINISHED
-    expect_next_event_on(@client_queue, FINISH_ACCEPTED, @tag)
-    ev = expect_next_event_on(@client_queue, FINISHED, @client_finished_tag)
-    expect(ev.result.details).to eq('status code is 10101')
-    expect(ev.result.code).to eq(10_101)
+    # confirm the server can read the inbound message and respond
+    the_status = Struct::Status.new(StatusCodes::OK, 'OK', {})
+    server_thread.join
+    server_ops = {
+      CallOps::RECV_MESSAGE => nil,
+      CallOps::SEND_MESSAGE => reply_text,
+      CallOps::SEND_STATUS_FROM_SERVER => the_status
+    }
+    svr_batch = server_call.run_batch(@server_queue, @server_tag, deadline,
+                                      server_ops)
+    expect(svr_batch.message).to eq sent_message
+    expect(svr_batch.send_status).to be true
+    expect(svr_batch.send_message).to be true
+
+    # confirm the client can receive the server response and status.
+    client_ops = {
+      CallOps::SEND_CLOSE_FROM_CLIENT => nil,
+      CallOps::RECV_INITIAL_METADATA => nil,
+      CallOps::RECV_MESSAGE => nil,
+      CallOps::RECV_STATUS_ON_CLIENT => nil
+    }
+    batch_result = call.run_batch(@client_queue, @client_tag, deadline,
+                                  client_ops)
+    expect(batch_result.send_close).to be true
+    expect(batch_result.message).to eq reply_text
+    expect(batch_result.status).to eq the_status
+
+    # confirm the server can receive the client close.
+    server_ops = {
+      CallOps::RECV_CLOSE_ON_SERVER => nil
+    }
+    svr_batch = server_call.run_batch(@server_queue, @server_tag, deadline,
+                                      server_ops)
+    expect(svr_batch.send_close).to be true
   end
 end
 
@@ -208,11 +224,11 @@ shared_examples 'GRPC metadata delivery works OK' do
   describe 'from client => server' do
     before(:example) do
       n = 7  # arbitrary number of metadata
-      diff_keys_fn = proc { |i| [sprintf('k%d', i), sprintf('v%d', i)] }
+      diff_keys_fn = proc { |i| [format('k%d', i), format('v%d', i)] }
       diff_keys = Hash[n.times.collect { |x| diff_keys_fn.call x }]
-      null_vals_fn = proc { |i| [sprintf('k%d', i), sprintf('v\0%d', i)] }
+      null_vals_fn = proc { |i| [format('k%d', i), format('v\0%d', i)] }
       null_vals = Hash[n.times.collect { |x| null_vals_fn.call x }]
-      same_keys_fn = proc { |i| [sprintf('k%d', i), [sprintf('v%d', i)] * n] }
+      same_keys_fn = proc { |i| [format('k%d', i), [format('v%d', i)] * n] }
       same_keys = Hash[n.times.collect { |x| same_keys_fn.call x }]
       symbol_key = { a_key: 'a val' }
       @valid_metadata = [diff_keys, same_keys, null_vals, symbol_key]
@@ -224,25 +240,38 @@ shared_examples 'GRPC metadata delivery works OK' do
     it 'raises an exception if a metadata key is invalid' do
       @bad_keys.each do |md|
         call = new_client_call
-        expect { call.add_metadata(md) }.to raise_error
+        client_ops = {
+          CallOps::SEND_INITIAL_METADATA => md
+        }
+        blk = proc do
+          call.run_batch(@client_queue, @client_tag, deadline,
+                         client_ops)
+        end
+        expect(&blk).to raise_error
       end
     end
 
     it 'sends all the metadata pairs when keys and values are valid' do
       @valid_metadata.each do |md|
+        recvd_rpc = nil
+        rcv_thread = Thread.new do
+          recvd_rpc = @server.request_call(@server_queue, @server_tag, deadline)
+        end
+
         call = new_client_call
-        call.add_metadata(md)
+        client_ops = {
+          CallOps::SEND_INITIAL_METADATA => md
+        }
+        batch_result = call.run_batch(@client_queue, @client_tag, deadline,
+                                      client_ops)
+        expect(batch_result.send_metadata).to be true
 
-        # Client begins a call OK
-        call.invoke(@client_queue, @client_metadata_tag, @client_finished_tag)
-
-        # ... server has all metadata available even though the client did not
-        # send a write
-        @server.request_call(@server_tag)
-        ev = expect_next_event_on(@server_queue, SERVER_RPC_NEW, @server_tag)
+        # confirm the server can receive the client metadata
+        rcv_thread.join
+        expect(recvd_rpc).to_not eq nil
+        recvd_md = recvd_rpc.metadata
         replace_symbols = Hash[md.each_pair.collect { |x, y| [x.to_s, y] }]
-        result = ev.result.metadata
-        expect(result.merge(replace_symbols)).to eq(result)
+        expect(recvd_md).to eq(recvd_md.merge(replace_symbols))
       end
     end
   end
@@ -250,11 +279,11 @@ shared_examples 'GRPC metadata delivery works OK' do
   describe 'from server => client' do
     before(:example) do
       n = 7  # arbitrary number of metadata
-      diff_keys_fn = proc { |i| [sprintf('k%d', i), sprintf('v%d', i)] }
+      diff_keys_fn = proc { |i| [format('k%d', i), format('v%d', i)] }
       diff_keys = Hash[n.times.collect { |x| diff_keys_fn.call x }]
-      null_vals_fn = proc { |i| [sprintf('k%d', i), sprintf('v\0%d', i)] }
+      null_vals_fn = proc { |i| [format('k%d', i), format('v\0%d', i)] }
       null_vals = Hash[n.times.collect { |x| null_vals_fn.call x }]
-      same_keys_fn = proc { |i| [sprintf('k%d', i), [sprintf('v%d', i)] * n] }
+      same_keys_fn = proc { |i| [format('k%d', i), [format('v%d', i)] * n] }
       same_keys = Hash[n.times.collect { |x| same_keys_fn.call x }]
       symbol_key = { a_key: 'a val' }
       @valid_metadata = [diff_keys, same_keys, null_vals, symbol_key]
@@ -265,56 +294,97 @@ shared_examples 'GRPC metadata delivery works OK' do
 
     it 'raises an exception if a metadata key is invalid' do
       @bad_keys.each do |md|
+        recvd_rpc = nil
+        rcv_thread = Thread.new do
+          recvd_rpc = @server.request_call(@server_queue, @server_tag, deadline)
+        end
+
         call = new_client_call
-        call.invoke(@client_queue, @client_metadata_tag, @client_finished_tag)
+        # client signals that it's done sending metadata to allow server to
+        # respond
+        client_ops = {
+          CallOps::SEND_INITIAL_METADATA => nil
+        }
+        call.run_batch(@client_queue, @client_tag, deadline, client_ops)
 
         # server gets the invocation
-        @server.request_call(@server_tag)
-        ev = expect_next_event_on(@server_queue, SERVER_RPC_NEW, @server_tag)
-        expect { ev.call.add_metadata(md) }.to raise_error
+        rcv_thread.join
+        expect(recvd_rpc).to_not eq nil
+        server_ops = {
+          CallOps::SEND_INITIAL_METADATA => md
+        }
+        blk = proc do
+          recvd_rpc.call.run_batch(@server_queue, @server_tag, deadline,
+                                   server_ops)
+        end
+        expect(&blk).to raise_error
       end
     end
 
-    it 'sends a hash that contains the status when no metadata is added' do
+    it 'sends an empty hash if no metadata is added' do
+      recvd_rpc = nil
+      rcv_thread = Thread.new do
+        recvd_rpc = @server.request_call(@server_queue, @server_tag, deadline)
+      end
+
       call = new_client_call
-      call.invoke(@client_queue, @client_metadata_tag, @client_finished_tag)
+      # client signals that it's done sending metadata to allow server to
+      # respond
+      client_ops = {
+        CallOps::SEND_INITIAL_METADATA => nil
+      }
+      call.run_batch(@client_queue, @client_tag, deadline, client_ops)
 
-      # server gets the invocation
-      @server.request_call(@server_tag)
-      ev = expect_next_event_on(@server_queue, SERVER_RPC_NEW, @server_tag)
-      server_call = ev.call
+      # server gets the invocation but sends no metadata back
+      rcv_thread.join
+      expect(recvd_rpc).to_not eq nil
+      server_call = recvd_rpc.call
+      server_ops = {
+        CallOps::SEND_INITIAL_METADATA => nil
+      }
+      server_call.run_batch(@server_queue, @server_tag, deadline, server_ops)
 
-      # ... server accepts the call without adding metadata
-      server_call.server_accept(@server_queue, @server_finished_tag)
-      server_call.server_end_initial_metadata
-
-      # there is the HTTP status metadata, though there should not be any
-      # TODO: update this with the bug number to be resolved
-      ev = expect_next_event_on(@client_queue, CLIENT_METADATA_READ,
-                                @client_metadata_tag)
-      expect(ev.result).to eq({})
+      # client receives nothing as expected
+      client_ops = {
+        CallOps::RECV_INITIAL_METADATA => nil
+      }
+      batch_result = call.run_batch(@client_queue, @client_tag, deadline,
+                                    client_ops)
+      expect(batch_result.metadata).to eq({})
     end
 
     it 'sends all the pairs when keys and values are valid' do
       @valid_metadata.each do |md|
+        recvd_rpc = nil
+        rcv_thread = Thread.new do
+          recvd_rpc = @server.request_call(@server_queue, @server_tag, deadline)
+        end
+
         call = new_client_call
-        call.invoke(@client_queue, @client_metadata_tag, @client_finished_tag)
+        # client signals that it's done sending metadata to allow server to
+        # respond
+        client_ops = {
+          CallOps::SEND_INITIAL_METADATA => nil
+        }
+        call.run_batch(@client_queue, @client_tag, deadline, client_ops)
 
-        # server gets the invocation
-        @server.request_call(@server_tag)
-        ev = expect_next_event_on(@server_queue, SERVER_RPC_NEW, @server_tag)
-        server_call = ev.call
+        # server gets the invocation but sends no metadata back
+        rcv_thread.join
+        expect(recvd_rpc).to_not eq nil
+        server_call = recvd_rpc.call
+        server_ops = {
+          CallOps::SEND_INITIAL_METADATA => md
+        }
+        server_call.run_batch(@server_queue, @server_tag, deadline, server_ops)
 
-        # ... server adds metadata and accepts the call
-        server_call.add_metadata(md)
-        server_call.server_accept(@server_queue, @server_finished_tag)
-        server_call.server_end_initial_metadata
-
-        # Now the client can read the metadata
-        ev = expect_next_event_on(@client_queue, CLIENT_METADATA_READ,
-                                  @client_metadata_tag)
+        # client receives nothing as expected
+        client_ops = {
+          CallOps::RECV_INITIAL_METADATA => nil
+        }
+        batch_result = call.run_batch(@client_queue, @client_tag, deadline,
+                                      client_ops)
         replace_symbols = Hash[md.each_pair.collect { |x, y| [x.to_s, y] }]
-        expect(ev.result).to eq(replace_symbols)
+        expect(batch_result.metadata).to eq(replace_symbols)
       end
     end
   end
@@ -326,14 +396,14 @@ describe 'the http client/server' do
     @client_queue = GRPC::Core::CompletionQueue.new
     @server_queue = GRPC::Core::CompletionQueue.new
     @server = GRPC::Core::Server.new(@server_queue, nil)
-    server_port = @server.add_http2_port(server_host)
+    server_port = @server.add_http2_port(server_host, :this_port_is_insecure)
     @server.start
-    @ch = Channel.new("0.0.0.0:#{server_port}", nil)
+    @ch = Channel.new("0.0.0.0:#{server_port}", nil, :this_channel_is_insecure)
   end
 
   after(:example) do
     @ch.close
-    @server.close
+    @server.close(@server_queue, deadline)
   end
 
   it_behaves_like 'basic GRPC message delivery is OK' do
@@ -344,29 +414,63 @@ describe 'the http client/server' do
 end
 
 describe 'the secure http client/server' do
+  include_context 'setup: tags'
+
+  def load_test_certs
+    test_root = File.join(File.dirname(__FILE__), 'testdata')
+    files = ['ca.pem', 'server1.key', 'server1.pem']
+    files.map { |f| File.open(File.join(test_root, f)).read }
+  end
+
   before(:example) do
     certs = load_test_certs
-    server_host = 'localhost:0'
+    server_host = '0.0.0.0:0'
     @client_queue = GRPC::Core::CompletionQueue.new
     @server_queue = GRPC::Core::CompletionQueue.new
-    server_creds = GRPC::Core::ServerCredentials.new(nil, certs[1], certs[2])
-    @server = GRPC::Core::Server.new(@server_queue, nil, server_creds)
-    server_port = @server.add_http2_port(server_host, true)
+    server_creds = GRPC::Core::ServerCredentials.new(
+      nil, [{ private_key: certs[1], cert_chain: certs[2] }], false)
+    @server = GRPC::Core::Server.new(@server_queue, nil)
+    server_port = @server.add_http2_port(server_host, server_creds)
     @server.start
     args = { Channel::SSL_TARGET => 'foo.test.google.fr' }
     @ch = Channel.new("0.0.0.0:#{server_port}", args,
-                      GRPC::Core::Credentials.new(certs[0], nil, nil))
+                      GRPC::Core::ChannelCredentials.new(certs[0], nil, nil))
   end
 
   after(:example) do
-    @server.close
+    @server.close(@server_queue, deadline)
   end
 
-  # TODO: uncomment after updating the to the new c api
-  # it_behaves_like 'basic GRPC message delivery is OK' do
-  # end
+  it_behaves_like 'basic GRPC message delivery is OK' do
+  end
 
-  # TODO: uncomment after updating the to the new c api
-  # it_behaves_like 'GRPC metadata delivery works OK' do
-  # end
+  it_behaves_like 'GRPC metadata delivery works OK' do
+  end
+
+  it 'modifies metadata with CallCredentials' do
+    auth_proc = proc { { 'k1' => 'updated-v1' } }
+    call_creds = GRPC::Core::CallCredentials.new(auth_proc)
+    md = { 'k2' => 'v2' }
+    expected_md = { 'k1' => 'updated-v1', 'k2' => 'v2' }
+    recvd_rpc = nil
+    rcv_thread = Thread.new do
+      recvd_rpc = @server.request_call(@server_queue, @server_tag, deadline)
+    end
+
+    call = new_client_call
+    call.set_credentials! call_creds
+    client_ops = {
+      CallOps::SEND_INITIAL_METADATA => md
+    }
+    batch_result = call.run_batch(@client_queue, @client_tag, deadline,
+                                  client_ops)
+    expect(batch_result.send_metadata).to be true
+
+    # confirm the server can receive the client metadata
+    rcv_thread.join
+    expect(recvd_rpc).to_not eq nil
+    recvd_md = recvd_rpc.metadata
+    replace_symbols = Hash[expected_md.each_pair.collect { |x, y| [x.to_s, y] }]
+    expect(recvd_md).to eq(recvd_md.merge(replace_symbols))
+  end
 end

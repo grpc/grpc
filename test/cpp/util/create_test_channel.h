@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,23 +36,28 @@
 
 #include <memory>
 
-#include <grpc++/config.h>
-#include <grpc++/credentials.h>
+#include <grpc++/security/credentials.h>
 
 namespace grpc {
-class ChannelInterface;
+class Channel;
 
-std::shared_ptr<ChannelInterface> CreateTestChannel(const grpc::string& server,
-                                                    bool enable_ssl);
+std::shared_ptr<Channel> CreateTestChannel(const grpc::string& server,
+                                           bool enable_ssl);
 
-std::shared_ptr<ChannelInterface> CreateTestChannel(
+std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& override_hostname,
     bool enable_ssl, bool use_prod_roots);
 
-std::shared_ptr<ChannelInterface> CreateTestChannel(
+std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& override_hostname,
     bool enable_ssl, bool use_prod_roots,
-    const std::unique_ptr<Credentials>& creds);
+    const std::shared_ptr<CallCredentials>& creds);
+
+std::shared_ptr<Channel> CreateTestChannel(
+    const grpc::string& server, const grpc::string& override_hostname,
+    bool enable_ssl, bool use_prod_roots,
+    const std::shared_ptr<CallCredentials>& creds,
+    const ChannelArguments& args);
 
 }  // namespace grpc
 

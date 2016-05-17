@@ -32,96 +32,80 @@
 #endregion
 
 using System;
-using System.Collections.Concurrent;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Grpc.Core.Internal;
+using Grpc.Core.Logging;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core
 {
     /// <summary>
-    /// Server is implemented only to be able to do
-    /// in-process testing.
+    /// gRPC server. A single server can server arbitrary number of services and can listen on more than one ports.
     /// </summary>
     public class Server
     {
-        // TODO: make sure the delegate doesn't get garbage collected while
-        // native callbacks are in the completion queue.
-        readonly ServerShutdownCallbackDelegate serverShutdownHandler;
-        readonly CompletionCallbackDelegate newServerRpcHandler;
+        const int InitialAllowRpcTokenCount = 10;
+        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<Server>();
 
-        readonly BlockingCollection<NewRpcInfo> newRpcQueue = new BlockingCollection<NewRpcInfo>();
+        readonly AtomicCounter activeCallCounter = new AtomicCounter();
+
+        readonly ServiceDefinitionCollection serviceDefinitions;
+        readonly ServerPortCollection ports;
+        readonly GrpcEnvironment environment;
+        readonly List<ChannelOption> options;
         readonly ServerSafeHandle handle;
+        readonly object myLock = new object();
 
+        readonly List<ServerServiceDefinition> serviceDefinitionsList = new List<ServerServiceDefinition>();
+        readonly List<ServerPort> serverPortList = new List<ServerPort>();
         readonly Dictionary<string, IServerCallHandler> callHandlers = new Dictionary<string, IServerCallHandler>();
-
         readonly TaskCompletionSource<object> shutdownTcs = new TaskCompletionSource<object>();
 
-        public Server()
-        {
-            this.handle = ServerSafeHandle.NewServer(GetCompletionQueue(), IntPtr.Zero);
-            this.newServerRpcHandler = HandleNewServerRpc;
-            this.serverShutdownHandler = HandleServerShutdown;
-        }
-
-        // only call this before Start()
-        public void AddServiceDefinition(ServerServiceDefinition serviceDefinition) {
-            foreach(var entry in serviceDefinition.CallHandlers)
-            {
-                callHandlers.Add(entry.Key, entry.Value);
-            }
-        }
-
-        // only call before Start()
-        public int AddPort(string addr) {
-            return handle.AddPort(addr);
-        }
-
-        public void Start()
-        {
-            handle.Start();
-
-            // TODO: this basically means the server is single threaded....
-            StartHandlingRpcs();
-        }
+        bool startRequested;
+        volatile bool shutdownRequested;
 
         /// <summary>
-        /// Requests and handles single RPC call.
+        /// Create a new server.
         /// </summary>
-        internal void RunRpc()
+        /// <param name="options">Channel options.</param>
+        public Server(IEnumerable<ChannelOption> options = null)
         {
-            AllowOneRpc();
-
-            try
+            this.serviceDefinitions = new ServiceDefinitionCollection(this);
+            this.ports = new ServerPortCollection(this);
+            this.environment = GrpcEnvironment.AddRef();
+            this.options = options != null ? new List<ChannelOption>(options) : new List<ChannelOption>();
+            using (var channelArgs = ChannelOptions.CreateChannelArgs(this.options))
             {
-                var rpcInfo = newRpcQueue.Take();
-
-                //Console.WriteLine("Server received RPC " + rpcInfo.Method);
-
-                IServerCallHandler callHandler;
-                if (!callHandlers.TryGetValue(rpcInfo.Method, out callHandler))
-                {
-                    callHandler = new NoSuchMethodCallHandler();
-                }
-                callHandler.StartCall(rpcInfo.Method, rpcInfo.Call, GetCompletionQueue());
-            }
-            catch(Exception e)
-            {
-                Console.WriteLine("Exception while handling RPC: " + e);
+                this.handle = ServerSafeHandle.NewServer(environment.CompletionQueue, channelArgs);
             }
         }
 
         /// <summary>
-        /// Requests server shutdown and when there are no more calls being serviced,
-        /// cleans up used resources.
+        /// Services that will be exported by the server once started. Register a service with this
+        /// server by adding its definition to this collection.
         /// </summary>
-        /// <returns>The async.</returns>
-        public async Task ShutdownAsync() {
-            handle.ShutdownAndNotify(serverShutdownHandler);
-            await shutdownTcs.Task;
-            handle.Dispose();
+        public ServiceDefinitionCollection Services
+        {
+            get
+            {
+                return serviceDefinitions;
+            }
+        }
+
+        /// <summary>
+        /// Ports on which the server will listen once started. Register a port with this
+        /// server by adding its definition to this collection.
+        /// </summary>
+        public ServerPortCollection Ports
+        {
+            get
+            {
+                return ports;
+            }
         }
 
         /// <summary>
@@ -135,89 +119,276 @@ namespace Grpc.Core
             }
         }
 
-        public void Kill() {
+        /// <summary>
+        /// Starts the server.
+        /// </summary>
+        public void Start()
+        {
+            lock (myLock)
+            {
+                GrpcPreconditions.CheckState(!startRequested);
+                startRequested = true;
+                
+                handle.Start();
+
+                // Starting with more than one AllowOneRpc tokens can significantly increase
+                // unary RPC throughput.
+                for (int i = 0; i < InitialAllowRpcTokenCount; i++)
+                {
+                    AllowOneRpc();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Requests server shutdown and when there are no more calls being serviced,
+        /// cleans up used resources. The returned task finishes when shutdown procedure
+        /// is complete.
+        /// </summary>
+        public async Task ShutdownAsync()
+        {
+            lock (myLock)
+            {
+                GrpcPreconditions.CheckState(startRequested);
+                GrpcPreconditions.CheckState(!shutdownRequested);
+                shutdownRequested = true;
+            }
+
+            handle.ShutdownAndNotify(HandleServerShutdown, environment);
+            await shutdownTcs.Task.ConfigureAwait(false);
+            DisposeHandle();
+
+            await Task.Run(() => GrpcEnvironment.Release()).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Requests server shutdown while cancelling all the in-progress calls.
+        /// The returned task finishes when shutdown procedure is complete.
+        /// </summary>
+        public async Task KillAsync()
+        {
+            lock (myLock)
+            {
+                GrpcPreconditions.CheckState(startRequested);
+                GrpcPreconditions.CheckState(!shutdownRequested);
+                shutdownRequested = true;
+            }
+
+            handle.ShutdownAndNotify(HandleServerShutdown, environment);
+            handle.CancelAllCalls();
+            await shutdownTcs.Task.ConfigureAwait(false);
+            DisposeHandle();
+
+            await Task.Run(() => GrpcEnvironment.Release()).ConfigureAwait(false);
+        }
+
+        internal void AddCallReference(object call)
+        {
+            activeCallCounter.Increment();
+
+            bool success = false;
+            handle.DangerousAddRef(ref success);
+            GrpcPreconditions.CheckState(success);
+        }
+
+        internal void RemoveCallReference(object call)
+        {
+            handle.DangerousRelease();
+            activeCallCounter.Decrement();
+        }
+
+        /// <summary>
+        /// Adds a service definition.
+        /// </summary>
+        private void AddServiceDefinitionInternal(ServerServiceDefinition serviceDefinition)
+        {
+            lock (myLock)
+            {
+                GrpcPreconditions.CheckState(!startRequested);
+                foreach (var entry in serviceDefinition.CallHandlers)
+                {
+                    callHandlers.Add(entry.Key, entry.Value);
+                }
+                serviceDefinitionsList.Add(serviceDefinition);
+            }
+        }
+
+        /// <summary>
+        /// Adds a listening port.
+        /// </summary>
+        private int AddPortInternal(ServerPort serverPort)
+        {
+            lock (myLock)
+            {
+                GrpcPreconditions.CheckNotNull(serverPort.Credentials, "serverPort");
+                GrpcPreconditions.CheckState(!startRequested);
+                var address = string.Format("{0}:{1}", serverPort.Host, serverPort.Port);
+                int boundPort;
+                using (var nativeCredentials = serverPort.Credentials.ToNativeCredentials())
+                {
+                    if (nativeCredentials != null)
+                    {
+                        boundPort = handle.AddSecurePort(address, nativeCredentials);
+                    }
+                    else
+                    {
+                        boundPort = handle.AddInsecurePort(address);
+                    }
+                }
+                var newServerPort = new ServerPort(serverPort, boundPort);
+                this.serverPortList.Add(newServerPort);
+                return boundPort;
+            }
+        }
+
+        /// <summary>
+        /// Allows one new RPC call to be received by server.
+        /// </summary>
+        private void AllowOneRpc()
+        {
+            if (!shutdownRequested)
+            {
+                handle.RequestCall(HandleNewServerRpc, environment);
+            }
+        }
+
+        private void DisposeHandle()
+        {
+            var activeCallCount = activeCallCounter.Count;
+            if (activeCallCount > 0)
+            {
+                Logger.Warning("Server shutdown has finished but there are still {0} active calls for that server.", activeCallCount);
+            }
             handle.Dispose();
         }
 
-        private async Task StartHandlingRpcs() {
-            while (true)
-            {
-                await Task.Factory.StartNew(RunRpc);
-            }
-        }
-
-        private void AllowOneRpc()
-        {
-            AssertCallOk(handle.RequestCall(GetCompletionQueue(), newServerRpcHandler));
-        }
-
-        private void HandleNewServerRpc(GRPCOpError error, IntPtr batchContextPtr) {
-            try {
-                var ctx = new BatchContextSafeHandleNotOwned(batchContextPtr);
-
-                if (error != GRPCOpError.GRPC_OP_OK) {
-                    // TODO: handle error
-                }
-
-                var rpcInfo = new NewRpcInfo(ctx.GetServerRpcNewCall(), ctx.GetServerRpcNewMethod());
-
-                // after server shutdown, the callback returns with null call
-                if (!rpcInfo.Call.IsInvalid) {
-                    newRpcQueue.Add(rpcInfo);
-                }
-
-            } catch(Exception e) {
-                Console.WriteLine("Caught exception in a native handler: " + e);
-            }
-        }
-
-        private void HandleServerShutdown(IntPtr eventPtr)
+        /// <summary>
+        /// Selects corresponding handler for given call and handles the call.
+        /// </summary>
+        private async Task HandleCallAsync(ServerRpcNew newRpc)
         {
             try
             {
-                shutdownTcs.SetResult(null);
+                IServerCallHandler callHandler;
+                if (!callHandlers.TryGetValue(newRpc.Method, out callHandler))
+                {
+                    callHandler = NoSuchMethodCallHandler.Instance;
+                }
+                await callHandler.HandleCall(newRpc, environment).ConfigureAwait(false);
             }
             catch (Exception e)
             {
-                Console.WriteLine("Caught exception in a native handler: " + e);
+                Logger.Warning(e, "Exception while handling RPC.");
             }
         }
 
-        private static void AssertCallOk(GRPCCallError callError)
+        /// <summary>
+        /// Handles the native callback.
+        /// </summary>
+        private void HandleNewServerRpc(bool success, BatchContextSafeHandle ctx)
         {
-            Trace.Assert(callError == GRPCCallError.GRPC_CALL_OK, "Status not GRPC_CALL_OK");
-        }
+			Task.Run(() => AllowOneRpc());
 
-        private static CompletionQueueSafeHandle GetCompletionQueue()
-        {
-            return GrpcEnvironment.ThreadPool.CompletionQueue;
-        }
-
-        private struct NewRpcInfo
-        {
-            private CallSafeHandle call;
-            private string method;
-
-            public NewRpcInfo(CallSafeHandle call, string method)
+            if (success)
             {
-                this.call = call;
-                this.method = method;
-            }
+                ServerRpcNew newRpc = ctx.GetServerRpcNew(this);
 
-            public CallSafeHandle Call
-            {
-                get
+                // after server shutdown, the callback returns with null call
+                if (!newRpc.Call.IsInvalid)
                 {
-                    return this.call;
+                    HandleCallAsync(newRpc);  // we don't need to await.
                 }
             }
+        }
 
-            public string Method
+        /// <summary>
+        /// Handles native callback.
+        /// </summary>
+        private void HandleServerShutdown(bool success, BatchContextSafeHandle ctx)
+        {
+            shutdownTcs.SetResult(null);
+        }
+
+        /// <summary>
+        /// Collection of service definitions.
+        /// </summary>
+        public class ServiceDefinitionCollection : IEnumerable<ServerServiceDefinition>
+        {
+            readonly Server server;
+
+            internal ServiceDefinitionCollection(Server server)
             {
-                get
-                {
-                    return this.method;
-                }
+                this.server = server;
+            }
+
+            /// <summary>
+            /// Adds a service definition to the server. This is how you register
+            /// handlers for a service with the server. Only call this before Start().
+            /// </summary>
+            public void Add(ServerServiceDefinition serviceDefinition)
+            {
+                server.AddServiceDefinitionInternal(serviceDefinition);
+            }
+
+            /// <summary>
+            /// Gets enumerator for this collection.
+            /// </summary>
+            public IEnumerator<ServerServiceDefinition> GetEnumerator()
+            {
+                return server.serviceDefinitionsList.GetEnumerator();
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return server.serviceDefinitionsList.GetEnumerator();
+            }
+        }
+
+        /// <summary>
+        /// Collection of server ports.
+        /// </summary>
+        public class ServerPortCollection : IEnumerable<ServerPort>
+        {
+            readonly Server server;
+
+            internal ServerPortCollection(Server server)
+            {
+                this.server = server;
+            }
+
+            /// <summary>
+            /// Adds a new port on which server should listen.
+            /// Only call this before Start().
+            /// <returns>The port on which server will be listening.</returns>
+            /// </summary>
+            public int Add(ServerPort serverPort)
+            {
+                return server.AddPortInternal(serverPort);
+            }
+
+            /// <summary>
+            /// Adds a new port on which server should listen.
+            /// <returns>The port on which server will be listening.</returns>
+            /// </summary>
+            /// <param name="host">the host</param>
+            /// <param name="port">the port. If zero, an unused port is chosen automatically.</param>
+            /// <param name="credentials">credentials to use to secure this port.</param>
+            public int Add(string host, int port, ServerCredentials credentials)
+            {
+                return Add(new ServerPort(host, port, credentials));
+            }
+
+            /// <summary>
+            /// Gets enumerator for this collection.
+            /// </summary>
+            public IEnumerator<ServerPort> GetEnumerator()
+            {
+                return server.serverPortList.GetEnumerator();
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return server.serverPortList.GetEnumerator();
             }
         }
     }

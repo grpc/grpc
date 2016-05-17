@@ -1,23 +1,32 @@
-language: cpp
-before_install:
-  - sudo add-apt-repository ppa:yjwong/gflags -y
-  - sudo add-apt-repository ppa:h-rayflood/llvm -y
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq libgtest-dev libgflags-dev python-virtualenv clang-3.5
+language: objective-c
+osx_image: xcode7.2
 env:
   global:
-    - RUBY_VERSION=2.1
-  matrix:
-    - CONFIG=dbg TEST=c
-    - CONFIG=dbg TEST=c++
-    - CONFIG=opt TEST=c
-    - CONFIG=opt TEST=c++
-    - CONFIG=opt TEST=node
-    - CONFIG=opt TEST=ruby
-    - CONFIG=opt TEST=python
-script:
-  - rvm use $RUBY_VERSION
-  - gem install bundler
-  - ./tools/run_tests/run_tests.py -l $TEST -t -j 16 -c $CONFIG -s 4.0
+    - CONFIG=opt
+    - TEST=objc
+    - JOBS=1
+before_install:
+  - brew install gflags
+  # Pod install does this too, but we don't want the output.
+  - pod repo update --silent
+install:
+  - make grpc_objective_c_plugin
+  - pushd src/objective-c/tests
+  # Needs to be verbose, or otherwise OpenSSL's prepare_command makes Travis
+  # time out:
+  - pod install --verbose
+  - popd
+before_script:
+  - make interop_server
+  - bins/$CONFIG/interop_server --port=5050 &
+  - bins/$CONFIG/interop_server --port=5051 --use_tls &
+xcode_workspace: src/objective-c/tests/Tests.xcworkspace
+xcode_scheme:
+  - RxLibraryUnitTests
+  - InteropTestsLocalSSL
+  - InteropTestsLocalCleartext
+  # TODO(jcanizales): Investigate why they time out:
+  # - InteropTestsRemote
+xcode_sdk: iphonesimulator9.2
 notifications:
   email: false

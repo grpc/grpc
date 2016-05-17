@@ -37,17 +37,19 @@
 #include "config.h"
 #endif
 
-#include "php.h"
-#include "php_ini.h"
-#include "ext/standard/info.h"
-#include "ext/spl/spl_exceptions.h"
+#include <php.h>
+#include <php_ini.h>
+#include <ext/standard/info.h>
+#include <ext/spl/spl_exceptions.h>
 #include "php_grpc.h"
 
-#include "zend_exceptions.h"
-#include "zend_hash.h"
+#include <zend_exceptions.h>
+#include <zend_hash.h>
 
-#include "grpc/grpc.h"
-#include "grpc/grpc_security.h"
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+
+zend_class_entry *grpc_ce_server_credentials;
 
 /* Frees and destroys an instace of wrapped_grpc_server_credentials */
 void free_wrapped_grpc_server_credentials(void *object TSRMLS_DC) {
@@ -113,27 +115,17 @@ PHP_METHOD(ServerCredentials, createSsl) {
                          "createSsl expects 3 strings", 1 TSRMLS_CC);
     return;
   }
-  grpc_server_credentials *creds =
-      grpc_ssl_server_credentials_create(pem_root_certs, &pem_key_cert_pair, 1);
-  zval *creds_object = grpc_php_wrap_server_credentials(creds);
-  RETURN_DESTROY_ZVAL(creds_object);
-}
-
-/**
- * Create fake credentials. Only to be used for testing.
- * @return ServerCredentials The new fake credentials object
- */
-PHP_METHOD(ServerCredentials, createFake) {
-  grpc_server_credentials *creds =
-      grpc_fake_transport_security_server_credentials_create();
+  /* TODO: add a client_certificate_request field in ServerCredentials and pass
+   * it as the last parameter. */
+  grpc_server_credentials *creds = grpc_ssl_server_credentials_create_ex(
+      pem_root_certs, &pem_key_cert_pair, 1,
+      GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, NULL);
   zval *creds_object = grpc_php_wrap_server_credentials(creds);
   RETURN_DESTROY_ZVAL(creds_object);
 }
 
 static zend_function_entry server_credentials_methods[] = {
     PHP_ME(ServerCredentials, createSsl, NULL,
-           ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-    PHP_ME(ServerCredentials, createFake, NULL,
            ZEND_ACC_PUBLIC | ZEND_ACC_STATIC) PHP_FE_END};
 
 void grpc_init_server_credentials(TSRMLS_D) {

@@ -1,25 +1,44 @@
+[![npm](https://img.shields.io/npm/v/grpc.svg)](https://www.npmjs.com/package/grpc)
 # Node.js gRPC Library
 
 ## Status
+Beta
 
-Alpha : Ready for early adopters
+## PREREQUISITES
+- `node`: This requires `node` to be installed, version `0.12` or above. If you instead have the `nodejs` executable on Debian, you should install the [`nodejs-legacy`](https://packages.debian.org/sid/nodejs-legacy) package.
 
-## Prerequisites
+- **Note:** If you installed `node` via a package manager and the version is still less than `0.12`, try directly installing it from [nodejs.org](https://nodejs.org).
 
-This requires `node` to be installed. If you instead have the `nodejs` executable on Debian, you should install the [`nodejs-legacy`](https://packages.debian.org/sid/nodejs-legacy) package.
+## INSTALLATION
 
-## Installation
+Install the gRPC NPM package
 
-First, clone this repository (NPM package coming soon). Then follow the instructions in the `INSTALL` file in the root of the repository to install the C core library that this package depends on.
+```sh
+npm install grpc
+```
 
-Then, simply run `npm install` in or referencing this directory.
+## BUILD FROM SOURCE
+ 1. Clone [the grpc Git Repository](https://github.com/grpc/grpc).
+ 2. Run `npm install` from the repository root.
 
-## Tests
+ - **Note:** On Windows, this might fail due to [nodejs issue #4932](https://github.com/nodejs/node/issues/4932) in which case, you will see something like the following in `npm install`'s output (towards the very beginning):
 
+    ```
+     ..
+     Building the projects in this solution one at a time. To enable parallel build, please add the "/m" switch.
+     WINDOWS_BUILD_WARNING
+      "..\IMPORTANT: Due to https:\github.com\nodejs\node\issues\4932, to build this library on Windows, you must first remove C:\Users\jenkins\.node-gyp\4.4.0\include\node\openssl"
+      ...
+      ..
+    ```
+
+    To fix this, you will have to delete the folder `C:\Users\<username>\.node-gyp\<node_version>\include\node\openssl` and retry `npm install`
+
+
+## TESTING
 To run the test suite, simply run `npm test` in the install location.
 
 ## API
-
 This library internally uses [ProtoBuf.js](https://github.com/dcodeIO/ProtoBuf.js), and some structures it exports match those exported by that library
 
 If you require this module, you will get an object with the following members
@@ -44,10 +63,10 @@ function loadObject(reflectionObject)
 Returns the same structure that `load` returns, but takes a reflection object from `ProtoBuf.js` instead of a file name.
 
 ```javascript
-function buildServer(serviceArray)
+function Server([serverOpions])
 ```
 
-Takes an array of service objects and returns a constructor for a server that handles requests to all of those services.
+Constructs a server to which service/implementation pairs can be added.
 
 
 ```javascript
@@ -75,4 +94,4 @@ An object with factory methods for creating credential objects for clients.
 ServerCredentials
 ```
 
-An object with factory methods fro creating credential objects for servers.
+An object with factory methods for creating credential objects for servers.

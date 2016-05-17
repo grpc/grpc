@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\reconnect_server.c">
+      <Filter>test\core\util</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\test\core\util\reconnect_server.h">
+      <Filter>test\core\util</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{2c1de77d-7861-fdd2-e555-ccc3ba4a2055}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{6eb2ecf2-4fe8-a85e-cc37-34a5d5144442}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\util">
+      <UniqueIdentifier>{108031c9-fe76-7fee-49a6-700e25c6250a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

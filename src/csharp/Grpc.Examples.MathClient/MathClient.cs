@@ -1,6 +1,5 @@
 #region Copyright notice and license
-
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -28,35 +27,33 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 #endregion
-
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Grpc.Core;
 
-namespace math
+namespace Math
 {
-	class MathClient
+    class MathClient
     {
-		public static void Main (string[] args)
-		{
-            GrpcEnvironment.Initialize();
+        public static void Main(string[] args)
+        {
+            var channel = new Channel("127.0.0.1", 23456, ChannelCredentials.Insecure);
+            Math.MathClient client = new Math.MathClient(channel);
+            MathExamples.DivExample(client);
 
-			using (Channel channel = new Channel("127.0.0.1:23456"))
-			{
-				MathGrpc.IMathServiceClient stub = new MathGrpc.MathServiceClientStub(channel);
-				MathExamples.DivExample(stub);
+            MathExamples.DivAsyncExample(client).Wait();
 
-                MathExamples.FibExample(stub);
+            MathExamples.FibExample(client).Wait();
 
-				MathExamples.SumExample(stub);
+            MathExamples.SumExample(client).Wait();
 
-				MathExamples.DivManyExample(stub);
-			}
+            MathExamples.DivManyExample(client).Wait();
 
-            GrpcEnvironment.Shutdown();
-		}
-	}
+            MathExamples.DependendRequestsExample(client).Wait();
+
+            channel.ShutdownAsync().Wait();
+        }
+    }
 }

@@ -31,12 +31,24 @@
  *
  */
 
+#include <ruby/ruby.h>
+
+#include "rb_grpc_imports.generated.h"
 #include "rb_channel_args.h"
 
-#include <ruby.h>
 #include <grpc/grpc.h>
 
 #include "rb_grpc.h"
+
+static rb_data_type_t grpc_rb_channel_args_data_type = {
+    "grpc_channel_args",
+    {GRPC_RB_GC_NOT_MARKED, GRPC_RB_GC_DONT_FREE, GRPC_RB_MEMSIZE_UNAVAILABLE,
+     {NULL, NULL}},
+    NULL, NULL,
+#ifdef RUBY_TYPED_FREE_IMMEDIATELY
+    RUBY_TYPED_FREE_IMMEDIATELY
+#endif
+};
 
 /* A callback the processes the hash key values in channel_args hash */
 static int grpc_rb_channel_create_in_process_add_args_hash_cb(VALUE key,
@@ -60,7 +72,8 @@ static int grpc_rb_channel_create_in_process_add_args_hash_cb(VALUE key,
       return ST_STOP;
   }
 
-  Data_Get_Struct(args_obj, grpc_channel_args, args);
+  TypedData_Get_Struct(args_obj, grpc_channel_args,
+                       &grpc_rb_channel_args_data_type, args);
   if (args->num_args <= 0) {
     rb_raise(rb_eRuntimeError, "hash_cb bug: num_args is %lu for key:%s",
              args->num_args, StringValueCStr(key));
@@ -109,7 +122,7 @@ typedef struct channel_convert_params {
 
 static VALUE grpc_rb_hash_convert_to_channel_args0(VALUE as_value) {
   ID id_size = rb_intern("size");
-  VALUE rb_cChannelArgs = rb_define_class("TmpChannelArgs", rb_cObject);
+  VALUE grpc_rb_cChannelArgs = rb_define_class("TmpChannelArgs", rb_cObject);
   channel_convert_params* params = (channel_convert_params*)as_value;
   size_t num_args = 0;
 
@@ -126,8 +139,9 @@ static VALUE grpc_rb_hash_convert_to_channel_args0(VALUE as_value) {
     MEMZERO(params->dst->args, grpc_arg, num_args);
     rb_hash_foreach(params->src_hash,
                     grpc_rb_channel_create_in_process_add_args_hash_cb,
-                    Data_Wrap_Struct(rb_cChannelArgs, GC_NOT_MARKED,
-                                     GC_DONT_FREE, params->dst));
+                    TypedData_Wrap_Struct(grpc_rb_cChannelArgs,
+                                          &grpc_rb_channel_args_data_type,
+                                          params->dst));
     /* reset num_args as grpc_rb_channel_create_in_process_add_args_hash_cb
      * decrements it during has processing */
     params->dst->num_args = num_args;

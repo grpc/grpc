@@ -33,27 +33,25 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../..
 
-root=`pwd`
-export LD_LIBRARY_PATH=$root/libs/opt
-source python2.7_virtual_environment/bin/activate
-# TODO(issue 215): Properly itemize these in run_tests.py so that they can be parallelized.
-# TODO(atash): Enable dynamic unused port discovery for this test.
-# TODO(mlumish): Re-enable this test when we can install protoc
-# python2.7 -B test/compiler/python_plugin_test.py --build_mode=opt
-python2.7 -B -m grpc._adapter._blocking_invocation_inline_service_test
-python2.7 -B -m grpc._adapter._c_test
-python2.7 -B -m grpc._adapter._event_invocation_synchronous_event_service_test
-python2.7 -B -m grpc._adapter._future_invocation_asynchronous_event_service_test
-python2.7 -B -m grpc._adapter._links_test
-python2.7 -B -m grpc._adapter._lonely_rear_link_test
-python2.7 -B -m grpc._adapter._low_test
-python2.7 -B -m grpc.early_adopter.implementations_test
-python2.7 -B -m grpc.framework.assembly.implementations_test
-python2.7 -B -m grpc.framework.base.packets.implementations_test
-python2.7 -B -m grpc.framework.face.blocking_invocation_inline_service_test
-python2.7 -B -m grpc.framework.face.event_invocation_synchronous_event_service_test
-python2.7 -B -m grpc.framework.face.future_invocation_asynchronous_event_service_test
-python2.7 -B -m grpc.framework.foundation._later_test
-python2.7 -B -m grpc.framework.foundation._logging_pool_test
-# TODO(nathaniel): Get tests working under 3.4 (requires 3.X-friendly protobuf)
-# python3.4 -B -m unittest discover -s src/python -p '*.py'
+TOX_PYTHON_ENV="$1"
+
+ROOT=`pwd`
+export LD_LIBRARY_PATH=$ROOT/libs/$CONFIG
+export DYLD_LIBRARY_PATH=$ROOT/libs/$CONFIG
+export PATH=$ROOT/bins/$CONFIG:$ROOT/bins/$CONFIG/protobuf:$PATH
+export CFLAGS="-I$ROOT/include -std=c89"
+export LDFLAGS="-L$ROOT/libs/$CONFIG"
+export GRPC_PYTHON_BUILD_WITH_CYTHON=1
+export GRPC_PYTHON_USE_PRECOMPILED_BINARIES=0
+
+if [ "$CONFIG" = "gcov" ]
+then
+  export GRPC_PYTHON_ENABLE_CYTHON_TRACING=1
+  tox -e ${TOX_PYTHON_ENV}
+else
+  $ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/setup.py test_lite
+fi
+
+mkdir -p $ROOT/reports
+rm -rf $ROOT/reports/python-coverage
+(mv -T $ROOT/htmlcov $ROOT/reports/python-coverage) || true

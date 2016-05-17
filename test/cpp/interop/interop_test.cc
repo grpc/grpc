@@ -35,32 +35,33 @@
 #define _POSIX_SOURCE
 #endif
 
-#include <unistd.h>
 #include <assert.h>
-#include <stdio.h>
-#include <string.h>
 #include <signal.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-
-extern "C" {
-#include "src/core/iomgr/socket_utils_posix.h"
-#include "src/core/support/string.h"
-}
+#include <unistd.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include "test/core/util/port.h"
 
-int test_client(const char *root, const char *host, int port) {
+extern "C" {
+#include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/lib/support/string.h"
+}
+
+int test_client(const char* root, const char* host, int port) {
   int status;
   pid_t cli;
   cli = fork();
   if (cli == 0) {
-    char *binary_path;
-    char *port_arg;
+    char* binary_path;
+    char* port_arg;
     gpr_asprintf(&binary_path, "%s/interop_client", root);
     gpr_asprintf(&port_arg, "--server_port=%d", port);
 
@@ -78,9 +79,9 @@ int test_client(const char *root, const char *host, int port) {
   return 0;
 }
 
-int main(int argc, char **argv) {
-  char *me = argv[0];
-  char *lslash = strrchr(me, '/');
+int main(int argc, char** argv) {
+  char* me = argv[0];
+  char* lslash = strrchr(me, '/');
   char root[1024];
   int port = grpc_pick_unused_port_or_die();
   int status;
@@ -104,8 +105,8 @@ int main(int argc, char **argv) {
   /* start the server */
   svr = fork();
   if (svr == 0) {
-    char *binary_path;
-    char *port_arg;
+    char* binary_path;
+    char* port_arg;
     gpr_asprintf(&binary_path, "%s/interop_server", root);
     gpr_asprintf(&port_arg, "--port=%d", port);
 

@@ -31,10 +31,7 @@
  *
  */
 
-#include "src/cpp/util/time.h"
-
-#include <chrono>
-
+#include <grpc++/support/time.h>
 #include <grpc/support/time.h>
 #include <gtest/gtest.h>
 
@@ -48,8 +45,9 @@ namespace {
 class TimeTest : public ::testing::Test {};
 
 TEST_F(TimeTest, AbsolutePointTest) {
-  long us = 10000000L;
-  gpr_timespec ts = gpr_time_from_micros(us);
+  int64_t us = 10000000L;
+  gpr_timespec ts = gpr_time_from_micros(us, GPR_TIMESPAN);
+  ts.clock_type = GPR_CLOCK_REALTIME;
   system_clock::time_point tp{microseconds(us)};
   system_clock::time_point tp_converted = Timespec2Timepoint(ts);
   gpr_timespec ts_converted;
@@ -61,11 +59,26 @@ TEST_F(TimeTest, AbsolutePointTest) {
   EXPECT_TRUE(tp == tp_converted_2);
 }
 
-// gpr_inf_future is treated specially and mapped to time_point::max()
+// gpr_inf_future is treated specially and mapped to/from time_point::max()
 TEST_F(TimeTest, InfFuture) {
   EXPECT_EQ(system_clock::time_point::max(),
-            Timespec2Timepoint(gpr_inf_future));
+            Timespec2Timepoint(gpr_inf_future(GPR_CLOCK_REALTIME)));
+  gpr_timespec from_time_point_max;
+  Timepoint2Timespec(system_clock::time_point::max(), &from_time_point_max);
+  EXPECT_EQ(
+      0, gpr_time_cmp(gpr_inf_future(GPR_CLOCK_REALTIME), from_time_point_max));
+  // This will cause an overflow
+  Timepoint2Timespec(
+      std::chrono::time_point<system_clock, std::chrono::seconds>::max(),
+      &from_time_point_max);
+  EXPECT_EQ(
+      0, gpr_time_cmp(gpr_inf_future(GPR_CLOCK_REALTIME), from_time_point_max));
 }
 
 }  // namespace
 }  // namespace grpc
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

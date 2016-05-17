@@ -31,6 +31,14 @@ require 'grpc'
 
 include GRPC::Core::StatusCodes
 
+describe GRPC::Core::WriteFlags do
+  it 'should define the known write flag values' do
+    m = GRPC::Core::WriteFlags
+    expect(m.const_get(:BUFFER_HINT)).to_not be_nil
+    expect(m.const_get(:NO_COMPRESS)).to_not be_nil
+  end
+end
+
 describe GRPC::Core::RpcErrors do
   before(:each) do
     @known_types = {
@@ -66,51 +74,34 @@ describe GRPC::Core::RpcErrors do
   end
 end
 
-describe GRPC::Core::Call do
+describe GRPC::Core::CallOps do
   before(:each) do
-    @tag = Object.new
-    @client_queue = GRPC::Core::CompletionQueue.new
-    fake_host = 'localhost:10101'
-    @ch = GRPC::Core::Channel.new(fake_host, nil)
+    @known_types = {
+      SEND_INITIAL_METADATA: 0,
+      SEND_MESSAGE: 1,
+      SEND_CLOSE_FROM_CLIENT: 2,
+      SEND_STATUS_FROM_SERVER: 3,
+      RECV_INITIAL_METADATA: 4,
+      RECV_MESSAGE: 5,
+      RECV_STATUS_ON_CLIENT: 6,
+      RECV_CLOSE_ON_SERVER: 7
+    }
   end
 
-  describe '#start_read' do
-    xit 'should fail if called immediately' do
-      blk = proc { make_test_call.start_read(@tag) }
-      expect(&blk).to raise_error GRPC::Core::CallError
-    end
+  it 'should have symbols for all the known operation types' do
+    m = GRPC::Core::CallOps
+    syms_and_codes = m.constants.collect { |c| [c, m.const_get(c)] }
+    expect(Hash[syms_and_codes]).to eq(@known_types)
   end
+end
 
-  describe '#start_write' do
-    xit 'should fail if called immediately' do
-      bytes = GRPC::Core::ByteBuffer.new('test string')
-      blk = proc { make_test_call.start_write(bytes, @tag) }
-      expect(&blk).to raise_error GRPC::Core::CallError
-    end
-  end
+describe GRPC::Core::Call do
+  let(:client_queue) { GRPC::Core::CompletionQueue.new }
+  let(:test_tag)  { Object.new }
+  let(:fake_host) { 'localhost:10101' }
 
-  describe '#start_write_status' do
-    xit 'should fail if called immediately' do
-      blk = proc { make_test_call.start_write_status(153, 'x', @tag) }
-      expect(&blk).to raise_error GRPC::Core::CallError
-    end
-  end
-
-  describe '#writes_done' do
-    xit 'should fail if called immediately' do
-      blk = proc { make_test_call.writes_done(Object.new) }
-      expect(&blk).to raise_error GRPC::Core::CallError
-    end
-  end
-
-  describe '#add_metadata' do
-    it 'adds metadata to a call without fail' do
-      call = make_test_call
-      n = 37
-      one_md = proc { |x| [sprintf('key%d', x), sprintf('value%d', x)] }
-      metadata = Hash[n.times.collect { |i| one_md.call i }]
-      expect { call.add_metadata(metadata) }.to_not raise_error
-    end
+  before(:each) do
+    @ch = GRPC::Core::Channel.new(fake_host, nil, :this_channel_is_insecure)
   end
 
   describe '#status' do
@@ -153,8 +144,17 @@ describe GRPC::Core::Call do
     end
   end
 
+  describe '#set_credentials!' do
+    it 'can set a valid CallCredentials object' do
+      call = make_test_call
+      auth_proc = proc { { 'plugin_key' => 'plugin_value' } }
+      creds = GRPC::Core::CallCredentials.new auth_proc
+      expect { call.set_credentials! creds }.not_to raise_error
+    end
+  end
+
   def make_test_call
-    @ch.create_call('dummy_method', 'dummy_host', deadline)
+    @ch.create_call(client_queue, nil, nil, 'dummy_method', nil, deadline)
   end
 
   def deadline

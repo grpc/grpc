@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package packagerversion="1.9.5" version="2.0" xmlns="http://pear.php.net/dtd/package-2.0" xmlns:tasks="http://pear.php.net/dtd/tasks-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0 http://pear.php.net/dtd/tasks-1.0.xsd http://pear.php.net/dtd/package-2.0 http://pear.php.net/dtd/package-2.0.xsd">
+ <name>grpc</name>
+ <channel>pecl.php.net</channel>
+ <summary>A high performance, open source, general RPC framework that puts mobile and HTTP/2 first.</summary>
+ <description>Remote Procedure Calls (RPCs) provide a useful abstraction for building distributed applications and services. The libraries in this repository provide a concrete implementation of the gRPC protocol, layered over HTTP/2. These libraries enable communication between clients and servers using any combination of the supported languages.</description>
+ <lead>
+  <name>Stanley Cheung</name>
+  <user>stanleycheung</user>
+  <email>grpc-packages@google.com</email>
+  <active>yes</active>
+ </lead>
+ <date>2016-01-13</date>
+ <time>16:06:07</time>
+ <version>
+  <release>0.7.0</release>
+  <api>0.7.0</api>
+ </version>
+ <stability>
+  <release>beta</release>
+  <api>beta</api>
+ </stability>
+ <license>BSD</license>
+ <notes>
+- Breaking change to Credentials class (removed) #3765
+- Replaced by ChannelCredentials and CallCredentials class #3765
+- New plugin based metadata auth API #4394
+- Explicit ChannelCredentials::createInsecure() call
+ </notes>
+ <contents>
+  <dir baseinstalldir="/" name="/">
+   <file baseinstalldir="/" md5sum="f201d644fdbd8228ffd1d4a69cc44f1f" name="tests/grpc-basic.phpt" role="test" />
+   <file baseinstalldir="/" md5sum="6f19828fb869b7b8a590cbb76b4f996d" name="byte_buffer.c" role="src" />
+   <file baseinstalldir="/" md5sum="c8de0f819499c48adfc8d7f472c0196b" name="byte_buffer.h" role="src" />
+   <file baseinstalldir="/" md5sum="ee7eb7757f9e6f0e36f8f616b6bd0af5" name="call.c" role="src" />
+   <file baseinstalldir="/" md5sum="44c56bd9912d2538cbd6059e3e0452b6" name="call.h" role="src" />
+   <file baseinstalldir="/" md5sum="ff90f6c03ed44b5f4170bf3259a6704e" name="call_credentials.c" role="src" />
+   <file baseinstalldir="/" md5sum="3c3860e1d84f43cb6b2fbaa8d2ae1ab7" name="call_credentials.h" role="src" />
+   <file baseinstalldir="/" md5sum="aee9b63f790522aec2c682055240cc61" name="channel.c" role="src" />
+   <file baseinstalldir="/" md5sum="ed4b00c0cf3702b115d0cfa87450dc09" name="channel.h" role="src" />
+   <file baseinstalldir="/" md5sum="1a51c76d0b7b7d3ab570ed7d60c2ea46" name="channel_credentials.c" role="src" />
+   <file baseinstalldir="/" md5sum="a86250e03f610ce6c2c7595a84e08821" name="channel_credentials.h" role="src" />
+   <file baseinstalldir="/" md5sum="55ab7a42f9dd9bfc7e28a61cfc5fca63" name="completion_queue.c" role="src" />
+   <file baseinstalldir="/" md5sum="f10b5bb232d74a6878e829e2e76cdaa2" name="completion_queue.h" role="src" />
+   <file baseinstalldir="/" md5sum="cafed254127007ff2271dad7d56a06c8" name="config.m4" role="src" />
+   <file baseinstalldir="/" md5sum="38a1bc979d810c36ebc2a52d4b7b5319" name="CREDITS" role="doc" />
+   <file baseinstalldir="/" md5sum="8847cf67b1b54c981d47ecbb0d139a0c" name="LICENSE" role="doc" />
+   <file baseinstalldir="/" md5sum="3131a8af38fe5918e5409016b89d6cdb" name="php_grpc.c" role="src" />
+   <file baseinstalldir="/" md5sum="673b07859d9f69232f8a754c56780686" name="php_grpc.h" role="src" />
+   <file baseinstalldir="/" md5sum="7533a6d3ea02c78cad23a9651de0825d" name="README.md" role="doc" />
+   <file baseinstalldir="/" md5sum="3e4e960454ebb2fc7b78a840493f5315" name="server.c" role="src" />
+   <file baseinstalldir="/" md5sum="4b730f06d14cbbb0642bdbd194749595" name="server.h" role="src" />
+   <file baseinstalldir="/" md5sum="34ea881f1fe960d190d0713422cf8916" name="server_credentials.c" role="src" />
+   <file baseinstalldir="/" md5sum="9c4b4cc06356a8a39a16a085a9b85996" name="server_credentials.h" role="src" />
+   <file baseinstalldir="/" md5sum="7646ec78cb133f66ba59e03c6f451e39" name="timeval.c" role="src" />
+   <file baseinstalldir="/" md5sum="496e27a100b4d93ca3fb35c924c5e163" name="timeval.h" role="src" />
+  </dir>
+ </contents>
+ <dependencies>
+  <required>
+   <php>
+    <min>5.5.0</min>
+   </php>
+   <pearinstaller>
+    <min>1.4.0</min>
+   </pearinstaller>
+  </required>
+ </dependencies>
+ <providesextension>grpc</providesextension>
+ <extsrcrelease />
+ <changelog>
+  <release>
+   <version>
+    <release>0.5.0</release>
+    <api>0.5.0</api>
+   </version>
+   <stability>
+    <release>alpha</release>
+    <api>alpha</api>
+   </stability>
+   <date>2015-06-16</date>
+   <license>BSD</license>
+   <notes>
+First alpha release
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>0.5.1</release>
+    <api>0.5.1</api>
+   </version>
+   <stability>
+    <release>alpha</release>
+    <api>alpha</api>
+   </stability>
+   <date>2015-07-09</date>
+   <license>BSD</license>
+   <notes>
+Update to wrap gRPC C Core version 0.10.0
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>0.6.0</release>
+    <api>0.6.0</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <date>2015-09-24</date>
+   <license>BSD</license>
+   <notes>
+- support per message compression disable
+- expose per-call host override option
+- expose connectivity API
+- expose channel target and call peer
+- add user-agent
+- update to wrap gRPC C core library beta version 0.11.0
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>0.6.1</release>
+    <api>0.6.0</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <date>2015-10-21</date>
+   <license>BSD</license>
+   <notes>
+- fixed undefined constant fatal error when run with apache/nginx #2275
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>0.7.0</release>
+    <api>0.7.0</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <date>2016-01-13</date>
+   <license>BSD</license>
+   <notes>
+- Breaking change to Credentials class (removed) #3765
+- Replaced by ChannelCredentials and CallCredentials class #3765
+- New plugin based metadata auth API #4394
+- Explicit ChannelCredentials::createInsecure() call
+   </notes>
+  </release>
+ </changelog>
+</package>

@@ -34,8 +34,9 @@
 #ifndef GRPC_RB_CALL_H_
 #define GRPC_RB_CALL_H_
 
+#include <ruby/ruby.h>
+
 #include <grpc/grpc.h>
-#include <ruby.h>
 
 /* Gets the wrapped call from a VALUE. */
 grpc_call* grpc_rb_get_wrapped_call(VALUE v);
@@ -46,12 +47,18 @@ VALUE grpc_rb_wrap_call(grpc_call* c);
 /* Provides the details of an call error */
 const char* grpc_call_error_detail_of(grpc_call_error err);
 
-/* rb_cCall is the Call class whose instances proxy grpc_call. */
-extern VALUE rb_cCall;
+/* Converts a metadata array to a hash. */
+VALUE grpc_rb_md_ary_to_h(grpc_metadata_array *md_ary);
 
-/* rb_cCallError is the ruby class of the exception thrown during call
+/* grpc_rb_md_ary_convert converts a ruby metadata hash into
+   a grpc_metadata_array.
+*/
+void grpc_rb_md_ary_convert(VALUE md_ary_hash,
+                            grpc_metadata_array *md_ary);
+
+/* grpc_rb_eCallError is the ruby class of the exception thrown during call
    operations. */
-extern VALUE rb_eCallError;
+extern VALUE grpc_rb_eCallError;
 
 /* Initializes the Call class. */
 void Init_grpc_call();

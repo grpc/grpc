@@ -41,8 +41,24 @@ $LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
 
 require 'forwardable'
 require 'grpc'
+require 'logger'
 require 'math_services'
 require 'optparse'
+
+# RubyLogger defines a logger for gRPC based on the standard ruby logger.
+module RubyLogger
+  def logger
+    LOGGER
+  end
+
+  LOGGER = Logger.new(STDOUT)
+end
+
+# GRPC is the general RPC module
+module GRPC
+  # Inject the noop #logger if no module-level logger method has been injected.
+  extend RubyLogger
+end
 
 # Holds state for a fibonacci series
 class Fibber
@@ -55,7 +71,7 @@ class Fibber
     return enum_for(:generator) unless block_given?
     idx, current, previous = 0, 1, 1
     until idx == @limit
-      if idx == 0 || idx == 1
+      if idx.zero? || idx == 1
         yield Math::Num.new(num: 1)
         idx += 1
         next
@@ -94,7 +110,7 @@ end
 # package. That practice should be avoided by defining real services.
 class Calculator < Math::Math::Service
   def div(div_args, _call)
-    if div_args.divisor == 0
+    if div_args.divisor.zero?
       # To send non-OK status handlers raise a StatusError with the code and
       # and detail they want sent as a Status.
       fail GRPC::StatusError.new(GRPC::Status::INVALID_ARGUMENT,
@@ -128,13 +144,13 @@ class Calculator < Math::Math::Service
     t = Thread.new do
       begin
         requests.each do |req|
-          logger.info("read #{req.inspect}")
+          GRPC.logger.info("read #{req.inspect}")
           resp = Math::DivReply.new(quotient: req.dividend / req.divisor,
                                     remainder: req.dividend % req.divisor)
           q.push(resp)
           Thread.pass  # let the internal Bidi threads run
         end
-        logger.info('finished reads')
+        GRPC.logger.info('finished reads')
         q.push(self)
       rescue StandardError => e
         q.push(e)  # share the exception with the enumerator
@@ -155,7 +171,8 @@ end
 
 def test_server_creds
   certs = load_test_certs
-  GRPC::Core::ServerCredentials.new(nil, certs[1], certs[2])
+  GRPC::Core::ServerCredentials.new(
+    nil, [{ private_key: certs[1], cert_chain: certs[2] }], false)
 end
 
 def main
@@ -173,18 +190,17 @@ def main
     end
   end.parse!
 
+  s = GRPC::RpcServer.new
   if options['secure']
-    s = GRPC::RpcServer.new(creds: test_server_creds)
-    s.add_http2_port(options['host'], true)
-    logger.info("... running securely on #{options['host']}")
+    s.add_http2_port(options['host'], test_server_creds)
+    GRPC.logger.info("... running securely on #{options['host']}")
   else
-    s = GRPC::RpcServer.new
-    s.add_http2_port(options['host'])
-    logger.info("... running insecurely on #{options['host']}")
+    s.add_http2_port(options['host'], :this_port_is_insecure)
+    GRPC.logger.info("... running insecurely on #{options['host']}")
   end
 
   s.handle(Calculator)
-  s.run
+  s.run_till_terminated
 end
 
 main

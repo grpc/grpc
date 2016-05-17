@@ -31,6 +31,6 @@
 set -ex
 
 # change to grpc repo root
-cd $(dirname $0)/../../src/ruby
+cd $(dirname $0)/../..
 
 rake

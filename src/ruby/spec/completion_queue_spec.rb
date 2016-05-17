@@ -39,36 +39,4 @@ describe GRPC::Core::CompletionQueue do
       expect { GRPC::Core::CompletionQueue.new }.not_to raise_error
     end
   end
-
-  describe '#next' do
-    it 'can be called without failing' do
-      expect { @cq.next(3) }.not_to raise_error
-    end
-
-    it 'can be called with a time constant' do
-      # don't use INFINITE_FUTURE, as are no events and this blocks.
-      #
-      # don't use INFINITE_PAST, as this fails on docker, and does not need to
-      # be tested, as its not used anywhere in the ruby implementation
-      a_time = GRPC::Core::TimeConsts::ZERO
-      expect { @cq.next(a_time) }.not_to raise_error
-    end
-  end
-
-  describe '#pluck' do
-    it 'can be called without failing' do
-      tag = Object.new
-      expect { @cq.pluck(tag, 3) }.not_to raise_error
-    end
-
-    it 'can be called with a time constant' do
-      # don't use INFINITE_FUTURE, as there no events and this blocks.
-      #
-      # don't use INFINITE_PAST, as this fails on docker, and does not need to
-      # be tested, as its not used anywhere in the ruby implementation
-      tag = Object.new
-      a_time = GRPC::Core::TimeConsts::ZERO
-      expect { @cq.pluck(tag, a_time) }.not_to raise_error
-    end
-  end
 end

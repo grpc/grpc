@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package>
+  <metadata>
+    <id>Grpc.Tools</id>
+    <title>gRPC C# Tools</title>
+    <summary>Tools for C# implementation of gRPC - an RPC library and framework</summary>
+    <description>Precompiled protobuf compiler and gRPC protobuf compiler plugin for generating gRPC client/server C# code. Binaries are available for Windows, Linux and MacOS.</description>
+    <version>$version$</version>
+    <authors>Google Inc.</authors>
+    <owners>grpc-packages</owners>
+    <licenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/grpc/grpc</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <releaseNotes>Release $version$</releaseNotes>
+    <copyright>Copyright 2015, Google Inc.</copyright>
+    <tags>gRPC RPC Protocol HTTP/2</tags>
+  </metadata>
+  <files>
+    <file src="protoc_plugins\windows_x86\protoc.exe" target="tools\windows_x86\protoc.exe" />
+    <file src="protoc_plugins\windows_x86\grpc_csharp_plugin.exe" target="tools\windows_x86\grpc_csharp_plugin.exe" />
+    <file src="protoc_plugins\windows_x64\protoc.exe" target="tools\windows_x64\protoc.exe" />
+    <file src="protoc_plugins\windows_x64\grpc_csharp_plugin.exe" target="tools\windows_x64\grpc_csharp_plugin.exe" />
+    <file src="protoc_plugins\linux_x86\protoc" target="tools\linux_x86\protoc" />
+    <file src="protoc_plugins\linux_x86\grpc_csharp_plugin" target="tools\linux_x86\grpc_csharp_plugin" />
+    <file src="protoc_plugins\linux_x64\protoc" target="tools\linux_x64\protoc" />
+    <file src="protoc_plugins\linux_x64\grpc_csharp_plugin" target="tools\linux_x64\grpc_csharp_plugin" />
+    <file src="protoc_plugins\macosx_x86\protoc" target="tools\macosx_x86\protoc" />
+    <file src="protoc_plugins\macosx_x86\grpc_csharp_plugin" target="tools\macosx_x86\grpc_csharp_plugin" />
+    <file src="protoc_plugins\macosx_x64\protoc" target="tools\macosx_x64\protoc" />
+    <file src="protoc_plugins\macosx_x64\grpc_csharp_plugin" target="tools\macosx_x64\grpc_csharp_plugin" />
+  </files>
+</package>

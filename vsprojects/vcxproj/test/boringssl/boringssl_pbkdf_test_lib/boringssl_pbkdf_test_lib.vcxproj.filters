@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\evp\pbkdf_test.cc">
+      <Filter>third_party\boringssl\crypto\evp</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{70128d2f-4cde-2647-a28c-3b02a7f32085}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl">
+      <UniqueIdentifier>{49ff23e3-9ef0-c1d6-cc39-9ca1f23ba6f9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto">
+      <UniqueIdentifier>{7fa90322-3d1d-08d9-d1cc-3bb6e9493496}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto\evp">
+      <UniqueIdentifier>{9a380228-7d8b-54cd-aaf8-b5606ac90db2}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

@@ -35,78 +35,69 @@ using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
-    // TODO: we need to make sure that the delegates are not collected before invoked.
-    internal delegate void ServerShutdownCallbackDelegate(IntPtr eventPtr);
-
     /// <summary>
     /// grpc_server from grpc/grpc.h
     /// </summary>
     internal sealed class ServerSafeHandle : SafeHandleZeroIsInvalid
     {
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern GRPCCallError grpcsharp_server_request_call(ServerSafeHandle server, CompletionQueueSafeHandle cq, [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern ServerSafeHandle grpcsharp_server_create(CompletionQueueSafeHandle cq, IntPtr args);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern Int32 grpcsharp_server_add_http2_port(ServerSafeHandle server, string addr);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_server_start(ServerSafeHandle server);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_server_shutdown(ServerSafeHandle server);
-
-        // TODO: get rid of the old callback style
-        [DllImport("grpc_csharp_ext.dll", EntryPoint = "grpcsharp_server_shutdown_and_notify")]
-        static extern void grpcsharp_server_shutdown_and_notify_CALLBACK(ServerSafeHandle server, [MarshalAs(UnmanagedType.FunctionPtr)] ServerShutdownCallbackDelegate callback);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_server_destroy(IntPtr server);
+        static readonly NativeMethods Native = NativeMethods.Get();
 
         private ServerSafeHandle()
         {
         }
 
-        public static ServerSafeHandle NewServer(CompletionQueueSafeHandle cq, IntPtr args)
+        public static ServerSafeHandle NewServer(CompletionQueueSafeHandle cq, ChannelArgsSafeHandle args)
         {
-            // TODO: also grpc_secure_server_create...
-            return grpcsharp_server_create(cq, args);
+            // Increment reference count for the native gRPC environment to make sure we don't do grpc_shutdown() before destroying the server handle.
+            // Doing so would make object finalizer crash if we end up abandoning the handle.
+            GrpcEnvironment.GrpcNativeInit();
+            return Native.grpcsharp_server_create(cq, args);
         }
 
-        public int AddPort(string addr)
+        public int AddInsecurePort(string addr)
         {
-            return grpcsharp_server_add_http2_port(this, addr);
+            return Native.grpcsharp_server_add_insecure_http2_port(this, addr);
+        }
+
+        public int AddSecurePort(string addr, ServerCredentialsSafeHandle credentials)
+        {
+            return Native.grpcsharp_server_add_secure_http2_port(this, addr, credentials);
         }
 
         public void Start()
         {
-            grpcsharp_server_start(this);
+            Native.grpcsharp_server_start(this);
+        }
+    
+        public void ShutdownAndNotify(BatchCompletionDelegate callback, GrpcEnvironment environment)
+        {
+            var ctx = BatchContextSafeHandle.Create();
+            environment.CompletionRegistry.RegisterBatchCompletion(ctx, callback);
+            Native.grpcsharp_server_shutdown_and_notify_callback(this, environment.CompletionQueue, ctx);
         }
 
-        public void Shutdown()
+        public void RequestCall(BatchCompletionDelegate callback, GrpcEnvironment environment)
         {
-            grpcsharp_server_shutdown(this);
-        }
-
-        public void ShutdownAndNotify(ServerShutdownCallbackDelegate callback)
-        {
-            grpcsharp_server_shutdown_and_notify_CALLBACK(this, callback);
-        }
-
-        public GRPCCallError RequestCall(CompletionQueueSafeHandle cq, CompletionCallbackDelegate callback)
-        {
-            return grpcsharp_server_request_call(this, cq, callback);
+            var ctx = BatchContextSafeHandle.Create();
+            environment.CompletionRegistry.RegisterBatchCompletion(ctx, callback);
+            Native.grpcsharp_server_request_call(this, environment.CompletionQueue, ctx).CheckOk();
         }
 
         protected override bool ReleaseHandle()
         {
-            grpcsharp_server_destroy(handle);
+            Native.grpcsharp_server_destroy(handle);
+            GrpcEnvironment.GrpcNativeShutdown();
             return true;
+        }
+            
+        // Only to be called after ShutdownAndNotify.
+        public void CancelAllCalls()
+        {
+            Native.grpcsharp_server_cancel_all_calls(this);
         }
     }
 }

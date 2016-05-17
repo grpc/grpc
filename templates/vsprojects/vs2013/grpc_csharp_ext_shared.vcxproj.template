@@ -1,2 +1,0 @@
-<%namespace file="vcxproj_defs.include" import="gen_project"/>\
-${gen_project('grpc_csharp_ext', libs, targets, configuration_type = 'DynamicLibrary', project_guid = '{C26D04A8-37C6-44C7-B458-906C9FCE928C}', additional_props = ['winsock', 'ssl'])}

@@ -38,26 +38,15 @@
 #include "config.h"
 #endif
 
-#include "php.h"
-#include "php_ini.h"
-#include "ext/standard/info.h"
+#include <php.h>
+#include <php_ini.h>
+#include <ext/standard/info.h>
 #include "php_grpc.h"
 
-#include "grpc/grpc.h"
-
-// Throw an exception if error_code is not OK
-#define MAYBE_THROW_CALL_ERROR(func_name, error_code)            \
-  do {                                                           \
-    if (error_code != GRPC_CALL_OK) {                            \
-      zend_throw_exception(spl_ce_LogicException,                \
-                           #func_name " was called incorrectly", \
-                           (long)error_code TSRMLS_CC);          \
-      return;                                                    \
-    }                                                            \
-  } while (0)
+#include <grpc/grpc.h>
 
 /* Class entry for the Call PHP class */
-zend_class_entry *grpc_ce_call;
+extern zend_class_entry *grpc_ce_call;
 
 /* Wrapper struct for grpc_call that can be associated with a PHP object */
 typedef struct wrapped_grpc_call {
@@ -75,6 +64,10 @@ zval *grpc_php_wrap_call(grpc_call *wrapped, bool owned);
 
 /* Creates and returns a PHP associative array of metadata from a C array of
  * call metadata */
-zval *grpc_call_create_metadata_array(int count, grpc_metadata *elements);
+zval *grpc_parse_metadata_array(grpc_metadata_array *metadata_array);
+
+/* Populates a grpc_metadata_array with the data in a PHP array object.
+   Returns true on success and false on failure */
+bool create_metadata_array(zval *array, grpc_metadata_array *metadata);
 
 #endif /* NET_GRPC_PHP_GRPC_CHANNEL_H_ */

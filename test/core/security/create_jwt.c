@@ -34,9 +34,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/security/credentials.h"
-#include "src/core/security/json_token.h"
-#include "src/core/support/file.h"
+#include "src/core/lib/security/credentials.h"
+#include "src/core/lib/security/json_token.h"
+#include "src/core/lib/support/load_file.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/cmdline.h>
@@ -48,7 +48,7 @@ void create_jwt(const char *json_key_file_path, const char *service_url,
   grpc_auth_json_key key;
   int ok = 0;
   char *jwt;
-  gpr_slice json_key_data = gpr_load_file(json_key_file_path, &ok);
+  gpr_slice json_key_data = gpr_load_file(json_key_file_path, 1, &ok);
   if (!ok) {
     fprintf(stderr, "Could not read %s.\n", json_key_file_path);
     exit(1);
@@ -62,7 +62,7 @@ void create_jwt(const char *json_key_file_path, const char *service_url,
   }
   jwt = grpc_jwt_encode_and_sign(
       &key, service_url == NULL ? GRPC_JWT_OAUTH2_AUDIENCE : service_url,
-      grpc_max_auth_token_lifetime, scope);
+      grpc_max_auth_token_lifetime(), scope);
   grpc_auth_json_key_destruct(&key);
   if (jwt == NULL) {
     fprintf(stderr, "Could not create JWT.\n");

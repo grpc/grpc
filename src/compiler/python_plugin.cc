@@ -33,61 +33,12 @@
 
 // Generates a Python gRPC service interface out of Protobuf IDL.
 
-#include <cstring>
-#include <memory>
-#include <string>
-
+#include "src/compiler/config.h"
 #include "src/compiler/python_generator.h"
-#include <google/protobuf/compiler/code_generator.h>
-#include <google/protobuf/compiler/plugin.h>
-#include <google/protobuf/io/coded_stream.h>
-#include <google/protobuf/io/zero_copy_stream.h>
-#include <google/protobuf/descriptor.h>
-
-using google::protobuf::FileDescriptor;
-using google::protobuf::compiler::CodeGenerator;
-using google::protobuf::compiler::GeneratorContext;
-using google::protobuf::compiler::PluginMain;
-using google::protobuf::io::CodedOutputStream;
-using google::protobuf::io::ZeroCopyOutputStream;
-using std::string;
-using std::strlen;
-
-class PythonGrpcGenerator : public CodeGenerator {
- public:
-  PythonGrpcGenerator() {}
-  ~PythonGrpcGenerator() {}
-
-  bool Generate(const FileDescriptor* file, const string& parameter,
-                GeneratorContext* context, string* error) const {
-    // Get output file name.
-    string file_name;
-    static const int proto_suffix_length = strlen(".proto");
-    if (file->name().size() > static_cast<size_t>(proto_suffix_length) &&
-        file->name().find_last_of(".proto") == file->name().size() - 1) {
-      file_name = file->name().substr(
-          0, file->name().size() - proto_suffix_length) + "_pb2.py";
-    } else {
-      *error = "Invalid proto file name. Proto file must end with .proto";
-      return false;
-    }
-
-    std::unique_ptr<ZeroCopyOutputStream> output(
-        context->OpenForInsert(file_name, "module_scope"));
-    CodedOutputStream coded_out(output.get());
-    bool success = false;
-    string code = "";
-    tie(success, code) = grpc_python_generator::GetServices(file);
-    if (success) {
-      coded_out.WriteRaw(code.data(), code.size());
-      return true;
-    } else {
-      return false;
-    }
-  }
-};
 
 int main(int argc, char* argv[]) {
-  PythonGrpcGenerator generator;
-  return PluginMain(argc, argv, &generator);
+  grpc_python_generator::GeneratorConfiguration config;
+  config.beta_package_root = "grpc.beta";
+  grpc_python_generator::PythonGrpcGenerator generator(config);
+  return grpc::protobuf::compiler::PluginMain(argc, argv, &generator);
 }

@@ -1,5 +1,4 @@
 #region Copyright notice and license
-
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -28,40 +27,82 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 #endregion
-
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Grpc.Core.Profiling;
 
 namespace Grpc.Core.Internal
 {
     /// <summary>
-    /// grpc_channel from <grpc/grpc.h>
+    /// grpc_channel from <c>grpc/grpc.h</c>
     /// </summary>
-	internal class ChannelSafeHandle : SafeHandleZeroIsInvalid
-	{
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern ChannelSafeHandle grpcsharp_channel_create(string target, IntPtr channelArgs);
-
-		[DllImport("grpc_csharp_ext.dll")]
-		static extern void grpcsharp_channel_destroy(IntPtr channel);
+    internal class ChannelSafeHandle : SafeHandleZeroIsInvalid
+    {
+        static readonly NativeMethods Native = NativeMethods.Get();
 
         private ChannelSafeHandle()
         {
         }
 
-        public static ChannelSafeHandle Create(string target, IntPtr channelArgs)
+        public static ChannelSafeHandle CreateInsecure(string target, ChannelArgsSafeHandle channelArgs)
         {
-            return grpcsharp_channel_create(target, channelArgs);
+            // Increment reference count for the native gRPC environment to make sure we don't do grpc_shutdown() before destroying the server handle.
+            // Doing so would make object finalizer crash if we end up abandoning the handle.
+            GrpcEnvironment.GrpcNativeInit();
+            return Native.grpcsharp_insecure_channel_create(target, channelArgs);
         }
 
-		protected override bool ReleaseHandle()
-		{
-			grpcsharp_channel_destroy(handle);
-			return true;
-		}
-	}
+        public static ChannelSafeHandle CreateSecure(ChannelCredentialsSafeHandle credentials, string target, ChannelArgsSafeHandle channelArgs)
+        {
+            // Increment reference count for the native gRPC environment to make sure we don't do grpc_shutdown() before destroying the server handle.
+            // Doing so would make object finalizer crash if we end up abandoning the handle.
+            GrpcEnvironment.GrpcNativeInit();
+            return Native.grpcsharp_secure_channel_create(credentials, target, channelArgs);
+        }
+
+        public CallSafeHandle CreateCall(CompletionRegistry registry, CallSafeHandle parentCall, ContextPropagationFlags propagationMask, CompletionQueueSafeHandle cq, string method, string host, Timespec deadline, CallCredentialsSafeHandle credentials)
+        {
+            using (Profilers.ForCurrentThread().NewScope("ChannelSafeHandle.CreateCall"))
+            {
+                var result = Native.grpcsharp_channel_create_call(this, parentCall, propagationMask, cq, method, host, deadline);
+                if (credentials != null)
+                {
+                    result.SetCredentials(credentials);
+                }
+                result.Initialize(registry, cq);
+                return result;
+            }
+        }
+
+        public ChannelState CheckConnectivityState(bool tryToConnect)
+        {
+            return Native.grpcsharp_channel_check_connectivity_state(this, tryToConnect ? 1 : 0);
+        }
+
+        public void WatchConnectivityState(ChannelState lastObservedState, Timespec deadline, CompletionQueueSafeHandle cq,
+            CompletionRegistry completionRegistry, BatchCompletionDelegate callback)
+        {
+            var ctx = BatchContextSafeHandle.Create();
+            completionRegistry.RegisterBatchCompletion(ctx, callback);
+            Native.grpcsharp_channel_watch_connectivity_state(this, lastObservedState, deadline, cq, ctx);
+        }
+
+        public string GetTarget()
+        {
+            using (var cstring = Native.grpcsharp_channel_get_target(this))
+            {
+                return cstring.GetValue();
+            }
+        }
+
+        protected override bool ReleaseHandle()
+        {
+            Native.grpcsharp_channel_destroy(handle);
+            GrpcEnvironment.GrpcNativeShutdown();
+            return true;
+        }
+    }
 }

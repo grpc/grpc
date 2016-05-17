@@ -27,7 +27,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-require 'grpc'
+require_relative '../grpc'
 
 # GRPC contains the General RPC module.
 module GRPC
@@ -58,7 +58,7 @@ module GRPC
                "Cannot make an absolute deadline from #{timeish.inspect}")
         elsif timeish < 0
           TimeConsts::INFINITE_FUTURE
-        elsif timeish == 0
+        elsif timeish.zero?
           TimeConsts::ZERO
         else
           Time.now + timeish

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\digest\digest_test.cc">
+      <Filter>third_party\boringssl\crypto\digest</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{10558260-2071-db6b-3e53-af23707c3bfe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl">
+      <UniqueIdentifier>{055a1182-f900-b2a7-6591-c6863fe5a751}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto">
+      <UniqueIdentifier>{66667684-b8d7-e18a-c532-dd5ceb523466}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\boringssl\crypto\digest">
+      <UniqueIdentifier>{6f956a45-e1f4-13b2-baa4-e440a6fb21b2}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

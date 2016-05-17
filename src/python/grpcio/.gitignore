@@ -1,0 +1,17 @@
+MANIFEST
+*.egg-info/
+build/
+dist/
+*.egg
+*.egg/
+*.eggs/
+*_pb2.py
+.coverage
+.coverage.*
+.cache/
+.tox/
+nosetests.xml
+doc/
+_grpcio_metadata.py
+htmlcov/
+grpc/_cython/_credentials

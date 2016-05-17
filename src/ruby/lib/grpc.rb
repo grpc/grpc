@@ -27,13 +27,26 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-require 'grpc/errors'
-require 'grpc/grpc'
-require 'grpc/logconfig'
-require 'grpc/version'
-require 'grpc/core/event'
-require 'grpc/core/time_consts'
-require 'grpc/generic/active_call'
-require 'grpc/generic/client_stub'
-require 'grpc/generic/service'
-require 'grpc/generic/rpc_server'
+ssl_roots_path = File.expand_path('../../../../etc/roots.pem', __FILE__)
+
+require_relative 'grpc/errors'
+require_relative 'grpc/grpc'
+require_relative 'grpc/logconfig'
+require_relative 'grpc/notifier'
+require_relative 'grpc/signals'
+require_relative 'grpc/version'
+require_relative 'grpc/core/time_consts'
+require_relative 'grpc/generic/active_call'
+require_relative 'grpc/generic/client_stub'
+require_relative 'grpc/generic/service'
+require_relative 'grpc/generic/rpc_server'
+
+begin
+  file = File.open(ssl_roots_path)
+  roots = file.read
+  GRPC::Core::ChannelCredentials.set_default_roots_pem roots
+ensure
+  file.close
+end
+
+GRPC::Signals.wait_for_signals

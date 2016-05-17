@@ -1,0 +1,254 @@
+%YAML 1.2
+--- |
+  # GRPC Bazel BUILD file.
+  # This currently builds C, C++ and Objective-C code.
+  # This file has been automatically generated from a template file.
+  # Please look at the templates directory instead.
+  # This file can be regenerated from the template by running
+  # tools/buildgen/generate_projects.sh
+  
+  # Copyright 2015, Google Inc.
+  # All rights reserved.
+  #
+  # Redistribution and use in source and binary forms, with or without
+  # modification, are permitted provided that the following conditions are
+  # met:
+  #
+  #     * Redistributions of source code must retain the above copyright
+  # notice, this list of conditions and the following disclaimer.
+  #     * Redistributions in binary form must reproduce the above
+  # copyright notice, this list of conditions and the following disclaimer
+  # in the documentation and/or other materials provided with the
+  # distribution.
+  #     * Neither the name of Google Inc. nor the names of its
+  # contributors may be used to endorse or promote products derived from
+  # this software without specific prior written permission.
+  #
+  # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+  # A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+  # OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+  # SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+  # LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+  # DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+  # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+  # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  
+  licenses(["notice"])  # 3-clause BSD
+  
+  package(default_visibility = ["//visibility:public"])
+  
+  <%!
+  def get_deps(target_dict):
+    deps = []
+    if target_dict.get('secure', False):
+      deps = [
+        "//external:libssl",
+      ]
+    if target_dict.get('build', None) == 'protoc':
+      deps.append("//external:protobuf_compiler")
+    if (target_dict['name'] == 'grpc++_unsecure' or
+        target_dict['name'] == 'grpc++' or
+        target_dict['name'] == 'grpc++_codegen_lib'):
+      deps.append("//external:protobuf_clib")
+    elif target_dict['name'] == 'grpc':
+      deps.append("//external:zlib")
+    for d in target_dict.get('deps', []):
+      if d.find('//') == 0 or d[0] == ':':
+        deps.append(d)
+      else:
+        deps.append(':%s' % (d))
+    return deps
+  %>
+
+  % for lib in libs:
+  % if lib.build in ("all", "protoc"):
+  ${cc_library(lib)}
+  % endif
+  % endfor
+  
+  % for lib in libs:
+  % if lib.name in ("grpc", "gpr"):
+  ${objc_library(lib)}
+  % endif
+  % endfor
+  
+  % for tgt in targets:
+  % if tgt.build == 'protoc':
+  ${cc_binary(tgt)}
+  % endif
+  % endfor
+  
+  <%def name="cc_library(lib)">
+  <%
+    lib_hdrs = lib.get("headers", [])
+    hdrs = [h for h in lib_hdrs if not h.startswith('third_party/nanopb')]
+    srcs = [s for s in lib.src if not s.startswith('third_party/nanopb')]
+    uses_nanopb = len(lib_hdrs) != len(hdrs) or len(srcs) != len(lib.src)
+  %>
+  cc_library(
+    name = "${lib.name}",
+    srcs = [
+  % for hdr in hdrs:
+      "${hdr}",
+  % endfor
+  % for src in srcs:
+      "${src}",
+  % endfor
+    ],
+    hdrs = [
+  % for hdr in lib.get("public_headers", []):
+      "${hdr}",
+  % endfor
+    ],
+    includes = [
+      "include",
+      ".",
+    ],
+    deps = [
+  % for dep in get_deps(lib):
+      "${dep}",
+  % endfor
+  % if uses_nanopb:
+      "//external:nanopb",
+  % endif
+    ],
+  % if lib.name in ("grpc", "grpc_unsecure"):
+    copts = [
+      "-std=gnu99",
+    ],
+  % endif
+  )
+  </%def>
+  
+  <%def name="objc_library(lib)">
+  <%
+    lib_hdrs = lib.get("headers", [])
+    hdrs = [h for h in lib_hdrs if not h.startswith('third_party/nanopb')]
+    srcs = [s for s in lib.src if not s.startswith('third_party/nanopb')]
+    uses_nanopb = len(lib_hdrs) != len(hdrs) or len(srcs) != len(lib.src)
+  %>
+  objc_library(
+    name = "${lib.name}_objc",
+    srcs = [
+  % for src in srcs:
+      "${src}",
+  % endfor
+    ],
+    hdrs = [
+  % for hdr in lib.get("public_headers", []):
+      "${hdr}",
+  % endfor
+  % for hdr in hdrs:
+      "${hdr}",
+  % endfor
+    ],
+    includes = [
+      "include",
+      ".",
+    ],
+    deps = [
+  % for dep in lib.get("deps", []):
+      ":${dep}_objc",
+  % endfor
+  % if lib.get('secure', False):
+      "//external:libssl_objc",
+  % endif
+  % if uses_nanopb:
+      "//external:nanopb",
+  % endif
+    ],
+  % if lib.get("baselib", false):
+    sdk_dylibs = ["libz"],
+  % endif
+  )
+  </%def>
+  
+  <%def name="cc_binary(tgt)">
+  cc_binary(
+    name = "${tgt.name}",
+    srcs = [
+  % for src in tgt.src:
+      "${src}",
+  % endfor
+    ],
+    deps = [
+  % for dep in get_deps(tgt):
+      "${dep}",
+  % endfor
+    ],
+  )
+  </%def>
+  
+  objc_path = "src/objective-c"
+  
+  rx_library_path = objc_path + "/RxLibrary"
+  
+  objc_library(
+    name = "rx_library",
+    hdrs = glob([
+      rx_library_path + "/*.h",
+      rx_library_path + "/transformations/*.h",
+    ]),
+    srcs = glob([
+      rx_library_path + "/*.m",
+      rx_library_path + "/transformations/*.m",
+    ]),
+    includes = [objc_path],
+    deps = [
+      ":rx_library_private",
+    ],
+  )
+  
+  objc_library(
+    name = "rx_library_private",
+    hdrs = glob([rx_library_path + "/private/*.h"]),
+    srcs = glob([rx_library_path + "/private/*.m"]),
+    visibility = ["//visibility:private"],
+  )
+  
+  objc_client_path = objc_path + "/GRPCClient"
+  
+  objc_library(
+    name = "grpc_client",
+    hdrs = glob([
+      objc_client_path + "/*.h",
+      objc_client_path + "/private/*.h",
+    ]),
+    srcs = glob([
+      objc_client_path + "/*.m",
+      objc_client_path + "/private/*.m",
+    ]),
+    includes = [objc_path],
+    bundles = [":gRPCCertificates"],
+    deps = [
+      ":grpc_objc",
+      ":rx_library",
+    ],
+  )
+  
+  objc_bundle_library(
+      # The choice of name is signicant here, since it determines the bundle name.
+      name = "gRPCCertificates",
+      resources = ["etc/roots.pem"],
+  )
+  
+  proto_objc_rpc_path = objc_path + "/ProtoRPC"
+  
+  objc_library(
+    name = "proto_objc_rpc",
+    hdrs = glob([
+      proto_objc_rpc_path + "/*.h",
+    ]),
+    srcs = glob([
+      proto_objc_rpc_path + "/*.m",
+    ]),
+    includes = [objc_path],
+    deps = [
+      ":grpc_client",
+      ":rx_library",
+      "//external:protobuf_objc",
+    ],
+  )

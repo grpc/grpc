@@ -34,66 +34,41 @@
 
 #include <memory>
 
+#include <grpc++/impl/grpc_library.h>
+#include <grpc++/support/time.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/time.h>
-#include "src/cpp/util/time.h"
 
 namespace grpc {
 
-CompletionQueue::CompletionQueue() { cq_ = grpc_completion_queue_create(); }
+static internal::GrpcLibraryInitializer g_gli_initializer;
 
 CompletionQueue::CompletionQueue(grpc_completion_queue* take) : cq_(take) {}
 
-CompletionQueue::~CompletionQueue() { grpc_completion_queue_destroy(cq_); }
+void CompletionQueue::Shutdown() {
+  g_gli_initializer.summon();
+  grpc_completion_queue_shutdown(cq_);
+}
 
-void CompletionQueue::Shutdown() { grpc_completion_queue_shutdown(cq_); }
-
-// Helper class so we can declare a unique_ptr with grpc_event
-class EventDeleter {
- public:
-  void operator()(grpc_event* ev) {
-    if (ev) grpc_event_finish(ev);
-  }
-};
-
-bool CompletionQueue::Next(void** tag, bool* ok) {
-  std::unique_ptr<grpc_event, EventDeleter> ev;
-
+CompletionQueue::NextStatus CompletionQueue::AsyncNextInternal(
+    void** tag, bool* ok, gpr_timespec deadline) {
   for (;;) {
-    ev.reset(grpc_completion_queue_next(cq_, gpr_inf_future));
-    if (ev->type == GRPC_QUEUE_SHUTDOWN) {
-      return false;
-    }
-    auto cq_tag = static_cast<CompletionQueueTag*>(ev->tag);
-    *ok = ev->data.op_complete == GRPC_OP_OK;
-    *tag = cq_tag;
-    if (cq_tag->FinalizeResult(tag, ok)) {
-      return true;
+    auto ev = grpc_completion_queue_next(cq_, deadline, nullptr);
+    switch (ev.type) {
+      case GRPC_QUEUE_TIMEOUT:
+        return TIMEOUT;
+      case GRPC_QUEUE_SHUTDOWN:
+        return SHUTDOWN;
+      case GRPC_OP_COMPLETE:
+        auto cq_tag = static_cast<CompletionQueueTag*>(ev.tag);
+        *ok = ev.success != 0;
+        *tag = cq_tag;
+        if (cq_tag->FinalizeResult(tag, ok)) {
+          return GOT_EVENT;
+        }
+        break;
     }
   }
-}
-
-bool CompletionQueue::Pluck(CompletionQueueTag* tag) {
-  std::unique_ptr<grpc_event, EventDeleter> ev;
-
-  ev.reset(grpc_completion_queue_pluck(cq_, tag, gpr_inf_future));
-  bool ok = ev->data.op_complete == GRPC_OP_OK;
-  void* ignored = tag;
-  GPR_ASSERT(tag->FinalizeResult(&ignored, &ok));
-  GPR_ASSERT(ignored == tag);
-  return ok;
-}
-
-void CompletionQueue::TryPluck(CompletionQueueTag* tag) {
-  std::unique_ptr<grpc_event, EventDeleter> ev;
-
-  ev.reset(grpc_completion_queue_pluck(cq_, tag, gpr_inf_past));
-  if (!ev) return;
-  bool ok = ev->data.op_complete == GRPC_OP_OK;
-  void* ignored = tag;
-  // the tag must be swallowed if using TryPluck
-  GPR_ASSERT(!tag->FinalizeResult(&ignored, &ok));
 }
 
 }  // namespace grpc

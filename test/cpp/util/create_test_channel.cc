@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,10 +33,10 @@
 
 #include "test/cpp/util/create_test_channel.h"
 
-#include "test/core/end2end/data/ssl_test_data.h"
-#include <grpc++/channel_arguments.h>
 #include <grpc++/create_channel.h>
-#include <grpc++/credentials.h>
+#include <grpc++/security/credentials.h>
+
+#include "test/core/end2end/data/ssl_test_data.h"
 
 namespace grpc {
 
@@ -55,18 +55,18 @@ namespace grpc {
 //   CreateTestChannel("test.google.com:443", "", true, true, creds);
 //   same as above
 //   CreateTestChannel("", "test.google.com:443", true, true, creds);
-std::shared_ptr<ChannelInterface> CreateTestChannel(
+std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& override_hostname,
     bool enable_ssl, bool use_prod_roots,
-    const std::unique_ptr<Credentials>& creds) {
-  ChannelArguments channel_args;
+    const std::shared_ptr<CallCredentials>& creds,
+    const ChannelArguments& args) {
+  ChannelArguments channel_args(args);
   if (enable_ssl) {
-    const char* roots_certs =
-        use_prod_roots ? "" : test_root_cert;
+    const char* roots_certs = use_prod_roots ? "" : test_root_cert;
     SslCredentialsOptions ssl_opts = {roots_certs, "", ""};
 
-    std::unique_ptr<Credentials> channel_creds =
-        CredentialsFactory::SslCredentials(ssl_opts);
+    std::shared_ptr<ChannelCredentials> channel_creds =
+        SslCredentials(ssl_opts);
 
     if (!server.empty() && !override_hostname.empty()) {
       channel_args.SetSslTargetNameOverride(override_hostname);
@@ -74,25 +74,32 @@ std::shared_ptr<ChannelInterface> CreateTestChannel(
     const grpc::string& connect_to =
         server.empty() ? override_hostname : server;
     if (creds.get()) {
-      channel_creds =
-          CredentialsFactory::CompositeCredentials(creds, channel_creds);
+      channel_creds = CompositeChannelCredentials(channel_creds, creds);
     }
-    return CreateChannel(connect_to, channel_creds, channel_args);
+    return CreateCustomChannel(connect_to, channel_creds, channel_args);
   } else {
-    return CreateChannelDeprecated(server, channel_args);
+    return CreateChannel(server, InsecureChannelCredentials());
   }
 }
 
-std::shared_ptr<ChannelInterface> CreateTestChannel(
+std::shared_ptr<Channel> CreateTestChannel(
+    const grpc::string& server, const grpc::string& override_hostname,
+    bool enable_ssl, bool use_prod_roots,
+    const std::shared_ptr<CallCredentials>& creds) {
+  return CreateTestChannel(server, override_hostname, enable_ssl,
+                           use_prod_roots, creds, ChannelArguments());
+}
+
+std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& override_hostname,
     bool enable_ssl, bool use_prod_roots) {
   return CreateTestChannel(server, override_hostname, enable_ssl,
-                           use_prod_roots, std::unique_ptr<Credentials>());
+                           use_prod_roots, std::shared_ptr<CallCredentials>());
 }
 
 // Shortcut for end2end and interop tests.
-std::shared_ptr<ChannelInterface> CreateTestChannel(const grpc::string& server,
-                                                    bool enable_ssl) {
+std::shared_ptr<Channel> CreateTestChannel(const grpc::string& server,
+                                           bool enable_ssl) {
   return CreateTestChannel(server, "foo.test.google.fr", enable_ssl, false);
 }
 

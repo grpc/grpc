@@ -1,0 +1,274 @@
+%YAML 1.2
+--- |
+  # GRPC Node gyp file
+  # This currently builds the Node extension and dependencies
+  # This file has been automatically generated from a template file.
+  # Please look at the templates directory instead.
+  # This file can be regenerated from the template by running
+  # tools/buildgen/generate_projects.sh
+
+  # Copyright 2015, Google Inc.
+  # All rights reserved.
+  #
+  # Redistribution and use in source and binary forms, with or without
+  # modification, are permitted provided that the following conditions are
+  # met:
+  #
+  #     * Redistributions of source code must retain the above copyright
+  # notice, this list of conditions and the following disclaimer.
+  #     * Redistributions in binary form must reproduce the above
+  # copyright notice, this list of conditions and the following disclaimer
+  # in the documentation and/or other materials provided with the
+  # distribution.
+  #     * Neither the name of Google Inc. nor the names of its
+  # contributors may be used to endorse or promote products derived from
+  # this software without specific prior written permission.
+  #
+  # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+  # A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+  # OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+  # SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+  # LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+  # DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+  # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+  # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+  # Some of this file is built with the help of
+  # https://n8.io/converting-a-c-library-to-gyp/
+  {
+    'target_defaults': {
+      'include_dirs': [
+        '.',
+        'include'
+      ],
+      'conditions': [
+        ['OS == "win"', {
+          "include_dirs": [
+            "third_party/boringssl/include",
+            "third_party/zlib"
+          ],
+          "defines": [
+            '_WIN32_WINNT=0x0600',
+            'WIN32_LEAN_AND_MEAN',
+            '_HAS_EXCEPTIONS=0',
+            'UNICODE',
+            '_UNICODE',
+            'NOMINMAX',
+            'OPENSSL_NO_ASM',
+            'GPR_BACKWARDS_COMPATIBILITY_MODE'
+          ],
+          "msvs_settings": {
+            'VCCLCompilerTool': {
+              'RuntimeLibrary': 1, # static debug
+            }
+          },
+          "libraries": [
+            "ws2_32"
+          ]
+        }, { # OS != "win"
+          'variables': {
+            'config': '<!(echo $CONFIG)',
+            # The output of "node --version" is "v[version]". We use cut to
+            # remove the first character.
+            'target%': '<!(node --version | cut -c2-)'
+          },
+            # Empirically, Node only exports ALPN symbols if its major version is >0.
+            # io.js always reports versions >0 and always exports ALPN symbols.
+            # Therefore, Node's major version will be truthy if and only if it
+            # supports ALPN. The target is "[major].[minor].[patch]". We split by
+            # periods and take the first field to get the major version.
+          'defines': [
+            'TSI_OPENSSL_ALPN_SUPPORT=<!(echo <(target) | cut -d. -f1)',
+            'GPR_BACKWARDS_COMPATIBILITY_MODE'
+          ],
+          'include_dirs': [
+            '<(node_root_dir)/deps/openssl/openssl/include',
+            '<(node_root_dir)/deps/zlib'
+          ],
+          'conditions': [
+            ['config=="gcov"', {
+              'cflags': [
+                '-ftest-coverage',
+                '-fprofile-arcs',
+                '-O0'
+              ],
+              'ldflags': [
+                '-ftest-coverage',
+                '-fprofile-arcs'
+              ]
+            }
+           ],
+           ["target_arch=='ia32'", {
+               "include_dirs": [ "<(node_root_dir)/deps/openssl/config/piii" ]
+           }],
+           ["target_arch=='x64'", {
+               "include_dirs": [ "<(node_root_dir)/deps/openssl/config/k8" ]
+           }],
+           ["target_arch=='arm'", {
+               "include_dirs": [ "<(node_root_dir)/deps/openssl/config/arm" ]
+           }]
+          ]
+        }]
+      ]
+    },
+    'conditions': [
+      ['OS == "win"', {
+        'targets': [
+          {
+            # IMPORTANT WINDOWS BUILD INFORMATION
+            # This library does not build on Windows without modifying the Node
+            # development packages that node-gyp downloads in order to build.
+            # Due to https://github.com/nodejs/node/issues/4932, the headers for
+            # BoringSSL conflict with the OpenSSL headers included by default
+            # when including the Node headers. The remedy for this is to remove
+            # the OpenSSL headers, from the downloaded Node development package,
+            # which is typically located in `.node-gyp` in your home directory.
+            'target_name': 'WINDOWS_BUILD_WARNING',
+            'actions': [
+              {
+                'action_name': 'WINDOWS_BUILD_WARNING',
+                'inputs': [
+                  'package.json'
+                ],
+                'outputs': [
+                  'ignore_this_part'
+                ],
+                'action': ['echo', 'IMPORTANT: Due to https://github.com/nodejs/node/issues/4932, to build this library on Windows, you must first remove <(node_root_dir)/include/node/openssl/']
+              }
+            ]
+          },
+          # Only want to compile BoringSSL and zlib under Windows
+          % for module in node_modules:
+          % for lib in libs:
+          % if lib.name in module.transitive_deps and lib.name in ('boringssl', 'z'):
+          {
+            'cflags': [
+              '-std=c99',
+              '-Wall',
+              '-Werror'
+            ],
+            'target_name': '${lib.name}',
+            'product_prefix': 'lib',
+            'type': 'static_library',
+            'dependencies': [
+              % for dep in getattr(lib, 'deps', []):
+              '${dep}',
+              % endfor
+            ],
+            'sources': [
+              % for source in lib.src:
+              '${source}',
+              % endfor
+            ]
+          },
+          % endif
+          % endfor
+          % endfor
+        ]
+      }]
+    ],
+    'targets': [
+      % for module in node_modules:
+      % for lib in libs:
+      % if lib.name in module.transitive_deps and lib.name not in ('boringssl', 'z'):
+      {
+        'cflags': [
+          '-std=c99',
+          '-Wall',
+          '-Werror'
+        ],
+        'target_name': '${lib.name}',
+        'product_prefix': 'lib',
+        'type': 'static_library',
+        'dependencies': [
+          % for dep in getattr(lib, 'deps', []):
+          '${dep}',
+          % endfor
+        ],
+        'sources': [
+          % for source in lib.src:
+          '${source}',
+          % endfor
+        ],
+        "conditions": [
+          ['OS == "mac"', {
+            'xcode_settings': {
+              'MACOSX_DEPLOYMENT_TARGET': '10.9'
+            }
+          }]
+        ]
+      },
+      % endif
+      % endfor
+      {
+        'include_dirs': [
+          "<!(node -e \"require('nan')\")"
+        ],
+        'cflags': [
+          '-std=c++11',
+          '-Wall',
+          '-pthread',
+          '-g',
+          '-zdefs',
+          '-Werror',
+          '-Wno-error=deprecated-declarations'
+        ],
+        'ldflags': [
+          '-g'
+        ],
+        "conditions": [
+          ['OS=="mac"', {
+            'xcode_settings': {
+              'MACOSX_DEPLOYMENT_TARGET': '10.9',
+              'OTHER_CFLAGS': [
+                '-stdlib=libc++',
+                '-std=c++11'
+              ]
+            }
+          }],
+          ['OS=="win"', {
+            'dependencies': [
+              % for dep in getattr(module, 'deps', []):
+              % if dep in ('boringssl', 'z'):
+              "${dep}",
+              % endif
+              % endfor
+            ]
+          }],
+          ['OS=="linux"', {
+            'ldflags': [
+              '-Wl,-wrap,memcpy'
+            ]
+          }]
+        ],
+        "target_name": "${module.name}",
+        "sources": [
+          % for source in module.src:
+          "${source}",
+          % endfor
+        ],
+        "dependencies": [
+          % for dep in getattr(module, 'deps', []):
+          % if dep not in ('boringssl', 'z'):
+          "${dep}",
+          % endif
+          % endfor
+        ]
+      },
+      % endfor
+      {
+        "target_name": "action_after_build",
+        "type": "none",
+        "dependencies": [ "<(module_name)" ],
+        "copies": [
+          {
+            "files": [ "<(PRODUCT_DIR)/<(module_name).node"],
+            "destination": "<(module_path)"
+          }
+        ]
+      }
+    ]
+  }

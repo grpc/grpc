@@ -38,22 +38,21 @@
 #include "config.h"
 #endif
 
-#include "php.h"
-#include "php_ini.h"
-#include "ext/standard/info.h"
+#include <php.h>
+#include <php_ini.h>
+#include <ext/standard/info.h>
 #include "php_grpc.h"
 
-#include "grpc/grpc.h"
+#include <grpc/grpc.h>
 
 /* Class entry for the PHP Channel class */
-zend_class_entry *grpc_ce_channel;
+extern zend_class_entry *grpc_ce_channel;
 
 /* Wrapper struct for grpc_channel that can be associated with a PHP object */
 typedef struct wrapped_grpc_channel {
   zend_object std;
 
   grpc_channel *wrapped;
-  char *target;
 } wrapped_grpc_channel;
 
 /* Initializes the Channel class */

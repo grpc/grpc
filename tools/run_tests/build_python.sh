@@ -33,9 +33,29 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../..
 
-root=`pwd`
-rm -rf python2.7_virtual_environment
-virtualenv -p /usr/bin/python2.7 python2.7_virtual_environment
-source python2.7_virtual_environment/bin/activate
-pip install enum34==1.0.4 futures==2.2.0 protobuf==3.0.0-alpha-1
-CFLAGS=-I$root/include LDFLAGS=-L$root/libs/opt pip install src/python/src
+TOX_PYTHON_ENV="$1"
+
+ROOT=`pwd`
+export LD_LIBRARY_PATH=$ROOT/libs/$CONFIG
+export DYLD_LIBRARY_PATH=$ROOT/libs/$CONFIG
+export PATH=$ROOT/bins/$CONFIG:$ROOT/bins/$CONFIG/protobuf:$PATH
+export CFLAGS="-I$ROOT/include -std=gnu99"
+export LDFLAGS="-L$ROOT/libs/$CONFIG"
+export GRPC_PYTHON_BUILD_WITH_CYTHON=1
+export GRPC_PYTHON_USE_PRECOMPILED_BINARIES=0
+
+if [ "$CONFIG" = "gcov" ]
+then
+  export GRPC_PYTHON_ENABLE_CYTHON_TRACING=1
+fi
+
+tox -e ${TOX_PYTHON_ENV} --notest
+
+$ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/setup.py build
+$ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/setup.py build_py
+$ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/setup.py build_ext --inplace
+$ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/setup.py gather --test
+
+# Build the health checker
+$ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/src/python/grpcio_health_checking/setup.py build
+$ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/src/python/grpcio_health_checking/setup.py build_py

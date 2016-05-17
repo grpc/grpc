@@ -1,0 +1,99 @@
+{
+  "name": "grpc",
+  "version": "0.15.0-dev",
+  "author": "Google Inc.",
+  "description": "gRPC Library for Node",
+  "homepage": "http://www.grpc.io/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/grpc/grpc.git"
+  },
+  "bugs": "https://github.com/grpc/grpc/issues",
+  "contributors": [
+    {
+      "name": "Michael Lumish",
+      "email": "mlumish@google.com"
+    }
+  ],
+  "directories": {
+    "lib": "src/node/src"
+  },
+  "scripts": {
+    "lint": "node ./node_modules/jshint/bin/jshint src/node/src src/node/test src/node/interop src/node/index.js --exclude-path=src/node/.jshintignore",
+    "test": "./node_modules/.bin/mocha src/node/test && npm run-script lint",
+    "gen_docs": "./node_modules/.bin/jsdoc -c src/node/jsdoc_conf.json",
+    "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha src/node/test",
+    "install": "./node_modules/.bin/node-pre-gyp install --fallback-to-build"
+  },
+  "bundledDependencies": ["node-pre-gyp"],
+  "dependencies": {
+    "arguejs": "^0.2.3",
+    "lodash": "^3.9.3",
+    "nan": "^2.0.0",
+    "protobufjs": "^4.0.0"
+  },
+  "devDependencies": {
+    "async": "^1.5.0",
+    "google-auth-library": "^0.9.2",
+    "google-protobuf": "^3.0.0-alpha.5",
+    "istanbul": "^0.3.21",
+    "jsdoc": "^3.3.2",
+    "jshint": "^2.5.0",
+    "minimist": "^1.1.0",
+    "mocha": "^2.3.4",
+    "mocha-jenkins-reporter": "^0.1.9",
+    "mustache": "^2.0.0",
+    "poisson-process": "^0.2.1"
+  },
+  "engines": {
+    "node": ">=0.12.0"
+  },
+  "binary": {
+    "module_name": "grpc_node",
+    "module_path": "./build/Release/",
+    "host": "https://storage.googleapis.com/",
+    "remote_path": "grpc-precompiled-binaries/node/{name}/v{version}",
+    "package_name": "{node_abi}-{platform}-{arch}.tar.gz",
+    "module_path": "src/node/extension_binary"
+  },
+  "files": [
+    "LICENSE",
+    "src/node/README.md",
+    "src/node/health_check",
+    "src/proto",
+    "etc",
+    "src/node/index.js",
+    "src/node/src",
+    "src/node/ext",
+    "include/grpc",
+    "src/core",
+    "src/boringssl",
+    "src/zlib",
+    "third_party/nanopb",
+    "third_party/zlib",
+    "third_party/boringssl",
+    "binding.gyp"
+  ],
+  "main": "src/node/index.js",
+  "license": "BSD-3-Clause",
+  "jshintConfig" : {
+    "bitwise": true,
+    "curly": true,
+    "eqeqeq": true,
+    "esnext": true,
+    "freeze": true,
+    "immed": true,
+    "indent": 2,
+    "latedef": "nofunc",
+    "maxlen": 80,
+    "mocha": true,
+    "newcap": true,
+    "node": true,
+    "noarg": true,
+    "quotmark": "single",
+    "strict": true,
+    "trailing": true,
+    "undef": true,
+    "unused": "vars"
+  }
+}

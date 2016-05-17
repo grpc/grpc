@@ -34,41 +34,40 @@ include GRPC::Core::StatusCodes
 describe GRPC::ActiveCall do
   ActiveCall = GRPC::ActiveCall
   Call = GRPC::Core::Call
-  CompletionType = GRPC::Core::CompletionType
+  CallOps = GRPC::Core::CallOps
+  WriteFlags = GRPC::Core::WriteFlags
 
   before(:each) do
     @pass_through = proc { |x| x }
     @server_tag = Object.new
-    @server_done_tag = Object.new
     @tag = Object.new
 
     @client_queue = GRPC::Core::CompletionQueue.new
     @server_queue = GRPC::Core::CompletionQueue.new
     host = '0.0.0.0:0'
     @server = GRPC::Core::Server.new(@server_queue, nil)
-    server_port = @server.add_http2_port(host)
+    server_port = @server.add_http2_port(host, :this_port_is_insecure)
     @server.start
-    @ch = GRPC::Core::Channel.new("localhost:#{server_port}", nil)
+    @ch = GRPC::Core::Channel.new("0.0.0.0:#{server_port}", nil,
+                                  :this_channel_is_insecure)
   end
 
   after(:each) do
-    @server.close
+    @server.close(@server_queue, deadline)
   end
 
   describe 'restricted view methods' do
     before(:each) do
       call = make_test_call
-      done_tag, meta_tag = ActiveCall.client_invoke(call, @client_queue,
-                                                    deadline)
+      md_tag = ActiveCall.client_invoke(call, @client_queue)
       @client_call = ActiveCall.new(call, @client_queue, @pass_through,
                                     @pass_through, deadline,
-                                    finished_tag: done_tag,
-                                    read_metadata_tag: meta_tag)
+                                    metadata_tag: md_tag)
     end
 
     describe '#multi_req_view' do
-      xit 'exposes a fixed subset of the ActiveCall methods' do
-        want = %w(cancelled, deadline, each_remote_read, shutdown)
+      it 'exposes a fixed subset of the ActiveCall methods' do
+        want = %w(cancelled, deadline, each_remote_read, metadata, shutdown)
         v = @client_call.multi_req_view
         want.each do |w|
           expect(v.methods.include?(w))
@@ -77,8 +76,8 @@ describe GRPC::ActiveCall do
     end
 
     describe '#single_req_view' do
-      xit 'exposes a fixed subset of the ActiveCall methods' do
-        want = %w(cancelled, deadline, shutdown)
+      it 'exposes a fixed subset of the ActiveCall methods' do
+        want = %w(cancelled, deadline, metadata, shutdown)
         v = @client_call.single_req_view
         want.each do |w|
           expect(v.methods.include?(w))
@@ -90,75 +89,95 @@ describe GRPC::ActiveCall do
   describe '#remote_send' do
     it 'allows a client to send a payload to the server' do
       call = make_test_call
-      done_tag, meta_tag = ActiveCall.client_invoke(call, @client_queue,
-                                                    deadline)
+      md_tag = ActiveCall.client_invoke(call, @client_queue)
       @client_call = ActiveCall.new(call, @client_queue, @pass_through,
                                     @pass_through, deadline,
-                                    finished_tag: done_tag,
-                                    read_metadata_tag: meta_tag)
+                                    metadata_tag: md_tag)
       msg = 'message is a string'
       @client_call.remote_send(msg)
 
       # check that server rpc new was received
-      @server.request_call(@server_tag)
-      ev = @server_queue.next(deadline)
-      expect(ev.type).to be(CompletionType::SERVER_RPC_NEW)
-      expect(ev.call).to be_a(Call)
-      expect(ev.tag).to be(@server_tag)
+      recvd_rpc = @server.request_call(@server_queue, @server_tag, deadline)
+      expect(recvd_rpc).to_not eq nil
+      recvd_call = recvd_rpc.call
 
       # Accept the call, and verify that the server reads the response ok.
-      ev.call.server_accept(@client_queue, @server_tag)
-      ev.call.server_end_initial_metadata
-      server_call = ActiveCall.new(ev.call, @client_queue, @pass_through,
+      server_ops = {
+        CallOps::SEND_INITIAL_METADATA => {}
+      }
+      recvd_call.run_batch(@server_queue, @server_tag, deadline, server_ops)
+      server_call = ActiveCall.new(recvd_call, @server_queue, @pass_through,
                                    @pass_through, deadline)
       expect(server_call.remote_read).to eq(msg)
     end
 
     it 'marshals the payload using the marshal func' do
       call = make_test_call
-      done_tag, meta_tag = ActiveCall.client_invoke(call, @client_queue,
-                                                    deadline)
+      ActiveCall.client_invoke(call, @client_queue)
       marshal = proc { |x| 'marshalled:' + x }
       client_call = ActiveCall.new(call, @client_queue, marshal,
-                                   @pass_through, deadline,
-                                   finished_tag: done_tag,
-                                   read_metadata_tag: meta_tag)
+                                   @pass_through, deadline)
       msg = 'message is a string'
       client_call.remote_send(msg)
 
       # confirm that the message was marshalled
-      @server.request_call(@server_tag)
-      ev = @server_queue.next(deadline)
-      ev.call.server_accept(@client_queue, @server_tag)
-      ev.call.server_end_initial_metadata
-      server_call = ActiveCall.new(ev.call, @client_queue, @pass_through,
+      recvd_rpc =  @server.request_call(@server_queue, @server_tag, deadline)
+      recvd_call = recvd_rpc.call
+      server_ops = {
+        CallOps::SEND_INITIAL_METADATA => nil
+      }
+      recvd_call.run_batch(@server_queue, @server_tag, deadline, server_ops)
+      server_call = ActiveCall.new(recvd_call, @server_queue, @pass_through,
                                    @pass_through, deadline)
       expect(server_call.remote_read).to eq('marshalled:' + msg)
+    end
+
+    TEST_WRITE_FLAGS = [WriteFlags::BUFFER_HINT, WriteFlags::NO_COMPRESS]
+    TEST_WRITE_FLAGS.each do |f|
+      it "successfully makes calls with write_flag set to #{f}" do
+        call = make_test_call
+        ActiveCall.client_invoke(call, @client_queue)
+        marshal = proc { |x| 'marshalled:' + x }
+        client_call = ActiveCall.new(call, @client_queue, marshal,
+                                     @pass_through, deadline)
+        msg = 'message is a string'
+        client_call.write_flag = f
+        client_call.remote_send(msg)
+
+        # confirm that the message was marshalled
+        recvd_rpc =  @server.request_call(@server_queue, @server_tag, deadline)
+        recvd_call = recvd_rpc.call
+        server_ops = {
+          CallOps::SEND_INITIAL_METADATA => nil
+        }
+        recvd_call.run_batch(@server_queue, @server_tag, deadline, server_ops)
+        server_call = ActiveCall.new(recvd_call, @server_queue, @pass_through,
+                                     @pass_through, deadline)
+        expect(server_call.remote_read).to eq('marshalled:' + msg)
+      end
     end
   end
 
   describe '#client_invoke' do
     it 'sends keywords as metadata to the server when the are present' do
       call = make_test_call
-      ActiveCall.client_invoke(call, @client_queue, deadline,
-                               k1: 'v1', k2: 'v2')
-      @server.request_call(@server_tag)
-      ev = @server_queue.next(deadline)
-      expect(ev).to_not be_nil
-      expect(ev.result.metadata['k1']).to eq('v1')
-      expect(ev.result.metadata['k2']).to eq('v2')
+      ActiveCall.client_invoke(call, @client_queue, k1: 'v1', k2: 'v2')
+      recvd_rpc =  @server.request_call(@server_queue, @server_tag, deadline)
+      recvd_call = recvd_rpc.call
+      expect(recvd_call).to_not be_nil
+      expect(recvd_rpc.metadata).to_not be_nil
+      expect(recvd_rpc.metadata['k1']).to eq('v1')
+      expect(recvd_rpc.metadata['k2']).to eq('v2')
     end
   end
 
   describe '#remote_read' do
     it 'reads the response sent by a server' do
       call = make_test_call
-      done_tag, meta_tag = ActiveCall.client_invoke(call, @client_queue,
-                                                    deadline)
+      md_tag = ActiveCall.client_invoke(call, @client_queue)
       client_call = ActiveCall.new(call, @client_queue, @pass_through,
                                    @pass_through, deadline,
-                                   finished_tag: done_tag,
-                                   read_metadata_tag: meta_tag)
+                                   metadata_tag: md_tag)
       msg = 'message is a string'
       client_call.remote_send(msg)
       server_call = expect_server_to_receive(msg)
@@ -168,12 +187,10 @@ describe GRPC::ActiveCall do
 
     it 'saves no metadata when the server adds no metadata' do
       call = make_test_call
-      done_tag, meta_tag = ActiveCall.client_invoke(call, @client_queue,
-                                                    deadline)
+      md_tag = ActiveCall.client_invoke(call, @client_queue)
       client_call = ActiveCall.new(call, @client_queue, @pass_through,
                                    @pass_through, deadline,
-                                   finished_tag: done_tag,
-                                   read_metadata_tag: meta_tag)
+                                   metadata_tag: md_tag)
       msg = 'message is a string'
       client_call.remote_send(msg)
       server_call = expect_server_to_receive(msg)
@@ -185,12 +202,10 @@ describe GRPC::ActiveCall do
 
     it 'saves metadata add by the server' do
       call = make_test_call
-      done_tag, meta_tag = ActiveCall.client_invoke(call, @client_queue,
-                                                    deadline)
+      md_tag = ActiveCall.client_invoke(call, @client_queue)
       client_call = ActiveCall.new(call, @client_queue, @pass_through,
                                    @pass_through, deadline,
-                                   finished_tag: done_tag,
-                                   read_metadata_tag: meta_tag)
+                                   metadata_tag: md_tag)
       msg = 'message is a string'
       client_call.remote_send(msg)
       server_call = expect_server_to_receive(msg, k1: 'v1', k2: 'v2')
@@ -203,12 +218,10 @@ describe GRPC::ActiveCall do
 
     it 'get a nil msg before a status when an OK status is sent' do
       call = make_test_call
-      done_tag, meta_tag = ActiveCall.client_invoke(call, @client_queue,
-                                                    deadline)
+      md_tag = ActiveCall.client_invoke(call, @client_queue)
       client_call = ActiveCall.new(call, @client_queue, @pass_through,
                                    @pass_through, deadline,
-                                   finished_tag: done_tag,
-                                   read_metadata_tag: meta_tag)
+                                   metadata_tag: md_tag)
       msg = 'message is a string'
       client_call.remote_send(msg)
       client_call.writes_done(false)
@@ -222,13 +235,11 @@ describe GRPC::ActiveCall do
 
     it 'unmarshals the response using the unmarshal func' do
       call = make_test_call
-      done_tag, meta_tag = ActiveCall.client_invoke(call, @client_queue,
-                                                    deadline)
+      md_tag = ActiveCall.client_invoke(call, @client_queue)
       unmarshal = proc { |x| 'unmarshalled:' + x }
       client_call = ActiveCall.new(call, @client_queue, @pass_through,
                                    unmarshal, deadline,
-                                   finished_tag: done_tag,
-                                   read_metadata_tag: meta_tag)
+                                   metadata_tag: md_tag)
 
       # confirm the client receives the unmarshalled message
       msg = 'message is a string'
@@ -249,13 +260,11 @@ describe GRPC::ActiveCall do
 
     it 'the returns an enumerator that can read n responses' do
       call = make_test_call
-      done_tag, meta_tag = ActiveCall.client_invoke(call, @client_queue,
-                                                    deadline)
+      md_tag = ActiveCall.client_invoke(call, @client_queue)
       client_call = ActiveCall.new(call, @client_queue, @pass_through,
                                    @pass_through, deadline,
-                                   finished_tag: done_tag,
-                                   read_metadata_tag: meta_tag)
-      msg = 'message is 4a string'
+                                   metadata_tag: md_tag)
+      msg = 'message is a string'
       reply = 'server_response'
       client_call.remote_send(msg)
       server_call = expect_server_to_receive(msg)
@@ -269,19 +278,17 @@ describe GRPC::ActiveCall do
 
     it 'the returns an enumerator that stops after an OK Status' do
       call = make_test_call
-      done_tag, meta_tag = ActiveCall.client_invoke(call, @client_queue,
-                                                    deadline)
+      md_tag = ActiveCall.client_invoke(call, @client_queue)
       client_call = ActiveCall.new(call, @client_queue, @pass_through,
                                    @pass_through, deadline,
-                                   read_metadata_tag: meta_tag,
-                                   finished_tag: done_tag)
+                                   metadata_tag: md_tag)
       msg = 'message is a string'
       reply = 'server_response'
       client_call.remote_send(msg)
       client_call.writes_done(false)
       server_call = expect_server_to_receive(msg)
       e = client_call.each_remote_read
-      n = 3  # arbitrary value > 1
+      n = 3 # arbitrary value > 1
       n.times do
         server_call.remote_send(reply)
         expect(e.next).to eq(reply)
@@ -294,12 +301,10 @@ describe GRPC::ActiveCall do
   describe '#writes_done' do
     it 'finishes ok if the server sends a status response' do
       call = make_test_call
-      done_tag, meta_tag = ActiveCall.client_invoke(call, @client_queue,
-                                                    deadline)
+      md_tag = ActiveCall.client_invoke(call, @client_queue)
       client_call = ActiveCall.new(call, @client_queue, @pass_through,
                                    @pass_through, deadline,
-                                   finished_tag: done_tag,
-                                   read_metadata_tag: meta_tag)
+                                   metadata_tag: md_tag)
       msg = 'message is a string'
       client_call.remote_send(msg)
       expect { client_call.writes_done(false) }.to_not raise_error
@@ -312,12 +317,10 @@ describe GRPC::ActiveCall do
 
     it 'finishes ok if the server sends an early status response' do
       call = make_test_call
-      done_tag, meta_tag = ActiveCall.client_invoke(call, @client_queue,
-                                                    deadline)
+      md_tag = ActiveCall.client_invoke(call, @client_queue)
       client_call = ActiveCall.new(call, @client_queue, @pass_through,
                                    @pass_through, deadline,
-                                   read_metadata_tag: meta_tag,
-                                   finished_tag: done_tag)
+                                   metadata_tag: md_tag)
       msg = 'message is a string'
       client_call.remote_send(msg)
       server_call = expect_server_to_receive(msg)
@@ -330,12 +333,10 @@ describe GRPC::ActiveCall do
 
     it 'finishes ok if writes_done is true' do
       call = make_test_call
-      done_tag, meta_tag = ActiveCall.client_invoke(call, @client_queue,
-                                                    deadline)
+      md_tag = ActiveCall.client_invoke(call, @client_queue)
       client_call = ActiveCall.new(call, @client_queue, @pass_through,
                                    @pass_through, deadline,
-                                   read_metadata_tag: meta_tag,
-                                   finished_tag: done_tag)
+                                   metadata_tag: md_tag)
       msg = 'message is a string'
       client_call.remote_send(msg)
       server_call = expect_server_to_receive(msg)
@@ -353,21 +354,20 @@ describe GRPC::ActiveCall do
   end
 
   def expect_server_to_be_invoked(**kw)
-    @server.request_call(@server_tag)
-    ev = @server_queue.next(deadline)
-    ev.call.add_metadata(kw)
-    ev.call.server_accept(@client_queue, @server_done_tag)
-    ev.call.server_end_initial_metadata
-    ActiveCall.new(ev.call, @client_queue, @pass_through,
-                   @pass_through, deadline,
-                   finished_tag: @server_done_tag)
+    recvd_rpc =  @server.request_call(@server_queue, @server_tag, deadline)
+    expect(recvd_rpc).to_not eq nil
+    recvd_call = recvd_rpc.call
+    recvd_call.run_batch(@server_queue, @server_tag, deadline,
+                         CallOps::SEND_INITIAL_METADATA => kw)
+    ActiveCall.new(recvd_call, @server_queue, @pass_through,
+                   @pass_through, deadline)
   end
 
   def make_test_call
-    @ch.create_call('dummy_method', 'dummy_host', deadline)
+    @ch.create_call(@client_queue, nil, nil, '/method', nil, deadline)
   end
 
   def deadline
-    Time.now + 1  # in 1 second; arbitrary
+    Time.now + 2  # in 2 seconds; arbitrary
   end
 end

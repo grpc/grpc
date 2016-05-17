@@ -57,10 +57,12 @@ def merge_json(dst, add):
   if isinstance(dst, dict) and isinstance(add, dict):
     for k, v in add.items():
       if k in dst:
+        if k == '#': continue
         merge_json(dst[k], v)
       else:
         dst[k] = v
   elif isinstance(dst, list) and isinstance(add, list):
     dst.extend(add)
   else:
-    raise Exception('Tried to merge incompatible objects %r, %r' % (dst, add))
+    raise Exception('Tried to merge incompatible objects %s %s\n\n%r\n\n%r' % (type(dst).__name__, type(add).__name__, dst, add))
+

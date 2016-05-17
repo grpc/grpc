@@ -1,0 +1,4 @@
+%YAML 1.2
+--- |
+  <%namespace file="Doxyfile.include" import="gen_doxyfile"/>\
+  ${gen_doxyfile(['grpc', 'gpr'], 'Core', libs, True)}

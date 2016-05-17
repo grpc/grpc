@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\transport\chttp2\hpack_parser_test.c">
+      <Filter>test\core\transport\chttp2</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{90cedac0-92ed-c0a9-0b69-864412659dad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{95449508-1539-8450-0bd8-72c446e4a98c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\transport">
+      <UniqueIdentifier>{71e60448-0dd6-7a9e-4000-e91d46181eaa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\transport\chttp2">
+      <UniqueIdentifier>{83631117-085d-9e83-6d43-38fb94e16c2b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

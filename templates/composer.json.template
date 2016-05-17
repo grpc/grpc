@@ -1,0 +1,27 @@
+%YAML 1.2
+--- |
+  {
+    "name": "grpc/grpc",
+    "type": "library",
+    "description": "gRPC library for PHP",
+    "version": "${settings.php_version.php()}",
+    "keywords": ["rpc"],
+    "homepage": "http://grpc.io",
+    "license": "BSD-3-Clause",
+    "repositories": [
+      {
+        "type": "vcs",
+        "url": "https://github.com/stanley-cheung/Protobuf-PHP"
+      }
+    ],
+    "require": {
+      "php": ">=5.5.0",
+      "datto/protobuf-php": "dev-master",
+      "google/auth": "v0.7"
+    },
+    "autoload": {
+      "psr-4": {
+        "Grpc\\": "src/php/lib/Grpc/"
+      }
+    }
+  }

@@ -33,12 +33,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Utils;
+using Grpc.Testing;
 using NUnit.Framework;
-using grpc.testing;
 
 namespace Grpc.IntegrationTesting
 {
@@ -47,31 +48,35 @@ namespace Grpc.IntegrationTesting
     /// </summary>
     public class InteropClientServerTest
     {
-        string host = "localhost";
+        const string Host = "localhost";
         Server server;
         Channel channel;
-        TestServiceGrpc.ITestServiceClient client;
+        TestService.TestServiceClient client;
 
         [TestFixtureSetUp]
         public void Init()
         {
-            GrpcEnvironment.Initialize();
-
-            server = new Server();
-            server.AddServiceDefinition(TestServiceGrpc.BindService(new TestServiceImpl()));
-            int port = server.AddPort(host + ":0");
+            server = new Server
+            {
+                Services = { TestService.BindService(new TestServiceImpl()) },
+                Ports = { { Host, ServerPort.PickUnused, TestCredentials.CreateSslServerCredentials() } }
+            };
             server.Start();
-            channel = new Channel(host + ":" + port);
-            client = TestServiceGrpc.NewStub(channel);
+
+            var options = new List<ChannelOption>
+            {
+                new ChannelOption(ChannelOptions.SslTargetNameOverride, TestCredentials.DefaultHostOverride)
+            };
+            int port = server.Ports.Single().BoundPort;
+            channel = new Channel(Host, port, TestCredentials.CreateSslCredentials(), options);
+            client = TestService.NewClient(channel);
         }
 
         [TestFixtureTearDown]
         public void Cleanup()
         {
-            channel.Dispose();
-
+            channel.ShutdownAsync().Wait();
             server.ShutdownAsync().Wait();
-            GrpcEnvironment.Shutdown();
         }
 
         [Test]
@@ -83,37 +88,67 @@ namespace Grpc.IntegrationTesting
         [Test]
         public void LargeUnary()
         {
-            InteropClient.RunEmptyUnary(client);
+            InteropClient.RunLargeUnary(client);
         }
 
         [Test]
-        public void ClientStreaming()
+        public async Task ClientStreaming()
         {
-            InteropClient.RunClientStreaming(client);
+            await InteropClient.RunClientStreamingAsync(client);
         }
 
         [Test]
-        public void ServerStreaming()
+        public async Task ServerStreaming()
         {
-            InteropClient.RunServerStreaming(client);
+            await InteropClient.RunServerStreamingAsync(client);
         }
 
         [Test]
-        public void PingPong()
+        public async Task PingPong()
         {
-            InteropClient.RunPingPong(client);
+            await InteropClient.RunPingPongAsync(client);
         }
 
         [Test]
-        public void EmptyStream()
+        public async Task EmptyStream()
         {
-            InteropClient.RunEmptyStream(client);
+            await InteropClient.RunEmptyStreamAsync(client);
         }
 
-        // TODO: add cancel_after_begin
+        [Test]
+        public async Task CancelAfterBegin()
+        {
+            await InteropClient.RunCancelAfterBeginAsync(client);
+        }
 
-        // TODO: add cancel_after_first_response
+        [Test]
+        public async Task CancelAfterFirstResponse()
+        {
+            await InteropClient.RunCancelAfterFirstResponseAsync(client);
+        }
 
+        [Test]
+        public async Task TimeoutOnSleepingServer()
+        {
+            await InteropClient.RunTimeoutOnSleepingServerAsync(client);
+        }
+
+        [Test]
+        public async Task CustomMetadata()
+        {
+            await InteropClient.RunCustomMetadataAsync(client);
+        }
+
+        [Test]
+        public async Task StatusCodeAndMessage()
+        {
+            await InteropClient.RunStatusCodeAndMessageAsync(client);
+        }
+
+        [Test]
+        public void UnimplementedMethod()
+        {
+            InteropClient.RunUnimplementedMethod(UnimplementedService.NewClient(channel));
+        }
     }
 }
-

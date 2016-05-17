@@ -37,11 +37,16 @@ cd $(dirname $0)/../..
 
 root=`pwd`
 export GRPC_LIB_SUBDIR=libs/$CONFIG
+export CFLAGS="-Wno-parentheses-equality"
 
 # build php
 cd src/php
 
 cd ext/grpc
 phpize
-./configure --enable-grpc=$root
+if [ "$CONFIG" != "gcov" ] ; then
+  ./configure --enable-grpc=$root
+else
+  ./configure --enable-grpc=$root --enable-coverage
+fi
 make

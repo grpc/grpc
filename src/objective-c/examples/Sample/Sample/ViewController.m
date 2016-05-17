@@ -32,39 +32,62 @@
  */
 
 #import "ViewController.h"
+
 #import <GRPCClient/GRPCCall.h>
-#import <GRPCClient/GRPCMethodName.h>
+#import <ProtoRPC/ProtoMethod.h>
+#import <RemoteTest/Messages.pbobjc.h>
+#import <RemoteTest/Test.pbrpc.h>
 #import <RxLibrary/GRXWriter+Immediate.h>
 #import <RxLibrary/GRXWriteable.h>
-
-@interface ViewController ()
-
-@end
 
 @implementation ViewController
 
 - (void)viewDidLoad {
   [super viewDidLoad];
-  // Do any additional setup after loading the view, typically from a nib.
 
-  GRPCMethodName *method = [[GRPCMethodName alloc] initWithPackage:@"grpc.testing"
-                                                         interface:@"TestService"
-                                                            method:@"EmptyCall"];
+  NSString * const kRemoteHost = @"grpc-test.sandbox.googleapis.com";
 
-  GRPCCall *call = [[GRPCCall alloc] initWithHost:@"localhost"
-                                           method:method
-                                   requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
+  RMTSimpleRequest *request = [[RMTSimpleRequest alloc] init];
+  request.responseSize = 10;
+  request.fillUsername = YES;
+  request.fillOauthScope = YES;
 
-  [call startWithWriteable:[[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
-    NSLog(@"Received response: %@", value);
+  // Example gRPC call using a generated proto client library:
+
+  RMTTestService *service = [[RMTTestService alloc] initWithHost:kRemoteHost];
+  [service unaryCallWithRequest:request handler:^(RMTSimpleResponse *response, NSError *error) {
+    if (response) {
+      NSLog(@"Finished successfully with response:\n%@", response);
+    } else if (error) {
+      NSLog(@"Finished with error: %@", error);
+    }
+  }];
+
+
+  // Same example call using the generic gRPC client library:
+
+  ProtoMethod *method = [[ProtoMethod alloc] initWithPackage:@"grpc.testing"
+                                                     service:@"TestService"
+                                                      method:@"UnaryCall"];
+
+  GRXWriter *requestsWriter = [GRXWriter writerWithValue:[request data]];
+
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:kRemoteHost
+                                             path:method.HTTPPath
+                                   requestsWriter:requestsWriter];
+
+  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+    RMTSimpleResponse *response = [RMTSimpleResponse parseFromData:value error:NULL];
+    NSLog(@"Received response:\n%@", response);
   } completionHandler:^(NSError *errorOrNil) {
-    NSLog(@"Finished with error: %@", errorOrNil);
-  }]];
-}
+    if (errorOrNil) {
+      NSLog(@"Finished with error: %@", errorOrNil);
+    } else {
+      NSLog(@"Finished successfully.");
+    }
+  }];
 
-- (void)didReceiveMemoryWarning {
-  [super didReceiveMemoryWarning];
-  // Dispose of any resources that can be recreated.
+  [call startWithWriteable:responsesWriteable];
 }
 
 @end

@@ -68,7 +68,7 @@ end
 
 def test_creds
   certs = load_test_certs
-  GRPC::Core::Credentials.new(certs[0])
+  GRPC::Core::ChannelCredentials.new(certs[0])
 end
 
 def main
@@ -94,15 +94,15 @@ def main
     p stub_opts
     p options['host']
     stub = NoProtoStub.new(options['host'], **stub_opts)
-    logger.info("... connecting securely on #{options['host']}")
+    GRPC.logger.info("... connecting securely on #{options['host']}")
   else
     stub = NoProtoStub.new(options['host'])
-    logger.info("... connecting insecurely on #{options['host']}")
+    GRPC.logger.info("... connecting insecurely on #{options['host']}")
   end
 
-  logger.info('sending a NoProto rpc')
+  GRPC.logger.info('sending a NoProto rpc')
   resp = stub.an_rpc(NoProtoMsg.new)
-  logger.info("got a response: #{resp}")
+  GRPC.logger.info("got a response: #{resp}")
 end
 
 main

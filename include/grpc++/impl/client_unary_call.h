@@ -34,26 +34,6 @@
 #ifndef GRPCXX_IMPL_CLIENT_UNARY_CALL_H
 #define GRPCXX_IMPL_CLIENT_UNARY_CALL_H
 
-namespace google {
-namespace protobuf {
-class Message;
-}  // namespace protobuf
-}  // namespace google
-
-namespace grpc {
-
-class ChannelInterface;
-class ClientContext;
-class CompletionQueue;
-class RpcMethod;
-class Status;
-
-// Wrapper that performs a blocking unary call
-Status BlockingUnaryCall(ChannelInterface *channel, const RpcMethod &method,
-                         ClientContext *context,
-                         const google::protobuf::Message &request,
-                         google::protobuf::Message *result);
-
-}  // namespace grpc
+#include <grpc++/impl/codegen/client_unary_call.h>
 
 #endif  // GRPCXX_IMPL_CLIENT_UNARY_CALL_H

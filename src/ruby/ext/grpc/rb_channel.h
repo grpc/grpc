@@ -34,11 +34,9 @@
 #ifndef GRPC_RB_CHANNEL_H_
 #define GRPC_RB_CHANNEL_H_
 
-#include <ruby.h>
-#include <grpc/grpc.h>
+#include <ruby/ruby.h>
 
-/* rb_cChannel is the Channel class whose instances proxy grpc_channel. */
-extern VALUE rb_cChannel;
+#include <grpc/grpc.h>
 
 /* Initializes the Channel class. */
 void Init_grpc_channel();

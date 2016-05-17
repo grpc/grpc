@@ -1,5 +1,4 @@
 #region Copyright notice and license
-
 // Copyright 2015, Google Inc.
 // All rights reserved.
 // 
@@ -30,162 +29,192 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #endregion
-
 using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Grpc.Core;
+using Grpc.Core.Utils;
+using Grpc.Core.Profiling;
 
 namespace Grpc.Core.Internal
 {
-    //TODO: rename the delegate
-    internal delegate void CompletionCallbackDelegate(GRPCOpError error, IntPtr batchContextPtr);
-
     /// <summary>
-    /// grpc_call from <grpc/grpc.h>
+    /// grpc_call from <c>grpc/grpc.h</c>
     /// </summary>
-	internal class CallSafeHandle : SafeHandleZeroIsInvalid
-	{
-        const UInt32 GRPC_WRITE_BUFFER_HINT = 1;
+    internal class CallSafeHandle : SafeHandleZeroIsInvalid, INativeCall
+    {
+        public static readonly CallSafeHandle NullInstance = new CallSafeHandle();
+        static readonly NativeMethods Native = NativeMethods.Get();
 
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern CallSafeHandle grpcsharp_channel_create_call(ChannelSafeHandle channel, CompletionQueueSafeHandle cq, string method, string host, Timespec deadline);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern GRPCCallError grpcsharp_call_cancel(CallSafeHandle call);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern GRPCCallError grpcsharp_call_cancel_with_status(CallSafeHandle call, StatusCode status, string description);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern GRPCCallError grpcsharp_call_start_unary(CallSafeHandle call,
-                                                                        [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback,
-                                                                        byte[] send_buffer, UIntPtr send_buffer_len);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_call_blocking_unary(CallSafeHandle call, CompletionQueueSafeHandle dedicatedCq,
-                                                               [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback,
-                                                               byte[] send_buffer, UIntPtr send_buffer_len);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern GRPCCallError grpcsharp_call_start_client_streaming(CallSafeHandle call,
-                                                                      [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern GRPCCallError grpcsharp_call_start_server_streaming(CallSafeHandle call,
-                                                                      [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback,
-                                                                      byte[] send_buffer, UIntPtr send_buffer_len);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern GRPCCallError grpcsharp_call_start_duplex_streaming(CallSafeHandle call,
-                                                                          [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern GRPCCallError grpcsharp_call_send_message(CallSafeHandle call,
-                                                                      [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback,
-                                                                      byte[] send_buffer, UIntPtr send_buffer_len);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern GRPCCallError grpcsharp_call_send_close_from_client(CallSafeHandle call,
-                                                                             [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern GRPCCallError grpcsharp_call_send_status_from_server(CallSafeHandle call, [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback, StatusCode statusCode, string statusMessage);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern GRPCCallError grpcsharp_call_recv_message(CallSafeHandle call,
-                                                               [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern GRPCCallError grpcsharp_call_start_serverside(CallSafeHandle call,
-                                                                [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_call_destroy(IntPtr call);
-
+        const uint GRPC_WRITE_BUFFER_HINT = 1;
+        CompletionRegistry completionRegistry;
+        CompletionQueueSafeHandle completionQueue;
 
         private CallSafeHandle()
         {
         }
 
-        public static CallSafeHandle Create(ChannelSafeHandle channel, CompletionQueueSafeHandle cq, string method, string host, Timespec deadline)
+        public void Initialize(CompletionRegistry completionRegistry, CompletionQueueSafeHandle completionQueue)
         {
-            return grpcsharp_channel_create_call(channel, cq, method, host, deadline);
+            this.completionRegistry = completionRegistry;
+            this.completionQueue = completionQueue;
         }
 
-        public void StartUnary(byte[] payload, CompletionCallbackDelegate callback)
+        public void SetCredentials(CallCredentialsSafeHandle credentials)
         {
-            AssertCallOk(grpcsharp_call_start_unary(this, callback, payload, new UIntPtr((ulong) payload.Length)));
+            Native.grpcsharp_call_set_credentials(this, credentials).CheckOk();
         }
 
-        public void BlockingUnary(CompletionQueueSafeHandle dedicatedCq, byte[] payload, CompletionCallbackDelegate callback)
+        public void StartUnary(UnaryResponseClientHandler callback, byte[] payload, MetadataArraySafeHandle metadataArray, WriteFlags writeFlags)
         {
-            grpcsharp_call_blocking_unary(this, dedicatedCq, callback, payload, new UIntPtr((ulong) payload.Length));
+            using (completionQueue.NewScope())
+            {
+                var ctx = BatchContextSafeHandle.Create();
+                completionRegistry.RegisterBatchCompletion(ctx, (success, context) => callback(success, context.GetReceivedStatusOnClient(), context.GetReceivedMessage(), context.GetReceivedInitialMetadata()));
+                Native.grpcsharp_call_start_unary(this, ctx, payload, new UIntPtr((ulong)payload.Length), metadataArray, writeFlags)
+                    .CheckOk();
+            }
         }
 
-        public void StartClientStreaming(CompletionCallbackDelegate callback)
+        public void StartUnary(BatchContextSafeHandle ctx, byte[] payload, MetadataArraySafeHandle metadataArray, WriteFlags writeFlags)
         {
-            AssertCallOk(grpcsharp_call_start_client_streaming(this, callback));
+            using (Profilers.ForCurrentThread().NewScope("CallSafeHandle.StartUnary"))
+            {
+                Native.grpcsharp_call_start_unary(this, ctx, payload, new UIntPtr((ulong)payload.Length), metadataArray, writeFlags)
+                    .CheckOk();
+            }
         }
 
-        public void StartServerStreaming(byte[] payload, CompletionCallbackDelegate callback)
+        public void StartClientStreaming(UnaryResponseClientHandler callback, MetadataArraySafeHandle metadataArray)
         {
-            AssertCallOk(grpcsharp_call_start_server_streaming(this, callback, payload, new UIntPtr((ulong) payload.Length)));
+            using (completionQueue.NewScope())
+            {
+                var ctx = BatchContextSafeHandle.Create();
+                completionRegistry.RegisterBatchCompletion(ctx, (success, context) => callback(success, context.GetReceivedStatusOnClient(), context.GetReceivedMessage(), context.GetReceivedInitialMetadata()));
+                Native.grpcsharp_call_start_client_streaming(this, ctx, metadataArray).CheckOk();
+            }
         }
 
-        public void StartDuplexStreaming(CompletionCallbackDelegate callback)
+        public void StartServerStreaming(ReceivedStatusOnClientHandler callback, byte[] payload, MetadataArraySafeHandle metadataArray, WriteFlags writeFlags)
         {
-            AssertCallOk(grpcsharp_call_start_duplex_streaming(this, callback));
+            using (completionQueue.NewScope())
+            {
+                var ctx = BatchContextSafeHandle.Create();
+                completionRegistry.RegisterBatchCompletion(ctx, (success, context) => callback(success, context.GetReceivedStatusOnClient()));
+                Native.grpcsharp_call_start_server_streaming(this, ctx, payload, new UIntPtr((ulong)payload.Length), metadataArray, writeFlags).CheckOk();
+            }
         }
 
-        public void StartSendMessage(byte[] payload, CompletionCallbackDelegate callback)
+        public void StartDuplexStreaming(ReceivedStatusOnClientHandler callback, MetadataArraySafeHandle metadataArray)
         {
-            AssertCallOk(grpcsharp_call_send_message(this, callback, payload, new UIntPtr((ulong) payload.Length)));
+            using (completionQueue.NewScope())
+            {
+                var ctx = BatchContextSafeHandle.Create();
+                completionRegistry.RegisterBatchCompletion(ctx, (success, context) => callback(success, context.GetReceivedStatusOnClient()));
+                Native.grpcsharp_call_start_duplex_streaming(this, ctx, metadataArray).CheckOk();
+            }
         }
 
-        public void StartSendCloseFromClient(CompletionCallbackDelegate callback)
+        public void StartSendMessage(SendCompletionHandler callback, byte[] payload, WriteFlags writeFlags, bool sendEmptyInitialMetadata)
         {
-            AssertCallOk(grpcsharp_call_send_close_from_client(this, callback));
+            using (completionQueue.NewScope())
+            {
+                var ctx = BatchContextSafeHandle.Create();
+                completionRegistry.RegisterBatchCompletion(ctx, (success, context) => callback(success));
+                Native.grpcsharp_call_send_message(this, ctx, payload, new UIntPtr((ulong)payload.Length), writeFlags, sendEmptyInitialMetadata).CheckOk();
+            }
         }
 
-        public void StartSendStatusFromServer(Status status, CompletionCallbackDelegate callback)
+        public void StartSendCloseFromClient(SendCompletionHandler callback)
         {
-            AssertCallOk(grpcsharp_call_send_status_from_server(this, callback, status.StatusCode, status.Detail));
+            using (completionQueue.NewScope())
+            {
+                var ctx = BatchContextSafeHandle.Create();
+                completionRegistry.RegisterBatchCompletion(ctx, (success, context) => callback(success));
+                Native.grpcsharp_call_send_close_from_client(this, ctx).CheckOk();
+            }
         }
 
-        public void StartReceiveMessage(CompletionCallbackDelegate callback)
+        public void StartSendStatusFromServer(SendCompletionHandler callback, Status status, MetadataArraySafeHandle metadataArray, bool sendEmptyInitialMetadata,
+            byte[] optionalPayload, WriteFlags writeFlags)
         {
-            AssertCallOk(grpcsharp_call_recv_message(this, callback));
+            using (completionQueue.NewScope())
+            {
+                var ctx = BatchContextSafeHandle.Create();
+                var optionalPayloadLength = optionalPayload != null ? new UIntPtr((ulong)optionalPayload.Length) : UIntPtr.Zero;
+                completionRegistry.RegisterBatchCompletion(ctx, (success, context) => callback(success));
+                Native.grpcsharp_call_send_status_from_server(this, ctx, status.StatusCode, status.Detail, metadataArray, sendEmptyInitialMetadata,
+                    optionalPayload, optionalPayloadLength, writeFlags).CheckOk();
+            }
         }
 
-        public void StartServerSide(CompletionCallbackDelegate callback)
+        public void StartReceiveMessage(ReceivedMessageHandler callback)
         {
-            AssertCallOk(grpcsharp_call_start_serverside(this, callback));
+            using (completionQueue.NewScope())
+            {
+                var ctx = BatchContextSafeHandle.Create();
+                completionRegistry.RegisterBatchCompletion(ctx, (success, context) => callback(success, context.GetReceivedMessage()));
+                Native.grpcsharp_call_recv_message(this, ctx).CheckOk();
+            }
+        }
+
+        public void StartReceiveInitialMetadata(ReceivedResponseHeadersHandler callback)
+        {
+            using (completionQueue.NewScope())
+            {
+                var ctx = BatchContextSafeHandle.Create();
+                completionRegistry.RegisterBatchCompletion(ctx, (success, context) => callback(success, context.GetReceivedInitialMetadata()));
+                Native.grpcsharp_call_recv_initial_metadata(this, ctx).CheckOk();
+            }
+        }
+
+        public void StartServerSide(ReceivedCloseOnServerHandler callback)
+        {
+            using (completionQueue.NewScope())
+            {
+                var ctx = BatchContextSafeHandle.Create();
+                completionRegistry.RegisterBatchCompletion(ctx, (success, context) => callback(success, context.GetReceivedCloseOnServerCancelled()));
+                Native.grpcsharp_call_start_serverside(this, ctx).CheckOk();
+            }
+        }
+
+        public void StartSendInitialMetadata(SendCompletionHandler callback, MetadataArraySafeHandle metadataArray)
+        {
+            using (completionQueue.NewScope())
+            {
+                var ctx = BatchContextSafeHandle.Create();
+                completionRegistry.RegisterBatchCompletion(ctx, (success, context) => callback(success));
+                Native.grpcsharp_call_send_initial_metadata(this, ctx, metadataArray).CheckOk();
+            }
         }
 
         public void Cancel()
         {
-            AssertCallOk(grpcsharp_call_cancel(this));
+            Native.grpcsharp_call_cancel(this).CheckOk();
         }
 
         public void CancelWithStatus(Status status)
         {
-            AssertCallOk(grpcsharp_call_cancel_with_status(this, status.StatusCode, status.Detail));
+            Native.grpcsharp_call_cancel_with_status(this, status.StatusCode, status.Detail).CheckOk();
         }
 
-		protected override bool ReleaseHandle()
-		{
-            grpcsharp_call_destroy(handle);
-			return true;
-		}
-
-        private static void AssertCallOk(GRPCCallError callError)
+        public string GetPeer()
         {
-            Trace.Assert(callError == GRPCCallError.GRPC_CALL_OK, "Status not GRPC_CALL_OK");
+            using (var cstring = Native.grpcsharp_call_get_peer(this))
+            {
+                return cstring.GetValue();
+            }
         }
 
-        private static UInt32 GetFlags(bool buffered) {
+        protected override bool ReleaseHandle()
+        {
+            Native.grpcsharp_call_destroy(handle);
+            return true;
+        }
+
+        private static uint GetFlags(bool buffered)
+        {
             return buffered ? 0 : GRPC_WRITE_BUFFER_HINT;
         }
-	}
+    }
 }

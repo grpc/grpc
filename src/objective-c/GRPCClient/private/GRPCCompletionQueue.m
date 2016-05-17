@@ -33,19 +33,22 @@
 
 #import "GRPCCompletionQueue.h"
 
-#import <grpc.h>
+#import <grpc/grpc.h>
 
 @implementation GRPCCompletionQueue
 
 + (instancetype)completionQueue {
-  // TODO(jcanizales): Reuse completion queues to consume only one thread,
-  // instead of one per call.
-  return [[self alloc] init];
+  static GRPCCompletionQueue *singleton = nil;
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    singleton = [[self alloc] init];
+  });
+  return singleton;
 }
 
 - (instancetype)init {
   if ((self = [super init])) {
-    _unmanagedQueue = grpc_completion_queue_create();
+    _unmanagedQueue = grpc_completion_queue_create(NULL);
 
     // This is for the following block to capture the pointer by value (instead
     // of retaining self and doing self->_unmanagedQueue). This is essential
@@ -65,31 +68,21 @@
     dispatch_async(gDefaultConcurrentQueue, ^{
       while (YES) {
         // The following call blocks until an event is available.
-        grpc_event *event = grpc_completion_queue_next(unmanagedQueue, gpr_inf_future);
-        switch (event->type) {
-          case GRPC_WRITE_ACCEPTED:
-          case GRPC_FINISH_ACCEPTED:
-          case GRPC_CLIENT_METADATA_READ:
-          case GRPC_READ:
-          case GRPC_FINISHED:
-            if (event->tag) {
-              GRPCEventHandler handler = (__bridge_transfer GRPCEventHandler) event->tag;
-              handler(event);
-            }
-            grpc_event_finish(event);
-            continue;
+        grpc_event event = grpc_completion_queue_next(unmanagedQueue,
+                                                      gpr_inf_future(GPR_CLOCK_REALTIME),
+                                                      NULL);
+        GRPCQueueCompletionHandler handler;
+        switch (event.type) {
+          case GRPC_OP_COMPLETE:
+            handler = (__bridge_transfer GRPCQueueCompletionHandler)event.tag;
+            handler(event.success);
+            break;
           case GRPC_QUEUE_SHUTDOWN:
             grpc_completion_queue_destroy(unmanagedQueue);
-            grpc_event_finish(event);
             return;
-          case GRPC_SERVER_RPC_NEW:
-            NSAssert(NO, @"C gRPC library produced a server-only event.");
-            continue;
+          default:
+            [NSException raise:@"Unrecognized completion type" format:@""];
         }
-        // This means the C gRPC library produced an event that wasn't known
-        // when this library was written. To preserve evolvability, ignore the
-        // unknown event on release builds.
-        NSAssert(NO, @"C gRPC library produced an unknown event.");
       };
     });
   }

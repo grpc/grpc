@@ -34,12 +34,9 @@
 #ifndef GRPC_RB_SERVER_H_
 #define GRPC_RB_SERVER_H_
 
-#include <ruby.h>
-#include <grpc/grpc.h>
+#include <ruby/ruby.h>
 
-/* rb_cServer is the Server class whose instances proxy
-   grpc_byte_buffer. */
-extern VALUE rb_cServer;
+#include <grpc/grpc.h>
 
 /* Initializes the Server class. */
 void Init_grpc_server();
