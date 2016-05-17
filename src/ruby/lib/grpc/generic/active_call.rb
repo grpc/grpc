@@ -28,7 +28,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'forwardable'
+require 'weakref'
 require_relative 'bidi_call'
+require_relative '../signals'
 
 class Struct
   # BatchResult is the struct returned by calls to call#start_batch.
@@ -121,6 +123,10 @@ module GRPC
       @unmarshal = unmarshal
       @metadata_tag = metadata_tag
       @op_notifier = nil
+      weak_self = WeakRef.new(self)
+      remove_handler = GRPC::Signals.register_handler(&weak_self
+                                                        .method(:cancel))
+      ObjectSpace.define_finalizer(self, remove_handler)
     end
 
     # output_metadata are provides access to hash that can be used to

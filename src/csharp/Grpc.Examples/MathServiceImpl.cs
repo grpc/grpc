@@ -52,23 +52,15 @@ namespace Math
 
         public override async Task Fib(FibArgs request, IServerStreamWriter<Num> responseStream, ServerCallContext context)
         {
-            if (request.Limit <= 0)
-            {
-                // keep streaming the sequence until cancelled.
-                IEnumerator<Num> fibEnumerator = FibInternal(long.MaxValue).GetEnumerator();
-                while (!context.CancellationToken.IsCancellationRequested && fibEnumerator.MoveNext())
-                {
-                    await responseStream.WriteAsync(fibEnumerator.Current);
-                    await Task.Delay(100);
-                }
-            }
+            var limit = request.Limit > 0 ? request.Limit : long.MaxValue;
+            var fibEnumerator = FibInternal(limit).GetEnumerator();
 
-            if (request.Limit > 0)
+            // Keep streaming the sequence until the call is cancelled.
+            // Use CancellationToken from ServerCallContext to detect the cancellation.
+            while (!context.CancellationToken.IsCancellationRequested && fibEnumerator.MoveNext())
             {
-                foreach (var num in FibInternal(request.Limit))
-                {
-                    await responseStream.WriteAsync(num);
-                }
+                await responseStream.WriteAsync(fibEnumerator.Current);
+                await Task.Delay(100);
             }
         }
 
@@ -89,6 +81,13 @@ namespace Math
 
         static DivReply DivInternal(DivArgs args)
         {
+            if (args.Divisor == 0)
+            {
+                // One can finish the RPC with non-ok status by throwing RpcException instance.
+                // Alternatively, resulting status can be set using ServerCallContext.Status
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "Division by zero"));
+            }
+
             long quotient = args.Dividend / args.Divisor;
             long remainder = args.Dividend % args.Divisor;
             return new DivReply { Quotient = quotient, Remainder = remainder };

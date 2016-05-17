@@ -165,7 +165,8 @@ namespace Grpc.Core.Internal.Tests
             SendCompletionHandler = callback;
         }
 
-        public void StartSendStatusFromServer(SendCompletionHandler callback, Status status, MetadataArraySafeHandle metadataArray, bool sendEmptyInitialMetadata)
+        public void StartSendStatusFromServer(SendCompletionHandler callback, Status status, MetadataArraySafeHandle metadataArray, bool sendEmptyInitialMetadata,
+            byte[] optionalPayload, WriteFlags writeFlags)
         {
             SendStatusFromServerHandler = callback;
         }
