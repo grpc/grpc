@@ -86,6 +86,7 @@ struct grpc_completion_queue {
 };
 
 #define POLLSET_FROM_CQ(cq) ((grpc_pollset *)(cq + 1))
+#define CQ_FROM_POLLSET(ps) (((grpc_completion_queue *)ps) - 1)
 
 static gpr_mu g_freelist_mu;
 static grpc_completion_queue *g_freelist;
@@ -512,6 +513,10 @@ void grpc_completion_queue_destroy(grpc_completion_queue *cc) {
 
 grpc_pollset *grpc_cq_pollset(grpc_completion_queue *cc) {
   return POLLSET_FROM_CQ(cc);
+}
+
+grpc_completion_queue *grpc_cq_from_pollset(grpc_pollset *ps) {
+  return CQ_FROM_POLLSET(ps);
 }
 
 void grpc_cq_mark_non_listening_server_cq(grpc_completion_queue *cc) {
