@@ -63,8 +63,8 @@ static void test_no_op(void) {
   shutdown_and_destroy(grpc_completion_queue_create(NULL));
 }
 
-static void test_pollset_conversion() {
-  grpc_completion_queue *cq = grpc_completion_queue(NULL);
+static void test_pollset_conversion(void) {
+  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
   GPR_ASSERT(grpc_cq_from_pollset(grpc_cq_pollset(cq)) == cq);
   shutdown_and_destroy(cq);
 }
@@ -414,6 +414,7 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   test_no_op();
+  test_pollset_conversion();
   test_wait_empty();
   test_shutdown_then_next_polling();
   test_shutdown_then_next_with_timeout();

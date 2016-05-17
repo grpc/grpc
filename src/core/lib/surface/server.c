@@ -372,6 +372,7 @@ static void server_delete(grpc_exec_ctx *exec_ctx, grpc_server *server) {
     for (i = 0; i < server->cq_count; i++) {
       request_matcher_destroy(&rm->request_matchers[i]);
     }
+    gpr_free(rm->request_matchers);
     gpr_free(rm->method);
     gpr_free(rm->host);
     gpr_free(rm);
@@ -381,6 +382,7 @@ static void server_delete(grpc_exec_ctx *exec_ctx, grpc_server *server) {
     request_matcher_destroy(&server->unregistered_request_matchers[i]);
   }
   gpr_stack_lockfree_destroy(server->request_freelist);
+  gpr_free(server->unregistered_request_matchers);
   gpr_free(server->cqs);
   gpr_free(server->pollsets);
   gpr_free(server->shutdown_tags);
