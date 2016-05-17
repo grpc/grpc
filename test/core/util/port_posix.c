@@ -89,6 +89,7 @@ static int free_chosen_port(int port) {
       grpc_free_port_using_server(env, port);
     }
   }
+  gpr_free(env);
   return found;
 }
 
