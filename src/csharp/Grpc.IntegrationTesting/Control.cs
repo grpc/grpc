@@ -85,25 +85,25 @@ namespace Grpc.Testing {
             "RUFNSU5HEAFiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Grpc.Testing.PayloadsReflection.Descriptor, global::Grpc.Testing.StatsReflection.Descriptor, },
-          new pbr::GeneratedCodeInfo(new[] {typeof(global::Grpc.Testing.ClientType), typeof(global::Grpc.Testing.ServerType), typeof(global::Grpc.Testing.RpcType), }, new pbr::GeneratedCodeInfo[] {
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.PoissonParams), global::Grpc.Testing.PoissonParams.Parser, new[]{ "OfferedLoad" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ClosedLoopParams), global::Grpc.Testing.ClosedLoopParams.Parser, null, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.LoadParams), global::Grpc.Testing.LoadParams.Parser, new[]{ "ClosedLoop", "Poisson" }, new[]{ "Load" }, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.SecurityParams), global::Grpc.Testing.SecurityParams.Parser, new[]{ "UseTestCa", "ServerHostOverride" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ClientConfig), global::Grpc.Testing.ClientConfig.Parser, new[]{ "ServerTargets", "ClientType", "SecurityParams", "OutstandingRpcsPerChannel", "ClientChannels", "AsyncClientThreads", "RpcType", "LoadParams", "PayloadConfig", "HistogramParams", "CoreList", "CoreLimit", "OtherClientApi" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ClientStatus), global::Grpc.Testing.ClientStatus.Parser, new[]{ "Stats" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.Mark), global::Grpc.Testing.Mark.Parser, new[]{ "Reset" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ClientArgs), global::Grpc.Testing.ClientArgs.Parser, new[]{ "Setup", "Mark" }, new[]{ "Argtype" }, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ServerConfig), global::Grpc.Testing.ServerConfig.Parser, new[]{ "ServerType", "SecurityParams", "Port", "AsyncServerThreads", "CoreLimit", "PayloadConfig", "CoreList", "OtherServerApi" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ServerArgs), global::Grpc.Testing.ServerArgs.Parser, new[]{ "Setup", "Mark" }, new[]{ "Argtype" }, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ServerStatus), global::Grpc.Testing.ServerStatus.Parser, new[]{ "Stats", "Port", "Cores" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.CoreRequest), global::Grpc.Testing.CoreRequest.Parser, null, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.CoreResponse), global::Grpc.Testing.CoreResponse.Parser, new[]{ "Cores" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.Void), global::Grpc.Testing.Void.Parser, null, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.Scenario), global::Grpc.Testing.Scenario.Parser, new[]{ "Name", "ClientConfig", "NumClients", "ServerConfig", "NumServers", "WarmupSeconds", "BenchmarkSeconds", "SpawnLocalWorkerCount" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.Scenarios), global::Grpc.Testing.Scenarios.Parser, new[]{ "Scenarios_" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ScenarioResultSummary), global::Grpc.Testing.ScenarioResultSummary.Parser, new[]{ "Qps", "QpsPerServerCore", "ServerSystemTime", "ServerUserTime", "ClientSystemTime", "ClientUserTime", "Latency50", "Latency90", "Latency95", "Latency99", "Latency999" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ScenarioResult), global::Grpc.Testing.ScenarioResult.Parser, new[]{ "Scenario", "Latencies", "ClientStats", "ServerStats", "ServerCores", "Summary" }, null, null, null)
+          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Grpc.Testing.ClientType), typeof(global::Grpc.Testing.ServerType), typeof(global::Grpc.Testing.RpcType), }, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.PoissonParams), global::Grpc.Testing.PoissonParams.Parser, new[]{ "OfferedLoad" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClosedLoopParams), global::Grpc.Testing.ClosedLoopParams.Parser, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.LoadParams), global::Grpc.Testing.LoadParams.Parser, new[]{ "ClosedLoop", "Poisson" }, new[]{ "Load" }, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.SecurityParams), global::Grpc.Testing.SecurityParams.Parser, new[]{ "UseTestCa", "ServerHostOverride" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClientConfig), global::Grpc.Testing.ClientConfig.Parser, new[]{ "ServerTargets", "ClientType", "SecurityParams", "OutstandingRpcsPerChannel", "ClientChannels", "AsyncClientThreads", "RpcType", "LoadParams", "PayloadConfig", "HistogramParams", "CoreList", "CoreLimit", "OtherClientApi" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClientStatus), global::Grpc.Testing.ClientStatus.Parser, new[]{ "Stats" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.Mark), global::Grpc.Testing.Mark.Parser, new[]{ "Reset" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClientArgs), global::Grpc.Testing.ClientArgs.Parser, new[]{ "Setup", "Mark" }, new[]{ "Argtype" }, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ServerConfig), global::Grpc.Testing.ServerConfig.Parser, new[]{ "ServerType", "SecurityParams", "Port", "AsyncServerThreads", "CoreLimit", "PayloadConfig", "CoreList", "OtherServerApi" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ServerArgs), global::Grpc.Testing.ServerArgs.Parser, new[]{ "Setup", "Mark" }, new[]{ "Argtype" }, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ServerStatus), global::Grpc.Testing.ServerStatus.Parser, new[]{ "Stats", "Port", "Cores" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.CoreRequest), global::Grpc.Testing.CoreRequest.Parser, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.CoreResponse), global::Grpc.Testing.CoreResponse.Parser, new[]{ "Cores" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.Void), global::Grpc.Testing.Void.Parser, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.Scenario), global::Grpc.Testing.Scenario.Parser, new[]{ "Name", "ClientConfig", "NumClients", "ServerConfig", "NumServers", "WarmupSeconds", "BenchmarkSeconds", "SpawnLocalWorkerCount" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.Scenarios), global::Grpc.Testing.Scenarios.Parser, new[]{ "Scenarios_" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ScenarioResultSummary), global::Grpc.Testing.ScenarioResultSummary.Parser, new[]{ "Qps", "QpsPerServerCore", "ServerSystemTime", "ServerUserTime", "ClientSystemTime", "ClientUserTime", "Latency50", "Latency90", "Latency95", "Latency99", "Latency999" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ScenarioResult), global::Grpc.Testing.ScenarioResult.Parser, new[]{ "Scenario", "Latencies", "ClientStats", "ServerStats", "ServerCores", "Summary" }, null, null, null)
           }));
     }
     #endregion
@@ -115,27 +115,27 @@ namespace Grpc.Testing {
     ///  Many languages support a basic distinction between using
     ///  sync or async client, and this allows the specification
     /// </summary>
-    SYNC_CLIENT = 0,
-    ASYNC_CLIENT = 1,
+    [pbr::OriginalName("SYNC_CLIENT")] SyncClient = 0,
+    [pbr::OriginalName("ASYNC_CLIENT")] AsyncClient = 1,
     /// <summary>
     ///  used for some language-specific variants
     /// </summary>
-    OTHER_CLIENT = 2,
+    [pbr::OriginalName("OTHER_CLIENT")] OtherClient = 2,
   }
 
   public enum ServerType {
-    SYNC_SERVER = 0,
-    ASYNC_SERVER = 1,
-    ASYNC_GENERIC_SERVER = 2,
+    [pbr::OriginalName("SYNC_SERVER")] SyncServer = 0,
+    [pbr::OriginalName("ASYNC_SERVER")] AsyncServer = 1,
+    [pbr::OriginalName("ASYNC_GENERIC_SERVER")] AsyncGenericServer = 2,
     /// <summary>
     ///  used for some language-specific variants
     /// </summary>
-    OTHER_SERVER = 3,
+    [pbr::OriginalName("OTHER_SERVER")] OtherServer = 3,
   }
 
   public enum RpcType {
-    UNARY = 0,
-    STREAMING = 1,
+    [pbr::OriginalName("UNARY")] Unary = 0,
+    [pbr::OriginalName("STREAMING")] Streaming = 1,
   }
 
   #endregion
@@ -547,7 +547,7 @@ namespace Grpc.Testing {
     public string ServerHostOverride {
       get { return serverHostOverride_; }
       set {
-        serverHostOverride_ = pb::Preconditions.CheckNotNull(value, "value");
+        serverHostOverride_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
@@ -686,7 +686,7 @@ namespace Grpc.Testing {
 
     /// <summary>Field number for the "client_type" field.</summary>
     public const int ClientTypeFieldNumber = 2;
-    private global::Grpc.Testing.ClientType clientType_ = global::Grpc.Testing.ClientType.SYNC_CLIENT;
+    private global::Grpc.Testing.ClientType clientType_ = 0;
     public global::Grpc.Testing.ClientType ClientType {
       get { return clientType_; }
       set {
@@ -747,7 +747,7 @@ namespace Grpc.Testing {
 
     /// <summary>Field number for the "rpc_type" field.</summary>
     public const int RpcTypeFieldNumber = 8;
-    private global::Grpc.Testing.RpcType rpcType_ = global::Grpc.Testing.RpcType.UNARY;
+    private global::Grpc.Testing.RpcType rpcType_ = 0;
     public global::Grpc.Testing.RpcType RpcType {
       get { return rpcType_; }
       set {
@@ -819,7 +819,7 @@ namespace Grpc.Testing {
     public string OtherClientApi {
       get { return otherClientApi_; }
       set {
-        otherClientApi_ = pb::Preconditions.CheckNotNull(value, "value");
+        otherClientApi_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
@@ -853,12 +853,12 @@ namespace Grpc.Testing {
     public override int GetHashCode() {
       int hash = 1;
       hash ^= serverTargets_.GetHashCode();
-      if (ClientType != global::Grpc.Testing.ClientType.SYNC_CLIENT) hash ^= ClientType.GetHashCode();
+      if (ClientType != 0) hash ^= ClientType.GetHashCode();
       if (securityParams_ != null) hash ^= SecurityParams.GetHashCode();
       if (OutstandingRpcsPerChannel != 0) hash ^= OutstandingRpcsPerChannel.GetHashCode();
       if (ClientChannels != 0) hash ^= ClientChannels.GetHashCode();
       if (AsyncClientThreads != 0) hash ^= AsyncClientThreads.GetHashCode();
-      if (RpcType != global::Grpc.Testing.RpcType.UNARY) hash ^= RpcType.GetHashCode();
+      if (RpcType != 0) hash ^= RpcType.GetHashCode();
       if (loadParams_ != null) hash ^= LoadParams.GetHashCode();
       if (payloadConfig_ != null) hash ^= PayloadConfig.GetHashCode();
       if (histogramParams_ != null) hash ^= HistogramParams.GetHashCode();
@@ -874,7 +874,7 @@ namespace Grpc.Testing {
 
     public void WriteTo(pb::CodedOutputStream output) {
       serverTargets_.WriteTo(output, _repeated_serverTargets_codec);
-      if (ClientType != global::Grpc.Testing.ClientType.SYNC_CLIENT) {
+      if (ClientType != 0) {
         output.WriteRawTag(16);
         output.WriteEnum((int) ClientType);
       }
@@ -894,7 +894,7 @@ namespace Grpc.Testing {
         output.WriteRawTag(56);
         output.WriteInt32(AsyncClientThreads);
       }
-      if (RpcType != global::Grpc.Testing.RpcType.UNARY) {
+      if (RpcType != 0) {
         output.WriteRawTag(64);
         output.WriteEnum((int) RpcType);
       }
@@ -924,7 +924,7 @@ namespace Grpc.Testing {
     public int CalculateSize() {
       int size = 0;
       size += serverTargets_.CalculateSize(_repeated_serverTargets_codec);
-      if (ClientType != global::Grpc.Testing.ClientType.SYNC_CLIENT) {
+      if (ClientType != 0) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) ClientType);
       }
       if (securityParams_ != null) {
@@ -939,7 +939,7 @@ namespace Grpc.Testing {
       if (AsyncClientThreads != 0) {
         size += 1 + pb::CodedOutputStream.ComputeInt32Size(AsyncClientThreads);
       }
-      if (RpcType != global::Grpc.Testing.RpcType.UNARY) {
+      if (RpcType != 0) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) RpcType);
       }
       if (loadParams_ != null) {
@@ -966,7 +966,7 @@ namespace Grpc.Testing {
         return;
       }
       serverTargets_.Add(other.serverTargets_);
-      if (other.ClientType != global::Grpc.Testing.ClientType.SYNC_CLIENT) {
+      if (other.ClientType != 0) {
         ClientType = other.ClientType;
       }
       if (other.securityParams_ != null) {
@@ -984,7 +984,7 @@ namespace Grpc.Testing {
       if (other.AsyncClientThreads != 0) {
         AsyncClientThreads = other.AsyncClientThreads;
       }
-      if (other.RpcType != global::Grpc.Testing.RpcType.UNARY) {
+      if (other.RpcType != 0) {
         RpcType = other.RpcType;
       }
       if (other.loadParams_ != null) {
@@ -1515,7 +1515,7 @@ namespace Grpc.Testing {
 
     /// <summary>Field number for the "server_type" field.</summary>
     public const int ServerTypeFieldNumber = 1;
-    private global::Grpc.Testing.ServerType serverType_ = global::Grpc.Testing.ServerType.SYNC_SERVER;
+    private global::Grpc.Testing.ServerType serverType_ = 0;
     public global::Grpc.Testing.ServerType ServerType {
       get { return serverType_; }
       set {
@@ -1606,7 +1606,7 @@ namespace Grpc.Testing {
     public string OtherServerApi {
       get { return otherServerApi_; }
       set {
-        otherServerApi_ = pb::Preconditions.CheckNotNull(value, "value");
+        otherServerApi_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
@@ -1634,7 +1634,7 @@ namespace Grpc.Testing {
 
     public override int GetHashCode() {
       int hash = 1;
-      if (ServerType != global::Grpc.Testing.ServerType.SYNC_SERVER) hash ^= ServerType.GetHashCode();
+      if (ServerType != 0) hash ^= ServerType.GetHashCode();
       if (securityParams_ != null) hash ^= SecurityParams.GetHashCode();
       if (Port != 0) hash ^= Port.GetHashCode();
       if (AsyncServerThreads != 0) hash ^= AsyncServerThreads.GetHashCode();
@@ -1650,7 +1650,7 @@ namespace Grpc.Testing {
     }
 
     public void WriteTo(pb::CodedOutputStream output) {
-      if (ServerType != global::Grpc.Testing.ServerType.SYNC_SERVER) {
+      if (ServerType != 0) {
         output.WriteRawTag(8);
         output.WriteEnum((int) ServerType);
       }
@@ -1683,7 +1683,7 @@ namespace Grpc.Testing {
 
     public int CalculateSize() {
       int size = 0;
-      if (ServerType != global::Grpc.Testing.ServerType.SYNC_SERVER) {
+      if (ServerType != 0) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) ServerType);
       }
       if (securityParams_ != null) {
@@ -1712,7 +1712,7 @@ namespace Grpc.Testing {
       if (other == null) {
         return;
       }
-      if (other.ServerType != global::Grpc.Testing.ServerType.SYNC_SERVER) {
+      if (other.ServerType != 0) {
         ServerType = other.ServerType;
       }
       if (other.securityParams_ != null) {
@@ -2436,7 +2436,7 @@ namespace Grpc.Testing {
     public string Name {
       get { return name_; }
       set {
-        name_ = pb::Preconditions.CheckNotNull(value, "value");
+        name_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 

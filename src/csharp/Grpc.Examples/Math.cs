@@ -34,12 +34,12 @@ namespace Math {
             "Mw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
-          new pbr::GeneratedCodeInfo(null, new pbr::GeneratedCodeInfo[] {
-            new pbr::GeneratedCodeInfo(typeof(global::Math.DivArgs), global::Math.DivArgs.Parser, new[]{ "Dividend", "Divisor" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Math.DivReply), global::Math.DivReply.Parser, new[]{ "Quotient", "Remainder" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Math.FibArgs), global::Math.FibArgs.Parser, new[]{ "Limit" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Math.Num), global::Math.Num.Parser, new[]{ "Num_" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Math.FibReply), global::Math.FibReply.Parser, new[]{ "Count" }, null, null, null)
+          new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::Math.DivArgs), global::Math.DivArgs.Parser, new[]{ "Dividend", "Divisor" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Math.DivReply), global::Math.DivReply.Parser, new[]{ "Quotient", "Remainder" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Math.FibArgs), global::Math.FibArgs.Parser, new[]{ "Limit" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Math.Num), global::Math.Num.Parser, new[]{ "Num_" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Math.FibReply), global::Math.FibReply.Parser, new[]{ "Count" }, null, null, null)
           }));
     }
     #endregion

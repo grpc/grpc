@@ -39,7 +39,7 @@ namespace Grpc.Testing {
             "YgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Grpc.Testing.MessagesReflection.Descriptor, global::Grpc.Testing.ControlReflection.Descriptor, },
-          new pbr::GeneratedCodeInfo(null, null));
+          new pbr::GeneratedClrTypeInfo(null, null));
     }
     #endregion
 
