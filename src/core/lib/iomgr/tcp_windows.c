@@ -61,25 +61,29 @@
 #define GRPC_FIONBIO FIONBIO
 #endif
 
-static grpc_error * set_non_block(SOCKET sock) {
+static grpc_error *set_non_block(SOCKET sock) {
   int status;
   uint32_t param = 1;
   DWORD ret;
   status = WSAIoctl(sock, GRPC_FIONBIO, &param, sizeof(param), NULL, 0, &ret,
                     NULL, NULL);
-  return status == 0 ? GRPC_ERROR_NONE : GRPC_WSA_ERROR(WSAGetLastError(), "WSAIoctl(GRPC_FIONBIO)");
+  return status == 0
+             ? GRPC_ERROR_NONE
+             : GRPC_WSA_ERROR(WSAGetLastError(), "WSAIoctl(GRPC_FIONBIO)");
 }
 
-static grpc_error * set_dualstack(SOCKET sock) {
+static grpc_error *set_dualstack(SOCKET sock) {
   int status;
   unsigned long param = 0;
   status = setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, (const char *)&param,
                       sizeof(param));
-  return status == 0 ? GRPC_ERROR_NONE : GRPC_WSA_ERROR(WSAGetLastError(), "setsockopt(IPV6_V6ONLY)");
+  return status == 0
+             ? GRPC_ERROR_NONE
+             : GRPC_WSA_ERROR(WSAGetLastError(), "setsockopt(IPV6_V6ONLY)");
 }
 
-grpc_error * grpc_tcp_prepare_socket(SOCKET sock) {
-  grpc_error * err;
+grpc_error *grpc_tcp_prepare_socket(SOCKET sock) {
+  grpc_error *err;
   err = set_non_block(sock);
   if (err != GRPC_ERROR_NONE) return err;
   err = set_dualstack(sock);
@@ -194,7 +198,8 @@ static void win_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   WSABUF buffer;
 
   if (tcp->shutting_down) {
-    grpc_exec_ctx_push(exec_ctx, cb, GRPC_ERROR_CREATE("TCP socket is shutting down"), NULL);
+    grpc_exec_ctx_push(exec_ctx, cb,
+                       GRPC_ERROR_CREATE("TCP socket is shutting down"), NULL);
     return;
   }
 
@@ -231,7 +236,8 @@ static void win_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     int wsa_error = WSAGetLastError();
     if (wsa_error != WSA_IO_PENDING) {
       info->wsa_error = wsa_error;
-      grpc_exec_ctx_push(exec_ctx, &tcp->on_read, GRPC_WSA_ERROR(info->wsa_error, "WSARecv"), NULL);
+      grpc_exec_ctx_push(exec_ctx, &tcp->on_read,
+                         GRPC_WSA_ERROR(info->wsa_error, "WSARecv"), NULL);
       return;
     }
   }
@@ -280,7 +286,8 @@ static void win_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   size_t len;
 
   if (tcp->shutting_down) {
-    grpc_exec_ctx_push(exec_ctx, cb, GRPC_ERROR_CREATE("TCP socket is shutting down"), NULL);
+    grpc_exec_ctx_push(exec_ctx, cb,
+                       GRPC_ERROR_CREATE("TCP socket is shutting down"), NULL);
     return;
   }
 
@@ -308,7 +315,9 @@ static void win_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
      connection that has its send queue filled up. But if we don't, then we can
      avoid doing an async write operation at all. */
   if (info->wsa_error != WSAEWOULDBLOCK) {
-    grpc_error *error = status == 0 ? GRPC_ERROR_NONE : GRPC_WSA_ERROR(info->wsa_error, "WSASend");
+    grpc_error *error = status == 0
+                            ? GRPC_ERROR_NONE
+                            : GRPC_WSA_ERROR(info->wsa_error, "WSASend");
     grpc_exec_ctx_push(exec_ctx, cb, error, NULL);
     return;
   }
@@ -326,7 +335,8 @@ static void win_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     int wsa_error = WSAGetLastError();
     if (wsa_error != WSA_IO_PENDING) {
       TCP_UNREF(tcp, "write");
-      grpc_exec_ctx_push(exec_ctx, cb, GRPC_WSA_ERROR(wsa_error, "WSASend"), NULL);
+      grpc_exec_ctx_push(exec_ctx, cb, GRPC_WSA_ERROR(wsa_error, "WSASend"),
+                         NULL);
       return;
     }
   }

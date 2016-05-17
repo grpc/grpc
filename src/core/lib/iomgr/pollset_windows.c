@@ -128,8 +128,8 @@ void grpc_pollset_reset(grpc_pollset *pollset) {
 }
 
 grpc_error *grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
-                       grpc_pollset_worker **worker_hdl, gpr_timespec now,
-                       gpr_timespec deadline) {
+                              grpc_pollset_worker **worker_hdl,
+                              gpr_timespec now, gpr_timespec deadline) {
   grpc_pollset_worker worker;
   *worker_hdl = &worker;
 
@@ -167,7 +167,8 @@ grpc_error *grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
       }
 
       if (pollset->shutting_down && pollset->on_shutdown != NULL) {
-        grpc_exec_ctx_push(exec_ctx, pollset->on_shutdown, GRPC_ERROR_NONE, NULL);
+        grpc_exec_ctx_push(exec_ctx, pollset->on_shutdown, GRPC_ERROR_NONE,
+                           NULL);
         pollset->on_shutdown = NULL;
       }
       goto done;
@@ -200,7 +201,8 @@ done:
   return GRPC_ERROR_NONE;
 }
 
-grpc_error *grpc_pollset_kick(grpc_pollset *p, grpc_pollset_worker *specific_worker) {
+grpc_error *grpc_pollset_kick(grpc_pollset *p,
+                              grpc_pollset_worker *specific_worker) {
   if (specific_worker != NULL) {
     if (specific_worker == GRPC_POLLSET_KICK_BROADCAST) {
       for (specific_worker =

@@ -130,7 +130,7 @@ grpc_error *grpc_os_error(const char *file, int line, int err,
 #define GRPC_OS_ERROR(err, call_name) \
   grpc_os_error(__FILE__, __LINE__, err, call_name)
 grpc_error *grpc_wsa_error(const char *file, int line, int err,
-                          const char *call_name);
+                           const char *call_name);
 #define GRPC_WSA_ERROR(err, call_name) \
   grpc_wsa_error(__FILE__, __LINE__, err, call_name)
 

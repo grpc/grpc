@@ -102,7 +102,8 @@ struct grpc_tcp_server {
 
 /* Public function. Allocates the proper data structures to hold a
    grpc_tcp_server. */
-grpc_error *grpc_tcp_server_create(grpc_closure *shutdown_complete, grpc_tcp_server **server) {
+grpc_error *grpc_tcp_server_create(grpc_closure *shutdown_complete,
+                                   grpc_tcp_server **server) {
   grpc_tcp_server *s = gpr_malloc(sizeof(grpc_tcp_server));
   gpr_ref_init(&s->refs, 1);
   gpr_mu_init(&s->mu);
@@ -144,7 +145,8 @@ grpc_tcp_server *grpc_tcp_server_ref(grpc_tcp_server *s) {
 void grpc_tcp_server_shutdown_starting_add(grpc_tcp_server *s,
                                            grpc_closure *shutdown_starting) {
   gpr_mu_lock(&s->mu);
-  grpc_closure_list_append(&s->shutdown_starting, shutdown_starting, GRPC_ERROR_NONE);
+  grpc_closure_list_append(&s->shutdown_starting, shutdown_starting,
+                           GRPC_ERROR_NONE);
   gpr_mu_unlock(&s->mu);
 }
 
@@ -189,7 +191,7 @@ void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
 
 /* Prepare (bind) a recently-created socket for listening. */
 static grpc_error *prepare_socket(SOCKET sock, const struct sockaddr *addr,
-                          size_t addr_len, int *port) {
+                                  size_t addr_len, int *port) {
   struct sockaddr_storage sockname_temp;
   socklen_t sockname_len;
   grpc_error *error = GRPC_ERROR_NONE;
@@ -222,7 +224,11 @@ static grpc_error *prepare_socket(SOCKET sock, const struct sockaddr *addr,
 failure:
   GPR_ASSERT(error != GRPC_ERROR_NONE);
   char *tgtaddr = grpc_sockaddr_to_uri(addr);
-  grpc_error *final_error = grpc_error_set_int( grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING("Failed to prepare server socket", &error, 1), GRPC_ERROR_STR_TARGET_ADDRESS, tgtaddr), GRPC_ERROR_INT_FD, (intptr_t)sock);
+  grpc_error *final_error = grpc_error_set_int(
+      grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING(
+                             "Failed to prepare server socket", &error, 1),
+                         GRPC_ERROR_STR_TARGET_ADDRESS, tgtaddr),
+      GRPC_ERROR_INT_FD, (intptr_t)sock);
   gpr_free(tgtaddr);
   GRPC_ERROR_UNREF(error);
   if (sock != INVALID_SOCKET) closesocket(sock);
@@ -246,7 +252,8 @@ static void decrement_active_ports_and_notify(grpc_exec_ctx *exec_ctx,
 
 /* In order to do an async accept, we need to create a socket first which
    will be the one assigned to the new incoming connection. */
-static grpc_error *start_accept(grpc_exec_ctx *exec_ctx, grpc_tcp_listener *port) {
+static grpc_error *start_accept(grpc_exec_ctx *exec_ctx,
+                                grpc_tcp_listener *port) {
   SOCKET sock = INVALID_SOCKET;
   BOOL success;
   DWORD addrlen = sizeof(struct sockaddr_in6) + 16;
@@ -384,9 +391,9 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 }
 
 static grpc_error *add_socket_to_server(grpc_tcp_server *s, SOCKET sock,
-                                               const struct sockaddr *addr,
-                                               size_t addr_len,
-                                               unsigned port_index, grpc_tcp_listener **listener) {
+                                        const struct sockaddr *addr,
+                                        size_t addr_len, unsigned port_index,
+                                        grpc_tcp_listener **listener) {
   grpc_tcp_listener *sp = NULL;
   int port;
   int status;
@@ -501,7 +508,8 @@ done:
   gpr_free(allocated_addr);
 
   if (error != GRPC_ERROR_NONE) {
-    grpc_error *error_out = GRPC_ERROR_CREATE_REFERENCING("Failed to add port to server", &error, 1);
+    grpc_error *error_out = GRPC_ERROR_CREATE_REFERENCING(
+        "Failed to add port to server", &error, 1);
     GRPC_ERROR_UNREF(error);
     error = error_out;
   }
