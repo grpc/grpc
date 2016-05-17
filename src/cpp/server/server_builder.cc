@@ -100,11 +100,8 @@ void ServerBuilder::AddListeningPort(const grpc::string& addr,
 
 std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   std::unique_ptr<ThreadPoolInterface> thread_pool;
-  // Does this server have atleast one sync method
-  bool has_sync_methods = false;
   for (auto it = services_.begin(); it != services_.end(); ++it) {
     if ((*it)->service->has_synchronous_methods()) {
-      has_sync_methods = true;
       if (thread_pool == nullptr) {
         thread_pool.reset(CreateDefaultThreadPool());
         break;
@@ -134,12 +131,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
 
   ServerInitializer* initializer = server->initializer();
 
-  // If the server has atleast one sync methods, we know that this is a Sync
-  // server or a Hybrid server. This means that the completion queue on the
-  // Server object (i.e server->cq_) will be frequently polled (which is why
-  // we initialize num_frequently_pollsed_cqs to 1 here)
-  int num_frequently_polled_cqs = has_sync_methods ? 1 : 0;
-
+  int num_non_listening_cqs = 0;
   for (auto cq = cqs_.begin(); cq != cqs_.end(); ++cq) {
     // A completion queue that is not polled frequently (by calling Next() or
     // AsyncNext()) is not safe to use for listening to incoming channels.
@@ -148,17 +140,19 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     if ((*cq)->IsFrequentlyPolled()) {
       grpc_server_register_completion_queue(server->server_, (*cq)->cq(),
                                             nullptr);
-      num_frequently_polled_cqs++;
     } else {
       grpc_server_register_non_listening_completion_queue(server->server_,
                                                           (*cq)->cq(), nullptr);
+      num_non_listening_cqs++;
     }
   }
 
-  if (num_frequently_polled_cqs == 0) {
-    gpr_log(GPR_ERROR,
-            "Atleast one of the completion queues must be frequently polled");
-    return nullptr;
+  // TODO: (sreek) - Find a good way to determine whether the server is a Sync
+  // server or an Async server. In case of Async server, return an error if all
+  // the completion queues are non-listening
+  if (num_non_listening_cqs >= 0) {
+    gpr_log(GPR_INFO, "Number of non listening completion queues: %d out of %d",
+            num_non_listening_cqs, cqs_.size());
   }
 
   for (auto service = services_.begin(); service != services_.end();
