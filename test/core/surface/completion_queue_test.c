@@ -63,6 +63,12 @@ static void test_no_op(void) {
   shutdown_and_destroy(grpc_completion_queue_create(NULL));
 }
 
+static void test_pollset_conversion() {
+  grpc_completion_queue *cq = grpc_completion_queue(NULL);
+  GPR_ASSERT(grpc_cq_from_pollset(grpc_cq_pollset(cq)) == cq);
+  shutdown_and_destroy(cq);
+}
+
 static void test_wait_empty(void) {
   grpc_completion_queue *cc;
   grpc_event event;
