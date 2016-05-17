@@ -39,6 +39,22 @@
 
 #include "src/core/lib/profiling/timers.h"
 
+bool grpc_exec_ctx_ready_to_finish(grpc_exec_ctx *exec_ctx) {
+  if (!exec_ctx->cached_ready_to_finish) {
+    exec_ctx->cached_ready_to_finish = exec_ctx->check_ready_to_finish(
+        exec_ctx, exec_ctx->check_ready_to_finish_arg);
+  }
+  return exec_ctx->cached_ready_to_finish;
+}
+
+bool grpc_never_ready_to_finish(grpc_exec_ctx *exec_ctx, void *arg_ignored) {
+  return false;
+}
+
+bool grpc_always_ready_to_finish(grpc_exec_ctx *exec_ctx, void *arg_ignored) {
+  return true;
+}
+
 #ifndef GRPC_EXECUTION_CONTEXT_SANITIZER
 bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
   bool did_something = 0;
@@ -62,6 +78,7 @@ bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
 }
 
 void grpc_exec_ctx_finish(grpc_exec_ctx *exec_ctx) {
+  exec_ctx->cached_ready_to_finish = true;
   grpc_exec_ctx_flush(exec_ctx);
 }
 
