@@ -558,9 +558,21 @@ static void free_grpc_pollset(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
   gpr_free(pollset);
 }
 
+static void pollset_work(grpc_exec_ctx *exec_ctx, gpr_mu *pollset_mu,
+                         grpc_pollset *pollset, gpr_timespec deadline) {
+  grpc_pollset_worker *worker = NULL;
+
+  /* grpc_pollset_work requires the caller to hold the pollset mutex */
+  gpr_mu_lock(pollset_mu);
+  grpc_pollset_work(exec_ctx, pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
+                    deadline);
+  gpr_mu_unlock(pollset_mu);
+
+  grpc_exec_ctx_flush(exec_ctx);
+}
+
 /* This tests that the read_notifier_pollset field of a grpc_fd is properly
    set when the grpc_fd becomes readable
-   - This tests both basic and multi pollsets
    - The parameter register_cb_after_read_event controls whether the on-read
      callback registration (i.e the one done by grpc_fd_notify_on_read()) is
      done either before or after the fd becomes readable
@@ -569,34 +581,33 @@ static void test_grpc_fd_read_notifier_pollset(
     bool register_cb_after_read_event) {
   grpc_fd *em_fd[2];
   int sv[2][2];
-  gpr_mu *mu[2];
-  grpc_pollset *pollset[2];
+  gpr_mu *mu;
+  grpc_pollset *pollset;
   char data;
   ssize_t result;
   int i;
-  grpc_pollset_worker *worker;
   read_notifier_test_fd_context fd_context;
   grpc_closure on_read_closure;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
+  pollset = create_grpc_pollset(&mu);
+
   for (i = 0; i < 2; i++) {
-    pollset[i] = create_grpc_pollset(&mu[i]);
     get_socket_pair(sv[i]); /* sv[i][0] & sv[i][1] will have the socket pair */
     em_fd[i] = grpc_fd_create(sv[i][0], "test_grpc_fd_read_notifier_pollset");
-    grpc_pollset_add_fd(&exec_ctx, pollset[i], em_fd[i]);
+    grpc_pollset_add_fd(&exec_ctx, pollset, em_fd[i]);
   }
 
-  /* At this point pollset[0] has em_fd[0] and pollset[1] has em_fd[1] and both
-     are basic pollsets. Make pollset[1] a multi-pollset by adding em_fd[0] to
-     it */
-  grpc_pollset_add_fd(&exec_ctx, pollset[1], em_fd[0]);
   grpc_exec_ctx_flush(&exec_ctx);
 
-  /* The following tests that the read_notifier_pollset is correctly set on the
-     grpc_fd structure in both basic pollset and multi pollset cases.
-      pollset[0] is a basic pollset containing just em_fd[0]
-      pollset[1] is a multi pollset containing em_fd[0] and em_fd[1] */
+  /* Call grpc_pollset_work with an immediate deadline (i.e a deadline in the
+     past like gpr_inf_past(GPR_CLOCK_MONOTONIC) so that any work that needs to
+     be done as a result of adding the above file descriptors will get done */
+  pollset_work(&exec_ctx, mu, pollset, gpr_inf_past(GPR_CLOCK_MONOTONIC));
 
+  /* At this point pollset contains two fds. em_fd[0] and em_fd[1]. The
+     following loop makes each of these fds readable (one at a time) and checks
+     that the read_notifier_pollset is correctly set on those fds */
   for (i = 0; i < 2; i++) {
     on_read_closure.cb = read_notifier_test_callback;
     fd_context.fd = em_fd[i];
@@ -612,14 +623,7 @@ static void test_grpc_fd_read_notifier_pollset(
     result = write(sv[i][1], &data, sizeof(data));
     GPR_ASSERT(result == 1);
 
-    /* grpc_pollset_work requires the caller to hold the pollset mutex */
-    gpr_mu_lock(mu[i]);
-    worker = NULL;
-    grpc_pollset_work(&exec_ctx, pollset[i], &worker,
-                      gpr_now(GPR_CLOCK_MONOTONIC),
-                      gpr_inf_future(GPR_CLOCK_MONOTONIC));
-    gpr_mu_unlock(mu[i]);
-    grpc_exec_ctx_flush(&exec_ctx);
+    pollset_work(&exec_ctx, mu, pollset, gpr_inf_future(GPR_CLOCK_MONOTONIC));
 
     if (register_cb_after_read_event) {
       /* Registering the callback after the fd is readable. In this case, the
@@ -640,9 +644,9 @@ static void test_grpc_fd_read_notifier_pollset(
   for (i = 0; i < 2; i++) {
     grpc_fd_orphan(&exec_ctx, em_fd[i], NULL, NULL, "");
     close(sv[i][1]);
-    free_grpc_pollset(&exec_ctx, pollset[i]);
   }
 
+  free_grpc_pollset(&exec_ctx, pollset);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
