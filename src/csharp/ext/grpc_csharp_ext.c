@@ -218,25 +218,22 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_batch_context_destroy(grpcsharp_batch_con
   gpr_free(ctx);
 }
 
-GPR_EXPORT intptr_t GPR_CALLTYPE grpcsharp_batch_context_recv_message_length(
-    const grpcsharp_batch_context *ctx) {
-  if (!ctx->recv_message) {
-    return -1;
-  }
-  return (intptr_t)grpc_byte_buffer_length(ctx->recv_message);
+GPR_EXPORT size_t GPR_CALLTYPE grpcsharp_byte_buffer_length(
+    grpc_byte_buffer *bb) {
+  return grpc_byte_buffer_length(bb);
 }
 
 /*
- * Copies data from recv_message to a buffer. Fatal error occurs if
+ * Copies contents of grpc_byte_buffer to a buffer. Fatal error occurs if
  * buffer is too small.
  */
-GPR_EXPORT void GPR_CALLTYPE grpcsharp_batch_context_recv_message_to_buffer(
-    const grpcsharp_batch_context *ctx, char *buffer, size_t buffer_len) {
+GPR_EXPORT void GPR_CALLTYPE grpcsharp_byte_buffer_read(
+    grpc_byte_buffer *bb, char *buffer, size_t buffer_len) {
   grpc_byte_buffer_reader reader;
   gpr_slice slice;
   size_t offset = 0;
 
-  grpc_byte_buffer_reader_init(&reader, ctx->recv_message);
+  grpc_byte_buffer_reader_init(&reader, bb);
 
   while (grpc_byte_buffer_reader_next(&reader, &slice)) {
     size_t len = GPR_SLICE_LENGTH(slice);

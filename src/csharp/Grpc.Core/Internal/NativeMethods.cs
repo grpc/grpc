@@ -58,9 +58,10 @@ namespace Grpc.Core.Internal
         public readonly Delegates.grpcsharp_version_string_delegate grpcsharp_version_string;
 
         public readonly Delegates.grpcsharp_batch_context_create_delegate grpcsharp_batch_context_create;
-        public readonly Delegates.grpcsharp_batch_context_recv_message_length_delegate grpcsharp_batch_context_recv_message_length;
-        public readonly Delegates.grpcsharp_batch_context_recv_message_to_buffer_delegate grpcsharp_batch_context_recv_message_to_buffer;
         public readonly Delegates.grpcsharp_batch_context_destroy_delegate grpcsharp_batch_context_destroy;
+
+        public readonly Delegates.grpcsharp_byte_buffer_length_delegate grpcsharp_byte_buffer_length;
+        public readonly Delegates.grpcsharp_byte_buffer_read_delegate grpcsharp_byte_buffer_read;
 
         public readonly Delegates.grpcsharp_composite_call_credentials_create_delegate grpcsharp_composite_call_credentials_create;
         public readonly Delegates.grpcsharp_call_credentials_release_delegate grpcsharp_call_credentials_release;
@@ -151,9 +152,10 @@ namespace Grpc.Core.Internal
                 this.grpcsharp_version_string = GetMethodDelegate<Delegates.grpcsharp_version_string_delegate>(library);
 
                 this.grpcsharp_batch_context_create = GetMethodDelegate<Delegates.grpcsharp_batch_context_create_delegate>(library);
-                this.grpcsharp_batch_context_recv_message_length = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_message_length_delegate>(library);
-                this.grpcsharp_batch_context_recv_message_to_buffer = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_message_to_buffer_delegate>(library);
                 this.grpcsharp_batch_context_destroy = GetMethodDelegate<Delegates.grpcsharp_batch_context_destroy_delegate>(library);
+
+                this.grpcsharp_byte_buffer_length = GetMethodDelegate<Delegates.grpcsharp_byte_buffer_length_delegate>(library);
+                this.grpcsharp_byte_buffer_read = GetMethodDelegate<Delegates.grpcsharp_byte_buffer_read_delegate>(library);
 
                 this.grpcsharp_composite_call_credentials_create = GetMethodDelegate<Delegates.grpcsharp_composite_call_credentials_create_delegate>(library);
                 this.grpcsharp_call_credentials_release = GetMethodDelegate<Delegates.grpcsharp_call_credentials_release_delegate>(library);
@@ -241,9 +243,10 @@ namespace Grpc.Core.Internal
                 this.grpcsharp_version_string = PInvokeMethods.grpcsharp_version_string;
 
                 this.grpcsharp_batch_context_create = PInvokeMethods.grpcsharp_batch_context_create;
-                this.grpcsharp_batch_context_recv_message_length = PInvokeMethods.grpcsharp_batch_context_recv_message_length;
-                this.grpcsharp_batch_context_recv_message_to_buffer = PInvokeMethods.grpcsharp_batch_context_recv_message_to_buffer;
                 this.grpcsharp_batch_context_destroy = PInvokeMethods.grpcsharp_batch_context_destroy;
+
+                this.grpcsharp_byte_buffer_length = PInvokeMethods.grpcsharp_byte_buffer_length;
+                this.grpcsharp_byte_buffer_read = PInvokeMethods.grpcsharp_byte_buffer_read;
 
                 this.grpcsharp_composite_call_credentials_create = PInvokeMethods.grpcsharp_composite_call_credentials_create;
                 this.grpcsharp_call_credentials_release = PInvokeMethods.grpcsharp_call_credentials_release;
@@ -359,9 +362,10 @@ namespace Grpc.Core.Internal
             public delegate IntPtr grpcsharp_version_string_delegate();  // returns not-owned const char*
 
             public delegate BatchContextSafeHandle grpcsharp_batch_context_create_delegate();
-            public delegate IntPtr grpcsharp_batch_context_recv_message_length_delegate(BatchContextSafeHandle ctx);
-            public delegate void grpcsharp_batch_context_recv_message_to_buffer_delegate(BatchContextSafeHandle ctx, byte[] buffer, UIntPtr bufferLen);
             public delegate void grpcsharp_batch_context_destroy_delegate(IntPtr ctx);
+
+            public delegate UIntPtr grpcsharp_byte_buffer_length_delegate(IntPtr grpcByteBuffer);
+            public delegate void grpcsharp_byte_buffer_read_delegate(IntPtr grpcByteBuffer, byte[] buffer, UIntPtr bufferLen);
 
             public delegate CallCredentialsSafeHandle grpcsharp_composite_call_credentials_create_delegate(CallCredentialsSafeHandle creds1, CallCredentialsSafeHandle creds2);
             public delegate void grpcsharp_call_credentials_release_delegate(IntPtr credentials);
@@ -482,13 +486,13 @@ namespace Grpc.Core.Internal
             public static extern BatchContextSafeHandle grpcsharp_batch_context_create();
 
             [DllImport("grpc_csharp_ext.dll")]
-            public static extern IntPtr grpcsharp_batch_context_recv_message_length(BatchContextSafeHandle ctx);
-
-            [DllImport("grpc_csharp_ext.dll")]
-            public static extern void grpcsharp_batch_context_recv_message_to_buffer(BatchContextSafeHandle ctx, byte[] buffer, UIntPtr bufferLen);
-
-            [DllImport("grpc_csharp_ext.dll")]
             public static extern void grpcsharp_batch_context_destroy(IntPtr ctx);
+
+            [DllImport("grpc_csharp_ext.dll")]
+            public static extern UIntPtr grpcsharp_byte_buffer_length(IntPtr grpcByteBuffer);
+
+            [DllImport("grpc_csharp_ext.dll")]
+            public static extern void grpcsharp_byte_buffer_read(IntPtr grpcByteBuffer, byte[] buffer, UIntPtr bufferLen);
 
             // CallCredentialsSafeHandle
 

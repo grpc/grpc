@@ -79,16 +79,17 @@ namespace Grpc.Core.Internal
         }
 
         // Gets data of recv_message completion.
-        public byte[] GetReceivedMessage()
+        public unsafe byte[] GetReceivedMessage()
         {
-            // TODO(jtattermusch): implement using an unsafe block to save transitions.
-            IntPtr len = Native.grpcsharp_batch_context_recv_message_length(this);
-            if (len == new IntPtr(-1))
+            var batchContext = (BatchContext*) handle;
+            var recvMessageBuffer = batchContext->recvMessage;
+            if (recvMessageBuffer == IntPtr.Zero)
             {
                 return null;
             }
-            byte[] data = new byte[(int)len];
-            Native.grpcsharp_batch_context_recv_message_to_buffer(this, data, new UIntPtr((ulong)data.Length));
+            UIntPtr len = Native.grpcsharp_byte_buffer_length(recvMessageBuffer);
+            byte[] data = new byte[len.ToUInt64()];
+            Native.grpcsharp_byte_buffer_read(recvMessageBuffer, data, len);
             return data;
         }
 
