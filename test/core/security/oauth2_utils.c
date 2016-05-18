@@ -85,6 +85,7 @@ char *grpc_test_fetch_oauth2_token_with_credentials(
 
   grpc_pollset *pollset = gpr_malloc(grpc_pollset_size());
   grpc_pollset_init(pollset, &request.mu);
+  request.pops = grpc_pops_create_from_pollset(pollset);
   request.is_done = 0;
 
   grpc_closure_init(&do_nothing_closure, do_nothing, NULL);
