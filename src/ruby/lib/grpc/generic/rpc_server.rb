@@ -353,10 +353,7 @@ module GRPC
         transition_running_state(:running)
         @run_cond.broadcast
       end
-      remove_signal_handler = GRPC::Signals.register_handler { stop }
       loop_handle_server_calls
-      # Remove signal handler when server stops
-      remove_signal_handler.call
     end
 
     alias_method :run_till_terminated, :run

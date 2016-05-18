@@ -123,10 +123,6 @@ module GRPC
       @unmarshal = unmarshal
       @metadata_tag = metadata_tag
       @op_notifier = nil
-      weak_self = WeakRef.new(self)
-      signal_handler = proc { weak_self.cancel if weak_self.weakref_alive? }
-      remove_handler = GRPC::Signals.register_handler(&signal_handler)
-      ObjectSpace.define_finalizer(self, remove_handler)
     end
 
     # output_metadata are provides access to hash that can be used to
