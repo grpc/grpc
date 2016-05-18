@@ -117,6 +117,8 @@ void grpc_socket_notify_on_read(grpc_exec_ctx *exec_ctx,
                                 grpc_winsocket *winsocket,
                                 grpc_closure *closure);
 
-void grpc_socket_become_ready(grpc_exec_ctx *exec_ctx, grpc_winsocket *winsocket, grpc_winsocket_callback_info *ci);
+void grpc_socket_become_ready(grpc_exec_ctx *exec_ctx,
+                              grpc_winsocket *winsocket,
+                              grpc_winsocket_callback_info *ci);
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKET_WINDOWS_H */
