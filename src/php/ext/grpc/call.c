@@ -89,7 +89,7 @@ zend_object_value create_wrapped_grpc_call(zend_class_entry *class_type
 
 /* Wraps a grpc_call struct in a PHP object. Owned indicates whether the struct
    should be destroyed at the end of the object's lifecycle */
-zval *grpc_php_wrap_call(grpc_call *wrapped, bool owned) {
+zval *grpc_php_wrap_call(grpc_call *wrapped, bool owned TSRMLS_DC) {
   zval *call_object;
   MAKE_STD_ZVAL(call_object);
   object_init_ex(call_object, grpc_ce_call);
@@ -102,7 +102,7 @@ zval *grpc_php_wrap_call(grpc_call *wrapped, bool owned) {
 
 /* Creates and returns a PHP array object with the data in a
  * grpc_metadata_array. Returns NULL on failure */
-zval *grpc_parse_metadata_array(grpc_metadata_array *metadata_array) {
+zval *grpc_parse_metadata_array(grpc_metadata_array *metadata_array TSRMLS_DC) {
   int count = metadata_array->count;
   grpc_metadata *elements = metadata_array->metadata;
   int i;
@@ -127,7 +127,7 @@ zval *grpc_parse_metadata_array(grpc_metadata_array *metadata_array) {
     if (zend_hash_find(array_hash, str_key, key_len, (void **)data) ==
         SUCCESS) {
       if (Z_TYPE_P(*data) != IS_ARRAY) {
-        zend_throw_exception(zend_exception_get_default(),
+        zend_throw_exception(zend_exception_get_default(TSRMLS_C),
                              "Metadata hash somehow contains wrong types.",
                              1 TSRMLS_CC);
         efree(str_key);
@@ -454,7 +454,7 @@ PHP_METHOD(Call, startBatch) {
         add_property_bool(result, "send_status", true);
         break;
       case GRPC_OP_RECV_INITIAL_METADATA:
-        array = grpc_parse_metadata_array(&recv_metadata);
+        array = grpc_parse_metadata_array(&recv_metadata TSRMLS_CC);
         add_property_zval(result, "metadata", array);
         Z_DELREF_P(array);
         break;
@@ -470,7 +470,7 @@ PHP_METHOD(Call, startBatch) {
       case GRPC_OP_RECV_STATUS_ON_CLIENT:
         MAKE_STD_ZVAL(recv_status);
         object_init(recv_status);
-        array = grpc_parse_metadata_array(&recv_trailing_metadata);
+        array = grpc_parse_metadata_array(&recv_trailing_metadata TSRMLS_CC);
         add_property_zval(recv_status, "metadata", array);
         Z_DELREF_P(array);
         add_property_long(recv_status, "code", status);

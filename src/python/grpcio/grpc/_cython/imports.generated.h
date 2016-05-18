@@ -870,14 +870,15 @@ void pygrpc_load_imports(HMODULE library);
 
 #else /* !GPR_WIN32 */
 
+#include <grpc/byte_buffer.h>
+#include <grpc/byte_buffer_reader.h>
+#include <grpc/compression.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/slice.h>
 #include <grpc/support/time.h>
 #include <grpc/status.h>
-#include <grpc/byte_buffer.h>
-#include <grpc/byte_buffer_reader.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
 
 #endif /* !GPR_WIN32 */
 
