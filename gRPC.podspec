@@ -36,7 +36,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC'
-  version = '0.12.0'
+  version = '0.14.0'
   s.version  = version
   s.summary  = 'gRPC client library for iOS/OSX'
   s.homepage = 'http://www.grpc.io'
@@ -44,7 +44,8 @@ Pod::Spec.new do |s|
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
   s.source = { :git => 'https://github.com/grpc/grpc.git',
-               :tag => "release-#{version.gsub(/\./, '_')}-objectivec-#{version}" }
+               :tag => "release-#{version.gsub(/\./, '_')}-objectivec-#{version}",
+               :submodules => true }
 
 
   s.ios.deployment_target = '7.1'
@@ -181,6 +182,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/endpoint.h',
                       'src/core/lib/iomgr/endpoint_pair.h',
                       'src/core/lib/iomgr/ev_poll_and_epoll_posix.h',
+                      'src/core/lib/iomgr/ev_poll_posix.h',
                       'src/core/lib/iomgr/ev_posix.h',
                       'src/core/lib/iomgr/exec_ctx.h',
                       'src/core/lib/iomgr/executor.h',
@@ -287,8 +289,9 @@ Pod::Spec.new do |s|
                       'src/core/ext/client_config/subchannel_call_holder.h',
                       'src/core/ext/client_config/subchannel_index.h',
                       'src/core/ext/client_config/uri_parser.h',
+                      'third_party/objective_c/Cronet/cronet_c_for_grpc.h',
                       'src/core/ext/lb_policy/grpclb/load_balancer_api.h',
-                      'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h',
+                      'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h',
                       'third_party/nanopb/pb.h',
                       'third_party/nanopb/pb_common.h',
                       'third_party/nanopb/pb_decode.h',
@@ -305,6 +308,7 @@ Pod::Spec.new do |s|
                       'include/grpc/grpc.h',
                       'include/grpc/status.h',
                       'include/grpc/impl/codegen/byte_buffer.h',
+                      'include/grpc/impl/codegen/byte_buffer_reader.h',
                       'include/grpc/impl/codegen/compression_types.h',
                       'include/grpc/impl/codegen/connectivity_state.h',
                       'include/grpc/impl/codegen/grpc_types.h',
@@ -324,6 +328,7 @@ Pod::Spec.new do |s|
                       'include/grpc/impl/codegen/sync_posix.h',
                       'include/grpc/impl/codegen/sync_win32.h',
                       'include/grpc/impl/codegen/time.h',
+                      'include/grpc/grpc_cronet.h',
                       'include/grpc/grpc_security.h',
                       'include/grpc/grpc_security_constants.h',
                       'include/grpc/census.h',
@@ -346,6 +351,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/endpoint_pair_posix.c',
                       'src/core/lib/iomgr/endpoint_pair_windows.c',
                       'src/core/lib/iomgr/ev_poll_and_epoll_posix.c',
+                      'src/core/lib/iomgr/ev_poll_posix.c',
                       'src/core/lib/iomgr/ev_posix.c',
                       'src/core/lib/iomgr/exec_ctx.c',
                       'src/core/lib/iomgr/executor.c',
@@ -473,8 +479,11 @@ Pod::Spec.new do |s|
                       'src/core/ext/client_config/uri_parser.c',
                       'src/core/ext/transport/chttp2/server/insecure/server_chttp2.c',
                       'src/core/ext/transport/chttp2/client/insecure/channel_create.c',
+                      'src/core/ext/transport/cronet/client/secure/cronet_channel_create.c',
+                      'src/core/ext/transport/cronet/transport/cronet_api_dummy.c',
+                      'src/core/ext/transport/cronet/transport/cronet_transport.c',
                       'src/core/ext/lb_policy/grpclb/load_balancer_api.c',
-                      'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c',
+                      'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c',
                       'third_party/nanopb/pb_common.c',
                       'third_party/nanopb/pb_decode.c',
                       'third_party/nanopb/pb_encode.c',
@@ -523,6 +532,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/endpoint.h',
                               'src/core/lib/iomgr/endpoint_pair.h',
                               'src/core/lib/iomgr/ev_poll_and_epoll_posix.h',
+                              'src/core/lib/iomgr/ev_poll_posix.h',
                               'src/core/lib/iomgr/ev_posix.h',
                               'src/core/lib/iomgr/exec_ctx.h',
                               'src/core/lib/iomgr/executor.h',
@@ -629,8 +639,9 @@ Pod::Spec.new do |s|
                               'src/core/ext/client_config/subchannel_call_holder.h',
                               'src/core/ext/client_config/subchannel_index.h',
                               'src/core/ext/client_config/uri_parser.h',
+                              'third_party/objective_c/Cronet/cronet_c_for_grpc.h',
                               'src/core/ext/lb_policy/grpclb/load_balancer_api.h',
-                              'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h',
+                              'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h',
                               'third_party/nanopb/pb.h',
                               'third_party/nanopb/pb_common.h',
                               'third_party/nanopb/pb_decode.h',
@@ -654,7 +665,7 @@ Pod::Spec.new do |s|
 
     ss.requires_arc = false
     ss.libraries = 'z'
-    ss.dependency 'BoringSSL', '~> 2.0'
+    ss.dependency 'BoringSSL', '~> 3.0'
 
     # ss.compiler_flags = '-GCC_WARN_INHIBIT_ALL_WARNINGS', '-w'
   end

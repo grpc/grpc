@@ -50,7 +50,7 @@ static bool decode_serverlist(pb_istream_t *stream, const pb_field_t *field,
   decode_serverlist_arg *dec_arg = *arg;
   if (dec_arg->first_pass != 0) { /* first pass */
     grpc_grpclb_server server;
-    if (!pb_decode(stream, grpc_lb_v0_Server_fields, &server)) {
+    if (!pb_decode(stream, grpc_lb_v1_Server_fields, &server)) {
       return false;
     }
     dec_arg->num_servers++;
@@ -61,7 +61,7 @@ static bool decode_serverlist(pb_istream_t *stream, const pb_field_t *field,
       dec_arg->servers =
           gpr_malloc(sizeof(grpc_grpclb_server *) * dec_arg->num_servers);
     }
-    if (!pb_decode(stream, grpc_lb_v0_Server_fields, server)) {
+    if (!pb_decode(stream, grpc_lb_v1_Server_fields, server)) {
       return false;
     }
     dec_arg->servers[dec_arg->i++] = server;
@@ -87,13 +87,13 @@ gpr_slice grpc_grpclb_request_encode(const grpc_grpclb_request *request) {
   pb_ostream_t outputstream;
   gpr_slice slice;
   memset(&sizestream, 0, sizeof(pb_ostream_t));
-  pb_encode(&sizestream, grpc_lb_v0_LoadBalanceRequest_fields, request);
+  pb_encode(&sizestream, grpc_lb_v1_LoadBalanceRequest_fields, request);
   encoded_length = sizestream.bytes_written;
 
   slice = gpr_slice_malloc(encoded_length);
   outputstream =
       pb_ostream_from_buffer(GPR_SLICE_START_PTR(slice), encoded_length);
-  GPR_ASSERT(pb_encode(&outputstream, grpc_lb_v0_LoadBalanceRequest_fields,
+  GPR_ASSERT(pb_encode(&outputstream, grpc_lb_v1_LoadBalanceRequest_fields,
                        request) != 0);
   return slice;
 }
@@ -109,7 +109,7 @@ grpc_grpclb_response *grpc_grpclb_response_parse(gpr_slice encoded_response) {
                              GPR_SLICE_LENGTH(encoded_response));
   grpc_grpclb_response *res = gpr_malloc(sizeof(grpc_grpclb_response));
   memset(res, 0, sizeof(*res));
-  status = pb_decode(&stream, grpc_lb_v0_LoadBalanceResponse_fields, res);
+  status = pb_decode(&stream, grpc_lb_v1_LoadBalanceResponse_fields, res);
   if (!status) {
     grpc_grpclb_response_destroy(res);
     return NULL;
@@ -132,7 +132,7 @@ grpc_grpclb_serverlist *grpc_grpclb_response_parse_serverlist(
   res->server_list.servers.funcs.decode = decode_serverlist;
   res->server_list.servers.arg = &arg;
   arg.first_pass = 1;
-  status = pb_decode(&stream, grpc_lb_v0_LoadBalanceResponse_fields, res);
+  status = pb_decode(&stream, grpc_lb_v1_LoadBalanceResponse_fields, res);
   if (!status) {
     grpc_grpclb_response_destroy(res);
     return NULL;
@@ -140,7 +140,7 @@ grpc_grpclb_serverlist *grpc_grpclb_response_parse_serverlist(
 
   arg.first_pass = 0;
   status =
-      pb_decode(&stream_at_start, grpc_lb_v0_LoadBalanceResponse_fields, res);
+      pb_decode(&stream_at_start, grpc_lb_v1_LoadBalanceResponse_fields, res);
   if (!status) {
     grpc_grpclb_response_destroy(res);
     return NULL;
