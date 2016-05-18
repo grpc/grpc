@@ -74,32 +74,6 @@ typedef enum {
   GRPC_COMPRESS_LEVEL_COUNT
 } grpc_compression_level;
 
-typedef struct grpc_compression_options {
-  /** All algs are enabled by default. This option corresponds to the channel
-   * argument key behind \a GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET
-   */
-  uint32_t enabled_algorithms_bitset;
-
-  /** The default channel compression level. It'll be used in the absence of
-   * call specific settings. This option corresponds to the channel argument key
-   * behind \a GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL. If present, takes
-   * precedence over \a default_algorithm.
-   * TODO(dgq): currently only available for server channels. */
-  struct {
-    bool is_set;
-    grpc_compression_algorithm level;
-  } default_level;
-
-  /** The default channel compression algorithm. It'll be used in the absence of
-   * call specific settings. This option corresponds to the channel argument key
-   * behind \a GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM. */
-  struct {
-    bool is_set;
-    grpc_compression_algorithm algorithm;
-  } default_algorithm;
-
-} grpc_compression_options;
-
 #ifdef __cplusplus
 }
 #endif

@@ -55,20 +55,6 @@ GRPCAPI int grpc_compression_algorithm_parse(
 GRPCAPI int grpc_compression_algorithm_name(
     grpc_compression_algorithm algorithm, char **name);
 
-GRPCAPI void grpc_compression_options_init(grpc_compression_options *opts);
-
-/** Mark \a algorithm as enabled in \a opts. */
-GRPCAPI void grpc_compression_options_enable_algorithm(
-    grpc_compression_options *opts, grpc_compression_algorithm algorithm);
-
-/** Mark \a algorithm as disabled in \a opts. */
-GRPCAPI void grpc_compression_options_disable_algorithm(
-    grpc_compression_options *opts, grpc_compression_algorithm algorithm);
-
-/** Returns true if \a algorithm is marked as enabled in \a opts. */
-GRPCAPI int grpc_compression_options_is_algorithm_enabled(
-    const grpc_compression_options *opts, grpc_compression_algorithm algorithm);
-
 #ifdef __cplusplus
 }
 #endif
