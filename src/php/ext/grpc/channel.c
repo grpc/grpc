@@ -84,7 +84,7 @@ zend_object_value create_wrapped_grpc_channel(zend_class_entry *class_type
   return retval;
 }
 
-void php_grpc_read_args_array(zval *args_array, grpc_channel_args *args) {
+void php_grpc_read_args_array(zval *args_array, grpc_channel_args *args TSRMLS_DC) {
   HashTable *array_hash;
   HashPosition array_pointer;
   int args_index;
@@ -168,7 +168,7 @@ PHP_METHOD(Channel, __construct) {
       zend_hash_del(array_hash, "credentials", 12);
     }
   }
-  php_grpc_read_args_array(args_array, &args);
+  php_grpc_read_args_array(args_array, &args TSRMLS_CC);
   if (creds == NULL) {
     channel->wrapped = grpc_insecure_channel_create(target, &args, NULL);
   } else {
