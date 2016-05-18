@@ -61,15 +61,15 @@ namespace Grpc.Core.Internal.Tests
         }
 
         [Test]
-        public void InfFuture()
+        public void InfFutureMatchesNativeValue()
         {
-            var timespec = Timespec.InfFuture;
+            Assert.AreEqual(Timespec.NativeInfFuture, Timespec.InfFuture);
         }
 
         [Test]
-        public void InfPast()
+        public void InfPastMatchesNativeValue()
         {
-            var timespec = Timespec.InfPast;
+            Assert.AreEqual(Timespec.NativeInfPast, Timespec.InfPast);
         }
 
         [Test]

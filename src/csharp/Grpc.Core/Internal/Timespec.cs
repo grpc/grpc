@@ -71,7 +71,7 @@ namespace Grpc.Core.Internal
         {
             get
             {
-                return Native.gprsharp_inf_future(GPRClockType.Realtime);
+                return new Timespec(long.MaxValue, 0, GPRClockType.Realtime);
             }
         }
 
@@ -82,7 +82,7 @@ namespace Grpc.Core.Internal
         {
             get
             {
-                return Native.gprsharp_inf_past(GPRClockType.Realtime);
+                return new Timespec(long.MinValue, 0, GPRClockType.Realtime);
             }
         }
 
@@ -231,11 +231,30 @@ namespace Grpc.Core.Internal
             }
         }
 
+        // for tests only
         internal static int NativeSize
         {
             get
             {
                 return Native.gprsharp_sizeof_timespec();
+            }
+        }
+
+        // for tests only
+        internal static Timespec NativeInfFuture
+        {
+            get
+            {
+                return Native.gprsharp_inf_future(GPRClockType.Realtime);
+            }
+        }
+
+        // for tests only
+        public static Timespec NativeInfPast
+        {
+            get
+            {
+                return Native.gprsharp_inf_past(GPRClockType.Realtime);
             }
         }
     }
