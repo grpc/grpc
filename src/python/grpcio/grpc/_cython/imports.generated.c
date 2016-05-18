@@ -125,7 +125,6 @@ grpc_header_key_is_legal_type grpc_header_key_is_legal_import;
 grpc_header_nonbin_value_is_legal_type grpc_header_nonbin_value_is_legal_import;
 grpc_is_binary_header_type grpc_is_binary_header_import;
 grpc_call_error_to_string_type grpc_call_error_to_string_import;
-grpc_cronet_secure_channel_create_type grpc_cronet_secure_channel_create_import;
 grpc_auth_property_iterator_next_type grpc_auth_property_iterator_next_import;
 grpc_auth_context_property_iterator_type grpc_auth_context_property_iterator_import;
 grpc_auth_context_peer_identity_type grpc_auth_context_peer_identity_import;
@@ -396,7 +395,6 @@ void pygrpc_load_imports(HMODULE library) {
   grpc_header_nonbin_value_is_legal_import = (grpc_header_nonbin_value_is_legal_type) GetProcAddress(library, "grpc_header_nonbin_value_is_legal");
   grpc_is_binary_header_import = (grpc_is_binary_header_type) GetProcAddress(library, "grpc_is_binary_header");
   grpc_call_error_to_string_import = (grpc_call_error_to_string_type) GetProcAddress(library, "grpc_call_error_to_string");
-  grpc_cronet_secure_channel_create_import = (grpc_cronet_secure_channel_create_type) GetProcAddress(library, "grpc_cronet_secure_channel_create");
   grpc_auth_property_iterator_next_import = (grpc_auth_property_iterator_next_type) GetProcAddress(library, "grpc_auth_property_iterator_next");
   grpc_auth_context_property_iterator_import = (grpc_auth_context_property_iterator_type) GetProcAddress(library, "grpc_auth_context_property_iterator");
   grpc_auth_context_peer_identity_import = (grpc_auth_context_peer_identity_type) GetProcAddress(library, "grpc_auth_context_peer_identity");
