@@ -28,7 +28,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require_relative '../grpc'
-require_relative '../signals'
 require_relative 'active_call'
 require_relative 'service'
 require 'thread'
