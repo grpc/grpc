@@ -432,7 +432,7 @@ static void read_metadata(input_stream *inp, size_t *count,
   } else {
     *metadata = gpr_malloc(1);
   }
-    add_to_free(cs, *metadata);
+  add_to_free(cs, *metadata);
 }
 
 static call_state *destroy_call(call_state *call) {

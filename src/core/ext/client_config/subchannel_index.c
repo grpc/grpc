@@ -112,8 +112,8 @@ static int subchannel_key_compare(grpc_subchannel_key *a,
   c = GPR_ICMP(a->args.filter_count, b->args.filter_count);
   if (c != 0) return c;
   if (a->args.addr_len) {
-  c = memcmp(a->args.addr, b->args.addr, a->args.addr_len);
-  if (c != 0) return c;
+    c = memcmp(a->args.addr, b->args.addr, a->args.addr_len);
+    if (c != 0) return c;
   }
   if (a->args.filter_count > 0) {
     c = memcmp(a->args.filters, b->args.filters,
