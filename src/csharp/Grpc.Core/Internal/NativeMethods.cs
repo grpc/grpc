@@ -58,18 +58,8 @@ namespace Grpc.Core.Internal
         public readonly Delegates.grpcsharp_version_string_delegate grpcsharp_version_string;
 
         public readonly Delegates.grpcsharp_batch_context_create_delegate grpcsharp_batch_context_create;
-        public readonly Delegates.grpcsharp_batch_context_recv_initial_metadata_delegate grpcsharp_batch_context_recv_initial_metadata;
         public readonly Delegates.grpcsharp_batch_context_recv_message_length_delegate grpcsharp_batch_context_recv_message_length;
         public readonly Delegates.grpcsharp_batch_context_recv_message_to_buffer_delegate grpcsharp_batch_context_recv_message_to_buffer;
-        public readonly Delegates.grpcsharp_batch_context_recv_status_on_client_status_delegate grpcsharp_batch_context_recv_status_on_client_status;
-        public readonly Delegates.grpcsharp_batch_context_recv_status_on_client_details_delegate grpcsharp_batch_context_recv_status_on_client_details;
-        public readonly Delegates.grpcsharp_batch_context_recv_status_on_client_trailing_metadata_delegate grpcsharp_batch_context_recv_status_on_client_trailing_metadata;
-        public readonly Delegates.grpcsharp_batch_context_server_rpc_new_call_delegate grpcsharp_batch_context_server_rpc_new_call;
-        public readonly Delegates.grpcsharp_batch_context_server_rpc_new_method_delegate grpcsharp_batch_context_server_rpc_new_method;
-        public readonly Delegates.grpcsharp_batch_context_server_rpc_new_host_delegate grpcsharp_batch_context_server_rpc_new_host;
-        public readonly Delegates.grpcsharp_batch_context_server_rpc_new_deadline_delegate grpcsharp_batch_context_server_rpc_new_deadline;
-        public readonly Delegates.grpcsharp_batch_context_server_rpc_new_request_metadata_delegate grpcsharp_batch_context_server_rpc_new_request_metadata;
-        public readonly Delegates.grpcsharp_batch_context_recv_close_on_server_cancelled_delegate grpcsharp_batch_context_recv_close_on_server_cancelled;
         public readonly Delegates.grpcsharp_batch_context_destroy_delegate grpcsharp_batch_context_destroy;
 
         public readonly Delegates.grpcsharp_composite_call_credentials_create_delegate grpcsharp_composite_call_credentials_create;
@@ -165,18 +155,8 @@ namespace Grpc.Core.Internal
                 this.grpcsharp_version_string = GetMethodDelegate<Delegates.grpcsharp_version_string_delegate>(library);
 
                 this.grpcsharp_batch_context_create = GetMethodDelegate<Delegates.grpcsharp_batch_context_create_delegate>(library);
-                this.grpcsharp_batch_context_recv_initial_metadata = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_initial_metadata_delegate>(library);
                 this.grpcsharp_batch_context_recv_message_length = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_message_length_delegate>(library);
                 this.grpcsharp_batch_context_recv_message_to_buffer = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_message_to_buffer_delegate>(library);
-                this.grpcsharp_batch_context_recv_status_on_client_status = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_status_on_client_status_delegate>(library);
-                this.grpcsharp_batch_context_recv_status_on_client_details = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_status_on_client_details_delegate>(library);
-                this.grpcsharp_batch_context_recv_status_on_client_trailing_metadata = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_status_on_client_trailing_metadata_delegate>(library);
-                this.grpcsharp_batch_context_server_rpc_new_call = GetMethodDelegate<Delegates.grpcsharp_batch_context_server_rpc_new_call_delegate>(library);
-                this.grpcsharp_batch_context_server_rpc_new_method = GetMethodDelegate<Delegates.grpcsharp_batch_context_server_rpc_new_method_delegate>(library);
-                this.grpcsharp_batch_context_server_rpc_new_host = GetMethodDelegate<Delegates.grpcsharp_batch_context_server_rpc_new_host_delegate>(library);
-                this.grpcsharp_batch_context_server_rpc_new_deadline = GetMethodDelegate<Delegates.grpcsharp_batch_context_server_rpc_new_deadline_delegate>(library);
-                this.grpcsharp_batch_context_server_rpc_new_request_metadata = GetMethodDelegate<Delegates.grpcsharp_batch_context_server_rpc_new_request_metadata_delegate>(library);
-                this.grpcsharp_batch_context_recv_close_on_server_cancelled = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_close_on_server_cancelled_delegate>(library);
                 this.grpcsharp_batch_context_destroy = GetMethodDelegate<Delegates.grpcsharp_batch_context_destroy_delegate>(library);
 
                 this.grpcsharp_composite_call_credentials_create = GetMethodDelegate<Delegates.grpcsharp_composite_call_credentials_create_delegate>(library);
@@ -269,18 +249,8 @@ namespace Grpc.Core.Internal
                 this.grpcsharp_version_string = PInvokeMethods.grpcsharp_version_string;
 
                 this.grpcsharp_batch_context_create = PInvokeMethods.grpcsharp_batch_context_create;
-                this.grpcsharp_batch_context_recv_initial_metadata = PInvokeMethods.grpcsharp_batch_context_recv_initial_metadata;
                 this.grpcsharp_batch_context_recv_message_length = PInvokeMethods.grpcsharp_batch_context_recv_message_length;
                 this.grpcsharp_batch_context_recv_message_to_buffer = PInvokeMethods.grpcsharp_batch_context_recv_message_to_buffer;
-                this.grpcsharp_batch_context_recv_status_on_client_status = PInvokeMethods.grpcsharp_batch_context_recv_status_on_client_status;
-                this.grpcsharp_batch_context_recv_status_on_client_details = PInvokeMethods.grpcsharp_batch_context_recv_status_on_client_details;
-                this.grpcsharp_batch_context_recv_status_on_client_trailing_metadata = PInvokeMethods.grpcsharp_batch_context_recv_status_on_client_trailing_metadata;
-                this.grpcsharp_batch_context_server_rpc_new_call = PInvokeMethods.grpcsharp_batch_context_server_rpc_new_call;
-                this.grpcsharp_batch_context_server_rpc_new_method = PInvokeMethods.grpcsharp_batch_context_server_rpc_new_method;
-                this.grpcsharp_batch_context_server_rpc_new_host = PInvokeMethods.grpcsharp_batch_context_server_rpc_new_host;
-                this.grpcsharp_batch_context_server_rpc_new_deadline = PInvokeMethods.grpcsharp_batch_context_server_rpc_new_deadline;
-                this.grpcsharp_batch_context_server_rpc_new_request_metadata = PInvokeMethods.grpcsharp_batch_context_server_rpc_new_request_metadata;
-                this.grpcsharp_batch_context_recv_close_on_server_cancelled = PInvokeMethods.grpcsharp_batch_context_recv_close_on_server_cancelled;
                 this.grpcsharp_batch_context_destroy = PInvokeMethods.grpcsharp_batch_context_destroy;
 
                 this.grpcsharp_composite_call_credentials_create = PInvokeMethods.grpcsharp_composite_call_credentials_create;
@@ -401,18 +371,8 @@ namespace Grpc.Core.Internal
             public delegate IntPtr grpcsharp_version_string_delegate();  // returns not-owned const char*
 
             public delegate BatchContextSafeHandle grpcsharp_batch_context_create_delegate();
-            public delegate IntPtr grpcsharp_batch_context_recv_initial_metadata_delegate(BatchContextSafeHandle ctx);
             public delegate IntPtr grpcsharp_batch_context_recv_message_length_delegate(BatchContextSafeHandle ctx);
             public delegate void grpcsharp_batch_context_recv_message_to_buffer_delegate(BatchContextSafeHandle ctx, byte[] buffer, UIntPtr bufferLen);
-            public delegate StatusCode grpcsharp_batch_context_recv_status_on_client_status_delegate(BatchContextSafeHandle ctx);
-            public delegate IntPtr grpcsharp_batch_context_recv_status_on_client_details_delegate(BatchContextSafeHandle ctx);  // returns const char*
-            public delegate IntPtr grpcsharp_batch_context_recv_status_on_client_trailing_metadata_delegate(BatchContextSafeHandle ctx);
-            public delegate CallSafeHandle grpcsharp_batch_context_server_rpc_new_call_delegate(BatchContextSafeHandle ctx);
-            public delegate IntPtr grpcsharp_batch_context_server_rpc_new_method_delegate(BatchContextSafeHandle ctx);  // returns const char*
-            public delegate IntPtr grpcsharp_batch_context_server_rpc_new_host_delegate(BatchContextSafeHandle ctx);  // returns const char*
-            public delegate Timespec grpcsharp_batch_context_server_rpc_new_deadline_delegate(BatchContextSafeHandle ctx);
-            public delegate IntPtr grpcsharp_batch_context_server_rpc_new_request_metadata_delegate(BatchContextSafeHandle ctx);
-            public delegate int grpcsharp_batch_context_recv_close_on_server_cancelled_delegate(BatchContextSafeHandle ctx);
             public delegate void grpcsharp_batch_context_destroy_delegate(IntPtr ctx);
 
             public delegate CallCredentialsSafeHandle grpcsharp_composite_call_credentials_create_delegate(CallCredentialsSafeHandle creds1, CallCredentialsSafeHandle creds2);
@@ -538,40 +498,10 @@ namespace Grpc.Core.Internal
             public static extern BatchContextSafeHandle grpcsharp_batch_context_create();
 
             [DllImport("grpc_csharp_ext.dll")]
-            public static extern IntPtr grpcsharp_batch_context_recv_initial_metadata(BatchContextSafeHandle ctx);
-
-            [DllImport("grpc_csharp_ext.dll")]
             public static extern IntPtr grpcsharp_batch_context_recv_message_length(BatchContextSafeHandle ctx);
 
             [DllImport("grpc_csharp_ext.dll")]
             public static extern void grpcsharp_batch_context_recv_message_to_buffer(BatchContextSafeHandle ctx, byte[] buffer, UIntPtr bufferLen);
-
-            [DllImport("grpc_csharp_ext.dll")]
-            public static extern StatusCode grpcsharp_batch_context_recv_status_on_client_status(BatchContextSafeHandle ctx);
-
-            [DllImport("grpc_csharp_ext.dll")]
-            public static extern IntPtr grpcsharp_batch_context_recv_status_on_client_details(BatchContextSafeHandle ctx);  // returns const char*
-
-            [DllImport("grpc_csharp_ext.dll")]
-            public static extern IntPtr grpcsharp_batch_context_recv_status_on_client_trailing_metadata(BatchContextSafeHandle ctx);
-
-            [DllImport("grpc_csharp_ext.dll")]
-            public static extern CallSafeHandle grpcsharp_batch_context_server_rpc_new_call(BatchContextSafeHandle ctx);
-
-            [DllImport("grpc_csharp_ext.dll")]
-            public static extern IntPtr grpcsharp_batch_context_server_rpc_new_method(BatchContextSafeHandle ctx);  // returns const char*
-
-            [DllImport("grpc_csharp_ext.dll")]
-            public static extern IntPtr grpcsharp_batch_context_server_rpc_new_host(BatchContextSafeHandle ctx);  // returns const char*
-
-            [DllImport("grpc_csharp_ext.dll")]
-            public static extern Timespec grpcsharp_batch_context_server_rpc_new_deadline(BatchContextSafeHandle ctx);
-
-            [DllImport("grpc_csharp_ext.dll")]
-            public static extern IntPtr grpcsharp_batch_context_server_rpc_new_request_metadata(BatchContextSafeHandle ctx);
-
-            [DllImport("grpc_csharp_ext.dll")]
-            public static extern int grpcsharp_batch_context_recv_close_on_server_cancelled(BatchContextSafeHandle ctx);
 
             [DllImport("grpc_csharp_ext.dll")]
             public static extern void grpcsharp_batch_context_destroy(IntPtr ctx);
