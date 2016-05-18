@@ -124,25 +124,3 @@ grpc_mdelem *grpc_compression_encoding_mdelem(
   }
   return NULL;
 }
-
-void grpc_compression_options_init(grpc_compression_options *opts) {
-  opts->enabled_algorithms_bitset = (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1;
-  opts->default_level.is_set = false;
-  opts->default_algorithm.is_set = false;
-}
-
-void grpc_compression_options_enable_algorithm(
-    grpc_compression_options *opts, grpc_compression_algorithm algorithm) {
-  GPR_BITSET(&opts->enabled_algorithms_bitset, algorithm);
-}
-
-void grpc_compression_options_disable_algorithm(
-    grpc_compression_options *opts, grpc_compression_algorithm algorithm) {
-  GPR_BITCLEAR(&opts->enabled_algorithms_bitset, algorithm);
-}
-
-int grpc_compression_options_is_algorithm_enabled(
-    const grpc_compression_options *opts,
-    grpc_compression_algorithm algorithm) {
-  return GPR_BITGET(opts->enabled_algorithms_bitset, algorithm);
-}
