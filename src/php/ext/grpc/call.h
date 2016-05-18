@@ -60,11 +60,11 @@ typedef struct wrapped_grpc_call {
 void grpc_init_call(TSRMLS_D);
 
 /* Creates a Call object that wraps the given grpc_call struct */
-zval *grpc_php_wrap_call(grpc_call *wrapped, bool owned);
+zval *grpc_php_wrap_call(grpc_call *wrapped, bool owned TSRMLS_DC);
 
 /* Creates and returns a PHP associative array of metadata from a C array of
  * call metadata */
-zval *grpc_parse_metadata_array(grpc_metadata_array *metadata_array);
+zval *grpc_parse_metadata_array(grpc_metadata_array *metadata_array TSRMLS_DC);
 
 /* Populates a grpc_metadata_array with the data in a PHP array object.
    Returns true on success and false on failure */
