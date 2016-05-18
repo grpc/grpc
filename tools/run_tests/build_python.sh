@@ -55,3 +55,7 @@ $ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/setup.py build
 $ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/setup.py build_py
 $ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/setup.py build_ext --inplace
 $ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/setup.py gather --test
+
+# Build the health checker
+$ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/src/python/grpcio_health_checking/setup.py build
+$ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/src/python/grpcio_health_checking/setup.py build_py

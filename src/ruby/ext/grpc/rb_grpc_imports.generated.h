@@ -43,6 +43,7 @@
 #include <grpc/census.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
+#include <grpc/grpc_cronet.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/alloc.h>
 #include <grpc/impl/codegen/byte_buffer.h>
@@ -325,6 +326,9 @@ extern grpc_is_binary_header_type grpc_is_binary_header_import;
 typedef const char *(*grpc_call_error_to_string_type)(grpc_call_error error);
 extern grpc_call_error_to_string_type grpc_call_error_to_string_import;
 #define grpc_call_error_to_string grpc_call_error_to_string_import
+typedef grpc_channel *(*grpc_cronet_secure_channel_create_type)(void *engine, const char *target, const grpc_channel_args *args, void *reserved);
+extern grpc_cronet_secure_channel_create_type grpc_cronet_secure_channel_create_import;
+#define grpc_cronet_secure_channel_create grpc_cronet_secure_channel_create_import
 typedef const grpc_auth_property *(*grpc_auth_property_iterator_next_type)(grpc_auth_property_iterator *it);
 extern grpc_auth_property_iterator_next_type grpc_auth_property_iterator_next_import;
 #define grpc_auth_property_iterator_next grpc_auth_property_iterator_next_import

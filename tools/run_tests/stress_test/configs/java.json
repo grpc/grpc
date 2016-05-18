@@ -21,6 +21,9 @@
         "metricsArgs": {
           "metrics_server_address": "localhost:8081",
           "total_only": "true"
+        },
+        "env": {
+          "STRESSTEST_CLIENT_OPTS":"-Xmx3g -Xms3g -XX:NewSize=1500m -XX:MaxNewSize=1500m -XX:+UseConcMarkSweepGC"
         }
       }
     },
@@ -44,7 +47,10 @@
         "serverPort": 8080,
         "serverArgs": {
           "port": 8080,
-		  "use_tls": "false"
+          "use_tls": "false"
+        },
+        "env": {
+          "TEST_SERVER_OPTS":"-Xmx3g -Xms3g -XX:NewSize=1500m -XX:MaxNewSize=1500m  -XX:+UseConcMarkSweepGC"
         }
       }
     },

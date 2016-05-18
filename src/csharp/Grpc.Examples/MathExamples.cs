@@ -32,6 +32,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Grpc.Core;
 using Grpc.Core.Utils;
 
 namespace Math
@@ -108,6 +109,43 @@ namespace Math
 
             DivReply result = await client.DivAsync(new DivArgs { Dividend = sum.Num_, Divisor = numbers.Count });
             Console.WriteLine("Avg Result: " + result);
+        }
+
+        /// <summary>
+        /// Shows how to handle a call ending with non-OK status.
+        /// </summary>
+        public static async Task HandleErrorExample(Math.MathClient client)
+        {
+            try
+            {
+                 DivReply result = await client.DivAsync(new DivArgs { Dividend = 5, Divisor = 0 });
+            }
+            catch (RpcException ex)
+            {
+                Console.WriteLine(string.Format("RPC ended with status {0}", ex.Status));
+            }
+        }
+
+        /// <summary>
+        /// Shows how to send request headers and how to access response headers
+        /// and response trailers.
+        /// </summary>
+        public static async Task MetadataExample(Math.MathClient client)
+        {
+            var requestHeaders = new Metadata
+            {
+                { "custom-header", "custom-value" }
+            };
+
+            var call = client.DivAsync(new DivArgs { Dividend = 5, Divisor = 0 }, requestHeaders);
+
+            // Get response headers
+            Metadata responseHeaders = await call.ResponseHeadersAsync;
+
+            var result = await call;
+
+            // Get response trailers after the call has finished.
+            Metadata responseTrailers = call.GetTrailers();
         }
     }
 }

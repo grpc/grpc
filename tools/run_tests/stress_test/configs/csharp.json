@@ -80,7 +80,7 @@
     "buildDockerImages": true,
     "pollIntervalSecs": 60,
     "testDurationSecs": 7200,
-    "kubernetesProxyPort": 8001,
+    "kubernetesProxyPort": 8009,
     "datasetIdNamePrefix": "stress_test_csharp",
     "summaryTableId": "summary",
     "qpsTableId": "qps",

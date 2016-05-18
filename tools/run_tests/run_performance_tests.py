@@ -89,7 +89,7 @@ def create_qpsworker_job(language, shortname=None,
   jobspec = jobset.JobSpec(
       cmdline=cmdline,
       shortname=shortname,
-      timeout_seconds=30*60)
+      timeout_seconds=2*60*60)
   return QpsWorkerJob(jobspec, language, host_and_port)
 
 
@@ -127,6 +127,36 @@ def create_quit_jobspec(workers, remote_host=None):
       cmdline=[cmd],
       shortname='qps_json_driver.quit',
       timeout_seconds=3*60,
+      shell=True,
+      verbose_success=True)
+
+
+def create_netperf_jobspec(server_host='localhost', client_host=None,
+                           bq_result_table=None):
+  """Runs netperf benchmark."""
+  cmd = 'NETPERF_SERVER_HOST="%s" ' % server_host
+  if bq_result_table:
+    cmd += 'BQ_RESULT_TABLE="%s" ' % bq_result_table
+  if client_host:
+    # If netperf is running remotely, the env variables populated by Jenkins
+    # won't be available on the client, but we need them for uploading results
+    # to BigQuery.
+    jenkins_job_name = os.getenv('JOB_NAME')
+    if jenkins_job_name:
+      cmd += 'JOB_NAME="%s" ' % jenkins_job_name
+    jenkins_build_number = os.getenv('BUILD_NUMBER')
+    if jenkins_build_number:
+      cmd += 'BUILD_NUMBER="%s" ' % jenkins_build_number
+
+  cmd += 'tools/run_tests/performance/run_netperf.sh'
+  if client_host:
+    user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, client_host)
+    cmd = 'ssh %s "cd ~/performance_workspace/grpc/ && "%s' % (user_at_host, pipes.quote(cmd))
+
+  return jobset.JobSpec(
+      cmdline=[cmd],
+      shortname='netperf',
+      timeout_seconds=60,
       shell=True,
       verbose_success=True)
 
@@ -244,34 +274,65 @@ def start_qpsworkers(languages, worker_hosts):
 
 
 def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*',
-                     bq_result_table=None):
+                     category='all', bq_result_table=None,
+                     netperf=False, netperf_hosts=[]):
   """Create jobspecs for scenarios to run."""
   all_workers = [worker
                  for workers in workers_by_lang.values()
                  for worker in workers]
   scenarios = []
+
+  if netperf:
+    if not netperf_hosts:
+      netperf_server='localhost'
+      netperf_client=None
+    elif len(netperf_hosts) == 1:
+      netperf_server=netperf_hosts[0]
+      netperf_client=netperf_hosts[0]
+    else:
+      netperf_server=netperf_hosts[0]
+      netperf_client=netperf_hosts[1]
+    scenarios.append(create_netperf_jobspec(server_host=netperf_server,
+                                            client_host=netperf_client,
+                                            bq_result_table=bq_result_table))
+
   for language in languages:
     for scenario_json in language.scenarios():
       if re.search(args.regex, scenario_json['name']):
-        workers = workers_by_lang[str(language)]
-        # 'SERVER_LANGUAGE' is an indicator for this script to pick
-        # a server in different language. It doesn't belong to the Scenario
-        # schema, so we also need to remove it.
-        custom_server_lang = scenario_json.pop('SERVER_LANGUAGE', None)
-        if custom_server_lang:
-          if not workers_by_lang.get(custom_server_lang, []):
-            print 'Warning: Skipping scenario %s as' % scenario_json['name']
-            print('SERVER_LANGUAGE is set to %s yet the language has '
-                  'not been selected with -l' % custom_server_lang)
-            continue
-          for idx in range(0, scenario_json['num_servers']):
-            # replace first X workers by workers of a different language
-            workers[idx] = workers_by_lang[custom_server_lang][idx]
-        scenario = create_scenario_jobspec(scenario_json,
-                                           workers,
-                                           remote_host=remote_host,
-                                           bq_result_table=bq_result_table)
-        scenarios.append(scenario)
+        if category in scenario_json.get('CATEGORIES', []) or category == 'all':
+          workers = workers_by_lang[str(language)]
+          # 'SERVER_LANGUAGE' is an indicator for this script to pick
+          # a server in different language.
+          custom_server_lang = scenario_json.get('SERVER_LANGUAGE', None)
+          custom_client_lang = scenario_json.get('CLIENT_LANGUAGE', None)
+          scenario_json = scenario_config.remove_nonproto_fields(scenario_json)
+          if custom_server_lang and custom_client_lang:
+            raise Exception('Cannot set both custom CLIENT_LANGUAGE and SERVER_LANGUAGE'
+                            'in the same scenario')
+          if custom_server_lang:
+            if not workers_by_lang.get(custom_server_lang, []):
+              print 'Warning: Skipping scenario %s as' % scenario_json['name']
+              print('SERVER_LANGUAGE is set to %s yet the language has '
+                    'not been selected with -l' % custom_server_lang)
+              continue
+            for idx in range(0, scenario_json['num_servers']):
+              # replace first X workers by workers of a different language
+              workers[idx] = workers_by_lang[custom_server_lang][idx]
+          if custom_client_lang:
+            if not workers_by_lang.get(custom_client_lang, []):
+              print 'Warning: Skipping scenario %s as' % scenario_json['name']
+              print('CLIENT_LANGUAGE is set to %s yet the language has '
+                    'not been selected with -l' % custom_client_lang)
+              continue
+            for idx in range(scenario_json['num_servers'], len(workers)):
+              # replace all client workers by workers of a different language,
+              # leave num_server workers as they are server workers.
+              workers[idx] = workers_by_lang[custom_client_lang][idx]
+          scenario = create_scenario_jobspec(scenario_json,
+                                             workers,
+                                             remote_host=remote_host,
+                                             bq_result_table=bq_result_table)
+          scenarios.append(scenario)
 
   # the very last scenario requests shutting down the workers.
   scenarios.append(create_quit_jobspec(all_workers, remote_host=remote_host))
@@ -298,7 +359,7 @@ argp = argparse.ArgumentParser(description='Run performance tests.')
 argp.add_argument('-l', '--language',
                   choices=['all'] + sorted(scenario_config.LANGUAGES.keys()),
                   nargs='+',
-                  default=['all'],
+                  required=True,
                   help='Languages to benchmark.')
 argp.add_argument('--remote_driver_host',
                   default=None,
@@ -311,6 +372,15 @@ argp.add_argument('-r', '--regex', default='.*', type=str,
                   help='Regex to select scenarios to run.')
 argp.add_argument('--bq_result_table', default=None, type=str,
                   help='Bigquery "dataset.table" to upload results to.')
+argp.add_argument('--category',
+                  choices=['smoketest','all'],
+                  default='all',
+                  help='Select a category of tests to run.')
+argp.add_argument('--netperf',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Run netperf benchmark as one of the scenarios.')
 
 args = argp.parse_args()
 
@@ -354,7 +424,11 @@ try:
                                workers_by_lang=worker_addresses,
                                remote_host=args.remote_driver_host,
                                regex=args.regex,
-                               bq_result_table=args.bq_result_table)
+                               category=args.category,
+                               bq_result_table=args.bq_result_table,
+                               netperf=args.netperf,
+                               netperf_hosts=args.remote_worker_host)
+
   if not scenarios:
     raise Exception('No scenarios to run')
 

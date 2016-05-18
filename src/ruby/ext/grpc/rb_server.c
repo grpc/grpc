@@ -32,10 +32,9 @@
  */
 
 #include <ruby/ruby.h>
+
 #include "rb_grpc_imports.generated.h"
 #include "rb_server.h"
-
-#include <ruby/ruby.h>
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
