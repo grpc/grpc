@@ -4377,6 +4377,7 @@
       "test/cpp/util/byte_buffer_proto_helper.h", 
       "test/cpp/util/cli_call.h", 
       "test/cpp/util/create_test_channel.h", 
+      "test/cpp/util/proto_file_parser.h", 
       "test/cpp/util/string_ref_helper.h", 
       "test/cpp/util/subprocess.h", 
       "test/cpp/util/test_credentials_provider.h"
@@ -4392,6 +4393,8 @@
       "test/cpp/util/cli_call.h", 
       "test/cpp/util/create_test_channel.cc", 
       "test/cpp/util/create_test_channel.h", 
+      "test/cpp/util/proto_file_parser.cc", 
+      "test/cpp/util/proto_file_parser.h", 
       "test/cpp/util/string_ref_helper.cc", 
       "test/cpp/util/string_ref_helper.h", 
       "test/cpp/util/subprocess.cc", 
