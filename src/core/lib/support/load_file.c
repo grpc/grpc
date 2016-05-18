@@ -43,21 +43,19 @@
 #include "src/core/lib/support/block_annotate.h"
 #include "src/core/lib/support/string.h"
 
-gpr_slice gpr_load_file(const char *filename, int add_null_terminator,
-                        int *success) {
+grpc_error *gpr_load_file(const char *filename, int add_null_terminator,
+                          gpr_slice *output) {
   unsigned char *contents = NULL;
   size_t contents_size = 0;
-  char *error_msg = NULL;
   gpr_slice result = gpr_empty_slice();
   FILE *file;
   size_t bytes_read = 0;
+  grpc_error *error = GRPC_ERROR_NONE;
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
   file = fopen(filename, "rb");
   if (file == NULL) {
-    gpr_asprintf(&error_msg, "Could not open file %s (error = %s).", filename,
-                 strerror(errno));
-    GPR_ASSERT(error_msg != NULL);
+    error = GRPC_OS_ERROR(errno, "fopen");
     goto end;
   }
   fseek(file, 0, SEEK_END);
@@ -67,25 +65,25 @@ gpr_slice gpr_load_file(const char *filename, int add_null_terminator,
   contents = gpr_malloc(contents_size + (add_null_terminator ? 1 : 0));
   bytes_read = fread(contents, 1, contents_size, file);
   if (bytes_read < contents_size) {
+    error = GRPC_OS_ERROR(errno, "fread");
     GPR_ASSERT(ferror(file));
-    gpr_asprintf(&error_msg, "Error %s occured while reading file %s.",
-                 strerror(errno), filename);
-    GPR_ASSERT(error_msg != NULL);
     goto end;
   }
-  if (success != NULL) *success = 1;
   if (add_null_terminator) {
     contents[contents_size++] = 0;
   }
   result = gpr_slice_new(contents, contents_size, gpr_free);
 
 end:
-  if (error_msg != NULL) {
-    gpr_log(GPR_ERROR, "%s", error_msg);
-    gpr_free(error_msg);
-    if (success != NULL) *success = 0;
-  }
+  *output = result;
   if (file != NULL) fclose(file);
+  if (error != GRPC_ERROR_NONE) {
+    grpc_error *error_out = grpc_error_set_str(
+        GRPC_ERROR_CREATE_REFERENCING("Failed to load file", &error, 1),
+        GRPC_ERROR_STR_FILENAME, filename);
+    GRPC_ERROR_UNREF(error);
+    error = error_out;
+  }
   GRPC_SCHEDULING_END_BLOCKING_REGION;
-  return result;
+  return error;
 }
