@@ -42,8 +42,8 @@
 #include <grpc/support/slice.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/support/load_file.h"
 #include "test/core/security/oauth2_utils.h"
 
 static grpc_call_credentials *create_refresh_token_creds(
@@ -51,7 +51,7 @@ static grpc_call_credentials *create_refresh_token_creds(
   gpr_slice refresh_token;
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "load_file",
-      gpr_load_file(json_refresh_token_file_path, 1, &refresh_token)));
+      grpc_load_file(json_refresh_token_file_path, 1, &refresh_token)));
   return grpc_google_refresh_token_credentials_create(
       (const char *)GPR_SLICE_START_PTR(refresh_token), NULL);
 }

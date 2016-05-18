@@ -919,7 +919,6 @@ gpr_cpu_test: $(BINDIR)/$(CONFIG)/gpr_cpu_test
 gpr_env_test: $(BINDIR)/$(CONFIG)/gpr_env_test
 gpr_histogram_test: $(BINDIR)/$(CONFIG)/gpr_histogram_test
 gpr_host_port_test: $(BINDIR)/$(CONFIG)/gpr_host_port_test
-gpr_load_file_test: $(BINDIR)/$(CONFIG)/gpr_load_file_test
 gpr_log_test: $(BINDIR)/$(CONFIG)/gpr_log_test
 gpr_slice_buffer_test: $(BINDIR)/$(CONFIG)/gpr_slice_buffer_test
 gpr_slice_test: $(BINDIR)/$(CONFIG)/gpr_slice_test
@@ -966,6 +965,7 @@ json_stream_error_test: $(BINDIR)/$(CONFIG)/json_stream_error_test
 json_test: $(BINDIR)/$(CONFIG)/json_test
 lame_client_test: $(BINDIR)/$(CONFIG)/lame_client_test
 lb_policies_test: $(BINDIR)/$(CONFIG)/lb_policies_test
+load_file_test: $(BINDIR)/$(CONFIG)/load_file_test
 low_level_ping_pong_benchmark: $(BINDIR)/$(CONFIG)/low_level_ping_pong_benchmark
 message_compress_test: $(BINDIR)/$(CONFIG)/message_compress_test
 mlog_test: $(BINDIR)/$(CONFIG)/mlog_test
@@ -1255,7 +1255,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/gpr_env_test \
   $(BINDIR)/$(CONFIG)/gpr_histogram_test \
   $(BINDIR)/$(CONFIG)/gpr_host_port_test \
-  $(BINDIR)/$(CONFIG)/gpr_load_file_test \
   $(BINDIR)/$(CONFIG)/gpr_log_test \
   $(BINDIR)/$(CONFIG)/gpr_slice_buffer_test \
   $(BINDIR)/$(CONFIG)/gpr_slice_test \
@@ -1294,6 +1293,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/json_test \
   $(BINDIR)/$(CONFIG)/lame_client_test \
   $(BINDIR)/$(CONFIG)/lb_policies_test \
+  $(BINDIR)/$(CONFIG)/load_file_test \
   $(BINDIR)/$(CONFIG)/message_compress_test \
   $(BINDIR)/$(CONFIG)/mlog_test \
   $(BINDIR)/$(CONFIG)/multiple_server_queues_test \
@@ -1534,8 +1534,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_histogram_test || ( echo test gpr_histogram_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_host_port_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_host_port_test || ( echo test gpr_host_port_test failed ; exit 1 )
-	$(E) "[RUN]     Testing gpr_load_file_test"
-	$(Q) $(BINDIR)/$(CONFIG)/gpr_load_file_test || ( echo test gpr_load_file_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_log_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_log_test || ( echo test gpr_log_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_slice_buffer_test"
@@ -1602,6 +1600,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/json_test || ( echo test json_test failed ; exit 1 )
 	$(E) "[RUN]     Testing lame_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/lame_client_test || ( echo test lame_client_test failed ; exit 1 )
+	$(E) "[RUN]     Testing load_file_test"
+	$(Q) $(BINDIR)/$(CONFIG)/load_file_test || ( echo test load_file_test failed ; exit 1 )
 	$(E) "[RUN]     Testing message_compress_test"
 	$(Q) $(BINDIR)/$(CONFIG)/message_compress_test || ( echo test message_compress_test failed ; exit 1 )
 	$(E) "[RUN]     Testing multiple_server_queues_test"
@@ -2338,7 +2338,6 @@ LIBGPR_SRC = \
     src/core/lib/support/env_win32.c \
     src/core/lib/support/histogram.c \
     src/core/lib/support/host_port.c \
-    src/core/lib/support/load_file.c \
     src/core/lib/support/log.c \
     src/core/lib/support/log_android.c \
     src/core/lib/support/log_linux.c \
@@ -2505,6 +2504,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/iomgr.c \
     src/core/lib/iomgr/iomgr_posix.c \
     src/core/lib/iomgr/iomgr_windows.c \
+    src/core/lib/iomgr/load_file.c \
     src/core/lib/iomgr/pollset_set_windows.c \
     src/core/lib/iomgr/pollset_windows.c \
     src/core/lib/iomgr/resolve_address_posix.c \
@@ -2862,6 +2862,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/iomgr.c \
     src/core/lib/iomgr/iomgr_posix.c \
     src/core/lib/iomgr/iomgr_windows.c \
+    src/core/lib/iomgr/load_file.c \
     src/core/lib/iomgr/pollset_set_windows.c \
     src/core/lib/iomgr/pollset_windows.c \
     src/core/lib/iomgr/resolve_address_posix.c \
@@ -7056,38 +7057,6 @@ endif
 endif
 
 
-GPR_LOAD_FILE_TEST_SRC = \
-    test/core/support/load_file_test.c \
-
-GPR_LOAD_FILE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_LOAD_FILE_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/gpr_load_file_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/gpr_load_file_test: $(GPR_LOAD_FILE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_LOAD_FILE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gpr_load_file_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/support/load_file_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_gpr_load_file_test: $(GPR_LOAD_FILE_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(GPR_LOAD_FILE_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 GPR_LOG_TEST_SRC = \
     test/core/support/log_test.c \
 
@@ -8556,6 +8525,38 @@ deps_lb_policies_test: $(LB_POLICIES_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(LB_POLICIES_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+LOAD_FILE_TEST_SRC = \
+    test/core/iomgr/load_file_test.c \
+
+LOAD_FILE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LOAD_FILE_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/load_file_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/load_file_test: $(LOAD_FILE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(LOAD_FILE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/load_file_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/iomgr/load_file_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_load_file_test: $(LOAD_FILE_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(LOAD_FILE_TEST_OBJS:.o=.dep)
 endif
 endif
 

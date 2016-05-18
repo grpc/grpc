@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/lib/support/load_file.h"
+#include "src/core/lib/iomgr/load_file.h"
 
 #include <errno.h>
 #include <string.h>
@@ -43,8 +43,8 @@
 #include "src/core/lib/support/block_annotate.h"
 #include "src/core/lib/support/string.h"
 
-grpc_error *gpr_load_file(const char *filename, int add_null_terminator,
-                          gpr_slice *output) {
+grpc_error *grpc_load_file(const char *filename, int add_null_terminator,
+                           gpr_slice *output) {
   unsigned char *contents = NULL;
   size_t contents_size = 0;
   gpr_slice result = gpr_empty_slice();
