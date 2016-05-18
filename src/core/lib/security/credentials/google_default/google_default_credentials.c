@@ -41,10 +41,10 @@
 
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/parser.h"
+#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 #include "src/core/lib/support/env.h"
-#include "src/core/lib/support/load_file.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/api_trace.h"
 
@@ -169,7 +169,7 @@ static grpc_error *create_default_creds_from_path(
     error = GRPC_ERROR_CREATE("creds_path unset");
     goto end;
   }
-  error = gpr_load_file(creds_path, 0, &creds_data);
+  error = grpc_load_file(creds_path, 0, &creds_data);
   if (error != GRPC_ERROR_NONE) {
     goto end;
   }

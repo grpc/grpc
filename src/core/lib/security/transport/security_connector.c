@@ -43,12 +43,12 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
+#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/transport/handshake.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/support/env.h"
-#include "src/core/lib/support/load_file.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/tsi/fake_transport_security.h"
 #include "src/core/lib/tsi/ssl_transport_security.h"
@@ -636,7 +636,7 @@ static gpr_slice compute_default_pem_root_certs_once(void) {
       gpr_getenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR);
   if (default_root_certs_path != NULL) {
     GRPC_LOG_IF_ERROR("load_file",
-                      gpr_load_file(default_root_certs_path, 0, &result));
+                      grpc_load_file(default_root_certs_path, 0, &result));
     gpr_free(default_root_certs_path);
   }
 
@@ -655,7 +655,7 @@ static gpr_slice compute_default_pem_root_certs_once(void) {
   if (GPR_SLICE_IS_EMPTY(result) &&
       ovrd_res != GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY) {
     GRPC_LOG_IF_ERROR("load_file",
-                      gpr_load_file(installed_roots_path, 0, &result));
+                      grpc_load_file(installed_roots_path, 0, &result));
   }
   return result;
 }

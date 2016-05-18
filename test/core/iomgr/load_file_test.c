@@ -38,7 +38,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
 
-#include "src/core/lib/support/load_file.h"
+#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/support/tmpfile.h"
 #include "test/core/util/test_config.h"
@@ -61,11 +61,11 @@ static void test_load_empty_file(void) {
   GPR_ASSERT(tmp != NULL);
   fclose(tmp);
 
-  error = gpr_load_file(tmp_name, 0, &slice);
+  error = grpc_load_file(tmp_name, 0, &slice);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(GPR_SLICE_LENGTH(slice) == 0);
 
-  error = gpr_load_file(tmp_name, 1, &slice_with_null_term);
+  error = grpc_load_file(tmp_name, 1, &slice_with_null_term);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(GPR_SLICE_LENGTH(slice_with_null_term) == 1);
   GPR_ASSERT(GPR_SLICE_START_PTR(slice_with_null_term)[0] == 0);
@@ -90,7 +90,7 @@ static void test_load_failure(void) {
   fclose(tmp);
   remove(tmp_name);
 
-  error = gpr_load_file(tmp_name, 0, &slice);
+  error = grpc_load_file(tmp_name, 0, &slice);
   GPR_ASSERT(error != GRPC_ERROR_NONE);
   GRPC_ERROR_UNREF(error);
   GPR_ASSERT(GPR_SLICE_LENGTH(slice) == 0);
@@ -114,12 +114,12 @@ static void test_load_small_file(void) {
   GPR_ASSERT(fwrite(blah, 1, strlen(blah), tmp) == strlen(blah));
   fclose(tmp);
 
-  error = gpr_load_file(tmp_name, 0, &slice);
+  error = grpc_load_file(tmp_name, 0, &slice);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(GPR_SLICE_LENGTH(slice) == strlen(blah));
   GPR_ASSERT(!memcmp(GPR_SLICE_START_PTR(slice), blah, strlen(blah)));
 
-  error = gpr_load_file(tmp_name, 1, &slice_with_null_term);
+  error = grpc_load_file(tmp_name, 1, &slice_with_null_term);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(GPR_SLICE_LENGTH(slice_with_null_term) == (strlen(blah) + 1));
   GPR_ASSERT(strcmp((const char *)GPR_SLICE_START_PTR(slice_with_null_term),
@@ -151,7 +151,7 @@ static void test_load_big_file(void) {
   GPR_ASSERT(fwrite(buffer, 1, buffer_size, tmp) == buffer_size);
   fclose(tmp);
 
-  error = gpr_load_file(tmp_name, 0, &slice);
+  error = grpc_load_file(tmp_name, 0, &slice);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(GPR_SLICE_LENGTH(slice) == buffer_size);
   current = GPR_SLICE_START_PTR(slice);

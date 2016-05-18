@@ -32,14 +32,14 @@
  */
 
 #include <grpc/support/log.h>
-#include "src/core/lib/support/load_file.h"
+#include "src/core/lib/iomgr/load_file.h"
 
 extern int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size);
 
 int main(int argc, char **argv) {
   gpr_slice buffer;
   GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("load_file", gpr_load_file(argv[1], 0, &buffer)));
+      GRPC_LOG_IF_ERROR("load_file", grpc_load_file(argv[1], 0, &buffer)));
   LLVMFuzzerTestOneInput(GPR_SLICE_START_PTR(buffer), GPR_SLICE_LENGTH(buffer));
   gpr_slice_unref(buffer);
   return 0;
