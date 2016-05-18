@@ -118,6 +118,7 @@ void bad_server_thread(void *vargs) {
   addr.ss_family = AF_INET;
   error =
       grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, addr_len, &port);
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("grpc_tcp_server_add_port", error));
   GPR_ASSERT(port > 0);
   gpr_asprintf(&args->addr, "localhost:%d", port);
 

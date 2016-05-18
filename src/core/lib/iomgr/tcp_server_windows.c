@@ -449,7 +449,7 @@ static grpc_error *add_socket_to_server(grpc_tcp_server *s, SOCKET sock,
 
 grpc_error *grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
                                      size_t addr_len, int *port) {
-  grpc_tcp_listener *sp;
+  grpc_tcp_listener *sp = NULL;
   SOCKET sock;
   struct sockaddr_in6 addr6_v4mapped;
   struct sockaddr_in6 wildcard;
@@ -512,6 +512,10 @@ done:
         "Failed to add port to server", &error, 1);
     GRPC_ERROR_UNREF(error);
     error = error_out;
+    *port = -1;
+  } else {
+    GPR_ASSERT(sp != NULL);
+    *port = sp->port;
   }
   return error;
 }
