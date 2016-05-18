@@ -73,7 +73,7 @@ static grpc_error* eventfd_wakeup(grpc_wakeup_fd* fd_info) {
     err = eventfd_write(fd_info->read_fd, 1);
   } while (err < 0 && errno == EINTR);
   if (err < 0) {
-    return GRPC_OS_ERROR(errno, "eventfd_read");
+    return GRPC_OS_ERROR(errno, "eventfd_write");
   }
   GPR_TIMER_END("eventfd_wakeup", 0);
   return GRPC_ERROR_NONE;
