@@ -261,6 +261,8 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_call *parent_call,
   call->channel = channel;
   call->cq = cq;
   call->parent = parent_call;
+  /* Always support no compression */
+  GPR_BITSET(&call->encodings_accepted_by_peer, GRPC_COMPRESS_NONE);
   call->is_client = server_transport_data == NULL;
   if (call->is_client) {
     GPR_ASSERT(add_initial_metadata_count < MAX_SEND_EXTRA_METADATA_COUNT);
@@ -406,8 +408,9 @@ static void set_status_code(grpc_call *call, status_source source,
   /* TODO(ctiller): what to do about the flush that was previously here */
 }
 
-static void set_incoming_compression_algorithm(
-    grpc_call *call, grpc_compression_algorithm algo) {
+static void set_compression_algorithm(grpc_call *call,
+                                      grpc_compression_algorithm algo) {
+  GPR_ASSERT(algo < GRPC_COMPRESS_ALGORITHMS_COUNT);
   call->incoming_compression_algorithm = algo;
 }
 
@@ -431,8 +434,8 @@ static grpc_compression_algorithm compression_algorithm_for_level_locked(
                                                       GRPC_COMPRESS_DEFLATE};
   const uint32_t accepted_encodings = call->encodings_accepted_by_peer;
   if (level > GRPC_COMPRESS_LEVEL_HIGH) {
-    extern int grpc_compress_filter_trace;
-    if (grpc_compress_filter_trace) {
+    extern int grpc_compression_trace;
+    if (grpc_compression_trace) {
       gpr_log(GPR_ERROR,
               "Unknown compression level %d. Compression will be disabled.",
               (int)level);
@@ -918,12 +921,16 @@ static uint32_t decode_status(grpc_mdelem *md) {
   return status;
 }
 
-static uint32_t decode_compression(grpc_mdelem *md) {
+static grpc_compression_algorithm decode_compression(grpc_mdelem *md) {
   grpc_compression_algorithm algorithm =
       grpc_compression_algorithm_from_mdstr(md->value);
   if (algorithm == GRPC_COMPRESS_ALGORITHMS_COUNT) {
     const char *md_c_str = grpc_mdstr_as_c_string(md->value);
-    gpr_log(GPR_ERROR, "Invalid compression algorithm: '%s'", md_c_str);
+    gpr_log(GPR_ERROR,
+            "Invalid incoming compression algorithm: '%s'. Interpreting "
+            "incoming data as uncompressed.",
+            md_c_str);
+    return GRPC_COMPRESS_NONE;
   }
   return algorithm;
 }
@@ -969,7 +976,7 @@ static grpc_mdelem *recv_initial_filter(void *callp, grpc_mdelem *elem) {
     return NULL;
   } else if (elem->key == GRPC_MDSTR_GRPC_ENCODING) {
     GPR_TIMER_BEGIN("incoming_compression_algorithm", 0);
-    set_incoming_compression_algorithm(call, decode_compression(elem));
+    set_compression_algorithm(call, decode_compression(elem));
     GPR_TIMER_END("incoming_compression_algorithm", 0);
     return NULL;
   } else if (elem->key == GRPC_MDSTR_GRPC_ACCEPT_ENCODING) {
@@ -1177,6 +1184,24 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
         &call->metadata_batch[1 /* is_receiving */][0 /* is_trailing */];
     grpc_metadata_batch_filter(md, recv_initial_filter, call);
 
+    /* make sure the received grpc-encoding is amongst the ones listed in
+     * grpc-accept-encoding */
+
+    GPR_ASSERT(call->encodings_accepted_by_peer != 0);
+    if (!GPR_BITGET(call->encodings_accepted_by_peer,
+                    call->incoming_compression_algorithm)) {
+      extern int grpc_compression_trace;
+      if (grpc_compression_trace) {
+        char *algo_name;
+        grpc_compression_algorithm_name(call->incoming_compression_algorithm,
+                                        &algo_name);
+        gpr_log(GPR_ERROR,
+                "Compression algorithm (grpc-encoding = '%s') not present in "
+                "the bitset of accepted encodings (grpc-accept-encodings: "
+                "'0x%x')",
+                algo_name, call->encodings_accepted_by_peer);
+      }
+    }
     if (gpr_time_cmp(md->deadline, gpr_inf_future(md->deadline.clock_type)) !=
             0 &&
         !call->is_client) {
@@ -1594,7 +1619,8 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
   grpc_call_error err;
 
   GRPC_API_TRACE(
-      "grpc_call_start_batch(call=%p, ops=%p, nops=%lu, tag=%p, reserved=%p)",
+      "grpc_call_start_batch(call=%p, ops=%p, nops=%lu, tag=%p, "
+      "reserved=%p)",
       5, (call, ops, (unsigned long)nops, tag, reserved));
 
   if (reserved != NULL) {

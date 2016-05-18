@@ -38,7 +38,7 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
-extern int grpc_compress_filter_trace;
+extern int grpc_compression_trace;
 
 /** Compression filter for outgoing data.
  *
