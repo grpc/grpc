@@ -30,7 +30,6 @@
 require 'forwardable'
 require 'weakref'
 require_relative 'bidi_call'
-require_relative '../signals'
 
 class Struct
   # BatchResult is the struct returned by calls to call#start_batch.
