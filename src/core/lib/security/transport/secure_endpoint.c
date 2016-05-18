@@ -158,7 +158,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *user_data, bool success) {
   /* TODO(yangg) check error, maybe bail out early */
   for (i = 0; i < ep->source_buffer.count; i++) {
     if (ep->protector == NULL || cur == NULL) break;
- 
+
     gpr_slice encrypted = ep->source_buffer.slices[i];
     uint8_t *message_bytes = GPR_SLICE_START_PTR(encrypted);
     if (message_bytes == NULL) break;
