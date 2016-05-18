@@ -89,39 +89,39 @@ typedef enum {
   GPR_HOURS
 } gpr_time_unit_type;
 
-#define GET_TIMESPEC_BY_DIFFERENT_SECOND_UNIT(t, n)        \
-  do {                                                     \
-    if (t == INT64_MAX) {                                  \
-      result = gpr_inf_future(type);                       \
-    } else if (t == INT64_MIN) {                           \
-      result = gpr_inf_past(type);                         \
-    } else if (t >= 0) {                                   \
-      result.tv_sec = t / n;                               \
-      result.tv_nsec = (int32_t)((t - result.tv_sec * n) * \
-                                 GPR_NS_PER_SEC / n);      \
-    } else {                                               \
-      result.tv_sec = (-((n - 1) - (t + n)) / n) - 1;      \
-      result.tv_nsec = (int32_t)((t - result.tv_sec * n) * \
-                                 GPR_NS_PER_SEC / n);      \
-    }                                                      \
-  } while (0);                                             \
+#define GET_TIMESPEC_BY_DIFFERENT_SECOND_UNIT(t, n)                \
+  do {                                                             \
+    if (t == INT64_MAX) {                                          \
+      result = gpr_inf_future(type);                               \
+    } else if (t == INT64_MIN) {                                   \
+      result = gpr_inf_past(type);                                 \
+    } else if (t >= 0) {                                           \
+      result.tv_sec = t / n;                                       \
+      result.tv_nsec =                                             \
+          (int32_t)((t - result.tv_sec * n) * GPR_NS_PER_SEC / n); \
+    } else {                                                       \
+      result.tv_sec = (-((n - 1) - (t + n)) / n) - 1;              \
+      result.tv_nsec =                                             \
+          (int32_t)((t - result.tv_sec * n) * GPR_NS_PER_SEC / n); \
+    }                                                              \
+  } while (0);                                                     \
   break; 
 
-#define GET_TIMESPEC_BY_HOUR_OR_MINTE_UNIT(t, n)           \
-  do {                                                     \
-    if (t * n >= INT64_MAX) {                              \
-      result = gpr_inf_future(type);                       \
-    } else if (t * n <= INT64_MIN) {                       \
-      result = gpr_inf_past(type);                         \
-    } else {                                               \
-      result.tv_sec = t * n;                               \
-      result.tv_nsec = 0;                                  \
-    }                                                      \
-  } while (0);                                             \
+#define GET_TIMESPEC_BY_HOUR_OR_MINTE_UNIT(t, n) \
+  do {                                           \
+    if (t * n >= INT64_MAX) {                    \
+      result = gpr_inf_future(type);             \
+    } else if (t * n <= INT64_MIN) {             \
+      result = gpr_inf_past(type);               \
+    } else {                                     \
+      result.tv_sec = t * n;                     \
+      result.tv_nsec = 0;                        \
+    }                                            \
+  } while (0);                                   \
   break; 
 
-static gpr_timespec gpr_time_by_unit_type(int64_t t,
-    gpr_clock_type type, gpr_time_unit_type unit) {
+static gpr_timespec gpr_time_by_unit_type(int64_t t, gpr_clock_type type,
+                                          gpr_time_unit_type unit) {
   gpr_timespec result;
   result.tv_sec = 0;
   result.tv_nsec = 0;
