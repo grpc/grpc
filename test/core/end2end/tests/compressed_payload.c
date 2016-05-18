@@ -110,7 +110,7 @@ static void request_with_payload_template(
     grpc_compression_algorithm default_server_channel_compression_algorithm,
     grpc_compression_algorithm expected_algorithm_from_client,
     grpc_compression_algorithm expected_algorithm_from_server,
-    grpc_metadata *client_init_metadata,
+    grpc_metadata *client_init_metadata, bool set_server_level,
     grpc_compression_level server_compression_level) {
   grpc_call *c;
   grpc_call *s;
@@ -212,9 +212,11 @@ static void request_with_payload_template(
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
-  op->data.send_initial_metadata.maybe_compression_level.is_set = true;
-  op->data.send_initial_metadata.maybe_compression_level.compression_level =
-      server_compression_level;
+  if (set_server_level) {
+    op->data.send_initial_metadata.maybe_compression_level.is_set = true;
+    op->data.send_initial_metadata.maybe_compression_level.compression_level =
+        server_compression_level;
+  }
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -352,7 +354,8 @@ static void test_invoke_request_with_exceptionally_uncompressed_payload(
   request_with_payload_template(
       config, "test_invoke_request_with_exceptionally_uncompressed_payload",
       GRPC_WRITE_NO_COMPRESS, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP,
-      GRPC_COMPRESS_NONE, GRPC_COMPRESS_GZIP, NULL, GRPC_COMPRESS_LEVEL_NONE);
+      GRPC_COMPRESS_NONE, GRPC_COMPRESS_GZIP, NULL, false,
+      /* ignored */ GRPC_COMPRESS_LEVEL_NONE);
 }
 
 static void test_invoke_request_with_uncompressed_payload(
@@ -360,7 +363,7 @@ static void test_invoke_request_with_uncompressed_payload(
   request_with_payload_template(
       config, "test_invoke_request_with_uncompressed_payload", 0,
       GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE,
-      GRPC_COMPRESS_NONE, NULL, GRPC_COMPRESS_LEVEL_NONE);
+      GRPC_COMPRESS_NONE, NULL, false, /* ignored */ GRPC_COMPRESS_LEVEL_NONE);
 }
 
 static void test_invoke_request_with_compressed_payload(
@@ -368,7 +371,7 @@ static void test_invoke_request_with_compressed_payload(
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload", 0,
       GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP,
-      GRPC_COMPRESS_GZIP, NULL, GRPC_COMPRESS_LEVEL_NONE);
+      GRPC_COMPRESS_GZIP, NULL, false, /* ignored */ GRPC_COMPRESS_LEVEL_NONE);
 }
 
 static void test_invoke_request_with_server_level(
@@ -376,7 +379,7 @@ static void test_invoke_request_with_server_level(
   request_with_payload_template(
       config, "test_invoke_request_with_server_level", 0, GRPC_COMPRESS_NONE,
       GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE /* ignored */,
-      NULL, GRPC_COMPRESS_LEVEL_HIGH);
+      NULL, true, GRPC_COMPRESS_LEVEL_HIGH);
 }
 
 static void test_invoke_request_with_compressed_payload_md_override(
@@ -402,20 +405,22 @@ static void test_invoke_request_with_compressed_payload_md_override(
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload_md_override_1", 0,
       GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_GZIP,
-      GRPC_COMPRESS_NONE, &gzip_compression_override, GRPC_COMPRESS_LEVEL_NONE);
+      GRPC_COMPRESS_NONE, &gzip_compression_override, false,
+      /*ignored*/ GRPC_COMPRESS_LEVEL_NONE);
 
   /* Channel default DEFLATE, call override to GZIP */
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload_md_override_2", 0,
       GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_GZIP,
-      GRPC_COMPRESS_NONE, &gzip_compression_override, GRPC_COMPRESS_LEVEL_NONE);
+      GRPC_COMPRESS_NONE, &gzip_compression_override, false,
+      /*ignored*/ GRPC_COMPRESS_LEVEL_NONE);
 
   /* Channel default DEFLATE, call override to NONE (aka IDENTITY) */
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload_md_override_3", 0,
       GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE,
-      GRPC_COMPRESS_NONE, &identity_compression_override,
-      GRPC_COMPRESS_LEVEL_NONE);
+      GRPC_COMPRESS_NONE, &identity_compression_override, false,
+      /*ignored*/ GRPC_COMPRESS_LEVEL_NONE);
 }
 
 void compressed_payload(grpc_end2end_test_config config) {
