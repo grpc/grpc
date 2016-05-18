@@ -1479,6 +1479,7 @@ targets:
   src:
   - test/core/support/load_file_test.c
   deps:
+  - grpc
   - gpr_test_util
   - gpr
 - name: gpr_log_test
