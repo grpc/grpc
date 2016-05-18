@@ -22,6 +22,9 @@
     <ClCompile Include="$(SolutionDir)\..\test\cpp\util\create_test_channel.cc">
       <Filter>test\cpp\util</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\proto_file_parser.cc">
+      <Filter>test\cpp\util</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\util\string_ref_helper.cc">
       <Filter>test\cpp\util</Filter>
     </ClCompile>
@@ -43,6 +46,9 @@
       <Filter>test\cpp\util</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\create_test_channel.h">
+      <Filter>test\cpp\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\proto_file_parser.h">
       <Filter>test\cpp\util</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\string_ref_helper.h">
