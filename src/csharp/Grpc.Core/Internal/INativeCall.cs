@@ -78,7 +78,7 @@ namespace Grpc.Core.Internal
 
         void StartSendCloseFromClient(SendCompletionHandler callback);
 
-        void StartSendStatusFromServer(SendCompletionHandler callback, Grpc.Core.Status status, MetadataArraySafeHandle metadataArray, bool sendEmptyInitialMetadata);
+        void StartSendStatusFromServer(SendCompletionHandler callback, Grpc.Core.Status status, MetadataArraySafeHandle metadataArray, bool sendEmptyInitialMetadata, byte[] optionalPayload, Grpc.Core.WriteFlags writeFlags);
 
         void StartServerSide(ReceivedCloseOnServerHandler callback);
     }

@@ -31,12 +31,15 @@
 
 FROM 32bit/debian:jessie
 
+RUN apt-get update && apt-get install debian-keyring && apt-key update
+
 # Install Git and basic packages.
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-key update && apt-get install -y \
   autoconf \
   autotools-dev \
   build-essential \
   bzip2 \
+  clang \
   curl \
   gcc \
   gcc-multilib \

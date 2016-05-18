@@ -715,10 +715,11 @@ grpcsharp_call_send_close_from_client(grpc_call *call,
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_send_status_from_server(
     grpc_call *call, grpcsharp_batch_context *ctx, grpc_status_code status_code,
     const char *status_details, grpc_metadata_array *trailing_metadata,
-    int32_t send_empty_initial_metadata) {
+    int32_t send_empty_initial_metadata, const char* optional_send_buffer,
+    size_t optional_send_buffer_len, uint32_t write_flags) {
   /* TODO: don't use magic number */
-  grpc_op ops[2];
-  size_t nops = send_empty_initial_metadata ? 2 : 1;
+  grpc_op ops[3];
+  size_t nops = 1;
   ops[0].op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   ops[0].data.send_status_from_server.status = status_code;
   ops[0].data.send_status_from_server.status_details =
@@ -731,12 +732,23 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_send_status_from_server(
       ctx->send_status_from_server.trailing_metadata.metadata;
   ops[0].flags = 0;
   ops[0].reserved = NULL;
-  ops[1].op = GRPC_OP_SEND_INITIAL_METADATA;
-  ops[1].data.send_initial_metadata.count = 0;
-  ops[1].data.send_initial_metadata.metadata = NULL;
-  ops[1].flags = 0;
-  ops[1].reserved = NULL;
-
+  if (optional_send_buffer) {
+    ops[nops].op = GRPC_OP_SEND_MESSAGE;
+    ctx->send_message = string_to_byte_buffer(optional_send_buffer,
+                                              optional_send_buffer_len);
+    ops[nops].data.send_message = ctx->send_message;
+    ops[nops].flags = write_flags;
+    ops[nops].reserved = NULL;
+    nops ++;
+  }
+  if (send_empty_initial_metadata) {
+    ops[nops].op = GRPC_OP_SEND_INITIAL_METADATA;
+    ops[nops].data.send_initial_metadata.count = 0;
+    ops[nops].data.send_initial_metadata.metadata = NULL;
+    ops[nops].flags = 0;
+    ops[nops].reserved = NULL;
+    nops++;
+  }
   return grpc_call_start_batch(call, ops, nops, ctx, NULL);
 }
 

@@ -43,12 +43,16 @@ sys.path.append(run_tests_root)
 
 import performance.scenario_config as scenario_config
 
+def _scenario_json_string(scenario_json):
+  return json.dumps(scenario_config.remove_nonproto_fields(scenario_json))
+
 print yaml.dump({
   'tests': [
     {
       'name': 'json_run_localhost',
-      'shortname': 'json_run_localhost:%s' % js['name'],
-      'args': ['--scenario_json', pipes.quote(json.dumps(js))],
+      'shortname': 'json_run_localhost:%s' % scenario_json['name'],
+      'args': ['--scenario_json',
+               pipes.quote(_scenario_json_string(scenario_json))],
       'ci_platforms': ['linux', 'mac', 'posix', 'windows'],
       'platforms': ['linux', 'mac', 'posix', 'windows'],
       'flaky': False,
@@ -58,6 +62,6 @@ print yaml.dump({
       'cpu_cost': 1000.0,
       'exclude_configs': []
     }
-    for js in scenario_config.CXXLanguage().scenarios()
+    for scenario_json in scenario_config.CXXLanguage().scenarios()
   ]
 })
