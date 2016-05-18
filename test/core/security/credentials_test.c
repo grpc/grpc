@@ -157,7 +157,7 @@ static grpc_httpcli_response http_response(int status, const char *body) {
   grpc_httpcli_response response;
   memset(&response, 0, sizeof(grpc_httpcli_response));
   response.status = status;
-  response.body = (char *)body;
+  response.body = gpr_strdup((char *)body);
   response.body_length = strlen(body);
   return response;
 }
@@ -247,6 +247,7 @@ static void test_oauth2_token_fetcher_creds_parsing_ok(void) {
                                "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_") ==
              0);
   grpc_credentials_md_store_unref(token_md);
+  grpc_http_response_destroy(&response);
 }
 
 static void test_oauth2_token_fetcher_creds_parsing_bad_http_status(void) {
@@ -257,6 +258,7 @@ static void test_oauth2_token_fetcher_creds_parsing_bad_http_status(void) {
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
                  &response, &token_md, &token_lifetime) ==
              GRPC_CREDENTIALS_ERROR);
+  grpc_http_response_destroy(&response);
 }
 
 static void test_oauth2_token_fetcher_creds_parsing_empty_http_body(void) {
@@ -266,6 +268,7 @@ static void test_oauth2_token_fetcher_creds_parsing_empty_http_body(void) {
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
                  &response, &token_md, &token_lifetime) ==
              GRPC_CREDENTIALS_ERROR);
+  grpc_http_response_destroy(&response);
 }
 
 static void test_oauth2_token_fetcher_creds_parsing_invalid_json(void) {
@@ -279,6 +282,7 @@ static void test_oauth2_token_fetcher_creds_parsing_invalid_json(void) {
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
                  &response, &token_md, &token_lifetime) ==
              GRPC_CREDENTIALS_ERROR);
+  grpc_http_response_destroy(&response);
 }
 
 static void test_oauth2_token_fetcher_creds_parsing_missing_token(void) {
@@ -291,6 +295,7 @@ static void test_oauth2_token_fetcher_creds_parsing_missing_token(void) {
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
                  &response, &token_md, &token_lifetime) ==
              GRPC_CREDENTIALS_ERROR);
+  grpc_http_response_destroy(&response);
 }
 
 static void test_oauth2_token_fetcher_creds_parsing_missing_token_type(void) {
@@ -304,6 +309,7 @@ static void test_oauth2_token_fetcher_creds_parsing_missing_token_type(void) {
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
                  &response, &token_md, &token_lifetime) ==
              GRPC_CREDENTIALS_ERROR);
+  grpc_http_response_destroy(&response);
 }
 
 static void test_oauth2_token_fetcher_creds_parsing_missing_token_lifetime(
@@ -317,6 +323,7 @@ static void test_oauth2_token_fetcher_creds_parsing_missing_token_lifetime(
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
                  &response, &token_md, &token_lifetime) ==
              GRPC_CREDENTIALS_ERROR);
+  grpc_http_response_destroy(&response);
 }
 
 static void check_metadata(expected_md *expected, grpc_credentials_md *md_elems,
@@ -902,8 +909,8 @@ static int default_creds_gce_detection_httpcli_get_success_override(
     grpc_httpcli_response *response) {
   *response = http_response(200, "");
   grpc_http_header *headers = gpr_malloc(sizeof(*headers) * 1);
-  headers[0].key = "Metadata-Flavor";
-  headers[0].value = "Google";
+  headers[0].key = gpr_strdup("Metadata-Flavor");
+  headers[0].value = gpr_strdup("Google");
   response->hdr_count = 1;
   response->hdrs = headers;
   GPR_ASSERT(strcmp(request->http.path, "/") == 0);
