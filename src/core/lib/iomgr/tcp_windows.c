@@ -167,7 +167,6 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *tcpp, grpc_error *error) {
   if (error == GRPC_ERROR_NONE) {
     if (info->wsa_error != 0 && !tcp->shutting_down) {
       char *utf8_message = gpr_format_message(info->wsa_error);
-      gpr_log(GPR_ERROR, "ReadFile overlapped error: %s", utf8_message);
       error = GRPC_ERROR_CREATE(utf8_message);
       gpr_free(utf8_message);
       gpr_slice_unref(tcp->read_slice);

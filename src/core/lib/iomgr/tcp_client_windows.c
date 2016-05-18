@@ -78,18 +78,18 @@ static void async_connect_unlock_and_cleanup(async_connect *ac,
 static void on_alarm(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
   async_connect *ac = acp;
   gpr_mu_lock(&ac->mu);
-  if (ac->socket != NULL) {
-    grpc_winsocket_shutdown(ac->socket);
+  grpc_winsocket *socket = ac->socket;
+  ac->socket = NULL;
+  if (socket != NULL) {
+    grpc_winsocket_shutdown(socket);
   }
-  async_connect_unlock_and_cleanup(ac, ac->socket);
+  async_connect_unlock_and_cleanup(ac, socket);
 }
 
 static void on_connect(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
   async_connect *ac = acp;
-  SOCKET sock = ac->socket->socket;
   grpc_endpoint **ep = ac->endpoint;
   GPR_ASSERT(*ep == NULL);
-  grpc_winsocket_callback_info *info = &ac->socket->write_info;
   grpc_closure *on_done = ac->on_done;
 
   GRPC_ERROR_REF(error);
@@ -106,7 +106,7 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
   if (error == GRPC_ERROR_NONE && socket != NULL) {
     DWORD transfered_bytes = 0;
     DWORD flags;
-    BOOL wsa_success = WSAGetOverlappedResult(sock, &info->overlapped,
+    BOOL wsa_success = WSAGetOverlappedResult(socket->socket, &socket->write_info.overlapped,
                                               &transfered_bytes, FALSE, &flags);
     GPR_ASSERT(transfered_bytes == 0);
     if (!wsa_success) {
