@@ -98,7 +98,9 @@ static void destroy(grpc_winsocket *winsocket) {
 }
 
 static bool check_destroyable(grpc_winsocket *winsocket) {
-  return winsocket->destroy_called == true && winsocket->write_info.closure == NULL && winsocket->read_info.closure == NULL;
+  return winsocket->destroy_called == true &&
+         winsocket->write_info.closure == NULL &&
+         winsocket->read_info.closure == NULL;
 }
 
 void grpc_winsocket_destroy(grpc_winsocket *winsocket) {
@@ -139,7 +141,8 @@ void grpc_socket_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_winsocket *socket,
   socket_notify_on_iocp(exec_ctx, socket, closure, &socket->read_info);
 }
 
-void grpc_socket_become_ready(grpc_exec_ctx *exec_ctx, grpc_winsocket *socket, grpc_winsocket_callback_info *info) {
+void grpc_socket_become_ready(grpc_exec_ctx *exec_ctx, grpc_winsocket *socket,
+                              grpc_winsocket_callback_info *info) {
   GPR_ASSERT(!info->has_pending_iocp);
   gpr_mu_lock(&socket->state_mu);
   if (info->closure) {
