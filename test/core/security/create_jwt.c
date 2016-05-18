@@ -45,13 +45,10 @@
 void create_jwt(const char *json_key_file_path, const char *service_url,
                 const char *scope) {
   grpc_auth_json_key key;
-  int ok = 0;
   char *jwt;
-  gpr_slice json_key_data = gpr_load_file(json_key_file_path, 1, &ok);
-  if (!ok) {
-    fprintf(stderr, "Could not read %s.\n", json_key_file_path);
-    exit(1);
-  }
+  gpr_slice json_key_data;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "load_file", gpr_load_file(json_key_file_path, 1, &json_key_data)));
   key = grpc_auth_json_key_create_from_string(
       (const char *)GPR_SLICE_START_PTR(json_key_data));
   gpr_slice_unref(json_key_data);

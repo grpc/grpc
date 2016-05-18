@@ -48,13 +48,10 @@
 
 static grpc_call_credentials *create_refresh_token_creds(
     const char *json_refresh_token_file_path) {
-  int success;
-  gpr_slice refresh_token =
-      gpr_load_file(json_refresh_token_file_path, 1, &success);
-  if (!success) {
-    gpr_log(GPR_ERROR, "Could not read file %s.", json_refresh_token_file_path);
-    exit(1);
-  }
+  gpr_slice refresh_token;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "load_file",
+      gpr_load_file(json_refresh_token_file_path, 1, &refresh_token)));
   return grpc_google_refresh_token_credentials_create(
       (const char *)GPR_SLICE_START_PTR(refresh_token), NULL);
 }
