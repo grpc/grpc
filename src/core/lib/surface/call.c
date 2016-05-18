@@ -1336,7 +1336,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
                             .compression_level);
           char *calgo_name;
           grpc_compression_algorithm_name(calgo, &calgo_name);
-          compression_md.key = "grpc-internal-encoding-request";
+          compression_md.key = GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY;
           compression_md.value = calgo_name;
           compression_md.value_length = strlen(calgo_name);
           additional_metadata_count++;

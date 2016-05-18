@@ -123,8 +123,15 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   if (max_message_size_ > 0) {
     args.SetInt(GRPC_ARG_MAX_MESSAGE_LENGTH, max_message_size_);
   }
-  args.SetInt(GRPC_COMPRESSION_ALGORITHM_STATE_ARG,
+  args.SetInt(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
               compression_options_.enabled_algorithms_bitset);
+  if (compression_options_.default_level.is_set) {
+    args.SetInt(GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL,
+                compression_options_.default_level.level);
+  } else if (compression_options_.default_algorithm.is_set) {
+    args.SetInt(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
+                compression_options_.default_algorithm.algorithm);
+  }
   std::unique_ptr<Server> server(
       new Server(thread_pool.release(), true, max_message_size_, &args));
   ServerInitializer* initializer = server->initializer();

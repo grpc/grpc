@@ -38,13 +38,13 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
+#include <grpc/impl/codegen/compression_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/compress_filter.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/call_test_only.h"
 #include "test/core/end2end/cq_verifier.h"
@@ -384,14 +384,14 @@ static void test_invoke_request_with_compressed_payload_md_override(
   grpc_metadata gzip_compression_override;
   grpc_metadata identity_compression_override;
 
-  gzip_compression_override.key = GRPC_COMPRESS_REQUEST_ALGORITHM_KEY;
+  gzip_compression_override.key = GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY;
   gzip_compression_override.value = "gzip";
   gzip_compression_override.value_length =
       strlen(gzip_compression_override.value);
   memset(&gzip_compression_override.internal_data, 0,
          sizeof(gzip_compression_override.internal_data));
 
-  identity_compression_override.key = GRPC_COMPRESS_REQUEST_ALGORITHM_KEY;
+  identity_compression_override.key = GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY;
   identity_compression_override.value = "identity";
   identity_compression_override.value_length =
       strlen(identity_compression_override.value);
