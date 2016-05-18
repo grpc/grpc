@@ -1326,10 +1326,6 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         grpc_compression_level effective_compression_level;
         bool level_set = false;
         if (op->data.send_initial_metadata.maybe_compression_level.is_set) {
-          if (call->is_client) {
-            error = GRPC_CALL_ERROR_NOT_ON_CLIENT;
-            goto done_with_error;
-          }
           effective_compression_level =
               op->data.send_initial_metadata.maybe_compression_level
                   .compression_level;
