@@ -235,7 +235,7 @@ class Server(six.with_metaclass(abc.ABCMeta)):
     This method may be called at any time and is idempotent. Passing a smaller
     grace value than has been passed in a previous call will have the effect of
     stopping the Server sooner. Passing a larger grace value than has been
-    passed in a previous call will not have the effect of stopping the sooner
+    passed in a previous call will not have the effect of stopping the server
     later.
 
     Args:
