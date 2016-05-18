@@ -190,7 +190,7 @@ class CallOpSendInitialMetadata {
     initial_metadata_count_ = metadata.size();
     initial_metadata_ = FillMetadataArray(metadata);
     // TODO(dgq): expose compression level in API so it can be properly set.
-    compression_level_ = GRPC_COMPRESS_LEVEL_NONE;
+    maybe_compression_level_.is_set = false;
   }
 
  protected:
@@ -202,9 +202,8 @@ class CallOpSendInitialMetadata {
     op->reserved = NULL;
     op->data.send_initial_metadata.count = initial_metadata_count_;
     op->data.send_initial_metadata.metadata = initial_metadata_;
-    op->data.send_initial_metadata.maybe_compression_level.is_set = true;
-    op->data.send_initial_metadata.maybe_compression_level.compression_level =
-        compression_level_;
+    memcpy(&op->data.send_initial_metadata.maybe_compression_level,
+           &maybe_compression_level_, sizeof(maybe_compression_level_));
   }
   void FinishOp(bool* status, int max_message_size) {
     if (!send_) return;
@@ -216,7 +215,10 @@ class CallOpSendInitialMetadata {
   uint32_t flags_;
   size_t initial_metadata_count_;
   grpc_metadata* initial_metadata_;
-  grpc_compression_level compression_level_;
+  struct {
+    bool is_set;
+    grpc_compression_level level;
+  } maybe_compression_level_;
 };
 
 class CallOpSendMessage {
