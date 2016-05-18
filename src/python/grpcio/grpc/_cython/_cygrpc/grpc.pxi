@@ -140,6 +140,9 @@ cdef extern from "grpc/_cython/loader.h":
   const char *GRPC_ARG_PRIMARY_USER_AGENT_STRING
   const char *GRPC_ARG_SECONDARY_USER_AGENT_STRING
   const char *GRPC_SSL_TARGET_NAME_OVERRIDE_ARG
+  const char *GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM
+  const char *GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL
+  const char *GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET
 
   const int GRPC_WRITE_BUFFER_HINT
   const int GRPC_WRITE_NO_COMPRESS
@@ -425,3 +428,38 @@ cdef extern from "grpc/_cython/loader.h":
 
   grpc_call_credentials *grpc_metadata_credentials_create_from_plugin(
       grpc_metadata_credentials_plugin plugin, void *reserved) nogil
+
+  ctypedef enum grpc_compression_algorithm:
+    GRPC_COMPRESS_NONE
+    GRPC_COMPRESS_DEFLATE
+    GRPC_COMPRESS_GZIP
+    GRPC_COMPRESS_ALGORITHMS_COUNT
+
+  ctypedef enum grpc_compression_level:
+    GRPC_COMPRESS_LEVEL_NONE
+    GRPC_COMPRESS_LEVEL_LOW
+    GRPC_COMPRESS_LEVEL_MED
+    GRPC_COMPRESS_LEVEL_HIGH
+    GRPC_COMPRESS_LEVEL_COUNT
+
+  ctypedef struct grpc_compression_options:
+    uint32_t enabled_algorithms_bitset
+    grpc_compression_algorithm default_compression_algorithm
+
+  int grpc_compression_algorithm_parse(
+      const char *name, size_t name_length,
+      grpc_compression_algorithm *algorithm) nogil
+  int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
+                                      char **name) nogil
+  grpc_compression_algorithm grpc_compression_algorithm_for_level(
+      grpc_compression_level level, uint32_t accepted_encodings) nogil
+  void grpc_compression_options_init(grpc_compression_options *opts) nogil
+  void grpc_compression_options_enable_algorithm(
+      grpc_compression_options *opts,
+      grpc_compression_algorithm algorithm) nogil
+  void grpc_compression_options_disable_algorithm(
+      grpc_compression_options *opts,
+      grpc_compression_algorithm algorithm) nogil
+  int grpc_compression_options_is_algorithm_enabled(
+      const grpc_compression_options *opts,
+      grpc_compression_algorithm algorithm) nogil
