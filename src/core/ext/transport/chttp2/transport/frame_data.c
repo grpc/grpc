@@ -69,8 +69,8 @@ grpc_error *grpc_chttp2_data_parser_begin_frame(grpc_chttp2_data_parser *parser,
   if (flags & ~GRPC_CHTTP2_DATA_FLAG_END_STREAM) {
     char *msg;
     gpr_asprintf(&msg, "unsupported data flags: 0x%02x", flags);
-    grpc_error *err = grpc_error_set_int(GRPC_ERROR_CREATE(msg),
-                                         GRPC_ERROR_INT_STREAM_ID, stream_id);
+    grpc_error *err = grpc_error_set_int(
+        GRPC_ERROR_CREATE(msg), GRPC_ERROR_INT_STREAM_ID, (intptr_t)stream_id);
     gpr_free(msg);
     return err;
   }
@@ -184,7 +184,7 @@ grpc_error *grpc_chttp2_data_parser_parse(
           gpr_asprintf(&msg, "Bad GRPC frame type 0x%02x", p->frame_type);
           p->error = GRPC_ERROR_CREATE(msg);
           p->error = grpc_error_set_int(p->error, GRPC_ERROR_INT_STREAM_ID,
-                                        stream_parsing->id);
+                                        (intptr_t)stream_parsing->id);
           gpr_free(msg);
           msg = gpr_dump_slice(slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
           p->error =

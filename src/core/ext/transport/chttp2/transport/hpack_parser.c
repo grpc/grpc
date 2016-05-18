@@ -739,8 +739,8 @@ static grpc_error *finish_indexed_field(grpc_chttp2_hpack_parser *p,
   if (md == NULL) {
     return grpc_error_set_int(
         grpc_error_set_int(GRPC_ERROR_CREATE("Invalid HPACK index received"),
-                           GRPC_ERROR_INT_INDEX, p->index),
-        GRPC_ERROR_INT_SIZE, p->table.num_ents);
+                           GRPC_ERROR_INT_INDEX, (intptr_t)p->index),
+        GRPC_ERROR_INT_SIZE, (intptr_t)p->table.num_ents);
   }
   GRPC_MDELEM_REF(md);
   grpc_error *err = on_hdr(p, md, 0);
@@ -1424,8 +1424,8 @@ static grpc_error *is_binary_indexed_header(grpc_chttp2_hpack_parser *p,
   if (!elem) {
     return grpc_error_set_int(
         grpc_error_set_int(GRPC_ERROR_CREATE("Invalid HPACK index received"),
-                           GRPC_ERROR_INT_INDEX, p->index),
-        GRPC_ERROR_INT_SIZE, p->table.num_ents);
+                           GRPC_ERROR_INT_INDEX, (intptr_t)p->index),
+        GRPC_ERROR_INT_SIZE, (intptr_t)p->table.num_ents);
   }
   *is =
       grpc_is_binary_header((const char *)GPR_SLICE_START_PTR(elem->key->slice),

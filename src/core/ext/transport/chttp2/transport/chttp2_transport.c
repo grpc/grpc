@@ -811,7 +811,8 @@ void grpc_chttp2_add_incoming_goaway(
       exec_ctx, transport_global, GRPC_CHANNEL_FATAL_FAILURE,
       grpc_error_set_str(
           grpc_error_set_int(GRPC_ERROR_CREATE("GOAWAY received"),
-                             GRPC_ERROR_INT_HTTP2_ERROR, goaway_error),
+                             GRPC_ERROR_INT_HTTP2_ERROR,
+                             (intptr_t)goaway_error),
           GRPC_ERROR_STR_RAW_BYTES, msg),
       "got_goaway");
   gpr_free(msg);
