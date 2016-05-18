@@ -52,21 +52,47 @@ typedef struct next_call_stack {
   grpc_event event;
   gpr_timespec timeout;
   void *tag;
+  volatile int interrupted;
 } next_call_stack;
 
 /* Calls grpc_completion_queue_next without holding the ruby GIL */
 static void *grpc_rb_completion_queue_next_no_gil(void *param) {
   next_call_stack *const next_call = (next_call_stack*)param;
-  next_call->event =
-      grpc_completion_queue_next(next_call->cq, next_call->timeout, NULL);
+  gpr_timespec increment = gpr_time_from_millis(20, GPR_TIMESPAN);
+  gpr_timespec deadline;
+  do {
+    deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), increment);
+    if (gpr_time_cmp(deadline, next_call->timeout) > 0) {
+      // Then we have run out of time
+      break;
+    }
+    next_call->event = grpc_completion_queue_next(next_call->cq,
+                                                  deadline, NULL);
+    if (next_call->event.success) {
+      break;
+    }
+  } while (!next_call->interrupted);
   return NULL;
 }
 
 /* Calls grpc_completion_queue_pluck without holding the ruby GIL */
 static void *grpc_rb_completion_queue_pluck_no_gil(void *param) {
   next_call_stack *const next_call = (next_call_stack*)param;
-  next_call->event = grpc_completion_queue_pluck(next_call->cq, next_call->tag,
-                                                 next_call->timeout, NULL);
+  gpr_timespec increment = gpr_time_from_millis(20, GPR_TIMESPAN);
+  gpr_timespec deadline;
+  do {
+    deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), increment);
+    if (gpr_time_cmp(deadline, next_call->timeout) > 0) {
+      // Then we have run out of time
+      break;
+    }
+    next_call->event = grpc_completion_queue_pluck(next_call->cq,
+                                                   next_call->tag,
+                                                   deadline, NULL);
+    if (next_call->event.type != GRPC_QUEUE_TIMEOUT) {
+      break;
+    }
+  } while (!next_call->interrupted);
   return NULL;
 }
 
@@ -139,6 +165,11 @@ static VALUE grpc_rb_completion_queue_alloc(VALUE cls) {
   return TypedData_Wrap_Struct(cls, &grpc_rb_completion_queue_data_type, cq);
 }
 
+static void unblock_func(void *param) {
+  next_call_stack *const next_call = (next_call_stack*)param;
+  next_call->interrupted = 1;
+}
+
 /* Blocks until the next event for given tag is available, and returns the
  * event. */
 grpc_event grpc_rb_completion_queue_pluck_event(VALUE self, VALUE tag,
@@ -158,8 +189,23 @@ grpc_event grpc_rb_completion_queue_pluck_event(VALUE self, VALUE tag,
     next_call.tag = ROBJECT(tag);
   }
   next_call.event.type = GRPC_QUEUE_TIMEOUT;
-  rb_thread_call_without_gvl(grpc_rb_completion_queue_pluck_no_gil,
-                             (void *)&next_call, NULL, NULL);
+  /* Loop until we finish a pluck without an interruption. The internal
+     pluck function runs either until it is interrupted or it gets an
+     event, or time runs out.
+
+     The basic reason we need this relatively complicated construction is that
+     we need to re-acquire the GVL when an interrupt comes in, so that the ruby
+     interpeter can do what it needs to do with the interrupt. But we also need
+     to get back to plucking when */
+  do {
+    next_call.interrupted = 0;
+    rb_thread_call_without_gvl(grpc_rb_completion_queue_pluck_no_gil,
+                               (void *)&next_call, unblock_func,
+                               (void *)&next_call);
+    /* If an interrupt prevented pluck from returning useful information, then
+       any plucks that did complete must have timed out */
+  } while (next_call.interrupted &&
+           next_call.event.type == GRPC_QUEUE_TIMEOUT);
   return next_call.event;
 }
 

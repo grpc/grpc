@@ -28,7 +28,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require_relative '../grpc'
-require_relative '../signals'
 require_relative 'active_call'
 require_relative 'service'
 require 'thread'
@@ -344,10 +343,7 @@ module GRPC
         transition_running_state(:running)
         @run_cond.broadcast
       end
-      remove_signal_handler = GRPC::Signals.register_handler { stop }
       loop_handle_server_calls
-      # Remove signal handler when server stops
-      remove_signal_handler.call
     end
 
     alias_method :run_till_terminated, :run

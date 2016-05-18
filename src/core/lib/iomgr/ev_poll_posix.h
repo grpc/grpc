@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,9 +31,11 @@
  *
  */
 
-#ifndef GRPC_RB_SIGNAL_H_
-#define GRPC_RB_SIGNAL_H_
+#ifndef GRPC_CORE_LIB_IOMGR_EV_POLL_POSIX_H
+#define GRPC_CORE_LIB_IOMGR_EV_POLL_POSIX_H
 
-void Init_grpc_signals();
+#include "src/core/lib/iomgr/ev_posix.h"
 
-#endif  /* GRPC_RB_SIGNAL_H_ */
+const grpc_event_engine_vtable *grpc_init_poll_posix(void);
+
+#endif /* GRPC_CORE_LIB_IOMGR_EV_POLL_POSIX_H */
