@@ -2816,7 +2816,7 @@
     "deps": [
       "gpr", 
       "grpc", 
-      "grpc_transport_cronet_client_secure"
+      "grpc_cronet"
     ], 
     "headers": [], 
     "language": "c89", 

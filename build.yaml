@@ -3129,8 +3129,8 @@ targets:
   src:
   - test/core/surface/public_headers_must_be_c89.c
   deps:
-  - grpc_transport_cronet_client_secure
   - grpc
+  - grpc_cronet
   - gpr
   platforms:
   - linux
