@@ -31,13 +31,12 @@
  *
  */
 
+#include <ruby/ruby.h>
+
 #include <string.h>
 
-#include <ruby/ruby.h>
 #include "rb_grpc_imports.generated.h"
 #include "rb_channel_credentials.h"
-
-#include <ruby/ruby.h>
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>

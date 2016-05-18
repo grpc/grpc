@@ -37,7 +37,7 @@ set -ex
 sudo apt-get update
 
 # Install JRE
-sudo apt-get install -y openjdk-7-jre
+sudo apt-get install -y openjdk-8-jre
 sudo apt-get install -y unzip lsof
 
 # Install Docker

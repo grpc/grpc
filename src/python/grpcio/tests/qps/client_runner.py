@@ -89,9 +89,9 @@ class ClosedLoopClientRunner(ClientRunner):
 
   def start(self):
     self._is_running = True
+    self._client.start()
     for _ in xrange(self._request_count):
       self._client.send_request()
-    self._client.start()
 
   def stop(self):
     self._is_running = False
