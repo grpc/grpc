@@ -62,27 +62,26 @@ namespace Grpc.Core.Internal
         }
 
         // Gets data of recv_initial_metadata completion.
-        public Metadata GetReceivedInitialMetadata()
+        public unsafe Metadata GetReceivedInitialMetadata()
         {
-            IntPtr metadataArrayPtr = Native.grpcsharp_batch_context_recv_initial_metadata(this);
-            return MetadataArraySafeHandle.ReadMetadataFromPtrUnsafe(metadataArrayPtr);
+            var batchContext = (BatchContext*) handle;
+            return MetadataArraySafeHandle.ReadMetadataFromPtrUnsafe(&batchContext->recvInitialMetadata);
         }
             
         // Gets data of recv_status_on_client completion.
-        public ClientSideStatus GetReceivedStatusOnClient()
+        public unsafe ClientSideStatus GetReceivedStatusOnClient()
         {
-            string details = Marshal.PtrToStringAnsi(Native.grpcsharp_batch_context_recv_status_on_client_details(this));
-            var status = new Status(Native.grpcsharp_batch_context_recv_status_on_client_status(this), details);
-
-            IntPtr metadataArrayPtr = Native.grpcsharp_batch_context_recv_status_on_client_trailing_metadata(this);
-            var metadata = MetadataArraySafeHandle.ReadMetadataFromPtrUnsafe(metadataArrayPtr);
-
+            var batchContext = (BatchContext*) handle;
+            string details = Marshal.PtrToStringAnsi(batchContext->recvStatusOnClient.statusDetails);
+            var status = new Status((StatusCode) batchContext->recvStatusOnClient.status, details);
+            var metadata = MetadataArraySafeHandle.ReadMetadataFromPtrUnsafe(&batchContext->recvStatusOnClient.trailingMetadata);
             return new ClientSideStatus(status, metadata);
         }
 
         // Gets data of recv_message completion.
         public byte[] GetReceivedMessage()
         {
+            // TODO(jtattermusch): implement using an unsafe block to save transitions.
             IntPtr len = Native.grpcsharp_batch_context_recv_message_length(this);
             if (len == new IntPtr(-1))
             {
@@ -94,30 +93,84 @@ namespace Grpc.Core.Internal
         }
 
         // Gets data of server_rpc_new completion.
-        public ServerRpcNew GetServerRpcNew(Server server)
+        public unsafe ServerRpcNew GetServerRpcNew(Server server)
         {
-            var call = Native.grpcsharp_batch_context_server_rpc_new_call(this);
+            var batchContext = (BatchContext*) handle;
+            var serverRpcNew = &(batchContext->serverRpcNew);
 
-            var method = Marshal.PtrToStringAnsi(Native.grpcsharp_batch_context_server_rpc_new_method(this));
-            var host = Marshal.PtrToStringAnsi(Native.grpcsharp_batch_context_server_rpc_new_host(this));
-            var deadline = Native.grpcsharp_batch_context_server_rpc_new_deadline(this);
-
-            IntPtr metadataArrayPtr = Native.grpcsharp_batch_context_server_rpc_new_request_metadata(this);
-            var metadata = MetadataArraySafeHandle.ReadMetadataFromPtrUnsafe(metadataArrayPtr);
-
+            var call = new CallSafeHandle(serverRpcNew->call);
+            var method = Marshal.PtrToStringAnsi(serverRpcNew->callDetails.method);
+            var host = Marshal.PtrToStringAnsi(serverRpcNew->callDetails.host);
+            var deadline = serverRpcNew->callDetails.deadline;
+            var metadata = MetadataArraySafeHandle.ReadMetadataFromPtrUnsafe(&serverRpcNew->requestMetadata);
             return new ServerRpcNew(server, call, method, host, deadline, metadata);
         }
 
         // Gets data of receive_close_on_server completion.
-        public bool GetReceivedCloseOnServerCancelled()
+        public unsafe bool GetReceivedCloseOnServerCancelled()
         {
-            return Native.grpcsharp_batch_context_recv_close_on_server_cancelled(this) != 0;
+            var batchContext = (BatchContext*) handle;
+            return (batchContext->recvCloseOnServerCancelled != 0);
         }
             
         protected override bool ReleaseHandle()
         {
             Native.grpcsharp_batch_context_destroy(handle);
             return true;
+        }
+
+        /// <summary>
+        /// Corresponds to grpcsharp_batch_context.
+        /// IMPORTANT: The struct layout needs to be kept in sync.
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct BatchContext
+        {
+            MetadataArraySafeHandle.MetadataArray sendInitialMetadata;
+            IntPtr sendMessage;
+            SendStatusFromServer sendStatusFromServer;
+            public MetadataArraySafeHandle.MetadataArray recvInitialMetadata;
+            public IntPtr recvMessage;
+            public RecvStatusOnClient recvStatusOnClient;
+            public int recvCloseOnServerCancelled;
+            public ServerRpcNewNative serverRpcNew;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct SendStatusFromServer
+        {
+            public MetadataArraySafeHandle.MetadataArray trailingMetadata;
+            public IntPtr statusDetails;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct RecvStatusOnClient
+        {
+            public MetadataArraySafeHandle.MetadataArray trailingMetadata;
+            public int status;
+            public IntPtr statusDetails;
+            public UIntPtr statusDetailsCapacity;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct ServerRpcNewNative
+        {
+            public IntPtr call;
+            public CallDetails callDetails;
+            public MetadataArraySafeHandle.MetadataArray requestMetadata;
+        }
+
+        // corresponds to grpc_call_details
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct CallDetails
+        {
+            public IntPtr method;
+            public UIntPtr methodCapacity;
+            public IntPtr host;
+            public UIntPtr hostCapacity;
+            public Timespec deadline;
+            public uint flags;
+            public IntPtr reserved;
         }
     }
 }

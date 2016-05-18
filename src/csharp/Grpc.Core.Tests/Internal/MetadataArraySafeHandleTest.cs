@@ -70,7 +70,7 @@ namespace Grpc.Core.Internal.Tests
             };
             var nativeMetadata = MetadataArraySafeHandle.Create(metadata);
 
-            var copy = MetadataArraySafeHandle.ReadMetadataFromPtrUnsafe(nativeMetadata.Handle);
+            var copy = nativeMetadata.ReadUnsafe();
             Assert.AreEqual(2, copy.Count);
 
             Assert.AreEqual("host", copy[0].Key);
