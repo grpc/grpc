@@ -124,3 +124,7 @@ cdef class Operations:
   cdef size_t c_nops
   cdef list operations
 
+
+cdef class CompressionOptions:
+
+  cdef grpc_compression_options c_options
