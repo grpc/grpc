@@ -153,52 +153,64 @@ class CLanguage(object):
   def test_specs(self):
     out = []
     binaries = get_c_tests(self.args.travis, self.test_lang)
+    POLLING_STRATEGIES = {
+      'windows': ['all'],
+      'mac': ['all'],
+      'posix': ['all'],
+      'linux': ['poll', 'legacy']
+    }
     for target in binaries:
-      if self.config.build_config in target['exclude_configs']:
-        continue
-      if self.platform == 'windows':
-        binary = 'vsprojects/%s%s/%s.exe' % (
-            'x64/' if self.args.arch == 'x64' else '',
-            _MSBUILD_CONFIG[self.config.build_config],
-            target['name'])
-      else:
-        binary = 'bins/%s/%s' % (self.config.build_config, target['name'])
-      if os.path.isfile(binary):
-        if 'gtest' in target and target['gtest']:
-          # here we parse the output of --gtest_list_tests to build up a
-          # complete list of the tests contained in a binary
-          # for each test, we then add a job to run, filtering for just that
-          # test
-          with open(os.devnull, 'w') as fnull:
-            tests = subprocess.check_output([binary, '--gtest_list_tests'],
-                                            stderr=fnull)
-          base = None
-          for line in tests.split('\n'):
-            i = line.find('#')
-            if i >= 0: line = line[:i]
-            if not line: continue
-            if line[0] != ' ':
-              base = line.strip()
-            else:
-              assert base is not None
-              assert line[1] == ' '
-              test = base + line.strip()
-              cmdline = [binary] + ['--gtest_filter=%s' % test]
-              out.append(self.config.job_spec(cmdline, [binary],
-                                              shortname='%s:%s' % (binary, test),
-                                              cpu_cost=target['cpu_cost'],
-                                              environ={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
-                                                       _ROOT + '/src/core/lib/tsi/test_creds/ca.pem'}))
+      polling_strategies = (POLLING_STRATEGIES[self.platform]
+                            if target.get('uses_polling', True)
+                            else ['all'])
+      for polling_strategy in polling_strategies:
+        env={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
+                 _ROOT + '/src/core/lib/tsi/test_creds/ca.pem',
+             'GRPC_POLL_STRATEGY': polling_strategy}
+        shortname_ext = '' if polling_strategy=='all' else ' polling=%s' % polling_strategy
+        if self.config.build_config in target['exclude_configs']:
+          continue
+        if self.platform == 'windows':
+          binary = 'vsprojects/%s%s/%s.exe' % (
+              'x64/' if self.args.arch == 'x64' else '',
+              _MSBUILD_CONFIG[self.config.build_config],
+              target['name'])
         else:
-          cmdline = [binary] + target['args']
-          out.append(self.config.job_spec(cmdline, [binary],
-                                          shortname=target.get('shortname', ' '.join(cmdline)),
-                                          cpu_cost=target['cpu_cost'],
-                                          flaky=target.get('flaky', False),
-                                          environ={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
-                                                   _ROOT + '/src/core/lib/tsi/test_creds/ca.pem'}))
-      elif self.args.regex == '.*' or self.platform == 'windows':
-        print '\nWARNING: binary not found, skipping', binary
+          binary = 'bins/%s/%s' % (self.config.build_config, target['name'])
+        if os.path.isfile(binary):
+          if 'gtest' in target and target['gtest']:
+            # here we parse the output of --gtest_list_tests to build up a
+            # complete list of the tests contained in a binary
+            # for each test, we then add a job to run, filtering for just that
+            # test
+            with open(os.devnull, 'w') as fnull:
+              tests = subprocess.check_output([binary, '--gtest_list_tests'],
+                                              stderr=fnull)
+            base = None
+            for line in tests.split('\n'):
+              i = line.find('#')
+              if i >= 0: line = line[:i]
+              if not line: continue
+              if line[0] != ' ':
+                base = line.strip()
+              else:
+                assert base is not None
+                assert line[1] == ' '
+                test = base + line.strip()
+                cmdline = [binary] + ['--gtest_filter=%s' % test]
+                out.append(self.config.job_spec(cmdline, [binary],
+                                                shortname='%s:%s %s' % (binary, test, shortname_ext),
+                                                cpu_cost=target['cpu_cost'],
+                                                environ=env))
+          else:
+            cmdline = [binary] + target['args']
+            out.append(self.config.job_spec(cmdline, [binary],
+                                            shortname=' '.join(cmdline) + shortname_ext,
+                                            cpu_cost=target['cpu_cost'],
+                                            flaky=target.get('flaky', False),
+                                            environ=env))
+        elif self.args.regex == '.*' or self.platform == 'windows':
+          print '\nWARNING: binary not found, skipping', binary
     return sorted(out)
 
   def make_targets(self):

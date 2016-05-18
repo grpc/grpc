@@ -123,7 +123,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   if (max_message_size_ > 0) {
     args.SetInt(GRPC_ARG_MAX_MESSAGE_LENGTH, max_message_size_);
   }
-  args.SetInt(GRPC_COMPRESSION_ALGORITHM_STATE_ARG,
+  args.SetInt(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
               compression_options_.enabled_algorithms_bitset);
   std::unique_ptr<Server> server(
       new Server(thread_pool.release(), true, max_message_size_, &args));

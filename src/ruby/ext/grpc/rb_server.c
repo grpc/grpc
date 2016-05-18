@@ -60,6 +60,7 @@ typedef struct grpc_rb_server {
   VALUE mark;
   /* The actual server */
   grpc_server *wrapped;
+  grpc_completion_queue *queue;
 } grpc_rb_server;
 
 /* Destroys server instances. */
@@ -145,6 +146,7 @@ static VALUE grpc_rb_server_init(VALUE self, VALUE cqueue, VALUE channel_args) {
   }
   grpc_server_register_completion_queue(srv, cq, NULL);
   wrapper->wrapped = srv;
+  wrapper->queue = cq;
 
   /* Add the cq as the server's mark object. This ensures the ruby cq can't be
      GCed before the server */

@@ -344,6 +344,7 @@ class Jobset(object):
     self._add_env = add_env
     self.resultset = {}
     self._remaining = None
+    self._start_time = time.time()
 
   def set_remaining(self, remaining):
     self._remaining = remaining
@@ -413,6 +414,11 @@ class Jobset(object):
       if dead: return
       if (not self._travis):
         rstr = '' if self._remaining is None else '%d queued, ' % self._remaining
+        if self._remaining is not None and self._completed > 0:
+          now = time.time()
+          sofar = now - self._start_time
+          remaining = sofar / self._completed * (self._remaining + len(self._running))
+          rstr = 'ETA %.1f sec; %s' % (remaining, rstr)
         message('WAITING', '%s%d jobs running, %d complete, %d failed' % (
             rstr, len(self._running), self._completed, self._failures))
       if platform_string() == 'windows':
@@ -457,7 +463,7 @@ def tag_remaining(xs):
   staging = []
   for x in xs:
     staging.append(x)
-    if len(staging) > 1000:
+    if len(staging) > 5000:
       yield (staging.pop(0), None)
   n = len(staging)
   for i, x in enumerate(staging):
