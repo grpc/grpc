@@ -68,7 +68,13 @@ struct grpc_channel {
 
   gpr_mu registered_call_mu;
   registered_call *registered_calls;
+
   char *target;
+
+  struct {
+    bool is_set;
+    grpc_compression_level default_compression_level;
+  } maybe_default_compression_level;
 };
 
 #define CHANNEL_STACK_FROM_CHANNEL(c) ((grpc_channel_stack *)((c) + 1))
@@ -151,6 +157,13 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
                 ":authority", args->args[i].value.string);
           }
         }
+      } else if (0 == strcmp(args->args[i].key,
+                             GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL)) {
+        channel->maybe_default_compression_level.is_set = true;
+        GPR_ASSERT(args->args[i].value.integer >= 0 &&
+                   args->args[i].value.integer < GRPC_COMPRESS_LEVEL_COUNT);
+        channel->maybe_default_compression_level.default_compression_level =
+            (grpc_compression_level)args->args[i].value.integer;
       }
     }
     grpc_channel_args_destroy(args);
@@ -324,3 +337,15 @@ grpc_mdelem *grpc_channel_get_reffed_status_elem(grpc_channel *channel, int i) {
 uint32_t grpc_channel_get_max_message_length(grpc_channel *channel) {
   return channel->max_message_length;
 }
+
+bool grpc_channel_default_compression_level(grpc_channel *channel,
+                                            grpc_compression_level *level) {
+  if (channel->maybe_default_compression_level.is_set) {
+    *level = channel->maybe_default_compression_level.default_compression_level;
+    return true;
+  }
+  return false;
+}
+
+bool grpc_channel_default_compression_algorithm(
+    grpc_channel *channel, grpc_compression_algorithm *algorithm);
