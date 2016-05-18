@@ -60,7 +60,7 @@ static grpc_error* eventfd_consume(grpc_wakeup_fd* fd_info) {
   do {
     err = eventfd_read(fd_info->read_fd, &value);
   } while (err < 0 && errno == EINTR);
-  if (err < 0) {
+  if (err < 0 && errno != EAGAIN) {
     return GRPC_OS_ERROR(errno, "eventfd_read");
   }
   return GRPC_ERROR_NONE;
