@@ -112,10 +112,6 @@ namespace Grpc.Core.Internal
 
         public readonly Delegates.grpcsharp_metadata_array_create_delegate grpcsharp_metadata_array_create;
         public readonly Delegates.grpcsharp_metadata_array_add_delegate grpcsharp_metadata_array_add;
-        public readonly Delegates.grpcsharp_metadata_array_count_delegate grpcsharp_metadata_array_count;
-        public readonly Delegates.grpcsharp_metadata_array_get_key_delegate grpcsharp_metadata_array_get_key;
-        public readonly Delegates.grpcsharp_metadata_array_get_value_delegate grpcsharp_metadata_array_get_value;
-        public readonly Delegates.grpcsharp_metadata_array_get_value_length_delegate grpcsharp_metadata_array_get_value_length;
         public readonly Delegates.grpcsharp_metadata_array_destroy_full_delegate grpcsharp_metadata_array_destroy_full;
 
         public readonly Delegates.grpcsharp_redirect_log_delegate grpcsharp_redirect_log;
@@ -209,10 +205,6 @@ namespace Grpc.Core.Internal
 
                 this.grpcsharp_metadata_array_create = GetMethodDelegate<Delegates.grpcsharp_metadata_array_create_delegate>(library);
                 this.grpcsharp_metadata_array_add = GetMethodDelegate<Delegates.grpcsharp_metadata_array_add_delegate>(library);
-                this.grpcsharp_metadata_array_count = GetMethodDelegate<Delegates.grpcsharp_metadata_array_count_delegate>(library);
-                this.grpcsharp_metadata_array_get_key = GetMethodDelegate<Delegates.grpcsharp_metadata_array_get_key_delegate>(library);
-                this.grpcsharp_metadata_array_get_value = GetMethodDelegate<Delegates.grpcsharp_metadata_array_get_value_delegate>(library);
-                this.grpcsharp_metadata_array_get_value_length = GetMethodDelegate<Delegates.grpcsharp_metadata_array_get_value_length_delegate>(library);
                 this.grpcsharp_metadata_array_destroy_full = GetMethodDelegate<Delegates.grpcsharp_metadata_array_destroy_full_delegate>(library);
 
                 this.grpcsharp_redirect_log = GetMethodDelegate<Delegates.grpcsharp_redirect_log_delegate>(library);
@@ -303,10 +295,6 @@ namespace Grpc.Core.Internal
 
                 this.grpcsharp_metadata_array_create = PInvokeMethods.grpcsharp_metadata_array_create;
                 this.grpcsharp_metadata_array_add = PInvokeMethods.grpcsharp_metadata_array_add;
-                this.grpcsharp_metadata_array_count = PInvokeMethods.grpcsharp_metadata_array_count;
-                this.grpcsharp_metadata_array_get_key = PInvokeMethods.grpcsharp_metadata_array_get_key;
-                this.grpcsharp_metadata_array_get_value = PInvokeMethods.grpcsharp_metadata_array_get_value;
-                this.grpcsharp_metadata_array_get_value_length = PInvokeMethods.grpcsharp_metadata_array_get_value_length;
                 this.grpcsharp_metadata_array_destroy_full = PInvokeMethods.grpcsharp_metadata_array_destroy_full;
 
                 this.grpcsharp_redirect_log = PInvokeMethods.grpcsharp_redirect_log;
@@ -439,10 +427,6 @@ namespace Grpc.Core.Internal
 
             public delegate MetadataArraySafeHandle grpcsharp_metadata_array_create_delegate(UIntPtr capacity);
             public delegate void grpcsharp_metadata_array_add_delegate(MetadataArraySafeHandle array, string key, byte[] value, UIntPtr valueLength);
-            public delegate UIntPtr grpcsharp_metadata_array_count_delegate(IntPtr metadataArray);
-            public delegate IntPtr grpcsharp_metadata_array_get_key_delegate(IntPtr metadataArray, UIntPtr index);
-            public delegate IntPtr grpcsharp_metadata_array_get_value_delegate(IntPtr metadataArray, UIntPtr index);
-            public delegate UIntPtr grpcsharp_metadata_array_get_value_length_delegate(IntPtr metadataArray, UIntPtr index);
             public delegate void grpcsharp_metadata_array_destroy_full_delegate(IntPtr array);
 
             public delegate void grpcsharp_redirect_log_delegate(GprLogDelegate callback);
