@@ -44,7 +44,7 @@
 
 int kDeadlineSecs = 10;
 
-DEFINE_string(metrics_server_address, "",
+DEFINE_string(metrics_server_address, "localhost:8081",
               "The metrics server addresses in the fomrat <hostname>:<port>");
 DEFINE_int32(deadline_secs, kDeadlineSecs,
              "The deadline (in seconds) for RCP call");

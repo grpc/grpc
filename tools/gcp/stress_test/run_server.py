@@ -106,16 +106,22 @@ def run_server():
     logfile = open(logfile_name, 'w')
     details = 'Logfile: %s' % logfile_name
 
+  stress_cmd = stress_server_cmd + [x for x in args_str.split()]
+
+  details = '%s, Stress server command: %s' % (details, str(stress_cmd))
   # Update status that the test is starting (in the status table)
   bq_helper.insert_summary_row(EventType.STARTING, details)
-
-  stress_cmd = stress_server_cmd + [x for x in args_str.split()]
 
   print 'Launching process %s ...' % stress_cmd
   stress_p = subprocess.Popen(args=stress_cmd,
                               stdout=logfile,
                               stderr=subprocess.STDOUT)
 
+  # Update the status to running if subprocess.Popen launched the server
+  if stress_p.poll() is None:
+    bq_helper.insert_summary_row(EventType.RUNNING, '')
+
+  # Wait for the server process to terminate
   returncode = stress_p.wait()
 
   if will_run_forever == '1' or returncode != 0:
