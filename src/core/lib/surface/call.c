@@ -414,30 +414,7 @@ static void set_status_code(grpc_call *call, status_source source,
 
 static void set_compression_algorithm(grpc_call *call,
                                       grpc_compression_algorithm algo) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  char *error_msg = NULL;
-  const grpc_compression_options compression_options =
-      grpc_channel_get_compression_options(call->channel);
-
-  /* check if algorithm is known */
-  if (algo >= GRPC_COMPRESS_ALGORITHMS_COUNT) {
-    gpr_asprintf(&error_msg, "Invalid compression algorithm value '%d'.", algo);
-    gpr_log(GPR_ERROR, error_msg);
-    close_with_status(&exec_ctx, call, GRPC_STATUS_INTERNAL, error_msg);
-  } else if (grpc_compression_options_is_algorithm_enabled(&compression_options,
-                                                           algo) == 0) {
-    /* check if algorithm is supported by current channel config */
-    char *algo_name;
-    grpc_compression_algorithm_name(algo, &algo_name);
-    gpr_asprintf(&error_msg, "Compression algorithm '%s' is disabled.",
-                 algo_name);
-    gpr_log(GPR_ERROR, error_msg);
-    close_with_status(&exec_ctx, call, GRPC_STATUS_UNIMPLEMENTED, error_msg);
-  } else {
-    call->compression_algorithm = algo;
-  }
-  gpr_free(error_msg);
-  grpc_exec_ctx_finish(&exec_ctx);
+  call->compression_algorithm = algo;
 }
 
 grpc_compression_algorithm grpc_call_test_only_get_compression_algorithm(
@@ -748,7 +725,7 @@ static void done_termination(grpc_exec_ctx *exec_ctx, void *tcp, bool success) {
   }
   gpr_slice_unref(tc->optional_message);
   if (tc->op_closure != NULL) {
-    grpc_exec_ctx_enqueue(exec_ctx, tc->op_closure, false, NULL);
+    grpc_exec_ctx_enqueue(exec_ctx, tc->op_closure, true, NULL);
   }
   gpr_free(tc);
 }
@@ -1156,6 +1133,36 @@ static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
   }
 }
 
+static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
+                                       batch_control *bctl) {
+  grpc_call *call = bctl->call;
+  if (call->compression_algorithm != GRPC_COMPRESS_NONE) {
+    const grpc_compression_algorithm algo = call->compression_algorithm;
+    char *error_msg = NULL;
+    const grpc_compression_options compression_options =
+        grpc_channel_get_compression_options(call->channel);
+    /* check if algorithm is known */
+    if (algo >= GRPC_COMPRESS_ALGORITHMS_COUNT) {
+      gpr_asprintf(&error_msg, "Invalid compression algorithm value '%d'.",
+                   algo);
+      gpr_log(GPR_ERROR, error_msg);
+      close_with_status(exec_ctx, call, GRPC_STATUS_INTERNAL, error_msg);
+    } else if (grpc_compression_options_is_algorithm_enabled(
+                   &compression_options, algo) == 0) {
+      /* check if algorithm is supported by current channel config */
+      char *algo_name;
+      grpc_compression_algorithm_name(algo, &algo_name);
+      gpr_asprintf(&error_msg, "Compression algorithm '%s' is disabled.",
+                   algo_name);
+      gpr_log(GPR_ERROR, error_msg);
+      close_with_status(exec_ctx, call, GRPC_STATUS_UNIMPLEMENTED, error_msg);
+    } else {
+      call->compression_algorithm = algo;
+    }
+    gpr_free(error_msg);
+  }
+}
+
 static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
                                              void *bctlp, bool success) {
   batch_control *bctl = bctlp;
@@ -1169,6 +1176,10 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
     grpc_metadata_batch *md =
         &call->metadata_batch[1 /* is_receiving */][0 /* is_trailing */];
     grpc_metadata_batch_filter(md, recv_initial_filter, call);
+
+    GPR_TIMER_BEGIN("validate_filtered_metadata", 0);
+    validate_filtered_metadata(exec_ctx, bctl);
+    GPR_TIMER_END("validate_filtered_metadata", 0);
 
     if (gpr_time_cmp(md->deadline, gpr_inf_future(md->deadline.clock_type)) !=
             0 &&
