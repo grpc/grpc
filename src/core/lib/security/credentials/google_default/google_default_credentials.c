@@ -45,6 +45,7 @@
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/support/load_file.h"
+#include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/api_trace.h"
 
 /* -- Constants. -- */
@@ -154,19 +155,31 @@ static int is_stack_running_on_compute_engine(void) {
 }
 
 /* Takes ownership of creds_path if not NULL. */
-static grpc_call_credentials *create_default_creds_from_path(char *creds_path) {
+static grpc_error *create_default_creds_from_path(
+    char *creds_path, grpc_call_credentials **creds) {
   grpc_json *json = NULL;
   grpc_auth_json_key key;
   grpc_auth_refresh_token token;
   grpc_call_credentials *result = NULL;
   gpr_slice creds_data = gpr_empty_slice();
-  int file_ok = 0;
-  if (creds_path == NULL) goto end;
-  creds_data = gpr_load_file(creds_path, 0, &file_ok);
-  if (!file_ok) goto end;
+  grpc_error *error = GRPC_ERROR_NONE;
+  if (creds_path == NULL) {
+    error = GRPC_ERROR_CREATE("creds_path unset");
+    goto end;
+  }
+  error = gpr_load_file(creds_path, 0, &creds_data);
+  if (error != GRPC_ERROR_NONE) {
+    goto end;
+  }
   json = grpc_json_parse_string_with_len(
       (char *)GPR_SLICE_START_PTR(creds_data), GPR_SLICE_LENGTH(creds_data));
-  if (json == NULL) goto end;
+  if (json == NULL) {
+    char *dump = gpr_dump_slice(creds_data, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+    error = grpc_error_set_str(GRPC_ERROR_CREATE("Failed to parse JSON"),
+                               GRPC_ERROR_STR_RAW_BYTES, dump);
+    gpr_free(dump);
+    goto end;
+  }
 
   /* First, try an auth json key. */
   key = grpc_auth_json_key_create_from_json(json);
@@ -174,6 +187,11 @@ static grpc_call_credentials *create_default_creds_from_path(char *creds_path) {
     result =
         grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
             key, grpc_max_auth_token_lifetime());
+    if (result == NULL) {
+      error = GRPC_ERROR_CREATE(
+          "grpc_service_account_jwt_access_credentials_create_from_auth_json_"
+          "key failed");
+    }
     goto end;
   }
 
@@ -182,19 +200,28 @@ static grpc_call_credentials *create_default_creds_from_path(char *creds_path) {
   if (grpc_auth_refresh_token_is_valid(&token)) {
     result =
         grpc_refresh_token_credentials_create_from_auth_refresh_token(token);
+    if (result == NULL) {
+      error = GRPC_ERROR_CREATE(
+          "grpc_refresh_token_credentials_create_from_auth_refresh_token "
+          "failed");
+    }
     goto end;
   }
 
 end:
+  GPR_ASSERT((result == NULL) + (error == GRPC_ERROR_NONE) == 1);
   if (creds_path != NULL) gpr_free(creds_path);
   gpr_slice_unref(creds_data);
   if (json != NULL) grpc_json_destroy(json);
-  return result;
+  *creds = result;
+  return error;
 }
 
 grpc_channel_credentials *grpc_google_default_credentials_create(void) {
   grpc_channel_credentials *result = NULL;
   grpc_call_credentials *call_creds = NULL;
+  grpc_error *error = GRPC_ERROR_CREATE("Failed to create Google credentials");
+  grpc_error *err;
 
   GRPC_API_TRACE("grpc_google_default_credentials_create(void)", 0, ());
 
@@ -208,14 +235,16 @@ grpc_channel_credentials *grpc_google_default_credentials_create(void) {
   }
 
   /* First, try the environment variable. */
-  call_creds = create_default_creds_from_path(
-      gpr_getenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR));
-  if (call_creds != NULL) goto end;
+  err = create_default_creds_from_path(
+      gpr_getenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR), &call_creds);
+  if (err == GRPC_ERROR_NONE) goto end;
+  error = grpc_error_add_child(error, err);
 
   /* Then the well-known file. */
-  call_creds = create_default_creds_from_path(
-      grpc_get_well_known_google_credentials_file_path());
-  if (call_creds != NULL) goto end;
+  err = create_default_creds_from_path(
+      grpc_get_well_known_google_credentials_file_path(), &call_creds);
+  if (err == GRPC_ERROR_NONE) goto end;
+  error = grpc_error_add_child(error, err);
 
   /* At last try to see if we're on compute engine (do the detection only once
      since it requires a network test). */
@@ -224,6 +253,10 @@ grpc_channel_credentials *grpc_google_default_credentials_create(void) {
     compute_engine_detection_done = 1;
     if (need_compute_engine_creds) {
       call_creds = grpc_google_compute_engine_credentials_create(NULL);
+      if (call_creds == NULL) {
+        error = grpc_error_add_child(
+            error, GRPC_ERROR_CREATE("Failed to get credentials from network"));
+      }
     }
   }
 
@@ -247,6 +280,11 @@ end:
     }
   }
   gpr_mu_unlock(&g_state_mu);
+  if (result == NULL) {
+    GRPC_LOG_IF_ERROR("grpc_google_default_credentials_create", error);
+  } else {
+    GRPC_ERROR_UNREF(error);
+  }
   return result;
 }
 

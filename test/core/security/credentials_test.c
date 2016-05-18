@@ -901,11 +901,11 @@ static int default_creds_gce_detection_httpcli_get_success_override(
     gpr_timespec deadline, grpc_closure *on_done,
     grpc_httpcli_response *response) {
   *response = http_response(200, "");
-  grpc_http_header header;
-  header.key = "Metadata-Flavor";
-  header.value = "Google";
+  grpc_http_header *headers = gpr_malloc(sizeof(*headers) * 1);
+  headers[0].key = "Metadata-Flavor";
+  headers[0].value = "Google";
   response->hdr_count = 1;
-  response->hdrs = &header;
+  response->hdrs = headers;
   GPR_ASSERT(strcmp(request->http.path, "/") == 0);
   GPR_ASSERT(strcmp(request->host, "metadata.google.internal") == 0);
   grpc_exec_ctx_push(exec_ctx, on_done, GRPC_ERROR_NONE, NULL);

@@ -78,6 +78,7 @@ typedef enum {
   GRPC_ERROR_STR_GRPC_MESSAGE,
   GRPC_ERROR_STR_RAW_BYTES,
   GRPC_ERROR_STR_TSI_ERROR,
+  GRPC_ERROR_STR_FILENAME,
 } grpc_error_strs;
 
 typedef enum {

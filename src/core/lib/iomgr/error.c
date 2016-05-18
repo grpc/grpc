@@ -134,6 +134,8 @@ static const char *error_str_name(grpc_error_strs key) {
       return "raw_bytes";
     case GRPC_ERROR_STR_TSI_ERROR:
       return "tsi_error";
+    case GRPC_ERROR_STR_FILENAME:
+      return "filename";
   }
   GPR_UNREACHABLE_CODE(return "unknown");
 }
