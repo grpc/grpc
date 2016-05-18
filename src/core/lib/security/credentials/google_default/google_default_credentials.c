@@ -113,6 +113,7 @@ static int is_stack_running_on_compute_engine(void) {
   detector.is_done = 0;
   detector.success = 0;
 
+  memset(&detector.response, 0, sizeof(detector.response));
   memset(&request, 0, sizeof(grpc_httpcli_request));
   request.host = GRPC_COMPUTE_ENGINE_DETECTION_HOST;
   request.http.path = "/";
@@ -150,6 +151,7 @@ static int is_stack_running_on_compute_engine(void) {
   g_polling_mu = NULL;
 
   gpr_free(detector.pollset);
+  grpc_http_response_destroy(&detector.response);
 
   return detector.success;
 }
