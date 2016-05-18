@@ -496,7 +496,6 @@ const char *grpc_error_string(grpc_error *err) {
   return finish_kvs(&kvs);
 }
 
-#ifdef GPR_POSIX_SOCKET
 grpc_error *grpc_os_error(const char *file, int line, int err,
                           const char *call_name) {
   return grpc_error_set_str(
@@ -506,7 +505,6 @@ grpc_error *grpc_os_error(const char *file, int line, int err,
           GRPC_ERROR_STR_OS_ERROR, strerror(err)),
       GRPC_ERROR_STR_SYSCALL, call_name);
 }
-#endif
 
 #ifdef GPR_WIN32
 grpc_error *grpc_wsa_error(const char *file, int line, int err,
