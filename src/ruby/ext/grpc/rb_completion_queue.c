@@ -62,13 +62,10 @@ static void *grpc_rb_completion_queue_next_no_gil(void *param) {
   gpr_timespec deadline;
   do {
     deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), increment);
-    if (gpr_time_cmp(deadline, next_call->timeout) > 0) {
-      // Then we have run out of time
-      break;
-    }
     next_call->event = grpc_completion_queue_next(next_call->cq,
                                                   deadline, NULL);
-    if (next_call->event.success) {
+    if (next_call->event.type != GRPC_QUEUE_TIMEOUT ||
+        gpr_time_cmp(deadline, next_call->timeout) > 0) {
       break;
     }
   } while (!next_call->interrupted);
@@ -82,14 +79,11 @@ static void *grpc_rb_completion_queue_pluck_no_gil(void *param) {
   gpr_timespec deadline;
   do {
     deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), increment);
-    if (gpr_time_cmp(deadline, next_call->timeout) > 0) {
-      // Then we have run out of time
-      break;
-    }
     next_call->event = grpc_completion_queue_pluck(next_call->cq,
                                                    next_call->tag,
                                                    deadline, NULL);
-    if (next_call->event.type != GRPC_QUEUE_TIMEOUT) {
+    if (next_call->event.type != GRPC_QUEUE_TIMEOUT ||
+        gpr_time_cmp(deadline, next_call->timeout) > 0) {
       break;
     }
   } while (!next_call->interrupted);
@@ -195,8 +189,8 @@ grpc_event grpc_rb_completion_queue_pluck_event(VALUE self, VALUE tag,
 
      The basic reason we need this relatively complicated construction is that
      we need to re-acquire the GVL when an interrupt comes in, so that the ruby
-     interpeter can do what it needs to do with the interrupt. But we also need
-     to get back to plucking when */
+     interpreter can do what it needs to do with the interrupt. But we also need
+     to get back to plucking when the interrupt has been handled. */
   do {
     next_call.interrupted = 0;
     rb_thread_call_without_gvl(grpc_rb_completion_queue_pluck_no_gil,
