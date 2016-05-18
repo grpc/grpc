@@ -126,7 +126,6 @@ static gpr_timespec gpr_time_by_unit_type(int64_t t,
   result.tv_sec = 0;
   result.tv_nsec = 0;
   result.clock_type = type;
-  GPR_ASSERT(unit >= GPR_NANOSECOND && unit <= GPR_HOURS);
   switch (unit) {
     case GPR_NANOSECOND:
       GET_TIMESPEC_BY_DIFFERENT_SECOND_UNIT(t, GPR_NS_PER_SEC);
