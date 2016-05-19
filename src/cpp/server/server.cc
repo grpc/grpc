@@ -295,7 +295,12 @@ Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
   grpc_channel_args channel_args;
   args->SetChannelArgs(&channel_args);
   server_ = grpc_server_create(&channel_args, nullptr);
-  grpc_server_register_completion_queue(server_, cq_.cq(), nullptr);
+  if (thread_pool_ == nullptr) {
+    grpc_server_register_non_listening_completion_queue(server_, cq_.cq(),
+                                                        nullptr);
+  } else {
+    grpc_server_register_completion_queue(server_, cq_.cq(), nullptr);
+  }
 }
 
 Server::~Server() {
