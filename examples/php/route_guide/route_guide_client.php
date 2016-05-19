@@ -190,7 +190,7 @@ function runRouteChat()
                      $route_note_reply->getLocation()->getLatitude(),
                      $route_note_reply->getLocation()->getLongitude(),
                      $route_note_reply->getMessage());
-  }
+    }
 }
 
 /**
