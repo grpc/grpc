@@ -144,7 +144,7 @@ static void start(grpc_exec_ctx *exec_ctx, grpc_server *server, void *statep,
 
 static void destroy_done(grpc_exec_ctx *exec_ctx, void *statep,
                          grpc_error *error) {
-  grpc_server_secure_state *state = statep;
+  server_secure_state *state = statep;
   if (state->destroy_callback != NULL) {
     state->destroy_callback->cb(exec_ctx, state->destroy_callback->cb_arg,
                                 GRPC_ERROR_REF(error));
