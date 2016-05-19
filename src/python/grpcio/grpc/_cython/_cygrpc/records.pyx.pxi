@@ -718,6 +718,32 @@ cdef class Operations:
     return _OperationsIterator(self)
 
 
+cdef class CompressionOptions:
+
+  def __cinit__(self):
+    with nogil:
+      grpc_compression_options_init(&self.c_options)
+
+  def enable_algorithm(self, grpc_compression_algorithm algorithm):
+    with nogil:
+      grpc_compression_options_enable_algorithm(&self.c_options, algorithm)
+
+  def disable_algorithm(self, grpc_compression_algorithm algorithm):
+    with nogil:
+      grpc_compression_options_disable_algorithm(&self.c_options, algorithm)
+
+  def is_algorithm_enabled(self, grpc_compression_algorithm algorithm):
+    cdef int result
+    with nogil:
+      result = grpc_compression_options_is_algorithm_enabled(
+          &self.c_options, algorithm)
+    return result
+
+  def to_channel_arg(self):
+    return ChannelArg(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
+                      self.c_options.enabled_algorithms_bitset)
+
+
 def compression_algorithm_name(grpc_compression_algorithm algorithm):
   cdef char* name
   with nogil:

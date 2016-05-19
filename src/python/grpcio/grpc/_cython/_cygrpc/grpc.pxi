@@ -442,6 +442,10 @@ cdef extern from "grpc/_cython/loader.h":
     GRPC_COMPRESS_LEVEL_HIGH
     GRPC_COMPRESS_LEVEL_COUNT
 
+  ctypedef struct grpc_compression_options:
+    uint32_t enabled_algorithms_bitset
+    grpc_compression_algorithm default_compression_algorithm
+
   int grpc_compression_algorithm_parse(
       const char *name, size_t name_length,
       grpc_compression_algorithm *algorithm) nogil
@@ -449,3 +453,13 @@ cdef extern from "grpc/_cython/loader.h":
                                       char **name) nogil
   grpc_compression_algorithm grpc_compression_algorithm_for_level(
       grpc_compression_level level, uint32_t accepted_encodings) nogil
+  void grpc_compression_options_init(grpc_compression_options *opts) nogil
+  void grpc_compression_options_enable_algorithm(
+      grpc_compression_options *opts,
+      grpc_compression_algorithm algorithm) nogil
+  void grpc_compression_options_disable_algorithm(
+      grpc_compression_options *opts,
+      grpc_compression_algorithm algorithm) nogil
+  int grpc_compression_options_is_algorithm_enabled(
+      const grpc_compression_options *opts,
+      grpc_compression_algorithm algorithm) nogil

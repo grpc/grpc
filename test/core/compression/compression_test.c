@@ -92,10 +92,137 @@ static void test_compression_algorithm_name(void) {
   /* the value of "name" is undefined upon failure */
 }
 
+static void test_compression_algorithm_for_level(void) {
+  gpr_log(GPR_DEBUG, "test_compression_algorithm_for_level");
+
+  {
+    /* accept only identity (aka none) */
+    uint32_t accepted_encodings = 0;
+    GPR_BITSET(&accepted_encodings, GRPC_COMPRESS_NONE); /* always */
+
+    GPR_ASSERT(GRPC_COMPRESS_NONE ==
+               grpc_compression_algorithm_for_level(GRPC_COMPRESS_LEVEL_NONE,
+                                                    accepted_encodings));
+
+    GPR_ASSERT(GRPC_COMPRESS_NONE ==
+               grpc_compression_algorithm_for_level(GRPC_COMPRESS_LEVEL_LOW,
+                                                    accepted_encodings));
+
+    GPR_ASSERT(GRPC_COMPRESS_NONE ==
+               grpc_compression_algorithm_for_level(GRPC_COMPRESS_LEVEL_MED,
+                                                    accepted_encodings));
+
+    GPR_ASSERT(GRPC_COMPRESS_NONE ==
+               grpc_compression_algorithm_for_level(GRPC_COMPRESS_LEVEL_HIGH,
+                                                    accepted_encodings));
+  }
+
+  {
+    /* accept only gzip */
+    uint32_t accepted_encodings = 0;
+    GPR_BITSET(&accepted_encodings, GRPC_COMPRESS_NONE); /* always */
+    GPR_BITSET(&accepted_encodings, GRPC_COMPRESS_GZIP);
+
+    GPR_ASSERT(GRPC_COMPRESS_NONE ==
+               grpc_compression_algorithm_for_level(GRPC_COMPRESS_LEVEL_NONE,
+                                                    accepted_encodings));
+
+    GPR_ASSERT(GRPC_COMPRESS_GZIP ==
+               grpc_compression_algorithm_for_level(GRPC_COMPRESS_LEVEL_LOW,
+                                                    accepted_encodings));
+
+    GPR_ASSERT(GRPC_COMPRESS_GZIP ==
+               grpc_compression_algorithm_for_level(GRPC_COMPRESS_LEVEL_MED,
+                                                    accepted_encodings));
+
+    GPR_ASSERT(GRPC_COMPRESS_GZIP ==
+               grpc_compression_algorithm_for_level(GRPC_COMPRESS_LEVEL_HIGH,
+                                                    accepted_encodings));
+  }
+
+  {
+    /* accept only deflate */
+    uint32_t accepted_encodings = 0;
+    GPR_BITSET(&accepted_encodings, GRPC_COMPRESS_NONE); /* always */
+    GPR_BITSET(&accepted_encodings, GRPC_COMPRESS_DEFLATE);
+
+    GPR_ASSERT(GRPC_COMPRESS_NONE ==
+               grpc_compression_algorithm_for_level(GRPC_COMPRESS_LEVEL_NONE,
+                                                    accepted_encodings));
+
+    GPR_ASSERT(GRPC_COMPRESS_DEFLATE ==
+               grpc_compression_algorithm_for_level(GRPC_COMPRESS_LEVEL_LOW,
+                                                    accepted_encodings));
+
+    GPR_ASSERT(GRPC_COMPRESS_DEFLATE ==
+               grpc_compression_algorithm_for_level(GRPC_COMPRESS_LEVEL_MED,
+                                                    accepted_encodings));
+
+    GPR_ASSERT(GRPC_COMPRESS_DEFLATE ==
+               grpc_compression_algorithm_for_level(GRPC_COMPRESS_LEVEL_HIGH,
+                                                    accepted_encodings));
+  }
+
+  {
+    /* accept gzip and deflate */
+    uint32_t accepted_encodings = 0;
+    GPR_BITSET(&accepted_encodings, GRPC_COMPRESS_NONE); /* always */
+    GPR_BITSET(&accepted_encodings, GRPC_COMPRESS_GZIP);
+    GPR_BITSET(&accepted_encodings, GRPC_COMPRESS_DEFLATE);
+
+    GPR_ASSERT(GRPC_COMPRESS_NONE ==
+               grpc_compression_algorithm_for_level(GRPC_COMPRESS_LEVEL_NONE,
+                                                    accepted_encodings));
+
+    GPR_ASSERT(GRPC_COMPRESS_GZIP ==
+               grpc_compression_algorithm_for_level(GRPC_COMPRESS_LEVEL_LOW,
+                                                    accepted_encodings));
+
+    GPR_ASSERT(GRPC_COMPRESS_DEFLATE ==
+               grpc_compression_algorithm_for_level(GRPC_COMPRESS_LEVEL_MED,
+                                                    accepted_encodings));
+
+    GPR_ASSERT(GRPC_COMPRESS_DEFLATE ==
+               grpc_compression_algorithm_for_level(GRPC_COMPRESS_LEVEL_HIGH,
+                                                    accepted_encodings));
+  }
+}
+
+static void test_compression_enable_disable_algorithm(void) {
+  grpc_compression_options options;
+  grpc_compression_algorithm algorithm;
+
+  gpr_log(GPR_DEBUG, "test_compression_enable_disable_algorithm");
+
+  grpc_compression_options_init(&options);
+  for (algorithm = GRPC_COMPRESS_NONE;
+       algorithm < GRPC_COMPRESS_ALGORITHMS_COUNT; algorithm++) {
+    /* all algorithms are enabled by default */
+    GPR_ASSERT(grpc_compression_options_is_algorithm_enabled(&options,
+                                                             algorithm) != 0);
+  }
+  /* disable one by one */
+  for (algorithm = GRPC_COMPRESS_NONE;
+       algorithm < GRPC_COMPRESS_ALGORITHMS_COUNT; algorithm++) {
+    grpc_compression_options_disable_algorithm(&options, algorithm);
+    GPR_ASSERT(grpc_compression_options_is_algorithm_enabled(&options,
+                                                             algorithm) == 0);
+  }
+  /* re-enable one by one */
+  for (algorithm = GRPC_COMPRESS_NONE;
+       algorithm < GRPC_COMPRESS_ALGORITHMS_COUNT; algorithm++) {
+    grpc_compression_options_enable_algorithm(&options, algorithm);
+    GPR_ASSERT(grpc_compression_options_is_algorithm_enabled(&options,
+                                                             algorithm) != 0);
+  }
+}
+
 int main(int argc, char **argv) {
   grpc_init();
   test_compression_algorithm_parse();
   test_compression_algorithm_name();
+  test_compression_algorithm_for_level();
+  test_compression_enable_disable_algorithm();
   grpc_shutdown();
 
   return 0;

@@ -319,7 +319,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/channel/connected_channel.c )
   s.files += %w( src/core/lib/channel/http_client_filter.c )
   s.files += %w( src/core/lib/channel/http_server_filter.c )
-  s.files += %w( src/core/lib/compression/compression_algorithm.c )
+  s.files += %w( src/core/lib/compression/compression.c )
   s.files += %w( src/core/lib/compression/message_compress.c )
   s.files += %w( src/core/lib/debug/trace.c )
   s.files += %w( src/core/lib/http/format_request.c )

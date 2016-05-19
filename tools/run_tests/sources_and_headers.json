@@ -5727,7 +5727,7 @@
       "src/core/lib/channel/http_server_filter.c", 
       "src/core/lib/channel/http_server_filter.h", 
       "src/core/lib/compression/algorithm_metadata.h", 
-      "src/core/lib/compression/compression_algorithm.c", 
+      "src/core/lib/compression/compression.c", 
       "src/core/lib/compression/message_compress.c", 
       "src/core/lib/compression/message_compress.h", 
       "src/core/lib/debug/trace.c", 

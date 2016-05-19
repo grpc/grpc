@@ -71,9 +71,8 @@ void grpc_channel_internal_unref(grpc_exec_ctx *exec_ctx,
   grpc_channel_internal_unref(exec_ctx, channel)
 #endif
 
-/** If the channel has an associated default compression level, return it in \a
- * level and return true. Otherwise return false. */
-bool grpc_channel_default_compression_level(grpc_channel *channel,
-                                            grpc_compression_level *level);
+/** Return the channel's compression options. */
+grpc_compression_options grpc_channel_compression_options(
+    const grpc_channel *channel);
 
 #endif /* GRPC_CORE_LIB_SURFACE_CHANNEL_H */
