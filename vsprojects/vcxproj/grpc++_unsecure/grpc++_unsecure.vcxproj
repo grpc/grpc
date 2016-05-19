@@ -275,6 +275,8 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\rpc_service_method.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\serialization_traits.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\server_builder_option.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\server_builder_plugin.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\server_initializer.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\service_type.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\sync.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\sync_cxx11.h" />

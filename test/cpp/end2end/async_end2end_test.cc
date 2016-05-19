@@ -199,6 +199,28 @@ class Verifier {
   bool spin_;
 };
 
+// This class disables the server builder plugins that may add sync services to
+// the server. If there are sync services, UnimplementedRpc test will triger
+// the sync unkown rpc routine on the server side, rather than the async one
+// that needs to be tested here.
+class ServerBuilderSyncPluginDisabler : public ::grpc::ServerBuilderOption {
+ public:
+  void UpdateArguments(ChannelArguments* arg) GRPC_OVERRIDE {}
+
+  void UpdatePlugins(
+      std::map<grpc::string, std::unique_ptr<ServerBuilderPlugin>>* plugins)
+      GRPC_OVERRIDE {
+    auto plugin = plugins->begin();
+    while (plugin != plugins->end()) {
+      if ((*plugin).second->has_sync_methods()) {
+        plugins->erase(plugin++);
+      } else {
+        plugin++;
+      }
+    }
+  }
+};
+
 class TestScenario {
  public:
   TestScenario(bool non_block, const grpc::string& creds_type,
@@ -223,8 +245,8 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
   void SetUp() GRPC_OVERRIDE {
     poll_overrider_.reset(new PollingOverrider(!GetParam().disable_blocking));
 
-    int port = grpc_pick_unused_port_or_die();
-    server_address_ << "localhost:" << port;
+    port_ = grpc_pick_unused_port_or_die();
+    server_address_ << "localhost:" << port_;
 
     // Setup server
     ServerBuilder builder;
@@ -232,6 +254,12 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
     builder.AddListeningPort(server_address_.str(), server_creds);
     builder.RegisterService(&service_);
     cq_ = builder.AddCompletionQueue();
+
+    // TODO(zyc): make a test option to choose wheather sync plugins should be
+    // deleted
+    std::unique_ptr<ServerBuilderOption> sync_plugin_disabler(
+        new ServerBuilderSyncPluginDisabler());
+    builder.SetOption(move(sync_plugin_disabler));
     server_ = builder.BuildAndStart();
 
     gpr_tls_set(&g_is_async_end2end_test, 1);
@@ -246,6 +274,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
       ;
     poll_overrider_.reset();
     gpr_tls_set(&g_is_async_end2end_test, 0);
+    grpc_recycle_unused_port(port_);
   }
 
   void ResetStub() {
@@ -297,6 +326,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
   std::unique_ptr<Server> server_;
   grpc::testing::EchoTestService::AsyncService service_;
   std::ostringstream server_address_;
+  int port_;
 
   std::unique_ptr<PollingOverrider> poll_overrider_;
 };

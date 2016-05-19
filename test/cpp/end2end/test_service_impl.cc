@@ -135,6 +135,14 @@ Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
       context->AddTrailingMetadata(ToString(iter->first),
                                    ToString(iter->second));
     }
+    // Terminate rpc with error and debug info in trailer.
+    if (request->param().debug_info().stack_entries_size() ||
+        !request->param().debug_info().detail().empty()) {
+      grpc::string serialized_debug_info =
+          request->param().debug_info().SerializeAsString();
+      context->AddTrailingMetadata(kDebugInfoTrailerKey, serialized_debug_info);
+      return Status::CANCELLED;
+    }
   }
   if (request->has_param() &&
       (request->param().expected_client_identity().length() > 0 ||
