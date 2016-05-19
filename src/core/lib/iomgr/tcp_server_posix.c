@@ -492,6 +492,7 @@ static grpc_error *clone_port(grpc_tcp_listener *listener, unsigned count) {
     err = prepare_socket(fd, &listener->addr.sockaddr, listener->addr_len, true,
                          &port);
     if (err != GRPC_ERROR_NONE) return err;
+    listener->server->nports++;
     grpc_sockaddr_to_string(&addr_str, &listener->addr.sockaddr, 1);
     gpr_asprintf(&name, "tcp-server-listener:%s/clone-%d", addr_str, i);
     sp = gpr_malloc(sizeof(grpc_tcp_listener));
