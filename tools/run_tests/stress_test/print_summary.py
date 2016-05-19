@@ -1,3 +1,4 @@
+#!/usr/bin/env python2.7
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -26,44 +27,33 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+import argparse
+import os
+import sys
 
-require 'thread'
-require_relative 'grpc'
+stress_test_utils_dir = os.path.abspath(os.path.join(
+    os.path.dirname(__file__), '../../gcp/stress_test'))
+sys.path.append(stress_test_utils_dir)
+from stress_test_utils import BigQueryHelper
 
-# GRPC contains the General RPC module.
-module GRPC
-  # Signals contains gRPC functions related to signal handling
-  module Signals
-    @interpreter_exiting = false
-    @signal_handlers = []
-    @handlers_mutex = Mutex.new
+argp = argparse.ArgumentParser(
+    description='Print summary tables',
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+argp.add_argument('--gcp_project_id',
+                  required=True,
+                  help='The Google Cloud Platform Project Id')
+argp.add_argument('--dataset_id', type=str, required=True)
+argp.add_argument('--run_id', type=str, required=True)
+argp.add_argument('--summary_table_id', type=str, default='summary')
+argp.add_argument('--qps_table_id', type=str, default='qps')
+argp.add_argument('--summary_only', action='store_true', default=True)
 
-    def register_handler(&handler)
-      @handlers_mutex.synchronize do
-        @signal_handlers.push(handler)
-        handler.call if @exit_signal_received
-      end
-      # Returns a function to remove the handler
-      lambda do
-        @handlers_mutex.synchronize { @signal_handlers.delete(handler) }
-      end
-    end
-    module_function :register_handler
-
-    def wait_for_signals
-      t = Thread.new do
-        sleep 0.1 until GRPC::Core.signal_received? || @interpreter_exiting
-        unless @interpreter_exiting
-          @handlers_mutex.synchronize do
-            @signal_handlers.each(&:call)
-          end
-        end
-      end
-      at_exit do
-        @interpreter_exiting = true
-        t.join
-      end
-    end
-    module_function :wait_for_signals
-  end
-end
+if __name__ == '__main__':
+  args = argp.parse_args()
+  bq_helper = BigQueryHelper(args.run_id, '', '', args.gcp_project_id,
+                             args.dataset_id, args.summary_table_id,
+                             args.qps_table_id)
+  bq_helper.initialize()
+  if not args.summary_only:
+    bq_helper.print_qps_records()
+  bq_helper.print_summary_records()
