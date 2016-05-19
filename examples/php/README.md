@@ -37,8 +37,7 @@ TRY IT!
    ```
    $ cd examples/node
    $ npm install
-   $ cd dynamic_codegen or cd static_codegen
-   $ node greeter_server.js
+   $ nodejs greeter_server.js
    ```
 
  - Run the client
