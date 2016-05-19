@@ -32,19 +32,21 @@
  *
  */
 
-require dirname(__FILE__) . '/vendor/autoload.php';
-require dirname(__FILE__) . '/helloworld.php';
+require dirname(__FILE__).'/vendor/autoload.php';
+require dirname(__FILE__).'/helloworld.php';
 
-function greet($name) {
-  $client = new helloworld\GreeterClient('localhost:50051', [
-    'credentials' => Grpc\ChannelCredentials::createInsecure()
-  ]);
-  $request = new helloworld\HelloRequest();
-  $request->setName($name);
-  list($reply, $status) = $client->SayHello($request)->wait();
-  $message = $reply->getMessage();
-  return $message;
+function greet($name)
+{
+    $client = new helloworld\GreeterClient('localhost:50051', [
+        'credentials' => Grpc\ChannelCredentials::createInsecure(),
+    ]);
+    $request = new helloworld\HelloRequest();
+    $request->setName($name);
+    list($reply, $status) = $client->SayHello($request)->wait();
+    $message = $reply->getMessage();
+
+    return $message;
 }
 
 $name = !empty($argv[1]) ? $argv[1] : 'world';
-print(greet($name)."\n");
+echo greet($name)."\n";
