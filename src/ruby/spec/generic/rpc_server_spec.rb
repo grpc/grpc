@@ -308,10 +308,6 @@ describe GRPC::RpcServer do
       expect { @srv.handle(EmptyService) }.to raise_error
     end
 
-    it 'raises if the service does not define its rpc methods' do
-      expect { @srv.handle(NoRpcImplementation) }.to raise_error
-    end
-
     it 'raises if a handler method is already registered' do
       @srv.handle(EchoService)
       expect { r.handle(EchoService) }.to raise_error
@@ -345,6 +341,25 @@ describe GRPC::RpcServer do
           stub.request_response('/unknown', req, marshal, unmarshal)
         end
         expect(&blk).to raise_error GRPC::BadStatus
+        @srv.stop
+        t.join
+      end
+
+      it 'should return UNIMPLEMENTED on unimplemented methods', server: true do
+        @srv.handle(NoRpcImplementation)
+        t = Thread.new { @srv.run }
+        @srv.wait_till_running
+        req = EchoMsg.new
+        blk = proc do
+          cq = GRPC::Core::CompletionQueue.new
+          stub = GRPC::ClientStub.new(@host, cq, :this_channel_is_insecure,
+                                      **client_opts)
+          stub.request_response('/an_rpc', req, marshal, unmarshal)
+        end
+        expect(&blk).to raise_error do |error|
+          expect(error).to be_a(GRPC::BadStatus)
+          expect(error.code).to be(GRPC::Core::StatusCodes::UNIMPLEMENTED)
+        end
         @srv.stop
         t.join
       end

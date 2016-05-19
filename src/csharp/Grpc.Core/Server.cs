@@ -48,6 +48,7 @@ namespace Grpc.Core
     /// </summary>
     public class Server
     {
+        const int InitialAllowRpcTokenCount = 10;
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<Server>();
 
         readonly AtomicCounter activeCallCounter = new AtomicCounter();
@@ -65,7 +66,7 @@ namespace Grpc.Core
         readonly TaskCompletionSource<object> shutdownTcs = new TaskCompletionSource<object>();
 
         bool startRequested;
-        bool shutdownRequested;
+        volatile bool shutdownRequested;
 
         /// <summary>
         /// Create a new server.
@@ -129,7 +130,13 @@ namespace Grpc.Core
                 startRequested = true;
                 
                 handle.Start();
-                AllowOneRpc();
+
+                // Starting with more than one AllowOneRpc tokens can significantly increase
+                // unary RPC throughput.
+                for (int i = 0; i < InitialAllowRpcTokenCount; i++)
+                {
+                    AllowOneRpc();
+                }
             }
         }
 
@@ -239,12 +246,9 @@ namespace Grpc.Core
         /// </summary>
         private void AllowOneRpc()
         {
-            lock (myLock)
+            if (!shutdownRequested)
             {
-                if (!shutdownRequested)
-                {
-                    handle.RequestCall(HandleNewServerRpc, environment);
-                }
+                handle.RequestCall(HandleNewServerRpc, environment);
             }
         }
 
@@ -283,6 +287,8 @@ namespace Grpc.Core
         /// </summary>
         private void HandleNewServerRpc(bool success, BatchContextSafeHandle ctx)
         {
+			Task.Run(() => AllowOneRpc());
+
             if (success)
             {
                 ServerRpcNew newRpc = ctx.GetServerRpcNew(this);
@@ -290,11 +296,9 @@ namespace Grpc.Core
                 // after server shutdown, the callback returns with null call
                 if (!newRpc.Call.IsInvalid)
                 {
-                    Task.Run(async () => await HandleCallAsync(newRpc)).ConfigureAwait(false);
+                    HandleCallAsync(newRpc);  // we don't need to await.
                 }
             }
-
-            AllowOneRpc();
         }
 
         /// <summary>

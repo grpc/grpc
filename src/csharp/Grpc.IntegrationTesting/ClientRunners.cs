@@ -142,8 +142,7 @@ namespace Grpc.IntegrationTesting
                 for (int i = 0; i < outstandingRpcsPerChannel; i++)
                 {
                     var timer = CreateTimer(loadParams, 1.0 / this.channels.Count / outstandingRpcsPerChannel);
-                    var threadBody = GetThreadBody(channel, timer);
-                    this.runnerTasks.Add(Task.Factory.StartNew(threadBody, TaskCreationOptions.LongRunning));
+                    this.runnerTasks.Add(RunClientAsync(channel, timer));
                 }
             }
         }
@@ -269,38 +268,30 @@ namespace Grpc.IntegrationTesting
             }
         }
 
-        private Action GetThreadBody(Channel channel, IInterarrivalTimer timer)
+        private Task RunClientAsync(Channel channel, IInterarrivalTimer timer)
         {
             if (payloadConfig.PayloadCase == PayloadConfig.PayloadOneofCase.BytebufParams)
             {
-                GrpcPreconditions.CheckArgument(clientType == ClientType.ASYNC_CLIENT, "Generic client only supports async API");
-                GrpcPreconditions.CheckArgument(rpcType == RpcType.STREAMING, "Generic client only supports streaming calls");
-                return () =>
-                {
-                    RunGenericStreamingAsync(channel, timer).Wait();
-                };
+                GrpcPreconditions.CheckArgument(clientType == ClientType.AsyncClient, "Generic client only supports async API");
+                GrpcPreconditions.CheckArgument(rpcType == RpcType.Streaming, "Generic client only supports streaming calls");
+                return RunGenericStreamingAsync(channel, timer);
             }
 
             GrpcPreconditions.CheckNotNull(payloadConfig.SimpleParams);
-            if (clientType == ClientType.SYNC_CLIENT)
+            if (clientType == ClientType.SyncClient)
             {
-                GrpcPreconditions.CheckArgument(rpcType == RpcType.UNARY, "Sync client can only be used for Unary calls in C#");
-                return () => RunUnary(channel, timer);
+                GrpcPreconditions.CheckArgument(rpcType == RpcType.Unary, "Sync client can only be used for Unary calls in C#");
+                // create a dedicated thread for the synchronous client
+                return Task.Factory.StartNew(() => RunUnary(channel, timer), TaskCreationOptions.LongRunning);
             }
-            else if (clientType == ClientType.ASYNC_CLIENT)
+            else if (clientType == ClientType.AsyncClient)
             {
                 switch (rpcType)
                 {
-                    case RpcType.UNARY:
-                        return () =>
-                        {
-                            RunUnaryAsync(channel, timer).Wait();
-                        };
-                    case RpcType.STREAMING:
-                        return () =>
-                        {
-                            RunStreamingPingPongAsync(channel, timer).Wait();
-                        };
+                    case RpcType.Unary:
+                        return RunUnaryAsync(channel, timer);
+                    case RpcType.Streaming:
+                        return RunStreamingPingPongAsync(channel, timer);
                 }
             }
             throw new ArgumentException("Unsupported configuration.");

@@ -32,11 +32,11 @@
  */
 
 #include <ruby/ruby.h>
+
 #include "rb_grpc_imports.generated.h"
 #include "rb_grpc.h"
 
 #include <math.h>
-#include <ruby/ruby.h>
 #include <ruby/vm.h>
 #include <sys/time.h>
 

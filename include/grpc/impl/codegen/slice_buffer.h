@@ -42,9 +42,8 @@ extern "C" {
 
 #define GRPC_SLICE_BUFFER_INLINE_ELEMENTS 8
 
-/* Represents an expandable array of slices, to be interpreted as a single item
-   TODO(ctiller): inline some small number of elements into the struct, to
-                  avoid per-call allocations */
+/* Represents an expandable array of slices, to be interpreted as a
+   single item. */
 typedef struct {
   /* slices in the array */
   gpr_slice *slices;
