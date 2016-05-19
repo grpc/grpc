@@ -484,7 +484,8 @@ static grpc_error *clone_port(grpc_tcp_listener *listener, unsigned count) {
   }
 
   for (unsigned i = 0; i < count; i++) {
-    int fd, port;
+    int fd = -1;
+    int port = -1;
     grpc_dualstack_mode dsmode;
     err = grpc_create_dualstack_socket(&listener->addr.sockaddr, SOCK_STREAM, 0,
                                        &dsmode, &fd);
