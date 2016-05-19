@@ -676,8 +676,8 @@ static void kill_pending_work_locked(grpc_exec_ctx *exec_ctx,
         exec_ctx, &server->unregistered_request_matcher);
     for (registered_method *rm = server->registered_methods; rm;
          rm = rm->next) {
-      request_matcher_kill_requests(exec_ctx, server, &rm->request_matcher);
-      request_matcher_zombify_all_pending_calls(exec_ctx, &rm->request_matcher, GRPC_ERROR_REF(error));
+      request_matcher_kill_requests(exec_ctx, server, &rm->request_matcher, GRPC_ERROR_REF(error));
+      request_matcher_zombify_all_pending_calls(exec_ctx, &rm->request_matcher);
     }
   }
   GRPC_ERROR_UNREF(error);
