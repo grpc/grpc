@@ -104,7 +104,6 @@ grpc_iocp_work_status grpc_iocp_work(grpc_exec_ctx *exec_ctx,
   } else if (overlapped == &socket->read_info.overlapped) {
     info = &socket->read_info;
   } else {
-    gpr_log(GPR_ERROR, "Unknown IOCP operation");
     abort();
   }
   success = WSAGetOverlappedResult(socket->socket, &info->overlapped, &bytes,
@@ -112,16 +111,7 @@ grpc_iocp_work_status grpc_iocp_work(grpc_exec_ctx *exec_ctx,
   info->bytes_transfered = bytes;
   info->wsa_error = success ? 0 : WSAGetLastError();
   GPR_ASSERT(overlapped == &info->overlapped);
-  GPR_ASSERT(!info->has_pending_iocp);
-  gpr_mu_lock(&socket->state_mu);
-  if (info->closure) {
-    closure = info->closure;
-    info->closure = NULL;
-  } else {
-    info->has_pending_iocp = 1;
-  }
-  gpr_mu_unlock(&socket->state_mu);
-  grpc_exec_ctx_enqueue(exec_ctx, closure, true, NULL);
+  grpc_socket_become_ready(exec_ctx, socket, info);
   return GRPC_IOCP_WORK_WORK;
 }
 
@@ -174,35 +164,6 @@ void grpc_iocp_add_socket(grpc_winsocket *socket) {
   }
   socket->added_to_iocp = 1;
   GPR_ASSERT(ret == g_iocp);
-}
-
-/* Calling notify_on_read or write means either of two things:
-   -) The IOCP already completed in the background, and we need to call
-   the callback now.
-   -) The IOCP hasn't completed yet, and we're queuing it for later. */
-static void socket_notify_on_iocp(grpc_exec_ctx *exec_ctx,
-                                  grpc_winsocket *socket, grpc_closure *closure,
-                                  grpc_winsocket_callback_info *info) {
-  GPR_ASSERT(info->closure == NULL);
-  gpr_mu_lock(&socket->state_mu);
-  if (info->has_pending_iocp) {
-    info->has_pending_iocp = 0;
-    grpc_exec_ctx_enqueue(exec_ctx, closure, true, NULL);
-  } else {
-    info->closure = closure;
-  }
-  gpr_mu_unlock(&socket->state_mu);
-}
-
-void grpc_socket_notify_on_write(grpc_exec_ctx *exec_ctx,
-                                 grpc_winsocket *socket,
-                                 grpc_closure *closure) {
-  socket_notify_on_iocp(exec_ctx, socket, closure, &socket->write_info);
-}
-
-void grpc_socket_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_winsocket *socket,
-                                grpc_closure *closure) {
-  socket_notify_on_iocp(exec_ctx, socket, closure, &socket->read_info);
 }
 
 #endif /* GPR_WINSOCK_SOCKET */

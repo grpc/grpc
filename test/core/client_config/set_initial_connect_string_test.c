@@ -41,7 +41,7 @@
 
 #include "src/core/ext/client_config/initial_connect_string.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/security/credentials.h"
+#include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/support/string.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -65,8 +65,8 @@ static int server_port;
 static struct rpc_state state;
 static grpc_closure on_read;
 
-static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
-  GPR_ASSERT(success);
+static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
   gpr_slice_buffer_move_into(&state.temp_incoming_buffer,
                              &state.incoming_buffer);
   if (state.incoming_buffer.length > strlen(magic_connect_string)) {
@@ -79,7 +79,8 @@ static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   }
 }
 
-static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,grpc_pollset*accepting_pollset,
+static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
+                       grpc_pollset *accepting_pollset,
                        grpc_tcp_server_acceptor *acceptor) {
   test_tcp_server *server = arg;
   grpc_closure_init(&on_read, handle_read, NULL);

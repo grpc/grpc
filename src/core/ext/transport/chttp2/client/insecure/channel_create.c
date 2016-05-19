@@ -79,11 +79,11 @@ static void connector_unref(grpc_exec_ctx *exec_ctx, grpc_connector *con) {
 }
 
 static void on_initial_connect_string_sent(grpc_exec_ctx *exec_ctx, void *arg,
-                                           bool success) {
+                                           grpc_error *error) {
   connector_unref(exec_ctx, arg);
 }
 
-static void connected(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   connector *c = arg;
   grpc_closure *notify;
   grpc_endpoint *tcp = c->tcp;
@@ -109,7 +109,7 @@ static void connected(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   }
   notify = c->notify;
   c->notify = NULL;
-  notify->cb(exec_ctx, notify->cb_arg, 1);
+  notify->cb(exec_ctx, notify->cb_arg, error);
 }
 
 static void connector_shutdown(grpc_exec_ctx *exec_ctx, grpc_connector *con) {}
