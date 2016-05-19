@@ -53,7 +53,10 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
-  f = config.create_fixture(client_args, server_args);
+  // We intentionally do not pass the client and server args to
+  // create_fixture(), since we don't want the limit enforced on the
+  // proxy, only on the backend server.
+  f = config.create_fixture(NULL, NULL);
   config.init_server(&f, server_args);
   config.init_client(&f, client_args);
   return f;

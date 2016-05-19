@@ -72,13 +72,13 @@ namespace Grpc.Health.V1 {
     [System.Obsolete("Service implementations should inherit from the generated abstract base class instead.")]
     public interface IHealth
     {
-      Task<global::Grpc.Health.V1.HealthCheckResponse> Check(global::Grpc.Health.V1.HealthCheckRequest request, ServerCallContext context);
+      global::System.Threading.Tasks.Task<global::Grpc.Health.V1.HealthCheckResponse> Check(global::Grpc.Health.V1.HealthCheckRequest request, ServerCallContext context);
     }
 
     /// <summary>Base class for server-side implementations of Health</summary>
     public abstract class HealthBase
     {
-      public virtual Task<global::Grpc.Health.V1.HealthCheckResponse> Check(global::Grpc.Health.V1.HealthCheckRequest request, ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task<global::Grpc.Health.V1.HealthCheckResponse> Check(global::Grpc.Health.V1.HealthCheckRequest request, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }

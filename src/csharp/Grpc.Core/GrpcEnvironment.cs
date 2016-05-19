@@ -45,11 +45,12 @@ namespace Grpc.Core
     /// </summary>
     public class GrpcEnvironment
     {
-        const int THREAD_POOL_SIZE = 4;
+        const int MinDefaultThreadPoolSize = 4;
 
         static object staticLock = new object();
         static GrpcEnvironment instance;
         static int refCount;
+        static int? customThreadPoolSize;
 
         static ILogger logger = new ConsoleLogger();
 
@@ -123,13 +124,30 @@ namespace Grpc.Core
         }
 
         /// <summary>
+        /// Sets the number of threads in the gRPC thread pool that polls for internal RPC events.
+        /// Can be only invoke before the <c>GrpcEnviroment</c> is started and cannot be changed afterwards.
+        /// Setting thread pool size is an advanced setting and you should only use it if you know what you are doing.
+        /// Most users should rely on the default value provided by gRPC library.
+        /// Note: this method is part of an experimental API that can change or be removed without any prior notice.
+        /// </summary>
+        public static void SetThreadPoolSize(int threadCount)
+        {
+            lock (staticLock)
+            {
+                GrpcPreconditions.CheckState(instance == null, "Can only be set before GrpcEnvironment is initialized");
+                GrpcPreconditions.CheckArgument(threadCount > 0, "threadCount needs to be a positive number");
+                customThreadPoolSize = threadCount;
+            }
+        }
+
+        /// <summary>
         /// Creates gRPC environment.
         /// </summary>
         private GrpcEnvironment()
         {
             GrpcNativeInit();
             completionRegistry = new CompletionRegistry(this);
-            threadPool = new GrpcThreadPool(this, THREAD_POOL_SIZE);
+            threadPool = new GrpcThreadPool(this, GetThreadPoolSizeOrDefault());
             threadPool.Start();
         }
 
@@ -199,6 +217,18 @@ namespace Grpc.Core
             isClosed = true;
 
             debugStats.CheckOK();
+        }
+
+        private int GetThreadPoolSizeOrDefault()
+        {
+            if (customThreadPoolSize.HasValue)
+            {
+                return customThreadPoolSize.Value;
+            }
+            // In systems with many cores, use half of the cores for GrpcThreadPool
+            // and the other half for .NET thread pool. This heuristic definitely needs
+            // more work, but seems to work reasonably well for a start.
+            return Math.Max(MinDefaultThreadPoolSize, Environment.ProcessorCount / 2);
         }
     }
 }

@@ -50,6 +50,7 @@ def mako_plugin(dictionary):
               'name': new_target['name'],
               'args': [fn],
               'exclude_configs': [],
+              'uses_polling': False,
               'platforms': ['linux'],
               'ci_platforms': ['linux'],
               'flaky': False,

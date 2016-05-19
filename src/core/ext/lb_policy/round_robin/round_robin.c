@@ -306,8 +306,10 @@ static void start_picking(grpc_exec_ctx *exec_ctx, round_robin_lb_policy *p) {
   size_t i;
   p->started_picking = 1;
 
-  gpr_log(GPR_DEBUG, "LB_POLICY: p=%p num_subchannels=%d", p,
-          p->num_subchannels);
+  if (grpc_lb_round_robin_trace) {
+    gpr_log(GPR_DEBUG, "LB_POLICY: p=%p num_subchannels=%d", p,
+            p->num_subchannels);
+  }
 
   for (i = 0; i < p->num_subchannels; i++) {
     subchannel_data *sd = p->subchannels[i];

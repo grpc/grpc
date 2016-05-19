@@ -28,6 +28,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'forwardable'
+require 'weakref'
 require_relative 'bidi_call'
 
 class Struct
