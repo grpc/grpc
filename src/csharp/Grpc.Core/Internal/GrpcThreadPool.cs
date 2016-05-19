@@ -118,7 +118,7 @@ namespace Grpc.Core.Internal
             do
             {
                 ev = cq.Next();
-                if (ev.type == GRPCCompletionType.OpComplete)
+                if (ev.type == CompletionQueueEvent.CompletionType.OpComplete)
                 {
                     bool success = (ev.success != 0);
                     IntPtr tag = ev.tag;
@@ -133,7 +133,7 @@ namespace Grpc.Core.Internal
                     }
                 }
             }
-            while (ev.type != GRPCCompletionType.Shutdown);
+            while (ev.type != CompletionQueueEvent.CompletionType.Shutdown);
         }
     }
 }
