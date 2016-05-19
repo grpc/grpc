@@ -73,7 +73,6 @@ class QpsWorkerJob:
 
 def create_qpsworker_job(language, shortname=None,
                          port=10000, remote_host=None):
-  # TODO: support more languages
   cmdline = language.worker_cmdline() + ['--driver_port=%s' % port]
   if remote_host:
     user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, remote_host)
@@ -373,7 +372,7 @@ argp.add_argument('-r', '--regex', default='.*', type=str,
 argp.add_argument('--bq_result_table', default=None, type=str,
                   help='Bigquery "dataset.table" to upload results to.')
 argp.add_argument('--category',
-                  choices=['smoketest','all'],
+                  choices=['smoketest','all','scalable'],
                   default='all',
                   help='Select a category of tests to run.')
 argp.add_argument('--netperf',
