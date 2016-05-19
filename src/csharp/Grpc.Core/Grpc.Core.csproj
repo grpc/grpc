@@ -74,7 +74,6 @@
     <Compile Include="Internal\CallSafeHandle.cs" />
     <Compile Include="Internal\ChannelSafeHandle.cs" />
     <Compile Include="Internal\CompletionQueueSafeHandle.cs" />
-    <Compile Include="Internal\Enums.cs" />
     <Compile Include="Internal\SafeHandleZeroIsInvalid.cs" />
     <Compile Include="Internal\Timespec.cs" />
     <Compile Include="Internal\GrpcThreadPool.cs" />
@@ -136,6 +135,8 @@
     <Compile Include="Internal\InterceptingCallInvoker.cs" />
     <Compile Include="Internal\ServerRpcNew.cs" />
     <Compile Include="Internal\ClientSideStatus.cs" />
+    <Compile Include="Internal\ClockType.cs" />
+    <Compile Include="Internal\CallError.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Grpc.Core.nuspec" />

@@ -108,7 +108,7 @@ namespace Grpc.Core.Internal.Tests
             Assert.Throws(typeof(InvalidOperationException),
                 () => new Timespec(0, 1000 * 1000 * 1000).ToDateTime());
             Assert.Throws(typeof(InvalidOperationException),
-                () => new Timespec(0, 0, GPRClockType.Monotonic).ToDateTime());
+                () => new Timespec(0, 0, ClockType.Monotonic).ToDateTime());
         }
 
         [Test]
