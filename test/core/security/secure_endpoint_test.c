@@ -41,7 +41,7 @@
 #include <grpc/support/log.h>
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/iomgr.h"
-#include "src/core/lib/security/secure_endpoint.h"
+#include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/tsi/fake_transport_security.h"
 #include "test/core/util/test_config.h"
 
@@ -139,7 +139,8 @@ static grpc_endpoint_test_config configs[] = {
      secure_endpoint_create_fixture_tcp_socketpair_leftover, clean_up},
 };
 
-static void inc_call_ctr(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+static void inc_call_ctr(grpc_exec_ctx *exec_ctx, void *arg,
+                         grpc_error *error) {
   ++*(int *)arg;
 }
 
@@ -172,7 +173,8 @@ static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
   clean_up();
 }
 
-static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, bool success) {
+static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
+                            grpc_error *error) {
   grpc_pollset_destroy(p);
 }
 

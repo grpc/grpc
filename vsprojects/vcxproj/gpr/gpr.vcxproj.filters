@@ -46,9 +46,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\host_port.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\load_file.c">
-      <Filter>src\core\lib\support</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\support\log.c">
       <Filter>src\core\lib\support</Filter>
     </ClCompile>
@@ -279,9 +276,6 @@
       <Filter>src\core\lib\support</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\env.h">
-      <Filter>src\core\lib\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\load_file.h">
       <Filter>src\core\lib\support</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\support\murmur_hash.h">

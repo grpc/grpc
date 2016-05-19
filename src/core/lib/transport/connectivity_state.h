@@ -49,6 +49,8 @@ typedef struct grpc_connectivity_state_watcher {
 typedef struct {
   /** current connectivity state */
   grpc_connectivity_state current_state;
+  /** error associated with state */
+  grpc_error *current_error;
   /** all our watchers */
   grpc_connectivity_state_watcher *watchers;
   /** a name to help debugging */
@@ -70,10 +72,11 @@ void grpc_connectivity_state_destroy(grpc_exec_ctx *exec_ctx,
 void grpc_connectivity_state_set(grpc_exec_ctx *exec_ctx,
                                  grpc_connectivity_state_tracker *tracker,
                                  grpc_connectivity_state state,
+                                 grpc_error *associated_error,
                                  const char *reason);
 
 grpc_connectivity_state grpc_connectivity_state_check(
-    grpc_connectivity_state_tracker *tracker);
+    grpc_connectivity_state_tracker *tracker, grpc_error **current_error);
 
 /** Return 1 if the channel should start connecting, 0 otherwise.
     If current==NULL cancel notify if it is already queued (success==0 in that
