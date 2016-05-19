@@ -2,11 +2,11 @@
 
 // Copyright 2015, Google Inc.
 // All rights reserved.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//
+// 
 //     * Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
 //     * Redistributions in binary form must reproduce the above
@@ -16,7 +16,7 @@
 //     * Neither the name of Google Inc. nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
-//
+// 
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,52 +33,38 @@
 
 using System;
 using Grpc.Core;
-using Grpc.Core.Internal;
-using Grpc.Core.Utils;
-using NUnit.Framework;
 
-namespace Grpc.Core.Internal.Tests
+namespace Grpc.Core.Internal
 {
-    public class MetadataArraySafeHandleTest
+    /// <summary>
+    /// Status + metadata received on client side when call finishes.
+    /// (when receive_status_on_client operation finishes).
+    /// </summary>
+    internal struct ClientSideStatus
     {
-        [Test]
-        public void CreateEmptyAndDestroy()
+        readonly Status status;
+        readonly Metadata trailers;
+
+        public ClientSideStatus(Status status, Metadata trailers)
         {
-            var nativeMetadata = MetadataArraySafeHandle.Create(new Metadata());
-            nativeMetadata.Dispose();
+            this.status = status;
+            this.trailers = trailers;
         }
 
-        [Test]
-        public void CreateAndDestroy()
+        public Status Status
         {
-            var metadata = new Metadata
+            get
             {
-                { "host", "somehost" },
-                { "header2", "header value" },
-            };
-            var nativeMetadata = MetadataArraySafeHandle.Create(metadata);
-            nativeMetadata.Dispose();
+                return this.status;
+            }
         }
 
-        [Test]
-        public void ReadMetadataFromPtrUnsafe()
+        public Metadata Trailers
         {
-            var metadata = new Metadata
+            get
             {
-                { "host", "somehost" },
-                { "header2", "header value" }
-            };
-            var nativeMetadata = MetadataArraySafeHandle.Create(metadata);
-
-            var copy = nativeMetadata.ReadUnsafe();
-            Assert.AreEqual(2, copy.Count);
-
-            Assert.AreEqual("host", copy[0].Key);
-            Assert.AreEqual("somehost", copy[0].Value);
-            Assert.AreEqual("header2", copy[1].Key);
-            Assert.AreEqual("header value", copy[1].Value);
-
-            nativeMetadata.Dispose();
+                return this.trailers;
+            }
         }
     }
 }

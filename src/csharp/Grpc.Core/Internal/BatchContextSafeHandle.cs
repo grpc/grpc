@@ -62,56 +62,56 @@ namespace Grpc.Core.Internal
         }
 
         // Gets data of recv_initial_metadata completion.
-        public Metadata GetReceivedInitialMetadata()
+        public unsafe Metadata GetReceivedInitialMetadata()
         {
-            IntPtr metadataArrayPtr = Native.grpcsharp_batch_context_recv_initial_metadata(this);
-            return MetadataArraySafeHandle.ReadMetadataFromPtrUnsafe(metadataArrayPtr);
+            var batchContext = (BatchContext*) handle;
+            return MetadataArraySafeHandle.ReadMetadataFromPtrUnsafe(&batchContext->recvInitialMetadata);
         }
             
         // Gets data of recv_status_on_client completion.
-        public ClientSideStatus GetReceivedStatusOnClient()
+        public unsafe ClientSideStatus GetReceivedStatusOnClient()
         {
-            string details = Marshal.PtrToStringAnsi(Native.grpcsharp_batch_context_recv_status_on_client_details(this));
-            var status = new Status(Native.grpcsharp_batch_context_recv_status_on_client_status(this), details);
-
-            IntPtr metadataArrayPtr = Native.grpcsharp_batch_context_recv_status_on_client_trailing_metadata(this);
-            var metadata = MetadataArraySafeHandle.ReadMetadataFromPtrUnsafe(metadataArrayPtr);
-
+            var batchContext = (BatchContext*) handle;
+            string details = Marshal.PtrToStringAnsi(batchContext->recvStatusOnClient.statusDetails);
+            var status = new Status((StatusCode) batchContext->recvStatusOnClient.status, details);
+            var metadata = MetadataArraySafeHandle.ReadMetadataFromPtrUnsafe(&batchContext->recvStatusOnClient.trailingMetadata);
             return new ClientSideStatus(status, metadata);
         }
 
         // Gets data of recv_message completion.
-        public byte[] GetReceivedMessage()
+        public unsafe byte[] GetReceivedMessage()
         {
-            IntPtr len = Native.grpcsharp_batch_context_recv_message_length(this);
-            if (len == new IntPtr(-1))
+            var batchContext = (BatchContext*) handle;
+            var recvMessageBuffer = batchContext->recvMessage;
+            if (recvMessageBuffer == IntPtr.Zero)
             {
                 return null;
             }
-            byte[] data = new byte[(int)len];
-            Native.grpcsharp_batch_context_recv_message_to_buffer(this, data, new UIntPtr((ulong)data.Length));
+            UIntPtr len = Native.grpcsharp_byte_buffer_length(recvMessageBuffer);
+            byte[] data = new byte[len.ToUInt64()];
+            Native.grpcsharp_byte_buffer_read(recvMessageBuffer, data, len);
             return data;
         }
 
         // Gets data of server_rpc_new completion.
-        public ServerRpcNew GetServerRpcNew(Server server)
+        public unsafe ServerRpcNew GetServerRpcNew(Server server)
         {
-            var call = Native.grpcsharp_batch_context_server_rpc_new_call(this);
+            var batchContext = (BatchContext*) handle;
+            var serverRpcNew = &(batchContext->serverRpcNew);
 
-            var method = Marshal.PtrToStringAnsi(Native.grpcsharp_batch_context_server_rpc_new_method(this));
-            var host = Marshal.PtrToStringAnsi(Native.grpcsharp_batch_context_server_rpc_new_host(this));
-            var deadline = Native.grpcsharp_batch_context_server_rpc_new_deadline(this);
-
-            IntPtr metadataArrayPtr = Native.grpcsharp_batch_context_server_rpc_new_request_metadata(this);
-            var metadata = MetadataArraySafeHandle.ReadMetadataFromPtrUnsafe(metadataArrayPtr);
-
+            var call = new CallSafeHandle(serverRpcNew->call);
+            var method = Marshal.PtrToStringAnsi(serverRpcNew->callDetails.method);
+            var host = Marshal.PtrToStringAnsi(serverRpcNew->callDetails.host);
+            var deadline = serverRpcNew->callDetails.deadline;
+            var metadata = MetadataArraySafeHandle.ReadMetadataFromPtrUnsafe(&serverRpcNew->requestMetadata);
             return new ServerRpcNew(server, call, method, host, deadline, metadata);
         }
 
         // Gets data of receive_close_on_server completion.
-        public bool GetReceivedCloseOnServerCancelled()
+        public unsafe bool GetReceivedCloseOnServerCancelled()
         {
-            return Native.grpcsharp_batch_context_recv_close_on_server_cancelled(this) != 0;
+            var batchContext = (BatchContext*) handle;
+            return (batchContext->recvCloseOnServerCancelled != 0);
         }
             
         protected override bool ReleaseHandle()
@@ -119,108 +119,59 @@ namespace Grpc.Core.Internal
             Native.grpcsharp_batch_context_destroy(handle);
             return true;
         }
-    }
 
-    /// <summary>
-    /// Status + metadata received on client side when call finishes.
-    /// (when receive_status_on_client operation finishes).
-    /// </summary>
-    internal struct ClientSideStatus
-    {
-        readonly Status status;
-        readonly Metadata trailers;
-
-        public ClientSideStatus(Status status, Metadata trailers)
+        /// <summary>
+        /// Corresponds to grpcsharp_batch_context.
+        /// IMPORTANT: The struct layout needs to be kept in sync.
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct BatchContext
         {
-            this.status = status;
-            this.trailers = trailers;
+            MetadataArraySafeHandle.MetadataArray sendInitialMetadata;
+            IntPtr sendMessage;
+            SendStatusFromServer sendStatusFromServer;
+            public MetadataArraySafeHandle.MetadataArray recvInitialMetadata;
+            public IntPtr recvMessage;
+            public RecvStatusOnClient recvStatusOnClient;
+            public int recvCloseOnServerCancelled;
+            public ServerRpcNewNative serverRpcNew;
         }
 
-        public Status Status
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct SendStatusFromServer
         {
-            get
-            {
-                return this.status;
-            }    
+            public MetadataArraySafeHandle.MetadataArray trailingMetadata;
+            public IntPtr statusDetails;
         }
 
-        public Metadata Trailers
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct RecvStatusOnClient
         {
-            get
-            {
-                return this.trailers;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Details of a newly received RPC.
-    /// </summary>
-    internal struct ServerRpcNew
-    {
-        readonly Server server;
-        readonly CallSafeHandle call;
-        readonly string method;
-        readonly string host;
-        readonly Timespec deadline;
-        readonly Metadata requestMetadata;
-
-        public ServerRpcNew(Server server, CallSafeHandle call, string method, string host, Timespec deadline, Metadata requestMetadata)
-        {
-            this.server = server;
-            this.call = call;
-            this.method = method;
-            this.host = host;
-            this.deadline = deadline;
-            this.requestMetadata = requestMetadata;
+            public MetadataArraySafeHandle.MetadataArray trailingMetadata;
+            public int status;
+            public IntPtr statusDetails;
+            public UIntPtr statusDetailsCapacity;
         }
 
-        public Server Server
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct ServerRpcNewNative
         {
-            get
-            {
-                return this.server;
-            }
+            public IntPtr call;
+            public CallDetails callDetails;
+            public MetadataArraySafeHandle.MetadataArray requestMetadata;
         }
 
-        public CallSafeHandle Call
+        // corresponds to grpc_call_details
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct CallDetails
         {
-            get
-            {
-                return this.call;
-            }
-        }
-
-        public string Method
-        {
-            get
-            {
-                return this.method;
-            }
-        }
-
-        public string Host
-        {
-            get
-            {
-                return this.host;
-            }
-        }
-
-        public Timespec Deadline
-        {
-            get
-            {
-                return this.deadline;
-            }
-        }
-
-        public Metadata RequestMetadata
-        {
-            get
-            {
-                return this.requestMetadata;
-            }
+            public IntPtr method;
+            public UIntPtr methodCapacity;
+            public IntPtr host;
+            public UIntPtr hostCapacity;
+            public Timespec deadline;
+            public uint flags;
+            public IntPtr reserved;
         }
     }
 }

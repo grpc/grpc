@@ -45,11 +45,25 @@ namespace Grpc.Core.Internal
         private MetadataArraySafeHandle()
         {
         }
+
+        /// <summary>
+        /// Reads metadata from this instance.
+        /// </summary>
+        public unsafe Metadata ReadUnsafe()
+        {
+            var metadataArrayP = (MetadataArray*)handle;
+            return ReadMetadataFromPtrUnsafe(metadataArrayP);
+        }
             
         public static MetadataArraySafeHandle Create(Metadata metadata)
         {
             using (Profilers.ForCurrentThread().NewScope("MetadataArraySafeHandle.Create"))
             {
+                if (metadata.Count == 0)
+                {
+                    return new MetadataArraySafeHandle();
+                }
+
                 // TODO(jtattermusch): we might wanna check that the metadata is readonly 
                 var metadataArray = Native.grpcsharp_metadata_array_create(new UIntPtr((ulong)metadata.Count));
                 for (int i = 0; i < metadata.Count; i++)
@@ -64,23 +78,25 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Reads metadata from pointer to grpc_metadata_array
         /// </summary>
-        public static Metadata ReadMetadataFromPtrUnsafe(IntPtr metadataArray)
+        public static unsafe Metadata ReadMetadataFromPtrUnsafe(MetadataArray* metadataArrayP)
         {
-            if (metadataArray == IntPtr.Zero)
+            //var metadataArrayP = (MetadataArray*)metadataArrayPtr;
+            long count = (long)metadataArrayP->count;
+            if (count == 0)
             {
-                return null;
+                return new Metadata();
             }
 
-            ulong count = Native.grpcsharp_metadata_array_count(metadataArray).ToUInt64();
-
             var metadata = new Metadata();
-            for (ulong i = 0; i < count; i++)
-            {
-                var index = new UIntPtr(i);
-                string key = Marshal.PtrToStringAnsi(Native.grpcsharp_metadata_array_get_key(metadataArray, index));
-                var bytes = new byte[Native.grpcsharp_metadata_array_get_value_length(metadataArray, index).ToUInt64()];
-                Marshal.Copy(Native.grpcsharp_metadata_array_get_value(metadataArray, index), bytes, 0, bytes.Length);
-                metadata.Add(Metadata.Entry.CreateUnsafe(key, bytes));
+            var metadataP = (MetadataNative*)metadataArrayP->metadata;
+            for (long i = 0; i < count; i++) {
+                string key = Marshal.PtrToStringAnsi(metadataP->key);
+
+                var bytes = new byte[(long)metadataP->valueLength];
+                Marshal.Copy(metadataP->value, bytes, 0, bytes.Length);
+                metadata.Add (Metadata.Entry.CreateUnsafe (key, bytes));
+
+                metadataP++;
             }
             return metadata;
         }
@@ -97,6 +113,30 @@ namespace Grpc.Core.Internal
         {
             Native.grpcsharp_metadata_array_destroy_full(handle);
             return true;
+        }
+
+        // corresponds to struct grpc_medatata
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct MetadataNative
+        {
+            public IntPtr key;
+            public IntPtr value;
+            public UIntPtr valueLength;
+            public uint flags;
+
+            IntPtr obfuscated0;
+            IntPtr obfuscated1;
+            IntPtr obfuscated2;
+            IntPtr obfuscated3;
+        }
+
+        // corresponds to struct grpc_medatata_array
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct MetadataArray
+        {
+            public UIntPtr count;
+            public UIntPtr capacity;
+            public IntPtr metadata;
         }
     }
 }

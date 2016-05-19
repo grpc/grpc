@@ -2,11 +2,11 @@
 
 // Copyright 2015, Google Inc.
 // All rights reserved.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//
+// 
 //     * Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
 //     * Redistributions in binary form must reproduce the above
@@ -16,7 +16,7 @@
 //     * Neither the name of Google Inc. nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
-//
+// 
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,52 +33,77 @@
 
 using System;
 using Grpc.Core;
-using Grpc.Core.Internal;
-using Grpc.Core.Utils;
-using NUnit.Framework;
 
-namespace Grpc.Core.Internal.Tests
+namespace Grpc.Core.Internal
 {
-    public class MetadataArraySafeHandleTest
+    /// <summary>
+    /// Details of a newly received RPC.
+    /// </summary>
+    internal struct ServerRpcNew
     {
-        [Test]
-        public void CreateEmptyAndDestroy()
+        readonly Server server;
+        readonly CallSafeHandle call;
+        readonly string method;
+        readonly string host;
+        readonly Timespec deadline;
+        readonly Metadata requestMetadata;
+
+        public ServerRpcNew(Server server, CallSafeHandle call, string method, string host, Timespec deadline, Metadata requestMetadata)
         {
-            var nativeMetadata = MetadataArraySafeHandle.Create(new Metadata());
-            nativeMetadata.Dispose();
+            this.server = server;
+            this.call = call;
+            this.method = method;
+            this.host = host;
+            this.deadline = deadline;
+            this.requestMetadata = requestMetadata;
         }
 
-        [Test]
-        public void CreateAndDestroy()
+        public Server Server
         {
-            var metadata = new Metadata
+            get
             {
-                { "host", "somehost" },
-                { "header2", "header value" },
-            };
-            var nativeMetadata = MetadataArraySafeHandle.Create(metadata);
-            nativeMetadata.Dispose();
+                return this.server;
+            }
         }
 
-        [Test]
-        public void ReadMetadataFromPtrUnsafe()
+        public CallSafeHandle Call
         {
-            var metadata = new Metadata
+            get
             {
-                { "host", "somehost" },
-                { "header2", "header value" }
-            };
-            var nativeMetadata = MetadataArraySafeHandle.Create(metadata);
+                return this.call;
+            }
+        }
 
-            var copy = nativeMetadata.ReadUnsafe();
-            Assert.AreEqual(2, copy.Count);
+        public string Method
+        {
+            get
+            {
+                return this.method;
+            }
+        }
 
-            Assert.AreEqual("host", copy[0].Key);
-            Assert.AreEqual("somehost", copy[0].Value);
-            Assert.AreEqual("header2", copy[1].Key);
-            Assert.AreEqual("header value", copy[1].Value);
+        public string Host
+        {
+            get
+            {
+                return this.host;
+            }
+        }
 
-            nativeMetadata.Dispose();
+        public Timespec Deadline
+        {
+            get
+            {
+                return this.deadline;
+            }
+        }
+
+        public Metadata RequestMetadata
+        {
+            get
+            {
+                return this.requestMetadata;
+            }
         }
     }
 }
