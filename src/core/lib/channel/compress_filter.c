@@ -296,8 +296,8 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
     channeld->default_compression_algorithm = GRPC_COMPRESS_NONE;
   }
 
-  channeld->supported_compression_algorithms = 0;
-  for (grpc_compression_algorithm algo_idx = 0;
+  channeld->supported_compression_algorithms = 1; /* always support identity */
+  for (grpc_compression_algorithm algo_idx = 1;
        algo_idx < GRPC_COMPRESS_ALGORITHMS_COUNT; ++algo_idx) {
     /* skip disabled algorithms */
     if (!GPR_BITGET(channeld->enabled_algorithms_bitset, algo_idx)) {
