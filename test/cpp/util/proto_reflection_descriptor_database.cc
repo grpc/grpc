@@ -38,8 +38,8 @@
 #include <grpc/support/log.h>
 
 using grpc::reflection::v1alpha::ServerReflection;
-using grpc::reflection::v1alpha::DescriptorDatabaseRequest;
-using grpc::reflection::v1alpha::DescriptorDatabaseResponse;
+using grpc::reflection::v1alpha::ServerReflectionRequest;
+using grpc::reflection::v1alpha::ServerReflectionResponse;
 using grpc::reflection::v1alpha::ListServiceResponse;
 using grpc::reflection::v1alpha::ErrorResponse;
 
@@ -65,21 +65,22 @@ bool ProtoReflectionDescriptorDatabase::FindFileByName(
     return false;
   }
 
-  DescriptorDatabaseRequest request;
+  ServerReflectionRequest request;
   request.set_file_by_filename(filename);
-  DescriptorDatabaseResponse response;
+  ServerReflectionResponse response;
 
   GetStream()->Write(request);
   GetStream()->Read(&response);
 
   if (response.message_response_case() ==
-      DescriptorDatabaseResponse::MessageResponseCase::kFileDescriptorProto) {
-    const google::protobuf::FileDescriptorProto file_proto =
-        ParseFileDescriptorProtoResponse(response.file_descriptor_proto());
-    known_files_.insert(file_proto.name());
-    cached_db_.Add(file_proto);
+      ServerReflectionResponse::MessageResponseCase::kFileDescriptorResponse) {
+    AddFileFromResponse(response.file_descriptor_response());
+    // const google::protobuf::FileDescriptorProto file_proto =
+    //     ParseFileDescriptorProtoResponse(response.file_descriptor_response());
+    // known_files_.insert(file_proto.name());
+    // cached_db_.Add(file_proto);
   } else if (response.message_response_case() ==
-             DescriptorDatabaseResponse::MessageResponseCase::kErrorResponse) {
+             ServerReflectionResponse::MessageResponseCase::kErrorResponse) {
     const ErrorResponse error = response.error_response();
     if (error.error_code() == StatusCode::NOT_FOUND) {
       gpr_log(GPR_INFO, "NOT_FOUND from server for FindFileByName(%s)",
@@ -97,7 +98,7 @@ bool ProtoReflectionDescriptorDatabase::FindFileByName(
         "Error on FindFileByName(%s) response type\n"
         "\tExpecting: %d\n\tReceived: %d",
         filename.c_str(),
-        DescriptorDatabaseResponse::MessageResponseCase::kFileDescriptorProto,
+        ServerReflectionResponse::MessageResponseCase::kFileDescriptorResponse,
         response.message_response_case());
   }
 
@@ -114,24 +115,25 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingSymbol(
     return false;
   }
 
-  DescriptorDatabaseRequest request;
+  ServerReflectionRequest request;
   request.set_file_containing_symbol(symbol_name);
-  DescriptorDatabaseResponse response;
+  ServerReflectionResponse response;
 
   GetStream()->Write(request);
   GetStream()->Read(&response);
 
   // Status status = stub_->GetFileContainingSymbol(&ctx, request, &response);
   if (response.message_response_case() ==
-      DescriptorDatabaseResponse::MessageResponseCase::kFileDescriptorProto) {
-    const google::protobuf::FileDescriptorProto file_proto =
-        ParseFileDescriptorProtoResponse(response.file_descriptor_proto());
-    if (known_files_.find(file_proto.name()) == known_files_.end()) {
-      known_files_.insert(file_proto.name());
-      cached_db_.Add(file_proto);
-    }
+      ServerReflectionResponse::MessageResponseCase::kFileDescriptorResponse) {
+    AddFileFromResponse(response.file_descriptor_response());
+    // const google::protobuf::FileDescriptorProto file_proto =
+    //     ParseFileDescriptorProtoResponse(response.file_descriptor_response());
+    // if (known_files_.find(file_proto.name()) == known_files_.end()) {
+    //   known_files_.insert(file_proto.name());
+    //   cached_db_.Add(file_proto);
+    // }
   } else if (response.message_response_case() ==
-             DescriptorDatabaseResponse::MessageResponseCase::kErrorResponse) {
+             ServerReflectionResponse::MessageResponseCase::kErrorResponse) {
     const ErrorResponse error = response.error_response();
     if (error.error_code() == StatusCode::NOT_FOUND) {
       missing_symbols_.insert(symbol_name);
@@ -151,7 +153,7 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingSymbol(
         "Error on FindFileContainingSymbol(%s) response type\n"
         "\tExpecting: %d\n\tReceived: %d",
         symbol_name.c_str(),
-        DescriptorDatabaseResponse::MessageResponseCase::kFileDescriptorProto,
+        ServerReflectionResponse::MessageResponseCase::kFileDescriptorResponse,
         response.message_response_case());
   }
   return cached_db_.FindFileContainingSymbol(symbol_name, output);
@@ -172,12 +174,12 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingExtension(
     return false;
   }
 
-  DescriptorDatabaseRequest request;
+  ServerReflectionRequest request;
   request.mutable_file_containing_extension()->set_containing_type(
       containing_type);
   request.mutable_file_containing_extension()->set_extension_number(
       field_number);
-  DescriptorDatabaseResponse response;
+  ServerReflectionResponse response;
 
   GetStream()->Write(request);
   GetStream()->Read(&response);
@@ -185,15 +187,16 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingExtension(
   // Status status = stub_->GetFileContainingExtension(&ctx, request,
   // &response);
   if (response.message_response_case() ==
-      DescriptorDatabaseResponse::MessageResponseCase::kFileDescriptorProto) {
-    const google::protobuf::FileDescriptorProto file_proto =
-        ParseFileDescriptorProtoResponse(response.file_descriptor_proto());
-    if (known_files_.find(file_proto.name()) == known_files_.end()) {
-      known_files_.insert(file_proto.name());
-      cached_db_.Add(file_proto);
-    }
+      ServerReflectionResponse::MessageResponseCase::kFileDescriptorResponse) {
+    AddFileFromResponse(response.file_descriptor_response());
+    // const google::protobuf::FileDescriptorProto file_proto =
+    //     ParseFileDescriptorProtoResponse(response.file_descriptor_response());
+    // if (known_files_.find(file_proto.name()) == known_files_.end()) {
+    //   known_files_.insert(file_proto.name());
+    //   cached_db_.Add(file_proto);
+    // }
   } else if (response.message_response_case() ==
-             DescriptorDatabaseResponse::MessageResponseCase::kErrorResponse) {
+             ServerReflectionResponse::MessageResponseCase::kErrorResponse) {
     const ErrorResponse error = response.error_response();
     if (error.error_code() == StatusCode::NOT_FOUND) {
       if (missing_extensions_.find(containing_type) ==
@@ -217,7 +220,7 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingExtension(
         "Error on FindFileContainingExtension(%s, %d) response type\n"
         "\tExpecting: %d\n\tReceived: %d",
         containing_type.c_str(), field_number,
-        DescriptorDatabaseResponse::MessageResponseCase::kFileDescriptorProto,
+        ServerReflectionResponse::MessageResponseCase::kFileDescriptorResponse,
         response.message_response_case());
   }
 
@@ -233,23 +236,22 @@ bool ProtoReflectionDescriptorDatabase::FindAllExtensionNumbers(
     return true;
   }
 
-  DescriptorDatabaseRequest request;
+  ServerReflectionRequest request;
   request.set_all_extension_numbers_of_type(extendee_type);
-  DescriptorDatabaseResponse response;
+  ServerReflectionResponse response;
 
   GetStream()->Write(request);
   GetStream()->Read(&response);
 
-  // Status status = stub_->GetAllExtensionNumbers(&ctx, request, &response);
   if (response.message_response_case() ==
-      DescriptorDatabaseResponse::MessageResponseCase::
+      ServerReflectionResponse::MessageResponseCase::
           kAllExtensionNumbersResponse) {
     auto number = response.all_extension_numbers_response().extension_number();
     *output = std::vector<int>(number.begin(), number.end());
     cached_extension_numbers_[extendee_type] = *output;
     return true;
   } else if (response.message_response_case() ==
-             DescriptorDatabaseResponse::MessageResponseCase::kErrorResponse) {
+             ServerReflectionResponse::MessageResponseCase::kErrorResponse) {
     const ErrorResponse error = response.error_response();
     if (error.error_code() == StatusCode::NOT_FOUND) {
       gpr_log(GPR_INFO, "NOT_FOUND from server for FindAllExtensionNumbers(%s)",
@@ -267,22 +269,21 @@ bool ProtoReflectionDescriptorDatabase::FindAllExtensionNumbers(
 
 bool ProtoReflectionDescriptorDatabase::GetServices(
     std::vector<std::string>* output) {
-  DescriptorDatabaseRequest request;
+  ServerReflectionRequest request;
   request.set_list_services("");
-  DescriptorDatabaseResponse response;
+  ServerReflectionResponse response;
   GetStream()->Write(request);
   GetStream()->Read(&response);
 
-  // Status status = stub_->ListService(&ctx, request, &response);
   if (response.message_response_case() ==
-      DescriptorDatabaseResponse::MessageResponseCase::kListServicesResponse) {
+      ServerReflectionResponse::MessageResponseCase::kListServicesResponse) {
     const ListServiceResponse ls_response = response.list_services_response();
     for (int i = 0; i < ls_response.service_size(); ++i) {
-      (*output).push_back(ls_response.service(i));
+      (*output).push_back(ls_response.service(i).name());
     }
     return true;
   } else if (response.message_response_case() ==
-             DescriptorDatabaseResponse::MessageResponseCase::kErrorResponse) {
+             ServerReflectionResponse::MessageResponseCase::kErrorResponse) {
     const ErrorResponse error = response.error_response();
     gpr_log(GPR_INFO,
             "Error on GetServices()\n\tError code: %d\n"
@@ -292,7 +293,7 @@ bool ProtoReflectionDescriptorDatabase::GetServices(
     gpr_log(
         GPR_INFO,
         "Error on GetServices() response type\n\tExpecting: %d\n\tReceived: %d",
-        DescriptorDatabaseResponse::MessageResponseCase::kListServicesResponse,
+        ServerReflectionResponse::MessageResponseCase::kListServicesResponse,
         response.message_response_case());
   }
   return false;
@@ -306,11 +307,22 @@ ProtoReflectionDescriptorDatabase::ParseFileDescriptorProtoResponse(
   return file_desc_proto;
 }
 
+void ProtoReflectionDescriptorDatabase::AddFileFromResponse(
+    const grpc::reflection::v1alpha::FileDescriptorResponse& response) {
+  for (int i = 0; i < response.file_descriptor_proto_size(); ++i) {
+    const google::protobuf::FileDescriptorProto file_proto =
+        ParseFileDescriptorProtoResponse(response.file_descriptor_proto(i));
+    if (known_files_.find(file_proto.name()) == known_files_.end()) {
+      known_files_.insert(file_proto.name());
+      cached_db_.Add(file_proto);
+    }
+  }
+}
+
 const std::shared_ptr<ProtoReflectionDescriptorDatabase::ClientStream>
 ProtoReflectionDescriptorDatabase::GetStream() {
   if (stream_ == nullptr) {
-    stream_ = stub_->DescriptorDatabaseInfo(&ctx_);
-    // stream_.reset(std::move(stub_->DescriptorDatabaseInfo(&ctx_)));
+    stream_ = stub_->ServerReflectionInfo(&ctx_);
   }
   return stream_;
 }

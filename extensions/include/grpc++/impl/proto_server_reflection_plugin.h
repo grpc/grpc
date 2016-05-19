@@ -61,12 +61,21 @@ class ProtoServerReflectionPlugin : public ::grpc::ServerBuilderPlugin {
   std::shared_ptr<::grpc::ProtoServerReflection> reflection_service;
 };
 
-std::unique_ptr<::grpc::ServerBuilderPlugin> CreateProtoReflection() {
-  return std::unique_ptr<::grpc::ServerBuilderPlugin>(
-      new ProtoServerReflectionPlugin());
-}
+// std::unique_ptr<::grpc::ServerBuilderPlugin> CreateProtoReflection() {
+//   return std::unique_ptr<::grpc::ServerBuilderPlugin>(
+//       new ProtoServerReflectionPlugin());
+// }
+
+std::unique_ptr<::grpc::ServerBuilderPlugin> CreateProtoReflection();
 
 void grpc_AddServerBuilderPlugin_reflection();
+
+// Force AddServerBuilderPlugin() to be called at static initialization time.
+struct StaticPluginInitializer_reflection {
+  StaticPluginInitializer_reflection() {
+    grpc_AddServerBuilderPlugin_reflection();
+  }
+} static_plugin_initializer_reflection_;
 
 }  // namespace reflection
 }  // namespace grpc

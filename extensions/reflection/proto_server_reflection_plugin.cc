@@ -71,19 +71,17 @@ bool ProtoServerReflectionPlugin::has_async_methods() const {
   return false;
 }
 
+std::unique_ptr<::grpc::ServerBuilderPlugin> CreateProtoReflection() {
+  return std::unique_ptr<::grpc::ServerBuilderPlugin>(
+      new ProtoServerReflectionPlugin());
+}
+
 void grpc_AddServerBuilderPlugin_reflection() {
   static bool already_here = false;
   if (already_here) return;
   already_here = true;
   ::grpc::ServerBuilder::InternalAddPluginFactory(&CreateProtoReflection);
 }
-
-// Force AddServerBuilderPlugin() to be called at static initialization time.
-struct StaticPluginInitializer_reflection {
-  StaticPluginInitializer_reflection() {
-    grpc_AddServerBuilderPlugin_reflection();
-  }
-} static_plugin_initializer_reflection_;
 
 }  // namespace reflection
 }  // namespace grpc

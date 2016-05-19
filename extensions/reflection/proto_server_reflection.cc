@@ -105,6 +105,9 @@ Status ProtoServerReflection::ServerReflectionInfo(
         status = Status(StatusCode::UNIMPLEMENTED, "");
     }
 
+    if (!status.ok()) {
+      FillErrorResponse(status, response.mutable_error_response());
+    }
     response.set_valid_host(request.host());
     response.set_allocated_original_request(
         new ServerReflectionRequest(request));
@@ -114,10 +117,10 @@ Status ProtoServerReflection::ServerReflectionInfo(
   return Status::OK;
 }
 
-void ProtoServerReflection::FillErrorResponse(Status* status,
+void ProtoServerReflection::FillErrorResponse(const Status& status,
                                               ErrorResponse* error_response) {
-  error_response->set_error_code(status->error_code());
-  error_response->set_error_message(status->error_message());
+  error_response->set_error_code(status.error_code());
+  error_response->set_error_message(status.error_message());
 }
 
 Status ProtoServerReflection::ListService(ServerContext* context,

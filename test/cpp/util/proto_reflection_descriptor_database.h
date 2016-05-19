@@ -42,8 +42,6 @@
 #include <grpc++/grpc++.h>
 #include <grpc++/impl/reflection.grpc.pb.h>
 
-// #include "reflection.grpc.pb.h"
-
 namespace grpc {
 
 class ProtoReflectionDescriptorDatabase
@@ -81,12 +79,15 @@ class ProtoReflectionDescriptorDatabase
 
  private:
   typedef ClientReaderWriter<
-      grpc::reflection::v1alpha::DescriptorDatabaseRequest,
-      grpc::reflection::v1alpha::DescriptorDatabaseResponse>
+      grpc::reflection::v1alpha::ServerReflectionRequest,
+      grpc::reflection::v1alpha::ServerReflectionResponse>
       ClientStream;
 
   const google::protobuf::FileDescriptorProto ParseFileDescriptorProtoResponse(
       const std::string& byte_fd_proto);
+
+  void AddFileFromResponse(
+      const grpc::reflection::v1alpha::FileDescriptorResponse& response);
 
   const std::shared_ptr<ClientStream> GetStream();
 
