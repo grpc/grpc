@@ -1053,7 +1053,8 @@ sync_streaming_ping_pong_test: $(BINDIR)/$(CONFIG)/sync_streaming_ping_pong_test
 sync_unary_ping_pong_test: $(BINDIR)/$(CONFIG)/sync_unary_ping_pong_test
 thread_stress_test: $(BINDIR)/$(CONFIG)/thread_stress_test
 zookeeper_test: $(BINDIR)/$(CONFIG)/zookeeper_test
-public_headers_must_be_c89: $(BINDIR)/$(CONFIG)/public_headers_must_be_c89
+public_headers_must_be_c89_grpc: $(BINDIR)/$(CONFIG)/public_headers_must_be_c89_grpc
+public_headers_must_be_c89_grpc_cronet: $(BINDIR)/$(CONFIG)/public_headers_must_be_c89_grpc_cronet
 boringssl_aes_test: $(BINDIR)/$(CONFIG)/boringssl_aes_test
 boringssl_asn1_test: $(BINDIR)/$(CONFIG)/boringssl_asn1_test
 boringssl_base64_test: $(BINDIR)/$(CONFIG)/boringssl_base64_test
@@ -1321,7 +1322,8 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/udp_server_test \
   $(BINDIR)/$(CONFIG)/uri_parser_test \
   $(BINDIR)/$(CONFIG)/workqueue_test \
-  $(BINDIR)/$(CONFIG)/public_headers_must_be_c89 \
+  $(BINDIR)/$(CONFIG)/public_headers_must_be_c89_grpc \
+  $(BINDIR)/$(CONFIG)/public_headers_must_be_c89_grpc_cronet \
   $(BINDIR)/$(CONFIG)/badreq_bad_client_test \
   $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test \
   $(BINDIR)/$(CONFIG)/head_of_line_blocking_bad_client_test \
@@ -1655,8 +1657,10 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/uri_parser_test || ( echo test uri_parser_test failed ; exit 1 )
 	$(E) "[RUN]     Testing workqueue_test"
 	$(Q) $(BINDIR)/$(CONFIG)/workqueue_test || ( echo test workqueue_test failed ; exit 1 )
-	$(E) "[RUN]     Testing public_headers_must_be_c89"
-	$(Q) $(BINDIR)/$(CONFIG)/public_headers_must_be_c89 || ( echo test public_headers_must_be_c89 failed ; exit 1 )
+	$(E) "[RUN]     Testing public_headers_must_be_c89_grpc"
+	$(Q) $(BINDIR)/$(CONFIG)/public_headers_must_be_c89_grpc || ( echo test public_headers_must_be_c89_grpc failed ; exit 1 )
+	$(E) "[RUN]     Testing public_headers_must_be_c89_grpc_cronet"
+	$(Q) $(BINDIR)/$(CONFIG)/public_headers_must_be_c89_grpc_cronet || ( echo test public_headers_must_be_c89_grpc_cronet failed ; exit 1 )
 	$(E) "[RUN]     Testing badreq_bad_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/badreq_bad_client_test || ( echo test badreq_bad_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing connection_prefix_bad_client_test"
@@ -12214,38 +12218,74 @@ endif
 $(OBJDIR)/$(CONFIG)/test/cpp/end2end/zookeeper_test.o: $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc
 
 
-PUBLIC_HEADERS_MUST_BE_C89_SRC = \
+PUBLIC_HEADERS_MUST_BE_C89_GRPC_SRC = \
     test/core/surface/public_headers_must_be_c89.c \
 
-PUBLIC_HEADERS_MUST_BE_C89_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PUBLIC_HEADERS_MUST_BE_C89_SRC))))
+PUBLIC_HEADERS_MUST_BE_C89_GRPC_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PUBLIC_HEADERS_MUST_BE_C89_GRPC_SRC))))
 ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/public_headers_must_be_c89: openssl_dep_error
+$(BINDIR)/$(CONFIG)/public_headers_must_be_c89_grpc: openssl_dep_error
 
 else
 
 
 
-$(BINDIR)/$(CONFIG)/public_headers_must_be_c89: $(PUBLIC_HEADERS_MUST_BE_C89_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgrpc_cronet.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/public_headers_must_be_c89_grpc: $(PUBLIC_HEADERS_MUST_BE_C89_GRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(PUBLIC_HEADERS_MUST_BE_C89_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgrpc_cronet.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/public_headers_must_be_c89
+	$(Q) $(LD) $(LDFLAGS) $(PUBLIC_HEADERS_MUST_BE_C89_GRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/public_headers_must_be_c89_grpc
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/surface/public_headers_must_be_c89.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgrpc_cronet.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/surface/public_headers_must_be_c89.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 $(OBJDIR)/$(CONFIG)/test/core/surface/public_headers_must_be_c89.o : test/core/surface/public_headers_must_be_c89.c
 	$(E) "[C]       Compiling $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(CC) $(CPPFLAGS) $(CFLAGS) -std=c89 -pedantic -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
-deps_public_headers_must_be_c89: $(PUBLIC_HEADERS_MUST_BE_C89_OBJS:.o=.dep)
+deps_public_headers_must_be_c89_grpc: $(PUBLIC_HEADERS_MUST_BE_C89_GRPC_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(PUBLIC_HEADERS_MUST_BE_C89_OBJS:.o=.dep)
+-include $(PUBLIC_HEADERS_MUST_BE_C89_GRPC_OBJS:.o=.dep)
+endif
+endif
+
+
+PUBLIC_HEADERS_MUST_BE_C89_GRPC_CRONET_SRC = \
+    test/core/surface/public_headers_must_be_c89.c \
+
+PUBLIC_HEADERS_MUST_BE_C89_GRPC_CRONET_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PUBLIC_HEADERS_MUST_BE_C89_GRPC_CRONET_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/public_headers_must_be_c89_grpc_cronet: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/public_headers_must_be_c89_grpc_cronet: $(PUBLIC_HEADERS_MUST_BE_C89_GRPC_CRONET_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_cronet.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(PUBLIC_HEADERS_MUST_BE_C89_GRPC_CRONET_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_cronet.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/public_headers_must_be_c89_grpc_cronet
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/surface/public_headers_must_be_c89.o:  $(LIBDIR)/$(CONFIG)/libgrpc_cronet.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/surface/public_headers_must_be_c89.o : test/core/surface/public_headers_must_be_c89.c
+	$(E) "[C]       Compiling $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(CC) $(CPPFLAGS) $(CFLAGS) -std=c89 -pedantic -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
+
+deps_public_headers_must_be_c89_grpc_cronet: $(PUBLIC_HEADERS_MUST_BE_C89_GRPC_CRONET_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(PUBLIC_HEADERS_MUST_BE_C89_GRPC_CRONET_OBJS:.o=.dep)
 endif
 endif
 

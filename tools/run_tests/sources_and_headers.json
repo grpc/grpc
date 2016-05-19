@@ -2815,12 +2815,25 @@
   {
     "deps": [
       "gpr", 
-      "grpc", 
+      "grpc"
+    ], 
+    "headers": [], 
+    "language": "c89", 
+    "name": "public_headers_must_be_c89_grpc", 
+    "src": [
+      "test/core/surface/public_headers_must_be_c89.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc_cronet"
     ], 
     "headers": [], 
     "language": "c89", 
-    "name": "public_headers_must_be_c89", 
+    "name": "public_headers_must_be_c89_grpc_cronet", 
     "src": [
       "test/core/surface/public_headers_must_be_c89.c"
     ], 

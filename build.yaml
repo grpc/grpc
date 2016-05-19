@@ -3123,13 +3123,22 @@ targets:
   - zookeeper
   platforms:
   - linux
-- name: public_headers_must_be_c89
+- name: public_headers_must_be_c89_grpc
   build: test
   language: c89
   src:
   - test/core/surface/public_headers_must_be_c89.c
   deps:
   - grpc
+  - gpr
+  platforms:
+  - linux
+- name: public_headers_must_be_c89_grpc_cronet
+  build: test
+  language: c89
+  src:
+  - test/core/surface/public_headers_must_be_c89.c
+  deps:
   - grpc_cronet
   - gpr
   platforms:

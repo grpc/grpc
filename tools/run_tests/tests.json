@@ -2618,7 +2618,22 @@
     "flaky": false, 
     "gtest": false, 
     "language": "c89", 
-    "name": "public_headers_must_be_c89", 
+    "name": "public_headers_must_be_c89_grpc", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c89", 
+    "name": "public_headers_must_be_c89_grpc_cronet", 
     "platforms": [
       "linux"
     ]
