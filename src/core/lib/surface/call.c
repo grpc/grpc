@@ -1406,12 +1406,14 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
             effective_compression_level = copts.default_level.level;
           }
         }
-        if (level_set) {
+        if (level_set && !call->is_client) {
           const grpc_compression_algorithm calgo =
               compression_algorithm_for_level_locked(
                   call, effective_compression_level);
           char *calgo_name;
           grpc_compression_algorithm_name(calgo, &calgo_name);
+          // the following will be picked up by the compress filter and used as
+          // the call's compression algorithm.
           compression_md.key = GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY;
           compression_md.value = calgo_name;
           compression_md.value_length = strlen(calgo_name);
