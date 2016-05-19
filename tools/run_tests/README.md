@@ -39,7 +39,9 @@ to BigQuery.
 Runs modified interop tests clients and servers under heavy load for an extended period of time to discover potential stability issues.
 The tests are internally using Kubernetes to run the client and server on GKE and upload statistics to BigQuery.
 
-Run `tools/run_tests/run_stress_tests.py --help` for more details.
+`tools/run_tests/stress_test/run_on_gke.py --gcp_project_id=<google-cloud-platform-project-id> --config_file=<path-to-config-file>` 
+
+The directory `tools/run_tests/stress_test/configs/` contains the config files for several scenarios
 
 #Artifacts & Packages (task_runner.py)
 
