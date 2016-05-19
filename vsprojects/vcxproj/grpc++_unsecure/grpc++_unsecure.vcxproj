@@ -268,6 +268,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\grpc++.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\call.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\client_unary_call.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\core_codegen.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\grpc_library.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\method_handler_impl.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\proto_utils.h" />
@@ -360,7 +361,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\src\cpp\client\create_channel_internal.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\cpp\common\core_codegen.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\dynamic_thread_pool.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\thread_pool_interface.h" />
   </ItemGroup>

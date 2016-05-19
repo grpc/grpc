@@ -844,8 +844,8 @@ cc_library(
 cc_library(
   name = "grpc++",
   srcs = [
+    "include/grpc++/impl/codegen/core_codegen.h",
     "src/cpp/client/secure_credentials.h",
-    "src/cpp/common/core_codegen.h",
     "src/cpp/common/secure_auth_context.h",
     "src/cpp/server/secure_server_credentials.h",
     "src/cpp/client/create_channel_internal.h",
@@ -894,6 +894,7 @@ cc_library(
     "include/grpc++/grpc++.h",
     "include/grpc++/impl/call.h",
     "include/grpc++/impl/client_unary_call.h",
+    "include/grpc++/impl/codegen/core_codegen.h",
     "include/grpc++/impl/grpc_library.h",
     "include/grpc++/impl/method_handler_impl.h",
     "include/grpc++/impl/proto_utils.h",
@@ -1001,7 +1002,6 @@ cc_library(
   name = "grpc++_unsecure",
   srcs = [
     "src/cpp/client/create_channel_internal.h",
-    "src/cpp/common/core_codegen.h",
     "src/cpp/server/dynamic_thread_pool.h",
     "src/cpp/server/thread_pool_interface.h",
     "src/cpp/common/insecure_create_auth_context.cc",
@@ -1042,6 +1042,7 @@ cc_library(
     "include/grpc++/grpc++.h",
     "include/grpc++/impl/call.h",
     "include/grpc++/impl/client_unary_call.h",
+    "include/grpc++/impl/codegen/core_codegen.h",
     "include/grpc++/impl/grpc_library.h",
     "include/grpc++/impl/method_handler_impl.h",
     "include/grpc++/impl/proto_utils.h",

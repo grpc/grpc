@@ -770,6 +770,7 @@ include/grpc++/generic/generic_stub.h \
 include/grpc++/grpc++.h \
 include/grpc++/impl/call.h \
 include/grpc++/impl/client_unary_call.h \
+include/grpc++/impl/codegen/core_codegen.h \
 include/grpc++/impl/grpc_library.h \
 include/grpc++/impl/method_handler_impl.h \
 include/grpc++/impl/proto_utils.h \
