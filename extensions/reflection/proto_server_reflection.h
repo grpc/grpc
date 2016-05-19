@@ -85,7 +85,7 @@ class ProtoServerReflection GRPC_FINAL
       const google::protobuf::FileDescriptor* file_desc,
       reflection::v1alpha::ServerReflectionResponse* response);
 
-  void FillErrorResponse(Status* status,
+  void FillErrorResponse(const Status& status,
                          reflection::v1alpha::ErrorResponse* error_response);
 
   const google::protobuf::DescriptorPool* descriptor_pool_;
