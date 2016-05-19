@@ -58,6 +58,7 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/block_annotate.h"
 
+struct polling_island;
 
 /*******************************************************************************
  * FD declarations
@@ -79,6 +80,13 @@ struct grpc_fd {
 
   grpc_closure *read_closure;
   grpc_closure *write_closure;
+
+  /* Mutex protecting the 'polling_island' field */
+  gpr_mu pi_mu;
+
+  /* The polling island to which this fd belongs to. An fd belongs to exactly
+     one polling island */
+  struct polling_island *polling_island;
 
   struct grpc_fd *freelist_next;
 
@@ -112,6 +120,104 @@ static void fd_global_shutdown(void);
 #define CLOSURE_READY ((grpc_closure *)1)
 
 /*******************************************************************************
+ * Polling Island
+ */
+typedef struct polling_island {
+  gpr_mu mu;
+  int ref_cnt;
+
+  /* Pointer to the polling_island this merged into. If this is not NULL, all
+     the remaining fields in this pollset (i.e all fields except mu and ref_cnt)
+     are considered invalid and must be ignored */
+  struct polling_island *merged_to;
+
+  /* The fd of the underlying epoll set */
+  int epoll_fd;
+
+  /* The file descriptors in the epoll set */
+  size_t fd_cnt;
+  size_t fd_capacity;
+  grpc_fd **fds;
+
+  /* Polling islands that are no longer needed are kept in a freelist so that
+     they can be reused. This field points to the next polling island in the
+     free list. Note that this is only used if the polling island is in the
+     free list */
+  struct polling_island *next_free;
+} polling_island;
+
+/* Polling island freelist */
+static gpr_mu g_pi_freelist_mu;
+static polling_island *g_pi_freelist = NULL;
+
+/* TODO: sreek - Should we hold a lock on fd or add a ref to the fd ? */
+static void add_fd_to_polling_island_locked(polling_island *pi, grpc_fd *fd) {
+  int err;
+  struct epoll_event ev;
+
+  ev.events = (uint32_t)(EPOLLIN | EPOLLOUT | EPOLLET);
+  ev.data.ptr = fd;
+  err = epoll_ctl(pi->epoll_fd, EPOLL_CTL_ADD, fd->fd, &ev);
+
+  if (err < 0 && errno != EEXIST) {
+    gpr_log(GPR_ERROR, "epoll_ctl add for fd: %d failed with error: %s", fd->fd,
+            strerror(errno));
+    return;
+  }
+
+  pi->fd_capacity = GPR_MAX(pi->fd_capacity + 8, pi->fd_cnt * 3 / 2);
+  pi->fds = gpr_realloc(pi->fds, sizeof(grpc_fd *) * pi->fd_capacity);
+  pi->fds[pi->fd_cnt++] = fd;
+}
+
+static polling_island *polling_island_create(int initial_ref_cnt,
+                                             grpc_fd *initial_fd) {
+  polling_island *pi = NULL;
+  gpr_mu_lock(&g_pi_freelist_mu);
+  if (g_pi_freelist != NULL) {
+    pi = g_pi_freelist;
+    g_pi_freelist = g_pi_freelist->next_free;
+    pi->next_free = NULL;
+  }
+  gpr_mu_unlock(&g_pi_freelist_mu);
+
+  /* Create new polling island if we could not get one from the free list */
+  if (pi == NULL) {
+    pi = gpr_malloc(sizeof(*pi));
+    gpr_mu_init(&pi->mu);
+    pi->fd_cnt = 0;
+    pi->fd_capacity = 0;
+    pi->fds = NULL;
+
+    pi->epoll_fd = epoll_create1(EPOLL_CLOEXEC);
+    if (pi->epoll_fd < 0) {
+      gpr_log(GPR_ERROR, "epoll_create1() failed with error: %s",
+              strerror(errno));
+    }
+    GPR_ASSERT(pi->epoll_fd >= 0);
+  }
+
+  pi->ref_cnt = initial_ref_cnt;
+  pi->merged_to = NULL;
+  pi->next_free = NULL;
+
+  if (initial_fd != NULL) {
+    /* add_fd_to_polling_island_locked() expects the caller to hold a pi->mu
+     * lock. However, since this is a new polling island (and no one has a
+     * reference to it yet), it is okay to not acquire pi->mu here */
+    add_fd_to_polling_island_locked(pi, initial_fd);
+  }
+
+  return pi;
+}
+
+static void polling_island_global_init() {
+  polling_island_create(0, NULL); /* TODO(sreek): Delete this line */
+  gpr_mu_init(&g_pi_freelist_mu);
+  g_pi_freelist = NULL;
+}
+
+/*******************************************************************************
  * pollset declarations
  */
 
@@ -138,6 +244,13 @@ struct grpc_pollset {
   grpc_closure *shutdown_done;
 
   int epoll_fd;
+
+   /* Mutex protecting the 'polling_island' field */
+  gpr_mu pi_mu;
+
+  /* The polling island to which this fd belongs to. An fd belongs to exactly
+     one polling island */
+  struct polling_island *polling_island;
 
   /* Local cache of eventfds for workers */
   grpc_cached_wakeup_fd *local_wakeup_cache;
@@ -236,23 +349,28 @@ static void freelist_fd(grpc_fd *fd) {
 
 static grpc_fd *alloc_fd(int fd) {
   grpc_fd *r = NULL;
+
   gpr_mu_lock(&fd_freelist_mu);
   if (fd_freelist != NULL) {
     r = fd_freelist;
     fd_freelist = fd_freelist->freelist_next;
   }
   gpr_mu_unlock(&fd_freelist_mu);
+
   if (r == NULL) {
     r = gpr_malloc(sizeof(grpc_fd));
     gpr_mu_init(&r->mu);
+    gpr_mu_init(&r->pi_mu);
   }
 
+  /* TODO: sreek - check with ctiller on why we need to acquire a lock here */
   gpr_mu_lock(&r->mu);
   gpr_atm_rel_store(&r->refst, 1);
   r->shutdown = 0;
   r->read_closure = CLOSURE_NOT_READY;
   r->write_closure = CLOSURE_NOT_READY;
   r->fd = fd;
+  r->polling_island = NULL;
   r->freelist_next = NULL;
   r->on_done_closure = NULL;
   r->closed = 0;
@@ -348,6 +466,7 @@ static int fd_wrapped_fd(grpc_fd *fd) {
   }
 }
 
+/* TODO: sreek - do something here with the pollset island link */
 static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                       grpc_closure *on_done, int *release_fd,
                       const char *reason) {
@@ -418,6 +537,7 @@ static int set_ready_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
   }
 }
 
+/* Do something here with the pollset island link (?) */
 static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
   gpr_mu_lock(&fd->mu);
   GPR_ASSERT(!fd->shutdown);
@@ -585,6 +705,8 @@ static void pollset_init(grpc_pollset *pollset, gpr_mu **mu) {
   gpr_mu_init(&pollset->mu);
   *mu = &pollset->mu;
   pollset->root_worker.next = pollset->root_worker.prev = &pollset->root_worker;
+  gpr_mu_init(&pollset->pi_mu);
+  pollset->polling_island = NULL;
   pollset->shutting_down = 0;
   pollset->called_shutdown = 0;
   pollset->kicked_without_pollers = 0;
@@ -609,9 +731,11 @@ static void pollset_destroy(grpc_pollset *pollset) {
     gpr_free(pollset->local_wakeup_cache);
     pollset->local_wakeup_cache = next;
   }
+  gpr_mu_destroy(&pollset->pi_mu);
   gpr_mu_destroy(&pollset->mu);
 }
 
+/* TODO(sreek) - Do something with the pollset island link (??) */
 static void pollset_reset(grpc_pollset *pollset) {
   GPR_ASSERT(pollset->shutting_down);
   GPR_ASSERT(!pollset_has_workers(pollset));
@@ -741,6 +865,7 @@ static void pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   GPR_TIMER_END("pollset_work", 0);
 }
 
+/* TODO: (sreek) Do something with the pollset island link */
 static void pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                              grpc_closure *closure) {
   GPR_ASSERT(!pollset->shutting_down);
@@ -1200,9 +1325,10 @@ static const grpc_event_engine_vtable vtable = {
     .shutdown_engine = shutdown_engine,
 };
 
-const grpc_event_engine_vtable *grpc_init_epoll_posix(void) {
+const grpc_event_engine_vtable *grpc_init_epoll_linux(void) {
   fd_global_init();
   pollset_global_init();
+  polling_island_global_init();
   return &vtable;
 }
 
