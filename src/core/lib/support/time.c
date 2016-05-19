@@ -139,6 +139,8 @@ static gpr_timespec gpr_time_by_unit_type(int64_t t, gpr_clock_type type,
       GET_TIMESPEC_BY_HOUR_OR_MINTE_UNIT(t, 60);
     case GPR_HOURS:
       GET_TIMESPEC_BY_HOUR_OR_MINTE_UNIT(t, 3600);
+    default:
+      break;
   }
   return result;
 }
