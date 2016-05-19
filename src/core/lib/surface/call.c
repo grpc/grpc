@@ -1154,7 +1154,7 @@ static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
       gpr_asprintf(&error_msg, "Invalid compression algorithm value '%d'.",
                    algo);
       gpr_log(GPR_ERROR, error_msg);
-      close_with_status(exec_ctx, call, GRPC_STATUS_INTERNAL, error_msg);
+      close_with_status(exec_ctx, call, GRPC_STATUS_UNIMPLEMENTED, error_msg);
     } else if (grpc_compression_options_is_algorithm_enabled(
                    &compression_options, algo) == 0) {
       /* check if algorithm is supported by current channel config */
