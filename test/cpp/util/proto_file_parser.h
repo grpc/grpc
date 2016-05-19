@@ -69,7 +69,6 @@ class ProtoFileParser {
 
  private:
   bool has_error_;
-  const grpc::protobuf::MethodDescriptor* method_descriptor_;
   grpc::string request_text_;
   grpc::string full_method_name_;
   google::protobuf::compiler::DiskSourceTree source_tree_;
