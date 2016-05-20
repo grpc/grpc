@@ -231,6 +231,7 @@ CORE_SOURCE_FILES = [
   'src/core/ext/client_config/subchannel_index.c',
   'src/core/ext/client_config/uri_parser.c',
   'src/core/ext/transport/chttp2/server/insecure/server_chttp2.c',
+  'src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c',
   'src/core/ext/transport/chttp2/client/insecure/channel_create.c',
   'src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c',
   'src/core/ext/lb_policy/grpclb/load_balancer_api.c',

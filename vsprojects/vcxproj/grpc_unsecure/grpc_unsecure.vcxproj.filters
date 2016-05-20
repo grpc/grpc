@@ -259,6 +259,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\insecure\server_chttp2.c">
       <Filter>src\core\ext\transport\chttp2\server\insecure</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\insecure\server_chttp2_posix.c">
+      <Filter>src\core\ext\transport\chttp2\server\insecure</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_encoder.c">
       <Filter>src\core\ext\transport\chttp2\transport</Filter>
     </ClCompile>

@@ -478,6 +478,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/client_config/subchannel_index.c )
   s.files += %w( src/core/ext/client_config/uri_parser.c )
   s.files += %w( src/core/ext/transport/chttp2/server/insecure/server_chttp2.c )
+  s.files += %w( src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c )
   s.files += %w( src/core/ext/transport/chttp2/client/insecure/channel_create.c )
   s.files += %w( src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c )
   s.files += %w( src/core/ext/lb_policy/grpclb/load_balancer_api.c )

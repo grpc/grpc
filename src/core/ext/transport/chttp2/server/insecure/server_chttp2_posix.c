@@ -37,6 +37,14 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
+#include <grpc/support/string_util.h>
+
+#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/tcp_posix.h"
+#include "src/core/lib/surface/server.h"
 
 void grpc_server_add_insecure_channel_from_fd(grpc_server *server, int fd) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
@@ -46,12 +54,12 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server *server, int fd) {
   grpc_endpoint *server_endpoint = grpc_tcp_create(
       grpc_fd_create(fd, name), GRPC_TCP_DEFAULT_READ_SLICE_SIZE, name);
 
-  grpc_channel_args *server_args = grpc_server_get_channel_args(server);
+  const grpc_channel_args *server_args = grpc_server_get_channel_args(server);
   grpc_transport *transport = grpc_create_chttp2_transport(
       &exec_ctx, server_args, server_endpoint, 0 /* is_client */);
   grpc_server_setup_transport(&exec_ctx, server, transport, server_args);
-
-
+  grpc_chttp2_transport_start_reading(&exec_ctx, transport, NULL, 0);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 

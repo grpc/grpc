@@ -485,6 +485,7 @@
     <file baseinstalldir="/" name="src/core/ext/client_config/subchannel_index.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/client_config/uri_parser.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/insecure/server_chttp2.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/insecure/channel_create.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/lb_policy/grpclb/load_balancer_api.c" role="src" />
