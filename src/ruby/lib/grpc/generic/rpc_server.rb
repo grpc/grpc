@@ -226,7 +226,7 @@ module GRPC
       # running_state can take 4 values: :not_started, :running, :stopping, and
       # :stopped. State transitions can only proceed in that order.
       @running_state = :not_started
-      @server = Core::Server.new(cq, server_args)
+      @server = Core::Server.new(@cq, server_args)
     end
 
     # stops a running server

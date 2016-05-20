@@ -138,7 +138,7 @@ module GRPC
     def send_status(active_client, code, details, metadata = {})
       details = 'Not sure why' if details.nil?
       GRPC.logger.debug("Sending status  #{code}:#{details}")
-      active_client.send_status(code, details, code == OK, metadata)
+      active_client.send_status(code, details, code == OK, metadata: metadata)
     rescue StandardError => e
       GRPC.logger.warn("Could not send status #{code}:#{details}")
       GRPC.logger.warn(e)
