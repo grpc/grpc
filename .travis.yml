@@ -6,7 +6,10 @@ env:
     - TEST=objc
     - JOBS=1
 before_install:
+  - pod --version
+  - gem uninstall cocoapods -a
   - gem install cocoapods -v '1.0.0'
+  - pod --version
   - brew install gflags
   # Pod install does this too, but we don't want the output.
   - pod repo update --silent
