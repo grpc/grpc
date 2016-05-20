@@ -207,6 +207,12 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
     EXPECT_TRUE(plugin != nullptr);
     EXPECT_TRUE(plugin->init_server_is_called());
     EXPECT_TRUE(plugin->finish_is_called());
+    server_->Shutdown();
+    void* tag;
+    bool ok;
+    cq_->Shutdown();
+    while (cq_->Next(&tag, &ok))
+      ;
   }
 
   string to_string(const int number) {
@@ -219,8 +225,8 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
   std::shared_ptr<Channel> channel_;
   std::unique_ptr<ServerBuilder> builder_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
-  std::unique_ptr<Server> server_;
   std::unique_ptr<ServerCompletionQueue> cq_;
+  std::unique_ptr<Server> server_;
   TestServiceImpl service_;
   int port_;
 };
