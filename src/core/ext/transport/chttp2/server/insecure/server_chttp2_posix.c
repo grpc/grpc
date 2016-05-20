@@ -31,42 +31,28 @@
  *
  */
 
-#ifndef GRPC_GRPC_POSIX_H
-#define GRPC_GRPC_POSIX_H
-
-
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/port_platform.h>
-
-#include <stddef.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/*! \mainpage GRPC Core POSIX
- *
- * The GRPC Core POSIX library provides some POSIX-specific low-level
- * functionality on top of GRPC Core.
- */
 
 #ifdef GPR_POSIX_SOCKET
 
-/** Create a client channel to 'target' using file descriptor 'fd'. The 'target'
-    argument will be used to indicate the name for this channel. See the comment
-    for grpc_insecure_channel_create for description of 'args' argument. */
-GRPCAPI grpc_channel *grpc_insecure_channel_create_from_fd(
-    const char *target, int fd, const grpc_channel_args *args);
+#include <grpc/grpc.h>
+#include <grpc/grpc_posix.h>
 
-/** Add the connected communication channel based on file descriptor 'fd' to the
-    'server'. The 'fd' must be an open file descriptor corresponding to a
-    connected socket. */
-GRPCAPI void grpc_server_add_insecure_channel_from_fd(grpc_server *server, int fd);
+void grpc_server_add_insecure_channel_from_fd(grpc_server *server, int fd) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  char *name;
+  gpr_asprintf(&name, "fd:%d", fd);
 
-#endif  // GPR_POSIX_SOCKET
+  grpc_endpoint *server_endpoint = grpc_tcp_create(
+      grpc_fd_create(fd, name), GRPC_TCP_DEFAULT_READ_SLICE_SIZE, name);
 
-#ifdef __cplusplus
+  grpc_channel_args *server_args = grpc_server_get_channel_args(server);
+  grpc_transport *transport = grpc_create_chttp2_transport(
+      &exec_ctx, server_args, server_endpoint, 0 /* is_client */);
+  grpc_server_setup_transport(&exec_ctx, server, transport, server_args);
+
+
 }
-#endif
 
-#endif /* GRPC_GRPC_POSIX_H */
+
+#endif // GPR_POSIX_SOCKET
