@@ -32,12 +32,7 @@
 #endregion
 
 using System;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Threading;
 using System.Threading.Tasks;
-using Grpc.Core.Internal;
 using Grpc.Core.Logging;
 using Grpc.Core.Profiling;
 using Grpc.Core.Utils;
@@ -57,9 +52,11 @@ namespace Grpc.Core.Internal
         // Completion of a pending unary response if not null.
         TaskCompletionSource<TResponse> unaryResponseTcs;
 
+        // TODO(jtattermusch): this field doesn't need to be initialized for unary response calls.
         // Indicates that response streaming call has finished.
         TaskCompletionSource<object> streamingCallFinishedTcs = new TaskCompletionSource<object>();
 
+        // TODO(jtattermusch): this field could be lazy-initialized (only if someone requests the response headers).
         // Response headers set here once received.
         TaskCompletionSource<Metadata> responseHeadersTcs = new TaskCompletionSource<Metadata>();
 
