@@ -40,7 +40,7 @@ namespace Grpc.Core.Internal
     /// <summary>
     /// grpc_call_error from grpc/grpc.h
     /// </summary>
-    internal enum GRPCCallError
+    internal enum CallError
     {
         /* everything went ok */
         OK = 0,
@@ -70,42 +70,9 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Checks the call API invocation's result is OK.
         /// </summary>
-        public static void CheckOk(this GRPCCallError callError)
+        public static void CheckOk(this CallError callError)
         {
-            GrpcPreconditions.CheckState(callError == GRPCCallError.OK, "Call error: " + callError);
+            GrpcPreconditions.CheckState(callError == CallError.OK, "Call error: " + callError);
         }
-    }
-
-    /// <summary>
-    /// grpc_completion_type from grpc/grpc.h
-    /// </summary>
-    internal enum GRPCCompletionType
-    {
-        /* Shutting down */
-        Shutdown, 
-
-        /* No event before timeout */
-        Timeout,  
-
-        /* operation completion */
-        OpComplete
-    }
-
-    /// <summary>
-    /// gpr_clock_type from grpc/support/time.h
-    /// </summary>
-    internal enum GPRClockType
-    {
-        /* Monotonic clock */
-        Monotonic,
-
-        /* Realtime clock */
-        Realtime,
-
-        /* Precise clock good for performance profiling. */
-        Precise,
-
-        /* Timespan - the distance between two time points */
-        Timespan
     }
 }

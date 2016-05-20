@@ -1,6 +1,5 @@
-#!/bin/sh
-
-# Copyright 2015, Google Inc.
+#!/usr/bin/env python2.7
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,28 +27,33 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+import argparse
+import os
+import sys
 
+stress_test_utils_dir = os.path.abspath(os.path.join(
+    os.path.dirname(__file__), '../../gcp/stress_test'))
+sys.path.append(stress_test_utils_dir)
+from stress_test_utils import BigQueryHelper
 
-set -e
+argp = argparse.ArgumentParser(
+    description='Print summary tables',
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+argp.add_argument('--gcp_project_id',
+                  required=True,
+                  help='The Google Cloud Platform Project Id')
+argp.add_argument('--dataset_id', type=str, required=True)
+argp.add_argument('--run_id', type=str, required=True)
+argp.add_argument('--summary_table_id', type=str, default='summary')
+argp.add_argument('--qps_table_id', type=str, default='qps')
+argp.add_argument('--summary_only', action='store_true', default=True)
 
-export TEST=true
-
-cd `dirname $0`/../../..
-
-submodules=`mktemp /tmp/submXXXXXX`
-want_submodules=`mktemp /tmp/submXXXXXX`
-
-git submodule | awk '{ print $1 }' | sort > $submodules
-cat << EOF | awk '{ print $1 }' | sort > $want_submodules
- c880e42ba1c8032d4cdde2aba0541d8a9d9fa2e9 third_party/boringssl (heads/2661)
- 05b155ff59114735ec8cd089f669c4c3d8f59029 third_party/gflags (v2.1.0-45-g05b155f)
- c99458533a9b4c743ed51537e25989ea55944908 third_party/googletest (release-1.7.0)
- f8ac463766281625ad710900479130c7fcb4d63b third_party/nanopb (nanopb-0.3.4-29-gf8ac463)
- 3470b6895aa659b7559ed678e029a5338e535f14 third_party/protobuf (v3.0.0-beta-2-441-g3470b68)
- 50893291621658f355bc5b4d450a8d06a563053d third_party/zlib (v1.2.8)
-EOF
-
-diff -u $submodules $want_submodules
-
-rm $submodules $want_submodules
-
+if __name__ == '__main__':
+  args = argp.parse_args()
+  bq_helper = BigQueryHelper(args.run_id, '', '', args.gcp_project_id,
+                             args.dataset_id, args.summary_table_id,
+                             args.qps_table_id)
+  bq_helper.initialize()
+  if not args.summary_only:
+    bq_helper.print_qps_records()
+  bq_helper.print_summary_records()
