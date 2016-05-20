@@ -67,8 +67,8 @@ namespace Grpc.Core.Internal
         protected bool started;
         protected bool cancelRequested;
 
-        protected AsyncCompletionDelegate<object> sendCompletionDelegate;  // Completion of a pending send or sendclose if not null.
         protected TaskCompletionSource<TRead> streamingReadTcs;  // Completion of a pending streaming read if not null.
+        protected TaskCompletionSource<object> streamingWriteTcs;  // Completion of a pending streaming write if not null.
         protected TaskCompletionSource<object> sendStatusFromServerTcs;
 
         protected bool readingDone;  // True if last read (i.e. read with null payload) was already received.
