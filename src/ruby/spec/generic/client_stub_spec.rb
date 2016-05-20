@@ -140,7 +140,7 @@ describe 'ClientStub' do
         server_port = create_test_server
         host = "localhost:#{server_port}"
         th = run_request_response(@sent_msg, @resp, @pass,
-                                  metadata: { k1: 'v1', k2: 'v2' })
+                                  k1: 'v1', k2: 'v2')
         stub = GRPC::ClientStub.new(host, @cq, :this_channel_is_insecure)
         expect(get_response(stub)).to eq(@resp)
         th.join
@@ -197,7 +197,7 @@ describe 'ClientStub' do
         server_port = create_test_server
         host = "localhost:#{server_port}"
         @stub = GRPC::ClientStub.new(host, @cq, :this_channel_is_insecure)
-        @options = { metadata: { k1: 'v1', k2: 'v2' } }
+        @metadata = { k1: 'v1', k2: 'v2' }
         @sent_msgs = Array.new(3) { |i| 'msg_' + (i + 1).to_s }
         @resp = 'a_reply'
       end
@@ -209,7 +209,7 @@ describe 'ClientStub' do
       end
 
       it 'should send metadata to the server ok' do
-        th = run_client_streamer(@sent_msgs, @resp, @pass, **@options)
+        th = run_client_streamer(@sent_msgs, @resp, @pass, **@metadata)
         expect(get_response(@stub)).to eq(@resp)
         th.join
       end
@@ -222,7 +222,7 @@ describe 'ClientStub' do
       end
 
       it 'should raise ArgumentError if metadata contains invalid values' do
-        @options.merge!(k3: 3)
+        @metadata.merge!(k3: 3)
         expect do
           get_response(@stub)
         end.to raise_error(ArgumentError,
@@ -232,7 +232,8 @@ describe 'ClientStub' do
 
     describe 'without a call operation' do
       def get_response(stub)
-        stub.client_streamer(@method, @sent_msgs, noop, noop, **@options)
+        stub.client_streamer(@method, @sent_msgs, noop, noop,
+                             metadata: @metadata)
       end
 
       it_behaves_like 'client streaming'
@@ -241,7 +242,7 @@ describe 'ClientStub' do
     describe 'via a call operation' do
       def get_response(stub)
         op = stub.client_streamer(@method, @sent_msgs, noop, noop,
-                                  return_op: true, **@options)
+                                  return_op: true, metadata: @metadata)
         expect(op).to be_a(GRPC::ActiveCall::Operation)
         op.execute
       end
@@ -291,7 +292,7 @@ describe 'ClientStub' do
     describe 'without a call operation' do
       def get_responses(stub)
         e = stub.server_streamer(@method, @sent_msg, noop, noop,
-                                 k1: 'v1', k2: 'v2')
+                                 metadata: { k1: 'v1', k2: 'v2' })
         expect(e).to be_a(Enumerator)
         e
       end
