@@ -36,6 +36,7 @@ JAVA_WARMUP_SECONDS=15  # Java needs more warmup time for JIT to kick in.
 BENCHMARK_SECONDS=30
 
 SMOKETEST='smoketest'
+SCALABLE='scalable'
 
 SECURE_SECARGS = {'use_test_ca': True,
                   'server_host_override': 'foo.test.google.fr'}
@@ -183,7 +184,7 @@ class CXXLanguage:
     # TODO(ctiller): add 70% load latency test
     for secure in [True, False]:
       secstr = 'secure' if secure else 'insecure'
-      smoketest_categories = [SMOKETEST] if secure else None
+      smoketest_categories = [SMOKETEST] if secure else []
 
       yield _ping_pong_scenario(
           'cpp_generic_async_streaming_ping_pong_%s' % secstr, rpc_type='STREAMING',
@@ -216,20 +217,21 @@ class CXXLanguage:
           client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
           unconstrained_client='async',
           secure=secure,
-          categories=smoketest_categories)
+          categories=smoketest_categories+[SCALABLE])
 
       yield _ping_pong_scenario(
           'cpp_protobuf_async_streaming_qps_unconstrained_%s' % secstr, rpc_type='STREAMING',
           client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
           unconstrained_client='async',
-          secure=secure)
+          secure=secure,
+          categories=[SCALABLE])
 
       yield _ping_pong_scenario(
           'cpp_generic_async_streaming_qps_unconstrained_%s' % secstr, rpc_type='STREAMING',
           client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
           unconstrained_client='async', use_generic_payload=True,
           secure=secure,
-          categories=smoketest_categories)
+          categories=smoketest_categories+[SCALABLE])
 
       yield _ping_pong_scenario(
           'cpp_generic_async_streaming_qps_one_server_core_%s' % secstr, rpc_type='STREAMING',
@@ -277,12 +279,13 @@ class CSharpLanguage:
         'csharp_protobuf_async_unary_qps_unconstrained', rpc_type='UNARY',
         client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
         unconstrained_client='async',
-        categories=[SMOKETEST])
+        categories=[SMOKETEST,SCALABLE])
 
     yield _ping_pong_scenario(
         'csharp_protobuf_async_streaming_qps_unconstrained', rpc_type='STREAMING',
         client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
-        unconstrained_client='async')
+        unconstrained_client='async',
+        categories=[SCALABLE])
 
     yield _ping_pong_scenario(
         'csharp_to_cpp_protobuf_sync_unary_ping_pong', rpc_type='UNARY',
@@ -298,17 +301,20 @@ class CSharpLanguage:
     yield _ping_pong_scenario(
         'csharp_to_cpp_protobuf_async_unary_qps_unconstrained', rpc_type='UNARY',
         client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
-        unconstrained_client='async', server_language='c++')
+        unconstrained_client='async', server_language='c++',
+        categories=[SCALABLE])
 
     yield _ping_pong_scenario(
         'csharp_to_cpp_protobuf_sync_to_async_unary_qps_unconstrained', rpc_type='UNARY',
         client_type='SYNC_CLIENT', server_type='ASYNC_SERVER',
-        unconstrained_client='sync', server_language='c++')
+        unconstrained_client='sync', server_language='c++',
+        categories=[SCALABLE])
 
     yield _ping_pong_scenario(
         'cpp_to_csharp_protobuf_async_unary_qps_unconstrained', rpc_type='UNARY',
         client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
-        unconstrained_client='async', client_language='c++')
+        unconstrained_client='async', client_language='c++',
+        categories=[SCALABLE])
 
 
   def __str__(self):
@@ -489,7 +495,7 @@ class JavaLanguage:
   def scenarios(self):
     for secure in [True, False]:
       secstr = 'secure' if secure else 'insecure'
-      smoketest_categories = [SMOKETEST] if secure else None
+      smoketest_categories = [SMOKETEST] if secure else []
 
       yield _ping_pong_scenario(
           'java_generic_async_streaming_ping_pong_%s' % secstr, rpc_type='STREAMING',
@@ -522,19 +528,21 @@ class JavaLanguage:
           client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
           unconstrained_client='async',
           secure=secure, warmup_seconds=JAVA_WARMUP_SECONDS,
-          categories=smoketest_categories)
+          categories=smoketest_categories+[SCALABLE])
 
       yield _ping_pong_scenario(
           'java_protobuf_async_streaming_qps_unconstrained_%s' % secstr, rpc_type='STREAMING',
           client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER',
           unconstrained_client='async',
-          secure=secure, warmup_seconds=JAVA_WARMUP_SECONDS)
+          secure=secure, warmup_seconds=JAVA_WARMUP_SECONDS,
+          categories=[SCALABLE])
 
       yield _ping_pong_scenario(
           'java_generic_async_streaming_qps_unconstrained_%s' % secstr, rpc_type='STREAMING',
           client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
           unconstrained_client='async', use_generic_payload=True,
-          secure=secure, warmup_seconds=JAVA_WARMUP_SECONDS)
+          secure=secure, warmup_seconds=JAVA_WARMUP_SECONDS,
+          categories=[SCALABLE])
 
       yield _ping_pong_scenario(
           'java_generic_async_streaming_qps_one_server_core_%s' % secstr, rpc_type='STREAMING',
@@ -564,7 +572,7 @@ class GoLanguage:
   def scenarios(self):
     for secure in [True, False]:
       secstr = 'secure' if secure else 'insecure'
-      smoketest_categories = [SMOKETEST] if secure else None
+      smoketest_categories = [SMOKETEST] if secure else []
 
       # ASYNC_GENERIC_SERVER for Go actually uses a sync streaming server,
       # but that's mostly because of lack of better name of the enum value. 
@@ -594,14 +602,15 @@ class GoLanguage:
           client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
           unconstrained_client='async',
           secure=secure,
-          categories=smoketest_categories)
+          categories=smoketest_categories+[SCALABLE])
 
       # unconstrained_client='async' is intended (client uses goroutines)
       yield _ping_pong_scenario(
           'go_protobuf_sync_streaming_qps_unconstrained_%s' % secstr, rpc_type='STREAMING',
           client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
           unconstrained_client='async',
-          secure=secure)
+          secure=secure,
+          categories=[SCALABLE])
 
       # unconstrained_client='async' is intended (client uses goroutines)
       # ASYNC_GENERIC_SERVER for Go actually uses a sync streaming server,
@@ -610,7 +619,8 @@ class GoLanguage:
           'go_generic_sync_streaming_qps_unconstrained_%s' % secstr, rpc_type='STREAMING',
           client_type='SYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
           unconstrained_client='async', use_generic_payload=True,
-          secure=secure)
+          secure=secure,
+          categories=[SCALABLE])
 
       # TODO(jtattermusch): add scenarios go vs C++ 
 
