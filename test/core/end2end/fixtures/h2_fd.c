@@ -35,46 +35,19 @@
 
 #include <fcntl.h>
 #include <string.h>
-#include <sys/socket.h>
-#include <sys/types.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/thd.h>
-#include <grpc/support/useful.h>
+#include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
-#include "src/core/ext/client_config/client_channel.h"
-#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-#include "src/core/lib/channel/compress_filter.h"
-#include "src/core/lib/channel/connected_channel.h"
-#include "src/core/lib/channel/http_client_filter.h"
-#include "src/core/lib/channel/http_server_filter.h"
-#include "src/core/lib/iomgr/endpoint_pair.h"
-#include "src/core/lib/iomgr/iomgr.h"
+#include <grpc/support/log.h>
 #include "src/core/lib/iomgr/socket_utils_posix.h"
-#include "src/core/lib/iomgr/tcp_posix.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
-#include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/server.h"
-#include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-
-/* chttp2 transport that is immediately available (used for testing
-   connected_channel without a client_channel */
-
-static void server_setup_transport(void *ts, grpc_transport *transport) {
-  grpc_end2end_test_fixture *f = ts;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_server_setup_transport(&exec_ctx, f->server, transport,
-                              grpc_server_get_channel_args(f->server));
-  grpc_exec_ctx_finish(&exec_ctx);
-}
 
 typedef struct {
   int fd_pair[2];
 } sp_fixture_data;
-
 
 static void create_sockets(int sv[2]) {
   int flags;
@@ -106,6 +79,7 @@ static void chttp2_init_client_socketpair(grpc_end2end_test_fixture *f,
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   sp_fixture_data *sfd = f->fixture_data;
 
+  GPR_ASSERT(!f->client);
   f->client = grpc_insecure_channel_create_from_fd(
       "fixture_client", sfd->fd_pair[0], client_args);
   GPR_ASSERT(f->client);
@@ -117,19 +91,14 @@ static void chttp2_init_server_socketpair(grpc_end2end_test_fixture *f,
                                           grpc_channel_args *server_args) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   sp_fixture_data *sfd = f->fixture_data;
-  grpc_transport *transport;
   GPR_ASSERT(!f->server);
   f->server = grpc_server_create(server_args, NULL);
+  GPR_ASSERT(f->server);
   grpc_server_register_completion_queue(f->server, f->cq, NULL);
   grpc_server_start(f->server);
-  grpc_endpoint *server_endpoint = grpc_tcp_create(
-      grpc_fd_create(sfd->fd_pair[1], "fixture_server"),
-      65536 /* read_slice_size */, "fixture_server");
 
-  transport =
-      grpc_create_chttp2_transport(&exec_ctx, server_args, server_endpoint, 0);
-  server_setup_transport(f, transport);
-  grpc_chttp2_transport_start_reading(&exec_ctx, transport, NULL, 0);
+  grpc_server_add_insecure_channel_from_fd(f->server, sfd->fd_pair[1]);
+
   grpc_exec_ctx_finish(&exec_ctx);
 }
 

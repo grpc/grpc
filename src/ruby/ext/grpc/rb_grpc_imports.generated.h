@@ -266,9 +266,6 @@ extern grpc_channel_get_target_type grpc_channel_get_target_import;
 typedef grpc_channel *(*grpc_insecure_channel_create_type)(const char *target, const grpc_channel_args *args, void *reserved);
 extern grpc_insecure_channel_create_type grpc_insecure_channel_create_import;
 #define grpc_insecure_channel_create grpc_insecure_channel_create_import
-typedef grpc_channel *(*grpc_insecure_channel_create_from_fd_type)(const char *target, int fd, const grpc_channel_args *args);
-extern grpc_insecure_channel_create_from_fd_type grpc_insecure_channel_create_from_fd_import;
-#define grpc_insecure_channel_create_from_fd grpc_insecure_channel_create_from_fd_import
 typedef grpc_channel *(*grpc_lame_client_channel_create_type)(const char *target, grpc_status_code error_code, const char *error_message);
 extern grpc_lame_client_channel_create_type grpc_lame_client_channel_create_import;
 #define grpc_lame_client_channel_create grpc_lame_client_channel_create_import
@@ -335,6 +332,9 @@ extern grpc_call_error_to_string_type grpc_call_error_to_string_import;
 typedef grpc_channel *(*grpc_insecure_channel_create_from_fd_type)(const char *target, int fd, const grpc_channel_args *args);
 extern grpc_insecure_channel_create_from_fd_type grpc_insecure_channel_create_from_fd_import;
 #define grpc_insecure_channel_create_from_fd grpc_insecure_channel_create_from_fd_import
+typedef void(*grpc_server_add_insecure_channel_from_fd_type)(grpc_server *server, int fd);
+extern grpc_server_add_insecure_channel_from_fd_type grpc_server_add_insecure_channel_from_fd_import;
+#define grpc_server_add_insecure_channel_from_fd grpc_server_add_insecure_channel_from_fd_import
 typedef const grpc_auth_property *(*grpc_auth_property_iterator_next_type)(grpc_auth_property_iterator *it);
 extern grpc_auth_property_iterator_next_type grpc_auth_property_iterator_next_import;
 #define grpc_auth_property_iterator_next grpc_auth_property_iterator_next_import

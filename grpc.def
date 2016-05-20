@@ -67,7 +67,6 @@ EXPORTS
     grpc_census_call_get_context
     grpc_channel_get_target
     grpc_insecure_channel_create
-    grpc_insecure_channel_create_from_fd
     grpc_lame_client_channel_create
     grpc_channel_destroy
     grpc_call_cancel
@@ -90,6 +89,7 @@ EXPORTS
     grpc_is_binary_header
     grpc_call_error_to_string
     grpc_insecure_channel_create_from_fd
+    grpc_server_add_insecure_channel_from_fd
     grpc_auth_property_iterator_next
     grpc_auth_context_property_iterator
     grpc_auth_context_peer_identity
