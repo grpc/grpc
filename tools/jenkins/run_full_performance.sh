@@ -31,11 +31,8 @@
 # This script is invoked by Jenkins and runs full performance test suite.
 set -ex
 
-# Enter the workspace root
+# Enter the gRPC repo root
 cd $(dirname $0)/../..
-
-# Enter the grpc repo
-cd grpc
 
 # run 8core client vs 8core server
 tools/run_tests/run_performance_tests.py \
