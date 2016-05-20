@@ -253,6 +253,7 @@ static void on_c2p_sent_message(void *arg, int success) {
   grpc_op op;
   grpc_call_error err;
 
+  grpc_byte_buffer_destroy(pc->p2s_msg);
   if (!pc->proxy->shutdown && success) {
     op.op = GRPC_OP_RECV_MESSAGE;
     op.flags = 0;
@@ -281,9 +282,10 @@ static void on_p2s_recv_msg(void *arg, int success) {
     err = grpc_call_start_batch(pc->c2p, &op, 1,
                                 new_closure(on_c2p_sent_message, pc), NULL);
     GPR_ASSERT(err == GRPC_CALL_OK);
+  } else {
+    grpc_byte_buffer_destroy(pc->p2s_msg);
   }
   unrefpc(pc, "on_p2s_recv_msg");
-  grpc_byte_buffer_destroy(pc->p2s_msg);
 }
 
 static void on_c2p_sent_status(void *arg, int success) {
