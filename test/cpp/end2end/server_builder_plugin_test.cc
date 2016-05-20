@@ -189,6 +189,7 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
   void StartServer() {
     grpc::string server_address = "localhost:" + to_string(port_);
     builder_->AddListeningPort(server_address, InsecureServerCredentials());
+    cq_ = builder_->AddCompletionQueue();
     server_ = builder_->BuildAndStart();
     EXPECT_TRUE(builder_->plugins_[PLUGIN_NAME] != nullptr);
   }
@@ -219,6 +220,7 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
   std::unique_ptr<ServerBuilder> builder_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<Server> server_;
+  std::unique_ptr<ServerCompletionQueue> cq_;
   TestServiceImpl service_;
   int port_;
 };

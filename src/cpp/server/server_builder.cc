@@ -155,7 +155,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
 
   if (num_frequently_polled_cqs == 0) {
     gpr_log(GPR_ERROR,
-            "Atleast one of the completion queues must be frequently polled");
+            "At least one of the completion queues must be frequently polled");
     return nullptr;
   }
 
