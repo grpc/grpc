@@ -133,7 +133,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   // If the server has atleast one sync methods, we know that this is a Sync
   // server or a Hybrid server and the completion queue (server->cq_) would be
   // frequently polled.
-  int num_frequently_polled_cqs = has_sync_methods ? 1 : 0;
+  int num_frequently_polled_cqs = (thread_pool != nullptr) ? 1 : 0;
 
   for (auto cq = cqs_.begin(); cq != cqs_.end(); ++cq) {
     // A completion queue that is not polled frequently (by calling Next() or
@@ -143,10 +143,10 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     if ((*cq)->IsFrequentlyPolled()) {
       grpc_server_register_completion_queue(server->server_, (*cq)->cq(),
                                             nullptr);
+      num_frequently_polled_cqs++;
     } else {
       grpc_server_register_non_listening_completion_queue(server->server_,
                                                           (*cq)->cq(), nullptr);
-      num_non_listening_cqs++;
     }
   }
 
