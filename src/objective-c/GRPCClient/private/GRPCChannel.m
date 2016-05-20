@@ -34,10 +34,11 @@
 #import "GRPCChannel.h"
 
 #include <grpc/grpc_security.h>
+#include <grpc/grpc_cronet.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-
+#import <GRPCClient/GRPCCall+Cronet.h>
 #import "GRPCCompletionQueue.h"
 
 void freeChannelArgs(grpc_channel_args *channel_args) {
@@ -99,6 +100,22 @@ grpc_channel_args * buildChannelArgs(NSDictionary *dictionary) {
   grpc_channel_args *_channelArgs;
 }
 
+- (instancetype)initWithHostUsingCronet:(NSString *)host
+                 engine:(void *)engine
+                 channelArgs:(NSDictionary *)channelArgs {
+  if (!host) {
+    [NSException raise:NSInvalidArgumentException format:@"host argument missing"];
+  }
+
+  if (self = [super init]) {
+    _channelArgs = buildChannelArgs(channelArgs);
+    _host = [host copy];
+    _unmanagedChannel = grpc_cronet_secure_channel_create(engine, _host.UTF8String, _channelArgs,
+                                                     NULL);
+  }
+
+  return self;
+}
 
 - (instancetype)initWithHost:(NSString *)host
                       secure:(BOOL)secure
@@ -131,6 +148,16 @@ grpc_channel_args * buildChannelArgs(NSDictionary *dictionary) {
   // as in the past that made this call to crash.
   grpc_channel_destroy(_unmanagedChannel);
   freeChannelArgs(_channelArgs);
+}
+
++ (GRPCChannel *)secureCronetChannelWithHost:(NSString *)host
+                                 channelArgs:(NSDictionary *)channelArgs {
+  void *engine = [GRPCCall getCronetEngine];
+  if (!engine) {
+    [NSException raise:NSInvalidArgumentException format:@"cronet_engine is NULL. Set it first."];
+    return nil;
+  }
+  return [[GRPCChannel alloc] initWithHostUsingCronet:host engine:engine channelArgs:channelArgs];
 }
 
 + (GRPCChannel *)secureChannelWithHost:(NSString *)host {

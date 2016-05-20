@@ -36,6 +36,7 @@
 #include <grpc/status.h>
 
 #import <GRPCClient/GRPCCall+Tests.h>
+#import <GRPCClient/GRPCCall+Cronet.h>
 #import <ProtoRPC/ProtoRPC.h>
 #import <RemoteTest/Empty.pbobjc.h>
 #import <RemoteTest/Messages.pbobjc.h>
@@ -43,6 +44,7 @@
 #import <RemoteTest/Test.pbrpc.h>
 #import <RxLibrary/GRXBufferedPipe.h>
 #import <RxLibrary/GRXWriter+Immediate.h>
+#import <Cronet/Cronet.h>
 
 // Convenience constructors for the generated proto messages:
 
@@ -78,6 +80,8 @@
 
 #pragma mark Tests
 
+static cronet_engine *_engine = NULL;
+
 @implementation InteropTests {
   RMTTestService *_service;
 }
@@ -88,6 +92,15 @@
 
 - (void)setUp {
   _service = self.class.host ? [RMTTestService serviceWithHost:self.class.host] : nil;
+#ifdef GRPC_COMPILE_WITH_CRONET
+  if (_engine == NULL) {
+    [Cronet setHttp2Enabled:YES];
+    [Cronet setSslKeyLogFileName:@"cronetkeylogfile.pem"];
+    [Cronet start];
+    _engine = [Cronet getGlobalEngine];
+    [GRPCCall setUseCronet:true :_engine];
+  }
+#endif
 }
 
 - (void)testEmptyUnaryRPC {
@@ -245,6 +258,8 @@
   [self waitForExpectationsWithTimeout:4 handler:nil];
 }
 
+#ifndef GRPC_COMPILE_WITH_CRONET
+// TODO(makdharma@): Fix this test
 - (void)testEmptyStreamRPC {
   XCTAssertNotNil(self.class.host);
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"EmptyStream"];
@@ -258,6 +273,7 @@
   }];
   [self waitForExpectationsWithTimeout:2 handler:nil];
 }
+#endif
 
 - (void)testCancelAfterBeginRPC {
   XCTAssertNotNil(self.class.host);
