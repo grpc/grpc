@@ -11,15 +11,10 @@ before_install:
   - gem install cocoapods -v '1.0.0'
   - pod --version
   - brew install gflags
-  # Pod install does this too, but we don't want the output.
-  - pod repo update --silent
 install:
   - make grpc_objective_c_plugin
   - pushd src/objective-c/tests
-  # Needs to be verbose, or otherwise OpenSSL's prepare_command makes Travis
-  # time out:
-  - pod --version
-  - pod install --verbose
+  - pod install
   - popd
 before_script:
   - make interop_server
