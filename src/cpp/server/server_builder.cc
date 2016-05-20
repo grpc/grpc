@@ -100,11 +100,8 @@ void ServerBuilder::AddListeningPort(const grpc::string& addr,
 
 std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   std::unique_ptr<ThreadPoolInterface> thread_pool;
-  // Does this server have atleast one sync method
-  bool has_sync_methods = false;
   for (auto it = services_.begin(); it != services_.end(); ++it) {
     if ((*it)->service->has_synchronous_methods()) {
-      has_sync_methods = true;
       if (thread_pool == nullptr) {
         thread_pool.reset(CreateDefaultThreadPool());
         break;
@@ -146,10 +143,10 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     if ((*cq)->IsFrequentlyPolled()) {
       grpc_server_register_completion_queue(server->server_, (*cq)->cq(),
                                             nullptr);
-      num_frequently_polled_cqs++;
     } else {
       grpc_server_register_non_listening_completion_queue(server->server_,
                                                           (*cq)->cq(), nullptr);
+      num_non_listening_cqs++;
     }
   }
 
