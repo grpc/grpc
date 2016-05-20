@@ -100,10 +100,12 @@ void ServerBuilder::AddListeningPort(const grpc::string& addr,
 
 std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   std::unique_ptr<ThreadPoolInterface> thread_pool;
+  bool has_sync_methods = false;
   for (auto it = services_.begin(); it != services_.end(); ++it) {
     if ((*it)->service->has_synchronous_methods()) {
       if (thread_pool == nullptr) {
         thread_pool.reset(CreateDefaultThreadPool());
+        has_sync_methods = true;
         break;
       }
     }
@@ -133,7 +135,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   // If the server has atleast one sync methods, we know that this is a Sync
   // server or a Hybrid server and the completion queue (server->cq_) would be
   // frequently polled.
-  int num_frequently_polled_cqs = (thread_pool != nullptr) ? 1 : 0;
+  int num_frequently_polled_cqs = has_sync_methods ? 1 : 0;
 
   for (auto cq = cqs_.begin(); cq != cqs_.end(); ++cq) {
     // A completion queue that is not polled frequently (by calling Next() or
