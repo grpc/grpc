@@ -61,6 +61,7 @@ class TestServerBuilderPlugin : public ServerBuilderPlugin {
     init_server_is_called_ = false;
     finish_is_called_ = false;
     change_arguments_is_called_ = false;
+    register_service_ = false;
   }
 
   grpc::string name() GRPC_OVERRIDE { return PLUGIN_NAME; }
