@@ -232,11 +232,10 @@ namespace Grpc.Core.Internal
 
         /// <summary>
         /// Sends a streaming request. Only one pending send action is allowed at any given time.
-        /// completionDelegate is called when the operation finishes.
         /// </summary>
-        public void StartSendMessage(TRequest msg, WriteFlags writeFlags, AsyncCompletionDelegate<object> completionDelegate)
+        public Task SendMessageAsync(TRequest msg, WriteFlags writeFlags)
         {
-            StartSendMessageInternal(msg, writeFlags, completionDelegate);
+            return SendMessageInternalAsync(msg, writeFlags);
         }
 
         /// <summary>
@@ -250,13 +249,11 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Sends halfclose, indicating client is done with streaming requests.
         /// Only one pending send action is allowed at any given time.
-        /// completionDelegate is called when the operation finishes.
         /// </summary>
-        public void StartSendCloseFromClient(AsyncCompletionDelegate<object> completionDelegate)
+        public Task SendCloseFromClientAsync()
         {
             lock (myLock)
             {
-                GrpcPreconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
                 CheckSendingAllowed(allowFinished: true);
 
                 if (!disposed && !finished)
@@ -272,7 +269,8 @@ namespace Grpc.Core.Internal
                 }
 
                 halfcloseRequested = true;
-                sendCompletionDelegate = completionDelegate;
+                streamingWriteTcs = new TaskCompletionSource<object>();
+                return streamingWriteTcs.Task;
             }
         }
 

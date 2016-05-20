@@ -68,7 +68,7 @@ namespace Grpc.Core.Internal
         protected bool cancelRequested;
 
         protected TaskCompletionSource<TRead> streamingReadTcs;  // Completion of a pending streaming read if not null.
-        protected TaskCompletionSource<object> streamingWriteTcs;  // Completion of a pending streaming write if not null.
+        protected TaskCompletionSource<object> streamingWriteTcs;  // Completion of a pending streaming write or send close from client if not null.
         protected TaskCompletionSource<object> sendStatusFromServerTcs;
 
         protected bool readingDone;  // True if last read (i.e. read with null payload) was already received.
@@ -128,28 +128,26 @@ namespace Grpc.Core.Internal
 
         /// <summary>
         /// Initiates sending a message. Only one send operation can be active at a time.
-        /// completionDelegate is invoked upon completion.
         /// </summary>
-        protected void StartSendMessageInternal(TWrite msg, WriteFlags writeFlags, AsyncCompletionDelegate<object> completionDelegate)
+        protected Task SendMessageInternalAsync(TWrite msg, WriteFlags writeFlags)
         {
             byte[] payload = UnsafeSerialize(msg);
 
             lock (myLock)
             {
-                GrpcPreconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
                 CheckSendingAllowed(allowFinished: false);
 
                 call.StartSendMessage(HandleSendFinished, payload, writeFlags, !initialMetadataSent);
 
-                sendCompletionDelegate = completionDelegate;
                 initialMetadataSent = true;
                 streamingWritesCounter++;
+                streamingWriteTcs = new TaskCompletionSource<object>();
+                return streamingWriteTcs.Task;
             }
         }
 
         /// <summary>
         /// Initiates reading a message. Only one read operation can be active at a time.
-        /// completionDelegate is invoked upon completion.
         /// </summary>
         protected Task<TRead> ReadMessageInternalAsync()
         {
@@ -183,7 +181,7 @@ namespace Grpc.Core.Internal
             {
                 if (!disposed && call != null)
                 {
-                    bool noMoreSendCompletions = sendCompletionDelegate == null && (halfcloseRequested || cancelRequested || finished);
+                    bool noMoreSendCompletions = streamingWriteTcs == null && (halfcloseRequested || cancelRequested || finished);
                     if (noMoreSendCompletions && readingDone && finished)
                     {
                         ReleaseResources();
@@ -221,7 +219,7 @@ namespace Grpc.Core.Internal
 
             GrpcPreconditions.CheckState(!halfcloseRequested, "Already halfclosed.");
             GrpcPreconditions.CheckState(!finished || allowFinished, "Already finished.");
-            GrpcPreconditions.CheckState(sendCompletionDelegate == null, "Only one write can be pending at a time");
+            GrpcPreconditions.CheckState(streamingWriteTcs == null, "Only one write can be pending at a time");
         }
 
         protected void CheckNotCancelled()
@@ -259,39 +257,27 @@ namespace Grpc.Core.Internal
             }
         }
 
-        protected void FireCompletion<T>(AsyncCompletionDelegate<T> completionDelegate, T value, Exception error)
-        {
-            try
-            {
-                completionDelegate(value, error);
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e, "Exception occured while invoking completion delegate.");
-            }
-        }
-
         /// <summary>
         /// Handles send completion.
         /// </summary>
         protected void HandleSendFinished(bool success)
         {
-            AsyncCompletionDelegate<object> origCompletionDelegate = null;
+            TaskCompletionSource<object> origTcs = null;
             lock (myLock)
             {
-                origCompletionDelegate = sendCompletionDelegate;
-                sendCompletionDelegate = null;
+                origTcs = streamingWriteTcs;
+                streamingWriteTcs = null;
 
                 ReleaseResourcesIfPossible();
             }
 
             if (!success)
             {
-                FireCompletion(origCompletionDelegate, null, new InvalidOperationException("Send failed"));
+                origTcs.SetException(new InvalidOperationException("Send failed"));
             }
             else
             {
-                FireCompletion(origCompletionDelegate, null, null);
+                origTcs.SetResult(null);
             }
         }
 
@@ -300,22 +286,23 @@ namespace Grpc.Core.Internal
         /// </summary>
         protected void HandleSendCloseFromClientFinished(bool success)
         {
-            AsyncCompletionDelegate<object> origCompletionDelegate = null;
+            TaskCompletionSource<object> origTcs = null;
             lock (myLock)
             {
-                origCompletionDelegate = sendCompletionDelegate;
-                sendCompletionDelegate = null;
+                origTcs = streamingWriteTcs;
+                streamingWriteTcs = null;
 
                 ReleaseResourcesIfPossible();
             }
 
             if (!success)
             {
-                FireCompletion(origCompletionDelegate, null, new InvalidOperationException("Sending close from client has failed."));
+                // TODO(jtattermusch): this method is same as HandleSendFinished (only the error message differs).
+                origTcs.SetException(new InvalidOperationException("Sending close from client has failed."));
             }
             else
             {
-                FireCompletion(origCompletionDelegate, null, null);
+                origTcs.SetResult(null);
             }
         }
 
