@@ -82,7 +82,7 @@ namespace Grpc.Core.Internal.Tests
             Assert.ThrowsAsync(typeof(InvalidOperationException),
                 async () => await asyncCall.ReadMessageAsync());
             Assert.Throws(typeof(InvalidOperationException),
-                () => asyncCall.StartSendMessage("abc", new WriteFlags(), (x,y) => {}));
+                () => asyncCall.SendMessageAsync("abc", new WriteFlags()));
         }
 
         [Test]
@@ -290,7 +290,7 @@ namespace Grpc.Core.Internal.Tests
         {
             asyncCall.StartServerStreamingCall("request1");
             Assert.Throws(typeof(InvalidOperationException),
-                () => asyncCall.StartSendMessage("abc", new WriteFlags(), (x,y) => {}));
+                () => asyncCall.SendMessageAsync("abc", new WriteFlags()));
         }
 
         [Test]
