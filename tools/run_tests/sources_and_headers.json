@@ -2395,6 +2395,29 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_reflection", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/cpp/util/proto_reflection_descriptor_database.h"
+    ], 
+    "language": "c++", 
+    "name": "proto_server_reflection_test", 
+    "src": [
+      "test/cpp/end2end/proto_server_reflection_test.cc", 
+      "test/cpp/util/proto_reflection_descriptor_database.cc", 
+      "test/cpp/util/proto_reflection_descriptor_database.h"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
       "grpc++_test_util", 
       "grpc_test_util", 
       "qps"
@@ -2547,26 +2570,6 @@
     "name": "reconnect_interop_server", 
     "src": [
       "test/cpp/interop/reconnect_interop_server.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_reflection"
-    ], 
-    "headers": [
-      "test/cpp/util/proto_reflection_descriptor_database.h"
-    ], 
-    "language": "c++", 
-    "name": "reflection_debug_test", 
-    "src": [
-      "test/cpp/util/proto_reflection_descriptor_database.cc", 
-      "test/cpp/util/proto_reflection_descriptor_database.h", 
-      "test/cpp/util/reflection_debug/reflection_client.cc"
     ], 
     "third_party": false, 
     "type": "target"

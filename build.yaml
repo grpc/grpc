@@ -2787,6 +2787,23 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: proto_server_reflection_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/cpp/util/proto_reflection_descriptor_database.h
+  src:
+  - test/cpp/end2end/proto_server_reflection_test.cc
+  - test/cpp/util/proto_reflection_descriptor_database.cc
+  deps:
+  - grpc++_reflection
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: qps_interarrival_test
   build: test
   run: false
@@ -2915,19 +2932,6 @@ targets:
   - gpr_test_util
   - gpr
   - grpc++_test_config
-- name: reflection_debug_test
-  build: test
-  language: c++
-  headers:
-  - test/cpp/util/proto_reflection_descriptor_database.h
-  src:
-  - test/cpp/util/proto_reflection_descriptor_database.cc
-  - test/cpp/util/reflection_debug/reflection_client.cc
-  deps:
-  - grpc++_reflection
-  - grpc++
-  - grpc
-  - gpr
 - name: secure_auth_context_test
   gtest: true
   build: test

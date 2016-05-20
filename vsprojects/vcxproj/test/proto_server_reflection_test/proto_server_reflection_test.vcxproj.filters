@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\end2end\proto_server_reflection_test.cc">
+      <Filter>test\cpp\end2end</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\util\proto_reflection_descriptor_database.cc">
       <Filter>test\cpp\util</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\reflection_debug\reflection_client.cc">
-      <Filter>test\cpp\util\reflection_debug</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -16,16 +16,16 @@
 
   <ItemGroup>
     <Filter Include="test">
-      <UniqueIdentifier>{fdf7e642-420d-9e18-7a3c-19dca964f218}</UniqueIdentifier>
+      <UniqueIdentifier>{354831a1-52fb-6364-b568-c8c49bfb8d29}</UniqueIdentifier>
     </Filter>
     <Filter Include="test\cpp">
-      <UniqueIdentifier>{562b3927-e256-190d-ab72-6b4b04ffb8b2}</UniqueIdentifier>
+      <UniqueIdentifier>{b4d957ef-f9fd-2a14-078c-b72f80096f70}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\end2end">
+      <UniqueIdentifier>{130f224c-89a5-54ea-7045-b54b4188c52b}</UniqueIdentifier>
     </Filter>
     <Filter Include="test\cpp\util">
-      <UniqueIdentifier>{8ed08be4-a27c-d51c-d587-a02cf3dc5abc}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="test\cpp\util\reflection_debug">
-      <UniqueIdentifier>{b84b1385-e0b2-239b-bac2-81a16bc90249}</UniqueIdentifier>
+      <UniqueIdentifier>{aae81aad-5563-fceb-1461-10fdec84c5b0}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
