@@ -126,7 +126,8 @@ static void chttp2_init_server_socketpair(grpc_end2end_test_fixture *f,
       grpc_fd_create(sfd->fd_pair[1], "fixture_server"),
       65536 /* read_slice_size */, "fixture_server");
 
-  transport =      grpc_create_chttp2_transport(&exec_ctx, server_args, server_endpoint, 0);
+  transport =
+      grpc_create_chttp2_transport(&exec_ctx, server_args, server_endpoint, 0);
   server_setup_transport(f, transport);
   grpc_chttp2_transport_start_reading(&exec_ctx, transport, NULL, 0);
   grpc_exec_ctx_finish(&exec_ctx);
