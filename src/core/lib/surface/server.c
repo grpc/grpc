@@ -175,7 +175,7 @@ struct registered_method {
   char *host;
   grpc_server_register_method_payload_handling payload_handling;
   uint32_t flags;
-  /* one request matcher per method per cq */
+  /* one request matcher per method */
   request_matcher request_matcher;
   registered_method *next;
 };
@@ -204,7 +204,7 @@ struct grpc_server {
   gpr_mu mu_call;   /* mutex for call-specific state */
 
   registered_method *registered_methods;
-  /** one request matcher for unregistered methods per cq */
+  /** one request matcher for unregistered methods */
   request_matcher unregistered_request_matcher;
   /** free list of available requested_calls indices */
   gpr_stack_lockfree *request_freelist;

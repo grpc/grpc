@@ -119,6 +119,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
       if ((*plugin).second->has_sync_methods()) {
         thread_pool.reset(CreateDefaultThreadPool());
+        has_sync_methods = true;
         break;
       }
     }
