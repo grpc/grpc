@@ -217,7 +217,7 @@ class HybridEnd2endTest : public ::testing::Test {
     }
     // Create a separate cq for each potential handler.
     for (int i = 0; i < 5; i++) {
-      cqs_.push_back(builder.AddCompletionQueue(i < num_cqs_frequently_polled));
+      cqs_.push_back(builder.AddCompletionQueue(i == num_cqs_frequently_polled - 1));
     }
     server_ = builder.BuildAndStart();
   }
@@ -253,6 +253,7 @@ class HybridEnd2endTest : public ::testing::Test {
     EchoRequest send_request;
     EchoResponse recv_response;
     ClientContext cli_ctx;
+    cli_ctx.set_fail_fast(false);
     send_request.set_message("Hello");
     Status recv_status = stub_->Echo(&cli_ctx, send_request, &recv_response);
     EXPECT_EQ(send_request.message(), recv_response.message());
@@ -266,6 +267,7 @@ class HybridEnd2endTest : public ::testing::Test {
     EchoRequest send_request;
     EchoResponse recv_response;
     ClientContext cli_ctx;
+    cli_ctx.set_fail_fast(false);
     send_request.set_message("Hello");
     Status recv_status = stub->Echo(&cli_ctx, send_request, &recv_response);
     EXPECT_EQ(send_request.message() + "_dup", recv_response.message());
@@ -277,6 +279,7 @@ class HybridEnd2endTest : public ::testing::Test {
     EchoResponse recv_response;
     grpc::string expected_message;
     ClientContext cli_ctx;
+    cli_ctx.set_fail_fast(false);
     send_request.set_message("Hello");
     auto stream = stub_->RequestStream(&cli_ctx, &recv_response);
     for (int i = 0; i < 5; i++) {
@@ -293,6 +296,7 @@ class HybridEnd2endTest : public ::testing::Test {
     EchoRequest request;
     EchoResponse response;
     ClientContext context;
+    context.set_fail_fast(false);
     request.set_message("hello");
 
     auto stream = stub_->ResponseStream(&context, request);
@@ -312,6 +316,7 @@ class HybridEnd2endTest : public ::testing::Test {
     EchoRequest request;
     EchoResponse response;
     ClientContext context;
+    context.set_fail_fast(false);
     grpc::string msg("hello");
 
     auto stream = stub_->BidiStream(&context);
@@ -505,12 +510,22 @@ TEST_F(HybridEnd2endTest, GenericEchoAsyncRequestStreamResponseStream) {
   SetUpServer(&service, nullptr, &generic_service, 3);
   ResetStub();
   std::thread generic_handler_thread([this, &generic_service] {
+    gpr_log(GPR_DEBUG, "t0 start");
     HandleGenericCall(&generic_service, cqs_[0].get());
+    gpr_log(GPR_DEBUG, "t0 done");
   });
   std::thread request_stream_handler_thread(
-      [this, &service] { HandleClientStreaming(&service, cqs_[1].get()); });
+      [this, &service] { 
+    gpr_log(GPR_DEBUG, "t1 start");
+        HandleClientStreaming(&service, cqs_[1].get());
+    gpr_log(GPR_DEBUG, "t1 done");
+      });
   std::thread response_stream_handler_thread(
-      [this, &service] { HandleServerStreaming(&service, cqs_[2].get()); });
+      [this, &service] { 
+    gpr_log(GPR_DEBUG, "t2 start");
+        HandleServerStreaming(&service, cqs_[2].get()); 
+    gpr_log(GPR_DEBUG, "t2 done");
+      });
   TestAllMethods();
   generic_handler_thread.join();
   request_stream_handler_thread.join();
