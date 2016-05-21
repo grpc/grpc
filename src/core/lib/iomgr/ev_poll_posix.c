@@ -995,8 +995,7 @@ static void pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   if (!pollset_has_workers(pollset)) {
     grpc_exec_ctx_enqueue_list(exec_ctx, &pollset->idle_jobs, NULL);
   }
-  if (!pollset->called_shutdown &&
-      !pollset_has_workers(pollset)) {
+  if (!pollset->called_shutdown && !pollset_has_workers(pollset)) {
     pollset->called_shutdown = 1;
     finish_shutdown(exec_ctx, pollset);
   }
