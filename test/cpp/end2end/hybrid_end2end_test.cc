@@ -513,22 +513,12 @@ TEST_F(HybridEnd2endTest, GenericEchoAsyncRequestStreamResponseStream) {
   SetUpServer(&service, nullptr, &generic_service);
   ResetStub();
   std::thread generic_handler_thread([this, &generic_service] {
-    gpr_log(GPR_DEBUG, "t0 start");
     HandleGenericCall(&generic_service, cqs_[0].get());
-    gpr_log(GPR_DEBUG, "t0 done");
   });
   std::thread request_stream_handler_thread(
-      [this, &service] { 
-    gpr_log(GPR_DEBUG, "t1 start");
-        HandleClientStreaming(&service, cqs_[1].get());
-    gpr_log(GPR_DEBUG, "t1 done");
-      });
+      [this, &service] { HandleClientStreaming(&service, cqs_[1].get()); });
   std::thread response_stream_handler_thread(
-      [this, &service] { 
-    gpr_log(GPR_DEBUG, "t2 start");
-        HandleServerStreaming(&service, cqs_[2].get()); 
-    gpr_log(GPR_DEBUG, "t2 done");
-      });
+      [this, &service] { HandleServerStreaming(&service, cqs_[2].get()); });
   TestAllMethods();
   generic_handler_thread.join();
   request_stream_handler_thread.join();
