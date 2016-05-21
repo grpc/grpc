@@ -483,8 +483,6 @@ typedef void (*platform_become_multipoller_type)(grpc_exec_ctx *exec_ctx,
  * be locked) */
 static int pollset_has_workers(grpc_pollset *pollset);
 
-static void remove_fd_from_all_epoll_sets(int fd);
-
 /*******************************************************************************
  * pollset_set definitions
  */
@@ -656,11 +654,8 @@ static void close_fd_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
 
     fd->polling_island = NULL;
     gpr_mu_unlock(&fd->pi_mu);
-
-
-    /* TODO: sreek - This should be no longer needed */
-    remove_fd_from_all_epoll_sets(fd->fd);
   }
+
   grpc_exec_ctx_enqueue(exec_ctx, fd->on_done_closure, true, NULL);
 }
 
@@ -1123,65 +1118,6 @@ static void fd_become_writable(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
   set_ready(exec_ctx, fd, &fd->write_closure);
 }
 
-/* TODO (sreek): Maybe this global list is not required. Double check*/
-struct epoll_fd_list {
-  int *epoll_fds;
-  size_t count;
-  size_t capacity;
-};
-
-static struct epoll_fd_list epoll_fd_global_list;
-static gpr_once init_epoll_fd_list_mu = GPR_ONCE_INIT;
-static gpr_mu epoll_fd_list_mu;
-
-static void init_mu(void) { gpr_mu_init(&epoll_fd_list_mu); }
-
-static void add_epoll_fd_to_global_list(int epoll_fd) {
-  gpr_once_init(&init_epoll_fd_list_mu, init_mu);
-
-  gpr_mu_lock(&epoll_fd_list_mu);
-  if (epoll_fd_global_list.count == epoll_fd_global_list.capacity) {
-    epoll_fd_global_list.capacity =
-        GPR_MAX((size_t)8, epoll_fd_global_list.capacity * 2);
-    epoll_fd_global_list.epoll_fds =
-        gpr_realloc(epoll_fd_global_list.epoll_fds,
-                    epoll_fd_global_list.capacity * sizeof(int));
-  }
-  epoll_fd_global_list.epoll_fds[epoll_fd_global_list.count++] = epoll_fd;
-  gpr_mu_unlock(&epoll_fd_list_mu);
-}
-
-static void remove_epoll_fd_from_global_list(int epoll_fd) {
-  gpr_mu_lock(&epoll_fd_list_mu);
-  GPR_ASSERT(epoll_fd_global_list.count > 0);
-  for (size_t i = 0; i < epoll_fd_global_list.count; i++) {
-    if (epoll_fd == epoll_fd_global_list.epoll_fds[i]) {
-      epoll_fd_global_list.epoll_fds[i] =
-          epoll_fd_global_list.epoll_fds[--(epoll_fd_global_list.count)];
-      break;
-    }
-  }
-  gpr_mu_unlock(&epoll_fd_list_mu);
-}
-
-static void remove_fd_from_all_epoll_sets(int fd) {
-  int err;
-  gpr_once_init(&init_epoll_fd_list_mu, init_mu);
-  gpr_mu_lock(&epoll_fd_list_mu);
-  if (epoll_fd_global_list.count == 0) {
-    gpr_mu_unlock(&epoll_fd_list_mu);
-    return;
-  }
-  for (size_t i = 0; i < epoll_fd_global_list.count; i++) {
-    err = epoll_ctl(epoll_fd_global_list.epoll_fds[i], EPOLL_CTL_DEL, fd, NULL);
-    if (err < 0 && errno != ENOENT) {
-      gpr_log(GPR_ERROR, "epoll_ctl del for %d failed: %s", fd,
-              strerror(errno));
-    }
-  }
-  gpr_mu_unlock(&epoll_fd_list_mu);
-}
-
 /* TODO: sreek - This function multipoll_with_epoll_pollset_add_fd() and
  * finally_add_fd() in ev_poll_and_epoll_posix.c */
 static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
@@ -1224,7 +1160,6 @@ static void multipoll_with_epoll_pollset_create_efd(grpc_pollset *pollset) {
     gpr_log(GPR_ERROR, "epoll_create1 failed: %s", strerror(errno));
     abort();
   }
-  add_epoll_fd_to_global_list(pollset->epoll_fd);
 
   ev.events = (uint32_t)(EPOLLIN | EPOLLET);
   ev.data.ptr = NULL;
@@ -1325,7 +1260,6 @@ static void multipoll_with_epoll_pollset_finish_shutdown(
 
 static void multipoll_with_epoll_pollset_destroy(grpc_pollset *pollset) {
   close(pollset->epoll_fd);
-  remove_epoll_fd_from_global_list(pollset->epoll_fd);
 }
 
 /*******************************************************************************
