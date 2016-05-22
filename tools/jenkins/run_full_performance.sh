@@ -1,4 +1,5 @@
-# Copyright 2016, Google Inc.
+#!/usr/bin/env bash
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,44 +27,30 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# This script is invoked by Jenkins and runs full performance test suite.
+set -ex
 
-require 'thread'
-require_relative 'grpc'
+# Enter the gRPC repo root
+cd $(dirname $0)/../..
 
-# GRPC contains the General RPC module.
-module GRPC
-  # Signals contains gRPC functions related to signal handling
-  module Signals
-    @interpreter_exiting = false
-    @signal_handlers = []
-    @handlers_mutex = Mutex.new
+# run 8core client vs 8core server
+tools/run_tests/run_performance_tests.py \
+    -l c++ csharp node ruby java python go \
+    --netperf \
+    --category all \
+    --bq_result_table performance_test.performance_experiment \
+    --remote_worker_host grpc-performance-server-8core grpc-performance-client-8core \
+    || EXIT_CODE=1
 
-    def register_handler(&handler)
-      @handlers_mutex.synchronize do
-        @signal_handlers.push(handler)
-        handler.call if @exit_signal_received
-      end
-      # Returns a function to remove the handler
-      lambda do
-        @handlers_mutex.synchronize { @signal_handlers.delete(handler) }
-      end
-    end
-    module_function :register_handler
+# scalability with 32cores (and upload to a different BQ table)
+tools/run_tests/run_performance_tests.py \
+    -l c++ java csharp go \
+    --netperf \
+    --category scalable \
+    --bq_result_table performance_test.performance_experiment_32core \
+    --remote_worker_host grpc-performance-server-32core grpc-performance-client-32core \
+    || EXIT_CODE=1
 
-    def wait_for_signals
-      t = Thread.new do
-        sleep 0.1 until GRPC::Core.signal_received? || @interpreter_exiting
-        unless @interpreter_exiting
-          @handlers_mutex.synchronize do
-            @signal_handlers.each(&:call)
-          end
-        end
-      end
-      at_exit do
-        @interpreter_exiting = true
-        t.join
-      end
-    end
-    module_function :wait_for_signals
-  end
-end
+exit $EXIT_CODE
+

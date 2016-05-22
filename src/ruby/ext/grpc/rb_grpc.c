@@ -50,7 +50,6 @@
 #include "rb_loader.h"
 #include "rb_server.h"
 #include "rb_server_credentials.h"
-#include "rb_signal.h"
 
 static VALUE grpc_rb_cTimeVal = Qnil;
 
@@ -333,7 +332,6 @@ void Init_grpc_c() {
   Init_grpc_channel_credentials();
   Init_grpc_server();
   Init_grpc_server_credentials();
-  Init_grpc_signals();
   Init_grpc_status_codes();
   Init_grpc_time_consts();
 }
