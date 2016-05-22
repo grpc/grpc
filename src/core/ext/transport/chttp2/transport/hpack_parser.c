@@ -1521,8 +1521,7 @@ grpc_error *grpc_chttp2_header_parser_parse(
       if (parser->is_boundary) {
         if (stream_parsing->header_frames_received ==
             GPR_ARRAY_SIZE(stream_parsing->got_metadata_on_parse)) {
-          gpr_log(GPR_ERROR, "too many trailer frames");
-          return GRPC_CHTTP2_CONNECTION_ERROR;
+          return GRPC_ERROR_CREATE("Too many trailer frames");
         }
         stream_parsing
             ->got_metadata_on_parse[stream_parsing->header_frames_received] = 1;
