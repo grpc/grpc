@@ -33,7 +33,6 @@ require_relative 'grpc/errors'
 require_relative 'grpc/grpc'
 require_relative 'grpc/logconfig'
 require_relative 'grpc/notifier'
-require_relative 'grpc/signals'
 require_relative 'grpc/version'
 require_relative 'grpc/core/time_consts'
 require_relative 'grpc/generic/active_call'
@@ -48,5 +47,3 @@ begin
 ensure
   file.close
 end
-
-GRPC::Signals.wait_for_signals
