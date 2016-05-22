@@ -2,11 +2,11 @@
 
 // Copyright 2015, Google Inc.
 // All rights reserved.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//
+// 
 //     * Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
 //     * Redistributions in binary form must reproduce the above
@@ -16,7 +16,7 @@
 //     * Neither the name of Google Inc. nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
-//
+// 
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -32,37 +32,39 @@
 #endregion
 
 using System;
-using System.Threading.Tasks;
 using Grpc.Core;
-using Grpc.Core.Internal;
-using Grpc.Core.Utils;
-using NUnit.Framework;
 
-namespace Grpc.Core.Internal.Tests
+namespace Grpc.Core.Internal
 {
-    public class CompletionQueueSafeHandleTest
+    /// <summary>
+    /// Status + metadata received on client side when call finishes.
+    /// (when receive_status_on_client operation finishes).
+    /// </summary>
+    internal struct ClientSideStatus
     {
-        [Test]
-        public void CreateAndDestroy()
+        readonly Status status;
+        readonly Metadata trailers;
+
+        public ClientSideStatus(Status status, Metadata trailers)
         {
-            GrpcEnvironment.AddRef();
-            var cq = CompletionQueueSafeHandle.Create();
-            cq.Dispose();
-            GrpcEnvironment.Release();
+            this.status = status;
+            this.trailers = trailers;
         }
 
-        [Test]
-        public void CreateAndShutdown()
+        public Status Status
         {
-            GrpcEnvironment.AddRef();
-            var cq = CompletionQueueSafeHandle.Create();
-            cq.Shutdown();
-            var ev = cq.Next();
-            cq.Dispose();
-            GrpcEnvironment.Release();
-            Assert.AreEqual(CompletionQueueEvent.CompletionType.Shutdown, ev.type);
-            Assert.AreNotEqual(IntPtr.Zero, ev.success);
-            Assert.AreEqual(IntPtr.Zero, ev.tag);
+            get
+            {
+                return this.status;
+            }
+        }
+
+        public Metadata Trailers
+        {
+            get
+            {
+                return this.trailers;
+            }
         }
     }
 }
