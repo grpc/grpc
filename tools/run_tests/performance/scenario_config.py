@@ -94,6 +94,7 @@ def remove_nonproto_fields(scenario):
 def _ping_pong_scenario(name, rpc_type,
                         client_type, server_type,
                         secure=True,
+                        use_big_generic_payload=False,
                         use_generic_payload=False,
                         unconstrained_client=None,
                         client_language=None,
@@ -128,7 +129,12 @@ def _ping_pong_scenario(name, rpc_type,
     'warmup_seconds': warmup_seconds,
     'benchmark_seconds': BENCHMARK_SECONDS
   }
-  if use_generic_payload:
+  if use_big_generic_payload:
+    if server_type != 'ASYNC_GENERIC_SERVER':
+      raise Exception('Use ASYNC_GENERIC_SERVER for big generic payload.')
+    scenario['client_config']['payload_config'] = BIG_GENERIC_PAYLOAD
+    scenario['server_config']['payload_config'] = BIG_GENERIC_PAYLOAD    
+  elif use_generic_payload:
     if server_type != 'ASYNC_GENERIC_SERVER':
       raise Exception('Use ASYNC_GENERIC_SERVER for generic payload.')
     scenario['client_config']['payload_config'] = EMPTY_GENERIC_PAYLOAD
@@ -141,13 +147,23 @@ def _ping_pong_scenario(name, rpc_type,
     if unconstrained_client == 'async':
       deep = DEEP
       wide = WIDE
+      num_clients = 0 # use as many clients as available
     elif unconstrained_client == 'sync':
       deep = SYNC_DEEP
       wide = SYNC_WIDE
+      num_clients = 0 # use as many clients as available
+    elif unconstrained_client == '1chan_bw':
+      deep = DEEP
+      wide = 1
+      num_clients = 1 # limit to 1 for a single channel
+    elif unconstrained_client == 'Nchan_bw':
+      deep = DEEP
+      wide = WIDE
+      num_clients = 0 # use as many clients as available
     else:
       raise Exception('Illegal value of unconstrained_client option.')
 
-    scenario['num_clients'] = 0  # use as many client as available.
+    scenario['num_clients'] = num_clients
     scenario['client_config']['outstanding_rpcs_per_channel'] = deep
     scenario['client_config']['client_channels'] = wide
     scenario['client_config']['async_client_threads'] = 0
@@ -236,6 +252,19 @@ class CXXLanguage:
           client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
           unconstrained_client='async', use_generic_payload=True,
           server_core_limit=1, async_server_threads=1,
+          secure=secure)
+
+      yield _ping_pong_scenario(
+          'cpp_generic_async_streaming_single_channel_throughput_%s' % secstr, rpc_type='STREAMING',
+          client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
+          unconstrained_client='1chan_bw', use_big_generic_payload=True,
+          secure=secure,
+          categories=smoketest_categories)
+
+      yield _ping_pong_scenario(
+          'cpp_generic_async_streaming_multi_channel_throughput_%s' % secstr, rpc_type='STREAMING',
+          client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
+          unconstrained_client='Nchan_bw', use_big_generic_payload=True,
           secure=secure)
 
   def __str__(self):
