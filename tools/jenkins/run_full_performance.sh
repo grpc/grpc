@@ -45,7 +45,7 @@ tools/run_tests/run_performance_tests.py \
 # scalability with 32cores (and upload to a different BQ table)
 tools/run_tests/run_performance_tests.py \
     -l c++ java csharp go \
-    --netperf
+    --netperf \
     --category scalable \
     --bq_result_table performance_test.performance_experiment_32core
     --remote_worker_host grpc-performance-server-32core grpc-performance-client-32core
