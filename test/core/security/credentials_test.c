@@ -33,7 +33,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/security/credentials.h"
+#include "src/core/lib/security/credentials/credentials.h"
 
 #include <openssl/rsa.h>
 #include <stdlib.h>
@@ -45,7 +45,10 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/http/httpcli.h"
-#include "src/core/lib/security/json_token.h"
+#include "src/core/lib/security/credentials/composite/composite_credentials.h"
+#include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
+#include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
+#include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 #include "src/core/lib/support/env.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/support/tmpfile.h"
