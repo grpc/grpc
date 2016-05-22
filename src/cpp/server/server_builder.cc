@@ -100,13 +100,12 @@ void ServerBuilder::AddListeningPort(const grpc::string& addr,
 
 std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   std::unique_ptr<ThreadPoolInterface> thread_pool;
-  // Does this server have atleast one sync method
   bool has_sync_methods = false;
   for (auto it = services_.begin(); it != services_.end(); ++it) {
     if ((*it)->service->has_synchronous_methods()) {
-      has_sync_methods = true;
       if (thread_pool == nullptr) {
         thread_pool.reset(CreateDefaultThreadPool());
+        has_sync_methods = true;
         break;
       }
     }
@@ -120,6 +119,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
       if ((*plugin).second->has_sync_methods()) {
         thread_pool.reset(CreateDefaultThreadPool());
+        has_sync_methods = true;
         break;
       }
     }
@@ -155,7 +155,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
 
   if (num_frequently_polled_cqs == 0) {
     gpr_log(GPR_ERROR,
-            "Atleast one of the completion queues must be frequently polled");
+            "At least one of the completion queues must be frequently polled");
     return nullptr;
   }
 

@@ -412,7 +412,9 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
       sync_methods_->push_back(SyncRequest(unknown_method_.get(), nullptr));
     }
     for (size_t i = 0; i < num_cqs; i++) {
-      new UnimplementedAsyncRequest(this, cqs[i]);
+      if (cqs[i]->IsFrequentlyPolled()) {
+        new UnimplementedAsyncRequest(this, cqs[i]);
+      }
     }
   }
   // Start processing rpcs.

@@ -23031,7 +23031,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 1000.0, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -23057,7 +23057,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 1000.0, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -23083,7 +23083,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 1000.0, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -23109,7 +23109,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 1000.0, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -23135,7 +23135,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 1000.0, 
+    "cpu_cost": 8, 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -23161,7 +23161,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 1000.0, 
+    "cpu_cost": 8, 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -23187,7 +23187,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 1000.0, 
+    "cpu_cost": 8, 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -23213,7 +23213,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 1000.0, 
+    "cpu_cost": 1, 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -23239,7 +23239,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 1000.0, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -23265,7 +23265,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 1000.0, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -23291,7 +23291,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 1000.0, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -23317,7 +23317,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 1000.0, 
+    "cpu_cost": 2, 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -23343,7 +23343,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 1000.0, 
+    "cpu_cost": 8, 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -23369,7 +23369,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 1000.0, 
+    "cpu_cost": 8, 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -23395,7 +23395,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 1000.0, 
+    "cpu_cost": 8, 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 
@@ -23421,7 +23421,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 1000.0, 
+    "cpu_cost": 1, 
     "defaults": "boringssl", 
     "exclude_configs": [], 
     "flaky": false, 

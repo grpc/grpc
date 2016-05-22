@@ -175,7 +175,7 @@ struct registered_method {
   char *host;
   grpc_server_register_method_payload_handling payload_handling;
   uint32_t flags;
-  /* one request matcher per method per cq */
+  /* one request matcher per method */
   request_matcher request_matcher;
   registered_method *next;
 };
@@ -204,7 +204,7 @@ struct grpc_server {
   gpr_mu mu_call;   /* mutex for call-specific state */
 
   registered_method *registered_methods;
-  /** one request matcher for unregistered methods per cq */
+  /** one request matcher for unregistered methods */
   request_matcher unregistered_request_matcher;
   /** free list of available requested_calls indices */
   gpr_stack_lockfree *request_freelist;
@@ -947,16 +947,15 @@ static void register_completion_queue(grpc_server *server,
 
   grpc_cq_mark_server_cq(cq);
 
-  /* Non-listening completion queues are not added to server->cqs */
   if (is_non_listening) {
     grpc_cq_mark_non_listening_server_cq(cq);
-  } else {
-    GRPC_CQ_INTERNAL_REF(cq, "server");
-    n = server->cq_count++;
-    server->cqs = gpr_realloc(
-        server->cqs, server->cq_count * sizeof(grpc_completion_queue *));
-    server->cqs[n] = cq;
   }
+
+  GRPC_CQ_INTERNAL_REF(cq, "server");
+  n = server->cq_count++;
+  server->cqs = gpr_realloc(server->cqs,
+                            server->cq_count * sizeof(grpc_completion_queue *));
+  server->cqs[n] = cq;
 }
 
 void grpc_server_register_completion_queue(grpc_server *server,
@@ -1063,9 +1062,12 @@ void grpc_server_start(grpc_server *server) {
   GRPC_API_TRACE("grpc_server_start(server=%p)", 1, (server));
 
   server->started = true;
+  size_t pollset_count = 0;
   server->pollsets = gpr_malloc(sizeof(grpc_pollset *) * server->cq_count);
   for (i = 0; i < server->cq_count; i++) {
-    server->pollsets[i] = grpc_cq_pollset(server->cqs[i]);
+    if (!grpc_cq_is_non_listening_server_cq(server->cqs[i])) {
+      server->pollsets[pollset_count++] = grpc_cq_pollset(server->cqs[i]);
+    }
   }
   request_matcher_init(&server->unregistered_request_matcher,
                        server->max_requested_calls, server);
@@ -1075,7 +1077,7 @@ void grpc_server_start(grpc_server *server) {
   }
 
   for (l = server->listeners; l; l = l->next) {
-    l->start(&exec_ctx, server, l->arg, server->pollsets, server->cq_count);
+    l->start(&exec_ctx, server, l->arg, server->pollsets, pollset_count);
   }
 
   grpc_exec_ctx_finish(&exec_ctx);
