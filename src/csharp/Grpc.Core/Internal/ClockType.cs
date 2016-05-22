@@ -31,38 +31,23 @@
 
 #endregion
 
-using System;
-using System.Threading.Tasks;
-using Grpc.Core;
-using Grpc.Core.Internal;
-using Grpc.Core.Utils;
-using NUnit.Framework;
-
-namespace Grpc.Core.Internal.Tests
+namespace Grpc.Core.Internal
 {
-    public class CompletionQueueSafeHandleTest
+    /// <summary>
+    /// gpr_clock_type from grpc/support/time.h
+    /// </summary>
+    internal enum ClockType
     {
-        [Test]
-        public void CreateAndDestroy()
-        {
-            GrpcEnvironment.AddRef();
-            var cq = CompletionQueueSafeHandle.Create();
-            cq.Dispose();
-            GrpcEnvironment.Release();
-        }
+        /* Monotonic clock */
+        Monotonic,
 
-        [Test]
-        public void CreateAndShutdown()
-        {
-            GrpcEnvironment.AddRef();
-            var cq = CompletionQueueSafeHandle.Create();
-            cq.Shutdown();
-            var ev = cq.Next();
-            cq.Dispose();
-            GrpcEnvironment.Release();
-            Assert.AreEqual(CompletionQueueEvent.CompletionType.Shutdown, ev.type);
-            Assert.AreNotEqual(IntPtr.Zero, ev.success);
-            Assert.AreEqual(IntPtr.Zero, ev.tag);
-        }
+        /* Realtime clock */
+        Realtime,
+
+        /* Precise clock good for performance profiling. */
+        Precise,
+
+        /* Timespan - the distance between two time points */
+        Timespan
     }
 }
