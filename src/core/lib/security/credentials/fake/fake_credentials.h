@@ -40,6 +40,7 @@
 
 /* Creates a fake transport security credentials object for testing. */
 grpc_channel_credentials *grpc_fake_transport_security_credentials_create(void);
+
 /* Creates a fake server transport security credentials object for testing. */
 grpc_server_credentials *grpc_fake_transport_security_server_credentials_create(
     void);
