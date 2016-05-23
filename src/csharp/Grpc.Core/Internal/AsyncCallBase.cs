@@ -158,7 +158,7 @@ namespace Grpc.Core.Internal
                 if (readingDone)
                 {
                     // the last read that returns null or throws an exception is idempotent
-                    // and maintain its state.
+                    // and maintains its state.
                     GrpcPreconditions.CheckState(streamingReadTcs != null, "Call does not support streaming reads.");
                     return streamingReadTcs.Task;
                 }
