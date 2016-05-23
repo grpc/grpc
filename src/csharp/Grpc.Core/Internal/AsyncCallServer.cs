@@ -201,11 +201,11 @@ namespace Grpc.Core.Internal
         protected override Task CheckSendAllowedOrEarlyResult()
         {
             CheckNotCancelled();
-            GrpcPreconditions.CheckState(!disposed);
 
             GrpcPreconditions.CheckState(!halfcloseRequested, "Response stream has already been completed.");
             GrpcPreconditions.CheckState(!finished, "Already finished.");
             GrpcPreconditions.CheckState(streamingWriteTcs == null, "Only one write can be pending at a time");
+            GrpcPreconditions.CheckState(!disposed);
 
             return null;
         }
