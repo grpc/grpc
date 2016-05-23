@@ -41,7 +41,7 @@
 #include <grpc/support/log.h>
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/iomgr.h"
-#include "src/core/lib/security/secure_endpoint.h"
+#include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/tsi/fake_transport_security.h"
 #include "test/core/util/test_config.h"
 
