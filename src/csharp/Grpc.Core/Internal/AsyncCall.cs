@@ -366,6 +366,9 @@ namespace Grpc.Core.Internal
 
         private Task CheckSendPreconditionsClientSide()
         {
+            GrpcPreconditions.CheckState(!halfcloseRequested, "Request stream has already been completed.");
+            GrpcPreconditions.CheckState(streamingWriteTcs == null, "Only one write can be pending at a time.");
+
             if (cancelRequested)
             {
                 // Return a cancelled task.
@@ -373,9 +376,6 @@ namespace Grpc.Core.Internal
                 tcs.SetCanceled();
                 return tcs.Task;
             }
-
-            GrpcPreconditions.CheckState(!halfcloseRequested, "Request stream has already been completed.");
-            GrpcPreconditions.CheckState(streamingWriteTcs == null, "Only one write can be pending at a time.");
 
             return null;
         }
