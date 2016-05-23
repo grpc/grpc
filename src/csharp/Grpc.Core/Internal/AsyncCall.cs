@@ -252,7 +252,12 @@ namespace Grpc.Core.Internal
             lock (myLock)
             {
                 GrpcPreconditions.CheckState(started);
-                CheckSendPreconditionsClientSide();
+
+                var earlyResult = CheckSendPreconditionsClientSide();
+                if (earlyResult != null)
+                {
+                    return earlyResult;
+                }
 
                 if (disposed || finished)
                 {
@@ -338,7 +343,11 @@ namespace Grpc.Core.Internal
 
         protected override Task CheckSendAllowedOrEarlyResult()
         {
-            CheckSendPreconditionsClientSide();
+            var earlyResult = CheckSendPreconditionsClientSide();
+            if (earlyResult != null)
+            {
+                return earlyResult;
+            }
 
             if (finishedStatus.HasValue)
             {
@@ -355,11 +364,20 @@ namespace Grpc.Core.Internal
             return null;
         }
 
-        private void CheckSendPreconditionsClientSide()
+        private Task CheckSendPreconditionsClientSide()
         {
-            CheckNotCancelled();
+            if (cancelRequested)
+            {
+                // Return a cancelled task.
+                var tcs = new TaskCompletionSource<object>();
+                tcs.SetCanceled();
+                return tcs.Task;
+            }
+
             GrpcPreconditions.CheckState(!halfcloseRequested, "Request stream has already been completed.");
             GrpcPreconditions.CheckState(streamingWriteTcs == null, "Only one write can be pending at a time.");
+
+            return null;
         }
 
         private void Initialize(CompletionQueueSafeHandle cq)

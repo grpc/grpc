@@ -270,7 +270,7 @@ namespace Grpc.Core.Internal.Tests
         }
 
         [Test]
-        public void ClientStreaming_WriteAfterCancellationRequestThrowsOperationCancelledException()
+        public void ClientStreaming_WriteAfterCancellationRequestThrowsTaskCanceledException()
         {
             var resultTask = asyncCall.ClientStreamingCallAsync();
             var requestStream = new ClientRequestStream<string, string>(asyncCall);
@@ -278,8 +278,8 @@ namespace Grpc.Core.Internal.Tests
             asyncCall.Cancel();
             Assert.IsTrue(fakeCall.IsCancelled);
 
-            // TODO: awaiting the writeTask should throw TaskCanceledException
-            Assert.Throws(typeof(OperationCanceledException), () => requestStream.WriteAsync("request1"));
+            var writeTask = requestStream.WriteAsync("request1");
+            Assert.ThrowsAsync(typeof(TaskCanceledException), async () => await writeTask);
 
             fakeCall.UnaryResponseClientHandler(true,
                 CreateClientSideStatus(StatusCode.Cancelled),
@@ -416,7 +416,7 @@ namespace Grpc.Core.Internal.Tests
         }
 
         [Test]
-        public void DuplexStreaming_WriteAfterCancellationRequestThrowsOperationCancelledException()
+        public void DuplexStreaming_WriteAfterCancellationRequestThrowsTaskCanceledException()
         {
             asyncCall.StartDuplexStreamingCall();
             var requestStream = new ClientRequestStream<string, string>(asyncCall);
@@ -424,7 +424,9 @@ namespace Grpc.Core.Internal.Tests
 
             asyncCall.Cancel();
             Assert.IsTrue(fakeCall.IsCancelled);
-            Assert.Throws(typeof(OperationCanceledException), () => requestStream.WriteAsync("request1"));
+
+            var writeTask = requestStream.WriteAsync("request1");
+            Assert.ThrowsAsync(typeof(TaskCanceledException), async () => await writeTask);
 
             var readTask = responseStream.MoveNext();
             fakeCall.ReceivedMessageHandler(true, null);

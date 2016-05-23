@@ -222,14 +222,6 @@ namespace Grpc.Core.Internal
         /// </summary>
         protected abstract Task CheckSendAllowedOrEarlyResult();
 
-        protected void CheckNotCancelled()
-        {
-            if (cancelRequested)
-            {
-                throw new OperationCanceledException("Remote call has been cancelled.");
-            }
-        }
-
         protected byte[] UnsafeSerialize(TWrite msg)
         {
             using (Profilers.ForCurrentThread().NewScope("AsyncCallBase.UnsafeSerialize"))
