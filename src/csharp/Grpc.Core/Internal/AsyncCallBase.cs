@@ -135,6 +135,7 @@ namespace Grpc.Core.Internal
 
             lock (myLock)
             {
+                GrpcPreconditions.CheckState(started);
                 CheckSendingAllowed(allowFinished: false);
 
                 call.StartSendMessage(HandleSendFinished, payload, writeFlags, !initialMetadataSent);
@@ -213,7 +214,6 @@ namespace Grpc.Core.Internal
 
         protected virtual void CheckSendingAllowed(bool allowFinished)
         {
-            GrpcPreconditions.CheckState(started);
             CheckNotCancelled();
             GrpcPreconditions.CheckState(!disposed || allowFinished);
 

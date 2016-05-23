@@ -251,6 +251,7 @@ namespace Grpc.Core.Internal
         {
             lock (myLock)
             {
+                GrpcPreconditions.CheckState(started);
                 CheckSendingAllowed(allowFinished: true);
 
                 if (!disposed && !finished)
