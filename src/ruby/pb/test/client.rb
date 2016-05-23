@@ -114,7 +114,9 @@ def create_stub(opts)
   if opts.secure
     creds = ssl_creds(opts.use_test_ca)
     stub_opts = {
-      GRPC::Core::Channel::SSL_TARGET => opts.host_override
+      channel_args: {
+        GRPC::Core::Channel::SSL_TARGET => opts.host_override
+      }
     }
 
     # Add service account creds if specified
