@@ -48,7 +48,8 @@ namespace Grpc.Core.Tests
         [Test]
         public void AsciiEntry()
         {
-            var entry = new Metadata.Entry("ABC", "XYZ");
+            Assert.Throws(typeof(ArgumentException), () => new Metadata.Entry("ABC", "xyz"));
+            var entry = new Metadata.Entry("abc", "XYZ");
             Assert.IsFalse(entry.IsBinary);
             Assert.AreEqual("abc", entry.Key);  // key is in lowercase.
             Assert.AreEqual("XYZ", entry.Value);
@@ -63,7 +64,7 @@ namespace Grpc.Core.Tests
         public void BinaryEntry()
         {
             var bytes = new byte[] { 1, 2, 3 };
-            var entry = new Metadata.Entry("ABC-BIN", bytes);
+            var entry = new Metadata.Entry("abc-bin", bytes);
             Assert.IsTrue(entry.IsBinary);
             Assert.AreEqual("abc-bin", entry.Key);  // key is in lowercase.
             Assert.Throws(typeof(InvalidOperationException), () => { var v = entry.Value; });
@@ -77,7 +78,7 @@ namespace Grpc.Core.Tests
         [Test]
         public void AsciiEntry_KeyValidity()
         {
-            new Metadata.Entry("ABC", "XYZ");
+            new Metadata.Entry("abc", "xyz");
             new Metadata.Entry("0123456789abc", "XYZ");
             new Metadata.Entry("-abc", "XYZ");
             new Metadata.Entry("a_bc_", "XYZ");
@@ -98,7 +99,7 @@ namespace Grpc.Core.Tests
         {
             var origBytes = new byte[] { 1, 2, 3 };
             var bytes = new byte[] { 1, 2, 3 };
-            var entry = new Metadata.Entry("ABC-BIN", bytes);
+            var entry = new Metadata.Entry("abc-bin", bytes);
             bytes[0] = 255;  // changing the array passed to constructor should have any effect.
             CollectionAssert.AreEqual(origBytes, entry.ValueBytes);
 
