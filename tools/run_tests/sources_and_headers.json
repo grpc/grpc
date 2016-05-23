@@ -1818,44 +1818,6 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
-      "grpc_test_util", 
-      "qps"
-    ], 
-    "headers": [], 
-    "language": "c++", 
-    "name": "async_streaming_ping_pong_test", 
-    "src": [
-      "test/cpp/qps/async_streaming_ping_pong_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
-      "grpc_test_util", 
-      "qps"
-    ], 
-    "headers": [], 
-    "language": "c++", 
-    "name": "async_unary_ping_pong_test", 
-    "src": [
-      "test/cpp/qps/async_unary_ping_pong_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -2084,25 +2046,6 @@
     "name": "end2end_test", 
     "src": [
       "test/cpp/end2end/end2end_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
-      "grpc_test_util", 
-      "qps"
-    ], 
-    "headers": [], 
-    "language": "c++", 
-    "name": "generic_async_streaming_ping_pong_test", 
-    "src": [
-      "test/cpp/qps/generic_async_streaming_ping_pong_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2463,26 +2406,6 @@
       "grpc_test_util", 
       "qps"
     ], 
-    "headers": [], 
-    "language": "c++", 
-    "name": "qps_test", 
-    "src": [
-      "test/cpp/qps/qps_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_config", 
-      "grpc++_test_util", 
-      "grpc_test_util", 
-      "qps"
-    ], 
     "headers": [
       "test/cpp/qps/client.h", 
       "test/cpp/qps/server.h"
@@ -2730,44 +2653,6 @@
       "test/cpp/interop/stress_test.cc", 
       "test/cpp/util/metrics_server.cc", 
       "test/cpp/util/metrics_server.h"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
-      "grpc_test_util", 
-      "qps"
-    ], 
-    "headers": [], 
-    "language": "c++", 
-    "name": "sync_streaming_ping_pong_test", 
-    "src": [
-      "test/cpp/qps/sync_streaming_ping_pong_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
-      "grpc_test_util", 
-      "qps"
-    ], 
-    "headers": [], 
-    "language": "c++", 
-    "name": "sync_unary_ping_pong_test", 
-    "src": [
-      "test/cpp/qps/sync_unary_ping_pong_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
