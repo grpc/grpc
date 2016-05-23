@@ -254,17 +254,15 @@ namespace Grpc.Core.Internal
                 GrpcPreconditions.CheckState(started);
                 CheckSendingAllowed(allowFinished: true);
 
-                if (!disposed && !finished)
-                {
-                    call.StartSendCloseFromClient(HandleSendCloseFromClientFinished);
-                }
-                else
+                if (disposed || finished)
                 {
                     // In case the call has already been finished by the serverside,
-                    // the halfclose has already been done implicitly, so we only
-                    // emit the notification for the completion delegate.
-                    Task.Run(() => HandleSendCloseFromClientFinished(true));
+                    // the halfclose has already been done implicitly, so just return
+                    // completed task here.
+                    halfcloseRequested = true;
+                    return Task.FromResult<object>(null);
                 }
+                call.StartSendCloseFromClient(HandleSendCloseFromClientFinished);
 
                 halfcloseRequested = true;
                 streamingWriteTcs = new TaskCompletionSource<object>();

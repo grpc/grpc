@@ -395,7 +395,7 @@ namespace Grpc.Core.Internal.Tests
         }
 
         [Test]
-        public void DuplexStreaming_CompleteAfterReceivingStatusFails()
+        public void DuplexStreaming_CompleteAfterReceivingStatusSuceeds()
         {
             asyncCall.StartDuplexStreamingCall();
             var requestStream = new ClientRequestStream<string, string>(asyncCall);
