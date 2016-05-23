@@ -33,7 +33,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 using Grpc.Core.Internal;
@@ -211,7 +210,9 @@ namespace Grpc.Core.Internal.Tests
                 new Metadata());
 
             AssertUnaryResponseSuccess(asyncCall, fakeCall, resultTask);
-            var ex = Assert.Throws<RpcException>(() => requestStream.WriteAsync("request1"));
+
+            var writeTask = requestStream.WriteAsync("request1");
+            var ex = Assert.ThrowsAsync<RpcException>(async () => await writeTask);
             Assert.AreEqual(Status.DefaultSuccess, ex.Status);
         }
 
@@ -227,7 +228,9 @@ namespace Grpc.Core.Internal.Tests
                 new Metadata());
 
             AssertUnaryResponseError(asyncCall, fakeCall, resultTask, StatusCode.OutOfRange);
-            var ex = Assert.Throws<RpcException>(() => requestStream.WriteAsync("request1"));
+
+            var writeTask = requestStream.WriteAsync("request1");
+            var ex = Assert.ThrowsAsync<RpcException>(async () => await writeTask);
             Assert.AreEqual(StatusCode.OutOfRange, ex.Status.StatusCode);
         }
 
@@ -275,6 +278,7 @@ namespace Grpc.Core.Internal.Tests
             asyncCall.Cancel();
             Assert.IsTrue(fakeCall.IsCancelled);
 
+            // TODO: awaiting the writeTask should throw TaskCanceledException
             Assert.Throws(typeof(OperationCanceledException), () => requestStream.WriteAsync("request1"));
 
             fakeCall.UnaryResponseClientHandler(true,
@@ -390,7 +394,8 @@ namespace Grpc.Core.Internal.Tests
 
             AssertStreamingResponseSuccess(asyncCall, fakeCall, readTask);
 
-            var ex = Assert.ThrowsAsync<RpcException>(async () => await requestStream.WriteAsync("request1"));
+            var writeTask = requestStream.WriteAsync("request1");
+            var ex = Assert.ThrowsAsync<RpcException>(async () => await writeTask);
             Assert.AreEqual(Status.DefaultSuccess, ex.Status);
         }
 
