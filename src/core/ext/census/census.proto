@@ -31,9 +31,6 @@ syntax = "proto3";
 
 package google.census;
 
-import "google/protobuf/duration.proto";
-import "google/protobuf/timestamp.proto";
-
 // All the census protos.
 //
 // Nomenclature note: capitalized names below (like Metric) are protos.
@@ -52,6 +49,41 @@ import "google/protobuf/timestamp.proto";
 // Aggregations to use through a View. The corresponding combination of
 // Metric/View/Aggregation which is available to census clients is called a
 // ViewAggregation.
+
+
+// The following two types are copied from
+// google/protobuf/{duration,timestamp}.proto. Ideally, we would be able to
+// import them, but this causes compilation issues on C-based systems
+// (e.g. https://koti.kapsi.fi/jpa/nanopb/), which cannot process the C++
+// headers generated from the standard protobuf distribution. See the relevant
+// proto files for full documentation of these types.
+
+message Duration {
+  // Signed seconds of the span of time. Must be from -315,576,000,000
+  // to +315,576,000,000 inclusive.
+  int64 seconds = 1;
+
+  // Signed fractions of a second at nanosecond resolution of the span
+  // of time. Durations less than one second are represented with a 0
+  // `seconds` field and a positive or negative `nanos` field. For durations
+  // of one second or more, a non-zero value for the `nanos` field must be
+  // of the same sign as the `seconds` field. Must be from -999,999,999
+  // to +999,999,999 inclusive.
+  int32 nanos = 2;
+}
+
+message Timestamp {
+  // Represents seconds of UTC time since Unix epoch
+  // 1970-01-01T00:00:00Z. Must be from from 0001-01-01T00:00:00Z to
+  // 9999-12-31T23:59:59Z inclusive.
+  int64 seconds = 1;
+
+  // Non-negative fractions of a second at nanosecond resolution. Negative
+  // second values with fractions must still have non-negative nanos values
+  // that count forward in time. Must be from 0 to 999,999,999
+  // inclusive.
+  int32 nanos = 2;
+}
 
 // Describes a metric
 message Metric {
@@ -167,7 +199,7 @@ message AggregationDescriptor {
 //
 // Although it is not forbidden, it is generally a bad idea to include
 // non-finite values (infinities or NaNs) in the population of values, as this
-// will render the `mean` and `sum_of_squared_deviation` fields meaningless.
+// will render the `mean` field meaningless.
 message Distribution {
   // The number of values in the population. Must be non-negative.
   int64 count = 1;
@@ -175,14 +207,6 @@ message Distribution {
   // The arithmetic mean of the values in the population. If `count` is zero
   // then this field must be zero.
   double mean = 2;
-
-  // The sum of squared deviations from the mean of the values in the
-  // population.  For values x_i this is:
-  //
-  //     Sum[i=1..n]((x_i - mean)^2)
-  //
-  // If `count` is zero then this field must be zero.
-  double sum_of_squared_deviation = 3;
 
   // Describes a range of population values.
   message Range {
@@ -194,7 +218,7 @@ message Distribution {
 
   // The range of the population values. If `count` is zero, this field will not
   // be defined.
-  Range range = 4;
+  Range range = 3;
 
   // A Distribution may optionally contain a histogram of the values in the
   // population.  The histogram is given in `bucket_count` as counts of values
@@ -210,7 +234,7 @@ message Distribution {
   // `bucket_boundaries`.
   //
   // Any suffix of trailing zero bucket_count fields may be omitted.
-  repeated int64 bucket_count = 5;
+  repeated int64 bucket_count = 4;
 }
 
 // Record summary stats over various time windows.
@@ -218,7 +242,7 @@ message IntervalStats {
   // Summary statistic over a single time window.
   message Window {
     // The window duration.
-    google.protobuf.Duration window_size = 1;
+    Duration window_size = 1;
     // The number of measurements in this window.
     int64 count = 2;
     // The arithmetic mean of all measurements in the window.
@@ -282,6 +306,6 @@ message ViewAggregations {
   // Start and end timestamps over which the value was accumulated. These
   // values are not relevant/defined for IntervalStats aggregations, which are
   // always accumulated over a fixed time period.
-  google.protobuf.Timestamp start = 2;
-  google.protobuf.Timestamp end = 3;
+  Timestamp start = 2;
+  Timestamp end = 3;
 }
