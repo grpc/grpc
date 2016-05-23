@@ -34,11 +34,11 @@ namespace Grpc.Testing {
             "aW5nLkNvbXBsZXhQcm90b1BhcmFtc0gAQgkKB3BheWxvYWRiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
-          new pbr::GeneratedCodeInfo(null, new pbr::GeneratedCodeInfo[] {
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ByteBufferParams), global::Grpc.Testing.ByteBufferParams.Parser, new[]{ "ReqSize", "RespSize" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.SimpleProtoParams), global::Grpc.Testing.SimpleProtoParams.Parser, new[]{ "ReqSize", "RespSize" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ComplexProtoParams), global::Grpc.Testing.ComplexProtoParams.Parser, null, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.PayloadConfig), global::Grpc.Testing.PayloadConfig.Parser, new[]{ "BytebufParams", "SimpleParams", "ComplexParams" }, new[]{ "Payload" }, null, null)
+          new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ByteBufferParams), global::Grpc.Testing.ByteBufferParams.Parser, new[]{ "ReqSize", "RespSize" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.SimpleProtoParams), global::Grpc.Testing.SimpleProtoParams.Parser, new[]{ "ReqSize", "RespSize" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ComplexProtoParams), global::Grpc.Testing.ComplexProtoParams.Parser, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.PayloadConfig), global::Grpc.Testing.PayloadConfig.Parser, new[]{ "BytebufParams", "SimpleParams", "ComplexParams" }, new[]{ "Payload" }, null, null)
           }));
     }
     #endregion

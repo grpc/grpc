@@ -77,12 +77,19 @@ static grpc_subchannel_key *create_key(
   grpc_subchannel_key *k = gpr_malloc(sizeof(*k));
   k->connector = grpc_connector_ref(connector);
   k->args.filter_count = args->filter_count;
-  k->args.filters = gpr_malloc(sizeof(*k->args.filters) * k->args.filter_count);
-  memcpy((grpc_channel_filter *)k->args.filters, args->filters,
-         sizeof(*k->args.filters) * k->args.filter_count);
+  if (k->args.filter_count > 0) {
+    k->args.filters =
+        gpr_malloc(sizeof(*k->args.filters) * k->args.filter_count);
+    memcpy((grpc_channel_filter *)k->args.filters, args->filters,
+           sizeof(*k->args.filters) * k->args.filter_count);
+  } else {
+    k->args.filters = NULL;
+  }
   k->args.addr_len = args->addr_len;
   k->args.addr = gpr_malloc(args->addr_len);
-  memcpy(k->args.addr, args->addr, k->args.addr_len);
+  if (k->args.addr_len > 0) {
+    memcpy(k->args.addr, args->addr, k->args.addr_len);
+  }
   k->args.args = copy_channel_args(args->args);
   return k;
 }
@@ -104,11 +111,15 @@ static int subchannel_key_compare(grpc_subchannel_key *a,
   if (c != 0) return c;
   c = GPR_ICMP(a->args.filter_count, b->args.filter_count);
   if (c != 0) return c;
-  c = memcmp(a->args.addr, b->args.addr, a->args.addr_len);
-  if (c != 0) return c;
-  c = memcmp(a->args.filters, b->args.filters,
-             a->args.filter_count * sizeof(*a->args.filters));
-  if (c != 0) return c;
+  if (a->args.addr_len) {
+    c = memcmp(a->args.addr, b->args.addr, a->args.addr_len);
+    if (c != 0) return c;
+  }
+  if (a->args.filter_count > 0) {
+    c = memcmp(a->args.filters, b->args.filters,
+               a->args.filter_count * sizeof(*a->args.filters));
+    if (c != 0) return c;
+  }
   return grpc_channel_args_compare(a->args.args, b->args.args);
 }
 

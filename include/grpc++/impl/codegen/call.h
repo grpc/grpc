@@ -329,8 +329,11 @@ class CallOpGenericRecvMessage {
 
   template <class R>
   void RecvMessage(R* message) {
-    deserialize_.reset(
-        new CallOpGenericRecvMessageHelper::DeserializeFuncType<R>(message));
+    // Use an explicit base class pointer to avoid resolution error in the
+    // following unique_ptr::reset for some old implementations.
+    CallOpGenericRecvMessageHelper::DeserializeFunc* func =
+        new CallOpGenericRecvMessageHelper::DeserializeFuncType<R>(message);
+    deserialize_.reset(func);
   }
 
   bool got_message;
