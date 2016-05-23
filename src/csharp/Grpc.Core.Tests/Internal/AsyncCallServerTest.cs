@@ -181,6 +181,21 @@ namespace Grpc.Core.Internal.Tests
             AssertFinished(asyncCallServer, fakeCall, finishedTask);
         }
 
+        [Test]
+        public void WriteAfterWriteStatusThrowsInvalidOperationException()
+        {
+            var finishedTask = asyncCallServer.ServerSideCallAsync();
+            var responseStream = new ServerResponseStream<string, string>(asyncCallServer);
+
+            asyncCallServer.SendStatusFromServerAsync(Status.DefaultSuccess, new Metadata(), null);
+            Assert.ThrowsAsync(typeof(InvalidOperationException), async () => await responseStream.WriteAsync("request1"));
+
+            fakeCall.SendStatusFromServerHandler(true);
+            fakeCall.ReceivedCloseOnServerHandler(true, cancelled: true);
+
+            AssertFinished(asyncCallServer, fakeCall, finishedTask);
+        }
+
         static void AssertFinished(AsyncCallServer<string, string> asyncCallServer, FakeNativeCall fakeCall, Task finishedTask)
         {
             Assert.IsTrue(fakeCall.IsDisposed);
