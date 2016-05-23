@@ -438,6 +438,7 @@ namespace Grpc.Core.Internal
         /// </summary>
         private void HandleReceivedResponseHeaders(bool success, Metadata responseHeaders)
         {
+            // TODO(jtattermusch): handle success==false
             responseHeadersTcs.SetResult(responseHeaders);
         }
 
