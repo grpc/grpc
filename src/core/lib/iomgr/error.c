@@ -225,6 +225,7 @@ grpc_error *grpc_error_create(const char *file, int line, const char *desc,
                   (void *)(uintptr_t)GRPC_ERROR_STR_FILE, gpr_strdup(file)),
       (void *)(uintptr_t)GRPC_ERROR_STR_DESCRIPTION, gpr_strdup(desc));
   err->errs = gpr_avl_create(&avl_vtable_errs);
+  err->next_err = 0;
   for (size_t i = 0; i < num_referencing; i++) {
     if (referencing[i] == GRPC_ERROR_NONE) continue;
     err->errs = gpr_avl_add(err->errs, (void *)(err->next_err++),
@@ -233,7 +234,6 @@ grpc_error *grpc_error_create(const char *file, int line, const char *desc,
   err->times = gpr_avl_add(gpr_avl_create(&avl_vtable_times),
                            (void *)(uintptr_t)GRPC_ERROR_TIME_CREATED,
                            box_time(gpr_now(GPR_CLOCK_REALTIME)));
-  err->next_err = 0;
   gpr_ref_init(&err->refs, 1);
   return err;
 }
