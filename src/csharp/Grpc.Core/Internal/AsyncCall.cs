@@ -336,6 +336,32 @@ namespace Grpc.Core.Internal
             get { return true; }
         }
 
+        protected override Task CheckSendAllowedOrEarlyResult()
+        {
+            CheckSendPreconditionsClientSide();
+
+            if (finishedStatus.HasValue)
+            {
+                // throwing RpcException if we already received status on client
+                // side makes the most sense.
+                // Note that this throws even for StatusCode.OK.
+                // Writing after the call has finished is not a programming error because server can close
+                // the call anytime, so don't throw directly, but let the write task finish with an error.
+                var tcs = new TaskCompletionSource<object>();
+                tcs.SetException(new RpcException(finishedStatus.Value.Status));
+                return tcs.Task;
+            }
+
+            return null;
+        }
+
+        private void CheckSendPreconditionsClientSide()
+        {
+            CheckNotCancelled();
+            GrpcPreconditions.CheckState(!halfcloseRequested, "Request stream has already been completed.");
+            GrpcPreconditions.CheckState(streamingWriteTcs == null, "Only one write can be pending at a time.");
+        }
+
         private void Initialize(CompletionQueueSafeHandle cq)
         {
             using (Profilers.ForCurrentThread().NewScope("AsyncCall.Initialize"))
@@ -435,32 +461,6 @@ namespace Grpc.Core.Internal
 
                 unaryResponseTcs.SetResult(msg);
             }
-        }
-
-        protected override Task CheckSendAllowedOrEarlyResult()
-        {
-            CheckSendPreconditionsClientSide();
-
-            if (finishedStatus.HasValue)
-            {
-                // throwing RpcException if we already received status on client
-                // side makes the most sense.
-                // Note that this throws even for StatusCode.OK.
-                // Writing after the call has finished is not a programming error because server can close
-                // the call anytime, so don't throw directly, but let the write task finish with an error.
-                var tcs = new TaskCompletionSource<object>();
-                tcs.SetException(new RpcException(finishedStatus.Value.Status));
-                return tcs.Task;
-            }
-
-            return null;
-        }
-
-        private void CheckSendPreconditionsClientSide()
-        {
-            CheckNotCancelled();
-            GrpcPreconditions.CheckState(!halfcloseRequested, "Request stream has already been completed.");
-            GrpcPreconditions.CheckState(streamingWriteTcs == null, "Only one write can be pending at a time.");
         }
 
         /// <summary>
