@@ -116,9 +116,15 @@ namespace Grpc.Core.Internal
             {
                 GrpcPreconditions.CheckNotNull(headers, "metadata");
 
+                GrpcPreconditions.CheckState(started);
                 GrpcPreconditions.CheckState(!initialMetadataSent, "Response headers can only be sent once per call.");
                 GrpcPreconditions.CheckState(streamingWritesCounter == 0, "Response headers can only be sent before the first write starts.");
-                CheckSendingAllowed(allowFinished: false);
+
+                var earlyResult = CheckSendAllowedOrEarlyResult();
+                if (earlyResult != null)
+                {
+                    return earlyResult;
+                }
 
                 using (var metadataArray = MetadataArraySafeHandle.Create(headers))
                 {
@@ -190,6 +196,18 @@ namespace Grpc.Core.Internal
         protected override void OnAfterReleaseResources()
         {
             server.RemoveCallReference(this);
+        }
+
+        protected override Task CheckSendAllowedOrEarlyResult()
+        {
+            CheckNotCancelled();
+            GrpcPreconditions.CheckState(!disposed);
+
+            GrpcPreconditions.CheckState(!halfcloseRequested, "Response stream has already been completed.");
+            GrpcPreconditions.CheckState(!finished, "Already finished.");
+            GrpcPreconditions.CheckState(streamingWriteTcs == null, "Only one write can be pending at a time");
+
+            return null;
         }
 
         /// <summary>
