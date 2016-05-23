@@ -1944,44 +1944,6 @@
     "ci_platforms": [
       "linux", 
       "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "gtest": false, 
-    "language": "c++", 
-    "name": "async_streaming_ping_pong_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [], 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "gtest": false, 
-    "language": "c++", 
-    "name": "async_unary_ping_pong_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [], 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
       "posix", 
       "windows"
     ], 
@@ -2232,25 +2194,6 @@
     "ci_platforms": [
       "linux", 
       "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "gtest": false, 
-    "language": "c++", 
-    "name": "generic_async_streaming_ping_pong_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [], 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
       "posix", 
       "windows"
     ], 
@@ -2394,25 +2337,6 @@
     "ci_platforms": [
       "linux", 
       "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 10, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "gtest": false, 
-    "language": "c++", 
-    "name": "qps_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [], 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
       "posix", 
       "windows"
     ], 
@@ -2543,44 +2467,6 @@
     "gtest": true, 
     "language": "c++", 
     "name": "streaming_throughput_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [], 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "gtest": false, 
-    "language": "c++", 
-    "name": "sync_streaming_ping_pong_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [], 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "gtest": false, 
-    "language": "c++", 
-    "name": "sync_unary_ping_pong_test", 
     "platforms": [
       "linux", 
       "mac", 
