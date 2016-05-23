@@ -252,7 +252,7 @@ namespace Grpc.Core.Internal
             lock (myLock)
             {
                 GrpcPreconditions.CheckState(started);
-                CheckSendingAllowed(allowFinished: true);
+                CheckSendPreconditionsClientSide();
 
                 if (disposed || finished)
                 {
@@ -437,17 +437,30 @@ namespace Grpc.Core.Internal
             }
         }
 
-        protected override void CheckSendingAllowed(bool allowFinished)
+        protected override Task CheckSendAllowedOrEarlyResult()
         {
-            base.CheckSendingAllowed(true);
+            CheckSendPreconditionsClientSide();
 
-            // throwing RpcException if we already received status on client
-            // side makes the most sense.
-            // Note that this throws even for StatusCode.OK.
-            if (!allowFinished && finishedStatus.HasValue)
+            if (finishedStatus.HasValue)
             {
-                throw new RpcException(finishedStatus.Value.Status);
+                // throwing RpcException if we already received status on client
+                // side makes the most sense.
+                // Note that this throws even for StatusCode.OK.
+                // Writing after the call has finished is not a programming error because server can close
+                // the call anytime, so don't throw directly, but let the write task finish with an error.
+                var tcs = new TaskCompletionSource<object>();
+                tcs.SetException(new RpcException(finishedStatus.Value.Status));
+                return tcs.Task;
             }
+
+            return null;
+        }
+
+        private void CheckSendPreconditionsClientSide()
+        {
+            CheckNotCancelled();
+            GrpcPreconditions.CheckState(!halfcloseRequested, "Request stream has already been completed.");
+            GrpcPreconditions.CheckState(streamingWriteTcs == null, "Only one write can be pending at a time.");
         }
 
         /// <summary>

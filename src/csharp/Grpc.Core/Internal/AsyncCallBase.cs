@@ -136,7 +136,11 @@ namespace Grpc.Core.Internal
             lock (myLock)
             {
                 GrpcPreconditions.CheckState(started);
-                CheckSendingAllowed(allowFinished: false);
+                var earlyResult = CheckSendAllowedOrEarlyResult();
+                if (earlyResult != null)
+                {
+                    return earlyResult;
+                }
 
                 call.StartSendMessage(HandleSendFinished, payload, writeFlags, !initialMetadataSent);
 
@@ -212,15 +216,11 @@ namespace Grpc.Core.Internal
         {
         }
 
-        protected virtual void CheckSendingAllowed(bool allowFinished)
-        {
-            CheckNotCancelled();
-            GrpcPreconditions.CheckState(!disposed || allowFinished);
-
-            GrpcPreconditions.CheckState(!halfcloseRequested, "Already halfclosed.");
-            GrpcPreconditions.CheckState(!finished || allowFinished, "Already finished.");
-            GrpcPreconditions.CheckState(streamingWriteTcs == null, "Only one write can be pending at a time");
-        }
+        /// <summary>
+        /// Checks if sending is allowed and possibly returns a Task that allows short-circuiting the send
+        /// logic by directly returning the write operation result task. Normally, null is returned.
+        /// </summary>
+        protected abstract Task CheckSendAllowedOrEarlyResult();
 
         protected void CheckNotCancelled()
         {
