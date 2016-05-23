@@ -136,7 +136,6 @@ namespace Grpc.Core.Internal.Tests
         public void WriteAfterCancelNotificationFails()
         {
             var finishedTask = asyncCallServer.ServerSideCallAsync();
-            var requestStream = new ServerRequestStream<string, string>(asyncCallServer);
             var responseStream = new ServerResponseStream<string, string>(asyncCallServer);
 
             fakeCall.ReceivedCloseOnServerHandler(true, cancelled: true);

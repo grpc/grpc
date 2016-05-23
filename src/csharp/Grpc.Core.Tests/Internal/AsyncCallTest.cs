@@ -103,7 +103,7 @@ namespace Grpc.Core.Internal.Tests
             var resultTask = asyncCall.UnaryCallAsync("request1");
             fakeCall.UnaryResponseClientHandler(true,
                 CreateClientSideStatus(StatusCode.InvalidArgument),
-                CreateResponsePayload(),
+                null,
                 new Metadata());
 
             AssertUnaryResponseError(asyncCall, fakeCall, resultTask, StatusCode.InvalidArgument);
@@ -148,7 +148,7 @@ namespace Grpc.Core.Internal.Tests
             var resultTask = asyncCall.ClientStreamingCallAsync();
             fakeCall.UnaryResponseClientHandler(true,
                 CreateClientSideStatus(StatusCode.InvalidArgument),
-                CreateResponsePayload(),
+                null,
                 new Metadata());
 
             AssertUnaryResponseError(asyncCall, fakeCall, resultTask, StatusCode.InvalidArgument);
@@ -193,7 +193,7 @@ namespace Grpc.Core.Internal.Tests
 
             fakeCall.UnaryResponseClientHandler(true,
                 CreateClientSideStatus(StatusCode.Internal),
-                CreateResponsePayload(),
+                null,
                 new Metadata());
 
             AssertUnaryResponseError(asyncCall, fakeCall, resultTask, StatusCode.Internal);
@@ -223,7 +223,7 @@ namespace Grpc.Core.Internal.Tests
 
             fakeCall.UnaryResponseClientHandler(true,
                 new ClientSideStatus(new Status(StatusCode.OutOfRange, ""), new Metadata()),
-                CreateResponsePayload(),
+                null,
                 new Metadata());
 
             AssertUnaryResponseError(asyncCall, fakeCall, resultTask, StatusCode.OutOfRange);
@@ -279,7 +279,7 @@ namespace Grpc.Core.Internal.Tests
 
             fakeCall.UnaryResponseClientHandler(true,
                 CreateClientSideStatus(StatusCode.Cancelled),
-                CreateResponsePayload(),
+                null,
                 new Metadata());
 
             AssertUnaryResponseError(asyncCall, fakeCall, resultTask, StatusCode.Cancelled);
