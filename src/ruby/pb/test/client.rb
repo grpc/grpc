@@ -114,7 +114,9 @@ def create_stub(opts)
   if opts.secure
     creds = ssl_creds(opts.use_test_ca)
     stub_opts = {
-      GRPC::Core::Channel::SSL_TARGET => opts.host_override
+      channel_args: {
+        GRPC::Core::Channel::SSL_TARGET => opts.host_override
+      }
     }
 
     # Add service account creds if specified
@@ -315,7 +317,8 @@ class NamedTests
   def timeout_on_sleeping_server
     msg_sizes = [[27_182, 31_415]]
     ppp = PingPongPlayer.new(msg_sizes)
-    resps = @stub.full_duplex_call(ppp.each_item, timeout: 0.001)
+    deadline = GRPC::Core::TimeConsts::from_relative_time(0.001)
+    resps = @stub.full_duplex_call(ppp.each_item, deadline: deadline)
     resps.each { |r| ppp.queue.push(r) }
     fail 'Should have raised GRPC::BadStatus(DEADLINE_EXCEEDED)'
   rescue GRPC::BadStatus => e
