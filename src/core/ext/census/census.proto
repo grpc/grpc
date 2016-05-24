@@ -149,13 +149,14 @@ message Metric {
 }
 
 // An Aggregation summarizes a series of individual Metric measurements, an
-// AggregationDescriptor describes an Aggregation
+// AggregationDescriptor describes an Aggregation.
 message AggregationDescriptor {
-  // At most one set of options.
+  // At most one set of options. If neither option is set, a default type
+  // of Distribution (without a histogram component) will be used.
   oneof options {
-    // Defines the histogram bucket boundaries for Distributions
+    // Defines the histogram bucket boundaries for Distributions.
     BucketBoundaries bucket_boundaries = 1;
-    // Defines the time windows to record for IntervalStats
+    // Defines the time windows to record for IntervalStats.
     IntervalBoundaries interval_boundaries = 2;
   }
 
@@ -164,7 +165,8 @@ message AggregationDescriptor {
   // `bucket_boundaries`.
   //
   // Describes histogram bucket boundaries. Defines `size(bounds) + 1` (= N)
-  // buckets, with these boundaries for bucket index i:
+  // buckets (for size(bounds) >= 1; if size(bounds) == 0, then no histogram
+  // will be defined. The boundaries for bucket index i are:
   //
   // [-infinity, bounds[i]) for i == 0
   // [bounds[i-1], bounds[i]) for 0 < i < N-2
@@ -253,7 +255,7 @@ message IntervalStats {
   repeated Window window = 1;
 }
 
-// A Tag: key-value pair
+// A Tag: key-value pair.
 message Tag {
   string key = 1;
   string value = 2;
