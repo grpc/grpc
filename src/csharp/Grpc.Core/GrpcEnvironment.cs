@@ -32,8 +32,9 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 using Grpc.Core.Internal;
 using Grpc.Core.Logging;
 using Grpc.Core.Utils;
@@ -46,6 +47,7 @@ namespace Grpc.Core
     public class GrpcEnvironment
     {
         const int MinDefaultThreadPoolSize = 4;
+        const int DefaultCompletionQueueCount = 1;
 
         static object staticLock = new object();
         static GrpcEnvironment instance;
@@ -57,6 +59,7 @@ namespace Grpc.Core
         readonly GrpcThreadPool threadPool;
         readonly CompletionRegistry completionRegistry;
         readonly DebugStats debugStats = new DebugStats();
+        readonly AtomicCounter cqPickerCounter = new AtomicCounter();
         bool isClosed;
 
         /// <summary>
@@ -147,7 +150,7 @@ namespace Grpc.Core
         {
             GrpcNativeInit();
             completionRegistry = new CompletionRegistry(this);
-            threadPool = new GrpcThreadPool(this, GetThreadPoolSizeOrDefault());
+            threadPool = new GrpcThreadPool(this, GetThreadPoolSizeOrDefault(), DefaultCompletionQueueCount);
             threadPool.Start();
         }
 
@@ -163,14 +166,24 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// Gets the completion queue used by this gRPC environment.
+        /// Gets the completion queues used by this gRPC environment.
         /// </summary>
-        internal CompletionQueueSafeHandle CompletionQueue
+        internal IReadOnlyCollection<CompletionQueueSafeHandle> CompletionQueues
         {
             get
             {
-                return this.threadPool.CompletionQueue;
+                return this.threadPool.CompletionQueues;
             }
+        }
+
+        /// <summary>
+        /// Picks a completion queue in a round-robin fashion.
+        /// Shouldn't be invoked on a per-call basis (used at per-channel basis).
+        /// </summary>
+        internal CompletionQueueSafeHandle PickCompletionQueue()
+        {
+            var cqIndex = (int) ((cqPickerCounter.Increment() - 1) % this.threadPool.CompletionQueues.Count);
+            return this.threadPool.CompletionQueues.ElementAt(cqIndex);
         }
 
         /// <summary>

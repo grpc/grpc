@@ -56,9 +56,9 @@ namespace Grpc.Core.Internal
             this.server = GrpcPreconditions.CheckNotNull(server);
         }
 
-        public void Initialize(CallSafeHandle call)
+        public void Initialize(CallSafeHandle call, CompletionQueueSafeHandle completionQueue)
         {
-            call.Initialize(environment.CompletionRegistry, environment.CompletionQueue);
+            call.Initialize(environment.CompletionRegistry, completionQueue);
 
             server.AddCallReference(this);
             InitializeInternal(call);

@@ -31,7 +31,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -56,6 +55,7 @@ namespace Grpc.Core
 
         readonly string target;
         readonly GrpcEnvironment environment;
+        readonly CompletionQueueSafeHandle completionQueue;
         readonly ChannelSafeHandle handle;
         readonly Dictionary<string, ChannelOption> options;
 
@@ -75,6 +75,7 @@ namespace Grpc.Core
             EnsureUserAgentChannelOption(this.options);
             this.environment = GrpcEnvironment.AddRef();
 
+            this.completionQueue = this.environment.PickCompletionQueue();
             using (var nativeCredentials = credentials.ToNativeCredentials())
             using (var nativeChannelArgs = ChannelOptions.CreateChannelArgs(this.options.Values))
             {
@@ -135,7 +136,7 @@ namespace Grpc.Core
                     tcs.SetCanceled();
                 }
             });
-            handle.WatchConnectivityState(lastObservedState, deadlineTimespec, environment.CompletionQueue, environment.CompletionRegistry, handler);
+            handle.WatchConnectivityState(lastObservedState, deadlineTimespec, completionQueue, environment.CompletionRegistry, handler);
             return tcs.Task;
         }
 
@@ -228,6 +229,14 @@ namespace Grpc.Core
             get
             {
                 return this.environment;
+            }
+        }
+
+        internal CompletionQueueSafeHandle CompletionQueue
+        {
+            get
+            {
+                return this.completionQueue;
             }
         }
 

@@ -144,7 +144,7 @@ namespace Grpc.Core.Internal
                 GrpcPreconditions.CheckState(!started);
                 started = true;
 
-                Initialize(environment.CompletionQueue);
+                Initialize(details.Channel.CompletionQueue);
 
                 halfcloseRequested = true;
                 readingDone = true;
@@ -171,7 +171,7 @@ namespace Grpc.Core.Internal
                 GrpcPreconditions.CheckState(!started);
                 started = true;
 
-                Initialize(environment.CompletionQueue);
+                Initialize(details.Channel.CompletionQueue);
 
                 readingDone = true;
 
@@ -195,7 +195,7 @@ namespace Grpc.Core.Internal
                 GrpcPreconditions.CheckState(!started);
                 started = true;
 
-                Initialize(environment.CompletionQueue);
+                Initialize(details.Channel.CompletionQueue);
 
                 halfcloseRequested = true;
 
@@ -220,7 +220,7 @@ namespace Grpc.Core.Internal
                 GrpcPreconditions.CheckState(!started);
                 started = true;
 
-                Initialize(environment.CompletionQueue);
+                Initialize(details.Channel.CompletionQueue);
 
                 using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
                 {
