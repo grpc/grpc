@@ -195,26 +195,30 @@ class Call(_types.Call):
         translated_op = cygrpc.operation_send_initial_metadata(
             cygrpc.Metadata(
                 cygrpc.Metadatum(key, value)
-                for key, value in op.initial_metadata))
+                for key, value in op.initial_metadata),
+            op.flags)
       elif op.type == _types.OpType.SEND_MESSAGE:
-        translated_op = cygrpc.operation_send_message(op.message)
+        translated_op = cygrpc.operation_send_message(op.message, op.flags)
       elif op.type == _types.OpType.SEND_CLOSE_FROM_CLIENT:
-        translated_op = cygrpc.operation_send_close_from_client()
+        translated_op = cygrpc.operation_send_close_from_client(op.flags)
       elif op.type == _types.OpType.SEND_STATUS_FROM_SERVER:
         translated_op = cygrpc.operation_send_status_from_server(
             cygrpc.Metadata(
                 cygrpc.Metadatum(key, value)
                 for key, value in op.trailing_metadata),
             op.status.code,
-            op.status.details)
+            op.status.details,
+            op.flags)
       elif op.type == _types.OpType.RECV_INITIAL_METADATA:
-        translated_op = cygrpc.operation_receive_initial_metadata()
+        translated_op = cygrpc.operation_receive_initial_metadata(
+            op.flags)
       elif op.type == _types.OpType.RECV_MESSAGE:
-        translated_op = cygrpc.operation_receive_message()
+        translated_op = cygrpc.operation_receive_message(op.flags)
       elif op.type == _types.OpType.RECV_STATUS_ON_CLIENT:
-        translated_op = cygrpc.operation_receive_status_on_client()
+        translated_op = cygrpc.operation_receive_status_on_client(
+            op.flags)
       elif op.type == _types.OpType.RECV_CLOSE_ON_SERVER:
-        translated_op = cygrpc.operation_receive_close_on_server()
+        translated_op = cygrpc.operation_receive_close_on_server(op.flags)
       else:
         raise ValueError('unexpected operation type {}'.format(op.type))
       translated_ops.append(translated_op)
