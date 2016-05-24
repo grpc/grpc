@@ -216,7 +216,7 @@ static void recv_im_ready(grpc_exec_ctx *exec_ctx, void *arg,
                                        &message);
     grpc_call_next_op(exec_ctx, elem, &op);
   }
-  grpc_exec_ctx_push(
+  grpc_exec_ctx_sched(
       exec_ctx, calld->recv_im_ready,
       GRPC_ERROR_CREATE_REFERENCING("Forced call to close", &error, 1), NULL);
 }

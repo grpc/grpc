@@ -163,7 +163,7 @@ typedef struct {
 static void do_request_thread(grpc_exec_ctx *exec_ctx, void *rp,
                               grpc_error *error) {
   request *r = rp;
-  grpc_exec_ctx_push(
+  grpc_exec_ctx_sched(
       exec_ctx, r->on_done,
       grpc_blocking_resolve_address(r->name, r->default_port, r->addrs_out),
       NULL);

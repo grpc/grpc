@@ -222,8 +222,8 @@ static void retry_waiting_locked(grpc_exec_ctx *exec_ctx,
   holder->waiting_ops_count = 0;
   holder->waiting_ops_capacity = 0;
   GRPC_SUBCHANNEL_CALL_REF(a->call, "retry_ops");
-  grpc_exec_ctx_push(exec_ctx, grpc_closure_create(retry_ops, a),
-                     GRPC_ERROR_NONE, NULL);
+  grpc_exec_ctx_sched(exec_ctx, grpc_closure_create(retry_ops, a),
+                      GRPC_ERROR_NONE, NULL);
 }
 
 static void retry_ops(grpc_exec_ctx *exec_ctx, void *args, grpc_error *error) {

@@ -183,7 +183,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *tcpp, grpc_error *error) {
 
   tcp->read_cb = NULL;
   TCP_UNREF(tcp, "read");
-  grpc_exec_ctx_push(exec_ctx, cb, error, NULL);
+  grpc_exec_ctx_sched(exec_ctx, cb, error, NULL);
 }
 
 static void win_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
@@ -197,7 +197,7 @@ static void win_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   WSABUF buffer;
 
   if (tcp->shutting_down) {
-    grpc_exec_ctx_push(exec_ctx, cb,
+    grpc_exec_ctx_sched(exec_ctx, cb,
                        GRPC_ERROR_CREATE("TCP socket is shutting down"), NULL);
     return;
   }
@@ -222,7 +222,7 @@ static void win_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   /* Did we get data immediately ? Yay. */
   if (info->wsa_error != WSAEWOULDBLOCK) {
     info->bytes_transfered = bytes_read;
-    grpc_exec_ctx_push(exec_ctx, &tcp->on_read, GRPC_ERROR_NONE, NULL);
+    grpc_exec_ctx_sched(exec_ctx, &tcp->on_read, GRPC_ERROR_NONE, NULL);
     return;
   }
 
@@ -235,7 +235,7 @@ static void win_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     int wsa_error = WSAGetLastError();
     if (wsa_error != WSA_IO_PENDING) {
       info->wsa_error = wsa_error;
-      grpc_exec_ctx_push(exec_ctx, &tcp->on_read,
+      grpc_exec_ctx_sched(exec_ctx, &tcp->on_read,
                          GRPC_WSA_ERROR(info->wsa_error, "WSARecv"), NULL);
       return;
     }
@@ -267,7 +267,7 @@ static void on_write(grpc_exec_ctx *exec_ctx, void *tcpp, grpc_error *error) {
   }
 
   TCP_UNREF(tcp, "write");
-  grpc_exec_ctx_push(exec_ctx, cb, error, NULL);
+  grpc_exec_ctx_sched(exec_ctx, cb, error, NULL);
 }
 
 /* Initiates a write. */
@@ -285,7 +285,7 @@ static void win_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   size_t len;
 
   if (tcp->shutting_down) {
-    grpc_exec_ctx_push(exec_ctx, cb,
+    grpc_exec_ctx_sched(exec_ctx, cb,
                        GRPC_ERROR_CREATE("TCP socket is shutting down"), NULL);
     return;
   }
@@ -317,7 +317,7 @@ static void win_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     grpc_error *error = status == 0
                             ? GRPC_ERROR_NONE
                             : GRPC_WSA_ERROR(info->wsa_error, "WSASend");
-    grpc_exec_ctx_push(exec_ctx, cb, error, NULL);
+    grpc_exec_ctx_sched(exec_ctx, cb, error, NULL);
     return;
   }
 
@@ -334,7 +334,7 @@ static void win_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     int wsa_error = WSAGetLastError();
     if (wsa_error != WSA_IO_PENDING) {
       TCP_UNREF(tcp, "write");
-      grpc_exec_ctx_push(exec_ctx, cb, GRPC_WSA_ERROR(wsa_error, "WSASend"),
+      grpc_exec_ctx_sched(exec_ctx, cb, GRPC_WSA_ERROR(wsa_error, "WSASend"),
                          NULL);
       return;
     }
