@@ -37,6 +37,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include <google/protobuf/descriptor.h>
@@ -81,9 +82,10 @@ class ProtoServerReflection GRPC_FINAL
       ServerContext* context, const grpc::string& type,
       reflection::v1alpha::ExtensionNumberResponse* response);
 
-  void FillFileDescriptorProtoResponse(
+  void FillFileDescriptorResponse(
       const google::protobuf::FileDescriptor* file_desc,
-      reflection::v1alpha::ServerReflectionResponse* response);
+      reflection::v1alpha::ServerReflectionResponse* response,
+      std::unordered_set<grpc::string>* seen_files);
 
   void FillErrorResponse(const Status& status,
                          reflection::v1alpha::ErrorResponse* error_response);
