@@ -277,7 +277,7 @@ static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
                                   grpc_transport_op *op) {
   channel_data *chand = elem->channel_data;
 
-  grpc_exec_ctx_push(exec_ctx, op->on_consumed, GRPC_ERROR_NONE, NULL);
+  grpc_exec_ctx_sched(exec_ctx, op->on_consumed, GRPC_ERROR_NONE, NULL);
 
   GPR_ASSERT(op->set_accept_stream == false);
   if (op->bind_pollset != NULL) {
@@ -296,9 +296,9 @@ static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
 
   if (op->send_ping != NULL) {
     if (chand->lb_policy == NULL) {
-      grpc_exec_ctx_push(exec_ctx, op->send_ping,
-                         GRPC_ERROR_CREATE("Ping with no load balancing"),
-                         NULL);
+      grpc_exec_ctx_sched(exec_ctx, op->send_ping,
+                          GRPC_ERROR_CREATE("Ping with no load balancing"),
+                          NULL);
     } else {
       grpc_lb_policy_ping_one(exec_ctx, chand->lb_policy, op->send_ping);
       op->bind_pollset = NULL;
@@ -354,11 +354,11 @@ static void continue_picking(grpc_exec_ctx *exec_ctx, void *arg,
   if (cpa->connected_subchannel == NULL) {
     /* cancelled, do nothing */
   } else if (error != GRPC_ERROR_NONE) {
-    grpc_exec_ctx_push(exec_ctx, cpa->on_ready, GRPC_ERROR_REF(error), NULL);
+    grpc_exec_ctx_sched(exec_ctx, cpa->on_ready, GRPC_ERROR_REF(error), NULL);
   } else if (cc_pick_subchannel(exec_ctx, cpa->elem, cpa->initial_metadata,
                                 cpa->initial_metadata_flags,
                                 cpa->connected_subchannel, cpa->on_ready)) {
-    grpc_exec_ctx_push(exec_ctx, cpa->on_ready, GRPC_ERROR_NONE, NULL);
+    grpc_exec_ctx_sched(exec_ctx, cpa->on_ready, GRPC_ERROR_NONE, NULL);
   }
   gpr_free(cpa);
 }
@@ -387,8 +387,8 @@ static int cc_pick_subchannel(grpc_exec_ctx *exec_ctx, void *elemp,
       cpa = closure->cb_arg;
       if (cpa->connected_subchannel == connected_subchannel) {
         cpa->connected_subchannel = NULL;
-        grpc_exec_ctx_push(exec_ctx, cpa->on_ready,
-                           GRPC_ERROR_CREATE("Pick cancelled"), NULL);
+        grpc_exec_ctx_sched(exec_ctx, cpa->on_ready,
+                            GRPC_ERROR_CREATE("Pick cancelled"), NULL);
       }
     }
     gpr_mu_unlock(&chand->mu_config);
@@ -423,8 +423,8 @@ static int cc_pick_subchannel(grpc_exec_ctx *exec_ctx, void *elemp,
     grpc_closure_list_append(&chand->waiting_for_config_closures, &cpa->closure,
                              GRPC_ERROR_NONE);
   } else {
-    grpc_exec_ctx_push(exec_ctx, on_ready, GRPC_ERROR_CREATE("Disconnected"),
-                       NULL);
+    grpc_exec_ctx_sched(exec_ctx, on_ready, GRPC_ERROR_CREATE("Disconnected"),
+                        NULL);
   }
   gpr_mu_unlock(&chand->mu_config);
   return 0;

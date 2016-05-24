@@ -82,7 +82,7 @@ void grpc_exec_ctx_finish(grpc_exec_ctx *exec_ctx) {
   grpc_exec_ctx_flush(exec_ctx);
 }
 
-void grpc_exec_ctx_push(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
+void grpc_exec_ctx_sched(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                         grpc_error *error,
                         grpc_workqueue *offload_target_or_null) {
   GPR_ASSERT(offload_target_or_null == NULL);

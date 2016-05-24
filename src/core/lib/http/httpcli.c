@@ -102,7 +102,7 @@ static void finish(grpc_exec_ctx *exec_ctx, internal_request *req,
                    grpc_error *error) {
   grpc_pollset_set_del_pollset(exec_ctx, req->context->pollset_set,
                                req->pollset);
-  grpc_exec_ctx_push(exec_ctx, req->on_done, error, NULL);
+  grpc_exec_ctx_sched(exec_ctx, req->on_done, error, NULL);
   grpc_http_parser_destroy(&req->parser);
   if (req->addresses != NULL) {
     grpc_resolved_addresses_destroy(req->addresses);

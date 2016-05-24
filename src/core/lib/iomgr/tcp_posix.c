@@ -175,7 +175,7 @@ static void call_read_cb(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
 
   tcp->read_cb = NULL;
   tcp->incoming_buffer = NULL;
-  grpc_exec_ctx_push(exec_ctx, cb, error, NULL);
+  grpc_exec_ctx_sched(exec_ctx, cb, error, NULL);
 }
 
 #define MAX_READ_IOVEC 4
@@ -277,7 +277,7 @@ static void tcp_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     tcp->finished_edge = false;
     grpc_fd_notify_on_read(exec_ctx, tcp->em_fd, &tcp->read_closure);
   } else {
-    grpc_exec_ctx_push(exec_ctx, &tcp->read_closure, GRPC_ERROR_NONE, NULL);
+    grpc_exec_ctx_sched(exec_ctx, &tcp->read_closure, GRPC_ERROR_NONE, NULL);
   }
 }
 
@@ -410,7 +410,7 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 
   if (buf->length == 0) {
     GPR_TIMER_END("tcp_write", 0);
-    grpc_exec_ctx_push(exec_ctx, cb, GRPC_ERROR_NONE, NULL);
+    grpc_exec_ctx_sched(exec_ctx, cb, GRPC_ERROR_NONE, NULL);
     return;
   }
   tcp->outgoing_buffer = buf;
@@ -422,7 +422,7 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     tcp->write_cb = cb;
     grpc_fd_notify_on_write(exec_ctx, tcp->em_fd, &tcp->write_closure);
   } else {
-    grpc_exec_ctx_push(exec_ctx, cb, error, NULL);
+    grpc_exec_ctx_sched(exec_ctx, cb, error, NULL);
   }
 
   GPR_TIMER_END("tcp_write", 0);

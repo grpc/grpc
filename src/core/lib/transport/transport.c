@@ -60,7 +60,7 @@ void grpc_stream_unref(grpc_exec_ctx *exec_ctx,
                        grpc_stream_refcount *refcount) {
 #endif
   if (gpr_unref(&refcount->refs)) {
-    grpc_exec_ctx_push(exec_ctx, &refcount->destroy, GRPC_ERROR_NONE, NULL);
+    grpc_exec_ctx_sched(exec_ctx, &refcount->destroy, GRPC_ERROR_NONE, NULL);
   }
 }
 
@@ -146,11 +146,11 @@ char *grpc_transport_get_peer(grpc_exec_ctx *exec_ctx,
 void grpc_transport_stream_op_finish_with_failure(grpc_exec_ctx *exec_ctx,
                                                   grpc_transport_stream_op *op,
                                                   grpc_error *error) {
-  grpc_exec_ctx_push(exec_ctx, op->recv_message_ready, GRPC_ERROR_REF(error),
+  grpc_exec_ctx_sched(exec_ctx, op->recv_message_ready, GRPC_ERROR_REF(error),
                      NULL);
-  grpc_exec_ctx_push(exec_ctx, op->recv_initial_metadata_ready,
+  grpc_exec_ctx_sched(exec_ctx, op->recv_initial_metadata_ready,
                      GRPC_ERROR_REF(error), NULL);
-  grpc_exec_ctx_push(exec_ctx, op->on_complete, error, NULL);
+  grpc_exec_ctx_sched(exec_ctx, op->on_complete, error, NULL);
 }
 
 void grpc_transport_stream_op_add_cancellation(grpc_transport_stream_op *op,

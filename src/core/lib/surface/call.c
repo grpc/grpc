@@ -743,7 +743,7 @@ static grpc_call_error cancel_with_status(grpc_exec_ctx *exec_ctx, grpc_call *c,
   cc->call = c;
   cc->status = status;
   GRPC_CALL_INTERNAL_REF(c, "cancel");
-  grpc_exec_ctx_push(exec_ctx, &cc->closure, GRPC_ERROR_NONE, NULL);
+  grpc_exec_ctx_sched(exec_ctx, &cc->closure, GRPC_ERROR_NONE, NULL);
 
   return GRPC_CALL_OK;
 }
@@ -970,7 +970,7 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx,
   grpc_call *call = bctl->call;
   if (bctl->is_notify_tag_closure) {
     /* unrefs bctl->error */
-    grpc_exec_ctx_push(exec_ctx, bctl->notify_tag, bctl->error, NULL);
+    grpc_exec_ctx_sched(exec_ctx, bctl->notify_tag, bctl->error, NULL);
     gpr_mu_lock(&call->mu);
     bctl->call->used_batches =
         (uint8_t)(bctl->call->used_batches &
@@ -1129,7 +1129,7 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
     grpc_closure *saved_rsr_closure = grpc_closure_create(
         receiving_stream_ready, call->saved_receiving_stream_ready_bctlp);
     call->saved_receiving_stream_ready_bctlp = NULL;
-    grpc_exec_ctx_push(exec_ctx, saved_rsr_closure, error, NULL);
+    grpc_exec_ctx_sched(exec_ctx, saved_rsr_closure, error, NULL);
   }
 
   gpr_mu_unlock(&call->mu);
