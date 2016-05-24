@@ -147,9 +147,9 @@ void grpc_transport_stream_op_finish_with_failure(grpc_exec_ctx *exec_ctx,
                                                   grpc_transport_stream_op *op,
                                                   grpc_error *error) {
   grpc_exec_ctx_sched(exec_ctx, op->recv_message_ready, GRPC_ERROR_REF(error),
-                     NULL);
+                      NULL);
   grpc_exec_ctx_sched(exec_ctx, op->recv_initial_metadata_ready,
-                     GRPC_ERROR_REF(error), NULL);
+                      GRPC_ERROR_REF(error), NULL);
   grpc_exec_ctx_sched(exec_ctx, op->on_complete, error, NULL);
 }
 

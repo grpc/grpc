@@ -60,7 +60,7 @@ static void me_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   gpr_mu_lock(&m->parent->mu);
   if (m->parent->shutdown) {
     grpc_exec_ctx_sched(exec_ctx, cb, GRPC_ERROR_CREATE("Already shutdown"),
-                       NULL);
+                        NULL);
   } else if (m->read_buffer.count > 0) {
     gpr_slice_buffer_swap(&m->read_buffer, slices);
     grpc_exec_ctx_sched(exec_ctx, cb, GRPC_ERROR_NONE, NULL);
@@ -110,13 +110,13 @@ static void me_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   m->parent->shutdown = true;
   if (m->on_read) {
     grpc_exec_ctx_sched(exec_ctx, m->on_read, GRPC_ERROR_CREATE("Shutdown"),
-                       NULL);
+                        NULL);
     m->on_read = NULL;
   }
   m = other_half(m);
   if (m->on_read) {
     grpc_exec_ctx_sched(exec_ctx, m->on_read, GRPC_ERROR_CREATE("Shutdown"),
-                       NULL);
+                        NULL);
     m->on_read = NULL;
   }
   gpr_mu_unlock(&m->parent->mu);

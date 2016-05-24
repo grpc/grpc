@@ -283,7 +283,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
     grpc_fd_orphan(exec_ctx, fdobj, NULL, NULL, "tcp_client_connect_error");
     grpc_exec_ctx_sched(exec_ctx, closure, GRPC_OS_ERROR(errno, "connect"),
-                       NULL);
+                        NULL);
     goto done;
   }
 

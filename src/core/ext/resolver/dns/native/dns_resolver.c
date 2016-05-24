@@ -112,7 +112,7 @@ static void dns_shutdown(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver) {
   if (r->next_completion != NULL) {
     *r->target_config = NULL;
     grpc_exec_ctx_sched(exec_ctx, r->next_completion,
-                       GRPC_ERROR_CREATE("Resolver Shutdown"), NULL);
+                        GRPC_ERROR_CREATE("Resolver Shutdown"), NULL);
     r->next_completion = NULL;
   }
   gpr_mu_unlock(&r->mu);
