@@ -234,7 +234,6 @@ static void publish_new_rpc(grpc_exec_ctx *exec_ctx, void *calld,
                             grpc_error *error);
 static void fail_call(grpc_exec_ctx *exec_ctx, grpc_server *server,
                       size_t cq_idx, requested_call *rc, grpc_error *error);
-
 /* Before calling maybe_finish_shutdown, we must hold mu_global and not
    hold mu_call */
 static void maybe_finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_server *server);
@@ -358,7 +357,8 @@ static void request_matcher_kill_requests(grpc_exec_ctx *exec_ctx,
   for (size_t i = 0; i < server->cq_count; i++) {
     while ((request_id = gpr_stack_lockfree_pop(rm->requests_per_cq[i])) !=
            -1) {
-      fail_call(exec_ctx, server, i, &server->requested_calls[request_id], GRPC_ERROR_REF(error));
+      fail_call(exec_ctx, server, i, &server->requested_calls[request_id],
+                GRPC_ERROR_REF(error));
     }
   }
   GRPC_ERROR_UNREF(error);
@@ -671,12 +671,14 @@ static void kill_pending_work_locked(grpc_exec_ctx *exec_ctx,
                                      grpc_server *server, grpc_error *error) {
   if (server->started) {
     request_matcher_kill_requests(exec_ctx, server,
-                                  &server->unregistered_request_matcher, GRPC_ERROR_REF(error));
+                                  &server->unregistered_request_matcher,
+                                  GRPC_ERROR_REF(error));
     request_matcher_zombify_all_pending_calls(
         exec_ctx, &server->unregistered_request_matcher);
     for (registered_method *rm = server->registered_methods; rm;
          rm = rm->next) {
-      request_matcher_kill_requests(exec_ctx, server, &rm->request_matcher, GRPC_ERROR_REF(error));
+      request_matcher_kill_requests(exec_ctx, server, &rm->request_matcher,
+                                    GRPC_ERROR_REF(error));
       request_matcher_zombify_all_pending_calls(exec_ctx, &rm->request_matcher);
     }
   }
