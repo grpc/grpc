@@ -34,6 +34,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include <google/protobuf/descriptor.h>
@@ -146,7 +147,8 @@ Status ProtoServerReflection::GetFileByName(
   if (file_desc == nullptr) {
     return Status(StatusCode::NOT_FOUND, "File not found.");
   }
-  FillFileDescriptorProtoResponse(file_desc, response);
+  std::unordered_set<grpc::string> seen_files;
+  FillFileDescriptorResponse(file_desc, response, &seen_files);
   return Status::OK;
 }
 
@@ -162,7 +164,8 @@ Status ProtoServerReflection::GetFileContainingSymbol(
   if (file_desc == nullptr) {
     return Status(StatusCode::NOT_FOUND, "Symbol not found.");
   }
-  FillFileDescriptorProtoResponse(file_desc, response);
+  std::unordered_set<grpc::string> seen_files;
+  FillFileDescriptorResponse(file_desc, response, &seen_files);
   return Status::OK;
 }
 
@@ -184,7 +187,8 @@ Status ProtoServerReflection::GetFileContainingExtension(
   if (field_desc == nullptr) {
     return Status(StatusCode::NOT_FOUND, "Extension not found.");
   }
-  FillFileDescriptorProtoResponse(field_desc->file(), response);
+  std::unordered_set<grpc::string> seen_files;
+  FillFileDescriptorResponse(field_desc->file(), response, &seen_files);
   return Status::OK;
 }
 
@@ -209,13 +213,23 @@ Status ProtoServerReflection::GetAllExtensionNumbers(
   return Status::OK;
 }
 
-void ProtoServerReflection::FillFileDescriptorProtoResponse(
-    const FileDescriptor* file_desc, ServerReflectionResponse* response) {
+void ProtoServerReflection::FillFileDescriptorResponse(
+    const FileDescriptor* file_desc, ServerReflectionResponse* response,
+    std::unordered_set<grpc::string>* seen_files) {
+  if (seen_files->find(file_desc->name()) != seen_files->end()) {
+    return;
+  }
+  seen_files->insert(file_desc->name());
+
   FileDescriptorProto file_desc_proto;
   grpc::string data;
   file_desc->CopyTo(&file_desc_proto);
   file_desc_proto.SerializeToString(&data);
   response->mutable_file_descriptor_response()->add_file_descriptor_proto(data);
+
+  for (int i = 0; i < file_desc->dependency_count(); ++i) {
+    FillFileDescriptorResponse(file_desc->dependency(i), response, seen_files);
+  }
 }
 
 }  // namespace grpc
