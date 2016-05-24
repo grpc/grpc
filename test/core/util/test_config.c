@@ -210,7 +210,7 @@ static void install_crash_handler() {
 #include <stdio.h>
 #include <string.h>
 
-static char g_alt_stack[MINSIGSTKSZ];
+static char g_alt_stack[GPR_MAX(MINSIGSTKSZ, 65536)];
 
 #define MAX_FRAMES 32
 

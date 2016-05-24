@@ -47,7 +47,6 @@ static int g_number_of_resolvers = 0;
 static char *g_default_resolver_prefix;
 
 void grpc_resolver_registry_init(const char *default_resolver_prefix) {
-  g_number_of_resolvers = 0;
   g_default_resolver_prefix = gpr_strdup(default_resolver_prefix);
 }
 
@@ -57,6 +56,13 @@ void grpc_resolver_registry_shutdown(void) {
     grpc_resolver_factory_unref(g_all_of_the_resolvers[i]);
   }
   gpr_free(g_default_resolver_prefix);
+  // FIXME(ctiller): this should live in grpc_resolver_registry_init,
+  // however that would have the client_config plugin call this AFTER we start
+  // registering resolvers from third party plugins, and so they'd never show
+  // up.
+  // We likely need some kind of dependency system for plugins.... what form
+  // that takes is TBD.
+  g_number_of_resolvers = 0;
 }
 
 void grpc_register_resolver_type(grpc_resolver_factory *factory) {

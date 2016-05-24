@@ -236,9 +236,6 @@ struct grpc_chttp2_transport_parsing {
   /** was a goaway frame received? */
   uint8_t goaway_received;
 
-  /** the last sent max_table_size setting */
-  uint32_t last_sent_max_table_size;
-
   /** initial window change */
   int64_t initial_window_update;
 
@@ -272,6 +269,9 @@ struct grpc_chttp2_transport_parsing {
   uint32_t incoming_frame_size;
   uint32_t incoming_stream_id;
 
+  /* current max frame size */
+  uint32_t max_frame_size;
+
   /* active parser */
   void *parser_data;
   grpc_chttp2_stream_parsing *incoming_stream;
@@ -282,6 +282,8 @@ struct grpc_chttp2_transport_parsing {
 
   /* received settings */
   uint32_t settings[GRPC_CHTTP2_NUM_SETTINGS];
+  /* last settings that were sent */
+  uint32_t last_sent_settings[GRPC_CHTTP2_NUM_SETTINGS];
 
   /* goaway data */
   grpc_status_code goaway_error;
@@ -420,23 +422,21 @@ typedef struct {
   /** number of streams that are currently being read */
   gpr_refcount active_streams;
 
-  /** when the application requests writes be closed, the write_closed is
-      'queued'; when the close is flow controlled into the send path, we are
-      'sending' it; when the write has been performed it is 'sent' */
+  /** Is this stream closed for writing. */
   bool write_closed;
-  /** is this stream reading half-closed (boolean) */
+  /** Is this stream reading half-closed. */
   bool read_closed;
-  /** are all published incoming byte streams closed */
+  /** Are all published incoming byte streams closed. */
   bool all_incoming_byte_streams_finished;
-  /** is this stream in the stream map? (boolean) */
+  /** Is this stream in the stream map. */
   bool in_stream_map;
-  /** has this stream seen an error? if 1, then pending incoming frames
-      can be thrown away */
+  /** Has this stream seen an error.
+      If true, then pending incoming frames can be thrown away. */
   bool seen_error;
+  bool exceeded_metadata_size;
 
   bool published_initial_metadata;
   bool published_trailing_metadata;
-  bool faked_trailing_metadata;
 
   grpc_chttp2_incoming_metadata_buffer received_initial_metadata;
   grpc_chttp2_incoming_metadata_buffer received_trailing_metadata;
@@ -479,7 +479,8 @@ struct grpc_chttp2_stream_parsing {
   /** which metadata did we get (on this parse) */
   uint8_t got_metadata_on_parse[2];
   /** should we raise the seen_error flag in transport_global */
-  uint8_t seen_error;
+  bool seen_error;
+  bool exceeded_metadata_size;
   /** window available for peer to send to us */
   int64_t incoming_window;
   /** parsing state for data frames */

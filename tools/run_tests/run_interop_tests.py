@@ -82,10 +82,10 @@ class CXXLanguage:
     return {}
 
   def unimplemented_test_cases(self):
-    return _SKIP_ADVANCED + _SKIP_COMPRESSION
+    return _SKIP_ADVANCED
 
   def unimplemented_test_cases_server(self):
-    return _SKIP_ADVANCED + _SKIP_COMPRESSION
+    return _SKIP_ADVANCED
 
   def __str__(self):
     return 'c++'
@@ -542,7 +542,7 @@ def build_interop_image_jobspec(language, tag=None):
     env['BUILD_INTEROP_DOCKER_EXTRA_ARGS'] = \
       '-v %s:/root/.composer/auth.json:ro' % host_file
   build_job = jobset.JobSpec(
-          cmdline=['tools/jenkins/build_interop_image.sh'],
+          cmdline=['tools/run_tests/dockerize/build_interop_image.sh'],
           environ=env,
           shortname='build_docker_%s' % (language),
           timeout_seconds=30*60)

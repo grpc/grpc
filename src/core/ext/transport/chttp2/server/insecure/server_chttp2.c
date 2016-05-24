@@ -43,14 +43,8 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
 
-static void setup_transport(grpc_exec_ctx *exec_ctx, void *server,
-                            grpc_transport *transport) {
-  grpc_server_setup_transport(exec_ctx, server, transport,
-                              grpc_server_get_channel_args(server));
-}
-
 static void new_transport(grpc_exec_ctx *exec_ctx, void *server,
-                          grpc_endpoint *tcp,
+                          grpc_endpoint *tcp, grpc_pollset *accepting_pollset,
                           grpc_tcp_server_acceptor *acceptor) {
   /*
    * Beware that the call to grpc_create_chttp2_transport() has to happen before
@@ -61,7 +55,8 @@ static void new_transport(grpc_exec_ctx *exec_ctx, void *server,
    */
   grpc_transport *transport = grpc_create_chttp2_transport(
       exec_ctx, grpc_server_get_channel_args(server), tcp, 0);
-  setup_transport(exec_ctx, server, transport);
+  grpc_server_setup_transport(exec_ctx, server, transport, accepting_pollset,
+                              grpc_server_get_channel_args(server));
   grpc_chttp2_transport_start_reading(exec_ctx, transport, NULL, 0);
 }
 

@@ -7,7 +7,7 @@ settings:
   '#3': Use "-preN" suffixes to identify pre-release versions
   '#4': Per-language overrides are possible with (eg) ruby_version tag here
   '#5': See the expand_version.py for all the quirks here
-  version: 0.14.0-dev
+  version: 0.15.0-dev
 filegroups:
 - name: census
   public_headers:
@@ -168,7 +168,7 @@ filegroups:
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/endpoint.h
   - src/core/lib/iomgr/endpoint_pair.h
-  - src/core/lib/iomgr/ev_poll_and_epoll_posix.h
+  - src/core/lib/iomgr/ev_poll_posix.h
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
@@ -243,7 +243,7 @@ filegroups:
   - src/core/lib/iomgr/endpoint.c
   - src/core/lib/iomgr/endpoint_pair_posix.c
   - src/core/lib/iomgr/endpoint_pair_windows.c
-  - src/core/lib/iomgr/ev_poll_and_epoll_posix.c
+  - src/core/lib/iomgr/ev_poll_posix.c
   - src/core/lib/iomgr/ev_posix.c
   - src/core/lib/iomgr/exec_ctx.c
   - src/core/lib/iomgr/executor.c
@@ -355,6 +355,7 @@ filegroups:
 - name: grpc_codegen
   public_headers:
   - include/grpc/impl/codegen/byte_buffer.h
+  - include/grpc/impl/codegen/byte_buffer_reader.h
   - include/grpc/impl/codegen/compression_types.h
   - include/grpc/impl/codegen/connectivity_state.h
   - include/grpc/impl/codegen/grpc_types.h
@@ -365,10 +366,10 @@ filegroups:
 - name: grpc_lb_policy_grpclb
   headers:
   - src/core/ext/lb_policy/grpclb/load_balancer_api.h
-  - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h
+  - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h
   src:
   - src/core/ext/lb_policy/grpclb/load_balancer_api.c
-  - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c
+  - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
   uses:
   - grpc_base
   - grpc_client_config
@@ -403,34 +404,52 @@ filegroups:
   - grpc_client_config
 - name: grpc_secure
   public_headers:
+  - include/grpc/grpc_cronet.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
   headers:
-  - src/core/lib/security/auth_filters.h
-  - src/core/lib/security/b64.h
-  - src/core/lib/security/credentials.h
-  - src/core/lib/security/handshake.h
-  - src/core/lib/security/json_token.h
-  - src/core/lib/security/jwt_verifier.h
-  - src/core/lib/security/secure_endpoint.h
-  - src/core/lib/security/security_connector.h
-  - src/core/lib/security/security_context.h
+  - src/core/lib/security/context/security_context.h
+  - src/core/lib/security/credentials/composite/composite_credentials.h
+  - src/core/lib/security/credentials/credentials.h
+  - src/core/lib/security/credentials/fake/fake_credentials.h
+  - src/core/lib/security/credentials/google_default/google_default_credentials.h
+  - src/core/lib/security/credentials/iam/iam_credentials.h
+  - src/core/lib/security/credentials/jwt/json_token.h
+  - src/core/lib/security/credentials/jwt/jwt_credentials.h
+  - src/core/lib/security/credentials/jwt/jwt_verifier.h
+  - src/core/lib/security/credentials/oauth2/oauth2_credentials.h
+  - src/core/lib/security/credentials/plugin/plugin_credentials.h
+  - src/core/lib/security/credentials/ssl/ssl_credentials.h
+  - src/core/lib/security/transport/auth_filters.h
+  - src/core/lib/security/transport/handshake.h
+  - src/core/lib/security/transport/secure_endpoint.h
+  - src/core/lib/security/transport/security_connector.h
+  - src/core/lib/security/util/b64.h
+  - src/core/lib/security/util/json_util.h
   src:
   - src/core/lib/http/httpcli_security_connector.c
-  - src/core/lib/security/b64.c
-  - src/core/lib/security/client_auth_filter.c
-  - src/core/lib/security/credentials.c
-  - src/core/lib/security/credentials_metadata.c
-  - src/core/lib/security/credentials_posix.c
-  - src/core/lib/security/credentials_win32.c
-  - src/core/lib/security/google_default_credentials.c
-  - src/core/lib/security/handshake.c
-  - src/core/lib/security/json_token.c
-  - src/core/lib/security/jwt_verifier.c
-  - src/core/lib/security/secure_endpoint.c
-  - src/core/lib/security/security_connector.c
-  - src/core/lib/security/security_context.c
-  - src/core/lib/security/server_auth_filter.c
+  - src/core/lib/security/context/security_context.c
+  - src/core/lib/security/credentials/composite/composite_credentials.c
+  - src/core/lib/security/credentials/credentials.c
+  - src/core/lib/security/credentials/credentials_metadata.c
+  - src/core/lib/security/credentials/fake/fake_credentials.c
+  - src/core/lib/security/credentials/google_default/credentials_posix.c
+  - src/core/lib/security/credentials/google_default/credentials_win32.c
+  - src/core/lib/security/credentials/google_default/google_default_credentials.c
+  - src/core/lib/security/credentials/iam/iam_credentials.c
+  - src/core/lib/security/credentials/jwt/json_token.c
+  - src/core/lib/security/credentials/jwt/jwt_credentials.c
+  - src/core/lib/security/credentials/jwt/jwt_verifier.c
+  - src/core/lib/security/credentials/oauth2/oauth2_credentials.c
+  - src/core/lib/security/credentials/plugin/plugin_credentials.c
+  - src/core/lib/security/credentials/ssl/ssl_credentials.c
+  - src/core/lib/security/transport/client_auth_filter.c
+  - src/core/lib/security/transport/handshake.c
+  - src/core/lib/security/transport/secure_endpoint.c
+  - src/core/lib/security/transport/security_connector.c
+  - src/core/lib/security/transport/server_auth_filter.c
+  - src/core/lib/security/util/b64.c
+  - src/core/lib/security/util/json_util.c
   - src/core/lib/surface/init_secure.c
   secure: true
   uses:
@@ -550,6 +569,16 @@ filegroups:
   - grpc_transport_chttp2
   - grpc_base
   - grpc_secure
+- name: grpc_transport_cronet_client_secure
+  headers:
+  - third_party/objective_c/Cronet/cronet_c_for_grpc.h
+  src:
+  - src/core/ext/transport/cronet/client/secure/cronet_channel_create.c
+  - src/core/ext/transport/cronet/transport/cronet_api_dummy.c
+  - src/core/ext/transport/cronet/transport/cronet_transport.c
+  filegroups:
+  - grpc_base
+  - grpc_transport_chttp2
 - name: nanopb
   headers:
   - third_party/nanopb/pb.h
@@ -594,6 +623,8 @@ filegroups:
   - include/grpc++/impl/rpc_service_method.h
   - include/grpc++/impl/serialization_traits.h
   - include/grpc++/impl/server_builder_option.h
+  - include/grpc++/impl/server_builder_plugin.h
+  - include/grpc++/impl/server_initializer.h
   - include/grpc++/impl/service_type.h
   - include/grpc++/impl/sync.h
   - include/grpc++/impl/sync_cxx11.h
@@ -737,6 +768,7 @@ libs:
   - grpc_transport_chttp2_client_secure
   - grpc_transport_chttp2_server_insecure
   - grpc_transport_chttp2_client_insecure
+  - grpc_transport_cronet_client_secure
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
@@ -2346,40 +2378,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: async_streaming_ping_pong_test
-  build: test
-  language: c++
-  src:
-  - test/cpp/qps/async_streaming_ping_pong_test.cc
-  deps:
-  - qps
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - mac
-  - linux
-  - posix
-- name: async_unary_ping_pong_test
-  build: test
-  language: c++
-  src:
-  - test/cpp/qps/async_unary_ping_pong_test.cc
-  deps:
-  - qps
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - mac
-  - linux
-  - posix
 - name: auth_property_iterator_test
   gtest: true
   build: test
@@ -2547,23 +2545,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: generic_async_streaming_ping_pong_test
-  build: test
-  language: c++
-  src:
-  - test/cpp/qps/generic_async_streaming_ping_pong_test.cc
-  deps:
-  - qps
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - mac
-  - linux
-  - posix
 - name: generic_end2end_test
   gtest: true
   build: test
@@ -2666,7 +2647,7 @@ targets:
   build: test
   language: c++
   src:
-  - src/proto/grpc/lb/v0/load_balancer.proto
+  - src/proto/grpc/lb/v1/load_balancer.proto
   - test/cpp/grpclb/grpclb_api_test.cc
   deps:
   - grpc++_test_util
@@ -2835,25 +2816,6 @@ targets:
   - mac
   - linux
   - posix
-- name: qps_test
-  cpu_cost: 10
-  build: test
-  language: c++
-  src:
-  - test/cpp/qps/qps_test.cc
-  deps:
-  - qps
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr_test_util
-  - gpr
-  - grpc++_test_config
-  platforms:
-  - mac
-  - linux
-  - posix
 - name: qps_worker
   build: test
   run: false
@@ -2938,6 +2900,19 @@ targets:
   - mac
   - linux
   - posix
+- name: server_builder_plugin_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/end2end/server_builder_plugin_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: server_crash_test
   gtest: true
   cpu_cost: 0.1
@@ -3036,40 +3011,6 @@ targets:
   - gpr_test_util
   - gpr
   - grpc++_test_config
-- name: sync_streaming_ping_pong_test
-  build: test
-  language: c++
-  src:
-  - test/cpp/qps/sync_streaming_ping_pong_test.cc
-  deps:
-  - qps
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - mac
-  - linux
-  - posix
-- name: sync_unary_ping_pong_test
-  build: test
-  language: c++
-  src:
-  - test/cpp/qps/sync_unary_ping_pong_test.cc
-  deps:
-  - qps
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - mac
-  - linux
-  - posix
 - name: thread_stress_test
   gtest: true
   cpu_cost: 100
@@ -3240,8 +3181,8 @@ configs:
     compile_the_world: true
     timeout_multiplier: 4
   mutrace:
-    CPPFLAGS: -O0
-    DEFINES: _DEBUG DEBUG
+    CPPFLAGS: -O3 -fno-omit-frame-pointer
+    DEFINES: NDEBUG
     LDFLAGS: -rdynamic
   opt:
     CPPFLAGS: -O2
@@ -3263,19 +3204,21 @@ configs:
     timeout_multiplier: 5
   ubsan:
     CC: clang
-    CPPFLAGS: -O1 -fsanitize-coverage=edge -fsanitize=undefined -fno-omit-frame-pointer
-      -Wno-unused-command-line-argument
+    CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=undefined,unsigned-integer-overflow
+      -fno-omit-frame-pointer -Wno-unused-command-line-argument -Wvarargs
     CXX: clang++
     DEFINES: NDEBUG
     LD: clang
-    LDFLAGS: -fsanitize=undefined
+    LDFLAGS: -fsanitize=undefined,unsigned-integer-overflow
     LDXX: clang++
     compile_the_world: true
+    test_environ:
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
     timeout_multiplier: 1.5
 defaults:
   boringssl:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas
-      -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare
+      -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
     CPPFLAGS: -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM
       -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
   global:

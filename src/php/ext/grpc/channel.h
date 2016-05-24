@@ -59,6 +59,6 @@ typedef struct wrapped_grpc_channel {
 void grpc_init_channel(TSRMLS_D);
 
 /* Iterates through a PHP array and populates args with the contents */
-void php_grpc_read_args_array(zval *args_array, grpc_channel_args *args);
+void php_grpc_read_args_array(zval *args_array, grpc_channel_args *args TSRMLS_DC);
 
 #endif /* NET_GRPC_PHP_GRPC_CHANNEL_H_ */

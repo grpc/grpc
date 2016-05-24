@@ -43,21 +43,46 @@ sys.path.append(run_tests_root)
 
 import performance.scenario_config as scenario_config
 
+def _scenario_json_string(scenario_json):
+  # tweak parameters to get fast test times
+  scenario_json['warmup_seconds'] = 1
+  scenario_json['benchmark_seconds'] = 1
+  return json.dumps(scenario_config.remove_nonproto_fields(scenario_json))
+
+def threads_of_type(scenario_json, path):
+  d = scenario_json
+  for el in path.split('/'):
+    if el not in d:
+      return 0
+    d = d[el]
+  return d
+
+def guess_cpu(scenario_json):
+  client = threads_of_type(scenario_json, 'client_config/async_client_threads')
+  server = threads_of_type(scenario_json, 'server_config/async_server_threads')
+  # make an arbitrary guess if set to auto-detect
+  # about the size of the jenkins instances we have for unit tests
+  if client == 0: client = 8
+  if server == 0: server = 8
+  return (scenario_json['num_clients'] * client +
+          scenario_json['num_servers'] * server)
+
 print yaml.dump({
   'tests': [
     {
       'name': 'json_run_localhost',
-      'shortname': 'json_run_localhost:%s' % js['name'],
-      'args': ['--scenario_json', pipes.quote(json.dumps(js))],
+      'shortname': 'json_run_localhost:%s' % scenario_json['name'],
+      'args': ['--scenario_json',
+               pipes.quote(_scenario_json_string(scenario_json))],
       'ci_platforms': ['linux', 'mac', 'posix', 'windows'],
       'platforms': ['linux', 'mac', 'posix', 'windows'],
       'flaky': False,
       'language': 'c++',
       'boringssl': True,
       'defaults': 'boringssl',
-      'cpu_cost': 1000.0,
+      'cpu_cost': guess_cpu(scenario_json),
       'exclude_configs': []
     }
-    for js in scenario_config.CXXLanguage().scenarios()
+    for scenario_json in scenario_config.CXXLanguage().scenarios()
   ]
 })
