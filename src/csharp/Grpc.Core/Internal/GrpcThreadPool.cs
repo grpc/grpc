@@ -33,15 +33,15 @@
 
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
+using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using Grpc.Core.Logging;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
     /// <summary>
-    /// Pool of threads polling on the same completion queue.
+    /// Pool of threads polling on a set of completions queues.
     /// </summary>
     internal class GrpcThreadPool
     {
@@ -51,25 +51,31 @@ namespace Grpc.Core.Internal
         readonly object myLock = new object();
         readonly List<Thread> threads = new List<Thread>();
         readonly int poolSize;
+        readonly int completionQueueCount;
 
-        CompletionQueueSafeHandle cq;
+        IReadOnlyCollection<CompletionQueueSafeHandle> completionQueues;
 
-        public GrpcThreadPool(GrpcEnvironment environment, int poolSize)
+        /// <summary>
+        /// Creates a thread pool threads polling on a set of completions queues.
+        /// </summary>
+        /// <param name="environment">Environment.</param>
+        /// <param name="poolSize">Pool size.</param>
+        /// <param name="completionQueueCount">Completion queue count.</param>
+        public GrpcThreadPool(GrpcEnvironment environment, int poolSize, int completionQueueCount)
         {
             this.environment = environment;
             this.poolSize = poolSize;
+            this.completionQueueCount = completionQueueCount;
+            GrpcPreconditions.CheckArgument(poolSize >= completionQueueCount,
+                "Thread pool size cannot be smaller than the number of completion queues used.");
         }
 
         public void Start()
         {
             lock (myLock)
             {
-                if (cq != null)
-                {
-                    throw new InvalidOperationException("Already started.");
-                }
-
-                cq = CompletionQueueSafeHandle.Create();
+                GrpcPreconditions.CheckState(completionQueues == null, "Already started.");
+                completionQueues = CreateCompletionQueueList(completionQueueCount);
 
                 for (int i = 0; i < poolSize; i++)
                 {
@@ -82,37 +88,47 @@ namespace Grpc.Core.Internal
         {
             lock (myLock)
             {
-                cq.Shutdown();
+                foreach (var cq in completionQueues)
+                {
+                    cq.Shutdown();
+                }
+
                 foreach (var thread in threads)
                 {
                     thread.Join();
                 }
 
-                cq.Dispose();
+                foreach (var cq in completionQueues)
+                {
+                    cq.Dispose();
+                }
             }
         }
 
-        internal CompletionQueueSafeHandle CompletionQueue
+        internal IReadOnlyCollection<CompletionQueueSafeHandle> CompletionQueues
         {
             get
             {
-                return cq;
+                return completionQueues;
             }
         }
 
-        private Thread CreateAndStartThread(int i)
+        private Thread CreateAndStartThread(int threadIndex)
         {
-            var thread = new Thread(new ThreadStart(RunHandlerLoop));
+            var cqIndex = threadIndex % completionQueues.Count;
+            var cq = completionQueues.ElementAt(cqIndex);
+
+            var thread = new Thread(new ThreadStart(() => RunHandlerLoop(cq)));
             thread.IsBackground = false;
             thread.Start();
-            thread.Name = "grpc " + i;
+            thread.Name = string.Format("grpc {0} (cq {1})", threadIndex, cqIndex);
             return thread;
         }
 
         /// <summary>
         /// Body of the polling thread.
         /// </summary>
-        private void RunHandlerLoop()
+        private void RunHandlerLoop(CompletionQueueSafeHandle cq)
         {
             CompletionQueueEvent ev;
             do
@@ -134,6 +150,16 @@ namespace Grpc.Core.Internal
                 }
             }
             while (ev.type != CompletionQueueEvent.CompletionType.Shutdown);
+        }
+
+        private static IReadOnlyCollection<CompletionQueueSafeHandle> CreateCompletionQueueList(int completionQueueCount)
+        {
+            var list = new List<CompletionQueueSafeHandle>();
+            for (int i = 0; i < completionQueueCount; i++)
+            {
+                list.Add(CompletionQueueSafeHandle.Create());
+            }
+            return list.AsReadOnly();
         }
     }
 }
