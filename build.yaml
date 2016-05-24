@@ -3038,20 +3038,18 @@ targets:
   build: test
   language: c89
   src:
-  - test/core/surface/public_headers_must_be_c89.c
+  - test/core/surface/public_headers_must_be_c89/grpc.c
   deps:
   - grpc
-  - gpr
   platforms:
   - linux
 - name: public_headers_must_be_c89_grpc_cronet
   build: test
   language: c89
   src:
-  - test/core/surface/public_headers_must_be_c89.c
+  - test/core/surface/public_headers_must_be_c89/grpc_cronet.c
   deps:
   - grpc_cronet
-  - gpr
   platforms:
   - linux
 vspackages:

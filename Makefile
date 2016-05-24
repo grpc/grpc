@@ -2764,7 +2764,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/endpoint.c \
     src/core/lib/iomgr/endpoint_pair_posix.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
-    src/core/lib/iomgr/ev_poll_and_epoll_posix.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
@@ -11943,7 +11942,7 @@ $(OBJDIR)/$(CONFIG)/test/cpp/end2end/zookeeper_test.o: $(GENDIR)/src/proto/grpc/
 
 
 PUBLIC_HEADERS_MUST_BE_C89_GRPC_SRC = \
-    test/core/surface/public_headers_must_be_c89.c \
+    test/core/surface/public_headers_must_be_c89/grpc.c \
 
 PUBLIC_HEADERS_MUST_BE_C89_GRPC_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PUBLIC_HEADERS_MUST_BE_C89_GRPC_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11956,15 +11955,15 @@ else
 
 
 
-$(BINDIR)/$(CONFIG)/public_headers_must_be_c89_grpc: $(PUBLIC_HEADERS_MUST_BE_C89_GRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/public_headers_must_be_c89_grpc: $(PUBLIC_HEADERS_MUST_BE_C89_GRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(PUBLIC_HEADERS_MUST_BE_C89_GRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/public_headers_must_be_c89_grpc
+	$(Q) $(LD) $(LDFLAGS) $(PUBLIC_HEADERS_MUST_BE_C89_GRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/public_headers_must_be_c89_grpc
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/surface/public_headers_must_be_c89.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
-$(OBJDIR)/$(CONFIG)/test/core/surface/public_headers_must_be_c89.o : test/core/surface/public_headers_must_be_c89.c
+$(OBJDIR)/$(CONFIG)/test/core/surface/public_headers_must_be_c89/grpc.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a
+$(OBJDIR)/$(CONFIG)/test/core/surface/public_headers_must_be_c89/grpc.o : test/core/surface/public_headers_must_be_c89/grpc.c
 	$(E) "[C]       Compiling $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(CC) $(CPPFLAGS) $(CFLAGS) -std=c89 -pedantic -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
@@ -11979,7 +11978,7 @@ endif
 
 
 PUBLIC_HEADERS_MUST_BE_C89_GRPC_CRONET_SRC = \
-    test/core/surface/public_headers_must_be_c89.c \
+    test/core/surface/public_headers_must_be_c89/grpc_cronet.c \
 
 PUBLIC_HEADERS_MUST_BE_C89_GRPC_CRONET_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PUBLIC_HEADERS_MUST_BE_C89_GRPC_CRONET_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11992,15 +11991,15 @@ else
 
 
 
-$(BINDIR)/$(CONFIG)/public_headers_must_be_c89_grpc_cronet: $(PUBLIC_HEADERS_MUST_BE_C89_GRPC_CRONET_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_cronet.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/public_headers_must_be_c89_grpc_cronet: $(PUBLIC_HEADERS_MUST_BE_C89_GRPC_CRONET_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_cronet.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(PUBLIC_HEADERS_MUST_BE_C89_GRPC_CRONET_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_cronet.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/public_headers_must_be_c89_grpc_cronet
+	$(Q) $(LD) $(LDFLAGS) $(PUBLIC_HEADERS_MUST_BE_C89_GRPC_CRONET_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_cronet.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/public_headers_must_be_c89_grpc_cronet
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/surface/public_headers_must_be_c89.o:  $(LIBDIR)/$(CONFIG)/libgrpc_cronet.a $(LIBDIR)/$(CONFIG)/libgpr.a
-$(OBJDIR)/$(CONFIG)/test/core/surface/public_headers_must_be_c89.o : test/core/surface/public_headers_must_be_c89.c
+$(OBJDIR)/$(CONFIG)/test/core/surface/public_headers_must_be_c89/grpc_cronet.o:  $(LIBDIR)/$(CONFIG)/libgrpc_cronet.a
+$(OBJDIR)/$(CONFIG)/test/core/surface/public_headers_must_be_c89/grpc_cronet.o : test/core/surface/public_headers_must_be_c89/grpc_cronet.c
 	$(E) "[C]       Compiling $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(CC) $(CPPFLAGS) $(CFLAGS) -std=c89 -pedantic -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
