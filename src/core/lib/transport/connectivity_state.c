@@ -134,7 +134,7 @@ int grpc_connectivity_state_notify_on_state_change(
     if (tracker->current_state != *current) {
       *current = tracker->current_state;
       grpc_exec_ctx_sched(exec_ctx, notify,
-                         GRPC_ERROR_REF(tracker->current_error), NULL);
+                          GRPC_ERROR_REF(tracker->current_error), NULL);
     } else {
       grpc_connectivity_state_watcher *w = gpr_malloc(sizeof(*w));
       w->current = current;
@@ -180,7 +180,7 @@ void grpc_connectivity_state_set(grpc_exec_ctx *exec_ctx,
     *w->current = tracker->current_state;
     tracker->watchers = w->next;
     grpc_exec_ctx_sched(exec_ctx, w->notify,
-                       GRPC_ERROR_REF(tracker->current_error), NULL);
+                        GRPC_ERROR_REF(tracker->current_error), NULL);
     gpr_free(w);
   }
 }

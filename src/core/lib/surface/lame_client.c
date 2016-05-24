@@ -95,14 +95,14 @@ static void lame_start_transport_op(grpc_exec_ctx *exec_ctx,
     GPR_ASSERT(*op->connectivity_state != GRPC_CHANNEL_FATAL_FAILURE);
     *op->connectivity_state = GRPC_CHANNEL_FATAL_FAILURE;
     grpc_exec_ctx_sched(exec_ctx, op->on_connectivity_state_change,
-                       GRPC_ERROR_NONE, NULL);
+                        GRPC_ERROR_NONE, NULL);
   }
   if (op->on_consumed != NULL) {
     grpc_exec_ctx_sched(exec_ctx, op->on_consumed, GRPC_ERROR_NONE, NULL);
   }
   if (op->send_ping != NULL) {
     grpc_exec_ctx_sched(exec_ctx, op->send_ping,
-                       GRPC_ERROR_CREATE("lame client channel"), NULL);
+                        GRPC_ERROR_CREATE("lame client channel"), NULL);
   }
   GRPC_ERROR_UNREF(op->disconnect_with_error);
 }

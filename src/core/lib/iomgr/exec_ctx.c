@@ -83,8 +83,8 @@ void grpc_exec_ctx_finish(grpc_exec_ctx *exec_ctx) {
 }
 
 void grpc_exec_ctx_sched(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
-                        grpc_error *error,
-                        grpc_workqueue *offload_target_or_null) {
+                         grpc_error *error,
+                         grpc_workqueue *offload_target_or_null) {
   GPR_ASSERT(offload_target_or_null == NULL);
   grpc_closure_list_append(&exec_ctx->closure_list, closure, error);
 }

@@ -79,7 +79,7 @@ static void me_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   gpr_mu_lock(&m->mu);
   if (m->on_read) {
     grpc_exec_ctx_sched(exec_ctx, m->on_read,
-                       GRPC_ERROR_CREATE("Endpoint Shutdown"), NULL);
+                        GRPC_ERROR_CREATE("Endpoint Shutdown"), NULL);
     m->on_read = NULL;
   }
   gpr_mu_unlock(&m->mu);

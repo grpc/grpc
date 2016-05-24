@@ -147,9 +147,9 @@ static void on_md_processing_done(
     grpc_transport_stream_op_add_close(&close_op, status, &message);
     grpc_call_next_op(&exec_ctx, elem, &close_op);
     grpc_exec_ctx_sched(&exec_ctx, calld->on_done_recv,
-                       grpc_error_set_int(GRPC_ERROR_CREATE(error_details),
-                                          GRPC_ERROR_INT_GRPC_STATUS, status),
-                       NULL);
+                        grpc_error_set_int(GRPC_ERROR_CREATE(error_details),
+                                           GRPC_ERROR_INT_GRPC_STATUS, status),
+                        NULL);
   }
 
   grpc_exec_ctx_finish(&exec_ctx);
@@ -170,7 +170,7 @@ static void auth_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
     }
   }
   grpc_exec_ctx_sched(exec_ctx, calld->on_done_recv, GRPC_ERROR_REF(error),
-                     NULL);
+                      NULL);
 }
 
 static void set_recv_ops_md_callbacks(grpc_call_element *elem,

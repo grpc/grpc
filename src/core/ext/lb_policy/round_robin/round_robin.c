@@ -240,7 +240,7 @@ static void rr_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
     p->pending_picks = pp->next;
     *pp->target = NULL;
     grpc_exec_ctx_sched(exec_ctx, pp->on_complete,
-                       GRPC_ERROR_CREATE("Channel Shutdown"), NULL);
+                        GRPC_ERROR_CREATE("Channel Shutdown"), NULL);
     gpr_free(pp);
   }
   grpc_connectivity_state_set(
@@ -267,7 +267,8 @@ static void rr_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
       grpc_pollset_set_del_pollset(exec_ctx, p->base.interested_parties,
                                    pp->pollset);
       *target = NULL;
-      grpc_exec_ctx_sched(exec_ctx, pp->on_complete, GRPC_ERROR_CANCELLED, NULL);
+      grpc_exec_ctx_sched(exec_ctx, pp->on_complete, GRPC_ERROR_CANCELLED,
+                          NULL);
       gpr_free(pp);
     } else {
       pp->next = p->pending_picks;
@@ -293,7 +294,8 @@ static void rr_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
       grpc_pollset_set_del_pollset(exec_ctx, p->base.interested_parties,
                                    pp->pollset);
       *pp->target = NULL;
-      grpc_exec_ctx_sched(exec_ctx, pp->on_complete, GRPC_ERROR_CANCELLED, NULL);
+      grpc_exec_ctx_sched(exec_ctx, pp->on_complete, GRPC_ERROR_CANCELLED,
+                          NULL);
       gpr_free(pp);
     } else {
       pp->next = p->pending_picks;
@@ -467,7 +469,7 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
             p->pending_picks = pp->next;
             *pp->target = NULL;
             grpc_exec_ctx_sched(exec_ctx, pp->on_complete, GRPC_ERROR_NONE,
-                               NULL);
+                                NULL);
             gpr_free(pp);
           }
         } else {
@@ -522,7 +524,7 @@ static void rr_ping_one(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   } else {
     gpr_mu_unlock(&p->mu);
     grpc_exec_ctx_sched(exec_ctx, closure,
-                       GRPC_ERROR_CREATE("Round Robin not connected"), NULL);
+                        GRPC_ERROR_CREATE("Round Robin not connected"), NULL);
   }
 }
 
