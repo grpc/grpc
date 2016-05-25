@@ -53,8 +53,6 @@ namespace Grpc.Core.Internal.Tests
         [SetUp]
         public void Init()
         {
-            var environment = GrpcEnvironment.AddRef();
-
             // Create a fake server just so we have an instance to refer to.
             // The server won't actually be used at all.
             server = new Server()
@@ -66,7 +64,6 @@ namespace Grpc.Core.Internal.Tests
             fakeCall = new FakeNativeCall();
             asyncCallServer = new AsyncCallServer<string, string>(
                 Marshallers.StringMarshaller.Serializer, Marshallers.StringMarshaller.Deserializer,
-                environment,
                 server);
             asyncCallServer.InitializeForTesting(fakeCall);
         }
@@ -75,7 +72,6 @@ namespace Grpc.Core.Internal.Tests
         public void Cleanup()
         {
             server.ShutdownAsync().Wait();
-            GrpcEnvironment.Release();
         }
 
         [Test]

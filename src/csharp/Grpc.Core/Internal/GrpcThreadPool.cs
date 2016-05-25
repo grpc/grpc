@@ -75,7 +75,7 @@ namespace Grpc.Core.Internal
             lock (myLock)
             {
                 GrpcPreconditions.CheckState(completionQueues == null, "Already started.");
-                completionQueues = CreateCompletionQueueList(completionQueueCount);
+                completionQueues = CreateCompletionQueueList(environment, completionQueueCount);
 
                 for (int i = 0; i < poolSize; i++)
                 {
@@ -152,12 +152,13 @@ namespace Grpc.Core.Internal
             while (ev.type != CompletionQueueEvent.CompletionType.Shutdown);
         }
 
-        private static IReadOnlyCollection<CompletionQueueSafeHandle> CreateCompletionQueueList(int completionQueueCount)
+        private static IReadOnlyCollection<CompletionQueueSafeHandle> CreateCompletionQueueList(GrpcEnvironment environment, int completionQueueCount)
         {
             var list = new List<CompletionQueueSafeHandle>();
             for (int i = 0; i < completionQueueCount; i++)
             {
-                list.Add(CompletionQueueSafeHandle.Create());
+                var completionRegistry = new CompletionRegistry(environment);
+                list.Add(CompletionQueueSafeHandle.Create(completionRegistry));
             }
             return list.AsReadOnly();
         }

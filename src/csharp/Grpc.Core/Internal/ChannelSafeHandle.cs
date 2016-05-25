@@ -63,7 +63,7 @@ namespace Grpc.Core.Internal
             return Native.grpcsharp_secure_channel_create(credentials, target, channelArgs);
         }
 
-        public CallSafeHandle CreateCall(CompletionRegistry registry, CallSafeHandle parentCall, ContextPropagationFlags propagationMask, CompletionQueueSafeHandle cq, string method, string host, Timespec deadline, CallCredentialsSafeHandle credentials)
+        public CallSafeHandle CreateCall(CallSafeHandle parentCall, ContextPropagationFlags propagationMask, CompletionQueueSafeHandle cq, string method, string host, Timespec deadline, CallCredentialsSafeHandle credentials)
         {
             using (Profilers.ForCurrentThread().NewScope("ChannelSafeHandle.CreateCall"))
             {
@@ -72,7 +72,7 @@ namespace Grpc.Core.Internal
                 {
                     result.SetCredentials(credentials);
                 }
-                result.Initialize(registry, cq);
+                result.Initialize(cq);
                 return result;
             }
         }

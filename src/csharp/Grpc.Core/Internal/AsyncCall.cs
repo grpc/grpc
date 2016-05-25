@@ -67,7 +67,7 @@ namespace Grpc.Core.Internal
         ClientSideStatus? finishedStatus;
 
         public AsyncCall(CallInvocationDetails<TRequest, TResponse> callDetails)
-            : base(callDetails.RequestMarshaller.Serializer, callDetails.ResponseMarshaller.Deserializer, callDetails.Channel.Environment)
+            : base(callDetails.RequestMarshaller.Serializer, callDetails.ResponseMarshaller.Deserializer)
         {
             this.details = callDetails.WithOptions(callDetails.Options.Normalize());
             this.initialMetadataSent = true;  // we always send metadata at the very beginning of the call.
@@ -368,7 +368,7 @@ namespace Grpc.Core.Internal
                 var credentials = details.Options.Credentials;
                 using (var nativeCredentials = credentials != null ? credentials.ToNativeCredentials() : null)
                 {
-                    var result = details.Channel.Handle.CreateCall(environment.CompletionRegistry,
+                    var result = details.Channel.Handle.CreateCall(
                                  parentCall, ContextPropagationToken.DefaultMask, cq,
                                  details.Method, details.Host, Timespec.FromDateTime(details.Options.Deadline.Value), nativeCredentials);
                     return result;
