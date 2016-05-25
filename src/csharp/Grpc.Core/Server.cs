@@ -34,6 +34,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core.Internal;
 using Grpc.Core.Logging;
@@ -160,7 +161,8 @@ namespace Grpc.Core
                 shutdownRequested = true;
             }
 
-            handle.ShutdownAndNotify(HandleServerShutdown, environment);
+            var cq = environment.CompletionQueues.First();  // any cq will do
+            handle.ShutdownAndNotify(HandleServerShutdown, cq);
             await shutdownTcs.Task.ConfigureAwait(false);
             DisposeHandle();
 
@@ -180,7 +182,8 @@ namespace Grpc.Core
                 shutdownRequested = true;
             }
 
-            handle.ShutdownAndNotify(HandleServerShutdown, environment);
+            var cq = environment.CompletionQueues.First();  // any cq will do
+            handle.ShutdownAndNotify(HandleServerShutdown, cq);
             handle.CancelAllCalls();
             await shutdownTcs.Task.ConfigureAwait(false);
             DisposeHandle();
@@ -254,7 +257,7 @@ namespace Grpc.Core
         {
             if (!shutdownRequested)
             {
-                handle.RequestCall((success, ctx) => HandleNewServerRpc(success, ctx, cq), environment, cq);
+                handle.RequestCall((success, ctx) => HandleNewServerRpc(success, ctx, cq), cq);
             }
         }
 

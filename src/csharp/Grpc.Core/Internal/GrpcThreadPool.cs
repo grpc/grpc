@@ -140,7 +140,7 @@ namespace Grpc.Core.Internal
                     IntPtr tag = ev.tag;
                     try
                     {
-                        var callback = environment.CompletionRegistry.Extract(tag);
+                        var callback = cq.CompletionRegistry.Extract(tag);
                         callback(success);
                     }
                     catch (Exception e)

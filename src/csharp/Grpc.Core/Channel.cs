@@ -136,7 +136,7 @@ namespace Grpc.Core
                     tcs.SetCanceled();
                 }
             });
-            handle.WatchConnectivityState(lastObservedState, deadlineTimespec, completionQueue, environment.CompletionRegistry, handler);
+            handle.WatchConnectivityState(lastObservedState, deadlineTimespec, completionQueue, handler);
             return tcs.Task;
         }
 

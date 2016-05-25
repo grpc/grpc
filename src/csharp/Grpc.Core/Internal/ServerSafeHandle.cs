@@ -72,17 +72,17 @@ namespace Grpc.Core.Internal
             Native.grpcsharp_server_start(this);
         }
     
-        public void ShutdownAndNotify(BatchCompletionDelegate callback, GrpcEnvironment environment)
+        public void ShutdownAndNotify(BatchCompletionDelegate callback, CompletionQueueSafeHandle completionQueue)
         {
             var ctx = BatchContextSafeHandle.Create();
-            environment.CompletionRegistry.RegisterBatchCompletion(ctx, callback);
-            Native.grpcsharp_server_shutdown_and_notify_callback(this, environment.PickCompletionQueue(), ctx);
+            completionQueue.CompletionRegistry.RegisterBatchCompletion(ctx, callback);
+            Native.grpcsharp_server_shutdown_and_notify_callback(this, completionQueue, ctx);
         }
 
-        public void RequestCall(BatchCompletionDelegate callback, GrpcEnvironment environment, CompletionQueueSafeHandle completionQueue)
+        public void RequestCall(BatchCompletionDelegate callback, CompletionQueueSafeHandle completionQueue)
         {
             var ctx = BatchContextSafeHandle.Create();
-            environment.CompletionRegistry.RegisterBatchCompletion(ctx, callback);
+            completionQueue.CompletionRegistry.RegisterBatchCompletion(ctx, callback);
             Native.grpcsharp_server_request_call(this, completionQueue, ctx).CheckOk();
         }
 

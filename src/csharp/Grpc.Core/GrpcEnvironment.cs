@@ -58,7 +58,6 @@ namespace Grpc.Core
         static ILogger logger = new ConsoleLogger();
 
         readonly GrpcThreadPool threadPool;
-        readonly CompletionRegistry completionRegistry;
         readonly DebugStats debugStats = new DebugStats();
         readonly AtomicCounter cqPickerCounter = new AtomicCounter();
         bool isClosed;
@@ -167,22 +166,10 @@ namespace Grpc.Core
         private GrpcEnvironment()
         {
             GrpcNativeInit();
-            completionRegistry = new CompletionRegistry(this);
 
             var cqCount = customCompletionQueueCount ?? DefaultCompletionQueueCount;
             threadPool = new GrpcThreadPool(this, GetThreadPoolSizeOrDefault(), cqCount);
             threadPool.Start();
-        }
-
-        /// <summary>
-        /// Gets the completion registry used by this gRPC environment.
-        /// </summary>
-        internal CompletionRegistry CompletionRegistry
-        {
-            get
-            {
-                return this.completionRegistry;
-            }
         }
 
         /// <summary>
