@@ -60,7 +60,7 @@ namespace Grpc.Core.Internal.Tests
             var ev = cq.Next();
             cq.Dispose();
             GrpcEnvironment.Release();
-            Assert.AreEqual(GRPCCompletionType.Shutdown, ev.type);
+            Assert.AreEqual(CompletionQueueEvent.CompletionType.Shutdown, ev.type);
             Assert.AreNotEqual(IntPtr.Zero, ev.success);
             Assert.AreEqual(IntPtr.Zero, ev.tag);
         }
