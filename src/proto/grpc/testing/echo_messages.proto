@@ -30,7 +30,7 @@
 
 syntax = "proto3";
 
-package grpc.testing;
+package grpc.testing.integration;
 
 // Message to be echoed back serialized in trailer.
 message DebugInfo {

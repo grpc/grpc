@@ -37,7 +37,7 @@ syntax = "proto3";
 // Ignored detached comment
 
 // Ignored package leading comment
-package grpc.testing;
+package grpc.testing.integration;
 
 message Request {
 }

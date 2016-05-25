@@ -29,7 +29,7 @@
 
 syntax = "proto3";
 
-package grpc.testing;
+package grpc.testing.integration;
 
 message ServerStats {
   // wall clock time change in seconds since last reset

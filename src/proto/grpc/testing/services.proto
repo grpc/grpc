@@ -34,7 +34,7 @@ syntax = "proto3";
 import "src/proto/grpc/testing/messages.proto";
 import "src/proto/grpc/testing/control.proto";
 
-package grpc.testing;
+package grpc.testing.integration;
 
 service BenchmarkService {
   // One request followed by one response.

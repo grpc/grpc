@@ -32,7 +32,7 @@
 
 syntax = "proto3";
 
-package grpc.testing;
+package grpc.testing.integration;
 
 // The type of payload that should be returned.
 enum PayloadType {
