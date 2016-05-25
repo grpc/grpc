@@ -41,6 +41,7 @@
 using std::chrono::duration_cast;
 using std::chrono::nanoseconds;
 using std::chrono::seconds;
+using std::chrono::steady_clock;
 using std::chrono::system_clock;
 using std::chrono::high_resolution_clock;
 
@@ -60,6 +61,22 @@ void Timepoint2Timespec(const system_clock::time_point& from,
   to->tv_sec = (int64_t)secs.count();
   to->tv_nsec = (int32_t)nsecs.count();
   to->clock_type = GPR_CLOCK_REALTIME;
+}
+
+void TimepointSteady2Timespec(const steady_clock::time_point& from,
+                        gpr_timespec* to) {
+  steady_clock::duration deadline = from.time_since_epoch();
+  seconds secs = duration_cast<seconds>(deadline);
+  if (from == steady_clock::time_point::max() ||
+      secs.count() >= gpr_inf_future(GPR_CLOCK_MONOTONIC).tv_sec ||
+      secs.count() < 0) {
+    *to = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+    return;
+  }
+  nanoseconds nsecs = duration_cast<nanoseconds>(deadline - secs);
+  to->tv_sec = (int64_t)secs.count();
+  to->tv_nsec = (int32_t)nsecs.count();
+  to->clock_type = GPR_CLOCK_MONOTONIC;
 }
 
 void TimepointHR2Timespec(const high_resolution_clock::time_point& from,
@@ -87,6 +104,18 @@ system_clock::time_point Timespec2Timepoint(gpr_timespec t) {
   tp += duration_cast<system_clock::time_point::duration>(seconds(t.tv_sec));
   tp +=
       duration_cast<system_clock::time_point::duration>(nanoseconds(t.tv_nsec));
+  return tp;
+}
+
+steady_clock::time_point Timespec2TimepointSteady(gpr_timespec t) {
+  if (gpr_time_cmp(t, gpr_inf_future(t.clock_type)) == 0) {
+    return steady_clock::time_point::max();
+  }
+  t = gpr_convert_clock_type(t, GPR_CLOCK_MONOTONIC);
+  steady_clock::time_point tp;
+  tp += duration_cast<steady_clock::time_point::duration>(seconds(t.tv_sec));
+  tp +=
+      duration_cast<steady_clock::time_point::duration>(nanoseconds(t.tv_nsec));
   return tp;
 }
 

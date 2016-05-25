@@ -1027,7 +1027,7 @@ TEST_P(ProxyEnd2endTest, MultipleRpcs) {
 }
 
 // Set a 10us deadline and make sure proper error is returned.
-TEST_P(ProxyEnd2endTest, RpcDeadlineExpires) {
+TEST_P(ProxyEnd2endTest, RpcSystemDeadlineExpires) {
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1042,8 +1042,24 @@ TEST_P(ProxyEnd2endTest, RpcDeadlineExpires) {
   EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, s.error_code());
 }
 
-// Set a long but finite deadline.
-TEST_P(ProxyEnd2endTest, RpcLongDeadline) {
+// Set a 10us steady deadline and make sure proper error is returned.
+TEST_P(ProxyEnd2endTest, RpcSteadyDeadlineExpires) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+  request.mutable_param()->set_skip_cancelled_check(true);
+
+  ClientContext context;
+  std::chrono::steady_clock::time_point deadline =
+      std::chrono::steady_clock::now() + std::chrono::microseconds(10);
+  context.set_deadline(deadline);
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, s.error_code());
+}
+
+// Set a long but finite system deadline.
+TEST_P(ProxyEnd2endTest, RpcLongSystemDeadline) {
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1052,6 +1068,22 @@ TEST_P(ProxyEnd2endTest, RpcLongDeadline) {
   ClientContext context;
   std::chrono::system_clock::time_point deadline =
       std::chrono::system_clock::now() + std::chrono::hours(1);
+  context.set_deadline(deadline);
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(response.message(), request.message());
+  EXPECT_TRUE(s.ok());
+}
+
+// Set a long but finite steady deadline.
+TEST_P(ProxyEnd2endTest, RpcLongSteadyDeadline) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+
+  ClientContext context;
+  std::chrono::steady_clock::time_point deadline =
+      std::chrono::steady_clock::now() + std::chrono::hours(1);
   context.set_deadline(deadline);
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(response.message(), request.message());
