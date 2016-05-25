@@ -59,7 +59,7 @@ struct grpc_channel_credentials;
  * Creates a secure channel to the specified @c host using Cronet as a transport mechanism.
  */
 + (nullable GRPCChannel *)secureCronetChannelWithHost:(NSString *)host
-                                 channelArgs:(NSDictionary *)channelArgs;
+                                          channelArgs:(NSDictionary *)channelArgs;
 
 /**
  * Creates a secure channel to the specified @c host using the specified @c credentials and

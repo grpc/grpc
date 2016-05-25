@@ -30,15 +30,17 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+#import <Cronet/Cronet.h>
+
 #import "GRPCCall.h"
 
 /**
- * TODOTODOTODO: Description
+ * Methods for using cronet transport.
  */
 @interface GRPCCall (Cronet)
 
 +(void) setUseCronet:(BOOL) useCronet
-                    :(void *)cronet_engine;
+                    :(cronet_engine *)cronet_engine;
 
 +(void *)getCronetEngine;
 
