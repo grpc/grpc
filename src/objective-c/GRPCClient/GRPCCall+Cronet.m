@@ -38,9 +38,8 @@ static void *g_cronet_engine;
 
 @implementation GRPCCall (Cronet)
 
-+ (void)setUseCronet:(BOOL)useCronet
-                    :(cronet_engine *)cronet_engine {
-  use_cronet = useCronet;
++ (void)useCronet:(cronet_engine *)cronet_engine {
+  use_cronet = YES;
   g_cronet_engine = cronet_engine;
 }
 

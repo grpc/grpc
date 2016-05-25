@@ -39,8 +39,7 @@
  */
 @interface GRPCCall (Cronet)
 
-+(void) setUseCronet:(BOOL) useCronet
-                    :(cronet_engine *)cronet_engine;
++(void)useCronet:(cronet_engine *)cronet_engine;
 
 +(void *)getCronetEngine;
 
