@@ -274,6 +274,7 @@ cdef class ByteBuffer:
           data_slice_length = gpr_slice_length(data_slice)
           with gil:
             result += (<char *>data_slice_pointer)[:data_slice_length]
+          gpr_slice_unref(data_slice)
       with nogil:
         grpc_byte_buffer_reader_destroy(&reader)
       return bytes(result)
