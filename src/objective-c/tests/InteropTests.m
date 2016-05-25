@@ -35,6 +35,7 @@
 
 #include <grpc/status.h>
 
+#import <Cronet/Cronet.h>
 #import <GRPCClient/GRPCCall+Tests.h>
 #import <GRPCClient/GRPCCall+Cronet.h>
 #import <ProtoRPC/ProtoRPC.h>
@@ -44,7 +45,6 @@
 #import <RemoteTest/Test.pbrpc.h>
 #import <RxLibrary/GRXBufferedPipe.h>
 #import <RxLibrary/GRXWriter+Immediate.h>
-#import <Cronet/Cronet.h>
 
 // Convenience constructors for the generated proto messages:
 

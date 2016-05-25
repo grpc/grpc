@@ -33,13 +33,13 @@
 
 #import "GRPCCall+Cronet.h"
 
-static BOOL use_cronet = false;
+static BOOL use_cronet = NO;
 static void *g_cronet_engine;
 
 @implementation GRPCCall (Cronet)
 
 + (void)setUseCronet:(BOOL)useCronet
-                    :(void *)cronet_engine {
+                    :(cronet_engine *)cronet_engine {
   use_cronet = useCronet;
   g_cronet_engine = cronet_engine;
 }
