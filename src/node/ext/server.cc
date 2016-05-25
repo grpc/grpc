@@ -35,15 +35,15 @@
 
 #include "server.h"
 
-#include <node.h>
 #include <nan.h>
+#include <node.h>
 
 #include <vector>
+#include "call.h"
+#include "completion_queue_async_worker.h"
 #include "grpc/grpc.h"
 #include "grpc/grpc_security.h"
 #include "grpc/support/log.h"
-#include "call.h"
-#include "completion_queue_async_worker.h"
 #include "server_credentials.h"
 #include "timeval.h"
 
@@ -100,8 +100,8 @@ class NewCallOp : public Op {
     Nan::Set(obj, Nan::New("host").ToLocalChecked(),
              Nan::New(details.host).ToLocalChecked());
     Nan::Set(obj, Nan::New("deadline").ToLocalChecked(),
-             Nan::New<Date>(
-                 TimespecToMilliseconds(details.deadline)).ToLocalChecked());
+             Nan::New<Date>(TimespecToMilliseconds(details.deadline))
+                 .ToLocalChecked());
     Nan::Set(obj, Nan::New("metadata").ToLocalChecked(),
              ParseMetadata(&request_metadata));
     return scope.Escape(obj);
@@ -117,14 +117,13 @@ class NewCallOp : public Op {
   grpc_metadata_array request_metadata;
 
  protected:
-  std::string GetTypeString() const {
-    return "new_call";
-  }
+  std::string GetTypeString() const { return "new_call"; }
 };
 
 Server::Server(grpc_server *server) : wrapped_server(server) {
   shutdown_queue = grpc_completion_queue_create(NULL);
-  grpc_server_register_completion_queue(server, shutdown_queue, NULL);
+  grpc_server_register_non_listening_completion_queue(server, shutdown_queue,
+                                                      NULL);
 }
 
 Server::~Server() {
@@ -156,8 +155,7 @@ bool Server::HasInstance(Local<Value> val) {
 }
 
 void Server::ShutdownServer() {
-  grpc_server_shutdown_and_notify(this->wrapped_server,
-                                  this->shutdown_queue,
+  grpc_server_shutdown_and_notify(this->wrapped_server, this->shutdown_queue,
                                   NULL);
   grpc_server_cancel_all_calls(this->wrapped_server);
   grpc_completion_queue_pluck(this->shutdown_queue, NULL,
@@ -170,8 +168,8 @@ NAN_METHOD(Server::New) {
   if (!info.IsConstructCall()) {
     const int argc = 1;
     Local<Value> argv[argc] = {info[0]};
-    MaybeLocal<Object> maybe_instance = constructor->GetFunction()->NewInstance(
-        argc, argv);
+    MaybeLocal<Object> maybe_instance =
+        constructor->GetFunction()->NewInstance(argc, argv);
     if (maybe_instance.IsEmpty()) {
       // There's probably a pending exception
       return;
@@ -185,8 +183,9 @@ NAN_METHOD(Server::New) {
   grpc_channel_args *channel_args;
   if (!ParseChannelArgs(info[0], &channel_args)) {
     DeallocateChannelArgs(channel_args);
-    return Nan::ThrowTypeError("Server options must be an object with "
-                               "string keys and integer or string values");
+    return Nan::ThrowTypeError(
+        "Server options must be an object with "
+        "string keys and integer or string values");
   }
   wrapped_server = grpc_server_create(channel_args, NULL);
   DeallocateChannelArgs(channel_args);
@@ -218,8 +217,7 @@ NAN_METHOD(Server::RequestCall) {
 
 NAN_METHOD(Server::AddHttp2Port) {
   if (!HasInstance(info.This())) {
-    return Nan::ThrowTypeError(
-        "addHttp2Port can only be called on a Server");
+    return Nan::ThrowTypeError("addHttp2Port can only be called on a Server");
   }
   if (!info[0]->IsString()) {
     return Nan::ThrowTypeError(
@@ -239,8 +237,7 @@ NAN_METHOD(Server::AddHttp2Port) {
                                                *Utf8String(info[0]));
   } else {
     port = grpc_server_add_secure_http2_port(server->wrapped_server,
-                                             *Utf8String(info[0]),
-                                             creds);
+                                             *Utf8String(info[0]), creds);
   }
   info.GetReturnValue().Set(Nan::New<Number>(port));
 }
@@ -262,8 +259,7 @@ NAN_METHOD(Server::TryShutdown) {
   Server *server = ObjectWrap::Unwrap<Server>(info.This());
   unique_ptr<OpVec> ops(new OpVec());
   grpc_server_shutdown_and_notify(
-      server->wrapped_server,
-      CompletionQueueAsyncWorker::GetQueue(),
+      server->wrapped_server, CompletionQueueAsyncWorker::GetQueue(),
       new struct tag(new Nan::Callback(info[0].As<Function>()), ops.release(),
                      shared_ptr<Resources>(nullptr)));
   CompletionQueueAsyncWorker::Next();
