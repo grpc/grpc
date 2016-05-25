@@ -98,7 +98,7 @@ static cronet_engine *_engine = NULL;
     [Cronet setSslKeyLogFileName:@"cronetkeylogfile.pem"];
     [Cronet start];
     _engine = [Cronet getGlobalEngine];
-    [GRPCCall setUseCronet:true :_engine];
+    [GRPCCall useCronet:_engine];
   }
 #endif
 }
