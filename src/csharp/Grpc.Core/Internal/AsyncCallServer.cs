@@ -51,14 +51,14 @@ namespace Grpc.Core.Internal
         readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         readonly Server server;
 
-        public AsyncCallServer(Func<TResponse, byte[]> serializer, Func<byte[], TRequest> deserializer, GrpcEnvironment environment, Server server) : base(serializer, deserializer, environment)
+        public AsyncCallServer(Func<TResponse, byte[]> serializer, Func<byte[], TRequest> deserializer, Server server) : base(serializer, deserializer)
         {
             this.server = GrpcPreconditions.CheckNotNull(server);
         }
 
         public void Initialize(CallSafeHandle call, CompletionQueueSafeHandle completionQueue)
         {
-            call.Initialize(environment.CompletionRegistry, completionQueue);
+            call.Initialize(completionQueue);
 
             server.AddCallReference(this);
             InitializeInternal(call);

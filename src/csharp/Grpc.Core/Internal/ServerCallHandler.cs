@@ -44,7 +44,7 @@ namespace Grpc.Core.Internal
 {
     internal interface IServerCallHandler
     {
-        Task HandleCall(ServerRpcNew newRpc, GrpcEnvironment environment, CompletionQueueSafeHandle cq);
+        Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq);
     }
 
     internal class UnaryServerCallHandler<TRequest, TResponse> : IServerCallHandler
@@ -62,12 +62,12 @@ namespace Grpc.Core.Internal
             this.handler = handler;
         }
 
-        public async Task HandleCall(ServerRpcNew newRpc, GrpcEnvironment environment, CompletionQueueSafeHandle cq)
+        public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
                 method.ResponseMarshaller.Serializer,
                 method.RequestMarshaller.Deserializer,
-                environment, newRpc.Server);
+                newRpc.Server);
 
             asyncCall.Initialize(newRpc.Call, cq);
             var finishedTask = asyncCall.ServerSideCallAsync();
@@ -121,12 +121,12 @@ namespace Grpc.Core.Internal
             this.handler = handler;
         }
 
-        public async Task HandleCall(ServerRpcNew newRpc, GrpcEnvironment environment, CompletionQueueSafeHandle cq)
+        public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
                 method.ResponseMarshaller.Serializer,
                 method.RequestMarshaller.Deserializer,
-                environment, newRpc.Server);
+                newRpc.Server);
 
             asyncCall.Initialize(newRpc.Call, cq);
             var finishedTask = asyncCall.ServerSideCallAsync();
@@ -179,12 +179,12 @@ namespace Grpc.Core.Internal
             this.handler = handler;
         }
 
-        public async Task HandleCall(ServerRpcNew newRpc, GrpcEnvironment environment, CompletionQueueSafeHandle cq)
+        public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
                 method.ResponseMarshaller.Serializer,
                 method.RequestMarshaller.Deserializer,
-                environment, newRpc.Server);
+                newRpc.Server);
 
             asyncCall.Initialize(newRpc.Call, cq);
             var finishedTask = asyncCall.ServerSideCallAsync();
@@ -237,12 +237,12 @@ namespace Grpc.Core.Internal
             this.handler = handler;
         }
 
-        public async Task HandleCall(ServerRpcNew newRpc, GrpcEnvironment environment, CompletionQueueSafeHandle cq)
+        public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
                 method.ResponseMarshaller.Serializer,
                 method.RequestMarshaller.Deserializer,
-                environment, newRpc.Server);
+                newRpc.Server);
 
             asyncCall.Initialize(newRpc.Call, cq);
             var finishedTask = asyncCall.ServerSideCallAsync();
@@ -281,11 +281,11 @@ namespace Grpc.Core.Internal
     {
         public static readonly NoSuchMethodCallHandler Instance = new NoSuchMethodCallHandler();
 
-        public async Task HandleCall(ServerRpcNew newRpc, GrpcEnvironment environment, CompletionQueueSafeHandle cq)
+        public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             // We don't care about the payload type here.
             var asyncCall = new AsyncCallServer<byte[], byte[]>(
-                (payload) => payload, (payload) => payload, environment, newRpc.Server);
+                (payload) => payload, (payload) => payload, newRpc.Server);
             
             asyncCall.Initialize(newRpc.Call, cq);
             var finishedTask = asyncCall.ServerSideCallAsync();

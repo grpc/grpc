@@ -280,7 +280,7 @@ namespace Grpc.Core
                 {
                     callHandler = NoSuchMethodCallHandler.Instance;
                 }
-                await callHandler.HandleCall(newRpc, environment, cq).ConfigureAwait(false);
+                await callHandler.HandleCall(newRpc, cq).ConfigureAwait(false);
             }
             catch (Exception e)
             {
