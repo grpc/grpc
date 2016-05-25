@@ -60,8 +60,11 @@ GRPCAPI grpc_channel *grpc_insecure_channel_create_from_fd(
 
 /** Add the connected communication channel based on file descriptor 'fd' to the
     'server'. The 'fd' must be an open file descriptor corresponding to a
-    connected socket. */
-GRPCAPI void grpc_server_add_insecure_channel_from_fd(grpc_server *server, int fd);
+    connected socket. The 'cq' is a completion queue that will be getting events
+    from that descriptor. */
+GRPCAPI void grpc_server_add_insecure_channel_from_fd(grpc_server *server,
+                                                      grpc_completion_queue *cq,
+                                                      int fd);
 
 #endif  // GPR_POSIX_SOCKET
 
