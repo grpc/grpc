@@ -57,6 +57,9 @@ def target_has_header(target, name):
       return True
   if name == 'src/core/lib/profiling/stap_probes.h':
     return True
+  if not name.startswith('extensions') \
+     and target_has_header(target, 'extensions/' + name):
+    return True
   return False
 
 def produces_object(name):

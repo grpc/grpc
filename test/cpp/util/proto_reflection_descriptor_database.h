@@ -32,6 +32,7 @@
  */
 
 #include <memory>
+#include <mutex>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -98,6 +99,7 @@ class ProtoReflectionDescriptorDatabase
   std::unordered_set<string> missing_symbols_;
   std::unordered_map<string, std::unordered_set<int>> missing_extensions_;
   std::unordered_map<string, std::vector<int>> cached_extension_numbers_;
+  std::mutex stream_mutex_;
 
   google::protobuf::SimpleDescriptorDatabase cached_db_;
 };

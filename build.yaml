@@ -914,6 +914,8 @@ libs:
   - extensions/reflection/proto_server_reflection_plugin.cc
   - extensions/reflection/reflection.grpc.pb.cc
   - extensions/reflection/reflection.pb.cc
+  uses:
+  - grpc++_base
 - name: grpc++_test_config
   build: private
   language: c++

@@ -4371,7 +4371,9 @@
     "type": "lib"
   }, 
   {
-    "deps": [], 
+    "deps": [
+      "grpc++_base"
+    ], 
     "headers": [
       "extensions/include/grpc++/impl/proto_server_reflection_plugin.h", 
       "extensions/include/grpc++/impl/reflection.grpc.pb.h", 

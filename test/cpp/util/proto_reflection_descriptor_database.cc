@@ -31,7 +31,7 @@
  *
  */
 
-#include "proto_reflection_descriptor_database.h"
+#include "test/cpp/util/proto_reflection_descriptor_database.h"
 
 #include <vector>
 
@@ -69,16 +69,14 @@ bool ProtoReflectionDescriptorDatabase::FindFileByName(
   request.set_file_by_filename(filename);
   ServerReflectionResponse response;
 
+  stream_mutex_.lock();
   GetStream()->Write(request);
   GetStream()->Read(&response);
+  stream_mutex_.unlock();
 
   if (response.message_response_case() ==
       ServerReflectionResponse::MessageResponseCase::kFileDescriptorResponse) {
     AddFileFromResponse(response.file_descriptor_response());
-    // const google::protobuf::FileDescriptorProto file_proto =
-    //     ParseFileDescriptorProtoResponse(response.file_descriptor_response());
-    // known_files_.insert(file_proto.name());
-    // cached_db_.Add(file_proto);
   } else if (response.message_response_case() ==
              ServerReflectionResponse::MessageResponseCase::kErrorResponse) {
     const ErrorResponse error = response.error_response();
@@ -119,19 +117,14 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingSymbol(
   request.set_file_containing_symbol(symbol_name);
   ServerReflectionResponse response;
 
+  stream_mutex_.lock();
   GetStream()->Write(request);
   GetStream()->Read(&response);
+  stream_mutex_.unlock();
 
-  // Status status = stub_->GetFileContainingSymbol(&ctx, request, &response);
   if (response.message_response_case() ==
       ServerReflectionResponse::MessageResponseCase::kFileDescriptorResponse) {
     AddFileFromResponse(response.file_descriptor_response());
-    // const google::protobuf::FileDescriptorProto file_proto =
-    //     ParseFileDescriptorProtoResponse(response.file_descriptor_response());
-    // if (known_files_.find(file_proto.name()) == known_files_.end()) {
-    //   known_files_.insert(file_proto.name());
-    //   cached_db_.Add(file_proto);
-    // }
   } else if (response.message_response_case() ==
              ServerReflectionResponse::MessageResponseCase::kErrorResponse) {
     const ErrorResponse error = response.error_response();
@@ -181,20 +174,14 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingExtension(
       field_number);
   ServerReflectionResponse response;
 
+  stream_mutex_.lock();
   GetStream()->Write(request);
   GetStream()->Read(&response);
+  stream_mutex_.unlock();
 
-  // Status status = stub_->GetFileContainingExtension(&ctx, request,
-  // &response);
   if (response.message_response_case() ==
       ServerReflectionResponse::MessageResponseCase::kFileDescriptorResponse) {
     AddFileFromResponse(response.file_descriptor_response());
-    // const google::protobuf::FileDescriptorProto file_proto =
-    //     ParseFileDescriptorProtoResponse(response.file_descriptor_response());
-    // if (known_files_.find(file_proto.name()) == known_files_.end()) {
-    //   known_files_.insert(file_proto.name());
-    //   cached_db_.Add(file_proto);
-    // }
   } else if (response.message_response_case() ==
              ServerReflectionResponse::MessageResponseCase::kErrorResponse) {
     const ErrorResponse error = response.error_response();
@@ -240,8 +227,10 @@ bool ProtoReflectionDescriptorDatabase::FindAllExtensionNumbers(
   request.set_all_extension_numbers_of_type(extendee_type);
   ServerReflectionResponse response;
 
+  stream_mutex_.lock();
   GetStream()->Write(request);
   GetStream()->Read(&response);
+  stream_mutex_.unlock();
 
   if (response.message_response_case() ==
       ServerReflectionResponse::MessageResponseCase::
@@ -272,8 +261,11 @@ bool ProtoReflectionDescriptorDatabase::GetServices(
   ServerReflectionRequest request;
   request.set_list_services("");
   ServerReflectionResponse response;
+
+  stream_mutex_.lock();
   GetStream()->Write(request);
   GetStream()->Read(&response);
+  stream_mutex_.unlock();
 
   if (response.message_response_case() ==
       ServerReflectionResponse::MessageResponseCase::kListServicesResponse) {
