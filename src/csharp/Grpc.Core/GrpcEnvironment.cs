@@ -53,6 +53,7 @@ namespace Grpc.Core
         static GrpcEnvironment instance;
         static int refCount;
         static int? customThreadPoolSize;
+        static int? customCompletionQueueCount;
 
         static ILogger logger = new ConsoleLogger();
 
@@ -144,13 +145,32 @@ namespace Grpc.Core
         }
 
         /// <summary>
+        /// Sets the number of completion queues in the  gRPC thread pool that polls for internal RPC events.
+        /// Can be only invoke before the <c>GrpcEnviroment</c> is started and cannot be changed afterwards.
+        /// Setting the number of completions queues is an advanced setting and you should only use it if you know what you are doing.
+        /// Most users should rely on the default value provided by gRPC library.
+        /// Note: this method is part of an experimental API that can change or be removed without any prior notice.
+        /// </summary>
+        public static void SetCompletionQueueCount(int completionQueueCount)
+        {
+            lock (staticLock)
+            {
+                GrpcPreconditions.CheckState(instance == null, "Can only be set before GrpcEnvironment is initialized");
+                GrpcPreconditions.CheckArgument(completionQueueCount > 0, "threadCount needs to be a positive number");
+                customCompletionQueueCount = completionQueueCount;
+            }
+        }
+
+        /// <summary>
         /// Creates gRPC environment.
         /// </summary>
         private GrpcEnvironment()
         {
             GrpcNativeInit();
             completionRegistry = new CompletionRegistry(this);
-            threadPool = new GrpcThreadPool(this, GetThreadPoolSizeOrDefault(), DefaultCompletionQueueCount);
+
+            var cqCount = customCompletionQueueCount ?? DefaultCompletionQueueCount;
+            threadPool = new GrpcThreadPool(this, GetThreadPoolSizeOrDefault(), cqCount);
             threadPool.Start();
         }
 
