@@ -38,7 +38,6 @@
 #include "grpc/grpc.h"
 #include "grpc/byte_buffer_reader.h"
 #include "grpc/support/slice.h"
-#include "grpc/support/log.h"
 
 #include "byte_buffer.h"
 
@@ -73,7 +72,6 @@ Local<Value> ByteBufferToBuffer(grpc_byte_buffer *buffer) {
   if (buffer == NULL) {
     return scope.Escape(Nan::Null());
   }
-  gpr_log(GPR_DEBUG, "Compressed size: %d", grpc_byte_buffer_length(buffer));
   grpc_byte_buffer_reader reader;
   grpc_byte_buffer_reader_init(&reader, buffer);
   gpr_slice slice = grpc_byte_buffer_reader_readall(&reader);
