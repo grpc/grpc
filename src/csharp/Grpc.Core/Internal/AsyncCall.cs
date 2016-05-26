@@ -64,7 +64,7 @@ namespace Grpc.Core.Internal
         ClientSideStatus? finishedStatus;
 
         public AsyncCall(CallInvocationDetails<TRequest, TResponse> callDetails)
-            : base(callDetails.RequestMarshaller.Serializer, callDetails.ResponseMarshaller.Deserializer, callDetails.Channel.Environment)
+            : base(callDetails.RequestMarshaller.Serializer, callDetails.ResponseMarshaller.Deserializer)
         {
             this.details = callDetails.WithOptions(callDetails.Options.Normalize());
             this.initialMetadataSent = true;  // we always send metadata at the very beginning of the call.
@@ -141,7 +141,7 @@ namespace Grpc.Core.Internal
                 GrpcPreconditions.CheckState(!started);
                 started = true;
 
-                Initialize(environment.CompletionQueue);
+                Initialize(details.Channel.CompletionQueue);
 
                 halfcloseRequested = true;
                 readingDone = true;
@@ -168,7 +168,7 @@ namespace Grpc.Core.Internal
                 GrpcPreconditions.CheckState(!started);
                 started = true;
 
-                Initialize(environment.CompletionQueue);
+                Initialize(details.Channel.CompletionQueue);
 
                 readingDone = true;
 
@@ -192,7 +192,7 @@ namespace Grpc.Core.Internal
                 GrpcPreconditions.CheckState(!started);
                 started = true;
 
-                Initialize(environment.CompletionQueue);
+                Initialize(details.Channel.CompletionQueue);
 
                 halfcloseRequested = true;
 
@@ -217,7 +217,7 @@ namespace Grpc.Core.Internal
                 GrpcPreconditions.CheckState(!started);
                 started = true;
 
-                Initialize(environment.CompletionQueue);
+                Initialize(details.Channel.CompletionQueue);
 
                 using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
                 {
@@ -406,7 +406,7 @@ namespace Grpc.Core.Internal
                 var credentials = details.Options.Credentials;
                 using (var nativeCredentials = credentials != null ? credentials.ToNativeCredentials() : null)
                 {
-                    var result = details.Channel.Handle.CreateCall(environment.CompletionRegistry,
+                    var result = details.Channel.Handle.CreateCall(
                                  parentCall, ContextPropagationToken.DefaultMask, cq,
                                  details.Method, details.Host, Timespec.FromDateTime(details.Options.Deadline.Value), nativeCredentials);
                     return result;

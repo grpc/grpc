@@ -137,6 +137,7 @@ namespace Grpc.Core.Internal
         public readonly Delegates.grpcsharp_server_credentials_release_delegate grpcsharp_server_credentials_release;
 
         public readonly Delegates.grpcsharp_server_create_delegate grpcsharp_server_create;
+        public readonly Delegates.grpcsharp_server_register_completion_queue_delegate grpcsharp_server_register_completion_queue;
         public readonly Delegates.grpcsharp_server_add_insecure_http2_port_delegate grpcsharp_server_add_insecure_http2_port;
         public readonly Delegates.grpcsharp_server_add_secure_http2_port_delegate grpcsharp_server_add_secure_http2_port;
         public readonly Delegates.grpcsharp_server_start_delegate grpcsharp_server_start;
@@ -244,6 +245,7 @@ namespace Grpc.Core.Internal
                 this.grpcsharp_server_credentials_release = GetMethodDelegate<Delegates.grpcsharp_server_credentials_release_delegate>(library);
 
                 this.grpcsharp_server_create = GetMethodDelegate<Delegates.grpcsharp_server_create_delegate>(library);
+                this.grpcsharp_server_register_completion_queue = GetMethodDelegate<Delegates.grpcsharp_server_register_completion_queue_delegate>(library);
                 this.grpcsharp_server_add_insecure_http2_port = GetMethodDelegate<Delegates.grpcsharp_server_add_insecure_http2_port_delegate>(library);
                 this.grpcsharp_server_add_secure_http2_port = GetMethodDelegate<Delegates.grpcsharp_server_add_secure_http2_port_delegate>(library);
                 this.grpcsharp_server_start = GetMethodDelegate<Delegates.grpcsharp_server_start_delegate>(library);
@@ -348,6 +350,7 @@ namespace Grpc.Core.Internal
                 this.grpcsharp_server_credentials_release = PInvokeMethods.grpcsharp_server_credentials_release;
 
                 this.grpcsharp_server_create = PInvokeMethods.grpcsharp_server_create;
+                this.grpcsharp_server_register_completion_queue = PInvokeMethods.grpcsharp_server_register_completion_queue;
                 this.grpcsharp_server_add_insecure_http2_port = PInvokeMethods.grpcsharp_server_add_insecure_http2_port;
                 this.grpcsharp_server_add_secure_http2_port = PInvokeMethods.grpcsharp_server_add_secure_http2_port;
                 this.grpcsharp_server_start = PInvokeMethods.grpcsharp_server_start;
@@ -493,7 +496,8 @@ namespace Grpc.Core.Internal
             public delegate ServerCredentialsSafeHandle grpcsharp_ssl_server_credentials_create_delegate(string pemRootCerts, string[] keyCertPairCertChainArray, string[] keyCertPairPrivateKeyArray, UIntPtr numKeyCertPairs, bool forceClientAuth);
             public delegate void grpcsharp_server_credentials_release_delegate(IntPtr credentials);
 
-            public delegate ServerSafeHandle grpcsharp_server_create_delegate(CompletionQueueSafeHandle cq, ChannelArgsSafeHandle args);
+            public delegate ServerSafeHandle grpcsharp_server_create_delegate(ChannelArgsSafeHandle args);
+            public delegate void grpcsharp_server_register_completion_queue_delegate(ServerSafeHandle server, CompletionQueueSafeHandle cq);
             public delegate int grpcsharp_server_add_insecure_http2_port_delegate(ServerSafeHandle server, string addr);
             public delegate int grpcsharp_server_add_secure_http2_port_delegate(ServerSafeHandle server, string addr, ServerCredentialsSafeHandle creds);
             public delegate void grpcsharp_server_start_delegate(ServerSafeHandle server);
@@ -773,7 +777,10 @@ namespace Grpc.Core.Internal
             // ServerSafeHandle
 
             [DllImport("grpc_csharp_ext.dll")]
-            public static extern ServerSafeHandle grpcsharp_server_create(CompletionQueueSafeHandle cq, ChannelArgsSafeHandle args);
+            public static extern ServerSafeHandle grpcsharp_server_create(ChannelArgsSafeHandle args);
+
+            [DllImport("grpc_csharp_ext.dll")]
+            public static extern void grpcsharp_server_register_completion_queue(ServerSafeHandle server, CompletionQueueSafeHandle cq);
 
             [DllImport("grpc_csharp_ext.dll")]
             public static extern int grpcsharp_server_add_insecure_http2_port(ServerSafeHandle server, string addr);
