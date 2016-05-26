@@ -65,12 +65,6 @@
       - status/close recv (depending on client/server) */
 #define MAX_CONCURRENT_BATCHES 6
 
-typedef struct {
-  grpc_ioreq_completion_func on_complete;
-  void *user_data;
-  int success;
-} completed_request;
-
 #define MAX_SEND_EXTRA_METADATA_COUNT 3
 
 /* Status data for a request can come from several sources; this
