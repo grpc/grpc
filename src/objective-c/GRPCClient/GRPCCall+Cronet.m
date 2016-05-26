@@ -33,22 +33,22 @@
 
 #import "GRPCCall+Cronet.h"
 
-static BOOL use_cronet = NO;
-static void *g_cronet_engine;
+static BOOL useCronet = NO;
+static cronet_engine *globalCronetEngine;
 
 @implementation GRPCCall (Cronet)
 
-+ (void)useCronet:(cronet_engine *)cronet_engine {
-  use_cronet = YES;
-  g_cronet_engine = cronet_engine;
++ (void)useCronetWithEngine:(cronet_engine *)engine {
+  useCronet = YES;
+  globalCronetEngine = engine;
 }
 
-+ (void *)getCronetEngine {
-  return g_cronet_engine;
++ (cronet_engine *)cronetEngine {
+  return globalCronetEngine;
 }
 
 + (BOOL)isUsingCronet {
-  return use_cronet;
+  return useCronet;
 }
 
 @end
