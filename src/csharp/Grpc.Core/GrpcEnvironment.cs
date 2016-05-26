@@ -47,7 +47,6 @@ namespace Grpc.Core
     public class GrpcEnvironment
     {
         const int MinDefaultThreadPoolSize = 4;
-        const int DefaultCompletionQueueCount = 1;
 
         static object staticLock = new object();
         static GrpcEnvironment instance;
@@ -166,9 +165,7 @@ namespace Grpc.Core
         private GrpcEnvironment()
         {
             GrpcNativeInit();
-
-            var cqCount = customCompletionQueueCount ?? DefaultCompletionQueueCount;
-            threadPool = new GrpcThreadPool(this, GetThreadPoolSizeOrDefault(), cqCount);
+            threadPool = new GrpcThreadPool(this, GetThreadPoolSizeOrDefault(), GetCompletionQueueCountOrDefault());
             threadPool.Start();
         }
 
@@ -249,6 +246,16 @@ namespace Grpc.Core
             // and the other half for .NET thread pool. This heuristic definitely needs
             // more work, but seems to work reasonably well for a start.
             return Math.Max(MinDefaultThreadPoolSize, Environment.ProcessorCount / 2);
+        }
+
+        private int GetCompletionQueueCountOrDefault()
+        {
+            if (customCompletionQueueCount.HasValue)
+            {
+                return customCompletionQueueCount.Value;
+            }
+            // by default, create a completion queue for each thread
+            return GetThreadPoolSizeOrDefault();
         }
     }
 }
