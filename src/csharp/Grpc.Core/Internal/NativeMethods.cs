@@ -350,6 +350,7 @@ namespace Grpc.Core.Internal
                 this.grpcsharp_server_credentials_release = PInvokeMethods.grpcsharp_server_credentials_release;
 
                 this.grpcsharp_server_create = PInvokeMethods.grpcsharp_server_create;
+                this.grpcsharp_server_register_completion_queue = PInvokeMethods.grpcsharp_server_register_completion_queue;
                 this.grpcsharp_server_add_insecure_http2_port = PInvokeMethods.grpcsharp_server_add_insecure_http2_port;
                 this.grpcsharp_server_add_secure_http2_port = PInvokeMethods.grpcsharp_server_add_secure_http2_port;
                 this.grpcsharp_server_start = PInvokeMethods.grpcsharp_server_start;
