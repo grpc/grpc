@@ -120,8 +120,9 @@ namespace Grpc.Core.Internal
 
             var thread = new Thread(new ThreadStart(() => RunHandlerLoop(cq)));
             thread.IsBackground = false;
-            thread.Start();
             thread.Name = string.Format("grpc {0} (cq {1})", threadIndex, cqIndex);
+            thread.Start();
+
             return thread;
         }
 
