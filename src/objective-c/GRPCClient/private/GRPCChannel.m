@@ -154,7 +154,7 @@ grpc_channel_args * buildChannelArgs(NSDictionary *dictionary) {
 
 + (GRPCChannel *)secureCronetChannelWithHost:(NSString *)host
                                  channelArgs:(NSDictionary *)channelArgs {
-  void *engine = [GRPCCall getCronetEngine];
+  cronet_engine *engine = [GRPCCall cronetEngine];
   if (!engine) {
     [NSException raise:NSInvalidArgumentException
                 format:@"cronet_engine is NULL. Set it first."];

@@ -201,14 +201,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (GRPCChannel *)newChannel {
   NSDictionary *args = [self channelArgs];
-  BOOL use_cronet = [GRPCCall isUsingCronet];
+  BOOL useCronet = [GRPCCall isUsingCronet];
   if (_secure) {
       GRPCChannel *channel;
       @synchronized(self) {
         if (_channelCreds == nil) {
           [self setTLSPEMRootCerts:nil withPrivateKey:nil withCertChain:nil error:nil];
         }
-        if (use_cronet) {
+        if (useCronet) {
           channel = [GRPCChannel secureCronetChannelWithHost:_address
                                                  channelArgs:args];
         } else {

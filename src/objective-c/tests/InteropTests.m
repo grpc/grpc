@@ -80,7 +80,7 @@
 
 #pragma mark Tests
 
-static cronet_engine *_engine = NULL;
+static cronet_engine *cronetEngine = NULL;
 
 @implementation InteropTests {
   RMTTestService *_service;
@@ -93,12 +93,12 @@ static cronet_engine *_engine = NULL;
 - (void)setUp {
   _service = self.class.host ? [RMTTestService serviceWithHost:self.class.host] : nil;
 #ifdef GRPC_COMPILE_WITH_CRONET
-  if (_engine == NULL) {
+  if (cronetEngine == NULL) {
+    // Cronet setup
     [Cronet setHttp2Enabled:YES];
-    [Cronet setSslKeyLogFileName:@"cronetkeylogfile.pem"];
     [Cronet start];
-    _engine = [Cronet getGlobalEngine];
-    [GRPCCall useCronet:_engine];
+    cronetEngine = [Cronet getGlobalEngine];
+    [GRPCCall useCronetWithEngine:cronetEngine];
   }
 #endif
 }

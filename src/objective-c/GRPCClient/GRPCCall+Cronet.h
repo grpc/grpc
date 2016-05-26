@@ -39,9 +39,16 @@
  */
 @interface GRPCCall (Cronet)
 
-+(void)useCronet:(cronet_engine *)cronet_engine;
+/* This method should be called before issuing the first RPC. It should be
+ * called only once. Create an instance of Cronet engine in your app elsewhere
+ * and pass the instance pointer in the cronet_engine parameter. Once set,
+ * all subsequent RPCs will use Cronet transport. The method is not thread
+ * safe.
+ */
 
-+(void *)getCronetEngine;
++(void)useCronetWithEngine:(cronet_engine *)engine;
+
++(cronet_engine *)cronetEngine;
 
 +(BOOL)isUsingCronet;
 
