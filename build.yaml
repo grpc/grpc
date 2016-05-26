@@ -34,6 +34,7 @@ filegroups:
   plugin: census_grpc_plugin
   uses:
   - grpc_base
+  - nanopb
 - name: gpr_base
   public_headers:
   - include/grpc/support/alloc.h
