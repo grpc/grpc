@@ -97,25 +97,6 @@ typedef struct {
   grpc_mdstr *details;
 } received_status;
 
-/* How far through the GRPC stream have we read? */
-typedef enum {
-  /* We are still waiting for initial metadata to complete */
-  READ_STATE_INITIAL = 0,
-  /* We have gotten initial metadata, and are reading either
-     messages or trailing metadata */
-  READ_STATE_GOT_INITIAL_METADATA,
-  /* The stream is closed for reading */
-  READ_STATE_READ_CLOSED,
-  /* The stream is closed for reading & writing */
-  READ_STATE_STREAM_CLOSED
-} read_state;
-
-typedef enum {
-  WRITE_STATE_INITIAL = 0,
-  WRITE_STATE_STARTED,
-  WRITE_STATE_WRITE_CLOSED
-} write_state;
-
 typedef struct batch_control {
   grpc_call *call;
   grpc_cq_completion cq_completion;
