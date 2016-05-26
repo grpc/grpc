@@ -1848,7 +1848,7 @@ $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc:
 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_zookeeper.pc:
 	$(E) "[MAKE]    Generating $@"
 	$(Q) mkdir -p $(@D)
-	$(Q) echo -e "$(GRPC_ZOOKEEPER_PC_FILE)" >$@
+	$(Q) echo "$(GRPC_ZOOKEEPER_PC_FILE)" | tr , '\n' >$@
 
 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc:
 	$(E) "[MAKE]    Generating $@"
