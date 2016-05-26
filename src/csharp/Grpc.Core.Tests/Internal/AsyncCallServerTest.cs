@@ -136,7 +136,6 @@ namespace Grpc.Core.Internal.Tests
         public void WriteAfterCancelNotificationFails()
         {
             var finishedTask = asyncCallServer.ServerSideCallAsync();
-            var requestStream = new ServerRequestStream<string, string>(asyncCallServer);
             var responseStream = new ServerResponseStream<string, string>(asyncCallServer);
 
             fakeCall.ReceivedCloseOnServerHandler(true, cancelled: true);
@@ -176,6 +175,21 @@ namespace Grpc.Core.Internal.Tests
             Assert.DoesNotThrowAsync(async () => await writeTask);
             Assert.DoesNotThrowAsync(async () => await writeStatusTask);
 
+            fakeCall.ReceivedCloseOnServerHandler(true, cancelled: true);
+
+            AssertFinished(asyncCallServer, fakeCall, finishedTask);
+        }
+
+        [Test]
+        public void WriteAfterWriteStatusThrowsInvalidOperationException()
+        {
+            var finishedTask = asyncCallServer.ServerSideCallAsync();
+            var responseStream = new ServerResponseStream<string, string>(asyncCallServer);
+
+            asyncCallServer.SendStatusFromServerAsync(Status.DefaultSuccess, new Metadata(), null);
+            Assert.ThrowsAsync(typeof(InvalidOperationException), async () => await responseStream.WriteAsync("request1"));
+
+            fakeCall.SendStatusFromServerHandler(true);
             fakeCall.ReceivedCloseOnServerHandler(true, cancelled: true);
 
             AssertFinished(asyncCallServer, fakeCall, finishedTask);
