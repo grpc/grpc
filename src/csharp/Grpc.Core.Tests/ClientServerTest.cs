@@ -235,8 +235,16 @@ namespace Grpc.Core.Tests
             await barrier.Task;  // make sure the handler has started.
             cts.Cancel();
 
-            var ex = Assert.ThrowsAsync<RpcException>(async () => await call.ResponseAsync);
-            Assert.AreEqual(StatusCode.Cancelled, ex.Status.StatusCode);
+            try
+            {
+                // cannot use Assert.ThrowsAsync because it uses Task.Wait and would deadlock.
+                await call.ResponseAsync;
+                Assert.Fail();
+            }
+            catch (RpcException ex)
+            {
+                Assert.AreEqual(StatusCode.Cancelled, ex.Status.StatusCode);
+            }
         }
 
         [Test]
@@ -265,9 +273,15 @@ namespace Grpc.Core.Tests
             await handlerStartedBarrier.Task;
             cts.Cancel();
 
-            var ex = Assert.ThrowsAsync<RpcException>(async () => await call.ResponseAsync);
-            Assert.AreEqual(StatusCode.Cancelled, ex.Status.StatusCode);
-
+            try
+            {
+                await call.ResponseAsync;
+                Assert.Fail();
+            }
+            catch (RpcException ex)
+            {
+                Assert.AreEqual(StatusCode.Cancelled, ex.Status.StatusCode);
+            }
             Assert.AreEqual("SUCCESS", await successTcs.Task);
         }
 

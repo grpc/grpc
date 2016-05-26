@@ -44,8 +44,11 @@ namespace Grpc.Core.Tests
         public void InitializeAndShutdownGrpcEnvironment()
         {
             var env = GrpcEnvironment.AddRef();
-            Assert.AreEqual(1, env.CompletionQueues.Count);
-            Assert.IsNotNull(env.CompletionQueues.ElementAt(0));
+            Assert.IsTrue(env.CompletionQueues.Count > 0);
+            for (int i = 0; i < env.CompletionQueues.Count; i++)
+            {
+                Assert.IsNotNull(env.CompletionQueues.ElementAt(i));
+            }
             GrpcEnvironment.Release();
         }
 
