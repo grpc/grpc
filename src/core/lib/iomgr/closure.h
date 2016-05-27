@@ -53,8 +53,8 @@ typedef struct grpc_closure_list {
 /** gRPC Callback definition.
  *
  * \param arg Arbitrary input.
- * \param success An indication on the state of the iomgr. On false, cleanup
- * actions should be taken (eg, shutdown). */
+ * \param error GRPC_ERROR_NONE if no error occurred, otherwise some grpc_error
+ *              describing what went wrong */
 typedef void (*grpc_iomgr_cb_func)(grpc_exec_ctx *exec_ctx, void *arg,
                                    grpc_error *error);
 
@@ -66,8 +66,11 @@ struct grpc_closure {
   /** Arguments to be passed to "cb". */
   void *cb_arg;
 
+  /** Once queued, the result of the closure. Before then: scratch space */
   grpc_error *error;
 
+  /** Once queued, next indicates the next queued closure; before then, scratch
+   *  space */
   union {
     grpc_closure *next;
     uintptr_t scratch;
@@ -84,8 +87,8 @@ grpc_closure *grpc_closure_create(grpc_iomgr_cb_func cb, void *cb_arg);
 #define GRPC_CLOSURE_LIST_INIT \
   { NULL, NULL }
 
-/** add \a closure to the end of \a list and set \a closure's success to \a
- * success */
+/** add \a closure to the end of \a list
+    and set \a closure's result to \a error */
 void grpc_closure_list_append(grpc_closure_list *list, grpc_closure *closure,
                               grpc_error *error);
 

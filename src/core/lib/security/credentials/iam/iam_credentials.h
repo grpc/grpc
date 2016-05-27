@@ -41,4 +41,4 @@ typedef struct {
   grpc_credentials_md_store *iam_md;
 } grpc_google_iam_credentials;
 
-#endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_IAM_IAM_CREDENTIALS_H
+#endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_IAM_IAM_CREDENTIALS_H */

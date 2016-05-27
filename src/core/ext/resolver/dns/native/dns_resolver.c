@@ -111,8 +111,8 @@ static void dns_shutdown(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver) {
   }
   if (r->next_completion != NULL) {
     *r->target_config = NULL;
-    grpc_exec_ctx_push(exec_ctx, r->next_completion,
-                       GRPC_ERROR_CREATE("Resolver Shutdown"), NULL);
+    grpc_exec_ctx_sched(exec_ctx, r->next_completion,
+                        GRPC_ERROR_CREATE("Resolver Shutdown"), NULL);
     r->next_completion = NULL;
   }
   gpr_mu_unlock(&r->mu);
@@ -227,7 +227,7 @@ static void dns_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
     if (r->resolved_config) {
       grpc_client_config_ref(r->resolved_config);
     }
-    grpc_exec_ctx_push(exec_ctx, r->next_completion, GRPC_ERROR_NONE, NULL);
+    grpc_exec_ctx_sched(exec_ctx, r->next_completion, GRPC_ERROR_NONE, NULL);
     r->next_completion = NULL;
     r->published_version = r->resolved_version;
   }

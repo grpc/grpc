@@ -137,8 +137,8 @@ static void on_readable(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   }
 }
 
-void grpc_workqueue_push(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
-                         grpc_closure *closure, grpc_error *error) {
+void grpc_workqueue_enqueue(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
+                            grpc_closure *closure, grpc_error *error) {
   grpc_error *push_error = GRPC_ERROR_NONE;
   gpr_mu_lock(&workqueue->mu);
   if (grpc_closure_list_empty(workqueue->closure_list)) {

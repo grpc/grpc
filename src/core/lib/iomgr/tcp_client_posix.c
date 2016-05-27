@@ -221,7 +221,7 @@ finish:
     gpr_free(ac->addr_str);
     gpr_free(ac);
   }
-  grpc_exec_ctx_push(exec_ctx, closure, error, NULL);
+  grpc_exec_ctx_sched(exec_ctx, closure, error, NULL);
 }
 
 static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
@@ -250,7 +250,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
 
   error = grpc_create_dualstack_socket(addr, SOCK_STREAM, 0, &dsmode, &fd);
   if (error != GRPC_ERROR_NONE) {
-    grpc_exec_ctx_push(exec_ctx, closure, error, NULL);
+    grpc_exec_ctx_sched(exec_ctx, closure, error, NULL);
     return;
   }
   if (dsmode == GRPC_DSMODE_IPV4) {
@@ -260,7 +260,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
     addr_len = sizeof(addr4_copy);
   }
   if ((error = prepare_socket(addr, fd)) != GRPC_ERROR_NONE) {
-    grpc_exec_ctx_push(exec_ctx, closure, error, NULL);
+    grpc_exec_ctx_sched(exec_ctx, closure, error, NULL);
     return;
   }
 
@@ -276,14 +276,14 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
 
   if (err >= 0) {
     *ep = grpc_tcp_create(fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, addr_str);
-    grpc_exec_ctx_push(exec_ctx, closure, GRPC_ERROR_NONE, NULL);
+    grpc_exec_ctx_sched(exec_ctx, closure, GRPC_ERROR_NONE, NULL);
     goto done;
   }
 
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
     grpc_fd_orphan(exec_ctx, fdobj, NULL, NULL, "tcp_client_connect_error");
-    grpc_exec_ctx_push(exec_ctx, closure, GRPC_OS_ERROR(errno, "connect"),
-                       NULL);
+    grpc_exec_ctx_sched(exec_ctx, closure, GRPC_OS_ERROR(errno, "connect"),
+                        NULL);
     goto done;
   }
 

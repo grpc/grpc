@@ -75,7 +75,7 @@ static void destroy(grpc_exec_ctx *exec_ctx, grpc_server *server, void *tcpp,
                     grpc_closure *destroy_done) {
   grpc_tcp_server *tcp = tcpp;
   grpc_tcp_server_unref(exec_ctx, tcp);
-  grpc_exec_ctx_push(exec_ctx, destroy_done, GRPC_ERROR_NONE, NULL);
+  grpc_exec_ctx_sched(exec_ctx, destroy_done, GRPC_ERROR_NONE, NULL);
 }
 
 int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr) {

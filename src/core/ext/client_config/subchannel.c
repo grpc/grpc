@@ -290,8 +290,8 @@ void grpc_subchannel_weak_unref(grpc_exec_ctx *exec_ctx,
   gpr_atm old_refs;
   old_refs = ref_mutate(c, -(gpr_atm)1, 1 REF_MUTATE_PURPOSE("WEAK_UNREF"));
   if (old_refs == 1) {
-    grpc_exec_ctx_push(exec_ctx, grpc_closure_create(subchannel_destroy, c),
-                       GRPC_ERROR_NONE, NULL);
+    grpc_exec_ctx_sched(exec_ctx, grpc_closure_create(subchannel_destroy, c),
+                        GRPC_ERROR_NONE, NULL);
   }
 }
 

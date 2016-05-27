@@ -53,4 +53,4 @@ typedef struct {
   int is_async;
 } grpc_md_only_test_credentials;
 
-#endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H
+#endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H */

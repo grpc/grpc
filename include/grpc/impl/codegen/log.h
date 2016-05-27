@@ -43,10 +43,6 @@
 extern "C" {
 #endif
 
-#ifdef GPR_WIN32
-#include <grpc/support/log_win32.h>
-#endif
-
 /* GPR log API.
 
    Usage (within grpc):

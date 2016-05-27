@@ -42,6 +42,10 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
+#ifdef GPR_WIN32
+#include <grpc/support/log_win32.h>
+#endif
+
 static void destroy_integer(void *key) {}
 
 static void *copy_integer(void *key) { return key; }
