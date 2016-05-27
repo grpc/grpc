@@ -5290,7 +5290,8 @@
   {
     "deps": [
       "gpr", 
-      "grpc_base"
+      "grpc_base", 
+      "nanopb"
     ], 
     "headers": [
       "include/grpc/census.h", 
