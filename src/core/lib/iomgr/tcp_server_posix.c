@@ -128,6 +128,9 @@ struct grpc_tcp_server {
   grpc_pollset **pollsets;
   /* number of pollsets in the pollsets array */
   size_t pollset_count;
+
+  /* next pollset to assign a channel to */
+  size_t next_pollset_to_assign;
 };
 
 grpc_tcp_server *grpc_tcp_server_create(grpc_closure *shutdown_complete) {
@@ -145,6 +148,7 @@ grpc_tcp_server *grpc_tcp_server_create(grpc_closure *shutdown_complete) {
   s->head = NULL;
   s->tail = NULL;
   s->nports = 0;
+  s->next_pollset_to_assign = 0;
   return s;
 }
 
@@ -317,7 +321,9 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
     goto error;
   }
 
-  read_notifier_pollset = grpc_fd_get_read_notifier_pollset(exec_ctx, sp->emfd);
+  read_notifier_pollset =
+      sp->server->pollsets[(sp->server->next_pollset_to_assign++) %
+                           sp->server->pollset_count];
 
   /* loop until accept4 returns EAGAIN, and then re-arm notification */
   for (;;) {

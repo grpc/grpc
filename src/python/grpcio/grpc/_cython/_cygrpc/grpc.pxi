@@ -336,6 +336,8 @@ cdef extern from "grpc/_cython/loader.h":
   void grpc_server_register_completion_queue(grpc_server *server,
                                              grpc_completion_queue *cq,
                                              void *reserved) nogil
+  void grpc_server_register_non_listening_completion_queue(
+      grpc_server *server, grpc_completion_queue *cq, void *reserved) nogil
   int grpc_server_add_insecure_http2_port(
       grpc_server *server, const char *addr) nogil
   void grpc_server_start(grpc_server *server) nogil
