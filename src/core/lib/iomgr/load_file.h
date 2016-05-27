@@ -31,25 +31,26 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SUPPORT_LOAD_FILE_H
-#define GRPC_CORE_LIB_SUPPORT_LOAD_FILE_H
+#ifndef GRPC_CORE_LIB_IOMGR_LOAD_FILE_H
+#define GRPC_CORE_LIB_IOMGR_LOAD_FILE_H
 
 #include <stdio.h>
 
 #include <grpc/support/slice.h>
+
+#include "src/core/lib/iomgr/error.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* Loads the content of a file into a slice. add_null_terminator will add
-   a NULL terminator if non-zero. The success parameter, if not NULL,
-   will be set to 1 in case of success and 0 in case of failure. */
-gpr_slice gpr_load_file(const char *filename, int add_null_terminator,
-                        int *success);
+   a NULL terminator if non-zero. */
+grpc_error *grpc_load_file(const char *filename, int add_null_terminator,
+                           gpr_slice *slice);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* GRPC_CORE_LIB_SUPPORT_LOAD_FILE_H */
+#endif /* GRPC_CORE_LIB_IOMGR_LOAD_FILE_H */

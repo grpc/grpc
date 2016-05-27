@@ -91,10 +91,69 @@ void grpc_winsocket_shutdown(grpc_winsocket *winsocket) {
   closesocket(winsocket->socket);
 }
 
-void grpc_winsocket_destroy(grpc_winsocket *winsocket) {
+static void destroy(grpc_winsocket *winsocket) {
   grpc_iomgr_unregister_object(&winsocket->iomgr_object);
   gpr_mu_destroy(&winsocket->state_mu);
   gpr_free(winsocket);
+}
+
+static bool check_destroyable(grpc_winsocket *winsocket) {
+  return winsocket->destroy_called == true &&
+         winsocket->write_info.closure == NULL &&
+         winsocket->read_info.closure == NULL;
+}
+
+void grpc_winsocket_destroy(grpc_winsocket *winsocket) {
+  gpr_mu_lock(&winsocket->state_mu);
+  GPR_ASSERT(!winsocket->destroy_called);
+  winsocket->destroy_called = true;
+  bool should_destroy = check_destroyable(winsocket);
+  gpr_mu_unlock(&winsocket->state_mu);
+  if (should_destroy) destroy(winsocket);
+}
+
+/* Calling notify_on_read or write means either of two things:
+-) The IOCP already completed in the background, and we need to call
+the callback now.
+-) The IOCP hasn't completed yet, and we're queuing it for later. */
+static void socket_notify_on_iocp(grpc_exec_ctx *exec_ctx,
+                                  grpc_winsocket *socket, grpc_closure *closure,
+                                  grpc_winsocket_callback_info *info) {
+  GPR_ASSERT(info->closure == NULL);
+  gpr_mu_lock(&socket->state_mu);
+  if (info->has_pending_iocp) {
+    info->has_pending_iocp = 0;
+    grpc_exec_ctx_sched(exec_ctx, closure, GRPC_ERROR_NONE, NULL);
+  } else {
+    info->closure = closure;
+  }
+  gpr_mu_unlock(&socket->state_mu);
+}
+
+void grpc_socket_notify_on_write(grpc_exec_ctx *exec_ctx,
+                                 grpc_winsocket *socket,
+                                 grpc_closure *closure) {
+  socket_notify_on_iocp(exec_ctx, socket, closure, &socket->write_info);
+}
+
+void grpc_socket_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_winsocket *socket,
+                                grpc_closure *closure) {
+  socket_notify_on_iocp(exec_ctx, socket, closure, &socket->read_info);
+}
+
+void grpc_socket_become_ready(grpc_exec_ctx *exec_ctx, grpc_winsocket *socket,
+                              grpc_winsocket_callback_info *info) {
+  GPR_ASSERT(!info->has_pending_iocp);
+  gpr_mu_lock(&socket->state_mu);
+  if (info->closure) {
+    grpc_exec_ctx_sched(exec_ctx, info->closure, GRPC_ERROR_NONE, NULL);
+    info->closure = NULL;
+  } else {
+    info->has_pending_iocp = 1;
+  }
+  bool should_destroy = check_destroyable(socket);
+  gpr_mu_unlock(&socket->state_mu);
+  if (should_destroy) destroy(socket);
 }
 
 #endif /* GPR_WINSOCK_SOCKET */

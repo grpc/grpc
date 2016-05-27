@@ -61,27 +61,34 @@
 #define GRPC_FIONBIO FIONBIO
 #endif
 
-static int set_non_block(SOCKET sock) {
+static grpc_error *set_non_block(SOCKET sock) {
   int status;
   uint32_t param = 1;
   DWORD ret;
   status = WSAIoctl(sock, GRPC_FIONBIO, &param, sizeof(param), NULL, 0, &ret,
                     NULL, NULL);
-  return status == 0;
+  return status == 0
+             ? GRPC_ERROR_NONE
+             : GRPC_WSA_ERROR(WSAGetLastError(), "WSAIoctl(GRPC_FIONBIO)");
 }
 
-static int set_dualstack(SOCKET sock) {
+static grpc_error *set_dualstack(SOCKET sock) {
   int status;
   unsigned long param = 0;
   status = setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, (const char *)&param,
                       sizeof(param));
-  return status == 0;
+  return status == 0
+             ? GRPC_ERROR_NONE
+             : GRPC_WSA_ERROR(WSAGetLastError(), "setsockopt(IPV6_V6ONLY)");
 }
 
-int grpc_tcp_prepare_socket(SOCKET sock) {
-  if (!set_non_block(sock)) return 0;
-  if (!set_dualstack(sock)) return 0;
-  return 1;
+grpc_error *grpc_tcp_prepare_socket(SOCKET sock) {
+  grpc_error *err;
+  err = set_non_block(sock);
+  if (err != GRPC_ERROR_NONE) return err;
+  err = set_dualstack(sock);
+  if (err != GRPC_ERROR_NONE) return err;
+  return GRPC_ERROR_NONE;
 }
 
 typedef struct grpc_tcp {
@@ -148,39 +155,35 @@ static void tcp_ref(grpc_tcp *tcp) { gpr_ref(&tcp->refcount); }
 #endif
 
 /* Asynchronous callback from the IOCP, or the background thread. */
-static void on_read(grpc_exec_ctx *exec_ctx, void *tcpp, bool success) {
+static void on_read(grpc_exec_ctx *exec_ctx, void *tcpp, grpc_error *error) {
   grpc_tcp *tcp = tcpp;
   grpc_closure *cb = tcp->read_cb;
   grpc_winsocket *socket = tcp->socket;
   gpr_slice sub;
   grpc_winsocket_callback_info *info = &socket->read_info;
 
-  if (success) {
+  GRPC_ERROR_REF(error);
+
+  if (error == GRPC_ERROR_NONE) {
     if (info->wsa_error != 0 && !tcp->shutting_down) {
-      if (info->wsa_error != WSAECONNRESET) {
-        char *utf8_message = gpr_format_message(info->wsa_error);
-        gpr_log(GPR_ERROR, "ReadFile overlapped error: %s", utf8_message);
-        gpr_free(utf8_message);
-      }
-      success = 0;
+      char *utf8_message = gpr_format_message(info->wsa_error);
+      error = GRPC_ERROR_CREATE(utf8_message);
+      gpr_free(utf8_message);
       gpr_slice_unref(tcp->read_slice);
     } else {
       if (info->bytes_transfered != 0 && !tcp->shutting_down) {
         sub = gpr_slice_sub_no_ref(tcp->read_slice, 0, info->bytes_transfered);
         gpr_slice_buffer_add(tcp->read_slices, sub);
-        success = 1;
       } else {
         gpr_slice_unref(tcp->read_slice);
-        success = 0;
+        error = GRPC_ERROR_CREATE("End of TCP stream");
       }
     }
   }
 
   tcp->read_cb = NULL;
   TCP_UNREF(tcp, "read");
-  if (cb) {
-    cb->cb(exec_ctx, cb->cb_arg, success);
-  }
+  grpc_exec_ctx_sched(exec_ctx, cb, error, NULL);
 }
 
 static void win_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
@@ -194,7 +197,8 @@ static void win_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   WSABUF buffer;
 
   if (tcp->shutting_down) {
-    grpc_exec_ctx_enqueue(exec_ctx, cb, false, NULL);
+    grpc_exec_ctx_sched(exec_ctx, cb,
+                        GRPC_ERROR_CREATE("TCP socket is shutting down"), NULL);
     return;
   }
 
@@ -218,7 +222,7 @@ static void win_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   /* Did we get data immediately ? Yay. */
   if (info->wsa_error != WSAEWOULDBLOCK) {
     info->bytes_transfered = bytes_read;
-    grpc_exec_ctx_enqueue(exec_ctx, &tcp->on_read, true, NULL);
+    grpc_exec_ctx_sched(exec_ctx, &tcp->on_read, GRPC_ERROR_NONE, NULL);
     return;
   }
 
@@ -231,7 +235,8 @@ static void win_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     int wsa_error = WSAGetLastError();
     if (wsa_error != WSA_IO_PENDING) {
       info->wsa_error = wsa_error;
-      grpc_exec_ctx_enqueue(exec_ctx, &tcp->on_read, false, NULL);
+      grpc_exec_ctx_sched(exec_ctx, &tcp->on_read,
+                          GRPC_WSA_ERROR(info->wsa_error, "WSARecv"), NULL);
       return;
     }
   }
@@ -240,32 +245,29 @@ static void win_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 }
 
 /* Asynchronous callback from the IOCP, or the background thread. */
-static void on_write(grpc_exec_ctx *exec_ctx, void *tcpp, bool success) {
+static void on_write(grpc_exec_ctx *exec_ctx, void *tcpp, grpc_error *error) {
   grpc_tcp *tcp = (grpc_tcp *)tcpp;
   grpc_winsocket *handle = tcp->socket;
   grpc_winsocket_callback_info *info = &handle->write_info;
   grpc_closure *cb;
+
+  GRPC_ERROR_REF(error);
 
   gpr_mu_lock(&tcp->mu);
   cb = tcp->write_cb;
   tcp->write_cb = NULL;
   gpr_mu_unlock(&tcp->mu);
 
-  if (success) {
+  if (error == GRPC_ERROR_NONE) {
     if (info->wsa_error != 0) {
-      if (info->wsa_error != WSAECONNRESET) {
-        char *utf8_message = gpr_format_message(info->wsa_error);
-        gpr_log(GPR_ERROR, "WSASend overlapped error: %s", utf8_message);
-        gpr_free(utf8_message);
-      }
-      success = 0;
+      error = GRPC_WSA_ERROR(info->wsa_error, "WSASend");
     } else {
       GPR_ASSERT(info->bytes_transfered == tcp->write_slices->length);
     }
   }
 
   TCP_UNREF(tcp, "write");
-  cb->cb(exec_ctx, cb->cb_arg, success);
+  grpc_exec_ctx_sched(exec_ctx, cb, error, NULL);
 }
 
 /* Initiates a write. */
@@ -283,7 +285,8 @@ static void win_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   size_t len;
 
   if (tcp->shutting_down) {
-    grpc_exec_ctx_enqueue(exec_ctx, cb, false, NULL);
+    grpc_exec_ctx_sched(exec_ctx, cb,
+                        GRPC_ERROR_CREATE("TCP socket is shutting down"), NULL);
     return;
   }
 
@@ -311,19 +314,10 @@ static void win_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
      connection that has its send queue filled up. But if we don't, then we can
      avoid doing an async write operation at all. */
   if (info->wsa_error != WSAEWOULDBLOCK) {
-    bool ok = false;
-    if (status == 0) {
-      ok = true;
-      GPR_ASSERT(bytes_sent == tcp->write_slices->length);
-    } else {
-      if (info->wsa_error != WSAECONNRESET) {
-        char *utf8_message = gpr_format_message(info->wsa_error);
-        gpr_log(GPR_ERROR, "WSASend error: %s", utf8_message);
-        gpr_free(utf8_message);
-      }
-    }
-    if (allocated) gpr_free(allocated);
-    grpc_exec_ctx_enqueue(exec_ctx, cb, ok, NULL);
+    grpc_error *error = status == 0
+                            ? GRPC_ERROR_NONE
+                            : GRPC_WSA_ERROR(info->wsa_error, "WSASend");
+    grpc_exec_ctx_sched(exec_ctx, cb, error, NULL);
     return;
   }
 
@@ -340,7 +334,8 @@ static void win_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     int wsa_error = WSAGetLastError();
     if (wsa_error != WSA_IO_PENDING) {
       TCP_UNREF(tcp, "write");
-      grpc_exec_ctx_enqueue(exec_ctx, cb, false, NULL);
+      grpc_exec_ctx_sched(exec_ctx, cb, GRPC_WSA_ERROR(wsa_error, "WSASend"),
+                          NULL);
       return;
     }
   }

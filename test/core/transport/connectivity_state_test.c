@@ -43,14 +43,15 @@
 
 int g_counter;
 
-static void must_succeed(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
-  GPR_ASSERT(success);
+static void must_succeed(grpc_exec_ctx *exec_ctx, void *arg,
+                         grpc_error *error) {
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(arg == THE_ARG);
   g_counter++;
 }
 
-static void must_fail(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
-  GPR_ASSERT(!success);
+static void must_fail(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+  GPR_ASSERT(error != GRPC_ERROR_NONE);
   GPR_ASSERT(arg == THE_ARG);
   g_counter++;
 }
@@ -74,9 +75,12 @@ static void test_connectivity_state_name(void) {
 static void test_check(void) {
   grpc_connectivity_state_tracker tracker;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_error *error;
   gpr_log(GPR_DEBUG, "test_check");
   grpc_connectivity_state_init(&tracker, GRPC_CHANNEL_IDLE, "xxx");
-  GPR_ASSERT(grpc_connectivity_state_check(&tracker) == GRPC_CHANNEL_IDLE);
+  GPR_ASSERT(grpc_connectivity_state_check(&tracker, &error) ==
+             GRPC_CHANNEL_IDLE);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
   grpc_connectivity_state_destroy(&exec_ctx, &tracker);
   grpc_exec_ctx_finish(&exec_ctx);
 }

@@ -102,7 +102,7 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *vargs, grpc_endpoint *tcp,
   (void)acceptor;
   grpc_endpoint_shutdown(exec_ctx, tcp);
   grpc_endpoint_destroy(exec_ctx, tcp);
-  grpc_pollset_kick(args->pollset, NULL);
+  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, NULL));
 }
 
 void bad_server_thread(void *vargs) {
@@ -112,10 +112,14 @@ void bad_server_thread(void *vargs) {
   struct sockaddr_storage addr;
   socklen_t addr_len = sizeof(addr);
   int port;
-  grpc_tcp_server *s = grpc_tcp_server_create(NULL);
+  grpc_tcp_server *s;
+  grpc_error *error = grpc_tcp_server_create(NULL, NULL, &s);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
   memset(&addr, 0, sizeof(addr));
   addr.ss_family = AF_INET;
-  port = grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, addr_len);
+  error =
+      grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, addr_len, &port);
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("grpc_tcp_server_add_port", error));
   GPR_ASSERT(port > 0);
   gpr_asprintf(&args->addr, "localhost:%d", port);
 
@@ -129,7 +133,11 @@ void bad_server_thread(void *vargs) {
         gpr_time_add(now, gpr_time_from_millis(100, GPR_TIMESPAN));
 
     grpc_pollset_worker *worker = NULL;
-    grpc_pollset_work(&exec_ctx, args->pollset, &worker, now, deadline);
+    if (!GRPC_LOG_IF_ERROR("pollset_work",
+                           grpc_pollset_work(&exec_ctx, args->pollset, &worker,
+                                             now, deadline))) {
+      gpr_atm_rel_store(&args->stop, 1);
+    }
     gpr_mu_unlock(args->mu);
     grpc_exec_ctx_finish(&exec_ctx);
     gpr_mu_lock(args->mu);
@@ -144,7 +152,7 @@ void bad_server_thread(void *vargs) {
 }
 
 static void done_pollset_shutdown(grpc_exec_ctx *exec_ctx, void *pollset,
-                                  bool success) {
+                                  grpc_error *error) {
   grpc_pollset_destroy(pollset);
   gpr_free(pollset);
 }

@@ -31,20 +31,12 @@
  *
  */
 
-#include <stdint.h>
-#include <string.h>
+#ifndef GRPC_CORE_LIB_SECURITY_TRANSPORT_TSI_ERROR_H
+#define GRPC_CORE_LIB_SECURITY_TRANSPORT_TSI_ERROR_H
 
-#include <grpc/support/alloc.h>
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/tsi/transport_security_interface.h"
 
-#include "src/core/lib/http/parser.h"
+grpc_error *grpc_set_tsi_error_bits(grpc_error *error, tsi_result result);
 
-int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-  grpc_http_parser parser;
-  grpc_http_parser_init(&parser);
-  gpr_slice slice = gpr_slice_from_copied_buffer((const char *)data, size);
-  grpc_http_parser_parse(&parser, slice);
-  grpc_http_parser_eof(&parser);
-  gpr_slice_unref(slice);
-  grpc_http_parser_destroy(&parser);
-  return 0;
-}
+#endif /* GRPC_CORE_LIB_SECURITY_TRANSPORT_TSI_ERROR_H */

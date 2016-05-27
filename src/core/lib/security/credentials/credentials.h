@@ -223,6 +223,7 @@ grpc_server_credentials *grpc_find_server_credentials_in_args(
 typedef struct {
   grpc_call_credentials *creds;
   grpc_credentials_metadata_cb cb;
+  grpc_http_response response;
   void *user_data;
 } grpc_credentials_metadata_request;
 
