@@ -47,6 +47,7 @@
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/status_conversion.h"
 #include "src/core/ext/transport/chttp2/transport/timeout_encoding.h"
+#include "src/core/lib/iomgr/workqueue.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/static_metadata.h"
@@ -87,10 +88,12 @@ static const grpc_transport_vtable vtable;
 static void writing_action(grpc_exec_ctx *exec_ctx, void *t, grpc_error *error);
 static void reading_action(grpc_exec_ctx *exec_ctx, void *t, grpc_error *error);
 static void parsing_action(grpc_exec_ctx *exec_ctx, void *t, grpc_error *error);
+static void initiate_writing(grpc_exec_ctx *exec_ctx, void *t,
+                             grpc_error *error);
 
 /** Set a transport level setting, and push it to our peer */
-static void push_setting(grpc_chttp2_transport *t, grpc_chttp2_setting_id id,
-                         uint32_t value);
+static void push_setting(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
+                         grpc_chttp2_setting_id id, uint32_t value);
 
 /** Start disconnection chain */
 static void drop_connection(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
@@ -137,7 +140,7 @@ static void check_read_ops(grpc_exec_ctx *exec_ctx,
                            grpc_chttp2_transport_global *transport_global);
 
 static void incoming_byte_stream_update_flow_control(
-    grpc_chttp2_transport_global *transport_global,
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global, size_t max_size_hint,
     size_t have_already);
 static void incoming_byte_stream_destroy_locked(grpc_exec_ctx *exec_ctx,
@@ -231,7 +234,7 @@ static void ref_transport(grpc_chttp2_transport *t) { gpr_ref(&t->refs); }
 
 static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                            const grpc_channel_args *channel_args,
-                           grpc_endpoint *ep, uint8_t is_client) {
+                           grpc_endpoint *ep, bool is_client) {
   size_t i;
   int j;
 
@@ -247,6 +250,9 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   /* ref is dropped at transport close() */
   gpr_ref_init(&t->shutdown_ep_refs, 1);
   gpr_mu_init(&t->executor.mu);
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "workqueue_create",
+      grpc_workqueue_create(exec_ctx, &t->executor.workqueue)));
   t->peer_string = grpc_endpoint_get_peer(ep);
   t->endpoint_reading = 1;
   t->global.next_stream_id = is_client ? 1 : 2;
@@ -272,6 +278,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   grpc_closure_init(&t->writing_action, writing_action, t);
   grpc_closure_init(&t->reading_action, reading_action, t);
   grpc_closure_init(&t->parsing_action, parsing_action, t);
+  grpc_closure_init(&t->initiate_writing, initiate_writing, t);
 
   gpr_slice_buffer_init(&t->parsing.qbuf);
   grpc_chttp2_goaway_parser_init(&t->parsing.goaway_parser);
@@ -285,6 +292,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     gpr_slice_buffer_add(
         &t->global.qbuf,
         gpr_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING));
+    grpc_chttp2_initiate_write(exec_ctx, &t->global);
   }
   /* 8 is a random stab in the dark as to a good initial size: it's small enough
      that it shouldn't waste memory for infrequently used connections, yet
@@ -310,11 +318,12 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 
   /* configure http2 the way we like it */
   if (is_client) {
-    push_setting(t, GRPC_CHTTP2_SETTINGS_ENABLE_PUSH, 0);
-    push_setting(t, GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, 0);
+    push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_ENABLE_PUSH, 0);
+    push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, 0);
   }
-  push_setting(t, GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE, DEFAULT_WINDOW);
-  push_setting(t, GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
+  push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE,
+               DEFAULT_WINDOW);
+  push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
                DEFAULT_MAX_HEADER_LIST_SIZE);
 
   if (channel_args) {
@@ -328,7 +337,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
           gpr_log(GPR_ERROR, "%s: must be an integer",
                   GRPC_ARG_MAX_CONCURRENT_STREAMS);
         } else {
-          push_setting(t, GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS,
+          push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS,
                        (uint32_t)channel_args->args[i].value.integer);
         }
       } else if (0 == strcmp(channel_args->args[i].key,
@@ -367,7 +376,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
           gpr_log(GPR_ERROR, "%s: must be non-negative",
                   GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER);
         } else {
-          push_setting(t, GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE,
+          push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE,
                        (uint32_t)channel_args->args[i].value.integer);
         }
       } else if (0 == strcmp(channel_args->args[i].key,
@@ -392,7 +401,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
           gpr_log(GPR_ERROR, "%s: must be non-negative",
                   GRPC_ARG_MAX_METADATA_SIZE);
         } else {
-          push_setting(t, GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
+          push_setting(exec_ctx, t, GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
                        (uint32_t)channel_args->args[i].value.integer);
         }
       }
@@ -637,14 +646,6 @@ static void finish_global_actions(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_executor_action_header *next;
 
   for (;;) {
-    if (!t->executor.writing_active && !t->closed &&
-        grpc_chttp2_unlocking_check_writes(exec_ctx, &t->global, &t->writing,
-                                           t->executor.parsing_active)) {
-      t->executor.writing_active = 1;
-      REF_TRANSPORT(t, "writing");
-      prevent_endpoint_shutdown(t);
-      grpc_exec_ctx_sched(exec_ctx, &t->writing_action, GRPC_ERROR_NONE, NULL);
-    }
     check_read_ops(exec_ctx, &t->global);
 
     gpr_mu_lock(&t->executor.mu);
@@ -727,16 +728,52 @@ void grpc_chttp2_run_with_global_lock(grpc_exec_ctx *exec_ctx,
  * OUTPUT PROCESSING
  */
 
-void grpc_chttp2_become_writable(grpc_chttp2_transport_global *transport_global,
+void grpc_chttp2_initiate_write(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global) {
+  grpc_chttp2_transport *t = TRANSPORT_FROM_GLOBAL(transport_global);
+  t->executor.writing_needed = true;
+  if (!t->executor.writing_initiated) {
+    t->executor.writing_initiated = true;
+    grpc_workqueue_enqueue(exec_ctx, t->executor.workqueue,
+                           &t->initiate_writing, GRPC_ERROR_NONE);
+  }
+}
+
+static void initiate_writing_locked(grpc_exec_ctx *exec_ctx,
+                                    grpc_chttp2_transport *t,
+                                    grpc_chttp2_stream *s_unused,
+                                    void *arg_ignored) {
+  GPR_ASSERT(t->executor.writing_needed);
+  GPR_ASSERT(!t->executor.writing_active);
+  if (!t->closed &&
+      grpc_chttp2_unlocking_check_writes(exec_ctx, &t->global, &t->writing,
+                                         t->executor.parsing_active)) {
+    t->executor.writing_needed = false;
+    t->executor.writing_active = true;
+    REF_TRANSPORT(t, "writing");
+    prevent_endpoint_shutdown(t);
+    grpc_exec_ctx_sched(exec_ctx, &t->writing_action, GRPC_ERROR_NONE, NULL);
+  }
+}
+
+static void initiate_writing(grpc_exec_ctx *exec_ctx, void *arg,
+                             grpc_error *error) {
+  grpc_chttp2_run_with_global_lock(exec_ctx, arg, NULL, initiate_writing_locked,
+                                   NULL, 0);
+}
+
+void grpc_chttp2_become_writable(grpc_exec_ctx *exec_ctx,
+                                 grpc_chttp2_transport_global *transport_global,
                                  grpc_chttp2_stream_global *stream_global) {
   if (!TRANSPORT_FROM_GLOBAL(transport_global)->closed &&
       grpc_chttp2_list_add_writable_stream(transport_global, stream_global)) {
     GRPC_CHTTP2_STREAM_REF(stream_global, "chttp2_writing");
+    grpc_chttp2_initiate_write(exec_ctx, transport_global);
   }
 }
 
-static void push_setting(grpc_chttp2_transport *t, grpc_chttp2_setting_id id,
-                         uint32_t value) {
+static void push_setting(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
+                         grpc_chttp2_setting_id id, uint32_t value) {
   const grpc_chttp2_setting_parameters *sp =
       &grpc_chttp2_settings_parameters[id];
   uint32_t use_value = GPR_CLAMP(value, sp->min_value, sp->max_value);
@@ -747,6 +784,7 @@ static void push_setting(grpc_chttp2_transport *t, grpc_chttp2_setting_id id,
   if (use_value != t->global.settings[GRPC_LOCAL_SETTINGS][id]) {
     t->global.settings[GRPC_LOCAL_SETTINGS][id] = use_value;
     t->global.dirtied_local_settings = 1;
+    grpc_chttp2_initiate_write(exec_ctx, &t->global);
   }
 }
 
@@ -772,10 +810,12 @@ static void terminate_writing_with_lock(grpc_exec_ctx *exec_ctx,
     GRPC_CHTTP2_STREAM_UNREF(exec_ctx, stream_global, "finish_writes");
   }
 
-  /* leave the writing flag up on shutdown to prevent further writes in
-     unlock()
-     from starting */
-  t->executor.writing_active = 0;
+  t->executor.writing_active = false;
+  if (t->executor.writing_needed) {
+    initiate_writing_locked(exec_ctx, t, NULL, NULL);
+  } else {
+    t->executor.writing_initiated = false;
+  }
   if (t->ep && !t->endpoint_reading) {
     destroy_endpoint(exec_ctx, t);
   }
@@ -862,7 +902,7 @@ static void maybe_start_some_streams(
         stream_global->id, STREAM_FROM_GLOBAL(stream_global));
     stream_global->in_stream_map = true;
     transport_global->concurrent_stream_count++;
-    grpc_chttp2_become_writable(transport_global, stream_global);
+    grpc_chttp2_become_writable(exec_ctx, transport_global, stream_global);
   }
   /* cancel out streams that will never be started */
   while (transport_global->next_stream_id >= MAX_CLIENT_STREAM_ID &&
@@ -991,7 +1031,8 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
           maybe_start_some_streams(exec_ctx, transport_global);
         } else {
           GPR_ASSERT(stream_global->id != 0);
-          grpc_chttp2_become_writable(transport_global, stream_global);
+          grpc_chttp2_become_writable(exec_ctx, transport_global,
+                                      stream_global);
         }
       } else {
         grpc_chttp2_complete_closure_step(
@@ -1015,7 +1056,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
     } else {
       stream_global->send_message = op->send_message;
       if (stream_global->id != 0) {
-        grpc_chttp2_become_writable(transport_global, stream_global);
+        grpc_chttp2_become_writable(exec_ctx, transport_global, stream_global);
       }
     }
   }
@@ -1054,7 +1095,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
       } else if (stream_global->id != 0) {
         /* TODO(ctiller): check if there's flow control for any outstanding
            bytes before going writable */
-        grpc_chttp2_become_writable(transport_global, stream_global);
+        grpc_chttp2_become_writable(exec_ctx, transport_global, stream_global);
       }
     }
   }
@@ -1075,8 +1116,8 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
         (stream_global->incoming_frames.head == NULL ||
          stream_global->incoming_frames.head->is_tail)) {
       incoming_byte_stream_update_flow_control(
-          transport_global, stream_global, transport_global->stream_lookahead,
-          0);
+          exec_ctx, transport_global, stream_global,
+          transport_global->stream_lookahead, 0);
     }
     grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
   }
@@ -1103,7 +1144,8 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
                                    sizeof(*op));
 }
 
-static void send_ping_locked(grpc_chttp2_transport *t, grpc_closure *on_recv) {
+static void send_ping_locked(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
+                             grpc_closure *on_recv) {
   grpc_chttp2_outstanding_ping *p = gpr_malloc(sizeof(*p));
   p->next = &t->global.pings;
   p->prev = p->next->prev;
@@ -1118,6 +1160,7 @@ static void send_ping_locked(grpc_chttp2_transport *t, grpc_closure *on_recv) {
   p->id[7] = (uint8_t)(t->global.ping_counter & 0xff);
   p->on_recv = on_recv;
   gpr_slice_buffer_add(&t->global.qbuf, grpc_chttp2_ping_create(0, p->id));
+  grpc_chttp2_initiate_write(exec_ctx, &t->global);
 }
 
 static void ack_ping_locked(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
@@ -1177,6 +1220,7 @@ static void perform_transport_op_locked(grpc_exec_ctx *exec_ctx,
     close_transport = grpc_chttp2_has_streams(t)
                           ? GRPC_ERROR_NONE
                           : GRPC_ERROR_CREATE("GOAWAY sent");
+    grpc_chttp2_initiate_write(exec_ctx, &t->global);
   }
 
   if (op->set_accept_stream) {
@@ -1194,7 +1238,7 @@ static void perform_transport_op_locked(grpc_exec_ctx *exec_ctx,
   }
 
   if (op->send_ping) {
-    send_ping_locked(t, op->send_ping);
+    send_ping_locked(exec_ctx, t, op->send_ping);
   }
 
   if (close_transport != GRPC_ERROR_NONE) {
@@ -1343,6 +1387,7 @@ static void cancel_from_api(grpc_exec_ctx *exec_ctx,
               stream_global->id,
               (uint32_t)grpc_chttp2_grpc_status_to_http2_error(status),
               &stream_global->stats.outgoing));
+      grpc_chttp2_initiate_write(exec_ctx, transport_global);
     }
     grpc_chttp2_fake_status(exec_ctx, transport_global, stream_global, status,
                             NULL);
@@ -1564,6 +1609,7 @@ static void close_from_api(grpc_exec_ctx *exec_ctx,
   }
   grpc_chttp2_mark_stream_closed(exec_ctx, transport_global, stream_global, 1,
                                  1, err);
+  grpc_chttp2_initiate_write(exec_ctx, transport_global);
 }
 
 static void cancel_stream_cb(grpc_chttp2_transport_global *transport_global,
@@ -1585,8 +1631,14 @@ static void drop_connection(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 }
 
 /** update window from a settings change */
+typedef struct {
+  grpc_chttp2_transport *t;
+  grpc_exec_ctx *exec_ctx;
+} update_global_window_args;
+
 static void update_global_window(void *args, uint32_t id, void *stream) {
-  grpc_chttp2_transport *t = args;
+  update_global_window_args *a = args;
+  grpc_chttp2_transport *t = a->t;
   grpc_chttp2_stream *s = stream;
   grpc_chttp2_transport_global *transport_global = &t->global;
   grpc_chttp2_stream_global *stream_global = &s->global;
@@ -1600,7 +1652,7 @@ static void update_global_window(void *args, uint32_t id, void *stream) {
   is_zero = stream_global->outgoing_window <= 0;
 
   if (was_zero && !is_zero) {
-    grpc_chttp2_become_writable(transport_global, stream_global);
+    grpc_chttp2_become_writable(a->exec_ctx, transport_global, stream_global);
   }
 }
 
@@ -1677,14 +1729,18 @@ static void post_parse_locked(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   grpc_chttp2_transport_global *transport_global = &t->global;
   grpc_chttp2_transport_parsing *transport_parsing = &t->parsing;
   /* copy parsing qbuf to global qbuf */
-  gpr_slice_buffer_move_into(&t->parsing.qbuf, &t->global.qbuf);
+  if (t->parsing.qbuf.count > 0) {
+    gpr_slice_buffer_move_into(&t->parsing.qbuf, &t->global.qbuf);
+    grpc_chttp2_initiate_write(exec_ctx, transport_global);
+  }
   /* merge stream lists */
   grpc_chttp2_stream_map_move_into(&t->new_stream_map, &t->parsing_stream_map);
   transport_global->concurrent_stream_count =
       (uint32_t)grpc_chttp2_stream_map_size(&t->parsing_stream_map);
   if (transport_parsing->initial_window_update != 0) {
+    update_global_window_args args = {t, exec_ctx};
     grpc_chttp2_stream_map_for_each(&t->parsing_stream_map,
-                                    update_global_window, t);
+                                    update_global_window, &args);
     transport_parsing->initial_window_update = 0;
   }
   /* handle higher level things */
@@ -1774,6 +1830,7 @@ static void add_to_pollset_locked(grpc_exec_ctx *exec_ctx,
                                   grpc_chttp2_stream *s_unused, void *pollset) {
   if (t->ep) {
     grpc_endpoint_add_to_pollset(exec_ctx, t->ep, pollset);
+    grpc_workqueue_add_to_pollset(exec_ctx, t->executor.workqueue, pollset);
   }
 }
 
@@ -1783,6 +1840,8 @@ static void add_to_pollset_set_locked(grpc_exec_ctx *exec_ctx,
                                       void *pollset_set) {
   if (t->ep) {
     grpc_endpoint_add_to_pollset_set(exec_ctx, t->ep, pollset_set);
+    grpc_workqueue_add_to_pollset_set(exec_ctx, t->executor.workqueue,
+                                      pollset_set);
   }
 }
 
@@ -1808,7 +1867,7 @@ static void incoming_byte_stream_unref(grpc_exec_ctx *exec_ctx,
 }
 
 static void incoming_byte_stream_update_flow_control(
-    grpc_chttp2_transport_global *transport_global,
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global, size_t max_size_hint,
     size_t have_already) {
   uint32_t max_recv_bytes;
@@ -1843,7 +1902,7 @@ static void incoming_byte_stream_update_flow_control(
                                    add_max_recv_bytes);
     grpc_chttp2_list_add_unannounced_incoming_window_available(transport_global,
                                                                stream_global);
-    grpc_chttp2_become_writable(transport_global, stream_global);
+    grpc_chttp2_become_writable(exec_ctx, transport_global, stream_global);
   }
 }
 
@@ -1865,8 +1924,9 @@ static void incoming_byte_stream_next_locked(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_stream_global *stream_global = &bs->stream->global;
 
   if (bs->is_tail) {
-    incoming_byte_stream_update_flow_control(
-        transport_global, stream_global, arg->max_size_hint, bs->slices.length);
+    incoming_byte_stream_update_flow_control(exec_ctx, transport_global,
+                                             stream_global, arg->max_size_hint,
+                                             bs->slices.length);
   }
   if (bs->slices.count > 0) {
     *arg->slice = gpr_slice_buffer_take_first(&bs->slices);

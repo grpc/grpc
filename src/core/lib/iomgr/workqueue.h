@@ -38,6 +38,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 
 #ifdef GPR_POSIX_SOCKET
 #include "src/core/lib/iomgr/workqueue_posix.h"
@@ -76,6 +77,9 @@ void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue);
 void grpc_workqueue_add_to_pollset(grpc_exec_ctx *exec_ctx,
                                    grpc_workqueue *workqueue,
                                    grpc_pollset *pollset);
+void grpc_workqueue_add_to_pollset_set(grpc_exec_ctx *exec_ctx,
+                                       grpc_workqueue *workqueue,
+                                       grpc_pollset_set *pollset_set);
 
 /** Add a work item to a workqueue */
 void grpc_workqueue_enqueue(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,

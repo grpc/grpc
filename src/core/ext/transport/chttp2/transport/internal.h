@@ -315,11 +315,16 @@ struct grpc_chttp2_transport {
 
   struct {
     gpr_mu mu;
+    grpc_workqueue *workqueue;
 
     /** is a thread currently in the global lock */
     bool global_active;
-    /** is a thread currently writing */
+    /** is a write currently initiated */
+    bool writing_initiated;
+    /** is a write actually going on right now */
     bool writing_active;
+    /** is a write needed */
+    bool writing_needed;
     /** is a thread currently parsing */
     bool parsing_active;
 
@@ -362,6 +367,8 @@ struct grpc_chttp2_transport {
   grpc_closure reading_action;
   /** closure to actually do parsing */
   grpc_closure parsing_action;
+  /** closure to initiate writing */
+  grpc_closure initiate_writing;
 
   /** incoming read bytes */
   gpr_slice_buffer read_buffer;
@@ -507,15 +514,16 @@ struct grpc_chttp2_stream {
 };
 
 /** Transport writing call flow:
-    chttp2_transport.c calls grpc_chttp2_unlocking_check_writes to see if writes
-   are required;
-    if they are, chttp2_transport.c calls grpc_chttp2_perform_writes to do the
-   writes.
-    Once writes have been completed (meaning another write could potentially be
-   started),
-    grpc_chttp2_terminate_writing is called. This will call
-   grpc_chttp2_cleanup_writing, at which
-    point the write phase is complete. */
+    grpc_chttp2_initiate_write() is called anywhere that we know bytes need to
+    go out on the wire.
+    If no other write has been started, a task is enqueued onto our workqueue.
+    When that task executes, it obtains the global lock, and gathers the data
+    to write.
+    The global lock is dropped and we do the syscall to write.
+    After writing, a follow-up check is made to see if another round of writing
+    should be performed. */
+void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
+                                grpc_chttp2_transport_global *transport_global);
 
 /** Someone is unlocking the transport mutex: check to see if writes
     are required, and schedule them if so */
@@ -816,7 +824,8 @@ void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx,
 
 /** add a ref to the stream and add it to the writable list;
     ref will be dropped in writing.c */
-void grpc_chttp2_become_writable(grpc_chttp2_transport_global *transport_global,
+void grpc_chttp2_become_writable(grpc_exec_ctx *exec_ctx,
+                                 grpc_chttp2_transport_global *transport_global,
                                  grpc_chttp2_stream_global *stream_global);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H */
