@@ -30,7 +30,13 @@
 
 set -ex
 
-cd $EXTERNAL_GIT_ROOT
+git clone https://github.com/grpc/grpc.git
+cd grpc && git submodule update --init
+
+cd third_party/protobuf && ./autogen.sh && \
+./configure && make -j12 && make check && make install && ldconfig
+
+cd ../.. && make -j12 && make install
 
 cd examples/cpp/helloworld
 
