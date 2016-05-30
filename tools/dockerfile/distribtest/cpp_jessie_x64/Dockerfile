@@ -42,12 +42,4 @@ RUN apt-get update && apt-get install -y \
       pkg-config \
       unzip && apt-get clean
 
-RUN git clone https://github.com/grpc/grpc.git
-RUN cd grpc && git submodule update --init
-
-RUN cd grpc/third_party/protobuf && ./autogen.sh && \
-    ./configure && make -j12 && make check && make install && ldconfig
-
-RUN cd grpc && make -j12 && make install
-
 CMD ["bash"]
