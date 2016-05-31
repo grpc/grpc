@@ -304,6 +304,22 @@ typedef struct grpc_chttp2_executor_action_header {
   void *arg;
 } grpc_chttp2_executor_action_header;
 
+typedef enum {
+  /** no writing activity */
+  GRPC_CHTTP2_WRITING_INACTIVE,
+  /** write has been requested, but not scheduled yet */
+  GRPC_CHTTP2_WRITE_REQUESTED_WITH_POLLER,
+  GRPC_CHTTP2_WRITE_REQUESTED_NO_POLLER,
+  /** write has been requested and scheduled against the workqueue */
+  GRPC_CHTTP2_WRITE_SCHEDULED,
+  /** write has been initiated after being reaped from the workqueue */
+  GRPC_CHTTP2_WRITING,
+  /** write has been initiated, AND another write needs to be started once it's
+      done */
+  GRPC_CHTTP2_WRITING_STALE_WITH_POLLER,
+  GRPC_CHTTP2_WRITING_STALE_NO_POLLER,
+} grpc_chttp2_write_state;
+
 struct grpc_chttp2_transport {
   grpc_transport base; /* must be first */
   gpr_refcount refs;
@@ -319,14 +335,10 @@ struct grpc_chttp2_transport {
 
     /** is a thread currently in the global lock */
     bool global_active;
-    /** is a write currently initiated */
-    bool writing_initiated;
-    /** is a write actually going on right now */
-    bool writing_active;
-    /** is a write needed */
-    bool writing_needed;
     /** is a thread currently parsing */
     bool parsing_active;
+    /** write execution state of the transport */
+    grpc_chttp2_write_state write_state;
 
     grpc_chttp2_executor_action_header *pending_actions_head;
     grpc_chttp2_executor_action_header *pending_actions_tail;
@@ -523,7 +535,8 @@ struct grpc_chttp2_stream {
     After writing, a follow-up check is made to see if another round of writing
     should be performed. */
 void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
-                                grpc_chttp2_transport_global *transport_global);
+                                grpc_chttp2_transport_global *transport_global,
+                                bool covered_by_poller);
 
 /** Someone is unlocking the transport mutex: check to see if writes
     are required, and schedule them if so */
@@ -826,6 +839,7 @@ void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx,
     ref will be dropped in writing.c */
 void grpc_chttp2_become_writable(grpc_exec_ctx *exec_ctx,
                                  grpc_chttp2_transport_global *transport_global,
-                                 grpc_chttp2_stream_global *stream_global);
+                                 grpc_chttp2_stream_global *stream_global,
+                                 bool covered_by_poller);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H */

@@ -344,8 +344,8 @@ void grpc_chttp2_list_flush_writing_stalled_by_transport(
   while (stream_list_pop(transport, &stream,
                          GRPC_CHTTP2_LIST_WRITING_STALLED_BY_TRANSPORT)) {
     if (is_window_available) {
-      grpc_chttp2_become_writable(exec_ctx, &transport->global,
-                                  &stream->global);
+      grpc_chttp2_become_writable(exec_ctx, &transport->global, &stream->global,
+                                  true);
     } else {
       grpc_chttp2_list_add_stalled_by_transport(transport_writing,
                                                 &stream->writing);
