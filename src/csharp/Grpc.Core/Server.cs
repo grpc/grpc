@@ -169,7 +169,7 @@ namespace Grpc.Core
             await shutdownTcs.Task.ConfigureAwait(false);
             DisposeHandle();
 
-            await Task.Run(() => GrpcEnvironment.Release()).ConfigureAwait(false);
+            await GrpcEnvironment.ReleaseAsync().ConfigureAwait(false);
         }
 
         /// <summary>
@@ -194,7 +194,7 @@ namespace Grpc.Core
             await shutdownTcs.Task.ConfigureAwait(false);
             DisposeHandle();
 
-            await Task.Run(() => GrpcEnvironment.Release()).ConfigureAwait(false);
+            await GrpcEnvironment.ReleaseAsync().ConfigureAwait(false);
         }
 
         internal void AddCallReference(object call)

@@ -35,6 +35,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Grpc.Core.Internal;
 using Grpc.Core.Logging;
 using Grpc.Core.Utils;
@@ -79,20 +80,25 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// Decrements the reference count for currently active environment and shuts down the gRPC environment if reference count drops to zero.
-        /// (and blocks until the environment has been fully shutdown).
+        /// Decrements the reference count for currently active environment and asynchronously shuts down the gRPC environment if reference count drops to zero.
         /// </summary>
-        internal static void Release()
+        internal static async Task ReleaseAsync()
         {
+            GrpcEnvironment instanceToShutdown = null;
             lock (staticLock)
             {
                 GrpcPreconditions.CheckState(refCount > 0);
                 refCount--;
                 if (refCount == 0)
                 {
-                    instance.Close();
+                    instanceToShutdown = instance;
                     instance = null;
                 }
+            }
+
+            if (instanceToShutdown != null)
+            {
+                await instanceToShutdown.ShutdownAsync();
             }
         }
 
@@ -223,13 +229,13 @@ namespace Grpc.Core
         /// <summary>
         /// Shuts down this environment.
         /// </summary>
-        private void Close()
+        private async Task ShutdownAsync()
         {
             if (isClosed)
             {
                 throw new InvalidOperationException("Close has already been called");
             }
-            threadPool.Stop();
+            await threadPool.StopAsync().ConfigureAwait(false);
             GrpcNativeShutdown();
             isClosed = true;
 
