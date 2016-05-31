@@ -1,0 +1,73 @@
+workspace(name = "grpc_helloworld")
+
+# ===== gRPC =====
+
+bind(
+    name = "grpc++",
+    actual = "@grpc_git//:grpc++",
+)
+
+#git_repository(
+#    name = "grpc_git",
+#    remote = "https://github.com/grpc/grpc.git",
+#    tag = "release-0_14_1",
+#)
+local_repository(  # for testing local changes
+    name = "grpc_git",
+    path = "/usr/local/google/home/yangg/github/grpc",
+)
+
+# ===== gRPC dependencies =====
+
+bind(
+    name = "nanopb",
+    actual = "@nanopb_git//:nanopb",
+)
+
+new_git_repository(
+    name = "nanopb_git",
+    build_file = "nanopb.BUILD",
+    remote = "https://github.com/nanopb/nanopb.git",
+    tag = "nanopb-0.3.5",
+)
+
+bind(
+    name = "protobuf_compiler",
+    actual = "@protobuf_git//:protoc_lib",
+)
+
+bind(
+    name = "protobuf_clib",
+    actual = "@protobuf_git//:protobuf",
+)
+
+git_repository(
+    name = "protobuf_git",
+    remote = "https://github.com/google/protobuf.git",
+    tag = "v3.0.0-beta-3",
+)
+
+bind(
+    name = "libssl",
+    actual = "@boringssl_git//:ssl",
+)
+
+git_repository(
+    name = "boringssl_git",
+    commit = "436432d849b83ab90f18773e4ae1c7a8f148f48d",
+    init_submodules = True,
+    remote = "https://github.com/mdsteele/boringssl-bazel.git",
+)
+
+bind(
+    name = "zlib",
+    actual = "@zlib_archive//:zlib",
+)
+
+new_http_archive(
+    name = "zlib_archive",
+    build_file = "zlib.BUILD",
+    sha256 = "879d73d8cd4d155f31c1f04838ecd567d34bebda780156f0e82a20721b3973d5",
+    strip_prefix = "zlib-1.2.8",
+    url = "http://zlib.net/zlib128.zip",
+)
