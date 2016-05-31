@@ -157,7 +157,7 @@ class CLanguage(object):
       'windows': ['all'],
       'mac': ['all'],
       'posix': ['all'],
-      'linux': ['poll'],
+      'linux': ['poll', 'epoll'],
     }
     for target in binaries:
       polling_strategies = (POLLING_STRATEGIES[self.platform]
