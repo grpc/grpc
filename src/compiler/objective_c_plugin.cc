@@ -95,9 +95,10 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       ::grpc::string imports = ::grpc::string("#import \"") + file_name +
         ".pbrpc.h\"\n\n"
         "#import <ProtoRPC/ProtoRPC.h>\n"
-        "#import <RxLibrary/GRXWriter+Immediate.h>\n";
+        "#import <RxLibrary/GRXWriter+Immediate.h>\n\n";
 
-      ::grpc::string definitions;
+      ::grpc::string definitions = "static NSString *const kPackageName = @\"" +
+        file->package() + "\";\n";
       for (int i = 0; i < file->service_count(); i++) {
         const grpc::protobuf::ServiceDescriptor *service = file->service(i);
         definitions += grpc_objective_c_generator::GetSource(service);
