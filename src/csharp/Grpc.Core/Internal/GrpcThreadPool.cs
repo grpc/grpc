@@ -128,7 +128,7 @@ namespace Grpc.Core.Internal
             var cq = completionQueues.ElementAt(cqIndex);
 
             var thread = new Thread(new ThreadStart(() => RunHandlerLoop(cq)));
-            thread.IsBackground = false;
+            thread.IsBackground = true;
             thread.Name = string.Format("grpc {0} (cq {1})", threadIndex, cqIndex);
             thread.Start();
 
