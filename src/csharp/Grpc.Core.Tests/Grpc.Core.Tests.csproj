@@ -86,6 +86,7 @@
     <Compile Include="NUnitMain.cs" />
     <Compile Include="Internal\FakeNativeCall.cs" />
     <Compile Include="Internal\AsyncCallServerTest.cs" />
+    <Compile Include="ShutdownHookTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
