@@ -46,7 +46,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/iomgr/pops.h"
+#include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/transport/transport.h"
 
 typedef struct grpc_channel_element grpc_channel_element;
@@ -103,7 +103,8 @@ typedef struct {
   void (*init_call_elem)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                          grpc_call_element_args *args);
   void (*set_pollset_or_pollset_set)(grpc_exec_ctx *exec_ctx,
-                                     grpc_call_element *elem, grpc_pops *pops);
+                                     grpc_call_element *elem,
+                                     grpc_polling_entity *pollent);
   /* Destroy per call data.
      The filter does not need to do any chaining.
      The bottom filter of a stack will be passed a non-NULL pointer to
@@ -206,7 +207,7 @@ void grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
  * op is started */
 void grpc_call_stack_set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
                                                 grpc_call_stack *call_stack,
-                                                grpc_pops *pops);
+                                                grpc_polling_entity *pollent);
 
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
 #define GRPC_CALL_STACK_REF(call_stack, reason) \
@@ -234,9 +235,9 @@ void grpc_call_stack_destroy(grpc_exec_ctx *exec_ctx, grpc_call_stack *stack,
 
 /* Ignore set pollset{_set} - used by filters if they don't care about pollsets
  * at all. Does nothing. */
-void grpc_call_stack_ignore_set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
-                                                       grpc_call_element *elem,
-                                                       grpc_pops *pops);
+void grpc_call_stack_ignore_set_pollset_or_pollset_set(
+    grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+    grpc_polling_entity *pollent);
 /* Call the next operation in a call stack */
 void grpc_call_next_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                        grpc_transport_stream_op *op);

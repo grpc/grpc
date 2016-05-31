@@ -37,9 +37,9 @@
 #include <stddef.h>
 
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/pops.h"
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
@@ -199,7 +199,7 @@ int grpc_transport_init_stream(grpc_exec_ctx *exec_ctx,
                                const void *server_data);
 
 void grpc_transport_set_pops(grpc_exec_ctx *exec_ctx, grpc_transport *transport,
-                             grpc_stream *stream, grpc_pops *pops);
+                             grpc_stream *stream, grpc_polling_entity *pollent);
 
 /* Destroy transport data for a stream.
 

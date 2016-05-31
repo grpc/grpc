@@ -126,12 +126,13 @@ void grpc_transport_perform_op(grpc_exec_ctx *exec_ctx,
 }
 
 void grpc_transport_set_pops(grpc_exec_ctx *exec_ctx, grpc_transport *transport,
-                             grpc_stream *stream, grpc_pops *pops) {
+                             grpc_stream *stream,
+                             grpc_polling_entity *pollent) {
   grpc_pollset *pollset;
   grpc_pollset_set *pollset_set;
-  if ((pollset = grpc_pops_pollset(pops)) != NULL) {
+  if ((pollset = grpc_pops_pollset(pollent)) != NULL) {
     transport->vtable->set_pollset(exec_ctx, transport, stream, pollset);
-  } else if ((pollset_set = grpc_pops_pollset_set(pops)) != NULL) {
+  } else if ((pollset_set = grpc_pops_pollset_set(pollent)) != NULL) {
     transport->vtable->set_pollset_set(exec_ctx, transport, stream,
                                        pollset_set);
   } else {

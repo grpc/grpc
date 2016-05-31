@@ -51,7 +51,7 @@
 
 typedef struct freereq {
   gpr_mu *mu;
-  grpc_pops pops;
+  grpc_polling_entity pops;
   int done;
 } freereq;
 
@@ -117,7 +117,7 @@ void grpc_free_port_using_server(char *server, int port) {
 
 typedef struct portreq {
   gpr_mu *mu;
-  grpc_pops pops;
+  grpc_polling_entity pops;
   int port;
   int retries;
   char *server;

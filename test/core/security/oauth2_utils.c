@@ -46,7 +46,7 @@
 
 typedef struct {
   gpr_mu *mu;
-  grpc_pops pops;
+  grpc_polling_entity pops;
   int is_done;
   char *token;
 } oauth2_request;
