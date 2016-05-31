@@ -36,7 +36,7 @@ SRC_DIR="extensions/reflection"
 INCLUDE_DIR="grpc++/impl"
 TMP_DIR="tmp"
 GRPC_PLUGIN="bins/opt/grpc_cpp_plugin"
-PROTOC=protoc
+PROTOC=third_party/protobuf/src/protoc
 
 set -e
 

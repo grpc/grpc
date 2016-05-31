@@ -983,6 +983,7 @@ inline ::std::string* ServerReflectionRequest::mutable_host() {
   return host_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline ::std::string* ServerReflectionRequest::release_host() {
+  // @@protoc_insertion_point(field_release:grpc.reflection.v1alpha.ServerReflectionRequest.host)
   
   return host_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
@@ -1056,6 +1057,7 @@ inline ::std::string* ServerReflectionRequest::mutable_file_by_filename() {
   return message_request_.file_by_filename_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline ::std::string* ServerReflectionRequest::release_file_by_filename() {
+  // @@protoc_insertion_point(field_release:grpc.reflection.v1alpha.ServerReflectionRequest.file_by_filename)
   if (has_file_by_filename()) {
     clear_has_message_request();
     return message_request_.file_by_filename_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
@@ -1136,6 +1138,7 @@ inline ::std::string* ServerReflectionRequest::mutable_file_containing_symbol() 
   return message_request_.file_containing_symbol_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline ::std::string* ServerReflectionRequest::release_file_containing_symbol() {
+  // @@protoc_insertion_point(field_release:grpc.reflection.v1alpha.ServerReflectionRequest.file_containing_symbol)
   if (has_file_containing_symbol()) {
     clear_has_message_request();
     return message_request_.file_containing_symbol_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
@@ -1185,6 +1188,7 @@ inline ::grpc::reflection::v1alpha::ExtensionRequest* ServerReflectionRequest::m
   return message_request_.file_containing_extension_;
 }
 inline ::grpc::reflection::v1alpha::ExtensionRequest* ServerReflectionRequest::release_file_containing_extension() {
+  // @@protoc_insertion_point(field_release:grpc.reflection.v1alpha.ServerReflectionRequest.file_containing_extension)
   if (has_file_containing_extension()) {
     clear_has_message_request();
     ::grpc::reflection::v1alpha::ExtensionRequest* temp = message_request_.file_containing_extension_;
@@ -1263,6 +1267,7 @@ inline ::std::string* ServerReflectionRequest::mutable_all_extension_numbers_of_
   return message_request_.all_extension_numbers_of_type_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline ::std::string* ServerReflectionRequest::release_all_extension_numbers_of_type() {
+  // @@protoc_insertion_point(field_release:grpc.reflection.v1alpha.ServerReflectionRequest.all_extension_numbers_of_type)
   if (has_all_extension_numbers_of_type()) {
     clear_has_message_request();
     return message_request_.all_extension_numbers_of_type_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
@@ -1343,6 +1348,7 @@ inline ::std::string* ServerReflectionRequest::mutable_list_services() {
   return message_request_.list_services_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline ::std::string* ServerReflectionRequest::release_list_services() {
+  // @@protoc_insertion_point(field_release:grpc.reflection.v1alpha.ServerReflectionRequest.list_services)
   if (has_list_services()) {
     clear_has_message_request();
     return message_request_.list_services_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
@@ -1406,6 +1412,7 @@ inline ::std::string* ExtensionRequest::mutable_containing_type() {
   return containing_type_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline ::std::string* ExtensionRequest::release_containing_type() {
+  // @@protoc_insertion_point(field_release:grpc.reflection.v1alpha.ExtensionRequest.containing_type)
   
   return containing_type_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
@@ -1467,6 +1474,7 @@ inline ::std::string* ServerReflectionResponse::mutable_valid_host() {
   return valid_host_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline ::std::string* ServerReflectionResponse::release_valid_host() {
+  // @@protoc_insertion_point(field_release:grpc.reflection.v1alpha.ServerReflectionResponse.valid_host)
   
   return valid_host_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
@@ -1501,6 +1509,7 @@ inline ::grpc::reflection::v1alpha::ServerReflectionRequest* ServerReflectionRes
   return original_request_;
 }
 inline ::grpc::reflection::v1alpha::ServerReflectionRequest* ServerReflectionResponse::release_original_request() {
+  // @@protoc_insertion_point(field_release:grpc.reflection.v1alpha.ServerReflectionResponse.original_request)
   
   ::grpc::reflection::v1alpha::ServerReflectionRequest* temp = original_request_;
   original_request_ = NULL;
@@ -1546,6 +1555,7 @@ inline ::grpc::reflection::v1alpha::FileDescriptorResponse* ServerReflectionResp
   return message_response_.file_descriptor_response_;
 }
 inline ::grpc::reflection::v1alpha::FileDescriptorResponse* ServerReflectionResponse::release_file_descriptor_response() {
+  // @@protoc_insertion_point(field_release:grpc.reflection.v1alpha.ServerReflectionResponse.file_descriptor_response)
   if (has_file_descriptor_response()) {
     clear_has_message_response();
     ::grpc::reflection::v1alpha::FileDescriptorResponse* temp = message_response_.file_descriptor_response_;
@@ -1593,6 +1603,7 @@ inline ::grpc::reflection::v1alpha::ExtensionNumberResponse* ServerReflectionRes
   return message_response_.all_extension_numbers_response_;
 }
 inline ::grpc::reflection::v1alpha::ExtensionNumberResponse* ServerReflectionResponse::release_all_extension_numbers_response() {
+  // @@protoc_insertion_point(field_release:grpc.reflection.v1alpha.ServerReflectionResponse.all_extension_numbers_response)
   if (has_all_extension_numbers_response()) {
     clear_has_message_response();
     ::grpc::reflection::v1alpha::ExtensionNumberResponse* temp = message_response_.all_extension_numbers_response_;
@@ -1640,6 +1651,7 @@ inline ::grpc::reflection::v1alpha::ListServiceResponse* ServerReflectionRespons
   return message_response_.list_services_response_;
 }
 inline ::grpc::reflection::v1alpha::ListServiceResponse* ServerReflectionResponse::release_list_services_response() {
+  // @@protoc_insertion_point(field_release:grpc.reflection.v1alpha.ServerReflectionResponse.list_services_response)
   if (has_list_services_response()) {
     clear_has_message_response();
     ::grpc::reflection::v1alpha::ListServiceResponse* temp = message_response_.list_services_response_;
@@ -1687,6 +1699,7 @@ inline ::grpc::reflection::v1alpha::ErrorResponse* ServerReflectionResponse::mut
   return message_response_.error_response_;
 }
 inline ::grpc::reflection::v1alpha::ErrorResponse* ServerReflectionResponse::release_error_response() {
+  // @@protoc_insertion_point(field_release:grpc.reflection.v1alpha.ServerReflectionResponse.error_response)
   if (has_error_response()) {
     clear_has_message_response();
     ::grpc::reflection::v1alpha::ErrorResponse* temp = message_response_.error_response_;
@@ -1747,6 +1760,7 @@ inline void FileDescriptorResponse::set_file_descriptor_proto(int index, const v
   // @@protoc_insertion_point(field_set_pointer:grpc.reflection.v1alpha.FileDescriptorResponse.file_descriptor_proto)
 }
 inline ::std::string* FileDescriptorResponse::add_file_descriptor_proto() {
+  // @@protoc_insertion_point(field_add_mutable:grpc.reflection.v1alpha.FileDescriptorResponse.file_descriptor_proto)
   return file_descriptor_proto_.Add();
 }
 inline void FileDescriptorResponse::add_file_descriptor_proto(const ::std::string& value) {
@@ -1806,6 +1820,7 @@ inline ::std::string* ExtensionNumberResponse::mutable_base_type_name() {
   return base_type_name_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline ::std::string* ExtensionNumberResponse::release_base_type_name() {
+  // @@protoc_insertion_point(field_release:grpc.reflection.v1alpha.ExtensionNumberResponse.base_type_name)
   
   return base_type_name_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
@@ -1917,6 +1932,7 @@ inline ::std::string* ServiceResponse::mutable_name() {
   return name_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline ::std::string* ServiceResponse::release_name() {
+  // @@protoc_insertion_point(field_release:grpc.reflection.v1alpha.ServiceResponse.name)
   
   return name_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
@@ -1978,6 +1994,7 @@ inline ::std::string* ErrorResponse::mutable_error_message() {
   return error_message_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 inline ::std::string* ErrorResponse::release_error_message() {
+  // @@protoc_insertion_point(field_release:grpc.reflection.v1alpha.ErrorResponse.error_message)
   
   return error_message_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
