@@ -218,8 +218,11 @@ static void on_write_completed(cronet_bidirectional_stream *stream,
 static void process_recv_message(stream_obj *s, const uint8_t *recv_data) {
   gpr_slice read_data_slice = gpr_slice_malloc((uint32_t)s->total_read_bytes);
   uint8_t *dst_p = GPR_SLICE_START_PTR(read_data_slice);
-  memcpy(dst_p, recv_data, (size_t)s->total_read_bytes);
-  gpr_slice_buffer_add(&s->read_slice_buffer, read_data_slice);
+  if (s->total_read_bytes > 0) {
+    // Only copy if there is non-zero number of bytes
+    memcpy(dst_p, recv_data, (size_t)s->total_read_bytes);
+    gpr_slice_buffer_add(&s->read_slice_buffer, read_data_slice);
+  }
   grpc_slice_buffer_stream_init(&s->sbs, &s->read_slice_buffer, 0);
   *s->recv_message = (grpc_byte_buffer *)&s->sbs;
 }
@@ -347,8 +350,17 @@ static void next_recv_step(stream_obj *s, enum e_caller caller) {
           if (grpc_cronet_trace) {
             gpr_log(GPR_DEBUG, "R: cronet_bidirectional_stream_read()");
           }
-          cronet_bidirectional_stream_read(s->cbs, (char *)s->read_buffer,
-                                           s->remaining_read_bytes);
+          if (s->remaining_read_bytes > 0) {
+            cronet_bidirectional_stream_read(s->cbs, (char *)s->read_buffer,
+                                             s->remaining_read_bytes);
+          } else {
+            // Calling the closing callback directly since this is a 0 byte read
+            // for an empty message.
+            process_recv_message(s, NULL);
+            enqueue_callbacks(s->callback_list[CB_RECV_MESSAGE]);
+            invoke_closing_callback(s);
+            set_recv_state(s, CRONET_RECV_CLOSED);
+          }
         }
       }
       break;

@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,30 +26,18 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# This script is invoked by Jenkins and runs full performance test suite.
-set -ex
 
-# Enter the gRPC repo root
-cd $(dirname $0)/../..
 
-# run 8core client vs 8core server
-tools/run_tests/run_performance_tests.py \
-    -l c++ csharp node ruby java python go \
-    --netperf \
-    --category all \
-    --bq_result_table performance_test.performance_experiment \
-    --remote_worker_host grpc-performance-server-8core grpc-performance-client-8core grpc-performance-client2-8core \
-    || EXIT_CODE=1
-
-# scalability with 32cores (and upload to a different BQ table)
-tools/run_tests/run_performance_tests.py \
-    -l c++ java csharp go \
-    --netperf \
-    --category scalable \
-    --bq_result_table performance_test.performance_experiment_32core \
-    --remote_worker_host grpc-performance-server-32core grpc-performance-client-32core grpc-performance-client2-32core \
-    || EXIT_CODE=1
-
-exit $EXIT_CODE
-
+Pod::Spec.new do |s|
+  s.name         = "CronetFramework"
+  s.version      = "0.0.2"
+  s.summary      = "Cronet, precompiled and used as a framework."
+  s.homepage     = "http://chromium.org"
+  s.license      = { :type => 'BSD' }
+  s.vendored_framework = "Cronet.framework"
+  s.author             = "The Chromium Authors"
+  s.ios.deployment_target = "8.0"
+  s.source       = { :http => 'https://storage.googleapis.com/grpc-precompiled-binaries/cronet/Cronet.framework.zip' }
+  s.preserve_paths = "Cronet.framework"
+  s.public_header_files = "Cronet.framework/Headers/**/*{.h}"
+end
