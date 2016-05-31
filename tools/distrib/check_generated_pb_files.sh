@@ -40,4 +40,4 @@ MOUNT_ARGS="-v $GRPC_ROOT:/var/local/jenkins/grpc"
 docker build -t grpc_check_generated_pb_files tools/dockerfile/grpc_check_generated_pb_files
 
 # run clang-format against the checked out codebase
-docker run -e TEST=$TEST -e CHANGED_FILES="$CHANGED_FILES" --rm=true $MOUNT_ARGS -t grpc_check_generated_pb_files /var/local/jenkins/grpc/tools/dockerfile/grpc_check_generated_pb_files/check_pb_files.sh
+docker run -e TEST=$TEST --rm=true $MOUNT_ARGS -t grpc_check_generated_pb_files bash -l /var/local/jenkins/grpc/tools/dockerfile/grpc_check_generated_pb_files/check_pb_files.sh
