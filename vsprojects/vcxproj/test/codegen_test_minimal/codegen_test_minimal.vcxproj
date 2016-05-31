@@ -239,14 +239,6 @@
     </ClCompile>
     <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\payloads.grpc.pb.h">
     </ClInclude>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.pb.cc">
-    </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.pb.h">
-    </ClInclude>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.grpc.pb.cc">
-    </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.grpc.pb.h">
-    </ClInclude>
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\services.pb.cc">
     </ClCompile>
     <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\services.pb.h">
