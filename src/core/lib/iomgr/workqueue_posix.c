@@ -70,7 +70,7 @@ grpc_error *grpc_workqueue_create(grpc_exec_ctx *exec_ctx,
 
 static void workqueue_destroy(grpc_exec_ctx *exec_ctx,
                               grpc_workqueue *workqueue) {
-  GPR_ASSERT(grpc_closure_list_empty(workqueue->closure_list));
+  grpc_exec_ctx_enqueue_list(exec_ctx, &workqueue->closure_list, NULL);
   grpc_fd_shutdown(exec_ctx, workqueue->wakeup_read_fd);
 }
 

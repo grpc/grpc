@@ -200,6 +200,8 @@ static void destruct_transport(grpc_exec_ctx *exec_ctx,
     gpr_free(ping);
   }
 
+  GRPC_WORKQUEUE_UNREF(exec_ctx, t->executor.workqueue, "transport");
+
   gpr_free(t->peer_string);
   gpr_free(t);
 }
@@ -734,6 +736,7 @@ void grpc_chttp2_initiate_write(
   t->executor.writing_needed = true;
   if (!t->executor.writing_initiated) {
     t->executor.writing_initiated = true;
+    REF_TRANSPORT(t, "initiate_writing");
     grpc_workqueue_enqueue(exec_ctx, t->executor.workqueue,
                            &t->initiate_writing, GRPC_ERROR_NONE);
   }
@@ -754,6 +757,7 @@ static void initiate_writing_locked(grpc_exec_ctx *exec_ctx,
     prevent_endpoint_shutdown(t);
     grpc_exec_ctx_sched(exec_ctx, &t->writing_action, GRPC_ERROR_NONE, NULL);
   }
+  UNREF_TRANSPORT(exec_ctx, t, "initiate_writing");
 }
 
 static void initiate_writing(grpc_exec_ctx *exec_ctx, void *arg,
@@ -812,6 +816,7 @@ static void terminate_writing_with_lock(grpc_exec_ctx *exec_ctx,
 
   t->executor.writing_active = false;
   if (t->executor.writing_needed) {
+    REF_TRANSPORT(t, "initiate_writing");
     initiate_writing_locked(exec_ctx, t, NULL, NULL);
   } else {
     t->executor.writing_initiated = false;
