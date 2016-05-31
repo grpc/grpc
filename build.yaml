@@ -915,6 +915,22 @@ libs:
   - grpc++_codegen
   secure: check
   vs_project_guid: '{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}'
+- name: grpc++_reflection
+  build: all
+  language: c++
+  public_headers:
+  - extensions/include/grpc++/impl/proto_server_reflection_plugin.h
+  - extensions/include/grpc++/impl/reflection.grpc.pb.h
+  - extensions/include/grpc++/impl/reflection.pb.h
+  headers:
+  - extensions/reflection/proto_server_reflection.h
+  src:
+  - extensions/reflection/proto_server_reflection.cc
+  - extensions/reflection/proto_server_reflection_plugin.cc
+  - extensions/reflection/reflection.grpc.pb.cc
+  - extensions/reflection/reflection.pb.cc
+  uses:
+  - grpc++_base
 - name: grpc++_test_config
   build: private
   language: c++
@@ -2731,6 +2747,23 @@ targets:
   src:
   - test/cpp/end2end/mock_test.cc
   deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: proto_server_reflection_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/cpp/util/proto_reflection_descriptor_database.h
+  src:
+  - test/cpp/end2end/proto_server_reflection_test.cc
+  - test/cpp/util/proto_reflection_descriptor_database.cc
+  deps:
+  - grpc++_reflection
   - grpc++_test_util
   - grpc_test_util
   - grpc++
