@@ -25,6 +25,7 @@
     "Grpc.Core.Tests.ResponseHeadersTest",
     "Grpc.Core.Tests.SanityTest",
     "Grpc.Core.Tests.ServerTest",
+    "Grpc.Core.Tests.ShutdownHookServerTest",
     "Grpc.Core.Tests.ShutdownHookTest",
     "Grpc.Core.Tests.ShutdownTest",
     "Grpc.Core.Tests.TimeoutsTest",

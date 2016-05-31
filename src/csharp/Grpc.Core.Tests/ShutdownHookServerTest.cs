@@ -43,22 +43,26 @@ using NUnit.Framework;
 
 namespace Grpc.Core.Tests
 {
-    public class ShutdownHookTest
+    public class ShutdownHookServerTest
     {
         const string Host = "127.0.0.1";
 
         /// <summary>
-        /// Make sure that a non-shutdown channel can be cleaned up using
+        /// Make sure that a non-shutdown server can be cleaned up using
         /// a <c>AppDomain.ProcessExit</c> hook.
         /// </summary>
         [Test]
         public void AppDomainProcessExitHook()
         {
-            var channel = new Channel(Host, 1000, ChannelCredentials.Insecure);
+            var helper = new MockServiceHelper(Host);
+            var server = helper.GetServer();
+            server.Start();
             AppDomain.CurrentDomain.ProcessExit += (object sender, EventArgs e) =>
             {
-                // TODO: expose API to shutdown all channels.
-                channel.ShutdownAsync();
+                // TODO: expose API for killing all servers
+                // TODO: expose API for closing all channels
+                server.KillAsync();
+                GrpcEnvironment.ReleaseAsync();
             };
         }
 
