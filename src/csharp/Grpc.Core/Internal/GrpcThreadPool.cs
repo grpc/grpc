@@ -35,6 +35,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Grpc.Core.Logging;
 using Grpc.Core.Utils;
 
@@ -52,6 +53,8 @@ namespace Grpc.Core.Internal
         readonly List<Thread> threads = new List<Thread>();
         readonly int poolSize;
         readonly int completionQueueCount;
+
+        bool stopRequested;
 
         IReadOnlyCollection<CompletionQueueSafeHandle> completionQueues;
 
@@ -84,15 +87,21 @@ namespace Grpc.Core.Internal
             }
         }
 
-        public void Stop()
+        public Task StopAsync()
         {
             lock (myLock)
             {
+                GrpcPreconditions.CheckState(!stopRequested, "Stop already requested.");
+                stopRequested = true;
+
                 foreach (var cq in completionQueues)
                 {
                     cq.Shutdown();
                 }
+            }
 
+            return Task.Run(() =>
+            {
                 foreach (var thread in threads)
                 {
                     thread.Join();
@@ -102,7 +111,7 @@ namespace Grpc.Core.Internal
                 {
                     cq.Dispose();
                 }
-            }
+            });
         }
 
         internal IReadOnlyCollection<CompletionQueueSafeHandle> CompletionQueues

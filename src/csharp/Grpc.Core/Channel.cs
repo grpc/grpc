@@ -220,7 +220,7 @@ namespace Grpc.Core
 
             handle.Dispose();
 
-            await Task.Run(() => GrpcEnvironment.Release()).ConfigureAwait(false);
+            await GrpcEnvironment.ReleaseAsync().ConfigureAwait(false);
         }
 
         internal ChannelSafeHandle Handle
