@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -222,9 +222,18 @@ class CompletionQueue : private GrpcLibraryCodegen {
 /// A specific type of completion queue used by the processing of notifications
 /// by servers. Instantiated by \a ServerBuilder.
 class ServerCompletionQueue : public CompletionQueue {
+ public:
+  bool IsFrequentlyPolled() { return is_frequently_polled_; }
+
  private:
+  bool is_frequently_polled_;
   friend class ServerBuilder;
-  ServerCompletionQueue() {}
+  /// \param is_frequently_polled Informs the GPRC library about whether the
+  /// server completion queue would be actively polled (by calling Next() or
+  /// AsyncNext()). By default all server completion queues are assumed to be
+  /// frequently polled.
+  ServerCompletionQueue(bool is_frequently_polled = true)
+      : is_frequently_polled_(is_frequently_polled) {}
 };
 
 }  // namespace grpc

@@ -157,7 +157,7 @@ class CLanguage(object):
       'windows': ['all'],
       'mac': ['all'],
       'posix': ['all'],
-      'linux': ['poll', 'legacy']
+      'linux': ['poll'],
     }
     for target in binaries:
       polling_strategies = (POLLING_STRATEGIES[self.platform]
@@ -892,7 +892,7 @@ for l in languages:
 
 language_make_options=[]
 if any(language.make_options() for language in languages):
-  if len(languages) != 1:
+  if not 'gcov' in args.config and len(languages) != 1:
     print 'languages with custom make options cannot be built simultaneously with other languages'
     sys.exit(1)
   else:

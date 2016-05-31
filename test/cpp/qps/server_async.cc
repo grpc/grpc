@@ -131,10 +131,10 @@ class AsyncQpsServerTest : public Server {
     }
   }
   ~AsyncQpsServerTest() {
-    server_->Shutdown();
     for (auto ss = shutdown_state_.begin(); ss != shutdown_state_.end(); ++ss) {
       (*ss)->set_shutdown();
     }
+    server_->Shutdown();
     for (auto thr = threads_.begin(); thr != threads_.end(); thr++) {
       thr->join();
     }
