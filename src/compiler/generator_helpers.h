@@ -34,7 +34,11 @@
 #ifndef GRPC_INTERNAL_COMPILER_GENERATOR_HELPERS_H
 #define GRPC_INTERNAL_COMPILER_GENERATOR_HELPERS_H
 
+#include <iostream>
 #include <map>
+#include <sstream>
+#include <string>
+#include <vector>
 
 #include "src/compiler/config.h"
 
@@ -173,6 +177,111 @@ inline MethodType GetMethodType(const grpc::protobuf::MethodDescriptor *method) 
       return METHODTYPE_NO_STREAMING;
     }
   }
+}
+
+inline void Split(const grpc::string &s, char delim,
+                  std::vector<grpc::string> *append_to) {
+  std::istringstream iss(s);
+  grpc::string piece;
+  while (std::getline(iss, piece)) {
+    append_to->push_back(piece);
+  }
+}
+
+enum CommentType {
+  COMMENTTYPE_LEADING,
+  COMMENTTYPE_TRAILING,
+  COMMENTTYPE_LEADING_DETACHED
+};
+
+// Get all the raw comments and append each line without newline to out.
+template <typename DescriptorType>
+inline void GetComment(const DescriptorType *desc, CommentType type,
+                       std::vector<grpc::string> *out) {
+  grpc::protobuf::SourceLocation location;
+  if (!desc->GetSourceLocation(&location)) {
+    return;
+  }
+  if (type == COMMENTTYPE_LEADING || type == COMMENTTYPE_TRAILING) {
+    const grpc::string &comments = type == COMMENTTYPE_LEADING
+                                       ? location.leading_comments
+                                       : location.trailing_comments;
+    Split(comments, '\n', out);
+  } else if (type == COMMENTTYPE_LEADING_DETACHED) {
+    for (unsigned int i = 0; i < location.leading_detached_comments.size();
+         i++) {
+      Split(location.leading_detached_comments[i], '\n', out);
+      out->push_back("");
+    }
+  } else {
+    std::cerr << "Unknown comment type " << type << std::endl;
+    abort();
+  }
+}
+
+// Each raw comment line without newline is appended to out.
+// For file level leading and detached leading comments, we return comments
+// above syntax line. Return nothing for trailing comments.
+template <>
+inline void GetComment(const grpc::protobuf::FileDescriptor *desc,
+                       CommentType type, std::vector<grpc::string> *out) {
+  if (type == COMMENTTYPE_TRAILING) {
+    return;
+  }
+  grpc::protobuf::SourceLocation location;
+  std::vector<int> path;
+  path.push_back(grpc::protobuf::FileDescriptorProto::kSyntaxFieldNumber);
+  if (!desc->GetSourceLocation(path, &location)) {
+    return;
+  }
+  if (type == COMMENTTYPE_LEADING) {
+    Split(location.leading_comments, '\n', out);
+  } else if (type == COMMENTTYPE_LEADING_DETACHED) {
+    for (unsigned int i = 0; i < location.leading_detached_comments.size();
+         i++) {
+      Split(location.leading_detached_comments[i], '\n', out);
+      out->push_back("");
+    }
+  } else {
+    std::cerr << "Unknown comment type " << type << std::endl;
+    abort();
+  }
+}
+
+// Add prefix and newline to each comment line and concatenate them together.
+// Make sure there is a space after the prefix unless the line is empty.
+inline grpc::string GenerateCommentsWithPrefix(
+    const std::vector<grpc::string> &in, const grpc::string &prefix) {
+  std::ostringstream oss;
+  for (const grpc::string &elem : in) {
+    if (elem.empty()) {
+      oss << prefix << "\n";
+    } else if (elem[0] == ' ') {
+      oss << prefix << elem << "\n";
+    } else {
+      oss << prefix << " " << elem << "\n";
+    }
+  }
+  return oss.str();
+}
+
+// Get leading or trailing comments in a string. Comment lines start with "// ".
+// Leading detached comments are put in in front of leading comments.
+template <typename DescriptorType>
+inline grpc::string GetCppComments(const DescriptorType *desc, bool leading) {
+  std::vector<grpc::string> out;
+  if (leading) {
+    grpc_generator::GetComment(
+        desc, grpc_generator::COMMENTTYPE_LEADING_DETACHED, &out);
+    std::vector<grpc::string> leading;
+    grpc_generator::GetComment(desc, grpc_generator::COMMENTTYPE_LEADING,
+                               &leading);
+    out.insert(out.end(), leading.begin(), leading.end());
+  } else {
+    grpc_generator::GetComment(desc, grpc_generator::COMMENTTYPE_TRAILING,
+                               &out);
+  }
+  return GenerateCommentsWithPrefix(out, "//");
 }
 
 }  // namespace grpc_generator

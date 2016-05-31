@@ -37,7 +37,7 @@
 #include <grpc/support/slice_buffer.h>
 
 #include "src/core/ext/client_config/lb_policy_factory.h"
-#include "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.h"
+#include "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,10 +45,10 @@ extern "C" {
 
 #define GRPC_GRPCLB_SERVICE_NAME_MAX_LENGTH 128
 
-typedef grpc_lb_v0_LoadBalanceRequest grpc_grpclb_request;
-typedef grpc_lb_v0_LoadBalanceResponse grpc_grpclb_response;
-typedef grpc_lb_v0_Server grpc_grpclb_server;
-typedef grpc_lb_v0_Duration grpc_grpclb_duration;
+typedef grpc_lb_v1_LoadBalanceRequest grpc_grpclb_request;
+typedef grpc_lb_v1_LoadBalanceResponse grpc_grpclb_response;
+typedef grpc_lb_v1_Server grpc_grpclb_server;
+typedef grpc_lb_v1_Duration grpc_grpclb_duration;
 typedef struct grpc_grpclb_serverlist {
   grpc_grpclb_server **servers;
   size_t num_servers;

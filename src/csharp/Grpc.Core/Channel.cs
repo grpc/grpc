@@ -31,7 +31,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Grpc.Core.Internal;
@@ -51,9 +51,11 @@ namespace Grpc.Core
 
         readonly object myLock = new object();
         readonly AtomicCounter activeCallCounter = new AtomicCounter();
+        readonly CancellationTokenSource shutdownTokenSource = new CancellationTokenSource();
 
         readonly string target;
         readonly GrpcEnvironment environment;
+        readonly CompletionQueueSafeHandle completionQueue;
         readonly ChannelSafeHandle handle;
         readonly Dictionary<string, ChannelOption> options;
 
@@ -73,6 +75,7 @@ namespace Grpc.Core
             EnsureUserAgentChannelOption(this.options);
             this.environment = GrpcEnvironment.AddRef();
 
+            this.completionQueue = this.environment.PickCompletionQueue();
             using (var nativeCredentials = credentials.ToNativeCredentials())
             using (var nativeChannelArgs = ChannelOptions.CreateChannelArgs(this.options.Values))
             {
@@ -101,12 +104,13 @@ namespace Grpc.Core
 
         /// <summary>
         /// Gets current connectivity state of this channel.
+        /// After channel is has been shutdown, <c>ChannelState.FatalFailure</c> will be returned.
         /// </summary>
         public ChannelState State
         {
             get
             {
-                return handle.CheckConnectivityState(false);        
+                return GetConnectivityState(false);
             }
         }
 
@@ -132,7 +136,7 @@ namespace Grpc.Core
                     tcs.SetCanceled();
                 }
             });
-            handle.WatchConnectivityState(lastObservedState, deadlineTimespec, environment.CompletionQueue, environment.CompletionRegistry, handler);
+            handle.WatchConnectivityState(lastObservedState, deadlineTimespec, completionQueue, handler);
             return tcs.Task;
         }
 
@@ -155,6 +159,17 @@ namespace Grpc.Core
         }
 
         /// <summary>
+        /// Returns a token that gets cancelled once <c>ShutdownAsync</c> is invoked.
+        /// </summary>
+        public CancellationToken ShutdownToken
+        {
+            get
+            {
+                return this.shutdownTokenSource.Token;
+            }
+        }
+
+        /// <summary>
         /// Allows explicitly requesting channel to connect without starting an RPC.
         /// Returned task completes once state Ready was seen. If the deadline is reached,
         /// or channel enters the FatalFailure state, the task is cancelled.
@@ -164,7 +179,7 @@ namespace Grpc.Core
         /// <param name="deadline">The deadline. <c>null</c> indicates no deadline.</param>
         public async Task ConnectAsync(DateTime? deadline = null)
         {
-            var currentState = handle.CheckConnectivityState(true);
+            var currentState = GetConnectivityState(true);
             while (currentState != ChannelState.Ready)
             {
                 if (currentState == ChannelState.FatalFailure)
@@ -172,7 +187,7 @@ namespace Grpc.Core
                     throw new OperationCanceledException("Channel has reached FatalFailure state.");
                 }
                 await WaitForStateChangedAsync(currentState, deadline).ConfigureAwait(false);
-                currentState = handle.CheckConnectivityState(false);
+                currentState = GetConnectivityState(false);
             }
         }
 
@@ -187,6 +202,8 @@ namespace Grpc.Core
                 GrpcPreconditions.CheckState(!shutdownRequested);
                 shutdownRequested = true;
             }
+
+            shutdownTokenSource.Cancel();
 
             var activeCallCount = activeCallCounter.Count;
             if (activeCallCount > 0)
@@ -215,6 +232,14 @@ namespace Grpc.Core
             }
         }
 
+        internal CompletionQueueSafeHandle CompletionQueue
+        {
+            get
+            {
+                return this.completionQueue;
+            }
+        }
+
         internal void AddCallReference(object call)
         {
             activeCallCounter.Increment();
@@ -229,6 +254,18 @@ namespace Grpc.Core
             handle.DangerousRelease();
 
             activeCallCounter.Decrement();
+        }
+
+        private ChannelState GetConnectivityState(bool tryToConnect)
+        {
+            try
+            {
+                return handle.CheckConnectivityState(tryToConnect);
+            }
+            catch (ObjectDisposedException)
+            {
+                return ChannelState.FatalFailure;
+            }
         }
 
         private static void EnsureUserAgentChannelOption(Dictionary<string, ChannelOption> options)

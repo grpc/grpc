@@ -45,15 +45,20 @@ gpr_slice grpc_chttp2_rst_stream_create(uint32_t id, uint32_t code,
   stats->framing_bytes += frame_size;
   uint8_t *p = GPR_SLICE_START_PTR(slice);
 
+  // Frame size.
   *p++ = 0;
   *p++ = 0;
   *p++ = 4;
+  // Frame type.
   *p++ = GRPC_CHTTP2_FRAME_RST_STREAM;
+  // Flags.
   *p++ = 0;
+  // Stream ID.
   *p++ = (uint8_t)(id >> 24);
   *p++ = (uint8_t)(id >> 16);
   *p++ = (uint8_t)(id >> 8);
   *p++ = (uint8_t)(id);
+  // Error code.
   *p++ = (uint8_t)(code >> 24);
   *p++ = (uint8_t)(code >> 16);
   *p++ = (uint8_t)(code >> 8);

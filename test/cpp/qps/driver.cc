@@ -83,6 +83,7 @@ static std::unordered_map<string, std::deque<int>> get_hosts_and_cores(
       auto stub = WorkerService::NewStub(
           CreateChannel(*it, InsecureChannelCredentials()));
       grpc::ClientContext ctx;
+      ctx.set_fail_fast(false);
       CoreRequest dummy;
       CoreResponse cores;
       grpc::Status s = stub->CoreCount(&ctx, dummy, &cores);
@@ -166,6 +167,7 @@ namespace runsc {
 static ClientContext* AllocContext(list<ClientContext>* contexts) {
   contexts->emplace_back();
   auto context = &contexts->back();
+  context->set_fail_fast(false);
   return context;
 }
 
@@ -435,6 +437,7 @@ void RunQuit() {
         CreateChannel(workers[i], InsecureChannelCredentials()));
     Void dummy;
     grpc::ClientContext ctx;
+    ctx.set_fail_fast(false);
     GPR_ASSERT(stub->QuitWorker(&ctx, dummy, &dummy).ok());
   }
 }

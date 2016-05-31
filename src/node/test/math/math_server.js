@@ -68,7 +68,7 @@ function mathDiv(call, cb) {
 function mathFib(stream) {
   // Here, call is a standard writable Node object Stream
   var previous = 0, current = 1;
-  for (var i = 0; i < stream.request.limit; i++) {
+  for (var i = 0; i < stream.request.getLimit(); i++) {
     var response = new math.Num();
     response.setNum(current);
     stream.write(response);

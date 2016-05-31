@@ -83,11 +83,15 @@ static void me_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   if (m->parent->shutdown) {
     ok = false;
   } else if (m->on_read != NULL) {
-    gpr_slice_buffer_addn(m->on_read_out, slices->slices, slices->count);
+    for (size_t i = 0; i < slices->count; i++) {
+      gpr_slice_buffer_add(m->on_read_out, gpr_slice_ref(slices->slices[i]));
+    }
     grpc_exec_ctx_enqueue(exec_ctx, m->on_read, true, NULL);
     m->on_read = NULL;
   } else {
-    gpr_slice_buffer_addn(&m->read_buffer, slices->slices, slices->count);
+    for (size_t i = 0; i < slices->count; i++) {
+      gpr_slice_buffer_add(&m->read_buffer, gpr_slice_ref(slices->slices[i]));
+    }
   }
   gpr_mu_unlock(&m->parent->mu);
   grpc_exec_ctx_enqueue(exec_ctx, cb, ok, NULL);

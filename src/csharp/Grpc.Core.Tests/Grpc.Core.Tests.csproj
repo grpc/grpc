@@ -84,6 +84,8 @@
     <Compile Include="SanityTest.cs" />
     <Compile Include="HalfcloseTest.cs" />
     <Compile Include="NUnitMain.cs" />
+    <Compile Include="Internal\FakeNativeCall.cs" />
+    <Compile Include="Internal\AsyncCallServerTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

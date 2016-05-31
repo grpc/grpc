@@ -174,6 +174,7 @@ static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
              GRPC_SUBCHANNEL_CALL_HOLDER_PICKING_SUBCHANNEL);
   holder->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING;
   if (holder->connected_subchannel == NULL) {
+    gpr_atm_no_barrier_store(&holder->subchannel_call, 1);
     fail_locked(exec_ctx, holder);
   } else if (1 == gpr_atm_acq_load(&holder->subchannel_call)) {
     /* already cancelled before subchannel became ready */

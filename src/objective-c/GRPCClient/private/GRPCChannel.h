@@ -56,16 +56,10 @@ struct grpc_channel_credentials;
 + (nullable GRPCChannel *)secureChannelWithHost:(nonnull NSString *)host;
 
 /**
- * Creates a secure channel to the specified @c host using the specified @c pathToCertificates and 
- * @c channelArgs. Only in tests should @c pathToCertificates be nil or
- * @c GRPC_SSL_TARGET_NAME_OVERRIDE_ARG channel arg be set. Passing nil for @c pathToCertificates
- * results in using the default root certificates distributed with the library. If certificates
- * could not be found in any case, then @c nil is returned.
+ * Creates a secure channel to the specified @c host using Cronet as a transport mechanism.
  */
-+ (nullable GRPCChannel *)secureChannelWithHost:(nonnull NSString *)host
-                             pathToCertificates:(nullable NSString *)pathToCertificates
-                                    channelArgs:(nullable NSDictionary *)channelArgs;
-
++ (nullable GRPCChannel *)secureCronetChannelWithHost:(NSString *)host
+                                          channelArgs:(NSDictionary *)channelArgs;
 
 /**
  * Creates a secure channel to the specified @c host using the specified @c credentials and

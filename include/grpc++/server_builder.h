@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,10 +34,12 @@
 #ifndef GRPCXX_SERVER_BUILDER_H
 #define GRPCXX_SERVER_BUILDER_H
 
+#include <map>
 #include <memory>
 #include <vector>
 
 #include <grpc++/impl/server_builder_option.h>
+#include <grpc++/impl/server_builder_plugin.h>
 #include <grpc++/support/config.h>
 #include <grpc/compression.h>
 
@@ -50,6 +52,10 @@ class Server;
 class ServerCompletionQueue;
 class ServerCredentials;
 class Service;
+
+namespace testing {
+class ServerBuilderPluginTest;
+}  // namespace testing
 
 /// A builder class for the creation and startup of \a grpc::Server instances.
 class ServerBuilder {
@@ -102,12 +108,26 @@ class ServerBuilder {
   /// Add a completion queue for handling asynchronous services
   /// Caller is required to keep this completion queue live until
   /// the server is destroyed.
-  std::unique_ptr<ServerCompletionQueue> AddCompletionQueue();
+  ///
+  /// \param is_frequently_polled This is an optional parameter to inform GRPC
+  /// library about whether this completion queue would be frequently polled
+  /// (i.e by calling Next() or AsyncNext()). The default value is 'true' and is
+  /// the recommended setting. Setting this to 'false' (i.e not polling the
+  /// completion queue frequently) will have a significantly negative
+  /// performance impact and hence should not be used in production use cases.
+  std::unique_ptr<ServerCompletionQueue> AddCompletionQueue(
+      bool is_frequently_polled = true);
 
   /// Return a running server which is ready for processing calls.
   std::unique_ptr<Server> BuildAndStart();
 
+  /// For internal use only: Register a ServerBuilderPlugin factory function.
+  static void InternalAddPluginFactory(
+      std::unique_ptr<ServerBuilderPlugin> (*CreatePlugin)());
+
  private:
+  friend class ::grpc::testing::ServerBuilderPluginTest;
+
   struct Port {
     grpc::string addr;
     std::shared_ptr<ServerCredentials> creds;
@@ -130,6 +150,7 @@ class ServerBuilder {
   std::vector<Port> ports_;
   std::vector<ServerCompletionQueue*> cqs_;
   std::shared_ptr<ServerCredentials> creds_;
+  std::map<grpc::string, std::unique_ptr<ServerBuilderPlugin>> plugins_;
   AsyncGenericService* generic_service_;
 };
 

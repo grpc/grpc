@@ -34,8 +34,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
+using System.Linq;
 using System.Threading.Tasks;
 using Grpc.Core.Internal;
 using Grpc.Core.Logging;
@@ -48,6 +47,7 @@ namespace Grpc.Core
     /// </summary>
     public class Server
     {
+        const int InitialAllowRpcTokenCountPerCq = 10;
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<Server>();
 
         readonly AtomicCounter activeCallCounter = new AtomicCounter();
@@ -65,7 +65,7 @@ namespace Grpc.Core
         readonly TaskCompletionSource<object> shutdownTcs = new TaskCompletionSource<object>();
 
         bool startRequested;
-        bool shutdownRequested;
+        volatile bool shutdownRequested;
 
         /// <summary>
         /// Create a new server.
@@ -79,7 +79,12 @@ namespace Grpc.Core
             this.options = options != null ? new List<ChannelOption>(options) : new List<ChannelOption>();
             using (var channelArgs = ChannelOptions.CreateChannelArgs(this.options))
             {
-                this.handle = ServerSafeHandle.NewServer(environment.CompletionQueue, channelArgs);
+                this.handle = ServerSafeHandle.NewServer(channelArgs);
+            }
+
+            foreach (var cq in environment.CompletionQueues)
+            {
+                this.handle.RegisterCompletionQueue(cq);
             }
         }
 
@@ -129,7 +134,16 @@ namespace Grpc.Core
                 startRequested = true;
                 
                 handle.Start();
-                AllowOneRpc();
+
+                // Starting with more than one AllowOneRpc tokens can significantly increase
+                // unary RPC throughput.
+                for (int i = 0; i < InitialAllowRpcTokenCountPerCq; i++)
+                {
+                    foreach (var cq in environment.CompletionQueues)
+                    {
+                        AllowOneRpc(cq);
+                    }
+                }
             }
         }
 
@@ -147,7 +161,8 @@ namespace Grpc.Core
                 shutdownRequested = true;
             }
 
-            handle.ShutdownAndNotify(HandleServerShutdown, environment);
+            var cq = environment.CompletionQueues.First();  // any cq will do
+            handle.ShutdownAndNotify(HandleServerShutdown, cq);
             await shutdownTcs.Task.ConfigureAwait(false);
             DisposeHandle();
 
@@ -167,7 +182,8 @@ namespace Grpc.Core
                 shutdownRequested = true;
             }
 
-            handle.ShutdownAndNotify(HandleServerShutdown, environment);
+            var cq = environment.CompletionQueues.First();  // any cq will do
+            handle.ShutdownAndNotify(HandleServerShutdown, cq);
             handle.CancelAllCalls();
             await shutdownTcs.Task.ConfigureAwait(false);
             DisposeHandle();
@@ -237,14 +253,11 @@ namespace Grpc.Core
         /// <summary>
         /// Allows one new RPC call to be received by server.
         /// </summary>
-        private void AllowOneRpc()
+        private void AllowOneRpc(CompletionQueueSafeHandle cq)
         {
-            lock (myLock)
+            if (!shutdownRequested)
             {
-                if (!shutdownRequested)
-                {
-                    handle.RequestCall(HandleNewServerRpc, environment);
-                }
+                handle.RequestCall((success, ctx) => HandleNewServerRpc(success, ctx, cq), cq);
             }
         }
 
@@ -261,7 +274,7 @@ namespace Grpc.Core
         /// <summary>
         /// Selects corresponding handler for given call and handles the call.
         /// </summary>
-        private async Task HandleCallAsync(ServerRpcNew newRpc)
+        private async Task HandleCallAsync(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             try
             {
@@ -270,7 +283,7 @@ namespace Grpc.Core
                 {
                     callHandler = NoSuchMethodCallHandler.Instance;
                 }
-                await callHandler.HandleCall(newRpc, environment).ConfigureAwait(false);
+                await callHandler.HandleCall(newRpc, cq).ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -281,8 +294,10 @@ namespace Grpc.Core
         /// <summary>
         /// Handles the native callback.
         /// </summary>
-        private void HandleNewServerRpc(bool success, BatchContextSafeHandle ctx)
+        private void HandleNewServerRpc(bool success, BatchContextSafeHandle ctx, CompletionQueueSafeHandle cq)
         {
+			Task.Run(() => AllowOneRpc(cq));
+
             if (success)
             {
                 ServerRpcNew newRpc = ctx.GetServerRpcNew(this);
@@ -290,11 +305,9 @@ namespace Grpc.Core
                 // after server shutdown, the callback returns with null call
                 if (!newRpc.Call.IsInvalid)
                 {
-                    Task.Run(async () => await HandleCallAsync(newRpc)).ConfigureAwait(false);
+                    HandleCallAsync(newRpc, cq);  // we don't need to await.
                 }
             }
-
-            AllowOneRpc();
         }
 
         /// <summary>
