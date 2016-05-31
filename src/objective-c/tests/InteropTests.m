@@ -35,7 +35,9 @@
 
 #include <grpc/status.h>
 
+#import <Cronet/Cronet.h>
 #import <GRPCClient/GRPCCall+Tests.h>
+#import <GRPCClient/GRPCCall+Cronet.h>
 #import <ProtoRPC/ProtoRPC.h>
 #import <RemoteTest/Empty.pbobjc.h>
 #import <RemoteTest/Messages.pbobjc.h>
@@ -78,6 +80,8 @@
 
 #pragma mark Tests
 
+static cronet_engine *cronetEngine = NULL;
+
 @implementation InteropTests {
   RMTTestService *_service;
 }
@@ -88,6 +92,15 @@
 
 - (void)setUp {
   _service = self.class.host ? [RMTTestService serviceWithHost:self.class.host] : nil;
+#ifdef GRPC_COMPILE_WITH_CRONET
+  if (cronetEngine == NULL) {
+    // Cronet setup
+    [Cronet setHttp2Enabled:YES];
+    [Cronet start];
+    cronetEngine = [Cronet getGlobalEngine];
+    [GRPCCall useCronetWithEngine:cronetEngine];
+  }
+#endif
 }
 
 - (void)testEmptyUnaryRPC {
@@ -245,6 +258,8 @@
   [self waitForExpectationsWithTimeout:4 handler:nil];
 }
 
+#ifndef GRPC_COMPILE_WITH_CRONET
+// TODO(makdharma@): Fix this test
 - (void)testEmptyStreamRPC {
   XCTAssertNotNil(self.class.host);
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"EmptyStream"];
@@ -258,6 +273,7 @@
   }];
   [self waitForExpectationsWithTimeout:2 handler:nil];
 }
+#endif
 
 - (void)testCancelAfterBeginRPC {
   XCTAssertNotNil(self.class.host);
@@ -272,8 +288,14 @@
     XCTAssertEqual(error.code, GRPC_STATUS_CANCELLED);
     [expectation fulfill];
   }];
+  XCTAssertEqual(call.state, GRXWriterStateNotStarted);
+
   [call start];
+  XCTAssertEqual(call.state, GRXWriterStateStarted);
+
   [call cancel];
+  XCTAssertEqual(call.state, GRXWriterStateFinished);
+
   [self waitForExpectationsWithTimeout:1 handler:nil];
 }
 

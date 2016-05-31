@@ -273,6 +273,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\status.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer_reader.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\compression_types.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\connectivity_state.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\grpc_types.h" />
@@ -292,6 +293,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_cronet.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_security.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_security_constants.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\census.h" />
@@ -314,7 +316,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\closure.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint_pair.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_and_epoll_posix.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\exec_ctx.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\executor.h" />
@@ -391,15 +393,24 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\timeout_encoding.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\varint.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\alpn\alpn.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\auth_filters.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\b64.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\handshake.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\json_token.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\jwt_verifier.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\secure_endpoint.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\security_connector.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\security_context.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\context\security_context.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\composite\composite_credentials.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\credentials.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\fake\fake_credentials.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\google_default\google_default_credentials.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\iam\iam_credentials.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\jwt\json_token.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\jwt\jwt_credentials.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\jwt\jwt_verifier.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\oauth2\oauth2_credentials.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\plugin\plugin_credentials.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\credentials\ssl\ssl_credentials.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\auth_filters.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\handshake.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\secure_endpoint.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\transport\security_connector.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\util\b64.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\security\util\json_util.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\tsi\fake_transport_security.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\tsi\ssl_transport_security.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\tsi\ssl_types.h" />
@@ -421,8 +432,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\subchannel_call_holder.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\subchannel_index.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\uri_parser.h" />
+    <ClInclude Include="$(SolutionDir)\..\third_party\objective_c\Cronet\cronet_c_for_grpc.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0\load_balancer.pb.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v1\load_balancer.pb.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_common.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.h" />
@@ -471,7 +483,7 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint_pair_windows.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_and_epoll_posix.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_posix.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_posix.c">
     </ClCompile>
@@ -647,33 +659,49 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\http\httpcli_security_connector.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\b64.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\context\security_context.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\client_auth_filter.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\composite\composite_credentials.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\credentials.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials_metadata.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\credentials_metadata.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials_posix.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\fake\fake_credentials.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials_windows.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\google_default\credentials_posix.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\google_default_credentials.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\google_default\credentials_windows.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\handshake.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\google_default\google_default_credentials.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\json_token.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\iam\iam_credentials.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\jwt_verifier.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\jwt\json_token.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\secure_endpoint.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\jwt\jwt_credentials.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\security_connector.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\jwt\jwt_verifier.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\security_context.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\oauth2\oauth2_credentials.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\server_auth_filter.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\plugin\plugin_credentials.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\ssl\ssl_credentials.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\client_auth_filter.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\handshake.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\secure_endpoint.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\security_connector.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\transport\server_auth_filter.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\util\b64.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\util\json_util.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\init_secure.c">
     </ClCompile>
@@ -727,9 +755,15 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\insecure\channel_create.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\cronet\client\secure\cronet_channel_create.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\cronet\transport\cronet_api_dummy.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\cronet\transport\cronet_transport.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v0\load_balancer.pb.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v1\load_balancer.pb.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_common.c">
     </ClCompile>
@@ -792,4 +826,3 @@
     <Error Condition="!Exists('$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\grpc.dependencies.openssl.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\..\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\grpc.dependencies.openssl.targets')" />
   </Target>
 </Project>
-

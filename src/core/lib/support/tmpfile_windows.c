@@ -33,7 +33,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WINDOWS
+#ifdef GPR_WINDOWS_TMPFILE
 
 #include <io.h>
 #include <stdio.h>
@@ -81,4 +81,4 @@ end:
   return result;
 }
 
-#endif /* GPR_WINDOWS */
+#endif /* GPR_WINDOWS_TMPFILE */

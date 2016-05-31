@@ -684,6 +684,26 @@ Server.prototype.register = function(name, handler, serialize, deserialize,
   return true;
 };
 
+var unimplementedStatusResponse = {
+  code: grpc.status.UNIMPLEMENTED,
+  details: 'The server does not implement this method'
+};
+
+var defaultHandler = {
+  unary: function(call, callback) {
+    callback(unimplementedStatusResponse);
+  },
+  client_stream: function(call, callback) {
+    callback(unimplementedStatusResponse);
+  },
+  server_stream: function(call) {
+    call.emit('error', unimplementedStatusResponse);
+  },
+  bidi: function(call) {
+    call.emit('error', unimplementedStatusResponse);
+  }
+};
+
 /**
  * Add a service to the server, with a corresponding implementation. If you are
  * generating this from a proto file, you should instead use
@@ -713,16 +733,18 @@ Server.prototype.addService = function(service, implementation) {
         method_type = 'unary';
       }
     }
+    var impl;
     if (implementation[name] === undefined) {
-      throw new Error('Method handler for ' + attrs.path +
-          ' not provided.');
+      console.warn('Method handler for %s expected but not provided',
+                   attrs.path);
+      impl = defaultHandler[method_type];
+    } else {
+      impl = _.bind(implementation[name], implementation);
     }
     var serialize = attrs.responseSerialize;
     var deserialize = attrs.requestDeserialize;
-    var register_success = self.register(attrs.path,
-                                         _.bind(implementation[name],
-                                                implementation),
-                                         serialize, deserialize, method_type);
+    var register_success = self.register(attrs.path, impl, serialize,
+                                         deserialize, method_type);
     if (!register_success) {
       throw new Error('Method handler for ' + attrs.path +
           ' already provided.');

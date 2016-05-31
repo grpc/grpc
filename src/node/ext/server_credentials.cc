@@ -146,7 +146,9 @@ NAN_METHOD(ServerCredentials::CreateSsl) {
         "createSsl's second argument must be a list of objects");
   }
 
-  grpc_ssl_client_certificate_request_type client_certificate_request;
+  // Default to not requesting the client certificate
+  grpc_ssl_client_certificate_request_type client_certificate_request =
+      GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE;
   if (info[2]->IsBoolean()) {
     client_certificate_request =
         Nan::To<bool>(info[2]).FromJust()

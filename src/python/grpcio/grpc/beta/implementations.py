@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2015-2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -188,12 +188,13 @@ def insecure_channel(host, port):
   Args:
     host: The name of the remote host to which to connect.
     port: The port of the remote host to which to connect.
+      If None only the 'host' part will be used.
 
   Returns:
     A Channel to the remote host through which RPCs may be conducted.
   """
   intermediary_low_channel = _intermediary_low.Channel(
-      '%s:%d' % (host, port), None)
+      '%s:%d' % (host, port) if port else host, None)
   return Channel(intermediary_low_channel._internal, intermediary_low_channel)  # pylint: disable=protected-access
 
 
@@ -203,13 +204,15 @@ def secure_channel(host, port, channel_credentials):
   Args:
     host: The name of the remote host to which to connect.
     port: The port of the remote host to which to connect.
+      If None only the 'host' part will be used.
     channel_credentials: A ChannelCredentials.
 
   Returns:
     A secure Channel to the remote host through which RPCs may be conducted.
   """
   intermediary_low_channel = _intermediary_low.Channel(
-      '%s:%d' % (host, port), channel_credentials._low_credentials)
+      '%s:%d' % (host, port) if port else host,
+      channel_credentials._low_credentials)
   return Channel(intermediary_low_channel._internal, intermediary_low_channel)  # pylint: disable=protected-access
 
 

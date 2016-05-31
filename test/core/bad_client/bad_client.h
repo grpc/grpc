@@ -44,18 +44,24 @@ typedef void (*grpc_bad_client_server_side_validator)(grpc_server *server,
                                                       grpc_completion_queue *cq,
                                                       void *registered_method);
 
+typedef void (*grpc_bad_client_client_stream_validator)(
+    gpr_slice_buffer *incoming);
+
 #define GRPC_BAD_CLIENT_DISCONNECT 1
 
 /* Test runner.
 
    Create a server, and send client_payload to it as bytes from a client.
-   Execute validator in a separate thread to assert that the bytes are
+   Execute server_validator in a separate thread to assert that the bytes are
    handled as expected. */
-void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
-                              const char *client_payload,
-                              size_t client_payload_length, uint32_t flags);
+void grpc_run_bad_client_test(
+    grpc_bad_client_server_side_validator server_validator,
+    grpc_bad_client_client_stream_validator client_validator,
+    const char *client_payload, size_t client_payload_length, uint32_t flags);
 
-#define GRPC_RUN_BAD_CLIENT_TEST(validator, payload, flags) \
-  grpc_run_bad_client_test(validator, payload, sizeof(payload) - 1, flags)
+#define GRPC_RUN_BAD_CLIENT_TEST(server_validator, client_validator, payload, \
+                                 flags)                                       \
+  grpc_run_bad_client_test(server_validator, client_validator, payload,       \
+                           sizeof(payload) - 1, flags)
 
 #endif /* GRPC_TEST_CORE_BAD_CLIENT_BAD_CLIENT_H */

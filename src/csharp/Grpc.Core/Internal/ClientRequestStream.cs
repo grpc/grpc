@@ -50,16 +50,12 @@ namespace Grpc.Core.Internal
 
         public Task WriteAsync(TRequest message)
         {
-            var taskSource = new AsyncCompletionTaskSource<object>();
-            call.StartSendMessage(message, GetWriteFlags(), taskSource.CompletionDelegate);
-            return taskSource.Task;
+            return call.SendMessageAsync(message, GetWriteFlags());
         }
 
         public Task CompleteAsync()
         {
-            var taskSource = new AsyncCompletionTaskSource<object>();
-            call.StartSendCloseFromClient(taskSource.CompletionDelegate);
-            return taskSource.Task;
+            return call.SendCloseFromClientAsync();
         }
 
         public WriteOptions WriteOptions

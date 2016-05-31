@@ -28,9 +28,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ssl_roots_path = File.expand_path('../../../../etc/roots.pem', __FILE__)
-unless ENV['GRPC_DEFAULT_SSL_ROOTS_FILE_PATH']
-  ENV['GRPC_DEFAULT_SSL_ROOTS_FILE_PATH'] = ssl_roots_path
-end
 
 require_relative 'grpc/errors'
 require_relative 'grpc/grpc'
@@ -42,3 +39,11 @@ require_relative 'grpc/generic/active_call'
 require_relative 'grpc/generic/client_stub'
 require_relative 'grpc/generic/service'
 require_relative 'grpc/generic/rpc_server'
+
+begin
+  file = File.open(ssl_roots_path)
+  roots = file.read
+  GRPC::Core::ChannelCredentials.set_default_roots_pem roots
+ensure
+  file.close
+end
