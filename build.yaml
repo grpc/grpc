@@ -165,7 +165,6 @@ filegroups:
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/endpoint.h
   - src/core/lib/iomgr/endpoint_pair.h
-  - src/core/lib/iomgr/ev_poll_and_epoll_posix.h
   - src/core/lib/iomgr/ev_poll_posix.h
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/exec_ctx.h
@@ -241,7 +240,6 @@ filegroups:
   - src/core/lib/iomgr/endpoint.c
   - src/core/lib/iomgr/endpoint_pair_posix.c
   - src/core/lib/iomgr/endpoint_pair_windows.c
-  - src/core/lib/iomgr/ev_poll_and_epoll_posix.c
   - src/core/lib/iomgr/ev_poll_posix.c
   - src/core/lib/iomgr/ev_posix.c
   - src/core/lib/iomgr/exec_ctx.c
@@ -408,31 +406,48 @@ filegroups:
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
   headers:
-  - src/core/lib/security/auth_filters.h
-  - src/core/lib/security/b64.h
-  - src/core/lib/security/credentials.h
-  - src/core/lib/security/handshake.h
-  - src/core/lib/security/json_token.h
-  - src/core/lib/security/jwt_verifier.h
-  - src/core/lib/security/secure_endpoint.h
-  - src/core/lib/security/security_connector.h
-  - src/core/lib/security/security_context.h
+  - src/core/lib/security/context/security_context.h
+  - src/core/lib/security/credentials/composite/composite_credentials.h
+  - src/core/lib/security/credentials/credentials.h
+  - src/core/lib/security/credentials/fake/fake_credentials.h
+  - src/core/lib/security/credentials/google_default/google_default_credentials.h
+  - src/core/lib/security/credentials/iam/iam_credentials.h
+  - src/core/lib/security/credentials/jwt/json_token.h
+  - src/core/lib/security/credentials/jwt/jwt_credentials.h
+  - src/core/lib/security/credentials/jwt/jwt_verifier.h
+  - src/core/lib/security/credentials/oauth2/oauth2_credentials.h
+  - src/core/lib/security/credentials/plugin/plugin_credentials.h
+  - src/core/lib/security/credentials/ssl/ssl_credentials.h
+  - src/core/lib/security/transport/auth_filters.h
+  - src/core/lib/security/transport/handshake.h
+  - src/core/lib/security/transport/secure_endpoint.h
+  - src/core/lib/security/transport/security_connector.h
+  - src/core/lib/security/util/b64.h
+  - src/core/lib/security/util/json_util.h
   src:
   - src/core/lib/http/httpcli_security_connector.c
-  - src/core/lib/security/b64.c
-  - src/core/lib/security/client_auth_filter.c
-  - src/core/lib/security/credentials.c
-  - src/core/lib/security/credentials_metadata.c
-  - src/core/lib/security/credentials_posix.c
-  - src/core/lib/security/credentials_win32.c
-  - src/core/lib/security/google_default_credentials.c
-  - src/core/lib/security/handshake.c
-  - src/core/lib/security/json_token.c
-  - src/core/lib/security/jwt_verifier.c
-  - src/core/lib/security/secure_endpoint.c
-  - src/core/lib/security/security_connector.c
-  - src/core/lib/security/security_context.c
-  - src/core/lib/security/server_auth_filter.c
+  - src/core/lib/security/context/security_context.c
+  - src/core/lib/security/credentials/composite/composite_credentials.c
+  - src/core/lib/security/credentials/credentials.c
+  - src/core/lib/security/credentials/credentials_metadata.c
+  - src/core/lib/security/credentials/fake/fake_credentials.c
+  - src/core/lib/security/credentials/google_default/credentials_posix.c
+  - src/core/lib/security/credentials/google_default/credentials_win32.c
+  - src/core/lib/security/credentials/google_default/google_default_credentials.c
+  - src/core/lib/security/credentials/iam/iam_credentials.c
+  - src/core/lib/security/credentials/jwt/json_token.c
+  - src/core/lib/security/credentials/jwt/jwt_credentials.c
+  - src/core/lib/security/credentials/jwt/jwt_verifier.c
+  - src/core/lib/security/credentials/oauth2/oauth2_credentials.c
+  - src/core/lib/security/credentials/plugin/plugin_credentials.c
+  - src/core/lib/security/credentials/ssl/ssl_credentials.c
+  - src/core/lib/security/transport/client_auth_filter.c
+  - src/core/lib/security/transport/handshake.c
+  - src/core/lib/security/transport/secure_endpoint.c
+  - src/core/lib/security/transport/security_connector.c
+  - src/core/lib/security/transport/server_auth_filter.c
+  - src/core/lib/security/util/b64.c
+  - src/core/lib/security/util/json_util.c
   - src/core/lib/surface/init_secure.c
   secure: true
   uses:
@@ -2341,40 +2356,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: async_streaming_ping_pong_test
-  build: test
-  language: c++
-  src:
-  - test/cpp/qps/async_streaming_ping_pong_test.cc
-  deps:
-  - qps
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - mac
-  - linux
-  - posix
-- name: async_unary_ping_pong_test
-  build: test
-  language: c++
-  src:
-  - test/cpp/qps/async_unary_ping_pong_test.cc
-  deps:
-  - qps
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - mac
-  - linux
-  - posix
 - name: auth_property_iterator_test
   gtest: true
   build: test
@@ -2542,23 +2523,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: generic_async_streaming_ping_pong_test
-  build: test
-  language: c++
-  src:
-  - test/cpp/qps/generic_async_streaming_ping_pong_test.cc
-  deps:
-  - qps
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - mac
-  - linux
-  - posix
 - name: generic_end2end_test
   gtest: true
   build: test
@@ -2830,25 +2794,6 @@ targets:
   - mac
   - linux
   - posix
-- name: qps_test
-  cpu_cost: 10
-  build: test
-  language: c++
-  src:
-  - test/cpp/qps/qps_test.cc
-  deps:
-  - qps
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr_test_util
-  - gpr
-  - grpc++_test_config
-  platforms:
-  - mac
-  - linux
-  - posix
 - name: qps_worker
   build: test
   run: false
@@ -3044,40 +2989,6 @@ targets:
   - gpr_test_util
   - gpr
   - grpc++_test_config
-- name: sync_streaming_ping_pong_test
-  build: test
-  language: c++
-  src:
-  - test/cpp/qps/sync_streaming_ping_pong_test.cc
-  deps:
-  - qps
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - mac
-  - linux
-  - posix
-- name: sync_unary_ping_pong_test
-  build: test
-  language: c++
-  src:
-  - test/cpp/qps/sync_unary_ping_pong_test.cc
-  deps:
-  - qps
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - mac
-  - linux
-  - posix
 - name: thread_stress_test
   gtest: true
   cpu_cost: 100
@@ -3248,8 +3159,8 @@ configs:
     compile_the_world: true
     timeout_multiplier: 4
   mutrace:
-    CPPFLAGS: -O0
-    DEFINES: _DEBUG DEBUG
+    CPPFLAGS: -O3 -fno-omit-frame-pointer
+    DEFINES: NDEBUG
     LDFLAGS: -rdynamic
   opt:
     CPPFLAGS: -O2
@@ -3280,7 +3191,7 @@ configs:
     LDXX: clang++
     compile_the_world: true
     test_environ:
-      UBSAN_OPTIONS: print_stacktrace=1
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
     timeout_multiplier: 1.5
 defaults:
   boringssl:

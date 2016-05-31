@@ -215,9 +215,9 @@ CC_mutrace = $(DEFAULT_CC)
 CXX_mutrace = $(DEFAULT_CXX)
 LD_mutrace = $(DEFAULT_CC)
 LDXX_mutrace = $(DEFAULT_CXX)
-CPPFLAGS_mutrace = -O0
+CPPFLAGS_mutrace = -O3 -fno-omit-frame-pointer
 LDFLAGS_mutrace = -rdynamic
-DEFINES_mutrace = _DEBUG DEBUG
+DEFINES_mutrace = NDEBUG
 
 VALID_CONFIG_memcheck = 1
 CC_memcheck = $(DEFAULT_CC)
@@ -1000,8 +1000,6 @@ uri_parser_test: $(BINDIR)/$(CONFIG)/uri_parser_test
 workqueue_test: $(BINDIR)/$(CONFIG)/workqueue_test
 alarm_cpp_test: $(BINDIR)/$(CONFIG)/alarm_cpp_test
 async_end2end_test: $(BINDIR)/$(CONFIG)/async_end2end_test
-async_streaming_ping_pong_test: $(BINDIR)/$(CONFIG)/async_streaming_ping_pong_test
-async_unary_ping_pong_test: $(BINDIR)/$(CONFIG)/async_unary_ping_pong_test
 auth_property_iterator_test: $(BINDIR)/$(CONFIG)/auth_property_iterator_test
 channel_arguments_test: $(BINDIR)/$(CONFIG)/channel_arguments_test
 cli_call_test: $(BINDIR)/$(CONFIG)/cli_call_test
@@ -1015,7 +1013,6 @@ cxx_slice_test: $(BINDIR)/$(CONFIG)/cxx_slice_test
 cxx_string_ref_test: $(BINDIR)/$(CONFIG)/cxx_string_ref_test
 cxx_time_test: $(BINDIR)/$(CONFIG)/cxx_time_test
 end2end_test: $(BINDIR)/$(CONFIG)/end2end_test
-generic_async_streaming_ping_pong_test: $(BINDIR)/$(CONFIG)/generic_async_streaming_ping_pong_test
 generic_end2end_test: $(BINDIR)/$(CONFIG)/generic_end2end_test
 golden_file_test: $(BINDIR)/$(CONFIG)/golden_file_test
 grpc_cli: $(BINDIR)/$(CONFIG)/grpc_cli
@@ -1036,7 +1033,6 @@ mock_test: $(BINDIR)/$(CONFIG)/mock_test
 qps_interarrival_test: $(BINDIR)/$(CONFIG)/qps_interarrival_test
 qps_json_driver: $(BINDIR)/$(CONFIG)/qps_json_driver
 qps_openloop_test: $(BINDIR)/$(CONFIG)/qps_openloop_test
-qps_test: $(BINDIR)/$(CONFIG)/qps_test
 qps_worker: $(BINDIR)/$(CONFIG)/qps_worker
 reconnect_interop_client: $(BINDIR)/$(CONFIG)/reconnect_interop_client
 reconnect_interop_server: $(BINDIR)/$(CONFIG)/reconnect_interop_server
@@ -1049,8 +1045,6 @@ shutdown_test: $(BINDIR)/$(CONFIG)/shutdown_test
 status_test: $(BINDIR)/$(CONFIG)/status_test
 streaming_throughput_test: $(BINDIR)/$(CONFIG)/streaming_throughput_test
 stress_test: $(BINDIR)/$(CONFIG)/stress_test
-sync_streaming_ping_pong_test: $(BINDIR)/$(CONFIG)/sync_streaming_ping_pong_test
-sync_unary_ping_pong_test: $(BINDIR)/$(CONFIG)/sync_unary_ping_pong_test
 thread_stress_test: $(BINDIR)/$(CONFIG)/thread_stress_test
 zookeeper_test: $(BINDIR)/$(CONFIG)/zookeeper_test
 public_headers_must_be_c89: $(BINDIR)/$(CONFIG)/public_headers_must_be_c89
@@ -1375,8 +1369,6 @@ buildtests_c: privatelibs_c \
 buildtests_cxx: buildtests_zookeeper privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/alarm_cpp_test \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
-  $(BINDIR)/$(CONFIG)/async_streaming_ping_pong_test \
-  $(BINDIR)/$(CONFIG)/async_unary_ping_pong_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
   $(BINDIR)/$(CONFIG)/channel_arguments_test \
   $(BINDIR)/$(CONFIG)/cli_call_test \
@@ -1390,7 +1382,6 @@ buildtests_cxx: buildtests_zookeeper privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/cxx_string_ref_test \
   $(BINDIR)/$(CONFIG)/cxx_time_test \
   $(BINDIR)/$(CONFIG)/end2end_test \
-  $(BINDIR)/$(CONFIG)/generic_async_streaming_ping_pong_test \
   $(BINDIR)/$(CONFIG)/generic_end2end_test \
   $(BINDIR)/$(CONFIG)/golden_file_test \
   $(BINDIR)/$(CONFIG)/grpc_cli \
@@ -1405,7 +1396,6 @@ buildtests_cxx: buildtests_zookeeper privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/qps_interarrival_test \
   $(BINDIR)/$(CONFIG)/qps_json_driver \
   $(BINDIR)/$(CONFIG)/qps_openloop_test \
-  $(BINDIR)/$(CONFIG)/qps_test \
   $(BINDIR)/$(CONFIG)/qps_worker \
   $(BINDIR)/$(CONFIG)/reconnect_interop_client \
   $(BINDIR)/$(CONFIG)/reconnect_interop_server \
@@ -1418,8 +1408,6 @@ buildtests_cxx: buildtests_zookeeper privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/status_test \
   $(BINDIR)/$(CONFIG)/streaming_throughput_test \
   $(BINDIR)/$(CONFIG)/stress_test \
-  $(BINDIR)/$(CONFIG)/sync_streaming_ping_pong_test \
-  $(BINDIR)/$(CONFIG)/sync_unary_ping_pong_test \
   $(BINDIR)/$(CONFIG)/thread_stress_test \
   $(BINDIR)/$(CONFIG)/boringssl_aes_test \
   $(BINDIR)/$(CONFIG)/boringssl_asn1_test \
@@ -1695,10 +1683,6 @@ test_cxx: test_zookeeper buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/alarm_cpp_test || ( echo test alarm_cpp_test failed ; exit 1 )
 	$(E) "[RUN]     Testing async_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/async_end2end_test || ( echo test async_end2end_test failed ; exit 1 )
-	$(E) "[RUN]     Testing async_streaming_ping_pong_test"
-	$(Q) $(BINDIR)/$(CONFIG)/async_streaming_ping_pong_test || ( echo test async_streaming_ping_pong_test failed ; exit 1 )
-	$(E) "[RUN]     Testing async_unary_ping_pong_test"
-	$(Q) $(BINDIR)/$(CONFIG)/async_unary_ping_pong_test || ( echo test async_unary_ping_pong_test failed ; exit 1 )
 	$(E) "[RUN]     Testing auth_property_iterator_test"
 	$(Q) $(BINDIR)/$(CONFIG)/auth_property_iterator_test || ( echo test auth_property_iterator_test failed ; exit 1 )
 	$(E) "[RUN]     Testing channel_arguments_test"
@@ -1723,8 +1707,6 @@ test_cxx: test_zookeeper buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/cxx_time_test || ( echo test cxx_time_test failed ; exit 1 )
 	$(E) "[RUN]     Testing end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/end2end_test || ( echo test end2end_test failed ; exit 1 )
-	$(E) "[RUN]     Testing generic_async_streaming_ping_pong_test"
-	$(Q) $(BINDIR)/$(CONFIG)/generic_async_streaming_ping_pong_test || ( echo test generic_async_streaming_ping_pong_test failed ; exit 1 )
 	$(E) "[RUN]     Testing generic_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/generic_end2end_test || ( echo test generic_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing golden_file_test"
@@ -1739,8 +1721,6 @@ test_cxx: test_zookeeper buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/mock_test || ( echo test mock_test failed ; exit 1 )
 	$(E) "[RUN]     Testing qps_openloop_test"
 	$(Q) $(BINDIR)/$(CONFIG)/qps_openloop_test || ( echo test qps_openloop_test failed ; exit 1 )
-	$(E) "[RUN]     Testing qps_test"
-	$(Q) $(BINDIR)/$(CONFIG)/qps_test || ( echo test qps_test failed ; exit 1 )
 	$(E) "[RUN]     Testing secure_auth_context_test"
 	$(Q) $(BINDIR)/$(CONFIG)/secure_auth_context_test || ( echo test secure_auth_context_test failed ; exit 1 )
 	$(E) "[RUN]     Testing secure_sync_unary_ping_pong_test"
@@ -1755,10 +1735,6 @@ test_cxx: test_zookeeper buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/status_test || ( echo test status_test failed ; exit 1 )
 	$(E) "[RUN]     Testing streaming_throughput_test"
 	$(Q) $(BINDIR)/$(CONFIG)/streaming_throughput_test || ( echo test streaming_throughput_test failed ; exit 1 )
-	$(E) "[RUN]     Testing sync_streaming_ping_pong_test"
-	$(Q) $(BINDIR)/$(CONFIG)/sync_streaming_ping_pong_test || ( echo test sync_streaming_ping_pong_test failed ; exit 1 )
-	$(E) "[RUN]     Testing sync_unary_ping_pong_test"
-	$(Q) $(BINDIR)/$(CONFIG)/sync_unary_ping_pong_test || ( echo test sync_unary_ping_pong_test failed ; exit 1 )
 	$(E) "[RUN]     Testing thread_stress_test"
 	$(Q) $(BINDIR)/$(CONFIG)/thread_stress_test || ( echo test thread_stress_test failed ; exit 1 )
 
@@ -1872,7 +1848,7 @@ $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc:
 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_zookeeper.pc:
 	$(E) "[MAKE]    Generating $@"
 	$(Q) mkdir -p $(@D)
-	$(Q) echo -e "$(GRPC_ZOOKEEPER_PC_FILE)" >$@
+	$(Q) echo "$(GRPC_ZOOKEEPER_PC_FILE)" | tr , '\n' >$@
 
 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc:
 	$(E) "[MAKE]    Generating $@"
@@ -2510,7 +2486,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/endpoint.c \
     src/core/lib/iomgr/endpoint_pair_posix.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
-    src/core/lib/iomgr/ev_poll_and_epoll_posix.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
@@ -2600,20 +2575,28 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/transport/writing.c \
     src/core/ext/transport/chttp2/alpn/alpn.c \
     src/core/lib/http/httpcli_security_connector.c \
-    src/core/lib/security/b64.c \
-    src/core/lib/security/client_auth_filter.c \
-    src/core/lib/security/credentials.c \
-    src/core/lib/security/credentials_metadata.c \
-    src/core/lib/security/credentials_posix.c \
-    src/core/lib/security/credentials_win32.c \
-    src/core/lib/security/google_default_credentials.c \
-    src/core/lib/security/handshake.c \
-    src/core/lib/security/json_token.c \
-    src/core/lib/security/jwt_verifier.c \
-    src/core/lib/security/secure_endpoint.c \
-    src/core/lib/security/security_connector.c \
-    src/core/lib/security/security_context.c \
-    src/core/lib/security/server_auth_filter.c \
+    src/core/lib/security/context/security_context.c \
+    src/core/lib/security/credentials/composite/composite_credentials.c \
+    src/core/lib/security/credentials/credentials.c \
+    src/core/lib/security/credentials/credentials_metadata.c \
+    src/core/lib/security/credentials/fake/fake_credentials.c \
+    src/core/lib/security/credentials/google_default/credentials_posix.c \
+    src/core/lib/security/credentials/google_default/credentials_win32.c \
+    src/core/lib/security/credentials/google_default/google_default_credentials.c \
+    src/core/lib/security/credentials/iam/iam_credentials.c \
+    src/core/lib/security/credentials/jwt/json_token.c \
+    src/core/lib/security/credentials/jwt/jwt_credentials.c \
+    src/core/lib/security/credentials/jwt/jwt_verifier.c \
+    src/core/lib/security/credentials/oauth2/oauth2_credentials.c \
+    src/core/lib/security/credentials/plugin/plugin_credentials.c \
+    src/core/lib/security/credentials/ssl/ssl_credentials.c \
+    src/core/lib/security/transport/client_auth_filter.c \
+    src/core/lib/security/transport/handshake.c \
+    src/core/lib/security/transport/secure_endpoint.c \
+    src/core/lib/security/transport/security_connector.c \
+    src/core/lib/security/transport/server_auth_filter.c \
+    src/core/lib/security/util/b64.c \
+    src/core/lib/security/util/json_util.c \
     src/core/lib/surface/init_secure.c \
     src/core/lib/tsi/fake_transport_security.c \
     src/core/lib/tsi/ssl_transport_security.c \
@@ -2858,7 +2841,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/endpoint.c \
     src/core/lib/iomgr/endpoint_pair_posix.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
-    src/core/lib/iomgr/ev_poll_and_epoll_posix.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
@@ -9719,92 +9701,6 @@ endif
 endif
 
 
-ASYNC_STREAMING_PING_PONG_TEST_SRC = \
-    test/cpp/qps/async_streaming_ping_pong_test.cc \
-
-ASYNC_STREAMING_PING_PONG_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ASYNC_STREAMING_PING_PONG_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/async_streaming_ping_pong_test: openssl_dep_error
-
-else
-
-
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
-
-$(BINDIR)/$(CONFIG)/async_streaming_ping_pong_test: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/async_streaming_ping_pong_test: $(PROTOBUF_DEP) $(ASYNC_STREAMING_PING_PONG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(ASYNC_STREAMING_PING_PONG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/async_streaming_ping_pong_test
-
-endif
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/async_streaming_ping_pong_test.o:  $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_async_streaming_ping_pong_test: $(ASYNC_STREAMING_PING_PONG_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(ASYNC_STREAMING_PING_PONG_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-ASYNC_UNARY_PING_PONG_TEST_SRC = \
-    test/cpp/qps/async_unary_ping_pong_test.cc \
-
-ASYNC_UNARY_PING_PONG_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ASYNC_UNARY_PING_PONG_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/async_unary_ping_pong_test: openssl_dep_error
-
-else
-
-
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
-
-$(BINDIR)/$(CONFIG)/async_unary_ping_pong_test: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/async_unary_ping_pong_test: $(PROTOBUF_DEP) $(ASYNC_UNARY_PING_PONG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(ASYNC_UNARY_PING_PONG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/async_unary_ping_pong_test
-
-endif
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/async_unary_ping_pong_test.o:  $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_async_unary_ping_pong_test: $(ASYNC_UNARY_PING_PONG_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(ASYNC_UNARY_PING_PONG_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 AUTH_PROPERTY_ITERATOR_TEST_SRC = \
     test/cpp/common/auth_property_iterator_test.cc \
 
@@ -10406,49 +10302,6 @@ deps_end2end_test: $(END2END_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(END2END_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-GENERIC_ASYNC_STREAMING_PING_PONG_TEST_SRC = \
-    test/cpp/qps/generic_async_streaming_ping_pong_test.cc \
-
-GENERIC_ASYNC_STREAMING_PING_PONG_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GENERIC_ASYNC_STREAMING_PING_PONG_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/generic_async_streaming_ping_pong_test: openssl_dep_error
-
-else
-
-
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
-
-$(BINDIR)/$(CONFIG)/generic_async_streaming_ping_pong_test: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/generic_async_streaming_ping_pong_test: $(PROTOBUF_DEP) $(GENERIC_ASYNC_STREAMING_PING_PONG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(GENERIC_ASYNC_STREAMING_PING_PONG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/generic_async_streaming_ping_pong_test
-
-endif
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/generic_async_streaming_ping_pong_test.o:  $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_generic_async_streaming_ping_pong_test: $(GENERIC_ASYNC_STREAMING_PING_PONG_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(GENERIC_ASYNC_STREAMING_PING_PONG_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -11232,49 +11085,6 @@ endif
 endif
 
 
-QPS_TEST_SRC = \
-    test/cpp/qps/qps_test.cc \
-
-QPS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(QPS_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/qps_test: openssl_dep_error
-
-else
-
-
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
-
-$(BINDIR)/$(CONFIG)/qps_test: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/qps_test: $(PROTOBUF_DEP) $(QPS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(QPS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/qps_test
-
-endif
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/qps_test.o:  $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
-
-deps_qps_test: $(QPS_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(QPS_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 QPS_WORKER_SRC = \
     test/cpp/qps/worker.cc \
 
@@ -11834,92 +11644,6 @@ $(OBJDIR)/$(CONFIG)/test/cpp/interop/interop_client.o: $(GENDIR)/src/proto/grpc/
 $(OBJDIR)/$(CONFIG)/test/cpp/interop/stress_interop_client.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
 $(OBJDIR)/$(CONFIG)/test/cpp/interop/stress_test.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
 $(OBJDIR)/$(CONFIG)/test/cpp/util/metrics_server.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
-
-
-SYNC_STREAMING_PING_PONG_TEST_SRC = \
-    test/cpp/qps/sync_streaming_ping_pong_test.cc \
-
-SYNC_STREAMING_PING_PONG_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SYNC_STREAMING_PING_PONG_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/sync_streaming_ping_pong_test: openssl_dep_error
-
-else
-
-
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
-
-$(BINDIR)/$(CONFIG)/sync_streaming_ping_pong_test: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/sync_streaming_ping_pong_test: $(PROTOBUF_DEP) $(SYNC_STREAMING_PING_PONG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(SYNC_STREAMING_PING_PONG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/sync_streaming_ping_pong_test
-
-endif
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/sync_streaming_ping_pong_test.o:  $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_sync_streaming_ping_pong_test: $(SYNC_STREAMING_PING_PONG_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(SYNC_STREAMING_PING_PONG_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-SYNC_UNARY_PING_PONG_TEST_SRC = \
-    test/cpp/qps/sync_unary_ping_pong_test.cc \
-
-SYNC_UNARY_PING_PONG_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SYNC_UNARY_PING_PONG_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/sync_unary_ping_pong_test: openssl_dep_error
-
-else
-
-
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
-
-$(BINDIR)/$(CONFIG)/sync_unary_ping_pong_test: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/sync_unary_ping_pong_test: $(PROTOBUF_DEP) $(SYNC_UNARY_PING_PONG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(SYNC_UNARY_PING_PONG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/sync_unary_ping_pong_test
-
-endif
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/sync_unary_ping_pong_test.o:  $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_sync_unary_ping_pong_test: $(SYNC_UNARY_PING_PONG_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(SYNC_UNARY_PING_PONG_TEST_OBJS:.o=.dep)
-endif
-endif
 
 
 THREAD_STRESS_TEST_SRC = \
@@ -14411,20 +14135,28 @@ src/core/ext/transport/cronet/client/secure/cronet_channel_create.c: $(OPENSSL_D
 src/core/ext/transport/cronet/transport/cronet_api_dummy.c: $(OPENSSL_DEP)
 src/core/ext/transport/cronet/transport/cronet_transport.c: $(OPENSSL_DEP)
 src/core/lib/http/httpcli_security_connector.c: $(OPENSSL_DEP)
-src/core/lib/security/b64.c: $(OPENSSL_DEP)
-src/core/lib/security/client_auth_filter.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials_metadata.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials_posix.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials_win32.c: $(OPENSSL_DEP)
-src/core/lib/security/google_default_credentials.c: $(OPENSSL_DEP)
-src/core/lib/security/handshake.c: $(OPENSSL_DEP)
-src/core/lib/security/json_token.c: $(OPENSSL_DEP)
-src/core/lib/security/jwt_verifier.c: $(OPENSSL_DEP)
-src/core/lib/security/secure_endpoint.c: $(OPENSSL_DEP)
-src/core/lib/security/security_connector.c: $(OPENSSL_DEP)
-src/core/lib/security/security_context.c: $(OPENSSL_DEP)
-src/core/lib/security/server_auth_filter.c: $(OPENSSL_DEP)
+src/core/lib/security/context/security_context.c: $(OPENSSL_DEP)
+src/core/lib/security/credentials/composite/composite_credentials.c: $(OPENSSL_DEP)
+src/core/lib/security/credentials/credentials.c: $(OPENSSL_DEP)
+src/core/lib/security/credentials/credentials_metadata.c: $(OPENSSL_DEP)
+src/core/lib/security/credentials/fake/fake_credentials.c: $(OPENSSL_DEP)
+src/core/lib/security/credentials/google_default/credentials_posix.c: $(OPENSSL_DEP)
+src/core/lib/security/credentials/google_default/credentials_win32.c: $(OPENSSL_DEP)
+src/core/lib/security/credentials/google_default/google_default_credentials.c: $(OPENSSL_DEP)
+src/core/lib/security/credentials/iam/iam_credentials.c: $(OPENSSL_DEP)
+src/core/lib/security/credentials/jwt/json_token.c: $(OPENSSL_DEP)
+src/core/lib/security/credentials/jwt/jwt_credentials.c: $(OPENSSL_DEP)
+src/core/lib/security/credentials/jwt/jwt_verifier.c: $(OPENSSL_DEP)
+src/core/lib/security/credentials/oauth2/oauth2_credentials.c: $(OPENSSL_DEP)
+src/core/lib/security/credentials/plugin/plugin_credentials.c: $(OPENSSL_DEP)
+src/core/lib/security/credentials/ssl/ssl_credentials.c: $(OPENSSL_DEP)
+src/core/lib/security/transport/client_auth_filter.c: $(OPENSSL_DEP)
+src/core/lib/security/transport/handshake.c: $(OPENSSL_DEP)
+src/core/lib/security/transport/secure_endpoint.c: $(OPENSSL_DEP)
+src/core/lib/security/transport/security_connector.c: $(OPENSSL_DEP)
+src/core/lib/security/transport/server_auth_filter.c: $(OPENSSL_DEP)
+src/core/lib/security/util/b64.c: $(OPENSSL_DEP)
+src/core/lib/security/util/json_util.c: $(OPENSSL_DEP)
 src/core/lib/surface/init_secure.c: $(OPENSSL_DEP)
 src/core/lib/tsi/fake_transport_security.c: $(OPENSSL_DEP)
 src/core/lib/tsi/ssl_transport_security.c: $(OPENSSL_DEP)

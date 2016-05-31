@@ -101,7 +101,7 @@ corresponding reasons. Empty cells denote disallowed transitions.
     <td>Shutdown triggered by application.</td>
   </tr>
   <tr>
-    <th>FATAL_FAILURE</th>
+    <th>SHUTDOWN</th>
     <td></td>
     <td></td>
     <td></td>
