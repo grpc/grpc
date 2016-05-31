@@ -458,6 +458,7 @@ ServerReflectionRequest* ServerReflectionRequest::New(::google::protobuf::Arena*
 }
 
 void ServerReflectionRequest::clear_message_request() {
+// @@protoc_insertion_point(one_of_clear_start:grpc.reflection.v1alpha.ServerReflectionRequest)
   switch(message_request_case()) {
     case kFileByFilename: {
       message_request_.file_by_filename_.DestroyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
@@ -488,13 +489,14 @@ void ServerReflectionRequest::clear_message_request() {
 
 
 void ServerReflectionRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:grpc.reflection.v1alpha.ServerReflectionRequest)
   host_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   clear_message_request();
 }
 
 bool ServerReflectionRequest::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream* input) {
-#define DO_(EXPRESSION) if (!(EXPRESSION)) goto failure
+#define DO_(EXPRESSION) if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
   // @@protoc_insertion_point(parse_start:grpc.reflection.v1alpha.ServerReflectionRequest)
   for (;;) {
@@ -752,6 +754,7 @@ void ServerReflectionRequest::SerializeWithCachedSizes(
 }
 
 int ServerReflectionRequest::ByteSize() const {
+// @@protoc_insertion_point(message_byte_size_start:grpc.reflection.v1alpha.ServerReflectionRequest)
   int total_size = 0;
 
   // optional string host = 1;
@@ -808,18 +811,22 @@ int ServerReflectionRequest::ByteSize() const {
 }
 
 void ServerReflectionRequest::MergeFrom(const ::google::protobuf::Message& from) {
+// @@protoc_insertion_point(generalized_merge_from_start:grpc.reflection.v1alpha.ServerReflectionRequest)
   if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
   const ServerReflectionRequest* source = 
       ::google::protobuf::internal::DynamicCastToGenerated<const ServerReflectionRequest>(
           &from);
   if (source == NULL) {
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:grpc.reflection.v1alpha.ServerReflectionRequest)
     ::google::protobuf::internal::ReflectionOps::Merge(from, this);
   } else {
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:grpc.reflection.v1alpha.ServerReflectionRequest)
     MergeFrom(*source);
   }
 }
 
 void ServerReflectionRequest::MergeFrom(const ServerReflectionRequest& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:grpc.reflection.v1alpha.ServerReflectionRequest)
   if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
   switch (from.message_request_case()) {
     case kFileByFilename: {
@@ -853,12 +860,14 @@ void ServerReflectionRequest::MergeFrom(const ServerReflectionRequest& from) {
 }
 
 void ServerReflectionRequest::CopyFrom(const ::google::protobuf::Message& from) {
+// @@protoc_insertion_point(generalized_copy_from_start:grpc.reflection.v1alpha.ServerReflectionRequest)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void ServerReflectionRequest::CopyFrom(const ServerReflectionRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:grpc.reflection.v1alpha.ServerReflectionRequest)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -922,6 +931,7 @@ void ServerReflectionRequest::clear_host() {
   return host_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
  ::std::string* ServerReflectionRequest::release_host() {
+  // @@protoc_insertion_point(field_release:grpc.reflection.v1alpha.ServerReflectionRequest.host)
   
   return host_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
@@ -995,6 +1005,7 @@ void ServerReflectionRequest::clear_file_by_filename() {
   return message_request_.file_by_filename_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
  ::std::string* ServerReflectionRequest::release_file_by_filename() {
+  // @@protoc_insertion_point(field_release:grpc.reflection.v1alpha.ServerReflectionRequest.file_by_filename)
   if (has_file_by_filename()) {
     clear_has_message_request();
     return message_request_.file_by_filename_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
@@ -1075,6 +1086,7 @@ void ServerReflectionRequest::clear_file_containing_symbol() {
   return message_request_.file_containing_symbol_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
  ::std::string* ServerReflectionRequest::release_file_containing_symbol() {
+  // @@protoc_insertion_point(field_release:grpc.reflection.v1alpha.ServerReflectionRequest.file_containing_symbol)
   if (has_file_containing_symbol()) {
     clear_has_message_request();
     return message_request_.file_containing_symbol_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
@@ -1124,6 +1136,7 @@ void ServerReflectionRequest::clear_file_containing_extension() {
   return message_request_.file_containing_extension_;
 }
 ::grpc::reflection::v1alpha::ExtensionRequest* ServerReflectionRequest::release_file_containing_extension() {
+  // @@protoc_insertion_point(field_release:grpc.reflection.v1alpha.ServerReflectionRequest.file_containing_extension)
   if (has_file_containing_extension()) {
     clear_has_message_request();
     ::grpc::reflection::v1alpha::ExtensionRequest* temp = message_request_.file_containing_extension_;
@@ -1202,6 +1215,7 @@ void ServerReflectionRequest::clear_all_extension_numbers_of_type() {
   return message_request_.all_extension_numbers_of_type_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
  ::std::string* ServerReflectionRequest::release_all_extension_numbers_of_type() {
+  // @@protoc_insertion_point(field_release:grpc.reflection.v1alpha.ServerReflectionRequest.all_extension_numbers_of_type)
   if (has_all_extension_numbers_of_type()) {
     clear_has_message_request();
     return message_request_.all_extension_numbers_of_type_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
@@ -1282,6 +1296,7 @@ void ServerReflectionRequest::clear_list_services() {
   return message_request_.list_services_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
  ::std::string* ServerReflectionRequest::release_list_services() {
+  // @@protoc_insertion_point(field_release:grpc.reflection.v1alpha.ServerReflectionRequest.list_services)
   if (has_list_services()) {
     clear_has_message_request();
     return message_request_.list_services_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
@@ -1383,13 +1398,14 @@ ExtensionRequest* ExtensionRequest::New(::google::protobuf::Arena* arena) const 
 }
 
 void ExtensionRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:grpc.reflection.v1alpha.ExtensionRequest)
   containing_type_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   extension_number_ = 0;
 }
 
 bool ExtensionRequest::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream* input) {
-#define DO_(EXPRESSION) if (!(EXPRESSION)) goto failure
+#define DO_(EXPRESSION) if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
   // @@protoc_insertion_point(parse_start:grpc.reflection.v1alpha.ExtensionRequest)
   for (;;) {
@@ -1494,6 +1510,7 @@ void ExtensionRequest::SerializeWithCachedSizes(
 }
 
 int ExtensionRequest::ByteSize() const {
+// @@protoc_insertion_point(message_byte_size_start:grpc.reflection.v1alpha.ExtensionRequest)
   int total_size = 0;
 
   // optional string containing_type = 1;
@@ -1517,18 +1534,22 @@ int ExtensionRequest::ByteSize() const {
 }
 
 void ExtensionRequest::MergeFrom(const ::google::protobuf::Message& from) {
+// @@protoc_insertion_point(generalized_merge_from_start:grpc.reflection.v1alpha.ExtensionRequest)
   if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
   const ExtensionRequest* source = 
       ::google::protobuf::internal::DynamicCastToGenerated<const ExtensionRequest>(
           &from);
   if (source == NULL) {
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:grpc.reflection.v1alpha.ExtensionRequest)
     ::google::protobuf::internal::ReflectionOps::Merge(from, this);
   } else {
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:grpc.reflection.v1alpha.ExtensionRequest)
     MergeFrom(*source);
   }
 }
 
 void ExtensionRequest::MergeFrom(const ExtensionRequest& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:grpc.reflection.v1alpha.ExtensionRequest)
   if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
   if (from.containing_type().size() > 0) {
 
@@ -1540,12 +1561,14 @@ void ExtensionRequest::MergeFrom(const ExtensionRequest& from) {
 }
 
 void ExtensionRequest::CopyFrom(const ::google::protobuf::Message& from) {
+// @@protoc_insertion_point(generalized_copy_from_start:grpc.reflection.v1alpha.ExtensionRequest)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void ExtensionRequest::CopyFrom(const ExtensionRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:grpc.reflection.v1alpha.ExtensionRequest)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -1608,6 +1631,7 @@ void ExtensionRequest::clear_containing_type() {
   return containing_type_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
  ::std::string* ExtensionRequest::release_containing_type() {
+  // @@protoc_insertion_point(field_release:grpc.reflection.v1alpha.ExtensionRequest.containing_type)
   
   return containing_type_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
@@ -1721,6 +1745,7 @@ ServerReflectionResponse* ServerReflectionResponse::New(::google::protobuf::Aren
 }
 
 void ServerReflectionResponse::clear_message_response() {
+// @@protoc_insertion_point(one_of_clear_start:grpc.reflection.v1alpha.ServerReflectionResponse)
   switch(message_response_case()) {
     case kFileDescriptorResponse: {
       delete message_response_.file_descriptor_response_;
@@ -1747,6 +1772,7 @@ void ServerReflectionResponse::clear_message_response() {
 
 
 void ServerReflectionResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:grpc.reflection.v1alpha.ServerReflectionResponse)
   valid_host_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   if (GetArenaNoVirtual() == NULL && original_request_ != NULL) delete original_request_;
   original_request_ = NULL;
@@ -1755,7 +1781,7 @@ void ServerReflectionResponse::Clear() {
 
 bool ServerReflectionResponse::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream* input) {
-#define DO_(EXPRESSION) if (!(EXPRESSION)) goto failure
+#define DO_(EXPRESSION) if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
   // @@protoc_insertion_point(parse_start:grpc.reflection.v1alpha.ServerReflectionResponse)
   for (;;) {
@@ -1965,6 +1991,7 @@ void ServerReflectionResponse::SerializeWithCachedSizes(
 }
 
 int ServerReflectionResponse::ByteSize() const {
+// @@protoc_insertion_point(message_byte_size_start:grpc.reflection.v1alpha.ServerReflectionResponse)
   int total_size = 0;
 
   // optional string valid_host = 1;
@@ -2021,18 +2048,22 @@ int ServerReflectionResponse::ByteSize() const {
 }
 
 void ServerReflectionResponse::MergeFrom(const ::google::protobuf::Message& from) {
+// @@protoc_insertion_point(generalized_merge_from_start:grpc.reflection.v1alpha.ServerReflectionResponse)
   if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
   const ServerReflectionResponse* source = 
       ::google::protobuf::internal::DynamicCastToGenerated<const ServerReflectionResponse>(
           &from);
   if (source == NULL) {
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:grpc.reflection.v1alpha.ServerReflectionResponse)
     ::google::protobuf::internal::ReflectionOps::Merge(from, this);
   } else {
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:grpc.reflection.v1alpha.ServerReflectionResponse)
     MergeFrom(*source);
   }
 }
 
 void ServerReflectionResponse::MergeFrom(const ServerReflectionResponse& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:grpc.reflection.v1alpha.ServerReflectionResponse)
   if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
   switch (from.message_response_case()) {
     case kFileDescriptorResponse: {
@@ -2065,12 +2096,14 @@ void ServerReflectionResponse::MergeFrom(const ServerReflectionResponse& from) {
 }
 
 void ServerReflectionResponse::CopyFrom(const ::google::protobuf::Message& from) {
+// @@protoc_insertion_point(generalized_copy_from_start:grpc.reflection.v1alpha.ServerReflectionResponse)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void ServerReflectionResponse::CopyFrom(const ServerReflectionResponse& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:grpc.reflection.v1alpha.ServerReflectionResponse)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -2135,6 +2168,7 @@ void ServerReflectionResponse::clear_valid_host() {
   return valid_host_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
  ::std::string* ServerReflectionResponse::release_valid_host() {
+  // @@protoc_insertion_point(field_release:grpc.reflection.v1alpha.ServerReflectionResponse.valid_host)
   
   return valid_host_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
@@ -2169,6 +2203,7 @@ const ::grpc::reflection::v1alpha::ServerReflectionRequest& ServerReflectionResp
   return original_request_;
 }
 ::grpc::reflection::v1alpha::ServerReflectionRequest* ServerReflectionResponse::release_original_request() {
+  // @@protoc_insertion_point(field_release:grpc.reflection.v1alpha.ServerReflectionResponse.original_request)
   
   ::grpc::reflection::v1alpha::ServerReflectionRequest* temp = original_request_;
   original_request_ = NULL;
@@ -2214,6 +2249,7 @@ void ServerReflectionResponse::clear_file_descriptor_response() {
   return message_response_.file_descriptor_response_;
 }
 ::grpc::reflection::v1alpha::FileDescriptorResponse* ServerReflectionResponse::release_file_descriptor_response() {
+  // @@protoc_insertion_point(field_release:grpc.reflection.v1alpha.ServerReflectionResponse.file_descriptor_response)
   if (has_file_descriptor_response()) {
     clear_has_message_response();
     ::grpc::reflection::v1alpha::FileDescriptorResponse* temp = message_response_.file_descriptor_response_;
@@ -2261,6 +2297,7 @@ void ServerReflectionResponse::clear_all_extension_numbers_response() {
   return message_response_.all_extension_numbers_response_;
 }
 ::grpc::reflection::v1alpha::ExtensionNumberResponse* ServerReflectionResponse::release_all_extension_numbers_response() {
+  // @@protoc_insertion_point(field_release:grpc.reflection.v1alpha.ServerReflectionResponse.all_extension_numbers_response)
   if (has_all_extension_numbers_response()) {
     clear_has_message_response();
     ::grpc::reflection::v1alpha::ExtensionNumberResponse* temp = message_response_.all_extension_numbers_response_;
@@ -2308,6 +2345,7 @@ void ServerReflectionResponse::clear_list_services_response() {
   return message_response_.list_services_response_;
 }
 ::grpc::reflection::v1alpha::ListServiceResponse* ServerReflectionResponse::release_list_services_response() {
+  // @@protoc_insertion_point(field_release:grpc.reflection.v1alpha.ServerReflectionResponse.list_services_response)
   if (has_list_services_response()) {
     clear_has_message_response();
     ::grpc::reflection::v1alpha::ListServiceResponse* temp = message_response_.list_services_response_;
@@ -2355,6 +2393,7 @@ void ServerReflectionResponse::clear_error_response() {
   return message_response_.error_response_;
 }
 ::grpc::reflection::v1alpha::ErrorResponse* ServerReflectionResponse::release_error_response() {
+  // @@protoc_insertion_point(field_release:grpc.reflection.v1alpha.ServerReflectionResponse.error_response)
   if (has_error_response()) {
     clear_has_message_response();
     ::grpc::reflection::v1alpha::ErrorResponse* temp = message_response_.error_response_;
@@ -2450,12 +2489,13 @@ FileDescriptorResponse* FileDescriptorResponse::New(::google::protobuf::Arena* a
 }
 
 void FileDescriptorResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:grpc.reflection.v1alpha.FileDescriptorResponse)
   file_descriptor_proto_.Clear();
 }
 
 bool FileDescriptorResponse::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream* input) {
-#define DO_(EXPRESSION) if (!(EXPRESSION)) goto failure
+#define DO_(EXPRESSION) if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
   // @@protoc_insertion_point(parse_start:grpc.reflection.v1alpha.FileDescriptorResponse)
   for (;;) {
@@ -2524,6 +2564,7 @@ void FileDescriptorResponse::SerializeWithCachedSizes(
 }
 
 int FileDescriptorResponse::ByteSize() const {
+// @@protoc_insertion_point(message_byte_size_start:grpc.reflection.v1alpha.FileDescriptorResponse)
   int total_size = 0;
 
   // repeated bytes file_descriptor_proto = 1;
@@ -2540,29 +2581,35 @@ int FileDescriptorResponse::ByteSize() const {
 }
 
 void FileDescriptorResponse::MergeFrom(const ::google::protobuf::Message& from) {
+// @@protoc_insertion_point(generalized_merge_from_start:grpc.reflection.v1alpha.FileDescriptorResponse)
   if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
   const FileDescriptorResponse* source = 
       ::google::protobuf::internal::DynamicCastToGenerated<const FileDescriptorResponse>(
           &from);
   if (source == NULL) {
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:grpc.reflection.v1alpha.FileDescriptorResponse)
     ::google::protobuf::internal::ReflectionOps::Merge(from, this);
   } else {
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:grpc.reflection.v1alpha.FileDescriptorResponse)
     MergeFrom(*source);
   }
 }
 
 void FileDescriptorResponse::MergeFrom(const FileDescriptorResponse& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:grpc.reflection.v1alpha.FileDescriptorResponse)
   if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
   file_descriptor_proto_.MergeFrom(from.file_descriptor_proto_);
 }
 
 void FileDescriptorResponse::CopyFrom(const ::google::protobuf::Message& from) {
+// @@protoc_insertion_point(generalized_copy_from_start:grpc.reflection.v1alpha.FileDescriptorResponse)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void FileDescriptorResponse::CopyFrom(const FileDescriptorResponse& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:grpc.reflection.v1alpha.FileDescriptorResponse)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -2623,6 +2670,7 @@ void FileDescriptorResponse::clear_file_descriptor_proto() {
   // @@protoc_insertion_point(field_set_pointer:grpc.reflection.v1alpha.FileDescriptorResponse.file_descriptor_proto)
 }
  ::std::string* FileDescriptorResponse::add_file_descriptor_proto() {
+  // @@protoc_insertion_point(field_add_mutable:grpc.reflection.v1alpha.FileDescriptorResponse.file_descriptor_proto)
   return file_descriptor_proto_.Add();
 }
  void FileDescriptorResponse::add_file_descriptor_proto(const ::std::string& value) {
@@ -2719,13 +2767,14 @@ ExtensionNumberResponse* ExtensionNumberResponse::New(::google::protobuf::Arena*
 }
 
 void ExtensionNumberResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:grpc.reflection.v1alpha.ExtensionNumberResponse)
   base_type_name_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   extension_number_.Clear();
 }
 
 bool ExtensionNumberResponse::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream* input) {
-#define DO_(EXPRESSION) if (!(EXPRESSION)) goto failure
+#define DO_(EXPRESSION) if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
   // @@protoc_insertion_point(parse_start:grpc.reflection.v1alpha.ExtensionNumberResponse)
   for (;;) {
@@ -2847,6 +2896,7 @@ void ExtensionNumberResponse::SerializeWithCachedSizes(
 }
 
 int ExtensionNumberResponse::ByteSize() const {
+// @@protoc_insertion_point(message_byte_size_start:grpc.reflection.v1alpha.ExtensionNumberResponse)
   int total_size = 0;
 
   // optional string base_type_name = 1;
@@ -2880,18 +2930,22 @@ int ExtensionNumberResponse::ByteSize() const {
 }
 
 void ExtensionNumberResponse::MergeFrom(const ::google::protobuf::Message& from) {
+// @@protoc_insertion_point(generalized_merge_from_start:grpc.reflection.v1alpha.ExtensionNumberResponse)
   if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
   const ExtensionNumberResponse* source = 
       ::google::protobuf::internal::DynamicCastToGenerated<const ExtensionNumberResponse>(
           &from);
   if (source == NULL) {
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:grpc.reflection.v1alpha.ExtensionNumberResponse)
     ::google::protobuf::internal::ReflectionOps::Merge(from, this);
   } else {
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:grpc.reflection.v1alpha.ExtensionNumberResponse)
     MergeFrom(*source);
   }
 }
 
 void ExtensionNumberResponse::MergeFrom(const ExtensionNumberResponse& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:grpc.reflection.v1alpha.ExtensionNumberResponse)
   if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
   extension_number_.MergeFrom(from.extension_number_);
   if (from.base_type_name().size() > 0) {
@@ -2901,12 +2955,14 @@ void ExtensionNumberResponse::MergeFrom(const ExtensionNumberResponse& from) {
 }
 
 void ExtensionNumberResponse::CopyFrom(const ::google::protobuf::Message& from) {
+// @@protoc_insertion_point(generalized_copy_from_start:grpc.reflection.v1alpha.ExtensionNumberResponse)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void ExtensionNumberResponse::CopyFrom(const ExtensionNumberResponse& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:grpc.reflection.v1alpha.ExtensionNumberResponse)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -2969,6 +3025,7 @@ void ExtensionNumberResponse::clear_base_type_name() {
   return base_type_name_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
  ::std::string* ExtensionNumberResponse::release_base_type_name() {
+  // @@protoc_insertion_point(field_release:grpc.reflection.v1alpha.ExtensionNumberResponse.base_type_name)
   
   return base_type_name_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
@@ -3079,12 +3136,13 @@ ListServiceResponse* ListServiceResponse::New(::google::protobuf::Arena* arena) 
 }
 
 void ListServiceResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:grpc.reflection.v1alpha.ListServiceResponse)
   service_.Clear();
 }
 
 bool ListServiceResponse::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream* input) {
-#define DO_(EXPRESSION) if (!(EXPRESSION)) goto failure
+#define DO_(EXPRESSION) if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
   // @@protoc_insertion_point(parse_start:grpc.reflection.v1alpha.ListServiceResponse)
   for (;;) {
@@ -3156,6 +3214,7 @@ void ListServiceResponse::SerializeWithCachedSizes(
 }
 
 int ListServiceResponse::ByteSize() const {
+// @@protoc_insertion_point(message_byte_size_start:grpc.reflection.v1alpha.ListServiceResponse)
   int total_size = 0;
 
   // repeated .grpc.reflection.v1alpha.ServiceResponse service = 1;
@@ -3173,29 +3232,35 @@ int ListServiceResponse::ByteSize() const {
 }
 
 void ListServiceResponse::MergeFrom(const ::google::protobuf::Message& from) {
+// @@protoc_insertion_point(generalized_merge_from_start:grpc.reflection.v1alpha.ListServiceResponse)
   if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
   const ListServiceResponse* source = 
       ::google::protobuf::internal::DynamicCastToGenerated<const ListServiceResponse>(
           &from);
   if (source == NULL) {
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:grpc.reflection.v1alpha.ListServiceResponse)
     ::google::protobuf::internal::ReflectionOps::Merge(from, this);
   } else {
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:grpc.reflection.v1alpha.ListServiceResponse)
     MergeFrom(*source);
   }
 }
 
 void ListServiceResponse::MergeFrom(const ListServiceResponse& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:grpc.reflection.v1alpha.ListServiceResponse)
   if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
   service_.MergeFrom(from.service_);
 }
 
 void ListServiceResponse::CopyFrom(const ::google::protobuf::Message& from) {
+// @@protoc_insertion_point(generalized_copy_from_start:grpc.reflection.v1alpha.ListServiceResponse)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void ListServiceResponse::CopyFrom(const ListServiceResponse& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:grpc.reflection.v1alpha.ListServiceResponse)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -3327,12 +3392,13 @@ ServiceResponse* ServiceResponse::New(::google::protobuf::Arena* arena) const {
 }
 
 void ServiceResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:grpc.reflection.v1alpha.ServiceResponse)
   name_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 
 bool ServiceResponse::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream* input) {
-#define DO_(EXPRESSION) if (!(EXPRESSION)) goto failure
+#define DO_(EXPRESSION) if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
   // @@protoc_insertion_point(parse_start:grpc.reflection.v1alpha.ServiceResponse)
   for (;;) {
@@ -3412,6 +3478,7 @@ void ServiceResponse::SerializeWithCachedSizes(
 }
 
 int ServiceResponse::ByteSize() const {
+// @@protoc_insertion_point(message_byte_size_start:grpc.reflection.v1alpha.ServiceResponse)
   int total_size = 0;
 
   // optional string name = 1;
@@ -3428,18 +3495,22 @@ int ServiceResponse::ByteSize() const {
 }
 
 void ServiceResponse::MergeFrom(const ::google::protobuf::Message& from) {
+// @@protoc_insertion_point(generalized_merge_from_start:grpc.reflection.v1alpha.ServiceResponse)
   if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
   const ServiceResponse* source = 
       ::google::protobuf::internal::DynamicCastToGenerated<const ServiceResponse>(
           &from);
   if (source == NULL) {
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:grpc.reflection.v1alpha.ServiceResponse)
     ::google::protobuf::internal::ReflectionOps::Merge(from, this);
   } else {
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:grpc.reflection.v1alpha.ServiceResponse)
     MergeFrom(*source);
   }
 }
 
 void ServiceResponse::MergeFrom(const ServiceResponse& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:grpc.reflection.v1alpha.ServiceResponse)
   if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
   if (from.name().size() > 0) {
 
@@ -3448,12 +3519,14 @@ void ServiceResponse::MergeFrom(const ServiceResponse& from) {
 }
 
 void ServiceResponse::CopyFrom(const ::google::protobuf::Message& from) {
+// @@protoc_insertion_point(generalized_copy_from_start:grpc.reflection.v1alpha.ServiceResponse)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void ServiceResponse::CopyFrom(const ServiceResponse& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:grpc.reflection.v1alpha.ServiceResponse)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -3515,6 +3588,7 @@ void ServiceResponse::clear_name() {
   return name_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
  ::std::string* ServiceResponse::release_name() {
+  // @@protoc_insertion_point(field_release:grpc.reflection.v1alpha.ServiceResponse.name)
   
   return name_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
@@ -3600,13 +3674,14 @@ ErrorResponse* ErrorResponse::New(::google::protobuf::Arena* arena) const {
 }
 
 void ErrorResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:grpc.reflection.v1alpha.ErrorResponse)
   error_code_ = 0;
   error_message_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 
 bool ErrorResponse::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream* input) {
-#define DO_(EXPRESSION) if (!(EXPRESSION)) goto failure
+#define DO_(EXPRESSION) if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
   // @@protoc_insertion_point(parse_start:grpc.reflection.v1alpha.ErrorResponse)
   for (;;) {
@@ -3711,6 +3786,7 @@ void ErrorResponse::SerializeWithCachedSizes(
 }
 
 int ErrorResponse::ByteSize() const {
+// @@protoc_insertion_point(message_byte_size_start:grpc.reflection.v1alpha.ErrorResponse)
   int total_size = 0;
 
   // optional int32 error_code = 1;
@@ -3734,18 +3810,22 @@ int ErrorResponse::ByteSize() const {
 }
 
 void ErrorResponse::MergeFrom(const ::google::protobuf::Message& from) {
+// @@protoc_insertion_point(generalized_merge_from_start:grpc.reflection.v1alpha.ErrorResponse)
   if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
   const ErrorResponse* source = 
       ::google::protobuf::internal::DynamicCastToGenerated<const ErrorResponse>(
           &from);
   if (source == NULL) {
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:grpc.reflection.v1alpha.ErrorResponse)
     ::google::protobuf::internal::ReflectionOps::Merge(from, this);
   } else {
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:grpc.reflection.v1alpha.ErrorResponse)
     MergeFrom(*source);
   }
 }
 
 void ErrorResponse::MergeFrom(const ErrorResponse& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:grpc.reflection.v1alpha.ErrorResponse)
   if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
   if (from.error_code() != 0) {
     set_error_code(from.error_code());
@@ -3757,12 +3837,14 @@ void ErrorResponse::MergeFrom(const ErrorResponse& from) {
 }
 
 void ErrorResponse::CopyFrom(const ::google::protobuf::Message& from) {
+// @@protoc_insertion_point(generalized_copy_from_start:grpc.reflection.v1alpha.ErrorResponse)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void ErrorResponse::CopyFrom(const ErrorResponse& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:grpc.reflection.v1alpha.ErrorResponse)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -3839,6 +3921,7 @@ void ErrorResponse::clear_error_message() {
   return error_message_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
  ::std::string* ErrorResponse::release_error_message() {
+  // @@protoc_insertion_point(field_release:grpc.reflection.v1alpha.ErrorResponse.error_message)
   
   return error_message_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
