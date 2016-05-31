@@ -205,11 +205,11 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_posix.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/polling_entity.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_set.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_set_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_windows.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/pops.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_posix.h" role="src" />
@@ -353,9 +353,9 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_windows.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/polling_entity.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_set_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_windows.c" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/pops.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_utils.c" role="src" />

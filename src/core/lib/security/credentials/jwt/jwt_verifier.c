@@ -37,7 +37,7 @@
 #include <string.h>
 
 #include "src/core/lib/http/httpcli.h"
-#include "src/core/lib/iomgr/pops.h"
+#include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/security/util/b64.h"
 #include "src/core/lib/tsi/ssl_types.h"
 
@@ -322,7 +322,7 @@ grpc_jwt_verifier_status grpc_jwt_claims_check(const grpc_jwt_claims *claims,
 
 typedef struct {
   grpc_jwt_verifier *verifier;
-  grpc_pops pops;
+  grpc_polling_entity pollent;
   jose_header *header;
   grpc_jwt_claims *claims;
   char *audience;
@@ -342,7 +342,7 @@ static verifier_cb_ctx *verifier_cb_ctx_create(
   verifier_cb_ctx *ctx = gpr_malloc(sizeof(verifier_cb_ctx));
   memset(ctx, 0, sizeof(verifier_cb_ctx));
   ctx->verifier = verifier;
-  ctx->pops = grpc_pops_create_from_pollset(pollset);
+  ctx->pollent = grpc_pops_create_from_pollset(pollset);
   ctx->header = header;
   ctx->audience = gpr_strdup(audience);
   ctx->claims = claims;
@@ -645,7 +645,7 @@ static void on_openid_config_retrieved(grpc_exec_ctx *exec_ctx, void *user_data,
     *(req.host + (req.http.path - jwks_uri)) = '\0';
   }
   grpc_httpcli_get(
-      exec_ctx, &ctx->verifier->http_ctx, &ctx->pops, &req,
+      exec_ctx, &ctx->verifier->http_ctx, &ctx->pollent, &req,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_max_delay),
       on_keys_retrieved, ctx);
   grpc_json_destroy(json);
@@ -748,7 +748,7 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
   }
 
   grpc_httpcli_get(
-      exec_ctx, &ctx->verifier->http_ctx, &ctx->pops, &req,
+      exec_ctx, &ctx->verifier->http_ctx, &ctx->pollent, &req,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_max_delay),
       http_cb, ctx);
   gpr_free(req.host);

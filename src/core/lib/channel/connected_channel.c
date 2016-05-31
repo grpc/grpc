@@ -95,11 +95,11 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 
 static void set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
                                        grpc_call_element *elem,
-                                       grpc_pops *pops) {
+                                       grpc_polling_entity *pollent) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   grpc_transport_set_pops(exec_ctx, chand->transport,
-                          TRANSPORT_STREAM_FROM_CALL_DATA(calld), pops);
+                          TRANSPORT_STREAM_FROM_CALL_DATA(calld), pollent);
 }
 
 /* Destructor for call_data */

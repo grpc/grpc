@@ -41,7 +41,7 @@
 
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/parser.h"
-#include "src/core/lib/iomgr/pops.h"
+#include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/security/transport/security_connector.h"
 
 struct grpc_http_response;
@@ -165,7 +165,8 @@ typedef void (*grpc_credentials_metadata_cb)(grpc_exec_ctx *exec_ctx,
 typedef struct {
   void (*destruct)(grpc_call_credentials *c);
   void (*get_request_metadata)(grpc_exec_ctx *exec_ctx,
-                               grpc_call_credentials *c, grpc_pops *pops,
+                               grpc_call_credentials *c,
+                               grpc_polling_entity *pollent,
                                grpc_auth_metadata_context context,
                                grpc_credentials_metadata_cb cb,
                                void *user_data);
@@ -180,9 +181,9 @@ struct grpc_call_credentials {
 grpc_call_credentials *grpc_call_credentials_ref(grpc_call_credentials *creds);
 void grpc_call_credentials_unref(grpc_call_credentials *creds);
 void grpc_call_credentials_get_request_metadata(
-    grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds, grpc_pops *pops,
-    grpc_auth_metadata_context context, grpc_credentials_metadata_cb cb,
-    void *user_data);
+    grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds,
+    grpc_polling_entity *pollent, grpc_auth_metadata_context context,
+    grpc_credentials_metadata_cb cb, void *user_data);
 
 /* Metadata-only credentials with the specified key and value where
    asynchronicity can be simulated for testing. */

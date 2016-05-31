@@ -48,7 +48,7 @@
 static int g_done = 0;
 static grpc_httpcli_context g_context;
 static gpr_mu *g_mu;
-static grpc_pops g_pops;
+static grpc_polling_entity g_pops;
 
 static gpr_timespec n_seconds_time(int seconds) {
   return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(seconds);

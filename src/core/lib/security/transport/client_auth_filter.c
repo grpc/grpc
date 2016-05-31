@@ -58,7 +58,7 @@ typedef struct {
      network requests, they should be done under a pollset added to this
      pollset_set so that work can progress when this call wants work to progress
   */
-  grpc_pops *pops;
+  grpc_polling_entity *pollent;
   grpc_transport_stream_op op;
   uint8_t security_context_set;
   grpc_linked_mdelem md_links[MAX_CREDENTIALS_METADATA_COUNT];
@@ -184,9 +184,9 @@ static void send_security_metadata(grpc_exec_ctx *exec_ctx,
   build_auth_metadata_context(&chand->security_connector->base,
                               chand->auth_context, calld);
   calld->op = *op; /* Copy op (originates from the caller's stack). */
-  GPR_ASSERT(calld->pops != NULL);
+  GPR_ASSERT(calld->pollent != NULL);
   grpc_call_credentials_get_request_metadata(
-      exec_ctx, calld->creds, calld->pops, calld->auth_md_context,
+      exec_ctx, calld->creds, calld->pollent, calld->auth_md_context,
       on_credentials_metadata, elem);
 }
 
@@ -272,9 +272,9 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 
 static void set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
                                        grpc_call_element *elem,
-                                       grpc_pops *pops) {
+                                       grpc_polling_entity *pollent) {
   call_data *calld = elem->call_data;
-  calld->pops = pops;
+  calld->pollent = pollent;
 }
 
 /* Destructor for call_data */

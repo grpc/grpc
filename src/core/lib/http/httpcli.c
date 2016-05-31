@@ -62,7 +62,7 @@ typedef struct {
   grpc_httpcli_response_cb on_response;
   void *user_data;
   grpc_httpcli_context *context;
-  grpc_pops *pops;
+  grpc_polling_entity *pollent;
   grpc_iomgr_object iomgr_obj;
   gpr_slice_buffer incoming;
   gpr_slice_buffer outgoing;
@@ -97,7 +97,8 @@ static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req);
 
 static void finish(grpc_exec_ctx *exec_ctx, internal_request *req,
                    int success) {
-  grpc_pops_del_to_pollset_set(exec_ctx, req->pops, req->context->pollset_set);
+  grpc_pops_del_to_pollset_set(exec_ctx, req->pollent,
+                               req->context->pollset_set);
   req->on_response(exec_ctx, req->user_data,
                    success ? &req->parser.http.response : NULL);
   grpc_http_parser_destroy(&req->parser);
@@ -220,10 +221,10 @@ static void on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 static void internal_request_begin(
-    grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context, grpc_pops *pops,
-    const grpc_httpcli_request *request, gpr_timespec deadline,
-    grpc_httpcli_response_cb on_response, void *user_data, const char *name,
-    gpr_slice request_text) {
+    grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
+    grpc_polling_entity *pollent, const grpc_httpcli_request *request,
+    gpr_timespec deadline, grpc_httpcli_response_cb on_response,
+    void *user_data, const char *name, gpr_slice request_text) {
   internal_request *req = gpr_malloc(sizeof(internal_request));
   memset(req, 0, sizeof(*req));
   req->request_text = request_text;
@@ -234,7 +235,7 @@ static void internal_request_begin(
   req->handshaker =
       request->handshaker ? request->handshaker : &grpc_httpcli_plaintext;
   req->context = context;
-  req->pops = pops;
+  req->pollent = pollent;
   grpc_closure_init(&req->on_read, on_read, req);
   grpc_closure_init(&req->done_write, done_write, req);
   gpr_slice_buffer_init(&req->incoming);
@@ -243,14 +244,16 @@ static void internal_request_begin(
   req->host = gpr_strdup(request->host);
   req->ssl_host_override = gpr_strdup(request->ssl_host_override);
 
-  GPR_ASSERT(pops);
-  grpc_pops_add_to_pollset_set(exec_ctx, req->pops, req->context->pollset_set);
+  GPR_ASSERT(pollent);
+  grpc_pops_add_to_pollset_set(exec_ctx, req->pollent,
+                               req->context->pollset_set);
   grpc_resolve_address(exec_ctx, request->host, req->handshaker->default_port,
                        on_resolved, req);
 }
 
 void grpc_httpcli_get(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
-                      grpc_pops *pops, const grpc_httpcli_request *request,
+                      grpc_polling_entity *pollent,
+                      const grpc_httpcli_request *request,
                       gpr_timespec deadline,
                       grpc_httpcli_response_cb on_response, void *user_data) {
   char *name;
@@ -259,14 +262,15 @@ void grpc_httpcli_get(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
     return;
   }
   gpr_asprintf(&name, "HTTP:GET:%s:%s", request->host, request->http.path);
-  internal_request_begin(exec_ctx, context, pops, request, deadline,
+  internal_request_begin(exec_ctx, context, pollent, request, deadline,
                          on_response, user_data, name,
                          grpc_httpcli_format_get_request(request));
   gpr_free(name);
 }
 
 void grpc_httpcli_post(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
-                       grpc_pops *pops, const grpc_httpcli_request *request,
+                       grpc_polling_entity *pollent,
+                       const grpc_httpcli_request *request,
                        const char *body_bytes, size_t body_size,
                        gpr_timespec deadline,
                        grpc_httpcli_response_cb on_response, void *user_data) {
@@ -278,8 +282,8 @@ void grpc_httpcli_post(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
   }
   gpr_asprintf(&name, "HTTP:POST:%s:%s", request->host, request->http.path);
   internal_request_begin(
-      exec_ctx, context, pops, request, deadline, on_response, user_data, name,
-      grpc_httpcli_format_post_request(request, body_bytes, body_size));
+      exec_ctx, context, pollent, request, deadline, on_response, user_data,
+      name, grpc_httpcli_format_post_request(request, body_bytes, body_size));
   gpr_free(name);
 }
 

@@ -682,7 +682,8 @@ grpc_connected_subchannel *grpc_subchannel_get_connected_subchannel(
 }
 
 grpc_subchannel_call *grpc_connected_subchannel_create_call(
-    grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *con, grpc_pops *pops) {
+    grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *con,
+    grpc_polling_entity *pollent) {
   grpc_channel_stack *chanstk = CHANNEL_STACK_FROM_CONNECTION(con);
   grpc_subchannel_call *call =
       gpr_malloc(sizeof(grpc_subchannel_call) + chanstk->call_stack_size);
@@ -691,7 +692,7 @@ grpc_subchannel_call *grpc_connected_subchannel_create_call(
   GRPC_CONNECTED_SUBCHANNEL_REF(con, "subchannel_call");
   grpc_call_stack_init(exec_ctx, chanstk, 1, subchannel_call_destroy, call,
                        NULL, NULL, callstk);
-  grpc_call_stack_set_pollset_or_pollset_set(exec_ctx, callstk, pops);
+  grpc_call_stack_set_pollset_or_pollset_set(exec_ctx, callstk, pollent);
   return call;
 }
 

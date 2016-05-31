@@ -35,7 +35,7 @@
 
 #include <string.h>
 
-#include "src/core/lib/iomgr/pops.h"
+#include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/surface/api_trace.h"
 
 #include <grpc/support/alloc.h>
@@ -50,7 +50,7 @@ typedef struct {
   grpc_credentials_md_store *md_elems;
   grpc_auth_metadata_context auth_md_context;
   void *user_data;
-  grpc_pops *pops;
+  grpc_polling_entity *pollent;
   grpc_credentials_metadata_cb cb;
 } grpc_composite_call_credentials_metadata_context;
 
@@ -93,9 +93,9 @@ static void composite_call_metadata_cb(grpc_exec_ctx *exec_ctx, void *user_data,
   if (ctx->creds_index < ctx->composite_creds->inner.num_creds) {
     grpc_call_credentials *inner_creds =
         ctx->composite_creds->inner.creds_array[ctx->creds_index++];
-    grpc_call_credentials_get_request_metadata(exec_ctx, inner_creds, ctx->pops,
-                                               ctx->auth_md_context,
-                                               composite_call_metadata_cb, ctx);
+    grpc_call_credentials_get_request_metadata(
+        exec_ctx, inner_creds, ctx->pollent, ctx->auth_md_context,
+        composite_call_metadata_cb, ctx);
     return;
   }
 
@@ -106,9 +106,9 @@ static void composite_call_metadata_cb(grpc_exec_ctx *exec_ctx, void *user_data,
 }
 
 static void composite_call_get_request_metadata(
-    grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds, grpc_pops *pops,
-    grpc_auth_metadata_context auth_md_context, grpc_credentials_metadata_cb cb,
-    void *user_data) {
+    grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds,
+    grpc_polling_entity *pollent, grpc_auth_metadata_context auth_md_context,
+    grpc_credentials_metadata_cb cb, void *user_data) {
   grpc_composite_call_credentials *c = (grpc_composite_call_credentials *)creds;
   grpc_composite_call_credentials_metadata_context *ctx;
 
@@ -118,10 +118,10 @@ static void composite_call_get_request_metadata(
   ctx->user_data = user_data;
   ctx->cb = cb;
   ctx->composite_creds = c;
-  ctx->pops = pops;
+  ctx->pollent = pollent;
   ctx->md_elems = grpc_credentials_md_store_create(c->inner.num_creds);
   grpc_call_credentials_get_request_metadata(
-      exec_ctx, c->inner.creds_array[ctx->creds_index++], ctx->pops,
+      exec_ctx, c->inner.creds_array[ctx->creds_index++], ctx->pollent,
       auth_md_context, composite_call_metadata_cb, ctx);
 }
 
