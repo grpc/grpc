@@ -55,10 +55,10 @@ namespace Grpc.Core.Tests
         public void AppDomainProcessExitHook()
         {
             var channel = new Channel(Host, 1000, ChannelCredentials.Insecure);
+            var channel2 = new Channel(Host, 1001, ChannelCredentials.Insecure);
             AppDomain.CurrentDomain.ProcessExit += (object sender, EventArgs e) =>
             {
-                // TODO: expose API to shutdown all channels.
-                channel.ShutdownAsync();
+                GrpcEnvironment.ShutdownChannelsAsync().Wait();
             };
         }
 
