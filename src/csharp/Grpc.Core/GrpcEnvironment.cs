@@ -55,6 +55,7 @@ namespace Grpc.Core
         static int? customThreadPoolSize;
         static int? customCompletionQueueCount;
         static readonly HashSet<Channel> registeredChannels = new HashSet<Channel>();
+        static readonly HashSet<Server> registeredServers = new HashSet<Server>();
 
         static ILogger logger = new ConsoleLogger();
 
@@ -131,6 +132,24 @@ namespace Grpc.Core
             }
         }
 
+        internal static void RegisterServer(Server server)
+        {
+            lock (staticLock)
+            {
+                GrpcPreconditions.CheckNotNull(server);
+                registeredServers.Add(server);
+            }
+        }
+
+        internal static void UnregisterServer(Server server)
+        {
+            lock (staticLock)
+            {
+                GrpcPreconditions.CheckNotNull(server);
+                GrpcPreconditions.CheckArgument(registeredServers.Remove(server), "Server not found in the registered servers set.");
+            }
+        }
+
         /// <summary>
         /// Requests shutdown of all channels created by the current process.
         /// </summary>
@@ -142,6 +161,19 @@ namespace Grpc.Core
                 snapshot = new HashSet<Channel>(registeredChannels);
             }
             return Task.WhenAll(snapshot.Select((channel) => channel.ShutdownAsync()));
+        }
+
+        /// <summary>
+        /// Requests immediate shutdown of all servers created by the current process.
+        /// </summary>
+        public static Task KillServersAsync()
+        {
+            HashSet<Server> snapshot = null;
+            lock (staticLock)
+            {
+                snapshot = new HashSet<Server>(registeredServers);
+            }
+            return Task.WhenAll(snapshot.Select((server) => server.KillAsync()));
         }
 
         /// <summary>
@@ -217,6 +249,14 @@ namespace Grpc.Core
             get
             {
                 return this.threadPool.CompletionQueues;
+            }
+        }
+
+        internal bool IsAlive
+        {
+            get
+            {
+                return this.threadPool.IsAlive;
             }
         }
 

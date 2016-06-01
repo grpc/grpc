@@ -114,6 +114,21 @@ namespace Grpc.Core.Internal
             });
         }
 
+        /// <summary>
+        /// Returns true if there is at least one thread pool thread that hasn't
+        /// already stopped.
+        /// Threads can either stop because all completion queues shut down or
+        /// because all foreground threads have already shutdown and process is
+        /// going to exit.
+        /// </summary>
+        internal bool IsAlive
+        {
+            get
+            {
+                return threads.Any(t => t.ThreadState != ThreadState.Stopped);
+            }
+        }
+
         internal IReadOnlyCollection<CompletionQueueSafeHandle> CompletionQueues
         {
             get
