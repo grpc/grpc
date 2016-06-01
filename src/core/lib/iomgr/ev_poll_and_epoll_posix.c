@@ -1357,7 +1357,7 @@ exit:
   }
 }
 
-static void multipoll_with_poll_pollset_maybe_work_and_unlock(
+static grpc_error *multipoll_with_poll_pollset_maybe_work_and_unlock(
     grpc_exec_ctx *exec_ctx, grpc_pollset *pollset, grpc_pollset_worker *worker,
     gpr_timespec deadline, gpr_timespec now) {
 #define POLLOUT_CHECK (POLLOUT | POLLHUP | POLLERR)
@@ -1371,6 +1371,7 @@ static void multipoll_with_poll_pollset_maybe_work_and_unlock(
   /* TODO(ctiller): inline some elements to avoid an allocation */
   grpc_fd_watcher *watchers;
   struct pollfd *pfds;
+  grpc_error *error = GRPC_ERROR_NONE;
 
   h = pollset->data.ptr;
   timeout = poll_deadline_to_millis_timeout(deadline, now);
@@ -1434,10 +1435,12 @@ static void multipoll_with_poll_pollset_maybe_work_and_unlock(
     }
   } else {
     if (pfds[0].revents & POLLIN_CHECK) {
-      grpc_wakeup_fd_consume_wakeup(&grpc_global_wakeup_fd);
+      work_combine_error(&error,
+                         grpc_wakeup_fd_consume_wakeup(&grpc_global_wakeup_fd));
     }
     if (pfds[1].revents & POLLIN_CHECK) {
-      grpc_wakeup_fd_consume_wakeup(&worker->wakeup_fd->fd);
+      work_combine_error(&error,
+                         grpc_wakeup_fd_consume_wakeup(&worker->wakeup_fd->fd));
     }
     for (i = 2; i < pfd_count; i++) {
       if (watchers[i].fd == NULL) {
@@ -1451,6 +1454,8 @@ static void multipoll_with_poll_pollset_maybe_work_and_unlock(
 
   gpr_free(pfds);
   gpr_free(watchers);
+
+  return error;
 }
 
 static void multipoll_with_poll_pollset_finish_shutdown(grpc_pollset *pollset) {
