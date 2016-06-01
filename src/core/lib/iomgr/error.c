@@ -102,6 +102,8 @@ static const char *error_int_name(grpc_error_ints key) {
       return "grpc_status";
     case GRPC_ERROR_INT_OFFSET:
       return "offset";
+    case GRPC_ERROR_INT_LIMIT:
+      return "limit";
     case GRPC_ERROR_INT_INDEX:
       return "index";
     case GRPC_ERROR_INT_SIZE:
