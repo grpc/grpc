@@ -169,7 +169,6 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/impl/codegen/sync_posix.h )
   s.files += %w( include/grpc/impl/codegen/sync_win32.h )
   s.files += %w( include/grpc/impl/codegen/time.h )
-  s.files += %w( include/grpc/grpc_cronet.h )
   s.files += %w( include/grpc/grpc_security.h )
   s.files += %w( include/grpc/grpc_security_constants.h )
   s.files += %w( include/grpc/census.h )

@@ -5956,7 +5956,6 @@
       "tsi"
     ], 
     "headers": [
-      "include/grpc/grpc_cronet.h", 
       "include/grpc/grpc_security.h", 
       "include/grpc/grpc_security_constants.h", 
       "src/core/lib/security/context/security_context.h", 
@@ -5981,7 +5980,6 @@
     "language": "c", 
     "name": "grpc_secure", 
     "src": [
-      "include/grpc/grpc_cronet.h", 
       "include/grpc/grpc_security.h", 
       "include/grpc/grpc_security_constants.h", 
       "src/core/lib/http/httpcli_security_connector.c", 
