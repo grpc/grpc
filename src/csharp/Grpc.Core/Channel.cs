@@ -88,6 +88,7 @@ namespace Grpc.Core
                     this.handle = ChannelSafeHandle.CreateInsecure(target, nativeChannelArgs);
                 }
             }
+            GrpcEnvironment.RegisterChannel(this);
         }
 
         /// <summary>
@@ -209,6 +210,7 @@ namespace Grpc.Core
                 GrpcPreconditions.CheckState(!shutdownRequested);
                 shutdownRequested = true;
             }
+            GrpcEnvironment.UnregisterChannel(this);
 
             shutdownTokenSource.Cancel();
 
