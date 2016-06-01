@@ -246,6 +246,7 @@ CORE_SOURCE_FILES = [
   'src/core/ext/resolver/dns/native/dns_resolver.c',
   'src/core/ext/resolver/sockaddr/sockaddr_resolver.c',
   'src/core/ext/census/context.c',
+  'src/core/ext/census/gen/census.pb.c',
   'src/core/ext/census/grpc_context.c',
   'src/core/ext/census/grpc_filter.c',
   'src/core/ext/census/grpc_plugin.c',
