@@ -155,21 +155,9 @@ namespace Grpc.Core
         /// <remarks>
         /// It is strongly recommended to shutdown all previously created servers before exiting from the process.
         /// </remarks>
-        public async Task ShutdownAsync()
+        public Task ShutdownAsync()
         {
-            lock (myLock)
-            {
-                GrpcPreconditions.CheckState(startRequested);
-                GrpcPreconditions.CheckState(!shutdownRequested);
-                shutdownRequested = true;
-            }
-
-            var cq = environment.CompletionQueues.First();  // any cq will do
-            handle.ShutdownAndNotify(HandleServerShutdown, cq);
-            await shutdownTcs.Task.ConfigureAwait(false);
-            DisposeHandle();
-
-            await GrpcEnvironment.ReleaseAsync().ConfigureAwait(false);
+            return ShutdownInternalAsync(false);
         }
 
         /// <summary>
@@ -179,22 +167,9 @@ namespace Grpc.Core
         /// <remarks>
         /// It is strongly recommended to shutdown all previously created servers before exiting from the process.
         /// </remarks>
-        public async Task KillAsync()
+        public Task KillAsync()
         {
-            lock (myLock)
-            {
-                GrpcPreconditions.CheckState(startRequested);
-                GrpcPreconditions.CheckState(!shutdownRequested);
-                shutdownRequested = true;
-            }
-
-            var cq = environment.CompletionQueues.First();  // any cq will do
-            handle.ShutdownAndNotify(HandleServerShutdown, cq);
-            handle.CancelAllCalls();
-            await shutdownTcs.Task.ConfigureAwait(false);
-            DisposeHandle();
-
-            await GrpcEnvironment.ReleaseAsync().ConfigureAwait(false);
+            return ShutdownInternalAsync(true);
         }
 
         internal void AddCallReference(object call)
@@ -210,6 +185,30 @@ namespace Grpc.Core
         {
             handle.DangerousRelease();
             activeCallCounter.Decrement();
+        }
+
+        /// <summary>
+        /// Shuts down the server.
+        /// </summary>
+        private async Task ShutdownInternalAsync(bool kill)
+        {
+            lock (myLock)
+            {
+                GrpcPreconditions.CheckState(startRequested);
+                GrpcPreconditions.CheckState(!shutdownRequested);
+                shutdownRequested = true;
+            }
+
+            var cq = environment.CompletionQueues.First();  // any cq will do
+            handle.ShutdownAndNotify(HandleServerShutdown, cq);
+            if (kill)
+            {
+                handle.CancelAllCalls();
+            }
+            await shutdownTcs.Task.ConfigureAwait(false);
+            DisposeHandle();
+
+            await GrpcEnvironment.ReleaseAsync().ConfigureAwait(false);
         }
 
         /// <summary>
