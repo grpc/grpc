@@ -1321,6 +1321,18 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: epoll_test
+  build: test
+  language: c
+  src:
+  - test/core/network_benchmarks/epoll_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - linux
 - name: fd_conservation_posix_test
   build: test
   language: c
