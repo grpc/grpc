@@ -43,16 +43,12 @@ using NUnit.Framework;
 
 namespace Grpc.Core.Tests
 {
-    public class ShutdownHookTest
+    public class ShutdownHookClientTest
     {
         const string Host = "127.0.0.1";
 
-        /// <summary>
-        /// Make sure that a non-shutdown channel can be cleaned up using
-        /// a <c>AppDomain.ProcessExit</c> hook.
-        /// </summary>
         [Test]
-        public void AppDomainProcessExitHook()
+        public void ProcessExitHookCanCleanupAbandonedChannels()
         {
             var channel = new Channel(Host, 1000, ChannelCredentials.Insecure);
             var channel2 = new Channel(Host, 1001, ChannelCredentials.Insecure);
@@ -61,11 +57,6 @@ namespace Grpc.Core.Tests
                 GrpcEnvironment.ShutdownChannelsAsync().Wait();
             };
         }
-
-        // TODO: test what happens if there's a pending completion in the cq (destroy on non-empty cq)
-
         // TODO: test what happens if there's an appdomain unload 
-
-        // TODO: tests involving a server...
     }
 }
