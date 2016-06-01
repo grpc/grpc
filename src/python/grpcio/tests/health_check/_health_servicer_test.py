@@ -49,25 +49,25 @@ class HealthServicerTest(unittest.TestCase):
 
   def test_empty_service(self):
     request = health_pb2.HealthCheckRequest()
-    resp = self.servicer.Check(request, None)
+    resp = self.servicer.check(request, None)
     self.assertEqual(resp.status, health_pb2.HealthCheckResponse.SERVING)
 
   def test_serving_service(self):
     request = health_pb2.HealthCheckRequest(
         service='grpc.test.TestServiceServing')
-    resp = self.servicer.Check(request, None)
+    resp = self.servicer.check(request, None)
     self.assertEqual(resp.status, health_pb2.HealthCheckResponse.SERVING)
 
   def test_unknown_serivce(self):
     request = health_pb2.HealthCheckRequest(
         service='grpc.test.TestServiceUnknown')
-    resp = self.servicer.Check(request, None)
+    resp = self.servicer.check(request, None)
     self.assertEqual(resp.status, health_pb2.HealthCheckResponse.UNKNOWN)
 
   def test_not_serving_service(self):
     request = health_pb2.HealthCheckRequest(
         service='grpc.test.TestServiceNotServing')
-    resp = self.servicer.Check(request, None)
+    resp = self.servicer.check(request, None)
     self.assertEqual(resp.status, health_pb2.HealthCheckResponse.NOT_SERVING)
 
 

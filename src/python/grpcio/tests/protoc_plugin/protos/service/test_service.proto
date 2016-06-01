@@ -62,3 +62,34 @@ service TestService {
   rpc HalfDuplexCall(stream StreamingOutputCallRequest)
       returns (stream StreamingOutputCallResponse);
 }
+
+service MassagedNames1 {
+  // -> 'anametest'
+  rpc Anametest(SimpleRequest) returns (SimpleResponse);
+}
+
+service MassagedNames2 {
+  // -> 'nametest'
+  rpc NAMETEST(SimpleRequest) returns (SimpleResponse);
+}
+
+service MassagedNames3 {
+  // -> 'name_test1'
+  rpc NAMETest1(SimpleRequest) returns (SimpleResponse);
+}
+
+service MassagedNames4 {
+  // -> 'name_tes_t1' (we *only* use capital letters to distinguish word
+  // boundaries)
+  rpc NameTEST1(SimpleRequest) returns (SimpleResponse);
+}
+
+service MassagedNames5 {
+  // -> 'name1_test'
+  rpc Name1TEST(SimpleRequest) returns (SimpleResponse);
+}
+
+service MassagedNames6 {
+  // -> 'name_test'
+  rpc NameTest(SimpleRequest) returns (SimpleResponse);
+}

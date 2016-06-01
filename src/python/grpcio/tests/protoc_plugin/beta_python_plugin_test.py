@@ -56,6 +56,7 @@ STUB_IDENTIFIER = 'BetaTestServiceStub'
 SERVER_FACTORY_IDENTIFIER = 'beta_create_TestService_server'
 STUB_FACTORY_IDENTIFIER = 'beta_create_TestService_stub'
 
+MASSAGED_NAMES_SERVICER_IDENTIFIER_FORMAT = 'BetaMassagedNames{}Servicer'
 
 class _ServicerMethods(object):
 
@@ -90,14 +91,14 @@ class _ServicerMethods(object):
       while self._paused:
         self._condition.wait()
 
-  def UnaryCall(self, request, unused_rpc_context):
+  def unary_call(self, request, unused_rpc_context):
     response = self._response_pb2.SimpleResponse()
     response.payload.payload_type = self._payload_pb2.COMPRESSABLE
     response.payload.payload_compressable = 'a' * request.response_size
     self._control()
     return response
 
-  def StreamingOutputCall(self, request, unused_rpc_context):
+  def streaming_output_call(self, request, unused_rpc_context):
     for parameter in request.response_parameters:
       response = self._response_pb2.StreamingOutputCallResponse()
       response.payload.payload_type = self._payload_pb2.COMPRESSABLE
@@ -105,7 +106,7 @@ class _ServicerMethods(object):
       self._control()
       yield response
 
-  def StreamingInputCall(self, request_iter, unused_rpc_context):
+  def streaming_input_call(self, request_iter, unused_rpc_context):
     response = self._response_pb2.StreamingInputCallResponse()
     aggregated_payload_size = 0
     for request in request_iter:
@@ -114,7 +115,7 @@ class _ServicerMethods(object):
     self._control()
     return response
 
-  def FullDuplexCall(self, request_iter, unused_rpc_context):
+  def full_duplex_call(self, request_iter, unused_rpc_context):
     for request in request_iter:
       for parameter in request.response_parameters:
         response = self._response_pb2.StreamingOutputCallResponse()
@@ -123,7 +124,7 @@ class _ServicerMethods(object):
         self._control()
         yield response
 
-  def HalfDuplexCall(self, request_iter, unused_rpc_context):
+  def half_duplex_call(self, request_iter, unused_rpc_context):
     responses = []
     for request in request_iter:
       for parameter in request.response_parameters:
@@ -157,20 +158,20 @@ def _CreateService(service_pb2, response_pb2, payload_pb2):
 
   class Servicer(getattr(service_pb2, SERVICER_IDENTIFIER)):
 
-    def UnaryCall(self, request, context):
-      return servicer_methods.UnaryCall(request, context)
+    def unary_call(self, request, context):
+      return servicer_methods.unary_call(request, context)
 
-    def StreamingOutputCall(self, request, context):
-      return servicer_methods.StreamingOutputCall(request, context)
+    def streaming_output_call(self, request, context):
+      return servicer_methods.streaming_output_call(request, context)
 
-    def StreamingInputCall(self, request_iter, context):
-      return servicer_methods.StreamingInputCall(request_iter, context)
+    def streaming_input_call(self, request_iter, context):
+      return servicer_methods.streaming_input_call(request_iter, context)
 
-    def FullDuplexCall(self, request_iter, context):
-      return servicer_methods.FullDuplexCall(request_iter, context)
+    def full_duplex_call(self, request_iter, context):
+      return servicer_methods.full_duplex_call(request_iter, context)
 
-    def HalfDuplexCall(self, request_iter, context):
-      return servicer_methods.HalfDuplexCall(request_iter, context)
+    def half_duplex_call(self, request_iter, context):
+      return servicer_methods.half_duplex_call(request_iter, context)
 
   servicer = Servicer()
   server = getattr(service_pb2, SERVER_FACTORY_IDENTIFIER)(servicer)
@@ -323,7 +324,7 @@ class PythonPluginTest(unittest.TestCase):
     with _CreateIncompleteService(self._service_pb2) as (_, stub):
       request = self._request_pb2.SimpleRequest(response_size=13)
       try:
-        stub.UnaryCall(request, test_constants.LONG_TIMEOUT)
+        stub.unary_call(request, test_constants.LONG_TIMEOUT)
       except face.AbortionError as error:
         self.assertEqual(interfaces.StatusCode.UNIMPLEMENTED, error.code)
 
@@ -331,8 +332,8 @@ class PythonPluginTest(unittest.TestCase):
     with _CreateService(self._service_pb2, self._response_pb2,
                         self._payload_pb2) as (methods, stub):
       request = self._request_pb2.SimpleRequest(response_size=13)
-      response = stub.UnaryCall(request, test_constants.LONG_TIMEOUT)
-    expected_response = methods.UnaryCall(request, 'not a real context!')
+      response = stub.unary_call(request, test_constants.LONG_TIMEOUT)
+    expected_response = methods.unary_call(request, 'not a real context!')
     self.assertEqual(expected_response, response)
 
   def testUnaryCallFuture(self):
@@ -341,10 +342,10 @@ class PythonPluginTest(unittest.TestCase):
       request = self._request_pb2.SimpleRequest(response_size=13)
       # Check that the call does not block waiting for the server to respond.
       with methods.pause():
-        response_future = stub.UnaryCall.future(
+        response_future = stub.unary_call.future(
             request, test_constants.LONG_TIMEOUT)
       response = response_future.result()
-    expected_response = methods.UnaryCall(request, 'not a real RpcContext!')
+    expected_response = methods.unary_call(request, 'not a real RpcContext!')
     self.assertEqual(expected_response, response)
 
   def testUnaryCallFutureExpired(self):
@@ -352,7 +353,7 @@ class PythonPluginTest(unittest.TestCase):
                         self._payload_pb2) as (methods, stub):
       request = self._request_pb2.SimpleRequest(response_size=13)
       with methods.pause():
-        response_future = stub.UnaryCall.future(
+        response_future = stub.unary_call.future(
             request, test_constants.SHORT_TIMEOUT)
         with self.assertRaises(face.ExpirationError):
           response_future.result()
@@ -362,7 +363,7 @@ class PythonPluginTest(unittest.TestCase):
                         self._payload_pb2) as (methods, stub):
       request = self._request_pb2.SimpleRequest(response_size=13)
       with methods.pause():
-        response_future = stub.UnaryCall.future(request, 1)
+        response_future = stub.unary_call.future(request, 1)
         response_future.cancel()
         self.assertTrue(response_future.cancelled())
 
@@ -371,7 +372,7 @@ class PythonPluginTest(unittest.TestCase):
                         self._payload_pb2) as (methods, stub):
       request = self._request_pb2.SimpleRequest(response_size=13)
       with methods.fail():
-        response_future = stub.UnaryCall.future(
+        response_future = stub.unary_call.future(
             request, test_constants.LONG_TIMEOUT)
         self.assertIsNotNone(response_future.exception())
 
@@ -379,9 +380,9 @@ class PythonPluginTest(unittest.TestCase):
     with _CreateService(self._service_pb2, self._response_pb2,
                         self._payload_pb2) as (methods, stub):
       request = _streaming_output_request(self._request_pb2)
-      responses = stub.StreamingOutputCall(
+      responses = stub.streaming_output_call(
           request, test_constants.LONG_TIMEOUT)
-      expected_responses = methods.StreamingOutputCall(
+      expected_responses = methods.streaming_output_call(
           request, 'not a real RpcContext!')
       for expected_response, response in moves.zip_longest(
           expected_responses, responses):
@@ -392,7 +393,7 @@ class PythonPluginTest(unittest.TestCase):
                         self._payload_pb2) as (methods, stub):
       request = _streaming_output_request(self._request_pb2)
       with methods.pause():
-        responses = stub.StreamingOutputCall(
+        responses = stub.streaming_output_call(
             request, test_constants.SHORT_TIMEOUT)
         with self.assertRaises(face.ExpirationError):
           list(responses)
@@ -401,7 +402,7 @@ class PythonPluginTest(unittest.TestCase):
     with _CreateService(self._service_pb2, self._response_pb2,
                         self._payload_pb2) as (methods, stub):
       request = _streaming_output_request(self._request_pb2)
-      responses = stub.StreamingOutputCall(
+      responses = stub.streaming_output_call(
           request, test_constants.LONG_TIMEOUT)
       next(responses)
       responses.cancel()
@@ -413,7 +414,7 @@ class PythonPluginTest(unittest.TestCase):
                         self._payload_pb2) as (methods, stub):
       request = _streaming_output_request(self._request_pb2)
       with methods.fail():
-        responses = stub.StreamingOutputCall(request, 1)
+        responses = stub.streaming_output_call(request, 1)
         self.assertIsNotNone(responses)
         with self.assertRaises(face.RemoteError):
           next(responses)
@@ -421,11 +422,11 @@ class PythonPluginTest(unittest.TestCase):
   def testStreamingInputCall(self):
     with _CreateService(self._service_pb2, self._response_pb2,
                         self._payload_pb2) as (methods, stub):
-      response = stub.StreamingInputCall(
+      response = stub.streaming_input_call(
           _streaming_input_request_iterator(
               self._request_pb2, self._payload_pb2),
           test_constants.LONG_TIMEOUT)
-    expected_response = methods.StreamingInputCall(
+    expected_response = methods.streaming_input_call(
         _streaming_input_request_iterator(self._request_pb2, self._payload_pb2),
         'not a real RpcContext!')
     self.assertEqual(expected_response, response)
@@ -434,12 +435,12 @@ class PythonPluginTest(unittest.TestCase):
     with _CreateService(self._service_pb2, self._response_pb2,
                         self._payload_pb2) as (methods, stub):
       with methods.pause():
-        response_future = stub.StreamingInputCall.future(
+        response_future = stub.streaming_input_call.future(
             _streaming_input_request_iterator(
                 self._request_pb2, self._payload_pb2),
             test_constants.LONG_TIMEOUT)
       response = response_future.result()
-    expected_response = methods.StreamingInputCall(
+    expected_response = methods.streaming_input_call(
         _streaming_input_request_iterator(self._request_pb2, self._payload_pb2),
         'not a real RpcContext!')
     self.assertEqual(expected_response, response)
@@ -448,7 +449,7 @@ class PythonPluginTest(unittest.TestCase):
     with _CreateService(self._service_pb2, self._response_pb2,
                         self._payload_pb2) as (methods, stub):
       with methods.pause():
-        response_future = stub.StreamingInputCall.future(
+        response_future = stub.streaming_input_call.future(
             _streaming_input_request_iterator(
                 self._request_pb2, self._payload_pb2),
             test_constants.SHORT_TIMEOUT)
@@ -461,7 +462,7 @@ class PythonPluginTest(unittest.TestCase):
     with _CreateService(self._service_pb2, self._response_pb2,
                         self._payload_pb2) as (methods, stub):
       with methods.pause():
-        response_future = stub.StreamingInputCall.future(
+        response_future = stub.streaming_input_call.future(
             _streaming_input_request_iterator(
                 self._request_pb2, self._payload_pb2),
             test_constants.LONG_TIMEOUT)
@@ -474,7 +475,7 @@ class PythonPluginTest(unittest.TestCase):
     with _CreateService(self._service_pb2, self._response_pb2,
                         self._payload_pb2) as (methods, stub):
       with methods.fail():
-        response_future = stub.StreamingInputCall.future(
+        response_future = stub.streaming_input_call.future(
             _streaming_input_request_iterator(
                 self._request_pb2, self._payload_pb2),
             test_constants.LONG_TIMEOUT)
@@ -483,10 +484,10 @@ class PythonPluginTest(unittest.TestCase):
   def testFullDuplexCall(self):
     with _CreateService(self._service_pb2, self._response_pb2,
                         self._payload_pb2) as (methods, stub):
-      responses = stub.FullDuplexCall(
+      responses = stub.full_duplex_call(
           _full_duplex_request_iterator(self._request_pb2),
           test_constants.LONG_TIMEOUT)
-      expected_responses = methods.FullDuplexCall(
+      expected_responses = methods.full_duplex_call(
           _full_duplex_request_iterator(self._request_pb2),
           'not a real RpcContext!')
       for expected_response, response in moves.zip_longest(
@@ -498,7 +499,7 @@ class PythonPluginTest(unittest.TestCase):
     with _CreateService(self._service_pb2, self._response_pb2,
                         self._payload_pb2) as (methods, stub):
       with methods.pause():
-        responses = stub.FullDuplexCall(
+        responses = stub.full_duplex_call(
             request_iterator, test_constants.SHORT_TIMEOUT)
         with self.assertRaises(face.ExpirationError):
           list(responses)
@@ -507,7 +508,7 @@ class PythonPluginTest(unittest.TestCase):
     with _CreateService(self._service_pb2, self._response_pb2,
                         self._payload_pb2) as (methods, stub):
       request_iterator = _full_duplex_request_iterator(self._request_pb2)
-      responses = stub.FullDuplexCall(
+      responses = stub.full_duplex_call(
           request_iterator, test_constants.LONG_TIMEOUT)
       next(responses)
       responses.cancel()
@@ -519,7 +520,7 @@ class PythonPluginTest(unittest.TestCase):
     with _CreateService(self._service_pb2, self._response_pb2,
                         self._payload_pb2) as (methods, stub):
       with methods.fail():
-        responses = stub.FullDuplexCall(
+        responses = stub.full_duplex_call(
             request_iterator, test_constants.LONG_TIMEOUT)
         self.assertIsNotNone(responses)
         with self.assertRaises(face.RemoteError):
@@ -536,9 +537,9 @@ class PythonPluginTest(unittest.TestCase):
         request.response_parameters.add(size=2, interval_us=0)
         request.response_parameters.add(size=3, interval_us=0)
         yield request
-      responses = stub.HalfDuplexCall(
+      responses = stub.half_duplex_call(
           half_duplex_request_iterator(), test_constants.LONG_TIMEOUT)
-      expected_responses = methods.HalfDuplexCall(
+      expected_responses = methods.half_duplex_call(
           half_duplex_request_iterator(), 'not a real RpcContext!')
       for check in moves.zip_longest(expected_responses, responses):
         expected_response, response = check
@@ -566,12 +567,29 @@ class PythonPluginTest(unittest.TestCase):
     with _CreateService(self._service_pb2, self._response_pb2,
                         self._payload_pb2) as (methods, stub):
       with wait():
-        responses = stub.HalfDuplexCall(
+        responses = stub.half_duplex_call(
             half_duplex_request_iterator(), test_constants.SHORT_TIMEOUT)
         # half-duplex waits for the client to send all info
         with self.assertRaises(face.ExpirationError):
           next(responses)
 
+  def testMassagedNames(self):
+    expected_names = {
+        '1': 'anametest',
+        '2': 'nametest',
+        '3': 'name_test1',
+        '4': 'name_tes_t1',
+        '5': 'name1_test',
+        '6': 'name_test',
+    }
+    for key, value in expected_names.items():
+      servicer_identifier = (
+          MASSAGED_NAMES_SERVICER_IDENTIFIER_FORMAT.format(key))
+      servicer_interface = getattr(self._service_pb2, servicer_identifier)
+      self.assertIn(
+          value, dir(servicer_interface),
+          'Massaged name in servicer {}: {} not in {}'.format(
+              servicer_identifier, value, dir(servicer_interface)))
 
 if __name__ == '__main__':
   #os.chdir(os.path.dirname(sys.argv[0]))
