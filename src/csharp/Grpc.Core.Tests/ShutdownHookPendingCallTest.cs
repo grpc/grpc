@@ -43,22 +43,34 @@ using NUnit.Framework;
 
 namespace Grpc.Core.Tests
 {
-    public class ShutdownHookServerTest
+    public class ShutdownHookPendingCallTest
     {
         const string Host = "127.0.0.1";
 
         [Test]
-        public void ProcessExitHookCanCleanupAbandonedServers()
+        public void ProcessExitHookCanCleanupAbandonedCall()
         {
-            var helper = new MockServiceHelper(Host);
-            var server = helper.GetServer();
-            server.Start();
             AppDomain.CurrentDomain.ProcessExit += (object sender, EventArgs e) =>
             {
                 var shutdownChannelsTask = GrpcEnvironment.ShutdownChannelsAsync();
                 var killServersTask = GrpcEnvironment.KillServersAsync();
                 Task.WaitAll(shutdownChannelsTask, killServersTask);
             };
+
+            var helper = new MockServiceHelper(Host);
+            var server = helper.GetServer();
+            server.Start();
+            var channel = helper.GetChannel();
+
+            var readyToShutdown = new TaskCompletionSource<object>();
+            helper.DuplexStreamingHandler = new DuplexStreamingServerMethod<string, string>(async (requestStream, responseStream, context) =>
+            {
+                readyToShutdown.SetResult(null);
+                await requestStream.ToListAsync();
+            });
+
+            var call = Calls.AsyncDuplexStreamingCall(helper.CreateDuplexStreamingCall());
+            readyToShutdown.Task.Wait();  // make sure handler is running
         }
     }
 }
