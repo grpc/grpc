@@ -99,8 +99,8 @@ def protoc_ext_module():
       os.path.join(protoc_lib_deps.CC_INCLUDE, cc_file)
       for cc_file in protoc_lib_deps.CC_FILES]
   plugin_ext = extension.Extension(
-      name='grpc.tools.protoc_compiler',
-      sources=['grpc/tools/protoc_compiler.pyx'] + plugin_sources,
+      name='grpc.tools._protoc_compiler',
+      sources=['grpc/tools/_protoc_compiler.pyx'] + plugin_sources,
       include_dirs=[
           '.',
           'grpc_root',
