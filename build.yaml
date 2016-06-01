@@ -571,6 +571,10 @@ filegroups:
   - grpc_base
   - grpc_secure
 - name: grpc_transport_cronet_client_secure
+  public_headers:
+  - include/grpc/grpc_cronet.h
+  - include/grpc/grpc_security.h
+  - include/grpc/grpc_security_constants.h
   headers:
   - third_party/objective_c/Cronet/cronet_c_for_grpc.h
   src:
@@ -769,7 +773,6 @@ libs:
   - grpc_transport_chttp2_client_secure
   - grpc_transport_chttp2_server_insecure
   - grpc_transport_chttp2_client_insecure
-  - grpc_transport_cronet_client_secure
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
@@ -783,6 +786,21 @@ libs:
   - grpc.dependencies.openssl
   - grpc.dependencies.zlib
   vs_project_guid: '{29D16885-7228-4C31-81ED-5F9187C7F2A9}'
+- name: grpc_cronet
+  build: all
+  language: c
+  src:
+  - src/core/lib/surface/init.c
+  baselib: true
+  deps_linkage: static
+  dll: true
+  filegroups:
+  - grpc_base
+  - grpc_transport_cronet_client_secure
+  generate_plugin_registry: true
+  platforms:
+  - linux
+  secure: true
 - name: grpc_dll
   build: private
   language: c
