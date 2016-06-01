@@ -804,8 +804,10 @@ void grpc_chttp2_add_incoming_goaway(
   gpr_free(msg);
   gpr_slice_unref(goaway_text);
   transport_global->seen_goaway = 1;
-  connectivity_state_set(exec_ctx, transport_global, GRPC_CHANNEL_FATAL_FAILURE,
-                         "got_goaway");
+  /* lie: use transient failure from the transport to indicate goaway has been
+   * received */
+  connectivity_state_set(exec_ctx, transport_global,
+                         GRPC_CHANNEL_TRANSIENT_FAILURE, "got_goaway");
 }
 
 static void maybe_start_some_streams(
