@@ -81,13 +81,12 @@ static __inline bool input_is_valid(uint8_t *input_ptr, size_t length) {
   (uint8_t)((decode_table[input_ptr[0]] << 2) | \
             (decode_table[input_ptr[1]] >> 4))
 
-#define COMPOSE_OUTPUT_BYTE_1(input_ptr)             \
-  (uint8_t)((decode_table[ctx->input_cur[1]] << 4) | \
-            (decode_table[ctx->input_cur[2]] >> 2))
+#define COMPOSE_OUTPUT_BYTE_1(input_ptr)        \
+  (uint8_t)((decode_table[input_ptr[1]] << 4) | \
+            (decode_table[input_ptr[2]] >> 2))
 
-#define COMPOSE_OUTPUT_BYTE_2(input_ptr)             \
-  (uint8_t)((decode_table[ctx->input_cur[2]] << 6) | \
-            decode_table[ctx->input_cur[3]])
+#define COMPOSE_OUTPUT_BYTE_2(input_ptr) \
+  (uint8_t)((decode_table[input_ptr[2]] << 6) | decode_table[input_ptr[3]])
 
 bool grpc_base64_decode_partial(struct grpc_base64_decode_context *ctx) {
   size_t input_tail;
