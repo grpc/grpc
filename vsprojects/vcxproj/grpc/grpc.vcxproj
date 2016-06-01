@@ -293,7 +293,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_win32.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_cronet.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_security.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_security_constants.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\census.h" />
