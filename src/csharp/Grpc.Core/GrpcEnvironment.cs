@@ -72,6 +72,8 @@ namespace Grpc.Core
         /// </summary>
         internal static GrpcEnvironment AddRef()
         {
+            ShutdownHooks.Register();
+
             lock (staticLock)
             {
                 refCount++;
@@ -336,6 +338,33 @@ namespace Grpc.Core
             }
             // by default, create a completion queue for each thread
             return GetThreadPoolSizeOrDefault();
+        }
+
+        private static class ShutdownHooks
+        {
+            static object staticLock = new object();
+            static bool hooksRegistered;
+
+            public static void Register()
+            {
+                lock (staticLock)
+                {
+                    if (!hooksRegistered)
+                    {
+                        AppDomain.CurrentDomain.ProcessExit += ShutdownHookHandler;
+                        AppDomain.CurrentDomain.DomainUnload += ShutdownHookHandler;
+                    }
+                    hooksRegistered = true;
+                }
+            }
+
+            /// <summary>
+            /// Handler for AppDomain.DomainUnload and AppDomain.ProcessExit hooks.
+            /// </summary>
+            private static void ShutdownHookHandler(object sender, EventArgs e)
+            {
+                Task.WaitAll(GrpcEnvironment.ShutdownChannelsAsync(), GrpcEnvironment.KillServersAsync());
+            }
         }
     }
 }
