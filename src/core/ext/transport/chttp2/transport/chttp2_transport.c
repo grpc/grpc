@@ -850,7 +850,7 @@ static void start_writing(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t) {
                       "start_writing:nothing_to_write");
     }
     end_waiting_for_write(exec_ctx, t, GRPC_ERROR_CREATE("Nothing to write"));
-    if (!t->endpoint_reading) {
+    if (t->ep && !t->endpoint_reading) {
       destroy_endpoint(exec_ctx, t);
     }
   }
