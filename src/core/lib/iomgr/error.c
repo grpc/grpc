@@ -33,6 +33,7 @@
 
 #include "src/core/lib/iomgr/error.h"
 
+#include <inttypes.h>
 #include <stdbool.h>
 #include <string.h>
 
@@ -340,7 +341,7 @@ static char *key_time(void *p) {
 
 static char *fmt_int(void *p) {
   char *s;
-  gpr_asprintf(&s, "%lld", (intptr_t)p);
+  gpr_asprintf(&s, "%"PRIdPTR, (intptr_t)p);
   return s;
 }
 
