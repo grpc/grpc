@@ -164,9 +164,9 @@ exports.getProtobufServiceAttrs = function getProtobufServiceAttrs(service,
 exports.logger = console;
 
 /**
- * The current logging verbosity. UNSET corresponds to logging everything
+ * The current logging verbosity. 0 corresponds to logging everything
  */
-exports.logVerbosity = -1;
+exports.logVerbosity = 0;
 
 /**
  * Log a message if the severity is at least as high as the current verbosity
