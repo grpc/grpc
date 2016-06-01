@@ -54,12 +54,15 @@ namespace Grpc.Core
         static int refCount;
         static int? customThreadPoolSize;
         static int? customCompletionQueueCount;
+        static readonly HashSet<Channel> registeredChannels = new HashSet<Channel>();
 
         static ILogger logger = new ConsoleLogger();
 
+        readonly object myLock = new object();
         readonly GrpcThreadPool threadPool;
         readonly DebugStats debugStats = new DebugStats();
         readonly AtomicCounter cqPickerCounter = new AtomicCounter();
+
         bool isClosed;
 
         /// <summary>
@@ -108,6 +111,37 @@ namespace Grpc.Core
             {
                 return refCount;
             }
+        }
+
+        internal static void RegisterChannel(Channel channel)
+        {
+            lock (staticLock)
+            {
+                GrpcPreconditions.CheckNotNull(channel);
+                registeredChannels.Add(channel);
+            }
+        }
+
+        internal static void UnregisterChannel(Channel channel)
+        {
+            lock (staticLock)
+            {
+                GrpcPreconditions.CheckNotNull(channel);
+                GrpcPreconditions.CheckArgument(registeredChannels.Remove(channel), "Channel not found in the registered channels set.");
+            }
+        }
+
+        /// <summary>
+        /// Requests shutdown of all channels created by the current process.
+        /// </summary>
+        public static Task ShutdownChannelsAsync()
+        {
+            HashSet<Channel> snapshot = null;
+            lock (staticLock)
+            {
+                snapshot = new HashSet<Channel>(registeredChannels);
+            }
+            return Task.WhenAll(snapshot.Select((channel) => channel.ShutdownAsync()));
         }
 
         /// <summary>
