@@ -153,7 +153,7 @@ static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     memset(c->result, 0, sizeof(*c->result));
     notify = c->notify;
     c->notify = NULL;
-    notify->cb(exec_ctx, notify->cb_arg, GRPC_ERROR_NONE);
+    notify->cb(exec_ctx, notify->cb_arg, grpc_error_ref(error));
   }
 }
 
