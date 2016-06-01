@@ -86,6 +86,7 @@ namespace Grpc.Core
             {
                 this.handle.RegisterCompletionQueue(cq);
             }
+            GrpcEnvironment.RegisterServer(this);
         }
 
         /// <summary>
@@ -198,6 +199,7 @@ namespace Grpc.Core
                 GrpcPreconditions.CheckState(!shutdownRequested);
                 shutdownRequested = true;
             }
+            GrpcEnvironment.UnregisterServer(this);
 
             var cq = environment.CompletionQueues.First();  // any cq will do
             handle.ShutdownAndNotify(HandleServerShutdown, cq);
@@ -205,10 +207,32 @@ namespace Grpc.Core
             {
                 handle.CancelAllCalls();
             }
-            await shutdownTcs.Task.ConfigureAwait(false);
+
+            await ShutdownCompleteOrEnvironmentDeadAsync().ConfigureAwait(false);
+
             DisposeHandle();
 
             await GrpcEnvironment.ReleaseAsync().ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// In case the environment's threadpool becomes dead, the shutdown completion will
+        /// never be delivered, but we need to release the environment's handle anyway.
+        /// </summary>
+        private async Task ShutdownCompleteOrEnvironmentDeadAsync()
+        {
+            while (true)
+            {
+                var task = await Task.WhenAny(shutdownTcs.Task, Task.Delay(20)).ConfigureAwait(false);
+                if (shutdownTcs.Task == task)
+                {
+                    return;
+                }
+                if (!environment.IsAlive)
+                {
+                    return;
+                }
+            }
         }
 
         /// <summary>
