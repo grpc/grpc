@@ -58,6 +58,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint_pair_windows.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_and_epoll_posix.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_posix.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
@@ -570,6 +573,9 @@
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint_pair.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_and_epoll_posix.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_posix.h">
