@@ -53,12 +53,6 @@ namespace Grpc.Core.Tests
             var helper = new MockServiceHelper(Host);
             var server = helper.GetServer();
             server.Start();
-            AppDomain.CurrentDomain.ProcessExit += (object sender, EventArgs e) =>
-            {
-                var shutdownChannelsTask = GrpcEnvironment.ShutdownChannelsAsync();
-                var killServersTask = GrpcEnvironment.KillServersAsync();
-                Task.WaitAll(shutdownChannelsTask, killServersTask);
-            };
         }
     }
 }

@@ -50,13 +50,6 @@ namespace Grpc.Core.Tests
         [Test]
         public void ProcessExitHookCanCleanupAbandonedCall()
         {
-            AppDomain.CurrentDomain.ProcessExit += (object sender, EventArgs e) =>
-            {
-                var shutdownChannelsTask = GrpcEnvironment.ShutdownChannelsAsync();
-                var killServersTask = GrpcEnvironment.KillServersAsync();
-                Task.WaitAll(shutdownChannelsTask, killServersTask);
-            };
-
             var helper = new MockServiceHelper(Host);
             var server = helper.GetServer();
             server.Start();
