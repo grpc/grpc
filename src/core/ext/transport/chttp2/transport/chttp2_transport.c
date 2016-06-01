@@ -93,6 +93,8 @@ static void initiate_writing(grpc_exec_ctx *exec_ctx, void *t,
                              grpc_error *error);
 
 static void start_writing(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t);
+static void end_waiting_for_write(grpc_exec_ctx *exec_ctx,
+                                  grpc_chttp2_transport *t, grpc_error *error);
 
 /** Set a transport level setting, and push it to our peer */
 static void push_setting(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
@@ -209,6 +211,7 @@ static void destruct_transport(grpc_exec_ctx *exec_ctx,
   gpr_free(t);
 }
 
+/*#define REFCOUNTING_DEBUG 1*/
 #ifdef REFCOUNTING_DEBUG
 #define REF_TRANSPORT(t, r) ref_transport(t, r, __FILE__, __LINE__)
 #define UNREF_TRANSPORT(cl, t, r) unref_transport(cl, t, r, __FILE__, __LINE__)
@@ -457,6 +460,9 @@ static void close_transport_locked(grpc_exec_ctx *exec_ctx,
                                    grpc_chttp2_transport *t,
                                    grpc_error *error) {
   if (!t->closed) {
+    if (grpc_http_write_state_trace) {
+      gpr_log(GPR_DEBUG, "W:%p close transport", t);
+    }
     t->closed = 1;
     connectivity_state_set(exec_ctx, &t->global, GRPC_CHANNEL_FATAL_FAILURE,
                            GRPC_ERROR_REF(error), "close_transport");
@@ -836,7 +842,17 @@ static void start_writing(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t) {
     prevent_endpoint_shutdown(t);
     grpc_exec_ctx_sched(exec_ctx, &t->writing_action, GRPC_ERROR_NONE, NULL);
   } else {
-    set_write_state(t, GRPC_CHTTP2_WRITING_INACTIVE, "start_writing");
+    if (t->closed) {
+      set_write_state(t, GRPC_CHTTP2_WRITING_INACTIVE,
+                      "start_writing:transport_closed");
+    } else {
+      set_write_state(t, GRPC_CHTTP2_WRITING_INACTIVE,
+                      "start_writing:nothing_to_write");
+    }
+    end_waiting_for_write(exec_ctx, t, GRPC_ERROR_CREATE("Nothing to write"));
+    if (!t->endpoint_reading) {
+      destroy_endpoint(exec_ctx, t);
+    }
   }
 }
 
@@ -881,6 +897,18 @@ static void push_setting(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   }
 }
 
+static void end_waiting_for_write(grpc_exec_ctx *exec_ctx,
+                                  grpc_chttp2_transport *t, grpc_error *error) {
+  grpc_chttp2_stream_global *stream_global;
+  while (grpc_chttp2_list_pop_closed_waiting_for_writing(&t->global,
+                                                         &stream_global)) {
+    fail_pending_writes(exec_ctx, &t->global, stream_global,
+                        GRPC_ERROR_REF(error));
+    GRPC_CHTTP2_STREAM_UNREF(exec_ctx, stream_global, "finish_writes");
+  }
+  GRPC_ERROR_UNREF(error);
+}
+
 static void terminate_writing_with_lock(grpc_exec_ctx *exec_ctx,
                                         grpc_chttp2_transport *t,
                                         grpc_chttp2_stream *s_ignored,
@@ -895,13 +923,7 @@ static void terminate_writing_with_lock(grpc_exec_ctx *exec_ctx,
 
   grpc_chttp2_cleanup_writing(exec_ctx, &t->global, &t->writing);
 
-  grpc_chttp2_stream_global *stream_global;
-  while (grpc_chttp2_list_pop_closed_waiting_for_writing(&t->global,
-                                                         &stream_global)) {
-    fail_pending_writes(exec_ctx, &t->global, stream_global,
-                        GRPC_ERROR_REF(error));
-    GRPC_CHTTP2_STREAM_UNREF(exec_ctx, stream_global, "finish_writes");
-  }
+  end_waiting_for_write(exec_ctx, t, error);
 
   switch (t->executor.write_state) {
     case GRPC_CHTTP2_WRITING_INACTIVE:
@@ -927,7 +949,6 @@ static void terminate_writing_with_lock(grpc_exec_ctx *exec_ctx,
   }
 
   UNREF_TRANSPORT(exec_ctx, t, "writing");
-  GRPC_ERROR_UNREF(error);
 }
 
 void grpc_chttp2_terminate_writing(grpc_exec_ctx *exec_ctx,
@@ -1893,11 +1914,12 @@ static void post_reading_action_locked(grpc_exec_ctx *exec_ctx,
   if (error != GRPC_ERROR_NONE) {
     drop_connection(exec_ctx, t, GRPC_ERROR_REF(error));
     t->endpoint_reading = 0;
+    if (grpc_http_write_state_trace) {
+      gpr_log(GPR_DEBUG, "R:%p -> 0 ws=%s", t,
+              write_state_name(t->executor.write_state));
+    }
     if (t->executor.write_state == GRPC_CHTTP2_WRITING_INACTIVE && t->ep) {
-      grpc_endpoint_destroy(exec_ctx, t->ep);
-      t->ep = NULL;
-      /* safe as we still have a ref for read */
-      UNREF_TRANSPORT(exec_ctx, t, "disconnect");
+      destroy_endpoint(exec_ctx, t);
     }
   } else if (!t->closed) {
     keep_reading = true;
