@@ -433,7 +433,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\subchannel_call_holder.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\subchannel_index.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\uri_parser.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\objective_c\Cronet\cronet_c_for_grpc.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v1\load_balancer.pb.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb.h" />
@@ -758,12 +757,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\insecure\server_chttp2.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\insecure\channel_create.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\cronet\client\secure\cronet_channel_create.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\cronet\transport\cronet_api_dummy.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\cronet\transport\cronet_transport.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.c">
     </ClCompile>
