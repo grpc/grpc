@@ -52,11 +52,6 @@ namespace Grpc.Core.Tests
         {
             var channel = new Channel(Host, 1000, ChannelCredentials.Insecure);
             var channel2 = new Channel(Host, 1001, ChannelCredentials.Insecure);
-            AppDomain.CurrentDomain.ProcessExit += (object sender, EventArgs e) =>
-            {
-                GrpcEnvironment.ShutdownChannelsAsync().Wait();
-            };
         }
-        // TODO: test what happens if there's an appdomain unload 
     }
 }
