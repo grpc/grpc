@@ -59,10 +59,9 @@ namespace Grpc.Core.Tests
             server.Start();
             AppDomain.CurrentDomain.ProcessExit += (object sender, EventArgs e) =>
             {
-                // TODO: expose API for killing all servers
-                // TODO: expose API for closing all channels
-                server.KillAsync();
-                GrpcEnvironment.ReleaseAsync();
+                var shutdownChannelsTask = GrpcEnvironment.ShutdownChannelsAsync();
+                var killServersTask = GrpcEnvironment.KillServersAsync();
+                Task.WaitAll(shutdownChannelsTask, killServersTask);
             };
         }
 
