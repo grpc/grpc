@@ -33,7 +33,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_POSIX_SOCKET
+#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
@@ -67,4 +67,4 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server *server,
 }
 
 
-#endif // GPR_POSIX_SOCKET
+#endif // GPR_SUPPORT_CHANNELS_FROM_FD

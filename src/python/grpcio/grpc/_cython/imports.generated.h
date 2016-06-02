@@ -332,7 +332,7 @@ extern grpc_call_error_to_string_type grpc_call_error_to_string_import;
 typedef grpc_channel *(*grpc_insecure_channel_create_from_fd_type)(const char *target, int fd, const grpc_channel_args *args);
 extern grpc_insecure_channel_create_from_fd_type grpc_insecure_channel_create_from_fd_import;
 #define grpc_insecure_channel_create_from_fd grpc_insecure_channel_create_from_fd_import
-typedef void(*grpc_server_add_insecure_channel_from_fd_type)(grpc_server *server, int fd);
+typedef void(*grpc_server_add_insecure_channel_from_fd_type)(grpc_server *server, grpc_completion_queue *cq, int fd);
 extern grpc_server_add_insecure_channel_from_fd_type grpc_server_add_insecure_channel_from_fd_import;
 #define grpc_server_add_insecure_channel_from_fd grpc_server_add_insecure_channel_from_fd_import
 typedef const grpc_auth_property *(*grpc_auth_property_iterator_next_type)(grpc_auth_property_iterator *it);
