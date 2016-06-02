@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -28,8 +27,32 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+import json
+import unittest
 
-cd $(dirname $0)/../../..
+import pkg_resources
+import six
 
-PYTHONPATH=src/python/grpcio_tests:src/python/grpcio:src/python/gens .tox/py27/bin/python src/python/grpcio_tests/tests/qps/qps_worker.py $@
+import tests
+
+
+class Sanity(unittest.TestCase):
+
+  def testTestsJsonUpToDate(self):
+    """Autodiscovers all test suites and checks that tests.json is up to date"""
+    loader = tests.Loader()
+    loader.loadTestsFromNames(['tests'])
+    test_suite_names = [
+        test_case_class.id().rsplit('.', 1)[0]
+        for test_case_class in tests._loader.iterate_suite_cases(loader.suite)]
+    test_suite_names = sorted(set(test_suite_names))
+
+    tests_json_string = pkg_resources.resource_string('tests', 'tests.json')
+    if six.PY3:
+      tests_json_string = tests_json_string.decode()
+    tests_json = json.loads(tests_json_string)
+    self.assertListEqual(test_suite_names, tests_json)
+
+
+if __name__ == '__main__':
+  unittest.main(verbosity=2)

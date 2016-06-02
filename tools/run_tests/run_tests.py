@@ -381,12 +381,9 @@ class PythonLanguage(object):
 
   def test_specs(self):
     # load list of known test suites
-    with open('src/python/grpcio/tests/tests.json') as tests_json_file:
+    with open('src/python/grpcio_tests/tests/tests.json') as tests_json_file:
       tests_json = json.load(tests_json_file)
     environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
-    environment['PYTHONPATH'] = '{}:{}'.format(
-      os.path.abspath('src/python/gens'),
-      os.path.abspath('src/python/grpcio_health_checking'))
     if self.config.build_config != 'gcov':
       return [self.config.job_spec(
           ['tools/run_tests/run_python.sh', tox_env],

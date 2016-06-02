@@ -49,7 +49,7 @@ then
   export GRPC_PYTHON_ENABLE_CYTHON_TRACING=1
   tox -e ${TOX_PYTHON_ENV}
 else
-  $ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/setup.py test_lite
+  $ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/src/python/grpcio_tests/setup.py test_lite
 fi
 
 mkdir -p $ROOT/reports

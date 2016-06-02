@@ -13,6 +13,8 @@ python_build/
 htmlcov/
 dist/
 *.egg
+py27/
+py34/
 
 # Node installation output
 ^node_modules

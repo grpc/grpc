@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,8 +27,4 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
 
-cd $(dirname $0)/../../..
-
-PYTHONPATH=src/python/grpcio_tests:src/python/grpcio:src/python/gens .tox/py27/bin/python src/python/grpcio_tests/tests/qps/qps_worker.py $@

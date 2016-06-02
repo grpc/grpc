@@ -27,27 +27,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import json
-import unittest
+# AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio_tests/grpc_version.py.template`!!!
 
-import tests
-
-
-class Sanity(unittest.TestCase):
-
-  def testTestsJsonUpToDate(self):
-    """Autodiscovers all test suites and checks that tests.json is up to date"""
-    loader = tests.Loader()
-    loader.loadTestsFromNames(['tests'])
-    test_suite_names = [
-        test_case_class.id().rsplit('.', 1)[0]
-        for test_case_class in tests._loader.iterate_suite_cases(loader.suite)]
-    test_suite_names = sorted(set(test_suite_names))
-
-    with open('src/python/grpcio/tests/tests.json') as tests_json_file:
-      tests_json = json.load(tests_json_file)
-    self.assertListEqual(test_suite_names, tests_json)
-
-
-if __name__ == '__main__':
-  unittest.main(verbosity=2)
+VERSION='0.15.0.dev0'
