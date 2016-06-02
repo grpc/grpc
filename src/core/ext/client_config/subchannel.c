@@ -621,6 +621,7 @@ static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
                                  grpc_error *error) {
   grpc_subchannel *c = arg;
+  grpc_channel_args *delete_channel_args = c->connecting_result.channel_args;
 
   GRPC_SUBCHANNEL_WEAK_REF(c, "connected");
   gpr_mu_lock(&c->mu);
@@ -651,6 +652,7 @@ static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
   }
   gpr_mu_unlock(&c->mu);
   GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
+  grpc_channel_args_destroy(delete_channel_args);
 }
 
 /*
