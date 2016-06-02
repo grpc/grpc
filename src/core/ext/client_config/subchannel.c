@@ -480,11 +480,11 @@ static void subchannel_on_child_state_changed(grpc_exec_ctx *exec_ctx, void *p,
   if (iomgr_success) {
     if (sw->connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
       /* any errors on a subchannel ==> we're done, create a new one */
-      sw->connectivity_state = GRPC_CHANNEL_FATAL_FAILURE;
+      sw->connectivity_state = GRPC_CHANNEL_SHUTDOWN;
     }
     grpc_connectivity_state_set(exec_ctx, &c->state_tracker,
                                 sw->connectivity_state, "reflect_child");
-    if (sw->connectivity_state != GRPC_CHANNEL_FATAL_FAILURE) {
+    if (sw->connectivity_state != GRPC_CHANNEL_SHUTDOWN) {
       grpc_connected_subchannel_notify_on_state_change(
           exec_ctx, GET_CONNECTED_SUBCHANNEL(c, no_barrier), NULL,
           &sw->connectivity_state, &sw->closure);
