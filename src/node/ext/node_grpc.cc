@@ -40,6 +40,7 @@
 #include "grpc/grpc_security.h"
 #include "grpc/support/alloc.h"
 #include "grpc/support/log.h"
+#include "grpc/support/time.h"
 
 #include "call.h"
 #include "call_credentials.h"
@@ -48,6 +49,7 @@
 #include "server.h"
 #include "completion_queue_async_worker.h"
 #include "server_credentials.h"
+#include "timeval.h"
 
 using v8::FunctionTemplate;
 using v8::Local;
@@ -57,9 +59,14 @@ using v8::Object;
 using v8::Uint32;
 using v8::String;
 
+typedef struct log_args {
+  gpr_log_func_args core_args;
+  gpr_timespec timestamp;
+} log_args;
+
 typedef struct logger_state {
   Nan::Callback *callback;
-  std::list<gpr_log_func_args *> *pending_args;
+  std::list<log_args *> *pending_args;
   uv_mutex_t mutex;
   uv_async_t async;
   // Indicates that a logger has been set
@@ -327,35 +334,38 @@ NAN_METHOD(SetDefaultRootsPem) {
 
 NAUV_WORK_CB(LogMessagesCallback) {
   Nan::HandleScope scope;
-  std::list<gpr_log_func_args *> args;
+  std::list<log_args *> args;
   uv_mutex_lock(&grpc_logger_state.mutex);
   args.splice(args.begin(), *grpc_logger_state.pending_args);
   uv_mutex_unlock(&grpc_logger_state.mutex);
   /* Call the callback with each log message */
   while (!args.empty()) {
-    gpr_log_func_args *arg = args.front();
+    log_args *arg = args.front();
     args.pop_front();
-    Local<Value> file = Nan::New(arg->file).ToLocalChecked();
-    Local<Value> line = Nan::New<Uint32, uint32_t>(arg->line);
+    Local<Value> file = Nan::New(arg->core_args.file).ToLocalChecked();
+    Local<Value> line = Nan::New<Uint32, uint32_t>(arg->core_args.line);
     Local<Value> severity = Nan::New(
-        gpr_log_severity_string(arg->severity)).ToLocalChecked();
-    Local<Value> message = Nan::New(arg->message).ToLocalChecked();
-    const int argc = 4;
-    Local<Value> argv[argc] = {file, line, severity, message};
+        gpr_log_severity_string(arg->core_args.severity)).ToLocalChecked();
+    Local<Value> message = Nan::New(arg->core_args.message).ToLocalChecked();
+    Local<Value> timestamp = Nan::New<v8::Date>(
+        grpc::node::TimespecToMilliseconds(arg->timestamp)).ToLocalChecked();
+    const int argc = 5;
+    Local<Value> argv[argc] = {file, line, severity, message, timestamp};
     grpc_logger_state.callback->Call(argc, argv);
-    delete[] arg->message;
+    delete[] arg->core_args.message;
     delete arg;
   }
 }
 
 void node_log_func(gpr_log_func_args *args) {
   // TODO(mlumish): Use the core's log formatter when it becomes available
-  gpr_log_func_args *args_copy = new gpr_log_func_args;
+  log_args *args_copy = new log_args;
   size_t message_len = strlen(args->message) + 1;
   char *message = new char[message_len];
   memcpy(message, args->message, message_len);
-  memcpy(args_copy, args, sizeof(gpr_log_func_args));
-  args_copy->message = message;
+  memcpy(&args_copy->core_args, args, sizeof(gpr_log_func_args));
+  args_copy->core_args.message = message;
+  args_copy->timestamp = gpr_now(GPR_CLOCK_REALTIME);
 
   uv_mutex_lock(&grpc_logger_state.mutex);
   grpc_logger_state.pending_args->push_back(args_copy);
@@ -366,7 +376,7 @@ void node_log_func(gpr_log_func_args *args) {
 
 void init_logger() {
   memset(&grpc_logger_state, 0, sizeof(logger_state));
-  grpc_logger_state.pending_args = new std::list<gpr_log_func_args *>();
+  grpc_logger_state.pending_args = new std::list<log_args *>();
   uv_mutex_init(&grpc_logger_state.mutex);
   uv_async_init(uv_default_loop(),
                 &grpc_logger_state.async,

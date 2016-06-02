@@ -124,6 +124,10 @@ exports.load = function load(filename, format, options) {
   return loadObject(builder.ns, options);
 };
 
+var log_template = _.template(
+    '{severity} {timestamp}\t{file}:{line}]\t{message}',
+    {interpolate: /{([\s\S]+?)}/g});
+
 /**
  * Sets the logger function for the gRPC module. For debugging purposes, the C
  * core will log synchronously directly to stdout unless this function is
@@ -134,9 +138,15 @@ exports.load = function load(filename, format, options) {
  */
 exports.setLogger = function setLogger(logger) {
   common.logger = logger;
-  grpc.setDefaultLoggerCallback(function(file, line, severity, message) {
-    file = path.basename(file);
-    logger.error(severity + '\t' + file + ':' + line + ']\t' + message);
+  grpc.setDefaultLoggerCallback(function(file, line, severity,
+                                         message, timestamp) {
+    logger.error(log_template({
+      file: path.basename(file),
+      line: line,
+      severity: severity,
+      message: message,
+      timestamp: timestamp.toISOString()
+    }));
   });
 };
 
