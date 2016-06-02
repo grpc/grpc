@@ -170,6 +170,45 @@ grpc::string ModuleAlias(const grpc::string& filename) {
   return module_name;
 }
 
+grpc::string ToSnakeCase(const grpc::string& method_name) {
+  grpc::string result;
+  size_t word_start = 0;
+  size_t word_end = 0;
+  while (true) {
+    word_start = word_end;
+    if (word_start + 1 < method_name.size() &&
+        std::isupper(method_name[word_start + 1])) {
+      // the word starting at `word_start` is an all-caps acronym
+      for (word_end = word_start + 1; word_end < method_name.size(); ++word_end) {
+        if (!std::isupper(method_name[word_end])) {
+          // back up a character; we've walked over into the next word
+          --word_end;
+          break;
+        }
+      }
+    } else {
+      // the word starting at `word_start` is a lower-case-tail word (or a
+      // trailing single-character acronym - but we treat both the same way)
+      for (word_end = word_start + 1; word_end < method_name.size(); ++word_end) {
+        if (std::isupper(method_name[word_end])) {
+          // this is the end of the current word
+          break;
+        }
+      }
+    }
+    for (size_t i = word_start; i < word_end; ++i) {
+      result.push_back(std::tolower(method_name[i]));
+    }
+    // Only push the underscore if we're not at the end of the name, and if we
+    // are at the end of the name, break out of the loop.
+    if (word_end < method_name.size()) {
+      result.push_back('_');
+    } else {
+      break;
+    }
+  }
+  return result;
+}
 
 bool GetModuleAndMessagePath(const Descriptor* type,
                              const ServiceDescriptor* service,
@@ -235,14 +274,15 @@ bool PrintBetaServicer(const ServiceDescriptor* service,
     IndentScope raii_class_indent(out);
     PrintAllComments(service, out);
     for (int i = 0; i < service->method_count(); ++i) {
-      auto meth = service->method(i);
-      grpc::string arg_name = meth->client_streaming() ?
+      auto method = service->method(i);
+      grpc::string method_name = ToSnakeCase(method->name());
+      grpc::string arg_name = method->client_streaming() ?
           "request_iterator" : "request";
       out->Print("def $Method$(self, $ArgName$, context):\n",
-                 "Method", meth->name(), "ArgName", arg_name);
+                 "Method", method_name, "ArgName", arg_name);
       {
         IndentScope raii_method_indent(out);
-        PrintAllComments(meth, out);
+        PrintAllComments(method, out);
         out->Print("context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)\n");
       }
     }
@@ -258,17 +298,18 @@ bool PrintBetaStub(const ServiceDescriptor* service,
     IndentScope raii_class_indent(out);
     PrintAllComments(service, out);
     for (int i = 0; i < service->method_count(); ++i) {
-      const MethodDescriptor* meth = service->method(i);
-      grpc::string arg_name = meth->client_streaming() ?
+      const MethodDescriptor* method = service->method(i);
+      grpc::string method_name = ToSnakeCase(method->name());
+      grpc::string arg_name = method->client_streaming() ?
           "request_iterator" : "request";
-      auto methdict = ListToDict({"Method", meth->name(), "ArgName", arg_name});
+      auto methdict = ListToDict({"Method", method_name, "ArgName", arg_name});
       out->Print(methdict, "def $Method$(self, $ArgName$, timeout, metadata=None, with_call=False, protocol_options=None):\n");
       {
         IndentScope raii_method_indent(out);
-        PrintAllComments(meth, out);
+        PrintAllComments(method, out);
         out->Print("raise NotImplementedError()\n");
       }
-      if (!meth->server_streaming()) {
+      if (!method->server_streaming()) {
         out->Print(methdict, "$Method$.future = None\n");
       }
     }
@@ -303,12 +344,13 @@ bool PrintBetaServerFactory(const grpc::string& package_qualified_service_name,
                                    &output_message_module_and_class)) {
         return false;
       }
+      grpc::string method_name = ToSnakeCase(method->name());
       method_implementation_constructors.insert(
-          make_pair(method->name(), method_implementation_constructor));
+          make_pair(method_name, method_implementation_constructor));
       input_message_modules_and_classes.insert(
-          make_pair(method->name(), input_message_module_and_class));
+          make_pair(method_name, input_message_module_and_class));
       output_message_modules_and_classes.insert(
-          make_pair(method->name(), output_message_module_and_class));
+          make_pair(method_name, output_message_module_and_class));
     }
     out->Print("request_deserializers = {\n");
     for (auto name_and_input_module_class_pair =
@@ -397,12 +439,13 @@ bool PrintBetaStubFactory(const grpc::string& package_qualified_service_name,
                                    &output_message_module_and_class)) {
         return false;
       }
+      grpc::string method_name = ToSnakeCase(method->name());
       method_cardinalities.insert(
-          make_pair(method->name(), method_cardinality));
+          make_pair(method_name, method_cardinality));
       input_message_modules_and_classes.insert(
-          make_pair(method->name(), input_message_module_and_class));
+          make_pair(method_name, input_message_module_and_class));
       output_message_modules_and_classes.insert(
-          make_pair(method->name(), output_message_module_and_class));
+          make_pair(method_name, output_message_module_and_class));
     }
     out->Print("request_serializers = {\n");
     for (auto name_and_input_module_class_pair =

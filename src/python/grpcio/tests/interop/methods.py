@@ -51,23 +51,23 @@ _TIMEOUT = 7
 
 class TestService(test_pb2.BetaTestServiceServicer):
 
-  def EmptyCall(self, request, context):
+  def empty_call(self, request, context):
     return empty_pb2.Empty()
 
-  def UnaryCall(self, request, context):
+  def unary_call(self, request, context):
     return messages_pb2.SimpleResponse(
         payload=messages_pb2.Payload(
             type=messages_pb2.COMPRESSABLE,
             body=b'\x00' * request.response_size))
 
-  def StreamingOutputCall(self, request, context):
+  def streaming_output_call(self, request, context):
     for response_parameters in request.response_parameters:
       yield messages_pb2.StreamingOutputCallResponse(
           payload=messages_pb2.Payload(
               type=request.response_type,
               body=b'\x00' * response_parameters.size))
 
-  def StreamingInputCall(self, request_iterator, context):
+  def streaming_input_call(self, request_iterator, context):
     aggregate_size = 0
     for request in request_iterator:
       if request.payload and request.payload.body:
@@ -75,7 +75,7 @@ class TestService(test_pb2.BetaTestServiceServicer):
     return messages_pb2.StreamingInputCallResponse(
         aggregated_payload_size=aggregate_size)
 
-  def FullDuplexCall(self, request_iterator, context):
+  def full_duplex_call(self, request_iterator, context):
     for request in request_iterator:
       yield messages_pb2.StreamingOutputCallResponse(
           payload=messages_pb2.Payload(
@@ -84,8 +84,8 @@ class TestService(test_pb2.BetaTestServiceServicer):
 
   # NOTE(nathaniel): Apparently this is the same as the full-duplex call?
   # NOTE(atash): It isn't even called in the interop spec (Oct 22 2015)...
-  def HalfDuplexCall(self, request_iterator, context):
-    return self.FullDuplexCall(request_iterator, context)
+  def half_duplex_call(self, request_iterator, context):
+    return self.full_duplex_call(request_iterator, context)
 
 
 def _large_unary_common_behavior(stub, fill_username, fill_oauth_scope):
@@ -94,7 +94,7 @@ def _large_unary_common_behavior(stub, fill_username, fill_oauth_scope):
         response_type=messages_pb2.COMPRESSABLE, response_size=314159,
         payload=messages_pb2.Payload(body=b'\x00' * 271828),
         fill_username=fill_username, fill_oauth_scope=fill_oauth_scope)
-    response_future = stub.UnaryCall.future(request, _TIMEOUT)
+    response_future = stub.unary_call.future(request, _TIMEOUT)
     response = response_future.result()
     if response.payload.type is not messages_pb2.COMPRESSABLE:
       raise ValueError(
@@ -107,7 +107,7 @@ def _large_unary_common_behavior(stub, fill_username, fill_oauth_scope):
 
 def _empty_unary(stub):
   with stub:
-    response = stub.EmptyCall(empty_pb2.Empty(), _TIMEOUT)
+    response = stub.empty_call(empty_pb2.Empty(), _TIMEOUT)
     if not isinstance(response, empty_pb2.Empty):
       raise TypeError(
           'response is of type "%s", not empty_pb2.Empty!', type(response))
@@ -126,7 +126,7 @@ def _client_streaming(stub):
     requests = (
         messages_pb2.StreamingInputCallRequest(payload=payload)
         for payload in payloads)
-    response = stub.StreamingInputCall(requests, _TIMEOUT)
+    response = stub.streaming_input_call(requests, _TIMEOUT)
     if response.aggregated_payload_size != 74922:
       raise ValueError(
           'incorrect size %d!' % response.aggregated_payload_size)
@@ -144,7 +144,7 @@ def _server_streaming(stub):
             messages_pb2.ResponseParameters(size=sizes[2]),
             messages_pb2.ResponseParameters(size=sizes[3]),
         ))
-    response_iterator = stub.StreamingOutputCall(request, _TIMEOUT)
+    response_iterator = stub.streaming_output_call(request, _TIMEOUT)
     for index, response in enumerate(response_iterator):
       if response.payload.type != messages_pb2.COMPRESSABLE:
         raise ValueError(
@@ -159,7 +159,7 @@ def _cancel_after_begin(stub):
     payloads = [messages_pb2.Payload(body=b'\x00' * size) for size in sizes]
     requests = [messages_pb2.StreamingInputCallRequest(payload=payload)
                 for payload in payloads]
-    responses = stub.StreamingInputCall.future(requests, _TIMEOUT)
+    responses = stub.streaming_input_call.future(requests, _TIMEOUT)
     responses.cancel()
     if not responses.cancelled():
       raise ValueError('expected call to be cancelled')
@@ -209,7 +209,7 @@ def _ping_pong(stub):
   request_payload_sizes = (27182, 8, 1828, 45904)
 
   with stub, _Pipe() as pipe:
-    response_iterator = stub.FullDuplexCall(pipe, _TIMEOUT)
+    response_iterator = stub.full_duplex_call(pipe, _TIMEOUT)
     print('Starting ping-pong with response iterator %s' % response_iterator)
     for response_size, payload_size in zip(
         request_response_sizes, request_payload_sizes):
@@ -232,7 +232,7 @@ def _cancel_after_first_response(stub):
   request_response_sizes = (31415, 9, 2653, 58979)
   request_payload_sizes = (27182, 8, 1828, 45904)
   with stub, _Pipe() as pipe:
-    response_iterator = stub.FullDuplexCall(pipe, _TIMEOUT)
+    response_iterator = stub.full_duplex_call(pipe, _TIMEOUT)
 
     response_size = request_response_sizes[0]
     payload_size = request_payload_sizes[0]
@@ -258,7 +258,7 @@ def _cancel_after_first_response(stub):
 def _timeout_on_sleeping_server(stub):
   request_payload_size = 27182
   with stub, _Pipe() as pipe:
-    response_iterator = stub.FullDuplexCall(pipe, 0.001)
+    response_iterator = stub.full_duplex_call(pipe, 0.001)
 
     request = messages_pb2.StreamingOutputCallRequest(
         response_type=messages_pb2.COMPRESSABLE,
@@ -275,7 +275,7 @@ def _timeout_on_sleeping_server(stub):
 
 def _empty_stream(stub):
   with stub, _Pipe() as pipe:
-    response_iterator = stub.FullDuplexCall(pipe, _TIMEOUT)
+    response_iterator = stub.full_duplex_call(pipe, _TIMEOUT)
     pipe.close()
     try:
       next(response_iterator)

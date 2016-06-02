@@ -41,12 +41,15 @@ class HealthServicer(health_pb2.BetaHealthServicer):
     self._server_status_lock = threading.Lock()
     self._server_status = {}
 
-  def Check(self, request, context):
+  def check(self, request, context):
+    """RPC implementation for checking a server's status.
+
+    See the health.v1.health protobuf file.
+    """
     with self._server_status_lock:
       if request.service not in self._server_status:
-        # TODO(atash): once the Python API has a way of setting the server
-        # status, bring us into conformance with the health check spec by
-        # returning the NOT_FOUND status here.
+        # TODO(atash): once the Python API has been refactored, set the
+        # NOT_FOUND status here.
         raise NotImplementedError()
       else:
         return health_pb2.HealthCheckResponse(
