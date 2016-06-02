@@ -33,6 +33,14 @@
 
 #include <grpc/grpc.h>
 
+extern void grpc_chttp2_plugin_init(void);
+extern void grpc_chttp2_plugin_shutdown(void);
+extern void grpc_client_config_init(void);
+extern void grpc_client_config_shutdown(void);
 
 void grpc_register_built_in_plugins(void) {
+  grpc_register_plugin(grpc_chttp2_plugin_init,
+                       grpc_chttp2_plugin_shutdown);
+  grpc_register_plugin(grpc_client_config_init,
+                       grpc_client_config_shutdown);
 }
