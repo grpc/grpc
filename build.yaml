@@ -796,6 +796,7 @@ libs:
   filegroups:
   - grpc_base
   - grpc_transport_cronet_client_secure
+  - grpc_transport_chttp2_client_secure
   generate_plugin_registry: true
   platforms:
   - linux
