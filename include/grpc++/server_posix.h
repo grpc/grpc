@@ -31,45 +31,26 @@
  *
  */
 
-#ifndef GRPC_GRPC_POSIX_H
-#define GRPC_GRPC_POSIX_H
+#ifndef GRPCXX_SERVER_POSIX_H
+#define GRPCXX_SERVER_POSIX_H
 
+#include <memory>
 
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/port_platform.h>
+#include <grpc++/server.h>
 
-#include <stddef.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/*! \mainpage GRPC Core POSIX
- *
- * The GRPC Core POSIX library provides some POSIX-specific low-level
- * functionality on top of GRPC Core.
- */
+namespace grpc {
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 
-/** Create a client channel to 'target' using file descriptor 'fd'. The 'target'
-    argument will be used to indicate the name for this channel. See the comment
-    for grpc_insecure_channel_create for description of 'args' argument. */
-GRPCAPI grpc_channel *grpc_insecure_channel_create_from_fd(
-    const char *target, int fd, const grpc_channel_args *args);
-
-/** Add the connected communication channel based on file descriptor 'fd' to the
-    'server'. The 'fd' must be an open file descriptor corresponding to a
-    connected socket. The 'cq' is a completion queue that will be getting events
-    from that descriptor. */
-GRPCAPI void grpc_server_add_insecure_channel_from_fd(grpc_server *server,
-                                                      grpc_completion_queue *cq,
-                                                      int fd);
+/// Adds new client to a \a Server communicating over given file descriptor
+///
+/// \param server The server to add a client to.
+/// \param fd The file descriptor representing a socket.
+void AddInsecureChannelFromFd(Server* server, int fd);
 
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 
-#ifdef __cplusplus
-}
-#endif
+}  // namespace grpc
 
-#endif /* GRPC_GRPC_POSIX_H */
+#endif  // GRPCXX_CREATE_CHANNEL_POSIX_H

@@ -33,7 +33,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_POSIX_SOCKET
+#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 
 #include <grpc/grpc.h>
 
@@ -85,4 +85,4 @@ grpc_channel *grpc_insecure_channel_create_from_fd(
                                          "Failed to create client channel");
 }
 
-#endif // GPR_POSIX_SOCKET
+#endif // GPR_SUPPORT_CHANNELS_FROM_FD

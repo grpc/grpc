@@ -57,8 +57,10 @@
 #include <grpc++/client_context.h>
 #include <grpc++/completion_queue.h>
 #include <grpc++/create_channel.h>
+#include <grpc++/create_channel_posix.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
+#include <grpc++/server_posix.h>
 
 #endif  // GRPCXX_GRPCXX_H
