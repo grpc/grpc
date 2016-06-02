@@ -154,35 +154,6 @@ static VALUE grpc_rb_server_init(VALUE self, VALUE cqueue, VALUE channel_args) {
   return self;
 }
 
-/* Clones Server instances.
-
-   Gives Server a consistent implementation of Ruby's object copy/dup
-   protocol. */
-static VALUE grpc_rb_server_init_copy(VALUE copy, VALUE orig) {
-  grpc_rb_server *orig_srv = NULL;
-  grpc_rb_server *copy_srv = NULL;
-
-  if (copy == orig) {
-    return copy;
-  }
-
-  /* Raise an error if orig is not a server object or a subclass. */
-  if (TYPE(orig) != T_DATA ||
-      RDATA(orig)->dfree != (RUBY_DATA_FUNC)grpc_rb_server_free) {
-    rb_raise(rb_eTypeError, "not a %s", rb_obj_classname(grpc_rb_cServer));
-  }
-
-  TypedData_Get_Struct(orig, grpc_rb_server, &grpc_rb_server_data_type,
-                       orig_srv);
-  TypedData_Get_Struct(copy, grpc_rb_server, &grpc_rb_server_data_type,
-                       copy_srv);
-
-  /* use ruby's MEMCPY to make a byte-for-byte copy of the server wrapper
-     object. */
-  MEMCPY(copy_srv, orig_srv, grpc_rb_server, 1);
-  return copy;
-}
-
 /* request_call_stack holds various values used by the
  * grpc_rb_server_request_call function */
 typedef struct request_call_stack {
@@ -378,7 +349,7 @@ void Init_grpc_server() {
   /* Provides a ruby constructor and support for dup/clone. */
   rb_define_method(grpc_rb_cServer, "initialize", grpc_rb_server_init, 2);
   rb_define_method(grpc_rb_cServer, "initialize_copy",
-                   grpc_rb_server_init_copy, 1);
+                   grpc_rb_cannot_init_copy, 1);
 
   /* Add the server methods. */
   rb_define_method(grpc_rb_cServer, "request_call",

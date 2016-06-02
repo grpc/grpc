@@ -85,7 +85,7 @@ VALUE grpc_rb_cannot_init(VALUE self) {
 VALUE grpc_rb_cannot_init_copy(VALUE copy, VALUE self) {
   (void)self;
   rb_raise(rb_eTypeError,
-           "initialization of %s only allowed from the gRPC native layer",
+           "Copy initialization of %s is not supported",
            rb_obj_classname(copy));
   return Qnil;
 }
