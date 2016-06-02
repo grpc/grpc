@@ -226,6 +226,8 @@ static void on_oauth2_token_fetcher_http_response(grpc_exec_ctx *exec_ctx,
   gpr_timespec token_lifetime;
   grpc_credentials_status status;
 
+  GRPC_LOG_IF_ERROR("oauth_fetch", GRPC_ERROR_REF(error));
+
   gpr_mu_lock(&c->mu);
   status = grpc_oauth2_token_fetcher_credentials_parse_server_response(
       &r->response, &c->access_token_md, &token_lifetime);
