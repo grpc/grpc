@@ -149,7 +149,7 @@ static void on_peer_checked(grpc_exec_ctx *exec_ctx, void *user_data,
   if (result != TSI_OK) {
     security_handshake_done(
         exec_ctx, h,
-        grpc_set_tsi_error_bits(
+        grpc_set_tsi_error_result(
             GRPC_ERROR_CREATE("Frame protector creation failed"), result));
     return;
   }
@@ -168,7 +168,7 @@ static void check_peer(grpc_exec_ctx *exec_ctx, grpc_security_handshake *h) {
 
   if (result != TSI_OK) {
     security_handshake_done(
-        exec_ctx, h, grpc_set_tsi_error_bits(
+        exec_ctx, h, grpc_set_tsi_error_result(
                          GRPC_ERROR_CREATE("Peer extraction failed"), result));
     return;
   }
@@ -195,9 +195,9 @@ static void send_handshake_bytes_to_peer(grpc_exec_ctx *exec_ctx,
   } while (result == TSI_INCOMPLETE_DATA);
 
   if (result != TSI_OK) {
-    security_handshake_done(
-        exec_ctx, h,
-        grpc_set_tsi_error_bits(GRPC_ERROR_CREATE("Handshake failed"), result));
+    security_handshake_done(exec_ctx, h,
+                            grpc_set_tsi_error_result(
+                                GRPC_ERROR_CREATE("Handshake failed"), result));
     return;
   }
 
@@ -249,9 +249,9 @@ static void on_handshake_data_received_from_peer(grpc_exec_ctx *exec_ctx,
   }
 
   if (result != TSI_OK) {
-    security_handshake_done(
-        exec_ctx, h,
-        grpc_set_tsi_error_bits(GRPC_ERROR_CREATE("Handshake failed"), result));
+    security_handshake_done(exec_ctx, h,
+                            grpc_set_tsi_error_result(
+                                GRPC_ERROR_CREATE("Handshake failed"), result));
     return;
   }
 
