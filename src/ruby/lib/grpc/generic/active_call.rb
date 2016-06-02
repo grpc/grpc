@@ -103,7 +103,7 @@ module GRPC
     #
     # @param call [Call] the call used by the ActiveCall
     # @param q [CompletionQueue] the completion queue used to accept
-    #          the call
+    #          the call.  This queue will be closed on call completion.
     # @param marshal [Function] f(obj)->string that marshal requests
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
     # @param deadline [Fixnum] the deadline for the call to complete
@@ -191,6 +191,8 @@ module GRPC
       @call.status = batch_result.status
       op_is_done
       batch_result.check_status
+      @call.close
+      @cq.close
     end
 
     # remote_send sends a request to the remote endpoint.
