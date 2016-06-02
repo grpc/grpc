@@ -90,7 +90,6 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
                                      grpc_auth_context *auth_context) {
   connector *c = arg;
   grpc_closure *notify;
-  grpc_channel_args *args_copy = NULL;
   gpr_mu_lock(&c->mu);
   if (c->connecting_endpoint == NULL) {
     memset(c->result, 0, sizeof(*c->result));
@@ -109,15 +108,12 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
     grpc_chttp2_transport_start_reading(exec_ctx, c->result->transport, NULL,
                                         0);
     auth_context_arg = grpc_auth_context_to_arg(auth_context);
-    args_copy = grpc_channel_args_copy_and_add(c->args.channel_args,
-                                               &auth_context_arg, 1);
-    c->result->channel_args = args_copy;
+    c->result->channel_args = grpc_channel_args_copy_and_add(
+        c->args.channel_args, &auth_context_arg, 1);
   }
   notify = c->notify;
   c->notify = NULL;
-  /* look at c->args which are connector args. */
-  notify->cb(exec_ctx, notify->cb_arg, GRPC_ERROR_NONE);
-  if (args_copy != NULL) grpc_channel_args_destroy(args_copy);
+  grpc_exec_ctx_sched(exec_ctx, notify, GRPC_ERROR_NONE, NULL);
 }
 
 static void on_initial_connect_string_sent(grpc_exec_ctx *exec_ctx, void *arg,
@@ -153,7 +149,7 @@ static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     memset(c->result, 0, sizeof(*c->result));
     notify = c->notify;
     c->notify = NULL;
-    notify->cb(exec_ctx, notify->cb_arg, grpc_error_ref(error));
+    grpc_exec_ctx_sched(exec_ctx, notify, GRPC_ERROR_REF(error), NULL);
   }
 }
 
@@ -175,7 +171,6 @@ static void connector_connect(grpc_exec_ctx *exec_ctx, grpc_connector *con,
                               grpc_closure *notify) {
   connector *c = (connector *)con;
   GPR_ASSERT(c->notify == NULL);
-  GPR_ASSERT(notify->cb);
   c->notify = notify;
   c->args = *args;
   c->result = result;

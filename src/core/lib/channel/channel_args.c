@@ -148,6 +148,7 @@ grpc_channel_args *grpc_channel_args_normalize(const grpc_channel_args *a) {
 
 void grpc_channel_args_destroy(grpc_channel_args *a) {
   size_t i;
+  if (!a) return;
   for (i = 0; i < a->num_args; i++) {
     switch (a->args[i].type) {
       case GRPC_ARG_STRING:
