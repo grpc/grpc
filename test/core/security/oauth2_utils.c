@@ -99,7 +99,7 @@ char *grpc_test_fetch_oauth2_token_with_credentials(
   gpr_mu_lock(request.mu);
   while (!request.is_done) {
     grpc_pollset_worker *worker = NULL;
-    if (GRPC_LOG_IF_ERROR(
+    if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
             grpc_pollset_work(&exec_ctx, request.pollset, &worker,
                               gpr_now(GPR_CLOCK_MONOTONIC),
