@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -89,14 +89,10 @@ static const gpr_avl_vtable avl_vtable_errs = {
 
 static const char *error_int_name(grpc_error_ints key) {
   switch (key) {
-    case GRPC_ERROR_INT_STATUS_CODE:
-      return "status_code";
     case GRPC_ERROR_INT_ERRNO:
       return "errno";
     case GRPC_ERROR_INT_FILE_LINE:
       return "file_line";
-    case GRPC_ERROR_INT_WARNING:
-      return "warning";
     case GRPC_ERROR_INT_STREAM_ID:
       return "stream_id";
     case GRPC_ERROR_INT_GRPC_STATUS:
