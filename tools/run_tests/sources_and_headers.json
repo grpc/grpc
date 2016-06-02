@@ -1818,44 +1818,6 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
-      "grpc_test_util", 
-      "qps"
-    ], 
-    "headers": [], 
-    "language": "c++", 
-    "name": "async_streaming_ping_pong_test", 
-    "src": [
-      "test/cpp/qps/async_streaming_ping_pong_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
-      "grpc_test_util", 
-      "qps"
-    ], 
-    "headers": [], 
-    "language": "c++", 
-    "name": "async_unary_ping_pong_test", 
-    "src": [
-      "test/cpp/qps/async_unary_ping_pong_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -2084,25 +2046,6 @@
     "name": "end2end_test", 
     "src": [
       "test/cpp/end2end/end2end_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
-      "grpc_test_util", 
-      "qps"
-    ], 
-    "headers": [], 
-    "language": "c++", 
-    "name": "generic_async_streaming_ping_pong_test", 
-    "src": [
-      "test/cpp/qps/generic_async_streaming_ping_pong_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -2463,26 +2406,6 @@
       "grpc_test_util", 
       "qps"
     ], 
-    "headers": [], 
-    "language": "c++", 
-    "name": "qps_test", 
-    "src": [
-      "test/cpp/qps/qps_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_config", 
-      "grpc++_test_util", 
-      "grpc_test_util", 
-      "qps"
-    ], 
     "headers": [
       "test/cpp/qps/client.h", 
       "test/cpp/qps/server.h"
@@ -2730,44 +2653,6 @@
       "test/cpp/interop/stress_test.cc", 
       "test/cpp/util/metrics_server.cc", 
       "test/cpp/util/metrics_server.h"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
-      "grpc_test_util", 
-      "qps"
-    ], 
-    "headers": [], 
-    "language": "c++", 
-    "name": "sync_streaming_ping_pong_test", 
-    "src": [
-      "test/cpp/qps/sync_streaming_ping_pong_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
-      "grpc_test_util", 
-      "qps"
-    ], 
-    "headers": [], 
-    "language": "c++", 
-    "name": "sync_unary_ping_pong_test", 
-    "src": [
-      "test/cpp/qps/sync_unary_ping_pong_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5441,13 +5326,15 @@
   {
     "deps": [
       "gpr", 
-      "grpc_base"
+      "grpc_base", 
+      "nanopb"
     ], 
     "headers": [
       "include/grpc/census.h", 
       "src/core/ext/census/aggregation.h", 
       "src/core/ext/census/census_interface.h", 
       "src/core/ext/census/census_rpc_stats.h", 
+      "src/core/ext/census/gen/census.pb.h", 
       "src/core/ext/census/grpc_filter.h", 
       "src/core/ext/census/mlog.h", 
       "src/core/ext/census/rpc_metric_id.h"
@@ -5460,6 +5347,8 @@
       "src/core/ext/census/census_interface.h", 
       "src/core/ext/census/census_rpc_stats.h", 
       "src/core/ext/census/context.c", 
+      "src/core/ext/census/gen/census.pb.c", 
+      "src/core/ext/census/gen/census.pb.h", 
       "src/core/ext/census/grpc_context.c", 
       "src/core/ext/census/grpc_filter.c", 
       "src/core/ext/census/grpc_filter.h", 
@@ -6112,15 +6001,24 @@
       "include/grpc/grpc_cronet.h", 
       "include/grpc/grpc_security.h", 
       "include/grpc/grpc_security_constants.h", 
-      "src/core/lib/security/auth_filters.h", 
-      "src/core/lib/security/b64.h", 
-      "src/core/lib/security/credentials.h", 
-      "src/core/lib/security/handshake.h", 
-      "src/core/lib/security/json_token.h", 
-      "src/core/lib/security/jwt_verifier.h", 
-      "src/core/lib/security/secure_endpoint.h", 
-      "src/core/lib/security/security_connector.h", 
-      "src/core/lib/security/security_context.h"
+      "src/core/lib/security/context/security_context.h", 
+      "src/core/lib/security/credentials/composite/composite_credentials.h", 
+      "src/core/lib/security/credentials/credentials.h", 
+      "src/core/lib/security/credentials/fake/fake_credentials.h", 
+      "src/core/lib/security/credentials/google_default/google_default_credentials.h", 
+      "src/core/lib/security/credentials/iam/iam_credentials.h", 
+      "src/core/lib/security/credentials/jwt/json_token.h", 
+      "src/core/lib/security/credentials/jwt/jwt_credentials.h", 
+      "src/core/lib/security/credentials/jwt/jwt_verifier.h", 
+      "src/core/lib/security/credentials/oauth2/oauth2_credentials.h", 
+      "src/core/lib/security/credentials/plugin/plugin_credentials.h", 
+      "src/core/lib/security/credentials/ssl/ssl_credentials.h", 
+      "src/core/lib/security/transport/auth_filters.h", 
+      "src/core/lib/security/transport/handshake.h", 
+      "src/core/lib/security/transport/secure_endpoint.h", 
+      "src/core/lib/security/transport/security_connector.h", 
+      "src/core/lib/security/util/b64.h", 
+      "src/core/lib/security/util/json_util.h"
     ], 
     "language": "c", 
     "name": "grpc_secure", 
@@ -6129,29 +6027,46 @@
       "include/grpc/grpc_security.h", 
       "include/grpc/grpc_security_constants.h", 
       "src/core/lib/http/httpcli_security_connector.c", 
-      "src/core/lib/security/auth_filters.h", 
-      "src/core/lib/security/b64.c", 
-      "src/core/lib/security/b64.h", 
-      "src/core/lib/security/client_auth_filter.c", 
-      "src/core/lib/security/credentials.c", 
-      "src/core/lib/security/credentials.h", 
-      "src/core/lib/security/credentials_metadata.c", 
-      "src/core/lib/security/credentials_posix.c", 
-      "src/core/lib/security/credentials_win32.c", 
-      "src/core/lib/security/google_default_credentials.c", 
-      "src/core/lib/security/handshake.c", 
-      "src/core/lib/security/handshake.h", 
-      "src/core/lib/security/json_token.c", 
-      "src/core/lib/security/json_token.h", 
-      "src/core/lib/security/jwt_verifier.c", 
-      "src/core/lib/security/jwt_verifier.h", 
-      "src/core/lib/security/secure_endpoint.c", 
-      "src/core/lib/security/secure_endpoint.h", 
-      "src/core/lib/security/security_connector.c", 
-      "src/core/lib/security/security_connector.h", 
-      "src/core/lib/security/security_context.c", 
-      "src/core/lib/security/security_context.h", 
-      "src/core/lib/security/server_auth_filter.c", 
+      "src/core/lib/security/context/security_context.c", 
+      "src/core/lib/security/context/security_context.h", 
+      "src/core/lib/security/credentials/composite/composite_credentials.c", 
+      "src/core/lib/security/credentials/composite/composite_credentials.h", 
+      "src/core/lib/security/credentials/credentials.c", 
+      "src/core/lib/security/credentials/credentials.h", 
+      "src/core/lib/security/credentials/credentials_metadata.c", 
+      "src/core/lib/security/credentials/fake/fake_credentials.c", 
+      "src/core/lib/security/credentials/fake/fake_credentials.h", 
+      "src/core/lib/security/credentials/google_default/credentials_posix.c", 
+      "src/core/lib/security/credentials/google_default/credentials_win32.c", 
+      "src/core/lib/security/credentials/google_default/google_default_credentials.c", 
+      "src/core/lib/security/credentials/google_default/google_default_credentials.h", 
+      "src/core/lib/security/credentials/iam/iam_credentials.c", 
+      "src/core/lib/security/credentials/iam/iam_credentials.h", 
+      "src/core/lib/security/credentials/jwt/json_token.c", 
+      "src/core/lib/security/credentials/jwt/json_token.h", 
+      "src/core/lib/security/credentials/jwt/jwt_credentials.c", 
+      "src/core/lib/security/credentials/jwt/jwt_credentials.h", 
+      "src/core/lib/security/credentials/jwt/jwt_verifier.c", 
+      "src/core/lib/security/credentials/jwt/jwt_verifier.h", 
+      "src/core/lib/security/credentials/oauth2/oauth2_credentials.c", 
+      "src/core/lib/security/credentials/oauth2/oauth2_credentials.h", 
+      "src/core/lib/security/credentials/plugin/plugin_credentials.c", 
+      "src/core/lib/security/credentials/plugin/plugin_credentials.h", 
+      "src/core/lib/security/credentials/ssl/ssl_credentials.c", 
+      "src/core/lib/security/credentials/ssl/ssl_credentials.h", 
+      "src/core/lib/security/transport/auth_filters.h", 
+      "src/core/lib/security/transport/client_auth_filter.c", 
+      "src/core/lib/security/transport/handshake.c", 
+      "src/core/lib/security/transport/handshake.h", 
+      "src/core/lib/security/transport/secure_endpoint.c", 
+      "src/core/lib/security/transport/secure_endpoint.h", 
+      "src/core/lib/security/transport/security_connector.c", 
+      "src/core/lib/security/transport/security_connector.h", 
+      "src/core/lib/security/transport/server_auth_filter.c", 
+      "src/core/lib/security/util/b64.c", 
+      "src/core/lib/security/util/b64.h", 
+      "src/core/lib/security/util/json_util.c", 
+      "src/core/lib/security/util/json_util.h", 
       "src/core/lib/surface/init_secure.c"
     ], 
     "third_party": false, 
