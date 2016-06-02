@@ -211,7 +211,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *user_data,
 
   if (result != TSI_OK) {
     gpr_slice_buffer_reset_and_unref(ep->read_buffer);
-    call_read_cb(exec_ctx, ep, grpc_set_tsi_error_bits(
+    call_read_cb(exec_ctx, ep, grpc_set_tsi_error_result(
                                    GRPC_ERROR_CREATE("Unwrap failed"), result));
     return;
   }
@@ -321,7 +321,7 @@ static void endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
     gpr_slice_buffer_reset_and_unref(&ep->output_buffer);
     grpc_exec_ctx_sched(
         exec_ctx, cb,
-        grpc_set_tsi_error_bits(GRPC_ERROR_CREATE("Wrap failed"), result),
+        grpc_set_tsi_error_result(GRPC_ERROR_CREATE("Wrap failed"), result),
         NULL);
     return;
   }
