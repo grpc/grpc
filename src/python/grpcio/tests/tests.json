@@ -5,6 +5,7 @@
   "_base_interface_test.SyncPeasyTest", 
   "_beta_features_test.BetaFeaturesTest", 
   "_beta_features_test.ContextManagementAndLifecycleTest", 
+  "_cancel_many_calls_test.CancelManyCallsTest",
   "_channel_test.ChannelTest", 
   "_connectivity_channel_test.ChannelConnectivityTest", 
   "_core_over_links_base_interface_test.AsyncEasyTest", 

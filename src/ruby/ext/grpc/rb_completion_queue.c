@@ -150,6 +150,14 @@ static rb_data_type_t grpc_rb_completion_queue_data_type = {
 #endif
 };
 
+/* Releases the c-level resources associated with a completion queue */
+static VALUE grpc_rb_completion_queue_close(VALUE self) {
+  grpc_completion_queue* cq = grpc_rb_get_wrapped_completion_queue(self);
+  grpc_rb_completion_queue_destroy(cq);
+  RTYPEDDATA_DATA(self) = NULL;
+  return Qnil;
+}
+
 /* Allocates a completion queue. */
 static VALUE grpc_rb_completion_queue_alloc(VALUE cls) {
   grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
@@ -212,6 +220,11 @@ void Init_grpc_completion_queue() {
      this func, so no separate initialization step is necessary. */
   rb_define_alloc_func(grpc_rb_cCompletionQueue,
                        grpc_rb_completion_queue_alloc);
+
+  /* close: Provides a way to close the underlying file descriptor without
+     waiting for ruby garbage collection. */
+  rb_define_method(grpc_rb_cCompletionQueue, "close",
+                   grpc_rb_completion_queue_close, 0);
 }
 
 /* Gets the wrapped completion queue from the ruby wrapper */

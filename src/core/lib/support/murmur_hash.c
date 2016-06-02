@@ -33,6 +33,8 @@
 
 #include "src/core/lib/support/murmur_hash.h"
 
+#include <string.h>
+
 #define ROTL32(x, r) ((x) << (r)) | ((x) >> (32 - (r)))
 
 #define FMIX32(h)    \
@@ -41,10 +43,6 @@
   (h) ^= (h) >> 13;  \
   (h) *= 0xc2b2ae35; \
   (h) ^= (h) >> 16;
-
-/* Block read - if your platform needs to do endian-swapping or can only
-   handle aligned reads, do the conversion here */
-#define GETBLOCK32(p, i) (p)[(i)]
 
 uint32_t gpr_murmur_hash3(const void *key, size_t len, uint32_t seed) {
   const uint8_t *data = (const uint8_t *)key;
@@ -62,7 +60,7 @@ uint32_t gpr_murmur_hash3(const void *key, size_t len, uint32_t seed) {
 
   /* body */
   for (i = -(int)nblocks; i; i++) {
-    k1 = GETBLOCK32(blocks, i);
+    memcpy(&k1, blocks + i, sizeof(uint32_t));
 
     k1 *= c1;
     k1 = ROTL32(k1, 15);

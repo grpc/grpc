@@ -61,15 +61,15 @@ namespace Grpc.Core.Internal.Tests
         }
 
         [Test]
-        public void InfFuture()
+        public void InfFutureMatchesNativeValue()
         {
-            var timespec = Timespec.InfFuture;
+            Assert.AreEqual(Timespec.NativeInfFuture, Timespec.InfFuture);
         }
 
         [Test]
-        public void InfPast()
+        public void InfPastMatchesNativeValue()
         {
-            var timespec = Timespec.InfPast;
+            Assert.AreEqual(Timespec.NativeInfPast, Timespec.InfPast);
         }
 
         [Test]
@@ -108,7 +108,7 @@ namespace Grpc.Core.Internal.Tests
             Assert.Throws(typeof(InvalidOperationException),
                 () => new Timespec(0, 1000 * 1000 * 1000).ToDateTime());
             Assert.Throws(typeof(InvalidOperationException),
-                () => new Timespec(0, 0, GPRClockType.Monotonic).ToDateTime());
+                () => new Timespec(0, 0, ClockType.Monotonic).ToDateTime());
         }
 
         [Test]
