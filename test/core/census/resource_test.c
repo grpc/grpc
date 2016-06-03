@@ -64,12 +64,12 @@ static void test_empty_definition() {
 // Given a file name, read raw proto and define the resource included within.
 // Returns resource id from census_define_resource().
 static int32_t define_resource_from_file(const char *file) {
-  const size_t buf_size = 512;
-  uint8_t buffer[buf_size];
+#define BUF_SIZE 512
+  uint8_t buffer[BUF_SIZE];
   FILE *input = fopen(file, "r");
   GPR_ASSERT(input != NULL);
-  size_t nbytes = fread(buffer, 1, buf_size, input);
-  GPR_ASSERT(nbytes != 0 && nbytes < buf_size);
+  size_t nbytes = fread(buffer, 1, BUF_SIZE, input);
+  GPR_ASSERT(nbytes != 0 && nbytes < BUF_SIZE);
   int32_t rid = census_define_resource(buffer, nbytes);
   GPR_ASSERT(fclose(input) == 0);
   return rid;
