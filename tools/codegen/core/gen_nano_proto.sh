@@ -136,6 +136,13 @@ readonly PROTO_BASENAME=$(basename $INPUT_PROTO .proto)
 sed -i "s:$PROTO_BASENAME.pb.h:${GRPC_OUTPUT_DIR}/$PROTO_BASENAME.pb.h:g" \
   "$OUTPUT_DIR/$PROTO_BASENAME.pb.c"
 
+# Fix up the include guards such that they pass the check_include_guards.py
+# test. Assumes that the generated files are being placed in gRPC src dir.
+readonly INCLUDE_GUARD_BASE=`echo $GRPC_OUTPUT_DIR | tr [a-z/] [A-Z_] | sed s:^.*SRC_::`
+readonly UC_PROTO_BASENAME=`echo $PROTO_BASENAME | tr [a-z] [A-Z]`
+sed -i "s:PB_${UC_PROTO_BASENAME}_PB_H_INCLUDED:GRPC_${INCLUDE_GUARD_BASE}_${UC_PROTO_BASENAME}_PB_H:g" \
+  "$OUTPUT_DIR/$PROTO_BASENAME.pb.h"
+
 # prepend copyright
 TMPFILE=$(mktemp)
 cat $COPYRIGHT_FILE "$OUTPUT_DIR/$PROTO_BASENAME.pb.c" > $TMPFILE

@@ -2290,17 +2290,19 @@ ifeq ($(INSTALL_OK),true)
 	@echo "Your system looks ready to go."
 	@echo
 else
-	@echo "We couldn't find protoc 3.0.0+ installed on your system. While this"
-	@echo "won't prevent grpc from working, you won't be able to compile"
-	@echo "and run any meaningful code with it."
+	@echo "Warning: it looks like protoc 3.0.0+ isn't installed on your system,"
+	@echo "which means that you won't be able to compile .proto files for use"
+	@echo "with gRPC."
 	@echo
+	@echo "If you are just using pre-compiled protocol buffers, or you otherwise"
+	@echo "have no need to compile .proto files, you can ignore this."
 	@echo
-	@echo "Please download and install protobuf 3.0.0+ from:"
+	@echo "If you do need protobuf for some reason, you can download and install"
+	@echo "it from:"
 	@echo
 	@echo "   https://github.com/google/protobuf/releases"
 	@echo
-	@echo "Once you've done so, or if you think this message is in error,"
-	@echo "you can re-run this check by doing:"
+	@echo "Once you've done so, you can re-run this check by doing:"
 	@echo
 	@echo "   make verify-install"
 endif
@@ -2486,6 +2488,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/endpoint.c \
     src/core/lib/iomgr/endpoint_pair_posix.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
+    src/core/lib/iomgr/ev_poll_and_epoll_posix.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
@@ -2635,6 +2638,7 @@ LIBGRPC_SRC = \
     src/core/ext/resolver/dns/native/dns_resolver.c \
     src/core/ext/resolver/sockaddr/sockaddr_resolver.c \
     src/core/ext/census/context.c \
+    src/core/ext/census/gen/census.pb.c \
     src/core/ext/census/grpc_context.c \
     src/core/ext/census/grpc_filter.c \
     src/core/ext/census/grpc_plugin.c \
@@ -2840,6 +2844,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/endpoint.c \
     src/core/lib/iomgr/endpoint_pair_posix.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
+    src/core/lib/iomgr/ev_poll_and_epoll_posix.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
@@ -2957,6 +2962,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/lb_policy/pick_first/pick_first.c \
     src/core/ext/lb_policy/round_robin/round_robin.c \
     src/core/ext/census/context.c \
+    src/core/ext/census/gen/census.pb.c \
     src/core/ext/census/grpc_context.c \
     src/core/ext/census/grpc_filter.c \
     src/core/ext/census/grpc_plugin.c \

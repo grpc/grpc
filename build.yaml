@@ -16,11 +16,13 @@ filegroups:
   - src/core/ext/census/aggregation.h
   - src/core/ext/census/census_interface.h
   - src/core/ext/census/census_rpc_stats.h
+  - src/core/ext/census/gen/census.pb.h
   - src/core/ext/census/grpc_filter.h
   - src/core/ext/census/mlog.h
   - src/core/ext/census/rpc_metric_id.h
   src:
   - src/core/ext/census/context.c
+  - src/core/ext/census/gen/census.pb.c
   - src/core/ext/census/grpc_context.c
   - src/core/ext/census/grpc_filter.c
   - src/core/ext/census/grpc_plugin.c
@@ -32,6 +34,7 @@ filegroups:
   plugin: census_grpc_plugin
   uses:
   - grpc_base
+  - nanopb
 - name: gpr_base
   public_headers:
   - include/grpc/support/alloc.h
@@ -165,6 +168,7 @@ filegroups:
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/endpoint.h
   - src/core/lib/iomgr/endpoint_pair.h
+  - src/core/lib/iomgr/ev_poll_and_epoll_posix.h
   - src/core/lib/iomgr/ev_poll_posix.h
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/exec_ctx.h
@@ -239,6 +243,7 @@ filegroups:
   - src/core/lib/iomgr/endpoint.c
   - src/core/lib/iomgr/endpoint_pair_posix.c
   - src/core/lib/iomgr/endpoint_pair_windows.c
+  - src/core/lib/iomgr/ev_poll_and_epoll_posix.c
   - src/core/lib/iomgr/ev_poll_posix.c
   - src/core/lib/iomgr/ev_posix.c
   - src/core/lib/iomgr/exec_ctx.c
