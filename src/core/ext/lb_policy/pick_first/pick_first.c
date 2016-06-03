@@ -104,7 +104,7 @@ static void pf_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   pp = p->pending_picks;
   p->pending_picks = NULL;
   grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
-                              GRPC_CHANNEL_FATAL_FAILURE, "shutdown");
+                              GRPC_CHANNEL_SHUTDOWN, "shutdown");
   /* cancel subscription */
   if (selected != NULL) {
     grpc_connected_subchannel_notify_on_state_change(
@@ -273,11 +273,11 @@ static void pf_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
   } else if (selected != NULL) {
     if (p->checking_connectivity == GRPC_CHANNEL_TRANSIENT_FAILURE) {
       /* if the selected channel goes bad, we're done */
-      p->checking_connectivity = GRPC_CHANNEL_FATAL_FAILURE;
+      p->checking_connectivity = GRPC_CHANNEL_SHUTDOWN;
     }
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
                                 p->checking_connectivity, "selected_changed");
-    if (p->checking_connectivity != GRPC_CHANNEL_FATAL_FAILURE) {
+    if (p->checking_connectivity != GRPC_CHANNEL_SHUTDOWN) {
       grpc_connected_subchannel_notify_on_state_change(
           exec_ctx, selected, p->base.interested_parties,
           &p->checking_connectivity, &p->connectivity_changed);
@@ -343,7 +343,7 @@ static void pf_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
             p->base.interested_parties, &p->checking_connectivity,
             &p->connectivity_changed);
         break;
-      case GRPC_CHANNEL_FATAL_FAILURE:
+      case GRPC_CHANNEL_SHUTDOWN:
         p->num_subchannels--;
         GPR_SWAP(grpc_subchannel *, p->subchannels[p->checking_subchannel],
                  p->subchannels[p->num_subchannels]);
@@ -351,7 +351,7 @@ static void pf_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
                               "pick_first");
         if (p->num_subchannels == 0) {
           grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
-                                      GRPC_CHANNEL_FATAL_FAILURE,
+                                      GRPC_CHANNEL_SHUTDOWN,
                                       "no_more_channels");
           while ((pp = p->pending_picks)) {
             p->pending_picks = pp->next;
