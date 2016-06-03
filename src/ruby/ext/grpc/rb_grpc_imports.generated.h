@@ -36,7 +36,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WIN32
+#ifdef GPR_WINDOWS
 
 #include <windows.h>
 
@@ -57,7 +57,7 @@
 #include <grpc/support/cpu.h>
 #include <grpc/support/histogram.h>
 #include <grpc/support/host_port.h>
-#include <grpc/support/log_win32.h>
+#include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/subprocess.h>
 #include <grpc/support/thd.h>
@@ -296,6 +296,9 @@ extern grpc_server_create_type grpc_server_create_import;
 typedef void(*grpc_server_register_completion_queue_type)(grpc_server *server, grpc_completion_queue *cq, void *reserved);
 extern grpc_server_register_completion_queue_type grpc_server_register_completion_queue_import;
 #define grpc_server_register_completion_queue grpc_server_register_completion_queue_import
+typedef void(*grpc_server_register_non_listening_completion_queue_type)(grpc_server *server, grpc_completion_queue *q, void *reserved);
+extern grpc_server_register_non_listening_completion_queue_type grpc_server_register_non_listening_completion_queue_import;
+#define grpc_server_register_non_listening_completion_queue grpc_server_register_non_listening_completion_queue_import
 typedef int(*grpc_server_add_insecure_http2_port_type)(grpc_server *server, const char *addr);
 extern grpc_server_add_insecure_http2_port_type grpc_server_add_insecure_http2_port_import;
 #define grpc_server_add_insecure_http2_port grpc_server_add_insecure_http2_port_import
@@ -860,6 +863,6 @@ extern gpr_thd_join_type gpr_thd_join_import;
 
 void grpc_rb_load_imports(HMODULE library);
 
-#endif /* GPR_WIN32 */
+#endif /* GPR_WINDOWS */
 
 #endif

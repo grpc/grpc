@@ -41,7 +41,7 @@
 
 #include "src/core/ext/client_config/initial_connect_string.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/security/credentials.h"
+#include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/support/string.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -69,6 +69,8 @@ static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   GPR_ASSERT(success);
   gpr_slice_buffer_move_into(&state.temp_incoming_buffer,
                              &state.incoming_buffer);
+  gpr_log(GPR_DEBUG, "got %d bytes, magic is %d bytes",
+          state.incoming_buffer.length, strlen(magic_connect_string));
   if (state.incoming_buffer.length > strlen(magic_connect_string)) {
     gpr_atm_rel_store(&state.done_atm, 1);
     grpc_endpoint_shutdown(exec_ctx, state.tcp);
@@ -80,6 +82,7 @@ static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
 }
 
 static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
+                       grpc_pollset *accepting_pollset,
                        grpc_tcp_server_acceptor *acceptor) {
   test_tcp_server *server = arg;
   grpc_closure_init(&on_read, handle_read, NULL);
@@ -117,7 +120,6 @@ static gpr_timespec n_sec_deadline(int seconds) {
 }
 
 static void start_rpc(int use_creds, int target_port) {
-  gpr_atm_rel_store(&state.done_atm, 0);
   state.cq = grpc_completion_queue_create(NULL);
   if (use_creds) {
     state.creds = grpc_fake_transport_security_credentials_create();
@@ -166,8 +168,15 @@ typedef struct {
 static void actually_poll_server(void *arg) {
   poll_args *pa = arg;
   gpr_timespec deadline = n_sec_deadline(10);
-  while (gpr_atm_acq_load(&state.done_atm) == 0 &&
-         gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0) {
+  while (true) {
+    bool done = gpr_atm_acq_load(&state.done_atm) != 0;
+    gpr_timespec time_left =
+        gpr_time_sub(deadline, gpr_now(GPR_CLOCK_REALTIME));
+    gpr_log(GPR_DEBUG, "done=%d, time_left=%d.%09d", done, time_left.tv_sec,
+            time_left.tv_nsec);
+    if (done || gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)) < 0) {
+      break;
+    }
     test_tcp_server_poll(pa->server, 1);
   }
   gpr_event_set(pa->signal_when_done, (void *)1);
@@ -176,6 +185,7 @@ static void actually_poll_server(void *arg) {
 
 static void poll_server_until_read_done(test_tcp_server *server,
                                         gpr_event *signal_when_done) {
+  gpr_atm_rel_store(&state.done_atm, 0);
   gpr_thd_id id;
   poll_args *pa = gpr_malloc(sizeof(*pa));
   pa->server = server;
