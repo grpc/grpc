@@ -5,6 +5,7 @@ libs
 objs
 
 # Python items
+cython_debug/
 python_build/
 .coverage*
 .eggs
