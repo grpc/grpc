@@ -34,8 +34,8 @@
 /** Round Robin Policy.
  *
  * This policy keeps:
- * - A circular list of ready (connected) subchannels, the
- *   *readylist*. An empty readylist consists solely of its root (dummy) node.
+ * - A circular list of ready (connected) subchannels, the *readylist*. An empty
+ *   readylist consists solely of its root (dummy) node.
  * - A pointer to the last element picked from the readylist, the *lastpick*.
  *   Initially set to point to the readylist's root.
  *
@@ -54,7 +54,7 @@
  *   readylist only had one element, this is still legal, as the lastpick would
  *   point to the dummy root node, for an empty readylist.
  * - Upon picking, *lastpick* is updated to point to the returned (connected)
- *   subchannel. Note that it possible that the selected subchannel becomes
+ *   subchannel. Note that it's possible that the selected subchannel becomes
  *   disconnected in the interim between the selection and the actual usage of
  *   the subchannel by the caller.
  */
