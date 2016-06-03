@@ -444,7 +444,7 @@ static void close_transport_locked(grpc_exec_ctx *exec_ctx,
                                    void *arg_ignored) {
   if (!t->closed) {
     t->closed = 1;
-    connectivity_state_set(exec_ctx, &t->global, GRPC_CHANNEL_FATAL_FAILURE,
+    connectivity_state_set(exec_ctx, &t->global, GRPC_CHANNEL_SHUTDOWN,
                            "close_transport");
     if (t->ep) {
       allow_endpoint_shutdown_locked(exec_ctx, t);
@@ -804,7 +804,7 @@ void grpc_chttp2_add_incoming_goaway(
   gpr_free(msg);
   gpr_slice_unref(goaway_text);
   transport_global->seen_goaway = 1;
-  connectivity_state_set(exec_ctx, transport_global, GRPC_CHANNEL_FATAL_FAILURE,
+  connectivity_state_set(exec_ctx, transport_global, GRPC_CHANNEL_SHUTDOWN,
                          "got_goaway");
 }
 
