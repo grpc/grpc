@@ -34,8 +34,6 @@
 #ifndef GRPCXX_PROTO_SERVER_REFLECTION_PLUGIN_H
 #define GRPCXX_PROTO_SERVER_REFLECTION_PLUGIN_H
 
-#include <memory>
-
 #include <grpc++/impl/server_builder_plugin.h>
 #include <grpc++/support/config.h>
 
@@ -58,7 +56,7 @@ class ProtoServerReflectionPlugin : public ::grpc::ServerBuilderPlugin {
   bool has_sync_methods() const GRPC_OVERRIDE;
 
  private:
-  std::shared_ptr<::grpc::ProtoServerReflection> reflection_service;
+  std::shared_ptr<::grpc::ProtoServerReflection> reflection_service_;
 };
 
 std::unique_ptr<::grpc::ServerBuilderPlugin> CreateProtoReflection();
@@ -70,7 +68,7 @@ static struct StaticPluginInitializer_reflection {
   StaticPluginInitializer_reflection() {
     grpc_AddServerBuilderPlugin_reflection();
   }
-} static_plugin_initializer_reflection_;
+} static_plugin_initializer_reflection;
 
 }  // namespace reflection
 }  // namespace grpc
