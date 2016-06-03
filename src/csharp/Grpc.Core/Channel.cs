@@ -104,7 +104,7 @@ namespace Grpc.Core
 
         /// <summary>
         /// Gets current connectivity state of this channel.
-        /// After channel is has been shutdown, <c>ChannelState.FatalFailure</c> will be returned.
+        /// After channel is has been shutdown, <c>ChannelState.Shutdown</c> will be returned.
         /// </summary>
         public ChannelState State
         {
@@ -121,8 +121,8 @@ namespace Grpc.Core
         /// </summary>
         public Task WaitForStateChangedAsync(ChannelState lastObservedState, DateTime? deadline = null)
         {
-            GrpcPreconditions.CheckArgument(lastObservedState != ChannelState.FatalFailure,
-                "FatalFailure is a terminal state. No further state changes can occur.");
+            GrpcPreconditions.CheckArgument(lastObservedState != ChannelState.Shutdown,
+                "Shutdown is a terminal state. No further state changes can occur.");
             var tcs = new TaskCompletionSource<object>();
             var deadlineTimespec = deadline.HasValue ? Timespec.FromDateTime(deadline.Value) : Timespec.InfFuture;
             var handler = new BatchCompletionDelegate((success, ctx) =>
@@ -172,7 +172,7 @@ namespace Grpc.Core
         /// <summary>
         /// Allows explicitly requesting channel to connect without starting an RPC.
         /// Returned task completes once state Ready was seen. If the deadline is reached,
-        /// or channel enters the FatalFailure state, the task is cancelled.
+        /// or channel enters the Shutdown state, the task is cancelled.
         /// There is no need to call this explicitly unless your use case requires that.
         /// Starting an RPC on a new channel will request connection implicitly.
         /// </summary>
@@ -182,9 +182,9 @@ namespace Grpc.Core
             var currentState = GetConnectivityState(true);
             while (currentState != ChannelState.Ready)
             {
-                if (currentState == ChannelState.FatalFailure)
+                if (currentState == ChannelState.Shutdown)
                 {
-                    throw new OperationCanceledException("Channel has reached FatalFailure state.");
+                    throw new OperationCanceledException("Channel has reached Shutdown state.");
                 }
                 await WaitForStateChangedAsync(currentState, deadline).ConfigureAwait(false);
                 currentState = GetConnectivityState(false);
@@ -264,7 +264,7 @@ namespace Grpc.Core
             }
             catch (ObjectDisposedException)
             {
-                return ChannelState.FatalFailure;
+                return ChannelState.Shutdown;
             }
         }
 
