@@ -236,7 +236,7 @@ grpc_error *grpc_create_dualstack_socket(const struct sockaddr *addr, int type,
     /* If this isn't an IPv4 address, then return whatever we've got. */
     if (!grpc_sockaddr_is_v4mapped(addr, NULL)) {
       *dsmode = GRPC_DSMODE_IPV6;
-      return GRPC_ERROR_NONE;
+      return *newfd >= 0 ? GRPC_ERROR_NONE : GRPC_OS_ERROR(errno, "socket");
     }
     /* Fall back to AF_INET. */
     if (*newfd >= 0) {
