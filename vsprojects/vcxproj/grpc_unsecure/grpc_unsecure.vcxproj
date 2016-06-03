@@ -304,6 +304,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\closure.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint_pair.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_and_epoll_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\exec_ctx.h" />
@@ -406,6 +407,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\aggregation.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\census_interface.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\census_rpc_stats.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\gen\census.pb.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\grpc_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\mlog.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\rpc_metric_id.h" />
@@ -448,6 +450,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint_pair_posix.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint_pair_windows.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_and_epoll_posix.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_posix.c">
     </ClCompile>
@@ -682,6 +686,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\round_robin\round_robin.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\context.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\gen\census.pb.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\grpc_context.c">
     </ClCompile>
