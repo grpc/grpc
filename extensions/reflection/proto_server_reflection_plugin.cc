@@ -42,31 +42,33 @@ namespace grpc {
 namespace reflection {
 
 ProtoServerReflectionPlugin::ProtoServerReflectionPlugin()
-    : reflection_service(new grpc::ProtoServerReflection()) {}
+    : reflection_service_(new grpc::ProtoServerReflection()) {}
 
-grpc::string ProtoServerReflectionPlugin::name() { return "p1"; }
+grpc::string ProtoServerReflectionPlugin::name() {
+  return "proto_server_reflection";
+}
 
 void ProtoServerReflectionPlugin::InitServer(grpc::ServerInitializer* si) {
-  si->RegisterService(reflection_service);
+  si->RegisterService(reflection_service_);
 }
 
 void ProtoServerReflectionPlugin::Finish(grpc::ServerInitializer* si) {
-  reflection_service->SetServiceList(si->GetServiceList());
+  reflection_service_->SetServiceList(si->GetServiceList());
 }
 
 void ProtoServerReflectionPlugin::ChangeArguments(const grpc::string& name,
                                                   void* value) {}
 
 bool ProtoServerReflectionPlugin::has_sync_methods() const {
-  if (reflection_service != nullptr) {
-    return reflection_service->has_synchronous_methods();
+  if (reflection_service_ != nullptr) {
+    return reflection_service_->has_synchronous_methods();
   }
   return false;
 }
 
 bool ProtoServerReflectionPlugin::has_async_methods() const {
-  if (reflection_service != nullptr) {
-    return reflection_service->has_async_methods();
+  if (reflection_service_ != nullptr) {
+    return reflection_service_->has_async_methods();
   }
   return false;
 }
