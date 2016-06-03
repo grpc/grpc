@@ -37,21 +37,12 @@
 #include <unordered_set>
 #include <vector>
 
-#include <google/protobuf/descriptor.h>
-#include <google/protobuf/descriptor.pb.h>
 #include <grpc++/grpc++.h>
 
 #include "reflection/proto_server_reflection.h"
 
 using grpc::Status;
 using grpc::StatusCode;
-using google::protobuf::MethodDescriptor;
-using google::protobuf::ServiceDescriptor;
-using google::protobuf::Descriptor;
-using google::protobuf::FileDescriptor;
-using google::protobuf::FieldDescriptor;
-using google::protobuf::DescriptorPool;
-using google::protobuf::FileDescriptorProto;
 using grpc::reflection::v1alpha::ServerReflectionRequest;
 using grpc::reflection::v1alpha::ExtensionRequest;
 using grpc::reflection::v1alpha::ServerReflectionResponse;
@@ -64,7 +55,7 @@ using grpc::reflection::v1alpha::FileDescriptorResponse;
 namespace grpc {
 
 ProtoServerReflection::ProtoServerReflection()
-    : descriptor_pool_(DescriptorPool::generated_pool()) {}
+    : descriptor_pool_(protobuf::DescriptorPool::generated_pool()) {}
 
 void ProtoServerReflection::SetServiceList(
     const std::vector<grpc::string>* services) {
@@ -143,7 +134,7 @@ Status ProtoServerReflection::GetFileByName(
     return Status::CANCELLED;
   }
 
-  const FileDescriptor* file_desc = descriptor_pool_->FindFileByName(filename);
+  const protobuf::FileDescriptor* file_desc = descriptor_pool_->FindFileByName(filename);
   if (file_desc == nullptr) {
     return Status(StatusCode::NOT_FOUND, "File not found.");
   }
@@ -159,7 +150,7 @@ Status ProtoServerReflection::GetFileContainingSymbol(
     return Status::CANCELLED;
   }
 
-  const FileDescriptor* file_desc =
+  const protobuf::FileDescriptor* file_desc =
       descriptor_pool_->FindFileContainingSymbol(symbol);
   if (file_desc == nullptr) {
     return Status(StatusCode::NOT_FOUND, "Symbol not found.");
@@ -176,13 +167,13 @@ Status ProtoServerReflection::GetFileContainingExtension(
     return Status::CANCELLED;
   }
 
-  const Descriptor* desc =
+  const protobuf::Descriptor* desc =
       descriptor_pool_->FindMessageTypeByName(request->containing_type());
   if (desc == nullptr) {
     return Status(StatusCode::NOT_FOUND, "Type not found.");
   }
 
-  const FieldDescriptor* field_desc = descriptor_pool_->FindExtensionByNumber(
+  const protobuf::FieldDescriptor* field_desc = descriptor_pool_->FindExtensionByNumber(
       desc, request->extension_number());
   if (field_desc == nullptr) {
     return Status(StatusCode::NOT_FOUND, "Extension not found.");
@@ -199,12 +190,12 @@ Status ProtoServerReflection::GetAllExtensionNumbers(
     return Status::CANCELLED;
   }
 
-  const Descriptor* desc = descriptor_pool_->FindMessageTypeByName(type);
+  const protobuf::Descriptor* desc = descriptor_pool_->FindMessageTypeByName(type);
   if (desc == nullptr) {
     return Status(StatusCode::NOT_FOUND, "Type not found.");
   }
 
-  std::vector<const FieldDescriptor*> extensions;
+  std::vector<const protobuf::FieldDescriptor*> extensions;
   descriptor_pool_->FindAllExtensions(desc, &extensions);
   for (auto extension : extensions) {
     response->add_extension_number(extension->number());
@@ -214,14 +205,14 @@ Status ProtoServerReflection::GetAllExtensionNumbers(
 }
 
 void ProtoServerReflection::FillFileDescriptorResponse(
-    const FileDescriptor* file_desc, ServerReflectionResponse* response,
+    const protobuf::FileDescriptor* file_desc, ServerReflectionResponse* response,
     std::unordered_set<grpc::string>* seen_files) {
   if (seen_files->find(file_desc->name()) != seen_files->end()) {
     return;
   }
   seen_files->insert(file_desc->name());
 
-  FileDescriptorProto file_desc_proto;
+  protobuf::FileDescriptorProto file_desc_proto;
   grpc::string data;
   file_desc->CopyTo(&file_desc_proto);
   file_desc_proto.SerializeToString(&data);
