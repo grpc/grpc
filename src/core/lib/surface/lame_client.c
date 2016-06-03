@@ -91,8 +91,8 @@ static void lame_start_transport_op(grpc_exec_ctx *exec_ctx,
                                     grpc_channel_element *elem,
                                     grpc_transport_op *op) {
   if (op->on_connectivity_state_change) {
-    GPR_ASSERT(*op->connectivity_state != GRPC_CHANNEL_FATAL_FAILURE);
-    *op->connectivity_state = GRPC_CHANNEL_FATAL_FAILURE;
+    GPR_ASSERT(*op->connectivity_state != GRPC_CHANNEL_SHUTDOWN);
+    *op->connectivity_state = GRPC_CHANNEL_SHUTDOWN;
     op->on_connectivity_state_change->cb(
         exec_ctx, op->on_connectivity_state_change->cb_arg, 1);
   }

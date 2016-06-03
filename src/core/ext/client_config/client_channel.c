@@ -119,7 +119,7 @@ static void set_channel_connectivity_state_locked(grpc_exec_ctx *exec_ctx,
                                                   grpc_connectivity_state state,
                                                   const char *reason) {
   if ((state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
-       state == GRPC_CHANNEL_FATAL_FAILURE) &&
+       state == GRPC_CHANNEL_SHUTDOWN) &&
       chand->lb_policy != NULL) {
     /* cancel fail-fast picks */
     grpc_lb_policy_cancel_picks(
@@ -136,8 +136,7 @@ static void on_lb_policy_state_changed_locked(
   /* check if the notification is for a stale policy */
   if (w->lb_policy != w->chand->lb_policy) return;
 
-  if (publish_state == GRPC_CHANNEL_FATAL_FAILURE &&
-      w->chand->resolver != NULL) {
+  if (publish_state == GRPC_CHANNEL_SHUTDOWN && w->chand->resolver != NULL) {
     publish_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
     grpc_resolver_channel_saw_error(exec_ctx, w->chand->resolver);
     GRPC_LB_POLICY_UNREF(exec_ctx, w->chand->lb_policy, "channel");
@@ -145,7 +144,7 @@ static void on_lb_policy_state_changed_locked(
   }
   set_channel_connectivity_state_locked(exec_ctx, w->chand, publish_state,
                                         "lb_changed");
-  if (w->state != GRPC_CHANNEL_FATAL_FAILURE) {
+  if (w->state != GRPC_CHANNEL_SHUTDOWN) {
     watch_lb_policy(exec_ctx, w->chand, w->lb_policy, w->state);
   }
 }
@@ -237,7 +236,7 @@ static void cc_on_config_changed(grpc_exec_ctx *exec_ctx, void *arg,
       chand->resolver = NULL;
     }
     set_channel_connectivity_state_locked(
-        exec_ctx, chand, GRPC_CHANNEL_FATAL_FAILURE, "resolver_gone");
+        exec_ctx, chand, GRPC_CHANNEL_SHUTDOWN, "resolver_gone");
     gpr_mu_unlock(&chand->mu_config);
   }
 
@@ -292,8 +291,8 @@ static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
   }
 
   if (op->disconnect && chand->resolver != NULL) {
-    set_channel_connectivity_state_locked(
-        exec_ctx, chand, GRPC_CHANNEL_FATAL_FAILURE, "disconnect");
+    set_channel_connectivity_state_locked(exec_ctx, chand,
+                                          GRPC_CHANNEL_SHUTDOWN, "disconnect");
     grpc_resolver_shutdown(exec_ctx, chand->resolver);
     GRPC_RESOLVER_UNREF(exec_ctx, chand->resolver, "channel");
     chand->resolver = NULL;
