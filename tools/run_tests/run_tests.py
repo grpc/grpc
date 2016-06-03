@@ -234,6 +234,13 @@ class CLanguage(object):
   def makefile_name(self):
     return 'Makefile'
 
+  def _nacl_make_options(self):
+    toolchain_path='/chromium/src/out/pepper_53/toolchain/linux_x86_glibc/x86_64-nacl/bin'
+    return ['CC=%s/gcc' % toolchain_path,
+            'CXX=%s/g++' % toolchain_path,
+            'LD=%s/gcc' % toolchain_path,
+            'LDXX=%s/g++' % toolchain_path]
+
   def _clang_make_options(self):
     return ['CC=clang', 'CXX=clang++', 'LD=clang', 'LDXX=clang++']
 
@@ -258,7 +265,7 @@ class CLanguage(object):
     elif compiler == 'clang3.6':
       return ('ubuntu1604', self._clang_make_options())
     elif compiler == 'nacl':
-      return ('nacl', [])
+      return ('nacl', self._nacl_make_options())
     else:
       raise Exception('Compiler %s not supported.' % compiler)
 
