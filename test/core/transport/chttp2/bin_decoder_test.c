@@ -58,9 +58,7 @@ static void expect_slice_eq(gpr_slice expected, gpr_slice slice, char *debug,
 }
 
 static void expect_slice_empty(gpr_slice slice) {
-  if (!GPR_SLICE_IS_EMPTY(slice)) {
-    all_ok = 0;
-  }
+  GPR_ASSERT(GPR_SLICE_IS_EMPTY(slice));
   gpr_slice_unref(slice);
 }
 
