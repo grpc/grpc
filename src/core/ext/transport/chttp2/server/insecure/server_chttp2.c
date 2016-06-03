@@ -152,6 +152,11 @@ error:
   }
   port_num = 0;
 
+  const char *msg = grpc_error_string(err);
+  gpr_log(GPR_ERROR, "%s", msg);
+  grpc_error_free_string(msg);
+  GRPC_ERROR_UNREF(err);
+
 done:
   grpc_exec_ctx_finish(&exec_ctx);
   if (errors != NULL) {
@@ -159,7 +164,6 @@ done:
       GRPC_ERROR_UNREF(errors[i]);
     }
   }
-  GRPC_ERROR_UNREF(err);
   gpr_free(errors);
   return port_num;
 }
