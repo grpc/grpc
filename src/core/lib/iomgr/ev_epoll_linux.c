@@ -788,16 +788,12 @@ static void sig_handler(int sig_num) {
 
 /* Global state management */
 static void pollset_global_init(void) {
-  gpr_tls_init(&g_current_thread_poller);
-  gpr_tls_init(&g_current_thread_worker);
   grpc_wakeup_fd_init(&grpc_global_wakeup_fd);
   signal(SIGUSR1, sig_handler);
 }
 
 static void pollset_global_shutdown(void) {
   grpc_wakeup_fd_destroy(&grpc_global_wakeup_fd);
-  gpr_tls_destroy(&g_current_thread_poller);
-  gpr_tls_destroy(&g_current_thread_worker);
 }
 
 /* Return 1 if the pollset has active threads in pollset_work (pollset must
