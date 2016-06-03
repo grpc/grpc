@@ -619,7 +619,6 @@ filegroups:
   - include/grpc++/impl/client_unary_call.h
   - include/grpc++/impl/grpc_library.h
   - include/grpc++/impl/method_handler_impl.h
-  - include/grpc++/impl/proto_utils.h
   - include/grpc++/impl/rpc_method.h
   - include/grpc++/impl/rpc_service_method.h
   - include/grpc++/impl/serialization_traits.h
@@ -644,6 +643,7 @@ filegroups:
   - include/grpc++/support/async_unary_call.h
   - include/grpc++/support/byte_buffer.h
   - include/grpc++/support/channel_arguments.h
+  - include/grpc++/support/config.h
   - include/grpc++/support/slice.h
   - include/grpc++/support/status.h
   - include/grpc++/support/status_code_enum.h
@@ -684,9 +684,8 @@ filegroups:
   deps:
   - grpc
   uses:
-  - grpc++_codegen
-  - grpc++_config
-- name: grpc++_codegen
+  - grpc++_codegen_base
+- name: grpc++_codegen_base
   language: c++
   public_headers:
   - include/grpc++/impl/codegen/async_stream.h
@@ -698,11 +697,11 @@ filegroups:
   - include/grpc++/impl/codegen/client_unary_call.h
   - include/grpc++/impl/codegen/completion_queue.h
   - include/grpc++/impl/codegen/completion_queue_tag.h
+  - include/grpc++/impl/codegen/config.h
   - include/grpc++/impl/codegen/core_codegen_interface.h
   - include/grpc++/impl/codegen/create_auth_context.h
   - include/grpc++/impl/codegen/grpc_library.h
   - include/grpc++/impl/codegen/method_handler_impl.h
-  - include/grpc++/impl/codegen/proto_utils.h
   - include/grpc++/impl/codegen/rpc_method.h
   - include/grpc++/impl/codegen/rpc_service_method.h
   - include/grpc++/impl/codegen/security/auth_context.h
@@ -723,18 +722,16 @@ filegroups:
   - src/cpp/codegen/codegen_init.cc
   uses:
   - grpc_codegen
-  - grpc++_config_codegen
-- name: grpc++_config
+- name: grpc++_codegen_proto
   language: c++
   public_headers:
-  - include/grpc++/support/config.h
-  - include/grpc++/support/config_protobuf.h
+  - include/grpc++/impl/codegen/proto_utils.h
   uses:
-  - grpc++_config_codegen
-- name: grpc++_config_codegen
+  - grpc++_codegen_base
+  - grpc++_config_proto
+- name: grpc++_config_proto
   language: c++
   public_headers:
-  - include/grpc++/impl/codegen/config.h
   - include/grpc++/impl/codegen/config_protobuf.h
 libs:
 - name: gpr
@@ -917,7 +914,7 @@ libs:
   dll: true
   filegroups:
   - grpc++_base
-  - grpc++_codegen
+  - grpc++_codegen_base
   secure: check
   vs_project_guid: '{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}'
 - name: grpc++_test_config
@@ -952,6 +949,10 @@ libs:
   deps:
   - grpc++
   - grpc_test_util
+  filegroups:
+  - grpc++_codegen_base
+  - grpc++_codegen_proto
+  - grpc++_config_proto
 - name: grpc++_unsecure
   build: all
   language: c++
@@ -964,7 +965,7 @@ libs:
   dll: true
   filegroups:
   - grpc++_base
-  - grpc++_codegen
+  - grpc++_codegen_base
   secure: false
   vs_project_guid: '{6EE56155-DF7C-4F6E-BFC4-F6F776BEB211}'
 - name: grpc_plugin_support
@@ -994,7 +995,7 @@ libs:
   - src/compiler/python_generator.cc
   - src/compiler/ruby_generator.cc
   filegroups:
-  - grpc++_config
+  - grpc++_config_proto
   secure: false
   vs_project_guid: '{B6E81D84-2ACB-41B8-8781-493A944C7817}'
   vs_props:
@@ -2443,7 +2444,7 @@ targets:
   - grpc
   - gpr
   filegroups:
-  - grpc++_codegen
+  - grpc++_codegen_base
 - name: codegen_test_minimal
   gtest: true
   build: test
@@ -2457,7 +2458,7 @@ targets:
   - src/proto/grpc/testing/stats.proto
   - test/cpp/codegen/codegen_test_minimal.cc
   filegroups:
-  - grpc++_codegen
+  - grpc++_codegen_base
 - name: credentials_test
   gtest: true
   build: test
