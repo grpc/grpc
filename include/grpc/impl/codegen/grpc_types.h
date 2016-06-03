@@ -115,6 +115,8 @@ typedef struct {
 /* Channel argument keys: */
 /** Enable census for tracing and stats collection */
 #define GRPC_ARG_ENABLE_CENSUS "grpc.census"
+/** Enable load reporting */
+#define GRPC_ARG_ENABLE_LOAD_REPORTING "grpc.loadreporting"
 /** Maximum number of concurrent incoming streams to allow on a http2
     connection */
 #define GRPC_ARG_MAX_CONCURRENT_STREAMS "grpc.max_concurrent_streams"

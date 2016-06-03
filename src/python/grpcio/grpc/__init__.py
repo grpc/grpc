@@ -352,6 +352,85 @@ class Call(six.with_metaclass(abc.ABCMeta, RpcContext)):
     raise NotImplementedError()
 
 
+############  Authentication & Authorization Interfaces & Classes  #############
+
+
+class ChannelCredentials(object):
+  """A value encapsulating the data required to create a secure Channel.
+
+  This class has no supported interface - it exists to define the type of its
+  instances and its instances exist to be passed to other functions.
+  """
+
+  def __init__(self, credentials):
+    self._credentials = credentials
+
+
+class CallCredentials(object):
+  """A value encapsulating data asserting an identity over a channel.
+
+  A CallCredentials may be composed with ChannelCredentials to always assert
+  identity for every call over that Channel.
+
+  This class has no supported interface - it exists to define the type of its
+  instances and its instances exist to be passed to other functions.
+  """
+
+  def __init__(self, credentials):
+    self._credentials = credentials
+
+
+class AuthMetadataContext(six.with_metaclass(abc.ABCMeta)):
+  """Provides information to call credentials metadata plugins.
+
+  Attributes:
+    service_url: A string URL of the service being called into.
+    method_name: A string of the fully qualified method name being called.
+  """
+
+
+class AuthMetadataPluginCallback(six.with_metaclass(abc.ABCMeta)):
+  """Callback object received by a metadata plugin."""
+
+  def __call__(self, metadata, error):
+    """Inform the gRPC runtime of the metadata to construct a CallCredentials.
+
+    Args:
+      metadata: An iterable of 2-sequences (e.g. tuples) of metadata key/value
+        pairs.
+      error: An Exception to indicate error or None to indicate success.
+    """
+    raise NotImplementedError()
+
+
+class AuthMetadataPlugin(six.with_metaclass(abc.ABCMeta)):
+  """A specification for custom authentication."""
+
+  def __call__(self, context, callback):
+    """Implements authentication by passing metadata to a callback.
+
+    Implementations of this method must not block.
+
+    Args:
+      context: An AuthMetadataContext providing information on the RPC that the
+        plugin is being called to authenticate.
+      callback: An AuthMetadataPluginCallback to be invoked either synchronously
+        or asynchronously.
+    """
+    raise NotImplementedError()
+
+
+class ServerCredentials(object):
+  """A value encapsulating the data required to open a secure port on a Server.
+
+  This class has no supported interface - it exists to define the type of its
+  instances and its instances exist to be passed to other functions.
+  """
+
+  def __init__(self, credentials):
+    self._credentials = credentials
+
+
 ########################  Multi-Callable Interfaces  ###########################
 
 
@@ -359,7 +438,9 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
   """Affords invoking a unary-unary RPC."""
 
   @abc.abstractmethod
-  def __call__(self, request, timeout=None, metadata=None, with_call=False):
+  def __call__(
+      self, request, timeout=None, metadata=None, credentials=None,
+      with_call=False):
     """Synchronously invokes the underlying RPC.
 
     Args:
@@ -367,6 +448,7 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
       timeout: An optional duration of time in seconds to allow for the RPC.
       metadata: An optional sequence of pairs of bytes to be transmitted to the
         service-side of the RPC.
+      credentials: An optional CallCredentials for the RPC.
       with_call: Whether or not to include return a Call for the RPC in addition
         to the response.
 
@@ -382,7 +464,7 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
     raise NotImplementedError()
 
   @abc.abstractmethod
-  def future(self, request, timeout=None, metadata=None):
+  def future(self, request, timeout=None, metadata=None, credentials=None):
     """Asynchronously invokes the underlying RPC.
 
     Args:
@@ -390,6 +472,7 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
       timeout: An optional duration of time in seconds to allow for the RPC.
       metadata: An optional sequence of pairs of bytes to be transmitted to the
         service-side of the RPC.
+      credentials: An optional CallCredentials for the RPC.
 
     Returns:
       An object that is both a Call for the RPC and a Future. In the event of
@@ -404,7 +487,7 @@ class UnaryStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
   """Affords invoking a unary-stream RPC."""
 
   @abc.abstractmethod
-  def __call__(self, request, timeout=None, metadata=None):
+  def __call__(self, request, timeout=None, metadata=None, credentials=None):
     """Invokes the underlying RPC.
 
     Args:
@@ -412,6 +495,7 @@ class UnaryStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
       timeout: An optional duration of time in seconds to allow for the RPC.
       metadata: An optional sequence of pairs of bytes to be transmitted to the
         service-side of the RPC.
+      credentials: An optional CallCredentials for the RPC.
 
     Returns:
       An object that is both a Call for the RPC and an iterator of response
@@ -426,7 +510,8 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
 
   @abc.abstractmethod
   def __call__(
-      self, request_iterator, timeout=None, metadata=None, with_call=False):
+      self, request_iterator, timeout=None, metadata=None, credentials=None,
+      with_call=False):
     """Synchronously invokes the underlying RPC.
 
     Args:
@@ -434,6 +519,7 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
       timeout: An optional duration of time in seconds to allow for the RPC.
       metadata: An optional sequence of pairs of bytes to be transmitted to the
         service-side of the RPC.
+      credentials: An optional CallCredentials for the RPC.
       with_call: Whether or not to include return a Call for the RPC in addition
         to the response.
 
@@ -449,7 +535,8 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
     raise NotImplementedError()
 
   @abc.abstractmethod
-  def future(self, request_iterator, timeout=None, metadata=None):
+  def future(
+      self, request_iterator, timeout=None, metadata=None, credentials=None):
     """Asynchronously invokes the underlying RPC.
 
     Args:
@@ -457,6 +544,7 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
       timeout: An optional duration of time in seconds to allow for the RPC.
       metadata: An optional sequence of pairs of bytes to be transmitted to the
         service-side of the RPC.
+      credentials: An optional CallCredentials for the RPC.
 
     Returns:
       An object that is both a Call for the RPC and a Future. In the event of
@@ -471,7 +559,8 @@ class StreamStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
   """Affords invoking a stream-stream RPC in any call style."""
 
   @abc.abstractmethod
-  def __call__(self, request_iterator, timeout=None, metadata=None):
+  def __call__(
+      self, request_iterator, timeout=None, metadata=None, credentials=None):
     """Invokes the underlying RPC.
 
     Args:
@@ -479,6 +568,7 @@ class StreamStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
       timeout: An optional duration of time in seconds to allow for the RPC.
       metadata: An optional sequence of pairs of bytes to be transmitted to the
         service-side of the RPC.
+      credentials: An optional CallCredentials for the RPC.
 
     Returns:
       An object that is both a Call for the RPC and an iterator of response
@@ -690,7 +780,6 @@ class RpcMethodHandler(six.with_metaclass(abc.ABCMeta)):
 
 class HandlerCallDetails(six.with_metaclass(abc.ABCMeta)):
   """Describes an RPC that has just arrived for service.
-
   Attributes:
     method: The method name of the RPC.
     invocation_metadata: The metadata from the invocation side of the RPC.
@@ -751,6 +840,25 @@ class Server(six.with_metaclass(abc.ABCMeta)):
     raise NotImplementedError()
 
   @abc.abstractmethod
+  def add_secure_port(self, address, server_credentials):
+    """Reserves a port for secure RPC service after this Server becomes active.
+
+    This method may only be called before calling this Server's start method is
+    called.
+
+    Args:
+      address: The address for which to open a port.
+      server_credentials: A ServerCredentials.
+
+    Returns:
+      An integer port on which RPCs will be serviced after this link has been
+        started. This is typically the same number as the port number contained
+        in the passed address, but will likely be different if the port number
+        contained in the passed address was zero.
+    """
+    raise NotImplementedError()
+
+  @abc.abstractmethod
   def start(self):
     """Starts this Server's service of RPCs.
 
@@ -792,6 +900,120 @@ class Server(six.with_metaclass(abc.ABCMeta)):
 #################################  Functions    ################################
 
 
+def ssl_channel_credentials(
+    root_certificates=None, private_key=None, certificate_chain=None):
+  """Creates a ChannelCredentials for use with an SSL-enabled Channel.
+
+  Args:
+    root_certificates: The PEM-encoded root certificates or unset to ask for
+      them to be retrieved from a default location.
+    private_key: The PEM-encoded private key to use or unset if no private key
+      should be used.
+    certificate_chain: The PEM-encoded certificate chain to use or unset if no
+      certificate chain should be used.
+
+  Returns:
+    A ChannelCredentials for use with an SSL-enabled Channel.
+  """
+  if private_key is not None or certificate_chain is not None:
+    pair = _cygrpc.SslPemKeyCertPair(private_key, certificate_chain)
+  else:
+    pair = None
+  return ChannelCredentials(
+      _cygrpc.channel_credentials_ssl(root_certificates, pair))
+
+
+def metadata_call_credentials(metadata_plugin, name=None):
+  """Construct CallCredentials from an AuthMetadataPlugin.
+
+  Args:
+    metadata_plugin: An AuthMetadataPlugin to use as the authentication behavior
+      in the created CallCredentials.
+    name: A name for the plugin.
+
+  Returns:
+    A CallCredentials.
+  """
+  from grpc import _plugin_wrapping
+  if name is None:
+    try:
+      effective_name = metadata_plugin.__name__
+    except AttributeError:
+      effective_name = metadata_plugin.__class__.__name__
+  else:
+    effective_name = name
+  return CallCredentials(
+      _plugin_wrapping.call_credentials_metadata_plugin(
+          metadata_plugin, effective_name))
+
+
+def composite_call_credentials(call_credentials, additional_call_credentials):
+  """Compose two CallCredentials to make a new one.
+
+  Args:
+    call_credentials: A CallCredentials object.
+    additional_call_credentials: Another CallCredentials object to compose on
+      top of call_credentials.
+
+  Returns:
+    A new CallCredentials composed of the two given CallCredentials.
+  """
+  return CallCredentials(
+      _cygrpc.call_credentials_composite(
+          call_credentials._credentials,
+          additional_call_credentials._credentials))
+
+
+def composite_channel_credentials(channel_credentials, call_credentials):
+  """Compose a ChannelCredentials and a CallCredentials.
+
+  Args:
+    channel_credentials: A ChannelCredentials.
+    call_credentials: A CallCredentials.
+
+  Returns:
+    A ChannelCredentials composed of the given ChannelCredentials and
+      CallCredentials.
+  """
+  return ChannelCredentials(
+      _cygrpc.channel_credentials_composite(
+          channel_credentials._credentials, call_credentials._credentials))
+
+
+def ssl_server_credentials(
+    private_key_certificate_chain_pairs, root_certificates=None,
+    require_client_auth=False):
+  """Creates a ServerCredentials for use with an SSL-enabled Server.
+
+  Args:
+    private_key_certificate_chain_pairs: A nonempty sequence each element of
+      which is a pair the first element of which is a PEM-encoded private key
+      and the second element of which is the corresponding PEM-encoded
+      certificate chain.
+    root_certificates: PEM-encoded client root certificates to be used for
+      verifying authenticated clients. If omitted, require_client_auth must also
+      be omitted or be False.
+    require_client_auth: A boolean indicating whether or not to require clients
+      to be authenticated. May only be True if root_certificates is not None.
+
+  Returns:
+    A ServerCredentials for use with an SSL-enabled Server.
+  """
+  if len(private_key_certificate_chain_pairs) == 0:
+    raise ValueError(
+        'At least one private key-certificate chain pair is required!')
+  elif require_client_auth and root_certificates is None:
+    raise ValueError(
+        'Illegal to require client auth without providing root certificates!')
+  else:
+    return ServerCredentials(
+        _cygrpc.server_credentials_ssl(
+        root_certificates,
+        [_cygrpc.SslPemKeyCertPair(key, pem)
+         for key, pem in private_key_certificate_chain_pairs],
+        require_client_auth))
+
+
 def channel_ready_future(channel):
   """Creates a Future tracking when a Channel is ready.
 
@@ -823,6 +1045,22 @@ def insecure_channel(target, options=None):
   """
   from grpc import _channel
   return _channel.Channel(target, None, options)
+
+
+def secure_channel(target, credentials, options=None):
+  """Creates an insecure Channel to a server.
+
+  Args:
+    target: The target to which to connect.
+    credentials: A ChannelCredentials instance.
+    options: A sequence of string-value pairs according to which to configure
+      the created channel.
+
+  Returns:
+    A Channel to the target through which RPCs may be conducted.
+  """
+  from grpc import _channel
+  return _channel.Channel(target, credentials, options)
 
 
 def server(generic_rpc_handlers, thread_pool, options=None):

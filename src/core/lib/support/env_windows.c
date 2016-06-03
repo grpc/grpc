@@ -33,29 +33,47 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WIN32
+#ifdef GPR_WINDOWS_ENV
 
-#include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
+#include <windows.h>
+
+#include "src/core/lib/support/env.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/support/string_windows.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/support/env.h"
-#include "src/core/lib/support/string.h"
-
-char *grpc_get_well_known_google_credentials_file_path_impl(void) {
+char *gpr_getenv(const char *name) {
   char *result = NULL;
-  char *appdata_path = gpr_getenv("APPDATA");
-  if (appdata_path == NULL) {
-    gpr_log(GPR_ERROR, "Could not get APPDATA environment variable.");
+  DWORD size;
+  LPTSTR tresult = NULL;
+  LPTSTR tname = gpr_char_to_tchar(name);
+  DWORD ret;
+
+  ret = GetEnvironmentVariable(tname, NULL, 0);
+  if (ret == 0) return NULL;
+  size = ret * (DWORD)sizeof(TCHAR);
+  tresult = gpr_malloc(size);
+  ret = GetEnvironmentVariable(tname, tresult, size);
+  gpr_free(tname);
+  if (ret == 0) {
+    gpr_free(tresult);
     return NULL;
   }
-  gpr_asprintf(&result, "%s/%s/%s", appdata_path,
-               GRPC_GOOGLE_CLOUD_SDK_CONFIG_DIRECTORY,
-               GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE);
-  gpr_free(appdata_path);
+  result = gpr_tchar_to_char(tresult);
+  gpr_free(tresult);
   return result;
 }
 
-#endif /* GPR_WIN32 */
+void gpr_setenv(const char *name, const char *value) {
+  LPTSTR tname = gpr_char_to_tchar(name);
+  LPTSTR tvalue = gpr_char_to_tchar(value);
+  BOOL res = SetEnvironmentVariable(tname, tvalue);
+  gpr_free(tname);
+  gpr_free(tvalue);
+  GPR_ASSERT(res);
+}
+
+#endif /* GPR_WINDOWS_ENV */
