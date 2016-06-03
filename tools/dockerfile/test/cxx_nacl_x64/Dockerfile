@@ -29,32 +29,6 @@
 
 FROM ubuntu:14.04
 
-#===========================
-# Native Client dependencies
-
-# Needed for the Chrome dependency msttcorefonts
-# http://askubuntu.com/questions/89096/how-do-i-enable-the-multiverse-repository
-RUN echo 'deb http://archive.ubuntu.com/ubuntu/ trusty multiverse' >> /etc/apt/sources.list
-RUN echo 'deb-src http://archive.ubuntu.com/ubuntu/ trusty multiverse' >> /etc/apt/sources.list
-RUN echo 'deb http://archive.ubuntu.com/ubuntu/ trusty-updates multiverse' >> /etc/apt/sources.list
-RUN echo 'deb-src http://archive.ubuntu.com/ubuntu/ trusty-updates multiverse' >> /etc/apt/sources.list
-RUN echo 'deb http://archive.ubuntu.com/ubuntu/ trusty-security multiverse' >> /etc/apt/sources.list
-RUN echo 'deb-src http://archive.ubuntu.com/ubuntu/ trusty-security multiverse' >> /etc/apt/sources.list
-RUN apt-get update
-RUN apt-get -y install msttcorefonts
-
-# Download source and build NaCl SDK
-RUN git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
-ENV PATH $pwd/depot_tools:$PATH
-RUN mkdir /chromium && cd /chromium && \
-  fetch --nohooks --no-history chromium
-RUN cd /chromium/src && ./build/install-build-deps.sh --nacl --no-prompt
-# The GYP_DEFINES is needed to install some ARM-specific tools necessary to
-# build the SDK.
-# https://chromium.googlesource.com/chromium/src/+/master/native_client_sdk/src/BUILDING.rst
-RUN cd /chromium && GYP_DEFINES=target_arch=arm gclient runhooks
-RUN cd /chromium/src && ./native_client_sdk/src/build_tools/build_sdk.py
-
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
   autoconf \
@@ -88,6 +62,32 @@ RUN apt-get update && apt-get install -y \
 #================
 # Build profiling
 RUN apt-get update && apt-get install -y time && apt-get clean
+
+#===========================
+# Native Client dependencies
+
+# Needed for the Chrome dependency msttcorefonts
+# http://askubuntu.com/questions/89096/how-do-i-enable-the-multiverse-repository
+RUN echo 'deb http://archive.ubuntu.com/ubuntu/ trusty multiverse' >> /etc/apt/sources.list
+RUN echo 'deb-src http://archive.ubuntu.com/ubuntu/ trusty multiverse' >> /etc/apt/sources.list
+RUN echo 'deb http://archive.ubuntu.com/ubuntu/ trusty-updates multiverse' >> /etc/apt/sources.list
+RUN echo 'deb-src http://archive.ubuntu.com/ubuntu/ trusty-updates multiverse' >> /etc/apt/sources.list
+RUN echo 'deb http://archive.ubuntu.com/ubuntu/ trusty-security multiverse' >> /etc/apt/sources.list
+RUN echo 'deb-src http://archive.ubuntu.com/ubuntu/ trusty-security multiverse' >> /etc/apt/sources.list
+RUN apt-get update
+RUN apt-get -y install msttcorefonts
+
+# Download source and build NaCl SDK
+RUN git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+ENV PATH $pwd/depot_tools:$PATH
+RUN mkdir /chromium && cd /chromium && \
+  fetch --nohooks --no-history chromium
+RUN cd /chromium/src && ./build/install-build-deps.sh --nacl --no-prompt
+# The GYP_DEFINES is needed to install some ARM-specific tools necessary to
+# build the SDK.
+# https://chromium.googlesource.com/chromium/src/+/master/native_client_sdk/src/BUILDING.rst
+RUN cd /chromium && GYP_DEFINES=target_arch=arm gclient runhooks
+RUN cd /chromium/src && ./native_client_sdk/src/build_tools/build_sdk.py
 
 #=================
 # C++ dependencies
