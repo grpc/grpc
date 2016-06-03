@@ -32,4 +32,4 @@ set -ex
 
 cd $(dirname $0)/../../..
 
-PYTHONPATH=src/python/grpcio_tests:src/python/grpcio:src/python/gens .tox/py27/bin/python src/python/grpcio_tests/tests/qps/qps_worker.py $@
+PYTHONPATH=src/python/grpcio_tests:src/python/grpcio:src/python/gens py27/bin/python src/python/grpcio_tests/tests/qps/qps_worker.py $@
