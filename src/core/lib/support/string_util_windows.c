@@ -35,7 +35,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WIN32
+#ifdef GPR_WINDOWS
 
 /* Some platforms (namely msys) need wchar to be included BEFORE
    anything else, especially strsafe.h. */
@@ -91,4 +91,4 @@ char *gpr_format_message(int messageid) {
   return message;
 }
 
-#endif /* GPR_WIN32 */
+#endif /* GPR_WINDOWS */

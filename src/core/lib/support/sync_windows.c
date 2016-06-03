@@ -35,7 +35,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WIN32
+#ifdef GPR_WINDOWS
 
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -130,4 +130,4 @@ void gpr_once_init(gpr_once *once, void (*init_function)(void)) {
   InitOnceExecuteOnce(once, run_once_func, &arg, &dummy);
 }
 
-#endif /* GPR_WIN32 */
+#endif /* GPR_WINDOWS */

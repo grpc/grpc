@@ -35,7 +35,7 @@
 
   <%
   def is_platform_header(hdr):
-    for platform_identifier in ['_gcc', '_win32', '_pthread',
+    for platform_identifier in ['_gcc', '_windows', '_pthread',
                                 '_zookeeper', '_msvc', '_posix']:
       if platform_identifier in hdr:
         return True

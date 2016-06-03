@@ -31,21 +31,13 @@
  *
  */
 
-#ifndef GRPC_SUPPORT_LOG_WIN32_H
-#define GRPC_SUPPORT_LOG_WIN32_H
+#ifndef GRPC_CORE_LIB_IOMGR_SOCKADDR_WINDOWS_H
+#define GRPC_CORE_LIB_IOMGR_SOCKADDR_WINDOWS_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <winsock2.h>
+#include <ws2tcpip.h>
 
-/* Returns a string allocated with gpr_malloc that contains a UTF-8
- * formatted error message, corresponding to the error messageid.
- * Use in conjunction with GetLastError() et al.
- */
-GPRAPI char *gpr_format_message(int messageid);
+// must be included after the above
+#include <mswsock.h>
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* GRPC_SUPPORT_LOG_WIN32_H */
+#endif /* GRPC_CORE_LIB_IOMGR_SOCKADDR_WINDOWS_H */

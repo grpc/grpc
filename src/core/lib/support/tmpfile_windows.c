@@ -31,53 +31,54 @@
  *
  */
 
-/* Windows code for gpr snprintf support. */
-
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WIN32_STRING
+#ifdef GPR_WINDOWS_TMPFILE
 
-#include <stdarg.h>
+#include <io.h>
 #include <stdio.h>
 #include <string.h>
+#include <tchar.h>
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
-#include "src/core/lib/support/string.h"
+#include "src/core/lib/support/string_windows.h"
+#include "src/core/lib/support/tmpfile.h"
 
-int gpr_asprintf(char **strp, const char *format, ...) {
-  va_list args;
-  int ret;
-  size_t strp_buflen;
+FILE *gpr_tmpfile(const char *prefix, char **tmp_filename_out) {
+  FILE *result = NULL;
+  LPTSTR template_string = NULL;
+  TCHAR tmp_path[MAX_PATH];
+  TCHAR tmp_filename[MAX_PATH];
+  DWORD status;
+  UINT success;
 
-  /* Determine the length. */
-  va_start(args, format);
-  ret = _vscprintf(format, args);
-  va_end(args);
-  if (ret < 0) {
-    *strp = NULL;
-    return -1;
+  if (tmp_filename_out != NULL) *tmp_filename_out = NULL;
+
+  /* Convert our prefix to TCHAR. */
+  template_string = gpr_char_to_tchar(prefix);
+  GPR_ASSERT(template_string);
+
+  /* Get the path to the best temporary folder available. */
+  status = GetTempPath(MAX_PATH, tmp_path);
+  if (status == 0 || status > MAX_PATH) goto end;
+
+  /* Generate a unique filename with our template + temporary path. */
+  success = GetTempFileName(tmp_path, template_string, 0, tmp_filename);
+  if (!success) goto end;
+
+  /* Open a file there. */
+  if (_tfopen_s(&result, tmp_filename, TEXT("wb+")) != 0) goto end;
+
+end:
+  if (result && tmp_filename_out) {
+    *tmp_filename_out = gpr_tchar_to_char(tmp_filename);
   }
 
-  /* Allocate a new buffer, with space for the NUL terminator. */
-  strp_buflen = (size_t)ret + 1;
-  if ((*strp = gpr_malloc(strp_buflen)) == NULL) {
-    /* This shouldn't happen, because gpr_malloc() calls abort(). */
-    return -1;
-  }
-
-  /* Print to the buffer. */
-  va_start(args, format);
-  ret = vsnprintf_s(*strp, strp_buflen, _TRUNCATE, format, args);
-  va_end(args);
-  if ((size_t)ret == strp_buflen - 1) {
-    return ret;
-  }
-
-  /* This should never happen. */
-  gpr_free(*strp);
-  *strp = NULL;
-  return -1;
+  gpr_free(template_string);
+  return result;
 }
 
-#endif /* GPR_WIN32_STRING */
+#endif /* GPR_WINDOWS_TMPFILE */
