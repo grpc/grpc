@@ -1531,7 +1531,7 @@ static void close_from_api(grpc_exec_ctx *exec_ctx,
 
 typedef struct {
   grpc_exec_ctx *exec_ctx;
-  gpr_slice optional_drop_message;
+  gpr_slice *optional_drop_message;
 } cancel_stream_cb_arg;
 
 static void cancel_stream_cb(grpc_chttp2_transport_global *transport_global,
@@ -1539,12 +1539,15 @@ static void cancel_stream_cb(grpc_chttp2_transport_global *transport_global,
                              grpc_chttp2_stream_global *stream_global) {
   cancel_stream_cb_arg *arg = user_data;
   cancel_from_api(arg->exec_ctx, transport_global, stream_global,
-                  GRPC_STATUS_UNAVAILABLE, &arg->optional_drop_message);
+                  GRPC_STATUS_UNAVAILABLE, arg->optional_drop_message);
 }
 
 static void end_all_the_calls(grpc_exec_ctx *exec_ctx,
                               grpc_chttp2_transport *t) {
-  cancel_stream_cb_arg arg = {exec_ctx, t->optional_drop_message};
+  cancel_stream_cb_arg arg = {exec_ctx,
+                              GPR_SLICE_IS_EMPTY(t->optional_drop_message)
+                                  ? NULL
+                                  : &t->optional_drop_message};
   grpc_chttp2_for_all_streams(&t->global, &arg, cancel_stream_cb);
 }
 
@@ -1618,13 +1621,11 @@ static void reading_action_locked(grpc_exec_ctx *exec_ctx,
 
 static bool try_http_parsing(grpc_exec_ctx *exec_ctx,
                              grpc_chttp2_transport *t) {
-  return false;
   grpc_http_parser parser;
   size_t i = 0;
   bool success = false;
 
   grpc_http_parser_init(&parser);
-  grpc_http1_trace = 1;
 
   for (; i < t->read_buffer.count &&
          grpc_http_parser_parse(&parser, t->read_buffer.slices[i]);
