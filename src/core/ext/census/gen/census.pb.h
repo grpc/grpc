@@ -54,6 +54,13 @@ typedef enum _google_census_Resource_BasicUnit {
     google_census_Resource_BasicUnit_MAX_UNITS = 5
 } google_census_Resource_BasicUnit;
 
+typedef enum _google_census_AggregationDescriptor_AggregationType {
+    google_census_AggregationDescriptor_AggregationType_UNKNOWN = 0,
+    google_census_AggregationDescriptor_AggregationType_COUNT = 1,
+    google_census_AggregationDescriptor_AggregationType_DISTRIBUTION = 2,
+    google_census_AggregationDescriptor_AggregationType_INTERVAL = 3
+} google_census_AggregationDescriptor_AggregationType;
+
 /* Struct definitions */
 typedef struct _google_census_AggregationDescriptor_BucketBoundaries {
     pb_callback_t bounds;
@@ -68,6 +75,8 @@ typedef struct _google_census_IntervalStats {
 } google_census_IntervalStats;
 
 typedef struct _google_census_AggregationDescriptor {
+    bool has_type;
+    google_census_AggregationDescriptor_AggregationType type;
     pb_size_t which_options;
     union {
         google_census_AggregationDescriptor_BucketBoundaries bucket_boundaries;
@@ -130,6 +139,7 @@ typedef struct _google_census_IntervalStats_Window {
 } google_census_IntervalStats_Window;
 
 typedef struct _google_census_Metric {
+    pb_callback_t view_name;
     pb_callback_t aggregation;
     bool has_start;
     google_census_Timestamp start;
@@ -158,6 +168,7 @@ typedef struct _google_census_Aggregation {
     pb_callback_t description;
     pb_size_t which_data;
     union {
+        uint64_t count;
         google_census_Distribution distribution;
         google_census_IntervalStats interval_stats;
     } data;
@@ -171,7 +182,7 @@ typedef struct _google_census_Aggregation {
 #define google_census_Timestamp_init_default     {false, 0, false, 0}
 #define google_census_Resource_init_default      {{{NULL}, NULL}, {{NULL}, NULL}, false, google_census_Resource_MeasurementUnit_init_default}
 #define google_census_Resource_MeasurementUnit_init_default {false, 0, {{NULL}, NULL}, {{NULL}, NULL}}
-#define google_census_AggregationDescriptor_init_default {0, {google_census_AggregationDescriptor_BucketBoundaries_init_default}}
+#define google_census_AggregationDescriptor_init_default {false, (google_census_AggregationDescriptor_AggregationType)0, 0, {google_census_AggregationDescriptor_BucketBoundaries_init_default}}
 #define google_census_AggregationDescriptor_BucketBoundaries_init_default {{{NULL}, NULL}}
 #define google_census_AggregationDescriptor_IntervalBoundaries_init_default {{{NULL}, NULL}}
 #define google_census_Distribution_init_default  {false, 0, false, 0, false, google_census_Distribution_Range_init_default, {{NULL}, NULL}}
@@ -180,13 +191,13 @@ typedef struct _google_census_Aggregation {
 #define google_census_IntervalStats_Window_init_default {false, google_census_Duration_init_default, false, 0, false, 0}
 #define google_census_Tag_init_default           {false, "", false, ""}
 #define google_census_View_init_default          {{{NULL}, NULL}, {{NULL}, NULL}, {{NULL}, NULL}, false, google_census_AggregationDescriptor_init_default, {{NULL}, NULL}}
-#define google_census_Aggregation_init_default   {{{NULL}, NULL}, {{NULL}, NULL}, 0, {google_census_Distribution_init_default}, {{NULL}, NULL}}
-#define google_census_Metric_init_default        {{{NULL}, NULL}, false, google_census_Timestamp_init_default, false, google_census_Timestamp_init_default}
+#define google_census_Aggregation_init_default   {{{NULL}, NULL}, {{NULL}, NULL}, 0, {0}, {{NULL}, NULL}}
+#define google_census_Metric_init_default        {{{NULL}, NULL}, {{NULL}, NULL}, false, google_census_Timestamp_init_default, false, google_census_Timestamp_init_default}
 #define google_census_Duration_init_zero         {false, 0, false, 0}
 #define google_census_Timestamp_init_zero        {false, 0, false, 0}
 #define google_census_Resource_init_zero         {{{NULL}, NULL}, {{NULL}, NULL}, false, google_census_Resource_MeasurementUnit_init_zero}
 #define google_census_Resource_MeasurementUnit_init_zero {false, 0, {{NULL}, NULL}, {{NULL}, NULL}}
-#define google_census_AggregationDescriptor_init_zero {0, {google_census_AggregationDescriptor_BucketBoundaries_init_zero}}
+#define google_census_AggregationDescriptor_init_zero {false, (google_census_AggregationDescriptor_AggregationType)0, 0, {google_census_AggregationDescriptor_BucketBoundaries_init_zero}}
 #define google_census_AggregationDescriptor_BucketBoundaries_init_zero {{{NULL}, NULL}}
 #define google_census_AggregationDescriptor_IntervalBoundaries_init_zero {{{NULL}, NULL}}
 #define google_census_Distribution_init_zero     {false, 0, false, 0, false, google_census_Distribution_Range_init_zero, {{NULL}, NULL}}
@@ -195,16 +206,17 @@ typedef struct _google_census_Aggregation {
 #define google_census_IntervalStats_Window_init_zero {false, google_census_Duration_init_zero, false, 0, false, 0}
 #define google_census_Tag_init_zero              {false, "", false, ""}
 #define google_census_View_init_zero             {{{NULL}, NULL}, {{NULL}, NULL}, {{NULL}, NULL}, false, google_census_AggregationDescriptor_init_zero, {{NULL}, NULL}}
-#define google_census_Aggregation_init_zero      {{{NULL}, NULL}, {{NULL}, NULL}, 0, {google_census_Distribution_init_zero}, {{NULL}, NULL}}
-#define google_census_Metric_init_zero           {{{NULL}, NULL}, false, google_census_Timestamp_init_zero, false, google_census_Timestamp_init_zero}
+#define google_census_Aggregation_init_zero      {{{NULL}, NULL}, {{NULL}, NULL}, 0, {0}, {{NULL}, NULL}}
+#define google_census_Metric_init_zero           {{{NULL}, NULL}, {{NULL}, NULL}, false, google_census_Timestamp_init_zero, false, google_census_Timestamp_init_zero}
 
 /* Field tags (for use in manual encoding/decoding) */
 #define google_census_AggregationDescriptor_BucketBoundaries_bounds_tag 1
 #define google_census_AggregationDescriptor_IntervalBoundaries_window_size_tag 1
 #define google_census_IntervalStats_window_tag   1
-#define google_census_AggregationDescriptor_bucket_boundaries_tag 1
+#define google_census_AggregationDescriptor_bucket_boundaries_tag 2
 
-#define google_census_AggregationDescriptor_interval_boundaries_tag 2
+#define google_census_AggregationDescriptor_interval_boundaries_tag 3
+#define google_census_AggregationDescriptor_type_tag 1
 #define google_census_Distribution_Range_min_tag 1
 #define google_census_Distribution_Range_max_tag 2
 #define google_census_Duration_seconds_tag       1
@@ -223,9 +235,10 @@ typedef struct _google_census_Aggregation {
 #define google_census_IntervalStats_Window_window_size_tag 1
 #define google_census_IntervalStats_Window_count_tag 2
 #define google_census_IntervalStats_Window_mean_tag 3
-#define google_census_Metric_aggregation_tag     1
-#define google_census_Metric_start_tag           2
-#define google_census_Metric_end_tag             3
+#define google_census_Metric_view_name_tag       1
+#define google_census_Metric_aggregation_tag     2
+#define google_census_Metric_start_tag           3
+#define google_census_Metric_end_tag             4
 #define google_census_Resource_name_tag          1
 #define google_census_Resource_description_tag   2
 #define google_census_Resource_unit_tag          3
@@ -234,19 +247,21 @@ typedef struct _google_census_Aggregation {
 #define google_census_View_resource_name_tag     3
 #define google_census_View_aggregation_tag       4
 #define google_census_View_tag_key_tag           5
-#define google_census_Aggregation_distribution_tag 3
+#define google_census_Aggregation_count_tag      3
 
-#define google_census_Aggregation_interval_stats_tag 4
+#define google_census_Aggregation_distribution_tag 4
+
+#define google_census_Aggregation_interval_stats_tag 5
 #define google_census_Aggregation_name_tag       1
 #define google_census_Aggregation_description_tag 2
-#define google_census_Aggregation_tag_tag        5
+#define google_census_Aggregation_tag_tag        6
 
 /* Struct field encoding specification for nanopb */
 extern const pb_field_t google_census_Duration_fields[3];
 extern const pb_field_t google_census_Timestamp_fields[3];
 extern const pb_field_t google_census_Resource_fields[4];
 extern const pb_field_t google_census_Resource_MeasurementUnit_fields[4];
-extern const pb_field_t google_census_AggregationDescriptor_fields[3];
+extern const pb_field_t google_census_AggregationDescriptor_fields[4];
 extern const pb_field_t google_census_AggregationDescriptor_BucketBoundaries_fields[2];
 extern const pb_field_t google_census_AggregationDescriptor_IntervalBoundaries_fields[2];
 extern const pb_field_t google_census_Distribution_fields[5];
@@ -255,8 +270,8 @@ extern const pb_field_t google_census_IntervalStats_fields[2];
 extern const pb_field_t google_census_IntervalStats_Window_fields[4];
 extern const pb_field_t google_census_Tag_fields[3];
 extern const pb_field_t google_census_View_fields[6];
-extern const pb_field_t google_census_Aggregation_fields[6];
-extern const pb_field_t google_census_Metric_fields[4];
+extern const pb_field_t google_census_Aggregation_fields[7];
+extern const pb_field_t google_census_Metric_fields[5];
 
 /* Maximum encoded size of messages (where known) */
 #define google_census_Duration_size              22

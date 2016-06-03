@@ -121,7 +121,7 @@ message Resource {
   //     denominator: SECS
   //     denominator: SECS
   //
-  // To specify multiples (in power of 10) units, specify a non-zero prefix
+  // To specify multiples (in power of 10) of units, specify a non-zero prefix
   // value, for example:
   //
   // - MB/s (i.e. megabytes / s):
@@ -145,22 +145,33 @@ message Resource {
 // An Aggregation summarizes a series of individual Resource measurements, an
 // AggregationDescriptor describes an Aggregation.
 message AggregationDescriptor {
-  // At most one set of options. If neither option is set, a default type
-  // of Distribution (without a histogram component) will be used.
+  enum AggregationType {
+    // Unspecified. Should not be used.
+    UNKNOWN = 0;
+    // A count of measurements made.
+    COUNT = 1;
+    // A Distribution.
+    DISTRIBUTION = 2;
+    // Counts over fixed time intervals.
+    INTERVAL = 3;
+  }
+  // The type of Aggregation.
+  AggregationType type = 1;
+
+  // At most one set of options. It is illegal to specifiy an option for
+  // COUNT Aggregations. interval_boundaries must be set for INTERVAL types.
+  // bucket_boundaries are optional for DISTRIBUTION types.
   oneof options {
-    // Defines the histogram bucket boundaries for Distributions.
-    BucketBoundaries bucket_boundaries = 1;
+    // Defines histogram bucket boundaries for Distributions.
+    BucketBoundaries bucket_boundaries = 2;
     // Defines the time windows to record for IntervalStats.
-    IntervalBoundaries interval_boundaries = 2;
+    IntervalBoundaries interval_boundaries = 3;
   }
 
   // A Distribution may optionally contain a histogram of the values in the
-  // population. The bucket boundaries for that histogram is described by
-  // `bucket_boundaries`.
-  //
-  // Describes histogram bucket boundaries. Defines `size(bounds) + 1` (= N)
-  // buckets (for size(bounds) >= 1; if size(bounds) == 0, then no histogram
-  // will be defined. The boundaries for bucket index i are:
+  // population. The bucket boundaries for that histogram are described by
+  // `bucket_boundaries`. This defines `size(bounds) + 1` (= N) buckets. The
+  // boundaries for bucket index i are:
   //
   // [-infinity, bounds[i]) for i == 0
   // [bounds[i-1], bounds[i]) for 0 < i < N-2
@@ -190,8 +201,8 @@ message AggregationDescriptor {
 // a specified set of histogram buckets, as defined in
 // Aggregation.bucket_options.
 //
-// The summary statistics are the count, mean, sum of the squared deviation from
-// the mean, the minimum, and the maximum of the set of population of values.
+// The summary statistics are the count, mean, minimum, and the maximum of the
+// set of population of values.
 //
 // Although it is not forbidden, it is generally a bad idea to include
 // non-finite values (infinities or NaNs) in the population of values, as this
@@ -237,7 +248,7 @@ message Distribution {
 message IntervalStats {
   // Summary statistic over a single time window.
   message Window {
-    // The window duration.
+    // The window duration. Must be positive.
     Duration window_size = 1;
     // The number of measurements in this window.
     int64 count = 2;
@@ -285,23 +296,27 @@ message Aggregation {
 
   // The data for this Aggregation.
   oneof data {
-    Distribution distribution = 3;
-    IntervalStats interval_stats = 4;
+    uint64 count = 3;
+    Distribution distribution = 4;
+    IntervalStats interval_stats = 5;
   }
 
   // Tags associated with this Aggregation.
-  repeated Tag tag = 5;
+  repeated Tag tag = 6;
 }
 
 // A Metric represents all the Aggregations for a particular view.
 message Metric {
+  // View associated with this Metric.
+  string view_name = 1;
+
   // Aggregations - each will have a unique set of tag values for the tag_keys
   // associated with the corresponding View.
-  repeated Aggregation aggregation = 1;
+  repeated Aggregation aggregation = 2;
 
   // Start and end timestamps over which the metric was accumulated. These
   // values are not relevant/defined for IntervalStats aggregations, which are
   // always accumulated over a fixed time period.
-  Timestamp start = 2;
-  Timestamp end = 3;
+  Timestamp start = 3;
+  Timestamp end = 4;
 }

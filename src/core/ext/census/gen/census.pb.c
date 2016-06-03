@@ -67,9 +67,10 @@ const pb_field_t google_census_Resource_MeasurementUnit_fields[4] = {
     PB_LAST_FIELD
 };
 
-const pb_field_t google_census_AggregationDescriptor_fields[3] = {
-    PB_ONEOF_FIELD(options,   1, MESSAGE , ONEOF, STATIC  , FIRST, google_census_AggregationDescriptor, bucket_boundaries, bucket_boundaries, &google_census_AggregationDescriptor_BucketBoundaries_fields),
-    PB_ONEOF_FIELD(options,   2, MESSAGE , ONEOF, STATIC  , FIRST, google_census_AggregationDescriptor, interval_boundaries, interval_boundaries, &google_census_AggregationDescriptor_IntervalBoundaries_fields),
+const pb_field_t google_census_AggregationDescriptor_fields[4] = {
+    PB_FIELD(  1, UENUM   , OPTIONAL, STATIC  , FIRST, google_census_AggregationDescriptor, type, type, 0),
+    PB_ONEOF_FIELD(options,   2, MESSAGE , ONEOF, STATIC  , OTHER, google_census_AggregationDescriptor, bucket_boundaries, type, &google_census_AggregationDescriptor_BucketBoundaries_fields),
+    PB_ONEOF_FIELD(options,   3, MESSAGE , ONEOF, STATIC  , OTHER, google_census_AggregationDescriptor, interval_boundaries, type, &google_census_AggregationDescriptor_IntervalBoundaries_fields),
     PB_LAST_FIELD
 };
 
@@ -124,19 +125,21 @@ const pb_field_t google_census_View_fields[6] = {
     PB_LAST_FIELD
 };
 
-const pb_field_t google_census_Aggregation_fields[6] = {
+const pb_field_t google_census_Aggregation_fields[7] = {
     PB_FIELD(  1, STRING  , OPTIONAL, CALLBACK, FIRST, google_census_Aggregation, name, name, 0),
     PB_FIELD(  2, STRING  , OPTIONAL, CALLBACK, OTHER, google_census_Aggregation, description, name, 0),
-    PB_ONEOF_FIELD(data,   3, MESSAGE , ONEOF, STATIC  , OTHER, google_census_Aggregation, distribution, description, &google_census_Distribution_fields),
-    PB_ONEOF_FIELD(data,   4, MESSAGE , ONEOF, STATIC  , OTHER, google_census_Aggregation, interval_stats, description, &google_census_IntervalStats_fields),
-    PB_FIELD(  5, MESSAGE , REPEATED, CALLBACK, OTHER, google_census_Aggregation, tag, data.interval_stats, &google_census_Tag_fields),
+    PB_ONEOF_FIELD(data,   3, UINT64  , ONEOF, STATIC  , OTHER, google_census_Aggregation, count, description, 0),
+    PB_ONEOF_FIELD(data,   4, MESSAGE , ONEOF, STATIC  , OTHER, google_census_Aggregation, distribution, description, &google_census_Distribution_fields),
+    PB_ONEOF_FIELD(data,   5, MESSAGE , ONEOF, STATIC  , OTHER, google_census_Aggregation, interval_stats, description, &google_census_IntervalStats_fields),
+    PB_FIELD(  6, MESSAGE , REPEATED, CALLBACK, OTHER, google_census_Aggregation, tag, data.interval_stats, &google_census_Tag_fields),
     PB_LAST_FIELD
 };
 
-const pb_field_t google_census_Metric_fields[4] = {
-    PB_FIELD(  1, MESSAGE , REPEATED, CALLBACK, FIRST, google_census_Metric, aggregation, aggregation, &google_census_Aggregation_fields),
-    PB_FIELD(  2, MESSAGE , OPTIONAL, STATIC  , OTHER, google_census_Metric, start, aggregation, &google_census_Timestamp_fields),
-    PB_FIELD(  3, MESSAGE , OPTIONAL, STATIC  , OTHER, google_census_Metric, end, start, &google_census_Timestamp_fields),
+const pb_field_t google_census_Metric_fields[5] = {
+    PB_FIELD(  1, STRING  , OPTIONAL, CALLBACK, FIRST, google_census_Metric, view_name, view_name, 0),
+    PB_FIELD(  2, MESSAGE , REPEATED, CALLBACK, OTHER, google_census_Metric, aggregation, view_name, &google_census_Aggregation_fields),
+    PB_FIELD(  3, MESSAGE , OPTIONAL, STATIC  , OTHER, google_census_Metric, start, aggregation, &google_census_Timestamp_fields),
+    PB_FIELD(  4, MESSAGE , OPTIONAL, STATIC  , OTHER, google_census_Metric, end, start, &google_census_Timestamp_fields),
     PB_LAST_FIELD
 };
 
