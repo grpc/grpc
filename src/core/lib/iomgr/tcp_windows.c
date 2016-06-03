@@ -52,6 +52,7 @@
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/iomgr/network_status_tracker.h"
 
 #if defined(__MSYS__) && defined(GPR_ARCH_64)
 /* Nasty workaround for nasty bug when using the 64 bits msys compiler
@@ -375,10 +376,14 @@ static void win_add_to_pollset_set(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 static void win_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
   gpr_mu_lock(&tcp->mu);
-  /* At that point, what may happen is that we're already inside the IOCP
-     callback. See the comments in on_read and on_write. */
-  tcp->shutting_down = 1;
-  grpc_winsocket_shutdown(tcp->socket);
+  /* We may already be in the process of shutting down, for example
+  due to network status change. In this case do nothing. */
+  if (tcp->shutting_down == 0) {
+    /* At that point, what may happen is that we're already inside the IOCP
+       callback. See the comments in on_read and on_write. */
+    tcp->shutting_down = 1;
+    grpc_winsocket_shutdown(tcp->socket);
+  }
   gpr_mu_unlock(&tcp->mu);
 }
 
@@ -406,6 +411,8 @@ grpc_endpoint *grpc_tcp_create(grpc_winsocket *socket, char *peer_string) {
   grpc_closure_init(&tcp->on_read, on_read, tcp);
   grpc_closure_init(&tcp->on_write, on_write, tcp);
   tcp->peer_string = gpr_strdup(peer_string);
+  // Tell network status tracking code about the new endpoint
+  grpc_network_status_register_endpoint(&tcp->base);
   return &tcp->base;
 }
 

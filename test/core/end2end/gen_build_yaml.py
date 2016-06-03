@@ -113,6 +113,7 @@ END2END_TESTS = {
     'registered_call': default_test_options,
     'request_with_flags': default_test_options._replace(proxyable=False),
     'request_with_payload': default_test_options,
+    'network_status_change': default_test_options,
     'server_finishes_request': default_test_options,
     'shutdown_finishes_calls': default_test_options,
     'shutdown_finishes_tags': default_test_options,
