@@ -845,7 +845,7 @@ include/grpc/impl/codegen/alloc.h \
 include/grpc/impl/codegen/atm.h \
 include/grpc/impl/codegen/atm_gcc_atomic.h \
 include/grpc/impl/codegen/atm_gcc_sync.h \
-include/grpc/impl/codegen/atm_win32.h \
+include/grpc/impl/codegen/atm_windows.h \
 include/grpc/impl/codegen/log.h \
 include/grpc/impl/codegen/port_platform.h \
 include/grpc/impl/codegen/slice.h \
@@ -853,7 +853,7 @@ include/grpc/impl/codegen/slice_buffer.h \
 include/grpc/impl/codegen/sync.h \
 include/grpc/impl/codegen/sync_generic.h \
 include/grpc/impl/codegen/sync_posix.h \
-include/grpc/impl/codegen/sync_win32.h \
+include/grpc/impl/codegen/sync_windows.h \
 include/grpc/impl/codegen/time.h
 
 # This tag can be used to specify the character encoding of the source files

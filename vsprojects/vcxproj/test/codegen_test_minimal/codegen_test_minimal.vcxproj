@@ -201,7 +201,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_atomic.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_sync.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_win32.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\log.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h" />
@@ -209,7 +209,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_generic.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_win32.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h" />
   </ItemGroup>
   <ItemGroup>
@@ -236,14 +236,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\payloads.grpc.pb.cc">
     </ClCompile>
     <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\payloads.grpc.pb.h">
-    </ClInclude>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.pb.cc">
-    </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.pb.h">
-    </ClInclude>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.grpc.pb.cc">
-    </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.grpc.pb.h">
     </ClInclude>
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\services.pb.cc">
     </ClCompile>

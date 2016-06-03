@@ -10,9 +10,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\payloads.proto">
       <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.proto">
-      <Filter>src\proto\grpc\testing</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\services.proto">
       <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
@@ -150,7 +147,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_sync.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_win32.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_windows.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\log.h">
@@ -174,7 +171,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_win32.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_windows.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h">

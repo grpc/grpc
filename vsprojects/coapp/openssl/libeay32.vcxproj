@@ -609,7 +609,7 @@
     <ClCompile Include="$(OpenSslPath)\crypto\dso\dso_err.c" />
     <ClCompile Include="$(OpenSslPath)\crypto\dso\dso_dlfcn.c" />
     <ClCompile Include="$(OpenSslPath)\crypto\dso\dso_lib.c" />
-    <ClCompile Include="$(OpenSslPath)\crypto\dso\dso_win32.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\dso\dso_windows.c" />
     <ClCompile Include="$(OpenSslPath)\crypto\stack\stack.c" />
     <ClCompile Include="$(OpenSslPath)\crypto\md4\md4_dgst.c" />
     <ClCompile Include="$(OpenSslPath)\crypto\md4\md4_one.c" />
