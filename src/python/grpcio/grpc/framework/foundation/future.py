@@ -232,6 +232,6 @@ class Future(six.with_metaclass(abc.ABCMeta)):
     immediately.
 
     Args:
-      fn: A callable taking a this Future object as its single parameter.
+      fn: A callable taking this Future object as its single parameter.
     """
     raise NotImplementedError()

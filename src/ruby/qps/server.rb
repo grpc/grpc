@@ -75,13 +75,14 @@ class BenchmarkServer
     @port = @server.add_http2_port("0.0.0.0:" + port.to_s, cred)
     @server.handle(BenchmarkServiceImpl.new)
     @start_time = Time.now
-    Thread.new {
+    t = Thread.new {
       @server.run
     }
+    t.abort_on_exception
   end
   def mark(reset)
     s = Grpc::Testing::ServerStats.new(time_elapsed:
-                                         (Time.now-@start_time).to_f)
+                                       (Time.now-@start_time).to_f)
     @start_time = Time.now if reset
     s
   end

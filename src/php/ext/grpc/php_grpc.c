@@ -227,7 +227,7 @@ PHP_MINIT_FUNCTION(grpc) {
                          GRPC_CHANNEL_TRANSIENT_FAILURE,
                          CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\CHANNEL_FATAL_FAILURE",
-                         GRPC_CHANNEL_FATAL_FAILURE,
+                         GRPC_CHANNEL_SHUTDOWN,
                          CONST_CS | CONST_PERSISTENT);
 
   grpc_init_call(TSRMLS_C);

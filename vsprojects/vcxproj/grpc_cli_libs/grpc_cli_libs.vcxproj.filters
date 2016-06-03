@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\cli_call.cc">
+      <Filter>test\cpp\util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\proto_file_parser.cc">
+      <Filter>test\cpp\util</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\cli_call.h">
+      <Filter>test\cpp\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\proto_file_parser.h">
+      <Filter>test\cpp\util</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{16a32a9f-93aa-5812-5a5e-be659aaa76aa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp">
+      <UniqueIdentifier>{a6049b9f-9c4c-f814-ac67-dbd2b628b2d0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\util">
+      <UniqueIdentifier>{30f91d14-0a6a-c8e8-ff23-6a83142d42fd}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

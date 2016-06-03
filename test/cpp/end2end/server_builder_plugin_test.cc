@@ -61,6 +61,7 @@ class TestServerBuilderPlugin : public ServerBuilderPlugin {
     init_server_is_called_ = false;
     finish_is_called_ = false;
     change_arguments_is_called_ = false;
+    register_service_ = false;
   }
 
   grpc::string name() GRPC_OVERRIDE { return PLUGIN_NAME; }
@@ -189,6 +190,7 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
   void StartServer() {
     grpc::string server_address = "localhost:" + to_string(port_);
     builder_->AddListeningPort(server_address, InsecureServerCredentials());
+    cq_ = builder_->AddCompletionQueue();
     server_ = builder_->BuildAndStart();
     EXPECT_TRUE(builder_->plugins_[PLUGIN_NAME] != nullptr);
   }
@@ -206,6 +208,12 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
     EXPECT_TRUE(plugin != nullptr);
     EXPECT_TRUE(plugin->init_server_is_called());
     EXPECT_TRUE(plugin->finish_is_called());
+    server_->Shutdown();
+    void* tag;
+    bool ok;
+    cq_->Shutdown();
+    while (cq_->Next(&tag, &ok))
+      ;
   }
 
   string to_string(const int number) {
@@ -218,6 +226,7 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
   std::shared_ptr<Channel> channel_;
   std::unique_ptr<ServerBuilder> builder_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
+  std::unique_ptr<ServerCompletionQueue> cq_;
   std::unique_ptr<Server> server_;
   TestServiceImpl service_;
   int port_;
