@@ -1426,93 +1426,95 @@ static void close_from_api(grpc_exec_ctx *exec_ctx,
 
   GPR_ASSERT(status >= 0 && (int)status < 100);
 
-  GPR_ASSERT(stream_global->id != 0);
-
-  /* Hand roll a header block.
-     This is unnecessarily ugly - at some point we should find a more elegant
-     solution.
-     It's complicated by the fact that our send machinery would be dead by the
-     time we got around to sending this, so instead we ignore HPACK compression
-     and just write the uncompressed bytes onto the wire. */
-  status_hdr = gpr_slice_malloc(15 + (status >= 10));
-  p = GPR_SLICE_START_PTR(status_hdr);
-  *p++ = 0x40; /* literal header */
-  *p++ = 11;   /* len(grpc-status) */
-  *p++ = 'g';
-  *p++ = 'r';
-  *p++ = 'p';
-  *p++ = 'c';
-  *p++ = '-';
-  *p++ = 's';
-  *p++ = 't';
-  *p++ = 'a';
-  *p++ = 't';
-  *p++ = 'u';
-  *p++ = 's';
-  if (status < 10) {
-    *p++ = 1;
-    *p++ = (uint8_t)('0' + status);
-  } else {
-    *p++ = 2;
-    *p++ = (uint8_t)('0' + (status / 10));
-    *p++ = (uint8_t)('0' + (status % 10));
-  }
-  GPR_ASSERT(p == GPR_SLICE_END_PTR(status_hdr));
-  len += (uint32_t)GPR_SLICE_LENGTH(status_hdr);
-
-  if (optional_message) {
-    GPR_ASSERT(GPR_SLICE_LENGTH(*optional_message) < 127);
-    message_pfx = gpr_slice_malloc(15);
-    p = GPR_SLICE_START_PTR(message_pfx);
-    *p++ = 0x40;
-    *p++ = 12; /* len(grpc-message) */
+  if (stream_global->id != 0 && !transport_global->is_client) {
+    /* Hand roll a header block.
+       This is unnecessarily ugly - at some point we should find a more elegant
+       solution.
+       It's complicated by the fact that our send machinery would be dead by the
+       time we got around to sending this, so instead we ignore HPACK
+       compression
+       and just write the uncompressed bytes onto the wire. */
+    status_hdr = gpr_slice_malloc(15 + (status >= 10));
+    p = GPR_SLICE_START_PTR(status_hdr);
+    *p++ = 0x40; /* literal header */
+    *p++ = 11;   /* len(grpc-status) */
     *p++ = 'g';
     *p++ = 'r';
     *p++ = 'p';
     *p++ = 'c';
     *p++ = '-';
-    *p++ = 'm';
-    *p++ = 'e';
     *p++ = 's';
-    *p++ = 's';
+    *p++ = 't';
     *p++ = 'a';
-    *p++ = 'g';
-    *p++ = 'e';
-    *p++ = (uint8_t)GPR_SLICE_LENGTH(*optional_message);
-    GPR_ASSERT(p == GPR_SLICE_END_PTR(message_pfx));
-    len += (uint32_t)GPR_SLICE_LENGTH(message_pfx);
-    len += (uint32_t)GPR_SLICE_LENGTH(*optional_message);
+    *p++ = 't';
+    *p++ = 'u';
+    *p++ = 's';
+    if (status < 10) {
+      *p++ = 1;
+      *p++ = (uint8_t)('0' + status);
+    } else {
+      *p++ = 2;
+      *p++ = (uint8_t)('0' + (status / 10));
+      *p++ = (uint8_t)('0' + (status % 10));
+    }
+    GPR_ASSERT(p == GPR_SLICE_END_PTR(status_hdr));
+    len += (uint32_t)GPR_SLICE_LENGTH(status_hdr);
+
+    if (optional_message) {
+      GPR_ASSERT(GPR_SLICE_LENGTH(*optional_message) < 127);
+      message_pfx = gpr_slice_malloc(15);
+      p = GPR_SLICE_START_PTR(message_pfx);
+      *p++ = 0x40;
+      *p++ = 12; /* len(grpc-message) */
+      *p++ = 'g';
+      *p++ = 'r';
+      *p++ = 'p';
+      *p++ = 'c';
+      *p++ = '-';
+      *p++ = 'm';
+      *p++ = 'e';
+      *p++ = 's';
+      *p++ = 's';
+      *p++ = 'a';
+      *p++ = 'g';
+      *p++ = 'e';
+      *p++ = (uint8_t)GPR_SLICE_LENGTH(*optional_message);
+      GPR_ASSERT(p == GPR_SLICE_END_PTR(message_pfx));
+      len += (uint32_t)GPR_SLICE_LENGTH(message_pfx);
+      len += (uint32_t)GPR_SLICE_LENGTH(*optional_message);
+    }
+
+    hdr = gpr_slice_malloc(9);
+    p = GPR_SLICE_START_PTR(hdr);
+    *p++ = (uint8_t)(len >> 16);
+    *p++ = (uint8_t)(len >> 8);
+    *p++ = (uint8_t)(len);
+    *p++ = GRPC_CHTTP2_FRAME_HEADER;
+    *p++ = GRPC_CHTTP2_DATA_FLAG_END_STREAM | GRPC_CHTTP2_DATA_FLAG_END_HEADERS;
+    *p++ = (uint8_t)(stream_global->id >> 24);
+    *p++ = (uint8_t)(stream_global->id >> 16);
+    *p++ = (uint8_t)(stream_global->id >> 8);
+    *p++ = (uint8_t)(stream_global->id);
+    GPR_ASSERT(p == GPR_SLICE_END_PTR(hdr));
+
+    gpr_slice_buffer_add(&transport_global->qbuf, hdr);
+    gpr_slice_buffer_add(&transport_global->qbuf, status_hdr);
+    if (optional_message) {
+      gpr_slice_buffer_add(&transport_global->qbuf, message_pfx);
+      gpr_slice_buffer_add(&transport_global->qbuf,
+                           gpr_slice_ref(*optional_message));
+    }
+
+    gpr_slice_buffer_add(
+        &transport_global->qbuf,
+        grpc_chttp2_rst_stream_create(stream_global->id, GRPC_CHTTP2_NO_ERROR,
+                                      &stream_global->stats.outgoing));
+
+    if (optional_message) {
+      gpr_slice_ref(*optional_message);
+    }
   }
 
-  hdr = gpr_slice_malloc(9);
-  p = GPR_SLICE_START_PTR(hdr);
-  *p++ = (uint8_t)(len >> 16);
-  *p++ = (uint8_t)(len >> 8);
-  *p++ = (uint8_t)(len);
-  *p++ = GRPC_CHTTP2_FRAME_HEADER;
-  *p++ = GRPC_CHTTP2_DATA_FLAG_END_STREAM | GRPC_CHTTP2_DATA_FLAG_END_HEADERS;
-  *p++ = (uint8_t)(stream_global->id >> 24);
-  *p++ = (uint8_t)(stream_global->id >> 16);
-  *p++ = (uint8_t)(stream_global->id >> 8);
-  *p++ = (uint8_t)(stream_global->id);
-  GPR_ASSERT(p == GPR_SLICE_END_PTR(hdr));
-
-  gpr_slice_buffer_add(&transport_global->qbuf, hdr);
-  gpr_slice_buffer_add(&transport_global->qbuf, status_hdr);
-  if (optional_message) {
-    gpr_slice_buffer_add(&transport_global->qbuf, message_pfx);
-    gpr_slice_buffer_add(&transport_global->qbuf,
-                         gpr_slice_ref(*optional_message));
-  }
-
-  gpr_slice_buffer_add(
-      &transport_global->qbuf,
-      grpc_chttp2_rst_stream_create(stream_global->id, GRPC_CHTTP2_NO_ERROR,
-                                    &stream_global->stats.outgoing));
-
-  if (optional_message) {
-    gpr_slice_ref(*optional_message);
-  }
   grpc_chttp2_fake_status(exec_ctx, transport_global, stream_global, status,
                           optional_message);
   grpc_chttp2_mark_stream_closed(exec_ctx, transport_global, stream_global, 1,
