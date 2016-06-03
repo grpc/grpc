@@ -49,7 +49,7 @@ static void *tag(intptr_t x) { return (void *)x; }
 
 void verify_connectivity(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   grpc_transport_op *op = arg;
-  GPR_ASSERT(GRPC_CHANNEL_FATAL_FAILURE == *op->connectivity_state);
+  GPR_ASSERT(GRPC_CHANNEL_SHUTDOWN == *op->connectivity_state);
   GPR_ASSERT(success);
 }
 
@@ -104,7 +104,7 @@ int main(int argc, char **argv) {
 
   test_transport_op(chan);
 
-  GPR_ASSERT(GRPC_CHANNEL_FATAL_FAILURE ==
+  GPR_ASSERT(GRPC_CHANNEL_SHUTDOWN ==
              grpc_channel_check_connectivity_state(chan, 0));
 
   cq = grpc_completion_queue_create(NULL);

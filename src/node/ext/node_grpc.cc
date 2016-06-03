@@ -220,7 +220,7 @@ void InitConnectivityStateConstants(Local<Object> exports) {
   Nan::Set(channel_state, Nan::New("TRANSIENT_FAILURE").ToLocalChecked(),
            TRANSIENT_FAILURE);
   Local<Value> FATAL_FAILURE(
-      Nan::New<Uint32, uint32_t>(GRPC_CHANNEL_FATAL_FAILURE));
+      Nan::New<Uint32, uint32_t>(GRPC_CHANNEL_SHUTDOWN));
   Nan::Set(channel_state, Nan::New("FATAL_FAILURE").ToLocalChecked(),
            FATAL_FAILURE);
 }

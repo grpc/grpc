@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -70,6 +70,8 @@ struct grpc_completion_queue {
   int shutdown;
   int shutdown_called;
   int is_server_cq;
+  /** Can the server cq accept incoming channels */
+  int is_non_listening_server_cq;
   int num_pluckers;
   plucker pluckers[GRPC_MAX_COMPLETION_QUEUE_PLUCKERS];
   grpc_closure pollset_shutdown_done;
@@ -84,6 +86,7 @@ struct grpc_completion_queue {
 };
 
 #define POLLSET_FROM_CQ(cq) ((grpc_pollset *)(cq + 1))
+#define CQ_FROM_POLLSET(ps) (((grpc_completion_queue *)ps) - 1)
 
 static gpr_mu g_freelist_mu;
 static grpc_completion_queue *g_freelist;
@@ -149,6 +152,7 @@ grpc_completion_queue *grpc_completion_queue_create(void *reserved) {
   cc->shutdown = 0;
   cc->shutdown_called = 0;
   cc->is_server_cq = 0;
+  cc->is_non_listening_server_cq = 0;
   cc->num_pluckers = 0;
 #ifndef NDEBUG
   cc->outstanding_tag_count = 0;
@@ -509,6 +513,18 @@ void grpc_completion_queue_destroy(grpc_completion_queue *cc) {
 
 grpc_pollset *grpc_cq_pollset(grpc_completion_queue *cc) {
   return POLLSET_FROM_CQ(cc);
+}
+
+grpc_completion_queue *grpc_cq_from_pollset(grpc_pollset *ps) {
+  return CQ_FROM_POLLSET(ps);
+}
+
+void grpc_cq_mark_non_listening_server_cq(grpc_completion_queue *cc) {
+  cc->is_non_listening_server_cq = 1;
+}
+
+bool grpc_cq_is_non_listening_server_cq(grpc_completion_queue *cc) {
+  return (cc->is_non_listening_server_cq == 1);
 }
 
 void grpc_cq_mark_server_cq(grpc_completion_queue *cc) { cc->is_server_cq = 1; }
