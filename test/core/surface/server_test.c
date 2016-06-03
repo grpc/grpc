@@ -32,9 +32,11 @@
  */
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -86,8 +88,13 @@ void test_bind_server_twice(void) {
   gpr_asprintf(&addr, "[::]:%d", port);
   grpc_server_register_completion_queue(server1, cq, NULL);
   grpc_server_register_completion_queue(server2, cq, NULL);
+  GPR_ASSERT(0 == grpc_server_add_secure_http2_port(server2, addr, NULL));
   GPR_ASSERT(port == grpc_server_add_insecure_http2_port(server1, addr));
   GPR_ASSERT(0 == grpc_server_add_insecure_http2_port(server2, addr));
+  grpc_server_credentials *fake_creds =
+      grpc_fake_transport_security_server_credentials_create();
+  GPR_ASSERT(0 == grpc_server_add_secure_http2_port(server2, addr, fake_creds));
+  grpc_server_credentials_release(fake_creds);
   grpc_server_shutdown_and_notify(server1, cq, NULL);
   grpc_server_shutdown_and_notify(server2, cq, NULL);
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL);

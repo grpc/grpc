@@ -188,7 +188,11 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
       3, (server, addr, creds));
 
   /* create security context */
-  if (creds == NULL) goto error;
+  if (creds == NULL) {
+    err = GRPC_ERROR_CREATE(
+        "No credentials specified for secure server port (creds==NULL)");
+    goto error;
+  }
   status = grpc_server_credentials_create_security_connector(creds, &sc);
   if (status != GRPC_SECURITY_OK) {
     char *msg;
