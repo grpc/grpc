@@ -65,7 +65,7 @@ proto.routeguide.Point.toObject = function(includeInstance, msg) {
   };
 
   if (includeInstance) {
-    obj.$jspbMessageInstance = msg
+    obj.$jspbMessageInstance = msg;
   }
   return obj;
 };
@@ -251,7 +251,7 @@ proto.routeguide.Rectangle.toObject = function(includeInstance, msg) {
   };
 
   if (includeInstance) {
-    obj.$jspbMessageInstance = msg
+    obj.$jspbMessageInstance = msg;
   }
   return obj;
 };
@@ -453,7 +453,7 @@ proto.routeguide.Feature.toObject = function(includeInstance, msg) {
   };
 
   if (includeInstance) {
-    obj.$jspbMessageInstance = msg
+    obj.$jspbMessageInstance = msg;
   }
   return obj;
 };
@@ -647,7 +647,7 @@ proto.routeguide.RouteNote.toObject = function(includeInstance, msg) {
   };
 
   if (includeInstance) {
-    obj.$jspbMessageInstance = msg
+    obj.$jspbMessageInstance = msg;
   }
   return obj;
 };
@@ -843,7 +843,7 @@ proto.routeguide.RouteSummary.toObject = function(includeInstance, msg) {
   };
 
   if (includeInstance) {
-    obj.$jspbMessageInstance = msg
+    obj.$jspbMessageInstance = msg;
   }
   return obj;
 };
