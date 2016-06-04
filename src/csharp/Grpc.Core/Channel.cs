@@ -192,9 +192,16 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// Waits until there are no more active calls for this channel and then cleans up
-        /// resources used by this channel.
+        /// Shuts down the channel cleanly. It is strongly recommended to shutdown
+        /// all previously created channels before exiting from the process.
         /// </summary>
+        /// <remarks>
+        /// This method doesn't wait for all calls on this channel to finish (nor does
+        /// it explicitly cancel all outstanding calls). It is user's responsibility to make sure
+        /// all the calls on this channel have finished (successfully or with an error)
+        /// before shutting down the channel to ensure channel shutdown won't impact
+        /// the outcome of those remote calls.
+        /// </remarks>
         public async Task ShutdownAsync()
         {
             lock (myLock)
