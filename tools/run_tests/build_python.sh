@@ -40,7 +40,7 @@ VENV_RELATIVE_PYTHON=${3:-bin/python}
 TOOLCHAIN=${4:-unix}
 
 ROOT=`pwd`
-export CFLAGS="-I$ROOT/include -std=gnu99 -fno-wrapv"
+export CFLAGS="-I$ROOT/include -std=gnu99 -fno-wrapv $CFLAGS"
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1
 
 # Default python on the host to fall back to when instantiating e.g. the
@@ -60,6 +60,19 @@ if [ "${PLATFORM/Darwin}" = "$PLATFORM" ]; then
       export CC='ccache clang'
     fi
   fi
+fi
+# TODO(atash) consider conceptualizing MinGW as a first-class platform and move
+# these flags into our `setup.py`s
+if [ "${PLATFORM/MINGW}" != "$PLATFORM" ]; then
+  # We're on MinGW, and our CFLAGS and LDFLAGS will be eaten by the void. Use
+  # our work-around environment variables instead.
+  PYTHON_MSVCR=`$PYTHON -c "from distutils.cygwinccompiler import get_msvcr; print(get_msvcr()[0])"`
+  export GRPC_PYTHON_LDFLAGS="-static-libgcc -static-libstdc++ -mcrtdll=$PYTHON_MSVCR -static -lpthread"
+  # See https://sourceforge.net/p/mingw-w64/bugs/363/
+  export GRPC_PYTHON_CFLAGS="-D_ftime=_ftime64 -D_timeb=__timeb64"
+  # TODO(atash) set these flags for only grpcio-tools (they don't do any harm to
+  # grpcio, but they result in noisy warnings).
+  export GRPC_PYTHON_CFLAGS="-frtti -std=c++11 $GRPC_PYTHON_CFLAGS"
 fi
 
 # Find `realpath`
