@@ -1928,7 +1928,8 @@
   }, 
   {
     "deps": [
-      "grpc++_codegen_base"
+      "grpc++_codegen_base", 
+      "grpc++_codegen_base_src"
     ], 
     "headers": [
       "src/proto/grpc/testing/control.grpc.pb.h", 
@@ -4241,7 +4242,8 @@
     "deps": [
       "grpc", 
       "grpc++_base", 
-      "grpc++_codegen_base"
+      "grpc++_codegen_base", 
+      "grpc++_codegen_base_src"
     ], 
     "headers": [
       "src/cpp/client/secure_credentials.h", 
@@ -4284,6 +4286,7 @@
     "deps": [
       "grpc++", 
       "grpc++_codegen_base", 
+      "grpc++_codegen_base_src", 
       "grpc++_codegen_proto", 
       "grpc++_config_proto", 
       "grpc_test_util"
@@ -4327,6 +4330,7 @@
       "grpc", 
       "grpc++_base", 
       "grpc++_codegen_base", 
+      "grpc++_codegen_base_src", 
       "grpc_unsecure"
     ], 
     "headers": [], 
@@ -5557,6 +5561,19 @@
   }, 
   {
     "deps": [
+      "grpc++_codegen_base"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "grpc++_codegen_base_src", 
+    "src": [
+      "src/cpp/codegen/codegen_init.cc"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
       "gpr", 
       "grpc_codegen"
     ], 
@@ -6549,8 +6566,7 @@
       "include/grpc++/impl/codegen/sync_cxx11.h", 
       "include/grpc++/impl/codegen/sync_no_cxx11.h", 
       "include/grpc++/impl/codegen/sync_stream.h", 
-      "include/grpc++/impl/codegen/time.h", 
-      "src/cpp/codegen/codegen_init.cc"
+      "include/grpc++/impl/codegen/time.h"
     ], 
     "third_party": false, 
     "type": "filegroup"

@@ -143,6 +143,11 @@ filegroups:
   - include/grpc/impl/codegen/sync_posix.h
   - include/grpc/impl/codegen/sync_windows.h
   - include/grpc/impl/codegen/time.h
+- name: grpc++_codegen_base_src
+  src:
+  - src/cpp/codegen/codegen_init.cc
+  uses:
+  - grpc++_codegen_base
 - name: grpc_base
   public_headers:
   - include/grpc/byte_buffer.h
@@ -728,8 +733,6 @@ filegroups:
   - include/grpc++/impl/codegen/sync_no_cxx11.h
   - include/grpc++/impl/codegen/sync_stream.h
   - include/grpc++/impl/codegen/time.h
-  src:
-  - src/cpp/codegen/codegen_init.cc
   uses:
   - grpc_codegen
 - name: grpc++_codegen_proto
@@ -927,6 +930,7 @@ libs:
   filegroups:
   - grpc++_base
   - grpc++_codegen_base
+  - grpc++_codegen_base_src
   secure: check
   vs_project_guid: '{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}'
 - name: grpc++_test_config
@@ -961,6 +965,7 @@ libs:
   - grpc_test_util
   filegroups:
   - grpc++_codegen_base
+  - grpc++_codegen_base_src
   - grpc++_codegen_proto
   - grpc++_config_proto
 - name: grpc++_unsecure
@@ -976,6 +981,7 @@ libs:
   filegroups:
   - grpc++_base
   - grpc++_codegen_base
+  - grpc++_codegen_base_src
   secure: false
   vs_project_guid: '{6EE56155-DF7C-4F6E-BFC4-F6F776BEB211}'
 - name: grpc_cli_libs
@@ -2477,6 +2483,7 @@ targets:
   - test/cpp/codegen/codegen_test_minimal.cc
   filegroups:
   - grpc++_codegen_base
+  - grpc++_codegen_base_src
 - name: credentials_test
   gtest: true
   build: test
