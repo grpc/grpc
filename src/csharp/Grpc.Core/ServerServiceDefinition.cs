@@ -63,11 +63,10 @@ namespace Grpc.Core
         /// <summary>
         /// Creates a new builder object for <c>ServerServiceDefinition</c>.
         /// </summary>
-        /// <param name="serviceName">The service name.</param>
         /// <returns>The builder object.</returns>
-        public static Builder CreateBuilder(string serviceName)
+        public static Builder CreateBuilder()
         {
-            return new Builder(serviceName);
+            return new Builder();
         }
 
         /// <summary>
@@ -75,16 +74,13 @@ namespace Grpc.Core
         /// </summary>
         public class Builder
         {
-            readonly string serviceName;
             readonly Dictionary<string, IServerCallHandler> callHandlers = new Dictionary<string, IServerCallHandler>();
 
             /// <summary>
             /// Creates a new instance of builder.
             /// </summary>
-            /// <param name="serviceName">The service name.</param>
-            public Builder(string serviceName)
+            public Builder()
             {
-                this.serviceName = serviceName;
             }
 
             /// <summary>
