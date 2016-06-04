@@ -19,9 +19,6 @@
     <ClCompile Include="$(SolutionDir)\..\test\cpp\codegen\codegen_test_full.cc">
       <Filter>test\cpp\codegen</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\codegen\codegen_init.cc">
-      <Filter>src\cpp\codegen</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\async_stream.h">
@@ -206,12 +203,6 @@
     </Filter>
     <Filter Include="src">
       <UniqueIdentifier>{909027fc-be54-d7d9-3e0b-b034a6f7ff8f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\cpp">
-      <UniqueIdentifier>{0944bc3e-4288-3a9e-81df-b4eb0910e74f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\cpp\codegen">
-      <UniqueIdentifier>{88566202-70b0-f87e-2ce8-3cd61e5a57da}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\proto">
       <UniqueIdentifier>{84c6b0c4-1143-abcf-cc7b-3ee6ef87f16a}</UniqueIdentifier>

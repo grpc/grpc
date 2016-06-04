@@ -255,8 +255,6 @@
     </ClInclude>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\codegen\codegen_test_full.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\cpp\codegen\codegen_init.cc">
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc++\grpc++.vcxproj">
