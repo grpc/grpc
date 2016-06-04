@@ -9,7 +9,6 @@ cython_debug/
 python_build/
 .coverage*
 .eggs
-.tox
 htmlcov/
 dist/
 *.egg
