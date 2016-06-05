@@ -30,7 +30,6 @@
 from __future__ import absolute_import
 
 import collections
-import fcntl
 import multiprocessing
 import os
 import select
