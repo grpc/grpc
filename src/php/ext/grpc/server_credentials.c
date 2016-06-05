@@ -46,6 +46,7 @@
 #include <zend_exceptions.h>
 #include <zend_hash.h>
 
+#include <grpc/support/alloc.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
@@ -128,14 +129,17 @@ PHP_METHOD(ServerCredentials, createSsl) {
   }
   array_hash = Z_ARRVAL_P(array);
   key_cert_pair_count = zend_hash_num_elements(array_hash);
-  /*if (key_cert_pair_count == 0) {
-    zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "array must have one element at least", 1 TSRMLS_CC);
-    return;
-  }*/
 
-  pem_key_cert_pairs = ecalloc(key_cert_pair_count + 1,
-                              sizeof(grpc_ssl_pem_key_cert_pair));
+  /* Default to not requesting the client certificate */
+  grpc_ssl_client_certificate_request_type client_certificate_request =
+    GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE;
+  if (force_client_auth) {
+    client_certificate_request =
+      GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY;
+  }
+
+  pem_key_cert_pairs = gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair) *
+                                  key_cert_pair_count);
 
   for (zend_hash_internal_pointer_reset_ex(array_hash, &array_pointer);
        zend_hash_get_current_data_ex(array_hash, (void**)&value,
@@ -145,13 +149,13 @@ PHP_METHOD(ServerCredentials, createSsl) {
                                      &array_pointer) != HASH_KEY_IS_LONG) {
       zend_throw_exception(spl_ce_InvalidArgumentException,
                            "keys must be integers", 1 TSRMLS_CC);
-      efree(pem_key_cert_pairs);
+      gpr_free(pem_key_cert_pairs);
       return;
     }
     if (Z_TYPE_PP(value) != IS_ARRAY) {
       zend_throw_exception(spl_ce_InvalidArgumentException,
                           "expected an array", 1 TSRMLS_CC);
-      efree(pem_key_cert_pairs);
+      gpr_free(pem_key_cert_pairs);
       return;
     }
 
@@ -161,7 +165,7 @@ PHP_METHOD(ServerCredentials, createSsl) {
         Z_TYPE_PP(private_key_value) != IS_STRING) {
       zend_throw_exception(spl_ce_InvalidArgumentException,
                            "expected a string", 1 TSRMLS_CC);
-      efree(pem_key_cert_pairs);
+      gpr_free(pem_key_cert_pairs);
       return;
     }
     if (zend_hash_find(inner_hash, "cert_chain", sizeof("cert_chain"),
@@ -169,7 +173,7 @@ PHP_METHOD(ServerCredentials, createSsl) {
         Z_TYPE_PP(cert_chain_value) != IS_STRING) {
       zend_throw_exception(spl_ce_InvalidArgumentException,
                            "expected a string", 1 TSRMLS_CC);
-      efree(pem_key_cert_pairs);
+      gpr_free(pem_key_cert_pairs);
       return;
     }
 
@@ -177,12 +181,12 @@ PHP_METHOD(ServerCredentials, createSsl) {
     pem_key_cert_pairs[index].cert_chain = Z_STRVAL_PP(cert_chain_value);
   }
 
-  grpc_server_credentials *creds = grpc_ssl_server_credentials_create(
+  grpc_server_credentials *creds = grpc_ssl_server_credentials_create_ex(
       pem_root_certs, pem_key_cert_pairs, key_cert_pair_count,
-      force_client_auth, NULL);
+      client_certificate_request, NULL);
   zval *creds_object = grpc_php_wrap_server_credentials(creds);
 
-  efree(pem_key_cert_pairs);
+  gpr_free(pem_key_cert_pairs);
   RETURN_DESTROY_ZVAL(creds_object);
 }
 
