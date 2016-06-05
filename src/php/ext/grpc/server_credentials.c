@@ -130,6 +130,11 @@ PHP_METHOD(ServerCredentials, createSsl) {
   array_hash = Z_ARRVAL_P(array);
   key_cert_pair_count = zend_hash_num_elements(array_hash);
 
+  if (key_cert_pair_count == 0) {
+    zend_throw_exception(spl_ce_InvalidArgumentException,
+                         "expects 1 array with 1 elem at least", 1 TSRMLS_CC);
+  }
+
   /* Default to not requesting the client certificate */
   grpc_ssl_client_certificate_request_type client_certificate_request =
     GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE;
