@@ -81,7 +81,7 @@ zend_object_value create_wrapped_grpc_server_credentials(
   return retval;
 }
 
-zval *grpc_php_wrap_server_credentials(grpc_server_credentials *wrapped TSRMLS_DC) {
+zval *grpc_php_wrap_server_credentials(grpc_server_credentials *wrapped) {
   zval *server_credentials_object;
   MAKE_STD_ZVAL(server_credentials_object);
   object_init_ex(server_credentials_object, grpc_ce_server_credentials);
@@ -101,26 +101,88 @@ zval *grpc_php_wrap_server_credentials(grpc_server_credentials *wrapped TSRMLS_D
  */
 PHP_METHOD(ServerCredentials, createSsl) {
   char *pem_root_certs = 0;
-  grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
+  int root_certs_length = 0;
+  zend_bool force_client_auth = 0;
+  grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs;
+  int key_cert_pair_count;
 
-  int root_certs_length = 0, private_key_length, cert_chain_length;
+  zval *array;
+  zval **value;
+  zval **private_key_value;
+  zval **cert_chain_value;
+  HashTable *array_hash;
+  HashPosition array_pointer;
+  HashTable *inner_hash;
+  char *key;
+  uint key_len;
+  ulong index;
 
-  /* "s!ss" == 1 nullable string, 2 strings */
-  /* TODO: support multiple key cert pairs. */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s!ss", &pem_root_certs,
-                            &root_certs_length, &pem_key_cert_pair.private_key,
-                            &private_key_length, &pem_key_cert_pair.cert_chain,
-                            &cert_chain_length) == FAILURE) {
+  /* "s!a|b" == 1 nullable string, 1 array, 1 optional bool */
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s!a|b", &pem_root_certs,
+                            &root_certs_length, &array, &force_client_auth)
+      == FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "createSsl expects 3 strings", 1 TSRMLS_CC);
+                         "createSsl expects 1 string, 1 array, 1 optional bool",
+                         1 TSRMLS_CC);
     return;
   }
-  /* TODO: add a client_certificate_request field in ServerCredentials and pass
-   * it as the last parameter. */
-  grpc_server_credentials *creds = grpc_ssl_server_credentials_create_ex(
-      pem_root_certs, &pem_key_cert_pair, 1,
-      GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, NULL);
-  zval *creds_object = grpc_php_wrap_server_credentials(creds TSRMLS_CC);
+  array_hash = Z_ARRVAL_P(array);
+  key_cert_pair_count = zend_hash_num_elements(array_hash);
+  /*if (key_cert_pair_count == 0) {
+    zend_throw_exception(spl_ce_InvalidArgumentException,
+                         "array must have one element at least", 1 TSRMLS_CC);
+    return;
+  }*/
+
+  pem_key_cert_pairs = ecalloc(key_cert_pair_count + 1,
+                              sizeof(grpc_ssl_pem_key_cert_pair));
+
+  for (zend_hash_internal_pointer_reset_ex(array_hash, &array_pointer);
+       zend_hash_get_current_data_ex(array_hash, (void**)&value,
+                                     &array_pointer) == SUCCESS;
+       zend_hash_move_forward_ex(array_hash, &array_pointer)) {
+    if (zend_hash_get_current_key_ex(array_hash, &key, &key_len, &index, 0,
+                                     &array_pointer) != HASH_KEY_IS_LONG) {
+      zend_throw_exception(spl_ce_InvalidArgumentException,
+                           "keys must be integers", 1 TSRMLS_CC);
+      efree(pem_key_cert_pairs);
+      return;
+    }
+    if (Z_TYPE_PP(value) != IS_ARRAY) {
+      zend_throw_exception(spl_ce_InvalidArgumentException,
+                          "expected an array", 1 TSRMLS_CC);
+      efree(pem_key_cert_pairs);
+      return;
+    }
+
+    inner_hash = Z_ARRVAL_PP(value);
+    if (zend_hash_find(inner_hash, "private_key", sizeof("private_key"),
+                       (void**)&private_key_value) != SUCCESS ||
+        Z_TYPE_PP(private_key_value) != IS_STRING) {
+      zend_throw_exception(spl_ce_InvalidArgumentException,
+                           "expected a string", 1 TSRMLS_CC);
+      efree(pem_key_cert_pairs);
+      return;
+    }
+    if (zend_hash_find(inner_hash, "cert_chain", sizeof("cert_chain"),
+                       (void**)&cert_chain_value) != SUCCESS ||
+        Z_TYPE_PP(cert_chain_value) != IS_STRING) {
+      zend_throw_exception(spl_ce_InvalidArgumentException,
+                           "expected a string", 1 TSRMLS_CC);
+      efree(pem_key_cert_pairs);
+      return;
+    }
+
+    pem_key_cert_pairs[index].private_key = Z_STRVAL_PP(private_key_value);
+    pem_key_cert_pairs[index].cert_chain = Z_STRVAL_PP(cert_chain_value);
+  }
+
+  grpc_server_credentials *creds = grpc_ssl_server_credentials_create(
+      pem_root_certs, pem_key_cert_pairs, key_cert_pair_count,
+      force_client_auth, NULL);
+  zval *creds_object = grpc_php_wrap_server_credentials(creds);
+
+  efree(pem_key_cert_pairs);
   RETURN_DESTROY_ZVAL(creds_object);
 }
 
