@@ -145,7 +145,6 @@ typedef struct polling_island {
  * Pollset Declarations
  */
 struct grpc_pollset_worker {
-  int kicked_specifically;
   pthread_t pt_id; /* Thread id of this worker */
   struct grpc_pollset_worker *next;
   struct grpc_pollset_worker *prev;
@@ -235,18 +234,16 @@ static void polling_island_remove_all_fds_locked(polling_island *pi,
   size_t i;
 
   for (i = 0; i < pi->fd_cnt; i++) {
-    if (remove_fd_refs) {
-      GRPC_FD_UNREF(pi->fds[i], "polling_island");
-    }
-
     err = epoll_ctl(pi->epoll_fd, EPOLL_CTL_DEL, pi->fds[i]->fd, NULL);
     if (err < 0 && errno != ENOENT) {
-      gpr_log(GPR_ERROR,
-              "epoll_ctl delete for fds[i]: %d failed with error: %s", i,
-              pi->fds[i]->fd, strerror(errno));
       /* TODO: sreek - We need a better way to bubble up this error instead of
-       * just logging a message */
-      continue;
+      * just logging a message */
+      gpr_log(GPR_ERROR, "epoll_ctl deleting fds[%d]: %d failed with error: %s",
+              i, pi->fds[i]->fd, strerror(errno));
+    }
+
+    if (remove_fd_refs) {
+      GRPC_FD_UNREF(pi->fds[i], "polling_island");
     }
   }
 
@@ -264,7 +261,7 @@ static void polling_island_remove_fd_locked(polling_island *pi, grpc_fd *fd,
   if (!is_fd_closed) {
     err = epoll_ctl(pi->epoll_fd, EPOLL_CTL_DEL, fd->fd, NULL);
     if (err < 0 && errno != ENOENT) {
-      gpr_log(GPR_ERROR, "epoll_ctl delete for fd: %d failed with error; %s",
+      gpr_log(GPR_ERROR, "epoll_ctl deleting fd: %d failed with error; %s",
               fd->fd, strerror(errno));
     }
   }
@@ -867,7 +864,6 @@ static void pollset_kick(grpc_pollset *p,
       GPR_TIMER_END("pollset_kick.broadcast", 0);
     } else {
       GPR_TIMER_MARK("kicked_specifically", 0);
-      worker->kicked_specifically = true;
       pthread_kill(worker->pt_id, SIGUSR1);
     }
   } else {
@@ -1100,7 +1096,6 @@ static void pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 
   grpc_pollset_worker worker;
   worker.next = worker.prev = NULL;
-  worker.kicked_specifically = 0;
   worker.pt_id = pthread_self();
 
   *worker_hdl = &worker;
