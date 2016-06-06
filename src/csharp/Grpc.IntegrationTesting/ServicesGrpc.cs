@@ -227,7 +227,7 @@ namespace Grpc.Testing {
     public static ServerServiceDefinition BindService(IBenchmarkService serviceImpl)
     #pragma warning restore 0618
     {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+      return ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_UnaryCall, serviceImpl.UnaryCall)
           .AddMethod(__Method_StreamingCall, serviceImpl.StreamingCall).Build();
     }
@@ -237,7 +237,7 @@ namespace Grpc.Testing {
     public static ServerServiceDefinition BindService(BenchmarkServiceBase serviceImpl)
     #pragma warning restore 0618
     {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+      return ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_UnaryCall, serviceImpl.UnaryCall)
           .AddMethod(__Method_StreamingCall, serviceImpl.StreamingCall).Build();
     }
@@ -583,7 +583,7 @@ namespace Grpc.Testing {
     public static ServerServiceDefinition BindService(IWorkerService serviceImpl)
     #pragma warning restore 0618
     {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+      return ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_RunServer, serviceImpl.RunServer)
           .AddMethod(__Method_RunClient, serviceImpl.RunClient)
           .AddMethod(__Method_CoreCount, serviceImpl.CoreCount)
@@ -595,7 +595,7 @@ namespace Grpc.Testing {
     public static ServerServiceDefinition BindService(WorkerServiceBase serviceImpl)
     #pragma warning restore 0618
     {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+      return ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_RunServer, serviceImpl.RunServer)
           .AddMethod(__Method_RunClient, serviceImpl.RunClient)
           .AddMethod(__Method_CoreCount, serviceImpl.CoreCount)

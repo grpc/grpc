@@ -559,9 +559,7 @@ void GenerateBindServiceMethod(Printer* out, const ServiceDescriptor *service,
   out->Print("{\n");
   out->Indent();
 
-  out->Print(
-      "return ServerServiceDefinition.CreateBuilder($servicenamefield$)\n",
-      "servicenamefield", GetServiceNameFieldName());
+  out->Print("return ServerServiceDefinition.CreateBuilder()\n");
   out->Indent();
   out->Indent();
   for (int i = 0; i < service->method_count(); i++) {
