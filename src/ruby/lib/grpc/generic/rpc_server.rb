@@ -355,7 +355,7 @@ module GRPC
       return an_rpc if @pool.jobs_waiting <= @max_waiting_requests
       GRPC.logger.warn("NOT AVAILABLE: too many jobs_waiting: #{an_rpc}")
       noop = proc { |x| x }
-      c = ActiveCall.new(an_rpc.call, @cq, noop, noop, an_rpc.deadline)
+      c = ActiveCall.new(an_rpc.call, an_rpc.cq, noop, noop, an_rpc.deadline)
       c.send_status(GRPC::Core::StatusCodes::RESOURCE_EXHAUSTED, '')
       nil
     end
@@ -366,7 +366,7 @@ module GRPC
       return an_rpc if rpc_descs.key?(mth)
       GRPC.logger.warn("UNIMPLEMENTED: #{an_rpc}")
       noop = proc { |x| x }
-      c = ActiveCall.new(an_rpc.call, @cq, noop, noop, an_rpc.deadline)
+      c = ActiveCall.new(an_rpc.call, an_rpc.cq, noop, noop, an_rpc.deadline)
       c.send_status(GRPC::Core::StatusCodes::UNIMPLEMENTED, '')
       nil
     end
@@ -377,7 +377,8 @@ module GRPC
       loop_tag = Object.new
       while running_state == :running
         begin
-          an_rpc = @server.request_call(@cq, loop_tag, INFINITE_FUTURE)
+          comp_queue = Core::CompletionQueue.new
+          an_rpc = @server.request_call(comp_queue, loop_tag, INFINITE_FUTURE)
           break if (!an_rpc.nil?) && an_rpc.call.nil?
           active_call = new_active_server_call(an_rpc)
           unless active_call.nil?
@@ -416,15 +417,16 @@ module GRPC
       unless @connect_md_proc.nil?
         connect_md = @connect_md_proc.call(an_rpc.method, an_rpc.metadata)
       end
-      an_rpc.call.run_batch(@cq, handle_call_tag, INFINITE_FUTURE,
+      an_rpc.call.run_batch(an_rpc.cq, handle_call_tag, INFINITE_FUTURE,
                             SEND_INITIAL_METADATA => connect_md)
+
       return nil unless available?(an_rpc)
       return nil unless implemented?(an_rpc)
 
       # Create the ActiveCall
       GRPC.logger.info("deadline is #{an_rpc.deadline}; (now=#{Time.now})")
       rpc_desc = rpc_descs[an_rpc.method.to_sym]
-      c = ActiveCall.new(an_rpc.call, @cq,
+      c = ActiveCall.new(an_rpc.call, an_rpc.cq,
                          rpc_desc.marshal_proc, rpc_desc.unmarshal_proc(:input),
                          an_rpc.deadline)
       mth = an_rpc.method.to_sym

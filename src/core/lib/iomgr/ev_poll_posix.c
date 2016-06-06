@@ -59,8 +59,6 @@
  * FD declarations
  */
 
-grpc_wakeup_fd grpc_global_wakeup_fd;
-
 typedef struct grpc_fd_watcher {
   struct grpc_fd_watcher *next;
   struct grpc_fd_watcher *prev;

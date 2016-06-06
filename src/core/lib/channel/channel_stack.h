@@ -45,6 +45,8 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
+
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/transport/transport.h"
@@ -67,6 +69,12 @@ typedef struct {
   const void *server_transport_data;
   grpc_call_context_element *context;
 } grpc_call_element_args;
+
+typedef struct {
+  grpc_transport_stream_stats transport_stream_stats;
+  gpr_timespec latency; /* From call creating to enqueing of received status */
+  grpc_status_code final_status;
+} grpc_call_stats;
 
 /* Channel filters specify:
    1. the amount of memory needed in the channel & call (via the sizeof_XXX
@@ -111,6 +119,7 @@ typedef struct {
      \a and_free_memory that should be passed to gpr_free when destruction
      is complete. */
   void (*destroy_call_elem)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                            const grpc_call_stats *stats,
                             void *and_free_memory);
 
   /* sizeof(per channel data) */
@@ -231,6 +240,7 @@ void grpc_call_stack_set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
 
 /* Destroy a call stack */
 void grpc_call_stack_destroy(grpc_exec_ctx *exec_ctx, grpc_call_stack *stack,
+                             const grpc_call_stats *call_stats,
                              void *and_free_memory);
 
 /* Ignore set pollset{_set} - used by filters if they don't care about pollsets
