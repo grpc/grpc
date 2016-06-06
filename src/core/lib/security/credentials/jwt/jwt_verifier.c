@@ -342,7 +342,7 @@ static verifier_cb_ctx *verifier_cb_ctx_create(
   verifier_cb_ctx *ctx = gpr_malloc(sizeof(verifier_cb_ctx));
   memset(ctx, 0, sizeof(verifier_cb_ctx));
   ctx->verifier = verifier;
-  ctx->pollent = grpc_pops_create_from_pollset(pollset);
+  ctx->pollent = grpc_polling_entity_create_from_pollset(pollset);
   ctx->header = header;
   ctx->audience = gpr_strdup(audience);
   ctx->claims = claims;

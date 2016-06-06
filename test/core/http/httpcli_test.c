@@ -66,7 +66,7 @@ static void on_finish(grpc_exec_ctx *exec_ctx, void *arg,
   GPR_ASSERT(0 == memcmp(expect, response->body, response->body_length));
   gpr_mu_lock(g_mu);
   g_done = 1;
-  grpc_pollset_kick(grpc_pops_pollset(&g_pops), NULL);
+  grpc_pollset_kick(grpc_polling_entity_pollset(&g_pops), NULL);
   gpr_mu_unlock(g_mu);
 }
 
@@ -91,7 +91,7 @@ static void test_get(int port) {
   gpr_mu_lock(g_mu);
   while (!g_done) {
     grpc_pollset_worker *worker = NULL;
-    grpc_pollset_work(&exec_ctx, grpc_pops_pollset(&g_pops), &worker,
+    grpc_pollset_work(&exec_ctx, grpc_polling_entity_pollset(&g_pops), &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC), n_seconds_time(20));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
@@ -122,7 +122,7 @@ static void test_post(int port) {
   gpr_mu_lock(g_mu);
   while (!g_done) {
     grpc_pollset_worker *worker = NULL;
-    grpc_pollset_work(&exec_ctx, grpc_pops_pollset(&g_pops), &worker,
+    grpc_pollset_work(&exec_ctx, grpc_polling_entity_pollset(&g_pops), &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC), n_seconds_time(20));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
@@ -133,7 +133,7 @@ static void test_post(int port) {
 }
 
 static void destroy_pops(grpc_exec_ctx *exec_ctx, void *p, bool success) {
-  grpc_pollset_destroy(grpc_pops_pollset(p));
+  grpc_pollset_destroy(grpc_polling_entity_pollset(p));
 }
 
 int main(int argc, char **argv) {
@@ -182,18 +182,18 @@ int main(int argc, char **argv) {
   grpc_httpcli_context_init(&g_context);
   grpc_pollset *pollset = gpr_malloc(grpc_pollset_size());
   grpc_pollset_init(pollset, &g_mu);
-  g_pops = grpc_pops_create_from_pollset(pollset);
+  g_pops = grpc_polling_entity_create_from_pollset(pollset);
 
   test_get(port);
   test_post(port);
 
   grpc_httpcli_context_destroy(&g_context);
   grpc_closure_init(&destroyed, destroy_pops, &g_pops);
-  grpc_pollset_shutdown(&exec_ctx, grpc_pops_pollset(&g_pops), &destroyed);
+  grpc_pollset_shutdown(&exec_ctx, grpc_polling_entity_pollset(&g_pops), &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();
 
-  gpr_free(grpc_pops_pollset(&g_pops));
+  gpr_free(grpc_polling_entity_pollset(&g_pops));
 
   gpr_subprocess_destroy(server);
 
