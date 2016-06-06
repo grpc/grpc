@@ -46,6 +46,7 @@
     if lib.language != 'c': continue
     for hdr in lib.get('public_headers', []):
       if is_platform_header(hdr): continue
+      if 'grpc_cronet.h' in hdr: continue
       assert(hdr[0:len(pfx)] == pfx)
       hdrs.add(hdr[len(pfx):])
   hdrs = sorted(list(hdrs))
