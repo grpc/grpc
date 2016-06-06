@@ -81,97 +81,6 @@ namespace Math {
       get { return global::Math.MathReflection.Descriptor.Services[0]; }
     }
 
-    /// <summary>Client for Math</summary>
-    [System.Obsolete("Client side interfaced will be removed in the next release. Use client class directly.")]
-    public interface IMathClient
-    {
-      /// <summary>
-      ///  Div divides args.dividend by args.divisor and returns the quotient and
-      ///  remainder.
-      /// </summary>
-      global::Math.DivReply Div(global::Math.DivArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      /// <summary>
-      ///  Div divides args.dividend by args.divisor and returns the quotient and
-      ///  remainder.
-      /// </summary>
-      global::Math.DivReply Div(global::Math.DivArgs request, CallOptions options);
-      /// <summary>
-      ///  Div divides args.dividend by args.divisor and returns the quotient and
-      ///  remainder.
-      /// </summary>
-      AsyncUnaryCall<global::Math.DivReply> DivAsync(global::Math.DivArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      /// <summary>
-      ///  Div divides args.dividend by args.divisor and returns the quotient and
-      ///  remainder.
-      /// </summary>
-      AsyncUnaryCall<global::Math.DivReply> DivAsync(global::Math.DivArgs request, CallOptions options);
-      /// <summary>
-      ///  DivMany accepts an arbitrary number of division args from the client stream
-      ///  and sends back the results in the reply stream.  The stream continues until
-      ///  the client closes its end; the server does the same after sending all the
-      ///  replies.  The stream ends immediately if either end aborts.
-      /// </summary>
-      AsyncDuplexStreamingCall<global::Math.DivArgs, global::Math.DivReply> DivMany(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      /// <summary>
-      ///  DivMany accepts an arbitrary number of division args from the client stream
-      ///  and sends back the results in the reply stream.  The stream continues until
-      ///  the client closes its end; the server does the same after sending all the
-      ///  replies.  The stream ends immediately if either end aborts.
-      /// </summary>
-      AsyncDuplexStreamingCall<global::Math.DivArgs, global::Math.DivReply> DivMany(CallOptions options);
-      /// <summary>
-      ///  Fib generates numbers in the Fibonacci sequence.  If args.limit > 0, Fib
-      ///  generates up to limit numbers; otherwise it continues until the call is
-      ///  canceled.  Unlike Fib above, Fib has no final FibReply.
-      /// </summary>
-      AsyncServerStreamingCall<global::Math.Num> Fib(global::Math.FibArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      /// <summary>
-      ///  Fib generates numbers in the Fibonacci sequence.  If args.limit > 0, Fib
-      ///  generates up to limit numbers; otherwise it continues until the call is
-      ///  canceled.  Unlike Fib above, Fib has no final FibReply.
-      /// </summary>
-      AsyncServerStreamingCall<global::Math.Num> Fib(global::Math.FibArgs request, CallOptions options);
-      /// <summary>
-      ///  Sum sums a stream of numbers, returning the final result once the stream
-      ///  is closed.
-      /// </summary>
-      AsyncClientStreamingCall<global::Math.Num, global::Math.Num> Sum(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      /// <summary>
-      ///  Sum sums a stream of numbers, returning the final result once the stream
-      ///  is closed.
-      /// </summary>
-      AsyncClientStreamingCall<global::Math.Num, global::Math.Num> Sum(CallOptions options);
-    }
-
-    /// <summary>Interface of server-side implementations of Math</summary>
-    [System.Obsolete("Service implementations should inherit from the generated abstract base class instead.")]
-    public interface IMath
-    {
-      /// <summary>
-      ///  Div divides args.dividend by args.divisor and returns the quotient and
-      ///  remainder.
-      /// </summary>
-      global::System.Threading.Tasks.Task<global::Math.DivReply> Div(global::Math.DivArgs request, ServerCallContext context);
-      /// <summary>
-      ///  DivMany accepts an arbitrary number of division args from the client stream
-      ///  and sends back the results in the reply stream.  The stream continues until
-      ///  the client closes its end; the server does the same after sending all the
-      ///  replies.  The stream ends immediately if either end aborts.
-      /// </summary>
-      global::System.Threading.Tasks.Task DivMany(IAsyncStreamReader<global::Math.DivArgs> requestStream, IServerStreamWriter<global::Math.DivReply> responseStream, ServerCallContext context);
-      /// <summary>
-      ///  Fib generates numbers in the Fibonacci sequence.  If args.limit > 0, Fib
-      ///  generates up to limit numbers; otherwise it continues until the call is
-      ///  canceled.  Unlike Fib above, Fib has no final FibReply.
-      /// </summary>
-      global::System.Threading.Tasks.Task Fib(global::Math.FibArgs request, IServerStreamWriter<global::Math.Num> responseStream, ServerCallContext context);
-      /// <summary>
-      ///  Sum sums a stream of numbers, returning the final result once the stream
-      ///  is closed.
-      /// </summary>
-      global::System.Threading.Tasks.Task<global::Math.Num> Sum(IAsyncStreamReader<global::Math.Num> requestStream, ServerCallContext context);
-    }
-
     /// <summary>Base class for server-side implementations of Math</summary>
     public abstract class MathBase
     {
@@ -217,9 +126,7 @@ namespace Math {
     }
 
     /// <summary>Client for Math</summary>
-    #pragma warning disable 0618
-    public class MathClient : ClientBase<MathClient>, IMathClient
-    #pragma warning restore 0618
+    public class MathClient : ClientBase<MathClient>
     {
       public MathClient(Channel channel) : base(channel)
       {
@@ -335,21 +242,7 @@ namespace Math {
     }
 
     /// <summary>Creates service definition that can be registered with a server</summary>
-    #pragma warning disable 0618
-    public static ServerServiceDefinition BindService(IMath serviceImpl)
-    #pragma warning restore 0618
-    {
-      return ServerServiceDefinition.CreateBuilder()
-          .AddMethod(__Method_Div, serviceImpl.Div)
-          .AddMethod(__Method_DivMany, serviceImpl.DivMany)
-          .AddMethod(__Method_Fib, serviceImpl.Fib)
-          .AddMethod(__Method_Sum, serviceImpl.Sum).Build();
-    }
-
-    /// <summary>Creates service definition that can be registered with a server</summary>
-    #pragma warning disable 0618
     public static ServerServiceDefinition BindService(MathBase serviceImpl)
-    #pragma warning restore 0618
     {
       return ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_Div, serviceImpl.Div)
