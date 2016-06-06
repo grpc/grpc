@@ -152,6 +152,9 @@ namespace Grpc.Core
         /// cleans up used resources. The returned task finishes when shutdown procedure
         /// is complete.
         /// </summary>
+        /// <remarks>
+        /// It is strongly recommended to shutdown all previously created servers before exiting from the process.
+        /// </remarks>
         public async Task ShutdownAsync()
         {
             lock (myLock)
@@ -173,6 +176,9 @@ namespace Grpc.Core
         /// Requests server shutdown while cancelling all the in-progress calls.
         /// The returned task finishes when shutdown procedure is complete.
         /// </summary>
+        /// <remarks>
+        /// It is strongly recommended to shutdown all previously created servers before exiting from the process.
+        /// </remarks>
         public async Task KillAsync()
         {
             lock (myLock)

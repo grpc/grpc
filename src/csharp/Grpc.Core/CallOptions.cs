@@ -88,7 +88,13 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// Token that can be used for cancelling the call.
+        /// Token that can be used for cancelling the call on the client side.
+        /// Cancelling the token will request cancellation
+        /// of the remote call. Best effort will be made to deliver the cancellation
+        /// notification to the server and interaction of the call with the server side
+        /// will be terminated. Unless the call finishes before the cancellation could
+        /// happen (there is an inherent race),
+        /// the call will finish with <c>StatusCode.Cancelled</c> status.
         /// </summary>
         public CancellationToken CancellationToken
         {
