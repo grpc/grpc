@@ -507,7 +507,7 @@ grpc_error *grpc_os_error(const char *file, int line, int err,
       GRPC_ERROR_STR_SYSCALL, call_name);
 }
 
-#ifdef GPR_WIN32
+#ifdef GPR_WINDOWS
 grpc_error *grpc_wsa_error(const char *file, int line, int err,
                            const char *call_name) {
   char *utf8_message = gpr_format_message(err);
