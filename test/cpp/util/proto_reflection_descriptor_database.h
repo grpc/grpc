@@ -30,6 +30,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+#ifndef GRPC_TEST_CPP_PROTO_SERVER_REFLECTION_DATABSE_H
+#define GRPC_TEST_CPP_PROTO_SERVER_REFLECTION_DATABSE_H
 
 #include <mutex>
 #include <unordered_map>
@@ -39,11 +41,14 @@
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/descriptor.pb.h>
 #include <google/protobuf/descriptor_database.h>
-#include <grpc++/grpc++.h>
 #include <grpc++/ext/reflection.grpc.pb.h>
+#include <grpc++/grpc++.h>
 
 namespace grpc {
 
+// ProtoReflectionDescriptorDatabase takes a stub of ServerReflection and
+// provides the methods defined by DescriptorDatabase interfaces. It can be used
+// to feed a DescriptorPool instance.
 class ProtoReflectionDescriptorDatabase
     : public google::protobuf::DescriptorDatabase {
  public:
@@ -55,27 +60,41 @@ class ProtoReflectionDescriptorDatabase
 
   virtual ~ProtoReflectionDescriptorDatabase();
 
-  // DescriptorDatabase methods
+  // The following four methods implement DescriptorDatabase interfaces.
+  //
+  // Find a file by file name.  Fills in in *output and returns true if found.
+  // Otherwise, returns false, leaving the contents of *output undefined.
   bool FindFileByName(const string& filename,
                       google::protobuf::FileDescriptorProto* output)
       GRPC_OVERRIDE;
 
+  // Find the file that declares the given fully-qualified symbol name.
+  // If found, fills in *output and returns true, otherwise returns false
+  // and leaves *output undefined.
   bool FindFileContainingSymbol(const string& symbol_name,
                                 google::protobuf::FileDescriptorProto* output)
       GRPC_OVERRIDE;
 
+  // Find the file which defines an extension extending the given message type
+  // with the given field number.  If found, fills in *output and returns true,
+  // otherwise returns false and leaves *output undefined.  containing_type
+  // must be a fully-qualified type name.
   bool FindFileContainingExtension(
       const string& containing_type, int field_number,
       google::protobuf::FileDescriptorProto* output) GRPC_OVERRIDE;
 
+  // Finds the tag numbers used by all known extensions of
+  // extendee_type, and appends them to output in an undefined
+  // order. This method is best-effort: it's not guaranteed that the
+  // database will find all extensions, and it's not guaranteed that
+  // FindFileContainingExtension will return true on all of the found
+  // numbers. Returns true if the search was successful, otherwise
+  // returns false and leaves output unchanged.
   bool FindAllExtensionNumbers(const string& extendee_type,
                                std::vector<int>* output) GRPC_OVERRIDE;
 
+  // Provide a list of full names of registered services
   bool GetServices(std::vector<std::string>* output);
-
-  grpc::reflection::v1alpha::ServerReflection::Stub* stub() {
-    return stub_.get();
-  }
 
  private:
   typedef ClientReaderWriter<
@@ -92,8 +111,8 @@ class ProtoReflectionDescriptorDatabase
   const std::shared_ptr<ClientStream> GetStream();
 
   void DoOneRequest(
-    const grpc::reflection::v1alpha::ServerReflectionRequest& request,
-    grpc::reflection::v1alpha::ServerReflectionResponse& response);
+      const grpc::reflection::v1alpha::ServerReflectionRequest& request,
+      grpc::reflection::v1alpha::ServerReflectionResponse& response);
 
   std::shared_ptr<ClientStream> stream_;
   grpc::ClientContext ctx_;
@@ -108,3 +127,5 @@ class ProtoReflectionDescriptorDatabase
 };
 
 }  // namespace grpc
+
+#endif  // GRPC_TEST_CPP_METRICS_SERVER_H

@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPCXX_PROTO_SERVER_REFLECTION_PLUGIN_H
-#define GRPCXX_PROTO_SERVER_REFLECTION_PLUGIN_H
+#ifndef GRPCXX_EXT_PROTO_SERVER_REFLECTION_PLUGIN_H
+#define GRPCXX_EXT_PROTO_SERVER_REFLECTION_PLUGIN_H
 
 #include <grpc++/impl/server_builder_plugin.h>
 #include <grpc++/support/config.h>
@@ -59,7 +59,11 @@ class ProtoServerReflectionPlugin : public ::grpc::ServerBuilderPlugin {
   std::shared_ptr<::grpc::ProtoServerReflection> reflection_service_;
 };
 
+// Add proto reflection plugin to ServerBuilder. This function should be called
+// at the static initialization time.
+void InitProtoReflectionServerBuilderPlugin();
+
 }  // namespace reflection
 }  // namespace grpc
 
-#endif  // GRPCXX_PROTO_SERVER_REFLECTION_PLUGIN_H
+#endif  // GRPCXX_EXT_PROTO_SERVER_REFLECTION_PLUGIN_H

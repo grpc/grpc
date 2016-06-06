@@ -30,16 +30,14 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-
-#ifndef GRPC_EXTENSIONS_REFLECTION_PROTO_SERVER_REFLECTION_H
-#define GRPC_EXTENSIONS_REFLECTION_PROTO_SERVER_REFLECTION_H
+#ifndef GRPC_INTERNAL_CPP_EXT_PROTO_SERVER_REFLECTION_H
+#define GRPC_INTERNAL_CPP_EXT_PROTO_SERVER_REFLECTION_H
 
 #include <unordered_set>
 #include <vector>
 
-#include <grpc++/grpc++.h>
-
 #include <grpc++/ext/reflection.grpc.pb.h>
+#include <grpc++/grpc++.h>
 
 namespace grpc {
 
@@ -48,21 +46,23 @@ class ProtoServerReflection GRPC_FINAL
  public:
   ProtoServerReflection();
 
+  // Add the full names of registered services
   void SetServiceList(const std::vector<grpc::string>* services);
 
+  // implementation of ServerReflectionInfo(stream ServerReflectionRequest) rpc
+  // in ServerReflection service
   Status ServerReflectionInfo(
       ServerContext* context,
       ServerReaderWriter<reflection::v1alpha::ServerReflectionResponse,
-                         reflection::v1alpha::ServerReflectionRequest>*
-          stream) GRPC_OVERRIDE;
+                         reflection::v1alpha::ServerReflectionRequest>* stream)
+      GRPC_OVERRIDE;
 
  private:
   Status ListService(ServerContext* context,
                      reflection::v1alpha::ListServiceResponse* response);
 
-  Status GetFileByName(
-      ServerContext* context, const grpc::string& file_name,
-      reflection::v1alpha::ServerReflectionResponse* response);
+  Status GetFileByName(ServerContext* context, const grpc::string& file_name,
+                       reflection::v1alpha::ServerReflectionResponse* response);
 
   Status GetFileContainingSymbol(
       ServerContext* context, const grpc::string& symbol,
@@ -91,4 +91,4 @@ class ProtoServerReflection GRPC_FINAL
 
 }  // namespace grpc
 
-#endif  // GRPC_EXTENSIONS_REFLECTION_PROTO_SERVER_REFLECTION_H
+#endif  // GRPC_INTERNAL_CPP_EXT_PROTO_SERVER_REFLECTION_H
