@@ -144,10 +144,9 @@ typedef struct polling_island {
 /*******************************************************************************
  * Pollset Declarations
  */
-
 struct grpc_pollset_worker {
   int kicked_specifically;
-  pthread_t pt_id; /* TODO (sreek) - Add an abstraction here */
+  pthread_t pt_id; /* Thread id of this worker */
   struct grpc_pollset_worker *next;
   struct grpc_pollset_worker *prev;
 };
@@ -483,8 +482,7 @@ polling_island *polling_island_merge(polling_island *p, polling_island *q) {
   /* Get locks on both the polling islands */
   polling_island_pair_update_and_lock(&p, &q);
 
-  /* TODO: sreek: Think about this scenario some more. Is it possible ?. what
-   * does it mean, when would this happen  */
+  /* TODO: sreek: Think about this scenario some more */
   if (p == q) {
     /* Nothing needs to be done here */
     gpr_mu_unlock(&p->mu);
@@ -539,7 +537,10 @@ static void polling_island_global_init() {
  * (specifically when a new alarm needs to be triggered earlier than the next
  * alarm 'epoch'). This wakeup_fd gives us something to alert on when such a
  * case occurs. */
-/* TODO: sreek: Right now, this wakes up all pollers */
+
+/* TODO: sreek: Right now, this wakes up all pollers. In future we should make
+ * sure to wake up one polling thread (which can wake up other threads if
+ * needed) */
 grpc_wakeup_fd grpc_global_wakeup_fd;
 
 static grpc_fd *fd_freelist = NULL;
@@ -676,7 +677,6 @@ static int fd_wrapped_fd(grpc_fd *fd) {
 static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                       grpc_closure *on_done, int *release_fd,
                       const char *reason) {
-  /* TODO(sreek) In ev_poll_posix.c,the lock is acquired a little later. Why? */
   bool is_fd_closed = false;
   gpr_mu_lock(&fd->mu);
   fd->on_done_closure = on_done;
@@ -784,8 +784,9 @@ static void fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
  */
 
 static void sig_handler(int sig_num) {
-  /* TODO: sreek - Remove this expensive log line */
+#ifdef GPRC_EPOLL_DEBUG
   gpr_log(GPR_INFO, "Received signal %d", sig_num);
+#endif
 }
 
 /* Global state management */
@@ -986,7 +987,10 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
 
       if (ep_rv < 0) {
         if (errno != EINTR) {
-          /* TODO (sreek) - Check for bad file descriptor error */
+          /* TODO (sreek) - Do not log an error in case of bad file descriptor
+           * (A bad file descriptor here would just mean that the epoll set was
+           * merged with another epoll set and that the current epoll_fd is
+           * closed) */
           gpr_log(GPR_ERROR, "epoll_pwait() failed: %s", strerror(errno));
         } else {
           gpr_log(GPR_DEBUG, "pollset_work_and_unlock: 0-timeout epoll_wait()");
@@ -1062,7 +1066,9 @@ static void pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   GPR_TIMER_END("pollset_shutdown", 0);
 }
 
-/* TODO(sreek) Is pollset_shutdown() guranteed to be called before this? */
+/* pollset_shutdown is guaranteed to be called before pollset_destroy. So other
+ * than destroying the mutexes, there is nothing special that needs to be done
+ * here */
 static void pollset_destroy(grpc_pollset *pollset) {
   GPR_ASSERT(!pollset_has_workers(pollset));
   gpr_mu_destroy(&pollset->pi_mu);
@@ -1075,7 +1081,7 @@ static void pollset_reset(grpc_pollset *pollset) {
   pollset->shutting_down = false;
   pollset->finish_shutdown_called = false;
   pollset->kicked_without_pollers = false;
-  /* TODO(sreek) - Should pollset->shutdown closure be set to NULL here? */
+  pollset->shutdown_done = NULL;
   pollset_release_polling_island_locked(pollset);
 }
 
@@ -1149,7 +1155,7 @@ static void pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                            grpc_fd *fd) {
   gpr_log(GPR_DEBUG, "pollset_add_fd: pollset: %p, fd: %d", pollset, fd->fd);
-  /* TODO sreek - Check if we need to get a pollset->mu lock here */
+  /* TODO sreek - Double check if we need to get a pollset->mu lock here */
   gpr_mu_lock(&pollset->pi_mu);
   gpr_mu_lock(&fd->pi_mu);
 
