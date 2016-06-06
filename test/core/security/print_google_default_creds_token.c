@@ -106,8 +106,8 @@ int main(int argc, char **argv) {
   gpr_mu_lock(sync.mu);
   while (!sync.is_done) {
     grpc_pollset_worker *worker = NULL;
-    grpc_pollset_work(&exec_ctx, grpc_polling_entity_pollset(&sync.pops), &worker,
-                      gpr_now(GPR_CLOCK_MONOTONIC),
+    grpc_pollset_work(&exec_ctx, grpc_polling_entity_pollset(&sync.pops),
+                      &worker, gpr_now(GPR_CLOCK_MONOTONIC),
                       gpr_inf_future(GPR_CLOCK_MONOTONIC));
     gpr_mu_unlock(sync.mu);
     grpc_exec_ctx_flush(&exec_ctx);

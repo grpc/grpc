@@ -98,7 +98,7 @@ static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req);
 static void finish(grpc_exec_ctx *exec_ctx, internal_request *req,
                    int success) {
   grpc_polling_entity_del_from_pollset_set(exec_ctx, req->pollent,
-                               req->context->pollset_set);
+                                           req->context->pollset_set);
   req->on_response(exec_ctx, req->user_data,
                    success ? &req->parser.http.response : NULL);
   grpc_http_parser_destroy(&req->parser);
@@ -246,7 +246,7 @@ static void internal_request_begin(
 
   GPR_ASSERT(pollent);
   grpc_polling_entity_add_to_pollset_set(exec_ctx, req->pollent,
-                               req->context->pollset_set);
+                                         req->context->pollset_set);
   grpc_resolve_address(exec_ctx, request->host, req->handshaker->default_port,
                        on_resolved, req);
 }
