@@ -233,10 +233,11 @@ static void on_oauth2_token_fetcher_http_response(
     c->token_expiration =
         gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), token_lifetime);
     r->cb(exec_ctx, r->user_data, c->access_token_md->entries,
-          c->access_token_md->num_entries, status, NULL);
+          c->access_token_md->num_entries, GRPC_CREDENTIALS_OK, NULL);
   } else {
     c->token_expiration = gpr_inf_past(GPR_CLOCK_REALTIME);
-    r->cb(exec_ctx, r->user_data, NULL, 0, status, NULL);
+    r->cb(exec_ctx, r->user_data, NULL, 0, status,
+          "Error occured when fetching oauth2 token.");
   }
   gpr_mu_unlock(&c->mu);
   grpc_credentials_metadata_request_destroy(r);
