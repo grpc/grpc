@@ -32,63 +32,38 @@
 #endregion
 
 using System;
+using System.Diagnostics;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Grpc.Core;
+using Grpc.Core.Internal;
+using Grpc.Core.Utils;
 using NUnit.Framework;
 
 namespace Grpc.Core.Tests
 {
-    public class GrpcEnvironmentTest
+    public class ShutdownHookPendingCallTest
     {
+        const string Host = "127.0.0.1";
+
         [Test]
-        public void InitializeAndShutdownGrpcEnvironment()
+        public void ProcessExitHookCanCleanupAbandonedCall()
         {
-            var env = GrpcEnvironment.AddRef();
-            Assert.IsTrue(env.CompletionQueues.Count > 0);
-            for (int i = 0; i < env.CompletionQueues.Count; i++)
+            var helper = new MockServiceHelper(Host);
+            var server = helper.GetServer();
+            server.Start();
+            var channel = helper.GetChannel();
+
+            var readyToShutdown = new TaskCompletionSource<object>();
+            helper.DuplexStreamingHandler = new DuplexStreamingServerMethod<string, string>(async (requestStream, responseStream, context) =>
             {
-                Assert.IsNotNull(env.CompletionQueues.ElementAt(i));
-            }
-            GrpcEnvironment.ReleaseAsync().Wait();
-        }
+                readyToShutdown.SetResult(null);
+                await requestStream.ToListAsync();
+            });
 
-        [Test]
-        public void SubsequentInvocations()
-        {
-            var env1 = GrpcEnvironment.AddRef();
-            var env2 = GrpcEnvironment.AddRef();
-            Assert.AreSame(env1, env2);
-            GrpcEnvironment.ReleaseAsync().Wait();
-            GrpcEnvironment.ReleaseAsync().Wait();
-        }
-
-        [Test]
-        public void InitializeAfterShutdown()
-        {
-            Assert.AreEqual(0, GrpcEnvironment.GetRefCount());
-
-            var env1 = GrpcEnvironment.AddRef();
-            GrpcEnvironment.ReleaseAsync().Wait();
-
-            var env2 = GrpcEnvironment.AddRef();
-            GrpcEnvironment.ReleaseAsync().Wait();
-
-            Assert.AreNotSame(env1, env2);
-        }
-
-        [Test]
-        public void ReleaseWithoutAddRef()
-        {
-            Assert.AreEqual(0, GrpcEnvironment.GetRefCount());
-            Assert.ThrowsAsync(typeof(InvalidOperationException), async () => await GrpcEnvironment.ReleaseAsync());
-        }
-
-        [Test]
-        public void GetCoreVersionString()
-        {
-            var coreVersion = GrpcEnvironment.GetCoreVersionString();
-            var parts = coreVersion.Split('.');
-            Assert.AreEqual(3, parts.Length);
+            var call = Calls.AsyncDuplexStreamingCall(helper.CreateDuplexStreamingCall());
+            readyToShutdown.Task.Wait();  // make sure handler is running
         }
     }
 }
