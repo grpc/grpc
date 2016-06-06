@@ -91,6 +91,10 @@ class ProtoReflectionDescriptorDatabase
 
   const std::shared_ptr<ClientStream> GetStream();
 
+  void DoOneRequest(
+    const grpc::reflection::v1alpha::ServerReflectionRequest& request,
+    grpc::reflection::v1alpha::ServerReflectionResponse& response);
+
   std::shared_ptr<ClientStream> stream_;
   grpc::ClientContext ctx_;
   std::unique_ptr<grpc::reflection::v1alpha::ServerReflection::Stub> stub_;

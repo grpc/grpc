@@ -140,6 +140,7 @@ class ProtoServerReflectionTest : public ::testing::Test {
   std::unordered_set<string> known_types_;
   const google::protobuf::DescriptorPool* ref_desc_pool_;
   int port_;
+  reflection::ProtoServerReflectionPlugin plugin_;
 };
 
 TEST_F(ProtoServerReflectionTest, CheckResponseWithLocalDescriptorPool) {

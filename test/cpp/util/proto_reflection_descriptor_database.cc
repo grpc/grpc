@@ -69,10 +69,7 @@ bool ProtoReflectionDescriptorDatabase::FindFileByName(
   request.set_file_by_filename(filename);
   ServerReflectionResponse response;
 
-  stream_mutex_.lock();
-  GetStream()->Write(request);
-  GetStream()->Read(&response);
-  stream_mutex_.unlock();
+  DoOneRequest(request, response);
 
   if (response.message_response_case() ==
       ServerReflectionResponse::MessageResponseCase::kFileDescriptorResponse) {
@@ -117,10 +114,7 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingSymbol(
   request.set_file_containing_symbol(symbol_name);
   ServerReflectionResponse response;
 
-  stream_mutex_.lock();
-  GetStream()->Write(request);
-  GetStream()->Read(&response);
-  stream_mutex_.unlock();
+  DoOneRequest(request, response);
 
   if (response.message_response_case() ==
       ServerReflectionResponse::MessageResponseCase::kFileDescriptorResponse) {
@@ -174,10 +168,7 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingExtension(
       field_number);
   ServerReflectionResponse response;
 
-  stream_mutex_.lock();
-  GetStream()->Write(request);
-  GetStream()->Read(&response);
-  stream_mutex_.unlock();
+  DoOneRequest(request, response);
 
   if (response.message_response_case() ==
       ServerReflectionResponse::MessageResponseCase::kFileDescriptorResponse) {
@@ -227,10 +218,7 @@ bool ProtoReflectionDescriptorDatabase::FindAllExtensionNumbers(
   request.set_all_extension_numbers_of_type(extendee_type);
   ServerReflectionResponse response;
 
-  stream_mutex_.lock();
-  GetStream()->Write(request);
-  GetStream()->Read(&response);
-  stream_mutex_.unlock();
+  DoOneRequest(request, response);
 
   if (response.message_response_case() ==
       ServerReflectionResponse::MessageResponseCase::
@@ -262,10 +250,7 @@ bool ProtoReflectionDescriptorDatabase::GetServices(
   request.set_list_services("");
   ServerReflectionResponse response;
 
-  stream_mutex_.lock();
-  GetStream()->Write(request);
-  GetStream()->Read(&response);
-  stream_mutex_.unlock();
+  DoOneRequest(request, response);
 
   if (response.message_response_case() ==
       ServerReflectionResponse::MessageResponseCase::kListServicesResponse) {
@@ -317,6 +302,15 @@ ProtoReflectionDescriptorDatabase::GetStream() {
     stream_ = stub_->ServerReflectionInfo(&ctx_);
   }
   return stream_;
+}
+
+void ProtoReflectionDescriptorDatabase::DoOneRequest(
+    const ServerReflectionRequest& request,
+    ServerReflectionResponse& response) {
+  stream_mutex_.lock();
+  GetStream()->Write(request);
+  GetStream()->Read(&response);
+  stream_mutex_.unlock();
 }
 
 }  // namespace grpc
