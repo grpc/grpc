@@ -339,7 +339,7 @@ namespace Math {
     public static ServerServiceDefinition BindService(IMath serviceImpl)
     #pragma warning restore 0618
     {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+      return ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_Div, serviceImpl.Div)
           .AddMethod(__Method_DivMany, serviceImpl.DivMany)
           .AddMethod(__Method_Fib, serviceImpl.Fib)
@@ -351,7 +351,7 @@ namespace Math {
     public static ServerServiceDefinition BindService(MathBase serviceImpl)
     #pragma warning restore 0618
     {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+      return ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_Div, serviceImpl.Div)
           .AddMethod(__Method_DivMany, serviceImpl.DivMany)
           .AddMethod(__Method_Fib, serviceImpl.Fib)

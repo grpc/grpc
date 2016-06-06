@@ -222,7 +222,7 @@ namespace Grpc.Testing {
     public static ServerServiceDefinition BindService(IMetricsService serviceImpl)
     #pragma warning restore 0618
     {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+      return ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_GetAllGauges, serviceImpl.GetAllGauges)
           .AddMethod(__Method_GetGauge, serviceImpl.GetGauge).Build();
     }
@@ -232,7 +232,7 @@ namespace Grpc.Testing {
     public static ServerServiceDefinition BindService(MetricsServiceBase serviceImpl)
     #pragma warning restore 0618
     {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+      return ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_GetAllGauges, serviceImpl.GetAllGauges)
           .AddMethod(__Method_GetGauge, serviceImpl.GetGauge).Build();
     }

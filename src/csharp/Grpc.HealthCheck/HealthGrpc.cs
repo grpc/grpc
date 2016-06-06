@@ -138,7 +138,7 @@ namespace Grpc.Health.V1 {
     public static ServerServiceDefinition BindService(IHealth serviceImpl)
     #pragma warning restore 0618
     {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+      return ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_Check, serviceImpl.Check).Build();
     }
 
@@ -147,7 +147,7 @@ namespace Grpc.Health.V1 {
     public static ServerServiceDefinition BindService(HealthBase serviceImpl)
     #pragma warning restore 0618
     {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+      return ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_Check, serviceImpl.Check).Build();
     }
 

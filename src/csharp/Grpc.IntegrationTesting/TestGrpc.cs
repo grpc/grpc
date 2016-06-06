@@ -449,7 +449,7 @@ namespace Grpc.Testing {
     public static ServerServiceDefinition BindService(ITestService serviceImpl)
     #pragma warning restore 0618
     {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+      return ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_EmptyCall, serviceImpl.EmptyCall)
           .AddMethod(__Method_UnaryCall, serviceImpl.UnaryCall)
           .AddMethod(__Method_StreamingOutputCall, serviceImpl.StreamingOutputCall)
@@ -463,7 +463,7 @@ namespace Grpc.Testing {
     public static ServerServiceDefinition BindService(TestServiceBase serviceImpl)
     #pragma warning restore 0618
     {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+      return ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_EmptyCall, serviceImpl.EmptyCall)
           .AddMethod(__Method_UnaryCall, serviceImpl.UnaryCall)
           .AddMethod(__Method_StreamingOutputCall, serviceImpl.StreamingOutputCall)
@@ -606,7 +606,7 @@ namespace Grpc.Testing {
     public static ServerServiceDefinition BindService(IUnimplementedService serviceImpl)
     #pragma warning restore 0618
     {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+      return ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_UnimplementedCall, serviceImpl.UnimplementedCall).Build();
     }
 
@@ -615,7 +615,7 @@ namespace Grpc.Testing {
     public static ServerServiceDefinition BindService(UnimplementedServiceBase serviceImpl)
     #pragma warning restore 0618
     {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+      return ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_UnimplementedCall, serviceImpl.UnimplementedCall).Build();
     }
 
@@ -757,7 +757,7 @@ namespace Grpc.Testing {
     public static ServerServiceDefinition BindService(IReconnectService serviceImpl)
     #pragma warning restore 0618
     {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+      return ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_Start, serviceImpl.Start)
           .AddMethod(__Method_Stop, serviceImpl.Stop).Build();
     }
@@ -767,7 +767,7 @@ namespace Grpc.Testing {
     public static ServerServiceDefinition BindService(ReconnectServiceBase serviceImpl)
     #pragma warning restore 0618
     {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+      return ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_Start, serviceImpl.Start)
           .AddMethod(__Method_Stop, serviceImpl.Stop).Build();
     }
