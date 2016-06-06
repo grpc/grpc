@@ -23,3 +23,6 @@ RUN cd /chromium/src && ./build/install-build-deps.sh --nacl --no-prompt
 # https://chromium.googlesource.com/chromium/src/+/master/native_client_sdk/src/BUILDING.rst
 RUN cd /chromium && GYP_DEFINES=target_arch=arm gclient runhooks
 RUN cd /chromium/src && ./native_client_sdk/src/build_tools/build_sdk.py
+
+# Patch boringssl for NaCl compatibility
+RUN patch -u /chromium/webports/ports/boringssl/nacl.patch
