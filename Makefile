@@ -84,7 +84,6 @@ BINDIR = $(BUILDDIR_ABSOLUTE)/bins
 OBJDIR = $(BUILDDIR_ABSOLUTE)/objs
 LIBDIR = $(BUILDDIR_ABSOLUTE)/libs
 GENDIR = $(BUILDDIR_ABSOLUTE)/gens
-EXTDIR = $(BUILDDIR_ABSOLUTE)/extensions
 
 # Configurations
 
@@ -370,7 +369,7 @@ CPPFLAGS += -fPIC
 LDFLAGS += -fPIC
 endif
 
-INCLUDES = . include $(GENDIR) $(EXTDIR) $(EXTDIR)/include
+INCLUDES = . include $(GENDIR)
 LDFLAGS += -Llibs/$(CONFIG)
 
 ifeq ($(SYSTEM),Darwin)
@@ -2155,8 +2154,8 @@ install-headers_c:
 
 install-headers_cxx:
 	$(E) "[INSTALL] Installing public C++ headers"
-	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX), $(INSTALL) -d $(prefix)/$(patsubst extensions/%,%,$(dir $(h))) && ) exit 0 || exit 1
-	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX), $(INSTALL) $(h) $(prefix)/$(patsubst extensions/%,%,$(h)) && ) exit 0 || exit 1
+	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX), $(INSTALL) -d $(prefix)/$(dir $(h)) && ) exit 0 || exit 1
+	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX), $(INSTALL) $(h) $(prefix)/$(h) && ) exit 0 || exit 1
 
 install-static: install-static_c install-static_cxx
 
@@ -3391,15 +3390,15 @@ endif
 
 
 LIBGRPC++_REFLECTION_SRC = \
-    extensions/reflection/proto_server_reflection.cc \
-    extensions/reflection/proto_server_reflection_plugin.cc \
-    extensions/reflection/reflection.grpc.pb.cc \
-    extensions/reflection/reflection.pb.cc \
+    src/cpp/ext/proto_server_reflection.cc \
+    src/cpp/ext/proto_server_reflection_plugin.cc \
+    src/cpp/ext/reflection.grpc.pb.cc \
+    src/cpp/ext/reflection.pb.cc \
 
 PUBLIC_HEADERS_CXX += \
-    extensions/include/grpc++/impl/proto_server_reflection_plugin.h \
-    extensions/include/grpc++/impl/reflection.grpc.pb.h \
-    extensions/include/grpc++/impl/reflection.pb.h \
+    include/grpc++/ext/proto_server_reflection_plugin.h \
+    include/grpc++/ext/reflection.grpc.pb.h \
+    include/grpc++/ext/reflection.pb.h \
 
 LIBGRPC++_REFLECTION_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_REFLECTION_SRC))))
 
@@ -14544,10 +14543,6 @@ ifneq ($(OPENSSL_DEP),)
 # This is to ensure the embedded OpenSSL is built beforehand, properly
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
-extensions/reflection/proto_server_reflection.cc: $(OPENSSL_DEP)
-extensions/reflection/proto_server_reflection_plugin.cc: $(OPENSSL_DEP)
-extensions/reflection/reflection.grpc.pb.cc: $(OPENSSL_DEP)
-extensions/reflection/reflection.pb.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/client/secure/secure_channel_create.c: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c: $(OPENSSL_DEP)
 src/core/ext/transport/cronet/client/secure/cronet_channel_create.c: $(OPENSSL_DEP)
@@ -14578,6 +14573,10 @@ src/cpp/common/auth_property_iterator.cc: $(OPENSSL_DEP)
 src/cpp/common/secure_auth_context.cc: $(OPENSSL_DEP)
 src/cpp/common/secure_channel_arguments.cc: $(OPENSSL_DEP)
 src/cpp/common/secure_create_auth_context.cc: $(OPENSSL_DEP)
+src/cpp/ext/proto_server_reflection.cc: $(OPENSSL_DEP)
+src/cpp/ext/proto_server_reflection_plugin.cc: $(OPENSSL_DEP)
+src/cpp/ext/reflection.grpc.pb.cc: $(OPENSSL_DEP)
+src/cpp/ext/reflection.pb.cc: $(OPENSSL_DEP)
 src/cpp/server/secure_server_credentials.cc: $(OPENSSL_DEP)
 src/csharp/ext/grpc_csharp_ext.c: $(OPENSSL_DEP)
 test/core/bad_client/bad_client.c: $(OPENSSL_DEP)

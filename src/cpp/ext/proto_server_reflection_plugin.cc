@@ -31,12 +31,12 @@
  *
  */
 
-#include <grpc++/impl/proto_server_reflection_plugin.h>
+#include <grpc++/ext/proto_server_reflection_plugin.h>
 #include <grpc++/impl/server_builder_plugin.h>
 #include <grpc++/impl/server_initializer.h>
 #include <grpc++/server.h>
 
-#include "reflection/proto_server_reflection.h"
+#include "src/cpp/ext/proto_server_reflection.h"
 
 namespace grpc {
 namespace reflection {

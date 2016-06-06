@@ -1000,16 +1000,16 @@ cc_library(
 cc_library(
   name = "grpc++_reflection",
   srcs = [
-    "extensions/reflection/proto_server_reflection.h",
-    "extensions/reflection/proto_server_reflection.cc",
-    "extensions/reflection/proto_server_reflection_plugin.cc",
-    "extensions/reflection/reflection.grpc.pb.cc",
-    "extensions/reflection/reflection.pb.cc",
+    "src/cpp/ext/proto_server_reflection.h",
+    "src/cpp/ext/proto_server_reflection.cc",
+    "src/cpp/ext/proto_server_reflection_plugin.cc",
+    "src/cpp/ext/reflection.grpc.pb.cc",
+    "src/cpp/ext/reflection.pb.cc",
   ],
   hdrs = [
-    "extensions/include/grpc++/impl/proto_server_reflection_plugin.h",
-    "extensions/include/grpc++/impl/reflection.grpc.pb.h",
-    "extensions/include/grpc++/impl/reflection.pb.h",
+    "include/grpc++/ext/proto_server_reflection_plugin.h",
+    "include/grpc++/ext/reflection.grpc.pb.h",
+    "include/grpc++/ext/reflection.pb.h",
   ],
   includes = [
     "include",

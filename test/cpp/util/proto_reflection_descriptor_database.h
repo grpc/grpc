@@ -40,7 +40,7 @@
 #include <google/protobuf/descriptor.pb.h>
 #include <google/protobuf/descriptor_database.h>
 #include <grpc++/grpc++.h>
-#include <grpc++/impl/reflection.grpc.pb.h>
+#include <grpc++/ext/reflection.grpc.pb.h>
 
 namespace grpc {
 
