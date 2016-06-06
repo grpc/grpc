@@ -1529,26 +1529,20 @@ static void close_from_api(grpc_exec_ctx *exec_ctx,
                                  1);
 }
 
-typedef struct {
-  grpc_exec_ctx *exec_ctx;
-  gpr_slice *optional_drop_message;
-} cancel_stream_cb_arg;
-
 static void cancel_stream_cb(grpc_chttp2_transport_global *transport_global,
                              void *user_data,
                              grpc_chttp2_stream_global *stream_global) {
-  cancel_stream_cb_arg *arg = user_data;
-  cancel_from_api(arg->exec_ctx, transport_global, stream_global,
-                  GRPC_STATUS_UNAVAILABLE, arg->optional_drop_message);
+  grpc_chttp2_transport *transport = TRANSPORT_FROM_GLOBAL(transport_global);
+  cancel_from_api(user_data, transport_global, stream_global,
+                  GRPC_STATUS_UNAVAILABLE,
+                  GPR_SLICE_IS_EMPTY(transport->optional_drop_message)
+                      ? NULL
+                      : &transport->optional_drop_message);
 }
 
 static void end_all_the_calls(grpc_exec_ctx *exec_ctx,
                               grpc_chttp2_transport *t) {
-  cancel_stream_cb_arg arg = {exec_ctx,
-                              GPR_SLICE_IS_EMPTY(t->optional_drop_message)
-                                  ? NULL
-                                  : &t->optional_drop_message};
-  grpc_chttp2_for_all_streams(&t->global, &arg, cancel_stream_cb);
+  grpc_chttp2_for_all_streams(&t->global, exec_ctx, cancel_stream_cb);
 }
 
 static void drop_connection(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t) {
