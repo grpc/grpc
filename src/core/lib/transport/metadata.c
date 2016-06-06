@@ -507,8 +507,8 @@ static void grow_mdtab(mdtab_shard *shard) {
 }
 
 static void rehash_mdtab(mdtab_shard *shard) {
-  if ((size_t)gpr_atm_no_barrier_load(&shard->free_estimate) >
-      shard->capacity / 4) {
+  if (gpr_atm_no_barrier_load(&shard->free_estimate) >
+      (gpr_atm)(shard->capacity / 4)) {
     gc_mdtab(shard);
   } else {
     grow_mdtab(shard);
