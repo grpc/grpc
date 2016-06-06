@@ -289,12 +289,12 @@ grpc_call *grpc_call_create(
         pollset_set_alternative == NULL &&
         "Only one of 'cq' and 'pollset_set_alternative' should be non-NULL.");
     GRPC_CQ_INTERNAL_REF(cq, "bind");
-    call->pollent = grpc_pops_create_from_pollset(grpc_cq_pollset(cq));
+    call->pollent = grpc_polling_entity_create_from_pollset(grpc_cq_pollset(cq));
   }
   if (pollset_set_alternative != NULL) {
-    call->pollent = grpc_pops_create_from_pollset_set(pollset_set_alternative);
+    call->pollent = grpc_polling_entity_create_from_pollset_set(pollset_set_alternative);
   }
-  if (!grpc_pops_is_empty(&call->pollent)) {
+  if (!grpc_polling_entity_is_empty(&call->pollent)) {
     grpc_call_stack_set_pollset_or_pollset_set(
         &exec_ctx, CALL_STACK_FROM_CALL(call), &call->pollent);
   }
@@ -352,13 +352,13 @@ void grpc_call_set_completion_queue(grpc_exec_ctx *exec_ctx, grpc_call *call,
                                     grpc_completion_queue *cq) {
   GPR_ASSERT(cq);
 
-  if (grpc_pops_pollset_set(&call->pollent) != NULL) {
+  if (grpc_polling_entity_pollset_set(&call->pollent) != NULL) {
     gpr_log(GPR_ERROR, "A pollset_set is already registered for this call.");
     abort();
   }
   call->cq = cq;
   GRPC_CQ_INTERNAL_REF(cq, "bind");
-  call->pollent = grpc_pops_create_from_pollset(grpc_cq_pollset(cq));
+  call->pollent = grpc_polling_entity_create_from_pollset(grpc_cq_pollset(cq));
   grpc_call_stack_set_pollset_or_pollset_set(
       exec_ctx, CALL_STACK_FROM_CALL(call), &call->pollent);
 }

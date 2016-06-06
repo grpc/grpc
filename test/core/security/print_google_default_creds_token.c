@@ -67,7 +67,7 @@ static void on_metadata_response(grpc_exec_ctx *exec_ctx, void *user_data,
   }
   gpr_mu_lock(sync->mu);
   sync->is_done = 1;
-  grpc_pollset_kick(grpc_pops_pollset(&sync->pops), NULL);
+  grpc_pollset_kick(grpc_polling_entity_pollset(&sync->pops), NULL);
   gpr_mu_unlock(sync->mu);
 }
 
@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
 
   grpc_pollset *pollset = gpr_malloc(grpc_pollset_size());
   grpc_pollset_init(pollset, &sync.mu);
-  sync.pops = grpc_pops_create_from_pollset(pollset);
+  sync.pops = grpc_polling_entity_create_from_pollset(pollset);
   sync.is_done = 0;
 
   grpc_call_credentials_get_request_metadata(
@@ -106,7 +106,7 @@ int main(int argc, char **argv) {
   gpr_mu_lock(sync.mu);
   while (!sync.is_done) {
     grpc_pollset_worker *worker = NULL;
-    grpc_pollset_work(&exec_ctx, grpc_pops_pollset(&sync.pops), &worker,
+    grpc_pollset_work(&exec_ctx, grpc_polling_entity_pollset(&sync.pops), &worker,
                       gpr_now(GPR_CLOCK_MONOTONIC),
                       gpr_inf_future(GPR_CLOCK_MONOTONIC));
     gpr_mu_unlock(sync.mu);
@@ -118,7 +118,7 @@ int main(int argc, char **argv) {
   grpc_exec_ctx_finish(&exec_ctx);
 
   grpc_channel_credentials_release(creds);
-  gpr_free(grpc_pops_pollset(&sync.pops));
+  gpr_free(grpc_polling_entity_pollset(&sync.pops));
 
 end:
   gpr_cmdline_destroy(cl);
