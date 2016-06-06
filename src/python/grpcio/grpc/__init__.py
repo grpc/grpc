@@ -947,6 +947,21 @@ def metadata_call_credentials(metadata_plugin, name=None):
           metadata_plugin, effective_name))
 
 
+def access_token_call_credentials(access_token):
+  """Construct CallCredentials from an access token.
+
+  Args:
+    access_token: A string to place directly in the http request
+      authorization header, ie "Authorization: Bearer <access_token>".
+
+  Returns:
+    A CallCredentials.
+  """
+  from grpc import _auth
+  return metadata_call_credentials(
+      _auth.AccessTokenCallCredentials(access_token))
+
+
 def composite_call_credentials(call_credentials, additional_call_credentials):
   """Compose two CallCredentials to make a new one.
 
