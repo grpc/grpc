@@ -42,10 +42,6 @@
 #include <grpc/support/time.h>
 #include "rb_grpc.h"
 
-/* grpc_rb_cCompletionQueue is the ruby class that proxies
- * grpc_completion_queue. */
-static VALUE grpc_rb_cCompletionQueue = Qnil;
-
 /* Used to allow grpc_completion_queue_next call to release the GIL */
 typedef struct next_call_stack {
   grpc_completion_queue *cq;
@@ -128,7 +124,7 @@ static void grpc_rb_completion_queue_shutdown_drain(grpc_completion_queue *cq) {
 }
 
 /* Helper function to free a completion queue. */
-static void grpc_rb_completion_queue_destroy(void *p) {
+void grpc_rb_completion_queue_destroy(grpc_completion_queue *cq) {
   grpc_completion_queue *cq = NULL;
   if (p == NULL) {
     return;
@@ -138,59 +134,22 @@ static void grpc_rb_completion_queue_destroy(void *p) {
   grpc_completion_queue_destroy(cq);
 }
 
-static rb_data_type_t grpc_rb_completion_queue_data_type = {
-    "grpc_completion_queue",
-    {GRPC_RB_GC_NOT_MARKED, grpc_rb_completion_queue_destroy,
-     GRPC_RB_MEMSIZE_UNAVAILABLE, {NULL, NULL}},
-    NULL, NULL,
-#ifdef RUBY_TYPED_FREE_IMMEDIATELY
-    /* cannot immediately free because grpc_rb_completion_queue_shutdown_drain
-     * calls rb_thread_call_without_gvl. */
-    0,
-#endif
-};
-
-/* Releases the c-level resources associated with a completion queue */
-static VALUE grpc_rb_completion_queue_close(VALUE self) {
-  grpc_completion_queue* cq = grpc_rb_get_wrapped_completion_queue(self);
-  grpc_rb_completion_queue_destroy(cq);
-  RTYPEDDATA_DATA(self) = NULL;
-  return Qnil;
-}
-
-/* Allocates a completion queue. */
-static VALUE grpc_rb_completion_queue_alloc(VALUE cls) {
-  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
-  if (cq == NULL) {
-    rb_raise(rb_eArgError, "could not create a completion queue: not sure why");
-  }
-  return TypedData_Wrap_Struct(cls, &grpc_rb_completion_queue_data_type, cq);
-}
-
 static void unblock_func(void *param) {
   next_call_stack *const next_call = (next_call_stack*)param;
   next_call->interrupted = 1;
 }
 
-/* Blocks until the next event for given tag is available, and returns the
- * event. */
-grpc_event grpc_rb_completion_queue_pluck_event(VALUE self, VALUE tag,
-                                                VALUE timeout) {
+/* Does the same thing as grpc_completion_queue_pluck, while properly releasing
+   the GVL and handling interrupts */
+grpc_event rb_completion_queue_pluck(grpc_completion_queue queue, void *tag,
+                                     gpr_timespec deadline, void *reserved) {
   next_call_stack next_call;
   MEMZERO(&next_call, next_call_stack, 1);
-  TypedData_Get_Struct(self, grpc_completion_queue,
-                       &grpc_rb_completion_queue_data_type, next_call.cq);
-  if (TYPE(timeout) == T_NIL) {
-    next_call.timeout = gpr_inf_future(GPR_CLOCK_REALTIME);
-  } else {
-    next_call.timeout = grpc_rb_time_timeval(timeout, /* absolute time*/ 0);
-  }
-  if (TYPE(tag) == T_NIL) {
-    next_call.tag = NULL;
-  } else {
-    next_call.tag = ROBJECT(tag);
-  }
+  next_call.cq = queue;
+  next_call.timeout = deadline;
+  next_call.tag = tag;
   next_call.event.type = GRPC_QUEUE_TIMEOUT;
+  (void)reserved;
   /* Loop until we finish a pluck without an interruption. The internal
      pluck function runs either until it is interrupted or it gets an
      event, or time runs out.
@@ -209,28 +168,4 @@ grpc_event grpc_rb_completion_queue_pluck_event(VALUE self, VALUE tag,
   } while (next_call.interrupted &&
            next_call.event.type == GRPC_QUEUE_TIMEOUT);
   return next_call.event;
-}
-
-void Init_grpc_completion_queue() {
-  grpc_rb_cCompletionQueue =
-      rb_define_class_under(grpc_rb_mGrpcCore, "CompletionQueue", rb_cObject);
-
-  /* constructor: uses an alloc func without an initializer. Using a simple
-     alloc func works here as the grpc header does not specify any args for
-     this func, so no separate initialization step is necessary. */
-  rb_define_alloc_func(grpc_rb_cCompletionQueue,
-                       grpc_rb_completion_queue_alloc);
-
-  /* close: Provides a way to close the underlying file descriptor without
-     waiting for ruby garbage collection. */
-  rb_define_method(grpc_rb_cCompletionQueue, "close",
-                   grpc_rb_completion_queue_close, 0);
-}
-
-/* Gets the wrapped completion queue from the ruby wrapper */
-grpc_completion_queue *grpc_rb_get_wrapped_completion_queue(VALUE v) {
-  grpc_completion_queue *cq = NULL;
-  TypedData_Get_Struct(v, grpc_completion_queue,
-                       &grpc_rb_completion_queue_data_type, cq);
-  return cq;
 }

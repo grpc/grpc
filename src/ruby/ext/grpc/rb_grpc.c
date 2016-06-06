@@ -46,7 +46,6 @@
 #include "rb_call_credentials.h"
 #include "rb_channel.h"
 #include "rb_channel_credentials.h"
-#include "rb_completion_queue.h"
 #include "rb_loader.h"
 #include "rb_server.h"
 #include "rb_server_credentials.h"
@@ -318,7 +317,7 @@ void Init_grpc_c() {
   grpc_rb_mGrpcCore = rb_define_module_under(grpc_rb_mGRPC, "Core");
   grpc_rb_sNewServerRpc =
       rb_struct_define("NewServerRpc", "method", "host",
-                       "deadline", "metadata", "call", "cq", NULL);
+                       "deadline", "metadata", "call", NULL);
   grpc_rb_sStatus =
       rb_struct_define("Status", "code", "details", "metadata", NULL);
   sym_code = ID2SYM(rb_intern("code"));
@@ -326,7 +325,6 @@ void Init_grpc_c() {
   sym_metadata = ID2SYM(rb_intern("metadata"));
 
   Init_grpc_channel();
-  Init_grpc_completion_queue();
   Init_grpc_call();
   Init_grpc_call_credentials();
   Init_grpc_channel_credentials();

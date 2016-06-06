@@ -63,6 +63,22 @@ typedef struct grpc_rb_server {
   grpc_completion_queue *queue;
 } grpc_rb_server;
 
+static void destroy_server(grpc_rb_server *server, gpr_timespec deadline) {
+  grpc_event ev;
+  if (server->wrapped != NULL) {
+    grpc_server_shutdown_and_notify(server->wrapped, server->queue, NULL);
+    ev = rb_completion_queue_pluck(server->queue, NULL, deadline, NULL);
+    if (ev.type == GRPC_QUEUE_TIMEOUT) {
+      grpc_server_cancel_all_calls(server->wrapped);
+      rb_completion_queue_pluck(server->queue, NULL, gpr_inf_future, NULL);
+    }
+    grpc_server_destroy(server->wrapped);
+    grpc_rb_completion_queue_destroy(server->queue);
+    server->wrapped = NULL;
+    server->queue = NULL;
+  }
+}
+
 /* Destroys server instances. */
 static void grpc_rb_server_free(void *p) {
   grpc_rb_server *svr = NULL;
@@ -71,16 +87,8 @@ static void grpc_rb_server_free(void *p) {
   };
   svr = (grpc_rb_server *)p;
 
-  /* Deletes the wrapped object if the mark object is Qnil, which indicates
-     that no other object is the actual owner. */
-  /* grpc_server_shutdown does not exist. Change this to something that does
-     or delete it */
-  if (svr->wrapped != NULL && svr->mark == Qnil) {
-    // grpc_server_shutdown(svr->wrapped);
-    // Aborting to indicate a bug
-    abort();
-    grpc_server_destroy(svr->wrapped);
-  }
+  // TODO(murgatroid99): Maybe don't wait forever for the server to shutdown
+  destroy_server(svr, gpr_inf_future);
 
   xfree(p);
 }
@@ -122,17 +130,15 @@ static VALUE grpc_rb_server_alloc(VALUE cls) {
 
 /*
   call-seq:
-    cq = CompletionQueue.new
-    server = Server.new(cq, {'arg1': 'value1'})
+    server = Server.new({'arg1': 'value1'})
 
   Initializes server instances. */
-static VALUE grpc_rb_server_init(VALUE self, VALUE cqueue, VALUE channel_args) {
-  grpc_completion_queue *cq = NULL;
+static VALUE grpc_rb_server_init(VALUE self, VALUE channel_args) {
+  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
   grpc_rb_server *wrapper = NULL;
   grpc_server *srv = NULL;
   grpc_channel_args args;
   MEMZERO(&args, grpc_channel_args, 1);
-  cq = grpc_rb_get_wrapped_completion_queue(cqueue);
   TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type,
                        wrapper);
   grpc_rb_hash_convert_to_channel_args(channel_args, &args);
@@ -179,65 +185,57 @@ static void grpc_request_call_stack_cleanup(request_call_stack* st) {
 }
 
 /* call-seq:
-   cq = CompletionQueue.new
-   tag = Object.new
-   timeout = 10
-   server.request_call(cqueue, tag, timeout)
+   server.request_call
 
    Requests notification of a new call on a server. */
-static VALUE grpc_rb_server_request_call(VALUE self, VALUE cqueue,
-                                         VALUE tag_new, VALUE timeout) {
+static VALUE grpc_rb_server_request_call(VALUE self) {
   grpc_rb_server *s = NULL;
   grpc_call *call = NULL;
   grpc_event ev;
   grpc_call_error err;
   request_call_stack st;
   VALUE result;
+  void *tag = (void*)&st;
+  grpc_completion_queue *call_queue = grpc_completion_queue_create(NULL);
   gpr_timespec deadline;
   TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type, s);
   if (s->wrapped == NULL) {
     rb_raise(rb_eRuntimeError, "destroyed!");
     return Qnil;
-  } else {
-    grpc_request_call_stack_init(&st);
-    /* call grpc_server_request_call, then wait for it to complete using
-     * pluck_event */
-    err = grpc_server_request_call(
-        s->wrapped, &call, &st.details, &st.md_ary,
-        grpc_rb_get_wrapped_completion_queue(cqueue),
-        grpc_rb_get_wrapped_completion_queue(s->mark),
-        ROBJECT(tag_new));
-    if (err != GRPC_CALL_OK) {
-      grpc_request_call_stack_cleanup(&st);
-      rb_raise(grpc_rb_eCallError,
-              "grpc_server_request_call failed: %s (code=%d)",
-               grpc_call_error_detail_of(err), err);
-      return Qnil;
-    }
-
-    ev = grpc_rb_completion_queue_pluck_event(s->mark, tag_new, timeout);
-    if (ev.type == GRPC_QUEUE_TIMEOUT) {
-      grpc_request_call_stack_cleanup(&st);
-      return Qnil;
-    }
-    if (!ev.success) {
-      grpc_request_call_stack_cleanup(&st);
-      rb_raise(grpc_rb_eCallError, "request_call completion failed");
-      return Qnil;
-    }
-
-    /* build the NewServerRpc struct result */
-    deadline = gpr_convert_clock_type(st.details.deadline, GPR_CLOCK_REALTIME);
-    result = rb_struct_new(
-        grpc_rb_sNewServerRpc, rb_str_new2(st.details.method),
-        rb_str_new2(st.details.host),
-        rb_funcall(rb_cTime, id_at, 2, INT2NUM(deadline.tv_sec),
-                   INT2NUM(deadline.tv_nsec)),
-        grpc_rb_md_ary_to_h(&st.md_ary), grpc_rb_wrap_call(call), cqueue, NULL);
-    grpc_request_call_stack_cleanup(&st);
-    return result;
   }
-  return Qnil;
+  grpc_request_call_stack_init(&st);
+  /* call grpc_server_request_call, then wait for it to complete using
+   * pluck_event */
+  err = grpc_server_request_call(
+      s->wrapped, &call, &st.details, &st.md_ary,
+      call_queue, s->queue, tag);
+  if (err != GRPC_CALL_OK) {
+    grpc_request_call_stack_cleanup(&st);
+    rb_raise(grpc_rb_eCallError,
+             "grpc_server_request_call failed: %s (code=%d)",
+             grpc_call_error_detail_of(err), err);
+    return Qnil;
+  }
+
+  ev = rb_completion_queue_pluck(s->queue, tag,
+                                 gpr_inf_future, NULL);
+  if (!ev.success) {
+    grpc_request_call_stack_cleanup(&st);
+    rb_raise(grpc_rb_eCallError, "request_call completion failed");
+    return Qnil;
+  }
+
+  /* build the NewServerRpc struct result */
+  deadline = gpr_convert_clock_type(st.details.deadline, GPR_CLOCK_REALTIME);
+  result = rb_struct_new(
+      grpc_rb_sNewServerRpc, rb_str_new2(st.details.method),
+      rb_str_new2(st.details.host),
+      rb_funcall(rb_cTime, id_at, 2, INT2NUM(deadline.tv_sec),
+                 INT2NUM(deadline.tv_nsec)),
+      grpc_rb_md_ary_to_h(&st.md_ary), grpc_rb_wrap_call(call, call_queue),
+      NULL);
+  grpc_request_call_stack_cleanup(&st);
+  return result;
 }
 
 static VALUE grpc_rb_server_start(VALUE self) {
@@ -275,19 +273,15 @@ static VALUE grpc_rb_server_destroy(int argc, VALUE *argv, VALUE self) {
   rb_scan_args(argc, argv, "11", &cqueue, &timeout);
   cq = grpc_rb_get_wrapped_completion_queue(cqueue);
   TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type, s);
-
-  if (s->wrapped != NULL) {
-    grpc_server_shutdown_and_notify(s->wrapped, cq, NULL);
-    ev = grpc_rb_completion_queue_pluck_event(cqueue, Qnil, timeout);
-    if (!ev.success) {
-      rb_warn("server shutdown failed, cancelling the calls, objects may leak");
-      grpc_server_cancel_all_calls(s->wrapped);
-      return Qfalse;
-    }
-    grpc_server_destroy(s->wrapped);
-    s->wrapped = NULL;
+  if (TYPE(timeout) == T_NIL) {
+    deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
+  } else {
+    deadline = grpc_rb_time_timeval(timeout, /* absolute time*/ 0);
   }
-  return Qtrue;
+
+  destroy_server(s, deadline);
+
+  return Qnil;
 }
 
 /*
@@ -347,13 +341,13 @@ void Init_grpc_server() {
   rb_define_alloc_func(grpc_rb_cServer, grpc_rb_server_alloc);
 
   /* Provides a ruby constructor and support for dup/clone. */
-  rb_define_method(grpc_rb_cServer, "initialize", grpc_rb_server_init, 2);
+  rb_define_method(grpc_rb_cServer, "initialize", grpc_rb_server_init, 1);
   rb_define_method(grpc_rb_cServer, "initialize_copy",
                    grpc_rb_cannot_init_copy, 1);
 
   /* Add the server methods. */
   rb_define_method(grpc_rb_cServer, "request_call",
-                   grpc_rb_server_request_call, 3);
+                   grpc_rb_server_request_call, 0);
   rb_define_method(grpc_rb_cServer, "start", grpc_rb_server_start, 0);
   rb_define_method(grpc_rb_cServer, "destroy", grpc_rb_server_destroy, -1);
   rb_define_alias(grpc_rb_cServer, "close", "destroy");
