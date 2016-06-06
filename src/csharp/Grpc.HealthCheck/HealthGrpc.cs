@@ -58,23 +58,6 @@ namespace Grpc.Health.V1 {
       get { return global::Grpc.Health.V1.HealthReflection.Descriptor.Services[0]; }
     }
 
-    /// <summary>Client for Health</summary>
-    [System.Obsolete("Client side interfaced will be removed in the next release. Use client class directly.")]
-    public interface IHealthClient
-    {
-      global::Grpc.Health.V1.HealthCheckResponse Check(global::Grpc.Health.V1.HealthCheckRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      global::Grpc.Health.V1.HealthCheckResponse Check(global::Grpc.Health.V1.HealthCheckRequest request, CallOptions options);
-      AsyncUnaryCall<global::Grpc.Health.V1.HealthCheckResponse> CheckAsync(global::Grpc.Health.V1.HealthCheckRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      AsyncUnaryCall<global::Grpc.Health.V1.HealthCheckResponse> CheckAsync(global::Grpc.Health.V1.HealthCheckRequest request, CallOptions options);
-    }
-
-    /// <summary>Interface of server-side implementations of Health</summary>
-    [System.Obsolete("Service implementations should inherit from the generated abstract base class instead.")]
-    public interface IHealth
-    {
-      global::System.Threading.Tasks.Task<global::Grpc.Health.V1.HealthCheckResponse> Check(global::Grpc.Health.V1.HealthCheckRequest request, ServerCallContext context);
-    }
-
     /// <summary>Base class for server-side implementations of Health</summary>
     public abstract class HealthBase
     {
@@ -86,9 +69,7 @@ namespace Grpc.Health.V1 {
     }
 
     /// <summary>Client for Health</summary>
-    #pragma warning disable 0618
-    public class HealthClient : ClientBase<HealthClient>, IHealthClient
-    #pragma warning restore 0618
+    public class HealthClient : ClientBase<HealthClient>
     {
       public HealthClient(Channel channel) : base(channel)
       {
@@ -134,20 +115,9 @@ namespace Grpc.Health.V1 {
     }
 
     /// <summary>Creates service definition that can be registered with a server</summary>
-    #pragma warning disable 0618
-    public static ServerServiceDefinition BindService(IHealth serviceImpl)
-    #pragma warning restore 0618
-    {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
-          .AddMethod(__Method_Check, serviceImpl.Check).Build();
-    }
-
-    /// <summary>Creates service definition that can be registered with a server</summary>
-    #pragma warning disable 0618
     public static ServerServiceDefinition BindService(HealthBase serviceImpl)
-    #pragma warning restore 0618
     {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+      return ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_Check, serviceImpl.Check).Build();
     }
 

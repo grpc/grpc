@@ -29,7 +29,10 @@
 
 """Tests the implementations module of the gRPC Python Beta API."""
 
+import datetime
 import unittest
+
+from oauth2client import client as oauth2client_client
 
 from grpc.beta import implementations
 from tests.unit import resources
@@ -48,6 +51,20 @@ class ChannelCredentialsTest(unittest.TestCase):
     self.assertIsInstance(
         channel_credentials, implementations.ChannelCredentials)
 
+
+class CallCredentialsTest(unittest.TestCase):
+
+  def test_google_call_credentials(self):
+    creds = oauth2client_client.GoogleCredentials(
+        'token', 'client_id', 'secret', 'refresh_token',
+        datetime.datetime(2008, 6, 24), 'https://refresh.uri.com/',
+        'user_agent')
+    call_creds = implementations.google_call_credentials(creds)
+    self.assertIsInstance(call_creds, implementations.CallCredentials)
+
+  def test_access_token_call_credentials(self):
+    call_creds = implementations.access_token_call_credentials('token')
+    self.assertIsInstance(call_creds, implementations.CallCredentials)
 
 if __name__ == '__main__':
   unittest.main(verbosity=2)
