@@ -33,7 +33,7 @@ import collections
 import threading
 import unittest
 
-from grpc.beta import _auth
+from grpc import _auth
 
 
 class MockGoogleCreds(object):
