@@ -58,6 +58,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll_linux.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_and_epoll_posix.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_posix.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
@@ -340,7 +343,7 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\google_default\credentials_posix.c">
       <Filter>src\core\lib\security\credentials\google_default</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\google_default\credentials_win32.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\google_default\credentials_windows.c">
       <Filter>src\core\lib\security\credentials\google_default</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\google_default\google_default_credentials.c">
@@ -502,8 +505,17 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\sockaddr\sockaddr_resolver.c">
       <Filter>src\core\ext\resolver\sockaddr</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting.c">
+      <Filter>src\core\ext\load_reporting</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting_filter.c">
+      <Filter>src\core\ext\load_reporting</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\context.c">
       <Filter>src\core\ext\census</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\gen\census.pb.c">
+      <Filter>src\core\ext\census\gen</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\grpc_context.c">
       <Filter>src\core\ext\census</Filter>
@@ -582,7 +594,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_sync.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_win32.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_windows.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\log.h">
@@ -606,7 +618,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_win32.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_windows.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h">
@@ -680,6 +692,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_epoll_linux.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_and_epoll_posix.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_posix.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
@@ -728,7 +743,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_utils.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_win32.h">
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_windows.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils_posix.h">
@@ -1049,6 +1064,12 @@
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.h">
       <Filter>third_party\nanopb</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting.h">
+      <Filter>src\core\ext\load_reporting</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting_filter.h">
+      <Filter>src\core\ext\load_reporting</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\aggregation.h">
       <Filter>src\core\ext\census</Filter>
     </ClInclude>
@@ -1057,6 +1078,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\census_rpc_stats.h">
       <Filter>src\core\ext\census</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\gen\census.pb.h">
+      <Filter>src\core\ext\census\gen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\grpc_filter.h">
       <Filter>src\core\ext\census</Filter>
@@ -1094,6 +1118,9 @@
     <Filter Include="src\core\ext\census">
       <UniqueIdentifier>{9bf70bd2-f553-11b2-c237-abd148971eea}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\core\ext\census\gen">
+      <UniqueIdentifier>{4a14dd37-5868-c656-7333-fa80574cbb07}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\core\ext\client_config">
       <UniqueIdentifier>{003725f8-37fc-80b5-deba-baae32caf915}</UniqueIdentifier>
     </Filter>
@@ -1120,6 +1147,9 @@
     </Filter>
     <Filter Include="src\core\ext\lb_policy\round_robin">
       <UniqueIdentifier>{2472d352-cf94-f317-646e-72b769cea846}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\load_reporting">
+      <UniqueIdentifier>{b6c863cd-a135-32e8-df03-02365f526f0d}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\ext\resolver">
       <UniqueIdentifier>{6bfa6808-9dcb-8990-deed-5cf58a149dda}</UniqueIdentifier>
