@@ -32,7 +32,7 @@
 #endregion
 
 using System;
-using System.Threading;
+using System.Linq;
 using Grpc.Core;
 using NUnit.Framework;
 
@@ -44,7 +44,11 @@ namespace Grpc.Core.Tests
         public void InitializeAndShutdownGrpcEnvironment()
         {
             var env = GrpcEnvironment.AddRef();
-            Assert.IsNotNull(env.CompletionQueue);
+            Assert.IsTrue(env.CompletionQueues.Count > 0);
+            for (int i = 0; i < env.CompletionQueues.Count; i++)
+            {
+                Assert.IsNotNull(env.CompletionQueues.ElementAt(i));
+            }
             GrpcEnvironment.Release();
         }
 
