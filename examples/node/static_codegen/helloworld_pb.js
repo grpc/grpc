@@ -61,7 +61,7 @@ proto.helloworld.HelloRequest.toObject = function(includeInstance, msg) {
   };
 
   if (includeInstance) {
-    obj.$jspbMessageInstance = msg
+    obj.$jspbMessageInstance = msg;
   }
   return obj;
 };
@@ -220,7 +220,7 @@ proto.helloworld.HelloReply.toObject = function(includeInstance, msg) {
   };
 
   if (includeInstance) {
-    obj.$jspbMessageInstance = msg
+    obj.$jspbMessageInstance = msg;
   }
   return obj;
 };
