@@ -131,7 +131,8 @@ Status ProtoServerReflection::GetFileByName(
     return Status::CANCELLED;
   }
 
-  const protobuf::FileDescriptor* file_desc = descriptor_pool_->FindFileByName(filename);
+  const protobuf::FileDescriptor* file_desc =
+      descriptor_pool_->FindFileByName(filename);
   if (file_desc == nullptr) {
     return Status(StatusCode::NOT_FOUND, "File not found.");
   }
@@ -170,8 +171,9 @@ Status ProtoServerReflection::GetFileContainingExtension(
     return Status(StatusCode::NOT_FOUND, "Type not found.");
   }
 
-  const protobuf::FieldDescriptor* field_desc = descriptor_pool_->FindExtensionByNumber(
-      desc, request->extension_number());
+  const protobuf::FieldDescriptor* field_desc =
+      descriptor_pool_->FindExtensionByNumber(desc,
+                                              request->extension_number());
   if (field_desc == nullptr) {
     return Status(StatusCode::NOT_FOUND, "Extension not found.");
   }
@@ -187,7 +189,8 @@ Status ProtoServerReflection::GetAllExtensionNumbers(
     return Status::CANCELLED;
   }
 
-  const protobuf::Descriptor* desc = descriptor_pool_->FindMessageTypeByName(type);
+  const protobuf::Descriptor* desc =
+      descriptor_pool_->FindMessageTypeByName(type);
   if (desc == nullptr) {
     return Status(StatusCode::NOT_FOUND, "Type not found.");
   }
@@ -202,7 +205,8 @@ Status ProtoServerReflection::GetAllExtensionNumbers(
 }
 
 void ProtoServerReflection::FillFileDescriptorResponse(
-    const protobuf::FileDescriptor* file_desc, ServerReflectionResponse* response,
+    const protobuf::FileDescriptor* file_desc,
+    ServerReflectionResponse* response,
     std::unordered_set<grpc::string>* seen_files) {
   if (seen_files->find(file_desc->name()) != seen_files->end()) {
     return;
