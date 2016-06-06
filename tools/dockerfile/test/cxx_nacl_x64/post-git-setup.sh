@@ -34,4 +34,4 @@ set root=`pwd`
 cd /var/local/git/grpc/third_party
 
 # Patch boringssl for NaCl compatibility
-patch -u /chromium/webports/ports/boringssl/nacl.patch
+patch -u -p1 < /chromium/webports/ports/boringssl/nacl.patch
