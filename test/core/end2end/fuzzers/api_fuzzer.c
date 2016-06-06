@@ -679,7 +679,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         if (g_channel != NULL) {
           grpc_connectivity_state st =
               grpc_channel_check_connectivity_state(g_channel, 0);
-          if (st != GRPC_CHANNEL_FATAL_FAILURE) {
+          if (st != GRPC_CHANNEL_SHUTDOWN) {
             gpr_timespec deadline = gpr_time_add(
                 gpr_now(GPR_CLOCK_REALTIME),
                 gpr_time_from_micros(read_uint32(&inp), GPR_TIMESPAN));

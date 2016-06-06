@@ -120,7 +120,7 @@ static void set_channel_connectivity_state_locked(grpc_exec_ctx *exec_ctx,
                                                   grpc_error *error,
                                                   const char *reason) {
   if ((state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
-       state == GRPC_CHANNEL_FATAL_FAILURE) &&
+       state == GRPC_CHANNEL_SHUTDOWN) &&
       chand->lb_policy != NULL) {
     /* cancel fail-fast picks */
     grpc_lb_policy_cancel_picks(
@@ -139,8 +139,7 @@ static void on_lb_policy_state_changed_locked(grpc_exec_ctx *exec_ctx,
   /* check if the notification is for a stale policy */
   if (w->lb_policy != w->chand->lb_policy) return;
 
-  if (publish_state == GRPC_CHANNEL_FATAL_FAILURE &&
-      w->chand->resolver != NULL) {
+  if (publish_state == GRPC_CHANNEL_SHUTDOWN && w->chand->resolver != NULL) {
     publish_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
     grpc_resolver_channel_saw_error(exec_ctx, w->chand->resolver);
     GRPC_LB_POLICY_UNREF(exec_ctx, w->chand->lb_policy, "channel");
@@ -148,7 +147,7 @@ static void on_lb_policy_state_changed_locked(grpc_exec_ctx *exec_ctx,
   }
   set_channel_connectivity_state_locked(exec_ctx, w->chand, publish_state,
                                         GRPC_ERROR_REF(error), "lb_changed");
-  if (w->state != GRPC_CHANNEL_FATAL_FAILURE) {
+  if (w->state != GRPC_CHANNEL_SHUTDOWN) {
     watch_lb_policy(exec_ctx, w->chand, w->lb_policy, w->state);
   }
 }
@@ -246,7 +245,7 @@ static void cc_on_config_changed(grpc_exec_ctx *exec_ctx, void *arg,
     }
     grpc_error *refs[] = {error, state_error};
     set_channel_connectivity_state_locked(
-        exec_ctx, chand, GRPC_CHANNEL_FATAL_FAILURE,
+        exec_ctx, chand, GRPC_CHANNEL_SHUTDOWN,
         GRPC_ERROR_CREATE_REFERENCING("Got config after disconnection", refs,
                                       GPR_ARRAY_SIZE(refs)),
         "resolver_gone");
@@ -309,7 +308,7 @@ static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
   if (op->disconnect_with_error != GRPC_ERROR_NONE) {
     if (chand->resolver != NULL) {
       set_channel_connectivity_state_locked(
-          exec_ctx, chand, GRPC_CHANNEL_FATAL_FAILURE,
+          exec_ctx, chand, GRPC_CHANNEL_SHUTDOWN,
           GRPC_ERROR_REF(op->disconnect_with_error), "disconnect");
       grpc_resolver_shutdown(exec_ctx, chand->resolver);
       GRPC_RESOLVER_UNREF(exec_ctx, chand->resolver, "channel");
@@ -439,6 +438,7 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                              const grpc_call_stats *stats,
                               void *and_free_memory) {
   grpc_subchannel_call_holder_destroy(exec_ctx, elem->call_data);
   gpr_free(and_free_memory);

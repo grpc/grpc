@@ -31,19 +31,17 @@
  *
  */
 
-#ifndef GRPC_IMPL_CODEGEN_SYNC_WIN32_H
-#define GRPC_IMPL_CODEGEN_SYNC_WIN32_H
+#ifndef GRPC_CORE_LIB_SUPPORT_STRING_WINDOWS_H
+#define GRPC_CORE_LIB_SUPPORT_STRING_WINDOWS_H
 
-#include <grpc/impl/codegen/sync_generic.h>
+#include <grpc/support/port_platform.h>
 
-typedef struct {
-  CRITICAL_SECTION cs; /* Not an SRWLock until Vista is unsupported */
-  int locked;
-} gpr_mu;
+#ifdef GPR_WINDOWS
 
-typedef CONDITION_VARIABLE gpr_cv;
+/* These allocate new strings using gpr_malloc to convert from and to utf-8. */
+LPTSTR gpr_char_to_tchar(LPCSTR input);
+LPSTR gpr_tchar_to_char(LPCTSTR input);
 
-typedef INIT_ONCE gpr_once;
-#define GPR_ONCE_INIT INIT_ONCE_STATIC_INIT
+#endif /* GPR_WINDOWS */
 
-#endif /* GRPC_IMPL_CODEGEN_SYNC_WIN32_H */
+#endif /* GRPC_CORE_LIB_SUPPORT_STRING_WINDOWS_H */

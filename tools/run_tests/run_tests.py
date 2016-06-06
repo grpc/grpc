@@ -254,9 +254,7 @@ class CLanguage(object):
 
   def _compiler_options(self, use_docker, compiler):
     """Returns docker distro and make options to use for given compiler."""
-    if _is_use_docker_child():
-      return ("already_under_docker", [])
-    if not use_docker:
+    if not use_docker and not _is_use_docker_child():
       _check_compiler(compiler, ['default'])
 
     if compiler == 'gcc4.9' or compiler == 'default':

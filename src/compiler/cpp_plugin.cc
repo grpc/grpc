@@ -43,7 +43,7 @@
 #include "src/compiler/cpp_generator_helpers.h"
 #include "src/compiler/generator_helpers.h"
 
-using grpc_generator::GetCppComments;
+using grpc_cpp_generator::GetCppComments;
 
 class ProtoBufMethod : public grpc_cpp_generator::Method {
  public:
