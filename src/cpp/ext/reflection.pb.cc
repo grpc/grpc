@@ -36,7 +36,7 @@
 // source: reflection.proto
 
 #define INTERNAL_SUPPRESS_PROTOBUF_FIELD_DEPRECATION
-#include <grpc++/impl/reflection.pb.h>
+#include <grpc++/ext/reflection.pb.h>
 
 #include <algorithm>
 

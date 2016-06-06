@@ -70,7 +70,7 @@
 #ifndef GRPC_reflection_2eproto__INCLUDED
 #define GRPC_reflection_2eproto__INCLUDED
 
-#include <grpc++/impl/reflection.pb.h>
+#include <grpc++/ext/reflection.pb.h>
 
 #include <grpc++/impl/codegen/async_stream.h>
 #include <grpc++/impl/codegen/async_unary_call.h>

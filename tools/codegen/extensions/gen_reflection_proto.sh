@@ -31,9 +31,9 @@
 
 PROTO_DIR="src/proto/grpc/reflection/v1alpha"
 PROTO_FILE="reflection"
-HEADER_DIR="extensions/include/grpc++/impl"
-SRC_DIR="extensions/reflection"
-INCLUDE_DIR="grpc++/impl"
+HEADER_DIR="include/grpc++/ext"
+SRC_DIR="src/cpp/ext"
+INCLUDE_DIR="grpc++/ext"
 TMP_DIR="tmp"
 GRPC_PLUGIN="bins/opt/grpc_cpp_plugin"
 PROTOC=third_party/protobuf/src/protoc

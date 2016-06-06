@@ -35,7 +35,7 @@
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
-#include <grpc++/impl/proto_server_reflection_plugin.h>
+#include <grpc++/ext/proto_server_reflection_plugin.h>
 #include <grpc++/security/credentials.h>
 #include <grpc++/security/server_credentials.h>
 #include <grpc++/server.h>

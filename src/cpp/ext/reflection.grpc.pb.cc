@@ -36,8 +36,8 @@
 // If you make any local change, they will be lost.
 // source: reflection.proto
 
-#include <grpc++/impl/reflection.pb.h>
-#include <grpc++/impl/reflection.grpc.pb.h>
+#include <grpc++/ext/reflection.pb.h>
+#include <grpc++/ext/reflection.grpc.pb.h>
 
 #include <grpc++/impl/codegen/async_stream.h>
 #include <grpc++/impl/codegen/async_unary_call.h>

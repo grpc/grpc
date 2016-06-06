@@ -36,7 +36,7 @@
 
 #include <grpc++/grpc++.h>
 
-#include "reflection/proto_server_reflection.h"
+#include "src/cpp/ext/proto_server_reflection.h"
 
 using grpc::Status;
 using grpc::StatusCode;

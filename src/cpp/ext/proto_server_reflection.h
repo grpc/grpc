@@ -39,7 +39,7 @@
 
 #include <grpc++/grpc++.h>
 
-#include <grpc++/impl/reflection.grpc.pb.h>
+#include <grpc++/ext/reflection.grpc.pb.h>
 
 namespace grpc {
 

@@ -147,21 +147,21 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\extensions\include\grpc++\impl\proto_server_reflection_plugin.h" />
-    <ClInclude Include="$(SolutionDir)\..\extensions\include\grpc++\impl\reflection.grpc.pb.h" />
-    <ClInclude Include="$(SolutionDir)\..\extensions\include\grpc++\impl\reflection.pb.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\ext\proto_server_reflection_plugin.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\ext\reflection.grpc.pb.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\ext\reflection.pb.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\extensions\reflection\proto_server_reflection.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\cpp\ext\proto_server_reflection.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\extensions\reflection\proto_server_reflection.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\ext\proto_server_reflection.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\extensions\reflection\proto_server_reflection_plugin.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\ext\proto_server_reflection_plugin.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\extensions\reflection\reflection.grpc.pb.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\ext\reflection.grpc.pb.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\extensions\reflection\reflection.pb.cc">
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\ext\reflection.pb.cc">
     </ClCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -1,51 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\extensions\reflection\proto_server_reflection.cc">
-      <Filter>extensions\reflection</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\ext\proto_server_reflection.cc">
+      <Filter>src\cpp\ext</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\extensions\reflection\proto_server_reflection_plugin.cc">
-      <Filter>extensions\reflection</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\ext\proto_server_reflection_plugin.cc">
+      <Filter>src\cpp\ext</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\extensions\reflection\reflection.grpc.pb.cc">
-      <Filter>extensions\reflection</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\ext\reflection.grpc.pb.cc">
+      <Filter>src\cpp\ext</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\extensions\reflection\reflection.pb.cc">
-      <Filter>extensions\reflection</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\ext\reflection.pb.cc">
+      <Filter>src\cpp\ext</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\extensions\include\grpc++\impl\proto_server_reflection_plugin.h">
-      <Filter>extensions\include\grpc++\impl</Filter>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\ext\proto_server_reflection_plugin.h">
+      <Filter>include\grpc++\ext</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\extensions\include\grpc++\impl\reflection.grpc.pb.h">
-      <Filter>extensions\include\grpc++\impl</Filter>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\ext\reflection.grpc.pb.h">
+      <Filter>include\grpc++\ext</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\extensions\include\grpc++\impl\reflection.pb.h">
-      <Filter>extensions\include\grpc++\impl</Filter>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\ext\reflection.pb.h">
+      <Filter>include\grpc++\ext</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\extensions\reflection\proto_server_reflection.h">
-      <Filter>extensions\reflection</Filter>
+    <ClInclude Include="$(SolutionDir)\..\src\cpp\ext\proto_server_reflection.h">
+      <Filter>src\cpp\ext</Filter>
     </ClInclude>
   </ItemGroup>
 
   <ItemGroup>
-    <Filter Include="extensions">
-      <UniqueIdentifier>{8fd45ce8-8f02-367f-e3f7-4c0ae0e36566}</UniqueIdentifier>
+    <Filter Include="include">
+      <UniqueIdentifier>{e9441021-f78a-ec84-7efd-1883975feddb}</UniqueIdentifier>
     </Filter>
-    <Filter Include="extensions\include">
-      <UniqueIdentifier>{1a18dfcc-bedf-226e-6929-377aba53249b}</UniqueIdentifier>
+    <Filter Include="include\grpc++">
+      <UniqueIdentifier>{c66e66b4-a64e-79bf-40e8-1a1bac124a3d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="extensions\include\grpc++">
-      <UniqueIdentifier>{83bf0cce-01da-a93c-0ff3-a1abca63ec5f}</UniqueIdentifier>
+    <Filter Include="include\grpc++\ext">
+      <UniqueIdentifier>{8d96203b-d3ce-2164-74a6-06e0ff2b09af}</UniqueIdentifier>
     </Filter>
-    <Filter Include="extensions\include\grpc++\impl">
-      <UniqueIdentifier>{d34e8821-f67b-a793-3419-e2781ab9b3ee}</UniqueIdentifier>
+    <Filter Include="src">
+      <UniqueIdentifier>{5ec5476e-3d72-e3f9-4f05-3f7c31c13651}</UniqueIdentifier>
     </Filter>
-    <Filter Include="extensions\reflection">
-      <UniqueIdentifier>{11feb184-a1d9-5485-26f0-538ddb50deff}</UniqueIdentifier>
+    <Filter Include="src\cpp">
+      <UniqueIdentifier>{a642ac8e-cec2-35d3-9a8a-78313d03b440}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\cpp\ext">
+      <UniqueIdentifier>{d0204618-0f6a-dbc6-cf41-ffc04e76075a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
