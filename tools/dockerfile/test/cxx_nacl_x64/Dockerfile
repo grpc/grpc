@@ -63,6 +63,10 @@ RUN apt-get update && apt-get install -y \
 # Build profiling
 RUN apt-get update && apt-get install -y time && apt-get clean
 
+#=================
+# C++ dependencies
+RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
+
 #===========================
 # Native Client dependencies
 
@@ -89,9 +93,9 @@ RUN cd /chromium/src && ./build/install-build-deps.sh --nacl --no-prompt
 RUN cd /chromium && GYP_DEFINES=target_arch=arm gclient runhooks
 RUN cd /chromium/src && ./native_client_sdk/src/build_tools/build_sdk.py
 
-#=================
-# C++ dependencies
-RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
+
+
+ENV POST_GIT_STEP tools/dockerfile/test/cxx_nacl_x64/post-git-setup.sh
 
 # Prepare ccache
 RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
