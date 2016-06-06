@@ -208,7 +208,7 @@ cdef extern from "grpc/_cython/loader.h":
     GRPC_CHANNEL_CONNECTING
     GRPC_CHANNEL_READY
     GRPC_CHANNEL_TRANSIENT_FAILURE
-    GRPC_CHANNEL_FATAL_FAILURE
+    GRPC_CHANNEL_SHUTDOWN
 
   ctypedef struct grpc_metadata:
     const char *key

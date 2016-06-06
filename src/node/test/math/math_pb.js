@@ -65,7 +65,7 @@ proto.math.DivArgs.toObject = function(includeInstance, msg) {
   };
 
   if (includeInstance) {
-    obj.$jspbMessageInstance = msg
+    obj.$jspbMessageInstance = msg;
   }
   return obj;
 };
@@ -251,7 +251,7 @@ proto.math.DivReply.toObject = function(includeInstance, msg) {
   };
 
   if (includeInstance) {
-    obj.$jspbMessageInstance = msg
+    obj.$jspbMessageInstance = msg;
   }
   return obj;
 };
@@ -436,7 +436,7 @@ proto.math.FibArgs.toObject = function(includeInstance, msg) {
   };
 
   if (includeInstance) {
-    obj.$jspbMessageInstance = msg
+    obj.$jspbMessageInstance = msg;
   }
   return obj;
 };
@@ -595,7 +595,7 @@ proto.math.Num.toObject = function(includeInstance, msg) {
   };
 
   if (includeInstance) {
-    obj.$jspbMessageInstance = msg
+    obj.$jspbMessageInstance = msg;
   }
   return obj;
 };
@@ -754,7 +754,7 @@ proto.math.FibReply.toObject = function(includeInstance, msg) {
   };
 
   if (includeInstance) {
-    obj.$jspbMessageInstance = msg
+    obj.$jspbMessageInstance = msg;
   }
   return obj;
 };

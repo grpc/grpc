@@ -181,26 +181,67 @@ void PrintMethod(const MethodDescriptor *method, Printer *out) {
 // Prints out the service descriptor object
 void PrintService(const ServiceDescriptor *service, Printer *out) {
   map<grpc::string, grpc::string> template_vars;
+  out->Print(GetNodeComments(service, true).c_str());
   template_vars["name"] = service->name();
   out->Print(template_vars, "var $name$Service = exports.$name$Service = {\n");
   out->Indent();
   for (int i = 0; i < service->method_count(); i++) {
     grpc::string method_name = grpc_generator::LowercaseFirstLetter(
         service->method(i)->name());
+    out->Print(GetNodeComments(service->method(i), true).c_str());
     out->Print("$method_name$: ",
                "method_name", method_name);
     PrintMethod(service->method(i), out);
     out->Print(",\n");
+    out->Print(GetNodeComments(service->method(i), false).c_str());
   }
   out->Outdent();
   out->Print("};\n\n");
   out->Print(template_vars, "exports.$name$Client = "
              "grpc.makeGenericClientConstructor($name$Service);\n");
+  out->Print(GetNodeComments(service, false).c_str());
+}
+
+void PrintImports(const FileDescriptor *file, Printer *out) {
+  out->Print("var grpc = require('grpc');\n");
+  if (file->message_type_count() > 0) {
+    grpc::string file_path = GetRelativePath(file->name(),
+                                             GetJSMessageFilename(
+                                                 file->name()));
+    out->Print("var $module_alias$ = require('$file_path$');\n",
+               "module_alias", ModuleAlias(file->name()),
+               "file_path", file_path);
+  }
+
+  for (int i = 0; i < file->dependency_count(); i++) {
+    grpc::string file_path = GetRelativePath(
+        file->name(), GetJSMessageFilename(file->dependency(i)->name()));
+    out->Print("var $module_alias$ = require('$file_path$');\n",
+               "module_alias", ModuleAlias(file->dependency(i)->name()),
+               "file_path", file_path);
+  }
+  out->Print("\n");
+}
+
+void PrintTransformers(const FileDescriptor *file, Printer *out) {
+  map<grpc::string, const Descriptor*> messages = GetAllMessages(file);
+  for (std::map<grpc::string, const Descriptor*>::iterator it =
+           messages.begin();
+       it != messages.end(); it++) {
+    PrintMessageTransformer(it->second, out);
+  }
+  out->Print("\n");
+}
+
+void PrintServices(const FileDescriptor *file, Printer *out) {
+  for (int i = 0; i < file->service_count(); i++) {
+    PrintService(file->service(i), out);
+  }
 }
 
 }
 
-grpc::string GetImports(const FileDescriptor *file) {
+grpc::string GenerateFile(const FileDescriptor *file) {
   grpc::string output;
   {
     StringOutputStream output_stream(&output);
@@ -209,67 +250,23 @@ grpc::string GetImports(const FileDescriptor *file) {
     if (file->service_count() == 0) {
       return output;
     }
-
     out.Print("// GENERATED CODE -- DO NOT EDIT!\n\n");
+
+    grpc::string leading_comments = GetNodeComments(file, true);
+    if (!leading_comments.empty()) {
+      out.Print("// Original file comments:\n");
+      out.Print(leading_comments.c_str());
+    }
 
     out.Print("'use strict';\n");
 
-    out.Print("var grpc = require('grpc');\n");
-    if (file->message_type_count() > 0) {
-      grpc::string file_path = GetRelativePath(file->name(),
-                                               GetJSMessageFilename(
-                                                   file->name()));
-      out.Print("var $module_alias$ = require('$file_path$');\n",
-                "module_alias", ModuleAlias(file->name()),
-                "file_path", file_path);
-    }
+    PrintImports(file, &out);
 
-    for (int i = 0; i < file->dependency_count(); i++) {
-      grpc::string file_path = GetRelativePath(
-          file->name(), GetJSMessageFilename(file->dependency(i)->name()));
-      out.Print("var $module_alias$ = require('$file_path$');\n",
-                "module_alias", ModuleAlias(file->dependency(i)->name()),
-                "file_path", file_path);
-    }
-    out.Print("\n");
-  }
-  return output;
-}
+    PrintTransformers(file, &out);
 
-grpc::string GetTransformers(const FileDescriptor *file) {
-  grpc::string output;
-  {
-    StringOutputStream output_stream(&output);
-    Printer out(&output_stream, '$');
+    PrintServices(file, &out);
 
-    if (file->service_count() == 0) {
-      return output;
-    }
-
-    map<grpc::string, const Descriptor*> messages = GetAllMessages(file);
-    for (std::map<grpc::string, const Descriptor*>::iterator it =
-             messages.begin();
-         it != messages.end(); it++) {
-      PrintMessageTransformer(it->second, &out);
-    }
-    out.Print("\n");
-  }
-  return output;
-}
-
-grpc::string GetServices(const FileDescriptor *file) {
-  grpc::string output;
-  {
-    StringOutputStream output_stream(&output);
-    Printer out(&output_stream, '$');
-
-    if (file->service_count() == 0) {
-      return output;
-    }
-
-    for (int i = 0; i < file->service_count(); i++) {
-      PrintService(file->service(i), &out);
-    }
+    out.Print(GetNodeComments(file, false).c_str());
   }
   return output;
 }

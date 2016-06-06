@@ -31,17 +31,53 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SUPPORT_STRING_WIN32_H
-#define GRPC_CORE_LIB_SUPPORT_STRING_WIN32_H
+/* Windows code for gpr snprintf support. */
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WIN32
+#ifdef GPR_WINDOWS_STRING
 
-/* These allocate new strings using gpr_malloc to convert from and to utf-8. */
-LPTSTR gpr_char_to_tchar(LPCSTR input);
-LPSTR gpr_tchar_to_char(LPCTSTR input);
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
 
-#endif /* GPR_WIN32 */
+#include <grpc/support/alloc.h>
 
-#endif /* GRPC_CORE_LIB_SUPPORT_STRING_WIN32_H */
+#include "src/core/lib/support/string.h"
+
+int gpr_asprintf(char **strp, const char *format, ...) {
+  va_list args;
+  int ret;
+  size_t strp_buflen;
+
+  /* Determine the length. */
+  va_start(args, format);
+  ret = _vscprintf(format, args);
+  va_end(args);
+  if (ret < 0) {
+    *strp = NULL;
+    return -1;
+  }
+
+  /* Allocate a new buffer, with space for the NUL terminator. */
+  strp_buflen = (size_t)ret + 1;
+  if ((*strp = gpr_malloc(strp_buflen)) == NULL) {
+    /* This shouldn't happen, because gpr_malloc() calls abort(). */
+    return -1;
+  }
+
+  /* Print to the buffer. */
+  va_start(args, format);
+  ret = vsnprintf_s(*strp, strp_buflen, _TRUNCATE, format, args);
+  va_end(args);
+  if ((size_t)ret == strp_buflen - 1) {
+    return ret;
+  }
+
+  /* This should never happen. */
+  gpr_free(*strp);
+  *strp = NULL;
+  return -1;
+}
+
+#endif /* GPR_WINDOWS_STRING */

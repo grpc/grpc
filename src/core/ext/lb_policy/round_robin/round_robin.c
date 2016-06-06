@@ -244,7 +244,7 @@ static void rr_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
     gpr_free(pp);
   }
   grpc_connectivity_state_set(
-      exec_ctx, &p->state_tracker, GRPC_CHANNEL_FATAL_FAILURE,
+      exec_ctx, &p->state_tracker, GRPC_CHANNEL_SHUTDOWN,
       GRPC_ERROR_CREATE("Channel Shutdown"), "shutdown");
   for (i = 0; i < p->num_subchannels; i++) {
     subchannel_data *sd = p->subchannels[i];
@@ -445,7 +445,7 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
             exec_ctx, &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
             GRPC_ERROR_REF(error), "connecting_transient_failure");
         break;
-      case GRPC_CHANNEL_FATAL_FAILURE:
+      case GRPC_CHANNEL_SHUTDOWN:
         if (sd->ready_list_node != NULL) {
           remove_disconnected_sc_locked(p, sd->ready_list_node);
           sd->ready_list_node = NULL;
@@ -461,7 +461,7 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
         unref = 1;
         if (p->num_subchannels == 0) {
           grpc_connectivity_state_set(
-              exec_ctx, &p->state_tracker, GRPC_CHANNEL_FATAL_FAILURE,
+              exec_ctx, &p->state_tracker, GRPC_CHANNEL_SHUTDOWN,
               GRPC_ERROR_CREATE_REFERENCING("Round Robin Channels Exhausted",
                                             &error, 1),
               "no_more_channels");

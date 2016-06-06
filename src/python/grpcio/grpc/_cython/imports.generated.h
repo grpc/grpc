@@ -36,7 +36,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WIN32
+#ifdef GPR_WINDOWS
 
 #include <windows.h>
 
@@ -57,7 +57,7 @@
 #include <grpc/support/cpu.h>
 #include <grpc/support/histogram.h>
 #include <grpc/support/host_port.h>
-#include <grpc/support/log_win32.h>
+#include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/subprocess.h>
 #include <grpc/support/thd.h>
@@ -877,7 +877,7 @@ void pygrpc_load_imports(HMODULE library);
 }
 #endif  /* __cpluslus */
 
-#else /* !GPR_WIN32 */
+#else /* !GPR_WINDOWS */
 
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
@@ -889,6 +889,6 @@ void pygrpc_load_imports(HMODULE library);
 #include <grpc/support/time.h>
 #include <grpc/status.h>
 
-#endif /* !GPR_WIN32 */
+#endif /* !GPR_WINDOWS */
 
 #endif

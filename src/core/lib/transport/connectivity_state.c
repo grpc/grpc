@@ -51,8 +51,8 @@ const char *grpc_connectivity_state_name(grpc_connectivity_state state) {
       return "READY";
     case GRPC_CHANNEL_TRANSIENT_FAILURE:
       return "TRANSIENT_FAILURE";
-    case GRPC_CHANNEL_FATAL_FAILURE:
-      return "FATAL_FAILURE";
+    case GRPC_CHANNEL_SHUTDOWN:
+      return "SHUTDOWN";
   }
   GPR_UNREACHABLE_CODE(return "UNKNOWN");
 }
@@ -73,8 +73,8 @@ void grpc_connectivity_state_destroy(grpc_exec_ctx *exec_ctx,
   while ((w = tracker->watchers)) {
     tracker->watchers = w->next;
 
-    if (GRPC_CHANNEL_FATAL_FAILURE != *w->current) {
-      *w->current = GRPC_CHANNEL_FATAL_FAILURE;
+    if (GRPC_CHANNEL_SHUTDOWN != *w->current) {
+      *w->current = GRPC_CHANNEL_SHUTDOWN;
       error = GRPC_ERROR_NONE;
     } else {
       error = GRPC_ERROR_CREATE("Shutdown connectivity owner");
@@ -164,7 +164,7 @@ void grpc_connectivity_state_set(grpc_exec_ctx *exec_ctx,
     case GRPC_CHANNEL_READY:
       GPR_ASSERT(error == GRPC_ERROR_NONE);
       break;
-    case GRPC_CHANNEL_FATAL_FAILURE:
+    case GRPC_CHANNEL_SHUTDOWN:
     case GRPC_CHANNEL_TRANSIENT_FAILURE:
       GPR_ASSERT(error != GRPC_ERROR_NONE);
       break;
@@ -174,7 +174,7 @@ void grpc_connectivity_state_set(grpc_exec_ctx *exec_ctx,
   if (tracker->current_state == state) {
     return;
   }
-  GPR_ASSERT(tracker->current_state != GRPC_CHANNEL_FATAL_FAILURE);
+  GPR_ASSERT(tracker->current_state != GRPC_CHANNEL_SHUTDOWN);
   tracker->current_state = state;
   while ((w = tracker->watchers) != NULL) {
     *w->current = tracker->current_state;

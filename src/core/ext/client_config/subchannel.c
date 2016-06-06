@@ -481,12 +481,12 @@ static void subchannel_on_child_state_changed(grpc_exec_ctx *exec_ctx, void *p,
   /* if we failed just leave this closure */
   if (sw->connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     /* any errors on a subchannel ==> we're done, create a new one */
-    sw->connectivity_state = GRPC_CHANNEL_FATAL_FAILURE;
+    sw->connectivity_state = GRPC_CHANNEL_SHUTDOWN;
   }
   grpc_connectivity_state_set(exec_ctx, &c->state_tracker,
                               sw->connectivity_state, GRPC_ERROR_REF(error),
                               "reflect_child");
-  if (sw->connectivity_state != GRPC_CHANNEL_FATAL_FAILURE) {
+  if (sw->connectivity_state != GRPC_CHANNEL_SHUTDOWN) {
     grpc_connected_subchannel_notify_on_state_change(
         exec_ctx, GET_CONNECTED_SUBCHANNEL(c, no_barrier), NULL,
         &sw->connectivity_state, &sw->closure);
@@ -664,7 +664,7 @@ static void subchannel_call_destroy(grpc_exec_ctx *exec_ctx, void *call,
   grpc_subchannel_call *c = call;
   GPR_TIMER_BEGIN("grpc_subchannel_call_unref.destroy", 0);
   grpc_connected_subchannel *connection = c->connection;
-  grpc_call_stack_destroy(exec_ctx, SUBCHANNEL_CALL_TO_CALL_STACK(c), c);
+  grpc_call_stack_destroy(exec_ctx, SUBCHANNEL_CALL_TO_CALL_STACK(c), NULL, c);
   GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, connection, "subchannel_call");
   GPR_TIMER_END("grpc_subchannel_call_unref.destroy", 0);
 }

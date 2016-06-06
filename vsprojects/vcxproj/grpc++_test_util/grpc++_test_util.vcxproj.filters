@@ -16,9 +16,6 @@
     <ClCompile Include="$(SolutionDir)\..\test\cpp\util\byte_buffer_proto_helper.cc">
       <Filter>test\cpp\util</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\cli_call.cc">
-      <Filter>test\cpp\util</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\util\create_test_channel.cc">
       <Filter>test\cpp\util</Filter>
     </ClCompile>
@@ -37,9 +34,6 @@
       <Filter>test\cpp\end2end</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\byte_buffer_proto_helper.h">
-      <Filter>test\cpp\util</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\cli_call.h">
       <Filter>test\cpp\util</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\create_test_channel.h">
