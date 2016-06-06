@@ -106,6 +106,7 @@ void grpc_channel_stack_init(grpc_exec_ctx *exec_ctx, int initial_refs,
                              const grpc_channel_filter **filters,
                              size_t filter_count,
                              const grpc_channel_args *channel_args,
+                             grpc_transport *optional_transport,
                              const char *name, grpc_channel_stack *stack) {
   size_t call_size =
       ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call_stack)) +
@@ -127,6 +128,7 @@ void grpc_channel_stack_init(grpc_exec_ctx *exec_ctx, int initial_refs,
   for (i = 0; i < filter_count; i++) {
     args.channel_stack = stack;
     args.channel_args = channel_args;
+    args.optional_transport = optional_transport;
     args.is_first = i == 0;
     args.is_last = i == (filter_count - 1);
     elems[i].filter = filters[i];
