@@ -192,7 +192,8 @@ int main(int argc, char **argv) {
 
   grpc_httpcli_context_destroy(&g_context);
   grpc_closure_init(&destroyed, destroy_pops, &g_pops);
-  grpc_pollset_shutdown(&exec_ctx, grpc_polling_entity_pollset(&g_pops), &destroyed);
+  grpc_pollset_shutdown(&exec_ctx, grpc_polling_entity_pollset(&g_pops),
+                        &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();
 

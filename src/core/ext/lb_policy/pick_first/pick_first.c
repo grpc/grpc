@@ -119,7 +119,7 @@ static void pf_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
     pending_pick *next = pp->next;
     *pp->target = NULL;
     grpc_polling_entity_del_from_pollset_set(exec_ctx, pp->pollent,
-                                 p->base.interested_parties);
+                                             p->base.interested_parties);
     grpc_exec_ctx_enqueue(exec_ctx, pp->on_complete, true, NULL);
     gpr_free(pp);
     pp = next;
@@ -137,7 +137,7 @@ static void pf_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     pending_pick *next = pp->next;
     if (pp->target == target) {
       grpc_polling_entity_del_from_pollset_set(exec_ctx, pp->pollent,
-                                   p->base.interested_parties);
+                                               p->base.interested_parties);
       *target = NULL;
       grpc_exec_ctx_enqueue(exec_ctx, pp->on_complete, false, NULL);
       gpr_free(pp);
@@ -163,7 +163,7 @@ static void pf_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     if ((pp->initial_metadata_flags & initial_metadata_flags_mask) ==
         initial_metadata_flags_eq) {
       grpc_polling_entity_del_from_pollset_set(exec_ctx, pp->pollent,
-                                   p->base.interested_parties);
+                                               p->base.interested_parties);
       grpc_exec_ctx_enqueue(exec_ctx, pp->on_complete, false, NULL);
       gpr_free(pp);
     } else {
@@ -222,7 +222,8 @@ static int pf_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     if (!p->started_picking) {
       start_picking(exec_ctx, p);
     }
-    grpc_polling_entity_add_to_pollset_set(exec_ctx, pollent, p->base.interested_parties);
+    grpc_polling_entity_add_to_pollset_set(exec_ctx, pollent,
+                                           p->base.interested_parties);
     pp = gpr_malloc(sizeof(*pp));
     pp->next = p->pending_picks;
     pp->pollent = pollent;
@@ -306,7 +307,7 @@ static void pf_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
           p->pending_picks = pp->next;
           *pp->target = selected;
           grpc_polling_entity_del_from_pollset_set(exec_ctx, pp->pollent,
-                                       p->base.interested_parties);
+                                                   p->base.interested_parties);
           grpc_exec_ctx_enqueue(exec_ctx, pp->on_complete, true, NULL);
           gpr_free(pp);
         }
