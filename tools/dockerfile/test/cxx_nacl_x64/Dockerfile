@@ -97,7 +97,7 @@ RUN cd /chromium/src && ./native_client_sdk/src/build_tools/build_sdk.py
 RUN cd /chromium && mkdir webports && cd webports
 RUN gclient config --unmanaged --name=src \
   https://chromium.googlesource.com/webports.git
-gclient sync --with_branch_heads
+RUN gclient sync --with_branch_heads
 
 
 ENV POST_GIT_STEP tools/dockerfile/test/cxx_nacl_x64/post-git-setup.sh
