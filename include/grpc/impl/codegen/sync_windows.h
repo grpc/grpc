@@ -31,49 +31,19 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#ifndef GRPC_IMPL_CODEGEN_SYNC_WINDOWS_H
+#define GRPC_IMPL_CODEGEN_SYNC_WINDOWS_H
 
-#ifdef GPR_WIN32_ENV
+#include <grpc/impl/codegen/sync_generic.h>
 
-#include <windows.h>
+typedef struct {
+  CRITICAL_SECTION cs; /* Not an SRWLock until Vista is unsupported */
+  int locked;
+} gpr_mu;
 
-#include "src/core/lib/support/env.h"
-#include "src/core/lib/support/string.h"
-#include "src/core/lib/support/string_win32.h"
+typedef CONDITION_VARIABLE gpr_cv;
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
+typedef INIT_ONCE gpr_once;
+#define GPR_ONCE_INIT INIT_ONCE_STATIC_INIT
 
-char *gpr_getenv(const char *name) {
-  char *result = NULL;
-  DWORD size;
-  LPTSTR tresult = NULL;
-  LPTSTR tname = gpr_char_to_tchar(name);
-  DWORD ret;
-
-  ret = GetEnvironmentVariable(tname, NULL, 0);
-  if (ret == 0) return NULL;
-  size = ret * (DWORD)sizeof(TCHAR);
-  tresult = gpr_malloc(size);
-  ret = GetEnvironmentVariable(tname, tresult, size);
-  gpr_free(tname);
-  if (ret == 0) {
-    gpr_free(tresult);
-    return NULL;
-  }
-  result = gpr_tchar_to_char(tresult);
-  gpr_free(tresult);
-  return result;
-}
-
-void gpr_setenv(const char *name, const char *value) {
-  LPTSTR tname = gpr_char_to_tchar(name);
-  LPTSTR tvalue = gpr_char_to_tchar(value);
-  BOOL res = SetEnvironmentVariable(tname, tvalue);
-  gpr_free(tname);
-  gpr_free(tvalue);
-  GPR_ASSERT(res);
-}
-
-#endif /* GPR_WIN32_ENV */
+#endif /* GRPC_IMPL_CODEGEN_SYNC_WINDOWS_H */

@@ -31,13 +31,9 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_SOCKADDR_WIN32_H
-#define GRPC_CORE_LIB_IOMGR_SOCKADDR_WIN32_H
+#ifndef GRPC_SUPPORT_SYNC_WINDOWS_H
+#define GRPC_SUPPORT_SYNC_WINDOWS_H
 
-#include <winsock2.h>
-#include <ws2tcpip.h>
+#include <grpc/impl/codegen/sync_windows.h>
 
-// must be included after the above
-#include <mswsock.h>
-
-#endif /* GRPC_CORE_LIB_IOMGR_SOCKADDR_WIN32_H */
+#endif /* GRPC_SUPPORT_SYNC_WINDOWS_H */
