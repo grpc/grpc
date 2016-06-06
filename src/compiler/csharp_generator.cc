@@ -52,7 +52,6 @@ using grpc::protobuf::MethodDescriptor;
 using grpc::protobuf::io::Printer;
 using grpc::protobuf::io::StringOutputStream;
 using grpc_generator::MethodType;
-using grpc_generator::GetCppComments;
 using grpc_generator::GetMethodType;
 using grpc_generator::METHODTYPE_NO_STREAMING;
 using grpc_generator::METHODTYPE_CLIENT_STREAMING;
@@ -659,7 +658,7 @@ grpc::string GetServices(const FileDescriptor *file, bool generate_client,
     out.Print("// source: $filename$\n", "filename", file->name());
 
     // use C++ style as there are no file-level XML comments in .NET
-    grpc::string leading_comments = GetCppComments(file, true);
+    grpc::string leading_comments = GetCsharpComments(file, true);
     if (!leading_comments.empty()) {
       out.Print("// Original file comments:\n");
       out.Print(leading_comments.c_str());

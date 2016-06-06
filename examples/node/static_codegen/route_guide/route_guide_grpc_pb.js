@@ -1,5 +1,35 @@
 // GENERATED CODE -- DO NOT EDIT!
 
+// Original file comments:
+// Copyright 2015, Google Inc.
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 'use strict';
 var grpc = require('grpc');
 var route_guide_pb = require('./route_guide_pb.js');
@@ -60,7 +90,14 @@ function deserialize_RouteSummary(buffer_arg) {
 }
 
 
+// Interface exported by the server.
 var RouteGuideService = exports.RouteGuideService = {
+  // A simple RPC.
+  //
+  // Obtains the feature at a given position.
+  //
+  // A feature with an empty name is returned if there's no feature at the given
+  // position.
   getFeature: {
     path: '/routeguide.RouteGuide/GetFeature',
     requestStream: false,
@@ -72,6 +109,12 @@ var RouteGuideService = exports.RouteGuideService = {
     responseSerialize: serialize_Feature,
     responseDeserialize: deserialize_Feature,
   },
+  // A server-to-client streaming RPC.
+  //
+  // Obtains the Features available within the given Rectangle.  Results are
+  // streamed rather than returned at once (e.g. in a response message with a
+  // repeated field), as the rectangle may cover a large area and contain a
+  // huge number of features.
   listFeatures: {
     path: '/routeguide.RouteGuide/ListFeatures',
     requestStream: false,
@@ -83,6 +126,10 @@ var RouteGuideService = exports.RouteGuideService = {
     responseSerialize: serialize_Feature,
     responseDeserialize: deserialize_Feature,
   },
+  // A client-to-server streaming RPC.
+  //
+  // Accepts a stream of Points on a route being traversed, returning a
+  // RouteSummary when traversal is completed.
   recordRoute: {
     path: '/routeguide.RouteGuide/RecordRoute',
     requestStream: true,
@@ -94,6 +141,10 @@ var RouteGuideService = exports.RouteGuideService = {
     responseSerialize: serialize_RouteSummary,
     responseDeserialize: deserialize_RouteSummary,
   },
+  // A Bidirectional streaming RPC.
+  //
+  // Accepts a stream of RouteNotes sent while a route is being traversed,
+  // while receiving other RouteNotes (e.g. from other users).
   routeChat: {
     path: '/routeguide.RouteGuide/RouteChat',
     requestStream: true,

@@ -33,8 +33,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WIN32
+#ifdef GPR_WINDOWS
 
 #include "src/core/lib/iomgr/workqueue.h"
 
-#endif /* GPR_WIN32 */
+#endif /* GPR_WINDOWS */

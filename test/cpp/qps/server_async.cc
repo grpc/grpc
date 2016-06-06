@@ -37,7 +37,6 @@
 #include <mutex>
 #include <thread>
 
-#include <gflags/gflags.h>
 #include <grpc++/generic/async_generic_service.h>
 #include <grpc++/security/server_credentials.h>
 #include <grpc++/server.h>
@@ -48,7 +47,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
-#include <gtest/gtest.h>
 
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 #include "test/core/util/test_config.h"

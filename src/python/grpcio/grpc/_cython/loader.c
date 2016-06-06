@@ -37,7 +37,7 @@
 extern "C" {
 #endif  /* __cpluslus  */
 
-#if GPR_WIN32
+#if GPR_WINDOWS
 
 int pygrpc_load_core(char *path) {
   HMODULE grpc_c;
@@ -60,7 +60,7 @@ int pygrpc_load_core(char *path) {
 
 int pygrpc_load_core(char *path) { return 1; }
 
-#endif  /* !GPR_WIN32 */
+#endif  /* !GPR_WINDOWS */
 
 #ifdef __cplusplus
 }

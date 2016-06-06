@@ -41,14 +41,14 @@ filegroups:
   - include/grpc/support/atm.h
   - include/grpc/support/atm_gcc_atomic.h
   - include/grpc/support/atm_gcc_sync.h
-  - include/grpc/support/atm_win32.h
+  - include/grpc/support/atm_windows.h
   - include/grpc/support/avl.h
   - include/grpc/support/cmdline.h
   - include/grpc/support/cpu.h
   - include/grpc/support/histogram.h
   - include/grpc/support/host_port.h
   - include/grpc/support/log.h
-  - include/grpc/support/log_win32.h
+  - include/grpc/support/log_windows.h
   - include/grpc/support/port_platform.h
   - include/grpc/support/slice.h
   - include/grpc/support/slice_buffer.h
@@ -57,7 +57,7 @@ filegroups:
   - include/grpc/support/sync.h
   - include/grpc/support/sync_generic.h
   - include/grpc/support/sync_posix.h
-  - include/grpc/support/sync_win32.h
+  - include/grpc/support/sync_windows.h
   - include/grpc/support/thd.h
   - include/grpc/support/time.h
   - include/grpc/support/tls.h
@@ -74,7 +74,7 @@ filegroups:
   - src/core/lib/support/murmur_hash.h
   - src/core/lib/support/stack_lockfree.h
   - src/core/lib/support/string.h
-  - src/core/lib/support/string_win32.h
+  - src/core/lib/support/string_windows.h
   - src/core/lib/support/thd_internal.h
   - src/core/lib/support/time_precise.h
   - src/core/lib/support/tmpfile.h
@@ -91,7 +91,7 @@ filegroups:
   - src/core/lib/support/cpu_windows.c
   - src/core/lib/support/env_linux.c
   - src/core/lib/support/env_posix.c
-  - src/core/lib/support/env_win32.c
+  - src/core/lib/support/env_windows.c
   - src/core/lib/support/histogram.c
   - src/core/lib/support/host_port.c
   - src/core/lib/support/load_file.c
@@ -99,31 +99,31 @@ filegroups:
   - src/core/lib/support/log_android.c
   - src/core/lib/support/log_linux.c
   - src/core/lib/support/log_posix.c
-  - src/core/lib/support/log_win32.c
+  - src/core/lib/support/log_windows.c
   - src/core/lib/support/murmur_hash.c
   - src/core/lib/support/slice.c
   - src/core/lib/support/slice_buffer.c
   - src/core/lib/support/stack_lockfree.c
   - src/core/lib/support/string.c
   - src/core/lib/support/string_posix.c
-  - src/core/lib/support/string_util_win32.c
-  - src/core/lib/support/string_win32.c
+  - src/core/lib/support/string_util_windows.c
+  - src/core/lib/support/string_windows.c
   - src/core/lib/support/subprocess_posix.c
   - src/core/lib/support/subprocess_windows.c
   - src/core/lib/support/sync.c
   - src/core/lib/support/sync_posix.c
-  - src/core/lib/support/sync_win32.c
+  - src/core/lib/support/sync_windows.c
   - src/core/lib/support/thd.c
   - src/core/lib/support/thd_posix.c
-  - src/core/lib/support/thd_win32.c
+  - src/core/lib/support/thd_windows.c
   - src/core/lib/support/time.c
   - src/core/lib/support/time_posix.c
   - src/core/lib/support/time_precise.c
-  - src/core/lib/support/time_win32.c
+  - src/core/lib/support/time_windows.c
   - src/core/lib/support/tls_pthread.c
   - src/core/lib/support/tmpfile_msys.c
   - src/core/lib/support/tmpfile_posix.c
-  - src/core/lib/support/tmpfile_win32.c
+  - src/core/lib/support/tmpfile_windows.c
   - src/core/lib/support/wrap_memcpy.c
   uses:
   - gpr_codegen
@@ -133,7 +133,7 @@ filegroups:
   - include/grpc/impl/codegen/atm.h
   - include/grpc/impl/codegen/atm_gcc_atomic.h
   - include/grpc/impl/codegen/atm_gcc_sync.h
-  - include/grpc/impl/codegen/atm_win32.h
+  - include/grpc/impl/codegen/atm_windows.h
   - include/grpc/impl/codegen/log.h
   - include/grpc/impl/codegen/port_platform.h
   - include/grpc/impl/codegen/slice.h
@@ -141,7 +141,7 @@ filegroups:
   - include/grpc/impl/codegen/sync.h
   - include/grpc/impl/codegen/sync_generic.h
   - include/grpc/impl/codegen/sync_posix.h
-  - include/grpc/impl/codegen/sync_win32.h
+  - include/grpc/impl/codegen/sync_windows.h
   - include/grpc/impl/codegen/time.h
 - name: grpc_base
   public_headers:
@@ -185,7 +185,7 @@ filegroups:
   - src/core/lib/iomgr/sockaddr.h
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_utils.h
-  - src/core/lib/iomgr/sockaddr_win32.h
+  - src/core/lib/iomgr/sockaddr_windows.h
   - src/core/lib/iomgr/socket_utils_posix.h
   - src/core/lib/iomgr/socket_windows.h
   - src/core/lib/iomgr/tcp_client.h
@@ -389,6 +389,16 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_config
+- name: grpc_load_reporting
+  headers:
+  - src/core/ext/load_reporting/load_reporting.h
+  - src/core/ext/load_reporting/load_reporting_filter.h
+  src:
+  - src/core/ext/load_reporting/load_reporting.c
+  - src/core/ext/load_reporting/load_reporting_filter.c
+  plugin: grpc_load_reporting_plugin
+  uses:
+  - grpc_base
 - name: grpc_resolver_dns_native
   src:
   - src/core/ext/resolver/dns/native/dns_resolver.c
@@ -435,7 +445,7 @@ filegroups:
   - src/core/lib/security/credentials/credentials_metadata.c
   - src/core/lib/security/credentials/fake/fake_credentials.c
   - src/core/lib/security/credentials/google_default/credentials_posix.c
-  - src/core/lib/security/credentials/google_default/credentials_win32.c
+  - src/core/lib/security/credentials/google_default/credentials_windows.c
   - src/core/lib/security/credentials/google_default/google_default_credentials.c
   - src/core/lib/security/credentials/iam/iam_credentials.c
   - src/core/lib/security/credentials/jwt/json_token.c
@@ -775,6 +785,7 @@ libs:
   - grpc_lb_policy_round_robin
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
+  - grpc_load_reporting
   - grpc_secure
   - census
   generate_plugin_registry: true
@@ -849,6 +860,7 @@ libs:
   - grpc_transport_chttp2_client_insecure
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
+  - grpc_load_reporting
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
@@ -933,7 +945,6 @@ libs:
   headers:
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/util/byte_buffer_proto_helper.h
-  - test/cpp/util/cli_call.h
   - test/cpp/util/create_test_channel.h
   - test/cpp/util/string_ref_helper.h
   - test/cpp/util/subprocess.h
@@ -944,7 +955,6 @@ libs:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/util/byte_buffer_proto_helper.cc
-  - test/cpp/util/cli_call.cc
   - test/cpp/util/create_test_channel.cc
   - test/cpp/util/string_ref_helper.cc
   - test/cpp/util/subprocess.cc
@@ -967,6 +977,18 @@ libs:
   - grpc++_codegen
   secure: false
   vs_project_guid: '{6EE56155-DF7C-4F6E-BFC4-F6F776BEB211}'
+- name: grpc_cli_libs
+  build: private
+  language: c++
+  headers:
+  - test/cpp/util/cli_call.h
+  - test/cpp/util/proto_file_parser.h
+  src:
+  - test/cpp/util/cli_call.cc
+  - test/cpp/util/proto_file_parser.cc
+  deps:
+  - grpc++
+  - grpc_plugin_support
 - name: grpc_plugin_support
   build: protoc
   language: c++
@@ -1071,7 +1093,6 @@ libs:
   - test/cpp/qps/histogram.h
   - test/cpp/qps/interarrival.h
   - test/cpp/qps/limit_cores.h
-  - test/cpp/qps/perf_db_client.h
   - test/cpp/qps/qps_worker.h
   - test/cpp/qps/report.h
   - test/cpp/qps/server.h
@@ -1084,12 +1105,10 @@ libs:
   - src/proto/grpc/testing/stats.proto
   - src/proto/grpc/testing/control.proto
   - src/proto/grpc/testing/services.proto
-  - src/proto/grpc/testing/perf_db.proto
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_sync.cc
   - test/cpp/qps/driver.cc
   - test/cpp/qps/limit_cores.cc
-  - test/cpp/qps/perf_db_client.cc
   - test/cpp/qps/qps_worker.cc
   - test/cpp/qps/report.cc
   - test/cpp/qps/server_async.cc
@@ -2389,6 +2408,7 @@ targets:
   src:
   - test/cpp/util/cli_call_test.cc
   deps:
+  - grpc_cli_libs
   - grpc++_test_util
   - grpc_test_util
   - grpc++
@@ -2434,7 +2454,6 @@ targets:
   - src/proto/grpc/testing/control.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/payloads.proto
-  - src/proto/grpc/testing/perf_db.proto
   - src/proto/grpc/testing/services.proto
   - src/proto/grpc/testing/stats.proto
   - test/cpp/codegen/codegen_test_full.cc
@@ -2452,7 +2471,6 @@ targets:
   - src/proto/grpc/testing/control.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/payloads.proto
-  - src/proto/grpc/testing/perf_db.proto
   - src/proto/grpc/testing/services.proto
   - src/proto/grpc/testing/stats.proto
   - test/cpp/codegen/codegen_test_minimal.cc
@@ -2557,6 +2575,7 @@ targets:
   src:
   - test/cpp/util/grpc_cli.cc
   deps:
+  - grpc_cli_libs
   - grpc++_test_util
   - grpc_test_util
   - grpc++

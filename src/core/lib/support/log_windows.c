@@ -33,19 +33,19 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WIN32_LOG
+#ifdef GPR_WINDOWS_LOG
 
 #include <stdarg.h>
 #include <stdio.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/log_win32.h>
+#include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/support/string.h"
-#include "src/core/lib/support/string_win32.h"
+#include "src/core/lib/support/string_windows.h"
 
 void gpr_log(const char *file, int line, gpr_log_severity severity,
              const char *format, ...) {
@@ -109,4 +109,4 @@ void gpr_default_log(gpr_log_func_args *args) {
   fflush(stderr);
 }
 
-#endif /* GPR_WIN32_LOG */
+#endif /* GPR_WINDOWS_LOG */
