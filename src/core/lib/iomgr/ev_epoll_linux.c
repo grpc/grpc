@@ -986,42 +986,39 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
   gpr_mu_unlock(&pollset->pi_mu);
   gpr_mu_unlock(&pollset->mu);
 
-  /* If epoll_fd == -1, this is a blank pollset and does not have any fds yet */
-  if (epoll_fd != -1) {
-    do {
-      ep_rv = epoll_pwait(epoll_fd, ep_ev, GRPC_EPOLL_MAX_EVENTS, timeout_ms,
-                          sig_mask);
-      if (ep_rv < 0) {
-        if (errno != EINTR) {
-          /* TODO (sreek) - Do not log an error in case of bad file descriptor
-           * (A bad file descriptor here would just mean that the epoll set was
-           * merged with another epoll set and that the current epoll_fd is
-           * closed) */
-          gpr_log(GPR_ERROR, "epoll_pwait() failed: %s", strerror(errno));
-        } else {
-          ep_rv = epoll_wait(epoll_fd, ep_ev, GRPC_EPOLL_MAX_EVENTS, 0);
-        }
+  do {
+    ep_rv = epoll_pwait(epoll_fd, ep_ev, GRPC_EPOLL_MAX_EVENTS, timeout_ms,
+                        sig_mask);
+    if (ep_rv < 0) {
+      if (errno != EINTR) {
+        /* TODO (sreek) - Do not log an error in case of bad file descriptor
+         * (A bad file descriptor here would just mean that the epoll set was
+         * merged with another epoll set and that the current epoll_fd is
+         * closed) */
+        gpr_log(GPR_ERROR, "epoll_pwait() failed: %s", strerror(errno));
+      } else {
+        ep_rv = epoll_wait(epoll_fd, ep_ev, GRPC_EPOLL_MAX_EVENTS, 0);
       }
+    }
 
-      int i;
-      for (i = 0; i < ep_rv; ++i) {
-        grpc_fd *fd = ep_ev[i].data.ptr;
-        int cancel = ep_ev[i].events & (EPOLLERR | EPOLLHUP);
-        int read_ev = ep_ev[i].events & (EPOLLIN | EPOLLPRI);
-        int write_ev = ep_ev[i].events & EPOLLOUT;
-        if (fd == NULL) {
-          grpc_wakeup_fd_consume_wakeup(&grpc_global_wakeup_fd);
-        } else {
-          if (read_ev || cancel) {
-            fd_become_readable(exec_ctx, fd);
-          }
-          if (write_ev || cancel) {
-            fd_become_writable(exec_ctx, fd);
-          }
+    int i;
+    for (i = 0; i < ep_rv; ++i) {
+      grpc_fd *fd = ep_ev[i].data.ptr;
+      int cancel = ep_ev[i].events & (EPOLLERR | EPOLLHUP);
+      int read_ev = ep_ev[i].events & (EPOLLIN | EPOLLPRI);
+      int write_ev = ep_ev[i].events & EPOLLOUT;
+      if (fd == NULL) {
+        grpc_wakeup_fd_consume_wakeup(&grpc_global_wakeup_fd);
+      } else {
+        if (read_ev || cancel) {
+          fd_become_readable(exec_ctx, fd);
+        }
+        if (write_ev || cancel) {
+          fd_become_writable(exec_ctx, fd);
         }
       }
-    } while (ep_rv == GRPC_EPOLL_MAX_EVENTS);
-  }
+    }
+  } while (ep_rv == GRPC_EPOLL_MAX_EVENTS);
   GPR_TIMER_END("pollset_work_and_unlock", 0);
 }
 
