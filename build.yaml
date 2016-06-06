@@ -166,7 +166,6 @@ filegroups:
   - src/core/lib/iomgr/endpoint.h
   - src/core/lib/iomgr/endpoint_pair.h
   - src/core/lib/iomgr/ev_epoll_linux.h
-  - src/core/lib/iomgr/ev_epoll_posix.h
   - src/core/lib/iomgr/ev_poll_posix.h
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/exec_ctx.h
@@ -242,7 +241,6 @@ filegroups:
   - src/core/lib/iomgr/endpoint_pair_posix.c
   - src/core/lib/iomgr/endpoint_pair_windows.c
   - src/core/lib/iomgr/ev_epoll_linux.c
-  - src/core/lib/iomgr/ev_epoll_posix.c
   - src/core/lib/iomgr/ev_poll_posix.c
   - src/core/lib/iomgr/ev_posix.c
   - src/core/lib/iomgr/exec_ctx.c
@@ -1321,18 +1319,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: epoll_test
-  build: test
-  language: c
-  src:
-  - test/core/network_benchmarks/epoll_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - linux
 - name: fd_conservation_posix_test
   build: test
   language: c

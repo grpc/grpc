@@ -35,7 +35,7 @@
 
 #ifdef GPR_POSIX_SOCKET
 
-#include "src/core/lib/iomgr/ev_epoll_posix.h"
+#include "src/core/lib/iomgr/ev_epoll_linux.h"
 
 #include <assert.h>
 #include <errno.h>

@@ -44,7 +44,6 @@
 #include <poll.h>
 #include <stdio.h>
 #include <string.h>
-#include <signal.h>
 #ifdef __linux__
 #include <sys/epoll.h>
 #endif
@@ -85,7 +84,6 @@ typedef struct thread_args {
 static int read_bytes(int fd, char *buf, size_t read_size, int spin) {
   size_t bytes_read = 0;
   ssize_t err;
-
   do {
     err = read(fd, buf + bytes_read, read_size - bytes_read);
     if (err < 0) {
