@@ -88,6 +88,7 @@ namespace Grpc.Core
                     this.handle = ChannelSafeHandle.CreateInsecure(target, nativeChannelArgs);
                 }
             }
+            GrpcEnvironment.RegisterChannel(this);
         }
 
         /// <summary>
@@ -209,6 +210,7 @@ namespace Grpc.Core
                 GrpcPreconditions.CheckState(!shutdownRequested);
                 shutdownRequested = true;
             }
+            GrpcEnvironment.UnregisterChannel(this);
 
             shutdownTokenSource.Cancel();
 
@@ -220,7 +222,7 @@ namespace Grpc.Core
 
             handle.Dispose();
 
-            await Task.Run(() => GrpcEnvironment.Release()).ConfigureAwait(false);
+            await GrpcEnvironment.ReleaseAsync().ConfigureAwait(false);
         }
 
         internal ChannelSafeHandle Handle

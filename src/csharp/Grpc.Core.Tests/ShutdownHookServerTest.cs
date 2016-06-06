@@ -32,63 +32,27 @@
 #endregion
 
 using System;
+using System.Diagnostics;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Grpc.Core;
+using Grpc.Core.Internal;
+using Grpc.Core.Utils;
 using NUnit.Framework;
 
 namespace Grpc.Core.Tests
 {
-    public class GrpcEnvironmentTest
+    public class ShutdownHookServerTest
     {
-        [Test]
-        public void InitializeAndShutdownGrpcEnvironment()
-        {
-            var env = GrpcEnvironment.AddRef();
-            Assert.IsTrue(env.CompletionQueues.Count > 0);
-            for (int i = 0; i < env.CompletionQueues.Count; i++)
-            {
-                Assert.IsNotNull(env.CompletionQueues.ElementAt(i));
-            }
-            GrpcEnvironment.ReleaseAsync().Wait();
-        }
+        const string Host = "127.0.0.1";
 
         [Test]
-        public void SubsequentInvocations()
+        public void ProcessExitHookCanCleanupAbandonedServers()
         {
-            var env1 = GrpcEnvironment.AddRef();
-            var env2 = GrpcEnvironment.AddRef();
-            Assert.AreSame(env1, env2);
-            GrpcEnvironment.ReleaseAsync().Wait();
-            GrpcEnvironment.ReleaseAsync().Wait();
-        }
-
-        [Test]
-        public void InitializeAfterShutdown()
-        {
-            Assert.AreEqual(0, GrpcEnvironment.GetRefCount());
-
-            var env1 = GrpcEnvironment.AddRef();
-            GrpcEnvironment.ReleaseAsync().Wait();
-
-            var env2 = GrpcEnvironment.AddRef();
-            GrpcEnvironment.ReleaseAsync().Wait();
-
-            Assert.AreNotSame(env1, env2);
-        }
-
-        [Test]
-        public void ReleaseWithoutAddRef()
-        {
-            Assert.AreEqual(0, GrpcEnvironment.GetRefCount());
-            Assert.ThrowsAsync(typeof(InvalidOperationException), async () => await GrpcEnvironment.ReleaseAsync());
-        }
-
-        [Test]
-        public void GetCoreVersionString()
-        {
-            var coreVersion = GrpcEnvironment.GetCoreVersionString();
-            var parts = coreVersion.Split('.');
-            Assert.AreEqual(3, parts.Length);
+            var helper = new MockServiceHelper(Host);
+            var server = helper.GetServer();
+            server.Start();
         }
     }
 }
