@@ -38,9 +38,13 @@
 extern "C" {
 #endif  /* __cpluslus  */
 
-/* TODO(atash) remove cruft */
-
 int pygrpc_load_core(char *path) { return 1; }
+
+// Cython doesn't have Py_AtExit bindings, so we call the C_API directly
+int pygrpc_initialize_core(void) {
+  grpc_init();
+  return Py_AtExit(grpc_shutdown) < 0 ? 0 : 1;
+}
 
 #ifdef __cplusplus
 }
