@@ -67,11 +67,19 @@ namespace Grpc.Core
         bool startRequested;
         volatile bool shutdownRequested;
 
+
         /// <summary>
-        /// Create a new server.
+        /// Creates a new server.
+        /// </summary>
+        public Server() : this(null)
+        {
+        }
+
+        /// <summary>
+        /// Creates a new server.
         /// </summary>
         /// <param name="options">Channel options.</param>
-        public Server(IEnumerable<ChannelOption> options = null)
+        public Server(IEnumerable<ChannelOption> options)
         {
             this.serviceDefinitions = new ServiceDefinitionCollection(this);
             this.ports = new ServerPortCollection(this);
