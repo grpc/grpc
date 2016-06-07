@@ -32,7 +32,11 @@
 #endregion
 
 using System;
+using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Internal;
 using Grpc.Core.Utils;
@@ -40,58 +44,47 @@ using NUnit.Framework;
 
 namespace Grpc.Core.Tests
 {
-    public class ServerTest
+    public class AppDomainUnloadTest
     {
         [Test]
-        public void StartAndShutdownServer()
+        public void AppDomainUnloadHookCanCleanupAbandonedCall()
         {
-            Server server = new Server
+            var setup = new AppDomainSetup
             {
-                Ports = { new ServerPort("localhost", ServerPort.PickUnused, ServerCredentials.Insecure) }
+                ApplicationBase = AppDomain.CurrentDomain.BaseDirectory
             };
-            server.Start();
-            server.ShutdownAsync().Wait();
+            var childDomain = AppDomain.CreateDomain("test", null, setup);
+            var remoteObj = childDomain.CreateInstance(typeof(AppDomainTestClass).Assembly.GetName().Name, typeof(AppDomainTestClass).FullName);
+
+            // Try to unload the appdomain once we've created a server and a channel inside the appdomain.
+            AppDomain.Unload(childDomain);
         }
 
-        [Test]
-        public void StartAndKillServer()
+        public class AppDomainTestClass
         {
-            Server server = new Server
+            const string Host = "127.0.0.1";
+
+            /// <summary>
+            /// Creates a server and a channel and initiates a call. The code is invoked from inside of an AppDomain
+            /// to test if AppDomain.Unload() work if Grpc is being used.
+            /// </summary>
+            public AppDomainTestClass()
             {
-                Ports = { new ServerPort("localhost", ServerPort.PickUnused, ServerCredentials.Insecure) }
-            };
-            server.Start();
-            server.KillAsync().Wait();
-        }
+                var helper = new MockServiceHelper(Host);
+                var server = helper.GetServer();
+                server.Start();
+                var channel = helper.GetChannel();
 
-        [Test]
-        public void PickUnusedPort()
-        {
-            Server server = new Server
-            {
-                Ports = { new ServerPort("localhost", ServerPort.PickUnused, ServerCredentials.Insecure) }
-            };
+                var readyToShutdown = new TaskCompletionSource<object>();
+                helper.DuplexStreamingHandler = new DuplexStreamingServerMethod<string, string>(async (requestStream, responseStream, context) =>
+                {
+                    readyToShutdown.SetResult(null);
+                    await requestStream.ToListAsync();
+                });
 
-            var boundPort = server.Ports.Single();
-            Assert.AreEqual(0, boundPort.Port);
-            Assert.Greater(boundPort.BoundPort, 0);
-
-            server.Start();
-            server.ShutdownAsync().Wait();
-        }
-
-        [Test]
-        public void CannotModifyAfterStarted()
-        {
-            Server server = new Server
-            {
-                Ports = { new ServerPort("localhost", ServerPort.PickUnused, ServerCredentials.Insecure) }
-            };
-            server.Start();
-            Assert.Throws(typeof(InvalidOperationException), () => server.Ports.Add("localhost", 9999, ServerCredentials.Insecure));
-            Assert.Throws(typeof(InvalidOperationException), () => server.Services.Add(ServerServiceDefinition.CreateBuilder().Build()));
-
-            server.ShutdownAsync().Wait();
+                var call = Calls.AsyncDuplexStreamingCall(helper.CreateDuplexStreamingCall());
+                readyToShutdown.Task.Wait();  // make sure handler is running
+            }
         }
     }
 }
