@@ -136,6 +136,10 @@ NSString * const kGRPCTrailersKey = @"io.grpc.TrailersKey";
 #pragma mark Finish
 
 - (void)finishWithError:(NSError *)errorOrNil {
+  @synchronized(self) {
+    _state = GRXWriterStateFinished;
+  }
+
   // If the call isn't retained anywhere else, it can be deallocated now.
   _retainSelf = nil;
 
@@ -342,6 +346,10 @@ NSString * const kGRPCTrailersKey = @"io.grpc.TrailersKey";
 #pragma mark GRXWriter implementation
 
 - (void)startWithWriteable:(id<GRXWriteable>)writeable {
+  @synchronized(self) {
+    _state = GRXWriterStateStarted;
+  }
+
   // Create a retain cycle so that this instance lives until the RPC finishes (or is cancelled).
   // This makes RPCs in which the call isn't externally retained possible (as long as it is started
   // before being autoreleased).
@@ -375,30 +383,32 @@ NSString * const kGRPCTrailersKey = @"io.grpc.TrailersKey";
 }
 
 - (void)setState:(GRXWriterState)newState {
-  // Manual transitions are only allowed from the started or paused states.
-  if (_state == GRXWriterStateNotStarted || _state == GRXWriterStateFinished) {
-    return;
-  }
+  @synchronized(self) {
+    // Manual transitions are only allowed from the started or paused states.
+    if (_state == GRXWriterStateNotStarted || _state == GRXWriterStateFinished) {
+      return;
+    }
 
-  switch (newState) {
-    case GRXWriterStateFinished:
-      _state = newState;
-      // Per GRXWriter's contract, setting the state to Finished manually
-      // means one doesn't wish the writeable to be messaged anymore.
-      [_responseWriteable cancelSilently];
-      _responseWriteable = nil;
-      return;
-    case GRXWriterStatePaused:
-      _state = newState;
-      return;
-    case GRXWriterStateStarted:
-      if (_state == GRXWriterStatePaused) {
+    switch (newState) {
+      case GRXWriterStateFinished:
         _state = newState;
-        [self startNextRead];
-      }
-      return;
-    case GRXWriterStateNotStarted:
-      return;
+        // Per GRXWriter's contract, setting the state to Finished manually
+        // means one doesn't wish the writeable to be messaged anymore.
+        [_responseWriteable cancelSilently];
+        _responseWriteable = nil;
+        return;
+      case GRXWriterStatePaused:
+        _state = newState;
+        return;
+      case GRXWriterStateStarted:
+        if (_state == GRXWriterStatePaused) {
+          _state = newState;
+          [self startNextRead];
+        }
+        return;
+      case GRXWriterStateNotStarted:
+        return;
+    }
   }
 }
 

@@ -53,6 +53,7 @@ void gpr_set_allocation_functions(gpr_allocation_functions functions) {
 
 void *gpr_malloc(size_t size) {
   void *p;
+  if (size == 0) return NULL;
   GPR_TIMER_BEGIN("gpr_malloc", 0);
   p = g_alloc_functions.malloc_fn(size);
   if (!p) {
@@ -69,6 +70,7 @@ void gpr_free(void *p) {
 }
 
 void *gpr_realloc(void *p, size_t size) {
+  if ((size == 0) && (p == NULL)) return NULL;
   GPR_TIMER_BEGIN("gpr_realloc", 0);
   p = g_alloc_functions.realloc_fn(p, size);
   if (!p) {

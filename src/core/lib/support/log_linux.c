@@ -41,7 +41,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_LINUX
+#ifdef GPR_LINUX_LOG
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -68,6 +68,7 @@ void gpr_log(const char *file, int line, gpr_log_severity severity,
   }
   va_end(args);
   gpr_log_message(file, line, severity, message);
+  /* message has been allocated by vasprintf above, and needs free */
   free(message);
 }
 
@@ -102,4 +103,4 @@ void gpr_default_log(gpr_log_func_args *args) {
   gpr_free(prefix);
 }
 
-#endif
+#endif /* GPR_LINUX_LOG */

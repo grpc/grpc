@@ -63,14 +63,8 @@ static void RunTest(RandomDistInterface &&r, int threads, std::string title) {
 }
 
 using grpc::testing::ExpDist;
-using grpc::testing::DetDist;
-using grpc::testing::UniformDist;
-using grpc::testing::ParetoDist;
 
 int main(int argc, char **argv) {
   RunTest(ExpDist(10.0), 5, std::string("Exponential(10)"));
-  RunTest(DetDist(5.0), 5, std::string("Det(5)"));
-  RunTest(UniformDist(0.0, 10.0), 5, std::string("Uniform(0,10)"));
-  RunTest(ParetoDist(1.0, 1.0), 5, std::string("Pareto(1,1)"));
   return 0;
 }

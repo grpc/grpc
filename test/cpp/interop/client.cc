@@ -81,6 +81,14 @@ DEFINE_string(default_service_account, "",
 DEFINE_string(service_account_key_file, "",
               "Path to service account json key file.");
 DEFINE_string(oauth_scope, "", "Scope for OAuth tokens.");
+DEFINE_bool(do_not_abort_on_transient_failures, false,
+            "If set to 'true', abort() is not called in case of transient "
+            "failures (i.e failures that are temporary and will likely go away "
+            "on retrying; like a temporary connection failure) and an error "
+            "message is printed instead. Note that this flag just controls "
+            "whether abort() is called or not. It does not control whether the "
+            "test is retried in case of transient failures (and currently the "
+            "interop tests are not retried even if this flag is set to true)");
 
 using grpc::testing::CreateChannelForTestCase;
 using grpc::testing::GetServiceAccountJsonKey;
@@ -89,8 +97,9 @@ int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
   gpr_log(GPR_INFO, "Testing these cases: %s", FLAGS_test_case.c_str());
   int ret = 0;
-  grpc::testing::InteropClient client(
-      CreateChannelForTestCase(FLAGS_test_case));
+  grpc::testing::InteropClient client(CreateChannelForTestCase(FLAGS_test_case),
+                                      true,
+                                      FLAGS_do_not_abort_on_transient_failures);
   if (FLAGS_test_case == "empty_unary") {
     client.DoEmpty();
   } else if (FLAGS_test_case == "large_unary") {

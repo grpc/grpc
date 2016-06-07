@@ -28,5 +28,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-gource --multi-sampling -c 4 -s 0.1 --max-file-lag 0.05 --max-files 0 -e 0.05 --hide filenames,dirnames $*
-
+gource                          \
+  --multi-sampling              \
+  -s 0.1                        \
+  --max-file-lag 0.05           \
+  --max-files 0                 \
+  -e 0.01                       \
+  --hide filenames,dirnames     \
+  --disable-auto-rotate         \
+  --file-filter '/grpc/doc/ref' \
+  $*

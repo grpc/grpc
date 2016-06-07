@@ -65,20 +65,62 @@ using std::vector;
 namespace grpc_csharp_generator {
 namespace {
 
+// This function is a massaged version of
+// https://github.com/google/protobuf/blob/master/src/google/protobuf/compiler/csharp/csharp_doc_comment.cc
+// Currently, we cannot easily reuse the functionality as
+// google/protobuf/compiler/csharp/csharp_doc_comment.h is not a public header.
+// TODO(jtattermusch): reuse the functionality from google/protobuf.
+void GenerateDocCommentBodyImpl(grpc::protobuf::io::Printer* printer, grpc::protobuf::SourceLocation location) {
+    grpc::string comments = location.leading_comments.empty() ?
+        location.trailing_comments : location.leading_comments;
+  if (comments.empty()) {
+    return;
+  }
+  // XML escaping... no need for apostrophes etc as the whole text is going to be a child
+  // node of a summary element, not part of an attribute.
+  comments = grpc_generator::StringReplace(comments, "&", "&amp;", true);
+  comments = grpc_generator::StringReplace(comments, "<", "&lt;", true);
+
+  std::vector<grpc::string> lines;
+  grpc_generator::Split(comments, '\n', &lines);
+  // TODO: We really should work out which part to put in the summary and which to put in the remarks...
+  // but that needs to be part of a bigger effort to understand the markdown better anyway.
+  printer->Print("/// <summary>\n");
+  bool last_was_empty = false;
+  // We squash multiple blank lines down to one, and remove any trailing blank lines. We need
+  // to preserve the blank lines themselves, as this is relevant in the markdown.
+  // Note that we can't remove leading or trailing whitespace as *that's* relevant in markdown too.
+  // (We don't skip "just whitespace" lines, either.)
+  for (std::vector<grpc::string>::iterator it = lines.begin(); it != lines.end(); ++it) {
+    grpc::string line = *it;
+    if (line.empty()) {
+      last_was_empty = true;
+    } else {
+      if (last_was_empty) {
+          printer->Print("///\n");
+      }
+      last_was_empty = false;
+      printer->Print("/// $line$\n", "line", *it);
+    }
+  }
+  printer->Print("/// </summary>\n");
+}
+
+template <typename DescriptorType>
+void GenerateDocCommentBody(
+  grpc::protobuf::io::Printer* printer, const DescriptorType* descriptor) {
+  grpc::protobuf::SourceLocation location;
+  if (descriptor->GetSourceLocation(&location)) {
+    GenerateDocCommentBodyImpl(printer, location);
+  }
+}
+
 std::string GetServiceClassName(const ServiceDescriptor* service) {
   return service->name();
 }
 
-std::string GetClientInterfaceName(const ServiceDescriptor* service) {
-  return "I" + service->name() + "Client";
-}
-
 std::string GetClientClassName(const ServiceDescriptor* service) {
   return service->name() + "Client";
-}
-
-std::string GetServerInterfaceName(const ServiceDescriptor* service) {
-  return "I" + service->name();
 }
 
 std::string GetServerClassName(const ServiceDescriptor* service) {
@@ -123,6 +165,10 @@ std::string GetMethodRequestParamMaybe(const MethodDescriptor *method,
   return GetClassName(method->input_type()) + " request, ";
 }
 
+std::string GetAccessLevel(bool internal_access) {
+  return internal_access ? "internal" : "public";
+}
+
 std::string GetMethodReturnTypeClient(const MethodDescriptor *method) {
   switch (GetMethodType(method)) {
     case METHODTYPE_NO_STREAMING:
@@ -159,10 +205,10 @@ std::string GetMethodReturnTypeServer(const MethodDescriptor *method) {
   switch (GetMethodType(method)) {
     case METHODTYPE_NO_STREAMING:
     case METHODTYPE_CLIENT_STREAMING:
-      return "Task<" + GetClassName(method->output_type()) + ">";
+      return "global::System.Threading.Tasks.Task<" + GetClassName(method->output_type()) + ">";
     case METHODTYPE_SERVER_STREAMING:
     case METHODTYPE_BIDI_STREAMING:
-      return "Task";
+      return "global::System.Threading.Tasks.Task";
   }
   GOOGLE_LOG(FATAL)<< "Can't get here.";
   return "";
@@ -238,7 +284,7 @@ void GenerateStaticMethodField(Printer* out, const MethodDescriptor *method) {
 void GenerateServiceDescriptorProperty(Printer* out, const ServiceDescriptor *service) {
   std::ostringstream index;
   index << service->index();
-  out->Print("// service descriptor\n");
+  out->Print("/// <summary>Service descriptor</summary>\n");
   out->Print("public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor\n");
   out->Print("{\n");
   out->Print("  get { return $umbrella$.Descriptor.Services[$index$]; }\n",
@@ -248,87 +294,16 @@ void GenerateServiceDescriptorProperty(Printer* out, const ServiceDescriptor *se
   out->Print("\n");
 }
 
-void GenerateClientInterface(Printer* out, const ServiceDescriptor *service) {
-  out->Print("// client interface\n");
-  out->Print("[System.Obsolete(\"Client side interfaced will be removed "
-             "in the next release. Use client class directly.\")]\n");
-  out->Print("public interface $name$\n", "name",
-             GetClientInterfaceName(service));
-  out->Print("{\n");
-  out->Indent();
-  for (int i = 0; i < service->method_count(); i++) {
-    const MethodDescriptor *method = service->method(i);
-    MethodType method_type = GetMethodType(method);
-
-    if (method_type == METHODTYPE_NO_STREAMING) {
-      // unary calls have an extra synchronous stub method
-      out->Print(
-          "$response$ $methodname$($request$ request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));\n",
-          "methodname", method->name(), "request",
-          GetClassName(method->input_type()), "response",
-          GetClassName(method->output_type()));
-
-      // overload taking CallOptions as a param
-      out->Print(
-          "$response$ $methodname$($request$ request, CallOptions options);\n",
-          "methodname", method->name(), "request",
-          GetClassName(method->input_type()), "response",
-          GetClassName(method->output_type()));
-    }
-
-    std::string method_name = method->name();
-    if (method_type == METHODTYPE_NO_STREAMING) {
-      method_name += "Async";  // prevent name clash with synchronous method.
-    }
-    out->Print(
-        "$returntype$ $methodname$($request_maybe$Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));\n",
-        "methodname", method_name, "request_maybe",
-        GetMethodRequestParamMaybe(method), "returntype",
-        GetMethodReturnTypeClient(method));
-
-    // overload taking CallOptions as a param
-    out->Print(
-        "$returntype$ $methodname$($request_maybe$CallOptions options);\n",
-        "methodname", method_name, "request_maybe",
-        GetMethodRequestParamMaybe(method), "returntype",
-        GetMethodReturnTypeClient(method));
-  }
-  out->Outdent();
-  out->Print("}\n");
-  out->Print("\n");
-}
-
-void GenerateServerInterface(Printer* out, const ServiceDescriptor *service) {
-  out->Print("// server-side interface\n");
-  out->Print("[System.Obsolete(\"Service implementations should inherit"
-      " from the generated abstract base class instead.\")]\n");
-  out->Print("public interface $name$\n", "name",
-             GetServerInterfaceName(service));
-  out->Print("{\n");
-  out->Indent();
-  for (int i = 0; i < service->method_count(); i++) {
-    const MethodDescriptor *method = service->method(i);
-    out->Print(
-        "$returntype$ $methodname$($request$$response_stream_maybe$, "
-        "ServerCallContext context);\n",
-        "methodname", method->name(), "returntype",
-        GetMethodReturnTypeServer(method), "request",
-        GetMethodRequestParamServer(method), "response_stream_maybe",
-        GetMethodResponseStreamMaybe(method));
-  }
-  out->Outdent();
-  out->Print("}\n");
-  out->Print("\n");
-}
-
 void GenerateServerClass(Printer* out, const ServiceDescriptor *service) {
-  out->Print("// server-side abstract class\n");
+  out->Print("/// <summary>Base class for server-side implementations of $servicename$</summary>\n",
+             "servicename", GetServiceClassName(service));
   out->Print("public abstract class $name$\n", "name",
              GetServerClassName(service));
   out->Print("{\n");
   out->Indent();
   for (int i = 0; i < service->method_count(); i++) {
     const MethodDescriptor *method = service->method(i);
+    GenerateDocCommentBody(out, method);
     out->Print(
         "public virtual $returntype$ $methodname$($request$$response_stream_maybe$, "
         "ServerCallContext context)\n",
@@ -349,11 +324,11 @@ void GenerateServerClass(Printer* out, const ServiceDescriptor *service) {
 }
 
 void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
-  out->Print("// client stub\n");
+  out->Print("/// <summary>Client for $servicename$</summary>\n",
+             "servicename", GetServiceClassName(service));
   out->Print(
-      "public class $name$ : ClientBase<$name$>, $interface$\n",
-      "name", GetClientClassName(service),
-      "interface", GetClientInterfaceName(service));
+      "public class $name$ : ClientBase<$name$>\n",
+      "name", GetClientClassName(service));
   out->Print("{\n");
   out->Indent();
 
@@ -386,6 +361,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
 
     if (method_type == METHODTYPE_NO_STREAMING) {
       // unary calls have an extra synchronous stub method
+      GenerateDocCommentBody(out, method);
       out->Print("public virtual $response$ $methodname$($request$ request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))\n",
           "methodname", method->name(), "request",
           GetClassName(method->input_type()), "response",
@@ -398,6 +374,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
       out->Print("}\n");
 
       // overload taking CallOptions as a param
+      GenerateDocCommentBody(out, method);
       out->Print("public virtual $response$ $methodname$($request$ request, CallOptions options)\n",
           "methodname", method->name(), "request",
           GetClassName(method->input_type()), "response",
@@ -414,6 +391,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
     if (method_type == METHODTYPE_NO_STREAMING) {
       method_name += "Async";  // prevent name clash with synchronous method.
     }
+    GenerateDocCommentBody(out, method);
     out->Print(
             "public virtual $returntype$ $methodname$($request_maybe$Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))\n",
             "methodname", method_name, "request_maybe",
@@ -429,6 +407,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
     out->Print("}\n");
 
     // overload taking CallOptions as a param
+    GenerateDocCommentBody(out, method);
     out->Print(
         "public virtual $returntype$ $methodname$($request_maybe$CallOptions options)\n",
         "methodname", method_name, "request_maybe",
@@ -476,20 +455,16 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
   out->Print("\n");
 }
 
-void GenerateBindServiceMethod(Printer* out, const ServiceDescriptor *service,
-                               bool use_server_class) {
+void GenerateBindServiceMethod(Printer* out, const ServiceDescriptor *service) {
   out->Print(
-      "// creates service definition that can be registered with a server\n");
+      "/// <summary>Creates service definition that can be registered with a server</summary>\n");
   out->Print(
-      "public static ServerServiceDefinition BindService($interface$ serviceImpl)\n",
-      "interface", use_server_class ? GetServerClassName(service) :
-          GetServerInterfaceName(service));
+      "public static ServerServiceDefinition BindService($implclass$ serviceImpl)\n",
+      "implclass", GetServerClassName(service));
   out->Print("{\n");
   out->Indent();
 
-  out->Print(
-      "return ServerServiceDefinition.CreateBuilder($servicenamefield$)\n",
-      "servicenamefield", GetServiceNameFieldName());
+  out->Print("return ServerServiceDefinition.CreateBuilder()\n");
   out->Indent();
   out->Indent();
   for (int i = 0; i < service->method_count(); i++) {
@@ -511,7 +486,8 @@ void GenerateBindServiceMethod(Printer* out, const ServiceDescriptor *service,
 }
 
 void GenerateNewStubMethods(Printer* out, const ServiceDescriptor *service) {
-  out->Print("// creates a new client\n");
+  out->Print("/// <summary>Creates a new client for $servicename$</summary>\n",
+             "servicename", GetServiceClassName(service));
   out->Print("public static $classname$ NewClient(Channel channel)\n",
              "classname", GetClientClassName(service));
   out->Print("{\n");
@@ -523,8 +499,12 @@ void GenerateNewStubMethods(Printer* out, const ServiceDescriptor *service) {
   out->Print("\n");
 }
 
-void GenerateService(Printer* out, const ServiceDescriptor *service) {
-  out->Print("public static class $classname$\n", "classname",
+void GenerateService(Printer* out, const ServiceDescriptor *service,
+                     bool generate_client, bool generate_server,
+                     bool internal_access) {
+  GenerateDocCommentBody(out, service);
+  out->Print("$access_level$ static class $classname$\n", "access_level",
+             GetAccessLevel(internal_access), "classname",
              GetServiceClassName(service));
   out->Print("{\n");
   out->Indent();
@@ -538,13 +518,17 @@ void GenerateService(Printer* out, const ServiceDescriptor *service) {
     GenerateStaticMethodField(out, service->method(i));
   }
   GenerateServiceDescriptorProperty(out, service);
-  GenerateClientInterface(out, service);
-  GenerateServerInterface(out, service);
-  GenerateServerClass(out, service);
-  GenerateClientStub(out, service);
-  GenerateBindServiceMethod(out, service, false);
-  GenerateBindServiceMethod(out, service, true);
-  GenerateNewStubMethods(out, service);
+
+  if (generate_server) {
+    GenerateServerClass(out, service);
+  }
+  if (generate_client) {
+    GenerateClientStub(out, service);
+    GenerateNewStubMethods(out, service);
+  }
+  if (generate_server) {
+    GenerateBindServiceMethod(out, service);
+  }
 
   out->Outdent();
   out->Print("}\n");
@@ -552,7 +536,8 @@ void GenerateService(Printer* out, const ServiceDescriptor *service) {
 
 }  // anonymous namespace
 
-grpc::string GetServices(const FileDescriptor *file) {
+grpc::string GetServices(const FileDescriptor *file, bool generate_client,
+                         bool generate_server, bool internal_access) {
   grpc::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
@@ -569,6 +554,14 @@ grpc::string GetServices(const FileDescriptor *file) {
     // Write out a file header.
     out.Print("// Generated by the protocol buffer compiler.  DO NOT EDIT!\n");
     out.Print("// source: $filename$\n", "filename", file->name());
+
+    // use C++ style as there are no file-level XML comments in .NET
+    grpc::string leading_comments = GetCsharpComments(file, true);
+    if (!leading_comments.empty()) {
+      out.Print("// Original file comments:\n");
+      out.Print(leading_comments.c_str());
+    }
+
     out.Print("#region Designer generated code\n");
     out.Print("\n");
     out.Print("using System;\n");
@@ -580,7 +573,8 @@ grpc::string GetServices(const FileDescriptor *file) {
     out.Print("namespace $namespace$ {\n", "namespace", GetFileNamespace(file));
     out.Indent();
     for (int i = 0; i < file->service_count(); i++) {
-      GenerateService(&out, file->service(i));
+      GenerateService(&out, file->service(i), generate_client, generate_server,
+                      internal_access);
     }
     out.Outdent();
     out.Print("}\n");

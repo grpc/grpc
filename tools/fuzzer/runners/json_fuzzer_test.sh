@@ -29,11 +29,12 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-flags="-max_total_time=$runtime -artifact_prefix=fuzzer_output/ -max_len=512"
+flags="-max_total_time=$runtime -artifact_prefix=fuzzer_output/ -max_len=512 -timeout=120"
+
 
 if [ "$jobs" != "1" ]
 then
-  flags="-jobs=$jobs -workers=$jobs"
+  flags="-jobs=$jobs -workers=$jobs $flags"
 fi
 
 if [ "$config" == "asan-trace-cmp" ]

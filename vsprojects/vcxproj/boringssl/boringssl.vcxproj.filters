@@ -217,6 +217,9 @@
     <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\buf\buf.c">
       <Filter>third_party\boringssl\crypto\buf</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bytestring\asn1_compat.c">
+      <Filter>third_party\boringssl\crypto\bytestring</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\bytestring\ber.c">
       <Filter>third_party\boringssl\crypto\bytestring</Filter>
     </ClCompile>
@@ -284,6 +287,9 @@
       <Filter>third_party\boringssl\crypto</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\curve25519\curve25519.c">
+      <Filter>third_party\boringssl\crypto\curve25519</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\curve25519\x25519-x86_64.c">
       <Filter>third_party\boringssl\crypto\curve25519</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\crypto\des\des.c">
@@ -859,6 +865,9 @@
     <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\ssl_cipher.c">
       <Filter>third_party\boringssl\ssl</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\ssl_ecdh.c">
+      <Filter>third_party\boringssl\ssl</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\third_party\boringssl\ssl\ssl_file.c">
       <Filter>third_party\boringssl\ssl</Filter>
     </ClCompile>
@@ -912,6 +921,9 @@
     <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\conf\internal.h">
       <Filter>third_party\boringssl\crypto\conf</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\curve25519\internal.h">
+      <Filter>third_party\boringssl\crypto\curve25519</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\des\internal.h">
       <Filter>third_party\boringssl\crypto\des</Filter>
     </ClInclude>
@@ -926,9 +938,6 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\directory.h">
       <Filter>third_party\boringssl\crypto</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\dsa\internal.h">
-      <Filter>third_party\boringssl\crypto\dsa</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\third_party\boringssl\crypto\ec\internal.h">
       <Filter>third_party\boringssl\crypto\ec</Filter>

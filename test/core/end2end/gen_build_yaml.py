@@ -39,9 +39,9 @@ import hashlib
 
 FixtureOptions = collections.namedtuple(
     'FixtureOptions',
-    'fullstack includes_proxy dns_resolver secure platforms ci_mac tracing')
+    'fullstack includes_proxy dns_resolver secure platforms ci_mac tracing exclude_configs')
 default_unsecure_fixture_options = FixtureOptions(
-    True, False, True, False, ['windows', 'linux', 'mac', 'posix'], True, False)
+    True, False, True, False, ['windows', 'linux', 'mac', 'posix'], True, False, [])
 socketpair_unsecure_fixture_options = default_unsecure_fixture_options._replace(fullstack=False, dns_resolver=False)
 default_secure_fixture_options = default_unsecure_fixture_options._replace(secure=True)
 uds_fixture_options = default_unsecure_fixture_options._replace(dns_resolver=False, platforms=['linux', 'mac', 'posix'])
@@ -56,15 +56,17 @@ END2END_FIXTURES = {
     'h2_full+pipe': default_unsecure_fixture_options._replace(
         platforms=['linux']),
     'h2_full+trace': default_unsecure_fixture_options._replace(tracing=True),
+    'h2_loadreporting': default_unsecure_fixture_options,
     'h2_oauth2': default_secure_fixture_options._replace(ci_mac=False),
     'h2_proxy': default_unsecure_fixture_options._replace(includes_proxy=True,
                                                           ci_mac=False),
     'h2_sockpair_1byte': socketpair_unsecure_fixture_options._replace(
-        ci_mac=False),
+        ci_mac=False, exclude_configs=['msan']),
     'h2_sockpair': socketpair_unsecure_fixture_options._replace(ci_mac=False),
     'h2_sockpair+trace': socketpair_unsecure_fixture_options._replace(
         ci_mac=False, tracing=True),
     'h2_ssl': default_secure_fixture_options,
+    'h2_ssl_cert': default_secure_fixture_options,
     'h2_ssl_proxy': default_secure_fixture_options._replace(includes_proxy=True,
                                                             ci_mac=False),
     'h2_uds': uds_fixture_options,
@@ -245,7 +247,7 @@ def main():
           {
               'name': '%s_nosec_test' % f,
               'args': [t],
-              'exclude_configs': [],
+              'exclude_configs': END2END_FIXTURES[f].exclude_configs,
               'platforms': END2END_FIXTURES[f].platforms,
               'ci_platforms': (END2END_FIXTURES[f].platforms
                                if END2END_FIXTURES[f].ci_mac else without(

@@ -81,6 +81,7 @@ typedef struct {
   grpc_closure read_closure;
   grpc_closure destroyed_closure;
   grpc_udp_server_read_cb read_cb;
+  grpc_udp_server_orphan_cb orphan_cb;
 } server_port;
 
 /* the overall server */
@@ -166,9 +167,12 @@ static void deactivated_all_ports(grpc_exec_ctx *exec_ctx, grpc_udp_server *s) {
   if (s->nports) {
     for (i = 0; i < s->nports; i++) {
       server_port *sp = &s->ports[i];
-      grpc_unlink_if_unix_domain_socket(&sp->addr.sockaddr);
       sp->destroyed_closure.cb = destroyed_port;
       sp->destroyed_closure.cb_arg = s;
+
+      GPR_ASSERT(sp->orphan_cb);
+      sp->orphan_cb(sp->emfd);
+
       grpc_fd_orphan(exec_ctx, sp->emfd, &sp->destroyed_closure, NULL,
                      "udp_listener_shutdown");
     }
@@ -269,7 +273,8 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
 
 static int add_socket_to_server(grpc_udp_server *s, int fd,
                                 const struct sockaddr *addr, size_t addr_len,
-                                grpc_udp_server_read_cb read_cb) {
+                                grpc_udp_server_read_cb read_cb,
+                                grpc_udp_server_orphan_cb orphan_cb) {
   server_port *sp;
   int port;
   char *addr_str;
@@ -293,6 +298,7 @@ static int add_socket_to_server(grpc_udp_server *s, int fd,
     memcpy(sp->addr.untyped, addr, addr_len);
     sp->addr_len = addr_len;
     sp->read_cb = read_cb;
+    sp->orphan_cb = orphan_cb;
     GPR_ASSERT(sp->emfd);
     gpr_mu_unlock(&s->mu);
     gpr_free(name);
@@ -302,7 +308,8 @@ static int add_socket_to_server(grpc_udp_server *s, int fd,
 }
 
 int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr,
-                             size_t addr_len, grpc_udp_server_read_cb read_cb) {
+                             size_t addr_len, grpc_udp_server_read_cb read_cb,
+                             grpc_udp_server_orphan_cb orphan_cb) {
   int allocated_port1 = -1;
   int allocated_port2 = -1;
   unsigned i;
@@ -317,8 +324,6 @@ int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr,
   socklen_t sockname_len;
   int port;
 
-  grpc_unlink_if_unix_domain_socket((struct sockaddr *)addr);
-
   /* Check if this is a wildcard port, and if so, try to keep the port the same
      as some previously created listener. */
   if (grpc_sockaddr_get_port(addr) == 0) {
@@ -328,7 +333,7 @@ int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr,
                            &sockname_len)) {
         port = grpc_sockaddr_get_port((struct sockaddr *)&sockname_temp);
         if (port > 0) {
-          allocated_addr = malloc(addr_len);
+          allocated_addr = gpr_malloc(addr_len);
           memcpy(allocated_addr, addr, addr_len);
           grpc_sockaddr_set_port(allocated_addr, port);
           addr = allocated_addr;
@@ -351,7 +356,8 @@ int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr,
     addr = (struct sockaddr *)&wild6;
     addr_len = sizeof(wild6);
     fd = grpc_create_dualstack_socket(addr, SOCK_DGRAM, IPPROTO_UDP, &dsmode);
-    allocated_port1 = add_socket_to_server(s, fd, addr, addr_len, read_cb);
+    allocated_port1 =
+        add_socket_to_server(s, fd, addr, addr_len, read_cb, orphan_cb);
     if (fd >= 0 && dsmode == GRPC_DSMODE_DUALSTACK) {
       goto done;
     }
@@ -373,7 +379,8 @@ int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr,
     addr = (struct sockaddr *)&addr4_copy;
     addr_len = sizeof(addr4_copy);
   }
-  allocated_port2 = add_socket_to_server(s, fd, addr, addr_len, read_cb);
+  allocated_port2 =
+      add_socket_to_server(s, fd, addr, addr_len, read_cb, orphan_cb);
 
 done:
   gpr_free(allocated_addr);

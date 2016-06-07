@@ -167,6 +167,37 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
+        public async Task ServerStreamingCall_EndOfStreamIsIdempotent()
+        {
+            helper.ServerStreamingHandler = new ServerStreamingServerMethod<string, string>(async (request, responseStream, context) =>
+            {
+            });
+
+            var call = Calls.AsyncServerStreamingCall(helper.CreateServerStreamingCall(), "");
+
+            Assert.IsFalse(await call.ResponseStream.MoveNext());
+            Assert.IsFalse(await call.ResponseStream.MoveNext());
+        }
+
+        [Test]
+        public async Task ServerStreamingCall_ErrorCanBeAwaitedTwice()
+        {
+            helper.ServerStreamingHandler = new ServerStreamingServerMethod<string, string>(async (request, responseStream, context) =>
+            {
+                context.Status = new Status(StatusCode.InvalidArgument, "");
+            });
+
+            var call = Calls.AsyncServerStreamingCall(helper.CreateServerStreamingCall(), "");
+
+            var ex = Assert.ThrowsAsync<RpcException>(async () => await call.ResponseStream.MoveNext());
+            Assert.AreEqual(StatusCode.InvalidArgument, ex.Status.StatusCode);
+
+            // attempting MoveNext again should result in throwing the same exception.
+            var ex2 = Assert.ThrowsAsync<RpcException>(async () => await call.ResponseStream.MoveNext());
+            Assert.AreEqual(StatusCode.InvalidArgument, ex2.Status.StatusCode);
+        }
+
+        [Test]
         public async Task DuplexStreamingCall()
         {
             helper.DuplexStreamingHandler = new DuplexStreamingServerMethod<string, string>(async (requestStream, responseStream, context) =>
@@ -204,8 +235,54 @@ namespace Grpc.Core.Tests
             await barrier.Task;  // make sure the handler has started.
             cts.Cancel();
 
-            var ex = Assert.ThrowsAsync<RpcException>(async () => await call.ResponseAsync);
-            Assert.AreEqual(StatusCode.Cancelled, ex.Status.StatusCode);
+            try
+            {
+                // cannot use Assert.ThrowsAsync because it uses Task.Wait and would deadlock.
+                await call.ResponseAsync;
+                Assert.Fail();
+            }
+            catch (RpcException ex)
+            {
+                Assert.AreEqual(StatusCode.Cancelled, ex.Status.StatusCode);
+            }
+        }
+
+        [Test]
+        public async Task ClientStreamingCall_ServerSideReadAfterCancelNotificationReturnsNull()
+        {
+            var handlerStartedBarrier = new TaskCompletionSource<object>();
+            var cancelNotificationReceivedBarrier = new TaskCompletionSource<object>();
+            var successTcs = new TaskCompletionSource<string>();
+
+            helper.ClientStreamingHandler = new ClientStreamingServerMethod<string, string>(async (requestStream, context) =>
+            {
+                handlerStartedBarrier.SetResult(null);
+
+                // wait for cancellation to be delivered.
+                context.CancellationToken.Register(() => cancelNotificationReceivedBarrier.SetResult(null));
+                await cancelNotificationReceivedBarrier.Task;
+
+                var moveNextResult = await requestStream.MoveNext();
+                successTcs.SetResult(!moveNextResult ? "SUCCESS" : "FAIL");
+                return "";
+            });
+
+            var cts = new CancellationTokenSource();
+            var call = Calls.AsyncClientStreamingCall(helper.CreateClientStreamingCall(new CallOptions(cancellationToken: cts.Token)));
+
+            await handlerStartedBarrier.Task;
+            cts.Cancel();
+
+            try
+            {
+                await call.ResponseAsync;
+                Assert.Fail();
+            }
+            catch (RpcException ex)
+            {
+                Assert.AreEqual(StatusCode.Cancelled, ex.Status.StatusCode);
+            }
+            Assert.AreEqual("SUCCESS", await successTcs.Task);
         }
 
         [Test]

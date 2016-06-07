@@ -78,7 +78,7 @@ static const clockid_t clockid_for_gpr_clock[] = {CLOCK_MONOTONIC,
 
 void gpr_time_init(void) { gpr_precise_clock_init(); }
 
-gpr_timespec gpr_now(gpr_clock_type clock_type) {
+static gpr_timespec now_impl(gpr_clock_type clock_type) {
   struct timespec now;
   GPR_ASSERT(clock_type != GPR_TIMESPAN);
   if (clock_type == GPR_CLOCK_PRECISE) {
@@ -114,7 +114,7 @@ void gpr_time_init(void) {
   g_time_start = mach_absolute_time();
 }
 
-gpr_timespec gpr_now(gpr_clock_type clock) {
+static gpr_timespec now_impl(gpr_clock_type clock) {
   gpr_timespec now;
   struct timeval now_tv;
   double now_dbl;
@@ -141,6 +141,12 @@ gpr_timespec gpr_now(gpr_clock_type clock) {
   return now;
 }
 #endif
+
+gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type) = now_impl;
+
+gpr_timespec gpr_now(gpr_clock_type clock_type) {
+  return gpr_now_impl(clock_type);
+}
 
 void gpr_sleep_until(gpr_timespec until) {
   gpr_timespec now;

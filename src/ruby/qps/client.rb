@@ -66,8 +66,10 @@ class BenchmarkClient
         cred = GRPC::Core::ChannelCredentials.new()
       end
       if config.security_params.server_host_override
-        opts[GRPC::Core::Channel::SSL_TARGET] =
+        channel_args = {}
+        channel_args[GRPC::Core::Channel::SSL_TARGET] =
           config.security_params.server_host_override
+        opts[:channel_args] = channel_args
       end
     else
       cred = :this_channel_is_insecure

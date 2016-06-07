@@ -143,19 +143,57 @@ describe('Server.prototype.addProtoService', function() {
       server.addProtoService(mathService, dummyImpls);
     });
   });
-  it('Should fail with missing handlers', function() {
-    assert.throws(function() {
-      server.addProtoService(mathService, {
-        'div': function() {},
-        'divMany': function() {},
-        'fib': function() {}
-      });
-    }, /math.Math.Sum/);
-  });
   it('Should fail if the server has been started', function() {
     server.start();
     assert.throws(function() {
       server.addProtoService(mathService, dummyImpls);
+    });
+  });
+  describe('Default handlers', function() {
+    var client;
+    beforeEach(function() {
+      server.addProtoService(mathService, {});
+      var port = server.bind('localhost:0', server_insecure_creds);
+      var Client = surface_client.makeProtobufClientConstructor(mathService);
+      client = new Client('localhost:' + port,
+                          grpc.credentials.createInsecure());
+      server.start();
+    });
+    it('should respond to a unary call with UNIMPLEMENTED', function(done) {
+      client.div({divisor: 4, dividend: 3}, function(error, response) {
+        assert(error);
+        assert.strictEqual(error.code, grpc.status.UNIMPLEMENTED);
+        done();
+      });
+    });
+    it('should respond to a client stream with UNIMPLEMENTED', function(done) {
+      var call = client.sum(function(error, respones) {
+        assert(error);
+        assert.strictEqual(error.code, grpc.status.UNIMPLEMENTED);
+        done();
+      });
+      call.end();
+    });
+    it('should respond to a server stream with UNIMPLEMENTED', function(done) {
+      var call = client.fib({limit: 5});
+      call.on('data', function(value) {
+        assert.fail('No messages expected');
+      });
+      call.on('status', function(status) {
+        assert.strictEqual(status.code, grpc.status.UNIMPLEMENTED);
+        done();
+      });
+    });
+    it('should respond to a bidi call with UNIMPLEMENTED', function(done) {
+      var call = client.divMany();
+      call.on('data', function(value) {
+        assert.fail('No messages expected');
+      });
+      call.on('status', function(status) {
+        assert.strictEqual(status.code, grpc.status.UNIMPLEMENTED);
+        done();
+      });
+      call.end();
     });
   });
 });

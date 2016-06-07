@@ -59,6 +59,15 @@ typedef enum {
   TSI_OUT_OF_RESOURCES = 12
 } tsi_result;
 
+typedef enum {
+  // Default option
+  TSI_DONT_REQUEST_CLIENT_CERTIFICATE,
+  TSI_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+  TSI_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY,
+  TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+  TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+} tsi_client_certificate_request_type;
+
 const char *tsi_result_to_string(tsi_result result);
 
 /* --- tsi tracing --- */

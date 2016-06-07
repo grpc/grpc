@@ -52,6 +52,7 @@ typedef struct grpc_tcp_server_acceptor {
 /* Called for newly connected TCP connections. */
 typedef void (*grpc_tcp_server_cb)(grpc_exec_ctx *exec_ctx, void *arg,
                                    grpc_endpoint *ep,
+                                   grpc_pollset *accepting_pollset,
                                    grpc_tcp_server_acceptor *acceptor);
 
 /* Create a server, initially not bound to any ports. The caller owns one ref.

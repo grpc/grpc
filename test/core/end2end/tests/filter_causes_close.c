@@ -207,10 +207,7 @@ static void recv_im_ready(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   call_data *calld = elem->call_data;
   if (success) {
     // close the stream with an error.
-    gpr_slice message;
-    grpc_transport_stream_op close_op;
-    memset(&close_op, 0, sizeof(close_op));
-    message =
+    gpr_slice message =
         gpr_slice_from_copied_string("Random failure that's not preventable.");
     grpc_transport_stream_op op;
     memset(&op, 0, sizeof(op));
@@ -235,8 +232,9 @@ static void start_transport_stream_op(grpc_exec_ctx *exec_ctx,
 static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                            grpc_call_element_args *args) {}
 
-static void destroy_call_elem(grpc_exec_ctx *exec_ctx,
-                              grpc_call_element *elem) {}
+static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                              const grpc_call_stats *stats,
+                              void *and_free_memory) {}
 
 static void init_channel_elem(grpc_exec_ctx *exec_ctx,
                               grpc_channel_element *elem,

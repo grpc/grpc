@@ -47,6 +47,7 @@ os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '..', '..'))
 argp = argparse.ArgumentParser()
 argp.add_argument('build_files', nargs='+', default=[])
 argp.add_argument('--templates', nargs='+', default=[])
+argp.add_argument('--output_merged', default=None, type=str)
 argp.add_argument('--jobs', '-j', default=multiprocessing.cpu_count(), type=int)
 args = argp.parse_args()
 
@@ -74,6 +75,9 @@ for js in json:
 cmd.append('-w')
 preprocessed_build = '.preprocessed_build'
 cmd.append(preprocessed_build)
+if args.output_merged is not None:
+  cmd.append('-M')
+  cmd.append(args.output_merged)
 pre_jobs.append(jobset.JobSpec(cmd, shortname='preprocess', timeout_seconds=None))
 
 jobs = []

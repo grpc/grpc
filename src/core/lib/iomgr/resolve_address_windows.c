@@ -43,7 +43,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
-#include <grpc/support/log_win32.h>
+#include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
@@ -155,8 +155,9 @@ void grpc_resolved_addresses_destroy(grpc_resolved_addresses *addrs) {
   gpr_free(addrs);
 }
 
-void grpc_resolve_address(const char *name, const char *default_port,
-                          grpc_resolve_cb cb, void *arg) {
+static void resolve_address_impl(grpc_exec_ctx *exec_ctx, const char *name,
+                                 const char *default_port, grpc_resolve_cb cb,
+                                 void *arg) {
   request *r = gpr_malloc(sizeof(request));
   grpc_closure_init(&r->request_closure, do_request_thread, r);
   r->name = gpr_strdup(name);
@@ -165,5 +166,9 @@ void grpc_resolve_address(const char *name, const char *default_port,
   r->arg = arg;
   grpc_executor_enqueue(&r->request_closure, 1);
 }
+
+void (*grpc_resolve_address)(grpc_exec_ctx *exec_ctx, const char *name,
+                             const char *default_port, grpc_resolve_cb cb,
+                             void *arg) = resolve_address_impl;
 
 #endif

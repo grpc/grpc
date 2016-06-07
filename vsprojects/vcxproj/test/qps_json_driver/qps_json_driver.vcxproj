@@ -160,6 +160,11 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\parse_json.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\parse_json.cc">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\qps_json_driver.cc">
     </ClCompile>
   </ItemGroup>

@@ -64,7 +64,7 @@ namespace Grpc.IntegrationTesting
 
         public static ServerServiceDefinition BindHandler(DuplexStreamingServerMethod<byte[], byte[]> handler)
         {
-            return ServerServiceDefinition.CreateBuilder(StreamingCallMethod.ServiceName)
+            return ServerServiceDefinition.CreateBuilder()
                 .AddMethod(StreamingCallMethod, handler).Build();
         }
     }

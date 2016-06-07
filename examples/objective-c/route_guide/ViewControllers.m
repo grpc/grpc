@@ -80,19 +80,14 @@ static NSString * const kHostAddress = @"localhost:50051";
  * Run the getFeature demo. Calls getFeature with a point known to have a feature and a point known
  * not to have a feature.
  */
-@interface GetFeatureViewController : UIViewController
+@interface GetFeatureViewController : UIViewController {
+  RTGRouteGuide *service;
+}
 @end
 
 @implementation GetFeatureViewController
 
-- (void)viewDidLoad {
-  [super viewDidLoad];
-
-  // This only needs to be done once per host, before creating service objects for that host.
-  [GRPCCall useInsecureConnectionsForHost:kHostAddress];
-
-  RTGRouteGuide *service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
-
+- (void)execRequest {
   void (^handler)(RTGFeature *response, NSError *error) = ^(RTGFeature *response, NSError *error) {
     if (response.name.length) {
       NSLog(@"Found feature called %@ at %@.", response.name, response.location);
@@ -111,6 +106,19 @@ static NSString * const kHostAddress = @"localhost:50051";
   [service getFeatureWithRequest:[RTGPoint message] handler:handler];
 }
 
+- (void)viewDidLoad {
+  [super viewDidLoad];
+
+  // This only needs to be done once per host, before creating service objects for that host.
+  [GRPCCall useInsecureConnectionsForHost:kHostAddress];
+
+  service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+  [self execRequest];
+}
+
 @end
 
 
@@ -120,16 +128,15 @@ static NSString * const kHostAddress = @"localhost:50051";
  * Run the listFeatures demo. Calls listFeatures with a rectangle containing all of the features in
  * the pre-generated database. Prints each response as it comes in.
  */
-@interface ListFeaturesViewController : UIViewController
+@interface ListFeaturesViewController : UIViewController {
+  RTGRouteGuide *service;
+}
+
 @end
 
 @implementation ListFeaturesViewController
 
-- (void)viewDidLoad {
-  [super viewDidLoad];
-
-  RTGRouteGuide *service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
-
+- (void)execRequest {
   RTGRectangle *rectangle = [RTGRectangle message];
   rectangle.lo.latitude = 405E6;
   rectangle.lo.longitude = -750E6;
@@ -147,6 +154,16 @@ static NSString * const kHostAddress = @"localhost:50051";
   }];
 }
 
+- (void)viewDidLoad {
+  [super viewDidLoad];
+
+  service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+  [self execRequest];
+}
+
 @end
 
 
@@ -157,14 +174,15 @@ static NSString * const kHostAddress = @"localhost:50051";
  * database with a variable delay in between. Prints the statistics when they are sent from the
  * server.
  */
-@interface RecordRouteViewController : UIViewController
+@interface RecordRouteViewController : UIViewController {
+  RTGRouteGuide *service;
+}
+
 @end
 
 @implementation RecordRouteViewController
 
-- (void)viewDidLoad {
-  [super viewDidLoad];
-
+- (void)execRequest {
   NSString *dataBasePath = [NSBundle.mainBundle pathForResource:@"route_guide_db"
                                                          ofType:@"json"];
   NSData *dataBaseContent = [NSData dataWithContentsOfFile:dataBasePath];
@@ -177,8 +195,6 @@ static NSString * const kHostAddress = @"localhost:50051";
     NSLog(@"Visiting point %@", location);
     return location;
   }];
-
-  RTGRouteGuide *service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
 
   [service recordRouteWithRequestsWriter:locations
                                  handler:^(RTGRouteSummary *response, NSError *error) {
@@ -193,6 +209,16 @@ static NSString * const kHostAddress = @"localhost:50051";
   }];
 }
 
+- (void)viewDidLoad {
+  [super viewDidLoad];
+
+  service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+  [self execRequest];
+}
+
 @end
 
 
@@ -202,14 +228,15 @@ static NSString * const kHostAddress = @"localhost:50051";
  * Run the routeChat demo. Send some chat messages, and print any chat messages that are sent from
  * the server.
  */
-@interface RouteChatViewController : UIViewController
+@interface RouteChatViewController : UIViewController {
+  RTGRouteGuide *service;
+}
+
 @end
 
 @implementation RouteChatViewController
 
-- (void)viewDidLoad {
-  [super viewDidLoad];
-
+- (void)execRequest {
   NSArray *notes = @[[RTGRouteNote noteWithMessage:@"First message" latitude:0 longitude:0],
                      [RTGRouteNote noteWithMessage:@"Second message" latitude:0 longitude:1],
                      [RTGRouteNote noteWithMessage:@"Third message" latitude:1 longitude:0],
@@ -218,8 +245,6 @@ static NSString * const kHostAddress = @"localhost:50051";
     NSLog(@"Sending message %@ at %@", note.message, note.location);
     return note;
   }];
-
-  RTGRouteGuide *service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
 
   [service routeChatWithRequestsWriter:notesWriter
                           eventHandler:^(BOOL done, RTGRouteNote *note, NSError *error) {
@@ -232,6 +257,16 @@ static NSString * const kHostAddress = @"localhost:50051";
       NSLog(@"Chat ended.");
     }
   }];
+}
+
+- (void)viewDidLoad {
+  [super viewDidLoad];
+
+  service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+  [self execRequest];
 }
 
 @end

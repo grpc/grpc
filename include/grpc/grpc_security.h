@@ -35,6 +35,7 @@
 #define GRPC_GRPC_SECURITY_H
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
 
 #ifdef __cplusplus
@@ -42,13 +43,6 @@ extern "C" {
 #endif
 
 /* --- Authentication Context. --- */
-
-#define GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME "transport_security_type"
-#define GRPC_SSL_TRANSPORT_SECURITY_TYPE "ssl"
-
-#define GRPC_X509_CN_PROPERTY_NAME "x509_common_name"
-#define GRPC_X509_SAN_PROPERTY_NAME "x509_subject_alternative_name"
-#define GRPC_X509_PEM_CERT_PROPERTY_NAME "x509_pem_cert"
 
 typedef struct grpc_auth_context grpc_auth_context;
 
@@ -130,28 +124,10 @@ typedef struct grpc_channel_credentials grpc_channel_credentials;
    The creator of the credentials object is responsible for its release. */
 GRPCAPI void grpc_channel_credentials_release(grpc_channel_credentials *creds);
 
-/* Environment variable that points to the google default application
-   credentials json key or refresh token. Used in the
-   grpc_google_default_credentials_create function. */
-#define GRPC_GOOGLE_CREDENTIALS_ENV_VAR "GOOGLE_APPLICATION_CREDENTIALS"
-
 /* Creates default credentials to connect to a google gRPC service.
    WARNING: Do NOT use this credentials to connect to a non-google service as
    this could result in an oauth2 token leak. */
 GRPCAPI grpc_channel_credentials *grpc_google_default_credentials_create(void);
-
-/* Environment variable that points to the default SSL roots file. This file
-   must be a PEM encoded file with all the roots such as the one that can be
-   downloaded from https://pki.google.com/roots.pem.  */
-#define GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR \
-  "GRPC_DEFAULT_SSL_ROOTS_FILE_PATH"
-
-/* Results for the SSL roots override callback. */
-typedef enum {
-  GRPC_SSL_ROOTS_OVERRIDE_OK,
-  GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY, /* Do not try fallback options. */
-  GRPC_SSL_ROOTS_OVERRIDE_FAIL
-} grpc_ssl_roots_override_result;
 
 /* Callback for getting the SSL roots override from the application.
    In case of success, *pem_roots_certs must be set to a NULL terminated string
@@ -334,7 +310,8 @@ typedef struct grpc_server_credentials grpc_server_credentials;
    */
 GRPCAPI void grpc_server_credentials_release(grpc_server_credentials *creds);
 
-/* Creates an SSL server_credentials object.
+/* Deprecated in favor of grpc_ssl_server_credentials_create_ex.
+   Creates an SSL server_credentials object.
    - pem_roots_cert is the NULL-terminated string containing the PEM encoding of
      the client root certificates. This parameter may be NULL if the server does
      not want the client to be authenticated with SSL.
@@ -348,6 +325,15 @@ GRPCAPI void grpc_server_credentials_release(grpc_server_credentials *creds);
 GRPCAPI grpc_server_credentials *grpc_ssl_server_credentials_create(
     const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
     size_t num_key_cert_pairs, int force_client_auth, void *reserved);
+
+/* Same as grpc_ssl_server_credentials_create method except uses
+   grpc_ssl_client_certificate_request_type enum to support more ways to
+   authenticate client cerificates.*/
+GRPCAPI grpc_server_credentials *grpc_ssl_server_credentials_create_ex(
+    const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
+    size_t num_key_cert_pairs,
+    grpc_ssl_client_certificate_request_type client_certificate_request,
+    void *reserved);
 
 /* --- Server-side secure ports. --- */
 

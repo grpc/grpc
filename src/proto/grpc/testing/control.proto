@@ -35,14 +35,18 @@ import "src/proto/grpc/testing/stats.proto";
 package grpc.testing;
 
 enum ClientType {
+  // Many languages support a basic distinction between using
+  // sync or async client, and this allows the specification
   SYNC_CLIENT = 0;
   ASYNC_CLIENT = 1;
+  OTHER_CLIENT = 2; // used for some language-specific variants
 }
 
 enum ServerType {
   SYNC_SERVER = 0;
   ASYNC_SERVER = 1;
   ASYNC_GENERIC_SERVER = 2;
+  OTHER_SERVER = 3; // used for some language-specific variants
 }
 
 enum RpcType {
@@ -57,18 +61,6 @@ message PoissonParams {
   double offered_load = 1;
 }
 
-message UniformParams {
-  double interarrival_lo = 1;
-  double interarrival_hi = 2;
-}
-
-message DeterministicParams { double offered_load = 1; }
-
-message ParetoParams {
-  double interarrival_base = 1;
-  double alpha = 2;
-}
-
 // Once an RPC finishes, immediately start a new one.
 // No configuration parameters needed.
 message ClosedLoopParams {}
@@ -77,9 +69,6 @@ message LoadParams {
   oneof load {
     ClosedLoopParams closed_loop = 1;
     PoissonParams poisson = 2;
-    UniformParams uniform = 3;
-    DeterministicParams determ = 4;
-    ParetoParams pareto = 5;
   };
 }
 
@@ -111,6 +100,9 @@ message ClientConfig {
   // Specify the cores we should run the client on, if desired
   repeated int32 core_list = 13;
   int32 core_limit = 14;
+
+  // If we use an OTHER_CLIENT client_type, this string gives more detail
+  string other_client_api = 15;
 }
 
 message ClientStatus { ClientStats stats = 1; }
@@ -142,6 +134,9 @@ message ServerConfig {
 
   // Specify the cores we should run the server on, if desired
   repeated int32 core_list = 10;
+
+  // If we use an OTHER_SERVER client_type, this string gives more detail
+  string other_server_api = 11;
 }
 
 message ServerArgs {
@@ -193,4 +188,45 @@ message Scenario {
 // A set of scenarios to be run with qps_json_driver
 message Scenarios {
   repeated Scenario scenarios = 1;
+}
+
+// Basic summary that can be computed from ClientStats and ServerStats
+// once the scenario has finished.
+message ScenarioResultSummary
+{
+  // Total number of operations per second over all clients.
+  double qps = 1;
+  // QPS per one server core.
+  double qps_per_server_core = 2;
+  // server load based on system_time (0.85 => 85%)
+  double server_system_time = 3;
+  // server load based on user_time (0.85 => 85%)
+  double server_user_time = 4;
+  // client load based on system_time (0.85 => 85%)
+  double client_system_time = 5;
+  // client load based on user_time (0.85 => 85%)
+  double client_user_time = 6;
+
+  // X% latency percentiles (in nanoseconds)
+  double latency_50 = 7;
+  double latency_90 = 8;
+  double latency_95 = 9;
+  double latency_99 = 10;
+  double latency_999 = 11;
+}
+
+// Results of a single benchmark scenario.
+message ScenarioResult {
+  // Inputs used to run the scenario.
+  Scenario scenario = 1;
+  // Histograms from all clients merged into one histogram.
+  HistogramData latencies = 2;
+  // Client stats for each client
+  repeated ClientStats client_stats = 3;
+  // Server stats for each server
+  repeated ServerStats server_stats = 4;
+  // Number of cores available to each server
+  repeated int32 server_cores = 5;
+  // An after-the-fact computed summary
+  ScenarioResultSummary summary = 6;
 }

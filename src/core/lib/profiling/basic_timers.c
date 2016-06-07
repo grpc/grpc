@@ -208,6 +208,7 @@ static void init_output() {
 }
 
 static void rotate_log() {
+  /* Using malloc here, as this code could end up being called by gpr_malloc */
   gpr_timer_log *new = malloc(sizeof(*new));
   gpr_once_init(&g_once_init, init_output);
   new->num_entries = 0;

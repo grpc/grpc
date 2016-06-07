@@ -115,6 +115,23 @@ def mako_plugin(dictionary):
       cur['plugins'] = plugins
       filegroups[cur['name']] = cur
 
+  # build reverse dependency map
+  things = {}
+  for thing in dictionary['libs'] + dictionary['targets'] + dictionary['filegroups']:
+    things[thing['name']] = thing
+    thing['used_by'] = []
+  thing_deps = lambda t: t.get('uses', []) + t.get('filegroups', []) + t.get('deps', [])
+  for thing in things.itervalues():
+    done = set()
+    todo = thing_deps(thing)
+    while todo:
+      cur = todo[0]
+      todo = todo[1:]
+      if cur in done: continue
+      things[cur]['used_by'].append(thing['name'])
+      todo.extend(thing_deps(things[cur]))
+      done.add(cur)
+
   # the above expansion can introduce duplicate filenames: contract them here
   for fg in filegroups.itervalues():
     for lst in FILEGROUP_LISTS:

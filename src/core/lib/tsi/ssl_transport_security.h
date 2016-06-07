@@ -142,6 +142,23 @@ tsi_result tsi_create_ssl_server_handshaker_factory(
     const unsigned char *alpn_protocols_lengths, uint16_t num_alpn_protocols,
     tsi_ssl_handshaker_factory **factory);
 
+/* Same as tsi_create_ssl_server_handshaker_factory method except uses
+   tsi_client_certificate_request_type to support more ways to handle client
+   certificate authentication.
+   - client_certificate_request, if set to non-zero will force the client to
+     authenticate with an SSL cert. Note that this option is ignored if
+     pem_client_root_certs is NULL or pem_client_roots_certs_size is 0 */
+tsi_result tsi_create_ssl_server_handshaker_factory_ex(
+    const unsigned char **pem_private_keys,
+    const size_t *pem_private_keys_sizes, const unsigned char **pem_cert_chains,
+    const size_t *pem_cert_chains_sizes, size_t key_cert_pair_count,
+    const unsigned char *pem_client_root_certs,
+    size_t pem_client_root_certs_size,
+    tsi_client_certificate_request_type client_certificate_request,
+    const char *cipher_suites, const unsigned char **alpn_protocols,
+    const unsigned char *alpn_protocols_lengths, uint16_t num_alpn_protocols,
+    tsi_ssl_handshaker_factory **factory);
+
 /* Creates a handshaker.
   - self is the factory from which the handshaker will be created.
   - server_name_indication indicates the name of the server the client is

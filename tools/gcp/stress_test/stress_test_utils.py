@@ -46,6 +46,7 @@ import big_query_utils as bq_utils
 
 class EventType:
   STARTING = 'STARTING'
+  RUNNING = 'RUNNING'
   SUCCESS = 'SUCCESS'
   FAILURE = 'FAILURE'
 
@@ -103,23 +104,29 @@ class BigQueryHelper:
     return bq_utils.insert_rows(self.bq, self.project_id, self.dataset_id,
                                 self.qps_table_id, [row])
 
-  def check_if_any_tests_failed(self, num_query_retries=3):
+  def check_if_any_tests_failed(self, num_query_retries=3, timeout_msec=30000):
     query = ('SELECT event_type FROM %s.%s WHERE run_id = \'%s\' AND '
              'event_type="%s"') % (self.dataset_id, self.summary_table_id,
                                    self.run_id, EventType.FAILURE)
+    page = None
     try:
       query_job = bq_utils.sync_query_job(self.bq, self.project_id, query)
+      job_id = query_job['jobReference']['jobId']
+      project_id = query_job['jobReference']['projectId']
       page = self.bq.jobs().getQueryResults(
-          **query_job['jobReference']).execute(num_retries=num_query_retries)
+          projectId=project_id,
+          jobId=job_id,
+          timeoutMs=timeout_msec).execute(num_retries=num_query_retries)
+
+      if not page['jobComplete']:
+        print('TIMEOUT ERROR: The query %s timed out. Current timeout value is'
+              ' %d msec. Returning False (i.e assuming there are no failures)'
+             ) % (query, timeoout_msec)
+        return False
+
       num_failures = int(page['totalRows'])
       print 'num rows: ', num_failures
       return num_failures > 0
-    # TODO (sreek): Cleanup the following lines once we have a better idea of
-    # why we sometimes get KeyError exceptions in long running test cases
-    except KeyError:
-      print 'KeyError in check_if_any_tests_failed()'
-      print 'Query:', query
-      print 'Query result page:', page
     except:
       print 'Exception in check_if_any_tests_failed(). Info: ', sys.exc_info()
       print 'Query: ', query
@@ -189,11 +196,11 @@ class BigQueryHelper:
         ('image_type', 'STRING', 'Client or Server?'),
         ('pod_name', 'STRING', 'GKE pod hosting this image'),
         ('event_date', 'STRING', 'The date of this event'),
-        ('event_type', 'STRING', 'STARTED/SUCCESS/FAILURE'),
+        ('event_type', 'STRING', 'STARTING/RUNNING/SUCCESS/FAILURE'),
         ('details', 'STRING', 'Any other relevant details')
     ]
-    desc = ('The table that contains START/SUCCESS/FAILURE events for '
-            ' the stress test clients and servers')
+    desc = ('The table that contains STARTING/RUNNING/SUCCESS/FAILURE events '
+            'for the stress test clients and servers')
     return bq_utils.create_table(self.bq, self.project_id, self.dataset_id,
                                  self.summary_table_id, summary_table_schema,
                                  desc)
