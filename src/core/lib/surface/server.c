@@ -812,7 +812,7 @@ static void channel_connectivity_changed(grpc_exec_ctx *exec_ctx, void *cd,
                                          bool iomgr_status_ignored) {
   channel_data *chand = cd;
   grpc_server *server = chand->server;
-  if (chand->connectivity_state != GRPC_CHANNEL_FATAL_FAILURE) {
+  if (chand->connectivity_state != GRPC_CHANNEL_SHUTDOWN) {
     grpc_transport_op op;
     memset(&op, 0, sizeof(op));
     op.on_connectivity_state_change = &chand->channel_connectivity_changed,
@@ -845,7 +845,7 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 }
 
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                              void *ignored) {
+                              const grpc_call_stats *stats, void *ignored) {
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
 

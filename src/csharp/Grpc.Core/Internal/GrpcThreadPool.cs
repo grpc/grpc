@@ -35,6 +35,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Grpc.Core.Logging;
 using Grpc.Core.Utils;
 
@@ -52,6 +53,8 @@ namespace Grpc.Core.Internal
         readonly List<Thread> threads = new List<Thread>();
         readonly int poolSize;
         readonly int completionQueueCount;
+
+        bool stopRequested;
 
         IReadOnlyCollection<CompletionQueueSafeHandle> completionQueues;
 
@@ -84,15 +87,21 @@ namespace Grpc.Core.Internal
             }
         }
 
-        public void Stop()
+        public Task StopAsync()
         {
             lock (myLock)
             {
+                GrpcPreconditions.CheckState(!stopRequested, "Stop already requested.");
+                stopRequested = true;
+
                 foreach (var cq in completionQueues)
                 {
                     cq.Shutdown();
                 }
+            }
 
+            return Task.Run(() =>
+            {
                 foreach (var thread in threads)
                 {
                     thread.Join();
@@ -102,6 +111,21 @@ namespace Grpc.Core.Internal
                 {
                     cq.Dispose();
                 }
+            });
+        }
+
+        /// <summary>
+        /// Returns true if there is at least one thread pool thread that hasn't
+        /// already stopped.
+        /// Threads can either stop because all completion queues shut down or
+        /// because all foreground threads have already shutdown and process is
+        /// going to exit.
+        /// </summary>
+        internal bool IsAlive
+        {
+            get
+            {
+                return threads.Any(t => t.ThreadState != ThreadState.Stopped);
             }
         }
 
@@ -119,7 +143,7 @@ namespace Grpc.Core.Internal
             var cq = completionQueues.ElementAt(cqIndex);
 
             var thread = new Thread(new ThreadStart(() => RunHandlerLoop(cq)));
-            thread.IsBackground = false;
+            thread.IsBackground = true;
             thread.Name = string.Format("grpc {0} (cq {1})", threadIndex, cqIndex);
             thread.Start();
 

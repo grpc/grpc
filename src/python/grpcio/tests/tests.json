@@ -1,4 +1,6 @@
 [
+  "_auth_test.AccessTokenCallCredentialsTest",
+  "_auth_test.GoogleCallCredentialsTest",
   "_base_interface_test.AsyncEasyTest", 
   "_base_interface_test.AsyncPeasyTest", 
   "_base_interface_test.SyncEasyTest", 
@@ -33,6 +35,7 @@
   "_face_interface_test.MultiCallableInvokerBlockingInvocationInlineServiceTest", 
   "_face_interface_test.MultiCallableInvokerFutureInvocationAsynchronousEventServiceTest",
   "_health_servicer_test.HealthServicerTest",
+  "_implementations_test.CallCredentialsTest",
   "_implementations_test.ChannelCredentialsTest", 
   "_insecure_interop_test.InsecureInteropTest", 
   "_intermediary_low_test.CancellationTest", 
@@ -45,6 +48,7 @@
   "_low_test.HangingServerShutdown", 
   "_low_test.InsecureServerInsecureClient", 
   "_not_found_test.NotFoundTest", 
+  "_read_some_but_not_all_responses_test.ReadSomeButNotAllResponsesTest",
   "_rpc_test.RPCTest",
   "_sanity_test.Sanity", 
   "_secure_interop_test.SecureInteropTest", 

@@ -7,6 +7,7 @@
     "Grpc.Core.Internal.Tests.CompletionQueueSafeHandleTest",
     "Grpc.Core.Internal.Tests.MetadataArraySafeHandleTest",
     "Grpc.Core.Internal.Tests.TimespecTest",
+    "Grpc.Core.Tests.AppDomainUnloadTest",
     "Grpc.Core.Tests.CallCredentialsTest",
     "Grpc.Core.Tests.CallOptionsTest",
     "Grpc.Core.Tests.ChannelCredentialsTest",
@@ -25,6 +26,9 @@
     "Grpc.Core.Tests.ResponseHeadersTest",
     "Grpc.Core.Tests.SanityTest",
     "Grpc.Core.Tests.ServerTest",
+    "Grpc.Core.Tests.ShutdownHookClientTest",
+    "Grpc.Core.Tests.ShutdownHookPendingCallTest",
+    "Grpc.Core.Tests.ShutdownHookServerTest",
     "Grpc.Core.Tests.ShutdownTest",
     "Grpc.Core.Tests.TimeoutsTest",
     "Grpc.Core.Tests.UserAgentStringTest"
