@@ -254,9 +254,7 @@ class CLanguage(object):
 
   def _compiler_options(self, use_docker, compiler):
     """Returns docker distro and make options to use for given compiler."""
-    if _is_use_docker_child():
-      return ("already_under_docker", [])
-    if not use_docker:
+    if not use_docker and not _is_use_docker_child():
       _check_compiler(compiler, ['default'])
 
     if compiler == 'gcc4.9' or compiler == 'default':
@@ -892,7 +890,7 @@ for l in languages:
 
 language_make_options=[]
 if any(language.make_options() for language in languages):
-  if len(languages) != 1:
+  if not 'gcov' in args.config and len(languages) != 1:
     print 'languages with custom make options cannot be built simultaneously with other languages'
     sys.exit(1)
   else:

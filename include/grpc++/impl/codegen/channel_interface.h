@@ -85,6 +85,16 @@ class ChannelInterface {
     return WaitForStateChangeImpl(last_observed, deadline_tp.raw_time());
   }
 
+  /// Wait for this channel to be connected
+  template <typename T>
+  bool WaitForConnected(T deadline) {
+    grpc_connectivity_state state;
+    while ((state = GetState(true)) != GRPC_CHANNEL_READY) {
+      if (!WaitForStateChange(state, deadline)) return false;
+    }
+    return true;
+  }
+
  private:
   template <class R>
   friend class ::grpc::ClientReader;

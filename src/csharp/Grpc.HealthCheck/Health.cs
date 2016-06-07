@@ -33,9 +33,9 @@ namespace Grpc.Health.V1 {
             "Ag5HcnBjLkhlYWx0aC5WMWIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
-          new pbr::GeneratedCodeInfo(null, new pbr::GeneratedCodeInfo[] {
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Health.V1.HealthCheckRequest), global::Grpc.Health.V1.HealthCheckRequest.Parser, new[]{ "Service" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Health.V1.HealthCheckResponse), global::Grpc.Health.V1.HealthCheckResponse.Parser, new[]{ "Status" }, null, new[]{ typeof(global::Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus) }, null)
+          new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Health.V1.HealthCheckRequest), global::Grpc.Health.V1.HealthCheckRequest.Parser, new[]{ "Service" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Health.V1.HealthCheckResponse), global::Grpc.Health.V1.HealthCheckResponse.Parser, new[]{ "Status" }, null, new[]{ typeof(global::Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus) }, null)
           }));
     }
     #endregion
@@ -75,7 +75,7 @@ namespace Grpc.Health.V1 {
     public string Service {
       get { return service_; }
       set {
-        service_ = pb::Preconditions.CheckNotNull(value, "value");
+        service_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
@@ -174,7 +174,7 @@ namespace Grpc.Health.V1 {
 
     /// <summary>Field number for the "status" field.</summary>
     public const int StatusFieldNumber = 1;
-    private global::Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus status_ = global::Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus.UNKNOWN;
+    private global::Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus status_ = 0;
     public global::Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus Status {
       get { return status_; }
       set {
@@ -199,7 +199,7 @@ namespace Grpc.Health.V1 {
 
     public override int GetHashCode() {
       int hash = 1;
-      if (Status != global::Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus.UNKNOWN) hash ^= Status.GetHashCode();
+      if (Status != 0) hash ^= Status.GetHashCode();
       return hash;
     }
 
@@ -208,7 +208,7 @@ namespace Grpc.Health.V1 {
     }
 
     public void WriteTo(pb::CodedOutputStream output) {
-      if (Status != global::Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus.UNKNOWN) {
+      if (Status != 0) {
         output.WriteRawTag(8);
         output.WriteEnum((int) Status);
       }
@@ -216,7 +216,7 @@ namespace Grpc.Health.V1 {
 
     public int CalculateSize() {
       int size = 0;
-      if (Status != global::Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus.UNKNOWN) {
+      if (Status != 0) {
         size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Status);
       }
       return size;
@@ -226,7 +226,7 @@ namespace Grpc.Health.V1 {
       if (other == null) {
         return;
       }
-      if (other.Status != global::Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus.UNKNOWN) {
+      if (other.Status != 0) {
         Status = other.Status;
       }
     }
@@ -251,9 +251,9 @@ namespace Grpc.Health.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     public static partial class Types {
       public enum ServingStatus {
-        UNKNOWN = 0,
-        SERVING = 1,
-        NOT_SERVING = 2,
+        [pbr::OriginalName("UNKNOWN")] Unknown = 0,
+        [pbr::OriginalName("SERVING")] Serving = 1,
+        [pbr::OriginalName("NOT_SERVING")] NotServing = 2,
       }
 
     }

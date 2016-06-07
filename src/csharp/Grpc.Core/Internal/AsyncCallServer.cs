@@ -51,14 +51,14 @@ namespace Grpc.Core.Internal
         readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         readonly Server server;
 
-        public AsyncCallServer(Func<TResponse, byte[]> serializer, Func<byte[], TRequest> deserializer, GrpcEnvironment environment, Server server) : base(serializer, deserializer, environment)
+        public AsyncCallServer(Func<TResponse, byte[]> serializer, Func<byte[], TRequest> deserializer, Server server) : base(serializer, deserializer)
         {
             this.server = GrpcPreconditions.CheckNotNull(server);
         }
 
-        public void Initialize(CallSafeHandle call)
+        public void Initialize(CallSafeHandle call, CompletionQueueSafeHandle completionQueue)
         {
-            call.Initialize(environment.CompletionRegistry, environment.CompletionQueue);
+            call.Initialize(completionQueue);
 
             server.AddCallReference(this);
             InitializeInternal(call);
@@ -91,11 +91,10 @@ namespace Grpc.Core.Internal
 
         /// <summary>
         /// Sends a streaming response. Only one pending send action is allowed at any given time.
-        /// completionDelegate is called when the operation finishes.
         /// </summary>
-        public void StartSendMessage(TResponse msg, WriteFlags writeFlags, AsyncCompletionDelegate<object> completionDelegate)
+        public Task SendMessageAsync(TResponse msg, WriteFlags writeFlags)
         {
-            StartSendMessageInternal(msg, writeFlags, completionDelegate);
+            return SendMessageInternalAsync(msg, writeFlags);
         }
 
         /// <summary>
@@ -110,20 +109,22 @@ namespace Grpc.Core.Internal
         /// Initiates sending a initial metadata. 
         /// Even though C-core allows sending metadata in parallel to sending messages, we will treat sending metadata as a send message operation
         /// to make things simpler.
-        /// completionDelegate is invoked upon completion.
         /// </summary>
-        public void StartSendInitialMetadata(Metadata headers, AsyncCompletionDelegate<object> completionDelegate)
+        public Task SendInitialMetadataAsync(Metadata headers)
         {
             lock (myLock)
             {
                 GrpcPreconditions.CheckNotNull(headers, "metadata");
-                GrpcPreconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
 
+                GrpcPreconditions.CheckState(started);
                 GrpcPreconditions.CheckState(!initialMetadataSent, "Response headers can only be sent once per call.");
                 GrpcPreconditions.CheckState(streamingWritesCounter == 0, "Response headers can only be sent before the first write starts.");
-                CheckSendingAllowed(allowFinished: false);
 
-                GrpcPreconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
+                var earlyResult = CheckSendAllowedOrEarlyResult();
+                if (earlyResult != null)
+                {
+                    return earlyResult;
+                }
 
                 using (var metadataArray = MetadataArraySafeHandle.Create(headers))
                 {
@@ -131,7 +132,8 @@ namespace Grpc.Core.Internal
                 }
 
                 this.initialMetadataSent = true;
-                sendCompletionDelegate = completionDelegate;
+                streamingWriteTcs = new TaskCompletionSource<object>();
+                return streamingWriteTcs.Task;
             }
         }
 
@@ -194,6 +196,16 @@ namespace Grpc.Core.Internal
         protected override void OnAfterReleaseResources()
         {
             server.RemoveCallReference(this);
+        }
+
+        protected override Task CheckSendAllowedOrEarlyResult()
+        {
+            GrpcPreconditions.CheckState(!halfcloseRequested, "Response stream has already been completed.");
+            GrpcPreconditions.CheckState(!finished, "Already finished.");
+            GrpcPreconditions.CheckState(streamingWriteTcs == null, "Only one write can be pending at a time");
+            GrpcPreconditions.CheckState(!disposed);
+
+            return null;
         }
 
         /// <summary>
