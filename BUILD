@@ -1016,6 +1016,7 @@ cc_library(
     ".",
   ],
   deps = [
+    ":grpc++",
   ],
 )
 
