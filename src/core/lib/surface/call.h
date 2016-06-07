@@ -53,6 +53,8 @@ typedef void (*grpc_ioreq_completion_func)(grpc_exec_ctx *exec_ctx,
 grpc_call *grpc_call_create(grpc_channel *channel, grpc_call *parent_call,
                             uint32_t propagation_mask,
                             grpc_completion_queue *cq,
+                            /* if not NULL, it'll be used in lieu of \a cq */
+                            grpc_pollset_set *pollset_set_alternative,
                             const void *server_transport_data,
                             grpc_mdelem **add_initial_metadata,
                             size_t add_initial_metadata_count,
