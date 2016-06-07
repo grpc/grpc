@@ -278,7 +278,8 @@ static int refill_queue(shard_type *shard, gpr_timespec now) {
   return !grpc_timer_heap_is_empty(&shard->heap);
 }
 
-/* This pops the next non-cancelled timer with deadline <= now from the queue,
+/* This pollent the next non-cancelled timer with deadline <= now from the
+   queue,
    or returns NULL if there isn't one.
    REQUIRES: shard->mu locked */
 static grpc_timer *pop_one(shard_type *shard, gpr_timespec now) {

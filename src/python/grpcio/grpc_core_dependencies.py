@@ -103,6 +103,7 @@ CORE_SOURCE_FILES = [
   'src/core/lib/iomgr/iomgr.c',
   'src/core/lib/iomgr/iomgr_posix.c',
   'src/core/lib/iomgr/iomgr_windows.c',
+  'src/core/lib/iomgr/polling_entity.c',
   'src/core/lib/iomgr/pollset_set_windows.c',
   'src/core/lib/iomgr/pollset_windows.c',
   'src/core/lib/iomgr/resolve_address_posix.c',
