@@ -36,13 +36,22 @@
 
 #import "ProtoMethod.h"
 
+__attribute__((deprecated("Please use GRPCProtoRPC.")))
 @interface ProtoRPC : GRPCCall
 
 - (instancetype)initWithHost:(NSString *)host
-                      method:(ProtoMethod *)method
+                      method:(GRPCProtoMethod *)method
               requestsWriter:(GRXWriter *)requestsWriter
                responseClass:(Class)responseClass
           responsesWriteable:(id<GRXWriteable>)responsesWriteable NS_DESIGNATED_INITIALIZER;
 
 - (void)start;
+@end
+
+/**
+ * This subclass is empty now. Eventually we'll remove ProtoService class
+ * to avoid potential naming conflict
+ */
+@interface GRPCProtoRPC : ProtoRPC
+
 @end
