@@ -40,6 +40,7 @@ from tests.unit import resources
 _SSL_HOST_OVERRIDE = 'foo.test.google.fr'
 _CALL_CREDENTIALS_METADATA_KEY = 'call-creds-key'
 _CALL_CREDENTIALS_METADATA_VALUE = 'call-creds-value'
+_EMPTY_FLAGS = 0
 
 def _metadata_plugin_callback(context, callback):
   callback(cygrpc.Metadata(
@@ -76,7 +77,7 @@ class TypeSmokeTest(unittest.TestCase):
 
   def testOperationsIteration(self):
     operations = cygrpc.Operations([
-        cygrpc.operation_send_message('asdf')])
+        cygrpc.operation_send_message('asdf', _EMPTY_FLAGS)])
     iterator = iter(operations)
     operation = next(iterator)
     self.assertIsInstance(operation, cygrpc.Operation)
@@ -84,6 +85,11 @@ class TypeSmokeTest(unittest.TestCase):
     # of them. Just check that we stop iterating.
     with self.assertRaises(StopIteration):
       next(iterator)
+
+  def testOperationFlags(self):
+    operation = cygrpc.operation_send_message('asdf',
+                                              cygrpc.WriteFlag.no_compress)
+    self.assertEqual(cygrpc.WriteFlag.no_compress, operation.flags)
 
   def testTimespec(self):
     now = time.time()
@@ -188,12 +194,13 @@ class InsecureServerInsecureClient(unittest.TestCase):
                          CLIENT_METADATA_ASCII_VALUE),
         cygrpc.Metadatum(CLIENT_METADATA_BIN_KEY, CLIENT_METADATA_BIN_VALUE)])
     client_start_batch_result = client_call.start_batch(cygrpc.Operations([
-        cygrpc.operation_send_initial_metadata(client_initial_metadata),
-        cygrpc.operation_send_message(REQUEST),
-        cygrpc.operation_send_close_from_client(),
-        cygrpc.operation_receive_initial_metadata(),
-        cygrpc.operation_receive_message(),
-        cygrpc.operation_receive_status_on_client()
+        cygrpc.operation_send_initial_metadata(client_initial_metadata,
+                                               _EMPTY_FLAGS),
+        cygrpc.operation_send_message(REQUEST, _EMPTY_FLAGS),
+        cygrpc.operation_send_close_from_client(_EMPTY_FLAGS),
+        cygrpc.operation_receive_initial_metadata(_EMPTY_FLAGS),
+        cygrpc.operation_receive_message(_EMPTY_FLAGS),
+        cygrpc.operation_receive_status_on_client(_EMPTY_FLAGS)
     ]), client_call_tag)
     self.assertEqual(cygrpc.CallError.ok, client_start_batch_result)
     client_event_future = test_utilities.CompletionQueuePollFuture(
@@ -223,12 +230,14 @@ class InsecureServerInsecureClient(unittest.TestCase):
         cygrpc.Metadatum(SERVER_TRAILING_METADATA_KEY,
                          SERVER_TRAILING_METADATA_VALUE)])
     server_start_batch_result = server_call.start_batch([
-        cygrpc.operation_send_initial_metadata(server_initial_metadata),
-        cygrpc.operation_receive_message(),
-        cygrpc.operation_send_message(RESPONSE),
-        cygrpc.operation_receive_close_on_server(),
+        cygrpc.operation_send_initial_metadata(server_initial_metadata,
+                                               _EMPTY_FLAGS),
+        cygrpc.operation_receive_message(_EMPTY_FLAGS),
+        cygrpc.operation_send_message(RESPONSE, _EMPTY_FLAGS),
+        cygrpc.operation_receive_close_on_server(_EMPTY_FLAGS),
         cygrpc.operation_send_status_from_server(
-            server_trailing_metadata, SERVER_STATUS_CODE, SERVER_STATUS_DETAILS)
+            server_trailing_metadata, SERVER_STATUS_CODE,
+            SERVER_STATUS_DETAILS, _EMPTY_FLAGS)
     ], server_call_tag)
     self.assertEqual(cygrpc.CallError.ok, server_start_batch_result)
 
@@ -349,12 +358,13 @@ class SecureServerSecureClient(unittest.TestCase):
                          CLIENT_METADATA_ASCII_VALUE),
         cygrpc.Metadatum(CLIENT_METADATA_BIN_KEY, CLIENT_METADATA_BIN_VALUE)])
     client_start_batch_result = client_call.start_batch(cygrpc.Operations([
-        cygrpc.operation_send_initial_metadata(client_initial_metadata),
-        cygrpc.operation_send_message(REQUEST),
-        cygrpc.operation_send_close_from_client(),
-        cygrpc.operation_receive_initial_metadata(),
-        cygrpc.operation_receive_message(),
-        cygrpc.operation_receive_status_on_client()
+        cygrpc.operation_send_initial_metadata(client_initial_metadata,
+                                               _EMPTY_FLAGS),
+        cygrpc.operation_send_message(REQUEST, _EMPTY_FLAGS),
+        cygrpc.operation_send_close_from_client(_EMPTY_FLAGS),
+        cygrpc.operation_receive_initial_metadata(_EMPTY_FLAGS),
+        cygrpc.operation_receive_message(_EMPTY_FLAGS),
+        cygrpc.operation_receive_status_on_client(_EMPTY_FLAGS)
     ]), client_call_tag)
     self.assertEqual(cygrpc.CallError.ok, client_start_batch_result)
     client_event_future = test_utilities.CompletionQueuePollFuture(
@@ -387,12 +397,14 @@ class SecureServerSecureClient(unittest.TestCase):
         cygrpc.Metadatum(SERVER_TRAILING_METADATA_KEY,
                          SERVER_TRAILING_METADATA_VALUE)])
     server_start_batch_result = server_call.start_batch([
-        cygrpc.operation_send_initial_metadata(server_initial_metadata),
-        cygrpc.operation_receive_message(),
-        cygrpc.operation_send_message(RESPONSE),
-        cygrpc.operation_receive_close_on_server(),
+        cygrpc.operation_send_initial_metadata(server_initial_metadata,
+                                               _EMPTY_FLAGS),
+        cygrpc.operation_receive_message(_EMPTY_FLAGS),
+        cygrpc.operation_send_message(RESPONSE, _EMPTY_FLAGS),
+        cygrpc.operation_receive_close_on_server(_EMPTY_FLAGS),
         cygrpc.operation_send_status_from_server(
-            server_trailing_metadata, SERVER_STATUS_CODE, SERVER_STATUS_DETAILS)
+            server_trailing_metadata, SERVER_STATUS_CODE,
+            SERVER_STATUS_DETAILS, _EMPTY_FLAGS)
     ], server_call_tag)
     self.assertEqual(cygrpc.CallError.ok, server_start_batch_result)
 

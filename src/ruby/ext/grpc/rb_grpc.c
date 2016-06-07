@@ -50,7 +50,6 @@
 #include "rb_loader.h"
 #include "rb_server.h"
 #include "rb_server_credentials.h"
-#include "rb_signal.h"
 
 static VALUE grpc_rb_cTimeVal = Qnil;
 
@@ -319,7 +318,7 @@ void Init_grpc_c() {
   grpc_rb_mGrpcCore = rb_define_module_under(grpc_rb_mGRPC, "Core");
   grpc_rb_sNewServerRpc =
       rb_struct_define("NewServerRpc", "method", "host",
-                       "deadline", "metadata", "call", NULL);
+                       "deadline", "metadata", "call", "cq", NULL);
   grpc_rb_sStatus =
       rb_struct_define("Status", "code", "details", "metadata", NULL);
   sym_code = ID2SYM(rb_intern("code"));
@@ -333,7 +332,6 @@ void Init_grpc_c() {
   Init_grpc_channel_credentials();
   Init_grpc_server();
   Init_grpc_server_credentials();
-  Init_grpc_signals();
   Init_grpc_status_codes();
   Init_grpc_time_consts();
 }

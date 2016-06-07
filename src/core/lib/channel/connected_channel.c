@@ -93,16 +93,18 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   GPR_ASSERT(r == 0);
 }
 
-static void set_pollset(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                        grpc_pollset *pollset) {
+static void set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
+                                       grpc_call_element *elem,
+                                       grpc_polling_entity *pollent) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
-  grpc_transport_set_pollset(exec_ctx, chand->transport,
-                             TRANSPORT_STREAM_FROM_CALL_DATA(calld), pollset);
+  grpc_transport_set_pops(exec_ctx, chand->transport,
+                          TRANSPORT_STREAM_FROM_CALL_DATA(calld), pollent);
 }
 
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                              const grpc_call_stats *stats,
                               void *and_free_memory) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
@@ -137,7 +139,7 @@ static const grpc_channel_filter connected_channel_filter = {
     con_start_transport_op,
     sizeof(call_data),
     init_call_elem,
-    set_pollset,
+    set_pollset_or_pollset_set,
     destroy_call_elem,
     sizeof(channel_data),
     init_channel_elem,
