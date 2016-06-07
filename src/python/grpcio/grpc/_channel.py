@@ -803,12 +803,15 @@ def _moot(state):
 
 def _options(options):
   if options is None:
-    pairs = ((cygrpc.ChannelArgKey.primary_user_agent_string, _USER_AGENT),)
+    options = ()
+
+  pairs = dict(options)
+  if cygrpc.ChannelArgKey.primary_user_agent_string in pairs:
+    pairs[cygrpc.ChannelArgKey.primary_user_agent_string] += ' ' + _USER_AGENT
   else:
-    pairs = list(options) + [
-        (cygrpc.ChannelArgKey.primary_user_agent_string, _USER_AGENT)]
+    pairs[cygrpc.ChannelArgKey.primary_user_agent_string] = _USER_AGENT
   return cygrpc.ChannelArgs(
-      cygrpc.ChannelArg(arg_name, arg_value) for arg_name, arg_value in pairs)
+      cygrpc.ChannelArg(key, pairs[key]) for key in pairs)
 
 
 class Channel(grpc.Channel):

@@ -170,10 +170,14 @@ class Call(_types.Call):
 class Channel(_types.Channel):
 
   def __init__(self, target, args, creds=None):
-    args = list(args) + [
-        (cygrpc.ChannelArgKey.primary_user_agent_string, _USER_AGENT)]
+    args = dict(args)
+    if cygrpc.ChannelArgKey.primary_user_agent_string in args:
+      args[cygrpc.ChannelArgKey.primary_user_agent_string] += ' ' + _USER_AGENT
+    else:
+      args[cygrpc.ChannelArgKey.primary_user_agent_string] = _USER_AGENT
+       
     args = cygrpc.ChannelArgs(
-        cygrpc.ChannelArg(key, value) for key, value in args)
+        cygrpc.ChannelArg(key, args[key]) for key in args)
     if creds is None:
       self.channel = cygrpc.Channel(target, args)
     else:
