@@ -43,7 +43,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
-#ifdef GPR_WIN32
+#ifdef GPR_WINDOWS
 #include <grpc/support/log_windows.h>
 #endif
 
