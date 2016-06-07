@@ -4372,7 +4372,7 @@
   }, 
   {
     "deps": [
-      "grpc++_base"
+      "grpc++"
     ], 
     "headers": [
       "include/grpc++/ext/proto_server_reflection_plugin.h", 
