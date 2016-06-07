@@ -153,9 +153,8 @@ class WorkerServer(services_pb2.BetaWorkerServiceServicer):
       if config.rpc_type == control_pb2.UNARY:
         client = benchmark_client.UnaryAsyncBenchmarkClient(
             server, config, qps_data)
-      elif config.rpc_type == control_pb2.STREAMING:
-        client = benchmark_client.StreamingAsyncBenchmarkClient(
-            server, config, qps_data)
+      else:
+        raise Exception('Async streaming client not supported')
     else:
       raise Exception('Unsupported client type {}'.format(config.client_type))
 
