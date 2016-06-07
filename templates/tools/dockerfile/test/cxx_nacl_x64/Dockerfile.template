@@ -28,16 +28,18 @@
   # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
   # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-  
+
   FROM ubuntu:14.04
-  
+
   <%include file="../../apt_get_basic.include"/>
   <%include file="../../cxx_deps.include"/>
   <%include file="../../nacl_deps.include"/>
+
+  RUN wget ${openssl_fallback.base_uri + openssl_fallback.tarball}
 
   ENV POST_GIT_STEP tools/dockerfile/test/cxx_nacl_x64/post-git-setup.sh
 
   <%include file="../../run_tests_addons.include"/>
   # Define the default command.
   CMD ["bash"]
-  
+

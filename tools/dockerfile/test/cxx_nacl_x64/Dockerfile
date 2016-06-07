@@ -100,6 +100,8 @@ RUN gclient config --unmanaged --name=src \
 RUN gclient sync --with_branch_heads
 
 
+RUN wget https://openssl.org/source/old/1.0.2/openssl-1.0.2f.tar.gz
+
 ENV POST_GIT_STEP tools/dockerfile/test/cxx_nacl_x64/post-git-setup.sh
 
 # Prepare ccache
