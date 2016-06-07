@@ -31,7 +31,6 @@
  *
  */
 
-
 #include <grpc++/channel.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/impl/grpc_library.h>
@@ -44,8 +43,8 @@ namespace grpc {
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 
-std::shared_ptr<Channel> CreateInsecureChannelFromFd(
-    const grpc::string& target, int fd) {
+std::shared_ptr<Channel> CreateInsecureChannelFromFd(const grpc::string& target,
+                                                     int fd) {
   internal::GrpcLibrary init_lib;
   init_lib.init();
   return CreateChannelInternal(

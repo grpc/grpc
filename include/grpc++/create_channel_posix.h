@@ -36,8 +36,8 @@
 
 #include <memory>
 
-#include <grpc/support/port_platform.h>
 #include <grpc++/channel.h>
+#include <grpc/support/port_platform.h>
 
 namespace grpc {
 
@@ -47,8 +47,8 @@ namespace grpc {
 ///
 /// \param target The name of the target.
 /// \param fd The file descriptor representing a socket.
-std::shared_ptr<Channel> CreateInsecureChannelFromFd(
-    const grpc::string& target, int fd);
+std::shared_ptr<Channel> CreateInsecureChannelFromFd(const grpc::string& target,
+                                                     int fd);
 
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 

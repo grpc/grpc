@@ -36,8 +36,8 @@
 
 #include <memory>
 
-#include <grpc/support/port_platform.h>
 #include <grpc++/server.h>
+#include <grpc/support/port_platform.h>
 
 namespace grpc {
 
@@ -53,4 +53,4 @@ void AddInsecureChannelFromFd(Server* server, int fd);
 
 }  // namespace grpc
 
-#endif  // GRPCXX_CREATE_CHANNEL_POSIX_H
+#endif  // GRPCXX_SERVER_POSIX_H
