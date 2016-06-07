@@ -94,7 +94,7 @@ void PrintSimpleSignature(Printer *printer, const MethodDescriptor *method,
 void PrintAdvancedSignature(Printer *printer, const MethodDescriptor *method,
                             map< ::grpc::string, ::grpc::string> vars) {
   vars["method_name"] = "RPCTo" + vars["method_name"];
-  vars["return_type"] = "ProtoRPC *";
+  vars["return_type"] = "GRPCProtoRPC *";
   PrintMethodSignature(printer, method, vars);
 }
 
@@ -199,7 +199,7 @@ void PrintMethodImplementations(Printer *printer,
         " marshalling and parsing.\n");
     printer.Print(vars,
                   "@interface $service_class$ :"
-                  " ProtoService<$service_class$>\n");
+                  " GRPCProtoService<$service_class$>\n");
     printer.Print(
         "- (instancetype)initWithHost:(NSString *)host"
         " NS_DESIGNATED_INITIALIZER;\n");
