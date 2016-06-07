@@ -86,6 +86,7 @@ namespace Grpc.Core
             {
                 this.handle.RegisterCompletionQueue(cq);
             }
+            GrpcEnvironment.RegisterServer(this);
         }
 
         /// <summary>
@@ -152,43 +153,24 @@ namespace Grpc.Core
         /// cleans up used resources. The returned task finishes when shutdown procedure
         /// is complete.
         /// </summary>
-        public async Task ShutdownAsync()
+        /// <remarks>
+        /// It is strongly recommended to shutdown all previously created servers before exiting from the process.
+        /// </remarks>
+        public Task ShutdownAsync()
         {
-            lock (myLock)
-            {
-                GrpcPreconditions.CheckState(startRequested);
-                GrpcPreconditions.CheckState(!shutdownRequested);
-                shutdownRequested = true;
-            }
-
-            var cq = environment.CompletionQueues.First();  // any cq will do
-            handle.ShutdownAndNotify(HandleServerShutdown, cq);
-            await shutdownTcs.Task.ConfigureAwait(false);
-            DisposeHandle();
-
-            await Task.Run(() => GrpcEnvironment.Release()).ConfigureAwait(false);
+            return ShutdownInternalAsync(false);
         }
 
         /// <summary>
         /// Requests server shutdown while cancelling all the in-progress calls.
         /// The returned task finishes when shutdown procedure is complete.
         /// </summary>
-        public async Task KillAsync()
+        /// <remarks>
+        /// It is strongly recommended to shutdown all previously created servers before exiting from the process.
+        /// </remarks>
+        public Task KillAsync()
         {
-            lock (myLock)
-            {
-                GrpcPreconditions.CheckState(startRequested);
-                GrpcPreconditions.CheckState(!shutdownRequested);
-                shutdownRequested = true;
-            }
-
-            var cq = environment.CompletionQueues.First();  // any cq will do
-            handle.ShutdownAndNotify(HandleServerShutdown, cq);
-            handle.CancelAllCalls();
-            await shutdownTcs.Task.ConfigureAwait(false);
-            DisposeHandle();
-
-            await Task.Run(() => GrpcEnvironment.Release()).ConfigureAwait(false);
+            return ShutdownInternalAsync(true);
         }
 
         internal void AddCallReference(object call)
@@ -204,6 +186,53 @@ namespace Grpc.Core
         {
             handle.DangerousRelease();
             activeCallCounter.Decrement();
+        }
+
+        /// <summary>
+        /// Shuts down the server.
+        /// </summary>
+        private async Task ShutdownInternalAsync(bool kill)
+        {
+            lock (myLock)
+            {
+                GrpcPreconditions.CheckState(startRequested);
+                GrpcPreconditions.CheckState(!shutdownRequested);
+                shutdownRequested = true;
+            }
+            GrpcEnvironment.UnregisterServer(this);
+
+            var cq = environment.CompletionQueues.First();  // any cq will do
+            handle.ShutdownAndNotify(HandleServerShutdown, cq);
+            if (kill)
+            {
+                handle.CancelAllCalls();
+            }
+
+            await ShutdownCompleteOrEnvironmentDeadAsync().ConfigureAwait(false);
+
+            DisposeHandle();
+
+            await GrpcEnvironment.ReleaseAsync().ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// In case the environment's threadpool becomes dead, the shutdown completion will
+        /// never be delivered, but we need to release the environment's handle anyway.
+        /// </summary>
+        private async Task ShutdownCompleteOrEnvironmentDeadAsync()
+        {
+            while (true)
+            {
+                var task = await Task.WhenAny(shutdownTcs.Task, Task.Delay(20)).ConfigureAwait(false);
+                if (shutdownTcs.Task == task)
+                {
+                    return;
+                }
+                if (!environment.IsAlive)
+                {
+                    return;
+                }
+            }
         }
 
         /// <summary>

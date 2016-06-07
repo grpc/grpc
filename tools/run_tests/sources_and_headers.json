@@ -4093,12 +4093,27 @@
       "grpc_transport_chttp2_client_insecure", 
       "grpc_transport_chttp2_client_secure", 
       "grpc_transport_chttp2_server_insecure", 
-      "grpc_transport_chttp2_server_secure", 
-      "grpc_transport_cronet_client_secure"
+      "grpc_transport_chttp2_server_secure"
     ], 
     "headers": [], 
     "language": "c", 
     "name": "grpc", 
+    "src": [
+      "src/core/lib/surface/init.c"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base", 
+      "grpc_transport_chttp2_client_secure", 
+      "grpc_transport_cronet_client_secure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "grpc_cronet", 
     "src": [
       "src/core/lib/surface/init.c"
     ], 
@@ -6008,7 +6023,6 @@
       "tsi"
     ], 
     "headers": [
-      "include/grpc/grpc_cronet.h", 
       "include/grpc/grpc_security.h", 
       "include/grpc/grpc_security_constants.h", 
       "src/core/lib/security/context/security_context.h", 
@@ -6033,7 +6047,6 @@
     "language": "c", 
     "name": "grpc_secure", 
     "src": [
-      "include/grpc/grpc_cronet.h", 
       "include/grpc/grpc_security.h", 
       "include/grpc/grpc_security_constants.h", 
       "src/core/lib/http/httpcli_security_connector.c", 
@@ -6292,11 +6305,17 @@
       "grpc_transport_chttp2"
     ], 
     "headers": [
+      "include/grpc/grpc_cronet.h", 
+      "include/grpc/grpc_security.h", 
+      "include/grpc/grpc_security_constants.h", 
       "third_party/objective_c/Cronet/cronet_c_for_grpc.h"
     ], 
     "language": "c", 
     "name": "grpc_transport_cronet_client_secure", 
     "src": [
+      "include/grpc/grpc_cronet.h", 
+      "include/grpc/grpc_security.h", 
+      "include/grpc/grpc_security_constants.h", 
       "src/core/ext/transport/cronet/client/secure/cronet_channel_create.c", 
       "src/core/ext/transport/cronet/transport/cronet_api_dummy.c", 
       "src/core/ext/transport/cronet/transport/cronet_transport.c"
