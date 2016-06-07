@@ -31,8 +31,6 @@
  *
  */
 
-#include <grpc++/support/config_protobuf.h>
-
 #include "test/cpp/qps/parse_json.h"
 
 #include <string>

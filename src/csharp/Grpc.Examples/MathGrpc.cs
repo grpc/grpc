@@ -85,8 +85,8 @@ namespace Math {
     public abstract class MathBase
     {
       /// <summary>
-      ///  Div divides args.dividend by args.divisor and returns the quotient and
-      ///  remainder.
+      ///  Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
+      ///  and remainder.
       /// </summary>
       public virtual global::System.Threading.Tasks.Task<global::Math.DivReply> Div(global::Math.DivArgs request, ServerCallContext context)
       {
@@ -105,7 +105,7 @@ namespace Math {
       }
 
       /// <summary>
-      ///  Fib generates numbers in the Fibonacci sequence.  If args.limit > 0, Fib
+      ///  Fib generates numbers in the Fibonacci sequence.  If FibArgs.limit > 0, Fib
       ///  generates up to limit numbers; otherwise it continues until the call is
       ///  canceled.  Unlike Fib above, Fib has no final FibReply.
       /// </summary>
@@ -144,32 +144,32 @@ namespace Math {
       }
 
       /// <summary>
-      ///  Div divides args.dividend by args.divisor and returns the quotient and
-      ///  remainder.
+      ///  Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
+      ///  and remainder.
       /// </summary>
       public virtual global::Math.DivReply Div(global::Math.DivArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return Div(request, new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  Div divides args.dividend by args.divisor and returns the quotient and
-      ///  remainder.
+      ///  Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
+      ///  and remainder.
       /// </summary>
       public virtual global::Math.DivReply Div(global::Math.DivArgs request, CallOptions options)
       {
         return CallInvoker.BlockingUnaryCall(__Method_Div, null, options, request);
       }
       /// <summary>
-      ///  Div divides args.dividend by args.divisor and returns the quotient and
-      ///  remainder.
+      ///  Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
+      ///  and remainder.
       /// </summary>
       public virtual AsyncUnaryCall<global::Math.DivReply> DivAsync(global::Math.DivArgs request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
         return DivAsync(request, new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  Div divides args.dividend by args.divisor and returns the quotient and
-      ///  remainder.
+      ///  Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
+      ///  and remainder.
       /// </summary>
       public virtual AsyncUnaryCall<global::Math.DivReply> DivAsync(global::Math.DivArgs request, CallOptions options)
       {
@@ -196,7 +196,7 @@ namespace Math {
         return CallInvoker.AsyncDuplexStreamingCall(__Method_DivMany, null, options);
       }
       /// <summary>
-      ///  Fib generates numbers in the Fibonacci sequence.  If args.limit > 0, Fib
+      ///  Fib generates numbers in the Fibonacci sequence.  If FibArgs.limit > 0, Fib
       ///  generates up to limit numbers; otherwise it continues until the call is
       ///  canceled.  Unlike Fib above, Fib has no final FibReply.
       /// </summary>
@@ -205,7 +205,7 @@ namespace Math {
         return Fib(request, new CallOptions(headers, deadline, cancellationToken));
       }
       /// <summary>
-      ///  Fib generates numbers in the Fibonacci sequence.  If args.limit > 0, Fib
+      ///  Fib generates numbers in the Fibonacci sequence.  If FibArgs.limit > 0, Fib
       ///  generates up to limit numbers; otherwise it continues until the call is
       ///  canceled.  Unlike Fib above, Fib has no final FibReply.
       /// </summary>

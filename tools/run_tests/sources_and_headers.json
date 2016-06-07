@@ -1904,7 +1904,7 @@
       "gpr", 
       "grpc", 
       "grpc++", 
-      "grpc++_codegen"
+      "grpc++_codegen_base"
     ], 
     "headers": [
       "src/proto/grpc/testing/control.grpc.pb.h", 
@@ -1928,7 +1928,8 @@
   }, 
   {
     "deps": [
-      "grpc++_codegen"
+      "grpc++_codegen_base", 
+      "grpc++_codegen_base_src"
     ], 
     "headers": [
       "src/proto/grpc/testing/control.grpc.pb.h", 
@@ -4267,7 +4268,8 @@
     "deps": [
       "grpc", 
       "grpc++_base", 
-      "grpc++_codegen"
+      "grpc++_codegen_base", 
+      "grpc++_codegen_base_src"
     ], 
     "headers": [
       "src/cpp/client/secure_credentials.h", 
@@ -4309,6 +4311,10 @@
   {
     "deps": [
       "grpc++", 
+      "grpc++_codegen_base", 
+      "grpc++_codegen_base_src", 
+      "grpc++_codegen_proto", 
+      "grpc++_config_proto", 
       "grpc_test_util"
     ], 
     "headers": [
@@ -4349,7 +4355,8 @@
       "gpr", 
       "grpc", 
       "grpc++_base", 
-      "grpc++_codegen", 
+      "grpc++_codegen_base", 
+      "grpc++_codegen_base_src", 
       "grpc_unsecure"
     ], 
     "headers": [], 
@@ -4383,7 +4390,7 @@
   }, 
   {
     "deps": [
-      "grpc++_config"
+      "grpc++_config_proto"
     ], 
     "headers": [
       "src/compiler/config.h", 
@@ -5580,6 +5587,19 @@
   }, 
   {
     "deps": [
+      "grpc++_codegen_base"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "grpc++_codegen_base_src", 
+    "src": [
+      "src/cpp/codegen/codegen_init.cc"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
       "gpr", 
       "grpc_codegen"
     ], 
@@ -6373,8 +6393,7 @@
   {
     "deps": [
       "grpc", 
-      "grpc++_codegen", 
-      "grpc++_config"
+      "grpc++_codegen_base"
     ], 
     "headers": [
       "include/grpc++/alarm.h", 
@@ -6389,7 +6408,6 @@
       "include/grpc++/impl/client_unary_call.h", 
       "include/grpc++/impl/grpc_library.h", 
       "include/grpc++/impl/method_handler_impl.h", 
-      "include/grpc++/impl/proto_utils.h", 
       "include/grpc++/impl/rpc_method.h", 
       "include/grpc++/impl/rpc_service_method.h", 
       "include/grpc++/impl/serialization_traits.h", 
@@ -6414,6 +6432,7 @@
       "include/grpc++/support/async_unary_call.h", 
       "include/grpc++/support/byte_buffer.h", 
       "include/grpc++/support/channel_arguments.h", 
+      "include/grpc++/support/config.h", 
       "include/grpc++/support/slice.h", 
       "include/grpc++/support/status.h", 
       "include/grpc++/support/status_code_enum.h", 
@@ -6441,7 +6460,6 @@
       "include/grpc++/impl/client_unary_call.h", 
       "include/grpc++/impl/grpc_library.h", 
       "include/grpc++/impl/method_handler_impl.h", 
-      "include/grpc++/impl/proto_utils.h", 
       "include/grpc++/impl/rpc_method.h", 
       "include/grpc++/impl/rpc_service_method.h", 
       "include/grpc++/impl/serialization_traits.h", 
@@ -6466,6 +6484,7 @@
       "include/grpc++/support/async_unary_call.h", 
       "include/grpc++/support/byte_buffer.h", 
       "include/grpc++/support/channel_arguments.h", 
+      "include/grpc++/support/config.h", 
       "include/grpc++/support/slice.h", 
       "include/grpc++/support/status.h", 
       "include/grpc++/support/status_code_enum.h", 
@@ -6507,7 +6526,6 @@
   }, 
   {
     "deps": [
-      "grpc++_config_codegen", 
       "grpc_codegen"
     ], 
     "headers": [
@@ -6520,11 +6538,11 @@
       "include/grpc++/impl/codegen/client_unary_call.h", 
       "include/grpc++/impl/codegen/completion_queue.h", 
       "include/grpc++/impl/codegen/completion_queue_tag.h", 
+      "include/grpc++/impl/codegen/config.h", 
       "include/grpc++/impl/codegen/core_codegen_interface.h", 
       "include/grpc++/impl/codegen/create_auth_context.h", 
       "include/grpc++/impl/codegen/grpc_library.h", 
       "include/grpc++/impl/codegen/method_handler_impl.h", 
-      "include/grpc++/impl/codegen/proto_utils.h", 
       "include/grpc++/impl/codegen/rpc_method.h", 
       "include/grpc++/impl/codegen/rpc_service_method.h", 
       "include/grpc++/impl/codegen/security/auth_context.h", 
@@ -6543,7 +6561,7 @@
       "include/grpc++/impl/codegen/time.h"
     ], 
     "language": "c++", 
-    "name": "grpc++_codegen", 
+    "name": "grpc++_codegen_base", 
     "src": [
       "include/grpc++/impl/codegen/async_stream.h", 
       "include/grpc++/impl/codegen/async_unary_call.h", 
@@ -6554,11 +6572,11 @@
       "include/grpc++/impl/codegen/client_unary_call.h", 
       "include/grpc++/impl/codegen/completion_queue.h", 
       "include/grpc++/impl/codegen/completion_queue_tag.h", 
+      "include/grpc++/impl/codegen/config.h", 
       "include/grpc++/impl/codegen/core_codegen_interface.h", 
       "include/grpc++/impl/codegen/create_auth_context.h", 
       "include/grpc++/impl/codegen/grpc_library.h", 
       "include/grpc++/impl/codegen/method_handler_impl.h", 
-      "include/grpc++/impl/codegen/proto_utils.h", 
       "include/grpc++/impl/codegen/rpc_method.h", 
       "include/grpc++/impl/codegen/rpc_service_method.h", 
       "include/grpc++/impl/codegen/security/auth_context.h", 
@@ -6574,25 +6592,23 @@
       "include/grpc++/impl/codegen/sync_cxx11.h", 
       "include/grpc++/impl/codegen/sync_no_cxx11.h", 
       "include/grpc++/impl/codegen/sync_stream.h", 
-      "include/grpc++/impl/codegen/time.h", 
-      "src/cpp/codegen/codegen_init.cc"
+      "include/grpc++/impl/codegen/time.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
   }, 
   {
     "deps": [
-      "grpc++_config_codegen"
+      "grpc++_codegen_base", 
+      "grpc++_config_proto"
     ], 
     "headers": [
-      "include/grpc++/support/config.h", 
-      "include/grpc++/support/config_protobuf.h"
+      "include/grpc++/impl/codegen/proto_utils.h"
     ], 
     "language": "c++", 
-    "name": "grpc++_config", 
+    "name": "grpc++_codegen_proto", 
     "src": [
-      "include/grpc++/support/config.h", 
-      "include/grpc++/support/config_protobuf.h"
+      "include/grpc++/impl/codegen/proto_utils.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -6600,13 +6616,11 @@
   {
     "deps": [], 
     "headers": [
-      "include/grpc++/impl/codegen/config.h", 
       "include/grpc++/impl/codegen/config_protobuf.h"
     ], 
     "language": "c++", 
-    "name": "grpc++_config_codegen", 
+    "name": "grpc++_config_proto", 
     "src": [
-      "include/grpc++/impl/codegen/config.h", 
       "include/grpc++/impl/codegen/config_protobuf.h"
     ], 
     "third_party": false, 

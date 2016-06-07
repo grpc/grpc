@@ -34,7 +34,7 @@
 #include <memory>
 #include <set>
 
-#include <grpc++/support/config_protobuf.h>
+#include <grpc++/impl/codegen/config_protobuf.h>
 
 #include <gflags/gflags.h>
 #include <grpc/support/log.h>

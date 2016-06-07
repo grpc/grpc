@@ -189,6 +189,7 @@ class ClientWriter : public ClientWriterInterface<W> {
                ClientContext* context, R* response)
       : context_(context), call_(channel->CreateCall(method, context, &cq_)) {
     finish_ops_.RecvMessage(response);
+    finish_ops_.AllowNoMessage();
 
     CallOpSet<CallOpSendInitialMetadata> ops;
     ops.SendInitialMetadata(context->send_initial_metadata_,
