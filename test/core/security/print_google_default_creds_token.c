@@ -48,7 +48,7 @@
 
 typedef struct {
   gpr_mu *mu;
-  grpc_pollset *pollset;
+  grpc_polling_entity pops;
   int is_done;
 } synchronizer;
 
@@ -67,7 +67,9 @@ static void on_metadata_response(grpc_exec_ctx *exec_ctx, void *user_data,
   }
   gpr_mu_lock(sync->mu);
   sync->is_done = 1;
-  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(sync->pollset, NULL));
+  GRPC_LOG_IF_ERROR(
+      "pollset_kick",
+      grpc_pollset_kick(grpc_polling_entity_pollset(&sync->pops), NULL));
   gpr_mu_unlock(sync->mu);
 }
 
@@ -94,20 +96,22 @@ int main(int argc, char **argv) {
     goto end;
   }
 
-  sync.pollset = gpr_malloc(grpc_pollset_size());
-  grpc_pollset_init(sync.pollset, &sync.mu);
+  grpc_pollset *pollset = gpr_malloc(grpc_pollset_size());
+  grpc_pollset_init(pollset, &sync.mu);
+  sync.pops = grpc_polling_entity_create_from_pollset(pollset);
   sync.is_done = 0;
 
   grpc_call_credentials_get_request_metadata(
       &exec_ctx, ((grpc_composite_channel_credentials *)creds)->call_creds,
-      sync.pollset, context, on_metadata_response, &sync);
+      &sync.pops, context, on_metadata_response, &sync);
 
   gpr_mu_lock(sync.mu);
   while (!sync.is_done) {
     grpc_pollset_worker *worker = NULL;
     if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
-            grpc_pollset_work(&exec_ctx, sync.pollset, &worker,
+            grpc_pollset_work(&exec_ctx,
+                              grpc_polling_entity_pollset(&sync.pops), &worker,
                               gpr_now(GPR_CLOCK_MONOTONIC),
                               gpr_inf_future(GPR_CLOCK_MONOTONIC))))
       sync.is_done = 1;
@@ -120,7 +124,7 @@ int main(int argc, char **argv) {
   grpc_exec_ctx_finish(&exec_ctx);
 
   grpc_channel_credentials_release(creds);
-  gpr_free(sync.pollset);
+  gpr_free(grpc_polling_entity_pollset(&sync.pops));
 
 end:
   gpr_cmdline_destroy(cl);

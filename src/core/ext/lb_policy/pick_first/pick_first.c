@@ -39,7 +39,7 @@
 
 typedef struct pending_pick {
   struct pending_pick *next;
-  grpc_pollset *pollset;
+  grpc_polling_entity *pollent;
   uint32_t initial_metadata_flags;
   grpc_connected_subchannel **target;
   grpc_closure *on_complete;
@@ -119,8 +119,8 @@ static void pf_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   while (pp != NULL) {
     pending_pick *next = pp->next;
     *pp->target = NULL;
-    grpc_pollset_set_del_pollset(exec_ctx, p->base.interested_parties,
-                                 pp->pollset);
+    grpc_polling_entity_del_from_pollset_set(exec_ctx, pp->pollent,
+                                             p->base.interested_parties);
     grpc_exec_ctx_sched(exec_ctx, pp->on_complete, GRPC_ERROR_NONE, NULL);
     gpr_free(pp);
     pp = next;
@@ -137,8 +137,8 @@ static void pf_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   while (pp != NULL) {
     pending_pick *next = pp->next;
     if (pp->target == target) {
-      grpc_pollset_set_del_pollset(exec_ctx, p->base.interested_parties,
-                                   pp->pollset);
+      grpc_polling_entity_del_from_pollset_set(exec_ctx, pp->pollent,
+                                               p->base.interested_parties);
       *target = NULL;
       grpc_exec_ctx_sched(exec_ctx, pp->on_complete,
                           GRPC_ERROR_CREATE("Pick Cancelled"), NULL);
@@ -164,8 +164,8 @@ static void pf_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     pending_pick *next = pp->next;
     if ((pp->initial_metadata_flags & initial_metadata_flags_mask) ==
         initial_metadata_flags_eq) {
-      grpc_pollset_set_del_pollset(exec_ctx, p->base.interested_parties,
-                                   pp->pollset);
+      grpc_polling_entity_del_from_pollset_set(exec_ctx, pp->pollent,
+                                               p->base.interested_parties);
       grpc_exec_ctx_sched(exec_ctx, pp->on_complete,
                           GRPC_ERROR_CREATE("Pick Cancelled"), NULL);
       gpr_free(pp);
@@ -199,7 +199,8 @@ static void pf_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
 }
 
 static int pf_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
-                   grpc_pollset *pollset, grpc_metadata_batch *initial_metadata,
+                   grpc_polling_entity *pollent,
+                   grpc_metadata_batch *initial_metadata,
                    uint32_t initial_metadata_flags,
                    grpc_connected_subchannel **target,
                    grpc_closure *on_complete) {
@@ -224,10 +225,11 @@ static int pf_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     if (!p->started_picking) {
       start_picking(exec_ctx, p);
     }
-    grpc_pollset_set_add_pollset(exec_ctx, p->base.interested_parties, pollset);
+    grpc_polling_entity_add_to_pollset_set(exec_ctx, pollent,
+                                           p->base.interested_parties);
     pp = gpr_malloc(sizeof(*pp));
     pp->next = p->pending_picks;
-    pp->pollset = pollset;
+    pp->pollent = pollent;
     pp->target = target;
     pp->initial_metadata_flags = initial_metadata_flags;
     pp->on_complete = on_complete;
@@ -313,8 +315,8 @@ static void pf_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
         while ((pp = p->pending_picks)) {
           p->pending_picks = pp->next;
           *pp->target = selected;
-          grpc_pollset_set_del_pollset(exec_ctx, p->base.interested_parties,
-                                       pp->pollset);
+          grpc_polling_entity_del_from_pollset_set(exec_ctx, pp->pollent,
+                                                   p->base.interested_parties);
           grpc_exec_ctx_sched(exec_ctx, pp->on_complete, GRPC_ERROR_NONE, NULL);
           gpr_free(pp);
         }

@@ -189,9 +189,9 @@ void grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
   }
 }
 
-void grpc_call_stack_set_pollset(grpc_exec_ctx *exec_ctx,
-                                 grpc_call_stack *call_stack,
-                                 grpc_pollset *pollset) {
+void grpc_call_stack_set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
+                                                grpc_call_stack *call_stack,
+                                                grpc_polling_entity *pollent) {
   size_t count = call_stack->count;
   grpc_call_element *call_elems;
   char *user_data;
@@ -203,15 +203,16 @@ void grpc_call_stack_set_pollset(grpc_exec_ctx *exec_ctx,
 
   /* init per-filter data */
   for (i = 0; i < count; i++) {
-    call_elems[i].filter->set_pollset(exec_ctx, &call_elems[i], pollset);
+    call_elems[i].filter->set_pollset_or_pollset_set(exec_ctx, &call_elems[i],
+                                                     pollent);
     user_data +=
         ROUND_UP_TO_ALIGNMENT_SIZE(call_elems[i].filter->sizeof_call_data);
   }
 }
 
-void grpc_call_stack_ignore_set_pollset(grpc_exec_ctx *exec_ctx,
-                                        grpc_call_element *elem,
-                                        grpc_pollset *pollset) {}
+void grpc_call_stack_ignore_set_pollset_or_pollset_set(
+    grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+    grpc_polling_entity *pollent) {}
 
 void grpc_call_stack_destroy(grpc_exec_ctx *exec_ctx, grpc_call_stack *stack,
                              const grpc_call_stats *call_stats,
