@@ -68,7 +68,7 @@ static void test_connectivity_state_name(void) {
       0 == strcmp(grpc_connectivity_state_name(GRPC_CHANNEL_TRANSIENT_FAILURE),
                   "TRANSIENT_FAILURE"));
   GPR_ASSERT(0 == strcmp(grpc_connectivity_state_name(GRPC_CHANNEL_SHUTDOWN),
-                         "FATAL_FAILURE"));
+                         "SHUTDOWN"));
 }
 
 static void test_check(void) {
