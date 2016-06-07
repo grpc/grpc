@@ -3452,7 +3452,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/client_unary_call.h \
     include/grpc++/impl/grpc_library.h \
     include/grpc++/impl/method_handler_impl.h \
-    include/grpc++/impl/proto_utils.h \
     include/grpc++/impl/rpc_method.h \
     include/grpc++/impl/rpc_service_method.h \
     include/grpc++/impl/serialization_traits.h \
@@ -3477,6 +3476,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/support/async_unary_call.h \
     include/grpc++/support/byte_buffer.h \
     include/grpc++/support/channel_arguments.h \
+    include/grpc++/support/config.h \
     include/grpc++/support/slice.h \
     include/grpc++/support/status.h \
     include/grpc++/support/status_code_enum.h \
@@ -3493,11 +3493,11 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/client_unary_call.h \
     include/grpc++/impl/codegen/completion_queue.h \
     include/grpc++/impl/codegen/completion_queue_tag.h \
+    include/grpc++/impl/codegen/config.h \
     include/grpc++/impl/codegen/core_codegen_interface.h \
     include/grpc++/impl/codegen/create_auth_context.h \
     include/grpc++/impl/codegen/grpc_library.h \
     include/grpc++/impl/codegen/method_handler_impl.h \
-    include/grpc++/impl/codegen/proto_utils.h \
     include/grpc++/impl/codegen/rpc_method.h \
     include/grpc++/impl/codegen/rpc_service_method.h \
     include/grpc++/impl/codegen/security/auth_context.h \
@@ -3535,10 +3535,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
     include/grpc/impl/codegen/time.h \
-    include/grpc++/impl/codegen/config.h \
-    include/grpc++/impl/codegen/config_protobuf.h \
-    include/grpc++/support/config.h \
-    include/grpc++/support/config_protobuf.h \
 
 LIBGRPC++_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_SRC))))
 
@@ -3662,8 +3658,62 @@ LIBGRPC++_TEST_UTIL_SRC = \
     test/cpp/util/string_ref_helper.cc \
     test/cpp/util/subprocess.cc \
     test/cpp/util/test_credentials_provider.cc \
+    src/cpp/codegen/codegen_init.cc \
 
 PUBLIC_HEADERS_CXX += \
+    include/grpc++/impl/codegen/async_stream.h \
+    include/grpc++/impl/codegen/async_unary_call.h \
+    include/grpc++/impl/codegen/call.h \
+    include/grpc++/impl/codegen/call_hook.h \
+    include/grpc++/impl/codegen/channel_interface.h \
+    include/grpc++/impl/codegen/client_context.h \
+    include/grpc++/impl/codegen/client_unary_call.h \
+    include/grpc++/impl/codegen/completion_queue.h \
+    include/grpc++/impl/codegen/completion_queue_tag.h \
+    include/grpc++/impl/codegen/config.h \
+    include/grpc++/impl/codegen/core_codegen_interface.h \
+    include/grpc++/impl/codegen/create_auth_context.h \
+    include/grpc++/impl/codegen/grpc_library.h \
+    include/grpc++/impl/codegen/method_handler_impl.h \
+    include/grpc++/impl/codegen/rpc_method.h \
+    include/grpc++/impl/codegen/rpc_service_method.h \
+    include/grpc++/impl/codegen/security/auth_context.h \
+    include/grpc++/impl/codegen/serialization_traits.h \
+    include/grpc++/impl/codegen/server_context.h \
+    include/grpc++/impl/codegen/server_interface.h \
+    include/grpc++/impl/codegen/service_type.h \
+    include/grpc++/impl/codegen/status.h \
+    include/grpc++/impl/codegen/status_code_enum.h \
+    include/grpc++/impl/codegen/string_ref.h \
+    include/grpc++/impl/codegen/stub_options.h \
+    include/grpc++/impl/codegen/sync.h \
+    include/grpc++/impl/codegen/sync_cxx11.h \
+    include/grpc++/impl/codegen/sync_no_cxx11.h \
+    include/grpc++/impl/codegen/sync_stream.h \
+    include/grpc++/impl/codegen/time.h \
+    include/grpc/impl/codegen/byte_buffer.h \
+    include/grpc/impl/codegen/byte_buffer_reader.h \
+    include/grpc/impl/codegen/compression_types.h \
+    include/grpc/impl/codegen/connectivity_state.h \
+    include/grpc/impl/codegen/grpc_types.h \
+    include/grpc/impl/codegen/propagation_bits.h \
+    include/grpc/impl/codegen/status.h \
+    include/grpc/impl/codegen/alloc.h \
+    include/grpc/impl/codegen/atm.h \
+    include/grpc/impl/codegen/atm_gcc_atomic.h \
+    include/grpc/impl/codegen/atm_gcc_sync.h \
+    include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/log.h \
+    include/grpc/impl/codegen/port_platform.h \
+    include/grpc/impl/codegen/slice.h \
+    include/grpc/impl/codegen/slice_buffer.h \
+    include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_generic.h \
+    include/grpc/impl/codegen/sync_posix.h \
+    include/grpc/impl/codegen/sync_windows.h \
+    include/grpc/impl/codegen/time.h \
+    include/grpc++/impl/codegen/proto_utils.h \
+    include/grpc++/impl/codegen/config_protobuf.h \
 
 LIBGRPC++_TEST_UTIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_TEST_UTIL_SRC))))
 
@@ -3713,6 +3763,7 @@ $(OBJDIR)/$(CONFIG)/test/cpp/util/create_test_channel.o: $(GENDIR)/src/proto/grp
 $(OBJDIR)/$(CONFIG)/test/cpp/util/string_ref_helper.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
 $(OBJDIR)/$(CONFIG)/test/cpp/util/subprocess.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
 $(OBJDIR)/$(CONFIG)/test/cpp/util/test_credentials_provider.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/src/cpp/codegen/codegen_init.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
 
 
 LIBGRPC++_UNSECURE_SRC = \
@@ -3756,7 +3807,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/client_unary_call.h \
     include/grpc++/impl/grpc_library.h \
     include/grpc++/impl/method_handler_impl.h \
-    include/grpc++/impl/proto_utils.h \
     include/grpc++/impl/rpc_method.h \
     include/grpc++/impl/rpc_service_method.h \
     include/grpc++/impl/serialization_traits.h \
@@ -3781,6 +3831,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/support/async_unary_call.h \
     include/grpc++/support/byte_buffer.h \
     include/grpc++/support/channel_arguments.h \
+    include/grpc++/support/config.h \
     include/grpc++/support/slice.h \
     include/grpc++/support/status.h \
     include/grpc++/support/status_code_enum.h \
@@ -3797,11 +3848,11 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/client_unary_call.h \
     include/grpc++/impl/codegen/completion_queue.h \
     include/grpc++/impl/codegen/completion_queue_tag.h \
+    include/grpc++/impl/codegen/config.h \
     include/grpc++/impl/codegen/core_codegen_interface.h \
     include/grpc++/impl/codegen/create_auth_context.h \
     include/grpc++/impl/codegen/grpc_library.h \
     include/grpc++/impl/codegen/method_handler_impl.h \
-    include/grpc++/impl/codegen/proto_utils.h \
     include/grpc++/impl/codegen/rpc_method.h \
     include/grpc++/impl/codegen/rpc_service_method.h \
     include/grpc++/impl/codegen/security/auth_context.h \
@@ -3839,10 +3890,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
     include/grpc/impl/codegen/time.h \
-    include/grpc++/impl/codegen/config.h \
-    include/grpc++/impl/codegen/config_protobuf.h \
-    include/grpc++/support/config.h \
-    include/grpc++/support/config_protobuf.h \
 
 LIBGRPC++_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_UNSECURE_SRC))))
 
@@ -3952,9 +3999,6 @@ LIBGRPC_PLUGIN_SUPPORT_SRC = \
     src/compiler/ruby_generator.cc \
 
 PUBLIC_HEADERS_CXX += \
-    include/grpc++/support/config.h \
-    include/grpc++/support/config_protobuf.h \
-    include/grpc++/impl/codegen/config.h \
     include/grpc++/impl/codegen/config_protobuf.h \
 
 LIBGRPC_PLUGIN_SUPPORT_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_PLUGIN_SUPPORT_SRC))))
@@ -10218,7 +10262,6 @@ CODEGEN_TEST_FULL_SRC = \
     $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc \
     test/cpp/codegen/codegen_test_full.cc \
-    src/cpp/codegen/codegen_init.cc \
 
 CODEGEN_TEST_FULL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CODEGEN_TEST_FULL_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10261,8 +10304,6 @@ $(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/stats.o:  $(LIBDIR)/$(CONFIG)/libgrpc
 
 $(OBJDIR)/$(CONFIG)/test/cpp/codegen/codegen_test_full.o:  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-$(OBJDIR)/$(CONFIG)/src/cpp/codegen/codegen_init.o:  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
 deps_codegen_test_full: $(CODEGEN_TEST_FULL_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
@@ -10271,7 +10312,6 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 $(OBJDIR)/$(CONFIG)/test/cpp/codegen/codegen_test_full.o: $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/src/cpp/codegen/codegen_init.o: $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc
 
 
 CODEGEN_TEST_MINIMAL_SRC = \
