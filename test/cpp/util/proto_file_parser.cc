@@ -38,6 +38,7 @@
 #include <sstream>
 
 #include <google/protobuf/text_format.h>
+#include <grpc++/support/config.h>
 
 namespace grpc {
 namespace testing {

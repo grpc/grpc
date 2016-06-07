@@ -31,7 +31,7 @@
 
 from concurrent import futures
 
-from grpc.beta import interfaces
+import grpc
 
 
 def _sign_request(callback, token, error):
@@ -39,7 +39,7 @@ def _sign_request(callback, token, error):
   callback(metadata, error)
 
 
-class GoogleCallCredentials(interfaces.GRPCAuthMetadataPlugin):
+class GoogleCallCredentials(grpc.AuthMetadataPlugin):
   """Metadata wrapper for GoogleCredentials from the oauth2client library."""
 
   def __init__(self, credentials):
@@ -63,7 +63,7 @@ class GoogleCallCredentials(interfaces.GRPCAuthMetadataPlugin):
     self._pool.shutdown(wait=False)
 
 
-class AccessTokenCallCredentials(interfaces.GRPCAuthMetadataPlugin):
+class AccessTokenCallCredentials(grpc.AuthMetadataPlugin):
   """Metadata wrapper for raw access token credentials."""
 
   def __init__(self, access_token):
