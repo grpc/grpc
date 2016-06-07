@@ -88,8 +88,7 @@ setuptools.setup(
       protoc_ext_module(),
   ]),
   packages=setuptools.find_packages('.'),
-  # TODO(atash): Figure out why auditwheel doesn't like namespace packages.
-  #namespace_packages=['grpc'],
+  namespace_packages=['grpc'],
   install_requires=[
     'protobuf>=3.0.0a3',
   ],
