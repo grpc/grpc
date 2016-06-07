@@ -49,8 +49,6 @@ extern "C" {
  * functionality on top of GRPC Core.
  */
 
-#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
-
 /** Create a client channel to 'target' using file descriptor 'fd'. The 'target'
     argument will be used to indicate the name for this channel. See the comment
     for grpc_insecure_channel_create for description of 'args' argument. */
@@ -64,8 +62,6 @@ GRPCAPI grpc_channel *grpc_insecure_channel_create_from_fd(
 GRPCAPI void grpc_server_add_insecure_channel_from_fd(grpc_server *server,
                                                       grpc_completion_queue *cq,
                                                       int fd);
-
-#endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 
 #ifdef __cplusplus
 }

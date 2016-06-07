@@ -31,12 +31,12 @@
  *
  */
 
+#include <grpc/grpc.h>
+#include <grpc/grpc_posix.h>
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 
-#include <grpc/grpc.h>
-#include <grpc/grpc_posix.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
