@@ -32,7 +32,6 @@
  */
 
 #include "resource.h"
-#include "gen/census.pb.h"
 #include "third_party/nanopb/pb_decode.h"
 
 #include <grpc/census.h>
@@ -42,13 +41,6 @@
 
 #include <stdbool.h>
 #include <string.h>
-
-// Internal representation of a resource.
-typedef struct {
-  char *name;
-  // Pointer to raw protobuf used in resource definition.
-  uint8_t *raw_pb;
-} resource;
 
 // Protect local resource data structures.
 static gpr_mu resource_lock;
@@ -65,7 +57,7 @@ static size_t n_resources = 0;
 // Number of defined resources
 static size_t n_defined_resources = 0;
 
-void initialize_resources() {
+void initialize_resources(void) {
   gpr_mu_init(&resource_lock);
   gpr_mu_lock(&resource_lock);
   GPR_ASSERT(resources == NULL && n_resources == 0 && n_defined_resources == 0);
@@ -78,16 +70,17 @@ void initialize_resources() {
 
 // Delete a resource given it's ID. Must be called with resource_lock held.
 static void delete_resource_locked(size_t rid) {
-  GPR_ASSERT(resources[rid] != NULL && resources[rid]->raw_pb != NULL &&
-             resources[rid]->name != NULL && n_defined_resources > 0);
+  GPR_ASSERT(resources[rid] != NULL);
   gpr_free(resources[rid]->name);
-  gpr_free(resources[rid]->raw_pb);
+  gpr_free(resources[rid]->description);
+  gpr_free(resources[rid]->numerators);
+  gpr_free(resources[rid]->denominators);
   gpr_free(resources[rid]);
   resources[rid] = NULL;
   n_defined_resources--;
 }
 
-void shutdown_resources() {
+void shutdown_resources(void) {
   gpr_mu_lock(&resource_lock);
   for (size_t i = 0; i < n_resources; i++) {
     if (resources[i] != NULL) {
@@ -128,8 +121,13 @@ static bool validate_string(pb_istream_t *stream, const pb_field_t *field,
       }
       break;
     case google_census_Resource_description_tag:
-      // Description is optional, does not need validating, just skip.
-      if (!pb_read(stream, NULL, stream->bytes_left)) {
+      if (stream->bytes_left == 0) {
+        return true;
+      }
+      vresource->description = gpr_malloc(stream->bytes_left + 1);
+      vresource->description[stream->bytes_left] = '\0';
+      if (!pb_read(stream, (uint8_t *)vresource->description,
+                   stream->bytes_left)) {
         return false;
       }
       break;
@@ -144,17 +142,47 @@ static bool validate_string(pb_istream_t *stream, const pb_field_t *field,
   return true;
 }
 
+// Decode numerators/denominators in a stream. The `count` and `bup`
+// (BasicUnit pointer) are pointers to the approriate fields in a resource
+// struct.
+static bool validate_units_helper(pb_istream_t *stream, int *count,
+                                  google_census_Resource_BasicUnit **bup) {
+  while (stream->bytes_left) {
+    (*count)++;
+    // Have to allocate a new array of values. Normal case is 0 or 1, so
+    // this should normally not be an issue.
+    google_census_Resource_BasicUnit *new_bup =
+        gpr_malloc((size_t)*count * sizeof(google_census_Resource_BasicUnit));
+    if (*count != 1) {
+      memcpy(new_bup, *bup,
+             (size_t)(*count - 1) * sizeof(google_census_Resource_BasicUnit));
+      gpr_free(*bup);
+    }
+    *bup = new_bup;
+    if (!pb_decode_varint(stream, (uint64_t *)(*bup + *count - 1))) {
+      return false;
+    }
+  }
+  return true;
+}
+
 // Validate units field of a Resource proto.
 static bool validate_units(pb_istream_t *stream, const pb_field_t *field,
                            void **arg) {
-  if (field->tag == google_census_Resource_MeasurementUnit_numerator_tag) {
-    *(bool *)*arg = true;  // has_numerator = true.
-  }
-  while (stream->bytes_left) {
-    uint64_t value;
-    if (!pb_decode_varint(stream, &value)) {
+  resource *vresource = (resource *)(*arg);
+  switch (field->tag) {
+    case google_census_Resource_MeasurementUnit_numerator_tag:
+      return validate_units_helper(stream, &vresource->n_numerators,
+                                   &vresource->numerators);
+      break;
+    case google_census_Resource_MeasurementUnit_denominator_tag:
+      return validate_units_helper(stream, &vresource->n_denominators,
+                                   &vresource->denominators);
+      break;
+    default:
+      gpr_log(GPR_ERROR, "Unknown field type.");
       return false;
-    }
+      break;
   }
   return true;
 }
@@ -170,10 +198,11 @@ static bool validate_resource_pb(const uint8_t *resource_pb,
   vresource.name.funcs.decode = &validate_string;
   vresource.name.arg = resources[id];
   vresource.description.funcs.decode = &validate_string;
+  vresource.description.arg = resources[id];
   vresource.unit.numerator.funcs.decode = &validate_units;
-  bool has_numerator = false;
-  vresource.unit.numerator.arg = &has_numerator;
+  vresource.unit.numerator.arg = resources[id];
   vresource.unit.denominator.funcs.decode = &validate_units;
+  vresource.unit.denominator.arg = resources[id];
 
   pb_istream_t stream =
       pb_istream_from_buffer((uint8_t *)resource_pb, resource_pb_size);
@@ -181,17 +210,15 @@ static bool validate_resource_pb(const uint8_t *resource_pb,
     return false;
   }
   // A Resource must have a name, a unit, with at least one numerator.
-  return (resources[id]->name != NULL && vresource.has_unit && has_numerator);
+  return (resources[id]->name != NULL && vresource.has_unit &&
+          resources[id]->n_numerators > 0);
 }
 
-int32_t census_define_resource(const uint8_t *resource_pb,
-                               size_t resource_pb_size) {
+// Allocate a blank resource, and return associated ID. Must be called with
+// resource_lock held.
+size_t allocate_resource(void) {
   // use next_id to optimize expected placement of next new resource.
   static size_t next_id = 0;
-  if (resource_pb == NULL) {
-    return -1;
-  }
-  gpr_mu_lock(&resource_lock);
   size_t id = n_resources;  // resource ID - initialize to invalid value.
   // Expand resources if needed.
   if (n_resources == n_defined_resources) {
@@ -212,22 +239,25 @@ int32_t census_define_resource(const uint8_t *resource_pb,
   }
   GPR_ASSERT(id < n_resources && resources[id] == NULL);
   resources[id] = gpr_malloc(sizeof(resource));
-  resources[id]->name = NULL;
+  memset(resources[id], 0, sizeof(resource));
+  n_defined_resources++;
+  next_id = (id + 1) % n_resources;
+  return id;
+}
+
+int32_t census_define_resource(const uint8_t *resource_pb,
+                               size_t resource_pb_size) {
+  if (resource_pb == NULL) {
+    return -1;
+  }
+  gpr_mu_lock(&resource_lock);
+  size_t id = allocate_resource();
   // Validate pb, extract name.
   if (!validate_resource_pb(resource_pb, resource_pb_size, id)) {
-    if (resources[id]->name != NULL) {
-      gpr_free(resources[id]->name);
-    }
-    gpr_free(resources[id]);
-    resources[id] = NULL;
+    delete_resource_locked(id);
     gpr_mu_unlock(&resource_lock);
     return -1;
   }
-  next_id = (id + 1) % n_resources;
-  // Make copy of raw proto, and return.
-  resources[id]->raw_pb = gpr_malloc(resource_pb_size);
-  memcpy(resources[id]->raw_pb, resource_pb, resource_pb_size);
-  n_defined_resources++;
   gpr_mu_unlock(&resource_lock);
   return (int32_t)id;
 }
@@ -252,4 +282,32 @@ int32_t census_resource_id(const char *name) {
   }
   gpr_mu_unlock(&resource_lock);
   return -1;
+}
+
+int32_t define_resource(const resource *base) {
+  GPR_ASSERT(base != NULL && base->name != NULL && base->n_numerators > 0 &&
+             base->numerators != NULL);
+  gpr_mu_lock(&resource_lock);
+  size_t id = allocate_resource();
+  size_t len = strlen(base->name) + 1;
+  resources[id]->name = gpr_malloc(len);
+  memcpy(resources[id]->name, base->name, len);
+  if (base->description) {
+    len = strlen(base->description);
+    resources[id]->description = gpr_malloc(len);
+    memcpy(resources[id]->description, base->description, len);
+  }
+  resources[id]->prefix = base->prefix;
+  resources[id]->n_numerators = base->n_numerators;
+  len = (size_t)base->n_numerators * sizeof(*base->numerators);
+  resources[id]->numerators = gpr_malloc(len);
+  memcpy(resources[id]->numerators, base->numerators, len);
+  resources[id]->n_denominators = base->n_denominators;
+  if (base->n_denominators != 0) {
+    len = (size_t)base->n_denominators * sizeof(*base->denominators);
+    resources[id]->denominators = gpr_malloc(len);
+    memcpy(resources[id]->denominators, base->denominators, len);
+  }
+  gpr_mu_unlock(&resource_lock);
+  return (int32_t)id;
 }
