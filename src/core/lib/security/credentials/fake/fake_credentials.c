@@ -106,7 +106,7 @@ static void on_simulated_token_fetch_done(grpc_exec_ctx *exec_ctx,
 
 static void md_only_test_get_request_metadata(
     grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds,
-    grpc_pollset *pollset, grpc_auth_metadata_context context,
+    grpc_polling_entity *pollent, grpc_auth_metadata_context context,
     grpc_credentials_metadata_cb cb, void *user_data) {
   grpc_md_only_test_credentials *c = (grpc_md_only_test_credentials *)creds;
 
