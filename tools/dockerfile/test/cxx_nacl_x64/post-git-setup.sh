@@ -29,9 +29,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 set -ex
-set root=`pwd`
 
-cd /var/local/git/grpc/third_party
-
-# Patch boringssl for NaCl compatibility
-patch -u -p1 < /chromium/webports/src/ports/boringssl/nacl.patch
+cd /var/local/git/grpc
+cp /openssl-1.0.2f.tar.gz third_party
+./tools/openssl/use_openssl.sh
