@@ -1,3 +1,4 @@
+#region Copyright notice and license
 
 // Copyright 2015, Google Inc.
 // All rights reserved.
@@ -28,53 +29,41 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-syntax = "proto3";
+#endregion
 
-package math;
+using System;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Grpc.Core;
+using Grpc.Core.Internal;
+using Grpc.Core.Utils;
+using NUnit.Framework;
 
-message DivArgs {
-  int64 dividend = 1;
-  int64 divisor = 2;
-}
+namespace Grpc.Core.Tests
+{
+    public class ShutdownHookPendingCallTest
+    {
+        const string Host = "127.0.0.1";
 
-message DivReply {
-  int64 quotient = 1;
-  int64 remainder = 2;
-}
+        [Test]
+        public void ProcessExitHookCanCleanupAbandonedCall()
+        {
+            var helper = new MockServiceHelper(Host);
+            var server = helper.GetServer();
+            server.Start();
+            var channel = helper.GetChannel();
 
-message FibArgs {
-  int64 limit = 1;
-}
+            var readyToShutdown = new TaskCompletionSource<object>();
+            helper.DuplexStreamingHandler = new DuplexStreamingServerMethod<string, string>(async (requestStream, responseStream, context) =>
+            {
+                readyToShutdown.SetResult(null);
+                await requestStream.ToListAsync();
+            });
 
-message Num {
-  int64 num = 1;
-}
-
-message FibReply {
-  int64 count = 1;
-}
-
-service Math {
-  // Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
-  // and remainder.
-  rpc Div (DivArgs) returns (DivReply) {
-  }
-
-  // DivMany accepts an arbitrary number of division args from the client stream
-  // and sends back the results in the reply stream.  The stream continues until
-  // the client closes its end; the server does the same after sending all the
-  // replies.  The stream ends immediately if either end aborts.
-  rpc DivMany (stream DivArgs) returns (stream DivReply) {
-  }
-
-  // Fib generates numbers in the Fibonacci sequence.  If FibArgs.limit > 0, Fib
-  // generates up to limit numbers; otherwise it continues until the call is
-  // canceled.  Unlike Fib above, Fib has no final FibReply.
-  rpc Fib (FibArgs) returns (stream Num) {
-  }
-
-  // Sum sums a stream of numbers, returning the final result once the stream
-  // is closed.
-  rpc Sum (stream Num) returns (Num) {
-  }
+            var call = Calls.AsyncDuplexStreamingCall(helper.CreateDuplexStreamingCall());
+            readyToShutdown.Task.Wait();  // make sure handler is running
+        }
+    }
 }
