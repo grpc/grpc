@@ -31,7 +31,6 @@
  *
  */
 
-#include "src/core/ext/census/census_log.h"
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
@@ -42,6 +41,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "src/core/ext/census/census_log.h"
 #include "test/core/util/test_config.h"
 
 /* Fills in 'record' of size 'size'. Each byte in record is filled in with the

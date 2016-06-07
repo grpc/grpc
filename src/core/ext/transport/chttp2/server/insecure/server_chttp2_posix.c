@@ -66,5 +66,12 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server *server,
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
+#else  // !GPR_SUPPORT_CHANNELS_FROM_FD
 
-#endif // GPR_SUPPORT_CHANNELS_FROM_FD
+void grpc_server_add_insecure_channel_from_fd(grpc_server *server,
+                                              grpc_completion_queue *cq,
+                                              int fd) {
+  GPR_ASSERT(0);
+}
+
+#endif  // GPR_SUPPORT_CHANNELS_FROM_FD

@@ -36,18 +36,16 @@
 #include <fcntl.h>
 #include <string.h>
 
-#include <grpc/support/alloc.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "test/core/util/test_config.h"
 
-typedef struct {
-  int fd_pair[2];
-} sp_fixture_data;
+typedef struct { int fd_pair[2]; } sp_fixture_data;
 
 static void create_sockets(int sv[2]) {
   int flags;
@@ -62,7 +60,7 @@ static void create_sockets(int sv[2]) {
 
 static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
     grpc_channel_args *client_args, grpc_channel_args *server_args) {
-  sp_fixture_data* fixture_data = gpr_malloc(sizeof(*fixture_data));
+  sp_fixture_data *fixture_data = gpr_malloc(sizeof(*fixture_data));
 
   grpc_end2end_test_fixture f;
   memset(&f, 0, sizeof(f));

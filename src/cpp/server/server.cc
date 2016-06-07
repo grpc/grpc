@@ -329,13 +329,9 @@ void Server::SetGlobalCallbacks(GlobalCallbacks* callbacks) {
   g_callbacks.reset(callbacks);
 }
 
-grpc_server* Server::c_server() {
-  return server_;
-}
+grpc_server* Server::c_server() { return server_; }
 
-CompletionQueue* Server::completion_queue() {
-  return &cq_;
-}
+CompletionQueue* Server::completion_queue() { return &cq_; }
 
 static grpc_server_register_method_payload_handling PayloadHandlingForMethod(
     RpcServiceMethod* method) {
