@@ -63,8 +63,8 @@ typedef struct {
 } event_engine_factory;
 
 static const event_engine_factory g_factories[] = {
-    {"poll", grpc_init_poll_posix},
     {"epoll", grpc_init_epoll_linux},
+    {"poll", grpc_init_poll_posix},
     {"legacy", grpc_init_poll_and_epoll_posix},
 };
 
