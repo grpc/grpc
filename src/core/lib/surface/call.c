@@ -1370,8 +1370,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         bool level_set = false;
         if (op->data.send_initial_metadata.maybe_compression_level.is_set) {
           effective_compression_level =
-              op->data.send_initial_metadata.maybe_compression_level
-                  .compression_level;
+              op->data.send_initial_metadata.maybe_compression_level.level;
           level_set = true;
         } else {
           const grpc_compression_options copts =
