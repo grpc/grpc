@@ -252,7 +252,7 @@ static void do_connect(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
 
     grpc_transport *transport =
         grpc_create_chttp2_transport(exec_ctx, NULL, server, 0);
-    grpc_server_setup_transport(exec_ctx, g_server, transport, NULL);
+    grpc_server_setup_transport(exec_ctx, g_server, transport, NULL, NULL);
     grpc_chttp2_transport_start_reading(exec_ctx, transport, NULL, 0);
 
     grpc_exec_ctx_enqueue(exec_ctx, fc->closure, false, NULL);
@@ -424,15 +424,19 @@ static void add_to_free(call_state *call, void *p) {
 static void read_metadata(input_stream *inp, size_t *count,
                           grpc_metadata **metadata, call_state *cs) {
   *count = next_byte(inp);
-  *metadata = gpr_malloc(*count * sizeof(**metadata));
-  memset(*metadata, 0, *count * sizeof(**metadata));
-  for (size_t i = 0; i < *count; i++) {
-    (*metadata)[i].key = read_string(inp);
-    read_buffer(inp, (char **)&(*metadata)[i].value,
-                &(*metadata)[i].value_length);
-    (*metadata)[i].flags = read_uint32(inp);
-    add_to_free(cs, (void *)(*metadata)[i].key);
-    add_to_free(cs, (void *)(*metadata)[i].value);
+  if (*count) {
+    *metadata = gpr_malloc(*count * sizeof(**metadata));
+    memset(*metadata, 0, *count * sizeof(**metadata));
+    for (size_t i = 0; i < *count; i++) {
+      (*metadata)[i].key = read_string(inp);
+      read_buffer(inp, (char **)&(*metadata)[i].value,
+                  &(*metadata)[i].value_length);
+      (*metadata)[i].flags = read_uint32(inp);
+      add_to_free(cs, (void *)(*metadata)[i].key);
+      add_to_free(cs, (void *)(*metadata)[i].value);
+    }
+  } else {
+    *metadata = gpr_malloc(1);
   }
   add_to_free(cs, *metadata);
 }
@@ -670,7 +674,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         if (g_channel != NULL) {
           grpc_connectivity_state st =
               grpc_channel_check_connectivity_state(g_channel, 0);
-          if (st != GRPC_CHANNEL_FATAL_FAILURE) {
+          if (st != GRPC_CHANNEL_SHUTDOWN) {
             gpr_timespec deadline = gpr_time_add(
                 gpr_now(GPR_CLOCK_REALTIME),
                 gpr_time_from_micros(read_uint32(&inp), GPR_TIMESPAN));

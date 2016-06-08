@@ -45,7 +45,7 @@
 
 #include <string.h>
 
-#ifdef GPR_WIN32
+#ifdef GPR_WINDOWS
 #define GPR_EXPORT __declspec(dllexport)
 #define GPR_CALLTYPE __stdcall
 #endif
@@ -806,11 +806,14 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_set_credentials(
 /* Server */
 
 GPR_EXPORT grpc_server *GPR_CALLTYPE
-grpcsharp_server_create(grpc_completion_queue *cq,
-                        const grpc_channel_args *args) {
-  grpc_server *server = grpc_server_create(args, NULL);
+grpcsharp_server_create(const grpc_channel_args *args) {
+  return grpc_server_create(args, NULL);
+}
+
+GPR_EXPORT void GPR_CALLTYPE
+grpcsharp_server_register_completion_queue(grpc_server *server,
+                                           grpc_completion_queue *cq) {
   grpc_server_register_completion_queue(server, cq, NULL);
-  return server;
 }
 
 GPR_EXPORT int32_t GPR_CALLTYPE
