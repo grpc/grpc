@@ -91,8 +91,8 @@ static void lame_start_transport_op(grpc_exec_ctx *exec_ctx,
                                     grpc_channel_element *elem,
                                     grpc_transport_op *op) {
   if (op->on_connectivity_state_change) {
-    GPR_ASSERT(*op->connectivity_state != GRPC_CHANNEL_FATAL_FAILURE);
-    *op->connectivity_state = GRPC_CHANNEL_FATAL_FAILURE;
+    GPR_ASSERT(*op->connectivity_state != GRPC_CHANNEL_SHUTDOWN);
+    *op->connectivity_state = GRPC_CHANNEL_SHUTDOWN;
     op->on_connectivity_state_change->cb(
         exec_ctx, op->on_connectivity_state_change->cb_arg, 1);
   }
@@ -108,6 +108,7 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                            grpc_call_element_args *args) {}
 
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                              const grpc_call_stats *stats,
                               void *and_free_memory) {
   gpr_free(and_free_memory);
 }
@@ -127,7 +128,7 @@ const grpc_channel_filter grpc_lame_filter = {
     lame_start_transport_op,
     sizeof(call_data),
     init_call_elem,
-    grpc_call_stack_ignore_set_pollset,
+    grpc_call_stack_ignore_set_pollset_or_pollset_set,
     destroy_call_elem,
     sizeof(channel_data),
     init_channel_elem,
