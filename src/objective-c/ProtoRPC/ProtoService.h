@@ -33,7 +33,7 @@
 
 #import <Foundation/Foundation.h>
 
-@class GRPCProtoRPC;
+@class GRPCProtoCall;
 @protocol GRXWriteable;
 @class GRXWriter;
 
@@ -44,7 +44,7 @@ __attribute__((deprecated("Please use GRPCProtoService.")))
                  packageName:(NSString *)packageName
                  serviceName:(NSString *)serviceName NS_DESIGNATED_INITIALIZER;
 
-- (GRPCProtoRPC *)RPCToMethod:(NSString *)method
+- (GRPCProtoCall *)RPCToMethod:(NSString *)method
            requestsWriter:(GRXWriter *)requestsWriter
   	        responseClass:(Class)responseClass
   	   responsesWriteable:(id<GRXWriteable>)responsesWriteable;

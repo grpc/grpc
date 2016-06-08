@@ -118,6 +118,6 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
 }
 @end
 
-@implementation GRPCProtoRPC
+@implementation GRPCProtoCall
 
 @end

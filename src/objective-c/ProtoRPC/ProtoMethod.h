@@ -51,7 +51,7 @@ __attribute__((deprecated("Please use GRPCProtoMethod.")))
 @end
 
 /**
- * This subclass is empty now. Eventually we'll remove ProtoService class
+ * This subclass is empty now. Eventually we'll remove ProtoMethod class
  * to avoid potential naming conflict
  */
 @interface GRPCProtoMethod : ProtoMethod
