@@ -242,6 +242,6 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
-void grpc_end2end_tests(grpc_end2end_test_config config) {
+void large_metadata(grpc_end2end_test_config config) {
   test_request_with_large_metadata(config);
 }

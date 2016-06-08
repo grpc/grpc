@@ -188,7 +188,7 @@ static void test_cancel_before_invoke(grpc_end2end_test_config config,
   config.tear_down_data(&f);
 }
 
-void grpc_end2end_tests(grpc_end2end_test_config config) {
+void cancel_before_invoke(grpc_end2end_test_config config) {
   size_t i;
   for (i = 1; i <= 6; i++) {
     test_cancel_before_invoke(config, i);

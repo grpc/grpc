@@ -143,6 +143,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/security/security_context.h )
   s.files += %w( src/core/tsi/fake_transport_security.h )
   s.files += %w( src/core/tsi/ssl_transport_security.h )
+  s.files += %w( src/core/tsi/ssl_types.h )
   s.files += %w( src/core/tsi/transport_security.h )
   s.files += %w( src/core/tsi/transport_security_interface.h )
   s.files += %w( src/core/census/grpc_filter.h )

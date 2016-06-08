@@ -1,0 +1,5 @@
+# GRPC Python setup requirements
+enum34>=1.0.4
+futures>=2.2.0
+cython>=0.23
+coverage>=4.0

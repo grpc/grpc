@@ -4,8 +4,13 @@ gens
 libs
 objs
 
-# Python virtual environments
-python*_virtual_environment
+# Python items
+.coverage*
+.eggs
+.tox
+htmlcov/
+dist/
+*.egg
 
 # gcov coverage data
 reports

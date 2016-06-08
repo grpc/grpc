@@ -11,16 +11,16 @@ You can find more detailed documentation and examples in the [doc](doc) and [exa
 
 #Installation
 
-See grpc/INSTALL for installation instructions for various platforms.
+See [grpc/INSTALL](INSTALL) for installation instructions for various platforms.
 
 #Repository Structure & Status
 
 This repository contains source code for gRPC libraries for multiple languages written on top of shared C core library [src/core] (src/core).
 
-Libraries in different languages are in different state of development. We are seeking contributions for all of these libraries.
+Libraries in different languages are in different states of development. We are seeking contributions for all of these libraries.
 
-| Language                | Source                              | Status                          |
-|-------------------------|-------------------------------------|---------------------------------|
+| Language                | Source                              | Status                           |
+|-------------------------|-------------------------------------|----------------------------------|
 | Shared C [core library] | [src/core] (src/core)               | Beta - the surface API is stable |
 | C++                     | [src/cpp] (src/cpp)                 | Beta - the surface API is stable |
 | Ruby                    | [src/ruby] (src/ruby)               | Beta - the surface API is stable |
@@ -31,10 +31,12 @@ Libraries in different languages are in different state of development. We are s
 | Objective-C             | [src/objective-c] (src/objective-c) | Beta - the surface API is stable |
 
 <small>
-Java source code is in [grpc-java] (http://github.com/grpc/grpc-java) repository.
-Go source code is in [grpc-go] (http://github.com/grpc/grpc-go) repository.
+Java source code is in the [grpc-java] (http://github.com/grpc/grpc-java) repository.
+Go source code is in the [grpc-go] (http://github.com/grpc/grpc-go) repository.
 </small>
 
+See [MANIFEST.md](MANIFEST.md) for a listing of top-level items in the
+repository.
 
 #Overview
 

@@ -29,6 +29,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import argparse
 import glob
 import os
 import shutil
@@ -42,37 +43,49 @@ assert sys.argv[1:], 'run generate_projects.sh instead of this directly'
 import jobset
 
 os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '..', '..'))
-json = sys.argv[1:]
+
+argp = argparse.ArgumentParser()
+argp.add_argument('json', nargs='+')
+argp.add_argument('--templates', nargs='+', default=[])
+args = argp.parse_args()
+
+json = args.json
 
 test = {} if 'TEST' in os.environ else None
 
 plugins = sorted(glob.glob('tools/buildgen/plugins/*.py'))
 
+templates = args.templates
+if not templates:
+  for root, dirs, files in os.walk('templates'):
+    for f in files:
+      templates.append(os.path.join(root, f))
+
 jobs = []
-for root, dirs, files in os.walk('templates'):
-  for f in files:
-    if os.path.splitext(f)[1] == '.template':
-      out_dir = '.' + root[len('templates'):]
-      out = out_dir + '/' + os.path.splitext(f)[0]
-      if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
-      cmd = ['python2.7', 'tools/buildgen/mako_renderer.py']
-      for plugin in plugins:
-        cmd.append('-p')
-        cmd.append(plugin)
-      for js in json:
-        cmd.append('-d')
-        cmd.append(js)
-      cmd.append('-o')
-      if test is None:
-        cmd.append(out)
-      else:
-        tf = tempfile.mkstemp()
-        test[out] = tf[1]
-        os.close(tf[0])
-        cmd.append(test[out])
-      cmd.append(root + '/' + f)
-      jobs.append(jobset.JobSpec(cmd, shortname=out))
+for template in templates:
+  root, f = os.path.split(template)
+  if os.path.splitext(f)[1] == '.template':
+    out_dir = '.' + root[len('templates'):]
+    out = out_dir + '/' + os.path.splitext(f)[0]
+    if not os.path.exists(out_dir):
+      os.makedirs(out_dir)
+    cmd = ['python2.7', 'tools/buildgen/mako_renderer.py']
+    for plugin in plugins:
+      cmd.append('-p')
+      cmd.append(plugin)
+    for js in json:
+      cmd.append('-d')
+      cmd.append(js)
+    cmd.append('-o')
+    if test is None:
+      cmd.append(out)
+    else:
+      tf = tempfile.mkstemp()
+      test[out] = tf[1]
+      os.close(tf[0])
+      cmd.append(test[out])
+    cmd.append(root + '/' + f)
+    jobs.append(jobset.JobSpec(cmd, shortname=out))
 
 jobset.run(jobs, maxjobs=multiprocessing.cpu_count())
 

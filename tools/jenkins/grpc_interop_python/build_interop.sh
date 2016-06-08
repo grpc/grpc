@@ -43,5 +43,5 @@ make install-certs
 make
 
 # build Python interop client and server
-CONFIG=opt ./tools/run_tests/build_python.sh 2.7
+CONFIG=opt ./tools/run_tests/build_python.sh
 
