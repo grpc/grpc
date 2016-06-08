@@ -95,6 +95,7 @@ namespace Grpc.Core
 
         public void Insert(int index, Metadata.Entry item)
         {
+            GrpcPreconditions.CheckNotNull(item);
             CheckWriteable();
             entries.Insert(index, item);
         }
@@ -114,6 +115,7 @@ namespace Grpc.Core
 
             set
             {
+                GrpcPreconditions.CheckNotNull(value);
                 CheckWriteable();
                 entries[index] = value;
             }
@@ -121,6 +123,7 @@ namespace Grpc.Core
 
         public void Add(Metadata.Entry item)
         {
+            GrpcPreconditions.CheckNotNull(item);
             CheckWriteable();
             entries.Add(item);
         }
@@ -187,7 +190,7 @@ namespace Grpc.Core
         /// <summary>
         /// Metadata entry
         /// </summary>
-        public struct Entry
+        public class Entry
         {
             private static readonly Encoding Encoding = Encoding.ASCII;
             private static readonly Regex ValidKeyRegex = new Regex("^[a-z0-9_-]+$");
