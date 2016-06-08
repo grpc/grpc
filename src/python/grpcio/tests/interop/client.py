@@ -76,6 +76,9 @@ def _stub(args):
     creds = oauth2client_client.GoogleCredentials.get_application_default()
     scoped_creds = creds.create_scoped([args.oauth_scope])
     call_creds = implementations.google_call_credentials(scoped_creds)
+  elif args.test_case == 'jwt_token_creds':
+    creds = oauth2client_client.GoogleCredentials.get_application_default()
+    call_creds = implementations.google_call_credentials(creds)
   else:
     call_creds = None
   if args.use_tls:

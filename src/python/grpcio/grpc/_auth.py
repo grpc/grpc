@@ -29,6 +29,7 @@
 
 """GRPCAuthMetadataPlugins for standard authentication."""
 
+import inspect
 from concurrent import futures
 
 import grpc
@@ -46,9 +47,21 @@ class GoogleCallCredentials(grpc.AuthMetadataPlugin):
     self._credentials = credentials
     self._pool = futures.ThreadPoolExecutor(max_workers=1)
 
+    # Hack to determine if these are JWT creds and we need to pass
+    # additional_claims when getting a token
+    if 'additional_claims' in inspect.getargspec(
+        credentials.get_access_token).args:
+      self._is_jwt = True
+    else:
+      self._is_jwt = False
+
   def __call__(self, context, callback):
     # MetadataPlugins cannot block (see grpc.beta.interfaces.py)
-    future = self._pool.submit(self._credentials.get_access_token)
+    if self._is_jwt:
+      future = self._pool.submit(self._credentials.get_access_token,
+                                 additional_claims={'aud': context.service_url})
+    else:
+      future = self._pool.submit(self._credentials.get_access_token)
     future.add_done_callback(lambda x: self._get_token_callback(callback, x))
 
   def _get_token_callback(self, callback, future):
