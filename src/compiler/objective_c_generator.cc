@@ -94,7 +94,7 @@ void PrintSimpleSignature(Printer *printer, const MethodDescriptor *method,
 void PrintAdvancedSignature(Printer *printer, const MethodDescriptor *method,
                             map< ::grpc::string, ::grpc::string> vars) {
   vars["method_name"] = "RPCTo" + vars["method_name"];
-  vars["return_type"] = "GRPCProtoRPC *";
+  vars["return_type"] = "GRPCProtoCall *";
   PrintMethodSignature(printer, method, vars);
 }
 

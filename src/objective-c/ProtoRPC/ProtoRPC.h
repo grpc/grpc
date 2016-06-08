@@ -36,7 +36,7 @@
 
 #import "ProtoMethod.h"
 
-__attribute__((deprecated("Please use GRPCProtoRPC.")))
+__attribute__((deprecated("Please use GRPCProtoCall.")))
 @interface ProtoRPC : GRPCCall
 
 - (instancetype)initWithHost:(NSString *)host
@@ -49,9 +49,9 @@ __attribute__((deprecated("Please use GRPCProtoRPC.")))
 @end
 
 /**
- * This subclass is empty now. Eventually we'll remove ProtoService class
+ * This subclass is empty now. Eventually we'll remove ProtoRPC class
  * to avoid potential naming conflict
  */
-@interface GRPCProtoRPC : ProtoRPC
+@interface GRPCProtoCall : ProtoRPC
 
 @end
