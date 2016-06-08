@@ -38,6 +38,7 @@
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 
+#include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
@@ -52,11 +53,14 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server *server,
                                               grpc_completion_queue *cq,
                                               int fd) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+
   char *name;
   gpr_asprintf(&name, "fd:%d", fd);
 
   grpc_endpoint *server_endpoint = grpc_tcp_create(
       grpc_fd_create(fd, name), GRPC_TCP_DEFAULT_READ_SLICE_SIZE, name);
+
+  gpr_free(name);
 
   const grpc_channel_args *server_args = grpc_server_get_channel_args(server);
   grpc_transport *transport = grpc_create_chttp2_transport(
