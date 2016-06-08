@@ -126,3 +126,13 @@ Help, I ...
   GCC 6.0), this is probably a bug where GCC chokes on constant expressions
   when the :code:`-fwrapv` flag is specified. You should consider setting your
   environment with :code:`CFLAGS=-fno-wrapv` or using clang (:code:`CC=clang`).
+
+Usage
+-----
+
+Given protobuf include directories :code:`$INCLUDE`, an output directory
+:code:`$OUTPUT`, and proto files :code:`$PROTO_FILES`, invoke as:
+
+::
+
+  $ python -m grpc.tools.protoc -I$INCLUDE --python_out=$OUTPUT --grpc_python_out=$OUTPUT $PROTO_FILES
