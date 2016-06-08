@@ -83,6 +83,7 @@ struct grpc_fd {
      this indicates that the 'fd' on this structure is no longer valid */
   bool orphaned;
 
+  /* TODO: sreek - Move this a lockfree implementation */
   grpc_closure *read_closure;
   grpc_closure *write_closure;
 
@@ -166,6 +167,9 @@ struct grpc_pollset {
 
   /* The polling island to which this pollset belongs to and the mutex
      protecting the field */
+  /* TODO: sreek: This lock might actually be adding more overhead to the
+     critical path (i.e pollset_work() function). Consider removing this lock
+     and just using the overall pollset lock */
   gpr_mu pi_mu;
   struct polling_island *polling_island;
 };
