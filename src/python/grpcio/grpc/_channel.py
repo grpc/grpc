@@ -85,7 +85,7 @@ def _deadline(timeout):
 
 
 def _unknown_code_details(unknown_cygrpc_code, details):
-  return b'Server sent unknown code {} and details "{}"'.format(
+  return 'Server sent unknown code {} and details "{}"'.format(
       unknown_cygrpc_code, details)
 
 
@@ -142,7 +142,7 @@ def _handle_event(event, state, response_deserializer):
         response = _common.deserialize(
             serialized_response, response_deserializer)
         if response is None:
-          details = b'Exception deserializing response!'
+          details = 'Exception deserializing response!'
           _abort(state, grpc.StatusCode.INTERNAL, details)
         else:
           state.response = response
@@ -186,7 +186,7 @@ def _consume_request_iterator(
         if state.code is None and not state.cancelled:
           if serialized_request is None:
             call.cancel()
-            details = b'Exception serializing request!'
+            details = 'Exception serializing request!'
             _abort(state, grpc.StatusCode.INTERNAL, details)
             return
           else:
@@ -230,7 +230,7 @@ class _Rendezvous(grpc.RpcError, grpc.Future, grpc.Call):
       if self._state.code is None:
         self._call.cancel()
         self._state.cancelled = True
-        _abort(self._state, grpc.StatusCode.CANCELLED, b'Cancelled!')
+        _abort(self._state, grpc.StatusCode.CANCELLED, 'Cancelled!')
         self._state.condition.notify_all()
       return False
 
@@ -402,7 +402,7 @@ def _start_unary_request(request, timeout, request_serializer):
   if serialized_request is None:
     state = _RPCState(
         (), _EMPTY_METADATA, _EMPTY_METADATA, grpc.StatusCode.INTERNAL,
-        b'Exception serializing request!')
+        'Exception serializing request!')
     rendezvous = _Rendezvous(state, None, None, deadline)
     return deadline, deadline_timespec, None, rendezvous
   else:
