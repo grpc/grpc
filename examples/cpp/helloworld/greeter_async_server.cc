@@ -75,11 +75,42 @@ class ServerImpl final {
     server_ = builder.BuildAndStart();
     std::cout << "Server listening on " << server_address << std::endl;
 
-    // Proceed to the server's main loop.
-    HandleRpcs();
+    // Spawn worker threads by calling HandleRpcs()
+    for (int i = 0; i < kNumAsyncServerThreads; i++)
+    {
+      server_threads_.push_back(
+              new std::thread(&ServerImpl::HandleRpcs, this)
+      );
+    }
+
+    // Wait for worker threads to finish
+    // The main thread's job is done
+    for (int i = 0; i < kNumAsyncServerThreads; i++)
+    {
+      server_threads_[i]->join();
+    }
   }
 
  private:
+  // Number of worker threads
+  static const int kNumAsyncServerThreads = 1;
+
+  // This can be run in multiple threads if needed.
+  void HandleRpcs() {
+    // Spawn a new CallData instance to serve new clients.
+    new CallData(&service_, cq_.get());
+    void* tag;  // uniquely identifies a request.
+    bool ok;
+
+    // Block waiting to read the next event from the completion queue. The
+    // event is uniquely identified by its tag, which in this case is the
+    // memory address of a CallData instance.
+    while (cq_->Next(&tag, &ok)) {
+      GPR_ASSERT(ok);
+      static_cast<CallData*>(tag)->Proceed();
+    }
+  }
+
   // Class encompasing the state and logic needed to serve a request.
   class CallData {
    public:
@@ -150,22 +181,9 @@ class ServerImpl final {
     CallStatus status_;  // The current serving state.
   };
 
-  // This can be run in multiple threads if needed.
-  void HandleRpcs() {
-    // Spawn a new CallData instance to serve new clients.
-    new CallData(&service_, cq_.get());
-    void* tag;  // uniquely identifies a request.
-    bool ok;
-    while (true) {
-      // Block waiting to read the next event from the completion queue. The
-      // event is uniquely identified by its tag, which in this case is the
-      // memory address of a CallData instance.
-      cq_->Next(&tag, &ok);
-      GPR_ASSERT(ok);
-      static_cast<CallData*>(tag)->Proceed();
-    }
-  }
 
+
+  std::vector<std::thread *> server_threads_;
   std::unique_ptr<ServerCompletionQueue> cq_;
   Greeter::AsyncService service_;
   std::unique_ptr<Server> server_;
