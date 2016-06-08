@@ -487,7 +487,7 @@ bool InteropClient::DoResponseCompressedStreaming() {
             GPR_ASSERT(response.payload().body() ==
                        grpc::string(response_stream_sizes[k], '\0'));
             break;
-          case PayloadType::UNCOMPRESSABLE: {
+          case PayloadType::UNCOMPRESSABLE:
             break;
           default:
             GPR_ASSERT(false);
