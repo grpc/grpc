@@ -488,12 +488,7 @@ bool InteropClient::DoResponseCompressedStreaming() {
                        grpc::string(response_stream_sizes[k], '\0'));
             break;
           case PayloadType::UNCOMPRESSABLE: {
-            std::ifstream rnd_file(kRandomFile);
-            GPR_ASSERT(rnd_file.good());
-            for (int n = 0; n < response_stream_sizes[k]; n++) {
-              GPR_ASSERT(response.payload().body()[n] == (char)rnd_file.get());
-            }
-          } break;
+            break;
           default:
             GPR_ASSERT(false);
         }
