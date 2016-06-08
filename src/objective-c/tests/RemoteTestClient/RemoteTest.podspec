@@ -23,13 +23,17 @@ Pod::Spec.new do |s|
     ms.header_mappings_dir = "."
     ms.requires_arc = false
     ms.dependency "Protobuf", "~> 3.0.0-alpha-4"
+    # This is needed by all pods that depend on Protobuf:
+    ms.pod_target_xcconfig = {
+      'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=1',
+    }
   end
 
   s.subspec "Services" do |ss|
     ss.source_files = "*.pbrpc.{h,m}"
     ss.header_mappings_dir = "."
     ss.requires_arc = true
-    ss.dependency "gRPC", "~> 0.12"
+    ss.dependency "gRPC-ProtoRPC", "~> 0.14"
     ss.dependency "#{s.name}/Messages"
   end
 end
