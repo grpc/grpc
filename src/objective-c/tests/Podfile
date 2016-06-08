@@ -3,36 +3,27 @@ platform :ios, '8.0'
 
 install! 'cocoapods', :deterministic_uuids => false
 
-def shared_pods
-	pod 'Protobuf', :path => "../../../third_party/protobuf"
-	pod 'BoringSSL', :podspec => ".."
-	pod 'gRPC', :path => "../../.."
-	pod 'gRPC-Core', :path => "../../.."
-	pod 'gRPC-RxLibrary', :path => "../../.."
-	pod 'gRPC-ProtoRPC',  :path => "../../.."
-	pod 'RemoteTest', :path => "RemoteTestClient"
+# Location of gRPC's repo root relative to this file.
+GRPC_LOCAL_SRC = '../../..'
+
+# Install the dependencies in the main target plus all test targets.
+%w(
+  Tests
+  AllTests
+  RxLibraryUnitTests
+  InteropTestsRemote
+  InteropTestsLocalSSL
+  InteropTestsLocalCleartext
+).each do |target_name|
+  target target_name do
+    pod 'Protobuf', :path => "#{GRPC_LOCAL_SRC}/third_party/protobuf"
+    pod 'BoringSSL', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
+    pod 'gRPC', :path => GRPC_LOCAL_SRC
+    pod 'gRPC-Core', :path => GRPC_LOCAL_SRC
+    pod 'gRPC-RxLibrary', :path => GRPC_LOCAL_SRC
+    pod 'gRPC-ProtoRPC',  :path => GRPC_LOCAL_SRC
+    pod 'RemoteTest', :path => "RemoteTestClient"
+  end
 end
 
-target 'Tests' do
-	shared_pods
-end
-
-target 'AllTests' do
-	shared_pods
-end
-
-target 'RxLibraryUnitTests' do
-	shared_pods
-end
-
-target 'InteropTestsRemote' do
-	shared_pods
-end
-
-target 'InteropTestsLocalSSL' do
-	shared_pods
-end
-
-target 'InteropTestsLocalCleartext' do
-	shared_pods
 end
