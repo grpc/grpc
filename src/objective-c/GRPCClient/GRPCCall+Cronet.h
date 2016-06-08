@@ -30,6 +30,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+#ifdef GRPC_COMPILE_WITH_CRONET
 #import <Cronet/Cronet.h>
 
 #import "GRPCCall.h"
@@ -53,3 +54,4 @@
 +(BOOL)isUsingCronet;
 
 @end
+#endif

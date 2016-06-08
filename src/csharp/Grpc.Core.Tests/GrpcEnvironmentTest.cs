@@ -49,7 +49,7 @@ namespace Grpc.Core.Tests
             {
                 Assert.IsNotNull(env.CompletionQueues.ElementAt(i));
             }
-            GrpcEnvironment.Release();
+            GrpcEnvironment.ReleaseAsync().Wait();
         }
 
         [Test]
@@ -58,8 +58,8 @@ namespace Grpc.Core.Tests
             var env1 = GrpcEnvironment.AddRef();
             var env2 = GrpcEnvironment.AddRef();
             Assert.AreSame(env1, env2);
-            GrpcEnvironment.Release();
-            GrpcEnvironment.Release();
+            GrpcEnvironment.ReleaseAsync().Wait();
+            GrpcEnvironment.ReleaseAsync().Wait();
         }
 
         [Test]
@@ -68,10 +68,10 @@ namespace Grpc.Core.Tests
             Assert.AreEqual(0, GrpcEnvironment.GetRefCount());
 
             var env1 = GrpcEnvironment.AddRef();
-            GrpcEnvironment.Release();
+            GrpcEnvironment.ReleaseAsync().Wait();
 
             var env2 = GrpcEnvironment.AddRef();
-            GrpcEnvironment.Release();
+            GrpcEnvironment.ReleaseAsync().Wait();
 
             Assert.AreNotSame(env1, env2);
         }
@@ -80,7 +80,7 @@ namespace Grpc.Core.Tests
         public void ReleaseWithoutAddRef()
         {
             Assert.AreEqual(0, GrpcEnvironment.GetRefCount());
-            Assert.Throws(typeof(InvalidOperationException), () => GrpcEnvironment.Release());
+            Assert.ThrowsAsync(typeof(InvalidOperationException), async () => await GrpcEnvironment.ReleaseAsync());
         }
 
         [Test]

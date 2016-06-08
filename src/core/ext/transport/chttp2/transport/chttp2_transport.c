@@ -1734,6 +1734,13 @@ static void set_pollset(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
                                    add_to_pollset_locked, pollset, 0);
 }
 
+static void set_pollset_set(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
+                            grpc_stream *gs, grpc_pollset_set *pollset_set) {
+  grpc_chttp2_run_with_global_lock(exec_ctx, (grpc_chttp2_transport *)gt,
+                                   (grpc_chttp2_stream *)gs,
+                                   add_to_pollset_set_locked, pollset_set, 0);
+}
+
 /*******************************************************************************
  * BYTE STREAM
  */
@@ -2055,6 +2062,7 @@ static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
                                              "chttp2",
                                              init_stream,
                                              set_pollset,
+                                             set_pollset_set,
                                              perform_stream_op,
                                              perform_transport_op,
                                              destroy_stream,

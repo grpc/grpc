@@ -99,12 +99,12 @@ void grpc_lb_policy_weak_unref(grpc_exec_ctx *exec_ctx,
 }
 
 int grpc_lb_policy_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-                        grpc_pollset *pollset,
+                        grpc_polling_entity *pollent,
                         grpc_metadata_batch *initial_metadata,
                         uint32_t initial_metadata_flags,
                         grpc_connected_subchannel **target,
                         grpc_closure *on_complete) {
-  return policy->vtable->pick(exec_ctx, policy, pollset, initial_metadata,
+  return policy->vtable->pick(exec_ctx, policy, pollent, initial_metadata,
                               initial_metadata_flags, target, on_complete);
 }
 

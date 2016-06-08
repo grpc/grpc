@@ -33,6 +33,7 @@
 
 #import "GRPCCall+Cronet.h"
 
+#ifdef GRPC_COMPILE_WITH_CRONET
 static BOOL useCronet = NO;
 static cronet_engine *globalCronetEngine;
 
@@ -52,3 +53,4 @@ static cronet_engine *globalCronetEngine;
 }
 
 @end
+#endif

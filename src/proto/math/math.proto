@@ -55,8 +55,8 @@ message FibReply {
 }
 
 service Math {
-  // Div divides args.dividend by args.divisor and returns the quotient and
-  // remainder.
+  // Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
+  // and remainder.
   rpc Div (DivArgs) returns (DivReply) {
   }
 
@@ -67,7 +67,7 @@ service Math {
   rpc DivMany (stream DivArgs) returns (stream DivReply) {
   }
 
-  // Fib generates numbers in the Fibonacci sequence.  If args.limit > 0, Fib
+  // Fib generates numbers in the Fibonacci sequence.  If FibArgs.limit > 0, Fib
   // generates up to limit numbers; otherwise it continues until the call is
   // canceled.  Unlike Fib above, Fib has no final FibReply.
   rpc Fib (FibArgs) returns (stream Num) {
