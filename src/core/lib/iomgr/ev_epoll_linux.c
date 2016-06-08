@@ -83,7 +83,7 @@ struct grpc_fd {
      this indicates that the 'fd' on this structure is no longer valid */
   bool orphaned;
 
-  /* TODO: sreek - Move this a lockfree implementation */
+  /* TODO: sreek - Move this to a lockfree implementation */
   grpc_closure *read_closure;
   grpc_closure *write_closure;
 
@@ -124,6 +124,8 @@ static void fd_global_shutdown(void);
 /*******************************************************************************
  * Polling-island Declarations
  */
+/* TODO: sree: Consider making ref_cnt and merged_to to gpr_atm - This would
+ * significantly reduce the number of mutex acquisition calls. */
 typedef struct polling_island {
   gpr_mu mu;
   int ref_cnt;
@@ -177,6 +179,12 @@ struct grpc_pollset {
 /*******************************************************************************
  * Pollset-set Declarations
  */
+/* TODO: sreek - Change the pollset_set implementation such that a pollset_set
+ * directly points to a polling_island (and adding an fd/pollset/pollset_set to
+ * the current pollset_set would result in polling island merges. This would
+ * remove the need to maintain fd_count here. This will also significantly
+ * simplify the grpc_fd structure since we would no longer need to explicitly
+ * maintain the orphaned state */
 struct grpc_pollset_set {
   gpr_mu mu;
 
