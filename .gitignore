@@ -57,6 +57,9 @@ latency_trace.*.txt
 # port server log
 portlog.txt
 
+# Qt Creator user files
+*.user
+
 # gyp generated make files
 *-gyp.mk
 out
