@@ -273,9 +273,15 @@ Status CallOpSendMessage::SendMessage(const M& message) {
 template <class R>
 class CallOpRecvMessage {
  public:
-  CallOpRecvMessage() : got_message(false), message_(nullptr) {}
+  CallOpRecvMessage()
+      : got_message(false),
+        message_(nullptr),
+        allow_not_getting_message_(false) {}
 
   void RecvMessage(R* message) { message_ = message; }
+
+  // Do not change status if no message is received.
+  void AllowNoMessage() { allow_not_getting_message_ = true; }
 
   bool got_message;
 
@@ -302,7 +308,9 @@ class CallOpRecvMessage {
       }
     } else {
       got_message = false;
-      *status = false;
+      if (!allow_not_getting_message_) {
+        *status = false;
+      }
     }
     message_ = nullptr;
   }
@@ -310,6 +318,7 @@ class CallOpRecvMessage {
  private:
   R* message_;
   grpc_byte_buffer* recv_buf_;
+  bool allow_not_getting_message_;
 };
 
 namespace CallOpGenericRecvMessageHelper {
@@ -337,7 +346,8 @@ class DeserializeFuncType GRPC_FINAL : public DeserializeFunc {
 
 class CallOpGenericRecvMessage {
  public:
-  CallOpGenericRecvMessage() : got_message(false) {}
+  CallOpGenericRecvMessage()
+      : got_message(false), allow_not_getting_message_(false) {}
 
   template <class R>
   void RecvMessage(R* message) {
@@ -347,6 +357,9 @@ class CallOpGenericRecvMessage {
         new CallOpGenericRecvMessageHelper::DeserializeFuncType<R>(message);
     deserialize_.reset(func);
   }
+
+  // Do not change status if no message is received.
+  void AllowNoMessage() { allow_not_getting_message_ = true; }
 
   bool got_message;
 
@@ -372,7 +385,9 @@ class CallOpGenericRecvMessage {
       }
     } else {
       got_message = false;
-      *status = false;
+      if (!allow_not_getting_message_) {
+        *status = false;
+      }
     }
     deserialize_.reset();
   }
@@ -380,6 +395,7 @@ class CallOpGenericRecvMessage {
  private:
   std::unique_ptr<CallOpGenericRecvMessageHelper::DeserializeFunc> deserialize_;
   grpc_byte_buffer* recv_buf_;
+  bool allow_not_getting_message_;
 };
 
 class CallOpClientSendClose {

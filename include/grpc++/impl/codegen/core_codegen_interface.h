@@ -34,7 +34,7 @@
 #ifndef GRPCXX_IMPL_CODEGEN_CORE_CODEGEN_INTERFACE_H
 #define GRPCXX_IMPL_CODEGEN_CORE_CODEGEN_INTERFACE_H
 
-#include <grpc++/impl/codegen/config_protobuf.h>
+#include <grpc++/impl/codegen/config.h>
 #include <grpc++/impl/codegen/status.h>
 #include <grpc/impl/codegen/grpc_types.h>
 
