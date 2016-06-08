@@ -135,6 +135,7 @@ struct grpc_call {
   bool receiving_message;
   bool requested_final_op;
   bool received_final_op;
+  gpr_atm cancelled_flag;
 
   /* have we received initial metadata */
   bool has_initial_md_been_received;
@@ -702,6 +703,7 @@ typedef struct cancel_closure {
 
 static void done_cancel(grpc_exec_ctx *exec_ctx, void *ccp, bool success) {
   cancel_closure *cc = ccp;
+  gpr_atm_rel_store(&cc->call->cancelled_flag, 1);
   GRPC_CALL_INTERNAL_UNREF(exec_ctx, cc->call, "cancel");
   gpr_free(cc);
 }
@@ -982,6 +984,10 @@ static void continue_receiving_slices(grpc_exec_ctx *exec_ctx,
       call->receiving_message = 0;
       grpc_byte_stream_destroy(exec_ctx, call->receiving_stream);
       call->receiving_stream = NULL;
+      if (gpr_atm_acq_load(&call->cancelled_flag)) {
+        grpc_byte_buffer_destroy(*call->receiving_buffer);
+        *call->receiving_buffer = NULL;
+      }
       if (gpr_unref(&bctl->steps_to_complete)) {
         post_batch_completion(exec_ctx, bctl);
       }
