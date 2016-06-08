@@ -310,6 +310,16 @@ def _oauth2_auth_token(stub, args):
         (response.oauth_scope, args.oauth_scope))
 
 
+def _jwt_token_creds(stub, args):
+  json_key_filename = os.environ[
+      oauth2client_client.GOOGLE_APPLICATION_CREDENTIALS]
+  wanted_email = json.load(open(json_key_filename, 'rb'))['client_email']
+  response = _large_unary_common_behavior(stub, True, False)
+  if wanted_email != response.username:
+    raise ValueError(
+        'expected username %s, got %s' % (wanted_email, response.username))
+
+
 def _per_rpc_creds(stub, args):
   json_key_filename = os.environ[
       oauth2client_client.GOOGLE_APPLICATION_CREDENTIALS]
@@ -338,6 +348,7 @@ class TestCase(enum.Enum):
   EMPTY_STREAM = 'empty_stream'
   COMPUTE_ENGINE_CREDS = 'compute_engine_creds'
   OAUTH2_AUTH_TOKEN = 'oauth2_auth_token'
+  JWT_TOKEN_CREDS = 'jwt_token_creds'
   PER_RPC_CREDS = 'per_rpc_creds'
   TIMEOUT_ON_SLEEPING_SERVER = 'timeout_on_sleeping_server'
 
@@ -364,6 +375,8 @@ class TestCase(enum.Enum):
       _compute_engine_creds(stub, args)
     elif self is TestCase.OAUTH2_AUTH_TOKEN:
       _oauth2_auth_token(stub, args)
+    elif self is TestCase.JWT_TOKEN_CREDS:
+      _jwt_token_creds(stub, args)
     elif self is TestCase.PER_RPC_CREDS:
       _per_rpc_creds(stub, args)
     else:
