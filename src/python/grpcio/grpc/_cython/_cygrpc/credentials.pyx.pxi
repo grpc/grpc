@@ -137,7 +137,7 @@ cdef void plugin_get_metadata(
   cy_context.context = context
   self.plugin_callback(cy_context, python_callback)
 
-cdef void plugin_destroy_c_plugin_state(void *state):
+cdef void plugin_destroy_c_plugin_state(void *state) with gil:
   cpython.Py_DECREF(<CredentialsMetadataPlugin>state)
 
 def channel_credentials_google_default():

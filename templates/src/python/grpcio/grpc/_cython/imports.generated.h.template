@@ -38,7 +38,7 @@
 
   #include <grpc/support/port_platform.h>
 
-  #ifdef GPR_WIN32
+  #ifdef GPR_WINDOWS
 
   #include <windows.h>
 
@@ -62,7 +62,7 @@
   }
   #endif  /* __cpluslus */
 
-  #else /* !GPR_WIN32 */
+  #else /* !GPR_WINDOWS */
 
   #include <grpc/byte_buffer.h>
   #include <grpc/byte_buffer_reader.h>
@@ -74,6 +74,6 @@
   #include <grpc/support/time.h>
   #include <grpc/status.h>
 
-  #endif /* !GPR_WIN32 */
+  #endif /* !GPR_WINDOWS */
 
   #endif

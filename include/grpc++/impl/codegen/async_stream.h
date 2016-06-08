@@ -172,6 +172,7 @@ class ClientAsyncWriter GRPC_FINAL : public ClientAsyncWriterInterface<W> {
                     R* response, void* tag)
       : context_(context), call_(channel->CreateCall(method, context, cq)) {
     finish_ops_.RecvMessage(response);
+    finish_ops_.AllowNoMessage();
 
     init_ops_.set_output_tag(tag);
     init_ops_.SendInitialMetadata(context->send_initial_metadata_,

@@ -793,9 +793,9 @@ static void accept_stream(grpc_exec_ctx *exec_ctx, void *cd,
                           const void *transport_server_data) {
   channel_data *chand = cd;
   /* create a call */
-  grpc_call *call =
-      grpc_call_create(chand->channel, NULL, 0, NULL, transport_server_data,
-                       NULL, 0, gpr_inf_future(GPR_CLOCK_MONOTONIC));
+  grpc_call *call = grpc_call_create(chand->channel, NULL, 0, NULL, NULL,
+                                     transport_server_data, NULL, 0,
+                                     gpr_inf_future(GPR_CLOCK_MONOTONIC));
   grpc_call_element *elem =
       grpc_call_stack_element(grpc_call_get_call_stack(call), 0);
   call_data *calld = elem->call_data;
@@ -812,7 +812,7 @@ static void channel_connectivity_changed(grpc_exec_ctx *exec_ctx, void *cd,
                                          bool iomgr_status_ignored) {
   channel_data *chand = cd;
   grpc_server *server = chand->server;
-  if (chand->connectivity_state != GRPC_CHANNEL_FATAL_FAILURE) {
+  if (chand->connectivity_state != GRPC_CHANNEL_SHUTDOWN) {
     grpc_transport_op op;
     memset(&op, 0, sizeof(op));
     op.on_connectivity_state_change = &chand->channel_connectivity_changed,
@@ -845,7 +845,7 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 }
 
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                              void *ignored) {
+                              const grpc_call_stats *stats, void *ignored) {
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
 
@@ -910,7 +910,7 @@ const grpc_channel_filter grpc_server_top_filter = {
     grpc_channel_next_op,
     sizeof(call_data),
     init_call_elem,
-    grpc_call_stack_ignore_set_pollset,
+    grpc_call_stack_ignore_set_pollset_or_pollset_set,
     destroy_call_elem,
     sizeof(channel_data),
     init_channel_elem,
