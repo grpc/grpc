@@ -4,7 +4,9 @@
   <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <ImportGroup Label="PropertySheets" />
     <PropertyGroup Label="UserMacros" />
-    <PropertyGroup />
+    <PropertyGroup>
+      <Jenkins>false</Jenkins>
+    </PropertyGroup>
     <ItemDefinitionGroup>
       <ClCompile>
         <AdditionalIncludeDirectories>$(SolutionDir)\..;$(SolutionDir)\..\include;$(SolutionDir)\..\third_party\protobuf\src;${';'.join('$(SolutionDir)\\packages\\%s.%s\\build\\native\\include' % (p.name, p.version) for p in vspackages)};%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
