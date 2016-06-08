@@ -52,6 +52,7 @@
 
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "test/core/util/test_config.h"
 
 static gpr_mu *g_mu;
