@@ -4261,18 +4261,18 @@
       "grpc++_codegen_base_src"
     ], 
     "headers": [
+      "include/grpc++/impl/codegen/core_codegen.h", 
       "src/cpp/client/secure_credentials.h", 
-      "src/cpp/common/core_codegen.h", 
       "src/cpp/common/secure_auth_context.h", 
       "src/cpp/server/secure_server_credentials.h"
     ], 
     "language": "c++", 
     "name": "grpc++", 
     "src": [
+      "include/grpc++/impl/codegen/core_codegen.h", 
       "src/cpp/client/secure_credentials.cc", 
       "src/cpp/client/secure_credentials.h", 
       "src/cpp/common/auth_property_iterator.cc", 
-      "src/cpp/common/core_codegen.h", 
       "src/cpp/common/secure_auth_context.cc", 
       "src/cpp/common/secure_auth_context.h", 
       "src/cpp/common/secure_channel_arguments.cc", 
@@ -6402,6 +6402,7 @@
       "include/grpc++/grpc++.h", 
       "include/grpc++/impl/call.h", 
       "include/grpc++/impl/client_unary_call.h", 
+      "include/grpc++/impl/codegen/core_codegen.h", 
       "include/grpc++/impl/grpc_library.h", 
       "include/grpc++/impl/method_handler_impl.h", 
       "include/grpc++/impl/rpc_method.h", 
@@ -6437,7 +6438,6 @@
       "include/grpc++/support/sync_stream.h", 
       "include/grpc++/support/time.h", 
       "src/cpp/client/create_channel_internal.h", 
-      "src/cpp/common/core_codegen.h", 
       "src/cpp/server/dynamic_thread_pool.h", 
       "src/cpp/server/thread_pool_interface.h"
     ], 
@@ -6454,6 +6454,7 @@
       "include/grpc++/grpc++.h", 
       "include/grpc++/impl/call.h", 
       "include/grpc++/impl/client_unary_call.h", 
+      "include/grpc++/impl/codegen/core_codegen.h", 
       "include/grpc++/impl/grpc_library.h", 
       "include/grpc++/impl/method_handler_impl.h", 
       "include/grpc++/impl/rpc_method.h", 
@@ -6499,7 +6500,6 @@
       "src/cpp/common/channel_arguments.cc", 
       "src/cpp/common/completion_queue.cc", 
       "src/cpp/common/core_codegen.cc", 
-      "src/cpp/common/core_codegen.h", 
       "src/cpp/common/rpc_method.cc", 
       "src/cpp/server/async_generic_service.cc", 
       "src/cpp/server/create_default_thread_pool.cc", 
