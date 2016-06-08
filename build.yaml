@@ -969,6 +969,8 @@ libs:
   - src/cpp/ext/reflection.pb.cc
   deps:
   - grpc++
+  filegroups:
+  - grpc++_codegen_proto
 - name: grpc++_test_config
   build: private
   language: c++

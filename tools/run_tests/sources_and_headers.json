@@ -4308,7 +4308,8 @@
   }, 
   {
     "deps": [
-      "grpc++"
+      "grpc++", 
+      "grpc++_codegen_proto"
     ], 
     "headers": [
       "include/grpc++/ext/proto_server_reflection_plugin.h", 
