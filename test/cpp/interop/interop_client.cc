@@ -55,8 +55,6 @@
 namespace grpc {
 namespace testing {
 
-static const char* kRandomFile = "test/cpp/interop/rnd.dat";
-
 namespace {
 // The same value is defined by the Java client.
 const std::vector<int> request_stream_sizes = {27182, 8, 1828, 45904};
