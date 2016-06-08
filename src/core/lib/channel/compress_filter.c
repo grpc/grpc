@@ -271,7 +271,7 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                              void *ignored) {
+                              const grpc_call_stats *stats, void *ignored) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   gpr_slice_buffer_destroy(&calld->slices);
@@ -325,7 +325,7 @@ const grpc_channel_filter grpc_compress_filter = {
     grpc_channel_next_op,
     sizeof(call_data),
     init_call_elem,
-    grpc_call_stack_ignore_set_pollset,
+    grpc_call_stack_ignore_set_pollset_or_pollset_set,
     destroy_call_elem,
     sizeof(channel_data),
     init_channel_elem,

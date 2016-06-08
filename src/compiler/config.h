@@ -34,8 +34,7 @@
 #ifndef SRC_COMPILER_CONFIG_H
 #define SRC_COMPILER_CONFIG_H
 
-#include <grpc++/support/config.h>
-#include <grpc++/support/config_protobuf.h>
+#include <grpc++/impl/codegen/config_protobuf.h>
 
 #ifndef GRPC_CUSTOM_DESCRIPTOR
 #include <google/protobuf/descriptor.h>
@@ -75,7 +74,15 @@
 #define GRPC_CUSTOM_PARSEGENERATORPARAMETER ::google::protobuf::compiler::ParseGeneratorParameter
 #endif
 
+#ifndef GRPC_CUSTOM_STRING
+#include <string>
+#define GRPC_CUSTOM_STRING std::string
+#endif
+
 namespace grpc {
+
+typedef GRPC_CUSTOM_STRING string;
+
 namespace protobuf {
 typedef GRPC_CUSTOM_DESCRIPTOR Descriptor;
 typedef GRPC_CUSTOM_FILEDESCRIPTOR FileDescriptor;
