@@ -93,5 +93,12 @@ namespace Grpc.Core.Tests
 
             server.ShutdownAsync().Wait();
         }
+
+        [Test]
+        public void UnstartedServerDoesNotPreventShutdown()
+        {
+            // just create a server, don't start it, and make sure it doesn't prevent shutdown.
+            var server = new Server();
+        }
     }
 }
