@@ -280,6 +280,9 @@ typedef struct {
 
   /* Type of credentials that this plugin is implementing. */
   const char *type;
+
+  /* Reserved for future use. */
+  void (*reserved)(void *state);
 } grpc_metadata_credentials_plugin;
 
 /* Creates a credentials object from a plugin. */

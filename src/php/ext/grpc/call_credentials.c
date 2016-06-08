@@ -164,6 +164,7 @@ PHP_METHOD(CallCredentials, createFromPlugin) {
   plugin.destroy = plugin_destroy_state;
   plugin.state = (void *)state;
   plugin.type = "";
+  plugin.reserved = NULL;
 
   grpc_call_credentials *creds = grpc_metadata_credentials_create_from_plugin(
       plugin, NULL);

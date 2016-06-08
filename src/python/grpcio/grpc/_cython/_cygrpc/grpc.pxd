@@ -417,6 +417,7 @@ cdef extern from "grpc/grpc_security.h":
     void (*destroy)(void *state)
     void *state
     const char *type
+    void (*reserved)(void *)
 
   grpc_call_credentials *grpc_metadata_credentials_create_from_plugin(
       grpc_metadata_credentials_plugin plugin, void *reserved)

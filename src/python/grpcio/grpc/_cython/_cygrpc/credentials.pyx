@@ -105,6 +105,7 @@ cdef class CredentialsMetadataPlugin:
     result.destroy = plugin_destroy_c_plugin_state
     result.state = <void *>self
     result.type = self.plugin_name
+    result.reserved = NULL
     cpython.Py_INCREF(self)
     return result
 
