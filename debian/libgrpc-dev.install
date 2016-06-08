@@ -1,0 +1,5 @@
+usr/include/grpc/
+usr/lib/libgpr.a
+usr/lib/libgpr.so
+usr/lib/libgrpc.a
+usr/lib/libgrpc.so
