@@ -415,7 +415,7 @@ class PythonLanguage:
     yield _ping_pong_scenario(
         'python_protobuf_sync_streaming_qps_unconstrained', rpc_type='STREAMING',
         client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
-        unconstrained_client='async')
+        unconstrained_client='sync')
 
     yield _ping_pong_scenario(
         'python_to_cpp_protobuf_sync_unary_ping_pong', rpc_type='UNARY',
