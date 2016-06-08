@@ -85,7 +85,7 @@ def _abortion_code(state, code):
 
 
 def _details(state):
-  return b'' if state.details is None else state.details
+  return '' if state.details is None else state.details
 
 
 class _HandlerCallDetails(
@@ -189,7 +189,7 @@ def _receive_message(state, call, request_deserializer):
         if request is None:
           _abort(
               state, call, cygrpc.StatusCode.internal,
-              b'Exception deserializing request!')
+              'Exception deserializing request!')
         else:
           state.request = request
         state.condition.notify_all()
@@ -340,7 +340,7 @@ def _unary_request(rpc_event, state, request_deserializer):
           state.condition.wait()
           if state.request is None:
             if state.client is _CLOSED:
-              details = b'"{}" requires exactly one request message.'.format(
+              details = '"{}" requires exactly one request message.'.format(
                   rpc_event.request_call_details.method)
               # TODO(5992#issuecomment-220761992): really, what status code?
               _abort(
@@ -363,7 +363,7 @@ def _call_behavior(rpc_event, state, behavior, argument, request_deserializer):
   except Exception as e:  # pylint: disable=broad-except
     with state.condition:
       if e not in state.rpc_errors:
-        details = b'Exception calling application: {}'.format(e)
+        details = 'Exception calling application: {}'.format(e)
         logging.exception(details)
         _abort(
             state, rpc_event.operation_call, cygrpc.StatusCode.unknown, details)
@@ -378,7 +378,7 @@ def _take_response_from_response_iterator(rpc_event, state, response_iterator):
   except Exception as e:  # pylint: disable=broad-except
     with state.condition:
       if e not in state.rpc_errors:
-        details = b'Exception iterating responses: {}'.format(e)
+        details = 'Exception iterating responses: {}'.format(e)
         logging.exception(details)
         _abort(
             state, rpc_event.operation_call, cygrpc.StatusCode.unknown, details)
@@ -391,7 +391,7 @@ def _serialize_response(rpc_event, state, response, response_serializer):
     with state.condition:
       _abort(
           state, rpc_event.operation_call, cygrpc.StatusCode.internal,
-          b'Failed to serialize response!')
+          'Failed to serialize response!')
     return None
   else:
     return serialized_response
@@ -544,7 +544,7 @@ def _handle_unrecognized_method(rpc_event):
       cygrpc.operation_receive_close_on_server(_EMPTY_FLAGS),
       cygrpc.operation_send_status_from_server(
           _EMPTY_METADATA, cygrpc.StatusCode.unimplemented,
-          b'Method not found!', _EMPTY_FLAGS),
+          'Method not found!', _EMPTY_FLAGS),
   )
   rpc_state = _RPCState()
   rpc_event.operation_call.start_batch(

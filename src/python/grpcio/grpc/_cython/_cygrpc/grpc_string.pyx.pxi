@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,31 +27,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
 
-# change to grpc repo root
-cd $(dirname $0)/../..
-
-TOX_PYTHON_ENV="$1"
-
-ROOT=`pwd`
-export LD_LIBRARY_PATH=$ROOT/libs/$CONFIG
-export DYLD_LIBRARY_PATH=$ROOT/libs/$CONFIG
-export PATH=$ROOT/bins/$CONFIG:$ROOT/bins/$CONFIG/protobuf:$PATH
-export CFLAGS="-I$ROOT/include -std=c89"
-export LDFLAGS="-L$ROOT/libs/$CONFIG"
-export GRPC_PYTHON_BUILD_WITH_CYTHON=1
-export GRPC_PYTHON_USE_PRECOMPILED_BINARIES=0
-
-if [ "$CONFIG" = "gcov" ]
-then
-  export GRPC_PYTHON_ENABLE_CYTHON_TRACING=1
-  tox -e ${TOX_PYTHON_ENV}
-else
-  $ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/setup.py test_lite
-fi
-
-mkdir -p $ROOT/reports
-rm -rf $ROOT/reports/python-coverage
-(mv -T $ROOT/htmlcov $ROOT/reports/python-coverage) || true
-
+# This function will ascii encode unicode string inputs if neccesary.
+# In Python3, unicode strings are the default str type.
+cdef bytes str_to_bytes(object s):
+  if s is None or isinstance(s, bytes):
+    return s
+  elif isinstance(s, unicode):
+    return s.encode('ascii')
+  else:
+    raise TypeError('Expected bytes, str, or unicode, not {}'.format(type(s)))
