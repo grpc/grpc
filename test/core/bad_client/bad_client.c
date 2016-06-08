@@ -70,7 +70,7 @@ static void done_write(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
 static void server_setup_transport(void *ts, grpc_transport *transport) {
   thd_args *a = ts;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_server_setup_transport(&exec_ctx, a->server, transport,
+  grpc_server_setup_transport(&exec_ctx, a->server, transport, NULL,
                               grpc_server_get_channel_args(a->server));
   grpc_exec_ctx_finish(&exec_ctx);
 }

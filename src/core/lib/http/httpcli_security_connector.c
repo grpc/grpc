@@ -38,7 +38,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include "src/core/lib/security/handshake.h"
+#include "src/core/lib/security/transport/handshake.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/tsi/ssl_transport_security.h"
 

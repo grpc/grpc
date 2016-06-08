@@ -33,7 +33,7 @@
 
 #include <string.h>
 
-#include "src/core/lib/security/security_context.h"
+#include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/support/string.h"
 #include "test/core/util/test_config.h"
 

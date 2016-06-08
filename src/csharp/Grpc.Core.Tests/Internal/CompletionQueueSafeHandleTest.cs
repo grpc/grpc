@@ -48,7 +48,7 @@ namespace Grpc.Core.Internal.Tests
             GrpcEnvironment.AddRef();
             var cq = CompletionQueueSafeHandle.Create();
             cq.Dispose();
-            GrpcEnvironment.Release();
+            GrpcEnvironment.ReleaseAsync().Wait();
         }
 
         [Test]
@@ -59,8 +59,8 @@ namespace Grpc.Core.Internal.Tests
             cq.Shutdown();
             var ev = cq.Next();
             cq.Dispose();
-            GrpcEnvironment.Release();
-            Assert.AreEqual(GRPCCompletionType.Shutdown, ev.type);
+            GrpcEnvironment.ReleaseAsync().Wait();
+            Assert.AreEqual(CompletionQueueEvent.CompletionType.Shutdown, ev.type);
             Assert.AreNotEqual(IntPtr.Zero, ev.success);
             Assert.AreEqual(IntPtr.Zero, ev.tag);
         }

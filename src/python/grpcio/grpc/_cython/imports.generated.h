@@ -36,14 +36,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WIN32
+#ifdef GPR_WINDOWS
 
 #include <windows.h>
 
 #include <grpc/census.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
-#include <grpc/grpc_cronet.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/alloc.h>
 #include <grpc/impl/codegen/byte_buffer.h>
@@ -57,7 +56,7 @@
 #include <grpc/support/cpu.h>
 #include <grpc/support/histogram.h>
 #include <grpc/support/host_port.h>
-#include <grpc/support/log_win32.h>
+#include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/subprocess.h>
 #include <grpc/support/thd.h>
@@ -296,6 +295,9 @@ extern grpc_server_create_type grpc_server_create_import;
 typedef void(*grpc_server_register_completion_queue_type)(grpc_server *server, grpc_completion_queue *cq, void *reserved);
 extern grpc_server_register_completion_queue_type grpc_server_register_completion_queue_import;
 #define grpc_server_register_completion_queue grpc_server_register_completion_queue_import
+typedef void(*grpc_server_register_non_listening_completion_queue_type)(grpc_server *server, grpc_completion_queue *q, void *reserved);
+extern grpc_server_register_non_listening_completion_queue_type grpc_server_register_non_listening_completion_queue_import;
+#define grpc_server_register_non_listening_completion_queue grpc_server_register_non_listening_completion_queue_import
 typedef int(*grpc_server_add_insecure_http2_port_type)(grpc_server *server, const char *addr);
 extern grpc_server_add_insecure_http2_port_type grpc_server_add_insecure_http2_port_import;
 #define grpc_server_add_insecure_http2_port grpc_server_add_insecure_http2_port_import
@@ -326,9 +328,6 @@ extern grpc_is_binary_header_type grpc_is_binary_header_import;
 typedef const char *(*grpc_call_error_to_string_type)(grpc_call_error error);
 extern grpc_call_error_to_string_type grpc_call_error_to_string_import;
 #define grpc_call_error_to_string grpc_call_error_to_string_import
-typedef grpc_channel *(*grpc_cronet_secure_channel_create_type)(void *engine, const char *target, const grpc_channel_args *args, void *reserved);
-extern grpc_cronet_secure_channel_create_type grpc_cronet_secure_channel_create_import;
-#define grpc_cronet_secure_channel_create grpc_cronet_secure_channel_create_import
 typedef const grpc_auth_property *(*grpc_auth_property_iterator_next_type)(grpc_auth_property_iterator *it);
 extern grpc_auth_property_iterator_next_type grpc_auth_property_iterator_next_import;
 #define grpc_auth_property_iterator_next grpc_auth_property_iterator_next_import
@@ -868,7 +867,7 @@ void pygrpc_load_imports(HMODULE library);
 }
 #endif  /* __cpluslus */
 
-#else /* !GPR_WIN32 */
+#else /* !GPR_WINDOWS */
 
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
@@ -880,6 +879,6 @@ void pygrpc_load_imports(HMODULE library);
 #include <grpc/support/time.h>
 #include <grpc/status.h>
 
-#endif /* !GPR_WIN32 */
+#endif /* !GPR_WINDOWS */
 
 #endif

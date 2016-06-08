@@ -36,6 +36,7 @@
 
 #include "src/core/ext/client_config/connector.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 /** A (sub-)channel that knows how to connect to exactly one target
@@ -109,7 +110,7 @@ void grpc_subchannel_call_unref(grpc_exec_ctx *exec_ctx,
 /** construct a subchannel call */
 grpc_subchannel_call *grpc_connected_subchannel_create_call(
     grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *connected_subchannel,
-    grpc_pollset *pollset);
+    grpc_polling_entity *pollent);
 
 /** process a transport level op */
 void grpc_connected_subchannel_process_transport_op(
