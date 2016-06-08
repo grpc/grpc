@@ -90,11 +90,11 @@ Client asserts:
 * clients are free to assert that the response payload body contents are zero
   and comparing the entire response message against a golden response
 
-### large_compressed_unary
+### server_compressed_unary
 
-This test verifies compressed unary calls succeed in sending messages. It
-sends one unary request for every payload type, with and without requesting a
-compressed response from the server.
+This test verifies compressed server-only unary calls succeed in sending
+messages. It sends one unary request for every payload type, with and without
+requesting a compressed response from the server.
 
 In all scenarios, whether compression was actually performed is determined by
 the compression bit in the response's message flags.
@@ -103,7 +103,6 @@ the compression bit in the response's message flags.
 Server features:
 * [UnaryCall][]
 * [Compressable Payload][]
-* [Uncompressable Payload][]
 
 Procedure:
  1. Client calls UnaryCall with:
@@ -128,26 +127,6 @@ Procedure:
     * response payload body is 314159 bytes in size
     * clients are free to assert that the response payload body contents are
       zero and comparing the entire response message against a golden response
-
-
- 2. Client calls UnaryCall with:
-    ```
-    {
-      request_compressed_response: bool
-      response_type: UNCOMPRESSABLE
-      response_size: 314159
-      payload:{
-        body: 271828 bytes of zeros
-      }
-    }
-    ```
-    Client asserts:
-    * call was successful
-    * response payload type is UNCOMPRESSABLE
-    * the response MAY have the compressed message flag set. Some
-      implementations will choose to compress the payload even when the output
-      size if larger than the input.
-    * response payload body is 314159 bytes in size
 
 
 ### client_streaming
@@ -250,7 +229,6 @@ This test verifies that server-only compressed streaming succeeds.
 Server features:
 * [StreamingOutputCall][]
 * [Compressable Payload][]
-* [Uncompressable Payload][]
 
 
 Procedure:
@@ -258,21 +236,29 @@ Procedure:
 
     ```
     {
-      request_compressed_response: bool
+      request_compressed_response: true
       response_type:COMPRESSABLE
       response_parameters:{
-        size: 31424
+        size: 31415
       }
       response_parameters:{
-        size: 61632
+        size: 58979
       }
     }
     ```
 
-    Note that the `response_parameters` sizes are the sum of the usual streaming
-    response sizes (31415, 9, 2653, 58979) taken in successive pairs. This way,
-    we only keep a single list of sizes while making sure the individual message
-    sizes are large enough to trigger compression in all implementations.
+    ```
+    {
+      request_compressed_response: false
+      response_type:COMPRESSABLE
+      response_parameters:{
+        size: 31415
+      }
+      response_parameters:{
+        size: 58979
+      }
+    }
+    ```
 
     Client asserts:
     * call was successful
@@ -282,34 +268,10 @@ Procedure:
       NOT have the compressed message flag set.
     * if `request_compressed_response` is true, the response's messages MUST
       have the compressed message flag set.
-    * response payload bodies are sized (in order): 31424, 61632
+    * response payload bodies are sized (in order): 31415, 58979
     * clients are free to assert that the response payload body contents are
       zero and comparing the entire response messages against golden responses
 
-
- 2. Client calls StreamingOutputCall with:
-
-    ```
-    {
-      request_compressed_response: bool
-      response_type:UNCOMPRESSABLE
-      response_parameters:{
-        size: 31424
-      }
-      response_parameters:{
-        size: 61632
-      }
-    }
-    ```
-
-    Client asserts:
-    * call was successful
-    * exactly four responses
-    * response payloads are UNCOMPRESSABLE
-    * the response MAY have the compressed message flag set. Some
-      implementations will choose to compress the payload even when the output
-      size if larger than the input.
-    * response payload bodies are sized (in order): 31424, 61632
 
 ### ping_pong
 
@@ -909,13 +871,6 @@ responses, it closes with OK.
 When the client requests COMPRESSABLE payload, the response includes a payload
 of the size requested containing all zeros and the payload type is
 COMPRESSABLE.
-
-### Uncompressable Payload
-[Uncompressable Payload]: #uncompressable-payload
-
-When the client requests UNCOMPRESSABLE payload, the response includes a payload
-of the size requested containing uncompressable data and the payload type is
-UNCOMPRESSABLE.
 
 ### Echo Status
 [Echo Status]: #echo-status
