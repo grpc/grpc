@@ -143,6 +143,11 @@ filegroups:
   - include/grpc/impl/codegen/sync_posix.h
   - include/grpc/impl/codegen/sync_windows.h
   - include/grpc/impl/codegen/time.h
+- name: grpc++_codegen_base_src
+  src:
+  - src/cpp/codegen/codegen_init.cc
+  uses:
+  - grpc++_codegen_base
 - name: grpc_base
   public_headers:
   - include/grpc/byte_buffer.h
@@ -178,6 +183,7 @@ filegroups:
   - src/core/lib/iomgr/iomgr.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/iomgr/iomgr_posix.h
+  - src/core/lib/iomgr/polling_entity.h
   - src/core/lib/iomgr/pollset.h
   - src/core/lib/iomgr/pollset_set.h
   - src/core/lib/iomgr/pollset_set_windows.h
@@ -254,6 +260,7 @@ filegroups:
   - src/core/lib/iomgr/iomgr.c
   - src/core/lib/iomgr/iomgr_posix.c
   - src/core/lib/iomgr/iomgr_windows.c
+  - src/core/lib/iomgr/polling_entity.c
   - src/core/lib/iomgr/pollset_set_windows.c
   - src/core/lib/iomgr/pollset_windows.c
   - src/core/lib/iomgr/resolve_address_posix.c
@@ -417,7 +424,6 @@ filegroups:
   - grpc_client_config
 - name: grpc_secure
   public_headers:
-  - include/grpc/grpc_cronet.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
   headers:
@@ -583,6 +589,10 @@ filegroups:
   - grpc_base
   - grpc_secure
 - name: grpc_transport_cronet_client_secure
+  public_headers:
+  - include/grpc/grpc_cronet.h
+  - include/grpc/grpc_security.h
+  - include/grpc/grpc_security_constants.h
   headers:
   - third_party/objective_c/Cronet/cronet_c_for_grpc.h
   src:
@@ -631,7 +641,6 @@ filegroups:
   - include/grpc++/impl/client_unary_call.h
   - include/grpc++/impl/grpc_library.h
   - include/grpc++/impl/method_handler_impl.h
-  - include/grpc++/impl/proto_utils.h
   - include/grpc++/impl/rpc_method.h
   - include/grpc++/impl/rpc_service_method.h
   - include/grpc++/impl/serialization_traits.h
@@ -656,6 +665,7 @@ filegroups:
   - include/grpc++/support/async_unary_call.h
   - include/grpc++/support/byte_buffer.h
   - include/grpc++/support/channel_arguments.h
+  - include/grpc++/support/config.h
   - include/grpc++/support/slice.h
   - include/grpc++/support/status.h
   - include/grpc++/support/status_code_enum.h
@@ -696,9 +706,8 @@ filegroups:
   deps:
   - grpc
   uses:
-  - grpc++_codegen
-  - grpc++_config
-- name: grpc++_codegen
+  - grpc++_codegen_base
+- name: grpc++_codegen_base
   language: c++
   public_headers:
   - include/grpc++/impl/codegen/async_stream.h
@@ -710,11 +719,11 @@ filegroups:
   - include/grpc++/impl/codegen/client_unary_call.h
   - include/grpc++/impl/codegen/completion_queue.h
   - include/grpc++/impl/codegen/completion_queue_tag.h
+  - include/grpc++/impl/codegen/config.h
   - include/grpc++/impl/codegen/core_codegen_interface.h
   - include/grpc++/impl/codegen/create_auth_context.h
   - include/grpc++/impl/codegen/grpc_library.h
   - include/grpc++/impl/codegen/method_handler_impl.h
-  - include/grpc++/impl/codegen/proto_utils.h
   - include/grpc++/impl/codegen/rpc_method.h
   - include/grpc++/impl/codegen/rpc_service_method.h
   - include/grpc++/impl/codegen/security/auth_context.h
@@ -731,22 +740,18 @@ filegroups:
   - include/grpc++/impl/codegen/sync_no_cxx11.h
   - include/grpc++/impl/codegen/sync_stream.h
   - include/grpc++/impl/codegen/time.h
-  src:
-  - src/cpp/codegen/codegen_init.cc
   uses:
   - grpc_codegen
-  - grpc++_config_codegen
-- name: grpc++_config
+- name: grpc++_codegen_proto
   language: c++
   public_headers:
-  - include/grpc++/support/config.h
-  - include/grpc++/support/config_protobuf.h
+  - include/grpc++/impl/codegen/proto_utils.h
   uses:
-  - grpc++_config_codegen
-- name: grpc++_config_codegen
+  - grpc++_codegen_base
+  - grpc++_config_proto
+- name: grpc++_config_proto
   language: c++
   public_headers:
-  - include/grpc++/impl/codegen/config.h
   - include/grpc++/impl/codegen/config_protobuf.h
 libs:
 - name: gpr
@@ -781,7 +786,6 @@ libs:
   - grpc_transport_chttp2_client_secure
   - grpc_transport_chttp2_server_insecure
   - grpc_transport_chttp2_client_insecure
-  - grpc_transport_cronet_client_secure
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
@@ -796,6 +800,22 @@ libs:
   - grpc.dependencies.openssl
   - grpc.dependencies.zlib
   vs_project_guid: '{29D16885-7228-4C31-81ED-5F9187C7F2A9}'
+- name: grpc_cronet
+  build: all
+  language: c
+  src:
+  - src/core/lib/surface/init.c
+  baselib: true
+  deps_linkage: static
+  dll: true
+  filegroups:
+  - grpc_base
+  - grpc_transport_cronet_client_secure
+  - grpc_transport_chttp2_client_secure
+  generate_plugin_registry: true
+  platforms:
+  - linux
+  secure: true
 - name: grpc_dll
   build: private
   language: c
@@ -931,7 +951,8 @@ libs:
   dll: true
   filegroups:
   - grpc++_base
-  - grpc++_codegen
+  - grpc++_codegen_base
+  - grpc++_codegen_base_src
   secure: check
   vs_project_guid: '{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}'
 - name: grpc++_test_config
@@ -964,6 +985,11 @@ libs:
   deps:
   - grpc++
   - grpc_test_util
+  filegroups:
+  - grpc++_codegen_base
+  - grpc++_codegen_base_src
+  - grpc++_codegen_proto
+  - grpc++_config_proto
 - name: grpc++_unsecure
   build: all
   language: c++
@@ -976,7 +1002,8 @@ libs:
   dll: true
   filegroups:
   - grpc++_base
-  - grpc++_codegen
+  - grpc++_codegen_base
+  - grpc++_codegen_base_src
   secure: false
   vs_project_guid: '{6EE56155-DF7C-4F6E-BFC4-F6F776BEB211}'
 - name: grpc_cli_libs
@@ -1018,7 +1045,7 @@ libs:
   - src/compiler/python_generator.cc
   - src/compiler/ruby_generator.cc
   filegroups:
-  - grpc++_config
+  - grpc++_config_proto
   secure: false
   vs_project_guid: '{B6E81D84-2ACB-41B8-8781-493A944C7817}'
   vs_props:
@@ -2464,7 +2491,7 @@ targets:
   - grpc
   - gpr
   filegroups:
-  - grpc++_codegen
+  - grpc++_codegen_base
 - name: codegen_test_minimal
   gtest: true
   build: test
@@ -2477,7 +2504,8 @@ targets:
   - src/proto/grpc/testing/stats.proto
   - test/cpp/codegen/codegen_test_minimal.cc
   filegroups:
-  - grpc++_codegen
+  - grpc++_codegen_base
+  - grpc++_codegen_base_src
 - name: credentials_test
   gtest: true
   build: test

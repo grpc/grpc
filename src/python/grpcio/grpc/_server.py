@@ -65,12 +65,23 @@ def _serialized_request(request_event):
   return request_event.batch_operations[0].received_message.bytes()
 
 
-def _code(state):
+def _application_code(code):
+  cygrpc_code = _common.STATUS_CODE_TO_CYGRPC_STATUS_CODE.get(code)
+  return cygrpc.StatusCode.unknown if cygrpc_code is None else cygrpc_code
+
+
+def _completion_code(state):
   if state.code is None:
     return cygrpc.StatusCode.ok
   else:
-    code = _common.STATUS_CODE_TO_CYGRPC_STATUS_CODE.get(state.code)
-    return cygrpc.StatusCode.unknown if code is None else code
+    return _application_code(state.code)
+
+
+def _abortion_code(state, code):
+  if state.code is None:
+    return code
+  else:
+    return _application_code(state.code)
 
 
 def _details(state):
@@ -126,20 +137,22 @@ def _send_status_from_server(state, token):
 
 def _abort(state, call, code, details):
   if state.client is not _CANCELLED:
+    effective_code = _abortion_code(state, code)
+    effective_details = details if state.details is None else state.details
     if state.initial_metadata_allowed:
       operations = (
           cygrpc.operation_send_initial_metadata(
               _EMPTY_METADATA, _EMPTY_FLAGS),
           cygrpc.operation_send_status_from_server(
-              _common.metadata(state.trailing_metadata), code, details,
-              _EMPTY_FLAGS),
+              _common.metadata(state.trailing_metadata), effective_code,
+              effective_details, _EMPTY_FLAGS),
       )
       token = _SEND_INITIAL_METADATA_AND_SEND_STATUS_FROM_SERVER_TOKEN
     else:
       operations = (
           cygrpc.operation_send_status_from_server(
-              _common.metadata(state.trailing_metadata), code, details,
-              _EMPTY_FLAGS),
+              _common.metadata(state.trailing_metadata), effective_code,
+              effective_details, _EMPTY_FLAGS),
       )
       token = _SEND_STATUS_FROM_SERVER_TOKEN
     call.start_batch(
@@ -346,7 +359,7 @@ def _unary_request(rpc_event, state, request_deserializer):
 def _call_behavior(rpc_event, state, behavior, argument, request_deserializer):
   context = _Context(rpc_event, state, request_deserializer)
   try:
-    return behavior(argument, context)
+    return behavior(argument, context), True
   except Exception as e:  # pylint: disable=broad-except
     with state.condition:
       if e not in state.rpc_errors:
@@ -354,7 +367,7 @@ def _call_behavior(rpc_event, state, behavior, argument, request_deserializer):
         logging.exception(details)
         _abort(
             state, rpc_event.operation_call, cygrpc.StatusCode.unknown, details)
-    return None
+    return None, False
 
 
 def _take_response_from_response_iterator(rpc_event, state, response_iterator):
@@ -415,7 +428,7 @@ def _status(rpc_event, state, serialized_response):
   with state.condition:
     if state.client is not _CANCELLED:
       trailing_metadata = _common.metadata(state.trailing_metadata)
-      code = _code(state)
+      code = _completion_code(state)
       details = _details(state)
       operations = [
           cygrpc.operation_send_status_from_server(
@@ -440,9 +453,9 @@ def _unary_response_in_pool(
     response_serializer):
   argument = argument_thunk()
   if argument is not None:
-    response = _call_behavior(
+    response, proceed = _call_behavior(
         rpc_event, state, behavior, argument, request_deserializer)
-    if response is not None:
+    if proceed:
       serialized_response = _serialize_response(
           rpc_event, state, response, response_serializer)
       if serialized_response is not None:
@@ -455,9 +468,9 @@ def _stream_response_in_pool(
     response_serializer):
   argument = argument_thunk()
   if argument is not None:
-    response_iterator = _call_behavior(
+    response_iterator, proceed = _call_behavior(
         rpc_event, state, behavior, argument, request_deserializer)
-    if response_iterator is not None:
+    if proceed:
       while True:
         response, proceed = _take_response_from_response_iterator(
             rpc_event, state, response_iterator)
