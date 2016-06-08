@@ -61,11 +61,12 @@ namespace Grpc.Core
 
         readonly List<ServerServiceDefinition> serviceDefinitionsList = new List<ServerServiceDefinition>();
         readonly List<ServerPort> serverPortList = new List<ServerPort>();
-        readonly Dictionary<string, IServerCallHandler> callHandlers = new Dictionary<string, IServerCallHandler>();
+        readonly Dictionary<string, AsyncServerMethodHandler> callHandlers = new Dictionary<string, AsyncServerMethodHandler>();
         readonly TaskCompletionSource<object> shutdownTcs = new TaskCompletionSource<object>();
 
         bool startRequested;
         volatile bool shutdownRequested;
+        IHandlerRegistry fallbackHandlerRegistry;
 
 
         /// <summary>
@@ -129,6 +130,22 @@ namespace Grpc.Core
             get
             {
                 return shutdownTcs.Task;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets a fallback handler registry that will be looked up in if a method handler is not found in <c>Services</c>.
+        /// Can only be set before the server is started.
+        /// </summary>
+        public IHandlerRegistry FallbackHandlerRegistry
+        {
+            get
+            {
+                return fallbackHandlerRegistry;
+            }
+            set
+            {
+                SetFallbackHandlerRegistryInternal(value);
             }
         }
 
@@ -287,6 +304,18 @@ namespace Grpc.Core
         }
 
         /// <summary>
+        /// Sets fallback handler registry.
+        /// </summary>
+        private void SetFallbackHandlerRegistryInternal(IHandlerRegistry registry)
+        {
+            lock (myLock)
+            {
+                GrpcPreconditions.CheckState(!startRequested);
+                this.fallbackHandlerRegistry = registry;
+            }
+        }
+
+        /// <summary>
         /// Allows one new RPC call to be received by server.
         /// </summary>
         private void AllowOneRpc(CompletionQueueSafeHandle cq)
@@ -314,12 +343,26 @@ namespace Grpc.Core
         {
             try
             {
-                IServerCallHandler callHandler;
-                if (!callHandlers.TryGetValue(newRpc.Method, out callHandler))
+                var callDetails = new ServerCallDetails(newRpc, cq);
+
+                AsyncServerMethodHandler callHandler;
+                if (!callHandlers.TryGetValue(newRpc.Method, out callHandler) && fallbackHandlerRegistry != null)
                 {
-                    callHandler = NoSuchMethodCallHandler.Instance;
+                    try
+                    {
+                        callHandler = fallbackHandlerRegistry.LookupHandler(newRpc.Method, newRpc.Host);
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.Warning(e, "Exception while looking up fallback handler for RPC.");
+                    }
                 }
-                await callHandler.HandleCall(newRpc, cq).ConfigureAwait(false);
+                if (callHandler == null)
+                {
+                    callHandler = ServerCallHandler.HandleCallWithUnimplementedStatusAsync;
+                }
+
+                await callHandler(callDetails).ConfigureAwait(false);
             }
             catch (Exception e)
             {

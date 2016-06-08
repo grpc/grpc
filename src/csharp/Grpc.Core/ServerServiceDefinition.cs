@@ -45,14 +45,14 @@ namespace Grpc.Core
     /// </summary>
     public class ServerServiceDefinition
     {
-        readonly ReadOnlyDictionary<string, IServerCallHandler> callHandlers;
+        readonly ReadOnlyDictionary<string, AsyncServerMethodHandler> callHandlers;
 
-        private ServerServiceDefinition(Dictionary<string, IServerCallHandler> callHandlers)
+        private ServerServiceDefinition(Dictionary<string, AsyncServerMethodHandler> callHandlers)
         {
-            this.callHandlers = new ReadOnlyDictionary<string, IServerCallHandler>(callHandlers);
+            this.callHandlers = new ReadOnlyDictionary<string, AsyncServerMethodHandler>(callHandlers);
         }
 
-        internal IDictionary<string, IServerCallHandler> CallHandlers
+        internal IDictionary<string, AsyncServerMethodHandler> CallHandlers
         {
             get
             {
@@ -74,7 +74,7 @@ namespace Grpc.Core
         /// </summary>
         public class Builder
         {
-            readonly Dictionary<string, IServerCallHandler> callHandlers = new Dictionary<string, IServerCallHandler>();
+            readonly Dictionary<string, AsyncServerMethodHandler> callHandlers = new Dictionary<string, AsyncServerMethodHandler>();
 
             /// <summary>
             /// Creates a new instance of builder.

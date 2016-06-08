@@ -42,48 +42,33 @@ using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
-    internal interface IServerCallHandler
+    /// <summary>
+    /// Runs the handling logic for server-side calls.
+    /// </summary>
+    internal class ServerCallHandler
     {
-        Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq);
-    }
+        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<ServerCallHandler>();
 
-    internal class UnaryServerCallHandler<TRequest, TResponse> : IServerCallHandler
-        where TRequest : class
-        where TResponse : class
-    {
-        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<UnaryServerCallHandler<TRequest, TResponse>>();
-
-        readonly Method<TRequest, TResponse> method;
-        readonly UnaryServerMethod<TRequest, TResponse> handler;
-
-        public UnaryServerCallHandler(Method<TRequest, TResponse> method, UnaryServerMethod<TRequest, TResponse> handler)
+        public static async Task HandleUnaryCallAsync<TRequest, TResponse>(Method<TRequest, TResponse> method, UnaryServerMethod<TRequest, TResponse> handler, ServerCallDetails callDetails)
+            where TRequest : class
+            where TResponse : class
         {
-            this.method = method;
-            this.handler = handler;
-        }
+            var asyncCall = CreateAndInitializeAsyncCall<TRequest,TResponse>(callDetails, method);
 
-        public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
-        {
-            var asyncCall = new AsyncCallServer<TRequest, TResponse>(
-                method.ResponseMarshaller.Serializer,
-                method.RequestMarshaller.Deserializer,
-                newRpc.Server);
-
-            asyncCall.Initialize(newRpc.Call, cq);
             var finishedTask = asyncCall.ServerSideCallAsync();
             var requestStream = new ServerRequestStream<TRequest, TResponse>(asyncCall);
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
             Tuple<TResponse,WriteFlags> responseTuple = null;
-            var context = HandlerUtils.NewContext(newRpc, asyncCall.Peer, responseStream, asyncCall.CancellationToken);
+            var context = CreateServerCallContext(callDetails.ServerRpcNew, asyncCall.Peer, responseStream, asyncCall.CancellationToken);
             try
             {
                 GrpcPreconditions.CheckArgument(await requestStream.MoveNext().ConfigureAwait(false));
                 var request = requestStream.Current;
                 var response = await handler(request, context).ConfigureAwait(false);
                 status = context.Status;
-                responseTuple = Tuple.Create(response, HandlerUtils.GetWriteFlags(context.WriteOptions));
+                responseTuple = Tuple.Create(response, GetWriteFlags(context.WriteOptions));
             } 
             catch (Exception e)
             {
@@ -91,7 +76,7 @@ namespace Grpc.Core.Internal
                 {
                     Logger.Warning(e, "Exception occured in handler.");
                 }
-                status = HandlerUtils.StatusFromException(e);
+                status = StatusFromException(e);
             }
             try
             {
@@ -104,37 +89,19 @@ namespace Grpc.Core.Internal
             }
             await finishedTask.ConfigureAwait(false);
         }
-    }
 
-    internal class ServerStreamingServerCallHandler<TRequest, TResponse> : IServerCallHandler
-        where TRequest : class
-        where TResponse : class
-    {
-        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<ServerStreamingServerCallHandler<TRequest, TResponse>>();
-
-        readonly Method<TRequest, TResponse> method;
-        readonly ServerStreamingServerMethod<TRequest, TResponse> handler;
-
-        public ServerStreamingServerCallHandler(Method<TRequest, TResponse> method, ServerStreamingServerMethod<TRequest, TResponse> handler)
+        public static async Task HandleServerStreamingCallAsync<TRequest, TResponse>(Method<TRequest, TResponse> method, ServerStreamingServerMethod<TRequest, TResponse> handler, ServerCallDetails callDetails)
+            where TRequest : class
+            where TResponse : class
         {
-            this.method = method;
-            this.handler = handler;
-        }
+            var asyncCall = CreateAndInitializeAsyncCall<TRequest,TResponse>(callDetails, method);
 
-        public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
-        {
-            var asyncCall = new AsyncCallServer<TRequest, TResponse>(
-                method.ResponseMarshaller.Serializer,
-                method.RequestMarshaller.Deserializer,
-                newRpc.Server);
-
-            asyncCall.Initialize(newRpc.Call, cq);
             var finishedTask = asyncCall.ServerSideCallAsync();
             var requestStream = new ServerRequestStream<TRequest, TResponse>(asyncCall);
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
-            var context = HandlerUtils.NewContext(newRpc, asyncCall.Peer, responseStream, asyncCall.CancellationToken);
+            var context = CreateServerCallContext(callDetails.ServerRpcNew, asyncCall.Peer, responseStream, asyncCall.CancellationToken);
             try
             {
                 GrpcPreconditions.CheckArgument(await requestStream.MoveNext().ConfigureAwait(false));
@@ -148,7 +115,7 @@ namespace Grpc.Core.Internal
                 {
                     Logger.Warning(e, "Exception occured in handler.");
                 }
-                status = HandlerUtils.StatusFromException(e);
+                status = StatusFromException(e);
             }
 
             try
@@ -162,43 +129,25 @@ namespace Grpc.Core.Internal
             }
             await finishedTask.ConfigureAwait(false);
         }
-    }
 
-    internal class ClientStreamingServerCallHandler<TRequest, TResponse> : IServerCallHandler
-        where TRequest : class
-        where TResponse : class
-    {
-        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<ClientStreamingServerCallHandler<TRequest, TResponse>>();
-
-        readonly Method<TRequest, TResponse> method;
-        readonly ClientStreamingServerMethod<TRequest, TResponse> handler;
-
-        public ClientStreamingServerCallHandler(Method<TRequest, TResponse> method, ClientStreamingServerMethod<TRequest, TResponse> handler)
+        public static async Task HandleClientStreamingCallAsync<TRequest, TResponse>(Method<TRequest, TResponse> method, ClientStreamingServerMethod<TRequest, TResponse> handler, ServerCallDetails callDetails)
+            where TRequest : class
+            where TResponse : class
         {
-            this.method = method;
-            this.handler = handler;
-        }
+            var asyncCall = CreateAndInitializeAsyncCall<TRequest,TResponse>(callDetails, method);
 
-        public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
-        {
-            var asyncCall = new AsyncCallServer<TRequest, TResponse>(
-                method.ResponseMarshaller.Serializer,
-                method.RequestMarshaller.Deserializer,
-                newRpc.Server);
-
-            asyncCall.Initialize(newRpc.Call, cq);
             var finishedTask = asyncCall.ServerSideCallAsync();
             var requestStream = new ServerRequestStream<TRequest, TResponse>(asyncCall);
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
             Tuple<TResponse,WriteFlags> responseTuple = null;
-            var context = HandlerUtils.NewContext(newRpc, asyncCall.Peer, responseStream, asyncCall.CancellationToken);
+            var context = CreateServerCallContext(callDetails.ServerRpcNew, asyncCall.Peer, responseStream, asyncCall.CancellationToken);
             try
             {
                 var response = await handler(requestStream, context).ConfigureAwait(false);
                 status = context.Status;
-                responseTuple = Tuple.Create(response, HandlerUtils.GetWriteFlags(context.WriteOptions));
+                responseTuple = Tuple.Create(response, GetWriteFlags(context.WriteOptions));
             }
             catch (Exception e)
             {
@@ -206,7 +155,7 @@ namespace Grpc.Core.Internal
                 {
                     Logger.Warning(e, "Exception occured in handler.");
                 }
-                status = HandlerUtils.StatusFromException(e);
+                status = StatusFromException(e);
             }
 
             try
@@ -220,37 +169,19 @@ namespace Grpc.Core.Internal
             }
             await finishedTask.ConfigureAwait(false);
         }
-    }
 
-    internal class DuplexStreamingServerCallHandler<TRequest, TResponse> : IServerCallHandler
-        where TRequest : class
-        where TResponse : class
-    {
-        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<DuplexStreamingServerCallHandler<TRequest, TResponse>>();
-
-        readonly Method<TRequest, TResponse> method;
-        readonly DuplexStreamingServerMethod<TRequest, TResponse> handler;
-
-        public DuplexStreamingServerCallHandler(Method<TRequest, TResponse> method, DuplexStreamingServerMethod<TRequest, TResponse> handler)
+        public static async Task HandleDuplexStreamingCallAsync<TRequest, TResponse>(Method<TRequest, TResponse> method, DuplexStreamingServerMethod<TRequest, TResponse> handler, ServerCallDetails callDetails)
+            where TRequest : class
+            where TResponse : class
         {
-            this.method = method;
-            this.handler = handler;
-        }
+            var asyncCall = CreateAndInitializeAsyncCall<TRequest,TResponse>(callDetails, method);
 
-        public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
-        {
-            var asyncCall = new AsyncCallServer<TRequest, TResponse>(
-                method.ResponseMarshaller.Serializer,
-                method.RequestMarshaller.Deserializer,
-                newRpc.Server);
-
-            asyncCall.Initialize(newRpc.Call, cq);
             var finishedTask = asyncCall.ServerSideCallAsync();
             var requestStream = new ServerRequestStream<TRequest, TResponse>(asyncCall);
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
-            var context = HandlerUtils.NewContext(newRpc, asyncCall.Peer, responseStream, asyncCall.CancellationToken);
+            var context = CreateServerCallContext(callDetails.ServerRpcNew, asyncCall.Peer, responseStream, asyncCall.CancellationToken);
             try
             {
                 await handler(requestStream, responseStream, context).ConfigureAwait(false);
@@ -262,7 +193,7 @@ namespace Grpc.Core.Internal
                 {
                     Logger.Warning(e, "Exception occured in handler.");
                 }
-                status = HandlerUtils.StatusFromException(e);
+                status = StatusFromException(e);
             }
             try
             {
@@ -275,28 +206,46 @@ namespace Grpc.Core.Internal
             }
             await finishedTask.ConfigureAwait(false);
         }
-    }
 
-    internal class NoSuchMethodCallHandler : IServerCallHandler
-    {
-        public static readonly NoSuchMethodCallHandler Instance = new NoSuchMethodCallHandler();
-
-        public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
+        /// <summary>
+        /// Handles the server call by returning <c>Unimplemented</c> status code immediately.
+        /// </summary>
+        public static async Task HandleCallWithUnimplementedStatusAsync(ServerCallDetails callDetails)
         {
             // We don't care about the payload type here.
             var asyncCall = new AsyncCallServer<byte[], byte[]>(
-                (payload) => payload, (payload) => payload, newRpc.Server);
-            
-            asyncCall.Initialize(newRpc.Call, cq);
+                (payload) => payload, (payload) => payload, callDetails.ServerRpcNew.Server);
+
+            asyncCall.Initialize(callDetails.ServerRpcNew.Call, callDetails.CompletionQueue);
             var finishedTask = asyncCall.ServerSideCallAsync();
             await asyncCall.SendStatusFromServerAsync(new Status(StatusCode.Unimplemented, ""), Metadata.Empty, null).ConfigureAwait(false);
             await finishedTask.ConfigureAwait(false);
         }
-    }
 
-    internal static class HandlerUtils
-    {
-        public static Status StatusFromException(Exception e)
+        private static AsyncCallServer<TRequest, TResponse> CreateAndInitializeAsyncCall<TRequest, TResponse>(ServerCallDetails callDetails, Method<TRequest, TResponse> method)
+            where TRequest : class
+            where TResponse : class
+        {
+            var asyncCall = new AsyncCallServer<TRequest, TResponse>(
+                method.ResponseMarshaller.Serializer,
+                method.RequestMarshaller.Deserializer,
+                callDetails.ServerRpcNew.Server);
+
+            asyncCall.Initialize(callDetails.ServerRpcNew.Call, callDetails.CompletionQueue);
+            return asyncCall;
+        }
+
+        private static ServerCallContext CreateServerCallContext<TRequest, TResponse>(ServerRpcNew newRpc, string peer, ServerResponseStream<TRequest, TResponse> serverResponseStream, CancellationToken cancellationToken)
+            where TRequest : class
+            where TResponse : class
+        {
+            DateTime realtimeDeadline = newRpc.Deadline.ToClockType(ClockType.Realtime).ToDateTime();
+
+            return new ServerCallContext(newRpc.Call, newRpc.Method, newRpc.Host, peer, realtimeDeadline,
+                newRpc.RequestMetadata, cancellationToken, serverResponseStream.WriteResponseHeadersAsync, serverResponseStream);
+        }
+
+        private static Status StatusFromException(Exception e)
         {
             var rpcException = e as RpcException;
             if (rpcException != null)
@@ -308,19 +257,9 @@ namespace Grpc.Core.Internal
             return new Status(StatusCode.Unknown, "Exception was thrown by handler.");
         }
 
-        public static WriteFlags GetWriteFlags(WriteOptions writeOptions)
+        private static WriteFlags GetWriteFlags(WriteOptions writeOptions)
         {
             return writeOptions != null ? writeOptions.Flags : default(WriteFlags);
-        }
-
-        public static ServerCallContext NewContext<TRequest, TResponse>(ServerRpcNew newRpc, string peer, ServerResponseStream<TRequest, TResponse> serverResponseStream, CancellationToken cancellationToken)
-            where TRequest : class
-            where TResponse : class
-        {
-            DateTime realtimeDeadline = newRpc.Deadline.ToClockType(ClockType.Realtime).ToDateTime();
-
-            return new ServerCallContext(newRpc.Call, newRpc.Method, newRpc.Host, peer, realtimeDeadline,
-                newRpc.RequestMetadata, cancellationToken, serverResponseStream.WriteResponseHeadersAsync, serverResponseStream);
         }
     }
 }

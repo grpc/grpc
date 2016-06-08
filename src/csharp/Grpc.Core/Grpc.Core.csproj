@@ -94,7 +94,6 @@
     <Compile Include="Metadata.cs" />
     <Compile Include="Internal\MetadataArraySafeHandle.cs" />
     <Compile Include="ClientBase.cs" />
-    <Compile Include="Internal\ServerCalls.cs" />
     <Compile Include="ServerMethods.cs" />
     <Compile Include="Internal\ClientRequestStream.cs" />
     <Compile Include="Internal\ClientResponseStream.cs" />
@@ -138,6 +137,9 @@
     <Compile Include="Internal\CallError.cs" />
     <Compile Include="Logging\LogLevel.cs" />
     <Compile Include="Logging\LogLevelFilterLogger.cs" />
+    <Compile Include="IHandlerRegistry.cs" />
+    <Compile Include="ServerCallDetails.cs" />
+    <Compile Include="ServerCalls.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Grpc.Core.nuspec" />

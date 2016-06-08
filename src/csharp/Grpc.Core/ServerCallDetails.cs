@@ -1,6 +1,6 @@
-#region Copyright notice and license
+﻿#region Copyright notice and license
 
-// Copyright 2015, Google Inc.
+// Copyright 2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -32,40 +32,41 @@
 #endregion
 
 using System;
-using System.Threading;
 using System.Threading.Tasks;
-using Grpc.Core;
+using Grpc.Core.Internal;
 
-namespace Grpc.Core.Internal
+namespace Grpc.Core
 {
-    internal static class ServerCalls
+    /// <summary>
+    /// Details about server-side call invocation. The class itself is visible,
+    /// but contents are marked as internal to make the instances opaque.
+    /// Users should never need to create instances of this class.
+    /// </summary>
+    public class ServerCallDetails
     {
-        public static IServerCallHandler UnaryCall<TRequest, TResponse>(Method<TRequest, TResponse> method, UnaryServerMethod<TRequest, TResponse> handler)
-            where TRequest : class
-            where TResponse : class
+        readonly ServerRpcNew serverRpcNew;
+        readonly CompletionQueueSafeHandle cq;
+
+        internal ServerCallDetails(ServerRpcNew serverRpcNew, CompletionQueueSafeHandle cq)
         {
-            return new UnaryServerCallHandler<TRequest, TResponse>(method, handler);
+            this.serverRpcNew = serverRpcNew;
+            this.cq = cq;
         }
 
-        public static IServerCallHandler ClientStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, ClientStreamingServerMethod<TRequest, TResponse> handler)
-            where TRequest : class
-            where TResponse : class
+        internal ServerRpcNew ServerRpcNew
         {
-            return new ClientStreamingServerCallHandler<TRequest, TResponse>(method, handler);
+            get
+            {
+                return this.serverRpcNew;
+            }
         }
 
-        public static IServerCallHandler ServerStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, ServerStreamingServerMethod<TRequest, TResponse> handler)
-            where TRequest : class
-            where TResponse : class
+        internal CompletionQueueSafeHandle CompletionQueue
         {
-            return new ServerStreamingServerCallHandler<TRequest, TResponse>(method, handler);
-        }
-
-        public static IServerCallHandler DuplexStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, DuplexStreamingServerMethod<TRequest, TResponse> handler)
-            where TRequest : class
-            where TResponse : class
-        {
-            return new DuplexStreamingServerCallHandler<TRequest, TResponse>(method, handler);
+            get
+            {
+                return this.cq;
+            }
         }
     }
 }
