@@ -338,7 +338,7 @@ typedef struct grpc_op {
        * Otherwise, \a compression_level won't be considered */
       struct {
         uint8_t is_set;
-        grpc_compression_level compression_level;
+        grpc_compression_level level;
       } maybe_compression_level;
     } send_initial_metadata;
     grpc_byte_buffer *send_message;
