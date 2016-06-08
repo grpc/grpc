@@ -128,6 +128,9 @@ struct grpc_tcp_server {
   grpc_pollset **pollsets;
   /* number of pollsets in the pollsets array */
   size_t pollset_count;
+
+  /* next pollset to assign a channel to */
+  size_t next_pollset_to_assign;
 };
 
 grpc_tcp_server *grpc_tcp_server_create(grpc_closure *shutdown_complete) {
@@ -145,6 +148,7 @@ grpc_tcp_server *grpc_tcp_server_create(grpc_closure *shutdown_complete) {
   s->head = NULL;
   s->tail = NULL;
   s->nports = 0;
+  s->next_pollset_to_assign = 0;
   return s;
 }
 
@@ -310,12 +314,16 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   grpc_tcp_listener *sp = arg;
   grpc_tcp_server_acceptor acceptor = {sp->server, sp->port_index,
                                        sp->fd_index};
+  grpc_pollset *read_notifier_pollset = NULL;
   grpc_fd *fdobj;
-  size_t i;
 
   if (!success) {
     goto error;
   }
+
+  read_notifier_pollset =
+      sp->server->pollsets[(sp->server->next_pollset_to_assign++) %
+                           sp->server->pollset_count];
 
   /* loop until accept4 returns EAGAIN, and then re-arm notification */
   for (;;) {
@@ -349,16 +357,18 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
     }
 
     fdobj = grpc_fd_create(fd, name);
-    /* TODO(ctiller): revise this when we have server-side sharding
-       of channels -- we certainly should not be automatically adding every
-       incoming channel to every pollset owned by the server */
-    for (i = 0; i < sp->server->pollset_count; i++) {
-      grpc_pollset_add_fd(exec_ctx, sp->server->pollsets[i], fdobj);
+
+    if (read_notifier_pollset == NULL) {
+      gpr_log(GPR_ERROR, "Read notifier pollset is not set on the fd");
+      goto error;
     }
+
+    grpc_pollset_add_fd(exec_ctx, read_notifier_pollset, fdobj);
+
     sp->server->on_accept_cb(
         exec_ctx, sp->server->on_accept_cb_arg,
         grpc_tcp_create(fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, addr_str),
-        &acceptor);
+        read_notifier_pollset, &acceptor);
 
     gpr_free(name);
     gpr_free(addr_str);

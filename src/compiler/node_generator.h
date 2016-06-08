@@ -38,11 +38,7 @@
 
 namespace grpc_node_generator {
 
-grpc::string GetImports(const grpc::protobuf::FileDescriptor *file);
-
-grpc::string GetTransformers(const grpc::protobuf::FileDescriptor *file);
-
-grpc::string GetServices(const grpc::protobuf::FileDescriptor *file);
+grpc::string GenerateFile(const grpc::protobuf::FileDescriptor *file);
 
 }  // namespace grpc_node_generator
 

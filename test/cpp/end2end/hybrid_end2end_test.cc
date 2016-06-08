@@ -207,6 +207,9 @@ class HybridEnd2endTest : public ::testing::Test {
     ServerBuilder builder;
     builder.AddListeningPort(server_address_.str(),
                              grpc::InsecureServerCredentials());
+    // Always add a sync unimplemented service: we rely on having at least one
+    // synchronous method to get a listening cq
+    builder.RegisterService(&unimplemented_service_);
     builder.RegisterService(service1);
     if (service2) {
       builder.RegisterService(service2);
@@ -216,7 +219,7 @@ class HybridEnd2endTest : public ::testing::Test {
     }
     // Create a separate cq for each potential handler.
     for (int i = 0; i < 5; i++) {
-      cqs_.push_back(builder.AddCompletionQueue());
+      cqs_.push_back(builder.AddCompletionQueue(false));
     }
     server_ = builder.BuildAndStart();
   }
@@ -252,6 +255,7 @@ class HybridEnd2endTest : public ::testing::Test {
     EchoRequest send_request;
     EchoResponse recv_response;
     ClientContext cli_ctx;
+    cli_ctx.set_fail_fast(false);
     send_request.set_message("Hello");
     Status recv_status = stub_->Echo(&cli_ctx, send_request, &recv_response);
     EXPECT_EQ(send_request.message(), recv_response.message());
@@ -265,6 +269,7 @@ class HybridEnd2endTest : public ::testing::Test {
     EchoRequest send_request;
     EchoResponse recv_response;
     ClientContext cli_ctx;
+    cli_ctx.set_fail_fast(false);
     send_request.set_message("Hello");
     Status recv_status = stub->Echo(&cli_ctx, send_request, &recv_response);
     EXPECT_EQ(send_request.message() + "_dup", recv_response.message());
@@ -276,6 +281,7 @@ class HybridEnd2endTest : public ::testing::Test {
     EchoResponse recv_response;
     grpc::string expected_message;
     ClientContext cli_ctx;
+    cli_ctx.set_fail_fast(false);
     send_request.set_message("Hello");
     auto stream = stub_->RequestStream(&cli_ctx, &recv_response);
     for (int i = 0; i < 5; i++) {
@@ -292,6 +298,7 @@ class HybridEnd2endTest : public ::testing::Test {
     EchoRequest request;
     EchoResponse response;
     ClientContext context;
+    context.set_fail_fast(false);
     request.set_message("hello");
 
     auto stream = stub_->ResponseStream(&context, request);
@@ -311,6 +318,7 @@ class HybridEnd2endTest : public ::testing::Test {
     EchoRequest request;
     EchoResponse response;
     ClientContext context;
+    context.set_fail_fast(false);
     grpc::string msg("hello");
 
     auto stream = stub_->BidiStream(&context);
@@ -338,6 +346,7 @@ class HybridEnd2endTest : public ::testing::Test {
     EXPECT_TRUE(s.ok());
   }
 
+  grpc::testing::UnimplementedService::Service unimplemented_service_;
   std::vector<std::unique_ptr<ServerCompletionQueue> > cqs_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<Server> server_;
