@@ -60,7 +60,7 @@ PROJECT_LOGO           =
 # entered, it will be relative to the location where doxygen was started. If
 # left blank the current directory will be used.
 
-OUTPUT_DIRECTORY       = doc/ref/c++
+OUTPUT_DIRECTORY       = doc/ref/c++.internal
 
 # If the CREATE_SUBDIRS tag is set to YES then doxygen will create 4096 sub-
 # directories (in 2 levels) under the output directory of each output format and
@@ -855,7 +855,52 @@ include/grpc/impl/codegen/sync.h \
 include/grpc/impl/codegen/sync_generic.h \
 include/grpc/impl/codegen/sync_posix.h \
 include/grpc/impl/codegen/sync_windows.h \
-include/grpc/impl/codegen/time.h
+include/grpc/impl/codegen/time.h \
+<<<<<<< HEAD
+include/grpc++/impl/codegen/config.h \
+include/grpc++/impl/codegen/config_protobuf.h \
+include/grpc++/support/config.h \
+include/grpc++/support/config_protobuf.h \
+include/grpc++/impl/codegen/core_codegen.h \
+=======
+>>>>>>> d30d4e279c4a63effaa6e912fc00bd4ad96054c7
+src/cpp/client/secure_credentials.h \
+src/cpp/common/secure_auth_context.h \
+src/cpp/server/secure_server_credentials.h \
+src/cpp/client/create_channel_internal.h \
+src/cpp/server/dynamic_thread_pool.h \
+src/cpp/server/thread_pool_interface.h \
+src/cpp/client/secure_credentials.cc \
+src/cpp/common/auth_property_iterator.cc \
+src/cpp/common/secure_auth_context.cc \
+src/cpp/common/secure_channel_arguments.cc \
+src/cpp/common/secure_create_auth_context.cc \
+src/cpp/server/secure_server_credentials.cc \
+src/cpp/client/channel.cc \
+src/cpp/client/client_context.cc \
+src/cpp/client/create_channel.cc \
+src/cpp/client/create_channel_internal.cc \
+src/cpp/client/credentials.cc \
+src/cpp/client/generic_stub.cc \
+src/cpp/client/insecure_credentials.cc \
+src/cpp/common/channel_arguments.cc \
+src/cpp/common/completion_queue.cc \
+src/cpp/common/core_codegen.cc \
+src/cpp/common/rpc_method.cc \
+src/cpp/server/async_generic_service.cc \
+src/cpp/server/create_default_thread_pool.cc \
+src/cpp/server/dynamic_thread_pool.cc \
+src/cpp/server/insecure_server_credentials.cc \
+src/cpp/server/server.cc \
+src/cpp/server/server_builder.cc \
+src/cpp/server/server_context.cc \
+src/cpp/server/server_credentials.cc \
+src/cpp/util/byte_buffer.cc \
+src/cpp/util/slice.cc \
+src/cpp/util/status.cc \
+src/cpp/util/string_ref.cc \
+src/cpp/util/time.cc \
+src/cpp/codegen/codegen_init.cc
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
