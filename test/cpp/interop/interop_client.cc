@@ -58,7 +58,7 @@ namespace testing {
 namespace {
 // The same value is defined by the Java client.
 const std::vector<int> request_stream_sizes = {27182, 8, 1828, 45904};
-const std::vector<int> response_stream_sizes = {31415, 59, 2653, 58979};
+const std::vector<int> response_stream_sizes = {31415, 9, 2653, 58979};
 const int kNumResponseMessages = 2000;
 const int kResponseMessageSize = 1030;
 const int kReceiveDelayMilliSeconds = 20;
@@ -466,10 +466,11 @@ bool InteropClient::DoResponseCompressedStreaming() {
       request.set_response_type(payload_types[i]);
       request.set_request_compressed_response(request_compression[j]);
 
-      for (size_t k = 0; k < response_stream_sizes.size(); ++k) {
+      for (size_t k = 0; k < response_stream_sizes.size() / 2; ++k) {
         ResponseParameters* response_parameter =
             request.add_response_parameters();
-        response_parameter->set_size(response_stream_sizes[k]);
+        response_parameter->set_size(response_stream_sizes[k] +
+                                     response_stream_sizes[k + 1]);
       }
       StreamingOutputCallResponse response;
 
@@ -483,7 +484,9 @@ bool InteropClient::DoResponseCompressedStreaming() {
         switch (response.payload().type()) {
           case PayloadType::COMPRESSABLE:
             GPR_ASSERT(response.payload().body() ==
-                       grpc::string(response_stream_sizes[k], '\0'));
+                       grpc::string(response_stream_sizes[k] +
+                                        response_stream_sizes[k + 1],
+                                    '\0'));
             break;
           case PayloadType::UNCOMPRESSABLE:
             break;
@@ -513,14 +516,14 @@ bool InteropClient::DoResponseCompressedStreaming() {
       gpr_log(GPR_DEBUG, "Response streaming done %s.", log_suffix);
       gpr_free(log_suffix);
 
-      if (k < response_stream_sizes.size()) {
+      if (k < response_stream_sizes.size() / 2) {
         // stream->Read() failed before reading all the expected messages. This
         // is most likely due to a connection failure.
         gpr_log(GPR_ERROR,
                 "DoResponseCompressedStreaming(): Responses read (k=%d) is "
                 "less than the expected messages (i.e "
-                "response_stream_sizes.size() (%d)). (i=%d, j=%d)",
-                k, response_stream_sizes.size(), i, j);
+                "response_stream_sizes.size()/2 (%d)). (i=%d, j=%d)",
+                k, response_stream_sizes.size() / 2, i, j);
         return TransientFailureOrAbort();
       }
 

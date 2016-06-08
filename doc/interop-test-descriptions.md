@@ -224,7 +224,7 @@ Procedure:
         size: 31415
       }
       response_parameters:{
-        size: 59
+        size: 9
       }
       response_parameters:{
         size: 2653
@@ -261,19 +261,18 @@ Procedure:
       request_compressed_response: bool
       response_type:COMPRESSABLE
       response_parameters:{
-        size: 31415
+        size: 31424
       }
       response_parameters:{
-        size: 59
-      }
-      response_parameters:{
-        size: 2653
-      }
-      response_parameters:{
-        size: 58979
+        size: 61632
       }
     }
     ```
+
+    Note that the `response_parameters` sizes are the sum of the usual streaming
+    response sizes (31415, 9, 2653, 58979) taken in successive pairs. This way,
+    we only keep a single list of sizes while making sure the individual message
+    sizes are large enough to trigger compression in all implementations.
 
     Client asserts:
     * call was successful
@@ -283,7 +282,7 @@ Procedure:
       NOT have the compressed message flag set.
     * if `request_compressed_response` is true, the response's messages MUST
       have the compressed message flag set.
-    * response payload bodies are sized (in order): 31415, 59, 2653, 58979
+    * response payload bodies are sized (in order): 31424, 61632
     * clients are free to assert that the response payload body contents are
       zero and comparing the entire response messages against golden responses
 
@@ -295,16 +294,10 @@ Procedure:
       request_compressed_response: bool
       response_type:UNCOMPRESSABLE
       response_parameters:{
-        size: 31415
+        size: 31424
       }
       response_parameters:{
-        size: 59
-      }
-      response_parameters:{
-        size: 2653
-      }
-      response_parameters:{
-        size: 58979
+        size: 61632
       }
     }
     ```
@@ -316,10 +309,7 @@ Procedure:
     * the response MAY have the compressed message flag set. Some
       implementations will choose to compress the payload even when the output
       size if larger than the input.
-    * response payload bodies are sized (in order): 31415, 59, 2653, 58979
-    * clients are free to assert that the body of the responses are identical to
-      the golden uncompressable data at `test/cpp/interop/rnd.dat`.
-
+    * response payload bodies are sized (in order): 31424, 61632
 
 ### ping_pong
 
@@ -350,7 +340,7 @@ Procedure:
     {
       response_type: COMPRESSABLE
       response_parameters:{
-        size: 59
+        size: 9
       }
       payload:{
         body: 8 bytes of zeros
