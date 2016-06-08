@@ -34,6 +34,8 @@
 #ifndef GRPC_TEST_CORE_END2END_CQ_VERIFIER_H
 #define GRPC_TEST_CORE_END2END_CQ_VERIFIER_H
 
+#include <stdbool.h>
+
 #include <grpc/grpc.h>
 #include "test/core/util/test_config.h"
 
@@ -57,7 +59,7 @@ void cq_verify_empty(cq_verifier *v);
    Any functions taking ... expect a NULL terminated list of key/value pairs
    (each pair using two parameter slots) of metadata that MUST be present in
    the event. */
-void cq_expect_completion(cq_verifier *v, void *tag, int success);
+void cq_expect_completion(cq_verifier *v, void *tag, bool success);
 
 int byte_buffer_eq_string(grpc_byte_buffer *byte_buffer, const char *string);
 int contains_metadata(grpc_metadata_array *array, const char *key,
