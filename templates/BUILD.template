@@ -83,10 +83,9 @@
   
   <%def name="cc_library(lib)">
   <%
-    lib_hdrs = lib.get("headers", [])
-    hdrs = [h for h in lib_hdrs if not h.startswith('third_party/nanopb')]
-    srcs = [s for s in lib.src if not s.startswith('third_party/nanopb')]
-    uses_nanopb = len(lib_hdrs) != len(hdrs) or len(srcs) != len(lib.src)
+    hdrs = lib.get("headers", [])
+    srcs = lib.get("src", [])
+    uses_nanopb = lib.name in ("grpc", "grpc_unsecure")
   %>
   cc_library(
     name = "${lib.name}",
@@ -125,10 +124,9 @@
   
   <%def name="objc_library(lib)">
   <%
-    lib_hdrs = lib.get("headers", [])
-    hdrs = [h for h in lib_hdrs if not h.startswith('third_party/nanopb')]
-    srcs = [s for s in lib.src if not s.startswith('third_party/nanopb')]
-    uses_nanopb = len(lib_hdrs) != len(hdrs) or len(srcs) != len(lib.src)
+    hdrs = lib.get("headers", [])
+    srcs = lib.get("src", [])
+    uses_nanopb = lib.name in ("grpc", "grpc_unsecure")
   %>
   objc_library(
     name = "${lib.name}_objc",

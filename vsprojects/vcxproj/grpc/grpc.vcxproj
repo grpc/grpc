@@ -435,10 +435,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\uri_parser.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v1\load_balancer.pb.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_common.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.h" />
-    <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\aggregation.h" />
@@ -765,12 +761,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v1\load_balancer.pb.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_common.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_decode.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\pick_first\pick_first.c">
     </ClCompile>

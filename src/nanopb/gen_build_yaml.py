@@ -1,4 +1,6 @@
-# Copyright 2015, Google Inc.
+#!/usr/bin/env python2.7
+
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,36 +29,29 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Buildgen expand binary attributes plugin.
+import re
+import os
+import sys
+import yaml
 
-This fills in any optional attributes.
+os.chdir(os.path.dirname(sys.argv[0])+'/../..')
 
-"""
+out = {}
 
+out['libs'] = [{
+    'name': 'nanopb',
+    'build': 'private',
+    'defaults': 'global',
+    'language': 'c',
+    'secure': 'no',
+    'src': ['third_party/nanopb/pb_common.c',
+            'third_party/nanopb/pb_decode.c',
+            'third_party/nanopb/pb_encode.c'],
+    'headers': ['third_party/nanopb/pb.h',
+                'third_party/nanopb/pb_common.h',
+                'third_party/nanopb/pb_decode.h',
+                'third_party/nanopb/pb_encode.h'],
+}]
 
-def mako_plugin(dictionary):
-  """The exported plugin code for expand_filegroups.
+print yaml.dump(out)
 
-  The list of libs in the build.yaml file can contain "filegroups" tags.
-  These refer to the filegroups in the root object. We will expand and
-  merge filegroups on the src, headers and public_headers properties.
-
-  """
-
-  targets = dictionary.get('targets')
-  default_platforms = ['windows', 'posix', 'linux', 'mac']
-
-  for tgt in targets:
-    tgt['flaky'] = tgt.get('flaky', False)
-    tgt['platforms'] = sorted(tgt.get('platforms', default_platforms))
-    tgt['ci_platforms'] = sorted(tgt.get('ci_platforms', tgt['platforms']))
-    tgt['boringssl'] = tgt.get('boringssl', False)
-    tgt['zlib'] = tgt.get('zlib', False)
-    tgt['nanopb'] = tgt.get('nanopb', False)
-    tgt['gtest'] = tgt.get('gtest', False)
-
-  libs = dictionary.get('libs')
-  for lib in libs:
-    lib['boringssl'] = lib.get('boringssl', False)
-    lib['zlib'] = lib.get('zlib', False)
-    lib['nanopb'] = lib.get('nanopb', False)

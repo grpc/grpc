@@ -468,6 +468,12 @@
   HAS_EMBEDDED_ZLIB = true
   endif
 
+  ifeq ($(wildcard third_party/nanopb/pb.h),)
+  HAS_EMBEDDED_NANOPB = false
+  else
+  HAS_EMBEDDED_NANOPB = true
+  endif
+
   ifeq ($(wildcard third_party/protobuf/src/google/protobuf/descriptor.pb.h),)
   HAS_EMBEDDED_PROTOBUF = false
   ifneq ($(HAS_VALID_PROTOC),true)
@@ -507,6 +513,14 @@
   PC_LIBS_GRPC += -lz
   LIBS += z
   endif
+  endif
+
+  ifeq ($(HAS_EMBEDDED_NANOPB), true)
+  NANOPB_DEP = $(LIBDIR)/$(CONFIG)/libnanopb.a
+  NANOPB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libnanopb.a
+  NANOPB_MERGE_OBJS = $(LIBNANOPB_OBJS)
+  CPPFLAGS += -Ithird_party/nanopb
+  LDFLAGS += -L$(LIBDIR)/$(CONFIG)/nanopb
   endif
 
   OPENSSL_PKG_CONFIG = false
@@ -1547,6 +1561,9 @@
   % if lib.name != 'z':
   $(ZLIB_DEP) \
   % endif
+  % if lib.name != 'nanopb':
+  $(NANOPB_DEP) \
+  % endif
   % endif
   % if lib.language == 'c++':
    $(PROTOBUF_DEP)\
@@ -1555,6 +1572,7 @@
   % if lib.get('baselib', False):
    $(LIBGPR_OBJS) \
    $(ZLIB_MERGE_OBJS) \
+   $(NANOPB_MERGE_OBJS) \
   % if lib.get('secure', 'check') == True:
    $(OPENSSL_MERGE_OBJS) \
   % endif
@@ -1567,6 +1585,7 @@
   % if lib.get('baselib', False):
    $(LIBGPR_OBJS) \
    $(ZLIB_MERGE_OBJS) \
+   $(NANOPB_MERGE_OBJS) \
   % if lib.get('secure', 'check') == True:
    $(OPENSSL_MERGE_OBJS) \
   % endif
@@ -1611,7 +1630,7 @@
     security = lib.get('secure', 'check')
     if security == True:
       common = common + ' $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE)'
-    common = common + ' $(ZLIB_MERGE_LIBS)'
+    common = common + ' $(ZLIB_MERGE_LIBS) $(NANOPB_MERGE_LIBS)'
 
     if security in [True, 'check']:
       for src in lib.src:
