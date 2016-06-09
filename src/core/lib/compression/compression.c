@@ -125,6 +125,28 @@ grpc_mdelem *grpc_compression_encoding_mdelem(
   return NULL;
 }
 
+void grpc_compression_options_init(grpc_compression_options *opts) {
+  memset(opts, 0, sizeof(*opts));
+  /* all enabled by default */
+  opts->enabled_algorithms_bitset = (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1;
+}
+
+void grpc_compression_options_enable_algorithm(
+    grpc_compression_options *opts, grpc_compression_algorithm algorithm) {
+  GPR_BITSET(&opts->enabled_algorithms_bitset, algorithm);
+}
+
+void grpc_compression_options_disable_algorithm(
+    grpc_compression_options *opts, grpc_compression_algorithm algorithm) {
+  GPR_BITCLEAR(&opts->enabled_algorithms_bitset, algorithm);
+}
+
+int grpc_compression_options_is_algorithm_enabled(
+    const grpc_compression_options *opts,
+    grpc_compression_algorithm algorithm) {
+  return GPR_BITGET(opts->enabled_algorithms_bitset, algorithm);
+}
+
 /* TODO(dgq): Add the ability to specify parameters to the individual
  * compression algorithms */
 grpc_compression_algorithm grpc_compression_algorithm_for_level(
@@ -179,26 +201,4 @@ grpc_compression_algorithm grpc_compression_algorithm_for_level(
     default:
       abort();
   };
-}
-
-void grpc_compression_options_init(grpc_compression_options *opts) {
-  opts->enabled_algorithms_bitset = (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1;
-  opts->default_compression_algorithm = GRPC_COMPRESS_NONE;
-}
-
-void grpc_compression_options_enable_algorithm(
-    grpc_compression_options *opts, grpc_compression_algorithm algorithm) {
-  GPR_BITSET(&opts->enabled_algorithms_bitset, algorithm);
-}
-
-void grpc_compression_options_disable_algorithm(
-    grpc_compression_options *opts, grpc_compression_algorithm algorithm) {
-  GPR_BITCLEAR(&opts->enabled_algorithms_bitset, algorithm);
-}
-
-int grpc_compression_options_is_algorithm_enabled(
-    const grpc_compression_options *opts,
-    grpc_compression_algorithm algorithm) {
-  if (algorithm >= GRPC_COMPRESS_ALGORITHMS_COUNT) return 0;
-  return GPR_BITGET(opts->enabled_algorithms_bitset, algorithm);
 }

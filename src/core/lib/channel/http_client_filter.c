@@ -39,6 +39,9 @@
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/static_metadata.h"
 
+#define EXPECTED_CONTENT_TYPE "application/grpc"
+#define EXPECTED_CONTENT_TYPE_LENGTH sizeof(EXPECTED_CONTENT_TYPE) - 1
+
 typedef struct call_data {
   grpc_linked_mdelem method;
   grpc_linked_mdelem scheme;
@@ -74,7 +77,24 @@ static grpc_mdelem *client_recv_filter(void *user_data, grpc_mdelem *md) {
   } else if (md->key == GRPC_MDSTR_STATUS) {
     grpc_call_element_send_cancel(a->exec_ctx, a->elem);
     return NULL;
+  } else if (md == GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC) {
+    return NULL;
   } else if (md->key == GRPC_MDSTR_CONTENT_TYPE) {
+    const char *value_str = grpc_mdstr_as_c_string(md->value);
+    if (strncmp(value_str, EXPECTED_CONTENT_TYPE,
+                EXPECTED_CONTENT_TYPE_LENGTH) == 0 &&
+        (value_str[EXPECTED_CONTENT_TYPE_LENGTH] == '+' ||
+         value_str[EXPECTED_CONTENT_TYPE_LENGTH] == ';')) {
+      /* Although the C implementation doesn't (currently) generate them,
+         any custom +-suffix is explicitly valid. */
+      /* TODO(klempner): We should consider preallocating common values such
+         as +proto or +json, or at least stashing them if we see them. */
+      /* TODO(klempner): Should we be surfacing this to application code? */
+    } else {
+      /* TODO(klempner): We're currently allowing this, but we shouldn't
+         see it without a proxy so log for now. */
+      gpr_log(GPR_INFO, "Unexpected content-type '%s'", value_str);
+    }
     return NULL;
   }
   return md;

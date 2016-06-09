@@ -167,6 +167,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
                                "/foo", "foo.test.google.fr", deadline, NULL);
   GPR_ASSERT(c);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
@@ -201,6 +202,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
     cq_expect_completion(cqv, tag(101), 1);
     cq_verify(cqv);
 
+    memset(ops, 0, sizeof(ops));
     op = ops;
     op->op = GRPC_OP_SEND_INITIAL_METADATA;
     op->data.send_initial_metadata.count = 0;
