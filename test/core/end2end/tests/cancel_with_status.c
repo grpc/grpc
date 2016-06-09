@@ -122,6 +122,7 @@ static void simple_request_body(grpc_end2end_test_fixture f, size_t num_ops) {
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;

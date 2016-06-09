@@ -115,6 +115,7 @@ int main(int argc, char **argv) {
   GPR_ASSERT(call);
   cqv = cq_verifier_create(cq);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
@@ -133,6 +134,7 @@ int main(int argc, char **argv) {
   cq_expect_completion(cqv, tag(1), 0);
   cq_verify(cqv);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
