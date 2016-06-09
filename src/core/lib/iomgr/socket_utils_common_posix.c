@@ -117,14 +117,18 @@ grpc_error *grpc_set_socket_ipv6_recvpktinfo_if_possible(int fd) {
   return GRPC_ERROR_NONE;
 }
 
-int grpc_set_socket_sndbuf(int fd, int buffer_size_bytes) {
+grpc_error *grpc_set_socket_sndbuf(int fd, int buffer_size_bytes) {
   return 0 == setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &buffer_size_bytes,
-                         sizeof(buffer_size_bytes));
+                         sizeof(buffer_size_bytes))
+             ? GRPC_ERROR_NONE
+             : GRPC_OS_ERROR(errno, "setsockopt(SO_SNDBUF)");
 }
 
-int grpc_set_socket_rcvbuf(int fd, int buffer_size_bytes) {
+grpc_error *grpc_set_socket_rcvbuf(int fd, int buffer_size_bytes) {
   return 0 == setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &buffer_size_bytes,
-                         sizeof(buffer_size_bytes));
+                         sizeof(buffer_size_bytes))
+             ? GRPC_ERROR_NONE
+             : GRPC_OS_ERROR(errno, "setsockopt(SO_RCVBUF)");
 }
 
 /* set a socket to close on exec */
