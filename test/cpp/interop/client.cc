@@ -40,7 +40,9 @@
 #include <grpc++/client_context.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/useful.h>
 
+#include "src/core/lib/support/string.h"
 #include "test/cpp/interop/client_helper.h"
 #include "test/cpp/interop/interop_client.h"
 #include "test/cpp/util/test_config.h"
@@ -55,10 +57,14 @@ DEFINE_string(test_case, "large_unary",
               "Configure different test cases. Valid options are: "
               "empty_unary : empty (zero bytes) request and response; "
               "large_unary : single request and (large) response; "
-              "large_compressed_unary : single request and compressed (large) "
-              "response; "
+
+              "client_compressed_unary : single compressed request; "
+              "server_compressed_unary : single compressed response; "
+
               "client_streaming : request streaming with single response; "
               "server_streaming : single request with response streaming; "
+              "client_compressed_streaming : compressed request streaming with "
+              "single response; "
               "server_compressed_streaming : single request with compressed "
               "response streaming; "
               "slow_consumer : single request with response; "
@@ -104,14 +110,18 @@ int main(int argc, char** argv) {
     client.DoEmpty();
   } else if (FLAGS_test_case == "large_unary") {
     client.DoLargeUnary();
-  } else if (FLAGS_test_case == "large_compressed_unary") {
-    client.DoLargeCompressedUnary();
+  } else if (FLAGS_test_case == "server_compressed_unary") {
+    client.DoServerCompressedUnary();
+  } else if (FLAGS_test_case == "client_compressed_unary") {
+    client.DoClientCompressedUnary();
   } else if (FLAGS_test_case == "client_streaming") {
     client.DoRequestStreaming();
   } else if (FLAGS_test_case == "server_streaming") {
     client.DoResponseStreaming();
   } else if (FLAGS_test_case == "server_compressed_streaming") {
-    client.DoResponseCompressedStreaming();
+    client.DoServerCompressedStreaming();
+  } else if (FLAGS_test_case == "client_compressed_streaming") {
+    client.DoClientCompressedStreaming();
   } else if (FLAGS_test_case == "slow_consumer") {
     client.DoResponseStreamingWithSlowConsumer();
   } else if (FLAGS_test_case == "half_duplex") {
@@ -144,9 +154,12 @@ int main(int argc, char** argv) {
   } else if (FLAGS_test_case == "all") {
     client.DoEmpty();
     client.DoLargeUnary();
+    client.DoClientCompressedUnary();
+    client.DoServerCompressedUnary();
     client.DoRequestStreaming();
     client.DoResponseStreaming();
-    client.DoResponseCompressedStreaming();
+    client.DoClientCompressedStreaming();
+    client.DoServerCompressedStreaming();
     client.DoHalfDuplex();
     client.DoPingPong();
     client.DoCancelAfterBegin();
@@ -165,14 +178,36 @@ int main(int argc, char** argv) {
     }
     // compute_engine_creds only runs in GCE.
   } else {
-    gpr_log(
-        GPR_ERROR,
-        "Unsupported test case %s. Valid options are all|empty_unary|"
-        "large_unary|large_compressed_unary|client_streaming|server_streaming|"
-        "server_compressed_streaming|half_duplex|ping_pong|cancel_after_begin|"
-        "cancel_after_first_response|timeout_on_sleeping_server|empty_stream|"
-        "compute_engine_creds|jwt_token_creds|oauth2_auth_token|per_rpc_creds",
-        "status_code_and_message|custom_metadata", FLAGS_test_case.c_str());
+    const char* testcases[] =
+    { "all",
+      "cancel_after_begin",
+      "cancel_after_first_response",
+      "client_compressed_streaming",
+      "client_compressed_unary",
+      "client_streaming",
+      "compute_engine_creds",
+      "custom_metadata",
+      "empty_stream",
+      "empty_unary",
+      "half_duplex",
+      "jwt_token_creds",
+      "large_unary",
+      "oauth2_auth_token",
+      "oauth2_auth_token",
+      "per_rpc_creds",
+      "per_rpc_creds",
+      "ping_pong",
+      "server_compressed_streaming",
+      "server_compressed_unary",
+      "server_streaming",
+      "status_code_and_message",
+      "timeout_on_sleeping_server"};
+    char* joined_testcases =
+        gpr_strjoin_sep(testcases, GPR_ARRAY_SIZE(testcases), "\n", NULL);
+
+    gpr_log(GPR_ERROR, "Unsupported test case %s. Valid options are\n%s",
+            FLAGS_test_case.c_str(), joined_testcases);
+    gpr_free(joined_testcases);
     ret = 1;
   }
 

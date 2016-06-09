@@ -38,9 +38,6 @@ package grpc.testing;
 enum PayloadType {
   // Compressable text format.
   COMPRESSABLE = 0;
-
-  // Uncompressable binary format.
-  UNCOMPRESSABLE = 1;
 }
 
 // A block of data, to simply increase gRPC message size.
@@ -82,6 +79,12 @@ message SimpleRequest {
 
   // Whether server should return a given status
   EchoStatus response_status = 7;
+
+  // Whether the server should expect this request to be compressed.
+  bool expect_compressed_request = 8;
+
+  // The type of payload.
+  PayloadType payload_type = 9;
 }
 
 // Unary response, as configured by the request.
@@ -99,6 +102,12 @@ message SimpleResponse {
 message StreamingInputCallRequest {
   // Optional input payload sent along with the request.
   Payload payload = 1;
+
+  // The type of payload.
+  PayloadType payload_type = 2;
+
+  // Whether the server should expect this request to be compressed.
+  bool expect_compressed_request = 3;
 
   // Not expecting any payload from the response.
 }
@@ -135,7 +144,7 @@ message StreamingOutputCallRequest {
   Payload payload = 3;
 
   // Whether to request the server to compress the response.
-  bool request_compressed_response = 6;
+  bool request_compressed_response = 4;
 
   // Whether server should return a given status
   EchoStatus response_status = 7;
