@@ -151,9 +151,9 @@ gpr_slice grpc_chttp2_base64_decode(gpr_slice input) {
   if (input_length % 4 != 0) {
     gpr_log(GPR_ERROR,
             "Base64 decoding failed, input of "
-            "grpc_chttp2_base64_decode has a length of %zu, which is not a "
+            "grpc_chttp2_base64_decode has a length of %d, which is not a "
             "multiple of 4.\n",
-            input_length);
+            (int)input_length);
     return gpr_empty_slice();
   }
 
@@ -196,18 +196,19 @@ gpr_slice grpc_chttp2_base64_decode_with_length(gpr_slice input,
   if (input_length % 4 == 1) {
     gpr_log(GPR_ERROR,
             "Base64 decoding failed, input of "
-            "grpc_chttp2_base64_decode_with_length has a length of %zu, which "
+            "grpc_chttp2_base64_decode_with_length has a length of %d, which "
             "has a tail of 1 byte.\n",
-            input_length);
+            (int)input_length);
     gpr_slice_unref(output);
     return gpr_empty_slice();
   }
 
   if (output_length > input_length / 4 * 3 + tail_xtra[input_length % 4]) {
     gpr_log(GPR_ERROR,
-            "Base64 decoding failed, output_length %zu is longer "
-            "than the max possible output length %zu.\n",
-            output_length, input_length / 4 * 3 + tail_xtra[input_length % 4]);
+            "Base64 decoding failed, output_length %d is longer "
+            "than the max possible output length %d.\n",
+            (int)output_length,
+            (int)(input_length / 4 * 3 + tail_xtra[input_length % 4]));
     gpr_slice_unref(output);
     return gpr_empty_slice();
   }
