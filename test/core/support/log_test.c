@@ -91,6 +91,9 @@ int main(int argc, char **argv) {
   /* Test placeholder macros */
   test_placeholder(size_t, GPR_SIZE_T_SPECIFIER);
   test_placeholder(ptrdiff_t, GPR_PTRDIFF_T_SPECIFIER);
+  test_placeholder(size_t, "%"PRIuPTR);
+  test_placeholder(intptr_t, "%"PRIdPTR);
+  test_placeholder(uintptr_t, "%"PRIuPTR);
 
   /* gpr_log_verbosity_init() will be effective only once, and only before
    * gpr_set_log_verbosity() is called */

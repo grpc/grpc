@@ -36,6 +36,7 @@
 
 #include <stdarg.h>
 #include <stdlib.h> /* for abort() */
+#include <inttypes.h>
 
 #include <grpc/impl/codegen/port_platform.h>
 
