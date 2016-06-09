@@ -133,11 +133,14 @@ def run_client():
     details = 'Logfile: %s' % logfile_name
     logfile = open(logfile_name, 'w')
 
+  metrics_cmd = metrics_client_cmd + [x
+                                      for x in metrics_client_args_str.split()]
+  stress_cmd = stress_client_cmd + [x for x in args_str.split()]
+
+  details = '%s, Metrics command: %s, Stress client command: %s' % (
+      details, str(metrics_cmd), str(stress_cmd))
   # Update status that the test is starting (in the status table)
   bq_helper.insert_summary_row(EventType.STARTING, details)
-
-  metrics_cmd = metrics_client_cmd + [x for x in metrics_client_args_str.split()]
-  stress_cmd = stress_client_cmd + [x for x in args_str.split()]
 
   print 'Launching process %s ...' % stress_cmd
   stress_p = subprocess.Popen(args=stress_cmd,
@@ -147,6 +150,7 @@ def run_client():
   qps_history = [1, 1, 1]  # Maintain the last 3 qps readings
   qps_history_idx = 0  # Index into the qps_history list
 
+  is_running_status_written = False
   is_error = False
   while True:
     # Check if stress_client is still running. If so, collect metrics and upload
@@ -164,6 +168,10 @@ def run_client():
       bq_helper.insert_summary_row(event_type, details)
       print details
       break
+
+    if not is_running_status_written:
+      bq_helper.insert_summary_row(EventType.RUNNING, '')
+      is_running_status_written = True
 
     # Stress client still running. Get metrics
     qps = _get_qps(metrics_cmd)

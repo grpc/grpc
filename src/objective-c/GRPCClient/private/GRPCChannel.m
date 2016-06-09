@@ -34,10 +34,17 @@
 #import "GRPCChannel.h"
 
 #include <grpc/grpc_security.h>
+#ifdef GRPC_COMPILE_WITH_CRONET
+#include <grpc/grpc_cronet.h>
+#endif
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#ifdef GRPC_COMPILE_WITH_CRONET
+#import <Cronet/Cronet.h>
+#import <GRPCClient/GRPCCall+Cronet.h>
+#endif
 #import "GRPCCompletionQueue.h"
 
 void freeChannelArgs(grpc_channel_args *channel_args) {
@@ -99,6 +106,24 @@ grpc_channel_args * buildChannelArgs(NSDictionary *dictionary) {
   grpc_channel_args *_channelArgs;
 }
 
+#ifdef GRPC_COMPILE_WITH_CRONET
+- (instancetype)initWithHost:(NSString *)host
+                cronetEngine:(cronet_engine *)cronetEngine
+                 channelArgs:(NSDictionary *)channelArgs {
+  if (!host) {
+    [NSException raise:NSInvalidArgumentException format:@"host argument missing"];
+  }
+
+  if (self = [super init]) {
+    _channelArgs = buildChannelArgs(channelArgs);
+    _host = [host copy];
+    _unmanagedChannel = grpc_cronet_secure_channel_create(cronetEngine, _host.UTF8String, _channelArgs,
+                                                     NULL);
+  }
+
+  return self;
+}
+#endif
 
 - (instancetype)initWithHost:(NSString *)host
                       secure:(BOOL)secure
@@ -132,6 +157,19 @@ grpc_channel_args * buildChannelArgs(NSDictionary *dictionary) {
   grpc_channel_destroy(_unmanagedChannel);
   freeChannelArgs(_channelArgs);
 }
+
+#ifdef GRPC_COMPILE_WITH_CRONET
++ (GRPCChannel *)secureCronetChannelWithHost:(NSString *)host
+                                 channelArgs:(NSDictionary *)channelArgs {
+  cronet_engine *engine = [GRPCCall cronetEngine];
+  if (!engine) {
+    [NSException raise:NSInvalidArgumentException
+                format:@"cronet_engine is NULL. Set it first."];
+    return nil;
+  }
+  return [[GRPCChannel alloc] initWithHost:host cronetEngine:engine channelArgs:channelArgs];
+}
+#endif
 
 + (GRPCChannel *)secureChannelWithHost:(NSString *)host {
   return [[GRPCChannel alloc] initWithHost:host secure:YES credentials:NULL channelArgs:NULL];

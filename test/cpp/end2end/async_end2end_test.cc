@@ -245,8 +245,8 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
   void SetUp() GRPC_OVERRIDE {
     poll_overrider_.reset(new PollingOverrider(!GetParam().disable_blocking));
 
-    int port = grpc_pick_unused_port_or_die();
-    server_address_ << "localhost:" << port;
+    port_ = grpc_pick_unused_port_or_die();
+    server_address_ << "localhost:" << port_;
 
     // Setup server
     ServerBuilder builder;
@@ -274,6 +274,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
       ;
     poll_overrider_.reset();
     gpr_tls_set(&g_is_async_end2end_test, 0);
+    grpc_recycle_unused_port(port_);
   }
 
   void ResetStub() {
@@ -325,6 +326,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
   std::unique_ptr<Server> server_;
   grpc::testing::EchoTestService::AsyncService service_;
   std::ostringstream server_address_;
+  int port_;
 
   std::unique_ptr<PollingOverrider> poll_overrider_;
 };
@@ -817,7 +819,7 @@ TEST_P(AsyncEnd2endTest, ServerCheckCancellation) {
   EXPECT_TRUE(srv_ctx.IsCancelled());
 
   response_reader->Finish(&recv_response, &recv_status, tag(4));
-  Verifier(GetParam().disable_blocking).Expect(4, false).Verify(cq_.get());
+  Verifier(GetParam().disable_blocking).Expect(4, true).Verify(cq_.get());
 
   EXPECT_EQ(StatusCode::CANCELLED, recv_status.error_code());
 }
@@ -879,7 +881,7 @@ TEST_P(AsyncEnd2endTest, UnimplementedRpc) {
       stub->AsyncUnimplemented(&cli_ctx, send_request, cq_.get()));
 
   response_reader->Finish(&recv_response, &recv_status, tag(4));
-  Verifier(GetParam().disable_blocking).Expect(4, false).Verify(cq_.get());
+  Verifier(GetParam().disable_blocking).Expect(4, true).Verify(cq_.get());
 
   EXPECT_EQ(StatusCode::UNIMPLEMENTED, recv_status.error_code());
   EXPECT_EQ("", recv_status.error_message());
@@ -1024,9 +1026,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
 
     // Client will see the cancellation
     cli_stream->Finish(&recv_status, tag(10));
-    // TODO(sreek): The expectation here should be true. This is a bug (github
-    // issue #4972)
-    Verifier(GetParam().disable_blocking).Expect(10, false).Verify(cq_.get());
+    Verifier(GetParam().disable_blocking).Expect(10, true).Verify(cq_.get());
     EXPECT_FALSE(recv_status.ok());
     EXPECT_EQ(::grpc::StatusCode::CANCELLED, recv_status.error_code());
   }

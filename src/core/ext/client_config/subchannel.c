@@ -320,7 +320,7 @@ grpc_subchannel *grpc_subchannel_create(grpc_exec_ctx *exec_ctx,
     c->filters = NULL;
   }
   c->addr = gpr_malloc(args->addr_len);
-  memcpy(c->addr, args->addr, args->addr_len);
+  if (args->addr_len) memcpy(c->addr, args->addr, args->addr_len);
   c->pollset_set = grpc_pollset_set_create();
   c->addr_len = args->addr_len;
   grpc_set_initial_connect_string(&c->addr, &c->addr_len,
@@ -480,11 +480,11 @@ static void subchannel_on_child_state_changed(grpc_exec_ctx *exec_ctx, void *p,
   if (iomgr_success) {
     if (sw->connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
       /* any errors on a subchannel ==> we're done, create a new one */
-      sw->connectivity_state = GRPC_CHANNEL_FATAL_FAILURE;
+      sw->connectivity_state = GRPC_CHANNEL_SHUTDOWN;
     }
     grpc_connectivity_state_set(exec_ctx, &c->state_tracker,
                                 sw->connectivity_state, "reflect_child");
-    if (sw->connectivity_state != GRPC_CHANNEL_FATAL_FAILURE) {
+    if (sw->connectivity_state != GRPC_CHANNEL_SHUTDOWN) {
       grpc_connected_subchannel_notify_on_state_change(
           exec_ctx, GET_CONNECTED_SUBCHANNEL(c, no_barrier), NULL,
           &sw->connectivity_state, &sw->closure);
@@ -645,7 +645,7 @@ static void subchannel_call_destroy(grpc_exec_ctx *exec_ctx, void *call,
   grpc_subchannel_call *c = call;
   GPR_TIMER_BEGIN("grpc_subchannel_call_unref.destroy", 0);
   grpc_connected_subchannel *connection = c->connection;
-  grpc_call_stack_destroy(exec_ctx, SUBCHANNEL_CALL_TO_CALL_STACK(c), c);
+  grpc_call_stack_destroy(exec_ctx, SUBCHANNEL_CALL_TO_CALL_STACK(c), NULL, c);
   GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, connection, "subchannel_call");
   GPR_TIMER_END("grpc_subchannel_call_unref.destroy", 0);
 }
@@ -683,7 +683,7 @@ grpc_connected_subchannel *grpc_subchannel_get_connected_subchannel(
 
 grpc_subchannel_call *grpc_connected_subchannel_create_call(
     grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *con,
-    grpc_pollset *pollset) {
+    grpc_polling_entity *pollent) {
   grpc_channel_stack *chanstk = CHANNEL_STACK_FROM_CONNECTION(con);
   grpc_subchannel_call *call =
       gpr_malloc(sizeof(grpc_subchannel_call) + chanstk->call_stack_size);
@@ -692,7 +692,7 @@ grpc_subchannel_call *grpc_connected_subchannel_create_call(
   GRPC_CONNECTED_SUBCHANNEL_REF(con, "subchannel_call");
   grpc_call_stack_init(exec_ctx, chanstk, 1, subchannel_call_destroy, call,
                        NULL, NULL, callstk);
-  grpc_call_stack_set_pollset(exec_ctx, callstk, pollset);
+  grpc_call_stack_set_pollset_or_pollset_set(exec_ctx, callstk, pollent);
   return call;
 }
 

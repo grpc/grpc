@@ -53,8 +53,6 @@ namespace Grpc.Core.Internal.Tests
         [SetUp]
         public void Init()
         {
-            var environment = GrpcEnvironment.AddRef();
-
             // Create a fake server just so we have an instance to refer to.
             // The server won't actually be used at all.
             server = new Server()
@@ -66,7 +64,6 @@ namespace Grpc.Core.Internal.Tests
             fakeCall = new FakeNativeCall();
             asyncCallServer = new AsyncCallServer<string, string>(
                 Marshallers.StringMarshaller.Serializer, Marshallers.StringMarshaller.Deserializer,
-                environment,
                 server);
             asyncCallServer.InitializeForTesting(fakeCall);
         }
@@ -75,7 +72,6 @@ namespace Grpc.Core.Internal.Tests
         public void Cleanup()
         {
             server.ShutdownAsync().Wait();
-            GrpcEnvironment.Release();
         }
 
         [Test]
@@ -136,7 +132,6 @@ namespace Grpc.Core.Internal.Tests
         public void WriteAfterCancelNotificationFails()
         {
             var finishedTask = asyncCallServer.ServerSideCallAsync();
-            var requestStream = new ServerRequestStream<string, string>(asyncCallServer);
             var responseStream = new ServerResponseStream<string, string>(asyncCallServer);
 
             fakeCall.ReceivedCloseOnServerHandler(true, cancelled: true);
@@ -176,6 +171,21 @@ namespace Grpc.Core.Internal.Tests
             Assert.DoesNotThrowAsync(async () => await writeTask);
             Assert.DoesNotThrowAsync(async () => await writeStatusTask);
 
+            fakeCall.ReceivedCloseOnServerHandler(true, cancelled: true);
+
+            AssertFinished(asyncCallServer, fakeCall, finishedTask);
+        }
+
+        [Test]
+        public void WriteAfterWriteStatusThrowsInvalidOperationException()
+        {
+            var finishedTask = asyncCallServer.ServerSideCallAsync();
+            var responseStream = new ServerResponseStream<string, string>(asyncCallServer);
+
+            asyncCallServer.SendStatusFromServerAsync(Status.DefaultSuccess, new Metadata(), null);
+            Assert.ThrowsAsync(typeof(InvalidOperationException), async () => await responseStream.WriteAsync("request1"));
+
+            fakeCall.SendStatusFromServerHandler(true);
             fakeCall.ReceivedCloseOnServerHandler(true, cancelled: true);
 
             AssertFinished(asyncCallServer, fakeCall, finishedTask);
