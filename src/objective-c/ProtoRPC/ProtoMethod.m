@@ -53,3 +53,7 @@
   }
 }
 @end
+
+@implementation GRPCProtoMethod
+
+@end

@@ -98,7 +98,6 @@ class ClosedLoopClientRunner(ClientRunner):
     self._client.stop()
     self._client = None
 
-  def _send_request(self, response_time):
+  def _send_request(self, client, response_time):
     if self._is_running:
-      self._client.send_request()
-
+      client.send_request()

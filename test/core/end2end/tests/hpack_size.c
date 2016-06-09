@@ -323,6 +323,7 @@ static void simple_request_body(grpc_end2end_test_fixture f, size_t index) {
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = GPR_ARRAY_SIZE(extra_metadata);
@@ -357,6 +358,7 @@ static void simple_request_body(grpc_end2end_test_fixture f, size_t index) {
   cq_expect_completion(cqv, tag(101), 1);
   cq_verify(cqv);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;

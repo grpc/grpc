@@ -110,14 +110,7 @@ void MaybeEchoMetadata(ServerContext* context) {
   }
 }
 
-bool SetPayload(PayloadType type, int size, Payload* payload) {
-  PayloadType response_type;
-  if (type == PayloadType::RANDOM) {
-    response_type =
-        rand() & 0x1 ? PayloadType::COMPRESSABLE : PayloadType::UNCOMPRESSABLE;
-  } else {
-    response_type = type;
-  }
+bool SetPayload(PayloadType response_type, int size, Payload* payload) {
   payload->set_type(response_type);
   switch (response_type) {
     case PayloadType::COMPRESSABLE: {
@@ -141,18 +134,9 @@ bool SetPayload(PayloadType type, int size, Payload* payload) {
 template <typename RequestType>
 void SetResponseCompression(ServerContext* context,
                             const RequestType& request) {
-  switch (request.response_compression()) {
-    case grpc::testing::NONE:
-      context->set_compression_algorithm(GRPC_COMPRESS_NONE);
-      break;
-    case grpc::testing::GZIP:
-      context->set_compression_algorithm(GRPC_COMPRESS_GZIP);
-      break;
-    case grpc::testing::DEFLATE:
-      context->set_compression_algorithm(GRPC_COMPRESS_DEFLATE);
-      break;
-    default:
-      abort();
+  if (request.request_compressed_response()) {
+    // Any level would do, let's go for HIGH because we are overachievers.
+    context->set_compression_level(GRPC_COMPRESS_LEVEL_HIGH);
   }
 }
 

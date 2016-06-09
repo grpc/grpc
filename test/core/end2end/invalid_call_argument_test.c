@@ -30,11 +30,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+
+#include <limits.h>
+#include <string.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
-#include <limits.h>
+
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -74,6 +78,7 @@ static void prepare_test(int is_client) {
   g_state.cqv = cq_verifier_create(g_state.cq);
   g_state.details = NULL;
   g_state.details_capacity = 0;
+  memset(g_state.ops, 0, sizeof(g_state.ops));
 
   if (is_client) {
     /* create a call, channel to a non existant server */
