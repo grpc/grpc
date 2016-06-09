@@ -38,6 +38,7 @@
 #include <mutex>
 #include <vector>
 
+#include <grpc++/channel.h>
 #include <grpc++/support/byte_buffer.h>
 #include <grpc++/support/channel_arguments.h>
 #include <grpc++/support/slice.h>
@@ -315,6 +316,10 @@ class ClientImpl : public Client {
           target, config.security_params().server_host_override(),
           config.has_security_params(), !config.security_params().use_test_ca(),
           std::shared_ptr<CallCredentials>(), args);
+      gpr_log(GPR_INFO, "Connecting to %s", target.c_str());
+      GPR_ASSERT(channel_->WaitForConnected(
+          gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                       gpr_time_from_seconds(30, GPR_TIMESPAN))));
       stub_ = create_stub(channel_);
     }
     Channel* get_channel() { return channel_.get(); }

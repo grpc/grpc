@@ -220,6 +220,8 @@ extern id const kGRPCTrailersKey;
  * messages to the response side of the call indefinitely (depending on the semantics of the
  * specific remote method called).
  * To finish a call right away, invoke cancel.
+ * host parameter should not contain the scheme (http:// or https://), only the name or IP addr
+ * and the port number, for example @"localhost:5050".
  */
 - (instancetype)initWithHost:(NSString *)host
                         path:(NSString *)path

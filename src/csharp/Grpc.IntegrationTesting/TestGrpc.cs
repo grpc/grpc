@@ -105,127 +105,6 @@ namespace Grpc.Testing {
       get { return global::Grpc.Testing.TestReflection.Descriptor.Services[0]; }
     }
 
-    /// <summary>Client for TestService</summary>
-    [System.Obsolete("Client side interfaced will be removed in the next release. Use client class directly.")]
-    public interface ITestServiceClient
-    {
-      /// <summary>
-      ///  One empty request followed by one empty response.
-      /// </summary>
-      global::Grpc.Testing.Empty EmptyCall(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      /// <summary>
-      ///  One empty request followed by one empty response.
-      /// </summary>
-      global::Grpc.Testing.Empty EmptyCall(global::Grpc.Testing.Empty request, CallOptions options);
-      /// <summary>
-      ///  One empty request followed by one empty response.
-      /// </summary>
-      AsyncUnaryCall<global::Grpc.Testing.Empty> EmptyCallAsync(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      /// <summary>
-      ///  One empty request followed by one empty response.
-      /// </summary>
-      AsyncUnaryCall<global::Grpc.Testing.Empty> EmptyCallAsync(global::Grpc.Testing.Empty request, CallOptions options);
-      /// <summary>
-      ///  One request followed by one response.
-      /// </summary>
-      global::Grpc.Testing.SimpleResponse UnaryCall(global::Grpc.Testing.SimpleRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      /// <summary>
-      ///  One request followed by one response.
-      /// </summary>
-      global::Grpc.Testing.SimpleResponse UnaryCall(global::Grpc.Testing.SimpleRequest request, CallOptions options);
-      /// <summary>
-      ///  One request followed by one response.
-      /// </summary>
-      AsyncUnaryCall<global::Grpc.Testing.SimpleResponse> UnaryCallAsync(global::Grpc.Testing.SimpleRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      /// <summary>
-      ///  One request followed by one response.
-      /// </summary>
-      AsyncUnaryCall<global::Grpc.Testing.SimpleResponse> UnaryCallAsync(global::Grpc.Testing.SimpleRequest request, CallOptions options);
-      /// <summary>
-      ///  One request followed by a sequence of responses (streamed download).
-      ///  The server returns the payload with client desired type and sizes.
-      /// </summary>
-      AsyncServerStreamingCall<global::Grpc.Testing.StreamingOutputCallResponse> StreamingOutputCall(global::Grpc.Testing.StreamingOutputCallRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      /// <summary>
-      ///  One request followed by a sequence of responses (streamed download).
-      ///  The server returns the payload with client desired type and sizes.
-      /// </summary>
-      AsyncServerStreamingCall<global::Grpc.Testing.StreamingOutputCallResponse> StreamingOutputCall(global::Grpc.Testing.StreamingOutputCallRequest request, CallOptions options);
-      /// <summary>
-      ///  A sequence of requests followed by one response (streamed upload).
-      ///  The server returns the aggregated size of client payload as the result.
-      /// </summary>
-      AsyncClientStreamingCall<global::Grpc.Testing.StreamingInputCallRequest, global::Grpc.Testing.StreamingInputCallResponse> StreamingInputCall(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      /// <summary>
-      ///  A sequence of requests followed by one response (streamed upload).
-      ///  The server returns the aggregated size of client payload as the result.
-      /// </summary>
-      AsyncClientStreamingCall<global::Grpc.Testing.StreamingInputCallRequest, global::Grpc.Testing.StreamingInputCallResponse> StreamingInputCall(CallOptions options);
-      /// <summary>
-      ///  A sequence of requests with each request served by the server immediately.
-      ///  As one request could lead to multiple responses, this interface
-      ///  demonstrates the idea of full duplexing.
-      /// </summary>
-      AsyncDuplexStreamingCall<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse> FullDuplexCall(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      /// <summary>
-      ///  A sequence of requests with each request served by the server immediately.
-      ///  As one request could lead to multiple responses, this interface
-      ///  demonstrates the idea of full duplexing.
-      /// </summary>
-      AsyncDuplexStreamingCall<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse> FullDuplexCall(CallOptions options);
-      /// <summary>
-      ///  A sequence of requests followed by a sequence of responses.
-      ///  The server buffers all the client requests and then serves them in order. A
-      ///  stream of responses are returned to the client when the server starts with
-      ///  first request.
-      /// </summary>
-      AsyncDuplexStreamingCall<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse> HalfDuplexCall(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      /// <summary>
-      ///  A sequence of requests followed by a sequence of responses.
-      ///  The server buffers all the client requests and then serves them in order. A
-      ///  stream of responses are returned to the client when the server starts with
-      ///  first request.
-      /// </summary>
-      AsyncDuplexStreamingCall<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse> HalfDuplexCall(CallOptions options);
-    }
-
-    /// <summary>Interface of server-side implementations of TestService</summary>
-    [System.Obsolete("Service implementations should inherit from the generated abstract base class instead.")]
-    public interface ITestService
-    {
-      /// <summary>
-      ///  One empty request followed by one empty response.
-      /// </summary>
-      global::System.Threading.Tasks.Task<global::Grpc.Testing.Empty> EmptyCall(global::Grpc.Testing.Empty request, ServerCallContext context);
-      /// <summary>
-      ///  One request followed by one response.
-      /// </summary>
-      global::System.Threading.Tasks.Task<global::Grpc.Testing.SimpleResponse> UnaryCall(global::Grpc.Testing.SimpleRequest request, ServerCallContext context);
-      /// <summary>
-      ///  One request followed by a sequence of responses (streamed download).
-      ///  The server returns the payload with client desired type and sizes.
-      /// </summary>
-      global::System.Threading.Tasks.Task StreamingOutputCall(global::Grpc.Testing.StreamingOutputCallRequest request, IServerStreamWriter<global::Grpc.Testing.StreamingOutputCallResponse> responseStream, ServerCallContext context);
-      /// <summary>
-      ///  A sequence of requests followed by one response (streamed upload).
-      ///  The server returns the aggregated size of client payload as the result.
-      /// </summary>
-      global::System.Threading.Tasks.Task<global::Grpc.Testing.StreamingInputCallResponse> StreamingInputCall(IAsyncStreamReader<global::Grpc.Testing.StreamingInputCallRequest> requestStream, ServerCallContext context);
-      /// <summary>
-      ///  A sequence of requests with each request served by the server immediately.
-      ///  As one request could lead to multiple responses, this interface
-      ///  demonstrates the idea of full duplexing.
-      /// </summary>
-      global::System.Threading.Tasks.Task FullDuplexCall(IAsyncStreamReader<global::Grpc.Testing.StreamingOutputCallRequest> requestStream, IServerStreamWriter<global::Grpc.Testing.StreamingOutputCallResponse> responseStream, ServerCallContext context);
-      /// <summary>
-      ///  A sequence of requests followed by a sequence of responses.
-      ///  The server buffers all the client requests and then serves them in order. A
-      ///  stream of responses are returned to the client when the server starts with
-      ///  first request.
-      /// </summary>
-      global::System.Threading.Tasks.Task HalfDuplexCall(IAsyncStreamReader<global::Grpc.Testing.StreamingOutputCallRequest> requestStream, IServerStreamWriter<global::Grpc.Testing.StreamingOutputCallResponse> responseStream, ServerCallContext context);
-    }
-
     /// <summary>Base class for server-side implementations of TestService</summary>
     public abstract class TestServiceBase
     {
@@ -287,9 +166,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Client for TestService</summary>
-    #pragma warning disable 0618
-    public class TestServiceClient : ClientBase<TestServiceClient>, ITestServiceClient
-    #pragma warning restore 0618
+    public class TestServiceClient : ClientBase<TestServiceClient>
     {
       public TestServiceClient(Channel channel) : base(channel)
       {
@@ -445,25 +322,9 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Creates service definition that can be registered with a server</summary>
-    #pragma warning disable 0618
-    public static ServerServiceDefinition BindService(ITestService serviceImpl)
-    #pragma warning restore 0618
-    {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
-          .AddMethod(__Method_EmptyCall, serviceImpl.EmptyCall)
-          .AddMethod(__Method_UnaryCall, serviceImpl.UnaryCall)
-          .AddMethod(__Method_StreamingOutputCall, serviceImpl.StreamingOutputCall)
-          .AddMethod(__Method_StreamingInputCall, serviceImpl.StreamingInputCall)
-          .AddMethod(__Method_FullDuplexCall, serviceImpl.FullDuplexCall)
-          .AddMethod(__Method_HalfDuplexCall, serviceImpl.HalfDuplexCall).Build();
-    }
-
-    /// <summary>Creates service definition that can be registered with a server</summary>
-    #pragma warning disable 0618
     public static ServerServiceDefinition BindService(TestServiceBase serviceImpl)
-    #pragma warning restore 0618
     {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+      return ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_EmptyCall, serviceImpl.EmptyCall)
           .AddMethod(__Method_UnaryCall, serviceImpl.UnaryCall)
           .AddMethod(__Method_StreamingOutputCall, serviceImpl.StreamingOutputCall)
@@ -496,38 +357,6 @@ namespace Grpc.Testing {
       get { return global::Grpc.Testing.TestReflection.Descriptor.Services[1]; }
     }
 
-    /// <summary>Client for UnimplementedService</summary>
-    [System.Obsolete("Client side interfaced will be removed in the next release. Use client class directly.")]
-    public interface IUnimplementedServiceClient
-    {
-      /// <summary>
-      ///  A call that no server should implement
-      /// </summary>
-      global::Grpc.Testing.Empty UnimplementedCall(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      /// <summary>
-      ///  A call that no server should implement
-      /// </summary>
-      global::Grpc.Testing.Empty UnimplementedCall(global::Grpc.Testing.Empty request, CallOptions options);
-      /// <summary>
-      ///  A call that no server should implement
-      /// </summary>
-      AsyncUnaryCall<global::Grpc.Testing.Empty> UnimplementedCallAsync(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      /// <summary>
-      ///  A call that no server should implement
-      /// </summary>
-      AsyncUnaryCall<global::Grpc.Testing.Empty> UnimplementedCallAsync(global::Grpc.Testing.Empty request, CallOptions options);
-    }
-
-    /// <summary>Interface of server-side implementations of UnimplementedService</summary>
-    [System.Obsolete("Service implementations should inherit from the generated abstract base class instead.")]
-    public interface IUnimplementedService
-    {
-      /// <summary>
-      ///  A call that no server should implement
-      /// </summary>
-      global::System.Threading.Tasks.Task<global::Grpc.Testing.Empty> UnimplementedCall(global::Grpc.Testing.Empty request, ServerCallContext context);
-    }
-
     /// <summary>Base class for server-side implementations of UnimplementedService</summary>
     public abstract class UnimplementedServiceBase
     {
@@ -542,9 +371,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Client for UnimplementedService</summary>
-    #pragma warning disable 0618
-    public class UnimplementedServiceClient : ClientBase<UnimplementedServiceClient>, IUnimplementedServiceClient
-    #pragma warning restore 0618
+    public class UnimplementedServiceClient : ClientBase<UnimplementedServiceClient>
     {
       public UnimplementedServiceClient(Channel channel) : base(channel)
       {
@@ -602,20 +429,9 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Creates service definition that can be registered with a server</summary>
-    #pragma warning disable 0618
-    public static ServerServiceDefinition BindService(IUnimplementedService serviceImpl)
-    #pragma warning restore 0618
-    {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
-          .AddMethod(__Method_UnimplementedCall, serviceImpl.UnimplementedCall).Build();
-    }
-
-    /// <summary>Creates service definition that can be registered with a server</summary>
-    #pragma warning disable 0618
     public static ServerServiceDefinition BindService(UnimplementedServiceBase serviceImpl)
-    #pragma warning restore 0618
     {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+      return ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_UnimplementedCall, serviceImpl.UnimplementedCall).Build();
     }
 
@@ -651,28 +467,6 @@ namespace Grpc.Testing {
       get { return global::Grpc.Testing.TestReflection.Descriptor.Services[2]; }
     }
 
-    /// <summary>Client for ReconnectService</summary>
-    [System.Obsolete("Client side interfaced will be removed in the next release. Use client class directly.")]
-    public interface IReconnectServiceClient
-    {
-      global::Grpc.Testing.Empty Start(global::Grpc.Testing.ReconnectParams request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      global::Grpc.Testing.Empty Start(global::Grpc.Testing.ReconnectParams request, CallOptions options);
-      AsyncUnaryCall<global::Grpc.Testing.Empty> StartAsync(global::Grpc.Testing.ReconnectParams request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      AsyncUnaryCall<global::Grpc.Testing.Empty> StartAsync(global::Grpc.Testing.ReconnectParams request, CallOptions options);
-      global::Grpc.Testing.ReconnectInfo Stop(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      global::Grpc.Testing.ReconnectInfo Stop(global::Grpc.Testing.Empty request, CallOptions options);
-      AsyncUnaryCall<global::Grpc.Testing.ReconnectInfo> StopAsync(global::Grpc.Testing.Empty request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      AsyncUnaryCall<global::Grpc.Testing.ReconnectInfo> StopAsync(global::Grpc.Testing.Empty request, CallOptions options);
-    }
-
-    /// <summary>Interface of server-side implementations of ReconnectService</summary>
-    [System.Obsolete("Service implementations should inherit from the generated abstract base class instead.")]
-    public interface IReconnectService
-    {
-      global::System.Threading.Tasks.Task<global::Grpc.Testing.Empty> Start(global::Grpc.Testing.ReconnectParams request, ServerCallContext context);
-      global::System.Threading.Tasks.Task<global::Grpc.Testing.ReconnectInfo> Stop(global::Grpc.Testing.Empty request, ServerCallContext context);
-    }
-
     /// <summary>Base class for server-side implementations of ReconnectService</summary>
     public abstract class ReconnectServiceBase
     {
@@ -689,9 +483,7 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Client for ReconnectService</summary>
-    #pragma warning disable 0618
-    public class ReconnectServiceClient : ClientBase<ReconnectServiceClient>, IReconnectServiceClient
-    #pragma warning restore 0618
+    public class ReconnectServiceClient : ClientBase<ReconnectServiceClient>
     {
       public ReconnectServiceClient(Channel channel) : base(channel)
       {
@@ -753,21 +545,9 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Creates service definition that can be registered with a server</summary>
-    #pragma warning disable 0618
-    public static ServerServiceDefinition BindService(IReconnectService serviceImpl)
-    #pragma warning restore 0618
-    {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
-          .AddMethod(__Method_Start, serviceImpl.Start)
-          .AddMethod(__Method_Stop, serviceImpl.Stop).Build();
-    }
-
-    /// <summary>Creates service definition that can be registered with a server</summary>
-    #pragma warning disable 0618
     public static ServerServiceDefinition BindService(ReconnectServiceBase serviceImpl)
-    #pragma warning restore 0618
     {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+      return ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_Start, serviceImpl.Start)
           .AddMethod(__Method_Stop, serviceImpl.Stop).Build();
     }
