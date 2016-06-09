@@ -95,6 +95,14 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
+        public void UnstartedServerCanBeShutdown()
+        {
+            var server = new Server();
+            server.ShutdownAsync().Wait();
+            Assert.Throws(typeof(InvalidOperationException), () => server.Start());
+        }
+
+        [Test]
         public void UnstartedServerDoesNotPreventShutdown()
         {
             // just create a server, don't start it, and make sure it doesn't prevent shutdown.
