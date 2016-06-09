@@ -512,7 +512,6 @@ polling_island *polling_island_merge(polling_island *p, polling_island *q) {
   /* Get locks on both the polling islands */
   polling_island_pair_update_and_lock(&p, &q);
 
-  /* TODO: sreek: Think about this scenario some more */
   if (p == q) {
     /* Nothing needs to be done here */
     gpr_mu_unlock(&p->mu);
@@ -525,7 +524,7 @@ polling_island *polling_island_merge(polling_island *p, polling_island *q) {
   }
 
   /* "Merge" p with q i.e move all the fds from p (The one with fewer fds) to q
-      )Note that the refcounts on the fds being moved will not change here. This
+      Note that the refcounts on the fds being moved will not change here. This
       is why the last parameter in the following two functions is 'false') */
   polling_island_add_fds_locked(q, p->fds, p->fd_cnt, false);
   polling_island_remove_all_fds_locked(p, false);
@@ -533,9 +532,11 @@ polling_island *polling_island_merge(polling_island *p, polling_island *q) {
   /* Wakeup all the pollers (if any) on p so that they can pickup this change */
   polling_island_add_wakeup_fd_locked(p, &polling_island_wakeup_fd);
 
-  /* The merged polling island inherits all the ref counts of the island merging
-     with it */
+  /* - The merged polling island (i.e q) inherits all the ref counts of the
+       island merging with it (i.e p)
+     - The island p will lose a ref count */
   q->ref_cnt += p->ref_cnt;
+  p->ref_cnt--;
 
   gpr_mu_unlock(&p->mu);
   gpr_mu_unlock(&q->mu);
