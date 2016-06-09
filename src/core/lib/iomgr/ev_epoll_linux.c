@@ -1481,7 +1481,26 @@ static const grpc_event_engine_vtable vtable = {
     .shutdown_engine = shutdown_engine,
 };
 
+/* It is possible that GLIBC has epoll but the underlying kernel doesn't.
+ * Create a dummy epoll_fd to make sure epoll support is available */
+static bool is_epoll_available() {
+  int fd = epoll_create1(EPOLL_CLOEXEC);
+  if (fd < 0) {
+    gpr_log(
+        GPR_ERROR,
+        "epoll_create1 failed with error: %d. Not using epoll polling engine",
+        fd);
+    return false;
+  }
+  close(fd);
+  return true;
+}
+
 const grpc_event_engine_vtable *grpc_init_epoll_linux(void) {
+  if (!is_epoll_available()) {
+    return NULL;
+  }
+
   fd_global_init();
   pollset_global_init();
   polling_island_global_init();
