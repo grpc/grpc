@@ -237,7 +237,7 @@ static grpc_error *error_for_fd(int fd, const struct sockaddr *addr) {
   grpc_sockaddr_to_string(&addr_str, addr, 0);
   grpc_error *err = grpc_error_set_str(GRPC_OS_ERROR(errno, "socket"),
                                        GRPC_ERROR_STR_TARGET_ADDRESS, addr_str);
-  gpr_free(err);
+  gpr_free(addr_str);
   return err;
 }
 
