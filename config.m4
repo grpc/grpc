@@ -554,6 +554,9 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/ssl/t1_enc.c \
     third_party/boringssl/ssl/t1_lib.c \
     third_party/boringssl/ssl/tls_record.c \
+    third_party/nanopb/pb_common.c \
+    third_party/nanopb/pb_decode.c \
+    third_party/nanopb/pb_encode.c \
     , $ext_shared, , -Wall -Werror \
     -Wno-parentheses-equality -Wno-unused-value -std=c11 \
     -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN \
@@ -645,4 +648,5 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/x509v3)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/ssl)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/ssl/pqueue)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/nanopb)
 fi

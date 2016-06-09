@@ -46,6 +46,7 @@
       ['OS == "win"', {
         "include_dirs": [
           "third_party/boringssl/include",
+          "third_party/nanopb",
           "third_party/zlib"
         ],
         "defines": [
@@ -84,7 +85,8 @@
         ],
         'include_dirs': [
           '<(node_root_dir)/deps/openssl/openssl/include',
-          '<(node_root_dir)/deps/zlib'
+          '<(node_root_dir)/deps/zlib',
+          'third_party/nanopb'
         ],
         'conditions': [
           ['config=="gcov"', {
@@ -456,6 +458,23 @@
             '-Wall',
             '-Werror'
           ],
+          'target_name': 'nanopb',
+          'product_prefix': 'lib',
+          'type': 'static_library',
+          'dependencies': [
+          ],
+          'sources': [
+            'third_party/nanopb/pb_common.c',
+            'third_party/nanopb/pb_decode.c',
+            'third_party/nanopb/pb_encode.c',
+          ]
+        },
+        {
+          'cflags': [
+            '-std=c99',
+            '-Wall',
+            '-Werror'
+          ],
           'target_name': 'z',
           'product_prefix': 'lib',
           'type': 'static_library',
@@ -776,6 +795,7 @@
         ['OS=="win"', {
           'dependencies': [
             "boringssl",
+            "nanopb",
             "z",
           ]
         }],

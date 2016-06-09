@@ -3248,6 +3248,7 @@ node_modules:
   - grpc
   - gpr
   - boringssl
+  - nanopb
   - z
   headers:
   - src/node/ext/byte_buffer.h
@@ -3288,6 +3289,7 @@ php_config_m4:
   - grpc
   - gpr
   - boringssl
+  - nanopb
   headers:
   - src/php/ext/grpc/byte_buffer.h
   - src/php/ext/grpc/call.h
@@ -3315,10 +3317,12 @@ python_dependencies:
   - grpc
   - gpr
   - boringssl
+  - nanopb
   - z
 ruby_gem:
   deps:
   - grpc
   - gpr
   - boringssl
+  - nanopb
   - z

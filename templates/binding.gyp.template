@@ -48,6 +48,7 @@
         ['OS == "win"', {
           "include_dirs": [
             "third_party/boringssl/include",
+            "third_party/nanopb",
             "third_party/zlib"
           ],
           "defines": [
@@ -86,7 +87,8 @@
           ],
           'include_dirs': [
             '<(node_root_dir)/deps/openssl/openssl/include',
-            '<(node_root_dir)/deps/zlib'
+            '<(node_root_dir)/deps/zlib',
+            'third_party/nanopb'
           ],
           'conditions': [
             ['config=="gcov"', {
@@ -143,7 +145,7 @@
           # Only want to compile BoringSSL and zlib under Windows
           % for module in node_modules:
           % for lib in libs:
-          % if lib.name in module.transitive_deps and lib.name in ('boringssl', 'z'):
+          % if lib.name in module.transitive_deps and lib.name in ('boringssl', 'nanopb', 'z'):
           {
             'cflags': [
               '-std=c99',
@@ -173,7 +175,7 @@
     'targets': [
       % for module in node_modules:
       % for lib in libs:
-      % if lib.name in module.transitive_deps and lib.name not in ('boringssl', 'z'):
+      % if lib.name in module.transitive_deps and lib.name not in ('boringssl', 'nanopb', 'z'):
       {
         'cflags': [
           '-std=c99',
@@ -232,7 +234,7 @@
           ['OS=="win"', {
             'dependencies': [
               % for dep in getattr(module, 'deps', []):
-              % if dep in ('boringssl', 'z'):
+              % if dep in ('boringssl', 'nanopb', 'z'):
               "${dep}",
               % endif
               % endfor
@@ -252,7 +254,7 @@
         ],
         "dependencies": [
           % for dep in getattr(module, 'deps', []):
-          % if dep not in ('boringssl', 'z'):
+          % if dep not in ('boringssl', 'nanopb', 'z'):
           "${dep}",
           % endif
           % endfor
