@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,36 +31,27 @@
  *
  */
 
-/// \mainpage gRPC C++ API
-///
-/// The gRPC C++ API mainly consists of the following classes:
-/// - grpc::Channel, which represents the connection to an endpoint. See [the
-/// gRPC Concepts page](http://www.grpc.io/docs/guides/concepts.html) for more
-/// details. Channels are created by the factory function grpc::CreateChannel.
-/// - grpc::CompletionQueue, the producer-consumer queue used for all
-/// asynchronous communication with the gRPC runtime.
-/// - grpc::ClientContext and grpc::ServerContext, where optional configuration
-/// for an RPC can be set, such as setting custom metadata to be conveyed to the
-/// peer, compression settings, authentication, etc.
-/// - grpc::Server, representing a gRPC server, created by grpc::ServerBuilder.
-///
-/// Refer to the
-/// [examples](https://github.com/grpc/grpc/blob/master/examples/cpp)
-/// for code putting these pieces into play.
+#ifndef GRPCXX_CREATE_CHANNEL_POSIX_H
+#define GRPCXX_CREATE_CHANNEL_POSIX_H
 
-#ifndef GRPCXX_GRPCXX_H
-#define GRPCXX_GRPCXX_H
-
-#include <grpc/grpc.h>
+#include <memory>
 
 #include <grpc++/channel.h>
-#include <grpc++/client_context.h>
-#include <grpc++/completion_queue.h>
-#include <grpc++/create_channel.h>
-#include <grpc++/create_channel_posix.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
-#include <grpc++/server_context.h>
-#include <grpc++/server_posix.h>
+#include <grpc/support/port_platform.h>
 
-#endif  // GRPCXX_GRPCXX_H
+namespace grpc {
+
+#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
+
+/// Create a new \a Channel communicating over given file descriptor
+///
+/// \param target The name of the target.
+/// \param fd The file descriptor representing a socket.
+std::shared_ptr<Channel> CreateInsecureChannelFromFd(const grpc::string& target,
+                                                     int fd);
+
+#endif  // GPR_SUPPORT_CHANNELS_FROM_FD
+
+}  // namespace grpc
+
+#endif  // GRPCXX_CREATE_CHANNEL_POSIX_H

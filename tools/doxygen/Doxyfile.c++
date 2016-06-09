@@ -765,6 +765,7 @@ include/grpc++/channel.h \
 include/grpc++/client_context.h \
 include/grpc++/completion_queue.h \
 include/grpc++/create_channel.h \
+include/grpc++/create_channel_posix.h \
 include/grpc++/generic/async_generic_service.h \
 include/grpc++/generic/generic_stub.h \
 include/grpc++/grpc++.h \
@@ -793,6 +794,7 @@ include/grpc++/security/server_credentials.h \
 include/grpc++/server.h \
 include/grpc++/server_builder.h \
 include/grpc++/server_context.h \
+include/grpc++/server_posix.h \
 include/grpc++/support/async_stream.h \
 include/grpc++/support/async_unary_call.h \
 include/grpc++/support/byte_buffer.h \

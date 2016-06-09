@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,36 +31,40 @@
  *
  */
 
-/// \mainpage gRPC C++ API
-///
-/// The gRPC C++ API mainly consists of the following classes:
-/// - grpc::Channel, which represents the connection to an endpoint. See [the
-/// gRPC Concepts page](http://www.grpc.io/docs/guides/concepts.html) for more
-/// details. Channels are created by the factory function grpc::CreateChannel.
-/// - grpc::CompletionQueue, the producer-consumer queue used for all
-/// asynchronous communication with the gRPC runtime.
-/// - grpc::ClientContext and grpc::ServerContext, where optional configuration
-/// for an RPC can be set, such as setting custom metadata to be conveyed to the
-/// peer, compression settings, authentication, etc.
-/// - grpc::Server, representing a gRPC server, created by grpc::ServerBuilder.
-///
-/// Refer to the
-/// [examples](https://github.com/grpc/grpc/blob/master/examples/cpp)
-/// for code putting these pieces into play.
+#ifndef GRPC_GRPC_POSIX_H
+#define GRPC_GRPC_POSIX_H
 
-#ifndef GRPCXX_GRPCXX_H
-#define GRPCXX_GRPCXX_H
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/port_platform.h>
 
-#include <grpc/grpc.h>
+#include <stddef.h>
 
-#include <grpc++/channel.h>
-#include <grpc++/client_context.h>
-#include <grpc++/completion_queue.h>
-#include <grpc++/create_channel.h>
-#include <grpc++/create_channel_posix.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
-#include <grpc++/server_context.h>
-#include <grpc++/server_posix.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#endif  // GRPCXX_GRPCXX_H
+/*! \mainpage GRPC Core POSIX
+ *
+ * The GRPC Core POSIX library provides some POSIX-specific low-level
+ * functionality on top of GRPC Core.
+ */
+
+/** Create a client channel to 'target' using file descriptor 'fd'. The 'target'
+    argument will be used to indicate the name for this channel. See the comment
+    for grpc_insecure_channel_create for description of 'args' argument. */
+GRPCAPI grpc_channel *grpc_insecure_channel_create_from_fd(
+    const char *target, int fd, const grpc_channel_args *args);
+
+/** Add the connected communication channel based on file descriptor 'fd' to the
+    'server'. The 'fd' must be an open file descriptor corresponding to a
+    connected socket. The 'cq' is a completion queue that will be getting events
+    from that descriptor. */
+GRPCAPI void grpc_server_add_insecure_channel_from_fd(grpc_server *server,
+                                                      grpc_completion_queue *cq,
+                                                      int fd);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* GRPC_GRPC_POSIX_H */
