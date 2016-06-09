@@ -48,6 +48,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/transport/byte_stream.h"
 #include "src/proto/grpc/testing/empty.grpc.pb.h"
 #include "src/proto/grpc/testing/messages.grpc.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
@@ -78,7 +79,6 @@ using grpc::testing::TestService;
 using grpc::Status;
 
 static bool got_sigint = false;
-static const char* kRandomFile = "test/cpp/interop/rnd.dat";
 
 const char kEchoInitialMetadataKey[] = "x-grpc-test-echo-initial";
 const char kEchoTrailingBinMetadataKey[] = "x-grpc-test-echo-trailing-bin";
@@ -117,16 +117,8 @@ bool SetPayload(PayloadType response_type, int size, Payload* payload) {
       std::unique_ptr<char[]> body(new char[size]());
       payload->set_body(body.get(), size);
     } break;
-    case PayloadType::UNCOMPRESSABLE: {
-      std::unique_ptr<char[]> body(new char[size]());
-      std::ifstream rnd_file(kRandomFile);
-      GPR_ASSERT(rnd_file.good());
-      rnd_file.read(body.get(), size);
-      GPR_ASSERT(!rnd_file.eof());  // Requested more rnd bytes than available
-      payload->set_body(body.get(), size);
-    } break;
     default:
-      GPR_ASSERT(false);
+      return false;
   }
   return true;
 }
@@ -138,6 +130,41 @@ void SetResponseCompression(ServerContext* context,
     // Any level would do, let's go for HIGH because we are overachievers.
     context->set_compression_level(GRPC_COMPRESS_LEVEL_HIGH);
   }
+}
+
+template <typename RequestType>
+bool CheckExpectedCompression(const ServerContext& context,
+                              const RequestType& request) {
+  const InteropServerContextInspector inspector(context);
+  const grpc_compression_algorithm received_compression =
+      inspector.GetCallCompressionAlgorithm();
+
+  if (request.expect_compressed_request()) {
+    if (received_compression == GRPC_COMPRESS_NONE) {
+      // Expected some compression, got NONE. This is an error.
+      gpr_log(GPR_ERROR,
+              "Failure: Expected compression but got uncompressed request "
+              "from client.");
+      return false;
+    }
+    if (request.payload_type() == PayloadType::COMPRESSABLE) {
+      if (!(inspector.GetMessageFlags() & GRPC_WRITE_INTERNAL_COMPRESS)) {
+        gpr_log(GPR_ERROR,
+                "Failure: Requested compression in a compressable request, but "
+                "compression bit in message flags not set.");
+        return false;
+      }
+    }
+  } else {
+    // Didn't expect compression -> make sure the request is uncompressed
+    if (inspector.GetMessageFlags() & GRPC_WRITE_INTERNAL_COMPRESS) {
+      gpr_log(GPR_ERROR,
+              "Failure: Didn't requested compression, but compression bit in "
+              "message flags set.");
+      return false;
+    }
+  }
+  return true;
 }
 
 class TestServiceImpl : public TestService::Service {
@@ -152,10 +179,15 @@ class TestServiceImpl : public TestService::Service {
                    SimpleResponse* response) {
     MaybeEchoMetadata(context);
     SetResponseCompression(context, *request);
+    if (!CheckExpectedCompression(*context, *request)) {
+      return Status(grpc::StatusCode::INVALID_ARGUMENT,
+                    "Compressed request expectation not met.");
+    }
     if (request->response_size() > 0) {
       if (!SetPayload(request->response_type(), request->response_size(),
                       response->mutable_payload())) {
-        return Status(grpc::StatusCode::INTERNAL, "Error creating payload.");
+        return Status(grpc::StatusCode::INVALID_ARGUMENT,
+                      "Error creating payload.");
       }
     }
 
@@ -179,7 +211,8 @@ class TestServiceImpl : public TestService::Service {
       if (!SetPayload(request->response_type(),
                       request->response_parameters(i).size(),
                       response.mutable_payload())) {
-        return Status(grpc::StatusCode::INTERNAL, "Error creating payload.");
+        return Status(grpc::StatusCode::INVALID_ARGUMENT,
+                      "Error creating payload.");
       }
       write_success = writer->Write(response);
     }
@@ -196,6 +229,10 @@ class TestServiceImpl : public TestService::Service {
     StreamingInputCallRequest request;
     int aggregated_payload_size = 0;
     while (reader->Read(&request)) {
+      if (!CheckExpectedCompression(*context, request)) {
+        return Status(grpc::StatusCode::INVALID_ARGUMENT,
+                      "Compressed request expectation not met.");
+      }
       if (request.has_payload()) {
         aggregated_payload_size += request.payload().body().size();
       }

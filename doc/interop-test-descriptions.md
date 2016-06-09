@@ -90,26 +90,84 @@ Client asserts:
 * clients are free to assert that the response payload body contents are zero
   and comparing the entire response message against a golden response
 
-### server_compressed_unary
+### client_compressed_unary
 
-This test verifies compressed server-only unary calls succeed in sending
-messages. It sends one unary request for every payload type, with and without
-requesting a compressed response from the server.
-
-In all scenarios, whether compression was actually performed is determined by
-the compression bit in the response's message flags.
-
+This test verifies the client can compress unary messages. It sends one
+unary request for a compressable payload type, with and without compression.
 
 Server features:
 * [UnaryCall][]
-* [Compressable Payload][]
+* [Compressed Request][]
 
 Procedure:
  1. Client calls UnaryCall with:
 
     ```
     {
-      request_compressed_response: bool
+      expect_compressed_request: true
+      response_type: COMPRESSABLE
+      response_size: 314159
+      payload:{
+        body: 271828 bytes of zeros
+      }
+    }
+    ```
+
+    ```
+    {
+      expect_compressed_request: false
+      response_type: COMPRESSABLE
+      response_size: 314159
+      payload:{
+        body: 271828 bytes of zeros
+      }
+    }
+    ```
+
+    Client asserts:
+    * call was successful
+    * response payload type is COMPRESSABLE
+    * if `request_compressed_response` is false, the response MUST NOT have the
+      compressed message flag set.
+    * if `request_compressed_response` is true, the response MUST have the
+      compressed message flag set.
+    * response payload body is 314159 bytes in size
+    * clients are free to assert that the response payload body contents are
+      zero and comparing the entire response message against a golden response
+
+
+### server_compressed_unary
+
+This test verifies the server can compress unary messages. It sends one unary
+request for a COMPRESSABLE payload type, with and without requesting a
+compressed response from the server.
+
+Whether compression was actually performed is determined by the compression bit
+in the response's message flags.
+
+
+Server features:
+* [UnaryCall][]
+* [Compressable Payload][]
+* [Compressed Response][]
+
+Procedure:
+ 1. Client calls UnaryCall with:
+
+    ```
+    {
+      request_compressed_response: true
+      response_type: COMPRESSABLE
+      response_size: 314159
+      payload:{
+        body: 271828 bytes of zeros
+      }
+    }
+    ```
+
+    ```
+    {
+      request_compressed_response: false
       response_type: COMPRESSABLE
       response_size: 314159
       payload:{
@@ -120,10 +178,10 @@ Procedure:
     Client asserts:
     * call was successful
     * response payload type is COMPRESSABLE
-    * if `request_compressed_response` is false, the response MUST NOT have the
+    * when `request_compressed_response` is true, the response MUST have the
       compressed message flag set.
-    * if `request_compressed_response` is true, the response MUST have the
-      compressed message flag set.
+    * when `request_compressed_response` is false, the response MUST NOT have
+      the compressed message flag set.
     * response payload body is 314159 bytes in size
     * clients are free to assert that the response payload body contents are
       zero and comparing the entire response message against a golden response
@@ -224,11 +282,12 @@ Client asserts:
 
 ### server_compressed_streaming
 
-This test verifies that server-only compressed streaming succeeds.
+This test verifies that the server can compress streaming messages.
 
 Server features:
 * [StreamingOutputCall][]
 * [Compressable Payload][]
+* [Compressed Response][]
 
 
 Procedure:
@@ -262,15 +321,54 @@ Procedure:
 
     Client asserts:
     * call was successful
-    * exactly four responses
+    * exactly two responses
     * response payloads are COMPRESSABLE
-    * if `request_compressed_response` is false, the response's messages MUST
+    * when `request_compressed_response` is false, the response's messages MUST
       NOT have the compressed message flag set.
-    * if `request_compressed_response` is true, the response's messages MUST
+    * when `request_compressed_response` is true, the response's messages MUST
       have the compressed message flag set.
     * response payload bodies are sized (in order): 31415, 58979
     * clients are free to assert that the response payload body contents are
       zero and comparing the entire response messages against golden responses
+
+
+### client_compressed_streaming
+
+This test verifies that the client can compress streaming messages.
+
+Server features:
+* [StreamingInputCall][]
+* [Compressed Request][]
+
+Procedure:
+ 1. Client calls StreamingInputCall
+ 1. Client sends:
+
+    ```
+    {
+      expect_compressed_request: true
+      payload:{
+        body: 27182 bytes of zeros
+      }
+    }
+    ```
+
+ 1. Client then sends:
+
+    ```
+    {
+      expect_compressed_request: false
+      payload:{
+        body: 45904 bytes of zeros
+      }
+    }
+    ```
+
+ 6. Client half-closes
+
+ Client asserts:
+ * call was successful
+ * response aggregated_payload_size is 73086
 
 
 ### ping_pong
@@ -373,7 +471,8 @@ with desired oauth scope.
 
 The test uses `--default_service_account` with GCE service account email and
 `--oauth_scope` with the OAuth scope to use. For testing against
-grpc-test.sandbox.googleapis.com, "https://www.googleapis.com/auth/xapi.zoo" should
+grpc-test.sandbox.googleapis.com, "https://www.googleapis.com/auth/xapi.zoo"
+should
 be passed in as `--oauth_scope`.
 
 Server features:
@@ -400,7 +499,8 @@ Procedure:
 
 Client asserts:
 * call was successful
-* received SimpleResponse.username equals the value of `--default_service_account` flag
+* received SimpleResponse.username equals the value of
+  `--default_service_account` flag
 * received SimpleResponse.oauth_scope is in `--oauth_scope`
 * response payload body is 314159 bytes in size
 * clients are free to assert that the response payload body contents are zero
@@ -444,7 +544,8 @@ Client asserts:
 * call was successful
 * received SimpleResponse.username is not empty and is in the json key file used
 by the auth library. The client can optionally check the username matches the
-email address in the key file or equals the value of `--default_service_account` flag.
+email address in the key file or equals the value of `--default_service_account`
+flag.
 * response payload body is 314159 bytes in size
 * clients are free to assert that the response payload body contents are zero
   and comparing the entire response message against a golden response
@@ -470,8 +571,8 @@ variable GOOGLE_APPLICATION_CREDENTIALS, *OR* if GCE credentials is used to
 fetch the token, `--default_service_account` can be used to pass in GCE service
 account email.
 - uses the flag `--oauth_scope` for the oauth scope.  For testing against
-grpc-test.sandbox.googleapis.com, "https://www.googleapis.com/auth/xapi.zoo" should
-be passed as the `--oauth_scope`.
+grpc-test.sandbox.googleapis.com, "https://www.googleapis.com/auth/xapi.zoo"
+should be passed as the `--oauth_scope`.
 
 Server features:
 * [UnaryCall][]
@@ -481,7 +582,8 @@ Server features:
 
 Procedure:
  1. Client uses the auth library to obtain an authorization token
- 2. Client configures the channel to use AccessTokenCredentials with the access token obtained in step 1
+ 2. Client configures the channel to use AccessTokenCredentials with the access
+    token obtained in step 1
  3. Client calls UnaryCall with the following message
 
     ```
@@ -502,17 +604,17 @@ json key file or GCE default service account email.
 
 Similar to the other auth tests, this test is only for cloud-to-prod path.
 
-This test verifies unary calls succeed in sending messages using a JWT or a service account
-credentials set on the RPC.
+This test verifies unary calls succeed in sending messages using a JWT or a
+service account credentials set on the RPC.
 
 The test
 - uses the flag `--service_account_key_file` with the path to a json key file
 downloaded from https://console.developers.google.com. Alternately, if using a
 usable auth implementation, it may specify the file location in the environment
 variable GOOGLE_APPLICATION_CREDENTIALS
-- optionally uses the flag `--oauth_scope` for the oauth scope if implementator 
+- optionally uses the flag `--oauth_scope` for the oauth scope if implementator
 wishes to use service account credential instead of JWT credential. For testing
-against grpc-test.sandbox.googleapis.com, oauth scope 
+against grpc-test.sandbox.googleapis.com, oauth scope
 "https://www.googleapis.com/auth/xapi.zoo" should be used.
 
 Server features:
@@ -838,6 +940,19 @@ Server implements UnaryCall which immediately returns a SimpleResponse with a
 payload body of size `SimpleRequest.response_size` bytes and type as appropriate
 for the `SimpleRequest.response_type`. If the server does not support the
 `response_type`, then it should fail the RPC with `INVALID_ARGUMENT`.
+
+### CompressedResponse
+[CompressedResponse]: #compressedresponse
+
+When the client sets `SimpleRequest.request_compressed_response` to true, the
+response is sent back compressed.
+
+### CompressedRequest
+[CompressedRequest]: #compressedrequest
+
+When the client sets `SimpleRequest.expect_compressed_request ` to true, the
+server expects the client request to be compressed. If it's not, it fails
+the RPC with `INVALID_ARGUMENT`.
 
 ### StreamingInputCall
 [StreamingInputCall]: #streaminginputcall
