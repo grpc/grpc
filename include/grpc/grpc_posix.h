@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,38 +31,40 @@
  *
  */
 
-#ifndef GRPC_TEST_CORE_END2END_CQ_VERIFIER_H
-#define GRPC_TEST_CORE_END2END_CQ_VERIFIER_H
+#ifndef GRPC_GRPC_POSIX_H
+#define GRPC_GRPC_POSIX_H
 
-#include <stdbool.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/port_platform.h>
 
-#include <grpc/grpc.h>
-#include "test/core/util/test_config.h"
+#include <stddef.h>
 
-/* A cq_verifier can verify that expected events arrive in a timely fashion
-   on a single completion queue */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-typedef struct cq_verifier cq_verifier;
+/*! \mainpage GRPC Core POSIX
+ *
+ * The GRPC Core POSIX library provides some POSIX-specific low-level
+ * functionality on top of GRPC Core.
+ */
 
-/* construct/destroy a cq_verifier */
-cq_verifier *cq_verifier_create(grpc_completion_queue *cq);
-void cq_verifier_destroy(cq_verifier *v);
+/** Create a client channel to 'target' using file descriptor 'fd'. The 'target'
+    argument will be used to indicate the name for this channel. See the comment
+    for grpc_insecure_channel_create for description of 'args' argument. */
+GRPCAPI grpc_channel *grpc_insecure_channel_create_from_fd(
+    const char *target, int fd, const grpc_channel_args *args);
 
-/* ensure all expected events (and only those events) are present on the
-   bound completion queue */
-void cq_verify(cq_verifier *v);
+/** Add the connected communication channel based on file descriptor 'fd' to the
+    'server'. The 'fd' must be an open file descriptor corresponding to a
+    connected socket. The 'cq' is a completion queue that will be getting events
+    from that descriptor. */
+GRPCAPI void grpc_server_add_insecure_channel_from_fd(grpc_server *server,
+                                                      grpc_completion_queue *cq,
+                                                      int fd);
 
-/* ensure that the completion queue is empty */
-void cq_verify_empty(cq_verifier *v);
+#ifdef __cplusplus
+}
+#endif
 
-/* Various expectation matchers
-   Any functions taking ... expect a NULL terminated list of key/value pairs
-   (each pair using two parameter slots) of metadata that MUST be present in
-   the event. */
-void cq_expect_completion(cq_verifier *v, void *tag, bool success);
-
-int byte_buffer_eq_string(grpc_byte_buffer *byte_buffer, const char *string);
-int contains_metadata(grpc_metadata_array *array, const char *key,
-                      const char *value);
-
-#endif /* GRPC_TEST_CORE_END2END_CQ_VERIFIER_H */
+#endif /* GRPC_GRPC_POSIX_H */

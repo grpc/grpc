@@ -28,6 +28,9 @@
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\limit_cores.cc">
       <Filter>test\cpp\qps</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\parse_json.cc">
+      <Filter>test\cpp\qps</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\qps_worker.cc">
       <Filter>test\cpp\qps</Filter>
     </ClCompile>
@@ -61,6 +64,9 @@
       <Filter>test\cpp\qps</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\limit_cores.h">
+      <Filter>test\cpp\qps</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\parse_json.h">
       <Filter>test\cpp\qps</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\qps_worker.h">

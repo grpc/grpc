@@ -2361,14 +2361,10 @@
       "grpc_test_util", 
       "qps"
     ], 
-    "headers": [
-      "test/cpp/qps/parse_json.h"
-    ], 
+    "headers": [], 
     "language": "c++", 
     "name": "qps_json_driver", 
     "src": [
-      "test/cpp/qps/parse_json.cc", 
-      "test/cpp/qps/parse_json.h", 
       "test/cpp/qps/qps_json_driver.cc"
     ], 
     "third_party": false, 
@@ -3501,6 +3497,23 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "h2_fd_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_fd.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "h2_full_test", 
     "src": [
       "test/core/end2end/fixtures/h2_full.c"
@@ -3742,6 +3755,23 @@
     "name": "h2_compress_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_compress.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_fd_nosec_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_fd.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4546,6 +4576,7 @@
       "test/cpp/qps/histogram.h", 
       "test/cpp/qps/interarrival.h", 
       "test/cpp/qps/limit_cores.h", 
+      "test/cpp/qps/parse_json.h", 
       "test/cpp/qps/qps_worker.h", 
       "test/cpp/qps/report.h", 
       "test/cpp/qps/server.h", 
@@ -4565,6 +4596,8 @@
       "test/cpp/qps/interarrival.h", 
       "test/cpp/qps/limit_cores.cc", 
       "test/cpp/qps/limit_cores.h", 
+      "test/cpp/qps/parse_json.cc", 
+      "test/cpp/qps/parse_json.h", 
       "test/cpp/qps/qps_worker.cc", 
       "test/cpp/qps/qps_worker.h", 
       "test/cpp/qps/report.cc", 
@@ -5597,6 +5630,7 @@
       "include/grpc/byte_buffer_reader.h", 
       "include/grpc/compression.h", 
       "include/grpc/grpc.h", 
+      "include/grpc/grpc_posix.h", 
       "include/grpc/status.h", 
       "src/core/lib/channel/channel_args.h", 
       "src/core/lib/channel/channel_stack.h", 
@@ -5682,6 +5716,7 @@
       "include/grpc/byte_buffer_reader.h", 
       "include/grpc/compression.h", 
       "include/grpc/grpc.h", 
+      "include/grpc/grpc_posix.h", 
       "include/grpc/status.h", 
       "src/core/lib/channel/channel_args.c", 
       "src/core/lib/channel/channel_args.h", 
@@ -5699,7 +5734,7 @@
       "src/core/lib/channel/http_server_filter.c", 
       "src/core/lib/channel/http_server_filter.h", 
       "src/core/lib/compression/algorithm_metadata.h", 
-      "src/core/lib/compression/compression_algorithm.c", 
+      "src/core/lib/compression/compression.c", 
       "src/core/lib/compression/message_compress.c", 
       "src/core/lib/compression/message_compress.h", 
       "src/core/lib/debug/trace.c", 
@@ -6272,7 +6307,8 @@
     "language": "c", 
     "name": "grpc_transport_chttp2_client_insecure", 
     "src": [
-      "src/core/ext/transport/chttp2/client/insecure/channel_create.c"
+      "src/core/ext/transport/chttp2/client/insecure/channel_create.c", 
+      "src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -6304,7 +6340,8 @@
     "language": "c", 
     "name": "grpc_transport_chttp2_server_insecure", 
     "src": [
-      "src/core/ext/transport/chttp2/server/insecure/server_chttp2.c"
+      "src/core/ext/transport/chttp2/server/insecure/server_chttp2.c", 
+      "src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -6400,6 +6437,7 @@
       "include/grpc++/client_context.h", 
       "include/grpc++/completion_queue.h", 
       "include/grpc++/create_channel.h", 
+      "include/grpc++/create_channel_posix.h", 
       "include/grpc++/generic/async_generic_service.h", 
       "include/grpc++/generic/generic_stub.h", 
       "include/grpc++/grpc++.h", 
@@ -6428,6 +6466,7 @@
       "include/grpc++/server.h", 
       "include/grpc++/server_builder.h", 
       "include/grpc++/server_context.h", 
+      "include/grpc++/server_posix.h", 
       "include/grpc++/support/async_stream.h", 
       "include/grpc++/support/async_unary_call.h", 
       "include/grpc++/support/byte_buffer.h", 
@@ -6452,6 +6491,7 @@
       "include/grpc++/client_context.h", 
       "include/grpc++/completion_queue.h", 
       "include/grpc++/create_channel.h", 
+      "include/grpc++/create_channel_posix.h", 
       "include/grpc++/generic/async_generic_service.h", 
       "include/grpc++/generic/generic_stub.h", 
       "include/grpc++/grpc++.h", 
@@ -6480,6 +6520,7 @@
       "include/grpc++/server.h", 
       "include/grpc++/server_builder.h", 
       "include/grpc++/server_context.h", 
+      "include/grpc++/server_posix.h", 
       "include/grpc++/support/async_stream.h", 
       "include/grpc++/support/async_unary_call.h", 
       "include/grpc++/support/byte_buffer.h", 
@@ -6497,6 +6538,7 @@
       "src/cpp/client/create_channel.cc", 
       "src/cpp/client/create_channel_internal.cc", 
       "src/cpp/client/create_channel_internal.h", 
+      "src/cpp/client/create_channel_posix.cc", 
       "src/cpp/client/credentials.cc", 
       "src/cpp/client/generic_stub.cc", 
       "src/cpp/client/insecure_credentials.cc", 
@@ -6513,6 +6555,7 @@
       "src/cpp/server/server_builder.cc", 
       "src/cpp/server/server_context.cc", 
       "src/cpp/server/server_credentials.cc", 
+      "src/cpp/server/server_posix.cc", 
       "src/cpp/server/thread_pool_interface.h", 
       "src/cpp/util/byte_buffer.cc", 
       "src/cpp/util/slice.cc", 

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,38 +31,26 @@
  *
  */
 
-#ifndef GRPC_TEST_CORE_END2END_CQ_VERIFIER_H
-#define GRPC_TEST_CORE_END2END_CQ_VERIFIER_H
-
-#include <stdbool.h>
-
+#include <grpc++/channel.h>
+#include <grpc++/create_channel.h>
+#include <grpc++/impl/grpc_library.h>
 #include <grpc/grpc.h>
-#include "test/core/util/test_config.h"
+#include <grpc/grpc_posix.h>
 
-/* A cq_verifier can verify that expected events arrive in a timely fashion
-   on a single completion queue */
+#include "src/cpp/client/create_channel_internal.h"
 
-typedef struct cq_verifier cq_verifier;
+namespace grpc {
 
-/* construct/destroy a cq_verifier */
-cq_verifier *cq_verifier_create(grpc_completion_queue *cq);
-void cq_verifier_destroy(cq_verifier *v);
+#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 
-/* ensure all expected events (and only those events) are present on the
-   bound completion queue */
-void cq_verify(cq_verifier *v);
+std::shared_ptr<Channel> CreateInsecureChannelFromFd(const grpc::string& target,
+                                                     int fd) {
+  internal::GrpcLibrary init_lib;
+  init_lib.init();
+  return CreateChannelInternal(
+      "", grpc_insecure_channel_create_from_fd(target.c_str(), fd, nullptr));
+}
 
-/* ensure that the completion queue is empty */
-void cq_verify_empty(cq_verifier *v);
+#endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 
-/* Various expectation matchers
-   Any functions taking ... expect a NULL terminated list of key/value pairs
-   (each pair using two parameter slots) of metadata that MUST be present in
-   the event. */
-void cq_expect_completion(cq_verifier *v, void *tag, bool success);
-
-int byte_buffer_eq_string(grpc_byte_buffer *byte_buffer, const char *string);
-int contains_metadata(grpc_metadata_array *array, const char *key,
-                      const char *value);
-
-#endif /* GRPC_TEST_CORE_END2END_CQ_VERIFIER_H */
+}  // namespace grpc
