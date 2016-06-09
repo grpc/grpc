@@ -220,18 +220,13 @@ void PrintMethodImplementations(Printer *printer,
                                 {"service_class", ServiceClassName(service)},
                                 {"package", service->file()->package()}};
 
-    printer.Print(vars,
-                  "static NSString *const kPackageName = @\"$package$\";\n");
-    printer.Print(
-        vars, "static NSString *const kServiceName = @\"$service_name$\";\n\n");
-
     printer.Print(vars, "@implementation $service_class$\n\n");
 
     printer.Print("// Designated initializer\n");
     printer.Print("- (instancetype)initWithHost:(NSString *)host {\n");
-    printer.Print(
+    printer.Print(vars,
         "  return (self = [super initWithHost:host"
-        " packageName:kPackageName serviceName:kServiceName]);\n");
+        " packageName:@\"$package$\" serviceName:@\"$service_name$\"]);\n");
     printer.Print("}\n\n");
     printer.Print(
         "// Override superclass initializer to disallow different"
