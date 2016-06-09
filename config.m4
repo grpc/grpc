@@ -8,6 +8,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_INCLUDE(../../grpc/include)
   PHP_ADD_INCLUDE(../../grpc/src/php/ext/grpc)
   PHP_ADD_INCLUDE(../../grpc/third_party/boringssl/include)
+  PHP_ADD_INCLUDE(../../grpc/third_party/nanopb)
 
   LIBS="-lpthread $LIBS"
 

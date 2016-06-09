@@ -1558,10 +1558,8 @@
 
   % endif
   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: \
-  % if lib.name != 'z':
+  % if lib.name not in ('z', 'nanopb'):
   $(ZLIB_DEP) \
-  % endif
-  % if lib.name != 'nanopb':
   $(NANOPB_DEP) \
   % endif
   % endif
@@ -1608,9 +1606,9 @@
     common = '$(LIB' + lib.name.upper() + '_OBJS) $(LDLIBS)'
 
     libs = ''
-    lib_deps = ' $(ZLIB_DEP)'
+    lib_deps = ' $(ZLIB_DEP) $(NANOPB_DEP)'
     mingw_libs = ''
-    mingw_lib_deps = ' $(ZLIB_DEP)'
+    mingw_lib_deps = ' $(ZLIB_DEP) $(NANOPB_DEP)'
     if lib.language == 'c++':
       lib_deps += ' $(PROTOBUF_DEP)'
       mingw_lib_deps += ' $(PROTOBUF_DEP)'
