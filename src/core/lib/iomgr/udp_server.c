@@ -210,6 +210,8 @@ static int prepare_socket(int fd, const struct sockaddr *addr,
                           size_t addr_len) {
   struct sockaddr_storage sockname_temp;
   socklen_t sockname_len;
+  /* Set send/receive socket buffers to 1 MB */
+  int buffer_size_bytes = 1024 * 1024;
 
   if (fd < 0) {
     goto error;
@@ -236,6 +238,18 @@ static int prepare_socket(int fd, const struct sockaddr *addr,
 
   sockname_len = sizeof(sockname_temp);
   if (getsockname(fd, (struct sockaddr *)&sockname_temp, &sockname_len) < 0) {
+    goto error;
+  }
+
+  if (!grpc_set_socket_sndbuf(fd, buffer_size_bytes)) {
+    gpr_log(GPR_ERROR, "Failed to set send buffer size to %d bytes",
+            buf_size_bytes);
+    goto error;
+  }
+
+  if (!grpc_set_socket_rcvbuf(fd, buffer_size_bytes)) {
+    gpr_log(GPR_ERROR, "Failed to set receive buffer size to %d bytes",
+            buf_size_bytes);
     goto error;
   }
 

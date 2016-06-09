@@ -31,6 +31,8 @@
  *
  */
 
+#include <string.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
@@ -78,6 +80,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   size_t details_capacity = 0;
 
   grpc_op ops[6];
+  memset(ops, 0, sizeof(ops));
   grpc_op *op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;

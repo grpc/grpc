@@ -136,8 +136,10 @@ static void test_compression_algorithm_states(void) {
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
+  grpc_init();
   test_create();
   test_set_compression_algorithm();
   test_compression_algorithm_states();
+  grpc_shutdown();
   return 0;
 }
