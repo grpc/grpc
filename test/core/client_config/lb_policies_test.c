@@ -275,6 +275,7 @@ static int *perform_request(servers_fixture *f, grpc_channel *client,
     GPR_ASSERT(c);
     completed_client = 0;
 
+    memset(ops, 0, sizeof(ops));
     op = ops;
     op->op = GRPC_OP_SEND_INITIAL_METADATA;
     op->data.send_initial_metadata.count = 0;
@@ -327,6 +328,7 @@ static int *perform_request(servers_fixture *f, grpc_channel *client,
     }
 
     if (s_idx >= 0) {
+      memset(ops, 0, sizeof(ops));
       op = ops;
       op->op = GRPC_OP_SEND_INITIAL_METADATA;
       op->data.send_initial_metadata.count = 0;
@@ -415,6 +417,7 @@ static grpc_call **perform_multirequest(servers_fixture *f,
     kill_server(f, i);
   }
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;

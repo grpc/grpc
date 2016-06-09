@@ -334,6 +334,12 @@ typedef struct grpc_op {
     struct {
       size_t count;
       grpc_metadata *metadata;
+      /** If \a is_set, \a compression_level will be used for the call.
+       * Otherwise, \a compression_level won't be considered */
+      struct {
+        uint8_t is_set;
+        grpc_compression_level level;
+      } maybe_compression_level;
     } send_initial_metadata;
     grpc_byte_buffer *send_message;
     struct {

@@ -65,6 +65,7 @@ static void init_ping_pong_request(void) {
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
 
   op->op = GRPC_OP_SEND_INITIAL_METADATA;

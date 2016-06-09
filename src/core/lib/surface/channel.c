@@ -36,16 +36,17 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <grpc/compression.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel_init.h"
-#include "src/core/lib/surface/init.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 /** Cache grpc-status: X mdelems for X = 0..NUM_CACHED_STATUS_ELEMS.
@@ -64,10 +65,12 @@ typedef struct registered_call {
 struct grpc_channel {
   int is_client;
   uint32_t max_message_length;
+  grpc_compression_options compression_options;
   grpc_mdelem *default_authority;
 
   gpr_mu registered_call_mu;
   registered_call *registered_calls;
+
   char *target;
 };
 
@@ -111,6 +114,7 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
   channel->registered_calls = NULL;
 
   channel->max_message_length = DEFAULT_MAX_MESSAGE_LENGTH;
+  grpc_compression_options_init(&channel->compression_options);
   if (args) {
     for (size_t i = 0; i < args->num_args; i++) {
       if (0 == strcmp(args->args[i].key, GRPC_ARG_MAX_MESSAGE_LENGTH)) {
@@ -151,6 +155,27 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
                 ":authority", args->args[i].value.string);
           }
         }
+      } else if (0 == strcmp(args->args[i].key,
+                             GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL)) {
+        channel->compression_options.default_level.is_set = true;
+        GPR_ASSERT(args->args[i].value.integer >= 0 &&
+                   args->args[i].value.integer < GRPC_COMPRESS_LEVEL_COUNT);
+        channel->compression_options.default_level.level =
+            (grpc_compression_level)args->args[i].value.integer;
+      } else if (0 == strcmp(args->args[i].key,
+                             GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM)) {
+        channel->compression_options.default_algorithm.is_set = true;
+        GPR_ASSERT(args->args[i].value.integer >= 0 &&
+                   args->args[i].value.integer <
+                       GRPC_COMPRESS_ALGORITHMS_COUNT);
+        channel->compression_options.default_algorithm.algorithm =
+            (grpc_compression_algorithm)args->args[i].value.integer;
+      } else if (0 ==
+                 strcmp(args->args[i].key,
+                        GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET)) {
+        channel->compression_options.enabled_algorithms_bitset =
+            (uint32_t)args->args[i].value.integer |
+            0x1; /* always support no compression */
       }
     }
     grpc_channel_args_destroy(args);
@@ -322,6 +347,11 @@ void grpc_channel_destroy(grpc_channel *channel) {
 
 grpc_channel_stack *grpc_channel_get_channel_stack(grpc_channel *channel) {
   return CHANNEL_STACK_FROM_CHANNEL(channel);
+}
+
+grpc_compression_options grpc_channel_compression_options(
+    const grpc_channel *channel) {
+  return channel->compression_options;
 }
 
 grpc_mdelem *grpc_channel_get_reffed_status_elem(grpc_channel *channel, int i) {
