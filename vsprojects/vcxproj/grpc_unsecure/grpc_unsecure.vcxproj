@@ -435,7 +435,7 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\compression\compression_algorithm.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\compression\compression.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\compression\message_compress.c">
     </ClCompile>
