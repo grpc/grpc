@@ -92,8 +92,10 @@ Client asserts:
 
 ### client_compressed_unary
 
-This test verifies the client can compress unary messages. It sends one
-unary request for a compressable payload type, with and without compression.
+This test verifies the client can compress unary messages. It sends two
+unary requests with their payloads marked as COMPRESSABLE. One request will be
+sent compressed and its `expect_compressed_request` set to true. Conversely for
+the uncompressed case.
 
 Server features:
 * [UnaryCall][]
@@ -138,9 +140,9 @@ Procedure:
 
 ### server_compressed_unary
 
-This test verifies the server can compress unary messages. It sends one unary
-request for a COMPRESSABLE payload type, with and without requesting a
-compressed response from the server.
+This test verifies the server can compress unary messages. It sends two unary
+requests for a COMPRESSABLE payload type, expecting the server response to be
+compressed or not according to the `request_compressed_response` boolean.
 
 Whether compression was actually performed is determined by the compression bit
 in the response's message flags.
