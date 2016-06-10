@@ -62,6 +62,17 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = "#{objc_dir}"
   end
 
+  s.subspec 'Nanopb' do |ss|
+    ss.source_files = 'third_party/nanopb/pb_common.c',
+                      'third_party/nanopb/pb_decode.c',
+                      'third_party/nanopb/pb_encode.c'
+    ss.private_header_files = 'third_party/nanopb/pb.h'
+                              'third_party/nanopb/pb_common.h'
+                              'third_party/nanopb/pb_decode.h'
+                              'third_party/nanopb/pb_encode.h'
+    ss.header_mappings_dir = '.'
+  end
+
   # Core cross-platform gRPC library, written in C.
   s.subspec 'C-Core' do |ss|
     ss.source_files = 'src/core/lib/profiling/timers.h',
@@ -687,6 +698,7 @@ Pod::Spec.new do |s|
     ss.requires_arc = false
     ss.libraries = 'z'
     ss.dependency 'BoringSSL', '~> 3.0'
+    ss.dependency 'gRPC/Nanopb'
 
     # ss.compiler_flags = '-GCC_WARN_INHIBIT_ALL_WARNINGS', '-w'
   end
