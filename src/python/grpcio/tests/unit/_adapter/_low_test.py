@@ -34,6 +34,7 @@ import unittest
 from grpc import _grpcio_metadata
 from grpc._adapter import _types
 from grpc._adapter import _low
+from grpc._cython import cygrpc
 from tests.unit import test_common
 
 
@@ -71,7 +72,8 @@ class InsecureServerInsecureClient(unittest.TestCase):
     self.server = _low.Server(self.server_completion_queue, [])
     self.port = self.server.add_http2_port('[::]:0')
     self.client_completion_queue = _low.CompletionQueue()
-    self.client_channel = _low.Channel('localhost:%d'%self.port, [])
+    user_agent_arg = (cygrpc.ChannelArgKey.primary_user_agent_string, 'ME')
+    self.client_channel = _low.Channel('localhost:%d'%self.port, [user_agent_arg])
 
     self.server.start()
 
@@ -121,7 +123,7 @@ class InsecureServerInsecureClient(unittest.TestCase):
         self.client_completion_queue, method, host, deadline)
     client_initial_metadata = [
         (client_metadata_ascii_key, client_metadata_ascii_value),
-        (client_metadata_bin_key, client_metadata_bin_value)
+        (client_metadata_bin_key, client_metadata_bin_value),
     ]
     client_start_batch_result = client_call.start_batch([
         _types.OpArgs.send_initial_metadata(client_initial_metadata),
@@ -146,10 +148,10 @@ class InsecureServerInsecureClient(unittest.TestCase):
     self.assertTrue(test_common.metadata_transmitted(client_initial_metadata,
                                                      received_initial_metadata))
     # Check that Python's user agent string is a part of the full user agent
-    # string
+    # string, and the provided user string comes first
     received_initial_metadata_dict = dict(received_initial_metadata)
     self.assertIn('user-agent', received_initial_metadata_dict)
-    self.assertIn('Python-gRPC-{}'.format(_grpcio_metadata.__version__),
+    self.assertIn('ME Python-gRPC-{}'.format(_grpcio_metadata.__version__),
                   received_initial_metadata_dict['user-agent'])
     self.assertEqual(method, request_event.call_details.method)
     self.assertEqual(host, request_event.call_details.host)
