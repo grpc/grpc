@@ -38,6 +38,7 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/static_metadata.h"
+#include "src/core/lib/transport/transport_impl.h"
 
 #define EXPECTED_CONTENT_TYPE "application/grpc"
 #define EXPECTED_CONTENT_TYPE_LENGTH sizeof(EXPECTED_CONTENT_TYPE) - 1
@@ -199,7 +200,8 @@ static grpc_mdelem *scheme_from_args(const grpc_channel_args *args) {
   return GRPC_MDELEM_SCHEME_HTTP;
 }
 
-static grpc_mdstr *user_agent_from_args(const grpc_channel_args *args) {
+static grpc_mdstr *user_agent_from_args(const grpc_channel_args *args,
+                                        const char *transport_name) {
   gpr_strvec v;
   size_t i;
   int is_first = 1;
@@ -221,8 +223,8 @@ static grpc_mdstr *user_agent_from_args(const grpc_channel_args *args) {
     }
   }
 
-  gpr_asprintf(&tmp, "%sgrpc-c/%s (%s)", is_first ? "" : " ",
-               grpc_version_string(), GPR_PLATFORM_STRING);
+  gpr_asprintf(&tmp, "%sgrpc-c/%s (%s; %s)", is_first ? "" : " ",
+               grpc_version_string(), GPR_PLATFORM_STRING, transport_name);
   is_first = 0;
   gpr_strvec_add(&v, tmp);
 
@@ -253,9 +255,12 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
                               grpc_channel_element_args *args) {
   channel_data *chand = elem->channel_data;
   GPR_ASSERT(!args->is_last);
+  GPR_ASSERT(args->optional_transport != NULL);
   chand->static_scheme = scheme_from_args(args->channel_args);
   chand->user_agent = grpc_mdelem_from_metadata_strings(
-      GRPC_MDSTR_USER_AGENT, user_agent_from_args(args->channel_args));
+      GRPC_MDSTR_USER_AGENT,
+      user_agent_from_args(args->channel_args,
+                           args->optional_transport->vtable->name));
 }
 
 /* Destructor for channel data */

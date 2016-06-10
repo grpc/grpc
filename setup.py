@@ -234,8 +234,7 @@ setuptools.setup(
   ext_modules=CYTHON_EXTENSION_MODULES,
   packages=list(PACKAGES),
   package_dir=PACKAGE_DIRECTORIES,
-  # TODO(atash): Figure out why auditwheel doesn't like namespace packages.
-  #namespace_packages=['grpc'],
+  namespace_packages=['grpc'],
   package_data=PACKAGE_DATA,
   install_requires=INSTALL_REQUIRES,
   setup_requires=SETUP_REQUIRES,
