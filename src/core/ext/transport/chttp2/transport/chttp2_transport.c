@@ -812,8 +812,10 @@ void grpc_chttp2_add_incoming_goaway(
       gpr_log(GPR_DEBUG, "got goaway [%d]: %s", goaway_error, msg));
   gpr_slice_unref(goaway_text);
   transport_global->seen_goaway = 1;
+  /* lie: use transient failure from the transport to indicate goaway has been
+   * received */
   connectivity_state_set(
-      exec_ctx, transport_global, GRPC_CHANNEL_SHUTDOWN,
+      exec_ctx, transport_global, GRPC_CHANNEL_TRANSIENT_FAILURE,
       grpc_error_set_str(
           grpc_error_set_int(GRPC_ERROR_CREATE("GOAWAY received"),
                              GRPC_ERROR_INT_HTTP2_ERROR,
