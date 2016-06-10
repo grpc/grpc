@@ -31,6 +31,7 @@
  *
  */
 
+#include <grpc/grpc_posix.h>
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_LINUX_EPOLL
@@ -58,9 +59,26 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/block_annotate.h"
 
-struct polling_island;
+static int grpc_wakeup_signal = -1;
+static bool is_grpc_wakeup_signal_initialized = false;
 
-static int grpc_poller_kick_signum;
+/* Implements the function defined in grpc_posix.h. This function might be
+ * called before even calling grpc_init() to set either a different signal to
+ * use. If signum == -1, then the use of signals is disabled */
+void grpc_use_signal(int signum) {
+  grpc_wakeup_signal = signum;
+  is_grpc_wakeup_signal_initialized = true;
+
+  if (grpc_wakeup_signal < 0) {
+    gpr_log(GPR_INFO,
+            "Use of signals is disabled. Epoll engine will not be used");
+  } else {
+    gpr_log(GPR_INFO, "epoll engine will be using signal: %d",
+            grpc_wakeup_signal);
+  }
+}
+
+struct polling_island;
 
 /*******************************************************************************
  * Fd Declarations
@@ -854,10 +872,7 @@ static void sig_handler(int sig_num) {
 #endif
 }
 
-static void poller_kick_init() {
-  grpc_poller_kick_signum = SIGRTMIN + 2;
-  signal(grpc_poller_kick_signum, sig_handler);
-}
+static void poller_kick_init() { signal(grpc_wakeup_signal, sig_handler); }
 
 /* Global state management */
 static void pollset_global_init(void) {
@@ -874,7 +889,7 @@ static void pollset_global_shutdown(void) {
 }
 
 static void pollset_worker_kick(grpc_pollset_worker *worker) {
-  pthread_kill(worker->pt_id, grpc_poller_kick_signum);
+  pthread_kill(worker->pt_id, grpc_wakeup_signal);
 }
 
 /* Return 1 if the pollset has active threads in pollset_work (pollset must
@@ -1214,9 +1229,9 @@ static void pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     pollset->kicked_without_pollers = 0;
   } else if (!pollset->shutting_down) {
     sigemptyset(&new_mask);
-    sigaddset(&new_mask, grpc_poller_kick_signum);
+    sigaddset(&new_mask, grpc_wakeup_signal);
     pthread_sigmask(SIG_BLOCK, &new_mask, &orig_mask);
-    sigdelset(&orig_mask, grpc_poller_kick_signum);
+    sigdelset(&orig_mask, grpc_wakeup_signal);
 
     push_front_worker(pollset, &worker);
 
@@ -1497,8 +1512,17 @@ static bool is_epoll_available() {
 }
 
 const grpc_event_engine_vtable *grpc_init_epoll_linux(void) {
+  /* If use of signals is disabled, we cannot use epoll engine*/
+  if (is_grpc_wakeup_signal_initialized && grpc_wakeup_signal < 0) {
+    return NULL;
+  }
+
   if (!is_epoll_available()) {
     return NULL;
+  }
+
+  if (!is_grpc_wakeup_signal_initialized) {
+    grpc_use_signal(SIGRTMIN + 2);
   }
 
   fd_global_init();
@@ -1507,9 +1531,10 @@ const grpc_event_engine_vtable *grpc_init_epoll_linux(void) {
   return &vtable;
 }
 
-#else /* defined(GPR_LINUX_EPOLL) */
+#else  /* defined(GPR_LINUX_EPOLL) */
 /* If GPR_LINUX_EPOLL is not defined, it means epoll is not available. Return
  * NULL */
 const grpc_event_engine_vtable *grpc_init_epoll_linux(void) { return NULL; }
 
+void grpc_use_signal(int signum) {}
 #endif /* !defined(GPR_LINUX_EPOLL) */
