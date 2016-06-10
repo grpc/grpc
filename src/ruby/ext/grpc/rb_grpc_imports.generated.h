@@ -482,7 +482,7 @@ extern grpc_byte_buffer_reader_readall_type grpc_byte_buffer_reader_readall_impo
 typedef grpc_byte_buffer *(*grpc_raw_byte_buffer_from_reader_type)(grpc_byte_buffer_reader *reader);
 extern grpc_raw_byte_buffer_from_reader_type grpc_raw_byte_buffer_from_reader_import;
 #define grpc_raw_byte_buffer_from_reader grpc_raw_byte_buffer_from_reader_import
-typedef void(*gpr_log_type)(const char *file, int line, gpr_log_severity severity, const char *format, ...);
+typedef void(*gpr_log_type)(const char *file, int line, gpr_log_severity severity, const char *format, ...) GPRC_PRINT_FORMAT_CHECK(4, 5);
 extern gpr_log_type gpr_log_import;
 #define gpr_log gpr_log_import
 typedef void(*gpr_log_message_type)(const char *file, int line, gpr_log_severity severity, const char *message);
@@ -821,7 +821,7 @@ extern gpr_format_message_type gpr_format_message_import;
 typedef char *(*gpr_strdup_type)(const char *src);
 extern gpr_strdup_type gpr_strdup_import;
 #define gpr_strdup gpr_strdup_import
-typedef int(*gpr_asprintf_type)(char **strp, const char *format, ...);
+typedef int(*gpr_asprintf_type)(char **strp, const char *format, ...) GPRC_PRINT_FORMAT_CHECK(2, 3);
 extern gpr_asprintf_type gpr_asprintf_import;
 #define gpr_asprintf gpr_asprintf_import
 typedef const char *(*gpr_subprocess_binary_extension_type)();

@@ -164,7 +164,7 @@ static void test_slice_split_head_works(size_t length) {
   size_t i;
 
   LOG_TEST_NAME("test_slice_split_head_works");
-  gpr_log(GPR_INFO, "length=%d", length);
+  gpr_log(GPR_INFO, "length=%" PRIuPTR, length);
 
   /* Create a slice in which each byte is equal to the distance from it to the
      beginning of the slice. */
@@ -192,7 +192,7 @@ static void test_slice_split_tail_works(size_t length) {
   size_t i;
 
   LOG_TEST_NAME("test_slice_split_tail_works");
-  gpr_log(GPR_INFO, "length=%d", length);
+  gpr_log(GPR_INFO, "length=%" PRIuPTR, length);
 
   /* Create a slice in which each byte is equal to the distance from it to the
      beginning of the slice. */
