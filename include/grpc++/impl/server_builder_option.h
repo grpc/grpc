@@ -50,7 +50,7 @@ class ServerBuilderOption {
   virtual void UpdateArguments(ChannelArguments* args) = 0;
   /// Alter the ServerBuilderPlugin map that will be added into ServerBuilder.
   virtual void UpdatePlugins(
-      std::map<grpc::string, std::unique_ptr<ServerBuilderPlugin> >*
+      std::vector<std::unique_ptr<ServerBuilderPlugin> >*
           plugins) = 0;
 };
 

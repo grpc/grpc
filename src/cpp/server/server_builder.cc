@@ -57,12 +57,7 @@ ServerBuilder::ServerBuilder()
   for (auto it = g_plugin_factory_list->begin();
        it != g_plugin_factory_list->end(); it++) {
     auto& factory = *it;
-    std::unique_ptr<ServerBuilderPlugin> plugin = factory();
-    auto name = plugin->name();
-    ServerBuilderPlugin* plugin_ptr = plugin.release();
-    plugins_[name] = nullptr;
-    auto pl = plugins_.find(name);
-    pl->second.reset(plugin_ptr);
+    plugins_.emplace_back(factory());
   }
 }
 
@@ -123,7 +118,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   }
   if (!thread_pool) {
     for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
-      if ((*plugin).second->has_sync_methods()) {
+      if ((*plugin)->has_sync_methods()) {
         thread_pool.reset(CreateDefaultThreadPool());
         has_sync_methods = true;
         break;
@@ -172,7 +167,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     }
   }
   for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
-    (*plugin).second->InitServer(initializer);
+    (*plugin)->InitServer(initializer);
   }
   if (generic_service_) {
     server->RegisterAsyncGenericService(generic_service_);
@@ -198,7 +193,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     return nullptr;
   }
   for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
-    (*plugin).second->Finish(initializer);
+    (*plugin)->Finish(initializer);
   }
   return server;
 }
