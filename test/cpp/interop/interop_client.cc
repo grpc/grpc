@@ -433,7 +433,7 @@ bool InteropClient::DoResponseStreaming() {
     // most likely due to connection failure.
     gpr_log(GPR_ERROR,
             "DoResponseStreaming(): Read fewer streams (%d) than "
-            "response_stream_sizes.size() (%" PRIu64 ")",
+            "response_stream_sizes.size() (%" PRIuPTR ")",
             i, response_stream_sizes.size());
     return TransientFailureOrAbort();
   }
@@ -520,7 +520,7 @@ bool InteropClient::DoResponseCompressedStreaming() {
                 "DoResponseCompressedStreaming(): Responses read (k=%" PRIuPTR
                 ") is "
                 "less than the expected messages (i.e "
-                "response_stream_sizes.size() (%" PRIu64 ")). (i=%" PRIuPTR
+                "response_stream_sizes.size() (%" PRIuPTR ")). (i=%" PRIuPTR
                 ", j=%" PRIuPTR ")",
                 k, response_stream_sizes.size(), i, j);
         return TransientFailureOrAbort();
@@ -610,7 +610,7 @@ bool InteropClient::DoHalfDuplex() {
     // most likely due to a connection failure
     gpr_log(GPR_ERROR,
             "DoHalfDuplex(): Responses read (i=%d) are less than the expected "
-            "number of messages response_stream_sizes.size() (%" PRIu64 ")",
+            "number of messages response_stream_sizes.size() (%" PRIuPTR ")",
             i, response_stream_sizes.size());
     return TransientFailureOrAbort();
   }
