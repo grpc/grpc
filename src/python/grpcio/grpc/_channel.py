@@ -134,9 +134,9 @@ def _handle_event(event, state, response_deserializer):
   for batch_operation in event.batch_operations:
     operation_type = batch_operation.type
     state.due.remove(operation_type)
-    if operation_type is cygrpc.OperationType.receive_initial_metadata:
+    if operation_type == cygrpc.OperationType.receive_initial_metadata:
       state.initial_metadata = batch_operation.received_metadata
-    elif operation_type is cygrpc.OperationType.receive_message:
+    elif operation_type == cygrpc.OperationType.receive_message:
       serialized_response = batch_operation.received_message.bytes()
       if serialized_response is not None:
         response = _common.deserialize(
@@ -146,7 +146,7 @@ def _handle_event(event, state, response_deserializer):
           _abort(state, grpc.StatusCode.INTERNAL, details)
         else:
           state.response = response
-    elif operation_type is cygrpc.OperationType.receive_status_on_client:
+    elif operation_type == cygrpc.OperationType.receive_status_on_client:
       state.trailing_metadata = batch_operation.received_metadata
       if state.code is None:
         code = _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE.get(

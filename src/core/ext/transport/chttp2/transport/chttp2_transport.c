@@ -47,6 +47,7 @@
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/status_conversion.h"
 #include "src/core/ext/transport/chttp2/transport/timeout_encoding.h"
+#include "src/core/lib/http/parser.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/static_metadata.h"
@@ -107,7 +108,8 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
 static void cancel_from_api(grpc_exec_ctx *exec_ctx,
                             grpc_chttp2_transport_global *transport_global,
                             grpc_chttp2_stream_global *stream_global,
-                            grpc_status_code status);
+                            grpc_status_code status,
+                            gpr_slice *optional_message);
 
 static void close_from_api(grpc_exec_ctx *exec_ctx,
                            grpc_chttp2_transport_global *transport_global,
@@ -160,6 +162,8 @@ static void destruct_transport(grpc_exec_ctx *exec_ctx,
   gpr_mu_lock(&t->executor.mu);
 
   GPR_ASSERT(t->ep == NULL);
+
+  gpr_slice_unref(t->optional_drop_message);
 
   gpr_slice_buffer_destroy(&t->global.qbuf);
 
@@ -260,6 +264,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   t->parsing.deframe_state =
       is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0;
   t->writing.is_client = is_client;
+  t->optional_drop_message = gpr_empty_slice();
   grpc_connectivity_state_init(
       &t->channel_callback.state_tracker, GRPC_CHANNEL_READY,
       is_client ? "client_transport" : "server_transport");
@@ -804,8 +809,10 @@ void grpc_chttp2_add_incoming_goaway(
   gpr_free(msg);
   gpr_slice_unref(goaway_text);
   transport_global->seen_goaway = 1;
-  connectivity_state_set(exec_ctx, transport_global, GRPC_CHANNEL_SHUTDOWN,
-                         "got_goaway");
+  /* lie: use transient failure from the transport to indicate goaway has been
+   * received */
+  connectivity_state_set(exec_ctx, transport_global,
+                         GRPC_CHANNEL_TRANSIENT_FAILURE, "got_goaway");
 }
 
 static void maybe_start_some_streams(
@@ -859,7 +866,7 @@ static void maybe_start_some_streams(
          grpc_chttp2_list_pop_waiting_for_concurrency(transport_global,
                                                       &stream_global)) {
     cancel_from_api(exec_ctx, transport_global, stream_global,
-                    GRPC_STATUS_UNAVAILABLE);
+                    GRPC_STATUS_UNAVAILABLE, NULL);
   }
 }
 
@@ -936,7 +943,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
 
   if (op->cancel_with_status != GRPC_STATUS_OK) {
     cancel_from_api(exec_ctx, transport_global, stream_global,
-                    op->cancel_with_status);
+                    op->cancel_with_status, op->optional_close_message);
   }
 
   if (op->close_with_status != GRPC_STATUS_OK) {
@@ -960,7 +967,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
               "(%" PRIuPTR " vs. %" PRIuPTR ")",
               metadata_size, metadata_peer_limit);
       cancel_from_api(exec_ctx, transport_global, stream_global,
-                      GRPC_STATUS_RESOURCE_EXHAUSTED);
+                      GRPC_STATUS_RESOURCE_EXHAUSTED, NULL);
     } else {
       if (contains_non_ok_status(transport_global, op->send_initial_metadata)) {
         stream_global->seen_error = true;
@@ -1015,7 +1022,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
               "(%" PRIuPTR " vs. %" PRIuPTR ")",
               metadata_size, metadata_peer_limit);
       cancel_from_api(exec_ctx, transport_global, stream_global,
-                      GRPC_STATUS_RESOURCE_EXHAUSTED);
+                      GRPC_STATUS_RESOURCE_EXHAUSTED, NULL);
     } else {
       if (contains_non_ok_status(transport_global,
                                  op->send_trailing_metadata)) {
@@ -1201,7 +1208,7 @@ static void check_read_ops(grpc_exec_ctx *exec_ctx,
         }
         if (stream_global->exceeded_metadata_size) {
           cancel_from_api(exec_ctx, transport_global, stream_global,
-                          GRPC_STATUS_RESOURCE_EXHAUSTED);
+                          GRPC_STATUS_RESOURCE_EXHAUSTED, NULL);
         }
       }
       grpc_chttp2_incoming_metadata_buffer_publish(
@@ -1240,7 +1247,7 @@ static void check_read_ops(grpc_exec_ctx *exec_ctx,
         }
         if (stream_global->exceeded_metadata_size) {
           cancel_from_api(exec_ctx, transport_global, stream_global,
-                          GRPC_STATUS_RESOURCE_EXHAUSTED);
+                          GRPC_STATUS_RESOURCE_EXHAUSTED, NULL);
         }
       }
       if (stream_global->all_incoming_byte_streams_finished) {
@@ -1303,7 +1310,8 @@ static void remove_stream(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 static void cancel_from_api(grpc_exec_ctx *exec_ctx,
                             grpc_chttp2_transport_global *transport_global,
                             grpc_chttp2_stream_global *stream_global,
-                            grpc_status_code status) {
+                            grpc_status_code status,
+                            gpr_slice *optional_message) {
   if (!stream_global->read_closed || !stream_global->write_closed) {
     if (stream_global->id != 0) {
       gpr_slice_buffer_add(
@@ -1313,8 +1321,12 @@ static void cancel_from_api(grpc_exec_ctx *exec_ctx,
               (uint32_t)grpc_chttp2_grpc_status_to_http2_error(status),
               &stream_global->stats.outgoing));
     }
+
+    if (optional_message) {
+      gpr_slice_ref(*optional_message);
+    }
     grpc_chttp2_fake_status(exec_ctx, transport_global, stream_global, status,
-                            NULL);
+                            optional_message);
   }
   if (status != GRPC_STATUS_OK && !stream_global->seen_error) {
     stream_global->seen_error = true;
@@ -1524,8 +1536,12 @@ static void close_from_api(grpc_exec_ctx *exec_ctx,
 static void cancel_stream_cb(grpc_chttp2_transport_global *transport_global,
                              void *user_data,
                              grpc_chttp2_stream_global *stream_global) {
+  grpc_chttp2_transport *transport = TRANSPORT_FROM_GLOBAL(transport_global);
   cancel_from_api(user_data, transport_global, stream_global,
-                  GRPC_STATUS_UNAVAILABLE);
+                  GRPC_STATUS_UNAVAILABLE,
+                  GPR_SLICE_IS_EMPTY(transport->optional_drop_message)
+                      ? NULL
+                      : &transport->optional_drop_message);
 }
 
 static void end_all_the_calls(grpc_exec_ctx *exec_ctx,
@@ -1601,6 +1617,29 @@ static void reading_action_locked(grpc_exec_ctx *exec_ctx,
   }
 }
 
+static bool try_http_parsing(grpc_exec_ctx *exec_ctx,
+                             grpc_chttp2_transport *t) {
+  grpc_http_parser parser;
+  size_t i = 0;
+  bool success = false;
+
+  grpc_http_parser_init(&parser);
+
+  for (; i < t->read_buffer.count &&
+         grpc_http_parser_parse(&parser, t->read_buffer.slices[i]);
+       i++)
+    ;
+  if (grpc_http_parser_eof(&parser) && parser.type == GRPC_HTTP_RESPONSE) {
+    success = true;
+    GRPC_CHTTP2_IF_TRACING(gpr_log(
+        GPR_DEBUG, "Trying to connect an http1.x server, received status:%d",
+        parser.http.response.status));
+  }
+
+  grpc_http_parser_destroy(&parser);
+  return success;
+}
+
 static void parsing_action(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   grpc_chttp2_transport *t = arg;
   GPR_TIMER_BEGIN("reading_action.parse", 0);
@@ -1612,6 +1651,14 @@ static void parsing_action(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
     ;
   if (i != t->read_buffer.count) {
     success = false;
+    gpr_slice_unref(t->optional_drop_message);
+    if (try_http_parsing(exec_ctx, t)) {
+      t->optional_drop_message = gpr_slice_from_copied_string(
+          "Connection dropped: received http1.x response");
+    } else {
+      t->optional_drop_message = gpr_slice_from_copied_string(
+          "Connection dropped: received unparseable response");
+    }
   }
   GPR_TIMER_END("reading_action.parse", 0);
   grpc_chttp2_run_with_global_lock(exec_ctx, t, NULL, post_parse_locked,

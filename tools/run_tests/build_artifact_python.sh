@@ -59,12 +59,14 @@ ${SETARCH_CMD} ${PYTHON} setup.py  \
 ${SETARCH_CMD} ${PYTHON} setup.py  \
     bdist_wheel
 
+# Build gRPC tools package distribution
+${PYTHON} tools/distrib/python/make_grpcio_tools.py
+
 # Build gRPC tools package source distribution
 ${SETARCH_CMD} ${PYTHON} tools/distrib/python/grpcio_tools/setup.py  \
     sdist
 
 # Build gRPC tools package binary distribution
-${PYTHON} tools/distrib/python/make_grpcio_tools.py
 CFLAGS="$CFLAGS -fno-wrapv" ${SETARCH_CMD} \
   ${PYTHON} tools/distrib/python/grpcio_tools/setup.py bdist_wheel
 
