@@ -76,8 +76,8 @@ static void create_test_socket(int port, int *socket_fd,
   setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
   /* Reset the size of socket send buffer to the minimal value to facilitate
      buffer filling up and triggering notify_on_write  */
-  GPR_ASSERT(grpc_set_socket_sndbuf(fd, buffer_size_bytes));
-  GPR_ASSERT(grpc_set_socket_rcvbuf(fd, buffer_size_bytes));
+  GPR_ASSERT(grpc_set_socket_sndbuf(fd, buffer_size_bytes) == GRPC_ERROR_NONE);
+  GPR_ASSERT(grpc_set_socket_rcvbuf(fd, buffer_size_bytes) == GRPC_ERROR_NONE);
   /* Make fd non-blocking */
   flags = fcntl(fd, F_GETFL, 0);
   GPR_ASSERT(fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0);
