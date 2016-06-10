@@ -649,7 +649,8 @@ static void on_initial_header(void *tp, grpc_mdelem *md) {
     if (new_size > metadata_size_limit) {
       if (!stream_parsing->exceeded_metadata_size) {
         gpr_log(GPR_DEBUG,
-                "received initial metadata size exceeds limit (%lu vs. %lu)",
+                "received initial metadata size exceeds limit (%" PRIuPTR
+                " vs. %" PRIuPTR ")",
                 new_size, metadata_size_limit);
         stream_parsing->seen_error = true;
         stream_parsing->exceeded_metadata_size = true;
@@ -695,7 +696,8 @@ static void on_trailing_header(void *tp, grpc_mdelem *md) {
   if (new_size > metadata_size_limit) {
     if (!stream_parsing->exceeded_metadata_size) {
       gpr_log(GPR_DEBUG,
-              "received trailing metadata size exceeds limit (%lu vs. %lu)",
+              "received trailing metadata size exceeds limit (%" PRIuPTR
+              " vs. %" PRIuPTR ")",
               new_size, metadata_size_limit);
       stream_parsing->seen_error = true;
       stream_parsing->exceeded_metadata_size = true;
