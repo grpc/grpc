@@ -113,6 +113,8 @@ static const char *error_int_name(grpc_error_ints key) {
       return "fd";
     case GRPC_ERROR_INT_WSA_ERROR:
       return "wsa_error";
+    case GRPC_ERROR_INT_HTTP_STATUS:
+      return "http_status";
   }
   GPR_UNREACHABLE_CODE(return "unknown");
 }
