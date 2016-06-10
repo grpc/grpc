@@ -177,8 +177,8 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
       const float savings_ratio = 1.0f - (float)after_size / (float)before_size;
       GPR_ASSERT(grpc_compression_algorithm_name(calld->compression_algorithm,
                                                  &algo_name));
-      gpr_log(GPR_DEBUG,
-              "Compressed[%s] %d bytes vs. %d bytes (%.2f%% savings)",
+      gpr_log(GPR_DEBUG, "Compressed[%s] %" PRIuPTR " bytes vs. %" PRIuPTR
+                         " bytes (%.2f%% savings)",
               algo_name, before_size, after_size, 100 * savings_ratio);
     }
     gpr_slice_buffer_swap(&calld->slices, &tmp);
@@ -188,10 +188,10 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
       char *algo_name;
       GPR_ASSERT(grpc_compression_algorithm_name(calld->compression_algorithm,
                                                  &algo_name));
-      gpr_log(
-          GPR_DEBUG,
-          "Algorithm '%s' enabled but decided not to compress. Input size: %d",
-          algo_name, calld->slices.length);
+      gpr_log(GPR_DEBUG,
+              "Algorithm '%s' enabled but decided not to compress. Input size: "
+              "%" PRIuPTR,
+              algo_name, calld->slices.length);
     }
   }
 
