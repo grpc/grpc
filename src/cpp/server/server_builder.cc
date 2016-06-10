@@ -54,7 +54,8 @@ ServerBuilder::ServerBuilder()
     : max_message_size_(-1), generic_service_(nullptr) {
   grpc_compression_options_init(&compression_options_);
   gpr_once_init(&once_init_plugin_list, do_plugin_list_init);
-  for (auto factory : (*g_plugin_factory_list)) {
+  for (auto it = g_plugin_factory_list->begin(); it != g_plugin_factory_list->end(); it++) {
+    auto& factory = *it;
     std::unique_ptr<ServerBuilderPlugin> plugin = factory();
     plugins_[plugin->name()] = std::move(plugin);
   }
@@ -103,7 +104,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   bool has_sync_methods = false;
   for (auto it = services_.begin(); it != services_.end(); ++it) {
     if ((*it)->service->has_synchronous_methods()) {
-      if (thread_pool == nullptr) {
+      if (!thread_pool) {
         thread_pool.reset(CreateDefaultThreadPool());
         has_sync_methods = true;
         break;
@@ -115,7 +116,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     (*option)->UpdateArguments(&args);
     (*option)->UpdatePlugins(&plugins_);
   }
-  if (thread_pool == nullptr) {
+  if (!thread_pool) {
     for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
       if ((*plugin).second->has_sync_methods()) {
         thread_pool.reset(CreateDefaultThreadPool());
