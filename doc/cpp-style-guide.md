@@ -34,6 +34,7 @@ C++11 constructs. Here are some guidelines, to be extended as needed:
     // code
   }
   ```
+  
   are not allowed and should be replaced with code such as
   ```c
   for (auto it = vec.begin; it != vec.end(); it++) {
@@ -41,6 +42,7 @@ C++11 constructs. Here are some guidelines, to be extended as needed:
     // code
   }
   ```
+  
 - Do not use lambda of any kind (no capture, explicit capture, or
 default capture). Other C++ functional features such as
 `std::function` or `std::bind` are allowed
