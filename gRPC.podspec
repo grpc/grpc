@@ -687,7 +687,7 @@ Pod::Spec.new do |s|
     ss.requires_arc = false
     ss.libraries = 'z'
     ss.dependency 'BoringSSL', '~> 3.0'
-    ss.dependency 'nanopb', '~> 0.3.2'
+    ss.dependency 'nanopb', '0.3.5'
 
     # ss.compiler_flags = '-GCC_WARN_INHIBIT_ALL_WARNINGS', '-w'
   end
