@@ -135,7 +135,7 @@ static void drain_cq(grpc_completion_queue *cq) {
 }
 
 static void kill_server(const servers_fixture *f, size_t i) {
-  gpr_log(GPR_INFO, "KILLING SERVER %d", i);
+  gpr_log(GPR_INFO, "KILLING SERVER %" PRIuPTR, i);
   GPR_ASSERT(f->servers[i] != NULL);
   grpc_server_shutdown_and_notify(f->servers[i], f->cq, tag(10000));
   GPR_ASSERT(
@@ -157,7 +157,7 @@ typedef struct request_data {
 static void revive_server(const servers_fixture *f, request_data *rdata,
                           size_t i) {
   int got_port;
-  gpr_log(GPR_INFO, "RAISE AGAIN SERVER %d", i);
+  gpr_log(GPR_INFO, "RAISE AGAIN SERVER %" PRIuPTR, i);
   GPR_ASSERT(f->servers[i] == NULL);
 
   gpr_log(GPR_DEBUG, "revive: %s", f->servers_hostports[i]);
@@ -311,7 +311,7 @@ static int *perform_request(servers_fixture *f, grpc_channel *client,
             .type != GRPC_QUEUE_TIMEOUT) {
       GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
       read_tag = ((int)(intptr_t)ev.tag);
-      gpr_log(GPR_DEBUG, "EVENT: success:%d, type:%d, tag:%d iter:%d",
+      gpr_log(GPR_DEBUG, "EVENT: success:%d, type:%d, tag:%d iter:%" PRIuPTR,
               ev.success, ev.type, read_tag, iter_num);
       if (ev.success && read_tag >= 1000) {
         GPR_ASSERT(s_idx == -1); /* only one server must reply */
@@ -643,7 +643,8 @@ static void print_failed_expectations(const int *expected_connection_sequence,
                                       const size_t num_iters) {
   size_t i;
   for (i = 0; i < num_iters; i++) {
-    gpr_log(GPR_ERROR, "FAILURE: Iter (expected, actual): %d (%d, %d)", i,
+    gpr_log(GPR_ERROR,
+            "FAILURE: Iter (expected, actual): %" PRIuPTR " (%d, %d)", i,
             expected_connection_sequence[i % expected_seq_length],
             actual_connection_sequence[i]);
   }
@@ -726,8 +727,8 @@ static void verify_total_carnage_round_robin(
     const int actual = actual_connection_sequence[i];
     const int expected = -1;
     if (actual != expected) {
-      gpr_log(GPR_ERROR, "FAILURE: expected %d, actual %d at iter %d", expected,
-              actual, i);
+      gpr_log(GPR_ERROR, "FAILURE: expected %d, actual %d at iter %" PRIuPTR,
+              expected, actual, i);
       abort();
     }
   }
