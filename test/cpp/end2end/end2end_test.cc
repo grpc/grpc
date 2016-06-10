@@ -1014,6 +1014,16 @@ TEST_P(ProxyEnd2endTest, SimpleRpc) {
   SendRpc(stub_.get(), 1, false);
 }
 
+TEST_P(ProxyEnd2endTest, SimpleRpcWithEmptyMessages) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+
+  ClientContext context;
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_TRUE(s.ok());
+}
+
 TEST_P(ProxyEnd2endTest, MultipleRpcs) {
   ResetStub();
   std::vector<std::thread*> threads;
