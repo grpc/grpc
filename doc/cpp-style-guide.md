@@ -78,4 +78,5 @@ default capture). Other C++ functional features such as
   is that many of these collection implementations assume a copy
   constructor
   to be available.
-  
+- Don't use `std::this_thread` . Use `gpr_sleep_until` for sleeping a thread.
+
