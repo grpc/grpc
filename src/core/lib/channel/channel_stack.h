@@ -60,6 +60,8 @@ typedef struct grpc_call_stack grpc_call_stack;
 typedef struct {
   grpc_channel_stack *channel_stack;
   const grpc_channel_args *channel_args;
+  /** Transport, iff it is known */
+  grpc_transport *optional_transport;
   int is_first;
   int is_last;
 } grpc_channel_element_args;
@@ -198,6 +200,7 @@ void grpc_channel_stack_init(grpc_exec_ctx *exec_ctx, int initial_refs,
                              grpc_iomgr_cb_func destroy, void *destroy_arg,
                              const grpc_channel_filter **filters,
                              size_t filter_count, const grpc_channel_args *args,
+                             grpc_transport *optional_transport,
                              const char *name, grpc_channel_stack *stack);
 /* Destroy a channel stack */
 void grpc_channel_stack_destroy(grpc_exec_ctx *exec_ctx,
