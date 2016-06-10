@@ -54,10 +54,15 @@ ServerBuilder::ServerBuilder()
     : max_message_size_(-1), generic_service_(nullptr) {
   grpc_compression_options_init(&compression_options_);
   gpr_once_init(&once_init_plugin_list, do_plugin_list_init);
-  for (auto it = g_plugin_factory_list->begin(); it != g_plugin_factory_list->end(); it++) {
+  for (auto it = g_plugin_factory_list->begin();
+       it != g_plugin_factory_list->end(); it++) {
     auto& factory = *it;
     std::unique_ptr<ServerBuilderPlugin> plugin = factory();
-    plugins_[plugin->name()] = std::move(plugin);
+    auto name = plugin->name();
+    ServerBuilderPlugin* plugin_ptr = plugin.release();
+    plugins_[name] = nullptr;
+    auto pl = plugins_.find(name);
+    pl->second.reset(plugin_ptr);
   }
 }
 
