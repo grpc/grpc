@@ -246,11 +246,32 @@ class CLanguage(object):
   def makefile_name(self):
     return 'Makefile'
 
+  def _nacl_make_options(self):
+    toolchain_path='/chromium/src/out/pepper_53/toolchain/linux_x86_glibc/x86_64-nacl/bin'
+    return ['CC=%s/gcc' % toolchain_path,
+            'CXX=%s/g++' % toolchain_path,
+            'LD=%s/gcc' % toolchain_path,
+            'LDXX=%s/g++' % toolchain_path]
+
   def _clang_make_options(self):
     return ['CC=clang', 'CXX=clang++', 'LD=clang', 'LDXX=clang++']
 
   def _gcc44_make_options(self):
     return ['CC=gcc-4.4', 'CXX=g++-4.4', 'LD=gcc-4.4', 'LDXX=g++-4.4']
+
+  #def _nacl_make_options(self):
+    # Note: This will need to be updated every six weeks as the current Chrome
+    # release version changes.
+    # https://chromium.googlesource.com/chromium/src/+/master/native_client_sdk/src/BUILDING.rst
+  #  _CHROME_PREFIX = '/chromium/src/out/pepper_52/toolchain/linux_x86_glibc'
+  #  return [
+  #      'CC=%s/x86_64-nacl-gcc' % _CHROME_PREFIX,
+  #      'CXX=%s/x86_64-nacl-g++' % _CHROME_PREFIX,
+  #      'LD=%s/x86_64-nacl-ld' % _CHROME_PREFIX,
+  #      'LDXX=%s/x86_64-nacl-ld' % _CHROME_PREFIX,
+  #      'AR=%s/x86_64-nacl-ar' % _CHROME_PREFIX,
+  #      'STRIP=%s/x86_64-nacl-strip' % _CHROME_PREFIX,
+  #  ]
 
   def _compiler_options(self, use_docker, compiler):
     """Returns docker distro and make options to use for given compiler."""
@@ -267,6 +288,8 @@ class CLanguage(object):
       return ('ubuntu1404', self._clang_make_options())
     elif compiler == 'clang3.6':
       return ('ubuntu1604', self._clang_make_options())
+    elif compiler == 'nacl':
+      return ('nacl', self._nacl_make_options())
     else:
       raise Exception('Compiler %s not supported.' % compiler)
 
@@ -820,7 +843,8 @@ argp.add_argument('--compiler',
                            'clang3.4', 'clang3.6',
                            'vs2010', 'vs2013', 'vs2015',
                            'python2.7', 'python3.4',
-                           'node0.12', 'node4', 'node5'],
+                           'node0.12', 'node4', 'node5',
+                           'nacl'],
                   default='default',
                   help='Selects compiler to use. Allowed values depend on the platform and language.')
 argp.add_argument('--build_only',
@@ -937,6 +961,8 @@ if args.use_docker:
 
 _check_arch_option(args.arch)
 
+# TODO(ahedberg): somehow, override makefile for --compiler=nacl.
+# And write makefile for NaCl toolchain...
 def make_jobspec(cfg, targets, makefile='Makefile'):
   if platform_string() == 'windows':
     extra_args = []
