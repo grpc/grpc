@@ -60,6 +60,8 @@ _CANCELLED = 'cancelled'
 _EMPTY_FLAGS = 0
 _EMPTY_METADATA = cygrpc.Metadata(())
 
+_UNEXPECTED_EXIT_SERVER_GRACE = 1.0
+
 
 def _serialized_request(request_event):
   return request_event.batch_operations[0].received_message.bytes()
@@ -670,17 +672,6 @@ def _serve(state):
             return
 
 
-def _start(state):
-  with state.lock:
-    if state.stage is not _ServerStage.STOPPED:
-      raise ValueError('Cannot start already-started server!')
-    state.server.start()
-    state.stage = _ServerStage.STARTED
-    _request_call(state)
-    thread = threading.Thread(target=_serve, args=(state,))
-    thread.start()
-
-
 def _stop(state, grace):
   with state.lock:
     if state.stage is _ServerStage.STOPPED:
@@ -717,6 +708,24 @@ def _stop(state, grace):
         return shutdown_event
   shutdown_event.wait()
   return shutdown_event
+
+
+def _start(state):
+  with state.lock:
+    if state.stage is not _ServerStage.STOPPED:
+      raise ValueError('Cannot start already-started server!')
+    state.server.start()
+    state.stage = _ServerStage.STARTED
+    _request_call(state)    
+    def cleanup_server(timeout):
+      if timeout is None:
+        _stop(state, _UNEXPECTED_EXIT_SERVER_GRACE).wait()
+      else:
+        _stop(state, timeout).wait()
+
+    thread = _common.CleanupThread(
+        cleanup_server, target=_serve, args=(state,))
+    thread.start()
 
 
 class Server(grpc.Server):
