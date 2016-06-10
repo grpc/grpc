@@ -63,7 +63,8 @@ default capture). Other C++ functional features such as
   `std::unique_lock`, `std::nullptr`, `std::thread` . Instead, use
   `grpc::mutex`, `grpc::lock_guard`, etc., which are gRPC
   implementations of the prominent features of these objects that are
-  not always available. You can use the `std` versions of those in 
+  not always available. You can use the `std` versions of those in  [test]
+  (../../../tree/master/test/cpp)
 - Similarly, in the same directories, do not use `std::chrono` unless
   it is guarded by `#ifndef GRPC_CXX0X_NO_CHRONO` . For platforms that
   lack`std::chrono,` there is a C-language timer called gpr_timespec that can
