@@ -90,6 +90,8 @@ typedef enum {
   GRPC_ERROR_INT_WSA_ERROR,
   /// File descriptor associated with this error
   GRPC_ERROR_INT_FD,
+  /// HTTP status (i.e. 404)
+  GRPC_ERROR_INT_HTTP_STATUS,
 } grpc_error_ints;
 
 typedef enum {
