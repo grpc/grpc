@@ -140,6 +140,7 @@ namespace Grpc.Core
             lock (myLock)
             {
                 GrpcPreconditions.CheckState(!startRequested);
+                GrpcPreconditions.CheckState(!shutdownRequested);
                 startRequested = true;
                 
                 handle.Start();
@@ -203,7 +204,6 @@ namespace Grpc.Core
         {
             lock (myLock)
             {
-                GrpcPreconditions.CheckState(startRequested);
                 GrpcPreconditions.CheckState(!shutdownRequested);
                 shutdownRequested = true;
             }
@@ -215,7 +215,6 @@ namespace Grpc.Core
             {
                 handle.CancelAllCalls();
             }
-
             await ShutdownCompleteOrEnvironmentDeadAsync().ConfigureAwait(false);
 
             DisposeHandle();
