@@ -8,7 +8,7 @@ tools written in other languages to roughly follow the same syntax and flags.
 At this point, the tool needs to be built from source, and it should be moved out to grpc-tools repository as a stand
 alone application once it is mature enough.
 
-## Core funcitonality
+## Core functionality
 
 The command line tool can do the following things:
 
@@ -30,10 +30,10 @@ The command line tool should support the following things:
 
 ## Code location
 
-To use the tool, you need to get the grpc repository and in the grpc directory call
+To use the tool, you need to get the grpc repository and in the grpc directory execute
 
 ```
-make grpc_cli
+$ make grpc_cli
 ```
 
 The main file can be found at
@@ -46,7 +46,7 @@ https://github.com/grpc/grpc/blob/master/test/cpp/util/grpc_cli.cc
 Send a rpc to a helloworld server at `localhost:50051`:
 
 ```
-bins/opt/grpc_cli call localhost:50051 SayHello examples/protos/helloworld.proto \
+$ bins/opt/grpc_cli call localhost:50051 SayHello examples/protos/helloworld.proto \
     "name: 'world'"  --enable_ssl=false
 ```
 
@@ -71,7 +71,7 @@ For using gRPC with protocols other than probobuf, you will need the exact metho
 and a file containing the raw bytes to be sent on the wire
 
 ```
-bins/opt/grpc_cli call localhost:50051 /helloworld.Greeter/SayHello --input_binary_file=input.bin \
+$ bins/opt/grpc_cli call localhost:50051 /helloworld.Greeter/SayHello --input_binary_file=input.bin \
     --output_binary_file=output.bin
 ```
 On success, you will need to read or decode the response from the `output.bin` file.
