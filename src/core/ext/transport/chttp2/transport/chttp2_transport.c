@@ -957,7 +957,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
     if (metadata_size > metadata_peer_limit) {
       gpr_log(GPR_DEBUG,
               "to-be-sent initial metadata size exceeds peer limit "
-              "(%lu vs. %lu)",
+              "(%" PRIuPTR " vs. %" PRIuPTR ")",
               metadata_size, metadata_peer_limit);
       cancel_from_api(exec_ctx, transport_global, stream_global,
                       GRPC_STATUS_RESOURCE_EXHAUSTED);
@@ -1012,7 +1012,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
     if (metadata_size > metadata_peer_limit) {
       gpr_log(GPR_DEBUG,
               "to-be-sent trailing metadata size exceeds peer limit "
-              "(%lu vs. %lu)",
+              "(%" PRIuPTR " vs. %" PRIuPTR ")",
               metadata_size, metadata_peer_limit);
       cancel_from_api(exec_ctx, transport_global, stream_global,
                       GRPC_STATUS_RESOURCE_EXHAUSTED);
