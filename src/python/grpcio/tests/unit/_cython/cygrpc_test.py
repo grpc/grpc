@@ -37,7 +37,7 @@ from tests.unit import test_common
 from tests.unit import resources
 
 
-_SSL_HOST_OVERRIDE = 'foo.test.google.fr'
+_SSL_HOST_OVERRIDE = b'foo.test.google.fr'
 _CALL_CREDENTIALS_METADATA_KEY = 'call-creds-key'
 _CALL_CREDENTIALS_METADATA_VALUE = 'call-creds-value'
 _EMPTY_FLAGS = 0

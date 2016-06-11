@@ -55,6 +55,7 @@ cdef class Call:
   def cancel(
       self, grpc_status_code error_code=GRPC_STATUS__DO_NOT_USE,
       details=None):
+    details = str_to_bytes(details)
     if not self.is_valid:
       raise ValueError("invalid call object cannot be used from Python")
     if (details is None) != (error_code == GRPC_STATUS__DO_NOT_USE):
@@ -63,12 +64,6 @@ cdef class Call:
     cdef grpc_call_error result
     cdef char *c_details = NULL
     if error_code != GRPC_STATUS__DO_NOT_USE:
-      if isinstance(details, bytes):
-        pass
-      elif isinstance(details, basestring):
-        details = details.encode()
-      else:
-        raise TypeError("expected details to be str or bytes")
       self.references.append(details)
       c_details = details
       with nogil:

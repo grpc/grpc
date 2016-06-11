@@ -387,7 +387,7 @@ class PythonLanguage(object):
   def configure(self, config, args):
     self.config = config
     self.args = args
-    self._tox_env = self._get_tox_env(self.args.compiler)
+    self._tox_envs = self._get_tox_envs(self.args.compiler)
 
   def test_specs(self):
     # load list of known test suites
@@ -399,19 +399,21 @@ class PythonLanguage(object):
       os.path.abspath('src/python/grpcio_health_checking'))
     if self.config.build_config != 'gcov':
       return [self.config.job_spec(
-          ['tools/run_tests/run_python.sh', self._tox_env],
+          ['tools/run_tests/run_python.sh', tox_env],
           None,
           environ=dict(environment.items() +
                        [('GRPC_PYTHON_TESTRUNNER_FILTER', suite_name)]),
-          shortname='py.test.%s' % suite_name,
+          shortname='%s.test.%s' % (tox_env, suite_name),
           timeout_seconds=5*60)
-          for suite_name in tests_json]
+          for suite_name in tests_json
+          for tox_env in self._tox_envs]
     else:
-      return [self.config.job_spec(['tools/run_tests/run_python.sh'],
+      return [self.config.job_spec(['tools/run_tests/run_python.sh', tox_env],
                                    None,
                                    environ=environment,
-                                   shortname='py.test.coverage',
-                                   timeout_seconds=15*60)]
+                                   shortname='%s.test.coverage' % tox_env,
+                                   timeout_seconds=15*60)
+                                   for tox_env in self._tox_envs]
 
 
   def pre_build_steps(self):
@@ -424,7 +426,8 @@ class PythonLanguage(object):
     return []
 
   def build_steps(self):
-    return [['tools/run_tests/build_python.sh', self._tox_env]]
+    return [['tools/run_tests/build_python.sh', tox_env] 
+            for tox_env in self._tox_envs]
 
   def post_tests_steps(self):
     return []
@@ -435,12 +438,14 @@ class PythonLanguage(object):
   def dockerfile_dir(self):
     return 'tools/dockerfile/test/python_jessie_%s' % _docker_arch_suffix(self.args.arch)
 
-  def _get_tox_env(self, compiler):
+  def _get_tox_envs(self, compiler):
     """Returns name of tox environment based on selected compiler."""
-    if compiler == 'python2.7' or compiler == 'default':
-      return 'py27'
+    if compiler == 'default':
+      return ('py27', 'py34')
+    elif compiler == 'python2.7':
+      return ('py27',)
     elif compiler == 'python3.4':
-      return 'py34'
+      return ('py34',)
     else:
       raise Exception('Compiler %s not supported.' % compiler)
 
