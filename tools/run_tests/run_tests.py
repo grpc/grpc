@@ -246,11 +246,17 @@ class CLanguage(object):
   def makefile_name(self):
     return 'Makefile'
 
-  def _clang_make_options(self):
-    return ['CC=clang', 'CXX=clang++', 'LD=clang', 'LDXX=clang++']
+  def _clang_make_options(self, version_suffix=''):
+    return ['CC=clang%s' % version_suffix,
+            'CXX=clang++%s' % version_suffix,
+            'LD=clang%s' % version_suffix,
+            'LDXX=clang++%s' % version_suffix]
 
-  def _gcc44_make_options(self):
-    return ['CC=gcc-4.4', 'CXX=g++-4.4', 'LD=gcc-4.4', 'LDXX=g++-4.4']
+  def _gcc_make_options(self, version_suffix):
+    return ['CC=gcc%s' % version_suffix,
+            'CXX=g++%s' % version_suffix,
+            'LD=gcc%s' % version_suffix,
+            'LDXX=g++%s' % version_suffix]
 
   def _compiler_options(self, use_docker, compiler):
     """Returns docker distro and make options to use for given compiler."""
@@ -260,13 +266,20 @@ class CLanguage(object):
     if compiler == 'gcc4.9' or compiler == 'default':
       return ('jessie', [])
     elif compiler == 'gcc4.4':
-      return ('wheezy', self._gcc44_make_options())
+      return ('wheezy', self._gcc_make_options(version_suffix='-4.4'))
+    elif compiler == 'gcc4.6':
+      return ('wheezy', self._gcc_make_options(version_suffix='-4.6'))
     elif compiler == 'gcc5.3':
       return ('ubuntu1604', [])
     elif compiler == 'clang3.4':
+      # on ubuntu1404, clang-3.4 alias doesn't exist, just use 'clang'
       return ('ubuntu1404', self._clang_make_options())
+    elif compiler == 'clang3.5':
+      return ('jessie', self._clang_make_options(version_suffix='-3.5'))
     elif compiler == 'clang3.6':
-      return ('ubuntu1604', self._clang_make_options())
+      return ('ubuntu1604', self._clang_make_options(version_suffix='-3.6'))
+    elif compiler == 'clang3.7':
+      return ('ubuntu1604', self._clang_make_options(version_suffix='-3.7'))
     else:
       raise Exception('Compiler %s not supported.' % compiler)
 
@@ -816,8 +829,8 @@ argp.add_argument('--arch',
                   help='Selects architecture to target. For some platforms "default" is the only supported choice.')
 argp.add_argument('--compiler',
                   choices=['default',
-                           'gcc4.4', 'gcc4.9', 'gcc5.3',
-                           'clang3.4', 'clang3.6',
+                           'gcc4.4', 'gcc4.6', 'gcc4.9', 'gcc5.3',
+                           'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
                            'vs2010', 'vs2013', 'vs2015',
                            'python2.7', 'python3.4',
                            'node0.12', 'node4', 'node5'],
