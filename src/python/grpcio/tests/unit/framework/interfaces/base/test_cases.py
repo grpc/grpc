@@ -29,6 +29,8 @@
 
 """Tests of the base interface of RPC Framework."""
 
+from __future__ import division
+
 import logging
 import random
 import threading
@@ -54,13 +56,13 @@ class _Serialization(test_interfaces.Serialization):
     return request + request
 
   def deserialize_request(self, serialized_request):
-    return serialized_request[:len(serialized_request) / 2]
+    return serialized_request[:len(serialized_request) // 2]
 
   def serialize_response(self, response):
     return response * 3
 
   def deserialize_response(self, serialized_response):
-    return serialized_response[2 * len(serialized_response) / 3:]
+    return serialized_response[2 * len(serialized_response) // 3:]
 
 
 def _advance(quadruples, operator, controller):

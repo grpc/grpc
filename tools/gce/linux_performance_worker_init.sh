@@ -69,6 +69,10 @@ sudo apt-get install -y \
   python-pip \
   python-setuptools \
   python-yaml \
+  python3-dev \
+  python3-pip \
+  python3-setuptools \
+  python3-yaml \
   telnet \
   unzip \
   wget \

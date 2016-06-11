@@ -31,12 +31,9 @@
 
 import abc
 import time
-try:
-  import Queue as queue  # Python 2.x
-except ImportError:
-  import queue  # Python 3
 
 from concurrent import futures
+from six.moves import queue
 
 from grpc.beta import implementations
 from grpc.framework.interfaces.face import face

@@ -33,6 +33,7 @@ import collections
 import threading
 
 import grpc
+from grpc import _common
 from grpc.beta import interfaces
 from grpc.framework.common import cardinality
 from grpc.framework.common import style
@@ -287,36 +288,43 @@ def _simple_method_handler(
           None, _adapt_stream_stream_event(implementation.stream_stream_event))
 
 
+def _flatten_method_pair_map(method_pair_map):
+  method_pair_map = method_pair_map or {}
+  flat_map = {}
+  for method_pair in method_pair_map:
+    method = _common.fully_qualified_method(method_pair[0], method_pair[1])
+    flat_map[method] = method_pair_map[method_pair]
+  return flat_map
+
+
 class _GenericRpcHandler(grpc.GenericRpcHandler):
 
   def __init__(
       self, method_implementations, multi_method_implementation,
       request_deserializers, response_serializers):
-    self._method_implementations = method_implementations
+    self._method_implementations = _flatten_method_pair_map(
+        method_implementations)
+    self._request_deserializers = _flatten_method_pair_map(
+        request_deserializers)
+    self._response_serializers = _flatten_method_pair_map(
+        response_serializers)
     self._multi_method_implementation = multi_method_implementation
-    self._request_deserializers = request_deserializers or {}
-    self._response_serializers = response_serializers or {}
 
   def service(self, handler_call_details):
-    try:
-      group_name, method_name = handler_call_details.method.split(b'/')[1:3]
-    except ValueError:
+    method_implementation = self._method_implementations.get(
+        handler_call_details.method)
+    if method_implementation is not None:
+      return _simple_method_handler(
+          method_implementation,
+          self._request_deserializers.get(handler_call_details.method),
+          self._response_serializers.get(handler_call_details.method))
+    elif self._multi_method_implementation is None:
       return None
     else:
-      method_implementation = self._method_implementations.get(
-          (group_name, method_name,))
-      if method_implementation is not None:
-        return _simple_method_handler(
-            method_implementation,
-            self._request_deserializers.get((group_name, method_name,)),
-            self._response_serializers.get((group_name, method_name,)))
-      elif self._multi_method_implementation is None:
+      try:
+        return None  #TODO(nathaniel): call the multimethod.
+      except face.NoSuchMethodError:
         return None
-      else:
-        try:
-          return None  #TODO(nathaniel): call the multimethod.
-        except face.NoSuchMethodError:
-          return None
 
 
 class _Server(interfaces.Server):
