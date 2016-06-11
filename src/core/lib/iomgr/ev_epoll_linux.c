@@ -1127,20 +1127,7 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
   /* Update the pollset->polling_island */
   pollset->polling_island = pi;
 
-#ifdef GRPC_EPOLL_DEBUG
-  if (pollset->polling_island->fd_cnt == 0) {
-    gpr_log(GPR_DEBUG, "pollset_work_and_unlock: epoll_fd: %d, No other fds",
-            epoll_fd);
-  }
-  for (size_t i = 0; i < pollset->polling_island->fd_cnt; i++) {
-    gpr_log(GPR_DEBUG,
-            "pollset_work_and_unlock: epoll_fd: %d, fd_count: %d, fd[%d]: %d",
-            epoll_fd, pollset->polling_island->fd_cnt, i,
-            pollset->polling_island->fds[i]->fd);
-  }
-#endif
-  gpr_mu_unlock(&pollset->polling_island->mu);
-
+  polling_island_unref_and_unlock(pollset->polling_island, 0); /* Keep the ref*/
   gpr_mu_unlock(&pollset->pi_mu);
   gpr_mu_unlock(&pollset->mu);
 
@@ -1190,10 +1177,7 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
    * gets updated whenever the underlying polling island is merged with another
    * island and while we are doing epoll_wait() above, the polling island may
    * have been merged */
-
-  /* TODO (sreek) - Change the ref count on polling island to gpr_atm so that
-   * we do not have to do this here */
-  gpr_mu_lock(&pi->mu);
+  polling_island_update_and_lock(pi, 1, 0); /* No new ref added */
   polling_island_unref_and_unlock(pi, 1);
 
   GPR_TIMER_END("pollset_work_and_unlock", 0);
