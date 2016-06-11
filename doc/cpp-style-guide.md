@@ -79,4 +79,7 @@ default capture). Other C++ functional features such as
   constructor
   to be available.
 - Don't use `std::this_thread` . Use `gpr_sleep_until` for sleeping a thread.
-
+- [Some adjacent character combinations cause problems]
+  (https://en.wikipedia.org/wiki/Digraphs_and_trigraphs#C). If declaring a
+  template against some class relative to the global namespace,
+  `<::name` will be non-portable. Separate the `<` from the `:` and use `< ::name`.
