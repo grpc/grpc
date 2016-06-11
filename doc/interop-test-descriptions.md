@@ -68,14 +68,12 @@ control (even if compression is enabled on the channel).
 
 Server features:
 * [UnaryCall][]
-* [Compressable Payload][]
 
 Procedure:
  1. Client calls UnaryCall with:
 
     ```
     {
-      response_type: COMPRESSABLE
       response_size: 314159
       payload:{
         body: 271828 bytes of zeros
@@ -85,29 +83,27 @@ Procedure:
 
 Client asserts:
 * call was successful
-* response payload type is COMPRESSABLE
 * response payload body is 314159 bytes in size
 * clients are free to assert that the response payload body contents are zero
   and comparing the entire response message against a golden response
 
 ### client_compressed_unary
 
-This test verifies the client can compress unary messages. It sends two
-unary requests with their payloads marked as COMPRESSABLE. One request will be
-sent compressed and its `expect_compressed_request` set to true. Conversely for
-the uncompressed case.
+This test verifies the client can compress unary messages. It sends an initial
+inconsistent request to verify whether the server supports the
+[CompressedRequest][] feature. If it does, it should catch the inconsistency and
+fail the call with an `INVALID_ARGUMENT` status. If the feature is supported, it
+proceeds with two unary calls, for compressed and uncompressed payloads.
 
 Server features:
 * [UnaryCall][]
-* [Compressed Request][]
+* [CompressedRequest][]
 
 Procedure:
- 1. Client calls UnaryCall with:
-
+ 1. Client calls UnaryCall with the feature probe, an **uncompressed** message:
     ```
     {
-      expect_compressed_request: true
-      response_type: COMPRESSABLE
+      expect_compressed: false
       response_size: 314159
       payload:{
         body: 271828 bytes of zeros
@@ -115,10 +111,23 @@ Procedure:
     }
     ```
 
+ 1. Client calls UnaryCall with the *compressed* message:
+
     ```
     {
-      expect_compressed_request: false
-      response_type: COMPRESSABLE
+      expect_compressed: true
+      response_size: 314159
+      payload:{
+        body: 271828 bytes of zeros
+      }
+    }
+    ```
+
+ 1. Client calls UnaryCall with the *uncompressed* message:
+
+    ```
+    {
+      expect_compressed: false
       response_size: 314159
       payload:{
         body: 271828 bytes of zeros
@@ -127,22 +136,18 @@ Procedure:
     ```
 
     Client asserts:
-    * call was successful
-    * response payload type is COMPRESSABLE
-    * if `request_compressed_response` is false, the response MUST NOT have the
-      compressed message flag set.
-    * if `request_compressed_response` is true, the response MUST have the
-      compressed message flag set.
-    * response payload body is 314159 bytes in size
-    * clients are free to assert that the response payload body contents are
-      zero and comparing the entire response message against a golden response
+    * First call was unsuccessful with `INVALID_ARGUMENT` status. Subsequent
+      calls were successful.
+    * Response payload body is 314159 bytes in size.
+    * Clients are free to assert that the response payload body contents are
+      zero and comparing the entire response message against a golden response.
 
 
 ### server_compressed_unary
 
 This test verifies the server can compress unary messages. It sends two unary
-requests for a COMPRESSABLE payload type, expecting the server response to be
-compressed or not according to the `request_compressed_response` boolean.
+requests, expecting the server response to be
+compressed or not according to the `response_compressed` boolean.
 
 Whether compression was actually performed is determined by the compression bit
 in the response's message flags.
@@ -150,16 +155,14 @@ in the response's message flags.
 
 Server features:
 * [UnaryCall][]
-* [Compressable Payload][]
-* [Compressed Response][]
+* [CompressedResponse][]
 
 Procedure:
  1. Client calls UnaryCall with:
 
     ```
     {
-      request_compressed_response: true
-      response_type: COMPRESSABLE
+      response_compressed: true
       response_size: 314159
       payload:{
         body: 271828 bytes of zeros
@@ -169,8 +172,7 @@ Procedure:
 
     ```
     {
-      request_compressed_response: false
-      response_type: COMPRESSABLE
+      response_compressed: false
       response_size: 314159
       payload:{
         body: 271828 bytes of zeros
@@ -179,10 +181,9 @@ Procedure:
     ```
     Client asserts:
     * call was successful
-    * response payload type is COMPRESSABLE
-    * when `request_compressed_response` is true, the response MUST have the
+    * when `response_compressed` is true, the response MUST have the
       compressed message flag set.
-    * when `request_compressed_response` is false, the response MUST NOT have
+    * when `response_compressed` is false, the response MUST NOT have
       the compressed message flag set.
     * response payload body is 314159 bytes in size
     * clients are free to assert that the response payload body contents are
@@ -195,7 +196,6 @@ This test verifies that client-only streaming succeeds.
 
 Server features:
 * [StreamingInputCall][]
-* [Compressable Payload][]
 
 Procedure:
  1. Client calls StreamingInputCall
@@ -245,20 +245,70 @@ Client asserts:
 * call was successful
 * response aggregated_payload_size is 74922
 
+
+### client_compressed_streaming
+
+This test verifies the client can compress streaming messages. It sends an
+initial inconsistent streaming call comprised of a single message to verify if
+the server implements the [CompressedRequest][] feature. If it does, the client
+will then send another streaming call, comprised of two messages: the first one
+compressed with `expect_compressed` true; the second one uncompressed with
+`expected_compressed` false.
+
+Procedure:
+ 1. Client calls StreamingInputCall
+ 1. Client sends the following feature-probing *uncompressed* message
+
+    ```
+    {
+      expect_compressed: true
+      payload:{
+        body: 27182 bytes of zeros
+      }
+    }
+    ```
+    If the call fails with `INVALID_ARGUMENT`, the test fails. Otherwise, we
+    continue.
+
+ 1. Client then sends the *compressed* message
+
+    ```
+    {
+      expect_compressed: true
+      payload:{
+        body: 27182 bytes of zeros
+      }
+    }
+    ```
+ 1. And finally, the *uncompressed* message:
+    ```
+    {
+      expect_compressed: false
+      payload:{
+        body: 45904 bytes of zeros
+      }
+    }
+    ```
+ 1. Client half-closes
+
+ Client asserts:
+ * First call was unsuccessful with `INVALID_ARGUMENT` status. Subsequent
+   calls were successful.
+ * Response aggregated_payload_size is 73086.
+
+
 ### server_streaming
 
 This test verifies that server-only streaming succeeds.
 
 Server features:
 * [StreamingOutputCall][]
-* [Compressable Payload][]
 
 Procedure:
  1. Client calls StreamingOutputCall with:
 
     ```
     {
-      response_type:COMPRESSABLE
       response_parameters:{
         size: 31415
       }
@@ -277,7 +327,6 @@ Procedure:
 Client asserts:
 * call was successful
 * exactly four responses
-* response payloads are COMPRESSABLE
 * response payload bodies are sized (in order): 31415, 9, 2653, 58979
 * clients are free to assert that the response payload body contents are zero
   and comparing the entire response messages against golden responses
@@ -288,8 +337,7 @@ This test verifies that the server can compress streaming messages.
 
 Server features:
 * [StreamingOutputCall][]
-* [Compressable Payload][]
-* [Compressed Response][]
+* [CompressedResponse][]
 
 
 Procedure:
@@ -297,8 +345,7 @@ Procedure:
 
     ```
     {
-      request_compressed_response: true
-      response_type:COMPRESSABLE
+      response_compressed: true
       response_parameters:{
         size: 31415
       }
@@ -310,8 +357,7 @@ Procedure:
 
     ```
     {
-      request_compressed_response: false
-      response_type:COMPRESSABLE
+      response_compressed: false
       response_parameters:{
         size: 31415
       }
@@ -324,53 +370,13 @@ Procedure:
     Client asserts:
     * call was successful
     * exactly two responses
-    * response payloads are COMPRESSABLE
-    * when `request_compressed_response` is false, the response's messages MUST
+    * when `response_compressed` is false, the response's messages MUST
       NOT have the compressed message flag set.
-    * when `request_compressed_response` is true, the response's messages MUST
+    * when `response_compressed` is true, the response's messages MUST
       have the compressed message flag set.
     * response payload bodies are sized (in order): 31415, 58979
     * clients are free to assert that the response payload body contents are
       zero and comparing the entire response messages against golden responses
-
-
-### client_compressed_streaming
-
-This test verifies that the client can compress streaming messages.
-
-Server features:
-* [StreamingInputCall][]
-* [Compressed Request][]
-
-Procedure:
- 1. Client calls StreamingInputCall
- 1. Client sends:
-
-    ```
-    {
-      expect_compressed_request: true
-      payload:{
-        body: 27182 bytes of zeros
-      }
-    }
-    ```
-
- 1. Client then sends:
-
-    ```
-    {
-      expect_compressed_request: false
-      payload:{
-        body: 45904 bytes of zeros
-      }
-    }
-    ```
-
- 6. Client half-closes
-
- Client asserts:
- * call was successful
- * response aggregated_payload_size is 73086
 
 
 ### ping_pong
@@ -379,14 +385,12 @@ This test verifies that full duplex bidi is supported.
 
 Server features:
 * [FullDuplexCall][]
-* [Compressable Payload][]
 
 Procedure:
  1. Client calls FullDuplexCall with:
 
     ```
     {
-      response_type: COMPRESSABLE
       response_parameters:{
         size: 31415
       }
@@ -400,7 +404,6 @@ Procedure:
 
     ```
     {
-      response_type: COMPRESSABLE
       response_parameters:{
         size: 9
       }
@@ -414,7 +417,6 @@ Procedure:
 
     ```
     {
-      response_type: COMPRESSABLE
       response_parameters:{
         size: 2653
       }
@@ -428,7 +430,6 @@ Procedure:
 
     ```
     {
-      response_type: COMPRESSABLE
       response_parameters:{
         size: 58979
       }
@@ -443,7 +444,6 @@ Procedure:
 Client asserts:
 * call was successful
 * exactly four responses
-* response payloads are COMPRESSABLE
 * response payload bodies are sized (in order): 31415, 9, 2653, 58979
 * clients are free to assert that the response payload body contents are zero
   and comparing the entire response messages against golden responses
@@ -479,7 +479,6 @@ be passed in as `--oauth_scope`.
 
 Server features:
 * [UnaryCall][]
-* [Compressable Payload][]
 * [Echo Authenticated Username][]
 * [Echo OAuth Scope][]
 
@@ -489,7 +488,6 @@ Procedure:
 
     ```
     {
-      response_type: COMPRESSABLE
       response_size: 314159
       payload:{
         body: 271828 bytes of zeros
@@ -523,7 +521,6 @@ variable GOOGLE_APPLICATION_CREDENTIALS.
 
 Server features:
 * [UnaryCall][]
-* [Compressable Payload][]
 * [Echo Authenticated Username][]
 * [Echo OAuth Scope][]
 
@@ -533,7 +530,6 @@ Procedure:
 
     ```
     {
-      response_type: COMPRESSABLE
       response_size: 314159
       payload:{
         body: 271828 bytes of zeros
@@ -578,7 +574,6 @@ should be passed as the `--oauth_scope`.
 
 Server features:
 * [UnaryCall][]
-* [Compressable Payload][]
 * [Echo Authenticated Username][]
 * [Echo OAuth Scope][]
 
@@ -621,7 +616,6 @@ against grpc-test.sandbox.googleapis.com, oauth scope
 
 Server features:
 * [UnaryCall][]
-* [Compressable Payload][]
 * [Echo Authenticated Username][]
 * [Echo OAuth Scope][]
 
@@ -652,7 +646,6 @@ by the server.
 Server features:
 * [UnaryCall][]
 * [FullDuplexCall][]
-* [Compressable Payload][]
 * [Echo Metadata][]
 
 Procedure:
@@ -667,7 +660,6 @@ Procedure:
 
     ```
     {
-      response_type: COMPRESSABLE
       response_size: 314159
       payload:{
         body: 271828 bytes of zeros
@@ -686,7 +678,6 @@ Procedure:
 
     ```
     {
-      response_type: COMPRESSABLE
       response_size: 314159
       payload:{
         body: 271828 bytes of zeros
@@ -792,14 +783,12 @@ from the server.
 
 Server features:
 * [FullDuplexCall][]
-* [Compressable Payload][]
 
 Procedure:
  1. Client starts FullDuplexCall with
 
     ```
     {
-      response_type: COMPRESSABLE
       response_parameters:{
         size: 31415
       }
@@ -946,15 +935,17 @@ for the `SimpleRequest.response_type`. If the server does not support the
 ### CompressedResponse
 [CompressedResponse]: #compressedresponse
 
-When the client sets `SimpleRequest.request_compressed_response` to true, the
-response is sent back compressed.
+When the client sets `response_compressed` to true, the server's response is
+sent back compressed. Note that `response_compressed` is present on both
+`SimpleRequest` (unary) and `StreamingOutputCallRequest` (streaming).
 
 ### CompressedRequest
 [CompressedRequest]: #compressedrequest
 
-When the client sets `SimpleRequest.expect_compressed_request ` to true, the
-server expects the client request to be compressed. If it's not, it fails
-the RPC with `INVALID_ARGUMENT`.
+When the client sets `expect_compressed` to true, the server expects the client
+request to be compressed. If it's not, it fails the RPC with `INVALID_ARGUMENT`.
+Note that `response_compressed` is present on both `SimpleRequest` (unary) and
+`StreamingOutputCallRequest` (streaming).
 
 ### StreamingInputCall
 [StreamingInputCall]: #streaminginputcall
@@ -981,13 +972,6 @@ StreamingOutputCallRequest. Each StreamingOutputCallResponses should have a
 payload body of size ResponseParameters.size bytes, as specified by its
 respective ResponseParameters. After receiving half close and sending all
 responses, it closes with OK.
-
-### Compressable Payload
-[Compressable Payload]: #compressable-payload
-
-When the client requests COMPRESSABLE payload, the response includes a payload
-of the size requested containing all zeros and the payload type is
-COMPRESSABLE.
 
 ### Echo Status
 [Echo Status]: #echo-status
