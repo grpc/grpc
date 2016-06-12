@@ -37,6 +37,7 @@ cdef extern from "grpc/_cython/loader.h":
   ctypedef long int64_t
 
   int pygrpc_load_core(char*)
+  int pygrpc_initialize_core()
 
   void *gpr_malloc(size_t size) nogil
   void gpr_free(void *ptr) nogil
