@@ -53,11 +53,8 @@ static ID id_at;
 /* id_insecure_server is used to indicate that a server is insecure */
 static VALUE id_insecure_server;
 
-/* grpc_rb_server wraps a grpc_server.  It provides a peer ruby object,
-  'mark' to minimize copying when a server is created from ruby. */
+/* grpc_rb_server wraps a grpc_server. */
 typedef struct grpc_rb_server {
-  /* Holder of ruby objects involved in constructing the server */
-  VALUE mark;
   /* The actual server */
   grpc_server *wrapped;
   grpc_completion_queue *queue;
@@ -98,21 +95,9 @@ static void grpc_rb_server_free(void *p) {
   xfree(p);
 }
 
-/* Protects the mark object from GC */
-static void grpc_rb_server_mark(void *p) {
-  grpc_rb_server *server = NULL;
-  if (p == NULL) {
-    return;
-  }
-  server = (grpc_rb_server *)p;
-  if (server->mark != Qnil) {
-    rb_gc_mark(server->mark);
-  }
-}
-
 static const rb_data_type_t grpc_rb_server_data_type = {
     "grpc_server",
-    {grpc_rb_server_mark, grpc_rb_server_free, GRPC_RB_MEMSIZE_UNAVAILABLE,
+    {GRPC_RB_GC_NOT_MARKED, grpc_rb_server_free, GRPC_RB_MEMSIZE_UNAVAILABLE,
      {NULL, NULL}},
     NULL,
     NULL,
@@ -129,7 +114,6 @@ static const rb_data_type_t grpc_rb_server_data_type = {
 static VALUE grpc_rb_server_alloc(VALUE cls) {
   grpc_rb_server *wrapper = ALLOC(grpc_rb_server);
   wrapper->wrapped = NULL;
-  wrapper->mark = Qnil;
   return TypedData_Wrap_Struct(cls, &grpc_rb_server_data_type, wrapper);
 }
 

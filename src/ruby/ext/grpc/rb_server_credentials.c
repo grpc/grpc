@@ -46,8 +46,8 @@
 static VALUE grpc_rb_cServerCredentials = Qnil;
 
 /* grpc_rb_server_credentials wraps a grpc_server_credentials.  It provides a
-   peer ruby object, 'mark' to minimize copying when a server credential is
-   created from ruby. */
+   peer ruby object, 'mark' to hold references to objects involved in
+   constructing the server credentials. */
 typedef struct grpc_rb_server_credentials {
   /* Holder of ruby objects involved in constructing the server credentials */
   VALUE mark;
