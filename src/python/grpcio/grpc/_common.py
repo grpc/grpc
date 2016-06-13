@@ -97,3 +97,16 @@ def serialize(message, serializer):
 def deserialize(serialized_message, deserializer):
   return _transform(serialized_message, deserializer,
                     'Exception deserializing message!')
+
+
+def _encode(s):
+  if isinstance(s, bytes):
+    return s
+  else:
+    return s.encode('ascii')
+
+
+def fully_qualified_method(group, method):
+  group = _encode(group)
+  method = _encode(method)
+  return b'/' + group + b'/' + method

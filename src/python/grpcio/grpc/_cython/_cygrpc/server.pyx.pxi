@@ -103,12 +103,7 @@ cdef class Server:
 
   def add_http2_port(self, address,
                      ServerCredentials server_credentials=None):
-    if isinstance(address, bytes):
-      pass
-    elif isinstance(address, basestring):
-      address = address.encode()
-    else:
-      raise TypeError("expected address to be a str or bytes")
+    address = str_to_bytes(address)
     self.references.append(address)
     cdef int result
     cdef char *address_c_string = address

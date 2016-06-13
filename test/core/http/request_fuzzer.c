@@ -31,12 +31,16 @@
  *
  */
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/http/parser.h"
+
+bool squelch = true;
+bool leak_check = true;
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_http_parser parser;
