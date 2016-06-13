@@ -1059,7 +1059,7 @@ def insecure_channel(target, options=None):
     A Channel to the target through which RPCs may be conducted.
   """
   from grpc import _channel
-  return _channel.Channel(target, None, options)
+  return _channel.Channel(target, options, None)
 
 
 def secure_channel(target, credentials, options=None):
@@ -1075,7 +1075,7 @@ def secure_channel(target, credentials, options=None):
     A Channel to the target through which RPCs may be conducted.
   """
   from grpc import _channel
-  return _channel.Channel(target, credentials, options)
+  return _channel.Channel(target, options, credentials)
 
 
 def server(generic_rpc_handlers, thread_pool, options=None):
