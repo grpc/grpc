@@ -94,7 +94,6 @@ typedef struct grpc_rb_call {
 } grpc_rb_call;
 
 static void destroy_call(grpc_rb_call *call) {
-  call = (grpc_rb_call *)p;
   grpc_call_destroy(call->wrapped);
   grpc_rb_completion_queue_destroy(call->queue);
 }
@@ -783,8 +782,11 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE ops_hash) {
              grpc_call_error_detail_of(err), err);
     return Qnil;
   }
-  ev = grpc_rb_completion_queue_pluck(call->queue, tag, gpr_inf_future, NULL);
-
+  ev = rb_completion_queue_pluck(call->queue, tag,
+                                 gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  if (!ev.success) {
+    rb_raise(grpc_rb_eCallError, "call#run_batch failed somehow");
+  }
   /* Build and return the BatchResult struct result,
      if there is an error, it's reflected in the status */
   result = grpc_run_batch_stack_build_result(&st);
@@ -943,10 +945,11 @@ grpc_call *grpc_rb_get_wrapped_call(VALUE v) {
 
 /* Obtains the wrapped object for a given call */
 VALUE grpc_rb_wrap_call(grpc_call *c, grpc_completion_queue *q) {
+  grpc_rb_call *wrapper;
   if (c == NULL || q == NULL) {
     return Qnil;
   }
-  grpc_rb_call *wrapper = ALLOC(grpc_rb_call);
+  wrapper = ALLOC(grpc_rb_call);
   wrapper->wrapped = c;
   wrapper->queue = q;
   return TypedData_Wrap_Struct(grpc_rb_cCall, &grpc_call_data_type, wrapper);

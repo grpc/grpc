@@ -52,23 +52,18 @@ module GRPC
     # deadline is the absolute deadline for the call.
     #
     # @param call [Call] the call used by the ActiveCall
-    # @param q [CompletionQueue] the completion queue used to accept
-    #          the call
     # @param marshal [Function] f(obj)->string that marshal requests
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
-    # @param metadata_tag [Object] tag object used to collect metadata
-    def initialize(call, q, marshal, unmarshal, metadata_tag: nil)
+    # @param metadata_received [true|false] indicates if metadata has already
+    #     been received. Should always be true for server calls
+    def initialize(call, marshal, unmarshal, metadata_received: false)
       fail(ArgumentError, 'not a call') unless call.is_a? Core::Call
-      unless q.is_a? Core::CompletionQueue
-        fail(ArgumentError, 'not a CompletionQueue')
-      end
       @call = call
-      @cq = q
       @marshal = marshal
       @op_notifier = nil  # signals completion on clients
       @readq = Queue.new
       @unmarshal = unmarshal
-      @metadata_tag = metadata_tag
+      @metadata_received = metadata_received
       @reads_complete = false
       @writes_complete = false
       @complete = false
@@ -124,7 +119,6 @@ module GRPC
       @done_mutex.synchronize do
         return unless @reads_complete && @writes_complete && !@complete
         @call.close
-        @cq.close
         @complete = true
       end
     end
@@ -132,11 +126,11 @@ module GRPC
     # performs a read using @call.run_batch, ensures metadata is set up
     def read_using_run_batch
       ops = { RECV_MESSAGE => nil }
-      ops[RECV_INITIAL_METADATA] = nil unless @metadata_tag.nil?
-      batch_result = @call.run_batch(@cq, self, INFINITE_FUTURE, ops)
-      unless @metadata_tag.nil?
+      ops[RECV_INITIAL_METADATA] = nil unless @metadata_received
+      batch_result = @call.run_batch(ops)
+      unless @metadata_received
         @call.metadata = batch_result.metadata
-        @metadata_tag = nil
+        @metadata_received = true
       end
       batch_result
     end
@@ -161,20 +155,18 @@ module GRPC
 
     def write_loop(requests, is_client: true)
       GRPC.logger.debug('bidi-write-loop: starting')
-      write_tag = Object.new
       count = 0
       requests.each do |req|
         GRPC.logger.debug("bidi-write-loop: #{count}")
         count += 1
         payload = @marshal.call(req)
-        @call.run_batch(@cq, write_tag, INFINITE_FUTURE,
-                        SEND_MESSAGE => payload)
+        # Fails if status already received
+        @call.run_batch(SEND_MESSAGE => payload)
       end
       GRPC.logger.debug("bidi-write-loop: #{count} writes done")
       if is_client
         GRPC.logger.debug("bidi-write-loop: client sent #{count}, waiting")
-        @call.run_batch(@cq, write_tag, INFINITE_FUTURE,
-                        SEND_CLOSE_FROM_CLIENT => nil)
+        @call.run_batch(SEND_CLOSE_FROM_CLIENT => nil)
         GRPC.logger.debug('bidi-write-loop: done')
         notify_done
         @writes_complete = true
@@ -195,7 +187,6 @@ module GRPC
       Thread.new do
         GRPC.logger.debug('bidi-read-loop: starting')
         begin
-          read_tag = Object.new
           count = 0
           # queue the initial read before beginning the loop
           loop do
@@ -208,8 +199,7 @@ module GRPC
               GRPC.logger.debug("bidi-read-loop: null batch #{batch_result}")
 
               if is_client
-                batch_result = @call.run_batch(@cq, read_tag, INFINITE_FUTURE,
-                                               RECV_STATUS_ON_CLIENT => nil)
+                batch_result = @call.run_batch(RECV_STATUS_ON_CLIENT => nil)
                 @call.status = batch_result.status
                 batch_result.check_status
                 GRPC.logger.debug("bidi-read-loop: done status #{@call.status}")

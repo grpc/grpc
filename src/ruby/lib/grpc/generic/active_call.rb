@@ -75,17 +75,10 @@ module GRPC
     # if a keyword value is a list, multiple metadata for it's key are sent
     #
     # @param call [Call] a call on which to start and invocation
-    # @param q [CompletionQueue] the completion queue
     # @param metadata [Hash] the metadata
-    def self.client_invoke(call, q, metadata = {})
+    def self.client_invoke(call, metadata = {})
       fail(TypeError, '!Core::Call') unless call.is_a? Core::Call
-      unless q.is_a? Core::CompletionQueue
-        fail(TypeError, '!Core::CompletionQueue')
-      end
-      metadata_tag = Object.new
-      call.run_batch(q, metadata_tag, INFINITE_FUTURE,
-                     SEND_INITIAL_METADATA => metadata)
-      metadata_tag
+      call.run_batch(SEND_INITIAL_METADATA => metadata)
     end
 
     # Creates an ActiveCall.
@@ -102,26 +95,21 @@ module GRPC
     # deadline is the absolute deadline for the call.
     #
     # @param call [Call] the call used by the ActiveCall
-    # @param q [CompletionQueue] the completion queue used to accept
-    #          the call.  This queue will be closed on call completion.
     # @param marshal [Function] f(obj)->string that marshal requests
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
     # @param deadline [Fixnum] the deadline for the call to complete
-    # @param metadata_tag [Object] the object use obtain metadata for clients
-    # @param started [true|false] indicates if the call has begun
-    def initialize(call, q, marshal, unmarshal, deadline, started: true,
-                   metadata_tag: nil)
+    # @param started [true|false] indicates that metadata was sent
+    # @param metadata_received [true|false] indicates if metadata has already
+    #     been received. Should always be true for server calls
+    def initialize(call, marshal, unmarshal, deadline, started: true,
+                   metadata_received: false)
       fail(TypeError, '!Core::Call') unless call.is_a? Core::Call
-      unless q.is_a? Core::CompletionQueue
-        fail(TypeError, '!Core::CompletionQueue')
-      end
       @call = call
-      @cq = q
       @deadline = deadline
       @marshal = marshal
-      @started = started
       @unmarshal = unmarshal
-      @metadata_tag = metadata_tag
+      @metadata_received = metadata_received
+      @metadata_sent = started
       @op_notifier = nil
     end
 
@@ -168,7 +156,7 @@ module GRPC
         SEND_CLOSE_FROM_CLIENT => nil
       }
       ops[RECV_STATUS_ON_CLIENT] = nil if assert_finished
-      batch_result = @call.run_batch(@cq, self, INFINITE_FUTURE, ops)
+      batch_result = @call.run_batch(ops)
       return unless assert_finished
       @call.status = batch_result.status
       op_is_done
@@ -179,8 +167,7 @@ module GRPC
     #
     # It blocks until the remote endpoint acknowledges by sending a status.
     def finished
-      batch_result = @call.run_batch(@cq, self, INFINITE_FUTURE,
-                                     RECV_STATUS_ON_CLIENT => nil)
+      batch_result = @call.run_batch(RECV_STATUS_ON_CLIENT => nil)
       unless batch_result.status.nil?
         if @call.metadata.nil?
           @call.metadata = batch_result.status.metadata
@@ -192,7 +179,6 @@ module GRPC
       op_is_done
       batch_result.check_status
       @call.close
-      @cq.close
     end
 
     # remote_send sends a request to the remote endpoint.
@@ -203,9 +189,10 @@ module GRPC
     # @param marshalled [false, true] indicates if the object is already
     # marshalled.
     def remote_send(req, marshalled = false)
+      # TODO(murgatroid99): ensure metadata was sent
       GRPC.logger.debug("sending #{req}, marshalled? #{marshalled}")
       payload = marshalled ? req : @marshal.call(req)
-      @call.run_batch(@cq, self, INFINITE_FUTURE, SEND_MESSAGE => payload)
+      @call.run_batch(SEND_MESSAGE => payload)
     end
 
     # send_status sends a status to the remote endpoint.
@@ -222,7 +209,7 @@ module GRPC
         SEND_STATUS_FROM_SERVER => Struct::Status.new(code, details, metadata)
       }
       ops[RECV_CLOSE_ON_SERVER] = nil if assert_finished
-      @call.run_batch(@cq, self, INFINITE_FUTURE, ops)
+      @call.run_batch(ops)
       nil
     end
 
@@ -234,11 +221,11 @@ module GRPC
     # raising BadStatus
     def remote_read
       ops = { RECV_MESSAGE => nil }
-      ops[RECV_INITIAL_METADATA] = nil unless @metadata_tag.nil?
-      batch_result = @call.run_batch(@cq, self, INFINITE_FUTURE, ops)
-      unless @metadata_tag.nil?
+      ops[RECV_INITIAL_METADATA] = nil unless @metadata_received
+      batch_result = @call.run_batch(ops)
+      unless @metadata_received
         @call.metadata = batch_result.metadata
-        @metadata_tag = nil
+        @metadata_received = true
       end
       GRPC.logger.debug("received req: #{batch_result}")
       unless batch_result.nil? || batch_result.message.nil?
@@ -318,7 +305,7 @@ module GRPC
     # a list, multiple metadata for its key are sent
     # @return [Object] the response received from the server
     def request_response(req, metadata: {})
-      start_call(metadata) unless @started
+      start_call(metadata)
       remote_send(req)
       writes_done(false)
       response = remote_read
@@ -342,7 +329,7 @@ module GRPC
     # a list, multiple metadata for its key are sent
     # @return [Object] the response received from the server
     def client_streamer(requests, metadata: {})
-      start_call(metadata) unless @started
+      start_call(metadata)
       requests.each { |r| remote_send(r) }
       writes_done(false)
       response = remote_read
@@ -368,7 +355,7 @@ module GRPC
     # a list, multiple metadata for its key are sent
     # @return [Enumerator|nil] a response Enumerator
     def server_streamer(req, metadata: {})
-      start_call(metadata) unless @started
+      start_call(metadata)
       remote_send(req)
       writes_done(false)
       replies = enum_for(:each_remote_read_then_finish)
@@ -407,10 +394,9 @@ module GRPC
     # a list, multiple metadata for its key are sent
     # @return [Enumerator, nil] a response Enumerator
     def bidi_streamer(requests, metadata: {}, &blk)
-      start_call(metadata) unless @started
-      bd = BidiCall.new(@call, @cq, @marshal, @unmarshal,
-                        metadata_tag: @metadata_tag)
-      @metadata_tag = nil  # run_on_client ensures metadata is read
+      start_call(metadata)
+      bd = BidiCall.new(@call, @marshal, @unmarshal,
+                        metadata_received: @metadata_received)
       bd.run_on_client(requests, @op_notifier, &blk)
     end
 
@@ -426,7 +412,7 @@ module GRPC
     #
     # @param gen_each_reply [Proc] generates the BiDi stream replies
     def run_server_bidi(gen_each_reply)
-      bd = BidiCall.new(@call, @cq, @marshal, @unmarshal)
+      bd = BidiCall.new(@call, @marshal, @unmarshal)
       bd.run_on_server(gen_each_reply)
     end
 
@@ -449,9 +435,9 @@ module GRPC
     # @param metadata [Hash] metadata to be sent to the server. If a value is
     # a list, multiple metadata for its key are sent
     def start_call(metadata = {})
-      return if @started
-      @metadata_tag = ActiveCall.client_invoke(@call, @cq, metadata)
-      @started = true
+      return if @metadata_sent
+      @metadata_tag = ActiveCall.client_invoke(@call, metadata)
+      @metadata_sent = true
     end
 
     def self.view_class(*visible_methods)

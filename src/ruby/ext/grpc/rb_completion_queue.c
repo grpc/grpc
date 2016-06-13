@@ -125,11 +125,6 @@ static void grpc_rb_completion_queue_shutdown_drain(grpc_completion_queue *cq) {
 
 /* Helper function to free a completion queue. */
 void grpc_rb_completion_queue_destroy(grpc_completion_queue *cq) {
-  grpc_completion_queue *cq = NULL;
-  if (p == NULL) {
-    return;
-  }
-  cq = (grpc_completion_queue *)p;
   grpc_rb_completion_queue_shutdown_drain(cq);
   grpc_completion_queue_destroy(cq);
 }
@@ -141,7 +136,7 @@ static void unblock_func(void *param) {
 
 /* Does the same thing as grpc_completion_queue_pluck, while properly releasing
    the GVL and handling interrupts */
-grpc_event rb_completion_queue_pluck(grpc_completion_queue queue, void *tag,
+grpc_event rb_completion_queue_pluck(grpc_completion_queue *queue, void *tag,
                                      gpr_timespec deadline, void *reserved) {
   next_call_stack next_call;
   MEMZERO(&next_call, next_call_stack, 1);

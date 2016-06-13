@@ -70,7 +70,8 @@ static void destroy_server(grpc_rb_server *server, gpr_timespec deadline) {
     ev = rb_completion_queue_pluck(server->queue, NULL, deadline, NULL);
     if (ev.type == GRPC_QUEUE_TIMEOUT) {
       grpc_server_cancel_all_calls(server->wrapped);
-      rb_completion_queue_pluck(server->queue, NULL, gpr_inf_future, NULL);
+      rb_completion_queue_pluck(server->queue, NULL,
+                                gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
     }
     grpc_server_destroy(server->wrapped);
     grpc_rb_completion_queue_destroy(server->queue);
@@ -82,13 +83,17 @@ static void destroy_server(grpc_rb_server *server, gpr_timespec deadline) {
 /* Destroys server instances. */
 static void grpc_rb_server_free(void *p) {
   grpc_rb_server *svr = NULL;
+  gpr_timespec deadline;
   if (p == NULL) {
     return;
   };
   svr = (grpc_rb_server *)p;
 
-  // TODO(murgatroid99): Maybe don't wait forever for the server to shutdown
-  destroy_server(svr, gpr_inf_future);
+  deadline = gpr_time_add(
+      gpr_now(GPR_CLOCK_REALTIME),
+      gpr_time_from_seconds(2, GPR_TIMESPAN));
+
+  destroy_server(svr, deadline);
 
   xfree(p);
 }
@@ -154,9 +159,6 @@ static VALUE grpc_rb_server_init(VALUE self, VALUE channel_args) {
   wrapper->wrapped = srv;
   wrapper->queue = cq;
 
-  /* Add the cq as the server's mark object. This ensures the ruby cq can't be
-     GCed before the server */
-  wrapper->mark = cqueue;
   return self;
 }
 
@@ -218,7 +220,7 @@ static VALUE grpc_rb_server_request_call(VALUE self) {
   }
 
   ev = rb_completion_queue_pluck(s->queue, tag,
-                                 gpr_inf_future, NULL);
+                                 gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
   if (!ev.success) {
     grpc_request_call_stack_cleanup(&st);
     rb_raise(grpc_rb_eCallError, "request_call completion failed");
@@ -251,27 +253,23 @@ static VALUE grpc_rb_server_start(VALUE self) {
 
 /*
   call-seq:
-    cq = CompletionQueue.new
-    server = Server.new(cq, {'arg1': 'value1'})
+    server = Server.new({'arg1': 'value1'})
     ... // do stuff with server
     ...
     ... // to shutdown the server
-    server.destroy(cq)
+    server.destroy()
 
     ... // to shutdown the server with a timeout
-    server.destroy(cq, timeout)
+    server.destroy(timeout)
 
   Destroys server instances. */
 static VALUE grpc_rb_server_destroy(int argc, VALUE *argv, VALUE self) {
-  VALUE cqueue = Qnil;
   VALUE timeout = Qnil;
-  grpc_completion_queue *cq = NULL;
-  grpc_event ev;
+  gpr_timespec deadline;
   grpc_rb_server *s = NULL;
 
-  /* "11" == 1 mandatory args, 1 (timeout) is optional */
-  rb_scan_args(argc, argv, "11", &cqueue, &timeout);
-  cq = grpc_rb_get_wrapped_completion_queue(cqueue);
+  /* "01" == 0 mandatory args, 1 (timeout) is optional */
+  rb_scan_args(argc, argv, "01", &timeout);
   TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type, s);
   if (TYPE(timeout) == T_NIL) {
     deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
