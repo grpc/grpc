@@ -210,6 +210,7 @@ namespace Grpc.Core.Internal.Tests
                 new Metadata());
 
             AssertUnaryResponseSuccess(asyncCall, fakeCall, resultTask);
+
             var writeTask = requestStream.WriteAsync("request1");
             var ex = Assert.ThrowsAsync<RpcException>(async () => await writeTask);
             Assert.AreEqual(Status.DefaultSuccess, ex.Status);
