@@ -35,6 +35,8 @@ set root=`pwd`
 CC=/chromium/src/out/pepper_53/toolchain/linux_x86_glibc/x86_64-nacl/bin/gcc
 
 cd /var/local/git/grpc
+ls /webports
+ls /webports/src/out/packages
 cp /webports/src/out/packages/openssl_1.0.2e_x86-64_glibc.tar.bz2 third_party
 cp /webports/src/out/packages/gflags_2.1.2_x86-64_glibc.tar.bz2 third_party
 
