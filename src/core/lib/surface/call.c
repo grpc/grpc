@@ -1109,6 +1109,9 @@ static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
                          call->receiving_slice);
     continue_receiving_slices(exec_ctx, bctl);
   } else {
+    if (grpc_trace_operation_failures) {
+      GRPC_LOG_IF_ERROR("receiving_slice_ready", GRPC_ERROR_REF(error));
+    }
     grpc_byte_stream_destroy(exec_ctx, call->receiving_stream);
     call->receiving_stream = NULL;
     grpc_byte_buffer_destroy(*call->receiving_buffer);
