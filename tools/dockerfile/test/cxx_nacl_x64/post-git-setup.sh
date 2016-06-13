@@ -30,6 +30,14 @@
 
 set -ex
 
+cd $(dirname $0)/../..
+set root=`pwd`
+CC=/chromium/src/out/pepper_53/toolchain/linux_x86_glibc/x86_64-nacl/bin/gcc
+
 cd /var/local/git/grpc
-cp /openssl-1.0.2f.tar.gz third_party
-./tools/openssl/use_openssl.sh
+cp /webports/src/out/packages/openssl_1.0.2e_x86-64_glibc.tar.bz2 third_party
+cp /webports/src/out/packages/gflags_2.1.2_x86-64_glibc.tar.bz2 third_party
+
+cd third_party
+tar xjf openssl_1.0.2e_x86-64_glibc.tar.bz2 && mv payload openssl_1.0.2e
+tar xjf gflags_2.1.2_x86-64_glibc.tar.bz2 && mv payload gflags_2.1.2

@@ -35,8 +35,6 @@
   <%include file="../../cxx_deps.include"/>
   <%include file="../../nacl_deps.include"/>
 
-  RUN wget ${openssl_fallback.base_uri + openssl_fallback.tarball}
-
   ENV POST_GIT_STEP tools/dockerfile/test/cxx_nacl_x64/post-git-setup.sh
 
   <%include file="../../run_tests_addons.include"/>
