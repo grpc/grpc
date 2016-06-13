@@ -127,12 +127,12 @@ void grpc_server_security_connector_shutdown(
 
 void grpc_channel_security_connector_do_handshake(
     grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *sc,
-    grpc_endpoint *nonsecure_endpoint, grpc_security_handshake_done_cb cb,
-    void *user_data) {
+    grpc_endpoint *nonsecure_endpoint, gpr_timespec deadline,
+    grpc_security_handshake_done_cb cb, void *user_data) {
   if (sc == NULL || nonsecure_endpoint == NULL) {
     cb(exec_ctx, user_data, GRPC_SECURITY_ERROR, NULL, NULL);
   } else {
-    sc->do_handshake(exec_ctx, sc, nonsecure_endpoint, cb, user_data);
+    sc->do_handshake(exec_ctx, sc, nonsecure_endpoint, deadline, cb, user_data);
   }
 }
 
@@ -310,6 +310,7 @@ static void fake_channel_check_call_host(grpc_exec_ctx *exec_ctx,
 static void fake_channel_do_handshake(grpc_exec_ctx *exec_ctx,
                                       grpc_channel_security_connector *sc,
                                       grpc_endpoint *nonsecure_endpoint,
+                                      gpr_timespec deadline,
                                       grpc_security_handshake_done_cb cb,
                                       void *user_data) {
   grpc_do_security_handshake(exec_ctx, tsi_create_fake_handshaker(1), &sc->base,
@@ -413,6 +414,7 @@ static grpc_security_status ssl_create_handshaker(
 static void ssl_channel_do_handshake(grpc_exec_ctx *exec_ctx,
                                      grpc_channel_security_connector *sc,
                                      grpc_endpoint *nonsecure_endpoint,
+                                     gpr_timespec deadline,
                                      grpc_security_handshake_done_cb cb,
                                      void *user_data) {
   grpc_ssl_channel_security_connector *c =

@@ -78,6 +78,7 @@ static grpc_httpcli_post_override g_post_override = NULL;
 
 static void plaintext_handshake(grpc_exec_ctx *exec_ctx, void *arg,
                                 grpc_endpoint *endpoint, const char *host,
+                                gpr_timespec deadline,
                                 void (*on_done)(grpc_exec_ctx *exec_ctx,
                                                 void *arg,
                                                 grpc_endpoint *endpoint)) {
@@ -206,7 +207,7 @@ static void on_connected(grpc_exec_ctx *exec_ctx, void *arg,
   req->handshaker->handshake(
       exec_ctx, req, req->ep,
       req->ssl_host_override ? req->ssl_host_override : req->host,
-      on_handshake_done);
+      req->deadline, on_handshake_done);
 }
 
 static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req,

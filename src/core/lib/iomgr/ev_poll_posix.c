@@ -715,6 +715,7 @@ static grpc_error *pollset_kick_ext(grpc_pollset *p,
   }
 
   GPR_TIMER_END("pollset_kick_ext", 0);
+  GRPC_LOG_IF_ERROR("pollset_kick_ext", GRPC_ERROR_REF(error));
   return error;
 }
 
@@ -843,6 +844,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     worker.wakeup_fd = gpr_malloc(sizeof(*worker.wakeup_fd));
     error = grpc_wakeup_fd_init(&worker.wakeup_fd->fd);
     if (error != GRPC_ERROR_NONE) {
+      GRPC_LOG_IF_ERROR("pollset_work", GRPC_ERROR_REF(error));
       return error;
     }
   }
@@ -1022,6 +1024,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   }
   *worker_hdl = NULL;
   GPR_TIMER_END("pollset_work", 0);
+  GRPC_LOG_IF_ERROR("pollset_work", GRPC_ERROR_REF(error));
   return error;
 }
 

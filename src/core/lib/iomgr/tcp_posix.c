@@ -160,7 +160,7 @@ static void call_read_cb(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
                          grpc_error *error) {
   grpc_closure *cb = tcp->read_cb;
 
-  if (grpc_tcp_trace) {
+  if (false && grpc_tcp_trace) {
     size_t i;
     const char *str = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "read: error=%s", str);
@@ -394,7 +394,7 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   grpc_tcp *tcp = (grpc_tcp *)ep;
   grpc_error *error = GRPC_ERROR_NONE;
 
-  if (grpc_tcp_trace) {
+  if (false && grpc_tcp_trace) {
     size_t i;
 
     for (i = 0; i < buf->count; i++) {
