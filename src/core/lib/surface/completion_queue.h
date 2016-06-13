@@ -39,6 +39,8 @@
 #include <grpc/grpc.h>
 #include "src/core/lib/iomgr/pollset.h"
 
+extern int grpc_trace_operation_failures;
+
 typedef struct grpc_cq_completion {
   /** user supplied tag */
   void *tag;
