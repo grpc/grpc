@@ -61,6 +61,10 @@ def metadata_transmitted(original_metadata, transmitted_metadata):
   original = collections.defaultdict(list)
   for key_value_pair in original_metadata:
     key, value = tuple(key_value_pair)
+    if not isinstance(key, bytes):
+      key = key.encode()
+    if not isinstance(value, bytes):
+      value = value.encode()
     original[key].append(value)
   transmitted = collections.defaultdict(list)
   for key_value_pair in transmitted_metadata:

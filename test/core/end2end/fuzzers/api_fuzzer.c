@@ -50,7 +50,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 // logging
 
-static const bool squelch = true;
+bool squelch = true;
+bool leak_check = true;
 
 static void dont_log(gpr_log_func_args *args) {}
 

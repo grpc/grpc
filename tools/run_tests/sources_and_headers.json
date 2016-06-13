@@ -2337,6 +2337,29 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_reflection", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/cpp/util/proto_reflection_descriptor_database.h"
+    ], 
+    "language": "c++", 
+    "name": "proto_server_reflection_test", 
+    "src": [
+      "test/cpp/end2end/proto_server_reflection_test.cc", 
+      "test/cpp/util/proto_reflection_descriptor_database.cc", 
+      "test/cpp/util/proto_reflection_descriptor_database.h"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
       "grpc++_test_util", 
       "grpc_test_util", 
       "qps"
@@ -4309,6 +4332,32 @@
       "src/cpp/common/secure_create_auth_context.cc", 
       "src/cpp/server/secure_server_credentials.cc", 
       "src/cpp/server/secure_server_credentials.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "grpc++", 
+      "grpc++_codegen_proto"
+    ], 
+    "headers": [
+      "include/grpc++/ext/proto_server_reflection_plugin.h", 
+      "include/grpc++/ext/reflection.grpc.pb.h", 
+      "include/grpc++/ext/reflection.pb.h", 
+      "src/cpp/ext/proto_server_reflection.h"
+    ], 
+    "language": "c++", 
+    "name": "grpc++_reflection", 
+    "src": [
+      "include/grpc++/ext/proto_server_reflection_plugin.h", 
+      "include/grpc++/ext/reflection.grpc.pb.h", 
+      "include/grpc++/ext/reflection.pb.h", 
+      "src/cpp/ext/proto_server_reflection.cc", 
+      "src/cpp/ext/proto_server_reflection.h", 
+      "src/cpp/ext/proto_server_reflection_plugin.cc", 
+      "src/cpp/ext/reflection.grpc.pb.cc", 
+      "src/cpp/ext/reflection.pb.cc"
     ], 
     "third_party": false, 
     "type": "lib"

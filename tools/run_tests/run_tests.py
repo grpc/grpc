@@ -246,11 +246,17 @@ class CLanguage(object):
   def makefile_name(self):
     return 'Makefile'
 
-  def _clang_make_options(self):
-    return ['CC=clang', 'CXX=clang++', 'LD=clang', 'LDXX=clang++']
+  def _clang_make_options(self, version_suffix=''):
+    return ['CC=clang%s' % version_suffix,
+            'CXX=clang++%s' % version_suffix,
+            'LD=clang%s' % version_suffix,
+            'LDXX=clang++%s' % version_suffix]
 
-  def _gcc44_make_options(self):
-    return ['CC=gcc-4.4', 'CXX=g++-4.4', 'LD=gcc-4.4', 'LDXX=g++-4.4']
+  def _gcc_make_options(self, version_suffix):
+    return ['CC=gcc%s' % version_suffix,
+            'CXX=g++%s' % version_suffix,
+            'LD=gcc%s' % version_suffix,
+            'LDXX=g++%s' % version_suffix]
 
   def _compiler_options(self, use_docker, compiler):
     """Returns docker distro and make options to use for given compiler."""
@@ -260,13 +266,20 @@ class CLanguage(object):
     if compiler == 'gcc4.9' or compiler == 'default':
       return ('jessie', [])
     elif compiler == 'gcc4.4':
-      return ('wheezy', self._gcc44_make_options())
+      return ('wheezy', self._gcc_make_options(version_suffix='-4.4'))
+    elif compiler == 'gcc4.6':
+      return ('wheezy', self._gcc_make_options(version_suffix='-4.6'))
     elif compiler == 'gcc5.3':
       return ('ubuntu1604', [])
     elif compiler == 'clang3.4':
+      # on ubuntu1404, clang-3.4 alias doesn't exist, just use 'clang'
       return ('ubuntu1404', self._clang_make_options())
+    elif compiler == 'clang3.5':
+      return ('jessie', self._clang_make_options(version_suffix='-3.5'))
     elif compiler == 'clang3.6':
-      return ('ubuntu1604', self._clang_make_options())
+      return ('ubuntu1604', self._clang_make_options(version_suffix='-3.6'))
+    elif compiler == 'clang3.7':
+      return ('ubuntu1604', self._clang_make_options(version_suffix='-3.7'))
     else:
       raise Exception('Compiler %s not supported.' % compiler)
 
@@ -374,7 +387,7 @@ class PythonLanguage(object):
   def configure(self, config, args):
     self.config = config
     self.args = args
-    self._tox_env = self._get_tox_env(self.args.compiler)
+    self._tox_envs = self._get_tox_envs(self.args.compiler)
 
   def test_specs(self):
     # load list of known test suites
@@ -386,19 +399,21 @@ class PythonLanguage(object):
       os.path.abspath('src/python/grpcio_health_checking'))
     if self.config.build_config != 'gcov':
       return [self.config.job_spec(
-          ['tools/run_tests/run_python.sh', self._tox_env],
+          ['tools/run_tests/run_python.sh', tox_env],
           None,
           environ=dict(environment.items() +
                        [('GRPC_PYTHON_TESTRUNNER_FILTER', suite_name)]),
-          shortname='py.test.%s' % suite_name,
+          shortname='%s.test.%s' % (tox_env, suite_name),
           timeout_seconds=5*60)
-          for suite_name in tests_json]
+          for suite_name in tests_json
+          for tox_env in self._tox_envs]
     else:
-      return [self.config.job_spec(['tools/run_tests/run_python.sh'],
+      return [self.config.job_spec(['tools/run_tests/run_python.sh', tox_env],
                                    None,
                                    environ=environment,
-                                   shortname='py.test.coverage',
-                                   timeout_seconds=15*60)]
+                                   shortname='%s.test.coverage' % tox_env,
+                                   timeout_seconds=15*60)
+                                   for tox_env in self._tox_envs]
 
 
   def pre_build_steps(self):
@@ -411,7 +426,8 @@ class PythonLanguage(object):
     return []
 
   def build_steps(self):
-    return [['tools/run_tests/build_python.sh', self._tox_env]]
+    return [['tools/run_tests/build_python.sh', tox_env] 
+            for tox_env in self._tox_envs]
 
   def post_tests_steps(self):
     return []
@@ -422,12 +438,14 @@ class PythonLanguage(object):
   def dockerfile_dir(self):
     return 'tools/dockerfile/test/python_jessie_%s' % _docker_arch_suffix(self.args.arch)
 
-  def _get_tox_env(self, compiler):
+  def _get_tox_envs(self, compiler):
     """Returns name of tox environment based on selected compiler."""
-    if compiler == 'python2.7' or compiler == 'default':
-      return 'py27'
+    if compiler == 'default':
+      return ('py27', 'py34')
+    elif compiler == 'python2.7':
+      return ('py27',)
     elif compiler == 'python3.4':
-      return 'py34'
+      return ('py34',)
     else:
       raise Exception('Compiler %s not supported.' % compiler)
 
@@ -816,8 +834,8 @@ argp.add_argument('--arch',
                   help='Selects architecture to target. For some platforms "default" is the only supported choice.')
 argp.add_argument('--compiler',
                   choices=['default',
-                           'gcc4.4', 'gcc4.9', 'gcc5.3',
-                           'clang3.4', 'clang3.6',
+                           'gcc4.4', 'gcc4.6', 'gcc4.9', 'gcc5.3',
+                           'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
                            'vs2010', 'vs2013', 'vs2015',
                            'python2.7', 'python3.4',
                            'node0.12', 'node4', 'node5'],
