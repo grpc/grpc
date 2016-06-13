@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,46 +27,52 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -e
+FROM debian:jessie
 
-# directories to run against
-DIRS="src/core/lib src/core/ext src/cpp test/core test/cpp include"
+# Install Git and basic packages.
+RUN apt-get update && apt-get install -y \
+  autoconf \
+  autotools-dev \
+  build-essential \
+  bzip2 \
+  ccache \
+  curl \
+  gcc \
+  gcc-multilib \
+  git \
+  golang \
+  gyp \
+  lcov \
+  libc6 \
+  libc6-dbg \
+  libc6-dev \
+  libgtest-dev \
+  libtool \
+  make \
+  perl \
+  strace \
+  python-dev \
+  python-setuptools \
+  python-yaml \
+  telnet \
+  unzip \
+  wget \
+  zip && apt-get clean
 
-# file matching patterns to check
-GLOB="*.h *.c *.cc"
+#================
+# Build profiling
+RUN apt-get update && apt-get install -y time && apt-get clean
 
-# clang format command
-CLANG_FORMAT=clang-format-3.8
+#=================
+# C++ dependencies
+RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
 
-files=
-for dir in $DIRS
-do
-  for glob in $GLOB
-  do
-    files="$files `find /local-code/$dir -name $glob -and -not -name *.generated.* -and -not -name *.pb.h -and -not -name *.pb.c -and -not -name *.pb.cc`"
-  done
-done
+#======================
+# Zookeeper dependencies
+# TODO(jtattermusch): is zookeeper still needed?
+RUN apt-get install -y libzookeeper-mt-dev
 
-# The CHANGED_FILES variable is used to restrict the set of files to check.
-# Here we set files to the intersection of files and CHANGED_FILES
-if [ -n "$CHANGED_FILES" ]; then
-  files=$(comm -12 <(echo $files | tr ' ' '\n' | sort -u) <(echo $CHANGED_FILES | tr ' ' '\n' | sort -u))
-fi
+RUN mkdir /var/local/jenkins
 
-if [ "x$TEST" = "x" ]
-then
-  echo $files | xargs $CLANG_FORMAT -i
-else
-  ok=yes
-  for file in $files
-  do
-    tmp=`mktemp`
-    $CLANG_FORMAT $file > $tmp
-    diff -u $file $tmp || ok=no
-    rm $tmp
-  done
-  if [ $ok == no ]
-  then
-    false
-  fi
-fi
+# Define the default command.
+CMD ["bash"]
