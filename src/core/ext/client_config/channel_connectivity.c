@@ -75,7 +75,6 @@ typedef enum {
 typedef struct {
   gpr_mu mu;
   callback_phase phase;
-  grpc_error *error;
   grpc_closure on_complete;
   grpc_timer alarm;
   grpc_connectivity_state state;
@@ -95,7 +94,6 @@ static void delete_state_watcher(grpc_exec_ctx *exec_ctx, state_watcher *w) {
     abort();
   }
   gpr_mu_destroy(&w->mu);
-  GRPC_ERROR_UNREF(w->error);
   gpr_free(w);
 }
 
@@ -131,17 +129,25 @@ static void partly_done(grpc_exec_ctx *exec_ctx, state_watcher *w,
   }
 
   gpr_mu_lock(&w->mu);
-  const char *msg = grpc_error_string(error);
-  grpc_error_free_string(msg);
 
   if (due_to_completion) {
-    GRPC_ERROR_UNREF(w->error);
-    w->error = GRPC_ERROR_NONE;
+    if (grpc_trace_operation_failures) {
+      GRPC_LOG_IF_ERROR("watch_completion_error", GRPC_ERROR_REF(error));
+    }
+    GRPC_ERROR_UNREF(error);
+    error = GRPC_ERROR_NONE;
+  } else {
+    if (error == GRPC_ERROR_NONE) {
+      error =
+          GRPC_ERROR_CREATE("Timed out waiting for connection state change");
+    } else if (error == GRPC_ERROR_CANCELLED) {
+      error = GRPC_ERROR_NONE;
+    }
   }
   switch (w->phase) {
     case WAITING:
       w->phase = CALLING_BACK;
-      grpc_cq_end_op(exec_ctx, w->cq, w->tag, GRPC_ERROR_REF(w->error),
+      grpc_cq_end_op(exec_ctx, w->cq, w->tag, GRPC_ERROR_REF(error),
                      finished_completion, w, &w->completion_storage);
       break;
     case CALLING_BACK:
@@ -194,7 +200,6 @@ void grpc_channel_watch_connectivity_state(
   grpc_closure_init(&w->on_complete, watch_complete, w);
   w->phase = WAITING;
   w->state = last_observed_state;
-  w->error = GRPC_ERROR_CREATE("Timeout waiting for channel state");
   w->cq = cq;
   w->tag = tag;
   w->channel = channel;
