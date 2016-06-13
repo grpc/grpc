@@ -29,14 +29,39 @@
 
 """Internal utilities for gRPC Python."""
 
+import collections
 import threading
 import time
 
+import six
+
 import grpc
+from grpc import _common
 from grpc.framework.foundation import callable_util
 
 _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE = (
     'Exception calling connectivity future "done" callback!')
+
+
+class RpcMethodHandler(
+    collections.namedtuple(
+        '_RpcMethodHandler',
+        ('request_streaming', 'response_streaming', 'request_deserializer',
+         'response_serializer', 'unary_unary', 'unary_stream', 'stream_unary',
+         'stream_stream',)),
+    grpc.RpcMethodHandler):
+  pass
+
+
+class DictionaryGenericHandler(grpc.GenericRpcHandler):
+
+  def __init__(self, service, method_handlers):
+    self._method_handlers = {
+        _common.fully_qualified_method(service, method): method_handler
+        for method, method_handler in six.iteritems(method_handlers)}
+
+  def service(self, handler_call_details):
+    return self._method_handlers.get(handler_call_details.method)
 
 
 class _ChannelReadyFuture(grpc.Future):
@@ -144,4 +169,3 @@ def channel_ready_future(channel):
   ready_future = _ChannelReadyFuture(channel)
   ready_future.start()
   return ready_future
-
