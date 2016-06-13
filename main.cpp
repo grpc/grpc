@@ -40,8 +40,7 @@
 
 static void *tag(intptr_t i) { return (void *)i; }
 
-int main(int argc, char **argv) {
-    grpc_channel *chan;
+void test_unary_blocking_rpc(grpc_channel *chan) {
     grpc_call *call;
     gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(2);
     grpc_completion_queue *cq;
@@ -52,15 +51,13 @@ int main(int argc, char **argv) {
     char *details = NULL;
     size_t details_capacity = 0;
 
-    grpc_test_init(argc, argv);
-    grpc_init();
-
     grpc_metadata_array_init(&trailing_metadata_recv);
 
     cq = grpc_completion_queue_create(NULL);
 
-    /* create a call, channel to a non existant server */
-    chan = grpc_insecure_channel_create("0.0.0.0:50051", NULL, NULL);
+    printf("\n");
+    printf("Testing Unary Blocking Call\n");
+
     call = grpc_channel_create_call(chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
                                     "/helloworld.Greeter/SayHello", "0.0.0.0", deadline, NULL);
 
@@ -113,22 +110,18 @@ int main(int argc, char **argv) {
     GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(
             call, ops, (size_t)(op - ops), tag(1), NULL));
 
-    /* wait till all tags get completed */
-    for (;;) {
-        grpc_event ev;
-        ev = grpc_completion_queue_next(cq, deadline, NULL);
-        if (ev.tag == tag(1)) break;
-    }
+    grpc_event ev;
+    ev = grpc_completion_queue_pluck(cq, tag(1), deadline, NULL);
+    GPR_ASSERT(ev.success);
 
-    printf("%x\n", buffer);
-    printf("%d\n", status);
-    printf("%s\n", details);
+    printf("Status: %d\n", status);
+    printf("Details: %s\n", details);
 
     grpc_byte_buffer_reader reader;
     grpc_byte_buffer_reader_init(&reader, buffer);
     gpr_slice slice_recv = grpc_byte_buffer_reader_readall(&reader);
     uint8_t *response = GPR_SLICE_START_PTR(slice_recv);
-    printf("Server said: %s", response + 2);    // skip to the string in serialized protobuf object
+    printf("Server said: %s\n", response + 2);    // skip to the string in serialized protobuf object
     GPR_ASSERT(status == GRPC_STATUS_OK);
 
     grpc_completion_queue_shutdown(cq);
@@ -138,12 +131,38 @@ int main(int argc, char **argv) {
         ;
     grpc_completion_queue_destroy(cq);
     grpc_call_destroy(call);
-    grpc_channel_destroy(chan);
 
     gpr_free(details);
     grpc_metadata_array_destroy(&trailing_metadata_recv);
+}
 
+void test_client_streaming_blocking_rpc(grpc_channel *chan) {
+
+}
+
+void test_server_streaming_blocking_rpc(grpc_channel *chan) {
+
+}
+
+void test_unary_async_rpc(grpc_channel *chan) {
+
+}
+
+int main(int argc, char **argv) {
+    grpc_channel *chan;
+    grpc_test_init(argc, argv);
+    grpc_init();
+
+    // Local greetings server
+    chan = grpc_insecure_channel_create("0.0.0.0:50051", NULL, NULL);
+
+    test_unary_blocking_rpc(chan);
+    test_client_streaming_blocking_rpc(chan);
+    test_server_streaming_blocking_rpc(chan);
+
+    test_unary_async_rpc(chan);
+
+    grpc_channel_destroy(chan);
     grpc_shutdown();
-
     return 0;
 }
