@@ -29,7 +29,7 @@
 
 FROM debian:jessie
 
-# Install packages for gRPC and protobuf
+# Install packages needed for gRPC and protobuf
 RUN apt-get update && apt-get install -y \
       autoconf \
       automake \
