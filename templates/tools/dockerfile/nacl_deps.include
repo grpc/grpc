@@ -26,8 +26,10 @@ RUN cd /chromium/src && ./native_client_sdk/src/build_tools/build_sdk.py
 
 # TODO this could be hopelessly wrong. Download gflags and openssl ports. (The glibc toolchain does not supprt boringssl.)
 RUN mkdir /webports && cd /webports
-RUN gclient config https://chromium.googlesource.com/webports.git
-RUN gclient sync --with_branch_heads
+RUN gclient config --unmanaged --name=src ${'\\'}
+  https://chromium.googlesource.com/webports.git
+RUN gclient sync
 ENV NACL_SDK_ROOT /chromium/src/out/pepper_53/
+RUN git config --global user.email ""
 RUN ./src/bin/webports -a x86_64 -t glibc install src/ports/gflags
 RUN ./src/bin/webports -a x86_64 -t glibc install src/ports/openssl
