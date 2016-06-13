@@ -5609,19 +5609,6 @@
   }, 
   {
     "deps": [
-      "grpc++_codegen_base"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "grpc++_codegen_base_src", 
-    "src": [
-      "src/cpp/codegen/codegen_init.cc"
-    ], 
-    "third_party": false, 
-    "type": "filegroup"
-  }, 
-  {
-    "deps": [
       "gpr", 
       "grpc_codegen"
     ], 
@@ -6632,6 +6619,19 @@
       "include/grpc++/impl/codegen/sync_no_cxx11.h", 
       "include/grpc++/impl/codegen/sync_stream.h", 
       "include/grpc++/impl/codegen/time.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "grpc++_codegen_base"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "grpc++_codegen_base_src", 
+    "src": [
+      "src/cpp/codegen/codegen_init.cc"
     ], 
     "third_party": false, 
     "type": "filegroup"

@@ -143,11 +143,6 @@ filegroups:
   - include/grpc/impl/codegen/sync_posix.h
   - include/grpc/impl/codegen/sync_windows.h
   - include/grpc/impl/codegen/time.h
-- name: grpc++_codegen_base_src
-  src:
-  - src/cpp/codegen/codegen_init.cc
-  uses:
-  - grpc++_codegen_base
 - name: grpc_base
   public_headers:
   - include/grpc/byte_buffer.h
@@ -747,6 +742,12 @@ filegroups:
   - include/grpc++/impl/codegen/time.h
   uses:
   - grpc_codegen
+- name: grpc++_codegen_base_src
+  language: c++
+  src:
+  - src/cpp/codegen/codegen_init.cc
+  uses:
+  - grpc++_codegen_base
 - name: grpc++_codegen_proto
   language: c++
   public_headers:
