@@ -38,6 +38,9 @@
 
 #include "src/core/ext/lb_policy/grpclb/load_balancer_api.h"
 
+bool squelch = true;
+bool leak_check = true;
+
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   gpr_slice slice = gpr_slice_from_copied_buffer((const char *)data, size);
   grpc_grpclb_serverlist *serverlist;
