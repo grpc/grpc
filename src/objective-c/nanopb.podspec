@@ -44,8 +44,7 @@ Pod::Spec.new do |s|
   # "The name and email addresses of the library maintainers, not the Podspec maintainer."
   s.authors  = 'Petteri Aimonen'
 
-  s.source = { :git => 'http://koti.kapsi.fi/~jpa/nanopb/download/nanopb-0.3.5.tar.gz',
-               :tag => 'version_for_cocoapods_0.3.5' }
+  s.source = { :http => 'http://koti.kapsi.fi/~jpa/nanopb/download/nanopb-0.3.5.tar.gz'}
 
   s.source_files = '*.{h,c}'
 
