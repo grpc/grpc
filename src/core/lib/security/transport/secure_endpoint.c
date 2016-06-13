@@ -128,7 +128,7 @@ static void flush_read_staging_buffer(secure_endpoint *ep, uint8_t **cur,
 
 static void call_read_cb(grpc_exec_ctx *exec_ctx, secure_endpoint *ep,
                          grpc_error *error) {
-  if (grpc_trace_secure_endpoint) {
+  if (false && grpc_trace_secure_endpoint) {
     size_t i;
     for (i = 0; i < ep->read_buffer->count; i++) {
       char *data = gpr_dump_slice(ep->read_buffer->slices[i],
@@ -256,7 +256,7 @@ static void endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
 
   gpr_slice_buffer_reset_and_unref(&ep->output_buffer);
 
-  if (grpc_trace_secure_endpoint) {
+  if (false && grpc_trace_secure_endpoint) {
     for (i = 0; i < slices->count; i++) {
       char *data =
           gpr_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);

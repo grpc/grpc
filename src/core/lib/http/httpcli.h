@@ -57,7 +57,7 @@ typedef struct grpc_httpcli_context {
 typedef struct {
   const char *default_port;
   void (*handshake)(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *endpoint,
-                    const char *host,
+                    const char *host, gpr_timespec deadline,
                     void (*on_done)(grpc_exec_ctx *exec_ctx, void *arg,
                                     grpc_endpoint *endpoint));
 } grpc_httpcli_handshaker;

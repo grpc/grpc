@@ -304,13 +304,11 @@ static void on_handshake_data_sent_to_peer(grpc_exec_ctx *exec_ctx,
   }
 }
 
-void grpc_do_security_handshake(grpc_exec_ctx *exec_ctx,
-                                tsi_handshaker *handshaker,
-                                grpc_security_connector *connector,
-                                bool is_client_side,
-                                grpc_endpoint *nonsecure_endpoint,
-                                grpc_security_handshake_done_cb cb,
-                                void *user_data) {
+void grpc_do_security_handshake(
+    grpc_exec_ctx *exec_ctx, tsi_handshaker *handshaker,
+    grpc_security_connector *connector, bool is_client_side,
+    grpc_endpoint *nonsecure_endpoint, gpr_timespec deadline,
+    grpc_security_handshake_done_cb cb, void *user_data) {
   grpc_security_connector_handshake_list *handshake_node;
   grpc_security_handshake *h = gpr_malloc(sizeof(grpc_security_handshake));
   memset(h, 0, sizeof(grpc_security_handshake));
