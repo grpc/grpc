@@ -30,7 +30,7 @@
 
 set -ex
 
-git clone https://github.com/grpc/grpc.git
+git clone $EXTERNAL_GIT_ROOT
 cd grpc && git submodule update --init
 
 cd third_party/protobuf && ./autogen.sh && \
