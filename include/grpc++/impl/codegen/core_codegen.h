@@ -42,7 +42,8 @@ namespace grpc {
 /// Implementation of the core codegen interface.
 class CoreCodegen : public CoreCodegenInterface {
  private:
-  grpc_completion_queue* grpc_completion_queue_create(void* reserved) GRPC_OVERRIDE;
+  grpc_completion_queue* grpc_completion_queue_create(void* reserved)
+      GRPC_OVERRIDE;
   void grpc_completion_queue_destroy(grpc_completion_queue* cq) GRPC_OVERRIDE;
   grpc_event grpc_completion_queue_pluck(grpc_completion_queue* cq, void* tag,
                                          gpr_timespec deadline,
@@ -55,8 +56,8 @@ class CoreCodegen : public CoreCodegenInterface {
 
   void grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,
                                     grpc_byte_buffer* buffer) GRPC_OVERRIDE;
-  void grpc_byte_buffer_reader_destroy(
-      grpc_byte_buffer_reader* reader) GRPC_OVERRIDE;
+  void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader* reader)
+      GRPC_OVERRIDE;
   int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader* reader,
                                    gpr_slice* slice) GRPC_OVERRIDE;
 
@@ -66,7 +67,8 @@ class CoreCodegen : public CoreCodegenInterface {
   gpr_slice gpr_slice_malloc(size_t length) GRPC_OVERRIDE;
   void gpr_slice_unref(gpr_slice slice) GRPC_OVERRIDE;
   gpr_slice gpr_slice_split_tail(gpr_slice* s, size_t split) GRPC_OVERRIDE;
-  void gpr_slice_buffer_add(gpr_slice_buffer* sb, gpr_slice slice) GRPC_OVERRIDE;
+  void gpr_slice_buffer_add(gpr_slice_buffer* sb,
+			    gpr_slice slice) GRPC_OVERRIDE;
   void gpr_slice_buffer_pop(gpr_slice_buffer* sb) GRPC_OVERRIDE;
 
   void grpc_metadata_array_init(grpc_metadata_array* array) GRPC_OVERRIDE;
