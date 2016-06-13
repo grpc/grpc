@@ -210,7 +210,6 @@ namespace Grpc.Core.Internal.Tests
                 new Metadata());
 
             AssertUnaryResponseSuccess(asyncCall, fakeCall, resultTask);
-
             var writeTask = requestStream.WriteAsync("request1");
             var ex = Assert.ThrowsAsync<RpcException>(async () => await writeTask);
             Assert.AreEqual(Status.DefaultSuccess, ex.Status);
@@ -224,7 +223,7 @@ namespace Grpc.Core.Internal.Tests
 
             fakeCall.UnaryResponseClientHandler(true,
                 new ClientSideStatus(new Status(StatusCode.OutOfRange, ""), new Metadata()),
-                null,
+                CreateResponsePayload(),
                 new Metadata());
 
             AssertUnaryResponseError(asyncCall, fakeCall, resultTask, StatusCode.OutOfRange);
