@@ -70,7 +70,7 @@ static void run_test(const test_fixture *fixture) {
   grpc_init();
 
   char *addr;
-  gpr_join_host_port(&addr, "::", grpc_pick_unused_port_or_die());
+  gpr_join_host_port(&addr, "localhost", grpc_pick_unused_port_or_die());
 
   grpc_server *server = grpc_server_create(NULL, NULL);
   fixture->add_server_port(server, addr);
