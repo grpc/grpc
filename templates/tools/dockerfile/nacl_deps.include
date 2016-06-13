@@ -29,6 +29,6 @@ RUN mkdir /webports && cd /webports
 RUN gclient config --unmanaged --name=src ${'\\'}
   https://chromium.googlesource.com/webports.git
 RUN gclient sync --with_branch_heads
-ENV NACL_SDK_ROOT = /chromium/src/out/pepper_53/
+ENV NACL_SDK_ROOT /chromium/src/out/pepper_53/
 RUN ./src/bin/webports -a x86_64 -t glibc install src/ports/gflags
 RUN ./src/bin/webports -a x86_64 -t glibc install src/ports/openssl
