@@ -30,44 +30,17 @@
 
 set -e
 
-# directories to run against
-DIRS="src/core/lib src/core/ext src/cpp test/core test/cpp include"
+mkdir -p /var/local/git
+git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
 
-# file matching patterns to check
-GLOB="*.h *.c *.cc"
+cd /var/local/git/grpc
 
-# clang format command
-CLANG_FORMAT=clang-format-3.8
+# build grpc cpp plugin for generating grpc pb files
+make grpc_cpp_plugin
 
-files=
-for dir in $DIRS
-do
-  for glob in $GLOB
-  do
-    files="$files `find /local-code/$dir -name $glob -and -not -name *.generated.* -and -not -name *.pb.h -and -not -name *.pb.c -and -not -name *.pb.cc`"
-  done
-done
+# generate pb files
+tools/codegen/extensions/gen_reflection_proto.sh
 
-# The CHANGED_FILES variable is used to restrict the set of files to check.
-# Here we set files to the intersection of files and CHANGED_FILES
-if [ -n "$CHANGED_FILES" ]; then
-  files=$(comm -12 <(echo $files | tr ' ' '\n' | sort -u) <(echo $CHANGED_FILES | tr ' ' '\n' | sort -u))
-fi
-
-if [ "x$TEST" = "x" ]
-then
-  echo $files | xargs $CLANG_FORMAT -i
-else
-  ok=yes
-  for file in $files
-  do
-    tmp=`mktemp`
-    $CLANG_FORMAT $file > $tmp
-    diff -u $file $tmp || ok=no
-    rm $tmp
-  done
-  if [ $ok == no ]
-  then
-    false
-  fi
-fi
+# check if the pb files in the checked out codebase are identical with the newly
+# generated ones
+git diff --exit-code
