@@ -47,6 +47,7 @@
   "_lonely_invocation_link_test.LonelyInvocationLinkTest", 
   "_low_test.HangingServerShutdown", 
   "_low_test.InsecureServerInsecureClient", 
+  "_metadata_test.MetadataTest",
   "_not_found_test.NotFoundTest", 
   "_read_some_but_not_all_responses_test.ReadSomeButNotAllResponsesTest",
   "_rpc_test.RPCTest",
