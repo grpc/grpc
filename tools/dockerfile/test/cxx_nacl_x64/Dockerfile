@@ -99,7 +99,7 @@ RUN gclient config --unmanaged --name=src \
   https://chromium.googlesource.com/webports.git
 RUN gclient sync
 ENV NACL_SDK_ROOT /chromium/src/out/pepper_53/
-RUN git config --global user.email ""
+RUN git config --global user.email "why_does_webports_use_git_commit@example.com"
 RUN ./src/bin/webports -a x86_64 -t glibc install src/ports/gflags
 RUN ./src/bin/webports -a x86_64 -t glibc install src/ports/openssl
 
