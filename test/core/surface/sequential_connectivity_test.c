@@ -33,6 +33,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
@@ -70,7 +71,7 @@ static void run_test(const test_fixture *fixture) {
   grpc_init();
 
   char *addr;
-  gpr_join_host_port(&addr, "::", grpc_pick_unused_port_or_die());
+  gpr_join_host_port(&addr, "localhost", grpc_pick_unused_port_or_die());
 
   grpc_server *server = grpc_server_create(NULL, NULL);
   fixture->add_server_port(server, addr);
@@ -127,6 +128,7 @@ static void run_test(const test_fixture *fixture) {
   grpc_completion_queue_destroy(cq);
 
   grpc_shutdown();
+  gpr_free(addr);
 }
 
 static void insecure_test_add_port(grpc_server *server, const char *addr) {
@@ -147,6 +149,7 @@ static void secure_test_add_port(grpc_server *server, const char *addr) {
   grpc_server_credentials *ssl_creds =
       grpc_ssl_server_credentials_create(NULL, &pem_cert_key_pair, 1, 0, NULL);
   grpc_server_add_secure_http2_port(server, addr, ssl_creds);
+  grpc_server_credentials_release(ssl_creds);
 }
 
 static grpc_channel *secure_test_create_channel(const char *addr) {
@@ -160,6 +163,7 @@ static grpc_channel *secure_test_create_channel(const char *addr) {
   grpc_channel *channel =
       grpc_secure_channel_create(ssl_creds, addr, new_client_args, NULL);
   grpc_channel_args_destroy(new_client_args);
+  grpc_channel_credentials_release(ssl_creds);
   return channel;
 }
 
