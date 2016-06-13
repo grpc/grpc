@@ -550,14 +550,14 @@ polling_island *polling_island_merge(polling_island *p, polling_island *q) {
   /* Wakeup all the pollers (if any) on p so that they can pickup this change */
   polling_island_add_wakeup_fd_locked(p, &polling_island_wakeup_fd);
 
+  p->merged_to = q;
+
   /* - The merged polling island (i.e q) inherits all the ref counts of the
        island merging with it (i.e p)
      - The island p will lose a ref count */
   q->ref_cnt += p->ref_cnt;
-  p->ref_cnt--;
-
-  gpr_mu_unlock(&p->mu);
-  gpr_mu_unlock(&q->mu);
+  polling_island_unref_and_unlock(p, 1); /* Decrement refcount */
+  polling_island_unref_and_unlock(q, 0); /* Just Unlock. Don't decrement ref */
 
   return q;
 }
@@ -1110,7 +1110,7 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
      Acquire the following locks:
      - pollset->mu (which we already have)
      - pollset->pi_mu
-     - pollset->polling_island->mu */
+     - pollset->polling_island->mu (call polling_island_update_and_lock())*/
   gpr_mu_lock(&pollset->pi_mu);
 
   pi = pollset->polling_island;
@@ -1144,8 +1144,7 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
       }
     }
 
-    int i;
-    for (i = 0; i < ep_rv; ++i) {
+    for (int i = 0; i < ep_rv; ++i) {
       void *data_ptr = ep_ev[i].data.ptr;
       if (data_ptr == &grpc_global_wakeup_fd) {
         grpc_wakeup_fd_consume_wakeup(&grpc_global_wakeup_fd);
@@ -1177,7 +1176,7 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
    * gets updated whenever the underlying polling island is merged with another
    * island and while we are doing epoll_wait() above, the polling island may
    * have been merged */
-  polling_island_update_and_lock(pi, 1, 0); /* No new ref added */
+  pi = polling_island_update_and_lock(pi, 1, 0); /* No new ref added */
   polling_island_unref_and_unlock(pi, 1);
 
   GPR_TIMER_END("pollset_work_and_unlock", 0);
