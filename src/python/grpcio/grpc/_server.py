@@ -254,7 +254,7 @@ class _Context(grpc.ServicerContext):
       else:
         if self._state.initial_metadata_allowed:
           operation = cygrpc.operation_send_initial_metadata(
-              cygrpc.Metadata(initial_metadata), _EMPTY_FLAGS)
+              _common.metadata(initial_metadata), _EMPTY_FLAGS)
           self._rpc_event.operation_call.start_batch(
               cygrpc.Operations((operation,)),
               _send_initial_metadata(self._state))
