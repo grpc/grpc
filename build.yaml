@@ -2133,6 +2133,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: sequential_connectivity_test
+  build: test
+  language: c
+  src:
+  - test/core/surface/sequential_connectivity_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: server_chttp2_test
   build: test
   language: c
