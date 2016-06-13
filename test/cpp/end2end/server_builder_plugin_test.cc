@@ -113,8 +113,7 @@ class InsertPluginServerBuilderOption : public ServerBuilderOption {
 
   void UpdateArguments(ChannelArguments* arg) GRPC_OVERRIDE {}
 
-  void UpdatePlugins(
-      std::vector<std::unique_ptr<ServerBuilderPlugin> >* plugins)
+  void UpdatePlugins(std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins)
       GRPC_OVERRIDE {
     plugins->clear();
 
@@ -226,10 +225,11 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
   std::unique_ptr<Server> server_;
   TestServiceImpl service_;
   int port_;
+
  private:
   TestServerBuilderPlugin* CheckPresent() {
     auto it = builder_->plugins_.begin();
-    for ( ; it != builder_->plugins_.end(); it++) {
+    for (; it != builder_->plugins_.end(); it++) {
       if ((*it)->name() == PLUGIN_NAME) break;
     }
     if (it != builder_->plugins_.end()) {
