@@ -29,8 +29,6 @@
 
 """Test of gRPC Python's application-layer API."""
 
-from __future__ import division
-
 import itertools
 import threading
 import unittest
