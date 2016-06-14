@@ -61,8 +61,9 @@ def _unix_piecemeal_link(
                           if not dir in ('/lib', '/lib64', '/usr/lib', '/usr/lib64')]
   lib_opts = ccompiler.gen_lib_options(self, library_dirs, runtime_library_dirs,
                              libraries)
-  if not isinstance(output_dir, basestring) and output_dir is not None:
-    raise TypeError, "'output_dir' must be a string or None"
+  if (not (isinstance(output_dir, str) or isinstance(output_dir, bytes))
+      and output_dir is not None):
+    raise TypeError("'output_dir' must be a string or None")
   if output_dir is not None:
     output_filename = os.path.join(output_dir, output_filename)
 
@@ -106,11 +107,14 @@ def _unix_piecemeal_link(
         escaped_ld_args = [arg.replace('\\', '\\\\') for arg in ld_args]
         command_file.write(' '.join(escaped_ld_args))
       self.spawn(linker + ['@{}'.format(command_filename)])
-    except errors.DistutilsExecError, msg:
-      raise ccompiler.LinkError, msg
+    except errors.DistutilsExecError:
+      raise ccompiler.LinkError
   else:
     log.debug("skipping %s (up-to-date)", output_filename)
 
+# TODO(atash) try replacing this monkeypatch of the compiler harness' link
+# operation with a monkeypatch of the distutils `spawn` that applies
+# command-argument-file hacks where it can. Might be cleaner.
 def monkeypatch_unix_compiler():
   """Monkeypatching is dumb, but it's either that or we become maintainers of
      something much, much bigger."""

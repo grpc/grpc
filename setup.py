@@ -57,13 +57,13 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.abspath(PYTHON_STEM))
 
 # Break import-style to ensure we can actually find our in-repo dependencies.
-import build
+import _unixccompiler_patch
 import commands
 import grpc_core_dependencies
 import grpc_version
 
 # TODO(atash) make this conditional on being on a mingw32 build
-build.monkeypatch_unix_compiler()
+_unixccompiler_patch.monkeypatch_unix_compiler()
 
 
 LICENSE = '3-clause BSD'
