@@ -889,6 +889,7 @@ algorithm_test: $(BINDIR)/$(CONFIG)/algorithm_test
 alloc_test: $(BINDIR)/$(CONFIG)/alloc_test
 alpn_test: $(BINDIR)/$(CONFIG)/alpn_test
 api_fuzzer: $(BINDIR)/$(CONFIG)/api_fuzzer
+bin_decoder_test: $(BINDIR)/$(CONFIG)/bin_decoder_test
 bin_encoder_test: $(BINDIR)/$(CONFIG)/bin_encoder_test
 census_context_test: $(BINDIR)/$(CONFIG)/census_context_test
 channel_create_test: $(BINDIR)/$(CONFIG)/channel_create_test
@@ -1226,6 +1227,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/algorithm_test \
   $(BINDIR)/$(CONFIG)/alloc_test \
   $(BINDIR)/$(CONFIG)/alpn_test \
+  $(BINDIR)/$(CONFIG)/bin_decoder_test \
   $(BINDIR)/$(CONFIG)/bin_encoder_test \
   $(BINDIR)/$(CONFIG)/census_context_test \
   $(BINDIR)/$(CONFIG)/channel_create_test \
@@ -1481,6 +1483,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/alloc_test || ( echo test alloc_test failed ; exit 1 )
 	$(E) "[RUN]     Testing alpn_test"
 	$(Q) $(BINDIR)/$(CONFIG)/alpn_test || ( echo test alpn_test failed ; exit 1 )
+	$(E) "[RUN]     Testing bin_decoder_test"
+	$(Q) $(BINDIR)/$(CONFIG)/bin_decoder_test || ( echo test bin_decoder_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bin_encoder_test"
 	$(Q) $(BINDIR)/$(CONFIG)/bin_encoder_test || ( echo test bin_encoder_test failed ; exit 1 )
 	$(E) "[RUN]     Testing census_context_test"
@@ -2584,6 +2588,7 @@ LIBGRPC_SRC = \
     src/core/lib/transport/transport.c \
     src/core/lib/transport/transport_op_string.c \
     src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c \
+    src/core/ext/transport/chttp2/transport/bin_decoder.c \
     src/core/ext/transport/chttp2/transport/bin_encoder.c \
     src/core/ext/transport/chttp2/transport/chttp2_plugin.c \
     src/core/ext/transport/chttp2/transport/chttp2_transport.c \
@@ -2853,6 +2858,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/transport/cronet/transport/cronet_api_dummy.c \
     src/core/ext/transport/cronet/transport/cronet_transport.c \
     src/core/ext/transport/chttp2/client/secure/secure_channel_create.c \
+    src/core/ext/transport/chttp2/transport/bin_decoder.c \
     src/core/ext/transport/chttp2/transport/bin_encoder.c \
     src/core/ext/transport/chttp2/transport/chttp2_plugin.c \
     src/core/ext/transport/chttp2/transport/chttp2_transport.c \
@@ -3186,6 +3192,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/transport/transport_op_string.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c \
+    src/core/ext/transport/chttp2/transport/bin_decoder.c \
     src/core/ext/transport/chttp2/transport/bin_encoder.c \
     src/core/ext/transport/chttp2/transport/chttp2_plugin.c \
     src/core/ext/transport/chttp2/transport/chttp2_transport.c \
@@ -6635,6 +6642,38 @@ deps_api_fuzzer: $(API_FUZZER_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(API_FUZZER_OBJS:.o=.dep)
+endif
+endif
+
+
+BIN_DECODER_TEST_SRC = \
+    test/core/transport/chttp2/bin_decoder_test.c \
+
+BIN_DECODER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BIN_DECODER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/bin_decoder_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/bin_decoder_test: $(BIN_DECODER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(BIN_DECODER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/bin_decoder_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/transport/chttp2/bin_decoder_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_bin_decoder_test: $(BIN_DECODER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BIN_DECODER_TEST_OBJS:.o=.dep)
 endif
 endif
 

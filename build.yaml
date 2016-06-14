@@ -506,6 +506,7 @@ filegroups:
   - gpr_test_util
 - name: grpc_transport_chttp2
   headers:
+  - src/core/ext/transport/chttp2/transport/bin_decoder.h
   - src/core/ext/transport/chttp2/transport/bin_encoder.h
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
   - src/core/ext/transport/chttp2/transport/frame.h
@@ -527,6 +528,7 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/timeout_encoding.h
   - src/core/ext/transport/chttp2/transport/varint.h
   src:
+  - src/core/ext/transport/chttp2/transport/bin_decoder.c
   - src/core/ext/transport/chttp2/transport/bin_encoder.c
   - src/core/ext/transport/chttp2/transport/chttp2_plugin.c
   - src/core/ext/transport/chttp2/transport/chttp2_transport.c
@@ -1247,6 +1249,14 @@ targets:
   - test/core/end2end/fuzzers/api_fuzzer_corpus
   dict: test/core/end2end/fuzzers/api_fuzzer.dictionary
   maxlen: 2048
+- name: bin_decoder_test
+  build: test
+  language: c
+  src:
+  - test/core/transport/chttp2/bin_decoder_test.c
+  deps:
+  - grpc_test_util
+  - grpc
 - name: bin_encoder_test
   build: test
   language: c
