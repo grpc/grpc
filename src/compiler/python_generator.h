@@ -43,6 +43,7 @@ namespace grpc_python_generator {
 // Data pertaining to configuration of the generator with respect to anything
 // that may be used internally at Google.
 struct GeneratorConfiguration {
+  grpc::string grpc_package_root;
   grpc::string beta_package_root;
 };
 
