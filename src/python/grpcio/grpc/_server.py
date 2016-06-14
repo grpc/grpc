@@ -342,10 +342,9 @@ def _unary_request(rpc_event, state, request_deserializer):
             if state.client is _CLOSED:
               details = '"{}" requires exactly one request message.'.format(
                   rpc_event.request_call_details.method)
-              # TODO(5992#issuecomment-220761992): really, what status code?
               _abort(
                   state, rpc_event.operation_call,
-                  cygrpc.StatusCode.unavailable, details)
+                  cygrpc.StatusCode.unimplemented, details)
               return None
             elif state.client is _CANCELLED:
               return None
