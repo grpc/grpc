@@ -72,10 +72,6 @@ else
   exit 1
 fi
 
-if [ "$CONFIG" = "gcov" ]; then
-  export GRPC_PYTHON_ENABLE_CYTHON_TRACING=1
-fi
-
 # Instnatiate the virtualenv, preferring to do so from the relevant python
 # version. Even if these commands fail (e.g. on Windows due to name conflicts)
 # it's possible that the virtualenv is still usable and we trust the tester to

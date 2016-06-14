@@ -394,24 +394,15 @@ class PythonLanguage(object):
     with open('src/python/grpcio_tests/tests/tests.json') as tests_json_file:
       tests_json = json.load(tests_json_file)
     environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
-    if self.config.build_config != 'gcov':
-      return [self.config.job_spec(
-          ['tools/run_tests/run_python.sh', config.venv_python],
-          None,
-          environ=dict(environment.items() +
-                       [('GRPC_PYTHON_TESTRUNNER_FILTER', suite_name)]),
-          shortname='%s.test.%s' % (config.venv, suite_name),
-          timeout_seconds=5*60)
-          for suite_name in tests_json
-          for config in self.pythons]
-    else:
-      return [self.config.job_spec(
-          ['tools/run_tests/run_python.sh', config.venv_python],
-          None,
-          environ=environment,
-          shortname='%s.test.coverage' % config.venv,
-          timeout_seconds=15*60)
-          for config in self.pythons]
+    return [self.config.job_spec(
+        ['tools/run_tests/run_python.sh', config.venv_python],
+        None,
+        environ=dict(environment.items() +
+                     [('GRPC_PYTHON_TESTRUNNER_FILTER', suite_name)]),
+        shortname='%s.test.%s' % (config.venv, suite_name),
+        timeout_seconds=5*60)
+        for suite_name in tests_json
+        for config in self.pythons]
 
 
   def pre_build_steps(self):
