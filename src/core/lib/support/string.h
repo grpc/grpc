@@ -85,7 +85,7 @@ void gpr_reverse_bytes(char *str, int len);
 
 /* Pad a string with flag characters. The given length specifies the minimum
    field width. The input string is never truncated. */
-char *gpr_strpad(const char *str, char flag, size_t length);
+char *gpr_leftpad(const char *str, char flag, size_t length);
 
 /* Join a set of strings, returning the resulting string.
    Total combined length (excluding null terminator) is returned in total_length

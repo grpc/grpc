@@ -334,34 +334,34 @@ static void test_int64toa() {
   GPR_ASSERT(0 == strcmp("-9223372036854775808", buf));
 }
 
-static void test_strpad() {
+static void test_leftpad() {
   char *padded;
 
-  padded = gpr_strpad("foo", ' ', 5);
+  padded = gpr_leftpad("foo", ' ', 5);
   GPR_ASSERT(0 == strcmp("  foo", padded));
   gpr_free(padded);
 
-  padded = gpr_strpad("foo", ' ', 4);
+  padded = gpr_leftpad("foo", ' ', 4);
   GPR_ASSERT(0 == strcmp(" foo", padded));
   gpr_free(padded);
 
-  padded = gpr_strpad("foo", ' ', 3);
+  padded = gpr_leftpad("foo", ' ', 3);
   GPR_ASSERT(0 == strcmp("foo", padded));
   gpr_free(padded);
 
-  padded = gpr_strpad("foo", ' ', 2);
+  padded = gpr_leftpad("foo", ' ', 2);
   GPR_ASSERT(0 == strcmp("foo", padded));
   gpr_free(padded);
 
-  padded = gpr_strpad("foo", ' ', 1);
+  padded = gpr_leftpad("foo", ' ', 1);
   GPR_ASSERT(0 == strcmp("foo", padded));
   gpr_free(padded);
 
-  padded = gpr_strpad("foo", ' ', 0);
+  padded = gpr_leftpad("foo", ' ', 0);
   GPR_ASSERT(0 == strcmp("foo", padded));
   gpr_free(padded);
 
-  padded = gpr_strpad("foo", '0', 5);
+  padded = gpr_leftpad("foo", '0', 5);
   GPR_ASSERT(0 == strcmp("00foo", padded));
   gpr_free(padded);
 }
@@ -378,6 +378,6 @@ int main(int argc, char **argv) {
   test_strsplit();
   test_ltoa();
   test_int64toa();
-  test_strpad();
+  test_leftpad();
   return 0;
 }
