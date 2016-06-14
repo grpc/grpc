@@ -76,7 +76,13 @@ static grpc_mdelem *client_recv_filter(void *user_data, grpc_mdelem *md) {
   if (md == GRPC_MDELEM_STATUS_200) {
     return NULL;
   } else if (md->key == GRPC_MDSTR_STATUS) {
-    grpc_call_element_send_cancel(a->exec_ctx, a->elem);
+    char *message_string;
+    gpr_asprintf(&message_string, "Received http2 header with status: %s",
+                 grpc_mdstr_as_c_string(md->value));
+    gpr_slice message = gpr_slice_from_copied_string(message_string);
+    gpr_free(message_string);
+    grpc_call_element_send_cancel_with_message(a->exec_ctx, a->elem,
+                                               GRPC_STATUS_CANCELLED, &message);
     return NULL;
   } else if (md == GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC) {
     return NULL;

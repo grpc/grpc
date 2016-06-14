@@ -266,3 +266,14 @@ void grpc_call_element_send_cancel(grpc_exec_ctx *exec_ctx,
   op.cancel_with_status = GRPC_STATUS_CANCELLED;
   grpc_call_next_op(exec_ctx, cur_elem, &op);
 }
+
+void grpc_call_element_send_cancel_with_message(grpc_exec_ctx *exec_ctx,
+                                                grpc_call_element *cur_elem,
+                                                grpc_status_code status,
+                                                gpr_slice *optional_message) {
+  grpc_transport_stream_op op;
+  memset(&op, 0, sizeof(op));
+  grpc_transport_stream_op_add_cancellation_with_message(&op, status,
+                                                         optional_message);
+  grpc_call_next_op(exec_ctx, cur_elem, &op);
+}

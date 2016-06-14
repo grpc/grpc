@@ -943,7 +943,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
 
   if (op->cancel_with_status != GRPC_STATUS_OK) {
     cancel_from_api(exec_ctx, transport_global, stream_global,
-                    op->cancel_with_status, op->optional_close_message);
+                    op->cancel_with_status, op->optional_cancel_message);
   }
 
   if (op->close_with_status != GRPC_STATUS_OK) {

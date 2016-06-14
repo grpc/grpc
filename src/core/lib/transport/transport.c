@@ -164,6 +164,7 @@ void grpc_transport_stream_op_add_cancellation(grpc_transport_stream_op *op,
   GPR_ASSERT(status != GRPC_STATUS_OK);
   if (op->cancel_with_status == GRPC_STATUS_OK) {
     op->cancel_with_status = status;
+    op->optional_cancel_message = NULL;
   }
   if (op->close_with_status != GRPC_STATUS_OK) {
     op->close_with_status = GRPC_STATUS_OK;
@@ -187,6 +188,35 @@ static void free_message(grpc_exec_ctx *exec_ctx, void *p, bool iomgr_success) {
     cmd->then_call->cb(exec_ctx, cmd->then_call->cb_arg, iomgr_success);
   }
   gpr_free(cmd);
+}
+
+void grpc_transport_stream_op_add_cancellation_with_message(
+    grpc_transport_stream_op *op, grpc_status_code status,
+    gpr_slice *optional_message) {
+  close_message_data *cmd;
+  GPR_ASSERT(status != GRPC_STATUS_OK);
+  if (op->cancel_with_status != GRPC_STATUS_OK) {
+    if (optional_message) {
+      gpr_slice_unref(*optional_message);
+    }
+    return;
+  }
+  if (optional_message) {
+    cmd = gpr_malloc(sizeof(*cmd));
+    cmd->message = *optional_message;
+    cmd->then_call = op->on_complete;
+    grpc_closure_init(&cmd->closure, free_message, cmd);
+    op->on_complete = &cmd->closure;
+    op->optional_cancel_message = &cmd->message;
+  }
+  op->cancel_with_status = status;
+  if (op->close_with_status != GRPC_STATUS_OK) {
+    op->close_with_status = GRPC_STATUS_OK;
+    if (op->optional_close_message != NULL) {
+      gpr_slice_unref(*op->optional_close_message);
+      op->optional_close_message = NULL;
+    }
+  }
 }
 
 void grpc_transport_stream_op_add_close(grpc_transport_stream_op *op,
