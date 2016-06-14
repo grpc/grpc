@@ -33,6 +33,7 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../..
 
+# Arguments
 PYTHON=${1:-python2.7}
 VENV=${2:-py27}
 VENV_RELATIVE_PYTHON=${3:-bin/python}
@@ -41,6 +42,10 @@ TOOLCHAIN=${4:-unix}
 ROOT=`pwd`
 export CFLAGS="-I$ROOT/include -std=gnu99 -fno-wrapv"
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1
+
+# Default python on the host to fall back to when instantiating e.g. the
+# virtualenv.
+HOST_PYTHON=${HOST_PYTHON:-python}
 
 # If ccache is available, use it... unless we're on Mac, then all hell breaks
 # loose because Python does hacky things to support other hacky things done to
@@ -71,7 +76,14 @@ if [ "$CONFIG" = "gcov" ]; then
   export GRPC_PYTHON_ENABLE_CYTHON_TRACING=1
 fi
 
-($PYTHON -m virtualenv $VENV || true)
+# Instnatiate the virtualenv, preferring to do so from the relevant python
+# version. Even if these commands fail (e.g. on Windows due to name conflicts)
+# it's possible that the virtualenv is still usable and we trust the tester to
+# be able to 'figure it out' instead of us e.g. doing potentially expensive and
+# unnecessary error recovery by `rm -rf`ing the virtualenv.
+($PYTHON -m virtualenv $VENV ||
+ $HOST_PYTHON -m virtualenv -p $PYTHON $VENV ||
+ true)
 VENV_PYTHON=`$REALPATH -s "$VENV/$VENV_RELATIVE_PYTHON"`
 
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
