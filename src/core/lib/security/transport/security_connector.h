@@ -174,14 +174,14 @@ struct grpc_server_security_connector {
   void (*do_handshake)(grpc_exec_ctx *exec_ctx,
                        grpc_server_security_connector *sc,
                        grpc_tcp_server_acceptor *acceptor,
-                       grpc_endpoint *nonsecure_endpoint,
+                       grpc_endpoint *nonsecure_endpoint, gpr_timespec deadline,
                        grpc_security_handshake_done_cb cb, void *user_data);
 };
 
 void grpc_server_security_connector_do_handshake(
     grpc_exec_ctx *exec_ctx, grpc_server_security_connector *sc,
     grpc_tcp_server_acceptor *acceptor, grpc_endpoint *nonsecure_endpoint,
-    grpc_security_handshake_done_cb cb, void *user_data);
+    gpr_timespec deadline, grpc_security_handshake_done_cb cb, void *user_data);
 
 void grpc_server_security_connector_shutdown(
     grpc_exec_ctx *exec_ctx, grpc_server_security_connector *connector);
