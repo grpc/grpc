@@ -129,9 +129,11 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *statep, grpc_endpoint *tcp,
   state->state = statep;
   state_ref(state->state);
   state->accepting_pollset = accepting_pollset;
-  grpc_server_security_connector_do_handshake(exec_ctx, state->state->sc,
-                                              acceptor, tcp,
-                                              on_secure_handshake_done, state);
+  grpc_server_security_connector_do_handshake(
+      exec_ctx, state->state->sc, acceptor, tcp,
+      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                   gpr_time_from_seconds(120, GPR_TIMESPAN)),
+      on_secure_handshake_done, state);
 }
 
 /* Server callback: start listening on our ports */

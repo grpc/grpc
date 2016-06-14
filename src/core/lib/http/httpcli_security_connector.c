@@ -80,7 +80,7 @@ static void httpcli_ssl_do_handshake(grpc_exec_ctx *exec_ctx,
     cb(exec_ctx, user_data, GRPC_SECURITY_ERROR, NULL, NULL);
   } else {
     grpc_do_security_handshake(exec_ctx, handshaker, &sc->base, true,
-                               nonsecure_endpoint, cb, user_data);
+                               nonsecure_endpoint, deadline, cb, user_data);
   }
 }
 

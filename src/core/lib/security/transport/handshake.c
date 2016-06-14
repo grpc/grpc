@@ -39,6 +39,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice_buffer.h>
+#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/security/transport/tsi_error.h"
@@ -61,6 +62,7 @@ typedef struct {
   grpc_closure on_handshake_data_sent_to_peer;
   grpc_closure on_handshake_data_received_from_peer;
   grpc_auth_context *auth_context;
+  grpc_timer timer;
 } grpc_security_handshake;
 
 static void on_handshake_data_received_from_peer(grpc_exec_ctx *exec_ctx,
@@ -100,6 +102,7 @@ static void security_connector_remove_handshake(grpc_security_handshake *h) {
 static void security_handshake_done(grpc_exec_ctx *exec_ctx,
                                     grpc_security_handshake *h,
                                     grpc_error *error) {
+  grpc_timer_cancel(exec_ctx, &h->timer);
   if (!h->is_client_side) {
     security_connector_remove_handshake(h);
   }
@@ -304,6 +307,12 @@ static void on_handshake_data_sent_to_peer(grpc_exec_ctx *exec_ctx,
   }
 }
 
+static void on_timeout(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+  if (error == GRPC_ERROR_NONE) {
+    grpc_endpoint_shutdown(exec_ctx, arg);
+  }
+}
+
 void grpc_do_security_handshake(
     grpc_exec_ctx *exec_ctx, tsi_handshaker *handshaker,
     grpc_security_connector *connector, bool is_client_side,
@@ -338,6 +347,8 @@ void grpc_do_security_handshake(
     gpr_mu_unlock(&server_connector->mu);
   }
   send_handshake_bytes_to_peer(exec_ctx, h);
+  grpc_timer_init(exec_ctx, &h->timer, deadline, on_timeout,
+                  h->wrapped_endpoint, gpr_now(deadline.clock_type));
 }
 
 void grpc_security_handshake_shutdown(grpc_exec_ctx *exec_ctx,

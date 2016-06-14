@@ -139,11 +139,13 @@ void grpc_channel_security_connector_do_handshake(
 void grpc_server_security_connector_do_handshake(
     grpc_exec_ctx *exec_ctx, grpc_server_security_connector *sc,
     grpc_tcp_server_acceptor *acceptor, grpc_endpoint *nonsecure_endpoint,
-    grpc_security_handshake_done_cb cb, void *user_data) {
+    gpr_timespec deadline, grpc_security_handshake_done_cb cb,
+    void *user_data) {
   if (sc == NULL || nonsecure_endpoint == NULL) {
     cb(exec_ctx, user_data, GRPC_SECURITY_ERROR, NULL, NULL);
   } else {
-    sc->do_handshake(exec_ctx, sc, acceptor, nonsecure_endpoint, cb, user_data);
+    sc->do_handshake(exec_ctx, sc, acceptor, nonsecure_endpoint, deadline, cb,
+                     user_data);
   }
 }
 
@@ -314,17 +316,19 @@ static void fake_channel_do_handshake(grpc_exec_ctx *exec_ctx,
                                       grpc_security_handshake_done_cb cb,
                                       void *user_data) {
   grpc_do_security_handshake(exec_ctx, tsi_create_fake_handshaker(1), &sc->base,
-                             true, nonsecure_endpoint, cb, user_data);
+                             true, nonsecure_endpoint, deadline, cb, user_data);
 }
 
 static void fake_server_do_handshake(grpc_exec_ctx *exec_ctx,
                                      grpc_server_security_connector *sc,
                                      grpc_tcp_server_acceptor *acceptor,
                                      grpc_endpoint *nonsecure_endpoint,
+                                     gpr_timespec deadline,
                                      grpc_security_handshake_done_cb cb,
                                      void *user_data) {
   grpc_do_security_handshake(exec_ctx, tsi_create_fake_handshaker(0), &sc->base,
-                             false, nonsecure_endpoint, cb, user_data);
+                             false, nonsecure_endpoint, deadline, cb,
+                             user_data);
 }
 
 static grpc_security_connector_vtable fake_channel_vtable = {
@@ -429,7 +433,7 @@ static void ssl_channel_do_handshake(grpc_exec_ctx *exec_ctx,
     cb(exec_ctx, user_data, status, NULL, NULL);
   } else {
     grpc_do_security_handshake(exec_ctx, handshaker, &sc->base, true,
-                               nonsecure_endpoint, cb, user_data);
+                               nonsecure_endpoint, deadline, cb, user_data);
   }
 }
 
@@ -437,6 +441,7 @@ static void ssl_server_do_handshake(grpc_exec_ctx *exec_ctx,
                                     grpc_server_security_connector *sc,
                                     grpc_tcp_server_acceptor *acceptor,
                                     grpc_endpoint *nonsecure_endpoint,
+                                    gpr_timespec deadline,
                                     grpc_security_handshake_done_cb cb,
                                     void *user_data) {
   grpc_ssl_server_security_connector *c =
@@ -448,7 +453,7 @@ static void ssl_server_do_handshake(grpc_exec_ctx *exec_ctx,
     cb(exec_ctx, user_data, status, NULL, NULL);
   } else {
     grpc_do_security_handshake(exec_ctx, handshaker, &sc->base, false,
-                               nonsecure_endpoint, cb, user_data);
+                               nonsecure_endpoint, deadline, cb, user_data);
   }
 }
 
