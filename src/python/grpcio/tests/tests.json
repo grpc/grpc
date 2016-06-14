@@ -54,6 +54,7 @@
   "_rpc_test.RPCTest",
   "_sanity_test.Sanity", 
   "_secure_interop_test.SecureInteropTest", 
+  "_thread_cleanup_test.CleanupThreadTest",
   "_transmission_test.RoundTripTest", 
   "_transmission_test.TransmissionTest", 
   "_utilities_test.ChannelConnectivityTest", 

@@ -193,13 +193,6 @@ class RPCTest(unittest.TestCase):
 
     self._channel = grpc.insecure_channel('localhost:%d' % port)
 
-  # TODO(nathaniel): Why is this necessary, and only in some development
-  # environments?
-  def tearDown(self):
-    del self._channel
-    del self._server
-    del self._server_pool
-
   def testUnrecognizedMethod(self):
     request = b'abc'
 
