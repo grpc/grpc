@@ -194,7 +194,7 @@ int int64_ttoa(int64_t value, char *string) {
   return i;
 }
 
-char *gpr_strpad(const char *str, char flag, size_t length) {
+char *gpr_leftpad(const char *str, char flag, size_t length) {
   const size_t str_length = strlen(str);
   const size_t out_length = str_length > length ? str_length : length;
   char *out = gpr_malloc(out_length + 1);

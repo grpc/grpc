@@ -2024,7 +2024,7 @@ static char *format_flowctl_context_var(const char *context, const char *var,
   if (context == NULL) {
     *scope = NULL;
     gpr_asprintf(&buf, "%s(%" PRId64 ")", var, val);
-    result = gpr_strpad(buf, ' ', 40);
+    result = gpr_leftpad(buf, ' ', 40);
     gpr_free(buf);
     return result;
   }
@@ -2037,7 +2037,7 @@ static char *format_flowctl_context_var(const char *context, const char *var,
     gpr_free(tmp);
   }
   gpr_asprintf(&buf, "%s.%s(%" PRId64 ")", underscore_pos + 1, var, val);
-  result = gpr_strpad(buf, ' ', 40);
+  result = gpr_leftpad(buf, ' ', 40);
   gpr_free(buf);
   return result;
 }
@@ -2068,8 +2068,8 @@ void grpc_chttp2_flowctl_trace(const char *file, int line, const char *phase,
   char *clisvr = is_client ? "client" : "server";
   char *prefix;
 
-  tmp_phase = gpr_strpad(phase, ' ', 8);
-  tmp_scope1 = gpr_strpad(scope1, ' ', 11);
+  tmp_phase = gpr_leftpad(phase, ' ', 8);
+  tmp_scope1 = gpr_leftpad(scope1, ' ', 11);
   gpr_asprintf(&prefix, "FLOW %s: %s %s ", phase, clisvr, scope1);
   gpr_free(tmp_phase);
   gpr_free(tmp_scope1);
