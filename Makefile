@@ -200,7 +200,7 @@ LD_tsan = clang
 LDXX_tsan = clang++
 CPPFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_tsan = -fsanitize=thread
-DEFINES_tsan = _GRPC_TSAN
+DEFINES_tsan = GRPC_TSAN
 DEFINES_tsan += GRPC_TEST_SLOWDOWN_BUILD_FACTOR=5
 
 VALID_CONFIG_stapprof = 1

@@ -236,7 +236,7 @@ static grpc_wakeup_fd polling_island_wakeup_fd;
 static gpr_mu g_pi_freelist_mu;
 static polling_island *g_pi_freelist = NULL;
 
-#ifdef _GRPC_TSAN
+#ifdef GRPC_TSAN
 /* Currently TSAN may incorrectly flag data races between epoll_ctl and
    epoll_wait for any grpc_fd structs that are added to the epoll set via
    epoll_ctl and are returned (within a very short window) via epoll_wait().
@@ -245,7 +245,7 @@ static polling_island *g_pi_freelist = NULL;
    the code just-before epoll_ctl() and the code after epoll_wait() by using
    this atomic */
 gpr_atm g_epoll_sync;
-#endif
+#endif /* defined(GRPC_TSAN) */
 
 /* The caller is expected to hold pi->mu lock before calling this function */
 static void polling_island_add_fds_locked(polling_island *pi, grpc_fd **fds,
@@ -254,10 +254,10 @@ static void polling_island_add_fds_locked(polling_island *pi, grpc_fd **fds,
   size_t i;
   struct epoll_event ev;
 
-#ifdef _GRPC_TSAN
+#ifdef GRPC_TSAN
   /* See the definition of g_epoll_sync for more context */
   gpr_atm_rel_store(&g_epoll_sync, 0);
-#endif
+#endif /* defined(GRPC_TSAN) */
 
   for (i = 0; i < fd_count; i++) {
     ev.events = (uint32_t)(EPOLLIN | EPOLLOUT | EPOLLET);
@@ -1161,10 +1161,10 @@ static void pollset_work_and_unlock(grpc_exec_ctx *exec_ctx,
       }
     }
 
-#ifdef _GRPC_TSAN
+#ifdef GRPC_TSAN
     /* See the definition of g_poll_sync for more details */
     gpr_atm_acq_load(&g_epoll_sync);
-#endif
+#endif /* defined(GRPC_TSAN) */
 
     for (int i = 0; i < ep_rv; ++i) {
       void *data_ptr = ep_ev[i].data.ptr;

@@ -3266,7 +3266,7 @@ configs:
     CPPFLAGS: -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
       -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
-    DEFINES: _GRPC_TSAN
+    DEFINES: GRPC_TSAN
     LD: clang
     LDFLAGS: -fsanitize=thread
     LDXX: clang++
