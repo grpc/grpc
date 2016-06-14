@@ -199,9 +199,7 @@ grpc_channel_args * buildChannelArgs(NSDictionary *dictionary) {
                                   NULL, GRPC_PROPAGATE_DEFAULTS,
                                   queue.unmanagedQueue,
                                   path.UTF8String,
-                                  // Get "host" from "host:port"
-                                  // TODO(jcanizales): Use NSURLs throughout, to clarify these.
-                                  [_host componentsSeparatedByString:@":"][0].UTF8String,
+                                  NULL,
                                   gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
 }
 
