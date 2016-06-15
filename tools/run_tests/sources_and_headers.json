@@ -86,6 +86,20 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "bin_decoder_test", 
+    "src": [
+      "test/core/transport/chttp2/bin_decoder_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "bin_encoder_test", 
     "src": [
       "test/core/transport/chttp2/bin_encoder_test.c"
@@ -2337,6 +2351,29 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_reflection", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/cpp/util/proto_reflection_descriptor_database.h"
+    ], 
+    "language": "c++", 
+    "name": "proto_server_reflection_test", 
+    "src": [
+      "test/cpp/end2end/proto_server_reflection_test.cc", 
+      "test/cpp/util/proto_reflection_descriptor_database.cc", 
+      "test/cpp/util/proto_reflection_descriptor_database.h"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
       "grpc++_test_util", 
       "grpc_test_util", 
       "qps"
@@ -4314,6 +4351,32 @@
     "type": "lib"
   }, 
   {
+    "deps": [
+      "grpc++", 
+      "grpc++_codegen_proto"
+    ], 
+    "headers": [
+      "include/grpc++/ext/proto_server_reflection_plugin.h", 
+      "include/grpc++/ext/reflection.grpc.pb.h", 
+      "include/grpc++/ext/reflection.pb.h", 
+      "src/cpp/ext/proto_server_reflection.h"
+    ], 
+    "language": "c++", 
+    "name": "grpc++_reflection", 
+    "src": [
+      "include/grpc++/ext/proto_server_reflection_plugin.h", 
+      "include/grpc++/ext/reflection.grpc.pb.h", 
+      "include/grpc++/ext/reflection.pb.h", 
+      "src/cpp/ext/proto_server_reflection.cc", 
+      "src/cpp/ext/proto_server_reflection.h", 
+      "src/cpp/ext/proto_server_reflection_plugin.cc", 
+      "src/cpp/ext/reflection.grpc.pb.cc", 
+      "src/cpp/ext/reflection.pb.cc"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
     "deps": [], 
     "headers": [
       "test/cpp/util/test_config.h"
@@ -6208,6 +6271,7 @@
       "grpc_transport_chttp2_alpn"
     ], 
     "headers": [
+      "src/core/ext/transport/chttp2/transport/bin_decoder.h", 
       "src/core/ext/transport/chttp2/transport/bin_encoder.h", 
       "src/core/ext/transport/chttp2/transport/chttp2_transport.h", 
       "src/core/ext/transport/chttp2/transport/frame.h", 
@@ -6232,6 +6296,8 @@
     "language": "c", 
     "name": "grpc_transport_chttp2", 
     "src": [
+      "src/core/ext/transport/chttp2/transport/bin_decoder.c", 
+      "src/core/ext/transport/chttp2/transport/bin_decoder.h", 
       "src/core/ext/transport/chttp2/transport/bin_encoder.c", 
       "src/core/ext/transport/chttp2/transport/bin_encoder.h", 
       "src/core/ext/transport/chttp2/transport/chttp2_plugin.c", 

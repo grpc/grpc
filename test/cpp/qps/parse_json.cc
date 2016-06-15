@@ -55,7 +55,7 @@ void ParseJson(const grpc::string& json, const grpc::string& type,
     grpc::string errmsg(status.error_message());
     gpr_log(GPR_ERROR, "Failed to convert json to binary: errcode=%d msg=%s",
             status.error_code(), errmsg.c_str());
-    gpr_log(GPR_ERROR, "JSON: ", json.c_str());
+    gpr_log(GPR_ERROR, "JSON: %s", json.c_str());
     abort();
   }
   GPR_ASSERT(msg->ParseFromString(binary));

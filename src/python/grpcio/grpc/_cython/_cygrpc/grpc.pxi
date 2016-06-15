@@ -80,6 +80,12 @@ cdef extern from "grpc/_cython/loader.h":
   gpr_timespec gpr_convert_clock_type(gpr_timespec t,
                                       gpr_clock_type target_clock) nogil
 
+  gpr_timespec gpr_time_from_millis(int64_t ms, gpr_clock_type type) nogil
+
+  gpr_timespec gpr_time_add(gpr_timespec a, gpr_timespec b) nogil
+
+  int gpr_time_cmp(gpr_timespec a, gpr_timespec b) nogil
+  
   ctypedef enum grpc_status_code:
     GRPC_STATUS_OK
     GRPC_STATUS_CANCELLED
