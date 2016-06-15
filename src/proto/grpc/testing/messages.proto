@@ -32,6 +32,8 @@
 
 syntax = "proto3";
 
+import "google/protobuf/wrappers.proto";
+
 package grpc.testing;
 
 // DEPRECATED, don't use. To be removed shortly.
@@ -76,8 +78,11 @@ message SimpleRequest {
   // Whether SimpleResponse should include OAuth scope.
   bool fill_oauth_scope = 5;
 
-  // Whether to request the server to compress the response.
-  bool response_compressed = 6;
+  // Whether to request the server to compress the response. This field is
+  // "nullable" in order to interoperate seamlessly with clients not able to
+  // implement the full compression tests by introspecting the call to verify
+  // the response's compression status.
+  google.protobuf.BoolValue response_compressed = 6;
 
   // Whether server should return a given status
   EchoStatus response_status = 7;
@@ -102,8 +107,11 @@ message StreamingInputCallRequest {
   // Optional input payload sent along with the request.
   Payload payload = 1;
 
-  // Whether the server should expect this request to be compressed.
-  bool expect_compressed = 2;
+  // Whether the server should expect this request to be compressed. This field
+  // is "nullable" in order to interoperate seamlessly with servers not able to
+  // implement the full compression tests by introspecting the call to verify
+  // the request's compression status.
+  BoolValue expect_compressed = 2;
 
   // Not expecting any payload from the response.
 }
@@ -122,6 +130,12 @@ message ResponseParameters {
   // Desired interval between consecutive responses in the response stream in
   // microseconds.
   int32 interval_us = 2;
+
+  // Whether to request the server to compress the response. This field is
+  // "nullable" in order to interoperate seamlessly with clients not able to
+  // implement the full compression tests by introspecting the call to verify
+  // the response's compression status.
+  BoolValue compressed = 3;
 }
 
 // Server-streaming request.
@@ -138,9 +152,6 @@ message StreamingOutputCallRequest {
 
   // Optional input payload sent along with the request.
   Payload payload = 3;
-
-  // Whether to request the server to compress the response.
-  bool response_compressed = 6;
 
   // Whether server should return a given status
   EchoStatus response_status = 7;
