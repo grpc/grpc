@@ -938,7 +938,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
 
     // Client sends 3 messages (tags 3, 4 and 5)
     for (int tag_idx = 3; tag_idx <= 5; tag_idx++) {
-      send_request.set_message("Ping " + std::to_string(tag_idx));
+      send_request.set_message("Ping " + grpc::to_string(tag_idx));
       cli_stream->Write(send_request, tag(tag_idx));
       Verifier(GetParam().disable_blocking)
           .Expect(tag_idx, true)
@@ -1104,7 +1104,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     // Server sends three messages (tags 3, 4 and 5)
     // But if want_done tag is true, we might also see tag 11
     for (int tag_idx = 3; tag_idx <= 5; tag_idx++) {
-      send_response.set_message("Pong " + std::to_string(tag_idx));
+      send_response.set_message("Pong " + grpc::to_string(tag_idx));
       srv_stream.Write(send_response, tag(tag_idx));
       // Note that we'll add something to the verifier and verify that
       // something was seen, but it might be tag 11 and not what we
