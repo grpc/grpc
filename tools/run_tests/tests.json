@@ -98,6 +98,27 @@
     "flaky": false, 
     "gtest": false, 
     "language": "c", 
+    "name": "bin_decoder_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c", 
     "name": "bin_encoder_test", 
     "platforms": [
       "linux", 
@@ -2306,6 +2327,27 @@
     "gtest": true, 
     "language": "c++", 
     "name": "mock_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "gtest": true, 
+    "language": "c++", 
+    "name": "proto_server_reflection_test", 
     "platforms": [
       "linux", 
       "mac", 
