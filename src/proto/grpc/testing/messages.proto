@@ -88,7 +88,7 @@ message SimpleRequest {
   EchoStatus response_status = 7;
 
   // Whether the server should expect this request to be compressed.
-  bool expect_compressed = 8;
+  google.protobuf.BoolValue expect_compressed = 8;
 }
 
 // Unary response, as configured by the request.
@@ -111,7 +111,7 @@ message StreamingInputCallRequest {
   // is "nullable" in order to interoperate seamlessly with servers not able to
   // implement the full compression tests by introspecting the call to verify
   // the request's compression status.
-  BoolValue expect_compressed = 2;
+  google.protobuf.BoolValue expect_compressed = 2;
 
   // Not expecting any payload from the response.
 }
@@ -135,7 +135,7 @@ message ResponseParameters {
   // "nullable" in order to interoperate seamlessly with clients not able to
   // implement the full compression tests by introspecting the call to verify
   // the response's compression status.
-  BoolValue compressed = 3;
+  google.protobuf.BoolValue compressed = 3;
 }
 
 // Server-streaming request.
