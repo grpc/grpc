@@ -421,7 +421,9 @@ static void fd_unref(grpc_fd *fd) { unref_by(fd, 2); }
 
 static void notify_on_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                              grpc_closure **st, grpc_closure *closure) {
-  if (*st == CLOSURE_NOT_READY) {
+  if (fd->shutdown) {
+    grpc_exec_ctx_enqueue(exec_ctx, closure, false, NULL);
+  } else if (*st == CLOSURE_NOT_READY) {
     /* not ready ==> switch to a waiting state by setting the closure */
     *st = closure;
   } else if (*st == CLOSURE_READY) {
@@ -463,11 +465,22 @@ static void set_read_notifier_pollset_locked(
 
 static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
   gpr_mu_lock(&fd->mu);
-  GPR_ASSERT(!fd->shutdown);
-  fd->shutdown = 1;
-  set_ready_locked(exec_ctx, fd, &fd->read_closure);
-  set_ready_locked(exec_ctx, fd, &fd->write_closure);
+  /* only shutdown once */
+  if (!fd->shutdown) {
+    fd->shutdown = 1;
+    /* signal read/write closed to OS so that future operations fail */
+    shutdown(fd->fd, SHUT_RDWR);
+    set_ready_locked(exec_ctx, fd, &fd->read_closure);
+    set_ready_locked(exec_ctx, fd, &fd->write_closure);
+  }
   gpr_mu_unlock(&fd->mu);
+}
+
+static bool fd_is_shutdown(grpc_fd *fd) {
+  gpr_mu_lock(&fd->mu);
+  bool r = fd->shutdown;
+  gpr_mu_unlock(&fd->mu);
+  return r;
 }
 
 static void fd_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
@@ -1172,6 +1185,7 @@ static const grpc_event_engine_vtable vtable = {
     .fd_wrapped_fd = fd_wrapped_fd,
     .fd_orphan = fd_orphan,
     .fd_shutdown = fd_shutdown,
+    .fd_is_shutdown = fd_is_shutdown,
     .fd_notify_on_read = fd_notify_on_read,
     .fd_notify_on_write = fd_notify_on_write,
     .fd_get_read_notifier_pollset = fd_get_read_notifier_pollset,

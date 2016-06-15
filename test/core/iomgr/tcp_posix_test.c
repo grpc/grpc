@@ -517,8 +517,8 @@ int main(int argc, char **argv) {
   grpc_init();
   g_pollset = gpr_malloc(grpc_pollset_size());
   grpc_pollset_init(g_pollset, &g_mu);
-  run_tests();
   grpc_endpoint_tests(configs[0], g_pollset, g_mu);
+  run_tests();
   grpc_closure_init(&destroyed, destroy_pollset, g_pollset);
   grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);
