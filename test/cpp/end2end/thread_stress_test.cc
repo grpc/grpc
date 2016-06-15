@@ -230,7 +230,7 @@ class CommonStressTestSyncServer : public CommonStressTest<TestServiceImpl> {
 };
 
 class CommonStressTestAsyncServer
-    : public CommonStressTest<::grpc::testing::EchoTestService::AsyncService> {
+    : public CommonStressTest< ::grpc::testing::EchoTestService::AsyncService> {
  public:
   void SetUp() GRPC_OVERRIDE {
     shutting_down_ = false;
@@ -394,7 +394,7 @@ class AsyncClientEnd2endTest : public ::testing::Test {
     for (int i = 0; i < num_rpcs; ++i) {
       AsyncClientCall* call = new AsyncClientCall;
       EchoRequest request;
-      request.set_message("Hello: " + std::to_string(i));
+      request.set_message("Hello: " + grpc::to_string(i));
       call->response_reader =
           common_.GetStub()->AsyncEcho(&call->context, request, &cq_);
       call->response_reader->Finish(&call->response, &call->status,

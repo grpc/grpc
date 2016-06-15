@@ -41,15 +41,9 @@
 
 #include "test/core/end2end/data/ssl_test_data.h"
 
+namespace grpc {
 namespace {
 
-using grpc::ChannelArguments;
-using grpc::ChannelCredentials;
-using grpc::InsecureChannelCredentials;
-using grpc::InsecureServerCredentials;
-using grpc::ServerCredentials;
-using grpc::SslCredentialsOptions;
-using grpc::SslServerCredentialsOptions;
 using grpc::testing::CredentialTypeProvider;
 
 // Provide test credentials. Thread-safe.
@@ -162,7 +156,6 @@ CredentialsProvider* GetProvider() {
 
 }  // namespace
 
-namespace grpc {
 namespace testing {
 
 void AddSecureType(const grpc::string& type,

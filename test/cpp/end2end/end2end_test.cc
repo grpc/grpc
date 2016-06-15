@@ -329,7 +329,7 @@ class End2endServerTryCancelTest : public End2endTest {
 
     // Send server_try_cancel value in the client metadata
     context.AddMetadata(kServerTryCancelRequest,
-                        std::to_string(server_try_cancel));
+                        grpc::to_string(server_try_cancel));
 
     auto stream = stub_->RequestStream(&context, &response);
 
@@ -402,7 +402,7 @@ class End2endServerTryCancelTest : public End2endTest {
 
     // Send server_try_cancel in the client metadata
     context.AddMetadata(kServerTryCancelRequest,
-                        std::to_string(server_try_cancel));
+                        grpc::to_string(server_try_cancel));
 
     request.set_message("hello");
     auto stream = stub_->ResponseStream(&context, request);
@@ -413,7 +413,7 @@ class End2endServerTryCancelTest : public End2endTest {
         break;
       }
       EXPECT_EQ(response.message(),
-                request.message() + std::to_string(num_msgs_read));
+                request.message() + grpc::to_string(num_msgs_read));
       num_msgs_read++;
     }
     gpr_log(GPR_INFO, "Read %d messages", num_msgs_read);
@@ -479,14 +479,14 @@ class End2endServerTryCancelTest : public End2endTest {
 
     // Send server_try_cancel in the client metadata
     context.AddMetadata(kServerTryCancelRequest,
-                        std::to_string(server_try_cancel));
+                        grpc::to_string(server_try_cancel));
 
     auto stream = stub_->BidiStream(&context);
 
     int num_msgs_read = 0;
     int num_msgs_sent = 0;
     while (num_msgs_sent < num_messages) {
-      request.set_message("hello " + std::to_string(num_msgs_sent));
+      request.set_message("hello " + grpc::to_string(num_msgs_sent));
       if (!stream->Write(request)) {
         break;
       }
@@ -548,7 +548,7 @@ TEST_P(End2endServerTryCancelTest, RequestEchoServerCancel) {
   ClientContext context;
 
   context.AddMetadata(kServerTryCancelRequest,
-                      std::to_string(CANCEL_BEFORE_PROCESSING));
+                      grpc::to_string(CANCEL_BEFORE_PROCESSING));
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_FALSE(s.ok());
   EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
