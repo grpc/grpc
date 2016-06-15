@@ -199,7 +199,10 @@ class TestScenario {
             credentials_type.c_str());
   }
   bool use_proxy;
-  const grpc::string credentials_type;
+  // Although the below grpc::string is logically const, we can't declare
+  // them const because of a limitation in the way old compilers (e.g., gcc-4.4)
+  // manage vector insertion using a copy constructor
+  grpc::string credentials_type;
 };
 
 class End2endTest : public ::testing::TestWithParam<TestScenario> {
@@ -1421,9 +1424,9 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
   }
   for (auto it = credentials_types.begin(); it != credentials_types.end();
        ++it) {
-    scenarios.push_back(TestScenario(false, *it));
+    scenarios.emplace_back(false, *it);
     if (use_proxy) {
-      scenarios.push_back(TestScenario(true, *it));
+      scenarios.emplace_back(true, *it);
     }
   }
   return scenarios;
