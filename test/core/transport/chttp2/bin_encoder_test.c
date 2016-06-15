@@ -88,7 +88,8 @@ static void expect_combined_equiv(const char *s, size_t len, int line) {
     char *t = gpr_dump_slice(input, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     char *e = gpr_dump_slice(expect, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     char *g = gpr_dump_slice(got, GPR_DUMP_HEX | GPR_DUMP_ASCII);
-    gpr_log(GPR_ERROR, "FAILED:%d:\ntest: %s\ngot:  %s\nwant: %s", t, g, e);
+    gpr_log(GPR_ERROR, "FAILED:%d:\ntest: %s\ngot:  %s\nwant: %s", line, t, g,
+            e);
     gpr_free(t);
     gpr_free(e);
     gpr_free(g);
