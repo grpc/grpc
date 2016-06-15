@@ -78,6 +78,7 @@
 #endif
 
 #ifdef GRPC_CXX0X_NO_NULLPTR
+#include <functional>
 #include <memory>
 namespace grpc {
 const class {
@@ -95,6 +96,10 @@ const class {
     return std::shared_ptr<T>(static_cast<T *>(0));
   }
   operator bool() const { return false; }
+  template <class F>
+  operator std::function<F>() const {
+    return std::function<F>();
+  }
 
  private:
   void operator&() const = delete;
