@@ -150,7 +150,7 @@
 #elif defined(ANDROID) || defined(__ANDROID__)
 #define GPR_PLATFORM_STRING "android"
 #define GPR_ANDROID 1
-#define GPR_ARCH_32 1
+//#define GPR_ARCH_32 1
 #define GPR_CPU_LINUX 1
 #define GPR_GCC_SYNC 1
 #define GPR_GCC_TLS 1
@@ -174,6 +174,11 @@
 #define GPR_HAVE_UNIX_SOCKET 1
 #define GPR_HAVE_IP_PKTINFO 1
 #define GPR_HAVE_IPV6_RECVPKTINFO 1
+#ifdef _LP64
+#define GPR_ARCH_64 1
+#else /* _LP64 */
+#define GPR_ARCH_32 1
+#endif /* _LP64 */
 #elif defined(__linux__)
 #define GPR_POSIX_CRASH_HANDLER 1
 #define GPR_PLATFORM_STRING "linux"
