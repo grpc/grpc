@@ -1,14 +1,19 @@
 {
-  "compile": "**/*.cs",
-
-  "content": "../nativelibs/**",
+  "buildOptions": {
+    "compile": "**/*.cs"
+  },
 
   "dependencies": {
     "Grpc.Core": "0.0.1",
     "Google.Protobuf": "3.0.0-beta3"
   },
   "frameworks": {
-    "net45": { },
+    "net45": {
+      "frameworkAssemblies": {
+        "System.Runtime": "",
+        "System.IO": ""
+      }
+    },
     "dotnet54": {
       "imports": [
         "portable-net45"
