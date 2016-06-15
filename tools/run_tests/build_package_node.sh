@@ -87,7 +87,7 @@ for arch in {x86,x64}; do
     cp $input_dir/grpc_node_plugin* bin/
     mkdir -p bin/google/protobuf
     for proto in "${well_known_protos[@]}"; do
-      cp $base/third_party/protobuf/src/google/protobuf/$proto.proto bin/google/protobuf/
+      cp $base/third_party/protobuf/src/google/protobuf/$proto.proto bin/google/protobuf/$proto.proto
     done
     tar -czf $output_dir/$node_plat-$node_arch.tar.gz bin/
   done
