@@ -112,7 +112,7 @@ static void simple_request_body(grpc_end2end_test_fixture f, size_t num_ops) {
   char *details = NULL;
   size_t details_capacity = 0;
 
-  gpr_log(GPR_DEBUG, "test with %d ops", num_ops);
+  gpr_log(GPR_DEBUG, "test with %" PRIuPTR " ops", num_ops);
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
                                "/foo", "foo.test.google.fr:1234", deadline,

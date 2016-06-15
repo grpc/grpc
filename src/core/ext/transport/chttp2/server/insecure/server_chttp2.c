@@ -111,13 +111,14 @@ int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
     }
   }
   if (count == 0) {
-    gpr_log(GPR_ERROR, "No address added out of total %d resolved",
+    gpr_log(GPR_ERROR, "No address added out of total %" PRIuPTR " resolved",
             resolved->naddrs);
     goto error;
   }
   if (count != resolved->naddrs) {
-    gpr_log(GPR_ERROR, "Only %d addresses added out of total %d resolved",
-            count, resolved->naddrs);
+    gpr_log(GPR_ERROR,
+            "Only %d addresses added out of total %" PRIuPTR " resolved", count,
+            resolved->naddrs);
   }
   grpc_resolved_addresses_destroy(resolved);
 
