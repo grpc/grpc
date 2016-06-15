@@ -644,8 +644,8 @@ static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
         0) {
       gpr_log(GPR_INFO, "Retry immediately");
     } else {
-      gpr_log(GPR_INFO, "Retry in %d.%09d seconds", time_til_next.tv_sec,
-              time_til_next.tv_nsec);
+      gpr_log(GPR_INFO, "Retry in %" PRId64 ".%09d seconds",
+              time_til_next.tv_sec, time_til_next.tv_nsec);
     }
     grpc_timer_init(exec_ctx, &c->alarm, c->next_attempt, on_alarm, c, now);
     grpc_error_free_string(errmsg);
