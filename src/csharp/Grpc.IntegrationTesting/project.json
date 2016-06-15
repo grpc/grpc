@@ -1,11 +1,8 @@
 {
-  "compile": "**/*.cs",
-  "compilationOptions": {
+  "buildOptions": {
+    "compile": "**/*.cs",
     "emitEntryPoint": true
   },
-
-  "content": "../nativelibs/**",
-
   "dependencies": {
     "Grpc.Auth": "0.0.1",
     "Grpc.Core": "0.0.1",
@@ -16,6 +13,11 @@
     "NUnitLite": "3.2.0-*"
   },
   "frameworks": {
-    "net45": { }
+    "net45": {
+      "frameworkAssemblies": {
+        "System.Runtime": "",
+        "System.IO": ""
+      }
+    }
   }
 }

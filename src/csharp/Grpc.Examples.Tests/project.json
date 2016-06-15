@@ -1,11 +1,14 @@
 {
-  "compile": "**/*.cs",
-  "compilationOptions": {
+  "buildOptions": {
+    "compile": "**/*.cs",
+    "copyToOutput": {
+      "mappings": {
+        "nativelibs/windows_x64/grpc_csharp_ext.dll": "../../../vsprojects/x64/Debug/grpc_csharp_ext.dll",
+        "nativelibs/windows_x86/grpc_csharp_ext.dll": "../../../vsprojects/Debug/grpc_csharp_ext.dll"
+      }
+    },
     "emitEntryPoint": true
   },
-
-  "content": "../nativelibs/**",
-
   "dependencies": {
     "Grpc.Examples": "1.0.0",
     "NUnit": "3.2.0",
