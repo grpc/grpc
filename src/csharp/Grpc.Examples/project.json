@@ -5,7 +5,7 @@
 
   "dependencies": {
     "Grpc.Core": "0.0.1",
-    "Google.Protobuf": "3.0.0-beta2"
+    "Google.Protobuf": "3.0.0-beta3"
   },
   "frameworks": {
     "net45": { },
