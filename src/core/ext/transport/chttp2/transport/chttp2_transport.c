@@ -981,7 +981,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
     if (metadata_size > metadata_peer_limit) {
       gpr_log(GPR_DEBUG,
               "to-be-sent initial metadata size exceeds peer limit "
-              "(%lu vs. %lu)",
+              "(%" PRIuPTR " vs. %" PRIuPTR ")",
               metadata_size, metadata_peer_limit);
       cancel_from_api(exec_ctx, transport_global, stream_global,
                       GRPC_STATUS_RESOURCE_EXHAUSTED, NULL);
@@ -1040,7 +1040,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
     if (metadata_size > metadata_peer_limit) {
       gpr_log(GPR_DEBUG,
               "to-be-sent trailing metadata size exceeds peer limit "
-              "(%lu vs. %lu)",
+              "(%" PRIuPTR " vs. %" PRIuPTR ")",
               metadata_size, metadata_peer_limit);
       cancel_from_api(exec_ctx, transport_global, stream_global,
                       GRPC_STATUS_RESOURCE_EXHAUSTED, NULL);
@@ -2110,10 +2110,13 @@ static char *format_flowctl_context_var(const char *context, const char *var,
                                         int64_t val, uint32_t id,
                                         char **scope) {
   char *underscore_pos;
+  char *buf;
   char *result;
   if (context == NULL) {
     *scope = NULL;
-    gpr_asprintf(&result, "%s(%lld)", var, val);
+    gpr_asprintf(&buf, "%s(%" PRId64 ")", var, val);
+    result = gpr_leftpad(buf, ' ', 40);
+    gpr_free(buf);
     return result;
   }
   underscore_pos = strchr(context, '_');
@@ -2124,7 +2127,9 @@ static char *format_flowctl_context_var(const char *context, const char *var,
     gpr_asprintf(scope, "%s[%d]", tmp, id);
     gpr_free(tmp);
   }
-  gpr_asprintf(&result, "%s.%s(%lld)", underscore_pos + 1, var, val);
+  gpr_asprintf(&buf, "%s.%s(%" PRId64 ")", underscore_pos + 1, var, val);
+  result = gpr_leftpad(buf, ' ', 40);
+  gpr_free(buf);
   return result;
 }
 
@@ -2145,6 +2150,8 @@ void grpc_chttp2_flowctl_trace(const char *file, int line, const char *phase,
                                uint32_t stream_id, int64_t val1, int64_t val2) {
   char *scope1;
   char *scope2;
+  char *tmp_phase;
+  char *tmp_scope1;
   char *label1 =
       format_flowctl_context_var(context1, var1, val1, stream_id, &scope1);
   char *label2 =
@@ -2152,14 +2159,18 @@ void grpc_chttp2_flowctl_trace(const char *file, int line, const char *phase,
   char *clisvr = is_client ? "client" : "server";
   char *prefix;
 
-  gpr_asprintf(&prefix, "FLOW % 8s: %s % 11s ", phase, clisvr, scope1);
+  tmp_phase = gpr_leftpad(phase, ' ', 8);
+  tmp_scope1 = gpr_leftpad(scope1, ' ', 11);
+  gpr_asprintf(&prefix, "FLOW %s: %s %s ", phase, clisvr, scope1);
+  gpr_free(tmp_phase);
+  gpr_free(tmp_scope1);
 
   switch (op) {
     case GRPC_CHTTP2_FLOWCTL_MOVE:
       GPR_ASSERT(samestr(scope1, scope2));
       if (val2 != 0) {
         gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-                "%sMOVE   % 40s <- % 40s giving %d", prefix, label1, label2,
+                "%sMOVE   %s <- %s giving %" PRId64, prefix, label1, label2,
                 val1 + val2);
       }
       break;
@@ -2167,7 +2178,7 @@ void grpc_chttp2_flowctl_trace(const char *file, int line, const char *phase,
       GPR_ASSERT(val2 >= 0);
       if (val2 != 0) {
         gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-                "%sCREDIT % 40s by % 40s giving %d", prefix, label1, label2,
+                "%sCREDIT %s by %s giving %" PRId64, prefix, label1, label2,
                 val1 + val2);
       }
       break;
@@ -2175,7 +2186,7 @@ void grpc_chttp2_flowctl_trace(const char *file, int line, const char *phase,
       GPR_ASSERT(val2 >= 0);
       if (val2 != 0) {
         gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-                "%sDEBIT  % 40s by % 40s giving %d", prefix, label1, label2,
+                "%sDEBIT  %s by %s giving %" PRId64, prefix, label1, label2,
                 val1 - val2);
       }
       break;

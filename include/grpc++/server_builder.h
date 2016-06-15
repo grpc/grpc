@@ -119,9 +119,20 @@ class ServerBuilder {
                                   std::shared_ptr<ServerCredentials> creds,
                                   int* selected_port = nullptr);
 
-  /// Add a completion queue for handling asynchronous services
-  /// Caller is required to keep this completion queue live until
-  /// the server is destroyed.
+  /// Add a completion queue for handling asynchronous services.
+  ///
+  /// Caller is required to shutdown the server prior to shutting down the
+  /// returned completion queue. A typical usage scenario:
+  ///
+  /// // While building the server:
+  /// ServerBuilder builder;
+  /// ...
+  /// cq_ = builder.AddCompletionQueue();
+  /// server_ = builder.BuildAndStart();
+  ///
+  /// // While shutting down the server;
+  /// server_->Shutdown();
+  /// cq_->Shutdown();  // Always *after* the associated server's Shutdown()!
   ///
   /// \param is_frequently_polled This is an optional parameter to inform GRPC
   /// library about whether this completion queue would be frequently polled

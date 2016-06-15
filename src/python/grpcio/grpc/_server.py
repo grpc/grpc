@@ -60,6 +60,8 @@ _CANCELLED = 'cancelled'
 _EMPTY_FLAGS = 0
 _EMPTY_METADATA = cygrpc.Metadata(())
 
+_UNEXPECTED_EXIT_SERVER_GRACE = 1.0
+
 
 def _serialized_request(request_event):
   return request_event.batch_operations[0].received_message.bytes()
@@ -254,7 +256,7 @@ class _Context(grpc.ServicerContext):
       else:
         if self._state.initial_metadata_allowed:
           operation = cygrpc.operation_send_initial_metadata(
-              cygrpc.Metadata(initial_metadata), _EMPTY_FLAGS)
+              _common.metadata(initial_metadata), _EMPTY_FLAGS)
           self._rpc_event.operation_call.start_batch(
               cygrpc.Operations((operation,)),
               _send_initial_metadata(self._state))
@@ -342,10 +344,9 @@ def _unary_request(rpc_event, state, request_deserializer):
             if state.client is _CLOSED:
               details = '"{}" requires exactly one request message.'.format(
                   rpc_event.request_call_details.method)
-              # TODO(5992#issuecomment-220761992): really, what status code?
               _abort(
                   state, rpc_event.operation_call,
-                  cygrpc.StatusCode.unavailable, details)
+                  cygrpc.StatusCode.unimplemented, details)
               return None
             elif state.client is _CANCELLED:
               return None
@@ -670,17 +671,6 @@ def _serve(state):
             return
 
 
-def _start(state):
-  with state.lock:
-    if state.stage is not _ServerStage.STOPPED:
-      raise ValueError('Cannot start already-started server!')
-    state.server.start()
-    state.stage = _ServerStage.STARTED
-    _request_call(state)
-    thread = threading.Thread(target=_serve, args=(state,))
-    thread.start()
-
-
 def _stop(state, grace):
   with state.lock:
     if state.stage is _ServerStage.STOPPED:
@@ -717,6 +707,24 @@ def _stop(state, grace):
         return shutdown_event
   shutdown_event.wait()
   return shutdown_event
+
+
+def _start(state):
+  with state.lock:
+    if state.stage is not _ServerStage.STOPPED:
+      raise ValueError('Cannot start already-started server!')
+    state.server.start()
+    state.stage = _ServerStage.STARTED
+    _request_call(state)    
+    def cleanup_server(timeout):
+      if timeout is None:
+        _stop(state, _UNEXPECTED_EXIT_SERVER_GRACE).wait()
+      else:
+        _stop(state, timeout).wait()
+
+    thread = _common.CleanupThread(
+        cleanup_server, target=_serve, args=(state,))
+    thread.start()
 
 
 class Server(grpc.Server):

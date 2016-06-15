@@ -337,7 +337,7 @@ static void start_picking(grpc_exec_ctx *exec_ctx, round_robin_lb_policy *p) {
   p->started_picking = 1;
 
   if (grpc_lb_round_robin_trace) {
-    gpr_log(GPR_DEBUG, "LB_POLICY: p=%p num_subchannels=%d", p,
+    gpr_log(GPR_DEBUG, "LB_POLICY: p=%p num_subchannels=%" PRIuPTR, p,
             p->num_subchannels);
   }
 

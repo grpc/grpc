@@ -175,7 +175,7 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   grpc_tcp_server *tcp = NULL;
   server_secure_state *state = NULL;
   size_t i;
-  unsigned count = 0;
+  size_t count = 0;
   int port_num = -1;
   int port_temp;
   grpc_security_status status = GRPC_SECURITY_ERROR;
@@ -245,14 +245,15 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   }
   if (count == 0) {
     char *msg;
-    gpr_asprintf(&msg, "No address added out of total %d resolved",
+    gpr_asprintf(&msg, "No address added out of total %" PRIuPTR " resolved",
                  resolved->naddrs);
     err = GRPC_ERROR_CREATE_REFERENCING(msg, errors, resolved->naddrs);
     gpr_free(msg);
     goto error;
   } else if (count != resolved->naddrs) {
     char *msg;
-    gpr_asprintf(&msg, "Only %d addresses added out of total %d resolved",
+    gpr_asprintf(&msg, "Only %" PRIuPTR
+                       " addresses added out of total %" PRIuPTR " resolved",
                  count, resolved->naddrs);
     err = GRPC_ERROR_CREATE_REFERENCING(msg, errors, resolved->naddrs);
     gpr_free(msg);

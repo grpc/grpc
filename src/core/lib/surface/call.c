@@ -1189,7 +1189,7 @@ static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
     if (algo >= GRPC_COMPRESS_ALGORITHMS_COUNT) {
       gpr_asprintf(&error_msg, "Invalid compression algorithm value '%d'.",
                    algo);
-      gpr_log(GPR_ERROR, error_msg);
+      gpr_log(GPR_ERROR, "%s", error_msg);
       close_with_status(exec_ctx, call, GRPC_STATUS_UNIMPLEMENTED, error_msg);
     } else if (grpc_compression_options_is_algorithm_enabled(
                    &compression_options, algo) == 0) {
@@ -1198,7 +1198,7 @@ static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
       grpc_compression_algorithm_name(algo, &algo_name);
       gpr_asprintf(&error_msg, "Compression algorithm '%s' is disabled.",
                    algo_name);
-      gpr_log(GPR_ERROR, error_msg);
+      gpr_log(GPR_ERROR, "%s", error_msg);
       close_with_status(exec_ctx, call, GRPC_STATUS_UNIMPLEMENTED, error_msg);
     } else {
       call->incoming_compression_algorithm = algo;
