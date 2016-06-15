@@ -257,12 +257,14 @@ static void inc_on_failure(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   *(int *)arg += (success == false);
 }
 
-static void wait_for_fail_count(grpc_exec_ctx *exec_ctx, int *fail_count, int want_fail_count) {
+static void wait_for_fail_count(grpc_exec_ctx *exec_ctx, int *fail_count,
+                                int want_fail_count) {
   grpc_exec_ctx_flush(exec_ctx);
   for (int i = 0; i < 5 && *fail_count < want_fail_count; i++) {
     grpc_pollset_worker *worker = NULL;
     gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
-    gpr_timespec deadline = gpr_time_add(now, gpr_time_from_seconds(1, GPR_TIMESPAN));
+    gpr_timespec deadline =
+        gpr_time_add(now, gpr_time_from_seconds(1, GPR_TIMESPAN));
     gpr_mu_lock(g_mu);
     grpc_pollset_work(exec_ctx, g_pollset, &worker, now, deadline);
     gpr_mu_unlock(g_mu);
