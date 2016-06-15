@@ -281,6 +281,7 @@ static void multiple_shutdown_test(grpc_endpoint_test_config config) {
                      grpc_closure_create(inc_on_failure, &fail_count));
   grpc_exec_ctx_flush(&exec_ctx);
   GPR_ASSERT(fail_count == 2);
+  gpr_slice_buffer_add(&slice_buffer, gpr_slice_from_copied_string("a"));
   grpc_endpoint_write(&exec_ctx, f.client_ep, &slice_buffer,
                       grpc_closure_create(inc_on_failure, &fail_count));
   grpc_exec_ctx_flush(&exec_ctx);
