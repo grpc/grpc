@@ -71,7 +71,7 @@ static void dump_state(const char *state, grpc_security_handshake *h,
   gpr_timespec ttl =
       gpr_time_sub(h->timer.deadline, gpr_now(h->timer.deadline.clock_type));
   const char *msg = grpc_error_string(error);
-  gpr_log(GPR_DEBUG, "%p: %s ttl=%d.%09d err=%s", h, state, ttl.tv_sec,
+  gpr_log(GPR_DEBUG, "%p: %s ttl=%" PRId64 ".%09d err=%s", h, state, ttl.tv_sec,
           ttl.tv_nsec, msg);
   grpc_error_free_string(msg);
   GRPC_ERROR_UNREF(error);
