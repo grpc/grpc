@@ -1074,20 +1074,5 @@ Update to wrap gRPC C Core version 0.10.0
 - Updated functions with TSRM macros for ZTS support #6607
    </notes>
   </release>
-  <release>
-   <version>
-    <release>0.15.0</release>
-    <api>0.15.0</api>
-   </version>
-   <stability>
-    <release>beta</release>
-    <api>beta</api>
-   </stability>
-   <date>2016-05-19</date>
-   <license>BSD</license>
-   <notes>
-- TBD
-   </notes>
-  </release>
  </changelog>
 </package>
