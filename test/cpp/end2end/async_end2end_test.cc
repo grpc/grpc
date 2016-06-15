@@ -233,8 +233,11 @@ class TestScenario {
             disable_blocking, credentials_type.c_str(), message_content.size());
   }
   bool disable_blocking;
-  const grpc::string credentials_type;
-  const grpc::string message_content;
+  // Although the below grpc::string's are logically const, we can't declare
+  // them const because of a limitation in the way old compilers (e.g., gcc-4.4)
+  // manage vector insertion using a copy constructor
+  grpc::string credentials_type;
+  grpc::string message_content;
 };
 
 class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
@@ -1395,9 +1398,9 @@ std::vector<TestScenario> CreateTestScenarios(bool test_disable_blocking,
   for (auto cred = credentials_types.begin(); cred != credentials_types.end();
        ++cred) {
     for (auto msg = messages.begin(); msg != messages.end(); msg++) {
-      scenarios.push_back(TestScenario(false, *cred, *msg));
+      scenarios.emplace_back(false, *cred, *msg);
       if (test_disable_blocking) {
-        scenarios.push_back(TestScenario(true, *cred, *msg));
+        scenarios.emplace_back(true, *cred, *msg);
       }
     }
   }
