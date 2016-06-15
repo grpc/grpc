@@ -62,7 +62,7 @@ for arch in {x86,x64}; do
     cp $input_dir/protoc* $output_dir/
     cp $input_dir/grpc_ruby_plugin* $output_dir/
     for proto in "${well_known_protos[@]}"; do
-      cp $base/third_party/protobuf/src/google/protobuf/$proto.proto $output_dir/google/protobuf/
+      cp $base/third_party/protobuf/src/google/protobuf/$proto.proto $output_dir/google/protobuf/$proto.proto
     done
   done
 done
