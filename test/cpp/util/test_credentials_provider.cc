@@ -102,7 +102,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
                         added_secure_type_names_.end(), type));
       if (it == added_secure_type_names_.end()) {
         gpr_log(GPR_ERROR, "Unsupported credentials type %s.", type.c_str());
-        return grpc::nullptr;
+        return nullptr;
       }
       return added_secure_type_providers_[it - added_secure_type_names_.begin()]
           ->GetChannelCredentials(args);
@@ -126,7 +126,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
                         added_secure_type_names_.end(), type));
       if (it == added_secure_type_names_.end()) {
         gpr_log(GPR_ERROR, "Unsupported credentials type %s.", type.c_str());
-        return grpc::nullptr;
+        return nullptr;
       }
       return added_secure_type_providers_[it - added_secure_type_names_.begin()]
           ->GetServerCredentials();
@@ -151,7 +151,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
 };
 
 gpr_once g_once_init_provider = GPR_ONCE_INIT;
-CredentialsProvider* g_provider = grpc::nullptr;
+CredentialsProvider* g_provider = nullptr;
 
 void CreateDefaultProvider() { g_provider = new DefaultCredentialsProvider; }
 
