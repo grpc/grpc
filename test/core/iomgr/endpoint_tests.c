@@ -253,35 +253,39 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void must_fail(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
-  GPR_ASSERT(!success);
-  ++*(int *)arg;
+static void inc_on_failure(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+  *(int *)arg += (success == false);
 }
 
 static void multiple_shutdown_test(grpc_endpoint_test_config config) {
-  grpc_endpoint_test_fixture f = begin_test(config, "read_and_write_test", 128);
+  grpc_endpoint_test_fixture f =
+      begin_test(config, "multiple_shutdown_test", 128);
   int fail_count = 0;
 
-  gpr_slice_buffer incoming;
-  gpr_slice_buffer_init(&incoming);
+  gpr_slice_buffer slice_buffer;
+  gpr_slice_buffer_init(&slice_buffer);
 
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_endpoint_read(&exec_ctx, f.client_ep, &incoming,
-                     grpc_closure_create(must_fail, &fail_count));
+  grpc_endpoint_read(&exec_ctx, f.client_ep, &slice_buffer,
+                     grpc_closure_create(inc_on_failure, &fail_count));
   grpc_exec_ctx_flush(&exec_ctx);
   GPR_ASSERT(fail_count == 0);
   grpc_endpoint_shutdown(&exec_ctx, f.client_ep);
   grpc_exec_ctx_flush(&exec_ctx);
   GPR_ASSERT(fail_count == 1);
-  grpc_endpoint_read(&exec_ctx, f.client_ep, &incoming,
-                     grpc_closure_create(must_fail, &fail_count));
+  grpc_endpoint_read(&exec_ctx, f.client_ep, &slice_buffer,
+                     grpc_closure_create(inc_on_failure, &fail_count));
   grpc_exec_ctx_flush(&exec_ctx);
   GPR_ASSERT(fail_count == 2);
+  grpc_endpoint_write(&exec_ctx, f.client_ep, &slice_buffer,
+                      grpc_closure_create(inc_on_failure, &fail_count));
+  grpc_exec_ctx_flush(&exec_ctx);
+  GPR_ASSERT(fail_count == 3);
   grpc_endpoint_shutdown(&exec_ctx, f.client_ep);
   grpc_exec_ctx_flush(&exec_ctx);
-  GPR_ASSERT(fail_count == 2);
+  GPR_ASSERT(fail_count == 3);
 
-  gpr_slice_buffer_destroy(&incoming);
+  gpr_slice_buffer_destroy(&slice_buffer);
 
   grpc_endpoint_destroy(&exec_ctx, f.client_ep);
   grpc_endpoint_destroy(&exec_ctx, f.server_ep);
@@ -293,12 +297,12 @@ void grpc_endpoint_tests(grpc_endpoint_test_config config,
   size_t i;
   g_pollset = pollset;
   g_mu = mu;
+  multiple_shutdown_test(config);
   read_and_write_test(config, 10000000, 100000, 8192, 0);
   read_and_write_test(config, 1000000, 100000, 1, 0);
   read_and_write_test(config, 100000000, 100000, 1, 1);
   for (i = 1; i < 1000; i = GPR_MAX(i + 1, i * 5 / 4)) {
     read_and_write_test(config, 40320, i, i, 0);
   }
-  multiple_shutdown_test(config);
   g_pollset = NULL;
 }
