@@ -153,6 +153,10 @@ void grpc_fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
   g_event_engine->fd_shutdown(exec_ctx, fd);
 }
 
+bool grpc_fd_is_shutdown(grpc_fd *fd) {
+  return g_event_engine->fd_is_shutdown(fd);
+}
+
 void grpc_fd_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                             grpc_closure *closure) {
   g_event_engine->fd_notify_on_read(exec_ctx, fd, closure);

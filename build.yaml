@@ -510,6 +510,7 @@ filegroups:
   - gpr_test_util
 - name: grpc_transport_chttp2
   headers:
+  - src/core/ext/transport/chttp2/transport/bin_decoder.h
   - src/core/ext/transport/chttp2/transport/bin_encoder.h
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
   - src/core/ext/transport/chttp2/transport/frame.h
@@ -531,6 +532,7 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/timeout_encoding.h
   - src/core/ext/transport/chttp2/transport/varint.h
   src:
+  - src/core/ext/transport/chttp2/transport/bin_decoder.c
   - src/core/ext/transport/chttp2/transport/bin_encoder.c
   - src/core/ext/transport/chttp2/transport/chttp2_plugin.c
   - src/core/ext/transport/chttp2/transport/chttp2_transport.c
@@ -949,6 +951,24 @@ libs:
   - grpc++_codegen_base_src
   secure: check
   vs_project_guid: '{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}'
+- name: grpc++_reflection
+  build: all
+  language: c++
+  public_headers:
+  - include/grpc++/ext/proto_server_reflection_plugin.h
+  - include/grpc++/ext/reflection.grpc.pb.h
+  - include/grpc++/ext/reflection.pb.h
+  headers:
+  - src/cpp/ext/proto_server_reflection.h
+  src:
+  - src/cpp/ext/proto_server_reflection.cc
+  - src/cpp/ext/proto_server_reflection_plugin.cc
+  - src/cpp/ext/reflection.grpc.pb.cc
+  - src/cpp/ext/reflection.pb.cc
+  deps:
+  - grpc++
+  filegroups:
+  - grpc++_codegen_proto
 - name: grpc++_test_config
   build: private
   language: c++
@@ -1218,6 +1238,14 @@ targets:
   - test/core/end2end/fuzzers/api_fuzzer_corpus
   dict: test/core/end2end/fuzzers/api_fuzzer.dictionary
   maxlen: 2048
+- name: bin_decoder_test
+  build: test
+  language: c
+  src:
+  - test/core/transport/chttp2/bin_decoder_test.c
+  deps:
+  - grpc_test_util
+  - grpc
 - name: bin_encoder_test
   build: test
   language: c
@@ -2806,6 +2834,23 @@ targets:
   src:
   - test/cpp/end2end/mock_test.cc
   deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: proto_server_reflection_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/cpp/util/proto_reflection_descriptor_database.h
+  src:
+  - test/cpp/end2end/proto_server_reflection_test.cc
+  - test/cpp/util/proto_reflection_descriptor_database.cc
+  deps:
+  - grpc++_reflection
   - grpc++_test_util
   - grpc_test_util
   - grpc++

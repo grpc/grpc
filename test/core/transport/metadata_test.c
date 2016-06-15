@@ -166,7 +166,7 @@ static void test_things_stick_around(void) {
   grpc_init();
 
   for (i = 0; i < nstrs; i++) {
-    gpr_asprintf(&buffer, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%dx", i);
+    gpr_asprintf(&buffer, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%" PRIuPTR "x", i);
     strs[i] = grpc_mdstr_from_string(buffer);
     shuf[i] = i;
     gpr_free(buffer);
@@ -188,7 +188,8 @@ static void test_things_stick_around(void) {
   for (i = 0; i < nstrs; i++) {
     GRPC_MDSTR_UNREF(strs[shuf[i]]);
     for (j = i + 1; j < nstrs; j++) {
-      gpr_asprintf(&buffer, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%dx", shuf[j]);
+      gpr_asprintf(&buffer, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%" PRIuPTR "x",
+                   shuf[j]);
       test = grpc_mdstr_from_string(buffer);
       GPR_ASSERT(test == strs[shuf[j]]);
       GRPC_MDSTR_UNREF(test);

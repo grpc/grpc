@@ -262,6 +262,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\secure\server_secure_chttp2.c">
       <Filter>src\core\ext\transport\chttp2\server\secure</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_decoder.c">
+      <Filter>src\core\ext\transport\chttp2\transport</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_encoder.c">
       <Filter>src\core\ext\transport\chttp2\transport</Filter>
     </ClCompile>
@@ -874,6 +877,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\transport_impl.h">
       <Filter>src\core\lib\transport</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_decoder.h">
+      <Filter>src\core\ext\transport\chttp2\transport</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_encoder.h">
       <Filter>src\core\ext\transport\chttp2\transport</Filter>

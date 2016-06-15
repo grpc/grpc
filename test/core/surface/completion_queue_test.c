@@ -349,8 +349,8 @@ static void test_threading(size_t producers, size_t consumers) {
   size_t total_consumed = 0;
   static int optid = 101;
 
-  gpr_log(GPR_INFO, "%s: %d producers, %d consumers", "test_threading",
-          producers, consumers);
+  gpr_log(GPR_INFO, "%s: %" PRIuPTR " producers, %" PRIuPTR " consumers",
+          "test_threading", producers, consumers);
 
   /* start all threads: they will wait for phase1 */
   for (i = 0; i < producers + consumers; i++) {

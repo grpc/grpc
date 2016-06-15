@@ -404,7 +404,7 @@ static void test_grpc_fd(void) {
   client_wait_and_shutdown(&cl);
   server_wait_and_shutdown(&sv);
   GPR_ASSERT(sv.read_bytes_total == cl.write_bytes_total);
-  gpr_log(GPR_INFO, "Total read bytes %d", sv.read_bytes_total);
+  gpr_log(GPR_INFO, "Total read bytes %" PRIdPTR, sv.read_bytes_total);
 }
 
 typedef struct fd_change_data {
