@@ -302,10 +302,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/client_config/uri_parser.h',
                       'src/core/ext/lb_policy/grpclb/load_balancer_api.h',
                       'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h',
-                      'third_party/nanopb/pb.h',
-                      'third_party/nanopb/pb_common.h',
-                      'third_party/nanopb/pb_decode.h',
-                      'third_party/nanopb/pb_encode.h',
                       'src/core/ext/load_reporting/load_reporting.h',
                       'src/core/ext/load_reporting/load_reporting_filter.h',
                       'src/core/ext/census/aggregation.h',
@@ -506,9 +502,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c',
                       'src/core/ext/lb_policy/grpclb/load_balancer_api.c',
                       'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c',
-                      'third_party/nanopb/pb_common.c',
-                      'third_party/nanopb/pb_decode.c',
-                      'third_party/nanopb/pb_encode.c',
                       'src/core/ext/lb_policy/pick_first/pick_first.c',
                       'src/core/ext/lb_policy/round_robin/round_robin.c',
                       'src/core/ext/resolver/dns/native/dns_resolver.c',
@@ -677,10 +670,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/client_config/uri_parser.h',
                               'src/core/ext/lb_policy/grpclb/load_balancer_api.h',
                               'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h',
-                              'third_party/nanopb/pb.h',
-                              'third_party/nanopb/pb_common.h',
-                              'third_party/nanopb/pb_decode.h',
-                              'third_party/nanopb/pb_encode.h',
                               'src/core/ext/load_reporting/load_reporting.h',
                               'src/core/ext/load_reporting/load_reporting_filter.h',
                               'src/core/ext/census/aggregation.h',
@@ -704,6 +693,7 @@ Pod::Spec.new do |s|
     ss.requires_arc = false
     ss.libraries = 'z'
     ss.dependency 'BoringSSL', '~> 3.0'
+    ss.dependency 'nanopb', '0.3.5'
 
     # ss.compiler_flags = '-GCC_WARN_INHIBIT_ALL_WARNINGS', '-w'
   end

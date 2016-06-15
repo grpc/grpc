@@ -48,6 +48,7 @@ PY3 = sys.version_info.major == 3
 PYTHON_STEM = './src/python/grpcio'
 CORE_INCLUDE = ('./include', '.',)
 BORINGSSL_INCLUDE = ('./third_party/boringssl/include',)
+NANOPB_INCLUDE = ('./third_party/nanopb',)
 ZLIB_INCLUDE = ('./third_party/zlib',)
 
 # Ensure we're in the proper directory whether or not we're being used by pip.
@@ -89,7 +90,7 @@ if not "win32" in sys.platform:
   CORE_C_FILES += tuple(grpc_core_dependencies.CORE_SOURCE_FILES)
 
 EXTENSION_INCLUDE_DIRECTORIES = (
-    (PYTHON_STEM,) + CORE_INCLUDE + BORINGSSL_INCLUDE + ZLIB_INCLUDE)
+    (PYTHON_STEM,) + CORE_INCLUDE + BORINGSSL_INCLUDE + NANOPB_INCLUDE + ZLIB_INCLUDE)
 
 EXTENSION_LIBRARIES = ()
 if "linux" in sys.platform:

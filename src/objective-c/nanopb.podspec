@@ -1,4 +1,6 @@
-# Copyright 2015, Google Inc.
+# nanopb 0.3.5 CocoaPods podspec
+
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,36 +29,27 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Buildgen expand binary attributes plugin.
+Pod::Spec.new do |s|
+  s.name     = 'nanopb'
+  s.version  = '0.3.5'
+  s.summary  = 'Protocol buffers with small code size.'
+  # Adapted from the homepage:
+  s.description = <<-DESC
+    Nanopb is a plain-C implementation of Google's Protocol Buffers data format.
+    It is targeted at 32 bit microcontrollers, but is also fit for other
+    embedded systems with tight (2-10 kB ROM, <1 kB RAM) memory constraints.
+  DESC
+  s.homepage = 'http://koti.kapsi.fi/jpa/nanopb/'
+  s.license  = { :type => 'zlib', :file => 'LICENSE.txt' }
+  # "The name and email addresses of the library maintainers, not the Podspec maintainer."
+  s.authors  = 'Petteri Aimonen'
 
-This fills in any optional attributes.
+  s.source = { :http => 'http://koti.kapsi.fi/~jpa/nanopb/download/nanopb-0.3.5.tar.gz'}
 
-"""
+  s.source_files = '*.{h,c}'
 
+  s.public_header_files = '*.h'
+  s.header_mappings_dir = '.'
 
-def mako_plugin(dictionary):
-  """The exported plugin code for expand_filegroups.
-
-  The list of libs in the build.yaml file can contain "filegroups" tags.
-  These refer to the filegroups in the root object. We will expand and
-  merge filegroups on the src, headers and public_headers properties.
-
-  """
-
-  targets = dictionary.get('targets')
-  default_platforms = ['windows', 'posix', 'linux', 'mac']
-
-  for tgt in targets:
-    tgt['flaky'] = tgt.get('flaky', False)
-    tgt['platforms'] = sorted(tgt.get('platforms', default_platforms))
-    tgt['ci_platforms'] = sorted(tgt.get('ci_platforms', tgt['platforms']))
-    tgt['boringssl'] = tgt.get('boringssl', False)
-    tgt['zlib'] = tgt.get('zlib', False)
-    tgt['nanopb'] = tgt.get('nanopb', False)
-    tgt['gtest'] = tgt.get('gtest', False)
-
-  libs = dictionary.get('libs')
-  for lib in libs:
-    lib['boringssl'] = lib.get('boringssl', False)
-    lib['zlib'] = lib.get('zlib', False)
-    lib['nanopb'] = lib.get('nanopb', False)
+  s.requires_arc = false
+end

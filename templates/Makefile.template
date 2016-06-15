@@ -468,6 +468,12 @@
   HAS_EMBEDDED_ZLIB = true
   endif
 
+  ifeq ($(wildcard third_party/nanopb/pb.h),)
+  HAS_EMBEDDED_NANOPB = false
+  else
+  HAS_EMBEDDED_NANOPB = true
+  endif
+
   ifeq ($(wildcard third_party/protobuf/src/google/protobuf/descriptor.pb.h),)
   HAS_EMBEDDED_PROTOBUF = false
   ifneq ($(HAS_VALID_PROTOC),true)
@@ -507,6 +513,14 @@
   PC_LIBS_GRPC += -lz
   LIBS += z
   endif
+  endif
+
+  ifeq ($(HAS_EMBEDDED_NANOPB), true)
+  NANOPB_DEP = $(LIBDIR)/$(CONFIG)/libnanopb.a
+  NANOPB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libnanopb.a
+  NANOPB_MERGE_OBJS = $(LIBNANOPB_OBJS)
+  CPPFLAGS += -Ithird_party/nanopb
+  LDFLAGS += -L$(LIBDIR)/$(CONFIG)/nanopb
   endif
 
   OPENSSL_PKG_CONFIG = false
@@ -1544,8 +1558,9 @@
 
   % endif
   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: \
-  % if lib.name != 'z':
+  % if lib.name not in ('z', 'nanopb'):
   $(ZLIB_DEP) \
+  $(NANOPB_DEP) \
   % endif
   % endif
   % if lib.language == 'c++':
@@ -1555,6 +1570,7 @@
   % if lib.get('baselib', False):
    $(LIBGPR_OBJS) \
    $(ZLIB_MERGE_OBJS) \
+   $(NANOPB_MERGE_OBJS) \
   % if lib.get('secure', 'check') == True:
    $(OPENSSL_MERGE_OBJS) \
   % endif
@@ -1567,6 +1583,7 @@
   % if lib.get('baselib', False):
    $(LIBGPR_OBJS) \
    $(ZLIB_MERGE_OBJS) \
+   $(NANOPB_MERGE_OBJS) \
   % if lib.get('secure', 'check') == True:
    $(OPENSSL_MERGE_OBJS) \
   % endif
@@ -1589,9 +1606,9 @@
     common = '$(LIB' + lib.name.upper() + '_OBJS) $(LDLIBS)'
 
     libs = ''
-    lib_deps = ' $(ZLIB_DEP)'
+    lib_deps = ' $(ZLIB_DEP) $(NANOPB_DEP)'
     mingw_libs = ''
-    mingw_lib_deps = ' $(ZLIB_DEP)'
+    mingw_lib_deps = ' $(ZLIB_DEP) $(NANOPB_DEP)'
     if lib.language == 'c++':
       lib_deps += ' $(PROTOBUF_DEP)'
       mingw_lib_deps += ' $(PROTOBUF_DEP)'
@@ -1611,7 +1628,7 @@
     security = lib.get('secure', 'check')
     if security == True:
       common = common + ' $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE)'
-    common = common + ' $(ZLIB_MERGE_LIBS)'
+    common = common + ' $(ZLIB_MERGE_LIBS) $(NANOPB_MERGE_LIBS)'
 
     if security in [True, 'check']:
       for src in lib.src:
