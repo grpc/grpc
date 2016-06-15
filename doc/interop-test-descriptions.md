@@ -89,11 +89,10 @@ Client asserts:
 
 ### client_compressed_unary
 
-This test verifies the client can compress unary messages. It sends an initial
-inconsistent request to verify whether the server supports the
-[CompressedRequest][] feature. If it does, it should catch the inconsistency and
-fail the call with an `INVALID_ARGUMENT` status. If the feature is supported, it
-proceeds with two unary calls, for compressed and uncompressed payloads.
+This test verifies the client can compress unary messages by sending two unary
+calls, for compressed and uncompressed payloads. It sends an initial probing
+request to verify whether the server supports the [CompressedRequest][] feature.
+If it doesn't, the call is expected to fail with an `INVALID_ARGUMENT` status.
 
 Server features:
 * [UnaryCall][]
@@ -140,14 +139,14 @@ Procedure:
       calls were successful.
     * Response payload body is 314159 bytes in size.
     * Clients are free to assert that the response payload body contents are
-      zero and comparing the entire response message against a golden response.
+      zeros and comparing the entire response message against a golden response.
 
 
 ### server_compressed_unary
 
 This test verifies the server can compress unary messages. It sends two unary
-requests, expecting the server response to be
-compressed or not according to the `response_compressed` boolean.
+requests, expecting the server's response to be compressed or not according to
+the `response_compressed` boolean.
 
 Whether compression was actually performed is determined by the compression bit
 in the response's message flags.
@@ -158,7 +157,7 @@ Server features:
 * [CompressedResponse][]
 
 Procedure:
- 1. Client calls UnaryCall with:
+ 1. Client calls UnaryCall with `SimpleRequest`s:
 
     ```
     {
@@ -257,7 +256,8 @@ compressed with `expect_compressed` true; the second one uncompressed with
 
 Procedure:
  1. Client calls StreamingInputCall
- 1. Client sends the following feature-probing *uncompressed* message
+ 1. Client sends the following feature-probing *uncompressed*
+ `StreamingInputCallRequest` message
 
     ```
     {
@@ -305,7 +305,7 @@ Server features:
 * [StreamingOutputCall][]
 
 Procedure:
- 1. Client calls StreamingOutputCall with:
+ 1. Client calls StreamingOutputCall with `StreamingOutputCallRequest`:
 
     ```
     {
@@ -341,27 +341,16 @@ Server features:
 
 
 Procedure:
- 1. Client calls StreamingOutputCall with:
+ 1. Client calls StreamingOutputCall with `StreamingOutputCallRequest`:
 
     ```
     {
-      response_compressed: true
       response_parameters:{
+        response_compressed: true
         size: 31415
       }
       response_parameters:{
-        size: 58979
-      }
-    }
-    ```
-
-    ```
-    {
-      response_compressed: false
-      response_parameters:{
-        size: 31415
-      }
-      response_parameters:{
+        response_compressed: false
         size: 58979
       }
     }
