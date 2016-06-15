@@ -3463,6 +3463,7 @@ LIBGRPC++_SRC = \
     src/cpp/client/generic_stub.cc \
     src/cpp/client/insecure_credentials.cc \
     src/cpp/common/channel_arguments.cc \
+    src/cpp/common/channel_filter.cc \
     src/cpp/common/completion_queue.cc \
     src/cpp/common/core_codegen.cc \
     src/cpp/common/rpc_method.cc \
@@ -3485,6 +3486,7 @@ LIBGRPC++_SRC = \
 PUBLIC_HEADERS_CXX += \
     include/grpc++/alarm.h \
     include/grpc++/channel.h \
+    include/grpc++/channel_filter.h \
     include/grpc++/client_context.h \
     include/grpc++/completion_queue.h \
     include/grpc++/create_channel.h \
@@ -3950,6 +3952,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/client/generic_stub.cc \
     src/cpp/client/insecure_credentials.cc \
     src/cpp/common/channel_arguments.cc \
+    src/cpp/common/channel_filter.cc \
     src/cpp/common/completion_queue.cc \
     src/cpp/common/core_codegen.cc \
     src/cpp/common/rpc_method.cc \
@@ -3972,6 +3975,7 @@ LIBGRPC++_UNSECURE_SRC = \
 PUBLIC_HEADERS_CXX += \
     include/grpc++/alarm.h \
     include/grpc++/channel.h \
+    include/grpc++/channel_filter.h \
     include/grpc++/client_context.h \
     include/grpc++/completion_queue.h \
     include/grpc++/create_channel.h \

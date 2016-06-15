@@ -31,6 +31,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\channel_arguments.cc">
       <Filter>src\cpp\common</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\common\channel_filter.cc">
+      <Filter>src\cpp\common</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\common\completion_queue.cc">
       <Filter>src\cpp\common</Filter>
     </ClCompile>
@@ -91,6 +94,9 @@
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\channel.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\channel_filter.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\client_context.h">
