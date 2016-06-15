@@ -317,7 +317,7 @@ static void polling_island_remove_all_fds_locked(polling_island *pi,
     if (err < 0 && errno != ENOENT) {
       /* TODO: sreek - We need a better way to bubble up this error instead of
       * just logging a message */
-      gpr_log(GPR_ERROR, "epoll_ctl deleting fds[%d]: %d failed with error: %s",
+      gpr_log(GPR_ERROR, "epoll_ctl deleting fds[%zu]: %d failed with error: %s",
               i, pi->fds[i]->fd, strerror(errno));
     }
 
