@@ -112,10 +112,10 @@ static void maybe_spawn_locked() {
   g_executor.pending_join = 1;
 }
 
-void grpc_executor_enqueue(grpc_closure *closure, bool success) {
+void grpc_executor_push(grpc_closure *closure, grpc_error *error) {
   gpr_mu_lock(&g_executor.mu);
   if (g_executor.shutting_down == 0) {
-    grpc_closure_list_add(&g_executor.closures, closure, success);
+    grpc_closure_list_append(&g_executor.closures, closure, error);
     maybe_spawn_locked();
   }
   gpr_mu_unlock(&g_executor.mu);

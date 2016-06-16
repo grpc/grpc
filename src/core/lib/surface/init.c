@@ -165,6 +165,7 @@ void grpc_init(void) {
                          &grpc_trace_channel_stack_builder);
     grpc_register_tracer("http1", &grpc_http1_trace);
     grpc_register_tracer("compression", &grpc_compression_trace);
+    grpc_register_tracer("op_failure", &grpc_trace_operation_failures);
     grpc_security_pre_init();
     grpc_iomgr_init();
     grpc_executor_init();

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\surface\sequential_connectivity_test.c">
+      <Filter>test\core\surface</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{432df9fa-0f9a-912a-8413-adc38d9c27ca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{42030451-0f78-add5-87be-b81131bcc0f5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\surface">
+      <UniqueIdentifier>{34047576-8f8d-eeb2-d596-35be59941f62}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

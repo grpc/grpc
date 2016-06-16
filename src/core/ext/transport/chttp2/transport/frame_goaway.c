@@ -38,6 +38,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 void grpc_chttp2_goaway_parser_init(grpc_chttp2_goaway_parser *p) {
   p->debug_data = NULL;
@@ -47,11 +48,15 @@ void grpc_chttp2_goaway_parser_destroy(grpc_chttp2_goaway_parser *p) {
   gpr_free(p->debug_data);
 }
 
-grpc_chttp2_parse_error grpc_chttp2_goaway_parser_begin_frame(
-    grpc_chttp2_goaway_parser *p, uint32_t length, uint8_t flags) {
+grpc_error *grpc_chttp2_goaway_parser_begin_frame(grpc_chttp2_goaway_parser *p,
+                                                  uint32_t length,
+                                                  uint8_t flags) {
   if (length < 8) {
-    gpr_log(GPR_ERROR, "goaway frame too short (%d bytes)", length);
-    return GRPC_CHTTP2_CONNECTION_ERROR;
+    char *msg;
+    gpr_asprintf(&msg, "goaway frame too short (%d bytes)", length);
+    grpc_error *err = GRPC_ERROR_CREATE(msg);
+    gpr_free(msg);
+    return err;
   }
 
   gpr_free(p->debug_data);
@@ -59,10 +64,10 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_begin_frame(
   p->debug_data = gpr_malloc(p->debug_length);
   p->debug_pos = 0;
   p->state = GRPC_CHTTP2_GOAWAY_LSI0;
-  return GRPC_CHTTP2_PARSE_OK;
+  return GRPC_ERROR_NONE;
 }
 
-grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
+grpc_error *grpc_chttp2_goaway_parser_parse(
     grpc_exec_ctx *exec_ctx, void *parser,
     grpc_chttp2_transport_parsing *transport_parsing,
     grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
@@ -75,7 +80,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
     case GRPC_CHTTP2_GOAWAY_LSI0:
       if (cur == end) {
         p->state = GRPC_CHTTP2_GOAWAY_LSI0;
-        return GRPC_CHTTP2_PARSE_OK;
+        return GRPC_ERROR_NONE;
       }
       p->last_stream_id = ((uint32_t)*cur) << 24;
       ++cur;
@@ -83,7 +88,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
     case GRPC_CHTTP2_GOAWAY_LSI1:
       if (cur == end) {
         p->state = GRPC_CHTTP2_GOAWAY_LSI1;
-        return GRPC_CHTTP2_PARSE_OK;
+        return GRPC_ERROR_NONE;
       }
       p->last_stream_id |= ((uint32_t)*cur) << 16;
       ++cur;
@@ -91,7 +96,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
     case GRPC_CHTTP2_GOAWAY_LSI2:
       if (cur == end) {
         p->state = GRPC_CHTTP2_GOAWAY_LSI2;
-        return GRPC_CHTTP2_PARSE_OK;
+        return GRPC_ERROR_NONE;
       }
       p->last_stream_id |= ((uint32_t)*cur) << 8;
       ++cur;
@@ -99,7 +104,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
     case GRPC_CHTTP2_GOAWAY_LSI3:
       if (cur == end) {
         p->state = GRPC_CHTTP2_GOAWAY_LSI3;
-        return GRPC_CHTTP2_PARSE_OK;
+        return GRPC_ERROR_NONE;
       }
       p->last_stream_id |= ((uint32_t)*cur);
       ++cur;
@@ -107,7 +112,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
     case GRPC_CHTTP2_GOAWAY_ERR0:
       if (cur == end) {
         p->state = GRPC_CHTTP2_GOAWAY_ERR0;
-        return GRPC_CHTTP2_PARSE_OK;
+        return GRPC_ERROR_NONE;
       }
       p->error_code = ((uint32_t)*cur) << 24;
       ++cur;
@@ -115,7 +120,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
     case GRPC_CHTTP2_GOAWAY_ERR1:
       if (cur == end) {
         p->state = GRPC_CHTTP2_GOAWAY_ERR1;
-        return GRPC_CHTTP2_PARSE_OK;
+        return GRPC_ERROR_NONE;
       }
       p->error_code |= ((uint32_t)*cur) << 16;
       ++cur;
@@ -123,7 +128,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
     case GRPC_CHTTP2_GOAWAY_ERR2:
       if (cur == end) {
         p->state = GRPC_CHTTP2_GOAWAY_ERR2;
-        return GRPC_CHTTP2_PARSE_OK;
+        return GRPC_ERROR_NONE;
       }
       p->error_code |= ((uint32_t)*cur) << 8;
       ++cur;
@@ -131,7 +136,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
     case GRPC_CHTTP2_GOAWAY_ERR3:
       if (cur == end) {
         p->state = GRPC_CHTTP2_GOAWAY_ERR3;
-        return GRPC_CHTTP2_PARSE_OK;
+        return GRPC_ERROR_NONE;
       }
       p->error_code |= ((uint32_t)*cur);
       ++cur;
@@ -151,9 +156,9 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
             gpr_slice_new(p->debug_data, p->debug_length, gpr_free);
         p->debug_data = NULL;
       }
-      return GRPC_CHTTP2_PARSE_OK;
+      return GRPC_ERROR_NONE;
   }
-  GPR_UNREACHABLE_CODE(return GRPC_CHTTP2_CONNECTION_ERROR);
+  GPR_UNREACHABLE_CODE(return GRPC_ERROR_CREATE("Should never reach here"));
 }
 
 void grpc_chttp2_goaway_append(uint32_t last_stream_id, uint32_t error_code,
