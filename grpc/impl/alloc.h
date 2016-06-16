@@ -32,10 +32,13 @@
  */
 
 
-#ifndef TEST_GRPC_C_STATUS_CODE_PUBLIC_H
-#define TEST_GRPC_C_STATUS_CODE_PUBLIC_H
+#ifndef TEST_GRPC_C_ALLOC_H
+#define TEST_GRPC_C_ALLOC_H
 
-#include "status_code_public.h"
-#include "impl/status.h"
+#include <stdlib.h>
 
-#endif //TEST_GRPC_C_STATUS_CODE_PUBLIC_H
+void* grpc_memdup(const void*, size_t);
+
+#define GRPC_ALLOC_STRUCT(type, ...) (type *) grpc_memdup(&(type)__VA_ARGS__, sizeof(type))
+
+#endif //TEST_GRPC_C_ALLOC_H

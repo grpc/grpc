@@ -118,8 +118,7 @@ static void op_recv_object_finish(grpc_context *context, bool *status, int max_m
     uint8_t *resp = GPR_SLICE_START_PTR(slice_recv);
     size_t len = GPR_SLICE_LENGTH(slice_recv);
 
-    grpc_message msg = { resp, len };
-    context->deserialize(msg, context->response);
+    context->deserialize((grpc_message) { resp, len }, context->response);
 
     gpr_slice_unref(slice_recv);
     grpc_byte_buffer_reader_destroy(&reader);

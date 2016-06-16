@@ -31,11 +31,10 @@
  *
  */
 
+#include "alloc.h"
+#include <string.h>
 
-#ifndef TEST_GRPC_C_STATUS_CODE_PUBLIC_H
-#define TEST_GRPC_C_STATUS_CODE_PUBLIC_H
-
-#include "status_code_public.h"
-#include "impl/status.h"
-
-#endif //TEST_GRPC_C_STATUS_CODE_PUBLIC_H
+void *grpc_memdup(const void *dst, size_t size) {
+  void *p = malloc(size);
+  return p ? memcpy(p, dst, size) : NULL;
+}

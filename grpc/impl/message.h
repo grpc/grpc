@@ -32,10 +32,11 @@
  */
 
 
-#ifndef TEST_GRPC_C_STATUS_CODE_PUBLIC_H
-#define TEST_GRPC_C_STATUS_CODE_PUBLIC_H
+#ifndef TEST_GRPC_C_MESSAGE_H
+#define TEST_GRPC_C_MESSAGE_H
 
-#include "status_code_public.h"
-#include "impl/status.h"
+#include "../message_public.h"
 
-#endif //TEST_GRPC_C_STATUS_CODE_PUBLIC_H
+typedef GRPC_message grpc_message;
+
+#endif //TEST_GRPC_C_MESSAGE_H
