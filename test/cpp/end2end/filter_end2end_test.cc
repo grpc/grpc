@@ -108,7 +108,7 @@ class CallDataImpl : public CallData {
   virtual ~CallDataImpl() {}
 
   void StartTransportStreamOp(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
-                              grpc_transport_stream_op* op) {
+                              grpc_transport_stream_op* op) GRPC_OVERRIDE {
     if (op->recv_initial_metadata != nullptr) IncrementCounter();
     grpc_call_next_op(exec_ctx, elem, op);
   }

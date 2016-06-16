@@ -73,13 +73,14 @@ void ChannelData::StartTransportOp(grpc_exec_ctx *exec_ctx,
 
 namespace internal {
 
-std::vector<FilterRecord> *channel_filters = nullptr;
+// Note: Implicitly initialized to nullptr due to static lifetime.
+std::vector<FilterRecord> *channel_filters;
 
 namespace {
 
 bool MaybeAddFilter(grpc_channel_stack_builder *builder, void *arg) {
   const FilterRecord &filter = *(FilterRecord *)arg;
-  if (filter.include_filter != nullptr) {
+  if (filter.include_filter) {
     const grpc_channel_args *args =
         grpc_channel_stack_builder_get_channel_arguments(builder);
     if (!filter.include_filter(*args)) return true;
