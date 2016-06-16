@@ -32,13 +32,15 @@
  */
 #include "call_ops.h"
 #include "context.h"
+#include "../message_public.h"
 #include <grpc/support/log.h>
+#include <grpc/impl/codegen/byte_buffer_reader.h>
 
 static void op_noop_finish(grpc_context *context, bool *status, int max_message_size) {
 
 }
 
-static void op_send_metadata_fill(grpc_op *op, const grpc_method *method, grpc_context *context, const grpc_message message, void *response) {
+static void op_send_metadata_fill(grpc_op *op, const grpc_method *method, grpc_context *context, const grpc_message message, grpc_message *response) {
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
@@ -54,11 +56,18 @@ const grpc_op_manager grpc_op_send_metadata = {
   op_send_metadata_finish
 };
 
-static void op_send_object_fill(grpc_op *op, const grpc_method *method, grpc_context *context, const grpc_message message, void *response) {
+static void op_send_object_fill(grpc_op *op, const grpc_method *method, grpc_context *context, const grpc_message message, grpc_message *response) {
   op->op = GRPC_OP_SEND_MESSAGE;
-  gpr_slice slice = gpr_slice_from_copied_buffer(message.data, message.length);
+
+  grpc_message serialized;
+  context->serialize(message, &serialized);
+
+  gpr_slice slice = gpr_slice_from_copied_buffer(serialized.data, serialized.length);
   op->data.send_message = grpc_raw_byte_buffer_create(&slice, 1);
   GPR_ASSERT(op->data.send_message != NULL);
+
+  GRPC_message_destroy(&serialized);
+
   op->flags = 0;
   op->reserved = NULL;
 }
@@ -72,7 +81,7 @@ const grpc_op_manager grpc_op_send_object = {
   op_send_object_finish
 };
 
-static void op_recv_metadata_fill(grpc_op *op, const grpc_method *method, grpc_context *context, const grpc_message message, void *response) {
+static void op_recv_metadata_fill(grpc_op *op, const grpc_method *method, grpc_context *context, const grpc_message message, grpc_message *response) {
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   grpc_metadata_array_init(&context->recv_metadata_array);
   op->data.recv_initial_metadata = &context->recv_metadata_array;
@@ -88,8 +97,9 @@ const grpc_op_manager grpc_op_recv_metadata = {
   op_recv_metadata_finish
 };
 
-static void op_recv_object_fill(grpc_op *op, const grpc_method *method, grpc_context *context, const grpc_message message, void *response) {
+static void op_recv_object_fill(grpc_op *op, const grpc_method *method, grpc_context *context, const grpc_message message, grpc_message *response) {
   context->got_message = false;
+  context->response = response;
   op->op = GRPC_OP_RECV_MESSAGE;
   context->recv_buffer = NULL;
   op->data.recv_message = &context->recv_buffer;
@@ -101,6 +111,20 @@ static void op_recv_object_finish(grpc_context *context, bool *status, int max_m
   if (context->recv_buffer) {
     // deserialize
     context->got_message = true;
+
+    grpc_byte_buffer_reader reader;
+    grpc_byte_buffer_reader_init(&reader, context->recv_buffer);
+    gpr_slice slice_recv = grpc_byte_buffer_reader_readall(&reader);
+    uint8_t *resp = GPR_SLICE_START_PTR(slice_recv);
+    size_t len = GPR_SLICE_LENGTH(slice_recv);
+
+    grpc_message msg = { resp, len };
+    context->deserialize(msg, context->response);
+
+    gpr_slice_unref(slice_recv);
+    grpc_byte_buffer_reader_destroy(&reader);
+    grpc_byte_buffer_destroy(context->recv_buffer);
+    context->recv_buffer = NULL;
   }
 }
 
@@ -109,7 +133,7 @@ const grpc_op_manager grpc_op_recv_object = {
   op_recv_object_finish
 };
 
-static void op_send_close_fill(grpc_op *op, const grpc_method *method, grpc_context *context, const grpc_message message, void *response) {
+static void op_send_close_fill(grpc_op *op, const grpc_method *method, grpc_context *context, const grpc_message message, grpc_message *response) {
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op->flags = 0;
   op->reserved = NULL;
@@ -123,7 +147,7 @@ const grpc_op_manager grpc_op_send_close = {
   op_send_close_finish
 };
 
-static void op_recv_status_fill(grpc_op *op, const grpc_method *method, grpc_context *context, const grpc_message message, void *response) {
+static void op_recv_status_fill(grpc_op *op, const grpc_method *method, grpc_context *context, const grpc_message message, grpc_message *response) {
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   grpc_metadata_array_init(&context->trailing_metadata_array);
   context->status.details = NULL;
