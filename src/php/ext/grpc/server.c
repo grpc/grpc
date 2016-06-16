@@ -69,7 +69,6 @@ void free_wrapped_grpc_server(void *object TSRMLS_DC) {
                                 gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
     grpc_server_destroy(server->wrapped);
   }
-  zend_object_std_dtor(&server->std TSRMLS_CC);
   efree(server);
 }
 
