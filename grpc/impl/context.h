@@ -36,6 +36,7 @@
 #define TEST_GRPC_C_CONTEXT_H
 
 #include "../grpc_c_public.h"
+#include "../serialization_public.h"
 #include <grpc/grpc.h>
 #include "status.h"
 #include <stdbool.h>
@@ -48,7 +49,10 @@ typedef struct grpc_context {
   grpc_metadata_array trailing_metadata_array;
   gpr_timespec deadline;
   grpc_byte_buffer *recv_buffer;
+  grpc_message *response;
   bool got_message;
+  GRPC_serializer serialize;
+  GRPC_deserializer deserialize;
   grpc_status status;
 } grpc_context;
 
