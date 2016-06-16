@@ -34,12 +34,10 @@
 #include "unary_blocking_call.h"
 #include "call_ops.h"
 #include <stdio.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-grpc_status grpc_unary_blocking_call(grpc_channel *channel, const grpc_method * const rpc_method,
-                                     grpc_context * const context, const grpc_message message,
-                                     grpc_message *response) {
+GRPC_status GRPC_unary_blocking_call(GRPC_channel *channel, const GRPC_method *const rpc_method,
+                                     GRPC_context *const context, const GRPC_message message, GRPC_message *response) {
   grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
   grpc_call *call = grpc_channel_create_call(channel,
                                              NULL,

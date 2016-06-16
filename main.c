@@ -34,21 +34,21 @@
 #include <stdio.h>
 #include "grpc/grpc_c_public.h"
 #include "grpc/status_public.h"
+#include "grpc/context_public.h"
 #include "grpc/channel_public.h"
-#include "grpc/message_public.h"
 
 int main(int argc, char **argv) {
   // Local greetings server
-  grpc_channel *chan = GRPC_channel_create("0.0.0.0:50051");
+  GRPC_channel *chan = GRPC_channel_create("0.0.0.0:50051");
 
-  grpc_method method = { NORMAL_RPC, "/helloworld.Greeter/SayHello" };
-  grpc_context *context = grpc_context_create(chan);
+  GRPC_method method = { NORMAL_RPC, "/helloworld.Greeter/SayHello" };
+  GRPC_context *context = GRPC_context_create(chan);
   // hardcoded string for "gRPC-C"
   char str[] = { 0x0A, 0x06, 0x67, 0x52, 0x50, 0x43, 0x2D, 0x43 };
-  grpc_message msg = { str, sizeof(str) };
+  GRPC_message msg = { str, sizeof(str) };
   // using char array to hold RPC result while protobuf is not there yet
-  grpc_message resp;
-  grpc_unary_blocking_call(chan, &method, context, msg, &resp);
+  GRPC_message resp;
+  GRPC_unary_blocking_call(chan, &method, context, msg, &resp);
   printf("Server said: %s\n", ((char *) resp.data) + 2);    // skip to the string in serialized protobuf object
   GRPC_message_destroy(&resp);
 

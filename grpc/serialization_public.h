@@ -37,7 +37,7 @@
 
 #include "grpc_c_public.h"
 
-typedef void (*GRPC_serializer)(grpc_message input, grpc_message *output);
-typedef void (*GRPC_deserializer)(grpc_message input, grpc_message *output);
+typedef void (*GRPC_serializer)(GRPC_message input, GRPC_message *output);
+typedef void (*GRPC_deserializer)(GRPC_message input, GRPC_message *output);
 
 #endif //TEST_GRPC_C_SERIALIZATION_PUBLIC_H_H
