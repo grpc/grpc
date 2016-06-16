@@ -309,6 +309,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/client_config/subchannel_call_holder.h )
   s.files += %w( src/core/ext/client_config/subchannel_index.h )
   s.files += %w( src/core/ext/client_config/uri_parser.h )
+  s.files += %w( src/core/ext/lb_policy/grpclb/grpclb.h )
   s.files += %w( src/core/ext/lb_policy/grpclb/load_balancer_api.h )
   s.files += %w( src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h )
   s.files += %w( third_party/nanopb/pb.h )

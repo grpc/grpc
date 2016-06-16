@@ -374,6 +374,7 @@ filegroups:
   - gpr_codegen
 - name: grpc_lb_policy_grpclb
   headers:
+  - src/core/ext/lb_policy/grpclb/grpclb.h
   - src/core/ext/lb_policy/grpclb/load_balancer_api.h
   - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h
   src:

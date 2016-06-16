@@ -926,6 +926,7 @@ src/core/ext/client_config/subchannel.h \
 src/core/ext/client_config/subchannel_call_holder.h \
 src/core/ext/client_config/subchannel_index.h \
 src/core/ext/client_config/uri_parser.h \
+src/core/ext/lb_policy/grpclb/grpclb.h \
 src/core/ext/lb_policy/grpclb/load_balancer_api.h \
 src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h \
 third_party/nanopb/pb.h \
