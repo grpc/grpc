@@ -58,7 +58,7 @@
                  requestedResponseSize:(NSNumber *)responseSize {
   RMTStreamingOutputCallRequest *request = [self message];
   RMTResponseParameters *parameters = [RMTResponseParameters message];
-  parameters.size = responseSize.integerValue;
+  parameters.size = (int)responseSize.integerValue;
   [request.responseParametersArray addObject:parameters];
   request.payload.body = [NSMutableData dataWithLength:payloadSize.unsignedIntegerValue];
   return request;
@@ -80,7 +80,9 @@
 
 #pragma mark Tests
 
+#ifdef GRPC_COMPILE_WITH_CRONET
 static cronet_engine *cronetEngine = NULL;
+#endif
 
 @implementation InteropTests {
   RMTTestService *_service;
@@ -186,7 +188,7 @@ static cronet_engine *cronetEngine = NULL;
   RMTStreamingOutputCallRequest *request = [RMTStreamingOutputCallRequest message];
   for (NSNumber *size in expectedSizes) {
     RMTResponseParameters *parameters = [RMTResponseParameters message];
-    parameters.size = [size integerValue];
+    parameters.size = (int)[size integerValue];
     [request.responseParametersArray addObject:parameters];
   }
 
@@ -282,7 +284,7 @@ static cronet_engine *cronetEngine = NULL;
   // A buffered pipe to which we never write any value acts as a writer that just hangs.
   GRXBufferedPipe *requestsBuffer = [[GRXBufferedPipe alloc] init];
 
-  ProtoRPC *call = [_service RPCToStreamingInputCallWithRequestsWriter:requestsBuffer
+  GRPCProtoCall *call = [_service RPCToStreamingInputCallWithRequestsWriter:requestsBuffer
                                                                handler:^(RMTStreamingInputCallResponse *response,
                                                                          NSError *error) {
     XCTAssertEqual(error.code, GRPC_STATUS_CANCELLED);
@@ -313,7 +315,7 @@ static cronet_engine *cronetEngine = NULL;
 
   [requestsBuffer writeValue:request];
 
-  __block ProtoRPC *call =
+  __block GRPCProtoCall *call =
       [_service RPCToFullDuplexCallWithRequestsWriter:requestsBuffer
                                          eventHandler:^(BOOL done,
                                                         RMTStreamingOutputCallResponse *response,
