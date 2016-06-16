@@ -32,8 +32,11 @@
   @rem enter repo root
   cd /d %~dp0\..
 
+  set PROTOC=protoc
+  set GRPC_CPP_PLUGIN_PATH=grpc_cpp_plugin
+
   % for proto in protos:
-  ${'%'}PROTOC% ${proto} --grpc_out=./ --plugin=protoc-gen-grpc=%GRPC_CPP_PLUGIN_PATH%
-  ${'%'}PROTOC% ${proto} --cpp_out=./
+  ${'%'}PROTOC% ${proto}.proto --grpc_out=./ --plugin=protoc-gen-grpc=%GRPC_CPP_PLUGIN_PATH%
+  ${'%'}PROTOC% ${proto}.proto --cpp_out=./
   % endfor
 
