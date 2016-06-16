@@ -78,9 +78,16 @@ std::vector<FilterRecord>* channel_filters = nullptr;
 
 namespace {
 
-bool AppendFilter(grpc_channel_stack_builder* builder, void* arg) {
-  return grpc_channel_stack_builder_append_filter(
-      builder, (const grpc_channel_filter *)arg, nullptr, nullptr);
+bool MaybeAddFilter(grpc_channel_stack_builder* builder, void* arg) {
+  const FilterRecord& filter = *(FilterRecord*)arg;
+  if (filter.include_filter != nullptr) {
+    const grpc_channel_args *args =
+        grpc_channel_stack_builder_get_channel_arguments(builder);
+    if (!filter.include_filter(args))
+      return true;
+  }
+  return grpc_channel_stack_builder_prepend_filter(
+      builder, &filter.filter, nullptr, nullptr);
 }
 
 }  // namespace
@@ -89,9 +96,11 @@ void ChannelFilterPluginInit() {
   for (size_t i = 0; i < channel_filters->size(); ++i) {
     FilterRecord& filter = (*channel_filters)[i];
     grpc_channel_init_register_stage(filter.stack_type, filter.priority,
-                                     AppendFilter, (void*)&filter.filter);
+                                     MaybeAddFilter, (void*)&filter);
   }
 }
+
+void ChannelFilterPluginShutdown() {}
 
 }  // namespace internal
 

@@ -36,6 +36,7 @@
 
 #include <grpc/grpc.h>
 
+#include <functional>
 #include <vector>
 
 #include "src/core/lib/channel/channel_stack.h"
@@ -45,9 +46,9 @@
 // An interface to define filters.
 //
 // To define a filter, implement a subclass of each of CallData and
-// ChannelData.  Then register the filter like this:
+// ChannelData.  Then register the filter using something like this:
 //   RegisterChannelFilter<MyChannelDataSubclass, MyCallDataSubclass>(
-//       "name-of-filter", GRPC_SERVER_CHANNEL, INT_MAX);
+//       "name-of-filter", GRPC_SERVER_CHANNEL, INT_MAX, nullptr);
 //
 
 namespace grpc {
@@ -56,11 +57,7 @@ namespace grpc {
 // Note: Must be copyable.
 class CallData {
  public:
-  // Do not override the destructor.  Instead, put clean-up code in the
-  // Destroy() method.
   virtual ~CallData() {}
-
-  virtual void Destroy() {}
 
   virtual void StartTransportStreamOp(
       grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
@@ -80,11 +77,7 @@ class CallData {
 // Note: Must be copyable.
 class ChannelData {
  public:
-  // Do not override the destructor.  Instead, put clean-up code in the
-  // Destroy() method.
   virtual ~ChannelData() {}
-
-  virtual void Destroy() {}
 
   virtual void StartTransportOp(
       grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
@@ -99,43 +92,40 @@ namespace internal {
 // Defines static members for passing to C core.
 template<typename ChannelDataType, typename CallDataType>
 class ChannelFilter {
+ public:
   static const size_t call_data_size = sizeof(CallDataType);
 
   static void InitCallElement(
       grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
       grpc_call_element_args *args) {
-    CallDataType* call_data = elem->call_data;
-    *call_data = CallDataType();
+    // Construct the object in the already-allocated memory.
+    new (elem->call_data) CallDataType();
   }
 
   static void DestroyCallElement(
       grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
       const grpc_call_stats *stats, void *and_free_memory) {
-    CallDataType* call_data = elem->call_data;
-    // Can't destroy the object here, since it's not allocated by
-    // itself; instead, it's part of a larger allocation managed by
-    // C-core.  So instead, we call the Destroy() method.
-    call_data->Destroy();
+    reinterpret_cast<CallDataType*>(elem->call_data)->~CallDataType();
   }
 
   static void StartTransportStreamOp(
       grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
       grpc_transport_stream_op *op) {
-    CallDataType* call_data = elem->call_data;
-    call_data->StartTransportStreamOp(exec_ctx, op);
+    CallDataType* call_data = (CallDataType*)elem->call_data;
+    call_data->StartTransportStreamOp(exec_ctx, elem, op);
   }
 
   static void SetPollsetOrPollsetSet(
       grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
       grpc_polling_entity *pollent) {
-    CallDataType* call_data = elem->call_data;
-    call_data->SetPollsetOrPollsetSet(exec_ctx, pollent);
+    CallDataType* call_data = (CallDataType*)elem->call_data;
+    call_data->SetPollsetOrPollsetSet(exec_ctx, elem, pollent);
   }
 
   static char* GetPeer(
       grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
-    CallDataType* call_data = elem->call_data;
-    return call_data->GetPeer(exec_ctx);
+    CallDataType* call_data = (CallDataType*)elem->call_data;
+    return call_data->GetPeer(exec_ctx, elem);
   }
 
   static const size_t channel_data_size = sizeof(ChannelDataType);
@@ -143,44 +133,45 @@ class ChannelFilter {
   static void InitChannelElement(
       grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
       grpc_channel_element_args *args) {
-    ChannelDataType* channel_data = elem->channel_data;
-    *channel_data = ChannelDataType();
+    // Construct the object in the already-allocated memory.
+    new (elem->channel_data) ChannelDataType();
   }
 
   static void DestroyChannelElement(
       grpc_exec_ctx *exec_ctx, grpc_channel_element *elem) {
-    ChannelDataType* channel_data = elem->channel_data;
-    // Can't destroy the object here, since it's not allocated by
-    // itself; instead, it's part of a larger allocation managed by
-    // C-core.  So instead, we call the Destroy() method.
-    channel_data->Destroy();
+    reinterpret_cast<ChannelDataType*>(elem->channel_data)->~ChannelDataType();
   }
 
   static void StartTransportOp(
       grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
       grpc_transport_op *op) {
-    ChannelDataType* channel_data = elem->channel_data;
-    channel_data->StartTransportOp(exec_ctx, op);
+    ChannelDataType* channel_data = (ChannelDataType*)elem->channel_data;
+    channel_data->StartTransportOp(exec_ctx, elem, op);
   }
 };
 
 struct FilterRecord {
   grpc_channel_stack_type stack_type;
   int priority;
+  std::function<bool(const grpc_channel_args*)> include_filter;
   grpc_channel_filter filter;
 };
 extern std::vector<FilterRecord>* channel_filters;
 
 void ChannelFilterPluginInit();
-void ChannelFilterPluginShutdown() {}
+void ChannelFilterPluginShutdown();
 
 }  // namespace internal
 
 // Registers a new filter.
 // Must be called by only one thread at a time.
+// The include_filter argument specifies a function that will be called
+// to determine at run-time whether or not to add the filter.  If the
+// value is nullptr, the filter will be added unconditionally.
 template<typename ChannelDataType, typename CallDataType>
-void RegisterChannelFilter(const char* name,
-                           grpc_channel_stack_type stack_type, int priority) {
+void RegisterChannelFilter(
+    const char* name, grpc_channel_stack_type stack_type, int priority,
+    std::function<bool(const grpc_channel_args*)> include_filter) {
   // If we haven't been called before, initialize channel_filters and
   // call grpc_register_plugin().
   if (internal::channel_filters == nullptr) {
@@ -191,8 +182,8 @@ void RegisterChannelFilter(const char* name,
   // Add an entry to channel_filters.  The filter will be added when the
   // C-core initialization code calls ChannelFilterPluginInit().
   typedef internal::ChannelFilter<ChannelDataType, CallDataType> FilterType;
-  internal::channel_filters->emplace_back({
-      stack_type, priority, {
+  internal::FilterRecord filter_record = {
+      stack_type, priority, include_filter, {
           FilterType::StartTransportStreamOp,
           FilterType::StartTransportOp,
           FilterType::call_data_size,
@@ -203,7 +194,8 @@ void RegisterChannelFilter(const char* name,
           FilterType::InitChannelElement,
           FilterType::DestroyChannelElement,
           FilterType::GetPeer,
-          name}});
+          name}};
+  internal::channel_filters->push_back(filter_record);
 }
 
 }  // namespace grpc

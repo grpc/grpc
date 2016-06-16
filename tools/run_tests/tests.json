@@ -2223,6 +2223,27 @@
     "flaky": false, 
     "gtest": true, 
     "language": "c++", 
+    "name": "filter_end2end_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "gtest": true, 
+    "language": "c++", 
     "name": "generic_end2end_test", 
     "platforms": [
       "linux", 
