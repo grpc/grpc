@@ -36,12 +36,13 @@
 #define TEST_GRPC_C_GRPC_C_PUBLIC_H
 
 #include <stdlib.h>
+#include "message_public.h"
 
-typedef struct grpc_channel grpc_channel;
-typedef struct grpc_status grpc_status;
-typedef struct grpc_context grpc_context;
+typedef struct grpc_channel GRPC_channel;
+typedef struct grpc_status GRPC_status;
+typedef struct grpc_context GRPC_context;
 
-typedef struct grpc_method {
+typedef struct GRPC_method {
   enum RpcType {
     NORMAL_RPC = 0,
     CLIENT_STREAMING,  // request streaming
@@ -49,16 +50,9 @@ typedef struct grpc_method {
     BIDI_STREAMING
   } type;
   const char* const name;
-} grpc_method;
+} GRPC_method;
 
-typedef struct grpc_message {
-  void * data;
-  size_t length;
-} grpc_message;
-
-grpc_context *grpc_context_create(grpc_channel *chan);
-void GRPC_context_destroy(grpc_context **context);
-
-grpc_status grpc_unary_blocking_call(grpc_channel *channel, const grpc_method * const rpc_method, grpc_context * const context, const grpc_message message, grpc_message *response);
+GRPC_status GRPC_unary_blocking_call(GRPC_channel *channel, const GRPC_method *const rpc_method,
+                                     GRPC_context *const context, const GRPC_message message, GRPC_message *response);
 
 #endif //TEST_GRPC_C_GRPC_C_PUBLIC_H

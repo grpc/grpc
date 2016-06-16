@@ -35,10 +35,14 @@
 #ifndef TEST_GRPC_C_STATUS_H
 #define TEST_GRPC_C_STATUS_H
 
+#include <grpc/grpc.h>
+
 typedef struct grpc_status {
   grpc_status_code code;
   char *details;
   size_t details_length;
 } grpc_status;
+
+typedef grpc_status GRPC_status;
 
 #endif //TEST_GRPC_C_STATUS_H

@@ -39,6 +39,7 @@
 #include "../serialization_public.h"
 #include <grpc/grpc.h>
 #include "status.h"
+#include "message.h"
 #include <stdbool.h>
 
 typedef struct grpc_context {
@@ -55,5 +56,7 @@ typedef struct grpc_context {
   GRPC_deserializer deserialize;
   grpc_status status;
 } grpc_context;
+
+typedef grpc_context GRPC_context;
 
 #endif //TEST_GRPC_C_CONTEXT_H

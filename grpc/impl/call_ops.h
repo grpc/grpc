@@ -36,8 +36,12 @@
 #define TEST_GRPC_C_CALL_OPS_H
 
 #include "../grpc_c_public.h"
+#include "message.h"
+#include "context.h"
 #include <grpc/grpc.h>
 #include <stdbool.h>
+
+typedef GRPC_method grpc_method;
 
 typedef void (*grpc_op_filler)(grpc_op *op, const grpc_method *, grpc_context *, const grpc_message message, grpc_message *response);
 typedef void (*grpc_op_finisher)(grpc_context *, bool *status, int max_message_size);
