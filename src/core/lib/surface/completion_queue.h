@@ -39,6 +39,8 @@
 #include <grpc/grpc.h>
 #include "src/core/lib/iomgr/pollset.h"
 
+/* These trace flags default to 1. The corresponding lines are only traced
+   if grpc_api_trace is also truthy */
 extern int grpc_cq_pluck_trace;
 extern int grpc_cq_event_timeout_trace;
 
