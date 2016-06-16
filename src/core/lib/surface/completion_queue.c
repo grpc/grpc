@@ -101,7 +101,6 @@ int grpc_cq_event_timeout_trace;
     gpr_free(_ev);                                                    \
   }
 
-
 static void on_pollset_shutdown_done(grpc_exec_ctx *exec_ctx, void *cc,
                                      bool success);
 
