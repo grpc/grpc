@@ -56,7 +56,7 @@ class ProtoServerReflectionPlugin : public ::grpc::ServerBuilderPlugin {
   bool has_sync_methods() const GRPC_OVERRIDE;
 
  private:
-  std::shared_ptr<::grpc::ProtoServerReflection> reflection_service_;
+  std::shared_ptr< ::grpc::ProtoServerReflection> reflection_service_;
 };
 
 // Add proto reflection plugin to ServerBuilder. This function should be called
