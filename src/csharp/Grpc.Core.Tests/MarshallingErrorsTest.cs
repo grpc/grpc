@@ -134,7 +134,15 @@ namespace Grpc.Core.Tests
         {
             helper.ClientStreamingHandler = new ClientStreamingServerMethod<string, string>(async (requestStream, context) =>
             {
-                Assert.ThrowsAsync<IOException>(async () => await requestStream.MoveNext());
+                try
+                {
+                    // cannot use Assert.ThrowsAsync because it uses Task.Wait and would deadlock.
+                    await requestStream.MoveNext();
+                    Assert.Fail();
+                }
+                catch (IOException)
+                {
+                }
                 return "RESPONSE";
             });
 

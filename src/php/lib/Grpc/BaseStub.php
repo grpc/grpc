@@ -52,8 +52,9 @@ class BaseStub
      *  - 'update_metadata': (optional) a callback function which takes in a
      * metadata array, and returns an updated metadata array
      *  - 'grpc.primary_user_agent': (optional) a user-agent string
+     * @param $channel Channel An already created Channel object
      */
-    public function __construct($hostname, $opts)
+    public function __construct($hostname, $opts, $channel = null)
     {
         $this->hostname = $hostname;
         $this->update_metadata = null;
@@ -77,7 +78,15 @@ class BaseStub
                                  'required. Please see one of the '.
                                  'ChannelCredentials::create methods');
         }
-        $this->channel = new Channel($hostname, $opts);
+        if ($channel) {
+            if (!is_a($channel, 'Channel')) {
+                throw new \Exception("The channel argument is not a".
+                                     "Channel object");
+            }
+            $this->channel = $channel;
+        } else {
+            $this->channel = new Channel($hostname, $opts);
+        }
     }
 
     /**

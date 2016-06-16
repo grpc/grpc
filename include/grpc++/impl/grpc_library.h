@@ -37,10 +37,9 @@
 #include <iostream>
 
 #include <grpc++/impl/codegen/config.h>
+#include <grpc++/impl/codegen/core_codegen.h>
 #include <grpc++/impl/codegen/grpc_library.h>
 #include <grpc/grpc.h>
-
-#include "src/cpp/common/core_codegen.h"
 
 namespace grpc {
 

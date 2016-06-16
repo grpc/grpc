@@ -43,9 +43,7 @@ def run_worker_server(port):
   server.add_insecure_port('[::]:{}'.format(port))
   server.start()
   servicer.wait_for_quit()
-  # Drain outstanding requests for clean exit
-  time.sleep(2)
-  server.stop(0)
+  server.stop(2)
 
 
 if __name__ == '__main__':

@@ -86,7 +86,6 @@
     <Compile Include="Utils\BenchmarkUtil.cs" />
     <Compile Include="ChannelCredentials.cs" />
     <Compile Include="Internal\ChannelArgsSafeHandle.cs" />
-    <Compile Include="Internal\AsyncCompletion.cs" />
     <Compile Include="Internal\AsyncCallBase.cs" />
     <Compile Include="Internal\AsyncCallServer.cs" />
     <Compile Include="Internal\AsyncCall.cs" />
@@ -137,6 +136,8 @@
     <Compile Include="Internal\ClientSideStatus.cs" />
     <Compile Include="Internal\ClockType.cs" />
     <Compile Include="Internal\CallError.cs" />
+    <Compile Include="Logging\LogLevel.cs" />
+    <Compile Include="Logging\LogLevelFilterLogger.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Grpc.Core.nuspec" />

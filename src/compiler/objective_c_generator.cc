@@ -60,9 +60,34 @@ void PrintProtoRpcDeclarationAsPragma(Printer *printer,
                  " returns ($server_stream$$response_type$)\n\n");
 }
 
+template <typename DescriptorType>
+static void PrintAllComments(const DescriptorType* desc, Printer* printer) {
+  std::vector<grpc::string> comments;
+  grpc_generator::GetComment(desc, grpc_generator::COMMENTTYPE_LEADING_DETACHED,
+                             &comments);
+  grpc_generator::GetComment(desc, grpc_generator::COMMENTTYPE_LEADING,
+                             &comments);
+  grpc_generator::GetComment(desc, grpc_generator::COMMENTTYPE_TRAILING,
+                             &comments);
+  if (comments.empty()) {
+    return;
+  }
+  printer->Print("/**\n");
+  for (auto it = comments.begin(); it != comments.end(); ++it) {
+    printer->Print(" * ");
+    size_t start_pos = it->find_first_not_of(' ');
+    if (start_pos != grpc::string::npos) {
+      printer->Print(it->c_str() + start_pos);
+    }
+    printer->Print("\n");
+  }
+  printer->Print(" */\n");
+}
+
 void PrintMethodSignature(Printer *printer, const MethodDescriptor *method,
                           const map< ::grpc::string, ::grpc::string> &vars) {
-  // TODO(jcanizales): Print method comments.
+  // Print comment
+  PrintAllComments(method, printer);
 
   printer->Print(vars, "- ($return_type$)$method_name$With");
   if (method->client_streaming()) {
@@ -94,7 +119,7 @@ void PrintSimpleSignature(Printer *printer, const MethodDescriptor *method,
 void PrintAdvancedSignature(Printer *printer, const MethodDescriptor *method,
                             map< ::grpc::string, ::grpc::string> vars) {
   vars["method_name"] = "RPCTo" + vars["method_name"];
-  vars["return_type"] = "ProtoRPC *";
+  vars["return_type"] = "GRPCProtoCall *";
   PrintMethodSignature(printer, method, vars);
 }
 
@@ -195,11 +220,13 @@ void PrintMethodImplementations(Printer *printer,
     printer.Print("@end\n\n");
 
     printer.Print(
-        "// Basic service implementation, over gRPC, that only does"
-        " marshalling and parsing.\n");
+        "/**\n"
+        " * Basic service implementation, over gRPC, that only does\n"
+        " * marshalling and parsing.\n"
+        " */\n");
     printer.Print(vars,
                   "@interface $service_class$ :"
-                  " ProtoService<$service_class$>\n");
+                  " GRPCProtoService<$service_class$>\n");
     printer.Print(
         "- (instancetype)initWithHost:(NSString *)host"
         " NS_DESIGNATED_INITIALIZER;\n");
@@ -220,18 +247,13 @@ void PrintMethodImplementations(Printer *printer,
                                 {"service_class", ServiceClassName(service)},
                                 {"package", service->file()->package()}};
 
-    printer.Print(vars,
-                  "static NSString *const kPackageName = @\"$package$\";\n");
-    printer.Print(
-        vars, "static NSString *const kServiceName = @\"$service_name$\";\n\n");
-
     printer.Print(vars, "@implementation $service_class$\n\n");
 
     printer.Print("// Designated initializer\n");
     printer.Print("- (instancetype)initWithHost:(NSString *)host {\n");
-    printer.Print(
+    printer.Print(vars,
         "  return (self = [super initWithHost:host"
-        " packageName:kPackageName serviceName:kServiceName]);\n");
+        " packageName:@\"$package$\" serviceName:@\"$service_name$\"]);\n");
     printer.Print("}\n\n");
     printer.Print(
         "// Override superclass initializer to disallow different"

@@ -373,7 +373,7 @@ static void Init_grpc_connectivity_states() {
   rb_define_const(grpc_rb_mConnectivityStates, "TRANSIENT_FAILURE",
                   LONG2NUM(GRPC_CHANNEL_TRANSIENT_FAILURE));
   rb_define_const(grpc_rb_mConnectivityStates, "FATAL_FAILURE",
-                  LONG2NUM(GRPC_CHANNEL_FATAL_FAILURE));
+                  LONG2NUM(GRPC_CHANNEL_SHUTDOWN));
 }
 
 void Init_grpc_channel() {

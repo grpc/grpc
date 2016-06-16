@@ -31,6 +31,8 @@
  *
  */
 
+#include <string.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
@@ -39,7 +41,8 @@
 #include "test/core/util/memory_counters.h"
 #include "test/core/util/mock_endpoint.h"
 
-static const bool squelch = true;
+bool squelch = true;
+bool leak_check = true;
 
 static void discard_write(gpr_slice slice) {}
 
@@ -51,7 +54,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_test_only_set_metadata_hash_seed(0);
   struct grpc_memory_counters counters;
   if (squelch) gpr_set_log_function(dont_log);
-  grpc_memory_counters_init();
+  if (leak_check) grpc_memory_counters_init();
   grpc_init();
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
@@ -78,6 +81,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   size_t details_capacity = 0;
 
   grpc_op ops[6];
+  memset(ops, 0, sizeof(ops));
   grpc_op *op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
@@ -153,8 +157,10 @@ done:
     grpc_byte_buffer_destroy(response_payload_recv);
   }
   grpc_shutdown();
-  counters = grpc_memory_counters_snapshot();
-  grpc_memory_counters_destroy();
-  GPR_ASSERT(counters.total_size_relative == 0);
+  if (leak_check) {
+    counters = grpc_memory_counters_snapshot();
+    grpc_memory_counters_destroy();
+    GPR_ASSERT(counters.total_size_relative == 0);
+  }
   return 0;
 }

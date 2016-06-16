@@ -229,9 +229,10 @@ class TestScenario {
         credentials_type(creds_type),
         message_content(content) {}
   void Log() const {
-    gpr_log(GPR_INFO,
-            "Scenario: disable_blocking %d, credentials %s, message size %d",
-            disable_blocking, credentials_type.c_str(), message_content.size());
+    gpr_log(
+        GPR_INFO,
+        "Scenario: disable_blocking %d, credentials %s, message size %" PRIuPTR,
+        disable_blocking, credentials_type.c_str(), message_content.size());
   }
   bool disable_blocking;
   const grpc::string credentials_type;
@@ -819,7 +820,7 @@ TEST_P(AsyncEnd2endTest, ServerCheckCancellation) {
   EXPECT_TRUE(srv_ctx.IsCancelled());
 
   response_reader->Finish(&recv_response, &recv_status, tag(4));
-  Verifier(GetParam().disable_blocking).Expect(4, false).Verify(cq_.get());
+  Verifier(GetParam().disable_blocking).Expect(4, true).Verify(cq_.get());
 
   EXPECT_EQ(StatusCode::CANCELLED, recv_status.error_code());
 }
@@ -881,7 +882,7 @@ TEST_P(AsyncEnd2endTest, UnimplementedRpc) {
       stub->AsyncUnimplemented(&cli_ctx, send_request, cq_.get()));
 
   response_reader->Finish(&recv_response, &recv_status, tag(4));
-  Verifier(GetParam().disable_blocking).Expect(4, false).Verify(cq_.get());
+  Verifier(GetParam().disable_blocking).Expect(4, true).Verify(cq_.get());
 
   EXPECT_EQ(StatusCode::UNIMPLEMENTED, recv_status.error_code());
   EXPECT_EQ("", recv_status.error_message());
@@ -1026,9 +1027,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
 
     // Client will see the cancellation
     cli_stream->Finish(&recv_status, tag(10));
-    // TODO(sreek): The expectation here should be true. This is a bug (github
-    // issue #4972)
-    Verifier(GetParam().disable_blocking).Expect(10, false).Verify(cq_.get());
+    Verifier(GetParam().disable_blocking).Expect(10, true).Verify(cq_.get());
     EXPECT_FALSE(recv_status.ok());
     EXPECT_EQ(::grpc::StatusCode::CANCELLED, recv_status.error_code());
   }

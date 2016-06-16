@@ -36,7 +36,10 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #import <GRPCClient/GRPCCall.h>
+#ifdef GRPC_COMPILE_WITH_CRONET
 #import <GRPCClient/GRPCCall+ChannelArg.h>
+#import <GRPCClient/GRPCCall+Cronet.h>
+#endif
 
 #import "GRPCChannel.h"
 #import "GRPCCompletionQueue.h"
@@ -200,15 +203,26 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (GRPCChannel *)newChannel {
   NSDictionary *args = [self channelArgs];
+#ifdef GRPC_COMPILE_WITH_CRONET
+  BOOL useCronet = [GRPCCall isUsingCronet];
+#endif
   if (_secure) {
       GRPCChannel *channel;
       @synchronized(self) {
         if (_channelCreds == nil) {
           [self setTLSPEMRootCerts:nil withPrivateKey:nil withCertChain:nil error:nil];
         }
-        channel = [GRPCChannel secureChannelWithHost:_address
-                                          credentials:_channelCreds
-                                          channelArgs:args];
+#ifdef GRPC_COMPILE_WITH_CRONET
+        if (useCronet) {
+          channel = [GRPCChannel secureCronetChannelWithHost:_address
+                                                 channelArgs:args];
+        } else
+#endif
+        {
+          channel = [GRPCChannel secureChannelWithHost:_address
+                                            credentials:_channelCreds
+                                            channelArgs:args];
+        }
       }
       return channel;
   } else {

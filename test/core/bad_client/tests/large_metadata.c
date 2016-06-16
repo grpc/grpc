@@ -163,6 +163,7 @@ static void server_verifier_sends_too_much_metadata(grpc_server *server,
   meta.value_length = metadata_value_size;
 
   grpc_op op;
+  memset(&op, 0, sizeof(op));
   op.op = GRPC_OP_SEND_INITIAL_METADATA;
   op.data.send_initial_metadata.count = 1;
   op.data.send_initial_metadata.metadata = &meta;
