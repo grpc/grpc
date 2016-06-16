@@ -41,20 +41,19 @@ namespace grpc {
 // CallData
 //
 
-void CallData::StartTransportStreamOp(
-    grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-    grpc_transport_stream_op *op) {
+void CallData::StartTransportStreamOp(grpc_exec_ctx *exec_ctx,
+                                      grpc_call_element *elem,
+                                      grpc_transport_stream_op *op) {
   grpc_call_next_op(exec_ctx, elem, op);
 }
 
-void CallData::SetPollsetOrPollsetSet(
-    grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-    grpc_polling_entity *pollent) {
+void CallData::SetPollsetOrPollsetSet(grpc_exec_ctx *exec_ctx,
+                                      grpc_call_element *elem,
+                                      grpc_polling_entity *pollent) {
   grpc_call_stack_ignore_set_pollset_or_pollset_set(exec_ctx, elem, pollent);
 }
 
-char* CallData::GetPeer(
-    grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
+char *CallData::GetPeer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
   return grpc_call_next_get_peer(exec_ctx, elem);
 }
 
@@ -62,9 +61,9 @@ char* CallData::GetPeer(
 // ChannelData
 //
 
-void ChannelData::StartTransportOp(
-    grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
-    grpc_transport_op *op) {
+void ChannelData::StartTransportOp(grpc_exec_ctx *exec_ctx,
+                                   grpc_channel_element *elem,
+                                   grpc_transport_op *op) {
   grpc_channel_next_op(exec_ctx, elem, op);
 }
 
@@ -74,29 +73,28 @@ void ChannelData::StartTransportOp(
 
 namespace internal {
 
-std::vector<FilterRecord>* channel_filters = nullptr;
+std::vector<FilterRecord> *channel_filters = nullptr;
 
 namespace {
 
-bool MaybeAddFilter(grpc_channel_stack_builder* builder, void* arg) {
-  const FilterRecord& filter = *(FilterRecord*)arg;
+bool MaybeAddFilter(grpc_channel_stack_builder *builder, void *arg) {
+  const FilterRecord &filter = *(FilterRecord *)arg;
   if (filter.include_filter != nullptr) {
     const grpc_channel_args *args =
         grpc_channel_stack_builder_get_channel_arguments(builder);
-    if (!filter.include_filter(*args))
-      return true;
+    if (!filter.include_filter(*args)) return true;
   }
-  return grpc_channel_stack_builder_prepend_filter(
-      builder, &filter.filter, nullptr, nullptr);
+  return grpc_channel_stack_builder_prepend_filter(builder, &filter.filter,
+                                                   nullptr, nullptr);
 }
 
 }  // namespace
 
 void ChannelFilterPluginInit() {
   for (size_t i = 0; i < channel_filters->size(); ++i) {
-    FilterRecord& filter = (*channel_filters)[i];
+    FilterRecord &filter = (*channel_filters)[i];
     grpc_channel_init_register_stage(filter.stack_type, filter.priority,
-                                     MaybeAddFilter, (void*)&filter);
+                                     MaybeAddFilter, (void *)&filter);
   }
 }
 
