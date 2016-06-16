@@ -95,9 +95,16 @@ int GetCounterValue() {
 
 }  // namespace
 
+class ChannelDataImpl : public ChannelData {
+ public:
+  explicit ChannelDataImpl(const grpc_channel_args& args) : ChannelData(args) {}
+  virtual ~ChannelDataImpl() {}
+};
+
 class CallDataImpl : public CallData {
  public:
-  CallDataImpl() {}
+  explicit CallDataImpl(const ChannelDataImpl& channel_data)
+      : CallData(channel_data) {}
   virtual ~CallDataImpl() {}
 
   void StartTransportStreamOp(
@@ -107,12 +114,6 @@ class CallDataImpl : public CallData {
       IncrementCounter();
     grpc_call_next_op(exec_ctx, elem, op);
   }
-};
-
-class ChannelDataImpl : public ChannelData {
- public:
-  ChannelDataImpl() {}
-  virtual ~ChannelDataImpl() {}
 };
 
 class FilterEnd2endTest : public ::testing::Test {

@@ -83,7 +83,7 @@ bool MaybeAddFilter(grpc_channel_stack_builder* builder, void* arg) {
   if (filter.include_filter != nullptr) {
     const grpc_channel_args *args =
         grpc_channel_stack_builder_get_channel_arguments(builder);
-    if (!filter.include_filter(args))
+    if (!filter.include_filter(*args))
       return true;
   }
   return grpc_channel_stack_builder_prepend_filter(
