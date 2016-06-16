@@ -34,10 +34,21 @@
 #include "unary_blocking_call.h"
 #include "call_ops.h"
 #include <stdio.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
-grpc_status grpc_unary_blocking_call(grpc_channel *channel, const grpc_method * const rpc_method, grpc_context * const context, const grpc_message message, void *response) {
+grpc_status grpc_unary_blocking_call(grpc_channel *channel, const grpc_method * const rpc_method,
+                                     grpc_context * const context, const grpc_message message,
+                                     grpc_message *response) {
   grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
-  grpc_call *call = grpc_channel_create_call(channel, NULL, GRPC_PROPAGATE_DEFAULTS, cq, rpc_method->name, "", context->deadline, NULL);
+  grpc_call *call = grpc_channel_create_call(channel,
+                                             NULL,
+                                             GRPC_PROPAGATE_DEFAULTS,
+                                             cq,
+                                             rpc_method->name,
+                                             "",
+                                             context->deadline,
+                                             NULL);
 
   grpc_call_set set = {
     grpc_op_send_metadata,
@@ -57,17 +68,7 @@ grpc_status grpc_unary_blocking_call(grpc_channel *channel, const grpc_method * 
   GPR_ASSERT(ev.success);
 
   grpc_finish_op_from_call_set(set, context);
-
-  printf("Status: %d\n", context->status.code);
-  printf("Details: %s\n", context->status.details);
   GPR_ASSERT(context->status.code == GRPC_STATUS_OK);
-
-  grpc_byte_buffer_reader reader;
-  grpc_byte_buffer_reader_init(&reader, context->recv_buffer);
-  gpr_slice slice_recv = grpc_byte_buffer_reader_readall(&reader);
-  uint8_t *resp = GPR_SLICE_START_PTR(slice_recv);
-  printf("Server said: %s\n", resp + 2);    // skip to the string in serialized protobuf object
-  grpc_byte_buffer_destroy(context->recv_buffer);
 
   grpc_completion_queue_shutdown(cq);
   while (
@@ -79,5 +80,4 @@ grpc_status grpc_unary_blocking_call(grpc_channel *channel, const grpc_method * 
 
   gpr_free(context->status.details);
 }
-
 
