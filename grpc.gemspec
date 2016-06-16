@@ -483,6 +483,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c )
   s.files += %w( src/core/ext/transport/chttp2/client/insecure/channel_create.c )
   s.files += %w( src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c )
+  s.files += %w( src/core/ext/lb_policy/grpclb/grpclb.c )
   s.files += %w( src/core/ext/lb_policy/grpclb/load_balancer_api.c )
   s.files += %w( src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c )
   s.files += %w( third_party/nanopb/pb_common.c )

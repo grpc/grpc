@@ -56,6 +56,7 @@ static bool decode_serverlist(pb_istream_t *stream, const pb_field_t *field,
     dec_arg->num_servers++;
   } else { /* second pass */
     grpc_grpclb_server *server = gpr_malloc(sizeof(grpc_grpclb_server));
+    memset(server, 0, sizeof(grpc_grpclb_server));
     GPR_ASSERT(dec_arg->num_servers > 0);
     if (dec_arg->i == 0) { /* first iteration of second pass */
       dec_arg->servers =
@@ -147,6 +148,7 @@ grpc_grpclb_serverlist *grpc_grpclb_response_parse_serverlist(
   }
 
   grpc_grpclb_serverlist *sl = gpr_malloc(sizeof(grpc_grpclb_serverlist));
+  memset(sl, 0, sizeof(*sl));
   sl->num_servers = arg.num_servers;
   sl->servers = arg.servers;
   if (res->server_list.has_expiration_interval) {
@@ -165,6 +167,81 @@ void grpc_grpclb_destroy_serverlist(grpc_grpclb_serverlist *serverlist) {
   }
   gpr_free(serverlist->servers);
   gpr_free(serverlist);
+}
+
+grpc_grpclb_serverlist *grpc_grpclb_serverlist_copy(
+    const grpc_grpclb_serverlist *sl) {
+  grpc_grpclb_serverlist *copy = gpr_malloc(sizeof(grpc_grpclb_serverlist));
+  memset(copy, 0, sizeof(grpc_grpclb_serverlist));
+  copy->num_servers = sl->num_servers;
+  memcpy(&copy->expiration_interval, &sl->expiration_interval,
+         sizeof(grpc_grpclb_duration));
+  copy->servers = gpr_malloc(sizeof(grpc_grpclb_server*) * sl->num_servers);
+  for (size_t i = 0; i < sl->num_servers; i++) {
+    copy->servers[i] = gpr_malloc(sizeof(grpc_grpclb_server));
+    memcpy(copy->servers[i], sl->servers[i], sizeof(grpc_grpclb_server));
+  }
+  return copy;
+}
+
+bool grpc_grpclb_serverlist_equals(const grpc_grpclb_serverlist *lhs,
+                                   const grpc_grpclb_serverlist *rhs) {
+  if ((lhs == NULL) || (rhs == NULL)) {
+    return false;
+  }
+  if (lhs->num_servers != rhs->num_servers) {
+    return false;
+  }
+  if (grpc_grpclb_duration_compare(&lhs->expiration_interval,
+                                   &rhs->expiration_interval) != 0) {
+    return false;
+  }
+  for (size_t i = 0; i < lhs->num_servers; i++) {
+    if (!grpc_grpclb_server_equals(lhs->servers[i], rhs->servers[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool grpc_grpclb_server_equals(const grpc_grpclb_server *lhs,
+                               const grpc_grpclb_server *rhs) {
+  return memcmp(lhs, rhs, sizeof(grpc_grpclb_server)) == 0;
+}
+
+int grpc_grpclb_duration_compare(const grpc_grpclb_duration *lhs,
+                                 const grpc_grpclb_duration *rhs) {
+  GPR_ASSERT(lhs && rhs);
+  if (lhs->has_seconds && rhs->has_seconds) {
+    if (lhs->seconds < rhs->seconds) {
+      return -1;
+    }
+    if (lhs->seconds > rhs->seconds) {
+      return 1;
+    }
+    goto compare_nanos;
+  }
+  if (lhs->has_seconds + rhs->has_seconds == 0) {
+    goto compare_nanos;
+  }
+  // only lhs or rhs have seconds
+  return rhs->has_seconds ? 1 : -1;
+
+compare_nanos:
+  if (lhs->has_nanos && rhs->has_nanos) {
+    if (lhs->nanos < rhs->nanos) {
+      return -1;
+    }
+    if (lhs->nanos > rhs->nanos) {
+      return 1;
+    }
+    return 0;
+  }
+  if (lhs->has_nanos + rhs->has_nanos == 0) {
+    return 0;
+  }
+  // only lhs or rhs have nanos
+  return rhs->has_nanos ? 1 : -1;
 }
 
 void grpc_grpclb_response_destroy(grpc_grpclb_response *response) {

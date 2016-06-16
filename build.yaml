@@ -377,8 +377,10 @@ filegroups:
   - src/core/ext/lb_policy/grpclb/load_balancer_api.h
   - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h
   src:
+  - src/core/ext/lb_policy/grpclb/grpclb.c
   - src/core/ext/lb_policy/grpclb/load_balancer_api.c
   - src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
+  plugin: grpc_lb_policy_grpclb
   uses:
   - grpc_base
   - grpc_client_config
@@ -796,6 +798,7 @@ libs:
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
+  - grpc_lb_policy_grpclb
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
   - grpc_load_reporting
@@ -893,6 +896,7 @@ libs:
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
+  - grpc_lb_policy_grpclb
   - census
   generate_plugin_registry: true
   secure: false
@@ -1810,6 +1814,16 @@ targets:
   language: c
   src:
   - test/core/security/verify_jwt.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: grpclb_test
+  build: test
+  language: c
+  src:
+  - test/core/client_config/grpclb_test.c
   deps:
   - grpc_test_util
   - grpc

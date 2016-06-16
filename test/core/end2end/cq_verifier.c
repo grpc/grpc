@@ -258,9 +258,10 @@ void cq_verify(cq_verifier *v) {
   gpr_strvec_destroy(&have_tags);
 }
 
-void cq_verify_empty(cq_verifier *v) {
-  gpr_timespec deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                       gpr_time_from_seconds(1, GPR_TIMESPAN));
+void cq_verify_empty_timeout(cq_verifier *v, int timeout_sec) {
+  gpr_timespec deadline =
+      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                   gpr_time_from_seconds(timeout_sec, GPR_TIMESPAN));
   grpc_event ev;
 
   GPR_ASSERT(v->expect.next == &v->expect && "expectation queue must be empty");
@@ -273,6 +274,8 @@ void cq_verify_empty(cq_verifier *v) {
     abort();
   }
 }
+
+void cq_verify_empty(cq_verifier *v) { cq_verify_empty_timeout(v, 1); }
 
 static expectation *add(cq_verifier *v, grpc_completion_type type, void *tag) {
   expectation *e = gpr_malloc(sizeof(expectation));

@@ -953,6 +953,22 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "grpclb_test", 
+    "src": [
+      "test/core/client_config/grpclb_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "hpack_parser_fuzzer_test", 
     "src": [
       "test/core/transport/chttp2/hpack_parser_fuzzer_test.c"
@@ -4152,6 +4168,7 @@
       "gpr", 
       "grpc_base", 
       "grpc_lb_policy_grpclb", 
+      "grpc_lb_policy_grpclb", 
       "grpc_lb_policy_pick_first", 
       "grpc_lb_policy_round_robin", 
       "grpc_load_reporting", 
@@ -4245,6 +4262,7 @@
       "census", 
       "gpr", 
       "grpc_base", 
+      "grpc_lb_policy_grpclb", 
       "grpc_lb_policy_grpclb", 
       "grpc_lb_policy_pick_first", 
       "grpc_lb_policy_round_robin", 
@@ -6048,6 +6066,7 @@
     "language": "c", 
     "name": "grpc_lb_policy_grpclb", 
     "src": [
+      "src/core/ext/lb_policy/grpclb/grpclb.c", 
       "src/core/ext/lb_policy/grpclb/load_balancer_api.c", 
       "src/core/ext/lb_policy/grpclb/load_balancer_api.h", 
       "src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c", 

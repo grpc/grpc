@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\core\client_config\grpclb_test.c">
+      <Filter>test\core\client_config</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{e0ba55a2-37d9-5029-6f4e-64f097307340}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{6d1d02a2-d635-142d-16d4-45bd59f5c83a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\client_config">
+      <UniqueIdentifier>{356b8663-f1cf-f0df-39d0-d2de958699d0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

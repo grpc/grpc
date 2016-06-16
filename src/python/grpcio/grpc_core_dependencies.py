@@ -235,6 +235,7 @@ CORE_SOURCE_FILES = [
   'src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c',
   'src/core/ext/transport/chttp2/client/insecure/channel_create.c',
   'src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c',
+  'src/core/ext/lb_policy/grpclb/grpclb.c',
   'src/core/ext/lb_policy/grpclb/load_balancer_api.c',
   'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c',
   'third_party/nanopb/pb_common.c',
