@@ -31,26 +31,38 @@
  *
  */
 
-#include <stdio.h>
-#include "test_config.h"
-#include "grpc/grpc_c_public.h"
-#include "grpc/status_public.h"
-#include "grpc/channel_public.h"
 
-int main(int argc, char **argv) {
-  grpc_test_init(argc, argv);
+#ifndef TEST_GRPC_C_CALL_OPS_H
+#define TEST_GRPC_C_CALL_OPS_H
 
-  // Local greetings server
-  grpc_channel *chan = GRPC_channel_create("0.0.0.0:50051");
+#include "../grpc_c_public.h"
+#include <grpc/grpc.h>
+#include <stdbool.h>
 
-  grpc_method method = { NORMAL_RPC, "/helloworld.Greeter/SayHello" };
-  grpc_context *context = grpc_context_create(chan);
-  // hardcoded string for "gRPC-C"
-  const char str[] = { 0x0A, 0x06, 0x67, 0x52, 0x50, 0x43, 0x2D, 0x43 };
-  grpc_message msg = { str, sizeof(str) };
-  grpc_unary_blocking_call(chan, &method, context, msg, NULL);
+typedef void (*grpc_op_filler)(grpc_op *op, const grpc_method *, grpc_context *, const grpc_message message, void *response);
+typedef void (*grpc_op_finisher)(grpc_context *, bool *status, int max_message_size);
 
-  GRPC_context_destroy(&context);
-  GRPC_channel_destroy(&chan);
-  return 0;
-}
+typedef struct grpc_op_manager {
+  const grpc_op_filler fill;
+  const grpc_op_finisher finish;
+} grpc_op_manager;
+
+enum { GRPC_MAX_OP_COUNT = 8 };
+
+typedef const grpc_op_manager grpc_call_set[GRPC_MAX_OP_COUNT];
+
+void grpc_fill_op_from_call_set(grpc_call_set set, const grpc_method *rpc_method, grpc_context *context,
+                                const grpc_message message, void *response, grpc_op ops[], size_t *nops);
+
+void grpc_finish_op_from_call_set(grpc_call_set set, grpc_context *context);
+
+/* list of operations */
+
+extern const grpc_op_manager grpc_op_send_metadata;
+extern const grpc_op_manager grpc_op_recv_metadata;
+extern const grpc_op_manager grpc_op_send_object;
+extern const grpc_op_manager grpc_op_recv_object;
+extern const grpc_op_manager grpc_op_send_close;
+extern const grpc_op_manager grpc_op_recv_status;
+
+#endif //TEST_GRPC_C_CALL_OPS_H
