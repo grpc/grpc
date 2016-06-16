@@ -31,6 +31,14 @@
  *
  */
 
+#include <string.h>
+
+#include <grpc/byte_buffer_reader.h>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/host_port.h>
+#include <grpc/support/string_util.h>
+
 #include "src/core/ext/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/client_config/client_channel_factory.h"
 #include "src/core/ext/client_config/lb_policy_registry.h"
@@ -40,14 +48,6 @@
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
-
-#include <string.h>
-
-#include <grpc/byte_buffer_reader.h>
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
-#include <grpc/support/string_util.h>
 
 int grpc_lb_glb_trace = 0;
 
