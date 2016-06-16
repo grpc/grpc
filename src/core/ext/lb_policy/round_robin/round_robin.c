@@ -31,6 +31,34 @@
  *
  */
 
+/** Round Robin Policy.
+ *
+ * This policy keeps:
+ * - A circular list of ready (connected) subchannels, the *readylist*. An empty
+ *   readylist consists solely of its root (dummy) node.
+ * - A pointer to the last element picked from the readylist, the *lastpick*.
+ *   Initially set to point to the readylist's root.
+ *
+ * Behavior:
+ * - When a subchannel connects, it's *prepended* to the readylist's root node.
+ *   Ie, if readylist = A <-> B <-> ROOT <-> C
+ *                      ^                    ^
+ *                      |____________________|
+ *   and subchannel D becomes connected, the addition of D to the readylist
+ *   results in  readylist = A <-> B <-> D <-> ROOT <-> C
+ *                           ^                          ^
+ *                           |__________________________|
+ * - When a subchannel disconnects, it's removed from the readylist. If the
+ *   subchannel being removed was the most recently picked, the *lastpick*
+ *   pointer moves to the removed node's previous element. Note that if the
+ *   readylist only had one element, this is still legal, as the lastpick would
+ *   point to the dummy root node, for an empty readylist.
+ * - Upon picking, *lastpick* is updated to point to the returned (connected)
+ *   subchannel. Note that it's possible that the selected subchannel becomes
+ *   disconnected in the interim between the selection and the actual usage of
+ *   the subchannel by the caller.
+ */
+
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -173,9 +201,7 @@ static void remove_disconnected_sc_locked(round_robin_lb_policy *p,
     return;
   }
   if (node == p->ready_list_last_pick) {
-    /* If removing the lastly picked node, reset the last pick pointer to the
-     * dummy root of the list */
-    p->ready_list_last_pick = &p->ready_list;
+    p->ready_list_last_pick = p->ready_list_last_pick->prev;
   }
 
   /* removing last item */
@@ -307,7 +333,7 @@ static void start_picking(grpc_exec_ctx *exec_ctx, round_robin_lb_policy *p) {
   p->started_picking = 1;
 
   if (grpc_lb_round_robin_trace) {
-    gpr_log(GPR_DEBUG, "LB_POLICY: p=%p num_subchannels=%d", p,
+    gpr_log(GPR_DEBUG, "LB_POLICY: p=%p num_subchannels=%" PRIuPTR, p,
             p->num_subchannels);
   }
 
@@ -345,8 +371,8 @@ static int rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     *target = grpc_subchannel_get_connected_subchannel(selected->subchannel);
     if (grpc_lb_round_robin_trace) {
       gpr_log(GPR_DEBUG,
-              "[RR PICK] TARGET <-- CONNECTED SUBCHANNEL %p (NODE %p)",
-              selected->subchannel, selected);
+              "[RR PICK] TARGET <-- CONNECTED SUBCHANNEL %p (NODE %p)", *target,
+              selected);
     }
     /* only advance the last picked pointer if the selection was used */
     advance_last_picked_locked(p);
@@ -526,7 +552,7 @@ static void round_robin_factory_ref(grpc_lb_policy_factory *factory) {}
 
 static void round_robin_factory_unref(grpc_lb_policy_factory *factory) {}
 
-static grpc_lb_policy *create_round_robin(grpc_exec_ctx *exec_ctx,
+static grpc_lb_policy *round_robin_create(grpc_exec_ctx *exec_ctx,
                                           grpc_lb_policy_factory *factory,
                                           grpc_lb_policy_args *args) {
   GPR_ASSERT(args->addresses != NULL);
@@ -582,7 +608,7 @@ static grpc_lb_policy *create_round_robin(grpc_exec_ctx *exec_ctx,
 }
 
 static const grpc_lb_policy_factory_vtable round_robin_factory_vtable = {
-    round_robin_factory_ref, round_robin_factory_unref, create_round_robin,
+    round_robin_factory_ref, round_robin_factory_unref, round_robin_create,
     "round_robin"};
 
 static grpc_lb_policy_factory round_robin_lb_policy_factory = {

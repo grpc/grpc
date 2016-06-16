@@ -52,6 +52,7 @@
 
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "test/core/util/test_config.h"
 
 static gpr_mu *g_mu;
@@ -68,17 +69,15 @@ static void create_test_socket(int port, int *socket_fd,
                                struct sockaddr_in *sin) {
   int fd;
   int one = 1;
-  int buf_size = BUF_SIZE;
+  int buffer_size_bytes = BUF_SIZE;
   int flags;
 
   fd = socket(AF_INET, SOCK_STREAM, 0);
   setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
   /* Reset the size of socket send buffer to the minimal value to facilitate
      buffer filling up and triggering notify_on_write  */
-  GPR_ASSERT(
-      setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &buf_size, sizeof(buf_size)) != -1);
-  GPR_ASSERT(
-      setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &buf_size, sizeof(buf_size)) != -1);
+  GPR_ASSERT(grpc_set_socket_sndbuf(fd, buffer_size_bytes));
+  GPR_ASSERT(grpc_set_socket_rcvbuf(fd, buffer_size_bytes));
   /* Make fd non-blocking */
   flags = fcntl(fd, F_GETFL, 0);
   GPR_ASSERT(fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0);
@@ -399,7 +398,7 @@ static void test_grpc_fd(void) {
   client_wait_and_shutdown(&cl);
   server_wait_and_shutdown(&sv);
   GPR_ASSERT(sv.read_bytes_total == cl.write_bytes_total);
-  gpr_log(GPR_INFO, "Total read bytes %d", sv.read_bytes_total);
+  gpr_log(GPR_INFO, "Total read bytes %" PRIdPTR, sv.read_bytes_total);
 }
 
 typedef struct fd_change_data {

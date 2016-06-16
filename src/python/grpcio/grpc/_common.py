@@ -30,6 +30,8 @@
 """Shared implementation."""
 
 import logging
+import threading
+import time
 
 import six
 
@@ -97,3 +99,56 @@ def serialize(message, serializer):
 def deserialize(serialized_message, deserializer):
   return _transform(serialized_message, deserializer,
                     'Exception deserializing message!')
+
+
+def _encode(s):
+  if isinstance(s, bytes):
+    return s
+  else:
+    return s.encode('ascii')
+
+
+def fully_qualified_method(group, method):
+  group = _encode(group)
+  method = _encode(method)
+  return b'/' + group + b'/' + method
+
+
+class CleanupThread(threading.Thread):
+  """A threading.Thread subclass supporting custom behavior on join().
+
+  On Python Interpreter exit, Python will attempt to join outstanding threads
+  prior to garbage collection.  We may need to do additional cleanup, and
+  we accomplish this by overriding the join() method.
+  """
+
+  def __init__(self, behavior, group=None, target=None, name=None,
+               args=(), kwargs={}):
+    """Constructor.
+
+    Args:
+      behavior (function): Function called on join() with a single
+          argument, timeout, indicating the maximum duration of
+          `behavior`, or None indicating `behavior` has no deadline.
+          `behavior` must be idempotent.
+      group (None): should be None.  Reseved for future extensions
+          when ThreadGroup is implemented.
+      target (function): The function to invoke when this thread is
+          run.  Defaults to None.
+      name (str): The name of this thread.  Defaults to None.
+        args (tuple[object]): A tuple of arguments to pass to `target`.
+      kwargs (dict[str,object]): A dictionary of keyword arguments to
+           pass to `target`.
+    """
+    super(CleanupThread, self).__init__(group=group, target=target,
+                                        name=name, args=args, kwargs=kwargs)
+    self._behavior = behavior
+
+  def join(self, timeout=None):
+    start_time = time.time()
+    self._behavior(timeout)
+    end_time = time.time()
+    if timeout is not None:
+      timeout -= end_time - start_time
+      timeout = max(timeout, 0)
+    super(CleanupThread, self).join(timeout)

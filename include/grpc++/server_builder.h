@@ -66,29 +66,43 @@ class ServerBuilder {
   /// The service must exist for the lifetime of the \a Server instance returned
   /// by \a BuildAndStart().
   /// Matches requests with any :authority
-  void RegisterService(Service* service);
+  ServerBuilder& RegisterService(Service* service);
 
   /// Register a generic service.
   /// Matches requests with any :authority
-  void RegisterAsyncGenericService(AsyncGenericService* service);
+  ServerBuilder& RegisterAsyncGenericService(AsyncGenericService* service);
 
   /// Register a service. This call does not take ownership of the service.
   /// The service must exist for the lifetime of the \a Server instance returned
   /// by BuildAndStart().
   /// Only matches requests with :authority \a host
-  void RegisterService(const grpc::string& host, Service* service);
+  ServerBuilder& RegisterService(const grpc::string& host, Service* service);
 
   /// Set max message size in bytes.
-  void SetMaxMessageSize(int max_message_size) {
+  ServerBuilder& SetMaxMessageSize(int max_message_size) {
     max_message_size_ = max_message_size;
+    return *this;
   }
 
-  /// Set the compression options to be used by the server.
-  void SetCompressionOptions(const grpc_compression_options& options) {
-    compression_options_ = options;
-  }
+  /// Set the support status for compression algorithms. All algorithms are
+  /// enabled by default.
+  ///
+  /// Incoming calls compressed with an unsupported algorithm will fail with
+  /// GRPC_STATUS_UNIMPLEMENTED.
+  ServerBuilder& SetCompressionAlgorithmSupportStatus(
+      grpc_compression_algorithm algorithm, bool enabled);
 
-  void SetOption(std::unique_ptr<ServerBuilderOption> option);
+  /// The default compression level to use for all channel calls in the
+  /// absence of a call-specific level.
+  ServerBuilder& SetDefaultCompressionLevel(grpc_compression_level level);
+
+  /// The default compression algorithm to use for all channel calls in the
+  /// absence of a call-specific level. Note that it overrides any compression
+  /// level set by \a SetDefaultCompressionLevel.
+  ServerBuilder& SetDefaultCompressionAlgorithm(
+      grpc_compression_algorithm algorithm);
+
+  ServerBuilder& SetOption(std::unique_ptr<ServerBuilderOption> option);
 
   /// Tries to bind \a server to the given \a addr.
   ///
@@ -101,13 +115,24 @@ class ServerBuilder {
   /// number. \a nullptr otherwise.
   ///
   // TODO(dgq): the "port" part seems to be a misnomer.
-  void AddListeningPort(const grpc::string& addr,
-                        std::shared_ptr<ServerCredentials> creds,
-                        int* selected_port = nullptr);
+  ServerBuilder& AddListeningPort(const grpc::string& addr,
+                                  std::shared_ptr<ServerCredentials> creds,
+                                  int* selected_port = nullptr);
 
-  /// Add a completion queue for handling asynchronous services
-  /// Caller is required to keep this completion queue live until
-  /// the server is destroyed.
+  /// Add a completion queue for handling asynchronous services.
+  ///
+  /// Caller is required to shutdown the server prior to shutting down the
+  /// returned completion queue. A typical usage scenario:
+  ///
+  /// // While building the server:
+  /// ServerBuilder builder;
+  /// ...
+  /// cq_ = builder.AddCompletionQueue();
+  /// server_ = builder.BuildAndStart();
+  ///
+  /// // While shutting down the server;
+  /// server_->Shutdown();
+  /// cq_->Shutdown();  // Always *after* the associated server's Shutdown()!
   ///
   /// \param is_frequently_polled This is an optional parameter to inform GRPC
   /// library about whether this completion queue would be frequently polled
@@ -144,7 +169,6 @@ class ServerBuilder {
   };
 
   int max_message_size_;
-  grpc_compression_options compression_options_;
   std::vector<std::unique_ptr<ServerBuilderOption>> options_;
   std::vector<std::unique_ptr<NamedService>> services_;
   std::vector<Port> ports_;
@@ -152,6 +176,15 @@ class ServerBuilder {
   std::shared_ptr<ServerCredentials> creds_;
   std::vector<std::unique_ptr<ServerBuilderPlugin>> plugins_;
   AsyncGenericService* generic_service_;
+  struct {
+    bool is_set;
+    grpc_compression_level level;
+  } maybe_default_compression_level_;
+  struct {
+    bool is_set;
+    grpc_compression_algorithm algorithm;
+  } maybe_default_compression_algorithm_;
+  uint32_t enabled_compression_algorithms_bitset_;
 };
 
 }  // namespace grpc

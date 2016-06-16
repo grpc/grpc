@@ -477,7 +477,8 @@ function _makeStub($args)
     return $stub;
 }
 
-function interop_main($args, $stub = false) {
+function interop_main($args, $stub = false)
+{
     if (!$stub) {
         $stub = _makeStub($args);
     }

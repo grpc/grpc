@@ -32,15 +32,35 @@ import threading
 from grpc._cython import cygrpc
 
 
-class CompletionQueuePollFuture:
+class SimpleFuture(object):
+  """A simple future mechanism."""
 
-  def __init__(self, completion_queue, deadline):
-    def poller_function():
-      self._event_result = completion_queue.poll(deadline)
-    self._event_result = None
-    self._thread = threading.Thread(target=poller_function)
+  def __init__(self, function, *args, **kwargs):
+    def wrapped_function():
+      try:
+        self._result = function(*args, **kwargs)
+      except Exception as error:
+        self._error = error
+    self._result = None
+    self._error = None
+    self._thread = threading.Thread(target=wrapped_function)
     self._thread.start()
 
   def result(self):
+    """The resulting value of this future.
+
+    Re-raises any exceptions.
+    """
     self._thread.join()
-    return self._event_result
+    if self._error:
+      # TODO(atash): re-raise exceptions in a way that preserves tracebacks
+      raise self._error
+    return self._result
+
+
+class CompletionQueuePollFuture(SimpleFuture):
+
+  def __init__(self, completion_queue, deadline):
+    super(CompletionQueuePollFuture, self).__init__(
+        lambda: completion_queue.poll(deadline))
+

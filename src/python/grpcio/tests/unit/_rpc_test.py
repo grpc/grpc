@@ -41,9 +41,9 @@ from tests.unit.framework.common import test_constants
 from tests.unit.framework.common import test_control
 
 _SERIALIZE_REQUEST = lambda bytestring: bytestring * 2
-_DESERIALIZE_REQUEST = lambda bytestring: bytestring[len(bytestring) / 2:]
+_DESERIALIZE_REQUEST = lambda bytestring: bytestring[len(bytestring) // 2:]
 _SERIALIZE_RESPONSE = lambda bytestring: bytestring * 3
-_DESERIALIZE_RESPONSE = lambda bytestring: bytestring[:len(bytestring) / 3]
+_DESERIALIZE_RESPONSE = lambda bytestring: bytestring[:len(bytestring) // 3]
 
 _UNARY_UNARY = b'/test/UnaryUnary'
 _UNARY_STREAM = b'/test/UnaryStream'
@@ -189,14 +189,7 @@ class RPCTest(unittest.TestCase):
     self._server.add_generic_rpc_handlers((_GenericHandler(self._handler),))
     self._server.start()
 
-    self._channel = grpc.insecure_channel(b'localhost:%d' % port)
-
-  # TODO(nathaniel): Why is this necessary, and only in some development
-  # environments?
-  def tearDown(self):
-    del self._channel
-    del self._server
-    del self._server_pool
+    self._channel = grpc.insecure_channel('localhost:%d' % port)
 
   def testUnrecognizedMethod(self):
     request = b'abc'

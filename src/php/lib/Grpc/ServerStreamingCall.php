@@ -91,6 +91,7 @@ class ServerStreamingCall extends AbstractCall
             OP_RECV_STATUS_ON_CLIENT => true,
         ]);
 
+        $this->trailing_metadata = $status_event->status->metadata;
         return $status_event->status;
     }
 }

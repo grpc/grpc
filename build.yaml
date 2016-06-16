@@ -154,6 +154,7 @@ filegroups:
   - include/grpc/byte_buffer_reader.h
   - include/grpc/compression.h
   - include/grpc/grpc.h
+  - include/grpc/grpc_posix.h
   - include/grpc/status.h
   headers:
   - src/core/lib/channel/channel_args.h
@@ -239,7 +240,7 @@ filegroups:
   - src/core/lib/channel/connected_channel.c
   - src/core/lib/channel/http_client_filter.c
   - src/core/lib/channel/http_server_filter.c
-  - src/core/lib/compression/compression_algorithm.c
+  - src/core/lib/compression/compression.c
   - src/core/lib/compression/message_compress.c
   - src/core/lib/debug/trace.c
   - src/core/lib/http/format_request.c
@@ -505,6 +506,7 @@ filegroups:
   - gpr_test_util
 - name: grpc_transport_chttp2
   headers:
+  - src/core/ext/transport/chttp2/transport/bin_decoder.h
   - src/core/ext/transport/chttp2/transport/bin_encoder.h
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
   - src/core/ext/transport/chttp2/transport/frame.h
@@ -526,6 +528,7 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/timeout_encoding.h
   - src/core/ext/transport/chttp2/transport/varint.h
   src:
+  - src/core/ext/transport/chttp2/transport/bin_decoder.c
   - src/core/ext/transport/chttp2/transport/bin_encoder.c
   - src/core/ext/transport/chttp2/transport/chttp2_plugin.c
   - src/core/ext/transport/chttp2/transport/chttp2_transport.c
@@ -561,6 +564,7 @@ filegroups:
 - name: grpc_transport_chttp2_client_insecure
   src:
   - src/core/ext/transport/chttp2/client/insecure/channel_create.c
+  - src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c
   uses:
   - grpc_transport_chttp2
   - grpc_base
@@ -576,6 +580,7 @@ filegroups:
 - name: grpc_transport_chttp2_server_insecure
   src:
   - src/core/ext/transport/chttp2/server/insecure/server_chttp2.c
+  - src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c
   uses:
   - grpc_transport_chttp2
   - grpc_base
@@ -632,6 +637,7 @@ filegroups:
   - include/grpc++/client_context.h
   - include/grpc++/completion_queue.h
   - include/grpc++/create_channel.h
+  - include/grpc++/create_channel_posix.h
   - include/grpc++/generic/async_generic_service.h
   - include/grpc++/generic/generic_stub.h
   - include/grpc++/grpc++.h
@@ -660,6 +666,7 @@ filegroups:
   - include/grpc++/server.h
   - include/grpc++/server_builder.h
   - include/grpc++/server_context.h
+  - include/grpc++/server_posix.h
   - include/grpc++/support/async_stream.h
   - include/grpc++/support/async_unary_call.h
   - include/grpc++/support/byte_buffer.h
@@ -681,6 +688,7 @@ filegroups:
   - src/cpp/client/client_context.cc
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
+  - src/cpp/client/create_channel_posix.cc
   - src/cpp/client/credentials.cc
   - src/cpp/client/generic_stub.cc
   - src/cpp/client/insecure_credentials.cc
@@ -696,6 +704,7 @@ filegroups:
   - src/cpp/server/server_builder.cc
   - src/cpp/server/server_context.cc
   - src/cpp/server/server_credentials.cc
+  - src/cpp/server/server_posix.cc
   - src/cpp/util/byte_buffer.cc
   - src/cpp/util/slice.cc
   - src/cpp/util/status.cc
@@ -953,6 +962,24 @@ libs:
   - grpc++_codegen_base_src
   secure: check
   vs_project_guid: '{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}'
+- name: grpc++_reflection
+  build: all
+  language: c++
+  public_headers:
+  - include/grpc++/ext/proto_server_reflection_plugin.h
+  - include/grpc++/ext/reflection.grpc.pb.h
+  - include/grpc++/ext/reflection.pb.h
+  headers:
+  - src/cpp/ext/proto_server_reflection.h
+  src:
+  - src/cpp/ext/proto_server_reflection.cc
+  - src/cpp/ext/proto_server_reflection_plugin.cc
+  - src/cpp/ext/reflection.grpc.pb.cc
+  - src/cpp/ext/reflection.pb.cc
+  deps:
+  - grpc++
+  filegroups:
+  - grpc++_codegen_proto
 - name: grpc++_test_config
   build: private
   language: c++
@@ -1120,6 +1147,7 @@ libs:
   - test/cpp/qps/histogram.h
   - test/cpp/qps/interarrival.h
   - test/cpp/qps/limit_cores.h
+  - test/cpp/qps/parse_json.h
   - test/cpp/qps/qps_worker.h
   - test/cpp/qps/report.h
   - test/cpp/qps/server.h
@@ -1136,6 +1164,7 @@ libs:
   - test/cpp/qps/client_sync.cc
   - test/cpp/qps/driver.cc
   - test/cpp/qps/limit_cores.cc
+  - test/cpp/qps/parse_json.cc
   - test/cpp/qps/qps_worker.cc
   - test/cpp/qps/report.cc
   - test/cpp/qps/server_async.cc
@@ -1220,6 +1249,14 @@ targets:
   - test/core/end2end/fuzzers/api_fuzzer_corpus
   dict: test/core/end2end/fuzzers/api_fuzzer.dictionary
   maxlen: 2048
+- name: bin_decoder_test
+  build: test
+  language: c
+  src:
+  - test/core/transport/chttp2/bin_decoder_test.c
+  deps:
+  - grpc_test_util
+  - grpc
 - name: bin_encoder_test
   build: test
   language: c
@@ -2789,6 +2826,23 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: proto_server_reflection_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/cpp/util/proto_reflection_descriptor_database.h
+  src:
+  - test/cpp/end2end/proto_server_reflection_test.cc
+  - test/cpp/util/proto_reflection_descriptor_database.cc
+  deps:
+  - grpc++_reflection
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: qps_interarrival_test
   build: test
   run: false
@@ -2811,10 +2865,7 @@ targets:
   build: test
   run: false
   language: c++
-  headers:
-  - test/cpp/qps/parse_json.h
   src:
-  - test/cpp/qps/parse_json.cc
   - test/cpp/qps/qps_json_driver.cc
   deps:
   - qps

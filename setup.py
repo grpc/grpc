@@ -33,9 +33,11 @@ import os
 import os.path
 import shutil
 import sys
+import sysconfig
 
 from distutils import core as _core
 from distutils import extension as _extension
+import pkg_resources
 import setuptools
 from setuptools.command import egg_info
 
@@ -108,6 +110,16 @@ if "linux" in sys.platform or "darwin" in sys.platform:
 
   pymodinit = '__attribute__((visibility ("default"))) {}'.format(pymodinit_type)
   DEFINE_MACROS += (('PyMODINIT_FUNC', pymodinit),)
+
+
+# By default, Python3 distutils enforces compatibility of
+# c plugins (.so files) with the OSX version Python3 was built with.
+# For Python3.4, this is OSX 10.6, but we need Thread Local Support (__thread)
+if 'darwin' in sys.platform and PY3:
+  mac_target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
+  if mac_target and (pkg_resources.parse_version(mac_target) <
+                     pkg_resources.parse_version('10.7.0')):
+    os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
 
 
 def cython_extensions(module_names, extra_sources, include_dirs,
@@ -234,8 +246,7 @@ setuptools.setup(
   ext_modules=CYTHON_EXTENSION_MODULES,
   packages=list(PACKAGES),
   package_dir=PACKAGE_DIRECTORIES,
-  # TODO(atash): Figure out why auditwheel doesn't like namespace packages.
-  #namespace_packages=['grpc'],
+  namespace_packages=['grpc'],
   package_data=PACKAGE_DATA,
   install_requires=INSTALL_REQUIRES,
   setup_requires=SETUP_REQUIRES,
