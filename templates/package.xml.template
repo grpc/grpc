@@ -200,20 +200,5 @@
   - Updated functions with TSRM macros for ZTS support #6607
      </notes>
     </release>
-    <release>
-     <version>
-      <release>${settings.php_version.php()}</release>
-      <api>${settings.php_version.php()}</api>
-     </version>
-     <stability>
-      <release>beta</release>
-      <api>beta</api>
-     </stability>
-     <date>2016-05-19</date>
-     <license>BSD</license>
-     <notes>
-  - TBD
-     </notes>
-    </release>
    </changelog>
   </package>

@@ -39,6 +39,7 @@ abstract class AbstractCall
     protected $call;
     protected $deserialize;
     protected $metadata;
+    protected $trailing_metadata;
 
     /**
      * Create a new Call wrapper object.
@@ -66,6 +67,7 @@ abstract class AbstractCall
         $this->call = new Call($channel, $method, $deadline);
         $this->deserialize = $deserialize;
         $this->metadata = null;
+        $this->trailing_metadata = null;
         if (isset($options['call_credentials_callback']) &&
             is_callable($call_credentials_callback =
                         $options['call_credentials_callback'])) {
@@ -81,6 +83,14 @@ abstract class AbstractCall
     public function getMetadata()
     {
         return $this->metadata;
+    }
+
+    /**
+     * @return The trailing metadata sent by the server.
+     */
+    public function getTrailingMetadata()
+    {
+        return $this->trailing_metadata;
     }
 
     /**

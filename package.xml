@@ -256,6 +256,7 @@
     <file baseinstalldir="/" name="src/core/lib/transport/static_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport_impl.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_decoder.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_encoder.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/chttp2_transport.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame.h" role="src" />
@@ -417,6 +418,7 @@
     <file baseinstalldir="/" name="src/core/lib/transport/transport.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport_op_string.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_decoder.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_encoder.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/chttp2_plugin.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/chttp2_transport.c" role="src" />
@@ -1072,21 +1074,6 @@ Update to wrap gRPC C Core version 0.10.0
    <license>BSD</license>
    <notes>
 - Updated functions with TSRM macros for ZTS support #6607
-   </notes>
-  </release>
-  <release>
-   <version>
-    <release>0.15.0</release>
-    <api>0.15.0</api>
-   </version>
-   <stability>
-    <release>beta</release>
-    <api>beta</api>
-   </stability>
-   <date>2016-05-19</date>
-   <license>BSD</license>
-   <notes>
-- TBD
    </notes>
   </release>
  </changelog>
