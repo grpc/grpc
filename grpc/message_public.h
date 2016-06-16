@@ -32,11 +32,16 @@
  */
 
 
-#include "grpc_c_public.h"
+#ifndef TEST_GRPC_C_MESSAGE_PUBLIC_H
+#define TEST_GRPC_C_MESSAGE_PUBLIC_H
 
-#ifndef TEST_GRPC_C_MESSAGE_H
-#define TEST_GRPC_C_MESSAGE_H
+#include <stdlib.h>
 
-void GRPC_message_destroy(grpc_message *message);
+typedef struct GRPC_message {
+  void * data;
+  size_t length;
+} GRPC_message;
 
-#endif //TEST_GRPC_C_MESSAGE_H
+void GRPC_message_destroy(GRPC_message *message);
+
+#endif //TEST_GRPC_C_MESSAGE_PUBLIC_H
