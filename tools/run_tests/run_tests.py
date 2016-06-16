@@ -229,8 +229,12 @@ class CLanguage(object):
     return self._make_options;
 
   def pre_build_steps(self):
+    print self.platform, self.test_lang
     if self.platform == 'windows':
-      return [['tools\\run_tests\\pre_build_c.bat']]
+      x = ([['tools\\run_tests\\pre_build_c.bat']] + 
+           ([['vsprojects\\build_protos.bat']] if self.test_lang=='c++' else []))
+      print x
+      return x
     else:
       return []
 

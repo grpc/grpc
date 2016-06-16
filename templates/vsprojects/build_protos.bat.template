@@ -32,11 +32,20 @@
   @rem enter repo root
   cd /d %~dp0\..
 
-  set PROTOC=protoc
-  set GRPC_CPP_PLUGIN_PATH=grpc_cpp_plugin
+  set "generator=Visual Studio 12"
+  call tools\run_tests\build_artifact_protoc.bat || goto :error
+
+  @echo on
+
+  set PROTOC=third_party\protobuf\cmake\Release\protoc.exe
+  set GRPC_CPP_PLUGIN_PATH=vsprojects\Release\grpc_cpp_plugin.exe
 
   % for proto in protos:
   ${'%'}PROTOC% ${proto}.proto --grpc_out=./ --plugin=protoc-gen-grpc=%GRPC_CPP_PLUGIN_PATH%
   ${'%'}PROTOC% ${proto}.proto --cpp_out=./
   % endfor
 
+  goto :EOF
+
+  :error
+  exit /b 1

@@ -30,8 +30,13 @@
 @rem enter repo root
 cd /d %~dp0\..
 
-set PROTOC=protoc
-set GRPC_CPP_PLUGIN_PATH=grpc_cpp_plugin
+set "generator=Visual Studio 12"
+call tools\run_tests\build_artifact_protoc.bat || goto :error
+
+@echo on
+
+set PROTOC=third_party\protobuf\cmake\Release\protoc.exe
+set GRPC_CPP_PLUGIN_PATH=vsprojects\Release\grpc_cpp_plugin.exe
 
 %PROTOC% src/proto/grpc/lb/v1/load_balancer.proto --grpc_out=./ --plugin=protoc-gen-grpc=%GRPC_CPP_PLUGIN_PATH%
 %PROTOC% src/proto/grpc/lb/v1/load_balancer.proto --cpp_out=./
@@ -59,3 +64,8 @@ set GRPC_CPP_PLUGIN_PATH=grpc_cpp_plugin
 %PROTOC% src/proto/grpc/testing/stats.proto --cpp_out=./
 %PROTOC% src/proto/grpc/testing/test.proto --grpc_out=./ --plugin=protoc-gen-grpc=%GRPC_CPP_PLUGIN_PATH%
 %PROTOC% src/proto/grpc/testing/test.proto --cpp_out=./
+
+goto :EOF
+
+:error
+exit /b 1
