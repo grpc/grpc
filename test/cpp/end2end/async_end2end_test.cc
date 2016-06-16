@@ -31,6 +31,7 @@
  *
  */
 
+#include <cinttypes>
 #include <memory>
 #include <thread>
 
