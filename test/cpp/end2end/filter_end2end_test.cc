@@ -126,10 +126,6 @@ class FilterEnd2endTest : public ::testing::Test {
     builder.AddListeningPort(server_address_.str(),
                              InsecureServerCredentials());
     builder.RegisterAsyncGenericService(&generic_service_);
-    // Include a second call to RegisterAsyncGenericService to make sure that
-    // we get an error in the log, since it is not allowed to have 2 async
-    // generic services
-    builder.RegisterAsyncGenericService(&generic_service_);
     srv_cq_ = builder.AddCompletionQueue();
     server_ = builder.BuildAndStart();
   }
