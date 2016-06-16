@@ -68,12 +68,12 @@ RUN apt-get update && apt-get install -y time && apt-get clean
 RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
 
 # Prepare ccache
-RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
-RUN ln -s /usr/bin/ccache /usr/local/bin/g++
-RUN ln -s /usr/bin/ccache /usr/local/bin/cc
-RUN ln -s /usr/bin/ccache /usr/local/bin/c++
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
+#RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
+#RUN ln -s /usr/bin/ccache /usr/local/bin/g++
+#RUN ln -s /usr/bin/ccache /usr/local/bin/cc
+#RUN ln -s /usr/bin/ccache /usr/local/bin/c++
+#RUN ln -s /usr/bin/ccache /usr/local/bin/clang
+#RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
 
 #======================
 # Zookeeper dependencies
