@@ -52,13 +52,13 @@ typedef struct grpc_method {
 } grpc_method;
 
 typedef struct grpc_message {
-  const void *data;
+  void * data;
   size_t length;
 } grpc_message;
 
 grpc_context *grpc_context_create(grpc_channel *chan);
 void GRPC_context_destroy(grpc_context **context);
 
-grpc_status grpc_unary_blocking_call(grpc_channel *channel, const grpc_method * const rpc_method, grpc_context * const context, const grpc_message message, void *response);
+grpc_status grpc_unary_blocking_call(grpc_channel *channel, const grpc_method * const rpc_method, grpc_context * const context, const grpc_message message, grpc_message *response);
 
 #endif //TEST_GRPC_C_GRPC_C_PUBLIC_H

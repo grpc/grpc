@@ -31,38 +31,17 @@
  *
  */
 
+#include <string.h>
+#include "id_serialization.h"
 
-#ifndef TEST_GRPC_C_CALL_OPS_H
-#define TEST_GRPC_C_CALL_OPS_H
+void GRPC_id_serialize(grpc_message input, grpc_message *output) {
+  output->data = malloc(input.length);
+  memcpy(output->data, input.data, input.length);
+  output->length = input.length;
+}
 
-#include "../grpc_c_public.h"
-#include <grpc/grpc.h>
-#include <stdbool.h>
-
-typedef void (*grpc_op_filler)(grpc_op *op, const grpc_method *, grpc_context *, const grpc_message message, grpc_message *response);
-typedef void (*grpc_op_finisher)(grpc_context *, bool *status, int max_message_size);
-
-typedef struct grpc_op_manager {
-  const grpc_op_filler fill;
-  const grpc_op_finisher finish;
-} grpc_op_manager;
-
-enum { GRPC_MAX_OP_COUNT = 8 };
-
-typedef const grpc_op_manager grpc_call_set[GRPC_MAX_OP_COUNT];
-
-void grpc_fill_op_from_call_set(grpc_call_set set, const grpc_method *rpc_method, grpc_context *context,
-                                const grpc_message message, void *response, grpc_op ops[], size_t *nops);
-
-void grpc_finish_op_from_call_set(grpc_call_set set, grpc_context *context);
-
-/* list of operations */
-
-extern const grpc_op_manager grpc_op_send_metadata;
-extern const grpc_op_manager grpc_op_recv_metadata;
-extern const grpc_op_manager grpc_op_send_object;
-extern const grpc_op_manager grpc_op_recv_object;
-extern const grpc_op_manager grpc_op_send_close;
-extern const grpc_op_manager grpc_op_recv_status;
-
-#endif //TEST_GRPC_C_CALL_OPS_H
+void GRPC_id_deserialize(grpc_message input, grpc_message *output) {
+  output->data = malloc(input.length);
+  memcpy(output->data, input.data, input.length);
+  output->length = input.length;
+}
