@@ -31,6 +31,7 @@
  *
  */
 
+#include <grpc/support/alloc.h>
 #include "context.h"
 #include "id_serialization.h"
 
@@ -44,6 +45,7 @@ grpc_context *grpc_context_create(grpc_channel *chan) {
 }
 
 void GRPC_context_destroy(grpc_context **context) {
+  gpr_free((*context)->status.details);
   free(*context);
   *context = NULL;
 }

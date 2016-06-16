@@ -77,7 +77,4 @@ grpc_status grpc_unary_blocking_call(grpc_channel *channel, const grpc_method * 
     ;
   grpc_completion_queue_destroy(cq);
   grpc_call_destroy(call);
-
-  gpr_free(context->status.details);
 }
-
