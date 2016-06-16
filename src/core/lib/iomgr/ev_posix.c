@@ -54,6 +54,7 @@
 grpc_poll_function_type grpc_poll_function = poll;
 
 static const grpc_event_engine_vtable *g_event_engine;
+static const char* g_poll_strategy_name = NULL;
 
 typedef const grpc_event_engine_vtable *(*event_engine_factory_fn)(void);
 
@@ -101,11 +102,17 @@ static void try_engine(const char *engine) {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(g_factories); i++) {
     if (is(engine, g_factories[i].name)) {
       if ((g_event_engine = g_factories[i].factory())) {
+        g_poll_strategy_name = g_factories[i].name;
         gpr_log(GPR_DEBUG, "Using polling engine: %s", g_factories[i].name);
         return;
       }
     }
   }
+}
+
+/* Call this only after calling grpc_event_engine_init() */
+const char *grpc_get_poll_strategy_name() {
+  return g_poll_strategy_name;
 }
 
 void grpc_event_engine_init(void) {
