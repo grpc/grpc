@@ -93,12 +93,12 @@ static grpc_completion_queue *g_freelist;
 int grpc_cq_pluck_trace;
 int grpc_cq_event_timeout_trace;
 
-#define GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, event)                    \
-  if (grpc_api_trace &&                                                 \
-      (grpc_cq_pluck_trace || (event)->type != GRPC_QUEUE_TIMEOUT)) {   \
-    char *_ev = grpc_event_string(event);                               \
-    gpr_log(GPR_INFO, "RETURN_EVENT[%p]: %s", cq, _ev);                 \
-    gpr_free(_ev);                                                      \
+#define GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, event)                  \
+  if (grpc_api_trace &&                                               \
+      (grpc_cq_pluck_trace || (event)->type != GRPC_QUEUE_TIMEOUT)) { \
+    char *_ev = grpc_event_string(event);                             \
+    gpr_log(GPR_INFO, "RETURN_EVENT[%p]: %s", cq, _ev);               \
+    gpr_free(_ev);                                                    \
   }
 
 
