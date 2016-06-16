@@ -179,7 +179,7 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingExtension(
     if (error.error_code() == StatusCode::NOT_FOUND) {
       if (missing_extensions_.find(containing_type) ==
           missing_extensions_.end()) {
-        missing_extensions_[containing_type] = {};
+        missing_extensions_[containing_type].clear();
       }
       missing_extensions_[containing_type].insert(field_number);
       gpr_log(GPR_INFO,

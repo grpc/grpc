@@ -31,7 +31,11 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
+#ifndef GPR_WINDOWS
 #include <sys/signal.h>
+#endif
 
 #include <chrono>
 #include <thread>
@@ -48,7 +52,9 @@ DEFINE_int32(server_port, 0, "Port for operation as a server");
 
 static bool got_sigint = false;
 
+#ifndef GPR_WINDOWS
 static void sigint_handler(int x) { got_sigint = true; }
+#endif
 
 namespace grpc {
 namespace testing {
@@ -68,7 +74,9 @@ static void RunServer() {
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
 
+#ifndef GPR_WINDOWS
   signal(SIGINT, sigint_handler);
+#endif
 
   grpc::testing::RunServer();
 
