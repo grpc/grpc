@@ -68,7 +68,7 @@ class CoreCodegen : public CoreCodegenInterface {
   void gpr_slice_unref(gpr_slice slice) GRPC_OVERRIDE;
   gpr_slice gpr_slice_split_tail(gpr_slice* s, size_t split) GRPC_OVERRIDE;
   void gpr_slice_buffer_add(gpr_slice_buffer* sb,
-			    gpr_slice slice) GRPC_OVERRIDE;
+                            gpr_slice slice) GRPC_OVERRIDE;
   void gpr_slice_buffer_pop(gpr_slice_buffer* sb) GRPC_OVERRIDE;
 
   void grpc_metadata_array_init(grpc_metadata_array* array) GRPC_OVERRIDE;
