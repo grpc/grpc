@@ -40,7 +40,7 @@
                     </view>
                     <tabBarItem key="tabBarItem" title="Get Feature" image="first" id="acW-dT-cKf"/>
                     <connections>
-                        <outlet property="output_label" destination="2ga-Gd-X9q" id="yXF-xa-kbD"/>
+                        <outlet property="outputLabel" destination="2ga-Gd-X9q" id="yXF-xa-kbD"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="W5J-7L-Pyd" sceneMemberID="firstResponder"/>
@@ -86,7 +86,7 @@
                     </view>
                     <tabBarItem key="tabBarItem" title="List Features" image="second" id="cPa-gy-q4n"/>
                     <connections>
-                        <outlet property="output_label" destination="8mE-gq-NQc" id="6rw-Kd-21X"/>
+                        <outlet property="outputLabel" destination="8mE-gq-NQc" id="6rw-Kd-21X"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="4Nw-L8-lE0" sceneMemberID="firstResponder"/>
@@ -150,7 +150,7 @@
                     </view>
                     <tabBarItem key="tabBarItem" title="Record Route" image="first" id="PLK-Jm-UyM"/>
                     <connections>
-                        <outlet property="output_label" destination="9wL-iS-tp8" id="xhd-zm-66g"/>
+                        <outlet property="outputLabel" destination="9wL-iS-tp8" id="xhd-zm-66g"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="9RW-dt-a4q" sceneMemberID="firstResponder"/>
@@ -192,7 +192,7 @@
                     </view>
                     <tabBarItem key="tabBarItem" title="Route Chat" image="second" id="p2G-IC-yAR"/>
                     <connections>
-                        <outlet property="output_label" destination="131-U2-Ogk" id="fNw-M5-x1D"/>
+                        <outlet property="outputLabel" destination="131-U2-Ogk" id="fNw-M5-x1D"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="yUz-se-Cfi" sceneMemberID="firstResponder"/>

@@ -37,7 +37,7 @@
 #import <RxLibrary/GRXWriter+Immediate.h>
 #import <RxLibrary/GRXWriter+Transformations.h>
 
-static NSString * const kHostAddress = @"localhost:50051";
+static NSString * const kHostAddress = @"192.168.1.120:50051";
 
 /** Category to override RTGPoint's description. */
 @interface RTGPoint (Description)
@@ -83,7 +83,7 @@ static NSString * const kHostAddress = @"localhost:50051";
 @interface GetFeatureViewController : UIViewController {
   RTGRouteGuide *service;
 }
-@property (weak, nonatomic) IBOutlet UILabel *output_label;
+@property (weak, nonatomic) IBOutlet UILabel *outputLabel;
 @end
 
 @implementation GetFeatureViewController
@@ -91,16 +91,16 @@ static NSString * const kHostAddress = @"localhost:50051";
 - (void)execRequest {
   void (^handler)(RTGFeature *response, NSError *error) = ^(RTGFeature *response, NSError *error) {
     if (response.name.length) {
-      NSString *str =[NSString stringWithFormat:@"%@\nFound feature called %@ at %@.", self.output_label.text, response.location, response.name];
-      self.output_label.text = str;
+      NSString *str =[NSString stringWithFormat:@"%@\nFound feature called %@ at %@.", self.outputLabel.text, response.location, response.name];
+      self.outputLabel.text = str;
       NSLog(@"Found feature called %@ at %@.", response.name, response.location);
     } else if (response) {
-      NSString *str =[NSString stringWithFormat:@"%@\nFound no features at %@",  self.output_label.text,response.location];
-      self.output_label.text = str;
+      NSString *str =[NSString stringWithFormat:@"%@\nFound no features at %@",  self.outputLabel.text,response.location];
+      self.outputLabel.text = str;
       NSLog(@"Found no features at %@", response.location);
     } else {
-      NSString *str =[NSString stringWithFormat:@"%@\nRPC error: %@", self.output_label.text, error];
-      self.output_label.text = str;
+      NSString *str =[NSString stringWithFormat:@"%@\nRPC error: %@", self.outputLabel.text, error];
+      self.outputLabel.text = str;
       NSLog(@"RPC error: %@", error);
     }
   };
@@ -123,9 +123,9 @@ static NSString * const kHostAddress = @"localhost:50051";
 }
 
 - (void)viewDidAppear:(BOOL)animated {
-  self.output_label.text = @"RPC log:";
-  self.output_label.numberOfLines = 0;
-  self.output_label.font = [UIFont fontWithName:@"Helvetica Neue" size:8.0];
+  self.outputLabel.text = @"RPC log:";
+  self.outputLabel.numberOfLines = 0;
+  self.outputLabel.font = [UIFont fontWithName:@"Helvetica Neue" size:8.0];
   [self execRequest];
 }
 
@@ -141,7 +141,7 @@ static NSString * const kHostAddress = @"localhost:50051";
 @interface ListFeaturesViewController : UIViewController {
   RTGRouteGuide *service;
 }
-@property (weak, nonatomic) IBOutlet UILabel *output_label;
+@property (weak, nonatomic) IBOutlet UILabel *outputLabel;
 
 @end
 
@@ -158,12 +158,12 @@ static NSString * const kHostAddress = @"localhost:50051";
   [service listFeaturesWithRequest:rectangle
                       eventHandler:^(BOOL done, RTGFeature *response, NSError *error) {
     if (response) {
-      NSString *str =[NSString stringWithFormat:@"%@\nFound feature at %@ called %@.", self.output_label.text, response.location, response.name];
-      self.output_label.text = str;
+      NSString *str =[NSString stringWithFormat:@"%@\nFound feature at %@ called %@.", self.outputLabel.text, response.location, response.name];
+      self.outputLabel.text = str;
       NSLog(@"Found feature at %@ called %@.", response.location, response.name);
     } else if (error) {
-      NSString *str =[NSString stringWithFormat:@"%@\nRPC error: %@", self.output_label.text, error];
-      self.output_label.text = str;
+      NSString *str =[NSString stringWithFormat:@"%@\nRPC error: %@", self.outputLabel.text, error];
+      self.outputLabel.text = str;
       NSLog(@"RPC error: %@", error);
     }
   }];
@@ -176,9 +176,9 @@ static NSString * const kHostAddress = @"localhost:50051";
 }
 
 - (void)viewDidAppear:(BOOL)animated {
-  self.output_label.text = @"RPC log:";
-  self.output_label.numberOfLines = 0;
-  self.output_label.font = [UIFont fontWithName:@"Helvetica Neue" size:8.0];
+  self.outputLabel.text = @"RPC log:";
+  self.outputLabel.numberOfLines = 0;
+  self.outputLabel.font = [UIFont fontWithName:@"Helvetica Neue" size:8.0];
   [self execRequest];
 }
 
@@ -195,7 +195,7 @@ static NSString * const kHostAddress = @"localhost:50051";
 @interface RecordRouteViewController : UIViewController {
   RTGRouteGuide *service;
 }
-@property (weak, nonatomic) IBOutlet UILabel *output_label;
+@property (weak, nonatomic) IBOutlet UILabel *outputLabel;
 
 @end
 
@@ -211,8 +211,8 @@ static NSString * const kHostAddress = @"localhost:50051";
     RTGPoint *location = [RTGPoint message];
     location.longitude = [((NSNumber *) feature[@"location"][@"longitude"]) intValue];
     location.latitude = [((NSNumber *) feature[@"location"][@"latitude"]) intValue];
-    NSString *str =[NSString stringWithFormat:@"%@\nVisiting point %@", self.output_label.text, location];
-    self.output_label.text = str;
+    NSString *str =[NSString stringWithFormat:@"%@\nVisiting point %@", self.outputLabel.text, location];
+    self.outputLabel.text = str;
     NSLog(@"Visiting point %@", location);
     return location;
   }];
@@ -223,16 +223,16 @@ static NSString * const kHostAddress = @"localhost:50051";
       NSString *str =[NSString stringWithFormat:
                       @"%@\nFinished trip with %i points\nPassed %i features\n"
                       "Travelled %i meters\nIt took %i seconds",
-                      self.output_label.text, response.pointCount, response.featureCount,
+                      self.outputLabel.text, response.pointCount, response.featureCount,
                       response.distance, response.elapsedTime];
-      self.output_label.text = str;
+      self.outputLabel.text = str;
       NSLog(@"Finished trip with %i points", response.pointCount);
       NSLog(@"Passed %i features", response.featureCount);
       NSLog(@"Travelled %i meters", response.distance);
       NSLog(@"It took %i seconds", response.elapsedTime);
     } else {
-      NSString *str =[NSString stringWithFormat:@"%@\nRPC error: %@", self.output_label.text, error];
-      self.output_label.text = str; 
+      NSString *str =[NSString stringWithFormat:@"%@\nRPC error: %@", self.outputLabel.text, error];
+      self.outputLabel.text = str; 
       NSLog(@"RPC error: %@", error);
     }
   }];
@@ -245,9 +245,9 @@ static NSString * const kHostAddress = @"localhost:50051";
 }
 
 - (void)viewDidAppear:(BOOL)animated {
-  self.output_label.text = @"RPC log:";
-  self.output_label.numberOfLines = 0;
-  self.output_label.font = [UIFont fontWithName:@"Helvetica Neue" size:8.0];
+  self.outputLabel.text = @"RPC log:";
+  self.outputLabel.numberOfLines = 0;
+  self.outputLabel.font = [UIFont fontWithName:@"Helvetica Neue" size:8.0];
   [self execRequest];
 }
 
@@ -263,7 +263,7 @@ static NSString * const kHostAddress = @"localhost:50051";
 @interface RouteChatViewController : UIViewController {
   RTGRouteGuide *service;
 }
-@property (weak, nonatomic) IBOutlet UILabel *output_label;
+@property (weak, nonatomic) IBOutlet UILabel *outputLabel;
 
 @end
 
@@ -283,12 +283,12 @@ static NSString * const kHostAddress = @"localhost:50051";
                           eventHandler:^(BOOL done, RTGRouteNote *note, NSError *error) {
     if (note) {
       NSString *str =[NSString stringWithFormat:@"%@\nGot message %@ at %@",
-                      self.output_label.text, note.message, note.location];
-      self.output_label.text = str;
+                      self.outputLabel.text, note.message, note.location];
+      self.outputLabel.text = str;
       NSLog(@"Got message %@ at %@", note.message, note.location);
     } else if (error) {
-      NSString *str =[NSString stringWithFormat:@"%@\nRPC error: %@", self.output_label.text, error];
-      self.output_label.text = str;
+      NSString *str =[NSString stringWithFormat:@"%@\nRPC error: %@", self.outputLabel.text, error];
+      self.outputLabel.text = str;
       NSLog(@"RPC error: %@", error);
     }
     if (done) {
@@ -304,9 +304,9 @@ static NSString * const kHostAddress = @"localhost:50051";
 }
 
 - (void)viewDidAppear:(BOOL)animated {
-  self.output_label.text = @"RPC log:";
-  self.output_label.numberOfLines = 0;
-  self.output_label.font = [UIFont fontWithName:@"Helvetica Neue" size:8.0];
+  self.outputLabel.text = @"RPC log:";
+  self.outputLabel.numberOfLines = 0;
+  self.outputLabel.font = [UIFont fontWithName:@"Helvetica Neue" size:8.0];
   [self execRequest];
 }
 
