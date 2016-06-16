@@ -387,7 +387,7 @@ static void start_backend_server(server_fixture *sf) {
     cq_expect_completion(cqv, tag(104), 1);
     cq_verify(cqv);
     gpr_log(GPR_INFO, "Server[%s] DONE. After servicing %d calls",
-        sf->servers_hostport, sf->num_calls_serviced);
+            sf->servers_hostport, sf->num_calls_serviced);
 
     grpc_call_destroy(s);
     cq_verifier_destroy(cqv);

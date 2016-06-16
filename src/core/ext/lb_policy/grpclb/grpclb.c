@@ -39,10 +39,10 @@
 #include <grpc/support/host_port.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/client_config/client_channel_factory.h"
 #include "src/core/ext/client_config/lb_policy_registry.h"
 #include "src/core/ext/client_config/parse_address.h"
+#include "src/core/ext/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/lb_policy/grpclb/load_balancer_api.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/support/string.h"
@@ -635,7 +635,8 @@ static void rr_handover(grpc_exec_ctx *exec_ctx, glb_lb_policy *p) {
     GRPC_LB_POLICY_REF(p->rr_policy, "rr_handover_pending_pick");
     pp->wrapped_on_complete_arg->rr_policy = p->rr_policy;
     if (grpc_lb_glb_trace) {
-      gpr_log(GPR_INFO, "Pending pick about to PICK from 0x%"PRIxPTR"", (intptr_t)p->rr_policy);
+      gpr_log(GPR_INFO, "Pending pick about to PICK from 0x%" PRIxPTR "",
+              (intptr_t)p->rr_policy);
     }
     grpc_lb_policy_pick(exec_ctx, p->rr_policy, pp->pollent,
                         pp->initial_metadata, pp->initial_metadata_flags,
@@ -649,7 +650,8 @@ static void rr_handover(grpc_exec_ctx *exec_ctx, glb_lb_policy *p) {
     GRPC_LB_POLICY_REF(p->rr_policy, "rr_handover_pending_ping");
     pping->wrapped_notify_arg->rr_policy = p->rr_policy;
     if (grpc_lb_glb_trace) {
-      gpr_log(GPR_INFO, "Pending ping about to PING from 0x%"PRIxPTR"", (intptr_t)p->rr_policy);
+      gpr_log(GPR_INFO, "Pending ping about to PING from 0x%" PRIxPTR "",
+              (intptr_t)p->rr_policy);
     }
     grpc_lb_policy_ping_one(exec_ctx, p->rr_policy, pping->wrapped_notify);
     gpr_free(pping);
@@ -677,7 +679,8 @@ static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
 
   if (p->rr_policy != NULL) {
     if (grpc_lb_glb_trace) {
-      gpr_log(GPR_INFO, "about to PICK from 0x%"PRIxPTR"", (intptr_t)p->rr_policy);
+      gpr_log(GPR_INFO, "about to PICK from 0x%" PRIxPTR "",
+              (intptr_t)p->rr_policy);
     }
     GRPC_LB_POLICY_REF(p->rr_policy, "rr_pick");
     wrapped_rr_closure_arg *warg = gpr_malloc(sizeof(wrapped_rr_closure_arg));

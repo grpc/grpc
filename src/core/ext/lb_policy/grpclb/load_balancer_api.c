@@ -176,7 +176,7 @@ grpc_grpclb_serverlist *grpc_grpclb_serverlist_copy(
   copy->num_servers = sl->num_servers;
   memcpy(&copy->expiration_interval, &sl->expiration_interval,
          sizeof(grpc_grpclb_duration));
-  copy->servers = gpr_malloc(sizeof(grpc_grpclb_server*) * sl->num_servers);
+  copy->servers = gpr_malloc(sizeof(grpc_grpclb_server *) * sl->num_servers);
   for (size_t i = 0; i < sl->num_servers; i++) {
     copy->servers[i] = gpr_malloc(sizeof(grpc_grpclb_server));
     memcpy(copy->servers[i], sl->servers[i], sizeof(grpc_grpclb_server));
