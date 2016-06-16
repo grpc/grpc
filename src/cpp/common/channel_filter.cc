@@ -38,6 +38,16 @@
 namespace grpc {
 
 //
+// ChannelData
+//
+
+void ChannelData::StartTransportOp(grpc_exec_ctx *exec_ctx,
+                                   grpc_channel_element *elem,
+                                   grpc_transport_op *op) {
+  grpc_channel_next_op(exec_ctx, elem, op);
+}
+
+//
 // CallData
 //
 
@@ -55,16 +65,6 @@ void CallData::SetPollsetOrPollsetSet(grpc_exec_ctx *exec_ctx,
 
 char *CallData::GetPeer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
   return grpc_call_next_get_peer(exec_ctx, elem);
-}
-
-//
-// ChannelData
-//
-
-void ChannelData::StartTransportOp(grpc_exec_ctx *exec_ctx,
-                                   grpc_channel_element *elem,
-                                   grpc_transport_op *op) {
-  grpc_channel_next_op(exec_ctx, elem, op);
 }
 
 //

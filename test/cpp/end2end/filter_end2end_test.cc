@@ -75,20 +75,36 @@ void verify_ok(CompletionQueue* cq, int i, bool expect_ok) {
 
 namespace {
 
+int global_num_connections = 0;
 int global_num_calls = 0;
 mutex global_mu;
 
-void IncrementCounter() {
+void IncrementConnectionCounter() {
+  unique_lock<mutex> lock(global_mu);
+  ++global_num_connections;
+}
+
+void ResetConnectionCounter() {
+  unique_lock<mutex> lock(global_mu);
+  global_num_connections = 0;
+}
+
+int GetConnectionCounterValue() {
+  unique_lock<mutex> lock(global_mu);
+  return global_num_connections;
+}
+
+void IncrementCallCounter() {
   unique_lock<mutex> lock(global_mu);
   ++global_num_calls;
 }
 
-void ResetCounter() {
+void ResetCallCounter() {
   unique_lock<mutex> lock(global_mu);
   global_num_calls = 0;
 }
 
-int GetCounterValue() {
+int GetCallCounterValue() {
   unique_lock<mutex> lock(global_mu);
   return global_num_calls;
 }
@@ -97,19 +113,22 @@ int GetCounterValue() {
 
 class ChannelDataImpl : public ChannelData {
  public:
-  explicit ChannelDataImpl(const grpc_channel_args& args) : ChannelData(args) {}
-  virtual ~ChannelDataImpl() {}
+  ChannelDataImpl(const grpc_channel_args& args, const char* peer)
+      : ChannelData(args, peer) {
+    IncrementConnectionCounter();
+  }
 };
 
 class CallDataImpl : public CallData {
  public:
   explicit CallDataImpl(const ChannelDataImpl& channel_data)
       : CallData(channel_data) {}
-  virtual ~CallDataImpl() {}
 
   void StartTransportStreamOp(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
                               grpc_transport_stream_op* op) GRPC_OVERRIDE {
-    if (op->recv_initial_metadata != nullptr) IncrementCounter();
+    // Incrementing the counter could be done from the ctor, but we want
+    // to test that the individual methods are actually called correctly.
+    if (op->recv_initial_metadata != nullptr) IncrementCallCounter();
     grpc_call_next_op(exec_ctx, elem, op);
   }
 };
@@ -146,7 +165,8 @@ class FilterEnd2endTest : public ::testing::Test {
     std::shared_ptr<Channel> channel =
         CreateChannel(server_address_.str(), InsecureChannelCredentials());
     generic_stub_.reset(new GenericStub(channel));
-    ResetCounter();
+    ResetConnectionCounter();
+    ResetCallCounter();
   }
 
   void server_ok(int i) { verify_ok(srv_cq_.get(), i, true); }
@@ -227,22 +247,27 @@ class FilterEnd2endTest : public ::testing::Test {
 
 TEST_F(FilterEnd2endTest, SimpleRpc) {
   ResetStub();
-  EXPECT_EQ(0, GetCounterValue());
+  EXPECT_EQ(0, GetConnectionCounterValue());
+  EXPECT_EQ(0, GetCallCounterValue());
   SendRpc(1);
-  EXPECT_EQ(1, GetCounterValue());
+  EXPECT_EQ(1, GetConnectionCounterValue());
+  EXPECT_EQ(1, GetCallCounterValue());
 }
 
 TEST_F(FilterEnd2endTest, SequentialRpcs) {
   ResetStub();
-  EXPECT_EQ(0, GetCounterValue());
+  EXPECT_EQ(0, GetConnectionCounterValue());
+  EXPECT_EQ(0, GetCallCounterValue());
   SendRpc(10);
-  EXPECT_EQ(10, GetCounterValue());
+  EXPECT_EQ(1, GetConnectionCounterValue());
+  EXPECT_EQ(10, GetCallCounterValue());
 }
 
 // One ping, one pong.
 TEST_F(FilterEnd2endTest, SimpleBidiStreaming) {
   ResetStub();
-  EXPECT_EQ(0, GetCounterValue());
+  EXPECT_EQ(0, GetConnectionCounterValue());
+  EXPECT_EQ(0, GetCallCounterValue());
 
   const grpc::string kMethodName(
       "/grpc.cpp.test.util.EchoTestService/BidiStream");
@@ -306,7 +331,8 @@ TEST_F(FilterEnd2endTest, SimpleBidiStreaming) {
   EXPECT_EQ(send_response.message(), recv_response.message());
   EXPECT_TRUE(recv_status.ok());
 
-  EXPECT_EQ(1, GetCounterValue());
+  EXPECT_EQ(1, GetCallCounterValue());
+  EXPECT_EQ(1, GetConnectionCounterValue());
 }
 
 }  // namespace

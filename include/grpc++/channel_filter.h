@@ -54,7 +54,6 @@
 namespace grpc {
 
 // Represents channel data.
-// Note: Must be copyable.
 class ChannelData {
  public:
   virtual ~ChannelData() {}
@@ -68,7 +67,6 @@ class ChannelData {
 };
 
 // Represents call data.
-// Note: Must be copyable.
 class CallData {
  public:
   virtual ~CallData() {}
