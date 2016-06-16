@@ -4,7 +4,10 @@
   },
 
   "dependencies": {
-    "Grpc.Core": "0.0.1",
+    "Grpc.Core": {
+      "version": "0.0.1",
+      "taget": "project"
+    },
     "Google.Protobuf": "3.0.0-beta3"
   },
   "frameworks": {
@@ -14,15 +17,12 @@
         "System.IO": ""
       }
     },
-    "dotnet54": {
+    "netstandard1.5": {
       "imports": [
         "portable-net45"
       ],
       "dependencies": {
-        "Microsoft.NETCore.App": {
-          "type": "platform",
-          "version": "1.0.0-rc2-23931"
-        }
+        "NETStandard.Library": "1.5.0-rc2-24027"
       }
     }
   }

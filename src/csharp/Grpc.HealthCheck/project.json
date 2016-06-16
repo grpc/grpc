@@ -26,12 +26,12 @@
         "System.IO": ""
       }
     },
-    "dotnet54": {
+    "netstandard1.5": {
       "imports": [
         "portable-net45"
       ],
       "dependencies": {
-        "Microsoft.CSharp": "4.0.1-beta-23516"
+        "NETStandard.Library": "1.5.0-rc2-24027"
       }
     }
   }
