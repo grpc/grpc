@@ -103,8 +103,8 @@ class CallDataImpl : public CallData {
   void StartTransportStreamOp(
       grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
       grpc_transport_stream_op *op) {
-    gpr_log(GPR_ERROR, "INCREMENTING");
-    IncrementCounter();
+    if (op->recv_initial_metadata != nullptr)
+      IncrementCounter();
     grpc_call_next_op(exec_ctx, elem, op);
   }
 };
@@ -120,8 +120,6 @@ class FilterEnd2endTest : public ::testing::Test {
   FilterEnd2endTest() : server_host_("localhost") {}
 
   void SetUp() GRPC_OVERRIDE {
-    RegisterChannelFilter<ChannelDataImpl, CallDataImpl>(
-        "test-filter", GRPC_SERVER_CHANNEL, INT_MAX, nullptr);
     int port = grpc_pick_unused_port_or_die();
     server_address_ << server_host_ << ":" << port;
     // Setup server
@@ -323,5 +321,8 @@ TEST_F(FilterEnd2endTest, SimpleBidiStreaming) {
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
+  grpc::RegisterChannelFilter<grpc::testing::ChannelDataImpl,
+                              grpc::testing::CallDataImpl>(
+      "test-filter", GRPC_SERVER_CHANNEL, INT_MAX, nullptr);
   return RUN_ALL_TESTS();
 }
