@@ -228,9 +228,10 @@ class TestScenario {
         credentials_type(creds_type),
         message_content(content) {}
   void Log() const {
-    gpr_log(GPR_INFO,
-            "Scenario: disable_blocking %d, credentials %s, message size %d",
-            disable_blocking, credentials_type.c_str(), message_content.size());
+    gpr_log(
+        GPR_INFO,
+        "Scenario: disable_blocking %d, credentials %s, message size %" PRIuPTR,
+        disable_blocking, credentials_type.c_str(), message_content.size());
   }
   bool disable_blocking;
   // Although the below grpc::string's are logically const, we can't declare

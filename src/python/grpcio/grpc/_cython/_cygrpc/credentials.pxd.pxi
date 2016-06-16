@@ -54,7 +54,7 @@ cdef class ServerCredentials:
 cdef class CredentialsMetadataPlugin:
 
   cdef object plugin_callback
-  cdef str plugin_name
+  cdef bytes plugin_name
 
   cdef grpc_metadata_credentials_plugin make_c_plugin(self)
 

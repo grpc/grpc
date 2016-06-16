@@ -263,6 +263,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\client_context.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\completion_queue.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\create_channel.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\create_channel_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\generic\async_generic_service.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\generic\generic_stub.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\grpc++.h" />
@@ -291,6 +292,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\server.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\server_builder.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\server_context.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\server_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\async_stream.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\async_unary_call.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\byte_buffer.h" />
@@ -371,6 +373,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\create_channel_internal.cc">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\client\create_channel_posix.cc">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\credentials.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\generic_stub.cc">
@@ -400,6 +404,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\server_context.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\server_credentials.cc">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\server\server_posix.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\util\byte_buffer.cc">
     </ClCompile>

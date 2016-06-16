@@ -194,6 +194,16 @@ int int64_ttoa(int64_t value, char *string) {
   return i;
 }
 
+char *gpr_leftpad(const char *str, char flag, size_t length) {
+  const size_t str_length = strlen(str);
+  const size_t out_length = str_length > length ? str_length : length;
+  char *out = gpr_malloc(out_length + 1);
+  memset(out, flag, out_length - str_length);
+  memcpy(out + out_length - str_length, str, str_length);
+  out[out_length] = 0;
+  return out;
+}
+
 char *gpr_strjoin(const char **strs, size_t nstrs, size_t *final_length) {
   return gpr_strjoin_sep(strs, nstrs, "", final_length);
 }

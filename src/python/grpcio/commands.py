@@ -191,7 +191,7 @@ class BuildProtoModules(setuptools.Command):
       except subprocess.CalledProcessError as e:
         sys.stderr.write(
             'warning: Command:\n{}\nMessage:\n{}\nOutput:\n{}'.format(
-                command, e.message, e.output))
+                command, str(e), e.output))
 
     # Generated proto directories dont include __init__.py, but
     # these are needed for python package resolution

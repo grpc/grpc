@@ -41,10 +41,24 @@ namespace Grpc.Core
 {
     /// <summary>
     /// A stream of messages to be read.
+    /// Messages can be awaited <c>await reader.MoveNext()</c>, that returns <c>true</c>
+    /// if there is a message available and <c>false</c> if there are no more messages
+    /// (i.e. the stream has been closed).
+    /// <para>
+    /// On the client side, the last invocation of <c>MoveNext()</c> either returns <c>false</c>
+    /// if the call has finished successfully or throws <c>RpcException</c> if call finished
+    /// with an error. Once the call finishes, subsequent invocations of <c>MoveNext()</c> will
+    /// continue yielding the same result (returning <c>false</c> or throwing an exception).
+    /// </para>
+    /// <para>
+    /// On the server side, <c>MoveNext()</c> does not throw exceptions.
+    /// In case of a failure, the request stream will appear to be finished
+    /// (<c>MoveNext</c> will return <c>false</c>) and the <c>CancellationToken</c>
+    /// associated with the call will be cancelled to signal the failure.
+    /// </para>
     /// </summary>
     /// <typeparam name="T">The message type.</typeparam>
     public interface IAsyncStreamReader<T> : IAsyncEnumerator<T>
     {
-        // TODO(jtattermusch): consider just using IAsyncEnumerator instead of this interface.
     }
 }

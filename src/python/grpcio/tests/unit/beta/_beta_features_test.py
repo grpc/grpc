@@ -42,8 +42,8 @@ from tests.unit.framework.common import test_constants
 
 _SERVER_HOST_OVERRIDE = 'foo.test.google.fr'
 
-_PER_RPC_CREDENTIALS_METADATA_KEY = 'my-call-credentials-metadata-key'
-_PER_RPC_CREDENTIALS_METADATA_VALUE = 'my-call-credentials-metadata-value'
+_PER_RPC_CREDENTIALS_METADATA_KEY = b'my-call-credentials-metadata-key'
+_PER_RPC_CREDENTIALS_METADATA_VALUE = b'my-call-credentials-metadata-value'
 
 _GROUP = 'group'
 _UNARY_UNARY = 'unary-unary'

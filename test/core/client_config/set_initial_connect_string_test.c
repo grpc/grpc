@@ -69,7 +69,7 @@ static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   GPR_ASSERT(success);
   gpr_slice_buffer_move_into(&state.temp_incoming_buffer,
                              &state.incoming_buffer);
-  gpr_log(GPR_DEBUG, "got %d bytes, magic is %d bytes",
+  gpr_log(GPR_DEBUG, "got %" PRIuPTR " bytes, magic is %" PRIuPTR " bytes",
           state.incoming_buffer.length, strlen(magic_connect_string));
   if (state.incoming_buffer.length > strlen(magic_connect_string)) {
     gpr_atm_rel_store(&state.done_atm, 1);
@@ -136,6 +136,7 @@ static void start_rpc(int use_creds, int target_port) {
   state.call = grpc_channel_create_call(
       state.channel, NULL, GRPC_PROPAGATE_DEFAULTS, state.cq, "/Service/Method",
       "localhost", gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  memset(&state.op, 0, sizeof(state.op));
   state.op.op = GRPC_OP_SEND_INITIAL_METADATA;
   state.op.data.send_initial_metadata.count = 0;
   state.op.flags = 0;
@@ -172,8 +173,8 @@ static void actually_poll_server(void *arg) {
     bool done = gpr_atm_acq_load(&state.done_atm) != 0;
     gpr_timespec time_left =
         gpr_time_sub(deadline, gpr_now(GPR_CLOCK_REALTIME));
-    gpr_log(GPR_DEBUG, "done=%d, time_left=%d.%09d", done, time_left.tv_sec,
-            time_left.tv_nsec);
+    gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64 ".%09" PRId32, done,
+            time_left.tv_sec, time_left.tv_nsec);
     if (done || gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)) < 0) {
       break;
     }
