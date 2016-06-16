@@ -37,7 +37,7 @@
 #import <RxLibrary/GRXWriter+Immediate.h>
 #import <RxLibrary/GRXWriter+Transformations.h>
 
-static NSString * const kHostAddress = @"192.168.1.120:50051";
+static NSString * const kHostAddress = @"localhost:50051";
 
 /** Category to override RTGPoint's description. */
 @interface RTGPoint (Description)
