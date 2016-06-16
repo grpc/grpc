@@ -32,9 +32,7 @@
  */
 
 #include <stdarg.h>
-#include <stdio.h>
 #include <string.h>
-#include <tgmath.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
