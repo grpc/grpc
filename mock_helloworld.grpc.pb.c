@@ -31,26 +31,5 @@
  *
  */
 
-#include <stdio.h>
-#include "test_config.h"
-#include "grpc/grpc_c_public.h"
-#include "grpc/status_public.h"
-#include "grpc/channel_public.h"
 
-int main(int argc, char **argv) {
-  grpc_test_init(argc, argv);
-
-  // Local greetings server
-  grpc_channel *chan = GRPC_channel_create("0.0.0.0:50051");
-
-  grpc_method method = { NORMAL_RPC, "/helloworld.Greeter/SayHello" };
-  grpc_context *context = grpc_context_create(chan);
-  // hardcoded string for "gRPC-C"
-  const char str[] = { 0x0A, 0x06, 0x67, 0x52, 0x50, 0x43, 0x2D, 0x43 };
-  grpc_message msg = { str, sizeof(str) };
-  grpc_unary_blocking_call(chan, &method, context, msg, NULL);
-
-  GRPC_context_destroy(&context);
-  GRPC_channel_destroy(&chan);
-  return 0;
-}
+#include "mock_helloworld.grpc.pb.h"

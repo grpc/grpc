@@ -31,26 +31,34 @@
  *
  */
 
-#include <stdio.h>
-#include "test_config.h"
-#include "grpc/grpc_c_public.h"
-#include "grpc/status_public.h"
-#include "grpc/channel_public.h"
 
-int main(int argc, char **argv) {
-  grpc_test_init(argc, argv);
+#ifndef TEST_GRPC_C_GRPC_C_PUBLIC_H
+#define TEST_GRPC_C_GRPC_C_PUBLIC_H
 
-  // Local greetings server
-  grpc_channel *chan = GRPC_channel_create("0.0.0.0:50051");
+#include <stdlib.h>
 
-  grpc_method method = { NORMAL_RPC, "/helloworld.Greeter/SayHello" };
-  grpc_context *context = grpc_context_create(chan);
-  // hardcoded string for "gRPC-C"
-  const char str[] = { 0x0A, 0x06, 0x67, 0x52, 0x50, 0x43, 0x2D, 0x43 };
-  grpc_message msg = { str, sizeof(str) };
-  grpc_unary_blocking_call(chan, &method, context, msg, NULL);
+typedef struct grpc_channel grpc_channel;
+typedef struct grpc_status grpc_status;
+typedef struct grpc_context grpc_context;
 
-  GRPC_context_destroy(&context);
-  GRPC_channel_destroy(&chan);
-  return 0;
-}
+typedef struct grpc_method {
+  enum RpcType {
+    NORMAL_RPC = 0,
+    CLIENT_STREAMING,  // request streaming
+    SERVER_STREAMING,  // response streaming
+    BIDI_STREAMING
+  } type;
+  const char* const name;
+} grpc_method;
+
+typedef struct grpc_message {
+  const void *data;
+  size_t length;
+} grpc_message;
+
+grpc_context *grpc_context_create(grpc_channel *chan);
+void GRPC_context_destroy(grpc_context **context);
+
+grpc_status grpc_unary_blocking_call(grpc_channel *channel, const grpc_method * const rpc_method, grpc_context * const context, const grpc_message message, void *response);
+
+#endif //TEST_GRPC_C_GRPC_C_PUBLIC_H

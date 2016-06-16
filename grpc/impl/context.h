@@ -31,26 +31,25 @@
  *
  */
 
-#include <stdio.h>
-#include "test_config.h"
-#include "grpc/grpc_c_public.h"
-#include "grpc/status_public.h"
-#include "grpc/channel_public.h"
 
-int main(int argc, char **argv) {
-  grpc_test_init(argc, argv);
+#ifndef TEST_GRPC_C_CONTEXT_H
+#define TEST_GRPC_C_CONTEXT_H
 
-  // Local greetings server
-  grpc_channel *chan = GRPC_channel_create("0.0.0.0:50051");
+#include "../grpc_c_public.h"
+#include <grpc/grpc.h>
+#include "status.h"
+#include <stdbool.h>
 
-  grpc_method method = { NORMAL_RPC, "/helloworld.Greeter/SayHello" };
-  grpc_context *context = grpc_context_create(chan);
-  // hardcoded string for "gRPC-C"
-  const char str[] = { 0x0A, 0x06, 0x67, 0x52, 0x50, 0x43, 0x2D, 0x43 };
-  grpc_message msg = { str, sizeof(str) };
-  grpc_unary_blocking_call(chan, &method, context, msg, NULL);
+typedef struct grpc_context {
+  grpc_channel *channel;
+  grpc_call *call;
+  grpc_metadata* send_metadata_array;
+  grpc_metadata_array recv_metadata_array;
+  grpc_metadata_array trailing_metadata_array;
+  gpr_timespec deadline;
+  grpc_byte_buffer *recv_buffer;
+  bool got_message;
+  grpc_status status;
+} grpc_context;
 
-  GRPC_context_destroy(&context);
-  GRPC_channel_destroy(&chan);
-  return 0;
-}
+#endif //TEST_GRPC_C_CONTEXT_H
