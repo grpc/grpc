@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,42 +27,12 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Don't run this script standalone. Instead, run from the repository root:
-# ./tools/run_tests/run_tests.py -l objc
+_BEFORE_IMPORT = tuple(globals())
 
-set -e
+from grpc import *
 
-# CocoaPods requires the terminal to be using UTF-8 encoding.
-export LANG=en_US.UTF-8
+_AFTER_IMPORT = tuple(globals())
 
-cd $(dirname $0)
-
-hash pod 2>/dev/null || { echo >&2 "Cocoapods needs to be installed."; exit 1; }
-hash xcodebuild 2>/dev/null || {
-    echo >&2 "XCode command-line tools need to be installed."
-    exit 1
-}
-
-BINDIR=../../../bins/$CONFIG
-
-if [ ! -f $BINDIR/protobuf/protoc ]; then
-    hash protoc 2>/dev/null || {
-        echo >&2 "Can't find protoc. Make sure run_tests.py is making" \
-                 "grpc_objective_c_plugin before calling this script."
-        exit 1
-    }
-    # When protoc is already installed, make doesn't compile one. Put a link
-    # there so the podspecs can do codegen using that path.
-    mkdir -p $BINDIR/protobuf
-    ln -s `which protoc` $BINDIR/protobuf/protoc
-fi
-
-[ -f $BINDIR/interop_server ] || {
-    echo >&2 "Can't find the test server. Make sure run_tests.py is making" \
-             "interop_server before calling this script. It needs to be done" \
-             "before because pod install of gRPC renames some C gRPC files" \
-             "and not the server's code references to them."
-    exit 1
-}
-
-pod install
+GRPC_ELEMENTS = tuple(
+    element for element in _AFTER_IMPORT
+    if element not in _BEFORE_IMPORT and element != '_BEFORE_IMPORT')
