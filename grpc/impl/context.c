@@ -34,7 +34,7 @@
 #include "context.h"
 
 grpc_context *grpc_context_create(grpc_channel *chan) {
-  grpc_context *context = calloc(1, sizeof(context));
+  grpc_context *context = calloc(1, sizeof(grpc_context));
   context->deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
   context->channel = chan;
   return context;
