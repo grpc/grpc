@@ -43,6 +43,10 @@
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* forward declarations */
 typedef struct grpc_transport grpc_transport;
 
@@ -263,5 +267,9 @@ void grpc_transport_destroy(grpc_exec_ctx *exec_ctx, grpc_transport *transport);
 /* Get the transports peer */
 char *grpc_transport_get_peer(grpc_exec_ctx *exec_ctx,
                               grpc_transport *transport);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_TRANSPORT_H */

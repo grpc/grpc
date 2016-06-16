@@ -62,8 +62,13 @@ class ChannelData {
                                 grpc_channel_element *elem,
                                 grpc_transport_op *op);
 
+  const char* peer() const { return peer_; }
+
  protected:
-  explicit ChannelData(const grpc_channel_args &) {}
+  ChannelData(const grpc_channel_args &args, const char *peer) : peer_(peer) {}
+
+ private:
+  const char *peer_;  // Do not own.
 };
 
 // Represents call data.
@@ -96,8 +101,12 @@ class ChannelFilter {
   static void InitChannelElement(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem,
                                  grpc_channel_element_args *args) {
+    const char* peer = args->optional_transport
+                       ? grpc_transport_get_peer(exec_ctx,
+                                                 args->optional_transport)
+                       : nullptr;
     // Construct the object in the already-allocated memory.
-    new (elem->channel_data) ChannelDataType(*args->channel_args);
+    new (elem->channel_data) ChannelDataType(*args->channel_args, peer);
   }
 
   static void DestroyChannelElement(grpc_exec_ctx *exec_ctx,
