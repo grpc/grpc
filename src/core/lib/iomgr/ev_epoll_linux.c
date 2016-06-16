@@ -317,8 +317,9 @@ static void polling_island_remove_all_fds_locked(polling_island *pi,
     if (err < 0 && errno != ENOENT) {
       /* TODO: sreek - We need a better way to bubble up this error instead of
       * just logging a message */
-      gpr_log(GPR_ERROR, "epoll_ctl deleting fds[%zu]: %d failed with error: %s",
-              i, pi->fds[i]->fd, strerror(errno));
+      gpr_log(GPR_ERROR,
+              "epoll_ctl deleting fds[%zu]: %d failed with error: %s", i,
+              pi->fds[i]->fd, strerror(errno));
     }
 
     if (remove_fd_refs) {
@@ -1456,6 +1457,52 @@ static void pollset_set_del_pollset_set(grpc_exec_ctx *exec_ctx,
     }
   }
   gpr_mu_unlock(&bag->mu);
+}
+
+/* Test helper functions
+ * */
+void *grpc_fd_get_polling_island(grpc_fd *fd) {
+  polling_island *pi;
+
+  gpr_mu_lock(&fd->pi_mu);
+  pi = fd->polling_island;
+  gpr_mu_unlock(&fd->pi_mu);
+
+  return pi;
+}
+
+void *grpc_pollset_get_polling_island(grpc_pollset *ps) {
+  polling_island *pi;
+
+  gpr_mu_lock(&ps->pi_mu);
+  pi = ps->polling_island;
+  gpr_mu_unlock(&ps->pi_mu);
+
+  return pi;
+}
+
+static polling_island *get_polling_island(polling_island *p) {
+  if (p == NULL) {
+    return NULL;
+  }
+
+  polling_island *next;
+  gpr_mu_lock(&p->mu);
+  while (p->merged_to != NULL) {
+    next = p->merged_to;
+    gpr_mu_unlock(&p->mu);
+    p = next;
+    gpr_mu_lock(&p->mu);
+  }
+  gpr_mu_unlock(&p->mu);
+
+  return p;
+}
+
+bool grpc_are_polling_islands_equal(void *p, void *q) {
+  p = get_polling_island(p);
+  q = get_polling_island(q);
+  return p == q;
 }
 
 /*******************************************************************************

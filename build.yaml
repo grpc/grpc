@@ -1407,6 +1407,18 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: ev_epoll_linux_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/ev_epoll_linux_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - linux
 - name: fd_conservation_posix_test
   build: test
   language: c
