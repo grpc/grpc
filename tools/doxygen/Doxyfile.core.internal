@@ -857,7 +857,6 @@ src/core/lib/surface/event_string.h \
 src/core/lib/surface/init.h \
 src/core/lib/surface/lame_client.h \
 src/core/lib/surface/server.h \
-src/core/lib/surface/surface_trace.h \
 src/core/lib/transport/byte_stream.h \
 src/core/lib/transport/connectivity_state.h \
 src/core/lib/transport/metadata.h \

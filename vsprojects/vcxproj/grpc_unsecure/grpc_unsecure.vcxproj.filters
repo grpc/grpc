@@ -749,9 +749,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\server.h">
       <Filter>src\core\lib\surface</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\surface_trace.h">
-      <Filter>src\core\lib\surface</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\byte_stream.h">
       <Filter>src\core\lib\transport</Filter>
     </ClInclude>

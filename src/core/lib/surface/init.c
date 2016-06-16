@@ -57,7 +57,6 @@
 #include "src/core/lib/surface/init.h"
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/surface/server.h"
-#include "src/core/lib/surface/surface_trace.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport_impl.h"
 
@@ -165,6 +164,12 @@ void grpc_init(void) {
                          &grpc_trace_channel_stack_builder);
     grpc_register_tracer("http1", &grpc_http1_trace);
     grpc_register_tracer("compression", &grpc_compression_trace);
+    grpc_register_tracer("queue_pluck", &grpc_cq_pluck_trace);
+    // Default pluck trace to 1
+    grpc_cq_pluck_trace = 1;
+    grpc_register_tracer("queue_timeout", &grpc_cq_event_timeout_trace);
+    // Default timeout trace to 1
+    grpc_cq_event_timeout_trace = 1;
     grpc_security_pre_init();
     grpc_iomgr_init();
     grpc_executor_init();

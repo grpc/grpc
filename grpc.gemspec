@@ -240,7 +240,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/surface/init.h )
   s.files += %w( src/core/lib/surface/lame_client.h )
   s.files += %w( src/core/lib/surface/server.h )
-  s.files += %w( src/core/lib/surface/surface_trace.h )
   s.files += %w( src/core/lib/transport/byte_stream.h )
   s.files += %w( src/core/lib/transport/connectivity_state.h )
   s.files += %w( src/core/lib/transport/metadata.h )
