@@ -1,23 +1,51 @@
 {
   "buildOptions": {
     "compile": "**/*.cs",
+    "copyToOutput": {
+      "mappings": {
+        "nativelibs/windows_x64/grpc_csharp_ext.dll": "../../../vsprojects/x64/Debug/grpc_csharp_ext.dll",
+        "nativelibs/windows_x86/grpc_csharp_ext.dll": "../../../vsprojects/Debug/grpc_csharp_ext.dll"
+      },
+      "include": "data/*"
+    },
     "emitEntryPoint": true
   },
   "dependencies": {
-    "Grpc.Auth": "0.0.1",
-    "Grpc.Core": "0.0.1",
+    "Grpc.Auth": {
+      "version": "0.0.1",
+      "taget": "project"
+    },
+    "Grpc.Core": {
+      "version": "0.0.1",
+      "taget": "project"
+    },
     "Google.Protobuf": "3.0.0-beta3",
     "CommandLineParser": "1.9.71",
-    "Moq": "4.2.1510.2205",
     "NUnit": "3.2.0",
     "NUnitLite": "3.2.0-*"
   },
   "frameworks": {
     "net45": {
+      "dependencies": {
+        "Moq": "4.2.1510.2205"
+      },
       "frameworkAssemblies": {
         "System.Runtime": "",
         "System.IO": ""
       }
+    },
+    "netstandard1.5": {
+      "imports": [
+        "portable-net45",
+        "net45"
+      ],
+      "dependencies": {
+        "NETStandard.Library": "1.5.0-rc2-24027",
+        "System.Linq.Expressions": "4.0.11-rc2-24027"
+      }
     }
+  },
+  "runtimes": {
+    "win7-x64": { }
   }
 }

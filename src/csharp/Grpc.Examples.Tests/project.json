@@ -10,22 +10,25 @@
     "emitEntryPoint": true
   },
   "dependencies": {
-    "Grpc.Examples": "1.0.0",
+    "Grpc.Examples": {
+      "version": "1.0.0",
+      "taget": "project"
+    },
     "NUnit": "3.2.0",
     "NUnitLite": "3.2.0-*"
   },
   "frameworks": {
     "net45": { },
-    "dotnet54": {
+    "netstandard1.5": {
       "imports": [
         "portable-net45"
       ],
       "dependencies": {
-        "Microsoft.NETCore.App": {
-          "type": "platform",
-          "version": "1.0.0-rc2-23931"
-        }
+        "NETStandard.Library": "1.5.0-rc2-24027"
       }
     }
+  },
+  "runtimes": {
+    "win7-x64": { }
   }
 }
