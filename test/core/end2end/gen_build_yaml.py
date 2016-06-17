@@ -118,7 +118,8 @@ END2END_TESTS = {
     'ping_pong_streaming': default_test_options,
     'ping': connectivity_test_options._replace(proxyable=False),
     'registered_call': default_test_options,
-    'request_with_flags': default_test_options._replace(proxyable=False),
+    'request_with_flags': default_test_options._replace(
+        proxyable=False, cpu_cost=LOWCPU),
     'request_with_payload': default_test_options,
     'server_finishes_request': default_test_options,
     'shutdown_finishes_calls': default_test_options,
