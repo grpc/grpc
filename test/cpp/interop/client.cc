@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,11 +35,11 @@
 
 #include <unistd.h>
 
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <gflags/gflags.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
 
 #include "test/cpp/interop/client_helper.h"
 #include "test/cpp/interop/interop_client.h"
@@ -81,6 +81,14 @@ DEFINE_string(default_service_account, "",
 DEFINE_string(service_account_key_file, "",
               "Path to service account json key file.");
 DEFINE_string(oauth_scope, "", "Scope for OAuth tokens.");
+DEFINE_bool(do_not_abort_on_transient_failures, false,
+            "If set to 'true', abort() is not called in case of transient "
+            "failures (i.e failures that are temporary and will likely go away "
+            "on retrying; like a temporary connection failure) and an error "
+            "message is printed instead. Note that this flag just controls "
+            "whether abort() is called or not. It does not control whether the "
+            "test is retried in case of transient failures (and currently the "
+            "interop tests are not retried even if this flag is set to true)");
 
 using grpc::testing::CreateChannelForTestCase;
 using grpc::testing::GetServiceAccountJsonKey;
@@ -89,8 +97,9 @@ int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
   gpr_log(GPR_INFO, "Testing these cases: %s", FLAGS_test_case.c_str());
   int ret = 0;
-  grpc::testing::InteropClient client(
-      CreateChannelForTestCase(FLAGS_test_case));
+  grpc::testing::InteropClient client(CreateChannelForTestCase(FLAGS_test_case),
+                                      true,
+                                      FLAGS_do_not_abort_on_transient_failures);
   if (FLAGS_test_case == "empty_unary") {
     client.DoEmpty();
   } else if (FLAGS_test_case == "large_unary") {
@@ -162,8 +171,9 @@ int main(int argc, char** argv) {
         "large_unary|large_compressed_unary|client_streaming|server_streaming|"
         "server_compressed_streaming|half_duplex|ping_pong|cancel_after_begin|"
         "cancel_after_first_response|timeout_on_sleeping_server|empty_stream|"
-        "compute_engine_creds|jwt_token_creds|oauth2_auth_token|per_rpc_creds",
-        "status_code_and_message|custom_metadata", FLAGS_test_case.c_str());
+        "compute_engine_creds|jwt_token_creds|oauth2_auth_token|per_rpc_creds|"
+        "status_code_and_message|custom_metadata",
+        FLAGS_test_case.c_str());
     ret = 1;
   }
 

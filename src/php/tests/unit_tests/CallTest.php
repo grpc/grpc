@@ -1,7 +1,7 @@
 <?php
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -94,7 +94,7 @@ class CallTest extends PHPUnit_Framework_TestCase
 
     public function testCancel()
     {
-      $this->assertNull($this->call->cancel());
+        $this->assertNull($this->call->cancel());
     }
 
     /**
@@ -118,5 +118,4 @@ class CallTest extends PHPUnit_Framework_TestCase
         ];
         $result = $this->call->startBatch($batch);
     }
-
 }

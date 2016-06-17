@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -55,14 +55,7 @@ namespace Grpc.IntegrationTesting
         {
             var serverConfig = new ServerConfig
             {
-                ServerType = ServerType.ASYNC_SERVER,
-                PayloadConfig = new PayloadConfig
-                {
-                    SimpleParams = new SimpleProtoParams
-                    {
-                        RespSize = 100
-                    }
-                }
+                ServerType = ServerType.AsyncServer
             };
             serverRunner = ServerRunners.CreateStarted(serverConfig);
         }
@@ -82,13 +75,14 @@ namespace Grpc.IntegrationTesting
             var config = new ClientConfig
             {
                 ServerTargets = { string.Format("{0}:{1}", "localhost", serverRunner.BoundPort) },
-                RpcType = RpcType.UNARY,
+                RpcType = RpcType.Unary,
                 LoadParams = new LoadParams { ClosedLoop = new ClosedLoopParams() },
                 PayloadConfig = new PayloadConfig
                 {
                     SimpleParams = new SimpleProtoParams
                     {
-                        ReqSize = 100
+                        ReqSize = 100,
+                        RespSize = 100
                     }
                 },
                 HistogramParams = new HistogramParams

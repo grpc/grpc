@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,7 +29,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-"""Generates the appropriate build.json data for all the end2end tests."""
+"""Generates the appropriate build.json data for all the bad_client tests."""
 
 
 import collections
@@ -44,6 +44,8 @@ BAD_CLIENT_TESTS = {
     'connection_prefix': default_test_options._replace(cpu_cost=0.2),
     'headers': default_test_options._replace(cpu_cost=0.2),
     'initial_settings_frame': default_test_options._replace(cpu_cost=0.2),
+    'head_of_line_blocking': default_test_options,
+    'large_metadata': default_test_options,
     'server_registered_method': default_test_options,
     'simple_request': default_test_options,
     'window_overflow': default_test_options,

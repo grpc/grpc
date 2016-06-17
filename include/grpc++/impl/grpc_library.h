@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,6 +37,7 @@
 #include <iostream>
 
 #include <grpc++/impl/codegen/config.h>
+#include <grpc++/impl/codegen/core_codegen.h>
 #include <grpc++/impl/codegen/grpc_library.h>
 #include <grpc/grpc.h>
 
@@ -46,15 +47,23 @@ namespace internal {
 class GrpcLibrary GRPC_FINAL : public GrpcLibraryInterface {
  public:
   void init() GRPC_OVERRIDE { grpc_init(); }
-
   void shutdown() GRPC_OVERRIDE { grpc_shutdown(); }
 };
 
 static GrpcLibrary g_gli;
+static CoreCodegen g_core_codegen;
 
+/// Instantiating this class ensures the proper initialization of gRPC.
 class GrpcLibraryInitializer GRPC_FINAL {
  public:
-  GrpcLibraryInitializer() { grpc::g_glip = &g_gli; }
+  GrpcLibraryInitializer() {
+    if (grpc::g_glip == nullptr) {
+      grpc::g_glip = &g_gli;
+    }
+    if (grpc::g_core_codegen_interface == nullptr) {
+      grpc::g_core_codegen_interface = &g_core_codegen;
+    }
+  }
 
   /// A no-op method to force the linker to reference this class, which will
   /// take care of initializing and shutting down the gRPC runtime.

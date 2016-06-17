@@ -115,6 +115,7 @@ inline grpc::string RubyTypeOf(const grpc::string &a_type,
     return res;
   } else {
     std::vector<grpc::string> prefixes_and_type = Split(res, '.');
+    res.clear();
     for (unsigned int i = 0; i < prefixes_and_type.size(); ++i) {
       if (i != 0) {
         res += "::";  // switch '.' to the ruby module delim

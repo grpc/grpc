@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,20 +31,20 @@
 set -e
 
 # directories to run against
-DIRS="src/core src/cpp test/core test/cpp include"
+DIRS="src/core/lib src/core/ext src/cpp test/core test/cpp include"
 
 # file matching patterns to check
 GLOB="*.h *.c *.cc"
 
 # clang format command
-CLANG_FORMAT=clang-format-3.6
+CLANG_FORMAT=clang-format-3.8
 
 files=
 for dir in $DIRS
 do
   for glob in $GLOB
   do
-    files="$files `find /local-code/$dir -name $glob -and -not -name *.generated.* -and -not -name *.pb.h -and -not -name *.pb.c`"
+    files="$files `find /local-code/$dir -name $glob -and -not -name *.generated.* -and -not -name *.pb.h -and -not -name *.pb.c -and -not -name *.pb.cc`"
   done
 done
 

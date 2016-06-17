@@ -5,15 +5,17 @@
 
 [![Join the chat at https://gitter.im/grpc/grpc](https://badges.gitter.im/grpc/grpc.svg)](https://gitter.im/grpc/grpc?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-Copyright 2015-2016 Google Inc.
+Copyright 2015 Google Inc.
 
 #Documentation
 
 You can find more detailed documentation and examples in the [doc](doc) and [examples](examples) directories respectively.
 
-#Installation
+#Installation & Testing
 
 See [INSTALL](INSTALL.md) for installation instructions for various platforms.
+
+See [tools/run_tests](tools/run_tests) for more guidance on how to run various test suites (e.g. unit tests, interop tests, benchmarks)
 
 #Repository Structure & Status
 

@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -33,15 +33,18 @@ import os
 import os.path
 import shutil
 import sys
+import sysconfig
 
 from distutils import core as _core
 from distutils import extension as _extension
+import pkg_resources
 import setuptools
 from setuptools.command import egg_info
 
 # Redirect the manifest template from MANIFEST.in to PYTHON-MANIFEST.in.
 egg_info.manifest_maker.template = 'PYTHON-MANIFEST.in'
 
+PY3 = sys.version_info.major == 3
 PYTHON_STEM = './src/python/grpcio'
 CORE_INCLUDE = ('./include', '.',)
 BORINGSSL_INCLUDE = ('./third_party/boringssl/include',)
@@ -53,7 +56,6 @@ sys.path.insert(0, os.path.abspath(PYTHON_STEM))
 
 # Break import-style to ensure we can actually find our in-repo dependencies.
 import commands
-import precompiled
 import grpc_core_dependencies
 import grpc_version
 
@@ -103,13 +105,32 @@ if "linux" in sys.platform:
   LDFLAGS += ('-Wl,-wrap,memcpy',)
 if "linux" in sys.platform or "darwin" in sys.platform:
   CFLAGS += ('-fvisibility=hidden',)
-  DEFINE_MACROS += (('PyMODINIT_FUNC', '__attribute__((visibility ("default"))) void'),)
+
+  pymodinit_type = 'PyObject*' if PY3 else 'void'
+
+  pymodinit = '__attribute__((visibility ("default"))) {}'.format(pymodinit_type)
+  DEFINE_MACROS += (('PyMODINIT_FUNC', pymodinit),)
 
 
-def cython_extensions(package_names, module_names, extra_sources, include_dirs,
+# By default, Python3 distutils enforces compatibility of
+# c plugins (.so files) with the OSX version Python3 was built with.
+# For Python3.4, this is OSX 10.6, but we need Thread Local Support (__thread)
+if 'darwin' in sys.platform and PY3:
+  mac_target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
+  if mac_target and (pkg_resources.parse_version(mac_target) <
+                     pkg_resources.parse_version('10.7.0')):
+    os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
+
+
+def cython_extensions(module_names, extra_sources, include_dirs,
                       libraries, define_macros, build_with_cython=False):
+  # Set compiler directives linetrace argument only if we care about tracing;
+  # this is due to Cython having different behavior between linetrace being
+  # False and linetrace being unset. See issue #5689.
+  cython_compiler_directives = {}
   if ENABLE_CYTHON_TRACING:
     define_macros = define_macros + [('CYTHON_TRACE_NOGIL', 1)]
+    cython_compiler_directives['linetrace'] = True
   file_extension = 'pyx' if build_with_cython else 'c'
   module_files = [os.path.join(PYTHON_STEM,
                                name.replace('.', '/') + '.' + file_extension)
@@ -129,12 +150,12 @@ def cython_extensions(package_names, module_names, extra_sources, include_dirs,
     return Cython.Build.cythonize(
         extensions,
         include_path=include_dirs,
-        compiler_directives={'linetrace': bool(ENABLE_CYTHON_TRACING)})
+        compiler_directives=cython_compiler_directives)
   else:
     return extensions
 
 CYTHON_EXTENSION_MODULES = cython_extensions(
-    list(CYTHON_EXTENSION_PACKAGE_NAMES), list(CYTHON_EXTENSION_MODULE_NAMES),
+    list(CYTHON_EXTENSION_MODULE_NAMES),
     list(CYTHON_HELPER_C_FILES) + list(CORE_C_FILES),
     list(EXTENSION_INCLUDE_DIRECTORIES), list(EXTENSION_LIBRARIES),
     list(DEFINE_MACROS), bool(BUILD_WITH_CYTHON))
@@ -154,6 +175,7 @@ INSTALL_REQUIRES = (
 
 SETUP_REQUIRES = (
     'sphinx>=1.3',
+    'sphinx_rtd_theme>=0.1.8'
 ) + INSTALL_REQUIRES
 
 COMMAND_CLASS = {
@@ -162,7 +184,6 @@ COMMAND_CLASS = {
     'build_project_metadata': commands.BuildProjectMetadata,
     'build_py': commands.BuildPy,
     'build_ext': commands.BuildExt,
-    'build_tagged_ext': precompiled.BuildTaggedExt,
     'gather': commands.Gather,
     'run_interop': commands.RunInterop,
     'test_lite': commands.TestLite
@@ -193,7 +214,7 @@ TEST_PACKAGE_DATA = {
 }
 
 TESTS_REQUIRE = (
-    'oauth2client>=1.4.7',
+    'oauth2client>=2.1.0',
     'protobuf>=3.0.0a3',
     'coverage>=4.0',
 ) + INSTALL_REQUIRES
@@ -218,23 +239,20 @@ else:
   PACKAGES = setuptools.find_packages(
       PYTHON_STEM, exclude=['tests', 'tests.*'])
 
-setup_arguments = {
-    'name': 'grpcio',
-    'version': grpc_version.VERSION,
-    'license': LICENSE,
-    'ext_modules': CYTHON_EXTENSION_MODULES,
-    'packages': list(PACKAGES),
-    'package_dir': PACKAGE_DIRECTORIES,
-    'package_data': PACKAGE_DATA,
-    'install_requires': INSTALL_REQUIRES,
-    'setup_requires': SETUP_REQUIRES,
-    'cmdclass': COMMAND_CLASS,
-    'tests_require': TESTS_REQUIRE,
-    'test_suite': TEST_SUITE,
-    'test_loader': TEST_LOADER,
-    'test_runner': TEST_RUNNER,
-}
-
-precompiled.update_setup_arguments(setup_arguments)
-
-setuptools.setup(**setup_arguments)
+setuptools.setup(
+  name='grpcio',
+  version=grpc_version.VERSION,
+  license=LICENSE,
+  ext_modules=CYTHON_EXTENSION_MODULES,
+  packages=list(PACKAGES),
+  package_dir=PACKAGE_DIRECTORIES,
+  namespace_packages=['grpc'],
+  package_data=PACKAGE_DATA,
+  install_requires=INSTALL_REQUIRES,
+  setup_requires=SETUP_REQUIRES,
+  cmdclass=COMMAND_CLASS,
+  tests_require=TESTS_REQUIRE,
+  test_suite=TEST_SUITE,
+  test_loader=TEST_LOADER,
+  test_runner=TEST_RUNNER,
+)

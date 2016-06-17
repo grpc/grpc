@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/iomgr/fd_posix.h"
+#include "src/core/lib/iomgr/ev_posix.h"
 
 #include <ctype.h>
 #include <errno.h>
@@ -50,7 +50,9 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/iomgr/pollset_posix.h"
+#include "src/core/lib/iomgr/ev_posix.h"
+#include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "test/core/util/test_config.h"
 
 static gpr_mu *g_mu;
@@ -67,17 +69,15 @@ static void create_test_socket(int port, int *socket_fd,
                                struct sockaddr_in *sin) {
   int fd;
   int one = 1;
-  int buf_size = BUF_SIZE;
+  int buffer_size_bytes = BUF_SIZE;
   int flags;
 
   fd = socket(AF_INET, SOCK_STREAM, 0);
   setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
   /* Reset the size of socket send buffer to the minimal value to facilitate
      buffer filling up and triggering notify_on_write  */
-  GPR_ASSERT(
-      setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &buf_size, sizeof(buf_size)) != -1);
-  GPR_ASSERT(
-      setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &buf_size, sizeof(buf_size)) != -1);
+  GPR_ASSERT(grpc_set_socket_sndbuf(fd, buffer_size_bytes));
+  GPR_ASSERT(grpc_set_socket_rcvbuf(fd, buffer_size_bytes));
   /* Make fd non-blocking */
   flags = fcntl(fd, F_GETFL, 0);
   GPR_ASSERT(fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0);
@@ -134,7 +134,7 @@ static void session_shutdown_cb(grpc_exec_ctx *exec_ctx, void *arg, /*session */
 static void session_read_cb(grpc_exec_ctx *exec_ctx, void *arg, /*session */
                             bool success) {
   session *se = arg;
-  int fd = se->em_fd->fd;
+  int fd = grpc_fd_wrapped_fd(se->em_fd);
 
   ssize_t read_once = 0;
   ssize_t read_total = 0;
@@ -204,7 +204,7 @@ static void listen_cb(grpc_exec_ctx *exec_ctx, void *arg, /*=sv_arg*/
     return;
   }
 
-  fd = accept(listen_em_fd->fd, (struct sockaddr *)&ss, &slen);
+  fd = accept(grpc_fd_wrapped_fd(listen_em_fd), (struct sockaddr *)&ss, &slen);
   GPR_ASSERT(fd >= 0);
   GPR_ASSERT(fd < FD_SETSIZE);
   flags = fcntl(fd, F_GETFL, 0);
@@ -306,7 +306,7 @@ static void client_session_shutdown_cb(grpc_exec_ctx *exec_ctx,
 static void client_session_write(grpc_exec_ctx *exec_ctx, void *arg, /*client */
                                  bool success) {
   client *cl = arg;
-  int fd = cl->em_fd->fd;
+  int fd = grpc_fd_wrapped_fd(cl->em_fd);
   ssize_t write_once = 0;
 
   if (!success) {
@@ -398,7 +398,7 @@ static void test_grpc_fd(void) {
   client_wait_and_shutdown(&cl);
   server_wait_and_shutdown(&sv);
   GPR_ASSERT(sv.read_bytes_total == cl.write_bytes_total);
-  gpr_log(GPR_INFO, "Total read bytes %d", sv.read_bytes_total);
+  gpr_log(GPR_INFO, "Total read bytes %" PRIdPTR, sv.read_bytes_total);
 }
 
 typedef struct fd_change_data {

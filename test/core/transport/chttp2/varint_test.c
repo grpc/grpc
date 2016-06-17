@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/transport/chttp2/varint.h"
+#include "src/core/ext/transport/chttp2/transport/varint.h"
 
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>

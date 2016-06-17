@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,11 +32,11 @@
  */
 
 #include <ruby/ruby.h>
+
 #include "rb_grpc_imports.generated.h"
 #include "rb_grpc.h"
 
 #include <math.h>
-#include <ruby/ruby.h>
 #include <ruby/vm.h>
 #include <sys/time.h>
 
@@ -318,7 +318,7 @@ void Init_grpc_c() {
   grpc_rb_mGrpcCore = rb_define_module_under(grpc_rb_mGRPC, "Core");
   grpc_rb_sNewServerRpc =
       rb_struct_define("NewServerRpc", "method", "host",
-                       "deadline", "metadata", "call", NULL);
+                       "deadline", "metadata", "call", "cq", NULL);
   grpc_rb_sStatus =
       rb_struct_define("Status", "code", "details", "metadata", NULL);
   sym_code = ID2SYM(rb_intern("code"));

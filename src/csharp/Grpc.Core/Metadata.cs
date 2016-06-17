@@ -1,5 +1,5 @@
 #region Copyright notice and license
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -95,6 +95,7 @@ namespace Grpc.Core
 
         public void Insert(int index, Metadata.Entry item)
         {
+            GrpcPreconditions.CheckNotNull(item);
             CheckWriteable();
             entries.Insert(index, item);
         }
@@ -114,6 +115,7 @@ namespace Grpc.Core
 
             set
             {
+                GrpcPreconditions.CheckNotNull(value);
                 CheckWriteable();
                 entries[index] = value;
             }
@@ -121,6 +123,7 @@ namespace Grpc.Core
 
         public void Add(Metadata.Entry item)
         {
+            GrpcPreconditions.CheckNotNull(item);
             CheckWriteable();
             entries.Add(item);
         }
@@ -187,7 +190,7 @@ namespace Grpc.Core
         /// <summary>
         /// Metadata entry
         /// </summary>
-        public struct Entry
+        public class Entry
         {
             private static readonly Encoding Encoding = Encoding.ASCII;
             private static readonly Regex ValidKeyRegex = new Regex("^[a-z0-9_-]+$");
@@ -323,7 +326,7 @@ namespace Grpc.Core
 
             private static string NormalizeKey(string key)
             {
-                var normalized = GrpcPreconditions.CheckNotNull(key, "key").ToLower(CultureInfo.InvariantCulture);
+                var normalized = GrpcPreconditions.CheckNotNull(key, "key").ToLowerInvariant();
                 GrpcPreconditions.CheckArgument(ValidKeyRegex.IsMatch(normalized), 
                     "Metadata entry key not valid. Keys can only contain lowercase alphanumeric characters, underscores and hyphens.");
                 return normalized;

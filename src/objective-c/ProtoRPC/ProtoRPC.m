@@ -70,7 +70,7 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
 
 // Designated initializer
 - (instancetype)initWithHost:(NSString *)host
-                      method:(ProtoMethod *)method
+                      method:(GRPCProtoMethod *)method
               requestsWriter:(GRXWriter *)requestsWriter
                responseClass:(Class)responseClass
           responsesWriteable:(id<GRXWriteable>)responsesWriteable {
@@ -116,4 +116,8 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
   // Break retain cycles.
   _responseWriteable = nil;
 }
+@end
+
+@implementation GRPCProtoCall
+
 @end

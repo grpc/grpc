@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/support/string.h"
+#include "src/core/lib/support/string.h"
 
 #include <limits.h>
 #include <stddef.h>
@@ -156,7 +156,7 @@ static void test_asprintf(void) {
   LOG_TEST_NAME("test_asprintf");
 
   /* Print an empty string. */
-  GPR_ASSERT(gpr_asprintf(&buf, "") == 0);
+  GPR_ASSERT(gpr_asprintf(&buf, "%s", "") == 0);
   GPR_ASSERT(buf[0] == '\0');
   gpr_free(buf);
 
@@ -334,6 +334,38 @@ static void test_int64toa() {
   GPR_ASSERT(0 == strcmp("-9223372036854775808", buf));
 }
 
+static void test_leftpad() {
+  char *padded;
+
+  padded = gpr_leftpad("foo", ' ', 5);
+  GPR_ASSERT(0 == strcmp("  foo", padded));
+  gpr_free(padded);
+
+  padded = gpr_leftpad("foo", ' ', 4);
+  GPR_ASSERT(0 == strcmp(" foo", padded));
+  gpr_free(padded);
+
+  padded = gpr_leftpad("foo", ' ', 3);
+  GPR_ASSERT(0 == strcmp("foo", padded));
+  gpr_free(padded);
+
+  padded = gpr_leftpad("foo", ' ', 2);
+  GPR_ASSERT(0 == strcmp("foo", padded));
+  gpr_free(padded);
+
+  padded = gpr_leftpad("foo", ' ', 1);
+  GPR_ASSERT(0 == strcmp("foo", padded));
+  gpr_free(padded);
+
+  padded = gpr_leftpad("foo", ' ', 0);
+  GPR_ASSERT(0 == strcmp("foo", padded));
+  gpr_free(padded);
+
+  padded = gpr_leftpad("foo", '0', 5);
+  GPR_ASSERT(0 == strcmp("00foo", padded));
+  gpr_free(padded);
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_strdup();
@@ -346,5 +378,6 @@ int main(int argc, char **argv) {
   test_strsplit();
   test_ltoa();
   test_int64toa();
+  test_leftpad();
   return 0;
 }

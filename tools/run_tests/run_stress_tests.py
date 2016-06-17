@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -195,7 +195,7 @@ def build_interop_stress_image_jobspec(language, tag=None):
     tag = 'grpc_interop_stress_%s:%s' % (language.safename, uuid.uuid4())
   env = {'INTEROP_IMAGE': tag,
          'BASE_NAME': 'grpc_interop_stress_%s' % language.safename}
-  build_job = jobset.JobSpec(cmdline=['tools/jenkins/build_interop_stress_image.sh'],
+  build_job = jobset.JobSpec(cmdline=['tools/run_tests/dockerize/build_interop_stress_image.sh'],
                              environ=env,
                              shortname='build_docker_%s' % (language),
                              timeout_seconds=30 * 60)

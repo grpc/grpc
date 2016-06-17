@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,13 +32,15 @@
  */
 
 #include <ruby/ruby.h>
+
+#include <string.h>
+
 #include "rb_grpc_imports.generated.h"
 #include "rb_channel_credentials.h"
 
-#include <ruby/ruby.h>
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "rb_call_credentials.h"
@@ -48,9 +50,11 @@
    grpc_channel_credentials. */
 static VALUE grpc_rb_cChannelCredentials = Qnil;
 
+static char *pem_root_certs = NULL;
+
 /* grpc_rb_channel_credentials wraps a grpc_channel_credentials.  It provides a
- * peer ruby object, 'mark' to minimize copying when a credential is
- * created from ruby. */
+ * mark object that is used to hold references to any objects used to create
+ * the credentials. */
 typedef struct grpc_rb_channel_credentials {
   /* Holder of ruby objects involved in constructing the credentials */
   VALUE mark;
@@ -66,13 +70,8 @@ static void grpc_rb_channel_credentials_free(void *p) {
     return;
   };
   wrapper = (grpc_rb_channel_credentials *)p;
-
-  /* Delete the wrapped object if the mark object is Qnil, which indicates that
-   * no other object is the actual owner. */
-  if (wrapper->wrapped != NULL && wrapper->mark == Qnil) {
-    grpc_channel_credentials_release(wrapper->wrapped);
-    wrapper->wrapped = NULL;
-  }
+  grpc_channel_credentials_release(wrapper->wrapped);
+  wrapper->wrapped = NULL;
 
   xfree(p);
 }
@@ -85,7 +84,6 @@ static void grpc_rb_channel_credentials_mark(void *p) {
   }
   wrapper = (grpc_rb_channel_credentials *)p;
 
-  /* If it's not already cleaned up, mark the mark object */
   if (wrapper->mark != Qnil) {
     rb_gc_mark(wrapper->mark);
   }
@@ -114,7 +112,7 @@ static VALUE grpc_rb_channel_credentials_alloc(VALUE cls) {
 /* Creates a wrapping object for a given channel credentials. This should only
  * be called with grpc_channel_credentials objects that are not already
  * associated with any Ruby object. */
-VALUE grpc_rb_wrap_channel_credentials(grpc_channel_credentials *c) {
+VALUE grpc_rb_wrap_channel_credentials(grpc_channel_credentials *c, VALUE mark) {
   VALUE rb_wrapper;
   grpc_rb_channel_credentials *wrapper;
   if (c == NULL) {
@@ -124,6 +122,7 @@ VALUE grpc_rb_wrap_channel_credentials(grpc_channel_credentials *c) {
   TypedData_Get_Struct(rb_wrapper, grpc_rb_channel_credentials,
                        &grpc_rb_channel_credentials_data_type, wrapper);
   wrapper->wrapped = c;
+  wrapper->mark = mark;
   return rb_wrapper;
 }
 
@@ -222,11 +221,15 @@ static VALUE grpc_rb_channel_credentials_compose(int argc, VALUE *argv,
                                                  VALUE self) {
   grpc_channel_credentials *creds;
   grpc_call_credentials *other;
+  VALUE mark;
   if (argc == 0) {
     return self;
   }
+  mark = rb_ary_new();
+  rb_ary_push(mark, self);
   creds = grpc_rb_get_wrapped_channel_credentials(self);
   for (int i = 0; i < argc; i++) {
+    rb_ary_push(mark, argv[i]);
     other = grpc_rb_get_wrapped_call_credentials(argv[i]);
     creds = grpc_composite_channel_credentials_create(creds, other, NULL);
     if (creds == NULL) {
@@ -234,7 +237,26 @@ static VALUE grpc_rb_channel_credentials_compose(int argc, VALUE *argv,
                "Failed to compose channel and call credentials");
     }
   }
-  return grpc_rb_wrap_channel_credentials(creds);
+  return grpc_rb_wrap_channel_credentials(creds, mark);
+}
+
+static grpc_ssl_roots_override_result get_ssl_roots_override(
+    char **pem_root_certs_ptr) {
+  *pem_root_certs_ptr = pem_root_certs;
+  if (pem_root_certs == NULL) {
+    return GRPC_SSL_ROOTS_OVERRIDE_FAIL;
+  } else {
+    return GRPC_SSL_ROOTS_OVERRIDE_OK;
+  }
+}
+
+static VALUE grpc_rb_set_default_roots_pem(VALUE self, VALUE roots) {
+  char *roots_ptr = StringValueCStr(roots);
+  size_t length = strlen(roots_ptr);
+  (void)self;
+  pem_root_certs = gpr_malloc((length + 1) * sizeof(char));
+  memcpy(pem_root_certs, roots_ptr, length + 1);
+  return Qnil;
 }
 
 void Init_grpc_channel_credentials() {
@@ -252,6 +274,11 @@ void Init_grpc_channel_credentials() {
                    grpc_rb_channel_credentials_init_copy, 1);
   rb_define_method(grpc_rb_cChannelCredentials, "compose",
                    grpc_rb_channel_credentials_compose, -1);
+  rb_define_module_function(grpc_rb_cChannelCredentials,
+                            "set_default_roots_pem",
+                            grpc_rb_set_default_roots_pem, 1);
+
+  grpc_set_ssl_roots_override_callback(get_ssl_roots_override);
 
   id_pem_cert_chain = rb_intern("__pem_cert_chain");
   id_pem_private_key = rb_intern("__pem_private_key");

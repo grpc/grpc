@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@ namespace Grpc.Core.Internal
 {
     internal interface IServerCallHandler
     {
-        Task HandleCall(ServerRpcNew newRpc, GrpcEnvironment environment);
+        Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq);
     }
 
     internal class UnaryServerCallHandler<TRequest, TResponse> : IServerCallHandler
@@ -62,42 +62,45 @@ namespace Grpc.Core.Internal
             this.handler = handler;
         }
 
-        public async Task HandleCall(ServerRpcNew newRpc, GrpcEnvironment environment)
+        public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
                 method.ResponseMarshaller.Serializer,
                 method.RequestMarshaller.Deserializer,
-                environment, newRpc.Server);
+                newRpc.Server);
 
-            asyncCall.Initialize(newRpc.Call);
+            asyncCall.Initialize(newRpc.Call, cq);
             var finishedTask = asyncCall.ServerSideCallAsync();
             var requestStream = new ServerRequestStream<TRequest, TResponse>(asyncCall);
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
+            Tuple<TResponse,WriteFlags> responseTuple = null;
             var context = HandlerUtils.NewContext(newRpc, asyncCall.Peer, responseStream, asyncCall.CancellationToken);
             try
             {
                 GrpcPreconditions.CheckArgument(await requestStream.MoveNext().ConfigureAwait(false));
                 var request = requestStream.Current;
-                // TODO(jtattermusch): we need to read the full stream so that native callhandle gets deallocated.
-                GrpcPreconditions.CheckArgument(!await requestStream.MoveNext().ConfigureAwait(false));
-                var result = await handler(request, context).ConfigureAwait(false);
+                var response = await handler(request, context).ConfigureAwait(false);
                 status = context.Status;
-                await responseStream.WriteAsync(result).ConfigureAwait(false);
+                responseTuple = Tuple.Create(response, HandlerUtils.GetWriteFlags(context.WriteOptions));
             } 
             catch (Exception e)
             {
-                Logger.Error(e, "Exception occured in handler.");
+                if (!(e is RpcException))
+                {
+                    Logger.Warning(e, "Exception occured in handler.");
+                }
                 status = HandlerUtils.StatusFromException(e);
             }
             try
             {
-                await responseStream.WriteStatusAsync(status, context.ResponseTrailers).ConfigureAwait(false);
+                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseTuple).ConfigureAwait(false);
             }
-            catch (OperationCanceledException)
+            catch (Exception)
             {
-                // Call has been already cancelled.
+                asyncCall.Cancel();
+                throw;
             }
             await finishedTask.ConfigureAwait(false);
         }
@@ -118,14 +121,14 @@ namespace Grpc.Core.Internal
             this.handler = handler;
         }
 
-        public async Task HandleCall(ServerRpcNew newRpc, GrpcEnvironment environment)
+        public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
                 method.ResponseMarshaller.Serializer,
                 method.RequestMarshaller.Deserializer,
-                environment, newRpc.Server);
+                newRpc.Server);
 
-            asyncCall.Initialize(newRpc.Call);
+            asyncCall.Initialize(newRpc.Call, cq);
             var finishedTask = asyncCall.ServerSideCallAsync();
             var requestStream = new ServerRequestStream<TRequest, TResponse>(asyncCall);
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
@@ -136,24 +139,26 @@ namespace Grpc.Core.Internal
             {
                 GrpcPreconditions.CheckArgument(await requestStream.MoveNext().ConfigureAwait(false));
                 var request = requestStream.Current;
-                // TODO(jtattermusch): we need to read the full stream so that native callhandle gets deallocated.
-                GrpcPreconditions.CheckArgument(!await requestStream.MoveNext().ConfigureAwait(false));
                 await handler(request, responseStream, context).ConfigureAwait(false);
                 status = context.Status;
             }
             catch (Exception e)
             {
-                Logger.Error(e, "Exception occured in handler.");
+                if (!(e is RpcException))
+                {
+                    Logger.Warning(e, "Exception occured in handler.");
+                }
                 status = HandlerUtils.StatusFromException(e);
             }
 
             try
             {
-                await responseStream.WriteStatusAsync(status, context.ResponseTrailers).ConfigureAwait(false);
+                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, null).ConfigureAwait(false);
             }
-            catch (OperationCanceledException)
+            catch (Exception)
             {
-                // Call has been already cancelled.
+                asyncCall.Cancel();
+                throw;
             }
             await finishedTask.ConfigureAwait(false);
         }
@@ -174,46 +179,44 @@ namespace Grpc.Core.Internal
             this.handler = handler;
         }
 
-        public async Task HandleCall(ServerRpcNew newRpc, GrpcEnvironment environment)
+        public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
                 method.ResponseMarshaller.Serializer,
                 method.RequestMarshaller.Deserializer,
-                environment, newRpc.Server);
+                newRpc.Server);
 
-            asyncCall.Initialize(newRpc.Call);
+            asyncCall.Initialize(newRpc.Call, cq);
             var finishedTask = asyncCall.ServerSideCallAsync();
             var requestStream = new ServerRequestStream<TRequest, TResponse>(asyncCall);
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
+            Tuple<TResponse,WriteFlags> responseTuple = null;
             var context = HandlerUtils.NewContext(newRpc, asyncCall.Peer, responseStream, asyncCall.CancellationToken);
             try
             {
-                var result = await handler(requestStream, context).ConfigureAwait(false);
+                var response = await handler(requestStream, context).ConfigureAwait(false);
                 status = context.Status;
-                try
-                {
-                    await responseStream.WriteAsync(result).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException)
-                {
-                    status = Status.DefaultCancelled;
-                }
+                responseTuple = Tuple.Create(response, HandlerUtils.GetWriteFlags(context.WriteOptions));
             }
             catch (Exception e)
             {
-                Logger.Error(e, "Exception occured in handler.");
+                if (!(e is RpcException))
+                {
+                    Logger.Warning(e, "Exception occured in handler.");
+                }
                 status = HandlerUtils.StatusFromException(e);
             }
 
             try
             {
-                await responseStream.WriteStatusAsync(status, context.ResponseTrailers).ConfigureAwait(false);
+                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseTuple).ConfigureAwait(false);
             }
-            catch (OperationCanceledException)
+            catch (Exception)
             {
-                // Call has been already cancelled.
+                asyncCall.Cancel();
+                throw;
             }
             await finishedTask.ConfigureAwait(false);
         }
@@ -234,14 +237,14 @@ namespace Grpc.Core.Internal
             this.handler = handler;
         }
 
-        public async Task HandleCall(ServerRpcNew newRpc, GrpcEnvironment environment)
+        public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
                 method.ResponseMarshaller.Serializer,
                 method.RequestMarshaller.Deserializer,
-                environment, newRpc.Server);
+                newRpc.Server);
 
-            asyncCall.Initialize(newRpc.Call);
+            asyncCall.Initialize(newRpc.Call, cq);
             var finishedTask = asyncCall.ServerSideCallAsync();
             var requestStream = new ServerRequestStream<TRequest, TResponse>(asyncCall);
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
@@ -255,16 +258,20 @@ namespace Grpc.Core.Internal
             }
             catch (Exception e)
             {
-                Logger.Error(e, "Exception occured in handler.");
+                if (!(e is RpcException))
+                {
+                    Logger.Warning(e, "Exception occured in handler.");
+                }
                 status = HandlerUtils.StatusFromException(e);
             }
             try
             {
-                await responseStream.WriteStatusAsync(status, context.ResponseTrailers).ConfigureAwait(false);
+                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, null).ConfigureAwait(false);
             }
-            catch (OperationCanceledException)
+            catch (Exception)
             {
-                // Call has been already cancelled.
+                asyncCall.Cancel();
+                throw;
             }
             await finishedTask.ConfigureAwait(false);
         }
@@ -274,17 +281,15 @@ namespace Grpc.Core.Internal
     {
         public static readonly NoSuchMethodCallHandler Instance = new NoSuchMethodCallHandler();
 
-        public async Task HandleCall(ServerRpcNew newRpc, GrpcEnvironment environment)
+        public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             // We don't care about the payload type here.
             var asyncCall = new AsyncCallServer<byte[], byte[]>(
-                (payload) => payload, (payload) => payload, environment, newRpc.Server);
+                (payload) => payload, (payload) => payload, newRpc.Server);
             
-            asyncCall.Initialize(newRpc.Call);
+            asyncCall.Initialize(newRpc.Call, cq);
             var finishedTask = asyncCall.ServerSideCallAsync();
-            var responseStream = new ServerResponseStream<byte[], byte[]>(asyncCall);
-
-            await responseStream.WriteStatusAsync(new Status(StatusCode.Unimplemented, ""), Metadata.Empty).ConfigureAwait(false);
+            await asyncCall.SendStatusFromServerAsync(new Status(StatusCode.Unimplemented, ""), Metadata.Empty, null).ConfigureAwait(false);
             await finishedTask.ConfigureAwait(false);
         }
     }
@@ -300,15 +305,19 @@ namespace Grpc.Core.Internal
                 return rpcException.Status;
             }
 
-            // TODO(jtattermusch): what is the right status code here?
             return new Status(StatusCode.Unknown, "Exception was thrown by handler.");
+        }
+
+        public static WriteFlags GetWriteFlags(WriteOptions writeOptions)
+        {
+            return writeOptions != null ? writeOptions.Flags : default(WriteFlags);
         }
 
         public static ServerCallContext NewContext<TRequest, TResponse>(ServerRpcNew newRpc, string peer, ServerResponseStream<TRequest, TResponse> serverResponseStream, CancellationToken cancellationToken)
             where TRequest : class
             where TResponse : class
         {
-            DateTime realtimeDeadline = newRpc.Deadline.ToClockType(GPRClockType.Realtime).ToDateTime();
+            DateTime realtimeDeadline = newRpc.Deadline.ToClockType(ClockType.Realtime).ToDateTime();
 
             return new ServerCallContext(newRpc.Call, newRpc.Method, newRpc.Host, peer, realtimeDeadline,
                 newRpc.RequestMetadata, cancellationToken, serverResponseStream.WriteResponseHeadersAsync, serverResponseStream);

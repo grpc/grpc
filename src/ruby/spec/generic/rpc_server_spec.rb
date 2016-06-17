@@ -99,7 +99,7 @@ class FailingService
   end
 
   def an_rpc(_req, _call)
-    fail GRPC::BadStatus.new(@code, @details, **@md)
+    fail GRPC::BadStatus.new(@code, @details, @md)
   end
 end
 
@@ -137,24 +137,11 @@ describe GRPC::RpcServer do
     @noop = proc { |x| x }
 
     @server_queue = GRPC::Core::CompletionQueue.new
-    server_host = '0.0.0.0:0'
-    @server = GRPC::Core::Server.new(@server_queue, nil)
-    server_port = @server.add_http2_port(server_host, :this_port_is_insecure)
-    @host = "localhost:#{server_port}"
-    @ch = GRPC::Core::Channel.new(@host, nil, :this_channel_is_insecure)
   end
 
   describe '#new' do
     it 'can be created with just some args' do
-      opts = { a_channel_arg: 'an_arg' }
-      blk = proc do
-        RpcServer.new(**opts)
-      end
-      expect(&blk).not_to raise_error
-    end
-
-    it 'can be created with a default deadline' do
-      opts = { a_channel_arg: 'an_arg', deadline: 5 }
+      opts = { server_args: { a_channel_arg: 'an_arg' } }
       blk = proc do
         RpcServer.new(**opts)
       end
@@ -163,7 +150,7 @@ describe GRPC::RpcServer do
 
     it 'can be created with a completion queue override' do
       opts = {
-        a_channel_arg: 'an_arg',
+        server_args: { a_channel_arg: 'an_arg' },
         completion_queue_override: @server_queue
       }
       blk = proc do
@@ -175,7 +162,7 @@ describe GRPC::RpcServer do
     it 'cannot be created with a bad completion queue override' do
       blk = proc do
         opts = {
-          a_channel_arg: 'an_arg',
+          server_args: { a_channel_arg: 'an_arg' },
           completion_queue_override: Object.new
         }
         RpcServer.new(**opts)
@@ -186,27 +173,8 @@ describe GRPC::RpcServer do
     it 'cannot be created with invalid ServerCredentials' do
       blk = proc do
         opts = {
-          a_channel_arg: 'an_arg',
+          server_args: { a_channel_arg: 'an_arg' },
           creds: Object.new
-        }
-        RpcServer.new(**opts)
-      end
-      expect(&blk).to raise_error
-    end
-
-    it 'can be created with a server override' do
-      opts = { a_channel_arg: 'an_arg', server_override: @server }
-      blk = proc do
-        RpcServer.new(**opts)
-      end
-      expect(&blk).not_to raise_error
-    end
-
-    it 'cannot be created with a bad server override' do
-      blk = proc do
-        opts = {
-          a_channel_arg: 'an_arg',
-          server_override: Object.new
         }
         RpcServer.new(**opts)
       end
@@ -216,20 +184,12 @@ describe GRPC::RpcServer do
 
   describe '#stopped?' do
     before(:each) do
-      opts = { a_channel_arg: 'an_arg', poll_period: 1.5 }
+      opts = { server_args: { a_channel_arg: 'an_arg' }, poll_period: 1.5 }
       @srv = RpcServer.new(**opts)
-    end
-
-    after(:each) do
-      @srv.stop
+      @srv.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
     end
 
     it 'starts out false' do
-      expect(@srv.stopped?).to be(false)
-    end
-
-    it 'stays false after a #stop is called before #run' do
-      @srv.stop
       expect(@srv.stopped?).to be(false)
     end
 
@@ -247,37 +207,37 @@ describe GRPC::RpcServer do
       t = Thread.new { @srv.run }
       @srv.wait_till_running
       @srv.stop
-      expect(@srv.stopped?).to be(true)
       t.join
+      expect(@srv.stopped?).to be(true)
     end
   end
 
   describe '#running?' do
     it 'starts out false' do
-      opts = { a_channel_arg: 'an_arg', server_override: @server }
+      opts = {
+        server_args: { a_channel_arg: 'an_arg' }
+      }
       r = RpcServer.new(**opts)
       expect(r.running?).to be(false)
     end
 
     it 'is false if run is called with no services registered', server: true do
       opts = {
-        a_channel_arg: 'an_arg',
-        poll_period: 2,
-        server_override: @server
+        server_args: { a_channel_arg: 'an_arg' },
+        poll_period: 2
       }
       r = RpcServer.new(**opts)
-      r.run
-      expect(r.running?).to be(false)
-      r.stop
+      r.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
+      expect { r.run }.to raise_error(RuntimeError)
     end
 
     it 'is true after run is called with a registered service' do
       opts = {
-        a_channel_arg: 'an_arg',
-        poll_period: 2.5,
-        server_override: @server
+        server_args: { a_channel_arg: 'an_arg' },
+        poll_period: 2.5
       }
       r = RpcServer.new(**opts)
+      r.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
       r.handle(EchoService)
       t = Thread.new { r.run }
       r.wait_till_running
@@ -289,12 +249,9 @@ describe GRPC::RpcServer do
 
   describe '#handle' do
     before(:each) do
-      @opts = { a_channel_arg: 'an_arg', poll_period: 1 }
+      @opts = { server_args: { a_channel_arg: 'an_arg' }, poll_period: 1 }
       @srv = RpcServer.new(**@opts)
-    end
-
-    after(:each) do
-      @srv.stop
+      @srv.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
     end
 
     it 'raises if #run has already been called' do
@@ -323,10 +280,6 @@ describe GRPC::RpcServer do
       expect { @srv.handle(EmptyService) }.to raise_error
     end
 
-    it 'raises if the service does not define its rpc methods' do
-      expect { @srv.handle(NoRpcImplementation) }.to raise_error
-    end
-
     it 'raises if a handler method is already registered' do
       @srv.handle(EchoService)
       expect { r.handle(EchoService) }.to raise_error
@@ -341,11 +294,13 @@ describe GRPC::RpcServer do
     context 'with no connect_metadata' do
       before(:each) do
         server_opts = {
-          server_override: @server,
           completion_queue_override: @server_queue,
           poll_period: 1
         }
         @srv = RpcServer.new(**server_opts)
+        server_port = @srv.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
+        @host = "localhost:#{server_port}"
+        @ch = GRPC::Core::Channel.new(@host, nil, :this_channel_is_insecure)
       end
 
       it 'should return NOT_FOUND status on unknown methods', server: true do
@@ -360,6 +315,25 @@ describe GRPC::RpcServer do
           stub.request_response('/unknown', req, marshal, unmarshal)
         end
         expect(&blk).to raise_error GRPC::BadStatus
+        @srv.stop
+        t.join
+      end
+
+      it 'should return UNIMPLEMENTED on unimplemented methods', server: true do
+        @srv.handle(NoRpcImplementation)
+        t = Thread.new { @srv.run }
+        @srv.wait_till_running
+        req = EchoMsg.new
+        blk = proc do
+          cq = GRPC::Core::CompletionQueue.new
+          stub = GRPC::ClientStub.new(@host, cq, :this_channel_is_insecure,
+                                      **client_opts)
+          stub.request_response('/an_rpc', req, marshal, unmarshal)
+        end
+        expect(&blk).to raise_error do |error|
+          expect(error).to be_a(GRPC::BadStatus)
+          expect(error.code).to be(GRPC::Core::StatusCodes::UNIMPLEMENTED)
+        end
         @srv.stop
         t.join
       end
@@ -383,7 +357,8 @@ describe GRPC::RpcServer do
         @srv.wait_till_running
         req = EchoMsg.new
         stub = EchoStub.new(@host, :this_channel_is_insecure, **client_opts)
-        expect(stub.an_rpc(req, k1: 'v1', k2: 'v2')).to be_a(EchoMsg)
+        expect(stub.an_rpc(req, metadata: { k1: 'v1', k2: 'v2' }))
+          .to be_a(EchoMsg)
         wanted_md = [{ 'k1' => 'v1', 'k2' => 'v2' }]
         check_md(wanted_md, service.received_md)
         @srv.stop
@@ -397,8 +372,11 @@ describe GRPC::RpcServer do
         @srv.wait_till_running
         req = EchoMsg.new
         stub = SlowStub.new(@host, :this_channel_is_insecure, **client_opts)
-        timeout = service.delay + 1.0 # wait for long enough
-        resp = stub.an_rpc(req, timeout: timeout, k1: 'v1', k2: 'v2')
+        timeout = service.delay + 1.0
+        deadline = GRPC::Core::TimeConsts.from_relative_time(timeout)
+        resp = stub.an_rpc(req,
+                           deadline: deadline,
+                           metadata: { k1: 'v1', k2: 'v2' })
         expect(resp).to be_a(EchoMsg)
         wanted_md = [{ 'k1' => 'v1', 'k2' => 'v2' }]
         check_md(wanted_md, service.received_md)
@@ -413,7 +391,7 @@ describe GRPC::RpcServer do
         @srv.wait_till_running
         req = EchoMsg.new
         stub = SlowStub.new(@host, :this_channel_is_insecure, **client_opts)
-        op = stub.an_rpc(req, k1: 'v1', k2: 'v2', return_op: true)
+        op = stub.an_rpc(req, metadata: { k1: 'v1', k2: 'v2' }, return_op: true)
         Thread.new do  # cancel the call
           sleep 0.1
           op.cancel
@@ -441,10 +419,9 @@ describe GRPC::RpcServer do
         threads.each(&:join)
       end
 
-      it 'should return UNAVAILABLE on too many jobs', server: true do
+      it 'should return RESOURCE_EXHAUSTED on too many jobs', server: true do
         opts = {
-          a_channel_arg: 'an_arg',
-          server_override: @server,
+          server_args: { a_channel_arg: 'an_arg' },
           completion_queue_override: @server_queue,
           pool_size: 1,
           poll_period: 1,
@@ -452,6 +429,8 @@ describe GRPC::RpcServer do
         }
         alt_srv = RpcServer.new(**opts)
         alt_srv.handle(SlowService)
+        alt_port = alt_srv.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
+        alt_host = "0.0.0.0:#{alt_port}"
         t = Thread.new { alt_srv.run }
         alt_srv.wait_till_running
         req = EchoMsg.new
@@ -460,11 +439,12 @@ describe GRPC::RpcServer do
         one_failed_as_unavailable = false
         n.times do
           threads << Thread.new do
-            stub = SlowStub.new(@host, :this_channel_is_insecure, **client_opts)
+            stub = SlowStub.new(alt_host, :this_channel_is_insecure)
             begin
               stub.an_rpc(req)
             rescue GRPC::BadStatus => e
-              one_failed_as_unavailable = e.code == StatusCodes::UNAVAILABLE
+              one_failed_as_unavailable =
+                e.code == StatusCodes::RESOURCE_EXHAUSTED
             end
           end
         end
@@ -486,12 +466,13 @@ describe GRPC::RpcServer do
       end
       before(:each) do
         server_opts = {
-          server_override: @server,
           completion_queue_override: @server_queue,
           poll_period: 1,
           connect_md_proc: test_md_proc
         }
         @srv = RpcServer.new(**server_opts)
+        alt_port = @srv.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
+        @alt_host = "0.0.0.0:#{alt_port}"
       end
 
       it 'should send connect metadata to the client', server: true do
@@ -500,8 +481,8 @@ describe GRPC::RpcServer do
         t = Thread.new { @srv.run }
         @srv.wait_till_running
         req = EchoMsg.new
-        stub = EchoStub.new(@host, :this_channel_is_insecure, **client_opts)
-        op = stub.an_rpc(req, k1: 'v1', k2: 'v2', return_op: true)
+        stub = EchoStub.new(@alt_host, :this_channel_is_insecure)
+        op = stub.an_rpc(req, metadata: { k1: 'v1', k2: 'v2' }, return_op: true)
         expect(op.metadata).to be nil
         expect(op.execute).to be_a(EchoMsg)
         wanted_md = {
@@ -521,15 +502,12 @@ describe GRPC::RpcServer do
     context 'with trailing metadata' do
       before(:each) do
         server_opts = {
-          server_override: @server,
           completion_queue_override: @server_queue,
           poll_period: 1
         }
         @srv = RpcServer.new(**server_opts)
-      end
-
-      after(:each) do
-        @srv.stop
+        alt_port = @srv.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
+        @alt_host = "0.0.0.0:#{alt_port}"
       end
 
       it 'should be added to BadStatus when requests fail', server: true do
@@ -538,7 +516,7 @@ describe GRPC::RpcServer do
         t = Thread.new { @srv.run }
         @srv.wait_till_running
         req = EchoMsg.new
-        stub = FailingStub.new(@host, :this_channel_is_insecure, **client_opts)
+        stub = FailingStub.new(@alt_host, :this_channel_is_insecure)
         blk = proc { stub.an_rpc(req) }
 
         # confirm it raise the expected error
@@ -563,8 +541,8 @@ describe GRPC::RpcServer do
         t = Thread.new { @srv.run }
         @srv.wait_till_running
         req = EchoMsg.new
-        stub = EchoStub.new(@host, :this_channel_is_insecure, **client_opts)
-        op = stub.an_rpc(req, k1: 'v1', k2: 'v2', return_op: true)
+        stub = EchoStub.new(@alt_host, :this_channel_is_insecure)
+        op = stub.an_rpc(req, return_op: true, metadata: { k1: 'v1', k2: 'v2' })
         expect(op.metadata).to be nil
         expect(op.execute).to be_a(EchoMsg)
         expect(op.metadata).to eq(wanted_trailers)

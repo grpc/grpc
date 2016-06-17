@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,6 +40,8 @@
 
 var fs = require('fs');
 var path = require('path');
+
+var genericService = require('./generic_service');
 
 var grpc = require('../../../');
 var serviceProto = grpc.load({
@@ -84,14 +86,28 @@ function streamingCall(call) {
   });
 }
 
+function makeStreamingGenericCall(response_size) {
+  var response = zeroBuffer(response_size);
+  return function streamingGenericCall(call) {
+    call.on('data', function(value) {
+      call.write(response);
+    });
+    call.on('end', function() {
+      call.end();
+    });
+  };
+}
+
 /**
  * BenchmarkServer class. Constructed based on parameters from the driver and
  * stores statistics.
  * @param {string} host The host to serve on
  * @param {number} port The port to listen to
- * @param {tls} Indicates whether TLS should be used
+ * @param {boolean} tls Indicates whether TLS should be used
+ * @param {boolean} generic Indicates whether to use the generic service
+ * @param {number=} response_size The response size for the generic service
  */
-function BenchmarkServer(host, port, tls) {
+function BenchmarkServer(host, port, tls, generic, response_size) {
   var server_creds;
   var host_override;
   if (tls) {
@@ -109,10 +125,16 @@ function BenchmarkServer(host, port, tls) {
 
   var server = new grpc.Server();
   this.port = server.bind(host + ':' + port, server_creds);
-  server.addProtoService(serviceProto.BenchmarkService.service, {
-    unaryCall: unaryCall,
-    streamingCall: streamingCall
-  });
+  if (generic) {
+    server.addService(genericService, {
+      streamingCall: makeStreamingGenericCall(response_size)
+    });
+  } else {
+    server.addProtoService(serviceProto.BenchmarkService.service, {
+      unaryCall: unaryCall,
+      streamingCall: streamingCall
+    });
+  }
   this.server = server;
 }
 

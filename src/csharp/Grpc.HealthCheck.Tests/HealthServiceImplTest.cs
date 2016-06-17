@@ -1,5 +1,5 @@
 ﻿#region Copyright notice and license
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -50,38 +50,39 @@ namespace Grpc.HealthCheck.Tests
         public void SetStatus()
         {
             var impl = new HealthServiceImpl();
-            impl.SetStatus("", HealthCheckResponse.Types.ServingStatus.SERVING);
-            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.SERVING, GetStatusHelper(impl, ""));
+            impl.SetStatus("", HealthCheckResponse.Types.ServingStatus.Serving);
+            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.Serving, GetStatusHelper(impl, ""));
 
-            impl.SetStatus("", HealthCheckResponse.Types.ServingStatus.NOT_SERVING);
-            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.NOT_SERVING, GetStatusHelper(impl, ""));
+            impl.SetStatus("", HealthCheckResponse.Types.ServingStatus.NotServing);
+            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.NotServing, GetStatusHelper(impl, ""));
 
-            impl.SetStatus("", HealthCheckResponse.Types.ServingStatus.UNKNOWN);
-            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.UNKNOWN, GetStatusHelper(impl, ""));
+            impl.SetStatus("", HealthCheckResponse.Types.ServingStatus.Unknown);
+            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.Unknown, GetStatusHelper(impl, ""));
 
-            impl.SetStatus("grpc.test.TestService", HealthCheckResponse.Types.ServingStatus.SERVING);
-            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.SERVING, GetStatusHelper(impl, "grpc.test.TestService"));
+            impl.SetStatus("grpc.test.TestService", HealthCheckResponse.Types.ServingStatus.Serving);
+            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.Serving, GetStatusHelper(impl, "grpc.test.TestService"));
         }
 
         [Test]
         public void ClearStatus()
         {
             var impl = new HealthServiceImpl();
-            impl.SetStatus("", HealthCheckResponse.Types.ServingStatus.SERVING);
-            impl.SetStatus("grpc.test.TestService", HealthCheckResponse.Types.ServingStatus.UNKNOWN);
+            impl.SetStatus("", HealthCheckResponse.Types.ServingStatus.Serving);
+            impl.SetStatus("grpc.test.TestService", HealthCheckResponse.Types.ServingStatus.Unknown);
 
             impl.ClearStatus("");
 
-            Assert.Throws(Is.TypeOf(typeof(RpcException)).And.Property("Status").Property("StatusCode").EqualTo(StatusCode.NotFound), () => GetStatusHelper(impl, ""));
-            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.UNKNOWN, GetStatusHelper(impl, "grpc.test.TestService"));
+            var ex = Assert.Throws<RpcException>(() => GetStatusHelper(impl, ""));
+            Assert.AreEqual(StatusCode.NotFound, ex.Status.StatusCode);
+            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.Unknown, GetStatusHelper(impl, "grpc.test.TestService"));
         }
 
         [Test]
         public void ClearAll()
         {
             var impl = new HealthServiceImpl();
-            impl.SetStatus("", HealthCheckResponse.Types.ServingStatus.SERVING);
-            impl.SetStatus("grpc.test.TestService", HealthCheckResponse.Types.ServingStatus.UNKNOWN);
+            impl.SetStatus("", HealthCheckResponse.Types.ServingStatus.Serving);
+            impl.SetStatus("grpc.test.TestService", HealthCheckResponse.Types.ServingStatus.Unknown);
 
             impl.ClearAll();
             Assert.Throws(typeof(RpcException), () => GetStatusHelper(impl, ""));
@@ -92,7 +93,7 @@ namespace Grpc.HealthCheck.Tests
         public void NullsRejected()
         {
             var impl = new HealthServiceImpl();
-            Assert.Throws(typeof(ArgumentNullException), () => impl.SetStatus(null, HealthCheckResponse.Types.ServingStatus.SERVING));
+            Assert.Throws(typeof(ArgumentNullException), () => impl.SetStatus(null, HealthCheckResponse.Types.ServingStatus.Serving));
 
             Assert.Throws(typeof(ArgumentNullException), () => impl.ClearStatus(null));
         }

@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,7 +27,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-require 'grpc/grpc'
+require_relative './grpc'
 
 # GRPC contains the General RPC module.
 module GRPC
@@ -40,11 +40,12 @@ module GRPC
 
     # @param code [Numeric] the status code
     # @param details [String] the details of the exception
-    def initialize(code, details = 'unknown cause', **kw)
+    # @param metadata [Hash] the error's metadata
+    def initialize(code, details = 'unknown cause', metadata = {})
       super("#{code}:#{details}")
       @code = code
       @details = details
-      @metadata = kw
+      @metadata = metadata
     end
 
     # Converts the exception to a GRPC::Status for use in the networking

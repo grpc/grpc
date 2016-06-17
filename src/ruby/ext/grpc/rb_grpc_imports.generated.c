@@ -33,7 +33,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WIN32
+#ifdef GPR_WINDOWS
 
 #include "rb_grpc_imports.generated.h"
 
@@ -115,6 +115,7 @@ grpc_server_register_method_type grpc_server_register_method_import;
 grpc_server_request_registered_call_type grpc_server_request_registered_call_import;
 grpc_server_create_type grpc_server_create_import;
 grpc_server_register_completion_queue_type grpc_server_register_completion_queue_import;
+grpc_server_register_non_listening_completion_queue_type grpc_server_register_non_listening_completion_queue_import;
 grpc_server_add_insecure_http2_port_type grpc_server_add_insecure_http2_port_import;
 grpc_server_start_type grpc_server_start_import;
 grpc_server_shutdown_and_notify_type grpc_server_shutdown_and_notify_import;
@@ -124,6 +125,9 @@ grpc_tracer_set_enabled_type grpc_tracer_set_enabled_import;
 grpc_header_key_is_legal_type grpc_header_key_is_legal_import;
 grpc_header_nonbin_value_is_legal_type grpc_header_nonbin_value_is_legal_import;
 grpc_is_binary_header_type grpc_is_binary_header_import;
+grpc_call_error_to_string_type grpc_call_error_to_string_import;
+grpc_insecure_channel_create_from_fd_type grpc_insecure_channel_create_from_fd_import;
+grpc_server_add_insecure_channel_from_fd_type grpc_server_add_insecure_channel_from_fd_import;
 grpc_auth_property_iterator_next_type grpc_auth_property_iterator_next_import;
 grpc_auth_context_property_iterator_type grpc_auth_context_property_iterator_import;
 grpc_auth_context_peer_identity_type grpc_auth_context_peer_identity_import;
@@ -152,6 +156,7 @@ grpc_metadata_credentials_create_from_plugin_type grpc_metadata_credentials_crea
 grpc_secure_channel_create_type grpc_secure_channel_create_import;
 grpc_server_credentials_release_type grpc_server_credentials_release_import;
 grpc_ssl_server_credentials_create_type grpc_ssl_server_credentials_create_import;
+grpc_ssl_server_credentials_create_ex_type grpc_ssl_server_credentials_create_ex_import;
 grpc_server_add_secure_http2_port_type grpc_server_add_secure_http2_port_import;
 grpc_call_set_credentials_type grpc_call_set_credentials_import;
 grpc_server_credentials_set_auth_metadata_processor_type grpc_server_credentials_set_auth_metadata_processor_import;
@@ -174,6 +179,8 @@ grpc_byte_buffer_reader_readall_type grpc_byte_buffer_reader_readall_import;
 grpc_raw_byte_buffer_from_reader_type grpc_raw_byte_buffer_from_reader_import;
 gpr_log_type gpr_log_import;
 gpr_log_message_type gpr_log_message_import;
+gpr_set_log_verbosity_type gpr_set_log_verbosity_import;
+gpr_log_verbosity_init_type gpr_log_verbosity_init_import;
 gpr_set_log_function_type gpr_set_log_function_import;
 gpr_slice_ref_type gpr_slice_ref_import;
 gpr_slice_unref_type gpr_slice_unref_import;
@@ -377,6 +384,7 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_server_request_registered_call_import = (grpc_server_request_registered_call_type) GetProcAddress(library, "grpc_server_request_registered_call");
   grpc_server_create_import = (grpc_server_create_type) GetProcAddress(library, "grpc_server_create");
   grpc_server_register_completion_queue_import = (grpc_server_register_completion_queue_type) GetProcAddress(library, "grpc_server_register_completion_queue");
+  grpc_server_register_non_listening_completion_queue_import = (grpc_server_register_non_listening_completion_queue_type) GetProcAddress(library, "grpc_server_register_non_listening_completion_queue");
   grpc_server_add_insecure_http2_port_import = (grpc_server_add_insecure_http2_port_type) GetProcAddress(library, "grpc_server_add_insecure_http2_port");
   grpc_server_start_import = (grpc_server_start_type) GetProcAddress(library, "grpc_server_start");
   grpc_server_shutdown_and_notify_import = (grpc_server_shutdown_and_notify_type) GetProcAddress(library, "grpc_server_shutdown_and_notify");
@@ -386,6 +394,9 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_header_key_is_legal_import = (grpc_header_key_is_legal_type) GetProcAddress(library, "grpc_header_key_is_legal");
   grpc_header_nonbin_value_is_legal_import = (grpc_header_nonbin_value_is_legal_type) GetProcAddress(library, "grpc_header_nonbin_value_is_legal");
   grpc_is_binary_header_import = (grpc_is_binary_header_type) GetProcAddress(library, "grpc_is_binary_header");
+  grpc_call_error_to_string_import = (grpc_call_error_to_string_type) GetProcAddress(library, "grpc_call_error_to_string");
+  grpc_insecure_channel_create_from_fd_import = (grpc_insecure_channel_create_from_fd_type) GetProcAddress(library, "grpc_insecure_channel_create_from_fd");
+  grpc_server_add_insecure_channel_from_fd_import = (grpc_server_add_insecure_channel_from_fd_type) GetProcAddress(library, "grpc_server_add_insecure_channel_from_fd");
   grpc_auth_property_iterator_next_import = (grpc_auth_property_iterator_next_type) GetProcAddress(library, "grpc_auth_property_iterator_next");
   grpc_auth_context_property_iterator_import = (grpc_auth_context_property_iterator_type) GetProcAddress(library, "grpc_auth_context_property_iterator");
   grpc_auth_context_peer_identity_import = (grpc_auth_context_peer_identity_type) GetProcAddress(library, "grpc_auth_context_peer_identity");
@@ -414,6 +425,7 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_secure_channel_create_import = (grpc_secure_channel_create_type) GetProcAddress(library, "grpc_secure_channel_create");
   grpc_server_credentials_release_import = (grpc_server_credentials_release_type) GetProcAddress(library, "grpc_server_credentials_release");
   grpc_ssl_server_credentials_create_import = (grpc_ssl_server_credentials_create_type) GetProcAddress(library, "grpc_ssl_server_credentials_create");
+  grpc_ssl_server_credentials_create_ex_import = (grpc_ssl_server_credentials_create_ex_type) GetProcAddress(library, "grpc_ssl_server_credentials_create_ex");
   grpc_server_add_secure_http2_port_import = (grpc_server_add_secure_http2_port_type) GetProcAddress(library, "grpc_server_add_secure_http2_port");
   grpc_call_set_credentials_import = (grpc_call_set_credentials_type) GetProcAddress(library, "grpc_call_set_credentials");
   grpc_server_credentials_set_auth_metadata_processor_import = (grpc_server_credentials_set_auth_metadata_processor_type) GetProcAddress(library, "grpc_server_credentials_set_auth_metadata_processor");
@@ -436,6 +448,8 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_raw_byte_buffer_from_reader_import = (grpc_raw_byte_buffer_from_reader_type) GetProcAddress(library, "grpc_raw_byte_buffer_from_reader");
   gpr_log_import = (gpr_log_type) GetProcAddress(library, "gpr_log");
   gpr_log_message_import = (gpr_log_message_type) GetProcAddress(library, "gpr_log_message");
+  gpr_set_log_verbosity_import = (gpr_set_log_verbosity_type) GetProcAddress(library, "gpr_set_log_verbosity");
+  gpr_log_verbosity_init_import = (gpr_log_verbosity_init_type) GetProcAddress(library, "gpr_log_verbosity_init");
   gpr_set_log_function_import = (gpr_set_log_function_type) GetProcAddress(library, "gpr_set_log_function");
   gpr_slice_ref_import = (gpr_slice_ref_type) GetProcAddress(library, "gpr_slice_ref");
   gpr_slice_unref_import = (gpr_slice_unref_type) GetProcAddress(library, "gpr_slice_unref");
@@ -561,4 +575,4 @@ void grpc_rb_load_imports(HMODULE library) {
   gpr_thd_join_import = (gpr_thd_join_type) GetProcAddress(library, "gpr_thd_join");
 }
 
-#endif /* GPR_WIN32 */
+#endif /* GPR_WINDOWS */

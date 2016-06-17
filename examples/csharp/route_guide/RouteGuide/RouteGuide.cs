@@ -37,7 +37,8 @@ namespace Routeguide {
             "b3V0ZWd1aWRlLkZlYXR1cmUiADABEj4KC1JlY29yZFJvdXRlEhEucm91dGVn",
             "dWlkZS5Qb2ludBoYLnJvdXRlZ3VpZGUuUm91dGVTdW1tYXJ5IgAoARI/CglS",
             "b3V0ZUNoYXQSFS5yb3V0ZWd1aWRlLlJvdXRlTm90ZRoVLnJvdXRlZ3VpZGUu",
-            "Um91dGVOb3RlIgAoATABQg8KB2V4LmdycGOiAgNSVEdiBnByb3RvMw=="));
+            "Um91dGVOb3RlIgAoATABQjYKG2lvLmdycGMuZXhhbXBsZXMucm91dGVndWlk",
+            "ZUIPUm91dGVHdWlkZVByb3RvUAGiAgNSVEdiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedCodeInfo(null, new pbr::GeneratedCodeInfo[] {

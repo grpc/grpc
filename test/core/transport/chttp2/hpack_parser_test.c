@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/transport/chttp2/hpack_parser.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 
 #include <stdarg.h>
 

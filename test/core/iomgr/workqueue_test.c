@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/iomgr/workqueue.h"
+#include "src/core/lib/iomgr/workqueue.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -73,8 +73,10 @@ static void test_add_closure(void) {
 
   gpr_mu_lock(g_mu);
   GPR_ASSERT(!done);
-  grpc_pollset_work(&exec_ctx, g_pollset, &worker, gpr_now(deadline.clock_type),
-                    deadline);
+  while (!done) {
+    grpc_pollset_work(&exec_ctx, g_pollset, &worker,
+                      gpr_now(deadline.clock_type), deadline);
+  }
   gpr_mu_unlock(g_mu);
   grpc_exec_ctx_finish(&exec_ctx);
   GPR_ASSERT(done);
@@ -97,9 +99,10 @@ static void test_flush(void) {
   grpc_workqueue_add_to_pollset(&exec_ctx, wq, g_pollset);
 
   gpr_mu_lock(g_mu);
-  GPR_ASSERT(!done);
-  grpc_pollset_work(&exec_ctx, g_pollset, &worker, gpr_now(deadline.clock_type),
-                    deadline);
+  while (!done) {
+    grpc_pollset_work(&exec_ctx, g_pollset, &worker,
+                      gpr_now(deadline.clock_type), deadline);
+  }
   gpr_mu_unlock(g_mu);
   grpc_exec_ctx_finish(&exec_ctx);
   GPR_ASSERT(done);

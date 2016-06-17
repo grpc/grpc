@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -82,10 +82,10 @@ class CXXLanguage:
     return {}
 
   def unimplemented_test_cases(self):
-    return _SKIP_ADVANCED + _SKIP_COMPRESSION
+    return _SKIP_ADVANCED
 
   def unimplemented_test_cases_server(self):
-    return _SKIP_ADVANCED + _SKIP_COMPRESSION
+    return _SKIP_ADVANCED
 
   def __str__(self):
     return 'c++'
@@ -111,8 +111,7 @@ class CSharpLanguage:
     return {}
 
   def unimplemented_test_cases(self):
-    # TODO: status_code_and_message doesn't work against node_server
-    return _SKIP_COMPRESSION + ['status_code_and_message']
+    return _SKIP_COMPRESSION
 
   def unimplemented_test_cases_server(self):
     return _SKIP_COMPRESSION
@@ -270,13 +269,13 @@ class RubyLanguage:
     self.safename = str(self)
 
   def client_cmd(self, args):
-    return ['ruby', 'src/ruby/bin/interop/interop_client.rb'] + args
+    return ['ruby', 'src/ruby/pb/test/client.rb'] + args
 
   def cloud_to_prod_env(self):
     return {}
 
   def server_cmd(self, args):
-    return ['ruby', 'src/ruby/bin/interop/interop_server.rb', '--use_tls=true'] + args
+    return ['ruby', 'src/ruby/pb/test/server.rb', '--use_tls=true'] + args
 
   def global_env(self):
     return {}
@@ -314,11 +313,11 @@ class PythonLanguage:
     ]
 
   def global_env(self):
-    return {'LD_LIBRARY_PATH': '{}/libs/opt'.format(DOCKER_WORKDIR_ROOT)}
+    return {'LD_LIBRARY_PATH': '{}/libs/opt'.format(DOCKER_WORKDIR_ROOT),
+            'PYTHONPATH': '{}/src/python/gens'.format(DOCKER_WORKDIR_ROOT)}
 
   def unimplemented_test_cases(self):
-    return _SKIP_ADVANCED + _SKIP_COMPRESSION + ['jwt_token_creds',
-                                                 'per_rpc_creds']
+    return _SKIP_ADVANCED + _SKIP_COMPRESSION
 
   def unimplemented_test_cases_server(self):
     return _SKIP_ADVANCED + _SKIP_COMPRESSION
@@ -542,7 +541,7 @@ def build_interop_image_jobspec(language, tag=None):
     env['BUILD_INTEROP_DOCKER_EXTRA_ARGS'] = \
       '-v %s:/root/.composer/auth.json:ro' % host_file
   build_job = jobset.JobSpec(
-          cmdline=['tools/jenkins/build_interop_image.sh'],
+          cmdline=['tools/run_tests/dockerize/build_interop_image.sh'],
           environ=env,
           shortname='build_docker_%s' % (language),
           timeout_seconds=30*60)
@@ -589,7 +588,11 @@ prod_servers = {
     'cloud_gateway': ('216.239.32.255', 'grpc-test.sandbox.googleapis.com',
                       False),
     'cloud_gateway_v2': ('216.239.32.255', 'grpc-test2.sandbox.googleapis.com',
-                         True)
+                         True),
+    'gateway_v4': ('grpc-test4.sandbox.googleapis.com',
+                   'grpc-test4.sandbox.googleapis.com', True),
+    'cloud_gateway_v4': ('216.239.32.255', 'grpc-test4.sandbox.googleapis.com',
+                         True),
 }
 
 argp = argparse.ArgumentParser(description='Run interop tests.')

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,9 +30,9 @@
 
 NODE_VERSION=$1
 source ~/.nvm/nvm.sh
-set -ex
 
 nvm use $NODE_VERSION
+set -ex
 
 CONFIG=${CONFIG:-opt}
 
@@ -48,6 +48,7 @@ if [ "$CONFIG" = "gcov" ]
 then
   ./node_modules/.bin/istanbul cover --dir reports/node_coverage \
     -x **/interop/* ./node_modules/.bin/_mocha -- --timeout $timeout $test_directory
+  cp -r reports/node_coverage/lcov-report/* reports/node_coverage/
   cd build
   gcov Release/obj.target/grpc/ext/*.o
   lcov --base-directory . --directory . -c -o coverage.info
@@ -55,8 +56,6 @@ then
   genhtml -o ../reports/node_ext_coverage --num-spaces 2 \
     -t 'Node gRPC test coverage' coverage.info --rc genhtml_hi_limit=95 \
     --rc genhtml_med_limit=80 --no-prefix
-  echo '<html><head><meta http-equiv="refresh" content="0;URL=lcov-report/index.html"></head></html>' > \
-    ../reports/node_coverage/index.html
 else
   JUNIT_REPORT_PATH=src/node/report.xml JUNIT_REPORT_STACK=1 \
     ./node_modules/.bin/mocha --timeout $timeout \

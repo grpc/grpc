@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/transport/chttp2/status_conversion.h"
+#include "src/core/ext/transport/chttp2/transport/status_conversion.h"
 #include <grpc/support/log.h>
 #include "test/core/util/test_config.h"
 

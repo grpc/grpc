@@ -44,9 +44,9 @@ def create_docker_jobspec(name, dockerfile_dir, shell_command, environ={},
   for k,v in environ.iteritems():
     docker_args += ['-e', '%s=%s' % (k, v)]
   docker_env = {'DOCKERFILE_DIR': dockerfile_dir,
-                'DOCKER_RUN_SCRIPT': 'tools/jenkins/docker_run.sh'}
+                'DOCKER_RUN_SCRIPT': 'tools/run_tests/dockerize/docker_run.sh'}
   jobspec = jobset.JobSpec(
-          cmdline=['tools/jenkins/build_and_run_docker.sh'] + docker_args,
+          cmdline=['tools/run_tests/dockerize/build_and_run_docker.sh'] + docker_args,
           environ=docker_env,
           shortname='distribtest.%s' % (name),
           timeout_seconds=30*60,
@@ -238,9 +238,37 @@ class PHPDistribTest(object):
     return self.name
 
 
+class CppDistribTest(object):
+  """Tests Cpp make intall by building examples."""
+
+  def __init__(self, platform, arch, docker_suffix=None):
+    self.name = 'cpp_%s_%s_%s' % (platform, arch, docker_suffix)
+    self.platform = platform
+    self.arch = arch
+    self.docker_suffix = docker_suffix
+    self.labels = ['distribtest', 'cpp', platform, arch, docker_suffix]
+
+  def pre_build_jobspecs(self):
+    return []
+
+  def build_jobspec(self):
+    if self.platform == 'linux':
+      return create_docker_jobspec(self.name,
+                                   'tools/dockerfile/distribtest/cpp_%s_%s' % (
+                                       self.docker_suffix,
+                                       self.arch),
+                                   'test/distrib/cpp/run_distrib_test.sh')
+    else:
+      raise Exception("Not supported yet.")
+
+  def __str__(self):
+    return self.name
+
+
 def targets():
   """Gets list of supported targets"""
-  return [CSharpDistribTest('linux', 'x64', 'wheezy'),
+  return [CppDistribTest('linux', 'x64', 'jessie'),
+          CSharpDistribTest('linux', 'x64', 'wheezy'),
           CSharpDistribTest('linux', 'x64', 'jessie'),
           CSharpDistribTest('linux', 'x86', 'jessie'),
           CSharpDistribTest('linux', 'x64', 'centos7'),

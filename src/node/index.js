@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,12 +34,9 @@
 'use strict';
 
 var path = require('path');
+var fs = require('fs');
 
 var SSL_ROOTS_PATH = path.resolve(__dirname, '..', '..', 'etc', 'roots.pem');
-
-if (!process.env.GRPC_DEFAULT_SSL_ROOTS_FILE_PATH) {
-  process.env.GRPC_DEFAULT_SSL_ROOTS_FILE_PATH = SSL_ROOTS_PATH;
-}
 
 var _ = require('lodash');
 
@@ -52,6 +49,8 @@ var server = require('./src/server.js');
 var Metadata = require('./src/metadata.js');
 
 var grpc = require('./src/grpc_extension');
+
+grpc.setDefaultRootsPem(fs.readFileSync(SSL_ROOTS_PATH, 'ascii'));
 
 /**
  * Load a gRPC object from an existing ProtoBuf.Reflect object.
@@ -87,6 +86,10 @@ var loadObject = exports.loadObject;
  *   Buffers. Defaults to false
  * - longsAsStrings: deserialize long values as strings instead of objects.
  *   Defaults to true
+ * - deprecatedArgumentOrder: Use the beta method argument order for client
+ *   methods, with optional arguments after the callback. Defaults to false.
+ *   This option is only a temporary stopgap measure to smooth an API breakage.
+ *   It is deprecated, and new code should not use it.
  * @param {string|{root: string, file: string}} filename The file to load
  * @param {string=} format The file format to expect. Must be either 'proto' or
  *     'json'. Defaults to 'proto'

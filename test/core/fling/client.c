@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
-#include "src/core/profiling/timers.h"
+#include "src/core/lib/profiling/timers.h"
 #include "test/core/util/grpc_profiler.h"
 #include "test/core/util/test_config.h"
 
@@ -65,6 +65,7 @@ static void init_ping_pong_request(void) {
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
 
   op->op = GRPC_OP_SEND_INITIAL_METADATA;

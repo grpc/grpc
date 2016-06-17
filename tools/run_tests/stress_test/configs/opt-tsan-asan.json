@@ -1,0 +1,134 @@
+{
+  "dockerImages": {
+    "grpc_stress_cxx_opt" : {
+      "buildScript": "tools/run_tests/dockerize/build_interop_stress_image.sh",
+      "dockerFileDir": "grpc_interop_stress_cxx",
+      "buildType": "opt"
+    },
+    "grpc_stress_cxx_tsan": {
+      "buildScript": "tools/run_tests/dockerize/build_interop_stress_image.sh",
+      "dockerFileDir": "grpc_interop_stress_cxx",
+      "buildType": "tsan"
+    },
+    "grpc_stress_cxx_asan": {
+      "buildScript": "tools/run_tests/dockerize/build_interop_stress_image.sh",
+      "dockerFileDir": "grpc_interop_stress_cxx",
+      "buildType": "asan"
+    }
+  },
+
+  "clientTemplates": {
+    "baseTemplates": {
+      "default": {
+        "wrapperScriptPath": "/var/local/git/grpc/tools/gcp/stress_test/run_client.py",
+        "pollIntervalSecs": 60,
+        "clientArgs": {
+          "num_channels_per_server":5,
+          "num_stubs_per_channel":10,
+          "test_cases": "empty_unary:1,large_unary:1,client_streaming:1,server_streaming:1,empty_stream:1",
+          "metrics_port": 8081
+        },
+        "metricsPort": 8081,
+        "metricsArgs": {
+          "metrics_server_address": "localhost:8081",
+          "total_only": "true"
+        }
+      }
+    },
+    "templates": {
+      "cxx_client_opt": {
+        "baseTemplate": "default",
+        "stressClientCmd": ["/var/local/git/grpc/bins/opt/stress_test"],
+        "metricsClientCmd": ["/var/local/git/grpc/bins/opt/metrics_client"]
+      },
+      "cxx_client_tsan": {
+        "baseTemplate": "default",
+        "stressClientCmd": ["/var/local/git/grpc/bins/tsan/stress_test"],
+        "metricsClientCmd": ["/var/local/git/grpc/bins/tsan/metrics_client"]
+      },
+    "cxx_client_asan": {
+        "baseTemplate": "default",
+        "stressClientCmd": ["/var/local/git/grpc/bins/asan/stress_test"],
+        "metricsClientCmd": ["/var/local/git/grpc/bins/asan/metrics_client"]
+      }
+    }
+  },
+
+  "serverTemplates": {
+    "baseTemplates":{
+      "default": {
+        "wrapperScriptPath": "/var/local/git/grpc/tools/gcp/stress_test/run_server.py",
+        "serverPort": 8080,
+        "serverArgs": {
+          "port": 8080
+        }
+      }
+    },
+    "templates": {
+      "cxx_server_opt": {
+        "baseTemplate": "default",
+        "stressServerCmd": ["/var/local/git/grpc/bins/opt/interop_server"]
+      },
+      "cxx_server_tsan": {
+        "baseTemplate": "default",
+        "stressServerCmd": ["/var/local/git/grpc/bins/tsan/interop_server"]
+      },
+    "cxx_server_asan": {
+        "baseTemplate": "default",
+        "stressServerCmd": ["/var/local/git/grpc/bins/asan/interop_server"]
+      }
+    }
+  },
+
+  "testMatrix": {
+    "serverPodSpecs": {
+      "stress-server-opt": {
+        "serverTemplate": "cxx_server_opt",
+        "dockerImage": "grpc_stress_cxx_opt",
+        "numInstances": 1
+      },
+      "stress-server-tsan": {
+        "serverTemplate": "cxx_server_tsan",
+        "dockerImage": "grpc_stress_cxx_tsan",
+        "numInstances": 1
+      },
+      "stress-server-asan": {
+        "serverTemplate": "cxx_server_asan",
+        "dockerImage": "grpc_stress_cxx_asan",
+        "numInstances": 1
+      }
+   },
+
+    "clientPodSpecs": {
+      "stress-client-opt": {
+        "clientTemplate": "cxx_client_opt",
+        "dockerImage": "grpc_stress_cxx_opt",
+        "numInstances": 5,
+        "serverPodSpec": "stress-server-opt"
+      },
+      "stress-client-tsan": {
+        "clientTemplate": "cxx_client_tsan",
+        "dockerImage": "grpc_stress_cxx_tsan",
+        "numInstances": 10,
+        "serverPodSpec": "stress-server-tsan"
+      },
+      "stress-client-asan": {
+        "clientTemplate": "cxx_client_asan",
+        "dockerImage": "grpc_stress_cxx_asan",
+        "numInstances": 10,
+        "serverPodSpec": "stress-server-asan"
+      }
+    }
+  },
+
+  "globalSettings": {
+    "buildDockerImages": true,
+    "pollIntervalSecs": 60,
+    "testDurationSecs": 7200,
+    "kubernetesProxyPort": 8004,
+    "datasetIdNamePrefix": "stress_test_opt_tsan",
+    "summaryTableId": "summary",
+    "qpsTableId": "qps",
+    "podWarmupSecs": 60
+  }
+}

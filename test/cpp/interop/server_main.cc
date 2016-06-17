@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,19 +40,19 @@
 #include <thread>
 
 #include <gflags/gflags.h>
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/useful.h>
+#include <grpc++/security/server_credentials.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
-#include <grpc++/security/server_credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/useful.h>
 
-#include "test/cpp/interop/server_helper.h"
-#include "test/cpp/util/test_config.h"
-#include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "src/proto/grpc/testing/empty.grpc.pb.h"
 #include "src/proto/grpc/testing/messages.grpc.pb.h"
+#include "src/proto/grpc/testing/test.grpc.pb.h"
+#include "test/cpp/interop/server_helper.h"
+#include "test/cpp/util/test_config.h"
 
 DEFINE_bool(use_tls, false, "Whether to use tls.");
 DEFINE_int32(port, 0, "Server port.");
@@ -110,14 +110,7 @@ void MaybeEchoMetadata(ServerContext* context) {
   }
 }
 
-bool SetPayload(PayloadType type, int size, Payload* payload) {
-  PayloadType response_type;
-  if (type == PayloadType::RANDOM) {
-    response_type =
-        rand() & 0x1 ? PayloadType::COMPRESSABLE : PayloadType::UNCOMPRESSABLE;
-  } else {
-    response_type = type;
-  }
+bool SetPayload(PayloadType response_type, int size, Payload* payload) {
   payload->set_type(response_type);
   switch (response_type) {
     case PayloadType::COMPRESSABLE: {
@@ -141,18 +134,9 @@ bool SetPayload(PayloadType type, int size, Payload* payload) {
 template <typename RequestType>
 void SetResponseCompression(ServerContext* context,
                             const RequestType& request) {
-  switch (request.response_compression()) {
-    case grpc::testing::NONE:
-      context->set_compression_algorithm(GRPC_COMPRESS_NONE);
-      break;
-    case grpc::testing::GZIP:
-      context->set_compression_algorithm(GRPC_COMPRESS_GZIP);
-      break;
-    case grpc::testing::DEFLATE:
-      context->set_compression_algorithm(GRPC_COMPRESS_DEFLATE);
-      break;
-    default:
-      abort();
+  if (request.request_compressed_response()) {
+    // Any level would do, let's go for HIGH because we are overachievers.
+    context->set_compression_level(GRPC_COMPRESS_LEVEL_HIGH);
   }
 }
 
@@ -197,6 +181,14 @@ class TestServiceImpl : public TestService::Service {
                       response.mutable_payload())) {
         return Status(grpc::StatusCode::INTERNAL, "Error creating payload.");
       }
+      int time_us;
+      if ((time_us = request->response_parameters(i).interval_us()) > 0) {
+        // Sleep before response if needed
+        gpr_timespec sleep_time =
+            gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                         gpr_time_from_micros(time_us, GPR_TIMESPAN));
+        gpr_sleep_until(sleep_time);
+      }
       write_success = writer->Write(response);
     }
     if (write_success) {
@@ -234,6 +226,14 @@ class TestServiceImpl : public TestService::Service {
         response.mutable_payload()->set_type(request.payload().type());
         response.mutable_payload()->set_body(
             grpc::string(request.response_parameters(0).size(), '\0'));
+        int time_us;
+        if ((time_us = request.response_parameters(0).interval_us()) > 0) {
+          // Sleep before response if needed
+          gpr_timespec sleep_time =
+              gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                           gpr_time_from_micros(time_us, GPR_TIMESPAN));
+          gpr_sleep_until(sleep_time);
+        }
         write_success = stream->Write(response);
       }
     }

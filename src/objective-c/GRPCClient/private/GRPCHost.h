@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,27 +33,44 @@
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 @class GRPCCompletionQueue;
 struct grpc_call;
+struct grpc_channel_credentials;
 
 @interface GRPCHost : NSObject
 
 @property(nonatomic, readonly) NSString *address;
-@property(nonatomic, copy) NSString *userAgentPrefix;
+@property(nonatomic, copy, nullable) NSString *userAgentPrefix;
+@property(nonatomic, nullable) struct grpc_channel_credentials *channelCreds;
 
 /** The following properties should only be modified for testing: */
 
 @property(nonatomic, getter=isSecure) BOOL secure;
 
-@property(nonatomic, copy) NSString *pathToCertificates;
-@property(nonatomic, copy) NSString *hostNameOverride;
+@property(nonatomic, copy, nullable) NSString *hostNameOverride;
 
+- (nullable instancetype)init NS_UNAVAILABLE;
 /** Host objects initialized with the same address are the same. */
-+ (instancetype)hostWithAddress:(NSString *)address;
-- (instancetype)initWithAddress:(NSString *)address NS_DESIGNATED_INITIALIZER;
++ (nullable instancetype)hostWithAddress:(NSString *)address;
+- (nullable instancetype)initWithAddress:(NSString *)address NS_DESIGNATED_INITIALIZER;
+- (BOOL)setTLSPEMRootCerts:(nullable NSString *)pemRootCerts
+            withPrivateKey:(nullable NSString *)pemPrivateKey
+             withCertChain:(nullable NSString *)pemCertChain
+                     error:(NSError **)errorPtr;
 
 /** Create a grpc_call object to the provided path on this host. */
-- (struct grpc_call *)unmanagedCallWithPath:(NSString *)path
-                            completionQueue:(GRPCCompletionQueue *)queue;
+- (nullable struct grpc_call *)unmanagedCallWithPath:(NSString *)path
+                                     completionQueue:(GRPCCompletionQueue *)queue;
 
+// TODO: There's a race when a new RPC is coming through just as an existing one is getting
+// notified that there's no connectivity. If connectivity comes back at that moment, the new RPC
+// will have its channel destroyed by the other RPC, and will never get notified of a problem, so
+// it'll hang (the C layer logs a timeout, with exponential back off). One solution could be to pass
+// the GRPCChannel to the GRPCCall, renaming this as "disconnectChannel:channel", which would only
+// act on that specific channel.
+- (void)disconnect;
 @end
+
+NS_ASSUME_NONNULL_END

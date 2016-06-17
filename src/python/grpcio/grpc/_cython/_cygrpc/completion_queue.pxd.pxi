@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,9 +31,6 @@
 cdef class CompletionQueue:
 
   cdef grpc_completion_queue *c_completion_queue
-  cdef object pluck_condition
-  cdef int num_plucking
-  cdef int num_polling
   cdef bint is_shutting_down
   cdef bint is_shutdown
 

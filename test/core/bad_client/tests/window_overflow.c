@@ -37,7 +37,7 @@
 
 #include <grpc/support/alloc.h>
 
-#include "src/core/surface/server.h"
+#include "src/core/lib/surface/server.h"
 
 #define PFX_STR                                                            \
   "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"                                       \
@@ -60,9 +60,9 @@
 static void verifier(grpc_server *server, grpc_completion_queue *cq,
                      void *registered_method) {
   while (grpc_server_has_open_connections(server)) {
-    GPR_ASSERT(grpc_completion_queue_next(cq,
-                                          GRPC_TIMEOUT_MILLIS_TO_DEADLINE(20),
-                                          NULL).type == GRPC_QUEUE_TIMEOUT);
+    GPR_ASSERT(grpc_completion_queue_next(
+                   cq, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(20), NULL)
+                   .type == GRPC_QUEUE_TIMEOUT);
   }
 }
 
@@ -90,15 +90,22 @@ int main(int argc, char **argv) {
 
   addbuf(PFX_STR, sizeof(PFX_STR) - 1);
   for (i = 0; i < NUM_FRAMES; i++) {
-    uint8_t hdr[9] = {(uint8_t)(FRAME_SIZE >> 16), (uint8_t)(FRAME_SIZE >> 8),
-                      (uint8_t)FRAME_SIZE, 0, 0, 0, 0, 0, 1};
+    uint8_t hdr[9] = {(uint8_t)(FRAME_SIZE >> 16),
+                      (uint8_t)(FRAME_SIZE >> 8),
+                      (uint8_t)FRAME_SIZE,
+                      0,
+                      0,
+                      0,
+                      0,
+                      0,
+                      1};
     addbuf(hdr, sizeof(hdr));
     for (j = 0; j < MESSAGES_PER_FRAME; j++) {
       uint8_t message[5] = {0, 0, 0, 0, 0};
       addbuf(message, sizeof(message));
     }
   }
-  grpc_run_bad_client_test(verifier, g_buffer, g_count, 0);
+  grpc_run_bad_client_test(verifier, NULL, g_buffer, g_count, 0);
   gpr_free(g_buffer);
 
   return 0;

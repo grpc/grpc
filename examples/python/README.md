@@ -8,12 +8,19 @@ For this sample, we've already generated the server and client stubs from
 
 
 Install gRPC:
-  ```sh
+```sh
   $ pip install grpcio
 ```
 Or, to install it system wide:
 ```sh
-	$ sudo pip install grpcio
+  $ sudo pip install grpcio
+```
+
+If you're on Windows, make sure you installed the `pip.exe` component when you
+installed Python. Invoke as above but with `pip.exe` instead of `pip` (you may
+also need to invoke from a `cmd.exe` ran as administrator):
+```sh
+  $ pip.exe install grpcio
 ```
 
 Download the example

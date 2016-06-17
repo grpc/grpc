@@ -38,7 +38,7 @@
 #include <gflags/gflags.h>
 #include <grpc++/security/server_credentials.h>
 
-#include "src/core/surface/call_test_only.h"
+#include "src/core/lib/surface/call_test_only.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 
 DECLARE_bool(use_tls);

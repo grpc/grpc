@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,7 +27,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-require 'grpc/grpc'
+require_relative '../grpc'
 
 # GRPC contains the General RPC module.
 module GRPC
@@ -80,12 +80,12 @@ module GRPC
       else  # is a bidi_stream
         active_call.run_server_bidi(mth)
       end
-      send_status(active_call, OK, 'OK', **active_call.output_metadata)
+      send_status(active_call, OK, 'OK', active_call.output_metadata)
     rescue BadStatus => e
       # this is raised by handlers that want GRPC to send an application error
       # code and detail message and some additional app-specific metadata.
       GRPC.logger.debug("app err:#{active_call}, status:#{e.code}:#{e.details}")
-      send_status(active_call, e.code, e.details, **e.metadata)
+      send_status(active_call, e.code, e.details, e.metadata)
     rescue Core::CallError => e
       # This is raised by GRPC internals but should rarely, if ever happen.
       # Log it, but don't notify the other endpoint..
@@ -135,10 +135,10 @@ module GRPC
       "##{mth.name}: bad arg count; got:#{mth.arity}, want:#{want}, #{msg}"
     end
 
-    def send_status(active_client, code, details, **kw)
+    def send_status(active_client, code, details, metadata = {})
       details = 'Not sure why' if details.nil?
       GRPC.logger.debug("Sending status  #{code}:#{details}")
-      active_client.send_status(code, details, code == OK, **kw)
+      active_client.send_status(code, details, code == OK, metadata: metadata)
     rescue StandardError => e
       GRPC.logger.warn("Could not send status #{code}:#{details}")
       GRPC.logger.warn(e)

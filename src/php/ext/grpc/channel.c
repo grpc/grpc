@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -84,7 +84,7 @@ zend_object_value create_wrapped_grpc_channel(zend_class_entry *class_type
   return retval;
 }
 
-void php_grpc_read_args_array(zval *args_array, grpc_channel_args *args) {
+void php_grpc_read_args_array(zval *args_array, grpc_channel_args *args TSRMLS_DC) {
   HashTable *array_hash;
   HashPosition array_pointer;
   int args_index;
@@ -110,9 +110,11 @@ void php_grpc_read_args_array(zval *args_array, grpc_channel_args *args) {
     switch (Z_TYPE_P(*data)) {
       case IS_LONG:
         args->args[args_index].value.integer = (int)Z_LVAL_P(*data);
+        args->args[args_index].type = GRPC_ARG_INTEGER;
         break;
       case IS_STRING:
         args->args[args_index].value.string = Z_STRVAL_P(*data);
+        args->args[args_index].type = GRPC_ARG_STRING;
         break;
       default:
         zend_throw_exception(spl_ce_InvalidArgumentException,
@@ -166,7 +168,7 @@ PHP_METHOD(Channel, __construct) {
       zend_hash_del(array_hash, "credentials", 12);
     }
   }
-  php_grpc_read_args_array(args_array, &args);
+  php_grpc_read_args_array(args_array, &args TSRMLS_CC);
   if (creds == NULL) {
     channel->wrapped = grpc_insecure_channel_create(target, &args, NULL);
   } else {

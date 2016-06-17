@@ -31,10 +31,10 @@
  *
  */
 
-#include <grpc/byte_buffer_reader.h>
 #include <grpc/byte_buffer.h>
-#include <grpc/support/slice.h>
+#include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
+#include <grpc/support/slice.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -42,7 +42,7 @@
 #include <grpc/support/time.h>
 #include "test/core/util/test_config.h"
 
-#include "src/core/compression/message_compress.h"
+#include "src/core/lib/compression/message_compress.h"
 
 #include <string.h>
 

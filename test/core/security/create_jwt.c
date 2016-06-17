@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,9 +34,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/security/credentials.h"
-#include "src/core/security/json_token.h"
-#include "src/core/support/load_file.h"
+#include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
+#include "src/core/lib/support/load_file.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/cmdline.h>

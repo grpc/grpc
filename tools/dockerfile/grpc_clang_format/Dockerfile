@@ -27,9 +27,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-FROM ubuntu:vivid
+FROM ubuntu:wily
 RUN apt-get update
-RUN apt-get -y install clang-format-3.6
+RUN apt-get -y install wget
+RUN echo deb http://llvm.org/apt/wily/ llvm-toolchain-wily-3.8 main >> /etc/apt/sources.list
+RUN echo deb-src http://llvm.org/apt/wily/ llvm-toolchain-wily-3.8 main >> /etc/apt/sources.list
+RUN wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key| apt-key add -
+RUN apt-get update
+RUN apt-get -y install clang-format-3.8
 ADD clang_format_all_the_things.sh /
 CMD ["echo 'Run with tools/distrib/clang_format_code.sh'"]
-

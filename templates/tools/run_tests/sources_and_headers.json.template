@@ -12,11 +12,13 @@
         out.extend(fmt % name for fmt in ['%s.grpc.pb.h', '%s.pb.h'])
     return out
 
-  def all_targets(targets, libs):
+  def all_targets(targets, libs, filegroups):
     for tgt in targets:
       yield ('target', tgt)
     for tgt in libs:
       yield ('lib', tgt)
+    for tgt in filegroups:
+      yield ('filegroup', tgt)
 
   def no_protos_filter(src):
   	return os.path.splitext(src)[1] != '.proto'
@@ -38,13 +40,15 @@
                  "language": tgt.language,
                  "third_party": tgt.boringssl or tgt.zlib,
                  "src": sorted(
-                     filter_srcs(tgt.src, (no_protos_filter, no_third_party_filter)) +
-                     filter_srcs(tgt.get('public_headers', []), (no_protos_filter, no_third_party_filter)) +
-                     filter_srcs(tgt.get('headers', []), (no_third_party_filter,))),
+                     filter_srcs(tgt.own_src, (no_protos_filter, no_third_party_filter)) +
+                     filter_srcs(tgt.own_public_headers, (no_protos_filter, no_third_party_filter)) +
+                     filter_srcs(tgt.own_headers, (no_third_party_filter,))),
                  "headers": sorted(
-                     tgt.get('public_headers', []) +
-                     tgt.get('headers', []) +
-                     proto_headers(tgt.src)),
-                 "deps": sorted(tgt.get('deps', []))}
-                for typ, tgt in all_targets(targets, libs)],
+                     tgt.own_public_headers +
+                     tgt.own_headers +
+                     proto_headers(tgt.own_src)),
+                 "deps": sorted(tgt.get('deps', []) +
+                                tgt.get('uses', []) +
+                                tgt.get('filegroups', []))}
+                for typ, tgt in all_targets(targets, libs, filegroups)],
                sort_keys=True, indent=2)}

@@ -41,16 +41,17 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/channel/channel_stack.h"
-#include "src/core/channel/client_channel.h"
-#include "src/core/client_config/lb_policies/round_robin.h"
-#include "src/core/client_config/lb_policy_registry.h"
-#include "src/core/support/string.h"
-#include "src/core/surface/channel.h"
-#include "src/core/surface/server.h"
+#include "src/core/ext/client_config/client_channel.h"
+#include "src/core/ext/client_config/lb_policy_registry.h"
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/server.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+
+#define RETRY_TIMEOUT 300
 
 typedef struct servers_fixture {
   size_t num_servers;
@@ -134,11 +135,12 @@ static void drain_cq(grpc_completion_queue *cq) {
 }
 
 static void kill_server(const servers_fixture *f, size_t i) {
-  gpr_log(GPR_INFO, "KILLING SERVER %d", i);
+  gpr_log(GPR_INFO, "KILLING SERVER %" PRIuPTR, i);
   GPR_ASSERT(f->servers[i] != NULL);
   grpc_server_shutdown_and_notify(f->servers[i], f->cq, tag(10000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(10000), n_millis_time(5000),
-                                         NULL).type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(
+      grpc_completion_queue_pluck(f->cq, tag(10000), n_millis_time(5000), NULL)
+          .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->servers[i]);
   f->servers[i] = NULL;
 }
@@ -155,7 +157,7 @@ typedef struct request_data {
 static void revive_server(const servers_fixture *f, request_data *rdata,
                           size_t i) {
   int got_port;
-  gpr_log(GPR_INFO, "RAISE AGAIN SERVER %d", i);
+  gpr_log(GPR_INFO, "RAISE AGAIN SERVER %" PRIuPTR, i);
   GPR_ASSERT(f->servers[i] == NULL);
 
   gpr_log(GPR_DEBUG, "revive: %s", f->servers_hostports[i]);
@@ -204,8 +206,8 @@ static void teardown_servers(servers_fixture *f) {
     if (f->servers[i] == NULL) continue;
     grpc_server_shutdown_and_notify(f->servers[i], f->cq, tag(10000));
     GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(10000),
-                                           n_millis_time(5000),
-                                           NULL).type == GRPC_OP_COMPLETE);
+                                           n_millis_time(5000), NULL)
+                   .type == GRPC_OP_COMPLETE);
     grpc_server_destroy(f->servers[i]);
   }
   grpc_completion_queue_shutdown(f->cq);
@@ -273,6 +275,7 @@ static int *perform_request(servers_fixture *f, grpc_channel *client,
     GPR_ASSERT(c);
     completed_client = 0;
 
+    memset(ops, 0, sizeof(ops));
     op = ops;
     op->op = GRPC_OP_SEND_INITIAL_METADATA;
     op->data.send_initial_metadata.count = 0;
@@ -302,12 +305,13 @@ static int *perform_request(servers_fixture *f, grpc_channel *client,
                grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL));
 
     s_idx = -1;
-    while ((ev = grpc_completion_queue_next(
-                f->cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1), NULL)).type !=
-           GRPC_QUEUE_TIMEOUT) {
+    while (
+        (ev = grpc_completion_queue_next(
+             f->cq, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(10 * RETRY_TIMEOUT), NULL))
+            .type != GRPC_QUEUE_TIMEOUT) {
       GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
       read_tag = ((int)(intptr_t)ev.tag);
-      gpr_log(GPR_DEBUG, "EVENT: success:%d, type:%d, tag:%d iter:%d",
+      gpr_log(GPR_DEBUG, "EVENT: success:%d, type:%d, tag:%d iter:%" PRIuPTR,
               ev.success, ev.type, read_tag, iter_num);
       if (ev.success && read_tag >= 1000) {
         GPR_ASSERT(s_idx == -1); /* only one server must reply */
@@ -324,6 +328,7 @@ static int *perform_request(servers_fixture *f, grpc_channel *client,
     }
 
     if (s_idx >= 0) {
+      memset(ops, 0, sizeof(ops));
       op = ops;
       op->op = GRPC_OP_SEND_INITIAL_METADATA;
       op->data.send_initial_metadata.count = 0;
@@ -376,9 +381,10 @@ static int *perform_request(servers_fixture *f, grpc_channel *client,
       }
     }
 
-    GPR_ASSERT(grpc_completion_queue_next(f->cq,
-                                          GRPC_TIMEOUT_MILLIS_TO_DEADLINE(200),
-                                          NULL).type == GRPC_QUEUE_TIMEOUT);
+    GPR_ASSERT(
+        grpc_completion_queue_next(
+            f->cq, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(2 * RETRY_TIMEOUT), NULL)
+            .type == GRPC_QUEUE_TIMEOUT);
 
     grpc_metadata_array_destroy(&rdata->initial_metadata_recv);
     grpc_metadata_array_destroy(&rdata->trailing_metadata_recv);
@@ -411,6 +417,7 @@ static grpc_call **perform_multirequest(servers_fixture *f,
     kill_server(f, i);
   }
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
@@ -434,9 +441,9 @@ static grpc_call **perform_multirequest(servers_fixture *f,
   return calls;
 }
 
-static void assert_channel_connectivity(
-    grpc_channel *ch, size_t num_accepted_conn_states,
-    grpc_connectivity_state accepted_conn_state, ...) {
+static void assert_channel_connectivity(grpc_channel *ch,
+                                        size_t num_accepted_conn_states,
+                                        int accepted_conn_state, ...) {
   size_t i;
   grpc_channel_stack *client_stack;
   grpc_channel_element *client_channel_filter;
@@ -452,7 +459,7 @@ static void assert_channel_connectivity(
   grpc_exec_ctx_finish(&exec_ctx);
   va_start(ap, accepted_conn_state);
   for (i = 0; i < num_accepted_conn_states; i++) {
-    if (actual_conn_state == accepted_conn_state) {
+    if ((int)actual_conn_state == accepted_conn_state) {
       break;
     }
     accepted_conn_state = va_arg(ap, grpc_connectivity_state);
@@ -506,7 +513,7 @@ void run_spec(const test_spec *spec) {
 
   arg.type = GRPC_ARG_INTEGER;
   arg.key = "grpc.testing.fixed_reconnect_backoff";
-  arg.value.integer = 100;
+  arg.value.integer = RETRY_TIMEOUT;
   args.num_args = 1;
   args.args = &arg;
 
@@ -542,7 +549,7 @@ static grpc_channel *create_client(const servers_fixture *f) {
 
   arg.type = GRPC_ARG_INTEGER;
   arg.key = "grpc.testing.fixed_reconnect_backoff";
-  arg.value.integer = 100;
+  arg.value.integer = RETRY_TIMEOUT;
   args.num_args = 1;
   args.args = &arg;
 
@@ -636,7 +643,8 @@ static void print_failed_expectations(const int *expected_connection_sequence,
                                       const size_t num_iters) {
   size_t i;
   for (i = 0; i < num_iters; i++) {
-    gpr_log(GPR_ERROR, "FAILURE: Iter, expected, actual:%d (%d, %d)", i,
+    gpr_log(GPR_ERROR,
+            "FAILURE: Iter (expected, actual): %" PRIuPTR " (%d, %d)", i,
             expected_connection_sequence[i % expected_seq_length],
             actual_connection_sequence[i]);
   }
@@ -660,8 +668,6 @@ static void verify_vanilla_round_robin(const servers_fixture *f,
     const int actual = actual_connection_sequence[i];
     const int expected = expected_connection_sequence[i % expected_seq_length];
     if (actual != expected) {
-      gpr_log(GPR_ERROR, "FAILURE: expected %d, actual %d at iter %d", expected,
-              actual, i);
       print_failed_expectations(expected_connection_sequence,
                                 actual_connection_sequence, expected_seq_length,
                                 num_iters);
@@ -688,24 +694,21 @@ static void verify_vanishing_floor_round_robin(
   memcpy(expected_connection_sequence, actual_connection_sequence + 2,
          expected_seq_length * sizeof(int));
 
-  /* first three elements of the sequence should be [<1st>, -1] */
-  if (actual_connection_sequence[0] != expected_connection_sequence[0]) {
-    gpr_log(GPR_ERROR, "FAILURE: expected %d, actual %d at iter %d",
-            expected_connection_sequence[0], actual_connection_sequence[0], 0);
-    print_failed_expectations(expected_connection_sequence,
-                              actual_connection_sequence, expected_seq_length,
-                              1u);
-    abort();
-  }
-
+  /* first two elements of the sequence should be [0 (1st server), -1 (failure)]
+   */
+  GPR_ASSERT(actual_connection_sequence[0] == 0);
   GPR_ASSERT(actual_connection_sequence[1] == -1);
 
+  /* the next two element must be [3, 0], repeating from that point: the 3 is
+   * brought forth by servers 1 and 2 disappearing after the intial pick of 0 */
+  GPR_ASSERT(actual_connection_sequence[2] == 3);
+  GPR_ASSERT(actual_connection_sequence[3] == 0);
+
+  /* make sure that the expectation obliges */
   for (i = 2; i < num_iters; i++) {
     const int actual = actual_connection_sequence[i];
     const int expected = expected_connection_sequence[i % expected_seq_length];
     if (actual != expected) {
-      gpr_log(GPR_ERROR, "FAILURE: expected %d, actual %d at iter %d", expected,
-              actual, i);
       print_failed_expectations(expected_connection_sequence,
                                 actual_connection_sequence, expected_seq_length,
                                 num_iters);
@@ -724,8 +727,8 @@ static void verify_total_carnage_round_robin(
     const int actual = actual_connection_sequence[i];
     const int expected = -1;
     if (actual != expected) {
-      gpr_log(GPR_ERROR, "FAILURE: expected %d, actual %d at iter %d", expected,
-              actual, i);
+      gpr_log(GPR_ERROR, "FAILURE: expected %d, actual %d at iter %" PRIuPTR,
+              expected, actual, i);
       abort();
     }
   }
@@ -753,8 +756,6 @@ static void verify_partial_carnage_round_robin(
     const int actual = actual_connection_sequence[i];
     const int expected = expected_connection_sequence[i % expected_seq_length];
     if (actual != expected) {
-      gpr_log(GPR_ERROR, "FAILURE: expected %d, actual %d at iter %d", expected,
-              actual, i);
       print_failed_expectations(expected_connection_sequence,
                                 actual_connection_sequence, expected_seq_length,
                                 num_iters);
@@ -852,8 +853,6 @@ static void verify_rebirth_round_robin(const servers_fixture *f,
     const int expected =
         expected_connection_sequence[j++ % expected_seq_length];
     if (actual != expected) {
-      gpr_log(GPR_ERROR, "FAILURE: expected %d, actual %d at iter %d", expected,
-              actual, i);
       print_failed_expectations(expected_connection_sequence,
                                 actual_connection_sequence, expected_seq_length,
                                 num_iters);
@@ -868,6 +867,7 @@ static void verify_rebirth_round_robin(const servers_fixture *f,
 }
 
 int main(int argc, char **argv) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   test_spec *spec;
   size_t i;
   const size_t NUM_ITERS = 10;
@@ -875,14 +875,15 @@ int main(int argc, char **argv) {
 
   grpc_test_init(argc, argv);
   grpc_init();
-  grpc_lb_round_robin_trace = 1;
+  grpc_tracer_set_enabled("round_robin", 1);
 
-  GPR_ASSERT(grpc_lb_policy_create("this-lb-policy-does-not-exist", NULL) ==
-             NULL);
-  GPR_ASSERT(grpc_lb_policy_create(NULL, NULL) == NULL);
+  GPR_ASSERT(grpc_lb_policy_create(&exec_ctx, "this-lb-policy-does-not-exist",
+                                   NULL) == NULL);
+  GPR_ASSERT(grpc_lb_policy_create(&exec_ctx, NULL, NULL) == NULL);
 
   spec = test_spec_create(NUM_ITERS, NUM_SERVERS);
-  /* everything is fine, all servers stay up the whole time and life's peachy */
+  /* everything is fine, all servers stay up the whole time and life's peachy
+   */
   spec->verifier = verify_vanilla_round_robin;
   spec->description = "test_all_server_up";
   run_spec(spec);
@@ -931,6 +932,7 @@ int main(int argc, char **argv) {
   test_pending_calls(4);
   test_ping();
 
+  grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();
   return 0;
 }

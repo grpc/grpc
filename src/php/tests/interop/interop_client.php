@@ -1,7 +1,7 @@
 <?php
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -388,141 +388,159 @@ function timeoutOnSleepingServer($stub)
              'Call status was not DEADLINE_EXCEEDED');
 }
 
-$args = getopt('', ['server_host:', 'server_port:', 'test_case:',
-                    'use_tls::', 'use_test_ca::',
-                    'server_host_override:', 'oauth_scope:',
-                    'default_service_account:', ]);
-if (!array_key_exists('server_host', $args)) {
-    throw new Exception('Missing argument: --server_host is required');
-}
-if (!array_key_exists('server_port', $args)) {
-    throw new Exception('Missing argument: --server_port is required');
-}
-if (!array_key_exists('test_case', $args)) {
-    throw new Exception('Missing argument: --test_case is required');
-}
-
-if ($args['server_port'] == 443) {
-    $server_address = $args['server_host'];
-} else {
-    $server_address = $args['server_host'].':'.$args['server_port'];
-}
-
-$test_case = $args['test_case'];
-
-$host_override = 'foo.test.google.fr';
-if (array_key_exists('server_host_override', $args)) {
-    $host_override = $args['server_host_override'];
-}
-
-$use_tls = false;
-if (array_key_exists('use_tls', $args) &&
-    $args['use_tls'] != 'false') {
-    $use_tls = true;
-}
-
-$use_test_ca = false;
-if (array_key_exists('use_test_ca', $args) &&
-    $args['use_test_ca'] != 'false') {
-    $use_test_ca = true;
-}
-
-$opts = [];
-
-if ($use_tls) {
-    if ($use_test_ca) {
-        $ssl_credentials = Grpc\ChannelCredentials::createSsl(
-            file_get_contents(dirname(__FILE__).'/../data/ca.pem'));
-    } else {
-        $ssl_credentials = Grpc\ChannelCredentials::createSsl();
+function _makeStub($args)
+{
+    if (!array_key_exists('server_host', $args)) {
+        throw new Exception('Missing argument: --server_host is required');
     }
-    $opts['credentials'] = $ssl_credentials;
-    $opts['grpc.ssl_target_name_override'] = $host_override;
-} else {
-    $opts['credentials'] = Grpc\ChannelCredentials::createInsecure();
-}
+    if (!array_key_exists('server_port', $args)) {
+        throw new Exception('Missing argument: --server_port is required');
+    }
+    if (!array_key_exists('test_case', $args)) {
+        throw new Exception('Missing argument: --test_case is required');
+    }
 
-if (in_array($test_case, ['service_account_creds',
-    'compute_engine_creds', 'jwt_token_creds', ])) {
-    if ($test_case == 'jwt_token_creds') {
-        $auth_credentials = ApplicationDefaultCredentials::getCredentials();
+    if ($args['server_port'] == 443) {
+        $server_address = $args['server_host'];
     } else {
+        $server_address = $args['server_host'].':'.$args['server_port'];
+    }
+
+    $test_case = $args['test_case'];
+
+    $host_override = 'foo.test.google.fr';
+    if (array_key_exists('server_host_override', $args)) {
+        $host_override = $args['server_host_override'];
+    }
+
+    $use_tls = false;
+    if (array_key_exists('use_tls', $args) &&
+        $args['use_tls'] != 'false') {
+        $use_tls = true;
+    }
+
+    $use_test_ca = false;
+    if (array_key_exists('use_test_ca', $args) &&
+        $args['use_test_ca'] != 'false') {
+        $use_test_ca = true;
+    }
+
+    $opts = [];
+
+    if ($use_tls) {
+        if ($use_test_ca) {
+            $ssl_credentials = Grpc\ChannelCredentials::createSsl(
+                file_get_contents(dirname(__FILE__).'/../data/ca.pem'));
+        } else {
+            $ssl_credentials = Grpc\ChannelCredentials::createSsl();
+        }
+        $opts['credentials'] = $ssl_credentials;
+        $opts['grpc.ssl_target_name_override'] = $host_override;
+    } else {
+        $opts['credentials'] = Grpc\ChannelCredentials::createInsecure();
+    }
+
+    if (in_array($test_case, ['service_account_creds',
+                              'compute_engine_creds', 'jwt_token_creds', ])) {
+        if ($test_case == 'jwt_token_creds') {
+            $auth_credentials = ApplicationDefaultCredentials::getCredentials();
+        } else {
+            $auth_credentials = ApplicationDefaultCredentials::getCredentials(
+                $args['oauth_scope']
+            );
+        }
+        $opts['update_metadata'] = $auth_credentials->getUpdateMetadataFunc();
+    }
+
+    if ($test_case == 'oauth2_auth_token') {
         $auth_credentials = ApplicationDefaultCredentials::getCredentials(
             $args['oauth_scope']
         );
+        $token = $auth_credentials->fetchAuthToken();
+        $update_metadata =
+            function ($metadata,
+                      $authUri = null,
+                      ClientInterface $client = null) use ($token) {
+                $metadata_copy = $metadata;
+                $metadata_copy[CredentialsLoader::AUTH_METADATA_KEY] =
+                    [sprintf('%s %s',
+                             $token['token_type'],
+                             $token['access_token'])];
+
+                return $metadata_copy;
+            };
+        $opts['update_metadata'] = $update_metadata;
     }
-    $opts['update_metadata'] = $auth_credentials->getUpdateMetadataFunc();
+
+    $stub = new grpc\testing\TestServiceClient($server_address, $opts);
+
+    return $stub;
 }
 
-if ($test_case == 'oauth2_auth_token') {
-    $auth_credentials = ApplicationDefaultCredentials::getCredentials(
-        $args['oauth_scope']
-    );
-    $token = $auth_credentials->fetchAuthToken();
-    $update_metadata =
-        function ($metadata,
-                  $authUri = null,
-                  ClientInterface $client = null) use ($token) {
-            $metadata_copy = $metadata;
-            $metadata_copy[CredentialsLoader::AUTH_METADATA_KEY] =
-                [sprintf('%s %s',
-                         $token['token_type'],
-                         $token['access_token'])];
+function interop_main($args, $stub = false)
+{
+    if (!$stub) {
+        $stub = _makeStub($args);
+    }
 
-            return $metadata_copy;
-        };
-    $opts['update_metadata'] = $update_metadata;
+    $test_case = $args['test_case'];
+    echo "Running test case $test_case\n";
+
+    switch ($test_case) {
+        case 'empty_unary':
+            emptyUnary($stub);
+            break;
+        case 'large_unary':
+            largeUnary($stub);
+            break;
+        case 'client_streaming':
+            clientStreaming($stub);
+            break;
+        case 'server_streaming':
+            serverStreaming($stub);
+            break;
+        case 'ping_pong':
+            pingPong($stub);
+            break;
+        case 'empty_stream':
+            emptyStream($stub);
+            break;
+        case 'cancel_after_begin':
+            cancelAfterBegin($stub);
+            break;
+        case 'cancel_after_first_response':
+            cancelAfterFirstResponse($stub);
+            break;
+        case 'timeout_on_sleeping_server':
+            timeoutOnSleepingServer($stub);
+            break;
+        case 'service_account_creds':
+            serviceAccountCreds($stub, $args);
+            break;
+        case 'compute_engine_creds':
+            computeEngineCreds($stub, $args);
+            break;
+        case 'jwt_token_creds':
+            jwtTokenCreds($stub, $args);
+            break;
+        case 'oauth2_auth_token':
+            oauth2AuthToken($stub, $args);
+            break;
+        case 'per_rpc_creds':
+            perRpcCreds($stub, $args);
+            break;
+        default:
+            echo "Unsupported test case $test_case\n";
+            exit(1);
+    }
+
+    return $stub;
 }
 
-$stub = new grpc\testing\TestServiceClient($server_address, $opts);
-
-echo "Connecting to $server_address\n";
-echo "Running test case $test_case\n";
-
-switch ($test_case) {
-    case 'empty_unary':
-        emptyUnary($stub);
-        break;
-    case 'large_unary':
-        largeUnary($stub);
-        break;
-    case 'client_streaming':
-        clientStreaming($stub);
-        break;
-    case 'server_streaming':
-        serverStreaming($stub);
-        break;
-    case 'ping_pong':
-        pingPong($stub);
-        break;
-    case 'empty_stream':
-        emptyStream($stub);
-        break;
-    case 'cancel_after_begin':
-        cancelAfterBegin($stub);
-        break;
-    case 'cancel_after_first_response':
-        cancelAfterFirstResponse($stub);
-        break;
-    case 'timeout_on_sleeping_server':
-        timeoutOnSleepingServer($stub);
-        break;
-    case 'service_account_creds':
-        serviceAccountCreds($stub, $args);
-        break;
-    case 'compute_engine_creds':
-        computeEngineCreds($stub, $args);
-        break;
-    case 'jwt_token_creds':
-        jwtTokenCreds($stub, $args);
-        break;
-    case 'oauth2_auth_token':
-        oauth2AuthToken($stub, $args);
-        break;
-    case 'per_rpc_creds':
-        perRpcCreds($stub, $args);
-        break;
-    default:
-        echo "Unsupported test case $test_case\n";
-        exit(1);
+if (isset($_SERVER['PHP_SELF']) && preg_match('/interop_client/', $_SERVER['PHP_SELF'])) {
+    $args = getopt('', ['server_host:', 'server_port:', 'test_case:',
+                        'use_tls::', 'use_test_ca::',
+                        'server_host_override:', 'oauth_scope:',
+                        'default_service_account:', ]);
+    interop_main($args);
 }

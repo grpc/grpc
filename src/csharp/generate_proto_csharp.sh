@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -45,4 +45,4 @@ $PROTOC --plugin=$PLUGIN --csharp_out=$HEALTHCHECK_DIR --grpc_out=$HEALTHCHECK_D
     -I src/proto/grpc/health/v1 src/proto/grpc/health/v1/health.proto
 
 $PROTOC --plugin=$PLUGIN --csharp_out=$TESTING_DIR --grpc_out=$TESTING_DIR \
-    -I . src/proto/grpc/testing/{control,empty,messages,payloads,services,stats,test}.proto 
+    -I . src/proto/grpc/testing/{control,empty,messages,metrics,payloads,services,stats,test}.proto 

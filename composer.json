@@ -2,13 +2,19 @@
   "name": "grpc/grpc",
   "type": "library",
   "description": "gRPC library for PHP",
-  "version": "0.6.0",
   "keywords": ["rpc"],
   "homepage": "http://grpc.io",
   "license": "BSD-3-Clause",
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/stanley-cheung/Protobuf-PHP"
+    }
+  ],
   "require": {
     "php": ">=5.5.0",
-    "google/auth": "dev-master"
+    "datto/protobuf-php": "dev-master",
+    "google/auth": "v0.7"
   },
   "autoload": {
     "psr-4": {

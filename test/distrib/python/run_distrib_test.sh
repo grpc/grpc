@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -33,8 +33,8 @@ set -ex
 cd $(dirname $0)
 
 # Pick up the source dist archive whatever its version is
-SDIST_ARCHIVE=$EXTERNAL_GIT_ROOT/input_artifacts/grpcio-*.tar.gz
-BDIST_DIR="file://$EXTERNAL_GIT_ROOT/input_artifacts"
+BDIST_ARCHIVES=$EXTERNAL_GIT_ROOT/input_artifacts/grpcio-*.whl
+TOOLS_BDIST_ARCHIVES=$EXTERNAL_GIT_ROOT/input_artifacts/grpcio_tools-*.whl
 
 if [ ! -f ${SDIST_ARCHIVE} ]
 then
@@ -42,17 +42,25 @@ then
   exit 1
 fi
 
-PIP=pip2
-which $PIP || PIP=pip
 PYTHON=python2
+PIP=pip2
 which $PYTHON || PYTHON=python
+which $PIP || PIP=pip
 
 # TODO(jtattermusch): this shouldn't be required
-$PIP install --upgrade six
+# TODO(jtattermusch): run the command twice to workaround docker-on-overlay
+# issue https://github.com/docker/docker/issues/12327
+# (first attempt will fail when using docker with overlayFS)
+${PIP} install --upgrade six pip || ${PIP} install --upgrade six pip
 
-GRPC_PYTHON_BINARIES_REPOSITORY="${BDIST_DIR}" \
-    $PIP install \
-    ${SDIST_ARCHIVE}
+# At least one of the bdist packages has to succeed (whichever one matches the
+# test machine, anyway).
+for bdist in ${BDIST_ARCHIVES} ${TOOLS_BDIST_ARCHIVES}; do
+  ($PYTHON -m pip install $bdist) || true
+done
+
+# TODO(jtattermusch): add a .proto file to the distribtest, generate python
+# code from it and then use the generated code from distribtest.py
+$PYTHON -m grpc.tools.protoc
 
 $PYTHON distribtest.py
-

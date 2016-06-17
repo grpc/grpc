@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -86,7 +86,6 @@ Status CliCall::Call(std::shared_ptr<grpc::Channel> channel,
   cq.Next(&got_tag, &ok);
   if (!ok) {
     std::cout << "Failed to read response." << std::endl;
-    return Status(StatusCode::INTERNAL, "Failed to read response");
   }
   grpc::Status status;
   call->Finish(&status, tag(5));
@@ -103,6 +102,7 @@ Status CliCall::Call(std::shared_ptr<grpc::Channel> channel,
                        slices[i].size());
     }
   }
+
   *server_initial_metadata = ctx.GetServerInitialMetadata();
   *server_trailing_metadata = ctx.GetServerTrailingMetadata();
   return status;

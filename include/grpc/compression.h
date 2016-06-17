@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,8 +36,8 @@
 
 #include <stdlib.h>
 
-#include <grpc/impl/codegen/port_platform.h>
 #include <grpc/impl/codegen/compression_types.h>
+#include <grpc/impl/codegen/port_platform.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,15 +51,17 @@ GRPCAPI int grpc_compression_algorithm_parse(
     grpc_compression_algorithm *algorithm);
 
 /** Updates \a name with the encoding name corresponding to a valid \a
- * algorithm.  Returns 1 upon success, 0 otherwise. */
+ * algorithm. Note that \a name is statically allocated and must *not* be freed.
+ * Returns 1 upon success, 0 otherwise. */
 GRPCAPI int grpc_compression_algorithm_name(
     grpc_compression_algorithm algorithm, char **name);
 
-/** Returns the compression algorithm corresponding to \a level.
+/** Returns the compression algorithm corresponding to \a level for the
+ * compression algorithms encoded in the \a accepted_encodings bitset.
  *
  * It abort()s for unknown levels . */
-GRPCAPI grpc_compression_algorithm
-grpc_compression_algorithm_for_level(grpc_compression_level level);
+GRPCAPI grpc_compression_algorithm grpc_compression_algorithm_for_level(
+    grpc_compression_level level, uint32_t accepted_encodings);
 
 GRPCAPI void grpc_compression_options_init(grpc_compression_options *opts);
 

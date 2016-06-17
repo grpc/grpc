@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -32,7 +32,7 @@
 #endregion
 
 using System;
-using System.Threading;
+using System.Linq;
 using Grpc.Core;
 using NUnit.Framework;
 
@@ -44,8 +44,12 @@ namespace Grpc.Core.Tests
         public void InitializeAndShutdownGrpcEnvironment()
         {
             var env = GrpcEnvironment.AddRef();
-            Assert.IsNotNull(env.CompletionQueue);
-            GrpcEnvironment.Release();
+            Assert.IsTrue(env.CompletionQueues.Count > 0);
+            for (int i = 0; i < env.CompletionQueues.Count; i++)
+            {
+                Assert.IsNotNull(env.CompletionQueues.ElementAt(i));
+            }
+            GrpcEnvironment.ReleaseAsync().Wait();
         }
 
         [Test]
@@ -54,8 +58,8 @@ namespace Grpc.Core.Tests
             var env1 = GrpcEnvironment.AddRef();
             var env2 = GrpcEnvironment.AddRef();
             Assert.AreSame(env1, env2);
-            GrpcEnvironment.Release();
-            GrpcEnvironment.Release();
+            GrpcEnvironment.ReleaseAsync().Wait();
+            GrpcEnvironment.ReleaseAsync().Wait();
         }
 
         [Test]
@@ -64,10 +68,10 @@ namespace Grpc.Core.Tests
             Assert.AreEqual(0, GrpcEnvironment.GetRefCount());
 
             var env1 = GrpcEnvironment.AddRef();
-            GrpcEnvironment.Release();
+            GrpcEnvironment.ReleaseAsync().Wait();
 
             var env2 = GrpcEnvironment.AddRef();
-            GrpcEnvironment.Release();
+            GrpcEnvironment.ReleaseAsync().Wait();
 
             Assert.AreNotSame(env1, env2);
         }
@@ -76,7 +80,7 @@ namespace Grpc.Core.Tests
         public void ReleaseWithoutAddRef()
         {
             Assert.AreEqual(0, GrpcEnvironment.GetRefCount());
-            Assert.Throws(typeof(InvalidOperationException), () => GrpcEnvironment.Release());
+            Assert.ThrowsAsync(typeof(InvalidOperationException), async () => await GrpcEnvironment.ReleaseAsync());
         }
 
         [Test]

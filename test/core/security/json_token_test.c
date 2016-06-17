@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/security/json_token.h"
+#include "src/core/lib/security/credentials/jwt/json_token.h"
 
 #include <openssl/evp.h>
 #include <string.h>
@@ -41,8 +41,9 @@
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
 
-#include "src/core/json/json.h"
-#include "src/core/security/b64.h"
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
+#include "src/core/lib/security/util/b64.h"
 #include "test/core/util/test_config.h"
 
 /* This JSON key was generated with the GCE console and revoked immediately.

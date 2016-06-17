@@ -1,4 +1,4 @@
-﻿// Copyright 2015-2016, Google Inc.
+﻿// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -43,9 +43,9 @@ namespace Routeguide
         /// </summary>
         public class RouteGuideClient
         {
-            readonly RouteGuide.IRouteGuideClient client;
+            readonly RouteGuide.RouteGuideClient client;
 
-            public RouteGuideClient(RouteGuide.IRouteGuideClient client)
+            public RouteGuideClient(RouteGuide.RouteGuideClient client)
             {
                 this.client = client;
             }

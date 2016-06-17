@@ -33,6 +33,8 @@ import abc
 import contextlib
 import threading
 
+import six
+
 
 class Defect(Exception):
   """Simulates a programming defect raised into in a system under test.
@@ -42,7 +44,7 @@ class Defect(Exception):
   """
 
 
-class Control(object):
+class Control(six.with_metaclass(abc.ABCMeta)):
   """An object that accepts program control from a system under test.
 
   Systems under test passed a Control should call its control() method
@@ -51,8 +53,6 @@ class Control(object):
   the system under test to simulate hanging, failing, or functioning.
   """
 
-  __metaclass__ = abc.ABCMeta
-
   @abc.abstractmethod
   def control(self):
     """Potentially does anything."""
@@ -60,10 +60,16 @@ class Control(object):
 
 
 class PauseFailControl(Control):
-  """A Control that can be used to pause or fail code under control."""
+  """A Control that can be used to pause or fail code under control.
+
+  This object is only safe for use from two threads: one of the system under
+  test calling control and the other from the test system calling pause,
+  block_until_paused, and fail.
+  """
 
   def __init__(self):
     self._condition = threading.Condition()
+    self._pause = False
     self._paused = False
     self._fail = False
 
@@ -72,18 +78,30 @@ class PauseFailControl(Control):
       if self._fail:
         raise Defect()
 
-      while self._paused:
+      while self._pause:
+        self._paused = True
+        self._condition.notify_all()
         self._condition.wait()
+      self._paused = False
 
   @contextlib.contextmanager
   def pause(self):
     """Pauses code under control while controlling code is in context."""
     with self._condition:
-      self._paused = True
+      self._pause = True
     yield
     with self._condition:
-      self._paused = False
+      self._pause = False
       self._condition.notify_all()
+
+  def block_until_paused(self):
+    """Blocks controlling code until code under control is paused.
+
+    May only be called within the context of a pause call.
+    """
+    with self._condition:
+      while not self._paused:
+        self._condition.wait()
 
   @contextlib.contextmanager
   def fail(self):

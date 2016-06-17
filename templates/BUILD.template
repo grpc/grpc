@@ -49,7 +49,9 @@
       ]
     if target_dict.get('build', None) == 'protoc':
       deps.append("//external:protobuf_compiler")
-    if target_dict['name'] == 'grpc++_unsecure' or target_dict['name'] == 'grpc++':
+    if (target_dict['name'] == 'grpc++_unsecure' or
+        target_dict['name'] == 'grpc++' or
+        target_dict['name'] == 'grpc++_codegen_lib'):
       deps.append("//external:protobuf_clib")
     elif target_dict['name'] == 'grpc':
       deps.append("//external:zlib")
@@ -60,7 +62,7 @@
         deps.append(':%s' % (d))
     return deps
   %>
-  
+
   % for lib in libs:
   % if lib.build in ("all", "protoc"):
   ${cc_library(lib)}
@@ -80,13 +82,19 @@
   % endfor
   
   <%def name="cc_library(lib)">
+  <%
+    lib_hdrs = lib.get("headers", [])
+    hdrs = [h for h in lib_hdrs if not h.startswith('third_party/nanopb')]
+    srcs = [s for s in lib.src if not s.startswith('third_party/nanopb')]
+    uses_nanopb = len(lib_hdrs) != len(hdrs) or len(srcs) != len(lib.src)
+  %>
   cc_library(
     name = "${lib.name}",
     srcs = [
-  % for hdr in lib.get("headers", []):
+  % for hdr in hdrs:
       "${hdr}",
   % endfor
-  % for src in lib.src:
+  % for src in srcs:
       "${src}",
   % endfor
     ],
@@ -103,6 +111,9 @@
   % for dep in get_deps(lib):
       "${dep}",
   % endfor
+  % if uses_nanopb:
+      "//external:nanopb",
+  % endif
     ],
   % if lib.name in ("grpc", "grpc_unsecure"):
     copts = [
@@ -113,10 +124,16 @@
   </%def>
   
   <%def name="objc_library(lib)">
+  <%
+    lib_hdrs = lib.get("headers", [])
+    hdrs = [h for h in lib_hdrs if not h.startswith('third_party/nanopb')]
+    srcs = [s for s in lib.src if not s.startswith('third_party/nanopb')]
+    uses_nanopb = len(lib_hdrs) != len(hdrs) or len(srcs) != len(lib.src)
+  %>
   objc_library(
     name = "${lib.name}_objc",
     srcs = [
-  % for src in lib.src:
+  % for src in srcs:
       "${src}",
   % endfor
     ],
@@ -124,7 +141,7 @@
   % for hdr in lib.get("public_headers", []):
       "${hdr}",
   % endfor
-  % for hdr in lib.get("headers", []):
+  % for hdr in hdrs:
       "${hdr}",
   % endfor
     ],
@@ -138,6 +155,9 @@
   % endfor
   % if lib.get('secure', False):
       "//external:libssl_objc",
+  % endif
+  % if uses_nanopb:
+      "//external:nanopb",
   % endif
     ],
   % if lib.get("baselib", false):

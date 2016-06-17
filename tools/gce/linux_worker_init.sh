@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,7 @@ set -ex
 sudo apt-get update
 
 # Install JRE
-sudo apt-get install -y openjdk-7-jre
+sudo apt-get install -y openjdk-8-jre
 sudo apt-get install -y unzip lsof
 
 # Install Docker

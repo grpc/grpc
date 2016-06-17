@@ -398,18 +398,20 @@ describe('client credentials', function() {
           metadataUpdater);
     });
     it('Should update metadata on a unary call', function(done) {
-      var call = client.unary({}, function(err, data) {
-        assert.ifError(err);
-      }, null, {credentials: updater_creds});
+      var call = client.unary({}, {credentials: updater_creds},
+                              function(err, data) {
+                                assert.ifError(err);
+                              });
       call.on('metadata', function(metadata) {
         assert.deepEqual(metadata.get('plugin_key'), ['plugin_value']);
         done();
       });
     });
     it('should update metadata on a client streaming call', function(done) {
-      var call = client.clientStream(function(err, data) {
-        assert.ifError(err);
-      }, null, {credentials: updater_creds});
+      var call = client.clientStream({credentials: updater_creds},
+                                     function(err, data) {
+                                       assert.ifError(err);
+                                     });
       call.on('metadata', function(metadata) {
         assert.deepEqual(metadata.get('plugin_key'), ['plugin_value']);
         done();
@@ -417,7 +419,7 @@ describe('client credentials', function() {
       call.end();
     });
     it('should update metadata on a server streaming call', function(done) {
-      var call = client.serverStream({}, null, {credentials: updater_creds});
+      var call = client.serverStream({}, {credentials: updater_creds});
       call.on('data', function() {});
       call.on('metadata', function(metadata) {
         assert.deepEqual(metadata.get('plugin_key'), ['plugin_value']);
@@ -425,7 +427,7 @@ describe('client credentials', function() {
       });
     });
     it('should update metadata on a bidi streaming call', function(done) {
-      var call = client.bidiStream(null, {credentials: updater_creds});
+      var call = client.bidiStream({credentials: updater_creds});
       call.on('data', function() {});
       call.on('metadata', function(metadata) {
         assert.deepEqual(metadata.get('plugin_key'), ['plugin_value']);
@@ -443,9 +445,10 @@ describe('client credentials', function() {
           altMetadataUpdater);
       var combined_updater = grpc.credentials.combineCallCredentials(
           updater_creds, alt_updater_creds);
-      var call = client.unary({}, function(err, data) {
-        assert.ifError(err);
-      }, null, {credentials: combined_updater});
+      var call = client.unary({}, {credentials: combined_updater},
+                              function(err, data) {
+                                assert.ifError(err);
+                              });
       call.on('metadata', function(metadata) {
         assert.deepEqual(metadata.get('plugin_key'), ['plugin_value']);
         assert.deepEqual(metadata.get('other_plugin_key'),

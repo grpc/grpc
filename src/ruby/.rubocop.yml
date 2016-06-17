@@ -11,7 +11,10 @@ AllCops:
     - 'pb/test/**/*'
 
 Metrics/CyclomaticComplexity:
-  Max: 8
+  Max: 9
 
 Metrics/PerceivedComplexity:
-  Max: 8
+  Max: 9
+
+Metrics/ClassLength:
+  Max: 250

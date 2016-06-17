@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,7 +27,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-FROM debian:jessie
+FROM ubuntu:15.10
 
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
@@ -65,14 +65,28 @@ RUN apt-get update && apt-get install -y time && apt-get clean
 
 #========================
 # Sanity test dependencies
-RUN apt-get update && apt-get install -y python-pip
+RUN apt-get update && apt-get install -y \
+      python-pip \
+      autoconf \
+      automake \
+      libtool \
+      curl \
+      python-virtualenv \
+      python-lxml
 RUN pip install simplejson mako
+
+#======================================
+# More sanity test dependencies (bazel)
+RUN apt-get install -y openjdk-8-jdk
+# TOOD(jtattermusch): pin the bazel version
+RUN git clone https://github.com/bazelbuild/bazel.git /bazel
+RUN cd /bazel && ./compile.sh
+RUN ln -s /bazel/output/bazel /bin/
 
 #===================
 # Docker "inception"
 # Note this is quite the ugly hack.
 # This makes sure that the docker binary we inject has its dependencies.
-RUN apt-get install libsystemd-journal0
 RUN curl https://get.docker.com/ | sh
 RUN apt-get remove --purge -y docker-engine
 

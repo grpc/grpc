@@ -33,6 +33,7 @@ import abc
 import enum
 import logging
 import threading
+import six
 import time
 
 from grpc._adapter import _intermediary_low
@@ -177,7 +178,10 @@ class _Kernel(object):
     call = service_acceptance.call
     call.accept(self._completion_queue, call)
     try:
-      group, method = service_acceptance.method.split('/')[1:3]
+      service_method = service_acceptance.method
+      if six.PY3:
+          service_method = service_method.decode('latin1')
+      group, method = service_method.split('/')[1:3]
     except ValueError:
       logging.info('Illegal path "%s"!', service_acceptance.method)
       return

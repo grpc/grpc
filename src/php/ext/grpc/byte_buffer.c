@@ -72,6 +72,7 @@ void byte_buffer_to_string(grpc_byte_buffer *buffer, char **out_string,
   while (grpc_byte_buffer_reader_next(&reader, &next) != 0) {
     memcpy(string + offset, GPR_SLICE_START_PTR(next), GPR_SLICE_LENGTH(next));
     offset += GPR_SLICE_LENGTH(next);
+    gpr_slice_unref(next);
   }
   *out_string = string;
   *out_length = length;

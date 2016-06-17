@@ -77,6 +77,7 @@ EXPORTS
     grpc_server_request_registered_call
     grpc_server_create
     grpc_server_register_completion_queue
+    grpc_server_register_non_listening_completion_queue
     grpc_server_add_insecure_http2_port
     grpc_server_start
     grpc_server_shutdown_and_notify
@@ -86,6 +87,9 @@ EXPORTS
     grpc_header_key_is_legal
     grpc_header_nonbin_value_is_legal
     grpc_is_binary_header
+    grpc_call_error_to_string
+    grpc_insecure_channel_create_from_fd
+    grpc_server_add_insecure_channel_from_fd
     grpc_auth_property_iterator_next
     grpc_auth_context_property_iterator
     grpc_auth_context_peer_identity
@@ -114,6 +118,7 @@ EXPORTS
     grpc_secure_channel_create
     grpc_server_credentials_release
     grpc_ssl_server_credentials_create
+    grpc_ssl_server_credentials_create_ex
     grpc_server_add_secure_http2_port
     grpc_call_set_credentials
     grpc_server_credentials_set_auth_metadata_processor
@@ -136,6 +141,8 @@ EXPORTS
     grpc_raw_byte_buffer_from_reader
     gpr_log
     gpr_log_message
+    gpr_set_log_verbosity
+    gpr_log_verbosity_init
     gpr_set_log_function
     gpr_slice_ref
     gpr_slice_unref

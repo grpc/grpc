@@ -64,6 +64,7 @@ struct grpc_end2end_test_config {
   void (*tear_down_data)(grpc_end2end_test_fixture *f);
 };
 
+void grpc_end2end_tests_pre_init(void);
 void grpc_end2end_tests(int argc, char **argv, grpc_end2end_test_config config);
 
 #endif /* GRPC_TEST_CORE_END2END_END2END_TESTS_H */

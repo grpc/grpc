@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,6 +33,7 @@
 
 #include <grpc++/server.h>
 
+#include <sstream>
 #include <utility>
 
 #include <grpc++/completion_queue.h>
@@ -41,6 +42,7 @@
 #include <grpc++/impl/grpc_library.h>
 #include <grpc++/impl/method_handler_impl.h>
 #include <grpc++/impl/rpc_service_method.h>
+#include <grpc++/impl/server_initializer.h>
 #include <grpc++/impl/service_type.h>
 #include <grpc++/security/server_credentials.h>
 #include <grpc++/server_context.h>
@@ -49,7 +51,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/profiling/timers.h"
+#include "src/core/lib/profiling/timers.h"
 #include "src/cpp/server/thread_pool_interface.h"
 
 namespace grpc {
@@ -264,6 +266,7 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
   void* const tag_;
   bool in_flight_;
   const bool has_request_payload_;
+  uint32_t incoming_flags_;
   grpc_call* call_;
   grpc_call_details* call_details_;
   gpr_timespec deadline_;
@@ -283,7 +286,8 @@ Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
       has_generic_service_(false),
       server_(nullptr),
       thread_pool_(thread_pool),
-      thread_pool_owned_(thread_pool_owned) {
+      thread_pool_owned_(thread_pool_owned),
+      server_initializer_(new ServerInitializer(this)) {
   g_gli_initializer.summon();
   gpr_once_init(&g_once_init_callbacks, InitGlobalCallbacks);
   global_callbacks_ = g_callbacks;
@@ -291,7 +295,12 @@ Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
   grpc_channel_args channel_args;
   args->SetChannelArgs(&channel_args);
   server_ = grpc_server_create(&channel_args, nullptr);
-  grpc_server_register_completion_queue(server_, cq_.cq(), nullptr);
+  if (thread_pool_ == nullptr) {
+    grpc_server_register_non_listening_completion_queue(server_, cq_.cq(),
+                                                        nullptr);
+  } else {
+    grpc_server_register_completion_queue(server_, cq_.cq(), nullptr);
+  }
 }
 
 Server::~Server() {
@@ -320,6 +329,23 @@ void Server::SetGlobalCallbacks(GlobalCallbacks* callbacks) {
   g_callbacks.reset(callbacks);
 }
 
+grpc_server* Server::c_server() { return server_; }
+
+CompletionQueue* Server::completion_queue() { return &cq_; }
+
+static grpc_server_register_method_payload_handling PayloadHandlingForMethod(
+    RpcServiceMethod* method) {
+  switch (method->method_type()) {
+    case RpcMethod::NORMAL_RPC:
+    case RpcMethod::SERVER_STREAMING:
+      return GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER;
+    case RpcMethod::CLIENT_STREAMING:
+    case RpcMethod::BIDI_STREAMING:
+      return GRPC_SRM_PAYLOAD_NONE;
+  }
+  GPR_UNREACHABLE_CODE(return GRPC_SRM_PAYLOAD_NONE;);
+}
+
 bool Server::RegisterService(const grpc::string* host, Service* service) {
   bool has_async_methods = service->has_async_methods();
   if (has_async_methods) {
@@ -327,14 +353,16 @@ bool Server::RegisterService(const grpc::string* host, Service* service) {
                "Can only register an asynchronous service against one server.");
     service->server_ = this;
   }
+  const char* method_name = nullptr;
   for (auto it = service->methods_.begin(); it != service->methods_.end();
        ++it) {
     if (it->get() == nullptr) {  // Handled by generic service if any.
       continue;
     }
     RpcServiceMethod* method = it->get();
-    void* tag = grpc_server_register_method(server_, method->name(),
-                                            host ? host->c_str() : nullptr);
+    void* tag = grpc_server_register_method(
+        server_, method->name(), host ? host->c_str() : nullptr,
+        PayloadHandlingForMethod(method), 0);
     if (tag == nullptr) {
       gpr_log(GPR_DEBUG, "Attempt to register %s multiple times",
               method->name());
@@ -344,6 +372,17 @@ bool Server::RegisterService(const grpc::string* host, Service* service) {
       method->set_server_tag(tag);
     } else {
       sync_methods_->emplace_back(method, tag);
+    }
+    method_name = method->name();
+  }
+
+  // Parse service name.
+  if (method_name != nullptr) {
+    std::stringstream ss(method_name);
+    grpc::string service_name;
+    if (std::getline(ss, service_name, '/') &&
+        std::getline(ss, service_name, '/')) {
+      services_.push_back(service_name);
     }
   }
   return true;
@@ -377,7 +416,9 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
       sync_methods_->push_back(SyncRequest(unknown_method_.get(), nullptr));
     }
     for (size_t i = 0; i < num_cqs; i++) {
-      new UnimplementedAsyncRequest(this, cqs[i]);
+      if (cqs[i]->IsFrequentlyPolled()) {
+        new UnimplementedAsyncRequest(this, cqs[i]);
+      }
     }
   }
   // Start processing rpcs.
@@ -582,5 +623,7 @@ void Server::RunRpc() {
     }
   }
 }
+
+ServerInitializer* Server::initializer() { return server_initializer_.get(); }
 
 }  // namespace grpc

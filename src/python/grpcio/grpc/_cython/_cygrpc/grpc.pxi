@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -38,27 +38,27 @@ cdef extern from "grpc/_cython/loader.h":
 
   int pygrpc_load_core(char*)
 
-  void *gpr_malloc(size_t size)
-  void gpr_free(void *ptr)
-  void *gpr_realloc(void *p, size_t size)
+  void *gpr_malloc(size_t size) nogil
+  void gpr_free(void *ptr) nogil
+  void *gpr_realloc(void *p, size_t size) nogil
 
   ctypedef struct gpr_slice:
     # don't worry about writing out the members of gpr_slice; we never access
     # them directly.
     pass
 
-  gpr_slice gpr_slice_ref(gpr_slice s)
-  void gpr_slice_unref(gpr_slice s)
-  gpr_slice gpr_slice_new(void *p, size_t len, void (*destroy)(void *))
+  gpr_slice gpr_slice_ref(gpr_slice s) nogil
+  void gpr_slice_unref(gpr_slice s) nogil
+  gpr_slice gpr_slice_new(void *p, size_t len, void (*destroy)(void *)) nogil
   gpr_slice gpr_slice_new_with_len(
-      void *p, size_t len, void (*destroy)(void *, size_t))
-  gpr_slice gpr_slice_malloc(size_t length)
-  gpr_slice gpr_slice_from_copied_string(const char *source)
-  gpr_slice gpr_slice_from_copied_buffer(const char *source, size_t len)
+      void *p, size_t len, void (*destroy)(void *, size_t)) nogil
+  gpr_slice gpr_slice_malloc(size_t length) nogil
+  gpr_slice gpr_slice_from_copied_string(const char *source) nogil
+  gpr_slice gpr_slice_from_copied_buffer(const char *source, size_t len) nogil
 
   # Declare functions for function-like macros (because Cython)...
-  void *gpr_slice_start_ptr "GPR_SLICE_START_PTR" (gpr_slice s)
-  size_t gpr_slice_length "GPR_SLICE_LENGTH" (gpr_slice s)
+  void *gpr_slice_start_ptr "GPR_SLICE_START_PTR" (gpr_slice s) nogil
+  size_t gpr_slice_length "GPR_SLICE_LENGTH" (gpr_slice s) nogil
 
   ctypedef enum gpr_clock_type:
     GPR_CLOCK_MONOTONIC
@@ -71,15 +71,21 @@ cdef extern from "grpc/_cython/loader.h":
     int32_t nanoseconds "tv_nsec"
     gpr_clock_type clock_type
 
-  gpr_timespec gpr_time_0(gpr_clock_type type)
-  gpr_timespec gpr_inf_future(gpr_clock_type type)
-  gpr_timespec gpr_inf_past(gpr_clock_type type)
+  gpr_timespec gpr_time_0(gpr_clock_type type) nogil
+  gpr_timespec gpr_inf_future(gpr_clock_type type) nogil
+  gpr_timespec gpr_inf_past(gpr_clock_type type) nogil
 
-  gpr_timespec gpr_now(gpr_clock_type clock)
+  gpr_timespec gpr_now(gpr_clock_type clock) nogil
 
   gpr_timespec gpr_convert_clock_type(gpr_timespec t,
-                                      gpr_clock_type target_clock)
+                                      gpr_clock_type target_clock) nogil
 
+  gpr_timespec gpr_time_from_millis(int64_t ms, gpr_clock_type type) nogil
+
+  gpr_timespec gpr_time_add(gpr_timespec a, gpr_timespec b) nogil
+
+  int gpr_time_cmp(gpr_timespec a, gpr_timespec b) nogil
+  
   ctypedef enum grpc_status_code:
     GRPC_STATUS_OK
     GRPC_STATUS_CANCELLED
@@ -105,6 +111,13 @@ cdef extern from "grpc/_cython/loader.h":
     GRPC_SSL_ROOTS_OVERRIDE_FAILED_PERMANENTLY
     GRPC_SSL_ROOTS_OVERRIDE_FAILED
 
+  ctypedef enum grpc_ssl_client_certificate_request_type:
+    GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
+    GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY
+    GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY
+    GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY
+    GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
+
   struct grpc_byte_buffer_reader:
     # We don't care about the internals
     pass
@@ -114,15 +127,15 @@ cdef extern from "grpc/_cython/loader.h":
     pass
 
   grpc_byte_buffer *grpc_raw_byte_buffer_create(gpr_slice *slices,
-                                                size_t nslices)
-  size_t grpc_byte_buffer_length(grpc_byte_buffer *bb)
-  void grpc_byte_buffer_destroy(grpc_byte_buffer *byte_buffer)
+                                                size_t nslices) nogil
+  size_t grpc_byte_buffer_length(grpc_byte_buffer *bb) nogil
+  void grpc_byte_buffer_destroy(grpc_byte_buffer *byte_buffer) nogil
 
   void grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
-                                    grpc_byte_buffer *buffer)
+                                    grpc_byte_buffer *buffer) nogil
   int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader *reader,
-                                   gpr_slice *slice)
-  void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader)
+                                   gpr_slice *slice) nogil
+  void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader) nogil
 
   const char *GRPC_ARG_PRIMARY_USER_AGENT_STRING
   const char *GRPC_ARG_ENABLE_CENSUS
@@ -133,6 +146,9 @@ cdef extern from "grpc/_cython/loader.h":
   const char *GRPC_ARG_PRIMARY_USER_AGENT_STRING
   const char *GRPC_ARG_SECONDARY_USER_AGENT_STRING
   const char *GRPC_SSL_TARGET_NAME_OVERRIDE_ARG
+  const char *GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM
+  const char *GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL
+  const char *GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET
 
   const int GRPC_WRITE_BUFFER_HINT
   const int GRPC_WRITE_NO_COMPRESS
@@ -198,7 +214,7 @@ cdef extern from "grpc/_cython/loader.h":
     GRPC_CHANNEL_CONNECTING
     GRPC_CHANNEL_READY
     GRPC_CHANNEL_TRANSIENT_FAILURE
-    GRPC_CHANNEL_FATAL_FAILURE
+    GRPC_CHANNEL_SHUTDOWN
 
   ctypedef struct grpc_metadata:
     const char *key
@@ -221,8 +237,8 @@ cdef extern from "grpc/_cython/loader.h":
     size_t capacity
     grpc_metadata *metadata
 
-  void grpc_metadata_array_init(grpc_metadata_array *array)
-  void grpc_metadata_array_destroy(grpc_metadata_array *array)
+  void grpc_metadata_array_init(grpc_metadata_array *array) nogil
+  void grpc_metadata_array_destroy(grpc_metadata_array *array) nogil
 
   ctypedef struct grpc_call_details:
     char *method
@@ -231,8 +247,8 @@ cdef extern from "grpc/_cython/loader.h":
     size_t host_capacity
     gpr_timespec deadline
 
-  void grpc_call_details_init(grpc_call_details *details)
-  void grpc_call_details_destroy(grpc_call_details *details)
+  void grpc_call_details_init(grpc_call_details *details) nogil
+  void grpc_call_details_destroy(grpc_call_details *details) nogil
 
   ctypedef enum grpc_op_type:
     GRPC_OP_SEND_INITIAL_METADATA
@@ -277,61 +293,64 @@ cdef extern from "grpc/_cython/loader.h":
     uint32_t flags
     grpc_op_data data
 
-  void grpc_init()
-  void grpc_shutdown()
+  void grpc_init() nogil
+  void grpc_shutdown() nogil
 
-  grpc_completion_queue *grpc_completion_queue_create(void *reserved)
+  grpc_completion_queue *grpc_completion_queue_create(void *reserved) nogil
   grpc_event grpc_completion_queue_next(grpc_completion_queue *cq,
                                         gpr_timespec deadline,
                                         void *reserved) nogil
   grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cq, void *tag,
                                          gpr_timespec deadline,
                                          void *reserved) nogil
-  void grpc_completion_queue_shutdown(grpc_completion_queue *cq)
-  void grpc_completion_queue_destroy(grpc_completion_queue *cq)
+  void grpc_completion_queue_shutdown(grpc_completion_queue *cq) nogil
+  void grpc_completion_queue_destroy(grpc_completion_queue *cq) nogil
 
-  grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
-                                        size_t nops, void *tag, void *reserved)
-  grpc_call_error grpc_call_cancel(grpc_call *call, void *reserved)
+  grpc_call_error grpc_call_start_batch(
+      grpc_call *call, const grpc_op *ops, size_t nops, void *tag,
+      void *reserved) nogil
+  grpc_call_error grpc_call_cancel(grpc_call *call, void *reserved) nogil
   grpc_call_error grpc_call_cancel_with_status(grpc_call *call,
                                                grpc_status_code status,
                                                const char *description,
-                                               void *reserved)
-  char *grpc_call_get_peer(grpc_call *call)
-  void grpc_call_destroy(grpc_call *call)
+                                               void *reserved) nogil
+  char *grpc_call_get_peer(grpc_call *call) nogil
+  void grpc_call_destroy(grpc_call *call) nogil
 
   grpc_channel *grpc_insecure_channel_create(const char *target,
                                              const grpc_channel_args *args,
-                                             void *reserved)
-  grpc_call *grpc_channel_create_call(grpc_channel *channel,
-                                      grpc_call *parent_call,
-                                      uint32_t propagation_mask,
-                                      grpc_completion_queue *completion_queue,
-                                      const char *method, const char *host,
-                                      gpr_timespec deadline, void *reserved)
+                                             void *reserved) nogil
+  grpc_call *grpc_channel_create_call(
+      grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
+      grpc_completion_queue *completion_queue, const char *method,
+      const char *host, gpr_timespec deadline, void *reserved) nogil
   grpc_connectivity_state grpc_channel_check_connectivity_state(
-      grpc_channel *channel, int try_to_connect)
+      grpc_channel *channel, int try_to_connect) nogil
   void grpc_channel_watch_connectivity_state(
       grpc_channel *channel, grpc_connectivity_state last_observed_state,
-      gpr_timespec deadline, grpc_completion_queue *cq, void *tag)
-  char *grpc_channel_get_target(grpc_channel *channel)
-  void grpc_channel_destroy(grpc_channel *channel)
+      gpr_timespec deadline, grpc_completion_queue *cq, void *tag) nogil
+  char *grpc_channel_get_target(grpc_channel *channel) nogil
+  void grpc_channel_destroy(grpc_channel *channel) nogil
 
-  grpc_server *grpc_server_create(const grpc_channel_args *args, void *reserved)
+  grpc_server *grpc_server_create(
+      const grpc_channel_args *args, void *reserved) nogil
   grpc_call_error grpc_server_request_call(
       grpc_server *server, grpc_call **call, grpc_call_details *details,
       grpc_metadata_array *request_metadata, grpc_completion_queue
       *cq_bound_to_call, grpc_completion_queue *cq_for_notification, void
-      *tag_new)
+      *tag_new) nogil
   void grpc_server_register_completion_queue(grpc_server *server,
                                              grpc_completion_queue *cq,
-                                             void *reserved)
-  int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr)
-  void grpc_server_start(grpc_server *server)
+                                             void *reserved) nogil
+  void grpc_server_register_non_listening_completion_queue(
+      grpc_server *server, grpc_completion_queue *cq, void *reserved) nogil
+  int grpc_server_add_insecure_http2_port(
+      grpc_server *server, const char *addr) nogil
+  void grpc_server_start(grpc_server *server) nogil
   void grpc_server_shutdown_and_notify(
-      grpc_server *server, grpc_completion_queue *cq, void *tag)
-  void grpc_server_cancel_all_calls(grpc_server *server)
-  void grpc_server_destroy(grpc_server *server)
+      grpc_server *server, grpc_completion_queue *cq, void *tag) nogil
+  void grpc_server_cancel_all_calls(grpc_server *server) nogil
+  void grpc_server_destroy(grpc_server *server) nogil
 
   ctypedef struct grpc_ssl_pem_key_cert_pair:
     const char *private_key
@@ -347,35 +366,36 @@ cdef extern from "grpc/_cython/loader.h":
 
   ctypedef void (*grpc_ssl_roots_override_callback)(char **pem_root_certs)
 
-  void grpc_set_ssl_roots_override_callback(grpc_ssl_roots_override_callback cb)
+  void grpc_set_ssl_roots_override_callback(
+      grpc_ssl_roots_override_callback cb) nogil
 
-  grpc_channel_credentials *grpc_google_default_credentials_create()
+  grpc_channel_credentials *grpc_google_default_credentials_create() nogil
   grpc_channel_credentials *grpc_ssl_credentials_create(
       const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pair,
-      void *reserved)
+      void *reserved) nogil
   grpc_channel_credentials *grpc_composite_channel_credentials_create(
       grpc_channel_credentials *creds1, grpc_call_credentials *creds2,
-      void *reserved)
-  void grpc_channel_credentials_release(grpc_channel_credentials *creds)
+      void *reserved) nogil
+  void grpc_channel_credentials_release(grpc_channel_credentials *creds) nogil
 
   grpc_call_credentials *grpc_composite_call_credentials_create(
       grpc_call_credentials *creds1, grpc_call_credentials *creds2,
-      void *reserved)
+      void *reserved) nogil
   grpc_call_credentials *grpc_google_compute_engine_credentials_create(
-      void *reserved)
+      void *reserved) nogil
   grpc_call_credentials *grpc_service_account_jwt_access_credentials_create(
       const char *json_key,
-      gpr_timespec token_lifetime, void *reserved)
+      gpr_timespec token_lifetime, void *reserved) nogil
   grpc_call_credentials *grpc_google_refresh_token_credentials_create(
-      const char *json_refresh_token, void *reserved)
+      const char *json_refresh_token, void *reserved) nogil
   grpc_call_credentials *grpc_google_iam_credentials_create(
       const char *authorization_token, const char *authority_selector,
-      void *reserved)
-  void grpc_call_credentials_release(grpc_call_credentials *creds)
+      void *reserved) nogil
+  void grpc_call_credentials_release(grpc_call_credentials *creds) nogil
 
   grpc_channel *grpc_secure_channel_create(
       grpc_channel_credentials *creds, const char *target,
-      const grpc_channel_args *args, void *reserved)
+      const grpc_channel_args *args, void *reserved) nogil
 
   ctypedef struct grpc_server_credentials:
     # We don't care about the internals (and in fact don't know them)
@@ -385,13 +405,13 @@ cdef extern from "grpc/_cython/loader.h":
       const char *pem_root_certs,
       grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
       size_t num_key_cert_pairs, int force_client_auth, void *reserved)
-  void grpc_server_credentials_release(grpc_server_credentials *creds)
+  void grpc_server_credentials_release(grpc_server_credentials *creds) nogil
 
   int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
-                                        grpc_server_credentials *creds)
+                                        grpc_server_credentials *creds) nogil
 
   grpc_call_error grpc_call_set_credentials(grpc_call *call,
-                                            grpc_call_credentials *creds)
+                                            grpc_call_credentials *creds) nogil
 
   ctypedef struct grpc_auth_context:
     # We don't care about the internals (and in fact don't know them)
@@ -415,4 +435,39 @@ cdef extern from "grpc/_cython/loader.h":
     const char *type
 
   grpc_call_credentials *grpc_metadata_credentials_create_from_plugin(
-      grpc_metadata_credentials_plugin plugin, void *reserved)
+      grpc_metadata_credentials_plugin plugin, void *reserved) nogil
+
+  ctypedef enum grpc_compression_algorithm:
+    GRPC_COMPRESS_NONE
+    GRPC_COMPRESS_DEFLATE
+    GRPC_COMPRESS_GZIP
+    GRPC_COMPRESS_ALGORITHMS_COUNT
+
+  ctypedef enum grpc_compression_level:
+    GRPC_COMPRESS_LEVEL_NONE
+    GRPC_COMPRESS_LEVEL_LOW
+    GRPC_COMPRESS_LEVEL_MED
+    GRPC_COMPRESS_LEVEL_HIGH
+    GRPC_COMPRESS_LEVEL_COUNT
+
+  ctypedef struct grpc_compression_options:
+    uint32_t enabled_algorithms_bitset
+    grpc_compression_algorithm default_compression_algorithm
+
+  int grpc_compression_algorithm_parse(
+      const char *name, size_t name_length,
+      grpc_compression_algorithm *algorithm) nogil
+  int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
+                                      char **name) nogil
+  grpc_compression_algorithm grpc_compression_algorithm_for_level(
+      grpc_compression_level level, uint32_t accepted_encodings) nogil
+  void grpc_compression_options_init(grpc_compression_options *opts) nogil
+  void grpc_compression_options_enable_algorithm(
+      grpc_compression_options *opts,
+      grpc_compression_algorithm algorithm) nogil
+  void grpc_compression_options_disable_algorithm(
+      grpc_compression_options *opts,
+      grpc_compression_algorithm algorithm) nogil
+  int grpc_compression_options_is_algorithm_enabled(
+      const grpc_compression_options *opts,
+      grpc_compression_algorithm algorithm) nogil

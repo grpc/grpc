@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -101,6 +101,19 @@ static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
   abort();
 }
 
+class ScopedProfile GRPC_FINAL {
+ public:
+  ScopedProfile(const char* filename, bool enable) : enable_(enable) {
+    if (enable_) grpc_profiler_start(filename);
+  }
+  ~ScopedProfile() {
+    if (enable_) grpc_profiler_stop();
+  }
+
+ private:
+  const bool enable_;
+};
+
 class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
  public:
   WorkerServiceImpl(int server_port, QpsWorker* worker)
@@ -114,9 +127,8 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
       return Status(StatusCode::RESOURCE_EXHAUSTED, "");
     }
 
-    grpc_profiler_start("qps_client.prof");
+    ScopedProfile profile("qps_client.prof", false);
     Status ret = RunClientBody(ctx, stream);
-    grpc_profiler_stop();
     return ret;
   }
 
@@ -128,9 +140,8 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
       return Status(StatusCode::RESOURCE_EXHAUSTED, "");
     }
 
-    grpc_profiler_start("qps_server.prof");
+    ScopedProfile profile("qps_server.prof", false);
     Status ret = RunServerBody(ctx, stream);
-    grpc_profiler_stop();
     return ret;
   }
 

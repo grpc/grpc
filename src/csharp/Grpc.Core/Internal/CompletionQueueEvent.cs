@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@ namespace Grpc.Core.Internal
     {
         static readonly NativeMethods Native = NativeMethods.Get();
 
-        public GRPCCompletionType type;
+        public CompletionType type;
         public int success;
         public IntPtr tag;
 
@@ -54,6 +54,21 @@ namespace Grpc.Core.Internal
             {
                 return Native.grpcsharp_sizeof_grpc_event();
             }
+        }
+
+        /// <summary>
+        /// grpc_completion_type from grpc/grpc.h
+        /// </summary>
+        internal enum CompletionType
+        {
+            /* Shutting down */
+            Shutdown, 
+
+            /* No event before timeout */
+            Timeout,  
+
+            /* operation completion */
+            OpComplete
         }
     }
 }

@@ -15,7 +15,7 @@
     <copyright>Copyright 2015, Google Inc.</copyright>
     <tags>gRPC RPC Protocol HTTP/2 Auth OAuth2</tags>
 	<dependencies>
-	  <dependency id="Google.Apis.Auth" version="1.9.3" />
+	  <dependency id="Google.Apis.Auth" version="1.11.1" />
 	  <dependency id="Grpc.Core" version="$version$" />
     </dependencies>
   </metadata>

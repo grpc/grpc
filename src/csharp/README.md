@@ -55,16 +55,11 @@ If you are a user of gRPC C#, go to Usage section above.
 
 **Windows**
 
-- The grpc_csharp_ext native library needs to be built so you can build the gRPC C# solution. You can 
-  either build the native solution in `vsprojects/grpc_csharp_ext.sln` from Visual Studio manually, or you can use
-  a convenience batch script that builds everything for you.
+- The grpc_csharp_ext native library needs to be built so you can build the gRPC C# solution. Open the
+  solution `vsprojects/grpc_csharp_ext.sln` in Visual Studio and build it.
 
-  ```
-  > REM From src/csharp directory
-  > buildall.bat
-  ```
-
-- Open Grpc.sln using Visual Studio.
+- Open `src\csharp\Grpc.sln` (path is relative to gRPC repository root)
+  using Visual Studio
 
 **Linux**
 
@@ -79,7 +74,7 @@ If you are a user of gRPC C#, go to Usage section above.
 **Mac OS X**
 
 - The grpc_csharp_ext native library needs to be built so you can build the gRPC C# solution.
-  
+
   ```sh
   # from the gRPC repository root
   $ tools/run_tests/run_tests.py -c dbg -l csharp --build_only

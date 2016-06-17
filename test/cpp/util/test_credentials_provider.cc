@@ -36,8 +36,8 @@
 
 #include <unordered_map>
 
-#include <grpc/support/sync.h>
 #include <grpc++/impl/sync.h>
+#include <grpc/support/sync.h>
 
 #include "test/core/end2end/data/ssl_test_data.h"
 

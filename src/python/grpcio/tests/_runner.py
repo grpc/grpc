@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,7 +27,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import cStringIO as StringIO
+from __future__ import absolute_import
+
 import collections
 import fcntl
 import multiprocessing
@@ -35,69 +36,59 @@ import os
 import select
 import signal
 import sys
+import tempfile
 import threading
 import time
 import unittest
 import uuid
 
+import six
+from six import moves
+
 from tests import _loader
 from tests import _result
 
 
-class CapturePipe(object):
-  """A context-manager pipe to redirect output to a byte array.
+class CaptureFile(object):
+  """A context-managed file to redirect output to a byte array.
+
+  Use by invoking `start` (`__enter__`) and at some point invoking `stop`
+  (`__exit__`). At any point after the initial call to `start` call `output` to
+  get the current redirected output. Note that we don't currently use file
+  locking, so calling `output` between calls to `start` and `stop` may muddle
+  the result (you should only be doing this during a Python-handled interrupt as
+  a last ditch effort to provide output to the user).
 
   Attributes:
-    _redirect_fd (int): File descriptor of file to redirect writes from.
+    _redirected_fd (int): File descriptor of file to redirect writes from.
     _saved_fd (int): A copy of the original value of the redirected file
       descriptor.
-    _read_thread (threading.Thread or None): Thread upon which reads through the
-      pipe are performed. Only non-None when self is started.
-    _read_fd (int or None): File descriptor of the read end of the redirect
-      pipe. Only non-None when self is started.
-    _write_fd (int or None): File descriptor of the write end of the redirect
-      pipe. Only non-None when self is started.
-    output (bytearray or None): Redirected output from writes to the redirected
-      file descriptor. Only valid during and after self has started.
+    _into_file (TemporaryFile or None): File to which writes are redirected.
+      Only non-None when self is started.
   """
 
   def __init__(self, fd):
-    self._redirect_fd = fd
-    self._saved_fd = os.dup(self._redirect_fd)
-    self._read_thread = None
-    self._read_fd = None
-    self._write_fd = None
-    self.output = None
+    self._redirected_fd = fd
+    self._saved_fd = os.dup(self._redirected_fd)
+    self._into_file = None
+
+  def output(self):
+    """Get all output from the redirected-to file if it exists."""
+    if self._into_file:
+      self._into_file.seek(0)
+      return bytes(self._into_file.read())
+    else:
+      return bytes()
 
   def start(self):
     """Start redirection of writes to the file descriptor."""
-    self._read_fd, self._write_fd = os.pipe()
-    os.dup2(self._write_fd, self._redirect_fd)
-    flags = fcntl.fcntl(self._read_fd, fcntl.F_GETFL)
-    fcntl.fcntl(self._read_fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
-    self._read_thread = threading.Thread(target=self._read)
-    self._read_thread.start()
+    self._into_file = tempfile.TemporaryFile()
+    os.dup2(self._into_file.fileno(), self._redirected_fd)
 
   def stop(self):
     """Stop redirection of writes to the file descriptor."""
-    os.close(self._write_fd)
-    os.dup2(self._saved_fd, self._redirect_fd)  # auto-close self._redirect_fd
-    self._read_thread.join()
-    self._read_thread = None
-    # we waited for the read thread to finish, so _read_fd has been read and we
-    # can close it.
-    os.close(self._read_fd)
-
-  def _read(self):
-    """Read-thread target for self."""
-    self.output = bytearray()
-    while True:
-      select.select([self._read_fd], [], [])
-      read_bytes = os.read(self._read_fd, 1024)
-      if read_bytes:
-        self.output.extend(read_bytes)
-      else:
-        break
+    # n.b. this dup2 call auto-closes self._redirected_fd
+    os.dup2(self._saved_fd, self._redirected_fd)
 
   def write_bypass(self, value):
     """Bypass the redirection and write directly to the original file.
@@ -105,6 +96,8 @@ class CapturePipe(object):
     Arguments:
       value (str): What to write to the original file.
     """
+    if six.PY3 and not isinstance(value, six.binary_type):
+      value = bytes(value, 'ascii')
     if self._saved_fd is None:
       os.write(self._redirect_fd, value)
     else:
@@ -144,7 +137,7 @@ class Runner(object):
   def run(self, suite):
     """See setuptools' test_runner setup argument for information."""
     # only run test cases with id starting with given prefix
-    testcase_filter = os.getenv('GPRC_PYTHON_TESTRUNNER_FILTER')
+    testcase_filter = os.getenv('GRPC_PYTHON_TESTRUNNER_FILTER')
     filtered_cases = []
     for case in _loader.iterate_suite_cases(suite):
       if not testcase_filter or case.id().startswith(testcase_filter):
@@ -156,11 +149,11 @@ class Runner(object):
                        for case in filtered_cases]
     case_id_by_case = dict((augmented_case.case, augmented_case.id)
                            for augmented_case in augmented_cases)
-    result_out = StringIO.StringIO()
+    result_out = moves.cStringIO()
     result = _result.TerminalResult(
         result_out, id_map=lambda case: case_id_by_case[case])
-    stdout_pipe = CapturePipe(sys.stdout.fileno())
-    stderr_pipe = CapturePipe(sys.stderr.fileno())
+    stdout_pipe = CaptureFile(sys.stdout.fileno())
+    stderr_pipe = CaptureFile(sys.stderr.fileno())
     kill_flag = [False]
 
     def sigint_handler(signal_number, frame):
@@ -171,7 +164,8 @@ class Runner(object):
     def fault_handler(signal_number, frame):
       stdout_pipe.write_bypass(
           'Received fault signal {}\nstdout:\n{}\n\nstderr:{}\n'
-          .format(signal_number, stdout_pipe.output, stderr_pipe.output))
+          .format(signal_number, stdout_pipe.output(),
+                  stderr_pipe.output()))
       os._exit(1)
 
     def check_kill_self():
@@ -180,9 +174,9 @@ class Runner(object):
         result.stopTestRun()
         stdout_pipe.write_bypass(result_out.getvalue())
         stdout_pipe.write_bypass(
-            '\ninterrupted stdout:\n{}\n'.format(stdout_pipe.output))
+            '\ninterrupted stdout:\n{}\n'.format(stdout_pipe.output().decode()))
         stderr_pipe.write_bypass(
-            '\ninterrupted stderr:\n{}\n'.format(stderr_pipe.output))
+            '\ninterrupted stderr:\n{}\n'.format(stderr_pipe.output().decode()))
         os._exit(1)
     signal.signal(signal.SIGINT, sigint_handler)
     signal.signal(signal.SIGSEGV, fault_handler)
@@ -212,7 +206,7 @@ class Runner(object):
         # re-raise the exception after forcing the with-block to end
         raise
       result.set_output(
-          augmented_case.case, stdout_pipe.output, stderr_pipe.output)
+          augmented_case.case, stdout_pipe.output(), stderr_pipe.output())
       sys.stdout.write(result_out.getvalue())
       sys.stdout.flush()
       result_out.truncate(0)
@@ -225,7 +219,7 @@ class Runner(object):
     sys.stdout.write(result_out.getvalue())
     sys.stdout.flush()
     signal.signal(signal.SIGINT, signal.SIG_DFL)
-    with open('report.xml', 'w') as report_xml_file:
+    with open('report.xml', 'wb') as report_xml_file:
       _result.jenkins_junit_xml(result).write(report_xml_file)
     return result
 

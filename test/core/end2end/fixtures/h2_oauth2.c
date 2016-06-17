@@ -36,15 +36,15 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/channel/channel_args.h"
-#include "src/core/iomgr/iomgr.h"
-#include "src/core/security/credentials.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
-#include "test/core/util/test_config.h"
-#include "test/core/util/port.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "test/core/end2end/data/ssl_test_data.h"
+#include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
 
 static const char oauth2_md[] = "Bearer aaslkfjs424535asdf";
 static const char *client_identity_property_name = "smurf_name";
@@ -226,7 +226,7 @@ static grpc_end2end_test_config configs[] = {
 int main(int argc, char **argv) {
   size_t i;
   grpc_test_init(argc, argv);
-
+  grpc_end2end_tests_pre_init();
   grpc_init();
 
   for (i = 0; i < sizeof(configs) / sizeof(*configs); i++) {

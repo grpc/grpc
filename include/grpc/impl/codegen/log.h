@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,8 +34,9 @@
 #ifndef GRPC_IMPL_CODEGEN_LOG_H
 #define GRPC_IMPL_CODEGEN_LOG_H
 
-#include <stdlib.h> /* for abort() */
+#include <inttypes.h>
 #include <stdarg.h>
+#include <stdlib.h> /* for abort() */
 
 #include <grpc/impl/codegen/port_platform.h>
 
@@ -61,6 +62,8 @@ typedef enum gpr_log_severity {
   GPR_LOG_SEVERITY_ERROR
 } gpr_log_severity;
 
+#define GPR_LOG_VERBOSITY_UNSET -1
+
 /* Returns a string representation of the log severity */
 const char *gpr_log_severity_string(gpr_log_severity severity);
 
@@ -72,10 +75,15 @@ const char *gpr_log_severity_string(gpr_log_severity severity);
 /* Log a message. It's advised to use GPR_xxx above to generate the context
  * for each message */
 GPRAPI void gpr_log(const char *file, int line, gpr_log_severity severity,
-                    const char *format, ...);
+                    const char *format, ...) GPRC_PRINT_FORMAT_CHECK(4, 5);
 
 GPRAPI void gpr_log_message(const char *file, int line,
                             gpr_log_severity severity, const char *message);
+
+/* Set global log verbosity */
+GPRAPI void gpr_set_log_verbosity(gpr_log_severity min_severity_to_print);
+
+GPRAPI void gpr_log_verbosity_init();
 
 /* Log overrides: applications can use this API to intercept logging calls
    and use their own implementations */

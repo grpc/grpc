@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/transport/chttp2/alpn.h"
+#include "src/core/ext/transport/chttp2/alpn/alpn.h"
 #include "test/core/bad_ssl/server_common.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 

@@ -36,8 +36,8 @@
 #include <cstring>
 #include <vector>
 
-#include <grpc/support/slice.h>
 #include <grpc++/support/slice.h>
+#include <grpc/support/slice.h>
 #include <gtest/gtest.h>
 
 namespace grpc {
@@ -103,6 +103,24 @@ TEST_F(ByteBufferTest, Dump) {
   buffer.Dump(&slices);
   EXPECT_TRUE(SliceEqual(slices[0], hello));
   EXPECT_TRUE(SliceEqual(slices[1], world));
+}
+
+TEST_F(ByteBufferTest, SerializationMakesCopy) {
+  gpr_slice hello = gpr_slice_from_copied_string(kContent1);
+  gpr_slice world = gpr_slice_from_copied_string(kContent2);
+  std::vector<Slice> slices;
+  slices.push_back(Slice(hello, Slice::STEAL_REF));
+  slices.push_back(Slice(world, Slice::STEAL_REF));
+  grpc_byte_buffer* send_buffer = nullptr;
+  bool owned = false;
+  ByteBuffer buffer(&slices[0], 2);
+  slices.clear();
+  auto status = SerializationTraits<ByteBuffer, void>::Serialize(
+      buffer, &send_buffer, &owned);
+  EXPECT_TRUE(status.ok());
+  EXPECT_TRUE(owned);
+  EXPECT_TRUE(send_buffer != nullptr);
+  grpc_byte_buffer_destroy(send_buffer);
 }
 
 }  // namespace

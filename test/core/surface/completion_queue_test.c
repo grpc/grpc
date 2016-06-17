@@ -31,14 +31,14 @@
  *
  */
 
-#include "src/core/surface/completion_queue.h"
+#include "src/core/lib/surface/completion_queue.h"
 
-#include "src/core/iomgr/iomgr.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+#include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
@@ -61,6 +61,12 @@ static void shutdown_and_destroy(grpc_completion_queue *cc) {
 static void test_no_op(void) {
   LOG_TEST("test_no_op");
   shutdown_and_destroy(grpc_completion_queue_create(NULL));
+}
+
+static void test_pollset_conversion(void) {
+  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+  GPR_ASSERT(grpc_cq_from_pollset(grpc_cq_pollset(cq)) == cq);
+  shutdown_and_destroy(cq);
 }
 
 static void test_wait_empty(void) {
@@ -342,8 +348,8 @@ static void test_threading(size_t producers, size_t consumers) {
   size_t total_consumed = 0;
   static int optid = 101;
 
-  gpr_log(GPR_INFO, "%s: %d producers, %d consumers", "test_threading",
-          producers, consumers);
+  gpr_log(GPR_INFO, "%s: %" PRIuPTR " producers, %" PRIuPTR " consumers",
+          "test_threading", producers, consumers);
 
   /* start all threads: they will wait for phase1 */
   for (i = 0; i < producers + consumers; i++) {
@@ -408,6 +414,7 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   test_no_op();
+  test_pollset_conversion();
   test_wait_empty();
   test_shutdown_then_next_polling();
   test_shutdown_then_next_with_timeout();

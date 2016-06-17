@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,6 +34,8 @@
 #ifndef GRPC_SUPPORT_STRING_UTIL_H
 #define GRPC_SUPPORT_STRING_UTIL_H
 
+#include <grpc/support/port_platform.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -52,7 +54,8 @@ GPRAPI char *gpr_strdup(const char *src);
 
    On error, returns -1 and sets *strp to NULL. If the format string is bad,
    the result is undefined. */
-GPRAPI int gpr_asprintf(char **strp, const char *format, ...);
+GPRAPI int gpr_asprintf(char **strp, const char *format, ...)
+    GPRC_PRINT_FORMAT_CHECK(2, 3);
 
 #ifdef __cplusplus
 }

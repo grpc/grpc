@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,8 @@
 #include <nan.h>
 #include <v8.h>
 #include "grpc/grpc.h"
+#include "grpc/grpc_security.h"
+#include "grpc/support/alloc.h"
 
 #include "call.h"
 #include "call_credentials.h"
@@ -50,6 +52,8 @@ using v8::Value;
 using v8::Object;
 using v8::Uint32;
 using v8::String;
+
+static char *pem_root_certs = NULL;
 
 void InitStatusConstants(Local<Object> exports) {
   Nan::HandleScope scope;
@@ -216,7 +220,7 @@ void InitConnectivityStateConstants(Local<Object> exports) {
   Nan::Set(channel_state, Nan::New("TRANSIENT_FAILURE").ToLocalChecked(),
            TRANSIENT_FAILURE);
   Local<Value> FATAL_FAILURE(
-      Nan::New<Uint32, uint32_t>(GRPC_CHANNEL_FATAL_FAILURE));
+      Nan::New<Uint32, uint32_t>(GRPC_CHANNEL_SHUTDOWN));
   Nan::Set(channel_state, Nan::New("FATAL_FAILURE").ToLocalChecked(),
            FATAL_FAILURE);
 }
@@ -268,9 +272,36 @@ NAN_METHOD(MetadataKeyIsBinary) {
       grpc_is_binary_header(key_str, static_cast<size_t>(key->Length()))));
 }
 
+static grpc_ssl_roots_override_result get_ssl_roots_override(
+    char **pem_root_certs_ptr) {
+  *pem_root_certs_ptr = pem_root_certs;
+  if (pem_root_certs == NULL) {
+    return GRPC_SSL_ROOTS_OVERRIDE_FAIL;
+  } else {
+    return GRPC_SSL_ROOTS_OVERRIDE_OK;
+  }
+}
+
+/* This should only be called once, and only before creating any
+ *ServerCredentials */
+NAN_METHOD(SetDefaultRootsPem) {
+  if (!info[0]->IsString()) {
+    return Nan::ThrowTypeError(
+        "setDefaultRootsPem's argument must be a string");
+  }
+  Nan::Utf8String utf8_roots(info[0]);
+  size_t length = static_cast<size_t>(utf8_roots.length());
+  if (length > 0) {
+    const char *data = *utf8_roots;
+    pem_root_certs = (char *)gpr_malloc((length + 1) * sizeof(char));
+    memcpy(pem_root_certs, data, length + 1);
+  }
+}
+
 void init(Local<Object> exports) {
   Nan::HandleScope scope;
   grpc_init();
+  grpc_set_ssl_roots_override_callback(get_ssl_roots_override);
   InitStatusConstants(exports);
   InitCallErrorConstants(exports);
   InitOpTypeConstants(exports);
@@ -297,6 +328,10 @@ void init(Local<Object> exports) {
   Nan::Set(exports, Nan::New("metadataKeyIsBinary").ToLocalChecked(),
            Nan::GetFunction(
                Nan::New<FunctionTemplate>(MetadataKeyIsBinary)
+                            ).ToLocalChecked());
+  Nan::Set(exports, Nan::New("setDefaultRootsPem").ToLocalChecked(),
+           Nan::GetFunction(
+               Nan::New<FunctionTemplate>(SetDefaultRootsPem)
                             ).ToLocalChecked());
 }
 

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/support/load_file.h"
+#include "src/core/lib/support/load_file.h"
 
 #include "test/core/bad_ssl/server_common.h"
 #include "test/core/end2end/data/ssl_test_data.h"
@@ -56,9 +56,11 @@ int main(int argc, char **argv) {
 
   grpc_init();
 
-  cert_slice = gpr_load_file("src/core/tsi/test_creds/badserver.pem", 1, &ok);
+  cert_slice =
+      gpr_load_file("src/core/lib/tsi/test_creds/badserver.pem", 1, &ok);
   GPR_ASSERT(ok);
-  key_slice = gpr_load_file("src/core/tsi/test_creds/badserver.key", 1, &ok);
+  key_slice =
+      gpr_load_file("src/core/lib/tsi/test_creds/badserver.key", 1, &ok);
   GPR_ASSERT(ok);
   pem_key_cert_pair.private_key = (const char *)GPR_SLICE_START_PTR(key_slice);
   pem_key_cert_pair.cert_chain = (const char *)GPR_SLICE_START_PTR(cert_slice);

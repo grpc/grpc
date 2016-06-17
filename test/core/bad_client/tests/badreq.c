@@ -35,8 +35,8 @@
 
 #include <string.h>
 
+#include "src/core/lib/surface/server.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "src/core/surface/server.h"
 
 #define PFX_STR                      \
   "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n" \
@@ -45,9 +45,9 @@
 static void verifier(grpc_server *server, grpc_completion_queue *cq,
                      void *registered_method) {
   while (grpc_server_has_open_connections(server)) {
-    GPR_ASSERT(grpc_completion_queue_next(cq,
-                                          GRPC_TIMEOUT_MILLIS_TO_DEADLINE(20),
-                                          NULL).type == GRPC_QUEUE_TIMEOUT);
+    GPR_ASSERT(grpc_completion_queue_next(
+                   cq, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(20), NULL)
+                   .type == GRPC_QUEUE_TIMEOUT);
   }
 }
 
@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
 
   /* invalid content type */
   GRPC_RUN_BAD_CLIENT_TEST(
-      verifier, PFX_STR
+      verifier, NULL, PFX_STR
       "\x00\x00\xc2\x01\x04\x00\x00\x00\x01"
       "\x10\x05:path\x08/foo/bar"
       "\x10\x07:scheme\x04http"
@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
 
   /* invalid te */
   GRPC_RUN_BAD_CLIENT_TEST(
-      verifier, PFX_STR
+      verifier, NULL, PFX_STR
       "\x00\x00\xcb\x01\x04\x00\x00\x00\x01"
       "\x10\x05:path\x08/foo/bar"
       "\x10\x07:scheme\x04http"
@@ -88,7 +88,7 @@ int main(int argc, char **argv) {
 
   /* two path headers */
   GRPC_RUN_BAD_CLIENT_TEST(
-      verifier, PFX_STR
+      verifier, NULL, PFX_STR
       "\x00\x00\xd9\x01\x04\x00\x00\x00\x01"
       "\x10\x05:path\x08/foo/bar"
       "\x10\x05:path\x08/foo/bah"
@@ -105,7 +105,7 @@ int main(int argc, char **argv) {
 
   /* bad accept-encoding algorithm */
   GRPC_RUN_BAD_CLIENT_TEST(
-      verifier, PFX_STR
+      verifier, NULL, PFX_STR
       "\x00\x00\xd2\x01\x04\x00\x00\x00\x01"
       "\x10\x05:path\x08/foo/bar"
       "\x10\x07:scheme\x04http"
@@ -121,7 +121,7 @@ int main(int argc, char **argv) {
 
   /* bad grpc-encoding algorithm */
   GRPC_RUN_BAD_CLIENT_TEST(
-      verifier, PFX_STR
+      verifier, NULL, PFX_STR
       "\x00\x00\xf5\x01\x04\x00\x00\x00\x01"
       "\x10\x05:path\x08/foo/bar"
       "\x10\x07:scheme\x04http"

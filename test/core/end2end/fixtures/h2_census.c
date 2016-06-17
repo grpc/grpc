@@ -35,19 +35,19 @@
 
 #include <string.h>
 
-#include "src/core/channel/channel_args.h"
-#include "src/core/channel/client_channel.h"
-#include "src/core/channel/connected_channel.h"
-#include "src/core/channel/http_server_filter.h"
-#include "src/core/surface/channel.h"
-#include "src/core/surface/server.h"
-#include "src/core/transport/chttp2_transport.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/useful.h>
+#include "src/core/ext/client_config/client_channel.h"
+#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/channel/http_server_filter.h"
+#include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/server.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -111,7 +111,7 @@ void chttp2_tear_down_fullstack(grpc_end2end_test_fixture *f) {
 
 /* All test configurations */
 static grpc_end2end_test_config configs[] = {
-    {"chttp2/fullstack", FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION,
+    {"chttp2/fullstack+census", FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION,
      chttp2_create_fixture_fullstack, chttp2_init_client_fullstack,
      chttp2_init_server_fullstack, chttp2_tear_down_fullstack},
 };
@@ -120,6 +120,7 @@ int main(int argc, char **argv) {
   size_t i;
 
   grpc_test_init(argc, argv);
+  grpc_end2end_tests_pre_init();
   grpc_init();
 
   for (i = 0; i < sizeof(configs) / sizeof(*configs); i++) {
