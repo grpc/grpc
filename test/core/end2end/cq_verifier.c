@@ -284,6 +284,6 @@ static expectation *add(cq_verifier *v, grpc_completion_type type, void *tag) {
   return e;
 }
 
-void cq_expect_completion(cq_verifier *v, void *tag, int success) {
+void cq_expect_completion(cq_verifier *v, void *tag, bool success) {
   add(v, GRPC_OP_COMPLETE, tag)->success = success;
 }

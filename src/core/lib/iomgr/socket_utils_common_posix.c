@@ -111,6 +111,16 @@ int grpc_set_socket_ipv6_recvpktinfo_if_possible(int fd) {
 #endif
 }
 
+int grpc_set_socket_sndbuf(int fd, int buffer_size_bytes) {
+  return 0 == setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &buffer_size_bytes,
+                         sizeof(buffer_size_bytes));
+}
+
+int grpc_set_socket_rcvbuf(int fd, int buffer_size_bytes) {
+  return 0 == setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &buffer_size_bytes,
+                         sizeof(buffer_size_bytes));
+}
+
 /* set a socket to close on exec */
 int grpc_set_socket_cloexec(int fd, int close_on_exec) {
   int oldflags = fcntl(fd, F_GETFD, 0);

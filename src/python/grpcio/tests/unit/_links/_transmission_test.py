@@ -153,7 +153,7 @@ class RoundTripTest(unittest.TestCase):
         invocation_mate.tickets()[-1].termination,
         links.Ticket.Termination.COMPLETION)
     self.assertIs(invocation_mate.tickets()[-1].code, test_code)
-    self.assertEqual(invocation_mate.tickets()[-1].message, test_message)
+    self.assertEqual(invocation_mate.tickets()[-1].message, test_message.encode())
 
   def _perform_scenario_test(self, scenario):
     test_operation_id = object()

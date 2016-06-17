@@ -36,13 +36,26 @@
 
 #import "ProtoMethod.h"
 
+__attribute__((deprecated("Please use GRPCProtoCall.")))
 @interface ProtoRPC : GRPCCall
 
+/**
+ * host parameter should not contain the scheme (http:// or https://), only the name or IP addr
+ * and the port number, for example @"localhost:5050".
+ */
 - (instancetype)initWithHost:(NSString *)host
-                      method:(ProtoMethod *)method
+                      method:(GRPCProtoMethod *)method
               requestsWriter:(GRXWriter *)requestsWriter
                responseClass:(Class)responseClass
           responsesWriteable:(id<GRXWriteable>)responsesWriteable NS_DESIGNATED_INITIALIZER;
 
 - (void)start;
+@end
+
+/**
+ * This subclass is empty now. Eventually we'll remove ProtoRPC class
+ * to avoid potential naming conflict
+ */
+@interface GRPCProtoCall : ProtoRPC
+
 @end

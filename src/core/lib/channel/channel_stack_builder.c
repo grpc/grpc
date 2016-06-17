@@ -257,8 +257,8 @@ void *grpc_channel_stack_builder_finish(grpc_exec_ctx *exec_ctx,
   // and initialize it
   grpc_channel_stack_init(exec_ctx, initial_refs, destroy,
                           destroy_arg == NULL ? result : destroy_arg, filters,
-                          num_filters, builder->args, builder->name,
-                          channel_stack);
+                          num_filters, builder->args, builder->transport,
+                          builder->name, channel_stack);
 
   // run post-initialization functions
   i = 0;

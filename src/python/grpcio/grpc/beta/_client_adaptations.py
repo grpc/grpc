@@ -30,6 +30,7 @@
 """Translates gRPC's client-side API into gRPC's client-side Beta API."""
 
 import grpc
+from grpc import _common
 from grpc._cython import cygrpc
 from grpc.beta import interfaces
 from grpc.framework.common import cardinality
@@ -46,10 +47,6 @@ _STATUS_CODE_TO_ABORTION_KIND_AND_ABORTION_ERROR_CLASS = {
     grpc.StatusCode.UNIMPLEMENTED: (
         face.Abortion.Kind.LOCAL_FAILURE, face.LocalError),
 }
-
-
-def _fully_qualified_method(group, method):
-  return b'/{}/{}'.format(group, method)
 
 
 def _effective_metadata(metadata, metadata_transformer):
@@ -184,7 +181,7 @@ def _blocking_unary_unary(
     metadata_transformer, request, request_serializer, response_deserializer):
   try:
     multi_callable = channel.unary_unary(
-        _fully_qualified_method(group, method),
+        _common.fully_qualified_method(group, method),
         request_serializer=request_serializer,
         response_deserializer=response_deserializer)
     effective_metadata = _effective_metadata(metadata, metadata_transformer)
@@ -205,7 +202,7 @@ def _future_unary_unary(
     channel, group, method, timeout, protocol_options, metadata,
     metadata_transformer, request, request_serializer, response_deserializer):
   multi_callable = channel.unary_unary(
-      _fully_qualified_method(group, method),
+      _common.fully_qualified_method(group, method),
       request_serializer=request_serializer,
       response_deserializer=response_deserializer)
   effective_metadata = _effective_metadata(metadata, metadata_transformer)
@@ -219,7 +216,7 @@ def _unary_stream(
     channel, group, method, timeout, protocol_options, metadata,
     metadata_transformer, request, request_serializer, response_deserializer):
   multi_callable = channel.unary_stream(
-      _fully_qualified_method(group, method),
+      _common.fully_qualified_method(group, method),
       request_serializer=request_serializer,
       response_deserializer=response_deserializer)
   effective_metadata = _effective_metadata(metadata, metadata_transformer)
@@ -235,7 +232,7 @@ def _blocking_stream_unary(
     response_deserializer):
   try:
     multi_callable = channel.stream_unary(
-        _fully_qualified_method(group, method),
+        _common.fully_qualified_method(group, method),
         request_serializer=request_serializer,
         response_deserializer=response_deserializer)
     effective_metadata = _effective_metadata(metadata, metadata_transformer)
@@ -257,7 +254,7 @@ def _future_stream_unary(
     metadata_transformer, request_iterator, request_serializer,
     response_deserializer):
   multi_callable = channel.stream_unary(
-      _fully_qualified_method(group, method),
+      _common.fully_qualified_method(group, method),
       request_serializer=request_serializer,
       response_deserializer=response_deserializer)
   effective_metadata = _effective_metadata(metadata, metadata_transformer)
@@ -272,7 +269,7 @@ def _stream_stream(
     metadata_transformer, request_iterator, request_serializer,
     response_deserializer):
   multi_callable = channel.stream_stream(
-      _fully_qualified_method(group, method),
+      _common.fully_qualified_method(group, method),
       request_serializer=request_serializer,
       response_deserializer=response_deserializer)
   effective_metadata = _effective_metadata(metadata, metadata_transformer)

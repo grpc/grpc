@@ -16,6 +16,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\create_channel_internal.cc">
       <Filter>src\cpp\client</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\client\create_channel_posix.cc">
+      <Filter>src\cpp\client</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\credentials.cc">
       <Filter>src\cpp\client</Filter>
     </ClCompile>
@@ -61,6 +64,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\server_credentials.cc">
       <Filter>src\cpp\server</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\server\server_posix.cc">
+      <Filter>src\cpp\server</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\util\byte_buffer.cc">
       <Filter>src\cpp\util</Filter>
     </ClCompile>
@@ -96,6 +102,9 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\create_channel.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\create_channel_posix.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\generic\async_generic_service.h">
       <Filter>include\grpc++\generic</Filter>
     </ClInclude>
@@ -110,6 +119,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\client_unary_call.h">
       <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\core_codegen.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\grpc_library.h">
       <Filter>include\grpc++\impl</Filter>
@@ -175,6 +187,9 @@
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\server_context.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\server_posix.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\async_stream.h">
@@ -370,9 +385,6 @@
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\src\cpp\client\create_channel_internal.h">
       <Filter>src\cpp\client</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\cpp\common\core_codegen.h">
-      <Filter>src\cpp\common</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\dynamic_thread_pool.h">
       <Filter>src\cpp\server</Filter>

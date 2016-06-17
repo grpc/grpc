@@ -50,7 +50,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 // logging
 
-static const bool squelch = true;
+bool squelch = true;
+bool leak_check = true;
 
 static void dont_log(gpr_log_func_args *args) {}
 
@@ -739,6 +740,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           break;
         }
         grpc_op *ops = gpr_malloc(sizeof(grpc_op) * num_ops);
+        memset(ops, 0, sizeof(grpc_op) * num_ops);
         bool ok = true;
         size_t i;
         grpc_op *op;
