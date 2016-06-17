@@ -11,8 +11,7 @@
   },
   "dependencies": {
     "Grpc.Core": {
-      "version": "0.0.1",
-      "taget": "project"
+      "target": "project"
     },
     "Newtonsoft.Json": "8.0.3",
     "NUnit": "3.2.0",

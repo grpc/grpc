@@ -12,12 +12,10 @@
   },
   "dependencies": {
     "Grpc.Auth": {
-      "version": "0.0.1",
-      "taget": "project"
+      "target": "project"
     },
     "Grpc.Core": {
-      "version": "0.0.1",
-      "taget": "project"
+      "target": "project"
     },
     "Google.Protobuf": "3.0.0-beta3",
     "CommandLineParser": "1.9.71",
