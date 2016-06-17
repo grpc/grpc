@@ -230,7 +230,7 @@ class CommonStressTestSyncServer : public CommonStressTest<TestServiceImpl> {
 };
 
 class CommonStressTestAsyncServer
-    : public CommonStressTest< ::grpc::testing::EchoTestService::AsyncService> {
+    : public CommonStressTest<grpc::testing::EchoTestService::AsyncService> {
  public:
   void SetUp() GRPC_OVERRIDE {
     shutting_down_ = false;
