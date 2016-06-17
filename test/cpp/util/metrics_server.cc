@@ -60,7 +60,7 @@ long QpsGauge::Get() {
   std::lock_guard<std::mutex> lock(num_queries_mu_);
   gpr_timespec time_diff =
       gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), start_time_);
-  long duration_secs = time_diff.tv_sec > 0 ? time_diff.tv_sec : 1;
+  long duration_secs = time_diff.tv_sec > 0 ? (long)time_diff.tv_sec : long(1);
   return num_queries_ / duration_secs;
 }
 

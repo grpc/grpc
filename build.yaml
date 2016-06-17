@@ -2634,7 +2634,7 @@ targets:
   - grpc
   - gpr
 - name: grpc_cli
-  build: test
+  build: tool
   run: false
   language: c++
   src:

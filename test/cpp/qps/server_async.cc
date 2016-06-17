@@ -392,8 +392,8 @@ std::unique_ptr<Server> CreateAsyncServer(const ServerConfig &config) {
                              BenchmarkService::AsyncService,
                              grpc::ServerContext>(
           config, RegisterBenchmarkService,
-          &BenchmarkService::AsyncService::RequestUnaryCall,
-          &BenchmarkService::AsyncService::RequestStreamingCall,
+          std::mem_fn(&BenchmarkService::AsyncService::RequestUnaryCall),
+          std::mem_fn(&BenchmarkService::AsyncService::RequestStreamingCall),
           ProcessSimpleRPC));
 }
 std::unique_ptr<Server> CreateAsyncGenericServer(const ServerConfig &config) {
@@ -401,7 +401,7 @@ std::unique_ptr<Server> CreateAsyncGenericServer(const ServerConfig &config) {
       new AsyncQpsServerTest<ByteBuffer, ByteBuffer, grpc::AsyncGenericService,
                              grpc::GenericServerContext>(
           config, RegisterGenericService, nullptr,
-          &grpc::AsyncGenericService::RequestCall, ProcessGenericRPC));
+          std::mem_fn(&grpc::AsyncGenericService::RequestCall), ProcessGenericRPC));
 }
 
 }  // namespace testing

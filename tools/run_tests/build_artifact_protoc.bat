@@ -32,9 +32,13 @@ mkdir artifacts
 setlocal
 cd third_party/protobuf
 
-powershell -Command "Invoke-WebRequest https://googlemock.googlecode.com/files/gmock-1.7.0.zip -OutFile gmock.zip"
-powershell -Command "Add-Type -Assembly 'System.IO.Compression.FileSystem'; [System.IO.Compression.ZipFile]::ExtractToDirectory('gmock.zip', '.');"
-rename gmock-1.7.0 gmock
+if exist gmock (
+	echo gmock already present: not downloading again
+) else (
+	powershell -Command "Invoke-WebRequest https://googlemock.googlecode.com/files/gmock-1.7.0.zip -OutFile gmock.zip"
+	powershell -Command "Add-Type -Assembly 'System.IO.Compression.FileSystem'; [System.IO.Compression.ZipFile]::ExtractToDirectory('gmock.zip', '.');"
+	rename gmock-1.7.0 gmock
+)
 
 cd cmake
 cmake -G "%generator%" || goto :error

@@ -72,7 +72,7 @@ bool PrintMetrics(std::unique_ptr<MetricsService::Stub> stub, bool total_only,
       stub->GetAllGauges(&context, message));
 
   GaugeResponse gauge_response;
-  long overall_qps = 0;
+  google::protobuf::int64 overall_qps = 0;
   while (reader->Read(&gauge_response)) {
     if (gauge_response.value_case() == GaugeResponse::kLongValue) {
       if (!total_only) {
