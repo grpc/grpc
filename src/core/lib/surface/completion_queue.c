@@ -233,15 +233,16 @@ void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
 #endif
 
   GPR_TIMER_BEGIN("grpc_cq_end_op", 0);
-  if (grpc_api_trace || (grpc_trace_operation_failures && error != GRPC_ERROR_NONE)) {
+  if (grpc_api_trace ||
+      (grpc_trace_operation_failures && error != GRPC_ERROR_NONE)) {
     const char *errmsg = grpc_error_string(error);
     GRPC_API_TRACE(
         "grpc_cq_end_op(exec_ctx=%p, cc=%p, tag=%p, error=%s, done=%p, "
         "done_arg=%p, storage=%p)",
         7, (exec_ctx, cc, tag, errmsg, done, done_arg, storage));
     if (grpc_trace_operation_failures) {
-	    gpr_log(GPR_ERROR, "Operation failed: tag=%p, error=%s", tag, errmsg);   
-    } 
+      gpr_log(GPR_ERROR, "Operation failed: tag=%p, error=%s", tag, errmsg);
+    }
     grpc_error_free_string(errmsg);
   }
 
