@@ -42,8 +42,8 @@ namespace grpc {
 void AddInsecureChannelFromFd(Server* server, int fd) {
   grpc_server_add_insecure_channel_from_fd(
       server->c_server(), server->completion_queue()->cq(), fd);
+}
 
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD
-}
 
 }  // namespace grpc

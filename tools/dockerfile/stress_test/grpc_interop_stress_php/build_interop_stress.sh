@@ -1,4 +1,5 @@
-# Copyright 2016, Google Inc.
+#!/bin/bash
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,34 +27,28 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# Builds PHP interop server and client in a base image.
+set -ex
 
-"""Create tests for each fuzzer"""
+mkdir -p /var/local/git
+git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
 
-import copy
-import glob
+# copy service account keys if available
+cp -r /var/local/jenkins/service_account $HOME || true
 
-def mako_plugin(dictionary):
-  targets = dictionary['targets']
-  tests = dictionary['tests']
-  for tgt in targets:
-    if tgt['build'] == 'fuzzer':
-      new_target = copy.deepcopy(tgt)
-      new_target['build'] = 'test'
-      new_target['name'] += '_one_entry'
-      new_target['run'] = False
-      new_target['src'].append('test/core/util/one_corpus_entry_fuzzer.c')
-      new_target['own_src'].append('test/core/util/one_corpus_entry_fuzzer.c')
-      targets.append(new_target)
-      for corpus in new_target['corpus_dirs']:
-        for fn in sorted(glob.glob('%s/*' % corpus)):
-          tests.append({
-              'name': new_target['name'],
-              'args': [fn],
-              'exclude_configs': ['tsan'],
-              'uses_polling': False,
-              'platforms': ['linux'],
-              'ci_platforms': ['linux'],
-              'flaky': False,
-              'language': 'c',
-              'cpu_cost': 0.1,
-          })
+cd /var/local/git/grpc
+rvm --default use ruby-2.1
+
+make install-certs
+
+# gRPC core and protobuf need to be installed
+make install
+
+(cd src/php/ext/grpc && phpize && ./configure && make)
+
+(cd third_party/protobuf && make install)
+
+(cd src/php && composer install)
+
+(cd src/php && protoc-gen-php -i tests/interop/ -o tests/interop/ tests/interop/test.proto)

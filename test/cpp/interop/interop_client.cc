@@ -31,10 +31,10 @@
  *
  */
 
+#include <unistd.h>
 #include <cinttypes>
 #include <fstream>
 #include <memory>
-#include <unistd.h>
 
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
