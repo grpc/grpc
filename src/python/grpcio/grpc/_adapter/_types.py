@@ -114,7 +114,7 @@ class ConnectivityState(enum.IntEnum):
   CONNECTING        = cygrpc.ConnectivityState.connecting
   READY             = cygrpc.ConnectivityState.ready
   TRANSIENT_FAILURE = cygrpc.ConnectivityState.transient_failure
-  FATAL_FAILURE     = cygrpc.ConnectivityState.fatal_failure
+  FATAL_FAILURE     = cygrpc.ConnectivityState.shutdown
 
 
 class Status(collections.namedtuple(

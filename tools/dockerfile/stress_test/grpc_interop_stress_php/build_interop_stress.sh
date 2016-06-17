@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -26,53 +27,28 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# Builds PHP interop server and client in a base image.
+set -ex
 
-FROM ubuntu:14.04
+mkdir -p /var/local/git
+git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
 
-# Install Git and basic packages.
-RUN apt-get update && apt-get install -y \
-  autoconf \
-  autotools-dev \
-  build-essential \
-  bzip2 \
-  ccache \
-  curl \
-  gcc \
-  gcc-multilib \
-  git \
-  golang \
-  gyp \
-  lcov \
-  libc6 \
-  libc6-dbg \
-  libc6-dev \
-  libgtest-dev \
-  libtool \
-  make \
-  perl \
-  strace \
-  python-dev \
-  python-setuptools \
-  python-yaml \
-  telnet \
-  unzip \
-  wget \
-  zip && apt-get clean
+# copy service account keys if available
+cp -r /var/local/jenkins/service_account $HOME || true
 
-#================
-# Build profiling
-RUN apt-get update && apt-get install -y time && apt-get clean
+cd /var/local/git/grpc
+rvm --default use ruby-2.1
 
-#=================
-# C++ dependencies
-RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
+make install-certs
 
-#======================
-# Zookeeper dependencies
-# TODO(jtattermusch): is zookeeper still needed?
-RUN apt-get install -y libzookeeper-mt-dev
+# gRPC core and protobuf need to be installed
+make install
 
-RUN mkdir /var/local/jenkins
+(cd src/php/ext/grpc && phpize && ./configure && make)
 
-# Define the default command.
-CMD ["bash"]
+(cd third_party/protobuf && make install)
+
+(cd src/php && composer install)
+
+(cd src/php && protoc-gen-php -i tests/interop/ -o tests/interop/ tests/interop/test.proto)
