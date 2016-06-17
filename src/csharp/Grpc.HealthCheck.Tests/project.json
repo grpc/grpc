@@ -11,8 +11,7 @@
   },
   "dependencies": {
     "Grpc.HealthCheck": {
-      "version": "0.0.1",
-      "taget": "project"
+      "target": "project"
     },
     "NUnit": "3.2.0",
     "NUnitLite": "3.2.0-*"

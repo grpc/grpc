@@ -5,8 +5,7 @@
 
   "dependencies": {
     "Grpc.Core": {
-      "version": "0.0.1",
-      "taget": "project"
+      "target": "project"
     },
     "Google.Protobuf": "3.0.0-beta3"
   },
