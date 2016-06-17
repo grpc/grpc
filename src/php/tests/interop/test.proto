@@ -68,4 +68,7 @@ service TestService {
   // first request.
   rpc HalfDuplexCall(stream StreamingOutputCallRequest)
       returns (stream StreamingOutputCallResponse);
+
+  // An unimplemented method on the server
+  rpc UnimplementedCall(grpc.testing.EmptyMessage) returns (grpc.testing.EmptyMessage);
 }
