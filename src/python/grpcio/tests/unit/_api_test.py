@@ -33,6 +33,8 @@ import unittest
 
 import six
 
+import grpc
+
 from tests.unit import _from_grpc_import_star
 
 
@@ -84,6 +86,18 @@ class AllTest(unittest.TestCase):
     six.assertCountEqual(
         self, expected_grpc_code_elements,
         _from_grpc_import_star.GRPC_ELEMENTS)
+
+
+class ChannelConnectivityTest(unittest.TestCase):
+
+  def testChannelConnectivity(self):
+    self.assertSequenceEqual(
+        (grpc.ChannelConnectivity.IDLE,
+         grpc.ChannelConnectivity.CONNECTING,
+         grpc.ChannelConnectivity.READY,
+         grpc.ChannelConnectivity.TRANSIENT_FAILURE,
+         grpc.ChannelConnectivity.SHUTDOWN,),
+        tuple(grpc.ChannelConnectivity))
 
 
 if __name__ == '__main__':
