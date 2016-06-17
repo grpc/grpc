@@ -212,14 +212,14 @@ class ChannelConnectivity(enum.Enum):
     READY: The channel is ready to conduct RPCs.
     TRANSIENT_FAILURE: The channel has seen a failure from which it expects to
       recover.
-    FATAL_FAILURE: The channel has seen a failure from which it cannot recover.
+    SHUTDOWN: The channel has seen a failure from which it cannot recover.
   """
   IDLE              = (_cygrpc.ConnectivityState.idle, 'idle')
   CONNECTING        = (_cygrpc.ConnectivityState.connecting, 'connecting')
   READY             = (_cygrpc.ConnectivityState.ready, 'ready')
   TRANSIENT_FAILURE = (
       _cygrpc.ConnectivityState.transient_failure, 'transient failure')
-  FATAL_FAILURE     = (_cygrpc.ConnectivityState.fatal_failure, 'fatal failure')
+  SHUTDOWN          = (_cygrpc.ConnectivityState.shutdown, 'shutdown')
 
 
 @enum.unique
