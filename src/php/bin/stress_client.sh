@@ -1,4 +1,5 @@
-# Copyright 2016, Google Inc.
+#!/bin/bash
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,33 +28,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Create tests for each fuzzer"""
-
-import copy
-import glob
-
-def mako_plugin(dictionary):
-  targets = dictionary['targets']
-  tests = dictionary['tests']
-  for tgt in targets:
-    if tgt['build'] == 'fuzzer':
-      new_target = copy.deepcopy(tgt)
-      new_target['build'] = 'test'
-      new_target['name'] += '_one_entry'
-      new_target['run'] = False
-      new_target['src'].append('test/core/util/one_corpus_entry_fuzzer.c')
-      new_target['own_src'].append('test/core/util/one_corpus_entry_fuzzer.c')
-      targets.append(new_target)
-      for corpus in new_target['corpus_dirs']:
-        for fn in sorted(glob.glob('%s/*' % corpus)):
-          tests.append({
-              'name': new_target['name'],
-              'args': [fn],
-              'exclude_configs': ['tsan'],
-              'uses_polling': False,
-              'platforms': ['linux'],
-              'ci_platforms': ['linux'],
-              'flaky': False,
-              'language': 'c',
-              'cpu_cost': 0.1,
-          })
+set -e
+cd $(dirname $0)
+source ./determine_extension_dir.sh
+php $extension_dir -d max_execution_time=300 \
+  ../tests/interop/stress_client.php $@ 1>&2

@@ -29,10 +29,37 @@
   # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   
-  FROM ubuntu:14.04
+  FROM debian:jessie
   
   <%include file="../../apt_get_basic.include"/>
-  <%include file="../../cxx_deps.include"/>
-  <%include file="../../run_tests_addons_nocache.include"/>
+  <%include file="../../ruby_deps.include"/>
+  <%include file="../../gcp_api_libraries.include"/>
+  <%include file="../../php_deps.include"/>
+  <%include file="../../run_tests_addons.include"/>
+  # ronn: a ruby tool used to convert markdown to man pages, used during the
+  # install of Protobuf extensions
+  #
+  # rake: a ruby version of make used to build the PHP Protobuf extension
+  RUN /bin/bash -l -c "rvm all do gem install ronn rake"
+  
+  # Install composer
+  RUN curl -sS https://getcomposer.org/installer | php
+  RUN mv composer.phar /usr/local/bin/composer
+  
+  # As an attempt to work around #4212, try to prefetch Protobuf-PHP dependency
+  # into composer cache to prevent "composer install" from cloning on each build.
+  RUN git clone --mirror https://github.com/stanley-cheung/Protobuf-PHP.git ${'\\'}
+    /root/.composer/cache/vcs/git-github.com-stanley-cheung-Protobuf-PHP.git/
+  
+  # Download the patched PHP protobuf so that PHP gRPC clients can be generated
+  # from proto3 schemas.
+  RUN git clone https://github.com/stanley-cheung/Protobuf-PHP.git /var/local/git/protobuf-php
+  
+  RUN /bin/bash -l -c "rvm use ruby-2.1 ${'\\'}
+    && cd /var/local/git/protobuf-php ${'\\'}
+    && rvm all do rake pear:package version=1.0 ${'\\'}
+    && pear install Protobuf-1.0.tgz"
+  
   # Define the default command.
   CMD ["bash"]
+  
