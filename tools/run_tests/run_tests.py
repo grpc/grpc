@@ -504,7 +504,14 @@ class CSharpLanguage(object):
       self._make_options = [_windows_toolset_option(self.args.compiler),
                             _windows_arch_option(self.args.arch)]
     else:
-      _check_compiler(self.args.compiler, ['default'])
+      if self.platform == 'linux':
+        if self.args.compiler == 'coreclr':
+          self._docker_distro = 'coreclr'
+        else:
+          self._docker_distro = 'jessie'
+      else:
+        _check_compiler(self.args.compiler, ['default'])
+
       if self.platform == 'mac':
         # On Mac, official distribution of mono is 32bit.
         # TODO(jtattermusch): EMBED_ZLIB=true currently breaks the mac build
@@ -521,14 +528,25 @@ class CSharpLanguage(object):
     nunit_args = ['--labels=All',
                   '--noresult',
                   '--workers=1']
-    if self.platform == 'windows':
+    assembly_subdir = 'bin/%s' % msbuild_config
+    assembly_extension = '.exe'
+
+    if self.args.compiler == 'coreclr':
+      # TODO(jtattermusch): make the runtime string platform-specific
+      assembly_subdir += '/netstandard1.5/debian.8-x64'
+      assembly_extension = ''
+      runtime_cmd = []
+    elif self.platform == 'windows':
       runtime_cmd = []
     else:
       runtime_cmd = ['mono']
 
     specs = []
     for assembly in tests_by_assembly.iterkeys():
-      assembly_file = 'src/csharp/%s/bin/%s/%s.exe' % (assembly, msbuild_config, assembly)
+      assembly_file = 'src/csharp/%s/%s/%s%s' % (assembly,
+                                                 assembly_subdir,
+                                                 assembly,
+                                                 assembly_extension)
       if self.config.build_config != 'gcov' or self.platform != 'windows':
         # normally, run each test as a separate process
         for test in tests_by_assembly[assembly]:
@@ -571,12 +589,15 @@ class CSharpLanguage(object):
     return self._make_options;
 
   def build_steps(self):
-    if self.platform == 'windows':
-      return [[_windows_build_bat(self.args.compiler),
-               'src/csharp/Grpc.sln',
-               '/p:Configuration=%s' % _MSBUILD_CONFIG[self.config.build_config]]]
+    if self.args.compiler == 'coreclr':
+      return [['tools/run_tests/build_csharp_coreclr.sh']]
     else:
-      return [['tools/run_tests/build_csharp.sh']]
+      if self.platform == 'windows':
+        return [[_windows_build_bat(self.args.compiler),
+                 'src/csharp/Grpc.sln',
+                 '/p:Configuration=%s' % _MSBUILD_CONFIG[self.config.build_config]]]
+      else:
+        return [['tools/run_tests/build_csharp.sh']]
 
   def post_tests_steps(self):
     if self.platform == 'windows':
@@ -588,7 +609,8 @@ class CSharpLanguage(object):
     return 'Makefile'
 
   def dockerfile_dir(self):
-    return 'tools/dockerfile/test/csharp_jessie_%s' % _docker_arch_suffix(self.args.arch)
+    return 'tools/dockerfile/test/csharp_%s_%s' % (self._docker_distro,
+                                                   _docker_arch_suffix(self.args.arch))
 
   def __str__(self):
     return 'csharp'
@@ -838,7 +860,8 @@ argp.add_argument('--compiler',
                            'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
                            'vs2010', 'vs2013', 'vs2015',
                            'python2.7', 'python3.4',
-                           'node0.12', 'node4', 'node5'],
+                           'node0.12', 'node4', 'node5',
+                           'coreclr'],
                   default='default',
                   help='Selects compiler to use. Allowed values depend on the platform and language.')
 argp.add_argument('--build_only',
