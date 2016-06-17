@@ -172,6 +172,8 @@ args = argp.parse_args()
 
 KNOWN_BAD = set([
     'src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h',
+    'include/grpc++/ext/reflection.grpc.pb.h',
+    'include/grpc++/ext/reflection.pb.h',
 ])
 
 

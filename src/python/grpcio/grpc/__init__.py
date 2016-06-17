@@ -900,6 +900,102 @@ class Server(six.with_metaclass(abc.ABCMeta)):
 #################################  Functions    ################################
 
 
+def unary_unary_rpc_method_handler(
+    behavior, request_deserializer=None, response_serializer=None):
+  """Creates an RpcMethodHandler for a unary-unary RPC method.
+
+  Args:
+    behavior: The implementation of an RPC method as a callable behavior taking
+      a single request value and returning a single response value.
+    request_deserializer: An optional request deserialization behavior.
+    response_serializer: An optional response serialization behavior.
+
+  Returns:
+    An RpcMethodHandler for a unary-unary RPC method constructed from the given
+      parameters.
+  """
+  from grpc import _utilities
+  return _utilities.RpcMethodHandler(
+      False, False, request_deserializer, response_serializer, behavior, None,
+      None, None)
+
+
+def unary_stream_rpc_method_handler(
+    behavior, request_deserializer=None, response_serializer=None):
+  """Creates an RpcMethodHandler for a unary-stream RPC method.
+
+  Args:
+    behavior: The implementation of an RPC method as a callable behavior taking
+      a single request value and returning an iterator of response values.
+    request_deserializer: An optional request deserialization behavior.
+    response_serializer: An optional response serialization behavior.
+
+  Returns:
+    An RpcMethodHandler for a unary-stream RPC method constructed from the
+      given parameters.
+  """
+  from grpc import _utilities
+  return _utilities.RpcMethodHandler(
+      False, True, request_deserializer, response_serializer, None, behavior,
+      None, None)
+
+
+def stream_unary_rpc_method_handler(
+    behavior, request_deserializer=None, response_serializer=None):
+  """Creates an RpcMethodHandler for a stream-unary RPC method.
+
+  Args:
+    behavior: The implementation of an RPC method as a callable behavior taking
+      an iterator of request values and returning a single response value.
+    request_deserializer: An optional request deserialization behavior.
+    response_serializer: An optional response serialization behavior.
+
+  Returns:
+    An RpcMethodHandler for a stream-unary RPC method constructed from the
+      given parameters.
+  """
+  from grpc import _utilities
+  return _utilities.RpcMethodHandler(
+      True, False, request_deserializer, response_serializer, None, None,
+      behavior, None)
+
+
+def stream_stream_rpc_method_handler(
+        behavior, request_deserializer=None, response_serializer=None):
+  """Creates an RpcMethodHandler for a stream-stream RPC method.
+
+  Args:
+    behavior: The implementation of an RPC method as a callable behavior taking
+      an iterator of request values and returning an iterator of response
+      values.
+    request_deserializer: An optional request deserialization behavior.
+    response_serializer: An optional response serialization behavior.
+
+  Returns:
+    An RpcMethodHandler for a stream-stream RPC method constructed from the
+      given parameters.
+  """
+  from grpc import _utilities
+  return _utilities.RpcMethodHandler(
+      True, True, request_deserializer, response_serializer, None, None, None,
+      behavior)
+
+
+def method_handlers_generic_handler(service, method_handlers):
+  """Creates a grpc.GenericRpcHandler from RpcMethodHandlers.
+
+  Args:
+    service: A service name to be used for the given method handlers.
+    method_handlers: A dictionary from method name to RpcMethodHandler
+      implementing the named method.
+
+  Returns:
+    A GenericRpcHandler constructed from the given parameters.
+  """
+  from grpc import _utilities
+  return _utilities.DictionaryGenericHandler(service, method_handlers)
+
+
 def ssl_channel_credentials(
     root_certificates=None, private_key=None, certificate_chain=None):
   """Creates a ChannelCredentials for use with an SSL-enabled Channel.
@@ -1059,7 +1155,7 @@ def insecure_channel(target, options=None):
     A Channel to the target through which RPCs may be conducted.
   """
   from grpc import _channel
-  return _channel.Channel(target, None, options)
+  return _channel.Channel(target, options, None)
 
 
 def secure_channel(target, credentials, options=None):
@@ -1075,7 +1171,7 @@ def secure_channel(target, credentials, options=None):
     A Channel to the target through which RPCs may be conducted.
   """
   from grpc import _channel
-  return _channel.Channel(target, credentials, options)
+  return _channel.Channel(target, options, credentials)
 
 
 def server(generic_rpc_handlers, thread_pool, options=None):
@@ -1097,3 +1193,49 @@ def server(generic_rpc_handlers, thread_pool, options=None):
   """
   from grpc import _server
   return _server.Server(generic_rpc_handlers, thread_pool)
+
+
+###################################  __all__  #################################
+
+
+__all__ = (
+    'FutureTimeoutError',
+    'FutureCancelledError',
+    'Future',
+    'ChannelConnectivity',
+    'StatusCode',
+    'RpcError',
+    'RpcContext',
+    'Call',
+    'ChannelCredentials',
+    'CallCredentials',
+    'AuthMetadataContext',
+    'AuthMetadataPluginCallback',
+    'AuthMetadataPlugin',
+    'ServerCredentials',
+    'UnaryUnaryMultiCallable',
+    'UnaryStreamMultiCallable',
+    'StreamUnaryMultiCallable',
+    'StreamStreamMultiCallable',
+    'Channel',
+    'ServicerContext',
+    'RpcMethodHandler',
+    'HandlerCallDetails',
+    'GenericRpcHandler',
+    'Server',
+    'unary_unary_rpc_method_handler',
+    'unary_stream_rpc_method_handler',
+    'stream_unary_rpc_method_handler',
+    'stream_stream_rpc_method_handler',
+    'method_handlers_generic_handler',
+    'ssl_channel_credentials',
+    'metadata_call_credentials',
+    'access_token_call_credentials',
+    'composite_call_credentials',
+    'composite_channel_credentials',
+    'ssl_server_credentials',
+    'channel_ready_future',
+    'insecure_channel',
+    'secure_channel',
+    'server',
+)

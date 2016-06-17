@@ -224,7 +224,7 @@ namespace Grpc.Core.Internal.Tests
 
             fakeCall.UnaryResponseClientHandler(true,
                 new ClientSideStatus(new Status(StatusCode.OutOfRange, ""), new Metadata()),
-                null,
+                CreateResponsePayload(),
                 new Metadata());
 
             AssertUnaryResponseError(asyncCall, fakeCall, resultTask, StatusCode.OutOfRange);

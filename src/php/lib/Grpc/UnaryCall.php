@@ -75,6 +75,8 @@ class UnaryCall extends AbstractCall
             OP_RECV_STATUS_ON_CLIENT => true,
         ]);
 
-        return [$this->deserializeResponse($event->message), $event->status];
+        $status = $event->status;
+        $this->trailing_metadata = $status->metadata;
+        return [$this->deserializeResponse($event->message), $status];
     }
 }

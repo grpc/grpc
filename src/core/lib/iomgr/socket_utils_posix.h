@@ -78,6 +78,14 @@ int grpc_set_socket_ip_pktinfo_if_possible(int fd);
    If IPV6_RECVPKTINFO is not available, returns 1. */
 int grpc_set_socket_ipv6_recvpktinfo_if_possible(int fd);
 
+/* Tries to set the socket's send buffer to given size.
+   Returns 1 on success, 0 on failure. */
+int grpc_set_socket_sndbuf(int fd, int buffer_size_bytes);
+
+/* Tries to set the socket's receive buffer to given size.
+   Returns 1 on success, 0 on failure. */
+int grpc_set_socket_rcvbuf(int fd, int buffer_size_bytes);
+
 /* An enum to keep track of IPv4/IPv6 socket modes.
 
    Currently, this information is only used when a socket is first created, but

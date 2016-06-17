@@ -30,10 +30,10 @@
 """Entry point for running stress tests."""
 
 import argparse
-import Queue
 import threading
 
 from grpc.beta import implementations
+from six.moves import queue
 from src.proto.grpc.testing import metrics_pb2
 from src.proto.grpc.testing import test_pb2
 
@@ -94,7 +94,7 @@ def run_test(args):
   test_cases = _parse_weighted_test_cases(args.test_cases)
   test_servers = args.server_addresses.split(',')
   # Propagate any client exceptions with a queue
-  exception_queue = Queue.Queue()
+  exception_queue = queue.Queue()
   stop_event = threading.Event()
   hist = histogram.Histogram(1, 1)
   runners = []
@@ -121,7 +121,7 @@ def run_test(args):
     if timeout_secs < 0:
       timeout_secs = None
     raise exception_queue.get(block=True, timeout=timeout_secs)
-  except Queue.Empty:
+  except queue.Empty:
     # No exceptions thrown, success
     pass
   finally:

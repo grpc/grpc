@@ -1,32 +1,36 @@
 source 'https://github.com/CocoaPods/Specs.git'
 platform :ios, '8.0'
 
-pod 'Protobuf', :path => "../../../third_party/protobuf"
-pod 'BoringSSL', :podspec => ".."
-pod 'CronetFramework', :podspec => ".."
-pod 'gRPC', :path => "../../.."
-pod 'RemoteTest', :path => "RemoteTestClient"
+install! 'cocoapods', :deterministic_uuids => false
 
-link_with 'AllTests',
-          'RxLibraryUnitTests',
-          'InteropTests',
-          'InteropTestsLocalSSL',
-          'InteropTestsLocalCleartext'
+def shared_pods
+	pod 'Protobuf', :path => "../../../third_party/protobuf"
+	pod 'BoringSSL', :podspec => ".."
+	pod 'CronetFramework', :podspec => ".."
+	pod 'gRPC', :path => "../../.."
+	pod 'RemoteTest', :path => "RemoteTestClient"
+end
 
 target 'Tests' do
+	shared_pods
 end
 
 target 'AllTests' do
+	shared_pods
 end
 
 target 'RxLibraryUnitTests' do
+	shared_pods
 end
 
 target 'InteropTestsRemote' do
+	shared_pods
 end
 
 target 'InteropTestsLocalSSL' do
+	shared_pods
 end
 
 target 'InteropTestsLocalCleartext' do
+	shared_pods
 end

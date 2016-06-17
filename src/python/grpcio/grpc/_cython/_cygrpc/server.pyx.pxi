@@ -99,16 +99,11 @@ cdef class Server:
     with nogil:
       grpc_server_start(self.c_server)
     # Ensure the core has gotten a chance to do the start-up work
-    self.backup_shutdown_queue.pluck(None, Timespec(None))
+    self.backup_shutdown_queue.poll(Timespec(None))
 
   def add_http2_port(self, address,
                      ServerCredentials server_credentials=None):
-    if isinstance(address, bytes):
-      pass
-    elif isinstance(address, basestring):
-      address = address.encode()
-    else:
-      raise TypeError("expected address to be a str or bytes")
+    address = str_to_bytes(address)
     self.references.append(address)
     cdef int result
     cdef char *address_c_string = address

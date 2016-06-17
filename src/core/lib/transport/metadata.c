@@ -129,7 +129,10 @@ typedef struct mdtab_shard {
   internal_metadata **elems;
   size_t count;
   size_t capacity;
-  size_t free;
+  /** Estimate of the number of unreferenced mdelems in the hash table.
+      This will eventually converge to the exact number, but it's instantaneous
+      accuracy is not guaranteed */
+  gpr_atm free_estimate;
 } mdtab_shard;
 
 #define LOG2_STRTAB_SHARD_COUNT 5
@@ -217,7 +220,7 @@ void grpc_mdctx_global_init(void) {
     mdtab_shard *shard = &g_mdtab_shard[i];
     gpr_mu_init(&shard->mu);
     shard->count = 0;
-    shard->free = 0;
+    gpr_atm_no_barrier_store(&shard->free_estimate, 0);
     shard->capacity = INITIAL_MDTAB_CAPACITY;
     shard->elems = gpr_malloc(sizeof(*shard->elems) * shard->capacity);
     memset(shard->elems, 0, sizeof(*shard->elems) * shard->capacity);
@@ -232,7 +235,7 @@ void grpc_mdctx_global_shutdown(void) {
     gc_mdtab(shard);
     /* TODO(ctiller): GPR_ASSERT(shard->count == 0); */
     if (shard->count != 0) {
-      gpr_log(GPR_DEBUG, "WARNING: %d metadata elements were leaked",
+      gpr_log(GPR_DEBUG, "WARNING: %" PRIuPTR " metadata elements were leaked",
               shard->count);
       if (grpc_iomgr_abort_on_leaks()) {
         abort();
@@ -245,7 +248,7 @@ void grpc_mdctx_global_shutdown(void) {
     gpr_mu_destroy(&shard->mu);
     /* TODO(ctiller): GPR_ASSERT(shard->count == 0); */
     if (shard->count != 0) {
-      gpr_log(GPR_DEBUG, "WARNING: %d metadata strings were leaked",
+      gpr_log(GPR_DEBUG, "WARNING: %" PRIuPTR " metadata strings were leaked",
               shard->count);
       for (size_t j = 0; j < shard->capacity; j++) {
         for (internal_string *s = shard->strs[j]; s; s = s->bucket_next) {
@@ -281,10 +284,8 @@ static void ref_md_locked(mdtab_shard *shard,
           grpc_mdstr_as_c_string((grpc_mdstr *)md->key),
           grpc_mdstr_as_c_string((grpc_mdstr *)md->value));
 #endif
-  if (0 == gpr_atm_no_barrier_fetch_add(&md->refcnt, 2)) {
-    shard->free--;
-  } else {
-    GPR_ASSERT(1 != gpr_atm_no_barrier_fetch_add(&md->refcnt, -1));
+  if (0 == gpr_atm_no_barrier_fetch_add(&md->refcnt, 1)) {
+    gpr_atm_no_barrier_fetch_add(&shard->free_estimate, -1);
   }
 }
 
@@ -447,6 +448,7 @@ static void gc_mdtab(mdtab_shard *shard) {
   size_t i;
   internal_metadata **prev_next;
   internal_metadata *md, *next;
+  gpr_atm num_freed = 0;
 
   GPR_TIMER_BEGIN("gc_mdtab", 0);
   for (i = 0; i < shard->capacity; i++) {
@@ -463,13 +465,14 @@ static void gc_mdtab(mdtab_shard *shard) {
         }
         gpr_free(md);
         *prev_next = next;
-        shard->free--;
+        num_freed++;
         shard->count--;
       } else {
         prev_next = &md->bucket_next;
       }
     }
   }
+  gpr_atm_no_barrier_fetch_add(&shard->free_estimate, -num_freed);
   GPR_TIMER_END("gc_mdtab", 0);
 }
 
@@ -504,7 +507,8 @@ static void grow_mdtab(mdtab_shard *shard) {
 }
 
 static void rehash_mdtab(mdtab_shard *shard) {
-  if (shard->free > shard->capacity / 4) {
+  if (gpr_atm_no_barrier_load(&shard->free_estimate) >
+      (gpr_atm)(shard->capacity / 4)) {
     gc_mdtab(shard);
   } else {
     grow_mdtab(shard);
@@ -553,7 +557,7 @@ grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_mdstr *mkey,
 
   /* not found: create a new pair */
   md = gpr_malloc(sizeof(internal_metadata));
-  gpr_atm_rel_store(&md->refcnt, 2);
+  gpr_atm_rel_store(&md->refcnt, 1);
   md->key = key;
   md->value = value;
   md->user_data = 0;
@@ -645,7 +649,7 @@ grpc_mdelem *grpc_mdelem_ref(grpc_mdelem *gmd DEBUG_ARGS) {
      this function - meaning that no adjustment to mdtab_free is necessary,
      simplifying the logic here to be just an atomic increment */
   /* use C assert to have this removed in opt builds */
-  assert(gpr_atm_no_barrier_load(&md->refcnt) >= 2);
+  assert(gpr_atm_no_barrier_load(&md->refcnt) >= 1);
   gpr_atm_no_barrier_fetch_add(&md->refcnt, 1);
   return gmd;
 }
@@ -662,18 +666,13 @@ void grpc_mdelem_unref(grpc_mdelem *gmd DEBUG_ARGS) {
           grpc_mdstr_as_c_string((grpc_mdstr *)md->key),
           grpc_mdstr_as_c_string((grpc_mdstr *)md->value));
 #endif
-  if (2 == gpr_atm_full_fetch_add(&md->refcnt, -1)) {
-    uint32_t hash = GRPC_MDSTR_KV_HASH(md->key->hash, md->value->hash);
+  uint32_t hash = GRPC_MDSTR_KV_HASH(md->key->hash, md->value->hash);
+  if (1 == gpr_atm_full_fetch_add(&md->refcnt, -1)) {
+    /* once the refcount hits zero, some other thread can come along and
+       free md at any time: it's unsafe from this point on to access it */
     mdtab_shard *shard =
         &g_mdtab_shard[SHARD_IDX(hash, LOG2_MDTAB_SHARD_COUNT)];
-    GPR_TIMER_BEGIN("grpc_mdelem_unref.to_zero", 0);
-    gpr_mu_lock(&shard->mu);
-    if (1 == gpr_atm_no_barrier_load(&md->refcnt)) {
-      shard->free++;
-      gpr_atm_no_barrier_store(&md->refcnt, 0);
-    }
-    gpr_mu_unlock(&shard->mu);
-    GPR_TIMER_END("grpc_mdelem_unref.to_zero", 0);
+    gpr_atm_no_barrier_fetch_add(&shard->free_estimate, 1);
   }
 }
 

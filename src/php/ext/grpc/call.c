@@ -292,6 +292,7 @@ PHP_METHOD(Call, startBatch) {
   grpc_metadata_array_init(&recv_trailing_metadata);
   MAKE_STD_ZVAL(result);
   object_init(result);
+  memset(ops, 0, sizeof(ops));
   /* "a" == 1 array */
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &array) ==
       FAILURE) {

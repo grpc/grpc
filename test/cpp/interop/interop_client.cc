@@ -332,7 +332,7 @@ bool InteropClient::DoClientCompressedUnary() {
   if (s.error_code() != grpc::StatusCode::INVALID_ARGUMENT) {
     // The server isn't able to evaluate incoming compression, making the rest
     // of this test moot.
-    gpr_log(GPR_DEBUG, "Compressed unary request probe failed %s");
+    gpr_log(GPR_DEBUG, "Compressed unary request probe failed");
     return false;
   }
   gpr_log(GPR_DEBUG, "Compressed unary request probe succeeded. Proceeding.");
@@ -452,7 +452,7 @@ bool InteropClient::DoResponseStreaming() {
     // most likely due to connection failure.
     gpr_log(GPR_ERROR,
             "DoResponseStreaming(): Read fewer streams (%d) than "
-            "response_stream_sizes.size() (%d)",
+            "response_stream_sizes.size() (%" PRIuPTR ")",
             i, response_stream_sizes.size());
     return TransientFailureOrAbort();
   }
@@ -489,7 +489,7 @@ bool InteropClient::DoClientCompressedStreaming() {
   if (s.error_code() != grpc::StatusCode::INVALID_ARGUMENT) {
     // The server isn't able to evaluate incoming compression, making the rest
     // of this test moot.
-    gpr_log(GPR_DEBUG, "Compressed streaming request probe failed %s");
+    gpr_log(GPR_DEBUG, "Compressed streaming request probe failed");
     return false;
   }
   gpr_log(GPR_DEBUG,
@@ -579,8 +579,10 @@ bool InteropClient::DoServerCompressedStreaming() {
     // stream->Read() failed before reading all the expected messages. This
     // is most likely due to a connection failure.
     gpr_log(GPR_ERROR,
-            "%s(): Responses read (k=%d) is "
-            "less than the expected number of messages (%d)).",
+            "%s(): Responses read (k=%" PRIuPTR
+            ") is "
+            "less than the expected messages (i.e "
+            "response_stream_sizes.size() (%" PRIuPTR ")).",
             __func__, k, response_stream_sizes.size());
     return TransientFailureOrAbort();
   }
@@ -666,7 +668,7 @@ bool InteropClient::DoHalfDuplex() {
     // most likely due to a connection failure
     gpr_log(GPR_ERROR,
             "DoHalfDuplex(): Responses read (i=%d) are less than the expected "
-            "number of messages response_stream_sizes.size() (%d)",
+            "number of messages response_stream_sizes.size() (%" PRIuPTR ")",
             i, response_stream_sizes.size());
     return TransientFailureOrAbort();
   }

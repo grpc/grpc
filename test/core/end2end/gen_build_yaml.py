@@ -45,6 +45,8 @@ default_unsecure_fixture_options = FixtureOptions(
 socketpair_unsecure_fixture_options = default_unsecure_fixture_options._replace(fullstack=False, dns_resolver=False)
 default_secure_fixture_options = default_unsecure_fixture_options._replace(secure=True)
 uds_fixture_options = default_unsecure_fixture_options._replace(dns_resolver=False, platforms=['linux', 'mac', 'posix'])
+fd_unsecure_fixture_options = default_unsecure_fixture_options._replace(
+    dns_resolver=False, fullstack=False, platforms=['linux', 'mac', 'posix'])
 
 
 # maps fixture name to whether it requires the security library
@@ -52,6 +54,7 @@ END2END_FIXTURES = {
     'h2_compress': default_unsecure_fixture_options,
     'h2_census': default_unsecure_fixture_options,
     'h2_fakesec': default_secure_fixture_options._replace(ci_mac=False),
+    'h2_fd': fd_unsecure_fixture_options,
     'h2_full': default_unsecure_fixture_options,
     'h2_full+pipe': default_unsecure_fixture_options._replace(
         platforms=['linux']),
@@ -73,7 +76,8 @@ END2END_FIXTURES = {
 }
 
 TestOptions = collections.namedtuple(
-    'TestOptions', 'needs_fullstack needs_dns proxyable secure traceable cpu_cost')
+    'TestOptions',
+    'needs_fullstack needs_dns proxyable secure traceable cpu_cost')
 default_test_options = TestOptions(False, False, True, False, True, 1.0)
 connectivity_test_options = default_test_options._replace(needs_fullstack=True)
 
@@ -90,8 +94,10 @@ END2END_TESTS = {
     'cancel_before_invoke': default_test_options._replace(cpu_cost=LOWCPU),
     'cancel_in_a_vacuum': default_test_options._replace(cpu_cost=LOWCPU),
     'cancel_with_status': default_test_options._replace(cpu_cost=LOWCPU),
-    'compressed_payload': default_test_options._replace(proxyable=False, cpu_cost=LOWCPU),
-    'connectivity': connectivity_test_options._replace(proxyable=False, cpu_cost=LOWCPU),
+    'compressed_payload': default_test_options._replace(proxyable=False,
+                                                        cpu_cost=LOWCPU),
+    'connectivity': connectivity_test_options._replace(proxyable=False,
+                                                       cpu_cost=LOWCPU),
     'default_host': default_test_options._replace(needs_fullstack=True,
                                                   needs_dns=True),
     'disappearing_server': connectivity_test_options,
@@ -117,7 +123,8 @@ END2END_TESTS = {
     'server_finishes_request': default_test_options,
     'shutdown_finishes_calls': default_test_options,
     'shutdown_finishes_tags': default_test_options,
-    'simple_delayed_request': connectivity_test_options._replace(cpu_cost=LOWCPU),
+    'simple_delayed_request': connectivity_test_options._replace(
+        cpu_cost=LOWCPU),
     'simple_metadata': default_test_options,
     'simple_request': default_test_options,
     'trailing_metadata': default_test_options,

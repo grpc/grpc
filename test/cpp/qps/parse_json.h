@@ -43,6 +43,9 @@ namespace testing {
 void ParseJson(const grpc::string& json, const grpc::string& type,
                GRPC_CUSTOM_MESSAGE* msg);
 
+grpc::string SerializeJson(const GRPC_CUSTOM_MESSAGE& msg,
+                           const grpc::string& type);
+
 }  // testing
 }  // grpc
 

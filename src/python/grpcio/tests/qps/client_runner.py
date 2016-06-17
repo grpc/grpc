@@ -34,7 +34,7 @@ ClientRunner invokes either periodically or in response to some event.
 """
 
 import abc
-import thread
+import threading
 import time
 
 
@@ -61,15 +61,18 @@ class OpenLoopClientRunner(ClientRunner):
     super(OpenLoopClientRunner, self).__init__(client)
     self._is_running = False
     self._interval_generator = interval_generator
+    self._dispatch_thread = threading.Thread(
+        target=self._dispatch_requests, args=())
 
   def start(self):
     self._is_running = True
     self._client.start()
-    thread.start_new_thread(self._dispatch_requests, ())
-
+    self._dispatch_thread.start()
+   
   def stop(self):
     self._is_running = False
     self._client.stop()
+    self._dispatch_thread.join()
     self._client = None
 
   def _dispatch_requests(self):
@@ -98,7 +101,6 @@ class ClosedLoopClientRunner(ClientRunner):
     self._client.stop()
     self._client = None
 
-  def _send_request(self, response_time):
+  def _send_request(self, client, response_time):
     if self._is_running:
-      self._client.send_request()
-
+      client.send_request()
