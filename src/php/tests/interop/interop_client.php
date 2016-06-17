@@ -446,6 +446,45 @@ function customMetadata($stub)
                $ECHO_TRAILING_VALUE, 'Incorrect trailing metadata value');
 }
 
+function statusCodeAndMessage($stub)
+{
+    $echo_status = new grpc\testing\EchoStatus();
+    $echo_status->setCode(2);
+    $echo_status->setMessage("test status message");
+
+    $request = new grpc\testing\SimpleRequest();
+    $request->setResponseStatus($echo_status);
+
+    $call = $stub->UnaryCall($request);
+    list($result, $status) = $call->wait();
+
+    hardAssert($status->code === 2,
+               'Received unexpected status code');
+    hardAssert($status->details === "test status message",
+               'Received unexpected status details');
+
+    $streaming_call = $stub->FullDuplexCall();
+
+    $streaming_request = new grpc\testing\StreamingOutputCallRequest();
+    $streaming_request->setResponseStatus($echo_status);
+    $streaming_call->write($streaming_request);
+    $streaming_call->writesDone();
+
+    $status = $streaming_call->getStatus();
+    hardAssert($status->code === 2,
+               'Received unexpected status code');
+    hardAssert($status->details === "test status message",
+               'Received unexpected status details');
+}
+
+function unimplementedMethod($stub)
+{
+    $call = $stub->UnimplementedCall(new grpc\testing\EmptyMessage());
+    list($result, $status) = $call->wait();
+    hardAssert($status->code === Grpc\STATUS_UNIMPLEMENTED,
+               'Received unexpected status code');
+}
+
 function _makeStub($args)
 {
     if (!array_key_exists('server_host', $args)) {
@@ -574,6 +613,12 @@ function interop_main($args, $stub = false)
             break;
         case 'custom_metadata':
             customMetadata($stub);
+            break;
+        case 'status_code_and_message':
+            statusCodeAndMessage($stub);
+            break;
+        case 'unimplemented_method':
+            unimplementedMethod($stub);
             break;
         case 'service_account_creds':
             serviceAccountCreds($stub, $args);
