@@ -41,13 +41,14 @@ of the request, including not performing any compression, regardless of channel
 and RPC settings (for example, if compression would result in small or negative
 gains).
 
-A compressed message from a client with an algorithm unsupported by a server,
-WILL result in an INVALID\_ARGUMENT error, alongside the receiving peer's
-`grpc-accept-encoding` header specifying the algorithms it accepts. If an
-INTERNAL error is returned from the server despite having used one of the
-algorithms from the `grpc-accept-encoding h`eader, the cause MUST NOT be related
-to compression. Data sent from a server compressed with an algorithm not
-supported by the client will also result in an INTERNAL error.
+When a message from a client compressed with an unsupported algorithm is
+processed by a server, it WILL result in an INVALID\_ARGUMENT error. The server
+will include in its response a `grpc-accept-encoding` header specifying the
+algorithms it does accept. If an INTERNAL error is returned from the server
+despite having used one of the algorithms from the `grpc-accept-encoding`
+header, the cause MUST NOT be related to compression. Data sent from a server
+compressed with an algorithm not supported by the client WILL result in an
+INTERNAL error on the client side.
 
 Note that a peer MAY choose to not disclose all the encodings it supports.
 However, if it receives a message compressed in an undisclosed but supported
@@ -67,16 +68,21 @@ cases.
 
 ### Compression Levels and Algorithms
 
-We currently (as of July 2015) support _gzip_ and _deflate_ as algorithms (with
-the possible future addition of snappy). In order to simplify the public API,
-it's intended to abstract the algorithms as _compression levels_ (such as "low",
-"medium", "high") that'd map to concrete algorithms and/or their settings (such
-as "low" mapping to "gzip -3" and "high" mapping to "gzip -9"). However, we
-can't presently (July 2015) implement said compression levels at the client side
-without either a initial negotiation of capabilities or an automatic retry
-mechanism. Therefore, compression levels are only supported at the server side,
-which is aware of the client's capabilities by virtue of the incoming
-Message-Accept-Encoding header.
+The set of supported algorithm is implementation dependent. In order to simplify
+the public API and to operate seamlessly across implementations (both in terms
+of languages but also different version of the same one), we introduce the idea
+of _compression levels_ (such as "low", "medium", "high").
+
+Levels map to concrete algorithms and/or their settings (such as "low" mapping
+to "gzip -3" and "high" mapping to "gzip -9") automatically depending on what a
+peer is known to support. A server is always aware of what its clients support,
+as clients disclose it in their Message-Accept-Encoding header as part of their
+initial call. A client doesn't a priori (presently) know which algorithms a
+server supports. This issue can be addressed with an initial negotiation of
+capabilities or an automatic retry mechanism. These features will be implemented
+in the future. Currently however, compression levels are only supported at the
+server side, which is aware of the client's capabilities by virtue of the
+incoming.
 
 ### Propagation to child RPCs
 
