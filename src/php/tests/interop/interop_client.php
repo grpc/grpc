@@ -569,7 +569,11 @@ function _makeStub($args)
         $opts['update_metadata'] = $update_metadata;
     }
 
-    $stub = new grpc\testing\TestServiceClient($server_address, $opts);
+    if ($test_case == 'unimplemented_method') {
+      $stub = new grpc\testing\UnimplementedServiceClient($server_address, $opts);
+    } else {
+      $stub = new grpc\testing\TestServiceClient($server_address, $opts);
+    }
 
     return $stub;
 }
