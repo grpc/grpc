@@ -52,11 +52,14 @@ class ClientAsyncStreamingInterface {
 
   /// Request notification of the reading of the initial metadata. Completion
   /// will be notified by \a tag on the associated completion queue.
+  /// This call is optional, but if it is used, it cannot be used concurrently
+  /// with Read
   ///
   /// \param[in] tag Tag identifying this request.
   virtual void ReadInitialMetadata(void* tag) = 0;
 
-  /// Request notification completion.
+  /// Indicate that the stream is to be finished and request notification
+  /// Should not be used concurrently with other operations
   ///
   /// \param[out] status To be updated with the operation status.
   /// \param[in] tag Tag identifying this request.
@@ -71,6 +74,8 @@ class AsyncReaderInterface {
 
   /// Read a message of type \a R into \a msg. Completion will be notified by \a
   /// tag on the associated completion queue.
+  /// This is thread-safe with respect to other streaming APIs except for Finish
+  /// on the same stream.
   ///
   /// \param[out] msg Where to eventually store the read message.
   /// \param[in] tag The tag identifying the operation.
@@ -88,6 +93,7 @@ class AsyncWriterInterface {
   /// Only one write may be outstanding at any given time. This means that
   /// after calling Write, one must wait to receive \a tag from the completion
   /// queue BEFORE calling Write again.
+  /// This is thread-safe with respect to Read
   ///
   /// \param[in] msg The message to be written.
   /// \param[in] tag The tag identifying the operation.
@@ -158,6 +164,7 @@ class ClientAsyncWriterInterface : public ClientAsyncStreamingInterface,
                                    public AsyncWriterInterface<W> {
  public:
   /// Signal the client is done with the writes.
+  /// Thread-safe with respect to Read
   ///
   /// \param[in] tag The tag identifying the operation.
   virtual void WritesDone(void* tag) = 0;
@@ -229,6 +236,7 @@ class ClientAsyncReaderWriterInterface : public ClientAsyncStreamingInterface,
                                          public AsyncReaderInterface<R> {
  public:
   /// Signal the client is done with the writes.
+  /// Thread-safe with respect to Read
   ///
   /// \param[in] tag The tag identifying the operation.
   virtual void WritesDone(void* tag) = 0;
