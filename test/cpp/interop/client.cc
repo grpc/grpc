@@ -171,8 +171,9 @@ int main(int argc, char** argv) {
         "large_unary|large_compressed_unary|client_streaming|server_streaming|"
         "server_compressed_streaming|half_duplex|ping_pong|cancel_after_begin|"
         "cancel_after_first_response|timeout_on_sleeping_server|empty_stream|"
-        "compute_engine_creds|jwt_token_creds|oauth2_auth_token|per_rpc_creds",
-        "status_code_and_message|custom_metadata", FLAGS_test_case.c_str());
+        "compute_engine_creds|jwt_token_creds|oauth2_auth_token|per_rpc_creds|"
+        "status_code_and_message|custom_metadata",
+        FLAGS_test_case.c_str());
     ret = 1;
   }
 

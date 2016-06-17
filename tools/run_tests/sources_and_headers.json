@@ -103,6 +103,20 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "bin_decoder_test", 
+    "src": [
+      "test/core/transport/chttp2/bin_decoder_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "bin_encoder_test", 
     "src": [
       "test/core/transport/chttp2/bin_encoder_test.c"
@@ -6274,6 +6288,7 @@
       "grpc_transport_chttp2_alpn"
     ], 
     "headers": [
+      "src/core/ext/transport/chttp2/transport/bin_decoder.h", 
       "src/core/ext/transport/chttp2/transport/bin_encoder.h", 
       "src/core/ext/transport/chttp2/transport/chttp2_transport.h", 
       "src/core/ext/transport/chttp2/transport/frame.h", 
@@ -6298,6 +6313,8 @@
     "language": "c", 
     "name": "grpc_transport_chttp2", 
     "src": [
+      "src/core/ext/transport/chttp2/transport/bin_decoder.c", 
+      "src/core/ext/transport/chttp2/transport/bin_decoder.h", 
       "src/core/ext/transport/chttp2/transport/bin_encoder.c", 
       "src/core/ext/transport/chttp2/transport/bin_encoder.h", 
       "src/core/ext/transport/chttp2/transport/chttp2_plugin.c", 

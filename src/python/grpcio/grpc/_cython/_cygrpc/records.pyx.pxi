@@ -33,7 +33,7 @@ class ConnectivityState:
   connecting = GRPC_CHANNEL_CONNECTING
   ready = GRPC_CHANNEL_READY
   transient_failure = GRPC_CHANNEL_TRANSIENT_FAILURE
-  fatal_failure = GRPC_CHANNEL_SHUTDOWN
+  shutdown = GRPC_CHANNEL_SHUTDOWN
 
 
 class ChannelArgKey:

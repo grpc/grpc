@@ -188,13 +188,15 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   grpc_endpoint_test_fixture f =
       begin_test(config, "read_and_write_test", slice_size);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  gpr_log(GPR_DEBUG, "num_bytes=%d write_size=%d slice_size=%d shutdown=%d",
+  gpr_log(GPR_DEBUG, "num_bytes=%" PRIuPTR " write_size=%" PRIuPTR
+                     " slice_size=%" PRIuPTR " shutdown=%d",
           num_bytes, write_size, slice_size, shutdown);
 
   if (shutdown) {
     gpr_log(GPR_INFO, "Start read and write shutdown test");
   } else {
-    gpr_log(GPR_INFO, "Start read and write test with %d bytes, slice size %d",
+    gpr_log(GPR_INFO, "Start read and write test with %" PRIuPTR
+                      " bytes, slice size %" PRIuPTR,
             num_bytes, slice_size);
   }
 

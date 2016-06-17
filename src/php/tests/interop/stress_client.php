@@ -102,7 +102,7 @@ if (empty($raw_args['server_addresses'])) {
 }
 
 $args['metrics_port'] = empty($raw_args['metrics_port']) ?
-    '8081' : $args['metrics_port'];
+    '8081' : $raw_args['metrics_port'];
 
 $args['test_duration_secs'] = empty($raw_args['test_duration_secs']) ||
     $raw_args['test_duration_secs'] == -1 ?

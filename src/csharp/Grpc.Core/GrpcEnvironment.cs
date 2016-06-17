@@ -47,6 +47,7 @@ namespace Grpc.Core
     /// </summary>
     public class GrpcEnvironment
     {
+        const LogLevel DefaultLogLevel = LogLevel.Info;
         const int MinDefaultThreadPoolSize = 4;
 
         static object staticLock = new object();
@@ -57,7 +58,7 @@ namespace Grpc.Core
         static readonly HashSet<Channel> registeredChannels = new HashSet<Channel>();
         static readonly HashSet<Server> registeredServers = new HashSet<Server>();
 
-        static ILogger logger = new ConsoleLogger();
+        static ILogger logger = new LogLevelFilterLogger(new ConsoleLogger(), DefaultLogLevel);
 
         readonly object myLock = new object();
         readonly GrpcThreadPool threadPool;
