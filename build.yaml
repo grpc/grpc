@@ -1247,6 +1247,17 @@ targets:
   - test/core/end2end/fuzzers/api_fuzzer_corpus
   dict: test/core/end2end/fuzzers/api_fuzzer.dictionary
   maxlen: 2048
+- name: bad_server_response_test
+  build: test
+  language: c
+  src:
+  - test/core/end2end/bad_server_response_test.c
+  deps:
+  - test_tcp_server
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: bin_encoder_test
   build: test
   language: c
