@@ -82,7 +82,7 @@ zend_object_value create_wrapped_grpc_server_credentials(
   return retval;
 }
 
-zval *grpc_php_wrap_server_credentials(grpc_server_credentials *wrapped) {
+zval *grpc_php_wrap_server_credentials(grpc_server_credentials *wrapped TSRMLS_DC) {
   zval *server_credentials_object;
   MAKE_STD_ZVAL(server_credentials_object);
   object_init_ex(server_credentials_object, grpc_ce_server_credentials);
@@ -189,7 +189,7 @@ PHP_METHOD(ServerCredentials, createSsl) {
   grpc_server_credentials *creds = grpc_ssl_server_credentials_create_ex(
       pem_root_certs, pem_key_cert_pairs, key_cert_pair_count,
       client_certificate_request, NULL);
-  zval *creds_object = grpc_php_wrap_server_credentials(creds);
+  zval *creds_object = grpc_php_wrap_server_credentials(creds TSRMLS_CC);
 
   gpr_free(pem_key_cert_pairs);
   RETURN_DESTROY_ZVAL(creds_object);
