@@ -1,4 +1,6 @@
 [
+  "_api_test.AllTest",
+  "_api_test.ChannelConnectivityTest",
   "_auth_test.AccessTokenCallCredentialsTest",
   "_auth_test.GoogleCallCredentialsTest",
   "_base_interface_test.AsyncEasyTest", 
@@ -12,6 +14,7 @@
   "_channel_ready_future_test.ChannelReadyFutureTest",
   "_channel_test.ChannelTest", 
   "_connectivity_channel_test.ChannelConnectivityTest", 
+  "_connectivity_channel_test.ConnectivityStatesTest",
   "_core_over_links_base_interface_test.AsyncEasyTest", 
   "_core_over_links_base_interface_test.AsyncPeasyTest", 
   "_core_over_links_base_interface_test.SyncEasyTest", 
@@ -48,6 +51,7 @@
   "_lonely_invocation_link_test.LonelyInvocationLinkTest", 
   "_low_test.HangingServerShutdown", 
   "_low_test.InsecureServerInsecureClient", 
+  "_metadata_test.MetadataTest",
   "_not_found_test.NotFoundTest", 
   "_python_plugin_test.PythonPluginTest",
   "_read_some_but_not_all_responses_test.ReadSomeButNotAllResponsesTest",

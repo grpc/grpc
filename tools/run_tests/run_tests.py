@@ -62,6 +62,11 @@ os.chdir(_ROOT)
 _FORCE_ENVIRON_FOR_WRAPPERS = {}
 
 
+_POLLING_STRATEGIES = {
+  'linux': ['poll', 'legacy']
+}
+
+
 def platform_string():
   return jobset.platform_string()
 
@@ -153,14 +158,8 @@ class CLanguage(object):
   def test_specs(self):
     out = []
     binaries = get_c_tests(self.args.travis, self.test_lang)
-    POLLING_STRATEGIES = {
-      'windows': ['all'],
-      'mac': ['all'],
-      'posix': ['all'],
-      'linux': ['poll', 'legacy']
-    }
     for target in binaries:
-      polling_strategies = (POLLING_STRATEGIES[self.platform]
+      polling_strategies = (_POLLING_STRATEGIES.get(self.platform, ['all'])
                             if target.get('uses_polling', True)
                             else ['all'])
       for polling_strategy in polling_strategies:
@@ -395,7 +394,7 @@ class PythonLanguage(object):
       tests_json = json.load(tests_json_file)
     environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
     environment['PYTHONPATH'] = '{}:{}'.format(
-      os.path.abspath('src/python/gens'), 
+      os.path.abspath('src/python/gens'),
       os.path.abspath('src/python/grpcio_health_checking'))
     if self.config.build_config != 'gcov':
       return [self.config.job_spec(
@@ -855,7 +854,12 @@ argp.add_argument('--update_submodules', default=[], nargs='*',
 argp.add_argument('-a', '--antagonists', default=0, type=int)
 argp.add_argument('-x', '--xml_report', default=None, type=str,
         help='Generates a JUnit-compatible XML report')
+argp.add_argument('--force_default_poller', default=False, action='store_const', const=True,
+                  help='Dont try to iterate over many polling strategies when they exist')
 args = argp.parse_args()
+
+if args.force_default_poller:
+  _POLLING_STRATEGIES = {}
 
 jobset.measure_cpu_costs = args.measure_cpu_costs
 
