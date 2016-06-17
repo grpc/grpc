@@ -46,8 +46,8 @@ CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY = {
     cygrpc.ConnectivityState.ready: grpc.ChannelConnectivity.READY,
     cygrpc.ConnectivityState.transient_failure:
         grpc.ChannelConnectivity.TRANSIENT_FAILURE,
-    cygrpc.ConnectivityState.fatal_failure:
-        grpc.ChannelConnectivity.FATAL_FAILURE,
+    cygrpc.ConnectivityState.shutdown:
+        grpc.ChannelConnectivity.SHUTDOWN,
 }
 
 CYGRPC_STATUS_CODE_TO_STATUS_CODE = {
