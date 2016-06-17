@@ -30,11 +30,13 @@
 """Defines test client behaviors (UNARY/STREAMING) (SYNC/ASYNC)."""
 
 import abc
+import threading
 import time
 
 from concurrent import futures
 from six.moves import queue
 
+import grpc
 from grpc.beta import implementations
 from grpc.framework.interfaces.face import face
 from src.proto.grpc.testing import messages_pb2
@@ -61,6 +63,13 @@ class BenchmarkClient:
           host, port, creds, config.security_params.server_host_override)
     else:
       channel = implementations.insecure_channel(host, port)
+
+    connected_event = threading.Event()
+    def wait_for_ready(connectivity):
+      if connectivity == grpc.ChannelConnectivity.READY:
+        connected_event.set()
+    channel.subscribe(wait_for_ready, try_to_connect=True)
+    connected_event.wait()
 
     if config.payload_config.WhichOneof('payload') == 'simple_params':
       self._generic = False
