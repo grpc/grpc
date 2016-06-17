@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,10 +32,9 @@
  */
 
 #include <ruby/ruby.h>
+
 #include "rb_grpc_imports.generated.h"
 #include "rb_server.h"
-
-#include <ruby/ruby.h>
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -61,6 +60,7 @@ typedef struct grpc_rb_server {
   VALUE mark;
   /* The actual server */
   grpc_server *wrapped;
+  grpc_completion_queue *queue;
 } grpc_rb_server;
 
 /* Destroys server instances. */
@@ -146,6 +146,7 @@ static VALUE grpc_rb_server_init(VALUE self, VALUE cqueue, VALUE channel_args) {
   }
   grpc_server_register_completion_queue(srv, cq, NULL);
   wrapper->wrapped = srv;
+  wrapper->queue = cq;
 
   /* Add the cq as the server's mark object. This ensures the ruby cq can't be
      GCed before the server */
@@ -233,7 +234,7 @@ static VALUE grpc_rb_server_request_call(VALUE self, VALUE cqueue,
     err = grpc_server_request_call(
         s->wrapped, &call, &st.details, &st.md_ary,
         grpc_rb_get_wrapped_completion_queue(cqueue),
-        grpc_rb_get_wrapped_completion_queue(cqueue),
+        grpc_rb_get_wrapped_completion_queue(s->mark),
         ROBJECT(tag_new));
     if (err != GRPC_CALL_OK) {
       grpc_request_call_stack_cleanup(&st);
@@ -243,7 +244,7 @@ static VALUE grpc_rb_server_request_call(VALUE self, VALUE cqueue,
       return Qnil;
     }
 
-    ev = grpc_rb_completion_queue_pluck_event(cqueue, tag_new, timeout);
+    ev = grpc_rb_completion_queue_pluck_event(s->mark, tag_new, timeout);
     if (ev.type == GRPC_QUEUE_TIMEOUT) {
       grpc_request_call_stack_cleanup(&st);
       return Qnil;
@@ -261,7 +262,7 @@ static VALUE grpc_rb_server_request_call(VALUE self, VALUE cqueue,
         rb_str_new2(st.details.host),
         rb_funcall(rb_cTime, id_at, 2, INT2NUM(deadline.tv_sec),
                    INT2NUM(deadline.tv_nsec)),
-        grpc_rb_md_ary_to_h(&st.md_ary), grpc_rb_wrap_call(call), NULL);
+        grpc_rb_md_ary_to_h(&st.md_ary), grpc_rb_wrap_call(call), cqueue, NULL);
     grpc_request_call_stack_cleanup(&st);
     return result;
   }

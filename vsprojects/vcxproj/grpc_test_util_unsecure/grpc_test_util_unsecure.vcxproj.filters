@@ -13,10 +13,22 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\util\grpc_profiler.c">
       <Filter>test\core\util</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\memory_counters.c">
+      <Filter>test\core\util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\mock_endpoint.c">
+      <Filter>test\core\util</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\parse_hexstring.c">
       <Filter>test\core\util</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\passthru_endpoint.c">
+      <Filter>test\core\util</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\port_posix.c">
+      <Filter>test\core\util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\port_server_client.c">
       <Filter>test\core\util</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\port_windows.c">
@@ -39,10 +51,22 @@
     <ClInclude Include="$(SolutionDir)\..\test\core\util\grpc_profiler.h">
       <Filter>test\core\util</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\core\util\memory_counters.h">
+      <Filter>test\core\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\core\util\mock_endpoint.h">
+      <Filter>test\core\util</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\core\util\parse_hexstring.h">
       <Filter>test\core\util</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\core\util\passthru_endpoint.h">
+      <Filter>test\core\util</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\core\util\port.h">
+      <Filter>test\core\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\test\core\util\port_server_client.h">
       <Filter>test\core\util</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\test\core\util\slice_splitter.h">

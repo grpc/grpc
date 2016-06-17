@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/iomgr/tcp_posix.h"
+#include "src/core/lib/iomgr/tcp_posix.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -97,7 +97,7 @@ static ssize_t fill_socket(int fd) {
 static size_t fill_socket_partial(int fd, size_t bytes) {
   ssize_t write_bytes;
   size_t total_bytes = 0;
-  unsigned char *buf = malloc(bytes);
+  unsigned char *buf = gpr_malloc(bytes);
   unsigned i;
   for (i = 0; i < bytes; ++i) {
     buf[i] = (uint8_t)(i % 256);
@@ -151,7 +151,7 @@ static void read_cb(grpc_exec_ctx *exec_ctx, void *user_data, bool success) {
   read_bytes = count_slices(state->incoming.slices, state->incoming.count,
                             &current_data);
   state->read_bytes += read_bytes;
-  gpr_log(GPR_INFO, "Read %d bytes of %d", read_bytes,
+  gpr_log(GPR_INFO, "Read %" PRIuPTR " bytes of %" PRIuPTR, read_bytes,
           state->target_read_bytes);
   if (state->read_bytes >= state->target_read_bytes) {
     gpr_mu_unlock(g_mu);
@@ -170,8 +170,8 @@ static void read_test(size_t num_bytes, size_t slice_size) {
   gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
-  gpr_log(GPR_INFO, "Read test of size %d, slice size %d", num_bytes,
-          slice_size);
+  gpr_log(GPR_INFO, "Read test of size %" PRIuPTR ", slice size %" PRIuPTR,
+          num_bytes, slice_size);
 
   create_sockets(sv);
 
@@ -179,7 +179,7 @@ static void read_test(size_t num_bytes, size_t slice_size) {
   grpc_endpoint_add_to_pollset(&exec_ctx, ep, g_pollset);
 
   written_bytes = fill_socket_partial(sv[0], num_bytes);
-  gpr_log(GPR_INFO, "Wrote %d bytes", written_bytes);
+  gpr_log(GPR_INFO, "Wrote %" PRIuPTR " bytes", written_bytes);
 
   state.ep = ep;
   state.read_bytes = 0;
@@ -216,7 +216,7 @@ static void large_read_test(size_t slice_size) {
   gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
-  gpr_log(GPR_INFO, "Start large read test, slice size %d", slice_size);
+  gpr_log(GPR_INFO, "Start large read test, slice size %" PRIuPTR, slice_size);
 
   create_sockets(sv);
 
@@ -225,7 +225,7 @@ static void large_read_test(size_t slice_size) {
   grpc_endpoint_add_to_pollset(&exec_ctx, ep, g_pollset);
 
   written_bytes = fill_socket(sv[0]);
-  gpr_log(GPR_INFO, "Wrote %d bytes", written_bytes);
+  gpr_log(GPR_INFO, "Wrote %" PRIuPTR " bytes", written_bytes);
 
   state.ep = ep;
   state.read_bytes = 0;
@@ -292,7 +292,7 @@ static void write_done(grpc_exec_ctx *exec_ctx,
 }
 
 void drain_socket_blocking(int fd, size_t num_bytes, size_t read_size) {
-  unsigned char *buf = malloc(read_size);
+  unsigned char *buf = gpr_malloc(read_size);
   ssize_t bytes_read;
   size_t bytes_left = num_bytes;
   int flags;
@@ -344,8 +344,9 @@ static void write_test(size_t num_bytes, size_t slice_size) {
   gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
-  gpr_log(GPR_INFO, "Start write test with %d bytes, slice size %d", num_bytes,
-          slice_size);
+  gpr_log(GPR_INFO,
+          "Start write test with %" PRIuPTR " bytes, slice size %" PRIuPTR,
+          num_bytes, slice_size);
 
   create_sockets(sv);
 
@@ -404,8 +405,9 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   int fd_released_done = 0;
   grpc_closure_init(&fd_released_cb, &on_fd_released, &fd_released_done);
 
-  gpr_log(GPR_INFO, "Release fd read_test of size %d, slice size %d", num_bytes,
-          slice_size);
+  gpr_log(GPR_INFO,
+          "Release fd read_test of size %" PRIuPTR ", slice size %" PRIuPTR,
+          num_bytes, slice_size);
 
   create_sockets(sv);
 
@@ -414,7 +416,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   grpc_endpoint_add_to_pollset(&exec_ctx, ep, g_pollset);
 
   written_bytes = fill_socket_partial(sv[0], num_bytes);
-  gpr_log(GPR_INFO, "Wrote %d bytes", written_bytes);
+  gpr_log(GPR_INFO, "Wrote %" PRIuPTR " bytes", written_bytes);
 
   state.ep = ep;
   state.read_bytes = 0;

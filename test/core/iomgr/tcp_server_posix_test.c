@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/iomgr/tcp_server.h"
+#include "src/core/lib/iomgr/tcp_server.h"
 
 #include <errno.h>
 #include <netinet/in.h>
@@ -45,8 +45,8 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/iomgr/iomgr.h"
-#include "src/core/iomgr/sockaddr_utils.h"
+#include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -113,6 +113,7 @@ static void server_weak_ref_set(server_weak_ref *weak_ref,
 }
 
 static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
+                       grpc_pollset *pollset,
                        grpc_tcp_server_acceptor *acceptor) {
   grpc_endpoint_shutdown(exec_ctx, tcp);
   grpc_endpoint_destroy(exec_ctx, tcp);

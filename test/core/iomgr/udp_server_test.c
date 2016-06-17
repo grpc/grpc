@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,39 +31,53 @@
  *
  */
 
-#include "src/core/iomgr/udp_server.h"
-#include "src/core/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/udp_server.h"
+
+#include <netinet/in.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
-#include "test/core/util/test_config.h"
 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <string.h>
-#include <unistd.h>
+#include "src/core/lib/iomgr/ev_posix.h"
+#include "src/core/lib/iomgr/iomgr.h"
+#include "test/core/util/test_config.h"
 
 #ifdef GRPC_NEED_UDP
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", #x)
 
-static grpc_pollset g_pollset;
+static grpc_pollset *g_pollset;
+static gpr_mu *g_mu;
 static int g_number_of_reads = 0;
 static int g_number_of_bytes_read = 0;
+static int g_number_of_orphan_calls = 0;
 
 static void on_read(grpc_exec_ctx *exec_ctx, grpc_fd *emfd,
                     grpc_server *server) {
   char read_buffer[512];
   ssize_t byte_count;
 
-  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
-  byte_count = recv(emfd->fd, read_buffer, sizeof(read_buffer), 0);
+  gpr_mu_lock(g_mu);
+  byte_count =
+      recv(grpc_fd_wrapped_fd(emfd), read_buffer, sizeof(read_buffer), 0);
 
   g_number_of_reads++;
   g_number_of_bytes_read += (int)byte_count;
 
-  grpc_pollset_kick(&g_pollset, NULL);
-  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+  grpc_pollset_kick(g_pollset, NULL);
+  gpr_mu_unlock(g_mu);
+}
+
+static void on_fd_orphaned(grpc_fd *emfd) {
+  gpr_log(GPR_INFO, "gRPC FD about to be orphaned: %d",
+          grpc_fd_wrapped_fd(emfd));
+  g_number_of_orphan_calls++;
 }
 
 static void test_no_op(void) {
@@ -83,6 +97,7 @@ static void test_no_op_with_start(void) {
 }
 
 static void test_no_op_with_port(void) {
+  g_number_of_orphan_calls = 0;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   struct sockaddr_in addr;
   grpc_udp_server *s = grpc_udp_server_create();
@@ -91,13 +106,17 @@ static void test_no_op_with_port(void) {
   memset(&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
   GPR_ASSERT(grpc_udp_server_add_port(s, (struct sockaddr *)&addr, sizeof(addr),
-                                      on_read));
+                                      on_read, on_fd_orphaned));
 
   grpc_udp_server_destroy(&exec_ctx, s, NULL);
   grpc_exec_ctx_finish(&exec_ctx);
+
+  /* The server had a single FD, which should have been orphaned. */
+  GPR_ASSERT(g_number_of_orphan_calls == 1);
 }
 
 static void test_no_op_with_port_and_start(void) {
+  g_number_of_orphan_calls = 0;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   struct sockaddr_in addr;
   grpc_udp_server *s = grpc_udp_server_create();
@@ -106,12 +125,15 @@ static void test_no_op_with_port_and_start(void) {
   memset(&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
   GPR_ASSERT(grpc_udp_server_add_port(s, (struct sockaddr *)&addr, sizeof(addr),
-                                      on_read));
+                                      on_read, on_fd_orphaned));
 
   grpc_udp_server_start(&exec_ctx, s, NULL, 0, NULL);
 
   grpc_udp_server_destroy(&exec_ctx, s, NULL);
   grpc_exec_ctx_finish(&exec_ctx);
+
+  /* The server had a single FD, which should have been orphaned. */
+  GPR_ASSERT(g_number_of_orphan_calls == 1);
 }
 
 static void test_receive(int number_of_clients) {
@@ -128,21 +150,22 @@ static void test_receive(int number_of_clients) {
   gpr_log(GPR_INFO, "clients=%d", number_of_clients);
 
   g_number_of_bytes_read = 0;
+  g_number_of_orphan_calls = 0;
 
   memset(&addr, 0, sizeof(addr));
   addr.ss_family = AF_INET;
-  GPR_ASSERT(
-      grpc_udp_server_add_port(s, (struct sockaddr *)&addr, addr_len, on_read));
+  GPR_ASSERT(grpc_udp_server_add_port(s, (struct sockaddr *)&addr, addr_len,
+                                      on_read, on_fd_orphaned));
 
   svrfd = grpc_udp_server_get_fd(s, 0);
   GPR_ASSERT(svrfd >= 0);
   GPR_ASSERT(getsockname(svrfd, (struct sockaddr *)&addr, &addr_len) == 0);
   GPR_ASSERT(addr_len <= sizeof(addr));
 
-  pollsets[0] = &g_pollset;
+  pollsets[0] = g_pollset;
   grpc_udp_server_start(&exec_ctx, s, pollsets, 1, NULL);
 
-  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+  gpr_mu_lock(g_mu);
 
   for (i = 0; i < number_of_clients; i++) {
     deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10);
@@ -155,22 +178,25 @@ static void test_receive(int number_of_clients) {
     GPR_ASSERT(5 == write(clifd, "hello", 5));
     while (g_number_of_reads == number_of_reads_before &&
            gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0) {
-      grpc_pollset_worker worker;
-      grpc_pollset_work(&exec_ctx, &g_pollset, &worker,
+      grpc_pollset_worker *worker = NULL;
+      grpc_pollset_work(&exec_ctx, g_pollset, &worker,
                         gpr_now(GPR_CLOCK_MONOTONIC), deadline);
-      gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+      gpr_mu_unlock(g_mu);
       grpc_exec_ctx_finish(&exec_ctx);
-      gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+      gpr_mu_lock(g_mu);
     }
     GPR_ASSERT(g_number_of_reads == number_of_reads_before + 1);
     close(clifd);
   }
   GPR_ASSERT(g_number_of_bytes_read == 5 * number_of_clients);
 
-  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+  gpr_mu_unlock(g_mu);
 
   grpc_udp_server_destroy(&exec_ctx, s, NULL);
   grpc_exec_ctx_finish(&exec_ctx);
+
+  /* The server had a single FD, which should have been orphaned. */
+  GPR_ASSERT(g_number_of_orphan_calls == 1);
 }
 
 static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, bool success) {
@@ -181,8 +207,9 @@ int main(int argc, char **argv) {
   grpc_closure destroyed;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init(argc, argv);
-  grpc_iomgr_init();
-  grpc_pollset_init(&g_pollset);
+  grpc_init();
+  g_pollset = gpr_malloc(grpc_pollset_size());
+  grpc_pollset_init(g_pollset, &g_mu);
 
   test_no_op();
   test_no_op_with_start();
@@ -191,9 +218,10 @@ int main(int argc, char **argv) {
   test_receive(1);
   test_receive(10);
 
-  grpc_closure_init(&destroyed, destroy_pollset, &g_pollset);
-  grpc_pollset_shutdown(&exec_ctx, &g_pollset, &destroyed);
+  grpc_closure_init(&destroyed, destroy_pollset, g_pollset);
+  grpc_pollset_shutdown(&exec_ctx, g_pollset, &destroyed);
   grpc_exec_ctx_finish(&exec_ctx);
+  gpr_free(g_pollset);
   grpc_iomgr_shutdown();
   return 0;
 }

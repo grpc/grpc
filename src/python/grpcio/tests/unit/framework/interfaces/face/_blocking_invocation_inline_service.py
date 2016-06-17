@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,10 +29,14 @@
 
 """Test code for the Face layer of RPC Framework."""
 
+from __future__ import division
+
 import abc
 import itertools
 import unittest
 from concurrent import futures
+
+import six
 
 # test_interfaces is referenced from specification in this module.
 from grpc.framework.foundation import logging_pool
@@ -46,14 +50,13 @@ from tests.unit.framework.interfaces.face import _stock_service
 from tests.unit.framework.interfaces.face import test_interfaces  # pylint: disable=unused-import
 
 
-class TestCase(test_coverage.Coverage, unittest.TestCase):
+class TestCase(six.with_metaclass(abc.ABCMeta, test_coverage.Coverage, unittest.TestCase)):
   """A test of the Face layer of RPC Framework.
 
   Concrete subclasses must have an "implementation" attribute of type
   test_interfaces.Implementation and an "invoker_constructor" attribute of type
   _invocation.InvokerConstructor.
   """
-  __metaclass__ = abc.ABCMeta
 
   NAME = 'BlockingInvocationInlineServiceTest'
 
@@ -81,7 +84,7 @@ class TestCase(test_coverage.Coverage, unittest.TestCase):
 
   def testSuccessfulUnaryRequestUnaryResponse(self):
     for (group, method), test_messages_sequence in (
-        self._digest.unary_unary_messages_sequences.iteritems()):
+        six.iteritems(self._digest.unary_unary_messages_sequences)):
       for test_messages in test_messages_sequence:
         request = test_messages.request()
 
@@ -92,7 +95,7 @@ class TestCase(test_coverage.Coverage, unittest.TestCase):
 
   def testSuccessfulUnaryRequestStreamResponse(self):
     for (group, method), test_messages_sequence in (
-        self._digest.unary_stream_messages_sequences.iteritems()):
+        six.iteritems(self._digest.unary_stream_messages_sequences)):
       for test_messages in test_messages_sequence:
         request = test_messages.request()
 
@@ -104,7 +107,7 @@ class TestCase(test_coverage.Coverage, unittest.TestCase):
 
   def testSuccessfulStreamRequestUnaryResponse(self):
     for (group, method), test_messages_sequence in (
-        self._digest.stream_unary_messages_sequences.iteritems()):
+        six.iteritems(self._digest.stream_unary_messages_sequences)):
       for test_messages in test_messages_sequence:
         requests = test_messages.requests()
 
@@ -115,7 +118,7 @@ class TestCase(test_coverage.Coverage, unittest.TestCase):
 
   def testSuccessfulStreamRequestStreamResponse(self):
     for (group, method), test_messages_sequence in (
-        self._digest.stream_stream_messages_sequences.iteritems()):
+        six.iteritems(self._digest.stream_stream_messages_sequences)):
       for test_messages in test_messages_sequence:
         requests = test_messages.requests()
 
@@ -127,7 +130,7 @@ class TestCase(test_coverage.Coverage, unittest.TestCase):
 
   def testSequentialInvocations(self):
     for (group, method), test_messages_sequence in (
-        self._digest.unary_unary_messages_sequences.iteritems()):
+        six.iteritems(self._digest.unary_unary_messages_sequences)):
       for test_messages in test_messages_sequence:
         first_request = test_messages.request()
         second_request = test_messages.request()
@@ -143,13 +146,13 @@ class TestCase(test_coverage.Coverage, unittest.TestCase):
         test_messages.verify(second_request, second_response, self)
 
   def testParallelInvocations(self):
-    pool = logging_pool.pool(test_constants.PARALLELISM)
+    pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
     for (group, method), test_messages_sequence in (
-        self._digest.unary_unary_messages_sequences.iteritems()):
+        six.iteritems(self._digest.unary_unary_messages_sequences)):
       for test_messages in test_messages_sequence:
         requests = []
         response_futures = []
-        for _ in range(test_constants.PARALLELISM):
+        for _ in range(test_constants.THREAD_CONCURRENCY):
           request = test_messages.request()
           response_future = pool.submit(
               self._invoker.blocking(group, method), request,
@@ -165,13 +168,13 @@ class TestCase(test_coverage.Coverage, unittest.TestCase):
     pool.shutdown(wait=True)
 
   def testWaitingForSomeButNotAllParallelInvocations(self):
-    pool = logging_pool.pool(test_constants.PARALLELISM)
+    pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
     for (group, method), test_messages_sequence in (
-        self._digest.unary_unary_messages_sequences.iteritems()):
+        six.iteritems(self._digest.unary_unary_messages_sequences)):
       for test_messages in test_messages_sequence:
         requests = []
         response_futures_to_indices = {}
-        for index in range(test_constants.PARALLELISM):
+        for index in range(test_constants.THREAD_CONCURRENCY):
           request = test_messages.request()
           response_future = pool.submit(
               self._invoker.blocking(group, method), request,
@@ -181,7 +184,7 @@ class TestCase(test_coverage.Coverage, unittest.TestCase):
 
         some_completed_response_futures_iterator = itertools.islice(
             futures.as_completed(response_futures_to_indices),
-            test_constants.PARALLELISM / 2)
+            test_constants.THREAD_CONCURRENCY // 2)
         for response_future in some_completed_response_futures_iterator:
           index = response_futures_to_indices[response_future]
           test_messages.verify(requests[index], response_future.result(), self)
@@ -205,7 +208,7 @@ class TestCase(test_coverage.Coverage, unittest.TestCase):
 
   def testExpiredUnaryRequestUnaryResponse(self):
     for (group, method), test_messages_sequence in (
-        self._digest.unary_unary_messages_sequences.iteritems()):
+        six.iteritems(self._digest.unary_unary_messages_sequences)):
       for test_messages in test_messages_sequence:
         request = test_messages.request()
 
@@ -216,7 +219,7 @@ class TestCase(test_coverage.Coverage, unittest.TestCase):
 
   def testExpiredUnaryRequestStreamResponse(self):
     for (group, method), test_messages_sequence in (
-        self._digest.unary_stream_messages_sequences.iteritems()):
+        six.iteritems(self._digest.unary_stream_messages_sequences)):
       for test_messages in test_messages_sequence:
         request = test_messages.request()
 
@@ -228,7 +231,7 @@ class TestCase(test_coverage.Coverage, unittest.TestCase):
 
   def testExpiredStreamRequestUnaryResponse(self):
     for (group, method), test_messages_sequence in (
-        self._digest.stream_unary_messages_sequences.iteritems()):
+        six.iteritems(self._digest.stream_unary_messages_sequences)):
       for test_messages in test_messages_sequence:
         requests = test_messages.requests()
 
@@ -239,7 +242,7 @@ class TestCase(test_coverage.Coverage, unittest.TestCase):
 
   def testExpiredStreamRequestStreamResponse(self):
     for (group, method), test_messages_sequence in (
-        self._digest.stream_stream_messages_sequences.iteritems()):
+        six.iteritems(self._digest.stream_stream_messages_sequences)):
       for test_messages in test_messages_sequence:
         requests = test_messages.requests()
 
@@ -251,7 +254,7 @@ class TestCase(test_coverage.Coverage, unittest.TestCase):
 
   def testFailedUnaryRequestUnaryResponse(self):
     for (group, method), test_messages_sequence in (
-        self._digest.unary_unary_messages_sequences.iteritems()):
+        six.iteritems(self._digest.unary_unary_messages_sequences)):
       for test_messages in test_messages_sequence:
         request = test_messages.request()
 
@@ -261,7 +264,7 @@ class TestCase(test_coverage.Coverage, unittest.TestCase):
 
   def testFailedUnaryRequestStreamResponse(self):
     for (group, method), test_messages_sequence in (
-        self._digest.unary_stream_messages_sequences.iteritems()):
+        six.iteritems(self._digest.unary_stream_messages_sequences)):
       for test_messages in test_messages_sequence:
         request = test_messages.request()
 
@@ -272,7 +275,7 @@ class TestCase(test_coverage.Coverage, unittest.TestCase):
 
   def testFailedStreamRequestUnaryResponse(self):
     for (group, method), test_messages_sequence in (
-        self._digest.stream_unary_messages_sequences.iteritems()):
+        six.iteritems(self._digest.stream_unary_messages_sequences)):
       for test_messages in test_messages_sequence:
         requests = test_messages.requests()
 
@@ -282,7 +285,7 @@ class TestCase(test_coverage.Coverage, unittest.TestCase):
 
   def testFailedStreamRequestStreamResponse(self):
     for (group, method), test_messages_sequence in (
-        self._digest.stream_stream_messages_sequences.iteritems()):
+        six.iteritems(self._digest.stream_stream_messages_sequences)):
       for test_messages in test_messages_sequence:
         requests = test_messages.requests()
 

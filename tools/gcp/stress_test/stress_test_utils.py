@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -46,6 +46,7 @@ import big_query_utils as bq_utils
 
 class EventType:
   STARTING = 'STARTING'
+  RUNNING = 'RUNNING'
   SUCCESS = 'SUCCESS'
   FAILURE = 'FAILURE'
 
@@ -103,16 +104,32 @@ class BigQueryHelper:
     return bq_utils.insert_rows(self.bq, self.project_id, self.dataset_id,
                                 self.qps_table_id, [row])
 
-  def check_if_any_tests_failed(self, num_query_retries=3):
+  def check_if_any_tests_failed(self, num_query_retries=3, timeout_msec=30000):
     query = ('SELECT event_type FROM %s.%s WHERE run_id = \'%s\' AND '
              'event_type="%s"') % (self.dataset_id, self.summary_table_id,
                                    self.run_id, EventType.FAILURE)
-    query_job = bq_utils.sync_query_job(self.bq, self.project_id, query)
-    page = self.bq.jobs().getQueryResults(**query_job['jobReference']).execute(
-        num_retries=num_query_retries)
-    num_failures = int(page['totalRows'])
-    print 'num rows: ', num_failures
-    return num_failures > 0
+    page = None
+    try:
+      query_job = bq_utils.sync_query_job(self.bq, self.project_id, query)
+      job_id = query_job['jobReference']['jobId']
+      project_id = query_job['jobReference']['projectId']
+      page = self.bq.jobs().getQueryResults(
+          projectId=project_id,
+          jobId=job_id,
+          timeoutMs=timeout_msec).execute(num_retries=num_query_retries)
+
+      if not page['jobComplete']:
+        print('TIMEOUT ERROR: The query %s timed out. Current timeout value is'
+              ' %d msec. Returning False (i.e assuming there are no failures)'
+             ) % (query, timeoout_msec)
+        return False
+
+      num_failures = int(page['totalRows'])
+      print 'num rows: ', num_failures
+      return num_failures > 0
+    except:
+      print 'Exception in check_if_any_tests_failed(). Info: ', sys.exc_info()
+      print 'Query: ', query
 
   def print_summary_records(self, num_query_retries=3):
     line = '-' * 120
@@ -126,8 +143,9 @@ class BigQueryHelper:
                  self.dataset_id, self.summary_table_id, self.run_id)
     query_job = bq_utils.sync_query_job(self.bq, self.project_id, query)
 
-    print '{:<25} {:<12} {:<12} {:<30} {}'.format(
-        'Pod name', 'Image type', 'Event type', 'Date', 'Details')
+    print '{:<25} {:<12} {:<12} {:<30} {}'.format('Pod name', 'Image type',
+                                                  'Event type', 'Date',
+                                                  'Details')
     print line
     page_token = None
     while True:
@@ -136,9 +154,11 @@ class BigQueryHelper:
           **query_job['jobReference']).execute(num_retries=num_query_retries)
       rows = page.get('rows', [])
       for row in rows:
-        print '{:<25} {:<12} {:<12} {:<30} {}'.format(
-            row['f'][0]['v'], row['f'][1]['v'], row['f'][2]['v'],
-            row['f'][3]['v'], row['f'][4]['v'])
+        print '{:<25} {:<12} {:<12} {:<30} {}'.format(row['f'][0]['v'],
+                                                      row['f'][1]['v'],
+                                                      row['f'][2]['v'],
+                                                      row['f'][3]['v'],
+                                                      row['f'][4]['v'])
       page_token = page.get('pageToken')
       if not page_token:
         break
@@ -176,11 +196,11 @@ class BigQueryHelper:
         ('image_type', 'STRING', 'Client or Server?'),
         ('pod_name', 'STRING', 'GKE pod hosting this image'),
         ('event_date', 'STRING', 'The date of this event'),
-        ('event_type', 'STRING', 'STARTED/SUCCESS/FAILURE'),
+        ('event_type', 'STRING', 'STARTING/RUNNING/SUCCESS/FAILURE'),
         ('details', 'STRING', 'Any other relevant details')
     ]
-    desc = ('The table that contains START/SUCCESS/FAILURE events for '
-            ' the stress test clients and servers')
+    desc = ('The table that contains STARTING/RUNNING/SUCCESS/FAILURE events '
+            'for the stress test clients and servers')
     return bq_utils.create_table(self.bq, self.project_id, self.dataset_id,
                                  self.summary_table_id, summary_table_schema,
                                  desc)

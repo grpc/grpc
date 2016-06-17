@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -60,31 +60,25 @@ grpc_root = File.expand_path(File.join(File.dirname(__FILE__), '../../../..'))
 
 grpc_config = ENV['GRPC_CONFIG'] || 'opt'
 
-if ENV.key?('GRPC_LIB_DIR')
-  grpc_lib_dir = File.join(grpc_root, ENV['GRPC_LIB_DIR'])
-else
-  grpc_lib_dir = File.join(grpc_root, 'libs', grpc_config)
-end
-
 ENV['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
 
-unless File.exist?(File.join(grpc_lib_dir, 'libgrpc.a')) or windows
-  ENV['AR'] = RbConfig::CONFIG['AR'] + ' rcs'
-  ENV['CC'] = RbConfig::CONFIG['CC']
-  ENV['LD'] = ENV['CC']
+ENV['AR'] = RbConfig::CONFIG['AR'] + ' rcs'
+ENV['CC'] = RbConfig::CONFIG['CC']
+ENV['LD'] = ENV['CC']
 
-  ENV['AR'] = 'libtool -o' if RUBY_PLATFORM =~ /darwin/
+ENV['AR'] = 'libtool -o' if RUBY_PLATFORM =~ /darwin/
 
-  ENV['EMBED_OPENSSL'] = 'true'
-  ENV['EMBED_ZLIB'] = 'true'
-  ENV['ARCH_FLAGS'] = RbConfig::CONFIG['ARCH_FLAG']
-  ENV['ARCH_FLAGS'] = '-arch i386 -arch x86_64' if RUBY_PLATFORM =~ /darwin/
-  ENV['CFLAGS'] = '-DGPR_BACKWARDS_COMPATIBILITY_MODE'
+ENV['EMBED_OPENSSL'] = 'true'
+ENV['EMBED_ZLIB'] = 'true'
+ENV['ARCH_FLAGS'] = RbConfig::CONFIG['ARCH_FLAG']
+ENV['ARCH_FLAGS'] = '-arch i386 -arch x86_64' if RUBY_PLATFORM =~ /darwin/
+ENV['CFLAGS'] = '-DGPR_BACKWARDS_COMPATIBILITY_MODE'
 
-  output_dir = File.expand_path(RbConfig::CONFIG['topdir'])
-  grpc_lib_dir = File.join(output_dir, 'libs', grpc_config)
-  ENV['BUILDDIR'] = output_dir
+output_dir = File.expand_path(RbConfig::CONFIG['topdir'])
+grpc_lib_dir = File.join(output_dir, 'libs', grpc_config)
+ENV['BUILDDIR'] = output_dir
 
+unless windows
   puts 'Building internal gRPC into ' + grpc_lib_dir
   system("make -j -C #{grpc_root} #{grpc_lib_dir}/libgrpc.a CONFIG=#{grpc_config}")
   exit 1 unless $? == 0

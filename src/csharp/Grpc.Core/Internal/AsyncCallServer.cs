@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
@@ -51,15 +51,24 @@ namespace Grpc.Core.Internal
         readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         readonly Server server;
 
-        public AsyncCallServer(Func<TResponse, byte[]> serializer, Func<byte[], TRequest> deserializer, GrpcEnvironment environment, Server server) : base(serializer, deserializer, environment)
+        public AsyncCallServer(Func<TResponse, byte[]> serializer, Func<byte[], TRequest> deserializer, Server server) : base(serializer, deserializer)
         {
             this.server = GrpcPreconditions.CheckNotNull(server);
         }
 
-        public void Initialize(CallSafeHandle call)
+        public void Initialize(CallSafeHandle call, CompletionQueueSafeHandle completionQueue)
         {
-            call.Initialize(environment.CompletionRegistry, environment.CompletionQueue);
+            call.Initialize(completionQueue);
 
+            server.AddCallReference(this);
+            InitializeInternal(call);
+        }
+
+        /// <summary>
+        /// Only for testing purposes.
+        /// </summary>
+        public void InitializeForTesting(INativeCall call)
+        {
             server.AddCallReference(this);
             InitializeInternal(call);
         }
@@ -82,40 +91,40 @@ namespace Grpc.Core.Internal
 
         /// <summary>
         /// Sends a streaming response. Only one pending send action is allowed at any given time.
-        /// completionDelegate is called when the operation finishes.
         /// </summary>
-        public void StartSendMessage(TResponse msg, WriteFlags writeFlags, AsyncCompletionDelegate<object> completionDelegate)
+        public Task SendMessageAsync(TResponse msg, WriteFlags writeFlags)
         {
-            StartSendMessageInternal(msg, writeFlags, completionDelegate);
+            return SendMessageInternalAsync(msg, writeFlags);
         }
 
         /// <summary>
         /// Receives a streaming request. Only one pending read action is allowed at any given time.
-        /// completionDelegate is called when the operation finishes.
         /// </summary>
-        public void StartReadMessage(AsyncCompletionDelegate<TRequest> completionDelegate)
+        public Task<TRequest> ReadMessageAsync()
         {
-            StartReadMessageInternal(completionDelegate);
+            return ReadMessageInternalAsync();
         }
 
         /// <summary>
         /// Initiates sending a initial metadata. 
         /// Even though C-core allows sending metadata in parallel to sending messages, we will treat sending metadata as a send message operation
         /// to make things simpler.
-        /// completionDelegate is invoked upon completion.
         /// </summary>
-        public void StartSendInitialMetadata(Metadata headers, AsyncCompletionDelegate<object> completionDelegate)
+        public Task SendInitialMetadataAsync(Metadata headers)
         {
             lock (myLock)
             {
                 GrpcPreconditions.CheckNotNull(headers, "metadata");
-                GrpcPreconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
 
+                GrpcPreconditions.CheckState(started);
                 GrpcPreconditions.CheckState(!initialMetadataSent, "Response headers can only be sent once per call.");
                 GrpcPreconditions.CheckState(streamingWritesCounter == 0, "Response headers can only be sent before the first write starts.");
-                CheckSendingAllowed();
 
-                GrpcPreconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
+                var earlyResult = CheckSendAllowedOrEarlyResult();
+                if (earlyResult != null)
+                {
+                    return earlyResult;
+                }
 
                 using (var metadataArray = MetadataArraySafeHandle.Create(headers))
                 {
@@ -123,29 +132,39 @@ namespace Grpc.Core.Internal
                 }
 
                 this.initialMetadataSent = true;
-                sendCompletionDelegate = completionDelegate;
+                streamingWriteTcs = new TaskCompletionSource<object>();
+                return streamingWriteTcs.Task;
             }
         }
 
         /// <summary>
-        /// Sends call result status, also indicating server is done with streaming responses.
-        /// Only one pending send action is allowed at any given time.
-        /// completionDelegate is called when the operation finishes.
+        /// Sends call result status, indicating we are done with writes.
+        /// Sending a status different from StatusCode.OK will also implicitly cancel the call.
         /// </summary>
-        public void StartSendStatusFromServer(Status status, Metadata trailers, AsyncCompletionDelegate<object> completionDelegate)
+        public Task SendStatusFromServerAsync(Status status, Metadata trailers, Tuple<TResponse, WriteFlags> optionalWrite)
         {
+            byte[] payload = optionalWrite != null ? UnsafeSerialize(optionalWrite.Item1) : null;
+            var writeFlags = optionalWrite != null ? optionalWrite.Item2 : default(WriteFlags);
+
             lock (myLock)
             {
-                GrpcPreconditions.CheckNotNull(completionDelegate, "Completion delegate cannot be null");
-                CheckSendingAllowed();
+                GrpcPreconditions.CheckState(started);
+                GrpcPreconditions.CheckState(!disposed);
+                GrpcPreconditions.CheckState(!halfcloseRequested, "Can only send status from server once.");
 
                 using (var metadataArray = MetadataArraySafeHandle.Create(trailers))
                 {
-                    call.StartSendStatusFromServer(HandleHalfclosed, status, metadataArray, !initialMetadataSent);
+                    call.StartSendStatusFromServer(HandleSendStatusFromServerFinished, status, metadataArray, !initialMetadataSent,
+                        payload, writeFlags);
                 }
                 halfcloseRequested = true;
-                readingDone = true;
-                sendCompletionDelegate = completionDelegate;
+                initialMetadataSent = true;
+                sendStatusFromServerTcs = new TaskCompletionSource<object>();
+                if (optionalWrite != null)
+                {
+                    streamingWritesCounter++;
+                }
+                return sendStatusFromServerTcs.Task;
             }
         }
 
@@ -174,15 +193,19 @@ namespace Grpc.Core.Internal
             get { return false; }
         }
 
-        protected override void CheckReadingAllowed()
-        {
-            base.CheckReadingAllowed();
-            GrpcPreconditions.CheckArgument(!cancelRequested);
-        }
-
         protected override void OnAfterReleaseResources()
         {
             server.RemoveCallReference(this);
+        }
+
+        protected override Task CheckSendAllowedOrEarlyResult()
+        {
+            GrpcPreconditions.CheckState(!halfcloseRequested, "Response stream has already been completed.");
+            GrpcPreconditions.CheckState(!finished, "Already finished.");
+            GrpcPreconditions.CheckState(streamingWriteTcs == null, "Only one write can be pending at a time");
+            GrpcPreconditions.CheckState(!disposed);
+
+            return null;
         }
 
         /// <summary>
@@ -190,12 +213,21 @@ namespace Grpc.Core.Internal
         /// </summary>
         private void HandleFinishedServerside(bool success, bool cancelled)
         {
+            // NOTE: because this event is a result of batch containing GRPC_OP_RECV_CLOSE_ON_SERVER,
+            // success will be always set to true.
             lock (myLock)
             {
                 finished = true;
+                if (streamingReadTcs == null)
+                {
+                    // if there's no pending read, readingDone=true will dispose now.
+                    // if there is a pending read, we will dispose once that read finishes.
+                    readingDone = true;
+                    streamingReadTcs = new TaskCompletionSource<TRequest>();
+                    streamingReadTcs.SetResult(default(TRequest));
+                }
                 ReleaseResourcesIfPossible();
             }
-            // TODO(jtattermusch): handle error
 
             if (cancelled)
             {

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_stack.h"
 
 #include <string.h>
 
@@ -62,8 +62,8 @@ static void call_init_func(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 static void channel_destroy_func(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem) {}
 
-static void call_destroy_func(grpc_exec_ctx *exec_ctx,
-                              grpc_call_element *elem) {
+static void call_destroy_func(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                              const grpc_call_stats *stats, void *ignored) {
   ++*(int *)(elem->channel_data);
 }
 
@@ -87,15 +87,23 @@ static void free_channel(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
 }
 
 static void free_call(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
-  grpc_call_stack_destroy(exec_ctx, arg);
+  grpc_call_stack_destroy(exec_ctx, arg, NULL, NULL);
   gpr_free(arg);
 }
 
 static void test_create_channel_stack(void) {
   const grpc_channel_filter filter = {
-      call_func, channel_func, sizeof(int), call_init_func,
-      grpc_call_stack_ignore_set_pollset, call_destroy_func, sizeof(int),
-      channel_init_func, channel_destroy_func, get_peer, "some_test_filter"};
+      call_func,
+      channel_func,
+      sizeof(int),
+      call_init_func,
+      grpc_call_stack_ignore_set_pollset_or_pollset_set,
+      call_destroy_func,
+      sizeof(int),
+      channel_init_func,
+      channel_destroy_func,
+      get_peer,
+      "some_test_filter"};
   const grpc_channel_filter *filters = &filter;
   grpc_channel_stack *channel_stack;
   grpc_call_stack *call_stack;
@@ -116,7 +124,7 @@ static void test_create_channel_stack(void) {
 
   channel_stack = gpr_malloc(grpc_channel_stack_size(&filters, 1));
   grpc_channel_stack_init(&exec_ctx, 1, free_channel, channel_stack, &filters,
-                          1, &chan_args, "test", channel_stack);
+                          1, &chan_args, NULL, "test", channel_stack);
   GPR_ASSERT(channel_stack->count == 1);
   channel_elem = grpc_channel_stack_element(channel_stack, 0);
   channel_data = (int *)channel_elem->channel_data;

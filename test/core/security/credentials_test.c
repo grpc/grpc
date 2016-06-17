@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,7 +33,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/security/credentials.h"
+#include "src/core/lib/security/credentials/credentials.h"
 
 #include <openssl/rsa.h>
 #include <stdlib.h>
@@ -44,11 +44,14 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/httpcli/httpcli.h"
-#include "src/core/security/json_token.h"
-#include "src/core/support/env.h"
-#include "src/core/support/tmpfile.h"
-#include "src/core/support/string.h"
+#include "src/core/lib/http/httpcli.h"
+#include "src/core/lib/security/credentials/composite/composite_credentials.h"
+#include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
+#include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
+#include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
+#include "src/core/lib/support/env.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/support/tmpfile.h"
 #include "test/core/util/test_config.h"
 
 /* -- Mock channel credentials. -- */
@@ -536,12 +539,12 @@ static void validate_compute_engine_http_request(
   GPR_ASSERT(request->handshaker != &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, "metadata") == 0);
   GPR_ASSERT(
-      strcmp(request->path,
+      strcmp(request->http.path,
              "/computeMetadata/v1/instance/service-accounts/default/token") ==
       0);
-  GPR_ASSERT(request->hdr_count == 1);
-  GPR_ASSERT(strcmp(request->hdrs[0].key, "Metadata-Flavor") == 0);
-  GPR_ASSERT(strcmp(request->hdrs[0].value, "Google") == 0);
+  GPR_ASSERT(request->http.hdr_count == 1);
+  GPR_ASSERT(strcmp(request->http.hdrs[0].key, "Metadata-Flavor") == 0);
+  GPR_ASSERT(strcmp(request->http.hdrs[0].value, "Google") == 0);
 }
 
 static int compute_engine_httpcli_get_success_override(
@@ -639,11 +642,12 @@ static void validate_refresh_token_http_request(
   gpr_free(expected_body);
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, GRPC_GOOGLE_OAUTH2_SERVICE_HOST) == 0);
-  GPR_ASSERT(strcmp(request->path, GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH) == 0);
-  GPR_ASSERT(request->hdr_count == 1);
-  GPR_ASSERT(strcmp(request->hdrs[0].key, "Content-Type") == 0);
   GPR_ASSERT(
-      strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded") == 0);
+      strcmp(request->http.path, GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH) == 0);
+  GPR_ASSERT(request->http.hdr_count == 1);
+  GPR_ASSERT(strcmp(request->http.hdrs[0].key, "Content-Type") == 0);
+  GPR_ASSERT(strcmp(request->http.hdrs[0].value,
+                    "application/x-www-form-urlencoded") == 0);
 }
 
 static int refresh_token_httpcli_post_success(
@@ -898,12 +902,12 @@ static int default_creds_gce_detection_httpcli_get_success_override(
     gpr_timespec deadline, grpc_httpcli_response_cb on_response,
     void *user_data) {
   grpc_httpcli_response response = http_response(200, "");
-  grpc_httpcli_header header;
+  grpc_http_header header;
   header.key = "Metadata-Flavor";
   header.value = "Google";
   response.hdr_count = 1;
   response.hdrs = &header;
-  GPR_ASSERT(strcmp(request->path, "/") == 0);
+  GPR_ASSERT(strcmp(request->http.path, "/") == 0);
   GPR_ASSERT(strcmp(request->host, "metadata.google.internal") == 0);
   on_response(exec_ctx, user_data, &response);
   return 1;
@@ -961,7 +965,7 @@ static int default_creds_gce_detection_httpcli_get_failure_override(
     void *user_data) {
   /* No magic header. */
   grpc_httpcli_response response = http_response(200, "");
-  GPR_ASSERT(strcmp(request->path, "/") == 0);
+  GPR_ASSERT(strcmp(request->http.path, "/") == 0);
   GPR_ASSERT(strcmp(request->host, "metadata.google.internal") == 0);
   on_response(exec_ctx, user_data, &response);
   return 1;

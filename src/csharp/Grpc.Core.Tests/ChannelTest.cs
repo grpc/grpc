@@ -32,6 +32,7 @@
 #endregion
 
 using System;
+using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Internal;
 using Grpc.Core.Utils;
@@ -70,7 +71,7 @@ namespace Grpc.Core.Tests
         public void WaitForStateChangedAsync_InvalidArgument()
         {
             var channel = new Channel("localhost", ChannelCredentials.Insecure);
-            Assert.Throws(typeof(ArgumentException), () => channel.WaitForStateChangedAsync(ChannelState.FatalFailure));
+            Assert.ThrowsAsync(typeof(ArgumentException), async () => await channel.WaitForStateChangedAsync(ChannelState.Shutdown));
             channel.ShutdownAsync().Wait();
         }
 
@@ -87,7 +88,45 @@ namespace Grpc.Core.Tests
         {
             var channel = new Channel("localhost", ChannelCredentials.Insecure);
             channel.ShutdownAsync().Wait();
-            Assert.Throws(typeof(InvalidOperationException), () => channel.ShutdownAsync().GetAwaiter().GetResult());
+            Assert.ThrowsAsync(typeof(InvalidOperationException), async () => await channel.ShutdownAsync());
+        }
+
+        [Test]
+        public async Task ShutdownTokenCancelledAfterShutdown()
+        {
+            var channel = new Channel("localhost", ChannelCredentials.Insecure);
+            Assert.IsFalse(channel.ShutdownToken.IsCancellationRequested);
+            var shutdownTask = channel.ShutdownAsync();
+            Assert.IsTrue(channel.ShutdownToken.IsCancellationRequested);
+            await shutdownTask;
+        }
+
+        [Test]
+        public async Task StateIsShutdownAfterShutdown()
+        {
+            var channel = new Channel("localhost", ChannelCredentials.Insecure);
+            await channel.ShutdownAsync();
+            Assert.AreEqual(ChannelState.Shutdown, channel.State);
+        }
+
+        [Test]
+        public async Task ShutdownFinishesWaitForStateChangedAsync()
+        {
+            var channel = new Channel("localhost", ChannelCredentials.Insecure);
+            var stateChangedTask = channel.WaitForStateChangedAsync(ChannelState.Idle);
+            var shutdownTask = channel.ShutdownAsync();
+            await stateChangedTask;
+            await shutdownTask;
+        }
+
+        [Test]
+        public async Task OperationsThrowAfterShutdown()
+        {
+            var channel = new Channel("localhost", ChannelCredentials.Insecure);
+            await channel.ShutdownAsync();
+            Assert.ThrowsAsync(typeof(ObjectDisposedException), async () => await channel.WaitForStateChangedAsync(ChannelState.Idle));
+            Assert.Throws(typeof(ObjectDisposedException), () => { var x = channel.ResolvedTarget; });
+            Assert.ThrowsAsync(typeof(TaskCanceledException), async () => await channel.ConnectAsync());
         }
     }
 }

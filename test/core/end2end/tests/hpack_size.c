@@ -44,7 +44,7 @@
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/support/string.h"
+#include "src/core/lib/support/string.h"
 #include "test/core/end2end/cq_verifier.h"
 
 static void *tag(intptr_t t) { return (void *)t; }
@@ -262,9 +262,9 @@ static void drain_cq(grpc_completion_queue *cq) {
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(1000),
-                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5),
-                                         NULL).type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
+                 .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
 }
@@ -323,6 +323,7 @@ static void simple_request_body(grpc_end2end_test_fixture f, size_t index) {
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = GPR_ARRAY_SIZE(extra_metadata);
@@ -357,6 +358,7 @@ static void simple_request_body(grpc_end2end_test_fixture f, size_t index) {
   cq_expect_completion(cqv, tag(101), 1);
   cq_verify(cqv);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
@@ -444,3 +446,5 @@ void hpack_size(grpc_end2end_test_config config) {
     }
   }
 }
+
+void hpack_size_pre_init(void) {}

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,8 +42,8 @@
 #include <grpc/support/slice.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/security/credentials.h"
-#include "src/core/support/load_file.h"
+#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/support/load_file.h"
 #include "test/core/security/oauth2_utils.h"
 
 static grpc_call_credentials *create_refresh_token_creds(

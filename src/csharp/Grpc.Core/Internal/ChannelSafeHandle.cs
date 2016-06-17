@@ -1,5 +1,5 @@
 #region Copyright notice and license
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -63,7 +63,7 @@ namespace Grpc.Core.Internal
             return Native.grpcsharp_secure_channel_create(credentials, target, channelArgs);
         }
 
-        public CallSafeHandle CreateCall(CompletionRegistry registry, CallSafeHandle parentCall, ContextPropagationFlags propagationMask, CompletionQueueSafeHandle cq, string method, string host, Timespec deadline, CallCredentialsSafeHandle credentials)
+        public CallSafeHandle CreateCall(CallSafeHandle parentCall, ContextPropagationFlags propagationMask, CompletionQueueSafeHandle cq, string method, string host, Timespec deadline, CallCredentialsSafeHandle credentials)
         {
             using (Profilers.ForCurrentThread().NewScope("ChannelSafeHandle.CreateCall"))
             {
@@ -72,7 +72,7 @@ namespace Grpc.Core.Internal
                 {
                     result.SetCredentials(credentials);
                 }
-                result.Initialize(registry, cq);
+                result.Initialize(cq);
                 return result;
             }
         }
@@ -82,11 +82,10 @@ namespace Grpc.Core.Internal
             return Native.grpcsharp_channel_check_connectivity_state(this, tryToConnect ? 1 : 0);
         }
 
-        public void WatchConnectivityState(ChannelState lastObservedState, Timespec deadline, CompletionQueueSafeHandle cq,
-            CompletionRegistry completionRegistry, BatchCompletionDelegate callback)
+        public void WatchConnectivityState(ChannelState lastObservedState, Timespec deadline, CompletionQueueSafeHandle cq, BatchCompletionDelegate callback)
         {
             var ctx = BatchContextSafeHandle.Create();
-            completionRegistry.RegisterBatchCompletion(ctx, callback);
+            cq.CompletionRegistry.RegisterBatchCompletion(ctx, callback);
             Native.grpcsharp_channel_watch_connectivity_state(this, lastObservedState, deadline, cq, ctx);
         }
 

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,14 +31,12 @@
  *
  */
 
-#include "src/core/iomgr/tcp_posix.h"
-
+#include "src/core/lib/iomgr/endpoint_pair.h"
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
-#include "src/core/iomgr/endpoint_pair.h"
 #include "test/core/iomgr/endpoint_tests.h"
 #include "test/core/util/test_config.h"
 

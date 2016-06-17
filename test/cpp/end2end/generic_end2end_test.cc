@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@
 #include <grpc++/create_channel.h>
 #include <grpc++/generic/async_generic_service.h>
 #include <grpc++/generic/generic_stub.h>
-#include <grpc++/impl/proto_utils.h>
+#include <grpc++/impl/codegen/proto_utils.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
@@ -135,6 +135,8 @@ class GenericEnd2endTest : public ::testing::Test {
       std::unique_ptr<ByteBuffer> send_buffer =
           SerializeToByteBuffer(&send_request);
       call->Write(*send_buffer, tag(2));
+      // Send ByteBuffer can be destroyed after calling Write.
+      send_buffer.reset();
       client_ok(2);
       call->WritesDone(tag(3));
       client_ok(3);
@@ -154,6 +156,7 @@ class GenericEnd2endTest : public ::testing::Test {
       send_response.set_message(recv_request.message());
       send_buffer = SerializeToByteBuffer(&send_response);
       stream.Write(*send_buffer, tag(6));
+      send_buffer.reset();
       server_ok(6);
 
       stream.Finish(Status::OK, tag(7));
@@ -223,6 +226,7 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
   std::unique_ptr<ByteBuffer> send_buffer =
       SerializeToByteBuffer(&send_request);
   cli_stream->Write(*send_buffer, tag(3));
+  send_buffer.reset();
   client_ok(3);
 
   ByteBuffer recv_buffer;
@@ -234,6 +238,7 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
   send_response.set_message(recv_request.message());
   send_buffer = SerializeToByteBuffer(&send_response);
   srv_stream.Write(*send_buffer, tag(5));
+  send_buffer.reset();
   server_ok(5);
 
   cli_stream->Read(&recv_buffer, tag(6));

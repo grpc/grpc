@@ -12,11 +12,11 @@
     <email>grpc-packages@google.com</email>
     <active>yes</active>
    </lead>
-   <date>2016-03-01</date>
+   <date>2016-05-19</date>
    <time>16:06:07</time>
    <version>
-    <release>0.14.0</release>
-    <api>0.14.0</api>
+    <release>${settings.php_version.php()}</release>
+    <api>${settings.php_version.php()}</api>
    </version>
    <stability>
     <release>beta</release>
@@ -24,14 +24,14 @@
    </stability>
    <license>BSD</license>
    <notes>
-  - Increase unit test code coverage #5225
+  - TBD
    </notes>
    <contents>
     <dir baseinstalldir="/" name="/">
       <file baseinstalldir="/" name="config.m4" role="src" />
+      <file baseinstalldir="/" name="src/php/README.md" role="src" />
       <file baseinstalldir="/" name="src/php/ext/grpc/CREDITS" role="src" />
       <file baseinstalldir="/" name="src/php/ext/grpc/LICENSE" role="src" />
-      <file baseinstalldir="/" name="src/php/ext/grpc/README.md" role="src" />
       % for source in php_config_m4.src + php_config_m4.headers:
       <file baseinstalldir="/" name="${source}" role="src" />
       % endfor
@@ -157,8 +157,8 @@
     </release>
     <release>
      <version>
-      <release>0.14.0</release>
-      <api>0.14.0</api>
+      <release>0.8.1</release>
+      <api>0.8.1</api>
      </version>
      <stability>
       <release>beta</release>
@@ -168,6 +168,36 @@
      <license>BSD</license>
      <notes>
   - Increase unit test code coverage #5225
+     </notes>
+    </release>
+    <release>
+     <version>
+      <release>0.14.0</release>
+      <api>0.14.0</api>
+     </version>
+     <stability>
+      <release>beta</release>
+      <api>beta</api>
+     </stability>
+     <date>2016-04-19</date>
+     <license>BSD</license>
+     <notes>
+  - destroy grpc_byte_buffer after startBatch #6096
+     </notes>
+    </release>
+    <release>
+     <version>
+      <release>0.14.2</release>
+      <api>0.14.2</api>
+     </version>
+     <stability>
+      <release>beta</release>
+      <api>beta</api>
+     </stability>
+     <date>2016-05-18</date>
+     <license>BSD</license>
+     <notes>
+  - Updated functions with TSRM macros for ZTS support #6607
      </notes>
     </release>
    </changelog>

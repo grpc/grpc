@@ -29,6 +29,8 @@
 
 """Implementations of interoperability test methods."""
 
+from __future__ import print_function
+
 import enum
 import json
 import os
@@ -37,12 +39,14 @@ import time
 
 from oauth2client import client as oauth2client_client
 
+from grpc.beta import implementations
+from grpc.beta import interfaces
 from grpc.framework.common import cardinality
 from grpc.framework.interfaces.face import face
 
-from tests.interop import empty_pb2
-from tests.interop import messages_pb2
-from tests.interop import test_pb2
+from src.proto.grpc.testing import empty_pb2
+from src.proto.grpc.testing import messages_pb2
+from src.proto.grpc.testing import test_pb2
 
 _TIMEOUT = 7
 
@@ -86,13 +90,15 @@ class TestService(test_pb2.BetaTestServiceServicer):
     return self.FullDuplexCall(request_iterator, context)
 
 
-def _large_unary_common_behavior(stub, fill_username, fill_oauth_scope):
+def _large_unary_common_behavior(stub, fill_username, fill_oauth_scope,
+                                 protocol_options=None):
   with stub:
     request = messages_pb2.SimpleRequest(
         response_type=messages_pb2.COMPRESSABLE, response_size=314159,
         payload=messages_pb2.Payload(body=b'\x00' * 271828),
         fill_username=fill_username, fill_oauth_scope=fill_oauth_scope)
-    response_future = stub.UnaryCall.future(request, _TIMEOUT)
+    response_future = stub.UnaryCall.future(request, _TIMEOUT,
+                                            protocol_options=protocol_options)
     response = response_future.result()
     if response.payload.type is not messages_pb2.COMPRESSABLE:
       raise ValueError(
@@ -173,6 +179,9 @@ class _Pipe(object):
   def __iter__(self):
     return self
 
+  def __next__(self):
+    return self.next()
+
   def next(self):
     with self._condition:
       while not self._values and self._open:
@@ -205,7 +214,7 @@ def _ping_pong(stub):
 
   with stub, _Pipe() as pipe:
     response_iterator = stub.FullDuplexCall(pipe, _TIMEOUT)
-    print 'Starting ping-pong with response iterator %s' % response_iterator
+    print('Starting ping-pong with response iterator %s' % response_iterator)
     for response_size, payload_size in zip(
         request_response_sizes, request_payload_sizes):
       request = messages_pb2.StreamingOutputCallRequest(
@@ -298,7 +307,34 @@ def _oauth2_auth_token(stub, args):
   if args.oauth_scope.find(response.oauth_scope) == -1:
     raise ValueError(
         'expected to find oauth scope "%s" in received "%s"' %
-            (response.oauth_scope, args.oauth_scope))
+        (response.oauth_scope, args.oauth_scope))
+
+
+def _jwt_token_creds(stub, args):
+  json_key_filename = os.environ[
+      oauth2client_client.GOOGLE_APPLICATION_CREDENTIALS]
+  wanted_email = json.load(open(json_key_filename, 'rb'))['client_email']
+  response = _large_unary_common_behavior(stub, True, False)
+  if wanted_email != response.username:
+    raise ValueError(
+        'expected username %s, got %s' % (wanted_email, response.username))
+
+
+def _per_rpc_creds(stub, args):
+  json_key_filename = os.environ[
+      oauth2client_client.GOOGLE_APPLICATION_CREDENTIALS]
+  wanted_email = json.load(open(json_key_filename, 'rb'))['client_email']
+  credentials = oauth2client_client.GoogleCredentials.get_application_default()
+  scoped_credentials = credentials.create_scoped([args.oauth_scope])
+  call_creds = implementations.google_call_credentials(scoped_credentials)
+  options = interfaces.grpc_call_options(disable_compression=False,
+                                         credentials=call_creds)
+  response = _large_unary_common_behavior(stub, True, False,
+                                          protocol_options=options)
+  if wanted_email != response.username:
+    raise ValueError(
+        'expected username %s, got %s' % (wanted_email, response.username))
+
 
 @enum.unique
 class TestCase(enum.Enum):
@@ -312,6 +348,8 @@ class TestCase(enum.Enum):
   EMPTY_STREAM = 'empty_stream'
   COMPUTE_ENGINE_CREDS = 'compute_engine_creds'
   OAUTH2_AUTH_TOKEN = 'oauth2_auth_token'
+  JWT_TOKEN_CREDS = 'jwt_token_creds'
+  PER_RPC_CREDS = 'per_rpc_creds'
   TIMEOUT_ON_SLEEPING_SERVER = 'timeout_on_sleeping_server'
 
   def test_interoperability(self, stub, args):
@@ -337,5 +375,9 @@ class TestCase(enum.Enum):
       _compute_engine_creds(stub, args)
     elif self is TestCase.OAUTH2_AUTH_TOKEN:
       _oauth2_auth_token(stub, args)
+    elif self is TestCase.JWT_TOKEN_CREDS:
+      _jwt_token_creds(stub, args)
+    elif self is TestCase.PER_RPC_CREDS:
+      _per_rpc_creds(stub, args)
     else:
       raise NotImplementedError('Test case "%s" not implemented!' % self.name)

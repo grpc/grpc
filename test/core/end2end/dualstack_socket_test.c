@@ -39,9 +39,9 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/support/string.h"
-#include "src/core/iomgr/resolve_address.h"
-#include "src/core/iomgr/socket_utils_posix.h"
+#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/lib/support/string.h"
 
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
@@ -88,9 +88,11 @@ void test_connect(const char *server_host, const char *client_host, int port,
   int was_cancelled = 2;
   grpc_call_details call_details;
   char *peer;
+  int picked_port = 0;
 
   if (port == 0) {
     port = grpc_pick_unused_port_or_die();
+    picked_port = 1;
   }
 
   gpr_join_host_port(&server_hostport, server_host, port);
@@ -165,10 +167,11 @@ void test_connect(const char *server_host, const char *client_host, int port,
                                "/foo", "foo.test.google.fr", deadline, NULL);
   GPR_ASSERT(c);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
+  op->flags = expect_ok ? GRPC_INITIAL_METADATA_IGNORE_CONNECTIVITY : 0;
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
@@ -199,6 +202,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
     cq_expect_completion(cqv, tag(101), 1);
     cq_verify(cqv);
 
+    memset(ops, 0, sizeof(ops));
     op = ops;
     op->op = GRPC_OP_SEND_INITIAL_METADATA;
     op->data.send_initial_metadata.count = 0;
@@ -237,7 +241,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
     cq_expect_completion(cqv, tag(1), 1);
     cq_verify(cqv);
 
-    GPR_ASSERT(status == GRPC_STATUS_DEADLINE_EXCEEDED);
+    GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
   }
 
   grpc_call_destroy(c);
@@ -249,9 +253,9 @@ void test_connect(const char *server_host, const char *client_host, int port,
 
   /* Destroy server. */
   grpc_server_shutdown_and_notify(server, cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(cq, tag(1000),
-                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5),
-                                         NULL).type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
+                 .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(server);
   grpc_completion_queue_shutdown(cq);
   drain_cq(cq);
@@ -263,6 +267,9 @@ void test_connect(const char *server_host, const char *client_host, int port,
 
   grpc_call_details_destroy(&call_details);
   gpr_free(details);
+  if (picked_port) {
+    grpc_recycle_unused_port(port);
+  }
 }
 
 int external_dns_works(const char *host) {

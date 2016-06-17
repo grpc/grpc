@@ -75,9 +75,9 @@ static void drain_cq(grpc_completion_queue *cq) {
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(1000),
-                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5),
-                                         NULL).type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
+                 .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
 }
@@ -97,7 +97,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-/* Request with a large amount of metadata.*/
+// Request with a large amount of metadata.
 static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   grpc_call *c;
   grpc_call *s;
@@ -106,8 +106,13 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   gpr_timespec deadline = five_seconds_time();
   grpc_metadata meta;
+  const size_t large_size = 64 * 1024;
+  grpc_arg arg = {GRPC_ARG_INTEGER,
+                  GRPC_ARG_MAX_METADATA_SIZE,
+                  {.integer = (int)large_size + 1024}};
+  grpc_channel_args args = {1, &arg};
   grpc_end2end_test_fixture f =
-      begin_test(config, "test_request_with_large_metadata", NULL, NULL);
+      begin_test(config, "test_request_with_large_metadata", &args, &args);
   cq_verifier *cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op *op;
@@ -121,7 +126,6 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   char *details = NULL;
   size_t details_capacity = 0;
   int was_cancelled = 2;
-  const size_t large_size = 64 * 1024;
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
                                "/foo", "foo.test.google.fr", deadline, NULL);
@@ -138,6 +142,8 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
+  memset(ops, 0, sizeof(ops));
+  // Client: send request.
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 1;
@@ -174,9 +180,12 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
+
   cq_expect_completion(cqv, tag(101), 1);
   cq_verify(cqv);
 
+  memset(ops, 0, sizeof(ops));
+  // Server: send initial metadata and receive request.
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
@@ -194,6 +203,9 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   cq_expect_completion(cqv, tag(102), 1);
   cq_verify(cqv);
 
+  memset(ops, 0, sizeof(ops));
+  // Server: receive close and send status.  This should trigger
+  // completion of request on client.
   op = ops;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
@@ -245,3 +257,5 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
 void large_metadata(grpc_end2end_test_config config) {
   test_request_with_large_metadata(config);
 }
+
+void large_metadata_pre_init(void) {}

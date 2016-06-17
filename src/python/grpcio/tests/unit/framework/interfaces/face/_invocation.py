@@ -31,6 +31,8 @@
 
 import abc
 
+import six
+
 from grpc.framework.common import cardinality
 
 _CARDINALITY_TO_GENERIC_BLOCKING_BEHAVIOR = {
@@ -62,9 +64,8 @@ _CARDINALITY_TO_MULTI_CALLABLE_ATTRIBUTE = {
 }
 
 
-class Invoker(object):
+class Invoker(six.with_metaclass(abc.ABCMeta)):
   """A type used to invoke test RPCs."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def blocking(self, group, name):
@@ -82,9 +83,8 @@ class Invoker(object):
     raise NotImplementedError()
 
 
-class InvokerConstructor(object):
+class InvokerConstructor(six.with_metaclass(abc.ABCMeta)):
   """A type used to create Invokers."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def name(self):

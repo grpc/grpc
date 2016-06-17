@@ -37,8 +37,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/surface/event_string.h"
-#include "src/core/support/string.h"
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/support/alloc.h>
@@ -46,6 +44,8 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/surface/event_string.h"
 
 #define ROOT_EXPECTATION 1000
 
@@ -284,6 +284,6 @@ static expectation *add(cq_verifier *v, grpc_completion_type type, void *tag) {
   return e;
 }
 
-void cq_expect_completion(cq_verifier *v, void *tag, int success) {
+void cq_expect_completion(cq_verifier *v, void *tag, bool success) {
   add(v, GRPC_OP_COMPLETE, tag)->success = success;
 }

@@ -30,9 +30,9 @@
 
 NODE_TARGET_ARCH=$1
 source ~/.nvm/nvm.sh
-set -ex
 
 nvm use 4
+set -ex
 
 cd $(dirname $0)/../..
 
@@ -42,7 +42,7 @@ mkdir -p artifacts
 
 npm update
 
-node_versions=( 0.12.0 1.0.0 1.1.0 2.0.0 3.0.0 4.0.0 5.0.0 )
+node_versions=( 0.12.0 1.0.0 1.1.0 2.0.0 3.0.0 4.0.0 5.0.0 6.0.0 )
 
 for version in ${node_versions[@]}
 do

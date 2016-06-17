@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -84,49 +84,38 @@ StressTestInteropClient::StressTestInteropClient(
     int test_id, const grpc::string& server_address,
     std::shared_ptr<Channel> channel,
     const WeightedRandomTestSelector& test_selector, long test_duration_secs,
-    long sleep_duration_ms, long metrics_collection_interval_secs)
+    long sleep_duration_ms, bool do_not_abort_on_transient_failures)
     : test_id_(test_id),
       server_address_(server_address),
       channel_(channel),
-      interop_client_(new InteropClient(channel, false)),
+      interop_client_(new InteropClient(channel, false,
+                                        do_not_abort_on_transient_failures)),
       test_selector_(test_selector),
       test_duration_secs_(test_duration_secs),
-      sleep_duration_ms_(sleep_duration_ms),
-      metrics_collection_interval_secs_(metrics_collection_interval_secs) {}
+      sleep_duration_ms_(sleep_duration_ms) {}
 
-void StressTestInteropClient::MainLoop(std::shared_ptr<Gauge> qps_gauge) {
+void StressTestInteropClient::MainLoop(std::shared_ptr<QpsGauge> qps_gauge) {
   gpr_log(GPR_INFO, "Running test %d. ServerAddr: %s", test_id_,
           server_address_.c_str());
 
-  gpr_timespec test_end_time =
-      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                   gpr_time_from_seconds(test_duration_secs_, GPR_TIMESPAN));
+  gpr_timespec test_end_time;
+  if (test_duration_secs_ < 0) {
+    test_end_time = gpr_inf_future(GPR_CLOCK_REALTIME);
+  } else {
+    test_end_time =
+        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                     gpr_time_from_seconds(test_duration_secs_, GPR_TIMESPAN));
+  }
 
-  gpr_timespec current_time = gpr_now(GPR_CLOCK_REALTIME);
-  gpr_timespec next_stat_collection_time = current_time;
-  gpr_timespec collection_interval =
-      gpr_time_from_seconds(metrics_collection_interval_secs_, GPR_TIMESPAN);
-  long num_calls_per_interval = 0;
+  qps_gauge->Reset();
 
-  while (test_duration_secs_ < 0 ||
-         gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), test_end_time) < 0) {
+  while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), test_end_time) < 0) {
     // Select the test case to execute based on the weights and execute it
     TestCaseType test_case = test_selector_.GetNextTest();
     gpr_log(GPR_DEBUG, "%d - Executing the test case %d", test_id_, test_case);
     RunTest(test_case);
 
-    num_calls_per_interval++;
-
-    // See if its time to collect stats yet
-    current_time = gpr_now(GPR_CLOCK_REALTIME);
-    if (gpr_time_cmp(next_stat_collection_time, current_time) < 0) {
-      qps_gauge->Set(num_calls_per_interval /
-                     metrics_collection_interval_secs_);
-
-      num_calls_per_interval = 0;
-      next_stat_collection_time =
-          gpr_time_add(current_time, collection_interval);
-    }
+    qps_gauge->Incr();
 
     // Sleep between successive calls if needed
     if (sleep_duration_ms_ > 0) {
@@ -138,31 +127,67 @@ void StressTestInteropClient::MainLoop(std::shared_ptr<Gauge> qps_gauge) {
   }
 }
 
-// TODO(sree): Add all interop tests
-void StressTestInteropClient::RunTest(TestCaseType test_case) {
+bool StressTestInteropClient::RunTest(TestCaseType test_case) {
+  bool is_success = false;
   switch (test_case) {
     case EMPTY_UNARY: {
-      interop_client_->DoEmpty();
+      is_success = interop_client_->DoEmpty();
       break;
     }
     case LARGE_UNARY: {
-      interop_client_->DoLargeUnary();
+      is_success = interop_client_->DoLargeUnary();
       break;
     }
     case LARGE_COMPRESSED_UNARY: {
-      interop_client_->DoLargeCompressedUnary();
+      is_success = interop_client_->DoLargeCompressedUnary();
       break;
     }
     case CLIENT_STREAMING: {
-      interop_client_->DoRequestStreaming();
+      is_success = interop_client_->DoRequestStreaming();
       break;
     }
     case SERVER_STREAMING: {
-      interop_client_->DoResponseStreaming();
+      is_success = interop_client_->DoResponseStreaming();
+      break;
+    }
+    case SERVER_COMPRESSED_STREAMING: {
+      is_success = interop_client_->DoResponseCompressedStreaming();
+      break;
+    }
+    case SLOW_CONSUMER: {
+      is_success = interop_client_->DoResponseStreamingWithSlowConsumer();
+      break;
+    }
+    case HALF_DUPLEX: {
+      is_success = interop_client_->DoHalfDuplex();
+      break;
+    }
+    case PING_PONG: {
+      is_success = interop_client_->DoPingPong();
+      break;
+    }
+    case CANCEL_AFTER_BEGIN: {
+      is_success = interop_client_->DoCancelAfterBegin();
+      break;
+    }
+    case CANCEL_AFTER_FIRST_RESPONSE: {
+      is_success = interop_client_->DoCancelAfterFirstResponse();
+      break;
+    }
+    case TIMEOUT_ON_SLEEPING_SERVER: {
+      is_success = interop_client_->DoTimeoutOnSleepingServer();
       break;
     }
     case EMPTY_STREAM: {
-      interop_client_->DoEmptyStream();
+      is_success = interop_client_->DoEmptyStream();
+      break;
+    }
+    case STATUS_CODE_AND_MESSAGE: {
+      is_success = interop_client_->DoStatusWithMessage();
+      break;
+    }
+    case CUSTOM_METADATA: {
+      is_success = interop_client_->DoCustomMetadata();
       break;
     }
     default: {
@@ -171,6 +196,8 @@ void StressTestInteropClient::RunTest(TestCaseType test_case) {
       break;
     }
   }
+
+  return is_success;
 }
 
 }  // namespace testing

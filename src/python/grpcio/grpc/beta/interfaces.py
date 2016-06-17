@@ -30,51 +30,13 @@
 """Constants and interfaces of the Beta API of gRPC Python."""
 
 import abc
-import enum
 
-from grpc._adapter import _types
+import six
 
+import grpc
 
-@enum.unique
-class ChannelConnectivity(enum.Enum):
-  """Mirrors grpc_connectivity_state in the gRPC Core.
-
-  Attributes:
-    IDLE: The channel is idle.
-    CONNECTING: The channel is connecting.
-    READY: The channel is ready to conduct RPCs.
-    TRANSIENT_FAILURE: The channel has seen a failure from which it expects to
-      recover.
-    FATAL_FAILURE: The channel has seen a failure from which it cannot recover.
-  """
-  IDLE = (_types.ConnectivityState.IDLE, 'idle',)
-  CONNECTING = (_types.ConnectivityState.CONNECTING, 'connecting',)
-  READY = (_types.ConnectivityState.READY, 'ready',)
-  TRANSIENT_FAILURE = (
-      _types.ConnectivityState.TRANSIENT_FAILURE, 'transient failure',)
-  FATAL_FAILURE = (_types.ConnectivityState.FATAL_FAILURE, 'fatal failure',)
-
-
-@enum.unique
-class StatusCode(enum.Enum):
-  """Mirrors grpc_status_code in the C core."""
-  OK                  = 0
-  CANCELLED           = 1
-  UNKNOWN             = 2
-  INVALID_ARGUMENT    = 3
-  DEADLINE_EXCEEDED   = 4
-  NOT_FOUND           = 5
-  ALREADY_EXISTS      = 6
-  PERMISSION_DENIED   = 7
-  RESOURCE_EXHAUSTED  = 8
-  FAILED_PRECONDITION = 9
-  ABORTED             = 10
-  OUT_OF_RANGE        = 11
-  UNIMPLEMENTED       = 12
-  INTERNAL            = 13
-  UNAVAILABLE         = 14
-  DATA_LOSS           = 15
-  UNAUTHENTICATED     = 16
+ChannelConnectivity = grpc.ChannelConnectivity
+StatusCode = grpc.StatusCode
 
 
 class GRPCCallOptions(object):
@@ -104,54 +66,13 @@ def grpc_call_options(disable_compression=False, credentials=None):
   """
   return GRPCCallOptions(disable_compression, None, credentials)
 
-
-class GRPCAuthMetadataContext(object):
-  """Provides information to call credentials metadata plugins.
-
-  Attributes:
-    service_url: A string URL of the service being called into.
-    method_name: A string of the fully qualified method name being called.
-  """
-  __metaclass__ = abc.ABCMeta
+GRPCAuthMetadataContext = grpc.AuthMetadataContext
+GRPCAuthMetadataPluginCallback = grpc.AuthMetadataPluginCallback
+GRPCAuthMetadataPlugin = grpc.AuthMetadataPlugin
 
 
-class GRPCAuthMetadataPluginCallback(object):
-  """Callback object received by a metadata plugin."""
-  __metaclass__ = abc.ABCMeta
-
-  def __call__(self, metadata, error):
-    """Inform the gRPC runtime of the metadata to construct a CallCredentials.
-
-    Args:
-      metadata: An iterable of 2-sequences (e.g. tuples) of metadata key/value
-        pairs.
-      error: An Exception to indicate error or None to indicate success.
-    """
-    raise NotImplementedError()
-
-
-class GRPCAuthMetadataPlugin(object):
-  """
-  """
-  __metaclass__ = abc.ABCMeta
-
-  def __call__(self, context, callback):
-    """Invoke the plugin.
-
-    Must not block. Need only be called by the gRPC runtime.
-
-    Args:
-      context: A GRPCAuthMetadataContext providing information on what the
-        plugin is being used for.
-      callback: A GRPCAuthMetadataPluginCallback to be invoked either
-        synchronously or asynchronously.
-    """
-    raise NotImplementedError()
-
-
-class GRPCServicerContext(object):
+class GRPCServicerContext(six.with_metaclass(abc.ABCMeta)):
   """Exposes gRPC-specific options and behaviors to code servicing RPCs."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def peer(self):
@@ -168,9 +89,8 @@ class GRPCServicerContext(object):
     raise NotImplementedError()
 
 
-class GRPCInvocationContext(object):
+class GRPCInvocationContext(six.with_metaclass(abc.ABCMeta)):
   """Exposes gRPC-specific options and behaviors to code invoking RPCs."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def disable_next_request_compression(self):
@@ -178,9 +98,8 @@ class GRPCInvocationContext(object):
     raise NotImplementedError()
 
 
-class Server(object):
+class Server(six.with_metaclass(abc.ABCMeta)):
   """Services RPCs."""
-  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def add_insecure_port(self, address):
@@ -239,7 +158,7 @@ class Server(object):
     This method may be called at any time and is idempotent. Passing a smaller
     grace value than has been passed in a previous call will have the effect of
     stopping the Server sooner. Passing a larger grace value than has been
-    passed in a previous call will not have the effect of stopping the sooner
+    passed in a previous call will not have the effect of stopping the server
     later.
 
     Args:

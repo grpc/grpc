@@ -31,6 +31,7 @@
 import datetime
 import os
 import re
+import resource
 import select
 import subprocess
 import sys
@@ -89,11 +90,16 @@ def run_client():
                examining logs). This is the reason why the script waits forever
                in case of failures
   """
+  # Set the 'core file' size to 'unlimited' so that 'core' files are generated
+  # if the client crashes (Note: This is not relevant for Java and Go clients)
+  resource.setrlimit(resource.RLIMIT_CORE,
+                     (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
+
   env = dict(os.environ)
   image_type = env['STRESS_TEST_IMAGE_TYPE']
-  image_name = env['STRESS_TEST_IMAGE']
+  stress_client_cmd = env['STRESS_TEST_CMD'].split()
   args_str = env['STRESS_TEST_ARGS_STR']
-  metrics_client_image = env['METRICS_CLIENT_IMAGE']
+  metrics_client_cmd = env['METRICS_CLIENT_CMD'].split()
   metrics_client_args_str = env['METRICS_CLIENT_ARGS_STR']
   run_id = env['RUN_ID']
   pod_name = env['POD_NAME']
@@ -103,6 +109,11 @@ def run_client():
   dataset_id = env['DATASET_ID']
   summary_table_id = env['SUMMARY_TABLE_ID']
   qps_table_id = env['QPS_TABLE_ID']
+  # The following parameter is to inform us whether the stress client runs
+  # forever until forcefully stopped or will it naturally stop after sometime.
+  # This way, we know that the stress client process should not terminate (even
+  # if it does with a success exit code) and flag the termination as a failure
+  will_run_forever = env.get('WILL_RUN_FOREVER', '1')
 
   bq_helper = BigQueryHelper(run_id, image_type, pod_name, project_id,
                              dataset_id, summary_table_id, qps_table_id)
@@ -122,12 +133,14 @@ def run_client():
     details = 'Logfile: %s' % logfile_name
     logfile = open(logfile_name, 'w')
 
+  metrics_cmd = metrics_client_cmd + [x
+                                      for x in metrics_client_args_str.split()]
+  stress_cmd = stress_client_cmd + [x for x in args_str.split()]
+
+  details = '%s, Metrics command: %s, Stress client command: %s' % (
+      details, str(metrics_cmd), str(stress_cmd))
   # Update status that the test is starting (in the status table)
   bq_helper.insert_summary_row(EventType.STARTING, details)
-
-  metrics_cmd = [metrics_client_image
-                ] + [x for x in metrics_client_args_str.split()]
-  stress_cmd = [image_name] + [x for x in args_str.split()]
 
   print 'Launching process %s ...' % stress_cmd
   stress_p = subprocess.Popen(args=stress_cmd,
@@ -137,15 +150,17 @@ def run_client():
   qps_history = [1, 1, 1]  # Maintain the last 3 qps readings
   qps_history_idx = 0  # Index into the qps_history list
 
+  is_running_status_written = False
   is_error = False
   while True:
     # Check if stress_client is still running. If so, collect metrics and upload
     # to BigQuery status table
+    # If stress_p.poll() is not None, it means that the stress client terminated
     if stress_p.poll() is not None:
       end_time = datetime.datetime.now().isoformat()
       event_type = EventType.SUCCESS
       details = 'End time: %s' % end_time
-      if stress_p.returncode != 0:
+      if will_run_forever == '1' or stress_p.returncode != 0:
         event_type = EventType.FAILURE
         details = 'Return code = %d. End time: %s' % (stress_p.returncode,
                                                       end_time)
@@ -153,6 +168,10 @@ def run_client():
       bq_helper.insert_summary_row(event_type, details)
       print details
       break
+
+    if not is_running_status_written:
+      bq_helper.insert_summary_row(EventType.RUNNING, '')
+      is_running_status_written = True
 
     # Stress client still running. Get metrics
     qps = _get_qps(metrics_cmd)

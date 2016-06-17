@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/support/stack_lockfree.h"
+#include "src/core/lib/support/stack_lockfree.h"
 
 #include <stdlib.h>
 

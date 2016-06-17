@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -51,7 +51,7 @@ namespace Grpc.IntegrationTesting
         const string Host = "localhost";
         Server server;
         Channel channel;
-        TestService.ITestServiceClient client;
+        TestService.TestServiceClient client;
 
         [TestFixtureSetUp]
         public void Init()

@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -32,7 +32,7 @@
 CXX = g++
 CPPFLAGS += -I/usr/local/include -pthread
 CXXFLAGS += -std=c++11
-LDFLAGS += -L/usr/local/lib -lgrpc++_unsecure -lgrpc -lprotobuf -lpthread -ldl
+LDFLAGS += -L/usr/local/lib `pkg-config --libs grpc++` -lprotobuf -lpthread -ldl
 PROTOC = protoc
 GRPC_CPP_PLUGIN = grpc_cpp_plugin
 GRPC_CPP_PLUGIN_PATH ?= `which $(GRPC_CPP_PLUGIN)`

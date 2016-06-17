@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -45,7 +45,7 @@ namespace Grpc.Testing
     /// <summary>
     /// Implementation of WorkerService server
     /// </summary>
-    public class WorkerServiceImpl : WorkerService.IWorkerService
+    public class WorkerServiceImpl : WorkerService.WorkerServiceBase
     {
         readonly Action stopRequestHandler;
 
@@ -54,7 +54,7 @@ namespace Grpc.Testing
             this.stopRequestHandler = GrpcPreconditions.CheckNotNull(stopRequestHandler);
         }
         
-        public async Task RunServer(IAsyncStreamReader<ServerArgs> requestStream, IServerStreamWriter<ServerStatus> responseStream, ServerCallContext context)
+        public override async Task RunServer(IAsyncStreamReader<ServerArgs> requestStream, IServerStreamWriter<ServerStatus> responseStream, ServerCallContext context)
         {
             GrpcPreconditions.CheckState(await requestStream.MoveNext());
             var serverConfig = requestStream.Current.Setup;
@@ -64,7 +64,7 @@ namespace Grpc.Testing
             {
                 Stats = runner.GetStats(false),
                 Port = runner.BoundPort,
-                Cores = 0,  // TODO: set number of cores
+                Cores = Environment.ProcessorCount,
             });
                 
             while (await requestStream.MoveNext())
@@ -78,7 +78,7 @@ namespace Grpc.Testing
             await runner.StopAsync();
         }
 
-        public async Task RunClient(IAsyncStreamReader<ClientArgs> requestStream, IServerStreamWriter<ClientStatus> responseStream, ServerCallContext context)
+        public override async Task RunClient(IAsyncStreamReader<ClientArgs> requestStream, IServerStreamWriter<ClientStatus> responseStream, ServerCallContext context)
         {
             GrpcPreconditions.CheckState(await requestStream.MoveNext());
             var clientConfig = requestStream.Current.Setup;
@@ -100,12 +100,12 @@ namespace Grpc.Testing
             await runner.StopAsync();
         }
 
-        public Task<CoreResponse> CoreCount(CoreRequest request, ServerCallContext context)
+        public override Task<CoreResponse> CoreCount(CoreRequest request, ServerCallContext context)
         {
             return Task.FromResult(new CoreResponse { Cores = Environment.ProcessorCount });
         }
 
-        public Task<Void> QuitWorker(Void request, ServerCallContext context)
+        public override Task<Void> QuitWorker(Void request, ServerCallContext context)
         {
             stopRequestHandler();
             return Task.FromResult(new Void());

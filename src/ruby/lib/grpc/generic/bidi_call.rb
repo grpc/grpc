@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,7 +28,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'forwardable'
-require 'grpc/grpc'
+require_relative '../grpc'
 
 # GRPC contains the General RPC module.
 module GRPC
@@ -69,6 +69,10 @@ module GRPC
       @readq = Queue.new
       @unmarshal = unmarshal
       @metadata_tag = metadata_tag
+      @reads_complete = false
+      @writes_complete = false
+      @complete = false
+      @done_mutex = Mutex.new
     end
 
     # Begins orchestration of the Bidi stream for a client sending requests.
@@ -113,6 +117,16 @@ module GRPC
       return unless @op_notifier
       GRPC.logger.debug("bidi-notify-done: notifying  #{@op_notifier}")
       @op_notifier.notify(self)
+    end
+
+    # signals that a bidi operation is complete (read + write)
+    def finished
+      @done_mutex.synchronize do
+        return unless @reads_complete && @writes_complete && !@complete
+        @call.close
+        @cq.close
+        @complete = true
+      end
     end
 
     # performs a read using @call.run_batch, ensures metadata is set up
@@ -163,12 +177,16 @@ module GRPC
                         SEND_CLOSE_FROM_CLIENT => nil)
         GRPC.logger.debug('bidi-write-loop: done')
         notify_done
+        @writes_complete = true
+        finished
       end
       GRPC.logger.debug('bidi-write-loop: finished')
     rescue StandardError => e
       GRPC.logger.warn('bidi-write-loop: failed')
       GRPC.logger.warn(e)
       notify_done
+      @writes_complete = true
+      finished
       raise e
     end
 
@@ -212,6 +230,8 @@ module GRPC
           @readq.push(e)  # let each_queued_msg terminate with this error
         end
         GRPC.logger.debug('bidi-read-loop: finished')
+        @reads_complete = true
+        finished
       end
     end
   end

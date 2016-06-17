@@ -42,23 +42,39 @@ void test_register_method_fail(void) {
   grpc_server *server = grpc_server_create(NULL, NULL);
   void *method;
   void *method_old;
-  method = grpc_server_register_method(server, NULL, NULL);
+  method =
+      grpc_server_register_method(server, NULL, NULL, GRPC_SRM_PAYLOAD_NONE, 0);
   GPR_ASSERT(method == NULL);
-  method_old = grpc_server_register_method(server, "m", "h");
+  method_old =
+      grpc_server_register_method(server, "m", "h", GRPC_SRM_PAYLOAD_NONE, 0);
   GPR_ASSERT(method_old != NULL);
-  method = grpc_server_register_method(server, "m", "h");
+  method = grpc_server_register_method(
+      server, "m", "h", GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER, 0);
+  GPR_ASSERT(method == NULL);
+  method_old =
+      grpc_server_register_method(server, "m2", "h2", GRPC_SRM_PAYLOAD_NONE,
+                                  GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST);
+  GPR_ASSERT(method_old != NULL);
+  method =
+      grpc_server_register_method(server, "m2", "h2", GRPC_SRM_PAYLOAD_NONE, 0);
+  GPR_ASSERT(method == NULL);
+  method = grpc_server_register_method(
+      server, "m2", "h2", GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER,
+      GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST);
   GPR_ASSERT(method == NULL);
   grpc_server_destroy(server);
 }
 
 void test_request_call_on_no_server_cq(void) {
   grpc_completion_queue *cc = grpc_completion_queue_create(NULL);
+  grpc_server *server = grpc_server_create(NULL, NULL);
   GPR_ASSERT(GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE ==
-             grpc_server_request_call(NULL, NULL, NULL, NULL, cc, cc, NULL));
+             grpc_server_request_call(server, NULL, NULL, NULL, cc, cc, NULL));
   GPR_ASSERT(GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE ==
-             grpc_server_request_registered_call(NULL, NULL, NULL, NULL, NULL,
+             grpc_server_request_registered_call(server, NULL, NULL, NULL, NULL,
                                                  NULL, cc, cc, NULL));
   grpc_completion_queue_destroy(cc);
+  grpc_server_destroy(server);
 }
 
 void test_bind_server_twice(void) {

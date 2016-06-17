@@ -7,7 +7,7 @@
   # This file can be regenerated from the template by running
   # tools/buildgen/generate_projects.sh
 
-  # Copyright 2015-2016, Google Inc.
+  # Copyright 2015, Google Inc.
   # All rights reserved.
   #
   # Redistribution and use in source and binary forms, with or without
@@ -49,6 +49,19 @@
 
     sources_that_need_openssl = set()
     sources_that_don_t_need_openssl = set()
+
+    # warnings we'd like, but that dont exist in all compilers
+    PREFERRED_WARNINGS=['shadow', 'extra-semi']
+    CHECK_WARNINGS=PREFERRED_WARNINGS + ['no-shift-negative-value']
+
+    def warning_var(fmt, warning):
+      return fmt % warning.replace('-', '_').upper()
+
+    def neg_warning(warning):
+      if warning[0:3] == 'no-':
+        return warning[3:]
+      else:
+        return 'no-' + warning
   %>
 
 
@@ -187,17 +200,14 @@
   CXX11_CHECK_CMD = $(CXX) -std=c++11 -o $(TMPOUT) -c test/build/c++11.cc
   HAS_CXX11 = $(shell $(CXX11_CHECK_CMD) 2> /dev/null && echo true || echo false)
 
-  CHECK_SHADOW_WORKS_CMD = $(CC) -std=c99 -Werror -Wshadow -o $(TMPOUT) -c test/build/shadow.c
-  HAS_WORKING_SHADOW = $(shell $(CHECK_SHADOW_WORKS_CMD) 2> /dev/null && echo true || echo false)
-  ifeq ($(HAS_WORKING_SHADOW),true)
-  W_SHADOW=-Wshadow
+  %for warning in CHECK_WARNINGS:
+  ${warning_var('CHECK_%s_WORKS_CMD', warning)} = $(CC) -std=c99 -Werror -W${warning} -o $(TMPOUT) -c test/build/${warning}.c
+  ${warning_var('HAS_WORKING_%s', warning)} = $(shell $(${warning_var('CHECK_%s_WORKS_CMD', warning)}) 2> /dev/null && echo true || echo false)
+  ifeq ($(${warning_var('HAS_WORKING_%s', warning)}),true)
+  ${warning_var('W_%s', warning)}=-W${warning}
+  ${warning_var('NO_W_%s', warning)}=-W${neg_warning(warning)}
   endif
-
-  CHECK_NO_SHIFT_NEGATIVE_VALUE_CMD = $(CC) -std=c99 -Werror -Wno-shift-negative-value -o $(TMPOUT) -c test/build/empty.c
-  HAS_NO_SHIFT_NEGATIVE_VALUE = $(shell $(CHECK_NO_SHIFT_NEGATIVE_VALUE_CMD) 2> /dev/null && echo true || echo false)
-  ifeq ($(HAS_NO_SHIFT_NEGATIVE_VALUE),true)
-  W_NO_SHIFT_NEGATIVE_VALUE=-Wno-shift-negative-value
-  endif
+  %endfor
 
   # The HOST compiler settings are used to compile the protoc plugins.
   # In most cases, you won't have to change anything, but if you are
@@ -213,7 +223,7 @@
   DEFINES += $(EXTRA_DEFINES)
   endif
 
-  CFLAGS += -std=c99 -Wsign-conversion -Wconversion $(W_SHADOW)
+  CFLAGS += -std=c99 -Wsign-conversion -Wconversion ${' '.join(warning_var('$(W_%s)', warning) for warning in PREFERRED_WARNINGS)}
   ifeq ($(HAS_CXX11),true)
   CXXFLAGS += -std=c++11
   else
@@ -1197,7 +1207,7 @@
   $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_zookeeper.pc:
   	$(E) "[MAKE]    Generating $@"
   	$(Q) mkdir -p $(@D)
-  	$(Q) echo -e "$(GRPC_ZOOKEEPER_PC_FILE)" >$@
+  	$(Q) echo "$(GRPC_ZOOKEEPER_PC_FILE)" | tr , '\n' >$@
 
   $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc:
   	$(E) "[MAKE]    Generating $@"
@@ -1421,17 +1431,19 @@
   	@echo "Your system looks ready to go."
   	@echo
   else
-  	@echo "We couldn't find protoc 3.0.0+ installed on your system. While this"
-  	@echo "won't prevent grpc from working, you won't be able to compile"
-  	@echo "and run any meaningful code with it."
+  	@echo "Warning: it looks like protoc 3.0.0+ isn't installed on your system,"
+  	@echo "which means that you won't be able to compile .proto files for use"
+  	@echo "with gRPC."
   	@echo
+  	@echo "If you are just using pre-compiled protocol buffers, or you otherwise"
+  	@echo "have no need to compile .proto files, you can ignore this."
   	@echo
-  	@echo "Please download and install protobuf 3.0.0+ from:"
+  	@echo "If you do need protobuf for some reason, you can download and install"
+  	@echo "it from:"
   	@echo
   	@echo "   https://github.com/google/protobuf/releases"
   	@echo
-  	@echo "Once you've done so, or if you think this message is in error,"
-  	@echo "you can re-run this check by doing:"
+  	@echo "Once you've done so, you can re-run this check by doing:"
   	@echo
   	@echo "   make verify-install"
   endif
@@ -1698,7 +1710,7 @@
   # boringssl needs an override to ensure that it does not include
   # system openssl headers regardless of other configuration
   # we do so here with a target specific variable assignment
-  $(${tgt.name.upper()}_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value
+  $(${tgt.name.upper()}_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
   $(${tgt.name.upper()}_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
   $(${tgt.name.upper()}_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
   % else:
@@ -1737,7 +1749,7 @@
    $(LIBDIR)/$(CONFIG)/lib${dep}.a\
   % endfor
 
-  % if tgt.language == "c++" or tgt.boringssl:
+  % if tgt.language == "c++" or tgt.boringssl or tgt.build == 'fuzzer':
   ## C++ targets specificies.
   % if tgt.build == 'protoc':
   	$(E) "[HOSTLD]  Linking $@"
@@ -1790,6 +1802,9 @@
    $(GTEST_LIB)\
   % elif tgt.language == 'c++' and tgt.build == 'benchmark':
    $(GTEST_LIB)\
+  % endif
+  % if tgt.build == 'fuzzer':
+   -lFuzzer\
   % endif
    -o $(BINDIR)/$(CONFIG)/${tgt.name}
   % if tgt.build == 'protoc' or tgt.language == 'c++':

@@ -49,7 +49,7 @@ func InteropCtx(t *testing.T) *HTTP2InteropCtx {
 
 	if ctx.UseTestCa {
 		// It would be odd if useTestCa was true, but not useTls.  meh
-		certData, err := ioutil.ReadFile("src/core/tsi/test_creds/ca.pem")
+		certData, err := ioutil.ReadFile("src/core/lib/tsi/test_creds/ca.pem")
 		if err != nil {
 			t.Fatal(err)
 		}

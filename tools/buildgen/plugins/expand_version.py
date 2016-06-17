@@ -27,10 +27,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Buildgen .proto files list plugin.
+"""Buildgen package version plugin
 
 This parses the list of targets from the yaml build file, and creates
-a list called "protos" that contains all of the proto file names.
+a custom version string for each language's package.
 
 """
 
@@ -83,6 +83,11 @@ class Version:
       return '%d.%d.%d.%s' % (self.major, self.minor, self.patch, self.tag)
     else:
       return '%d.%d.%d' % (self.major, self.minor, self.patch)
+
+  def php(self):
+    """Version string in PHP style"""
+    """PECL does not allow tag in version string"""
+    return '%d.%d.%d' % (self.major, self.minor, self.patch)
 
 def mako_plugin(dictionary):
   """Expand version numbers:

@@ -1,5 +1,5 @@
 ﻿#region Copyright notice and license
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -49,7 +49,7 @@ namespace Grpc.HealthCheck.Tests
         const string Host = "localhost";
         Server server;
         Channel channel;
-        Grpc.Health.V1.Health.IHealthClient client;
+        Grpc.Health.V1.Health.HealthClient client;
         Grpc.HealthCheck.HealthServiceImpl serviceImpl;
 
         [TestFixtureSetUp]
@@ -79,16 +79,17 @@ namespace Grpc.HealthCheck.Tests
         [Test]
         public void ServiceIsRunning()
         {
-            serviceImpl.SetStatus("", HealthCheckResponse.Types.ServingStatus.SERVING);
+            serviceImpl.SetStatus("", HealthCheckResponse.Types.ServingStatus.Serving);
 
             var response = client.Check(new HealthCheckRequest { Service = "" });
-            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.SERVING, response.Status);
+            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.Serving, response.Status);
         }
 
         [Test]
         public void ServiceDoesntExist()
         {
-            Assert.Throws(Is.TypeOf(typeof(RpcException)).And.Property("Status").Property("StatusCode").EqualTo(StatusCode.NotFound), () => client.Check(new HealthCheckRequest { Service = "nonexistent.service" }));
+            var ex = Assert.Throws<RpcException>(() => client.Check(new HealthCheckRequest { Service = "nonexistent.service" }));
+            Assert.AreEqual(StatusCode.NotFound, ex.Status.StatusCode);
         }
 
         // TODO(jtattermusch): add test with timeout once timeouts are supported

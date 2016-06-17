@@ -1,7 +1,7 @@
 
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,48 +35,136 @@
 /* This file is auto-generated */
 
 #include "test/core/end2end/end2end_tests.h"
+
+#include <stdbool.h>
 #include <string.h>
+
 #include <grpc/support/log.h>
 
+static bool g_pre_init_called = false;
+
 extern void bad_hostname(grpc_end2end_test_config config);
+extern void bad_hostname_pre_init(void);
 extern void binary_metadata(grpc_end2end_test_config config);
+extern void binary_metadata_pre_init(void);
 extern void cancel_after_accept(grpc_end2end_test_config config);
+extern void cancel_after_accept_pre_init(void);
 extern void cancel_after_client_done(grpc_end2end_test_config config);
+extern void cancel_after_client_done_pre_init(void);
 extern void cancel_after_invoke(grpc_end2end_test_config config);
+extern void cancel_after_invoke_pre_init(void);
 extern void cancel_before_invoke(grpc_end2end_test_config config);
+extern void cancel_before_invoke_pre_init(void);
 extern void cancel_in_a_vacuum(grpc_end2end_test_config config);
+extern void cancel_in_a_vacuum_pre_init(void);
 extern void cancel_with_status(grpc_end2end_test_config config);
+extern void cancel_with_status_pre_init(void);
 extern void compressed_payload(grpc_end2end_test_config config);
+extern void compressed_payload_pre_init(void);
 extern void connectivity(grpc_end2end_test_config config);
+extern void connectivity_pre_init(void);
 extern void default_host(grpc_end2end_test_config config);
+extern void default_host_pre_init(void);
 extern void disappearing_server(grpc_end2end_test_config config);
+extern void disappearing_server_pre_init(void);
 extern void empty_batch(grpc_end2end_test_config config);
+extern void empty_batch_pre_init(void);
+extern void filter_causes_close(grpc_end2end_test_config config);
+extern void filter_causes_close_pre_init(void);
 extern void graceful_server_shutdown(grpc_end2end_test_config config);
+extern void graceful_server_shutdown_pre_init(void);
 extern void high_initial_seqno(grpc_end2end_test_config config);
+extern void high_initial_seqno_pre_init(void);
 extern void hpack_size(grpc_end2end_test_config config);
+extern void hpack_size_pre_init(void);
+extern void idempotent_request(grpc_end2end_test_config config);
+extern void idempotent_request_pre_init(void);
 extern void invoke_large_request(grpc_end2end_test_config config);
+extern void invoke_large_request_pre_init(void);
 extern void large_metadata(grpc_end2end_test_config config);
+extern void large_metadata_pre_init(void);
 extern void max_concurrent_streams(grpc_end2end_test_config config);
+extern void max_concurrent_streams_pre_init(void);
 extern void max_message_length(grpc_end2end_test_config config);
+extern void max_message_length_pre_init(void);
 extern void negative_deadline(grpc_end2end_test_config config);
+extern void negative_deadline_pre_init(void);
 extern void no_op(grpc_end2end_test_config config);
+extern void no_op_pre_init(void);
 extern void payload(grpc_end2end_test_config config);
+extern void payload_pre_init(void);
 extern void ping(grpc_end2end_test_config config);
+extern void ping_pre_init(void);
 extern void ping_pong_streaming(grpc_end2end_test_config config);
+extern void ping_pong_streaming_pre_init(void);
 extern void registered_call(grpc_end2end_test_config config);
+extern void registered_call_pre_init(void);
 extern void request_with_flags(grpc_end2end_test_config config);
+extern void request_with_flags_pre_init(void);
 extern void request_with_payload(grpc_end2end_test_config config);
+extern void request_with_payload_pre_init(void);
 extern void server_finishes_request(grpc_end2end_test_config config);
+extern void server_finishes_request_pre_init(void);
 extern void shutdown_finishes_calls(grpc_end2end_test_config config);
+extern void shutdown_finishes_calls_pre_init(void);
 extern void shutdown_finishes_tags(grpc_end2end_test_config config);
+extern void shutdown_finishes_tags_pre_init(void);
 extern void simple_delayed_request(grpc_end2end_test_config config);
+extern void simple_delayed_request_pre_init(void);
 extern void simple_metadata(grpc_end2end_test_config config);
+extern void simple_metadata_pre_init(void);
 extern void simple_request(grpc_end2end_test_config config);
+extern void simple_request_pre_init(void);
 extern void trailing_metadata(grpc_end2end_test_config config);
+extern void trailing_metadata_pre_init(void);
+
+void grpc_end2end_tests_pre_init(void) {
+  GPR_ASSERT(!g_pre_init_called);
+  g_pre_init_called = true;
+  bad_hostname_pre_init();
+  binary_metadata_pre_init();
+  cancel_after_accept_pre_init();
+  cancel_after_client_done_pre_init();
+  cancel_after_invoke_pre_init();
+  cancel_before_invoke_pre_init();
+  cancel_in_a_vacuum_pre_init();
+  cancel_with_status_pre_init();
+  compressed_payload_pre_init();
+  connectivity_pre_init();
+  default_host_pre_init();
+  disappearing_server_pre_init();
+  empty_batch_pre_init();
+  filter_causes_close_pre_init();
+  graceful_server_shutdown_pre_init();
+  high_initial_seqno_pre_init();
+  hpack_size_pre_init();
+  idempotent_request_pre_init();
+  invoke_large_request_pre_init();
+  large_metadata_pre_init();
+  max_concurrent_streams_pre_init();
+  max_message_length_pre_init();
+  negative_deadline_pre_init();
+  no_op_pre_init();
+  payload_pre_init();
+  ping_pre_init();
+  ping_pong_streaming_pre_init();
+  registered_call_pre_init();
+  request_with_flags_pre_init();
+  request_with_payload_pre_init();
+  server_finishes_request_pre_init();
+  shutdown_finishes_calls_pre_init();
+  shutdown_finishes_tags_pre_init();
+  simple_delayed_request_pre_init();
+  simple_metadata_pre_init();
+  simple_request_pre_init();
+  trailing_metadata_pre_init();
+}
 
 void grpc_end2end_tests(int argc, char **argv,
                         grpc_end2end_test_config config) {
   int i;
+
+  GPR_ASSERT(g_pre_init_called);
 
   if (argc <= 1) {
     bad_hostname(config);
@@ -92,9 +180,11 @@ void grpc_end2end_tests(int argc, char **argv,
     default_host(config);
     disappearing_server(config);
     empty_batch(config);
+    filter_causes_close(config);
     graceful_server_shutdown(config);
     high_initial_seqno(config);
     hpack_size(config);
+    idempotent_request(config);
     invoke_large_request(config);
     large_metadata(config);
     max_concurrent_streams(config);
@@ -170,6 +260,10 @@ void grpc_end2end_tests(int argc, char **argv,
       empty_batch(config);
       continue;
     }
+    if (0 == strcmp("filter_causes_close", argv[i])) {
+      filter_causes_close(config);
+      continue;
+    }
     if (0 == strcmp("graceful_server_shutdown", argv[i])) {
       graceful_server_shutdown(config);
       continue;
@@ -180,6 +274,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("hpack_size", argv[i])) {
       hpack_size(config);
+      continue;
+    }
+    if (0 == strcmp("idempotent_request", argv[i])) {
+      idempotent_request(config);
       continue;
     }
     if (0 == strcmp("invoke_large_request", argv[i])) {

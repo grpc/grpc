@@ -35,6 +35,8 @@ import random
 import time
 import unittest
 
+import six
+
 from grpc._adapter import _intermediary_low
 from grpc._links import invocation
 from grpc._links import service
@@ -68,7 +70,7 @@ def _serialization_behaviors_from_serializations(serializations):
   request_deserializers = {}
   response_serializers = {}
   response_deserializers = {}
-  for (group, method), serialization in serializations.iteritems():
+  for (group, method), serialization in six.iteritems(serializations):
     request_serializers[group, method] = serialization.serialize_request
     request_deserializers[group, method] = serialization.deserialize_request
     response_serializers[group, method] = serialization.serialize_response

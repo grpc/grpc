@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -51,7 +51,7 @@ def get_distance(start, end):
   coord_factor = 10000000.0
   lat_1 = start.latitude / coord_factor
   lat_2 = end.latitude / coord_factor
-  lon_1 = start.latitude / coord_factor
+  lon_1 = start.longitude / coord_factor
   lon_2 = end.longitude / coord_factor
   lat_rad_1 = math.radians(lat_1)
   lat_rad_2 = math.radians(lat_2)

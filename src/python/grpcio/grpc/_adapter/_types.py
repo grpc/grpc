@@ -31,6 +31,8 @@ import abc
 import collections
 import enum
 
+import six
+
 from grpc._cython import cygrpc
 
 
@@ -150,7 +152,7 @@ class OpArgs(collections.namedtuple(
         'trailing_metadata',
         'message',
         'status',
-        'write_flags',
+        'flags',
     ])):
   """Arguments passed into a GRPC operation.
 
@@ -163,7 +165,7 @@ class OpArgs(collections.namedtuple(
     message (bytes): Only valid if type == OpType.SEND_MESSAGE, else is None.
     status (Status): Only valid if type == OpType.SEND_STATUS_FROM_SERVER, else
       is None.
-    write_flags (int): a bit OR'ing of 0 or more OpWriteFlags values.
+    flags (int): a bitwise OR'ing of 0 or more OpWriteFlags values.
   """
 
   @staticmethod
@@ -247,8 +249,7 @@ class Event(collections.namedtuple(
   """
 
 
-class CompletionQueue:
-  __metaclass__ = abc.ABCMeta
+class CompletionQueue(six.with_metaclass(abc.ABCMeta)):
 
   @abc.abstractmethod
   def __init__(self):
@@ -261,6 +262,9 @@ class CompletionQueue:
     deadline of None (i.e. no deadline).
     """
     return self
+
+  def __next__(self):
+    return self.next()
 
   @abc.abstractmethod
   def next(self, deadline=float('+inf')):
@@ -285,8 +289,7 @@ class CompletionQueue:
     return None
 
 
-class Call:
-  __metaclass__ = abc.ABCMeta
+class Call(six.with_metaclass(abc.ABCMeta)):
 
   @abc.abstractmethod
   def start_batch(self, ops, tag):
@@ -334,8 +337,7 @@ class Call:
     return None
 
 
-class Channel:
-  __metaclass__ = abc.ABCMeta
+class Channel(six.with_metaclass(abc.ABCMeta)):
 
   @abc.abstractmethod
   def __init__(self, target, args, credentials=None):
@@ -399,8 +401,7 @@ class Channel:
     return None
 
 
-class Server:
-  __metaclass__ = abc.ABCMeta
+class Server(six.with_metaclass(abc.ABCMeta)):
 
   @abc.abstractmethod
   def __init__(self, completion_queue, args):

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -122,8 +122,8 @@ GPRAPI gpr_slice gpr_slice_new(void *p, size_t len, void (*destroy)(void *));
 
 /* Equivalent to gpr_slice_new, but with a two argument destroy function that
    also takes the slice length. */
-GPRAPI gpr_slice
-gpr_slice_new_with_len(void *p, size_t len, void (*destroy)(void *, size_t));
+GPRAPI gpr_slice gpr_slice_new_with_len(void *p, size_t len,
+                                        void (*destroy)(void *, size_t));
 
 /* Equivalent to gpr_slice_new(malloc(len), len, free), but saves one malloc()
    call.

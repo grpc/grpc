@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,7 +33,6 @@
 
 #include <thread>
 
-#include <gflags/gflags.h>
 #include <grpc++/security/server_credentials.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>

@@ -43,10 +43,10 @@ def create_docker_jobspec(name, dockerfile_dir, shell_command, environ={},
   for k,v in environ.iteritems():
     docker_args += ['-e', '%s=%s' % (k, v)]
   docker_env = {'DOCKERFILE_DIR': dockerfile_dir,
-                'DOCKER_RUN_SCRIPT': 'tools/jenkins/docker_run.sh',
+                'DOCKER_RUN_SCRIPT': 'tools/run_tests/dockerize/docker_run.sh',
                 'OUTPUT_DIR': 'artifacts'}
   jobspec = jobset.JobSpec(
-          cmdline=['tools/jenkins/build_and_run_docker.sh'] + docker_args,
+          cmdline=['tools/run_tests/dockerize/build_and_run_docker.sh'] + docker_args,
           environ=docker_env,
           shortname='build_artifact.%s' % (name),
           timeout_seconds=30*60,
@@ -69,16 +69,6 @@ def create_jobspec(name, cmdline, environ=None, shell=False,
   return jobspec
 
 
-def macos_arch_env(arch):
-  """Returns environ specifying -arch arguments for make."""
-  if arch == 'x86':
-    arch_arg = '-arch i386'
-  elif arch == 'x64':
-    arch_arg = '-arch x86_64'
-  else:
-    raise Exception('Unsupported arch')
-  return {'CFLAGS': arch_arg, 'LDFLAGS': arch_arg}
-
 _MACOS_COMPAT_FLAG = '-mmacosx-version-min=10.7'
 
 _ARCH_FLAG_MAP = {
@@ -94,12 +84,16 @@ python_version_arch_map = {
 class PythonArtifact:
   """Builds Python artifacts."""
 
-  def __init__(self, platform, arch):
-    self.name = 'python_%s_%s' % (platform, arch)
+  def __init__(self, platform, arch, manylinux_build=None):
+    if manylinux_build:
+      self.name = 'python_%s_%s_%s' % (platform, arch, manylinux_build)
+    else:
+      self.name = 'python_%s_%s' % (platform, arch)
     self.platform = platform
     self.arch = arch
     self.labels = ['artifact', 'python', platform, arch]
     self.python_version = python_version_arch_map[arch]
+    self.manylinux_build = manylinux_build
 
   def pre_build_jobspecs(self):
       return []
@@ -109,14 +103,26 @@ class PythonArtifact:
     if self.platform == 'linux':
       if self.arch == 'x86':
         environ['SETARCH_CMD'] = 'linux32'
+      # Inside the manylinux container, the python installations are located in
+      # special places...
+      environ['PYTHON'] = '/opt/python/{}/bin/python'.format(self.manylinux_build)
+      environ['PIP'] = '/opt/python/{}/bin/pip'.format(self.manylinux_build)
+      # Our docker image has all the prerequisites pip-installed already.
+      environ['SKIP_PIP_INSTALL'] = '1'
+      # Platform autodetection for the manylinux1 image breaks so we set the
+      # defines ourselves.
+      # TODO(atash) get better platform-detection support in core so we don't
+      # need to do this manually...
+      environ['CFLAGS'] = '-DGPR_MANYLINUX1=1'
       return create_docker_jobspec(self.name,
-          'tools/dockerfile/grpc_artifact_linux_%s' % self.arch,
+          'tools/dockerfile/grpc_artifact_python_manylinux_%s' % self.arch,
           'tools/run_tests/build_artifact_python.sh',
           environ=environ)
     elif self.platform == 'windows':
       return create_jobspec(self.name,
                             ['tools\\run_tests\\build_artifact_python.bat',
-                             self.python_version
+                             self.python_version,
+                             '32' if self.arch == 'x86' else '64'
                             ],
                             shell=True)
     else:
@@ -191,13 +197,17 @@ class CSharpExtArtifact:
       environ = {'CONFIG': 'opt',
                  'EMBED_OPENSSL': 'true',
                  'EMBED_ZLIB': 'true',
-                 'CFLAGS': '-DGPR_BACKWARDS_COMPATIBILITY_MODE'}
+                 'CFLAGS': '-DGPR_BACKWARDS_COMPATIBILITY_MODE',
+                 'LDFLAGS': ''}
       if self.platform == 'linux':
         return create_docker_jobspec(self.name,
             'tools/dockerfile/grpc_artifact_linux_%s' % self.arch,
-            'tools/run_tests/build_artifact_csharp.sh')
+            'tools/run_tests/build_artifact_csharp.sh',
+            environ=environ)
       else:
-        environ.update(macos_arch_env(self.arch))
+        archflag = _ARCH_FLAG_MAP[self.arch]
+        environ['CFLAGS'] += ' %s %s' % (archflag, _MACOS_COMPAT_FLAG)
+        environ['LDFLAGS'] += ' %s' % archflag
         return create_jobspec(self.name,
                               ['tools/run_tests/build_artifact_csharp.sh'],
                               environ=environ)
@@ -313,8 +323,10 @@ def targets():
            for Cls in (CSharpExtArtifact, NodeExtArtifact, ProtocArtifact)
            for platform in ('linux', 'macos', 'windows')
            for arch in ('x86', 'x64')] +
-          [PythonArtifact('linux', 'x86'),
-           PythonArtifact('linux', 'x64'),
+          [PythonArtifact('linux', 'x86', 'cp27-cp27m'),
+           PythonArtifact('linux', 'x86', 'cp27-cp27mu'),
+           PythonArtifact('linux', 'x64', 'cp27-cp27m'),
+           PythonArtifact('linux', 'x64', 'cp27-cp27mu'),
            PythonArtifact('macos', 'x64'),
            PythonArtifact('windows', 'x86'),
            PythonArtifact('windows', 'x64'),

@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -170,17 +170,15 @@ describe Grpc::Health::Checker do
     before(:each) do
       @server_queue = GRPC::Core::CompletionQueue.new
       server_host = '0.0.0.0:0'
-      @server = GRPC::Core::Server.new(@server_queue, nil)
-      server_port = @server.add_http2_port(server_host, :this_port_is_insecure)
-      @host = "localhost:#{server_port}"
-      @ch = GRPC::Core::Channel.new(@host, nil, :this_channel_is_insecure)
       @client_opts = { channel_override: @ch }
       server_opts = {
-        server_override: @server,
         completion_queue_override: @server_queue,
         poll_period: 1
       }
       @srv = RpcServer.new(**server_opts)
+      server_port = @srv.add_http2_port(server_host, :this_port_is_insecure)
+      @host = "localhost:#{server_port}"
+      @ch = GRPC::Core::Channel.new(@host, nil, :this_channel_is_insecure)
     end
 
     after(:each) do

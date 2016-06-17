@@ -1,4 +1,4 @@
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -33,7 +33,7 @@ class ConnectivityState:
   connecting = GRPC_CHANNEL_CONNECTING
   ready = GRPC_CHANNEL_READY
   transient_failure = GRPC_CHANNEL_TRANSIENT_FAILURE
-  fatal_failure = GRPC_CHANNEL_FATAL_FAILURE
+  fatal_failure = GRPC_CHANNEL_SHUTDOWN
 
 
 class ChannelArgKey:
@@ -103,19 +103,35 @@ class OperationType:
   receive_close_on_server = GRPC_OP_RECV_CLOSE_ON_SERVER
 
 
+class CompressionAlgorithm:
+  none = GRPC_COMPRESS_NONE
+  deflate = GRPC_COMPRESS_DEFLATE
+  gzip = GRPC_COMPRESS_GZIP
+
+
+class CompressionLevel:
+  none = GRPC_COMPRESS_LEVEL_NONE
+  low = GRPC_COMPRESS_LEVEL_LOW
+  medium = GRPC_COMPRESS_LEVEL_MED
+  high = GRPC_COMPRESS_LEVEL_HIGH
+
+
 cdef class Timespec:
 
   def __cinit__(self, time):
     if time is None:
-      self.c_time = gpr_now(GPR_CLOCK_REALTIME)
+      with nogil:
+        self.c_time = gpr_now(GPR_CLOCK_REALTIME)
       return
     if isinstance(time, int):
       time = float(time)
     if isinstance(time, float):
       if time == float("+inf"):
-        self.c_time = gpr_inf_future(GPR_CLOCK_REALTIME)
+        with nogil:
+          self.c_time = gpr_inf_future(GPR_CLOCK_REALTIME)
       elif time == float("-inf"):
-        self.c_time = gpr_inf_past(GPR_CLOCK_REALTIME)
+        with nogil:
+          self.c_time = gpr_inf_past(GPR_CLOCK_REALTIME)
       else:
         self.c_time.seconds = time
         self.c_time.nanoseconds = (time - float(self.c_time.seconds)) * 1e9
@@ -131,8 +147,10 @@ cdef class Timespec:
     # TODO(atash) ensure that everywhere a Timespec is created that it's
     # converted to GPR_CLOCK_REALTIME then and not every time someone wants to
     # read values off in Python.
-    cdef gpr_timespec real_time = (
-        gpr_convert_clock_type(self.c_time, GPR_CLOCK_REALTIME))
+    cdef gpr_timespec real_time
+    with nogil:
+      real_time = (
+          gpr_convert_clock_type(self.c_time, GPR_CLOCK_REALTIME))
     return real_time.seconds
 
   @property
@@ -158,10 +176,12 @@ cdef class Timespec:
 cdef class CallDetails:
 
   def __cinit__(self):
-    grpc_call_details_init(&self.c_details)
+    with nogil:
+      grpc_call_details_init(&self.c_details)
 
   def __dealloc__(self):
-    grpc_call_details_destroy(&self.c_details)
+    with nogil:
+      grpc_call_details_destroy(&self.c_details)
 
   @property
   def method(self):
@@ -215,24 +235,24 @@ cdef class ByteBuffer:
     if data is None:
       self.c_byte_buffer = NULL
       return
-    if isinstance(data, bytes):
-      pass
-    elif isinstance(data, basestring):
-      data = data.encode()
-    elif isinstance(data, ByteBuffer):
+    if isinstance(data, ByteBuffer):
       data = (<ByteBuffer>data).bytes()
       if data is None:
         self.c_byte_buffer = NULL
         return
     else:
-      raise TypeError("expected value to be of type str, bytes, or "
-                      "ByteBuffer, not {}".format(type(data)))
+      data = str_to_bytes(data)
 
     cdef char *c_data = data
-    data_slice = gpr_slice_from_copied_buffer(c_data, len(data))
-    self.c_byte_buffer = grpc_raw_byte_buffer_create(
-        &data_slice, 1)
-    gpr_slice_unref(data_slice)
+    cdef gpr_slice data_slice
+    cdef size_t data_length = len(data)
+    with nogil:
+      data_slice = gpr_slice_from_copied_buffer(c_data, data_length)
+    with nogil:
+      self.c_byte_buffer = grpc_raw_byte_buffer_create(
+          &data_slice, 1)
+    with nogil:
+      gpr_slice_unref(data_slice)
 
   def bytes(self):
     cdef grpc_byte_buffer_reader reader
@@ -240,20 +260,28 @@ cdef class ByteBuffer:
     cdef size_t data_slice_length
     cdef void *data_slice_pointer
     if self.c_byte_buffer != NULL:
-      grpc_byte_buffer_reader_init(&reader, self.c_byte_buffer)
-      result = b""
-      while grpc_byte_buffer_reader_next(&reader, &data_slice):
-        data_slice_pointer = gpr_slice_start_ptr(data_slice)
-        data_slice_length = gpr_slice_length(data_slice)
-        result += (<char *>data_slice_pointer)[:data_slice_length]
-      grpc_byte_buffer_reader_destroy(&reader)
-      return result
+      with nogil:
+        grpc_byte_buffer_reader_init(&reader, self.c_byte_buffer)
+      result = bytearray()
+      with nogil:
+        while grpc_byte_buffer_reader_next(&reader, &data_slice):
+          data_slice_pointer = gpr_slice_start_ptr(data_slice)
+          data_slice_length = gpr_slice_length(data_slice)
+          with gil:
+            result += (<char *>data_slice_pointer)[:data_slice_length]
+          gpr_slice_unref(data_slice)
+      with nogil:
+        grpc_byte_buffer_reader_destroy(&reader)
+      return bytes(result)
     else:
       return None
 
   def __len__(self):
+    cdef size_t result
     if self.c_byte_buffer != NULL:
-      return grpc_byte_buffer_length(self.c_byte_buffer)
+      with nogil:
+        result = grpc_byte_buffer_length(self.c_byte_buffer)
+      return result
     else:
       return 0
 
@@ -262,25 +290,15 @@ cdef class ByteBuffer:
 
   def __dealloc__(self):
     if self.c_byte_buffer != NULL:
-      grpc_byte_buffer_destroy(self.c_byte_buffer)
+      with nogil:
+        grpc_byte_buffer_destroy(self.c_byte_buffer)
 
 
 cdef class SslPemKeyCertPair:
 
   def __cinit__(self, private_key, certificate_chain):
-    if isinstance(private_key, bytes):
-      self.private_key = private_key
-    elif isinstance(private_key, basestring):
-      self.private_key = private_key.encode()
-    else:
-      raise TypeError("expected private_key to be of type str or bytes")
-    if isinstance(certificate_chain, bytes):
-      self.certificate_chain = certificate_chain
-    elif isinstance(certificate_chain, basestring):
-      self.certificate_chain = certificate_chain.encode()
-    else:
-      raise TypeError("expected certificate_chain to be of type str or bytes "
-                      "or int")
+    self.private_key = str_to_bytes(private_key)
+    self.certificate_chain = str_to_bytes(certificate_chain)
     self.c_pair.private_key = self.private_key
     self.c_pair.certificate_chain = self.certificate_chain
 
@@ -288,27 +306,16 @@ cdef class SslPemKeyCertPair:
 cdef class ChannelArg:
 
   def __cinit__(self, key, value):
-    if isinstance(key, bytes):
-      self.key = key
-    elif isinstance(key, basestring):
-      self.key = key.encode()
-    else:
-      raise TypeError("expected key to be of type str or bytes")
-    if isinstance(value, bytes):
-      self.value = value
-      self.c_arg.type = GRPC_ARG_STRING
-      self.c_arg.value.string = self.value
-    elif isinstance(value, basestring):
-      self.value = value.encode()
-      self.c_arg.type = GRPC_ARG_STRING
-      self.c_arg.value.string = self.value
-    elif isinstance(value, int):
+    self.key = str_to_bytes(key)
+    self.c_arg.key = self.key
+    if isinstance(value, int):
       self.value = int(value)
       self.c_arg.type = GRPC_ARG_INTEGER
       self.c_arg.value.integer = self.value
     else:
-      raise TypeError("expected value to be of type str or bytes or int")
-    self.c_arg.key = self.key
+      self.value = str_to_bytes(value)
+      self.c_arg.type = GRPC_ARG_STRING
+      self.c_arg.value.string = self.value
 
 
 cdef class ChannelArgs:
@@ -319,14 +326,15 @@ cdef class ChannelArgs:
       if not isinstance(arg, ChannelArg):
         raise TypeError("expected list of ChannelArg")
     self.c_args.arguments_length = len(self.args)
-    self.c_args.arguments = <grpc_arg *>gpr_malloc(
-        self.c_args.arguments_length*sizeof(grpc_arg)
-    )
+    with nogil:
+      self.c_args.arguments = <grpc_arg *>gpr_malloc(
+          self.c_args.arguments_length*sizeof(grpc_arg))
     for i in range(self.c_args.arguments_length):
       self.c_args.arguments[i] = (<ChannelArg>self.args[i]).c_arg
 
   def __dealloc__(self):
-    gpr_free(self.c_args.arguments)
+    with nogil:
+      gpr_free(self.c_args.arguments)
 
   def __len__(self):
     # self.args is never stale; it's only updated from this file
@@ -340,18 +348,8 @@ cdef class ChannelArgs:
 cdef class Metadatum:
 
   def __cinit__(self, key, value):
-    if isinstance(key, bytes):
-      self._key = key
-    elif isinstance(key, basestring):
-      self._key = key.encode()
-    else:
-      raise TypeError("expected key to be of type str or bytes")
-    if isinstance(value, bytes):
-      self._value = value
-    elif isinstance(value, basestring):
-      self._value = value.encode()
-    else:
-      raise TypeError("expected value to be of type str or bytes")
+    self._key = str_to_bytes(key)
+    self._value = str_to_bytes(value)
     self.c_metadata.key = self._key
     self.c_metadata.value = self._value
     self.c_metadata.value_length = len(self._value)
@@ -407,21 +405,24 @@ cdef class Metadata:
     for metadatum in metadata:
       if not isinstance(metadatum, Metadatum):
         raise TypeError("expected list of Metadatum")
-    grpc_metadata_array_init(&self.c_metadata_array)
+    with nogil:
+      grpc_metadata_array_init(&self.c_metadata_array)
     self.c_metadata_array.count = len(self.metadata)
     self.c_metadata_array.capacity = len(self.metadata)
-    self.c_metadata_array.metadata = <grpc_metadata *>gpr_malloc(
-        self.c_metadata_array.count*sizeof(grpc_metadata)
-    )
+    with nogil:
+      self.c_metadata_array.metadata = <grpc_metadata *>gpr_malloc(
+          self.c_metadata_array.count*sizeof(grpc_metadata)
+      )
     for i in range(self.c_metadata_array.count):
       self.c_metadata_array.metadata[i] = (
           (<Metadatum>self.metadata[i]).c_metadata)
 
   def __dealloc__(self):
     # this frees the allocated memory for the grpc_metadata_array (although
-    # it'd be nice if that were documented somewhere...) TODO(atash): document
-    # this in the C core
-    grpc_metadata_array_destroy(&self.c_metadata_array)
+    # it'd be nice if that were documented somewhere...)
+    # TODO(atash): document this in the C core
+    with nogil:
+      grpc_metadata_array_destroy(&self.c_metadata_array)
 
   def __len__(self):
     return self.c_metadata_array.count
@@ -447,6 +448,10 @@ cdef class Operation:
   @property
   def type(self):
     return self.c_op.type
+
+  @property
+  def flags(self):
+    return self.c_op.flags
 
   @property
   def has_status(self):
@@ -526,11 +531,13 @@ cdef class Operation:
     # Python. The remaining one(s) are primitive fields filled in by GRPC core.
     # This means that we need to clean up after receive_status_on_client.
     if self.c_op.type == GRPC_OP_RECV_STATUS_ON_CLIENT:
-      gpr_free(self._received_status_details)
+      with nogil:
+        gpr_free(self._received_status_details)
 
-def operation_send_initial_metadata(Metadata metadata):
+def operation_send_initial_metadata(Metadata metadata, int flags):
   cdef Operation op = Operation()
   op.c_op.type = GRPC_OP_SEND_INITIAL_METADATA
+  op.c_op.flags = flags
   op.c_op.data.send_initial_metadata.count = metadata.c_metadata_array.count
   op.c_op.data.send_initial_metadata.metadata = (
       metadata.c_metadata_array.metadata)
@@ -538,31 +545,29 @@ def operation_send_initial_metadata(Metadata metadata):
   op.is_valid = True
   return op
 
-def operation_send_message(data):
+def operation_send_message(data, int flags):
   cdef Operation op = Operation()
   op.c_op.type = GRPC_OP_SEND_MESSAGE
+  op.c_op.flags = flags
   byte_buffer = ByteBuffer(data)
   op.c_op.data.send_message = byte_buffer.c_byte_buffer
   op.references.append(byte_buffer)
   op.is_valid = True
   return op
 
-def operation_send_close_from_client():
+def operation_send_close_from_client(int flags):
   cdef Operation op = Operation()
   op.c_op.type = GRPC_OP_SEND_CLOSE_FROM_CLIENT
+  op.c_op.flags = flags
   op.is_valid = True
   return op
 
 def operation_send_status_from_server(
-    Metadata metadata, grpc_status_code code, details):
-  if isinstance(details, bytes):
-    pass
-  elif isinstance(details, basestring):
-    details = details.encode()
-  else:
-    raise TypeError("expected a str or bytes object for details")
+    Metadata metadata, grpc_status_code code, details, int flags):
+  details = str_to_bytes(details)
   cdef Operation op = Operation()
   op.c_op.type = GRPC_OP_SEND_STATUS_FROM_SERVER
+  op.c_op.flags = flags
   op.c_op.data.send_status_from_server.trailing_metadata_count = (
       metadata.c_metadata_array.count)
   op.c_op.data.send_status_from_server.trailing_metadata = (
@@ -574,18 +579,20 @@ def operation_send_status_from_server(
   op.is_valid = True
   return op
 
-def operation_receive_initial_metadata():
+def operation_receive_initial_metadata(int flags):
   cdef Operation op = Operation()
   op.c_op.type = GRPC_OP_RECV_INITIAL_METADATA
+  op.c_op.flags = flags
   op._received_metadata = Metadata([])
   op.c_op.data.receive_initial_metadata = (
       &op._received_metadata.c_metadata_array)
   op.is_valid = True
   return op
 
-def operation_receive_message():
+def operation_receive_message(int flags):
   cdef Operation op = Operation()
   op.c_op.type = GRPC_OP_RECV_MESSAGE
+  op.c_op.flags = flags
   op._received_message = ByteBuffer(None)
   # n.b. the c_op.data.receive_message field needs to be deleted by us,
   # anyway, so we just let that be handled by the ByteBuffer() we allocated
@@ -594,9 +601,10 @@ def operation_receive_message():
   op.is_valid = True
   return op
 
-def operation_receive_status_on_client():
+def operation_receive_status_on_client(int flags):
   cdef Operation op = Operation()
   op.c_op.type = GRPC_OP_RECV_STATUS_ON_CLIENT
+  op.c_op.flags = flags
   op._received_metadata = Metadata([])
   op.c_op.data.receive_status_on_client.trailing_metadata = (
       &op._received_metadata.c_metadata_array)
@@ -609,9 +617,10 @@ def operation_receive_status_on_client():
   op.is_valid = True
   return op
 
-def operation_receive_close_on_server():
+def operation_receive_close_on_server(int flags):
   cdef Operation op = Operation()
   op.c_op.type = GRPC_OP_RECV_CLOSE_ON_SERVER
+  op.c_op.flags = flags
   op.c_op.data.receive_close_on_server.cancelled = &op._received_cancelled
   op.is_valid = True
   return op
@@ -648,8 +657,8 @@ cdef class Operations:
       if not isinstance(operation, Operation):
         raise TypeError("expected operations to be iterable of Operation")
     self.c_nops = len(self.operations)
-    self.c_ops = <grpc_op *>gpr_malloc(
-        sizeof(grpc_op)*self.c_nops)
+    with nogil:
+      self.c_ops = <grpc_op *>gpr_malloc(sizeof(grpc_op)*self.c_nops)
     for i in range(self.c_nops):
       self.c_ops[i] = (<Operation>(self.operations[i])).c_op
 
@@ -661,8 +670,42 @@ cdef class Operations:
     return self.operations[i]
 
   def __dealloc__(self):
-    gpr_free(self.c_ops)
+    with nogil:
+      gpr_free(self.c_ops)
 
   def __iter__(self):
     return _OperationsIterator(self)
 
+
+cdef class CompressionOptions:
+
+  def __cinit__(self):
+    with nogil:
+      grpc_compression_options_init(&self.c_options)
+
+  def enable_algorithm(self, grpc_compression_algorithm algorithm):
+    with nogil:
+      grpc_compression_options_enable_algorithm(&self.c_options, algorithm)
+
+  def disable_algorithm(self, grpc_compression_algorithm algorithm):
+    with nogil:
+      grpc_compression_options_disable_algorithm(&self.c_options, algorithm)
+
+  def is_algorithm_enabled(self, grpc_compression_algorithm algorithm):
+    cdef int result
+    with nogil:
+      result = grpc_compression_options_is_algorithm_enabled(
+          &self.c_options, algorithm)
+    return result
+
+  def to_channel_arg(self):
+    return ChannelArg(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
+                      self.c_options.enabled_algorithms_bitset)
+
+
+def compression_algorithm_name(grpc_compression_algorithm algorithm):
+  cdef char* name
+  with nogil:
+    grpc_compression_algorithm_name(algorithm, &name)
+  # Let Cython do the right thing with string casting
+  return name

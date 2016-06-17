@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPCXX_COMPLETION_QUEUE_TAG_H
-#define GRPCXX_COMPLETION_QUEUE_TAG_H
+#ifndef GRPCXX_IMPL_CODEGEN_COMPLETION_QUEUE_TAG_H
+#define GRPCXX_IMPL_CODEGEN_COMPLETION_QUEUE_TAG_H
 
 namespace grpc {
 
@@ -49,4 +49,4 @@ class CompletionQueueTag {
 
 }  // namespace grpc
 
-#endif  // GRPCXX_COMPLETION_QUEUE_TAG_H
+#endif  // GRPCXX_IMPL_CODEGEN_COMPLETION_QUEUE_TAG_H

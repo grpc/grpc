@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,10 +32,9 @@
  */
 
 #include <ruby/ruby.h>
+
 #include "rb_grpc_imports.generated.h"
 #include "rb_channel.h"
-
-#include <ruby/ruby.h>
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -70,11 +69,10 @@ static VALUE grpc_rb_cChannel = Qnil;
 /* Used during the conversion of a hash to channel args during channel setup */
 static VALUE grpc_rb_cChannelArgs;
 
-/* grpc_rb_channel wraps a grpc_channel.  It provides a peer ruby object,
- * 'mark' to minimize copying when a channel is created from ruby. */
+/* grpc_rb_channel wraps a grpc_channel. */
 typedef struct grpc_rb_channel {
-  /* Holder of ruby objects involved in constructing the channel */
-  VALUE mark;
+  VALUE credentials;
+
   /* The actual channel */
   grpc_channel *wrapped;
 } grpc_rb_channel;
@@ -87,13 +85,8 @@ static void grpc_rb_channel_free(void *p) {
   };
   ch = (grpc_rb_channel *)p;
 
-  /* Deletes the wrapped object if the mark object is Qnil, which indicates
-   * that no other object is the actual owner. */
-  if (ch->wrapped != NULL && ch->mark == Qnil) {
+  if (ch->wrapped != NULL) {
     grpc_channel_destroy(ch->wrapped);
-    rb_warning("channel gc: destroyed the c channel");
-  } else {
-    rb_warning("channel gc: did not destroy the c channel");
   }
 
   xfree(p);
@@ -106,8 +99,8 @@ static void grpc_rb_channel_mark(void *p) {
     return;
   }
   channel = (grpc_rb_channel *)p;
-  if (channel->mark != Qnil) {
-    rb_gc_mark(channel->mark);
+  if (channel->credentials != Qnil) {
+    rb_gc_mark(channel->credentials);
   }
 }
 
@@ -125,7 +118,7 @@ static rb_data_type_t grpc_channel_data_type = {
 static VALUE grpc_rb_channel_alloc(VALUE cls) {
   grpc_rb_channel *wrapper = ALLOC(grpc_rb_channel);
   wrapper->wrapped = NULL;
-  wrapper->mark = Qnil;
+  wrapper->credentials = Qnil;
   return TypedData_Wrap_Struct(cls, &grpc_channel_data_type, wrapper);
 }
 
@@ -162,6 +155,7 @@ static VALUE grpc_rb_channel_init(int argc, VALUE *argv, VALUE self) {
     }
     ch = grpc_insecure_channel_create(target_chars, &args, NULL);
   } else {
+    wrapper->credentials = credentials;
     creds = grpc_rb_get_wrapped_channel_credentials(credentials);
     ch = grpc_secure_channel_create(creds, target_chars, &args, NULL);
   }
@@ -330,7 +324,6 @@ static VALUE grpc_rb_channel_destroy(VALUE self) {
   if (ch != NULL) {
     grpc_channel_destroy(ch);
     wrapper->wrapped = NULL;
-    wrapper->mark = Qnil;
   }
 
   return Qnil;
@@ -380,7 +373,7 @@ static void Init_grpc_connectivity_states() {
   rb_define_const(grpc_rb_mConnectivityStates, "TRANSIENT_FAILURE",
                   LONG2NUM(GRPC_CHANNEL_TRANSIENT_FAILURE));
   rb_define_const(grpc_rb_mConnectivityStates, "FATAL_FAILURE",
-                  LONG2NUM(GRPC_CHANNEL_FATAL_FAILURE));
+                  LONG2NUM(GRPC_CHANNEL_SHUTDOWN));
 }
 
 void Init_grpc_channel() {

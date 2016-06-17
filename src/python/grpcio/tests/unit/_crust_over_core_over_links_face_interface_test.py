@@ -32,6 +32,8 @@
 import collections
 import unittest
 
+import six
+
 from grpc._adapter import _intermediary_low
 from grpc._links import invocation
 from grpc._links import service
@@ -59,7 +61,7 @@ def _serialization_behaviors_from_test_methods(test_methods):
   request_deserializers = {}
   response_serializers = {}
   response_deserializers = {}
-  for (group, method), test_method in test_methods.iteritems():
+  for (group, method), test_method in six.iteritems(test_methods):
     request_serializers[group, method] = test_method.serialize_request
     request_deserializers[group, method] = test_method.deserialize_request
     response_serializers[group, method] = test_method.serialize_response
@@ -108,7 +110,7 @@ class _Implementation(test_interfaces.Implementation):
     # _digest.TestServiceDigest.
     cardinalities = {
         method: method_object.cardinality()
-        for (group, method), method_object in methods.iteritems()}
+        for (group, method), method_object in six.iteritems(methods)}
     dynamic_stub = crust_implementations.dynamic_stub(
         invocation_end_link, group, cardinalities, pool)
 

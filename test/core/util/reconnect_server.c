@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,9 +40,9 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 #include <string.h>
-#include "src/core/iomgr/endpoint.h"
-#include "src/core/iomgr/sockaddr.h"
-#include "src/core/iomgr/tcp_server.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/tcp_server.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_tcp_server.h"
 
@@ -60,13 +60,18 @@ static void pretty_print_backoffs(reconnect_server *server) {
             i, backoff / 1000.0, expected_backoff / 1000.0,
             (backoff - expected_backoff) * 100.0 / expected_backoff);
     expected_backoff *= 1.6;
-    if (expected_backoff > 120 * 1000) {
-      expected_backoff = 120 * 1000;
+    int max_reconnect_backoff_ms = 120 * 1000;
+    if (server->max_reconnect_backoff_ms > 0) {
+      max_reconnect_backoff_ms = server->max_reconnect_backoff_ms;
+    }
+    if (expected_backoff > max_reconnect_backoff_ms) {
+      expected_backoff = max_reconnect_backoff_ms;
     }
   }
 }
 
 static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
+                       grpc_pollset *accepting_pollset,
                        grpc_tcp_server_acceptor *acceptor) {
   char *peer;
   char *last_colon;
@@ -108,6 +113,7 @@ void reconnect_server_init(reconnect_server *server) {
   server->head = NULL;
   server->tail = NULL;
   server->peer = NULL;
+  server->max_reconnect_backoff_ms = 0;
 }
 
 void reconnect_server_start(reconnect_server *server, int port) {

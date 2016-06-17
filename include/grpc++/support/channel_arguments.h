@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,12 +34,12 @@
 #ifndef GRPCXX_SUPPORT_CHANNEL_ARGUMENTS_H
 #define GRPCXX_SUPPORT_CHANNEL_ARGUMENTS_H
 
-#include <vector>
 #include <list>
+#include <vector>
 
+#include <grpc++/support/config.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
-#include <grpc++/support/config.h>
 
 namespace grpc {
 namespace testing {

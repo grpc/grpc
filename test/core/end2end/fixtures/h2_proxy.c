@@ -35,18 +35,18 @@
 
 #include <string.h>
 
-#include "src/core/channel/client_channel.h"
-#include "src/core/channel/connected_channel.h"
-#include "src/core/channel/http_server_filter.h"
-#include "src/core/surface/channel.h"
-#include "src/core/surface/server.h"
-#include "src/core/transport/chttp2_transport.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/useful.h>
+#include "src/core/ext/client_config/client_channel.h"
+#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/channel/http_server_filter.h"
+#include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/server.h"
 #include "test/core/end2end/fixtures/proxy.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -55,14 +55,16 @@ typedef struct fullstack_fixture_data {
   grpc_end2end_proxy *proxy;
 } fullstack_fixture_data;
 
-static grpc_server *create_proxy_server(const char *port) {
-  grpc_server *s = grpc_server_create(NULL, NULL);
+static grpc_server *create_proxy_server(const char *port,
+                                        grpc_channel_args *server_args) {
+  grpc_server *s = grpc_server_create(server_args, NULL);
   GPR_ASSERT(grpc_server_add_insecure_http2_port(s, port));
   return s;
 }
 
-static grpc_channel *create_proxy_client(const char *target) {
-  return grpc_insecure_channel_create(target, NULL, NULL);
+static grpc_channel *create_proxy_client(const char *target,
+                                         grpc_channel_args *client_args) {
+  return grpc_insecure_channel_create(target, client_args, NULL);
 }
 
 static const grpc_end2end_proxy_def proxy_def = {create_proxy_server,
@@ -74,7 +76,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
   fullstack_fixture_data *ffd = gpr_malloc(sizeof(fullstack_fixture_data));
   memset(&f, 0, sizeof(f));
 
-  ffd->proxy = grpc_end2end_proxy_create(&proxy_def);
+  ffd->proxy = grpc_end2end_proxy_create(&proxy_def, client_args, server_args);
 
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create(NULL);
@@ -120,6 +122,7 @@ int main(int argc, char **argv) {
   size_t i;
 
   grpc_test_init(argc, argv);
+  grpc_end2end_tests_pre_init();
   grpc_init();
 
   for (i = 0; i < sizeof(configs) / sizeof(*configs); i++) {

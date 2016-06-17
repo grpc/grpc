@@ -181,11 +181,15 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\empty_batch.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\filter_causes_close.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\graceful_server_shutdown.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\high_initial_seqno.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\hpack_size.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\idempotent_request.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\tests\invoke_large_request.c">
     </ClCompile>
@@ -227,9 +231,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\test/end2end\end2end_certs\end2end_certs.vcxproj">
-      <Project>{80EA2691-C037-6DD3-D3AB-21510BF0E64B}</Project>
-    </ProjectReference>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc_test_util\grpc_test_util.vcxproj">
       <Project>{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}</Project>
     </ProjectReference>

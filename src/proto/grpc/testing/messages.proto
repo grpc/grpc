@@ -1,5 +1,5 @@
 
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,17 +41,6 @@ enum PayloadType {
 
   // Uncompressable binary format.
   UNCOMPRESSABLE = 1;
-
-  // Randomly chosen from all other formats defined in this enum.
-  RANDOM = 2;
-}
-
-// Compression algorithms
-enum CompressionType {
-  // No compression
-  NONE = 0;
-  GZIP = 1;
-  DEFLATE = 2;
 }
 
 // A block of data, to simply increase gRPC message size.
@@ -88,8 +77,8 @@ message SimpleRequest {
   // Whether SimpleResponse should include OAuth scope.
   bool fill_oauth_scope = 5;
 
-  // Compression algorithm to be used by the server for the response (stream)
-  CompressionType response_compression = 6;
+  // Whether to request the server to compress the response.
+  bool request_compressed_response = 6;
 
   // Whether server should return a given status
   EchoStatus response_status = 7;
@@ -145,8 +134,8 @@ message StreamingOutputCallRequest {
   // Optional input payload sent along with the request.
   Payload payload = 3;
 
-  // Compression algorithm to be used by the server for the response (stream)
-  CompressionType response_compression = 6;
+  // Whether to request the server to compress the response.
+  bool request_compressed_response = 6;
 
   // Whether server should return a given status
   EchoStatus response_status = 7;
@@ -156,6 +145,12 @@ message StreamingOutputCallRequest {
 message StreamingOutputCallResponse {
   // Payload to increase response size.
   Payload payload = 1;
+}
+
+// For reconnect interop test only.
+// Client tells server what reconnection parameters it used.
+message ReconnectParams {
+  int32 max_reconnect_backoff_ms = 1;
 }
 
 // For reconnect interop test only.

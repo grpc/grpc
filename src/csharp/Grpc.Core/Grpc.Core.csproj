@@ -58,6 +58,7 @@
     <Compile Include="IServerStreamWriter.cs" />
     <Compile Include="IAsyncStreamWriter.cs" />
     <Compile Include="IAsyncStreamReader.cs" />
+    <Compile Include="Logging\TextWriterLogger.cs" />
     <Compile Include="Logging\NullLogger.cs" />
     <Compile Include="ServerPort.cs" />
     <Compile Include="Version.cs" />
@@ -73,7 +74,6 @@
     <Compile Include="Internal\CallSafeHandle.cs" />
     <Compile Include="Internal\ChannelSafeHandle.cs" />
     <Compile Include="Internal\CompletionQueueSafeHandle.cs" />
-    <Compile Include="Internal\Enums.cs" />
     <Compile Include="Internal\SafeHandleZeroIsInvalid.cs" />
     <Compile Include="Internal\Timespec.cs" />
     <Compile Include="Internal\GrpcThreadPool.cs" />
@@ -86,7 +86,6 @@
     <Compile Include="Utils\BenchmarkUtil.cs" />
     <Compile Include="ChannelCredentials.cs" />
     <Compile Include="Internal\ChannelArgsSafeHandle.cs" />
-    <Compile Include="Internal\AsyncCompletion.cs" />
     <Compile Include="Internal\AsyncCallBase.cs" />
     <Compile Include="Internal\AsyncCallServer.cs" />
     <Compile Include="Internal\AsyncCall.cs" />
@@ -129,6 +128,16 @@
     <Compile Include="Profiling\Profilers.cs" />
     <Compile Include="Internal\DefaultSslRootsOverride.cs" />
     <Compile Include="Utils\GrpcPreconditions.cs" />
+    <Compile Include="CallInvoker.cs" />
+    <Compile Include="DefaultCallInvoker.cs" />
+    <Compile Include="Internal\UnimplementedCallInvoker.cs" />
+    <Compile Include="Internal\InterceptingCallInvoker.cs" />
+    <Compile Include="Internal\ServerRpcNew.cs" />
+    <Compile Include="Internal\ClientSideStatus.cs" />
+    <Compile Include="Internal\ClockType.cs" />
+    <Compile Include="Internal\CallError.cs" />
+    <Compile Include="Logging\LogLevel.cs" />
+    <Compile Include="Logging\LogLevelFilterLogger.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Grpc.Core.nuspec" />
@@ -136,9 +145,7 @@
   </ItemGroup>
   <Import Project="NativeDeps.targets" />
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <ItemGroup>
-    <Folder Include="Resources\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <EmbeddedResource Include="..\..\..\etc\roots.pem">
       <Link>Resources\roots.pem</Link>

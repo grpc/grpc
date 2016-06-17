@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -33,6 +33,9 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../..
 
+TOX_PYTHON_ENV="$1"
+PY_VERSION="${TOX_PYTHON_ENV: -2}"
+
 ROOT=`pwd`
 export LD_LIBRARY_PATH=$ROOT/libs/$CONFIG
 export DYLD_LIBRARY_PATH=$ROOT/libs/$CONFIG
@@ -40,11 +43,34 @@ export PATH=$ROOT/bins/$CONFIG:$ROOT/bins/$CONFIG/protobuf:$PATH
 export CFLAGS="-I$ROOT/include -std=gnu99"
 export LDFLAGS="-L$ROOT/libs/$CONFIG"
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1
-export GRPC_PYTHON_ENABLE_CYTHON_TRACING=1
+export GRPC_PYTHON_USE_PRECOMPILED_BINARIES=0
 
-tox --notest
+if [ "$CONFIG" = "gcov" ]
+then
+  export GRPC_PYTHON_ENABLE_CYTHON_TRACING=1
+fi
 
-$ROOT/.tox/py27/bin/python $ROOT/setup.py build
-$ROOT/.tox/py27/bin/python $ROOT/setup.py build_py
-$ROOT/.tox/py27/bin/python $ROOT/setup.py build_ext --inplace
-$ROOT/.tox/py27/bin/python $ROOT/setup.py gather --test
+tox -e ${TOX_PYTHON_ENV} --notest
+
+# We force the .so naming convention in PEP 3149 for side by side installation support
+# Note this is the default in Python3, but explicitly disabled for Darwin, so we only
+# use this hack for our testing environment.
+if [ "$PY_VERSION" -gt "27" ]
+then
+  mv $ROOT/src/python/grpcio/grpc/_cython/cygrpc.so $ROOT/src/python/grpcio/grpc/_cython/cygrpc.so.backup || true
+fi
+
+$ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/setup.py build
+$ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/setup.py build_py
+$ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/setup.py build_ext --inplace
+$ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/setup.py gather --test
+
+if [ "$PY_VERSION" -gt "27" ]
+then
+  mv $ROOT/src/python/grpcio/grpc/_cython/cygrpc.so $ROOT/src/python/grpcio/grpc/_cython/cygrpc.cpython-${PY_VERSION}m.so || true
+  mv $ROOT/src/python/grpcio/grpc/_cython/cygrpc.so.backup $ROOT/src/python/grpcio/grpc/_cython/cygrpc.so || true
+fi
+
+# Build the health checker
+$ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/src/python/grpcio_health_checking/setup.py build
+$ROOT/.tox/${TOX_PYTHON_ENV}/bin/python $ROOT/src/python/grpcio_health_checking/setup.py build_py

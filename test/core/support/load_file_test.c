@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,9 +38,9 @@
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
 
-#include "src/core/support/load_file.h"
-#include "src/core/support/tmpfile.h"
-#include "src/core/support/string.h"
+#include "src/core/lib/support/load_file.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/support/tmpfile.h"
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST_NAME(x) gpr_log(GPR_INFO, "%s", x)
@@ -135,33 +135,33 @@ static void test_load_big_file(void) {
   gpr_slice slice;
   int success;
   char *tmp_name;
-  unsigned char buffer[124631];
+  static const size_t buffer_size = 124631;
+  unsigned char *buffer = gpr_malloc(buffer_size);
   unsigned char *current;
   size_t i;
 
   LOG_TEST_NAME("test_load_big_file");
 
-  for (i = 0; i < sizeof(buffer); i++) {
-    buffer[i] = 42;
-  }
+  memset(buffer, 42, buffer_size);
 
   tmp = gpr_tmpfile(prefix, &tmp_name);
   GPR_ASSERT(tmp != NULL);
   GPR_ASSERT(tmp_name != NULL);
-  GPR_ASSERT(fwrite(buffer, 1, sizeof(buffer), tmp) == sizeof(buffer));
+  GPR_ASSERT(fwrite(buffer, 1, buffer_size, tmp) == buffer_size);
   fclose(tmp);
 
   slice = gpr_load_file(tmp_name, 0, &success);
   GPR_ASSERT(success == 1);
-  GPR_ASSERT(GPR_SLICE_LENGTH(slice) == sizeof(buffer));
+  GPR_ASSERT(GPR_SLICE_LENGTH(slice) == buffer_size);
   current = GPR_SLICE_START_PTR(slice);
-  for (i = 0; i < sizeof(buffer); i++) {
+  for (i = 0; i < buffer_size; i++) {
     GPR_ASSERT(current[i] == 42);
   }
 
   remove(tmp_name);
   gpr_free(tmp_name);
   gpr_slice_unref(slice);
+  gpr_free(buffer);
 }
 
 int main(int argc, char **argv) {

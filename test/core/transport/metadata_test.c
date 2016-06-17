@@ -31,17 +31,19 @@
  *
  */
 
-#include "src/core/transport/metadata.h"
+#include "src/core/lib/transport/metadata.h"
 
 #include <stdio.h>
+#include <string.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/support/string.h"
-#include "src/core/transport/chttp2/bin_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/transport/static_metadata.h"
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
@@ -164,7 +166,7 @@ static void test_things_stick_around(void) {
   grpc_init();
 
   for (i = 0; i < nstrs; i++) {
-    gpr_asprintf(&buffer, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%dx", i);
+    gpr_asprintf(&buffer, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%" PRIuPTR "x", i);
     strs[i] = grpc_mdstr_from_string(buffer);
     shuf[i] = i;
     gpr_free(buffer);
@@ -186,7 +188,8 @@ static void test_things_stick_around(void) {
   for (i = 0; i < nstrs; i++) {
     GRPC_MDSTR_UNREF(strs[shuf[i]]);
     for (j = i + 1; j < nstrs; j++) {
-      gpr_asprintf(&buffer, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%dx", shuf[j]);
+      gpr_asprintf(&buffer, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%" PRIuPTR "x",
+                   shuf[j]);
       test = grpc_mdstr_from_string(buffer);
       GPR_ASSERT(test == strs[shuf[j]]);
       GRPC_MDSTR_UNREF(test);
@@ -260,6 +263,54 @@ static void test_user_data_works(void) {
   grpc_shutdown();
 }
 
+static void verify_ascii_header_size(const char *key, const char *value) {
+  grpc_mdelem *elem = grpc_mdelem_from_strings(key, value);
+  size_t elem_size = grpc_mdelem_get_size_in_hpack_table(elem);
+  size_t expected_size = 32 + strlen(key) + strlen(value);
+  GPR_ASSERT(expected_size == elem_size);
+  GRPC_MDELEM_UNREF(elem);
+}
+
+static void verify_binary_header_size(const char *key, const uint8_t *value,
+                                      size_t value_len) {
+  grpc_mdelem *elem = grpc_mdelem_from_string_and_buffer(key, value, value_len);
+  GPR_ASSERT(grpc_is_binary_header(key, strlen(key)));
+  size_t elem_size = grpc_mdelem_get_size_in_hpack_table(elem);
+  gpr_slice value_slice =
+      gpr_slice_from_copied_buffer((const char *)value, value_len);
+  gpr_slice base64_encoded = grpc_chttp2_base64_encode(value_slice);
+  size_t expected_size = 32 + strlen(key) + GPR_SLICE_LENGTH(base64_encoded);
+  GPR_ASSERT(expected_size == elem_size);
+  gpr_slice_unref(value_slice);
+  gpr_slice_unref(base64_encoded);
+  GRPC_MDELEM_UNREF(elem);
+}
+
+#define BUFFER_SIZE 64
+static void test_mdelem_sizes_in_hpack(void) {
+  LOG_TEST("test_mdelem_size");
+  grpc_init();
+
+  uint8_t binary_value[BUFFER_SIZE] = {0};
+  for (uint8_t i = 0; i < BUFFER_SIZE; i++) {
+    binary_value[i] = i;
+  }
+
+  verify_ascii_header_size("hello", "world");
+  verify_ascii_header_size("hello", "worldxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+  verify_ascii_header_size(":scheme", "http");
+
+  for (uint8_t i = 0; i < BUFFER_SIZE; i++) {
+    verify_binary_header_size("hello-bin", binary_value, i);
+  }
+
+  const char *static_metadata = grpc_static_metadata_strings[0];
+  memcpy(binary_value, static_metadata, strlen(static_metadata));
+  verify_binary_header_size("hello-bin", binary_value, strlen(static_metadata));
+
+  grpc_shutdown();
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_no_op();
@@ -272,5 +323,6 @@ int main(int argc, char **argv) {
   test_slices_work();
   test_base64_and_huffman_works();
   test_user_data_works();
+  test_mdelem_sizes_in_hpack();
   return 0;
 }

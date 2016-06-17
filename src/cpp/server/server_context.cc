@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,8 +42,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/channel/compress_filter.h"
-#include "src/cpp/common/create_auth_context.h"
+#include "src/core/lib/surface/call.h"
 
 namespace grpc {
 
@@ -62,7 +61,11 @@ class ServerContext::CompletionOp GRPC_FINAL : public CallOpSetInterface {
   void FillOps(grpc_op* ops, size_t* nops) GRPC_OVERRIDE;
   bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE;
 
-  bool CheckCancelled(CompletionQueue* cq);
+  bool CheckCancelled(CompletionQueue* cq) {
+    cq->TryPluck(this);
+    return CheckCancelledNoPluck();
+  }
+  bool CheckCancelledAsync() { return CheckCancelledNoPluck(); }
 
   void set_tag(void* tag) {
     has_tag_ = true;
@@ -72,6 +75,11 @@ class ServerContext::CompletionOp GRPC_FINAL : public CallOpSetInterface {
   void Unref();
 
  private:
+  bool CheckCancelledNoPluck() {
+    grpc::lock_guard<grpc::mutex> g(mu_);
+    return finalized_ ? (cancelled_ != 0) : false;
+  }
+
   bool has_tag_;
   void* tag_;
   grpc::mutex mu_;
@@ -86,12 +94,6 @@ void ServerContext::CompletionOp::Unref() {
     lock.unlock();
     delete this;
   }
-}
-
-bool ServerContext::CompletionOp::CheckCancelled(CompletionQueue* cq) {
-  cq->TryPluck(this);
-  grpc::lock_guard<grpc::mutex> g(mu_);
-  return finalized_ ? cancelled_ != 0 : false;
 }
 
 void ServerContext::CompletionOp::FillOps(grpc_op* ops, size_t* nops) {
@@ -182,12 +184,22 @@ void ServerContext::TryCancel() const {
 }
 
 bool ServerContext::IsCancelled() const {
-  return completion_op_ && completion_op_->CheckCancelled(cq_);
+  if (has_notify_when_done_tag_) {
+    // when using async API, but the result is only valid
+    // if the tag has already been delivered at the completion queue
+    return completion_op_ && completion_op_->CheckCancelledAsync();
+  } else {
+    // when using sync API
+    return completion_op_ && completion_op_->CheckCancelled(cq_);
+  }
 }
 
 void ServerContext::set_compression_level(grpc_compression_level level) {
+  // TODO(dgq): get rid of grpc_call_compression_for_level and propagate the
+  // compression level by adding a new argument to
+  // CallOpSendInitialMetadata::SendInitialMetadata.
   const grpc_compression_algorithm algorithm_for_level =
-      grpc_compression_algorithm_for_level(level);
+      grpc_call_compression_for_level(call_, level);
   set_compression_algorithm(algorithm_for_level);
 }
 
@@ -200,19 +212,7 @@ void ServerContext::set_compression_algorithm(
     abort();
   }
   GPR_ASSERT(algorithm_name != NULL);
-  AddInitialMetadata(GRPC_COMPRESS_REQUEST_ALGORITHM_KEY, algorithm_name);
-}
-
-void ServerContext::set_call(grpc_call* call) {
-  call_ = call;
-  auth_context_ = CreateAuthContext(call);
-}
-
-std::shared_ptr<const AuthContext> ServerContext::auth_context() const {
-  if (auth_context_.get() == nullptr) {
-    auth_context_ = CreateAuthContext(call_);
-  }
-  return auth_context_;
+  AddInitialMetadata(GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY, algorithm_name);
 }
 
 grpc::string ServerContext::peer() const {

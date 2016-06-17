@@ -34,7 +34,7 @@
 #include <grpc++/support/channel_arguments.h>
 
 #include <grpc/grpc_security.h>
-#include "src/core/channel/channel_args.h"
+#include "src/core/lib/channel/channel_args.h"
 
 namespace grpc {
 

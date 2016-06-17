@@ -33,10 +33,10 @@ import argparse
 from oauth2client import client as oauth2client_client
 
 from grpc.beta import implementations
+from src.proto.grpc.testing import test_pb2
 
 from tests.interop import methods
 from tests.interop import resources
-from tests.interop import test_pb2
 from tests.unit.beta import test_utilities
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
@@ -65,39 +65,37 @@ def _args():
       help='email address of the default service account', type=str)
   return parser.parse_args()
 
-def _oauth_access_token(args):
-  credentials = oauth2client_client.GoogleCredentials.get_application_default()
-  scoped_credentials = credentials.create_scoped([args.oauth_scope])
-  return scoped_credentials.get_access_token().access_token
 
 def _stub(args):
-  if args.oauth_scope:
-    if args.test_case == 'oauth2_auth_token':
-      # TODO(jtattermusch): This testcase sets the auth metadata key-value
-      # manually, which also means that the user would need to do the same
-      # thing every time he/she would like to use and out of band oauth token.
-      # The transformer function that produces the metadata key-value from
-      # the access token should be provided by gRPC auth library.
-      access_token = _oauth_access_token(args)
-      metadata_transformer = lambda x: [
-          ('authorization', 'Bearer %s' % access_token)]
-    else:
-      metadata_transformer = lambda x: [
-          ('authorization', 'Bearer %s' % _oauth_access_token(args))]
+  if args.test_case == 'oauth2_auth_token':
+    creds = oauth2client_client.GoogleCredentials.get_application_default()
+    scoped_creds = creds.create_scoped([args.oauth_scope])
+    access_token = scoped_creds.get_access_token().access_token
+    call_creds = implementations.access_token_call_credentials(access_token)
+  elif args.test_case == 'compute_engine_creds':
+    creds = oauth2client_client.GoogleCredentials.get_application_default()
+    scoped_creds = creds.create_scoped([args.oauth_scope])
+    call_creds = implementations.google_call_credentials(scoped_creds)
+  elif args.test_case == 'jwt_token_creds':
+    creds = oauth2client_client.GoogleCredentials.get_application_default()
+    call_creds = implementations.google_call_credentials(creds)
   else:
-    metadata_transformer = lambda x: []
+    call_creds = None
   if args.use_tls:
     if args.use_test_ca:
       root_certificates = resources.test_root_certificates()
     else:
       root_certificates = None  # will load default roots.
 
+    channel_creds = implementations.ssl_channel_credentials(root_certificates)
+    if call_creds is not None:
+      channel_creds = implementations.composite_channel_credentials(
+          channel_creds, call_creds)
+
     channel = test_utilities.not_really_secure_channel(
-        args.server_host, args.server_port,
-        implementations.ssl_channel_credentials(root_certificates, None, None),
+        args.server_host, args.server_port, channel_creds,
         args.server_host_override)
-    stub = test_pb2.beta_create_TestService_stub(
-        channel, metadata_transformer=metadata_transformer)
+    stub = test_pb2.beta_create_TestService_stub(channel)
   else:
     channel = implementations.insecure_channel(
         args.server_host, args.server_port)

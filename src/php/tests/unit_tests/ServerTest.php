@@ -1,7 +1,7 @@
 <?php
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -67,5 +67,4 @@ class ServerTest extends PHPUnit_Framework_TestCase
         $this->server = new Grpc\Server([]);
         $this->port = $this->server->addSecureHttp2Port(['0.0.0.0:0']);
     }
-
 }

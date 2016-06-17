@@ -31,9 +31,12 @@
  *
  */
 
+#include <string.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/test_config.h"
 
@@ -65,6 +68,7 @@ int main(int argc, char **argv) {
   call = grpc_channel_create_call(chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
                                   "/Foo", "nonexistant", deadline, NULL);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
@@ -88,8 +92,9 @@ int main(int argc, char **argv) {
   GPR_ASSERT(status == GRPC_STATUS_DEADLINE_EXCEEDED);
 
   grpc_completion_queue_shutdown(cq);
-  while (grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
-                                    NULL).type != GRPC_QUEUE_SHUTDOWN)
+  while (
+      grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL)
+          .type != GRPC_QUEUE_SHUTDOWN)
     ;
   grpc_completion_queue_destroy(cq);
   grpc_call_destroy(call);

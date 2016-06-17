@@ -33,17 +33,28 @@
 
 #import <Foundation/Foundation.h>
 
-@class ProtoRPC;
+@class GRPCProtoCall;
 @protocol GRXWriteable;
 @class GRXWriter;
 
+
+__attribute__((deprecated("Please use GRPCProtoService.")))
 @interface ProtoService : NSObject
 - (instancetype)initWithHost:(NSString *)host
                  packageName:(NSString *)packageName
                  serviceName:(NSString *)serviceName NS_DESIGNATED_INITIALIZER;
 
-- (ProtoRPC *)RPCToMethod:(NSString *)method
+- (GRPCProtoCall *)RPCToMethod:(NSString *)method
            requestsWriter:(GRXWriter *)requestsWriter
   	        responseClass:(Class)responseClass
   	   responsesWriteable:(id<GRXWriteable>)responsesWriteable;
+@end
+
+
+/**
+ * This subclass is empty now. Eventually we'll remove ProtoService class
+ * to avoid potential naming conflict
+ */
+@interface GRPCProtoService : ProtoService
+
 @end

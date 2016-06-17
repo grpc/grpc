@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-# Copyright 2015-2016, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -71,16 +71,22 @@ def create_dataset(biq_query, project_id, dataset_id):
 
 def create_table(big_query, project_id, dataset_id, table_id, table_schema,
                  description):
+  fields = [{'name': field_name,
+             'type': field_type,
+             'description': field_description
+             } for (field_name, field_type, field_description) in table_schema]
+  return create_table2(big_query, project_id, dataset_id, table_id,
+                       fields, description)
+
+
+def create_table2(big_query, project_id, dataset_id, table_id, fields_schema,
+                 description):
   is_success = True
 
   body = {
       'description': description,
       'schema': {
-          'fields': [{
-              'name': field_name,
-              'type': field_type,
-              'description': field_description
-          } for (field_name, field_type, field_description) in table_schema]
+          'fields': fields_schema
       },
       'tableReference': {
           'datasetId': dataset_id,
@@ -112,12 +118,14 @@ def insert_rows(big_query, project_id, dataset_id, table_id, rows_list):
                                                  datasetId=dataset_id,
                                                  tableId=table_id,
                                                  body=body)
-    print body
     res = insert_req.execute(num_retries=NUM_RETRIES)
-    print res
+    if res.get('insertErrors', None):
+      print 'Error inserting rows! Response: %s' % res
+      is_success = False
   except HttpError as http_error:
-    print 'Error in inserting rows in the table %s' % table_id
+    print 'Error inserting rows to the table %s' % table_id
     is_success = False
+
   return is_success
 
 

@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015-2016, Google Inc.
+// Copyright 2015, Google Inc.
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
@@ -118,109 +118,6 @@ namespace Grpc.Core.Internal
         {
             Native.grpcsharp_batch_context_destroy(handle);
             return true;
-        }
-    }
-
-    /// <summary>
-    /// Status + metadata received on client side when call finishes.
-    /// (when receive_status_on_client operation finishes).
-    /// </summary>
-    internal struct ClientSideStatus
-    {
-        readonly Status status;
-        readonly Metadata trailers;
-
-        public ClientSideStatus(Status status, Metadata trailers)
-        {
-            this.status = status;
-            this.trailers = trailers;
-        }
-
-        public Status Status
-        {
-            get
-            {
-                return this.status;
-            }    
-        }
-
-        public Metadata Trailers
-        {
-            get
-            {
-                return this.trailers;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Details of a newly received RPC.
-    /// </summary>
-    internal struct ServerRpcNew
-    {
-        readonly Server server;
-        readonly CallSafeHandle call;
-        readonly string method;
-        readonly string host;
-        readonly Timespec deadline;
-        readonly Metadata requestMetadata;
-
-        public ServerRpcNew(Server server, CallSafeHandle call, string method, string host, Timespec deadline, Metadata requestMetadata)
-        {
-            this.server = server;
-            this.call = call;
-            this.method = method;
-            this.host = host;
-            this.deadline = deadline;
-            this.requestMetadata = requestMetadata;
-        }
-
-        public Server Server
-        {
-            get
-            {
-                return this.server;
-            }
-        }
-
-        public CallSafeHandle Call
-        {
-            get
-            {
-                return this.call;
-            }
-        }
-
-        public string Method
-        {
-            get
-            {
-                return this.method;
-            }
-        }
-
-        public string Host
-        {
-            get
-            {
-                return this.host;
-            }
-        }
-
-        public Timespec Deadline
-        {
-            get
-            {
-                return this.deadline;
-            }
-        }
-
-        public Metadata RequestMetadata
-        {
-            get
-            {
-                return this.requestMetadata;
-            }
         }
     }
 }

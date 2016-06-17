@@ -151,8 +151,12 @@
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\fixtures\proxy.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\iomgr\endpoint_tests.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\util\grpc_profiler.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\core\util\memory_counters.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\core\util\mock_endpoint.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\util\parse_hexstring.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\core\util\passthru_endpoint.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\util\port.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\core\util\port_server_client.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\util\slice_splitter.h" />
   </ItemGroup>
   <ItemGroup>
@@ -164,9 +168,17 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\grpc_profiler.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\memory_counters.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\mock_endpoint.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\parse_hexstring.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\passthru_endpoint.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\port_posix.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\core\util\port_server_client.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\port_windows.c">
     </ClCompile>
@@ -182,6 +194,9 @@
     </ProjectReference>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc_unsecure\grpc_unsecure.vcxproj">
       <Project>{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc\grpc.vcxproj">
+      <Project>{29D16885-7228-4C31-81ED-5F9187C7F2A9}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

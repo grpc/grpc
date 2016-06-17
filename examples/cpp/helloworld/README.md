@@ -207,7 +207,7 @@ completion queue to return the tag. The basic flow is
     helloworld::Greeter::AsyncService service;
     ServerBuilder builder;
     builder.AddListeningPort("0.0.0.0:50051", InsecureServerCredentials());
-    builder.RegisterAsyncService(&service);
+    builder.RegisterService(&service);
     auto cq = builder.AddCompletionQueue();
     auto server = builder.BuildAndStart();
     ```

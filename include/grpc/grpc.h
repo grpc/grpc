@@ -36,13 +36,13 @@
 
 #include <grpc/status.h>
 
-#include <stddef.h>
 #include <grpc/byte_buffer.h>
+#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/codegen/propagation_bits.h>
 #include <grpc/support/slice.h>
 #include <grpc/support/time.h>
-#include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/propagation_bits.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -154,9 +154,8 @@ GRPCAPI void grpc_alarm_cancel(grpc_alarm *alarm);
 GRPCAPI void grpc_alarm_destroy(grpc_alarm *alarm);
 
 /** Check the connectivity state of a channel. */
-GRPCAPI grpc_connectivity_state
-grpc_channel_check_connectivity_state(grpc_channel *channel,
-                                      int try_to_connect);
+GRPCAPI grpc_connectivity_state grpc_channel_check_connectivity_state(
+    grpc_channel *channel, int try_to_connect);
 
 /** Watch for a change in connectivity state.
     Once the channel connectivity state is different from last_observed_state,
@@ -267,9 +266,10 @@ GRPCAPI grpc_call_error grpc_call_cancel(grpc_call *call, void *reserved);
     and description passed in.
     Importantly, this function does not send status nor description to the
     remote endpoint. */
-GRPCAPI grpc_call_error
-grpc_call_cancel_with_status(grpc_call *call, grpc_status_code status,
-                             const char *description, void *reserved);
+GRPCAPI grpc_call_error grpc_call_cancel_with_status(grpc_call *call,
+                                                     grpc_status_code status,
+                                                     const char *description,
+                                                     void *reserved);
 
 /** Destroy a call.
     THREAD SAFETY: grpc_call_destroy is thread-compatible */
@@ -283,13 +283,19 @@ GRPCAPI void grpc_call_destroy(grpc_call *call);
     to \a cq_bound_to_call.
     Note that \a cq_for_notification must have been registered to the server via
     \a grpc_server_register_completion_queue. */
-GRPCAPI grpc_call_error
-grpc_server_request_call(grpc_server *server, grpc_call **call,
-                         grpc_call_details *details,
-                         grpc_metadata_array *request_metadata,
-                         grpc_completion_queue *cq_bound_to_call,
-                         grpc_completion_queue *cq_for_notification,
-                         void *tag_new);
+GRPCAPI grpc_call_error grpc_server_request_call(
+    grpc_server *server, grpc_call **call, grpc_call_details *details,
+    grpc_metadata_array *request_metadata,
+    grpc_completion_queue *cq_bound_to_call,
+    grpc_completion_queue *cq_for_notification, void *tag_new);
+
+/** How to handle payloads for a registered method */
+typedef enum {
+  /** Don't try to read the payload */
+  GRPC_SRM_PAYLOAD_NONE,
+  /** Read the initial payload as a byte buffer */
+  GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER
+} grpc_server_register_method_payload_handling;
 
 /** Registers a method in the server.
     Methods to this (host, method) pair will not be reported by
@@ -298,8 +304,10 @@ grpc_server_request_call(grpc_server *server, grpc_call **call,
     registered_method (as returned by this function).
     Must be called before grpc_server_start.
     Returns NULL on failure. */
-GRPCAPI void *grpc_server_register_method(grpc_server *server,
-                                          const char *method, const char *host);
+GRPCAPI void *grpc_server_register_method(
+    grpc_server *server, const char *method, const char *host,
+    grpc_server_register_method_payload_handling payload_handling,
+    uint32_t flags);
 
 /** Request notification of a new pre-registered call. 'cq_for_notification'
     must have been registered to the server via
@@ -325,6 +333,15 @@ GRPCAPI grpc_server *grpc_server_create(const grpc_channel_args *args,
 GRPCAPI void grpc_server_register_completion_queue(grpc_server *server,
                                                    grpc_completion_queue *cq,
                                                    void *reserved);
+
+/** Register a non-listening completion queue with the server. This API is
+    similar to grpc_server_register_completion_queue except that the server will
+    not use this completion_queue to listen to any incoming channels.
+
+    Registering a non-listening completion queue will have negative performance
+    impact and hence this API is not recommended for production use cases. */
+GRPCAPI void grpc_server_register_non_listening_completion_queue(
+    grpc_server *server, grpc_completion_queue *q, void *reserved);
 
 /** Add a HTTP2 over plaintext over tcp listener.
     Returns bound port number on success, 0 on failure.
@@ -375,6 +392,9 @@ GRPCAPI int grpc_header_nonbin_value_is_legal(const char *value, size_t length);
 
 /** Check whether a metadata key corresponds to a binary value */
 GRPCAPI int grpc_is_binary_header(const char *key, size_t length);
+
+/** Convert grpc_call_error values to a string */
+GRPCAPI const char *grpc_call_error_to_string(grpc_call_error error);
 
 #ifdef __cplusplus
 }

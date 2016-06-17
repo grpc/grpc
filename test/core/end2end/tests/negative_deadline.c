@@ -36,13 +36,13 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/support/string.h"
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+#include "src/core/lib/support/string.h"
 #include "test/core/end2end/cq_verifier.h"
 
 enum { TIMEOUT = 200000 };
@@ -77,9 +77,9 @@ static void drain_cq(grpc_completion_queue *cq) {
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(1000),
-                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5),
-                                         NULL).type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
+                 .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
 }
@@ -112,7 +112,7 @@ static void simple_request_body(grpc_end2end_test_fixture f, size_t num_ops) {
   char *details = NULL;
   size_t details_capacity = 0;
 
-  gpr_log(GPR_DEBUG, "test with %d ops", num_ops);
+  gpr_log(GPR_DEBUG, "test with %" PRIuPTR " ops", num_ops);
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
                                "/foo", "foo.test.google.fr:1234", deadline,
@@ -122,6 +122,7 @@ static void simple_request_body(grpc_end2end_test_fixture f, size_t num_ops) {
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
@@ -179,3 +180,5 @@ void negative_deadline(grpc_end2end_test_config config) {
     test_invoke_simple_request(config, i);
   }
 }
+
+void negative_deadline_pre_init(void) {}

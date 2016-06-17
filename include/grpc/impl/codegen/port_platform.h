@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -82,40 +82,79 @@
    things.  */
 
 #if !defined(GPR_NO_AUTODETECT_PLATFORM)
+#if defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32)
 #if defined(_WIN64) || defined(WIN64)
-#define GPR_PLATFORM_STRING "windows"
-#define GPR_WIN32 1
 #define GPR_ARCH_64 1
-#define GPR_GETPID_IN_PROCESS_H 1
-#define GPR_WINSOCK_SOCKET 1
-#define GPR_WINDOWS_SUBPROCESS 1
-#ifdef __GNUC__
-#define GPR_GCC_ATOMIC 1
-#define GPR_GCC_TLS 1
 #else
-#define GPR_WIN32_ATOMIC 1
-#define GPR_MSVC_TLS 1
-#endif
-#define GPR_WINDOWS_CRASH_HANDLER 1
-#elif defined(_WIN32) || defined(WIN32)
-#define GPR_PLATFORM_STRING "windows"
 #define GPR_ARCH_32 1
-#define GPR_WIN32 1
-#define GPR_GETPID_IN_PROCESS_H 1
+#endif
+#define GPR_PLATFORM_STRING "windows"
+#define GPR_WINDOWS 1
 #define GPR_WINSOCK_SOCKET 1
 #define GPR_WINDOWS_SUBPROCESS 1
+#define GPR_WINDOWS_ENV
+#ifdef __MSYS__
+#define GPR_GETPID_IN_UNISTD_H 1
+#define GPR_MSYS_TMPFILE
+#define GPR_POSIX_LOG
+#define GPR_POSIX_STRING
+#define GPR_POSIX_TIME
+#else
+#define GPR_GETPID_IN_PROCESS_H 1
+#define GPR_WINDOWS_TMPFILE
+#define GPR_WINDOWS_LOG
+#define GPR_WINDOWS_CRASH_HANDLER 1
+#define GPR_WINDOWS_STRING
+#define GPR_WINDOWS_TIME
+#endif
 #ifdef __GNUC__
 #define GPR_GCC_ATOMIC 1
 #define GPR_GCC_TLS 1
 #else
-#define GPR_WIN32_ATOMIC 1
+#define GPR_WINDOWS_ATOMIC 1
 #define GPR_MSVC_TLS 1
 #endif
-#define GPR_WINDOWS_CRASH_HANDLER 1
+#elif defined(GPR_MANYLINUX1)
+// TODO(atash): manylinux1 is just another __linux__ but with ancient
+// libraries; it should be integrated with the `__linux__` definitions below.
+#define GPR_PLATFORM_STRING "manylinux"
+#define GPR_POSIX_CRASH_HANDLER 1
+#define GPR_CPU_LINUX 1
+#define GPR_GCC_ATOMIC 1
+#define GPR_GCC_TLS 1
+#define GPR_LINUX 1
+#define GPR_LINUX_LOG 1
+#define GPR_POSIX_SOCKET 1
+#define GPR_POSIX_WAKEUP_FD 1
+#define GPR_POSIX_SOCKETADDR 1
+#define GPR_POSIX_NO_SPECIAL_WAKEUP_FD 1
+#define GPR_POSIX_SOCKETUTILS 1
+#define GPR_SUPPORT_CHANNELS_FROM_FD 1
+#define GPR_HAVE_UNIX_SOCKET 1
+#define GPR_HAVE_IP_PKTINFO 1
+#define GPR_HAVE_IPV6_RECVPKTINFO 1
+#define GPR_LINUX_ENV 1
+#define GPR_POSIX_FILE 1
+#define GPR_POSIX_TMPFILE 1
+#define GPR_POSIX_STRING 1
+#define GPR_POSIX_SUBPROCESS 1
+#define GPR_POSIX_SYNC 1
+#define GPR_POSIX_TIME 1
+#define GPR_GETPID_IN_UNISTD_H 1
+#define GPR_HAVE_MSG_NOSIGNAL 1
+#ifdef _LP64
+#define GPR_ARCH_64 1
+#else /* _LP64 */
+#define GPR_ARCH_32 1
+#endif /* _LP64 */
 #elif defined(ANDROID) || defined(__ANDROID__)
 #define GPR_PLATFORM_STRING "android"
 #define GPR_ANDROID 1
+#ifdef _LP64
+#define GPR_ARCH_64 1
+#else /* _LP64 */
 #define GPR_ARCH_32 1
+#endif /* _LP64 */
 #define GPR_CPU_LINUX 1
 #define GPR_GCC_SYNC 1
 #define GPR_GCC_TLS 1
@@ -127,12 +166,18 @@
 #define GPR_POSIX_SOCKETUTILS 1
 #define GPR_POSIX_ENV 1
 #define GPR_POSIX_FILE 1
+#define GPR_POSIX_TMPFILE 1
+#define GPR_POSIX_LOG
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
 #define GPR_GETPID_IN_UNISTD_H 1
+#define GPR_SUPPORT_CHANNELS_FROM_FD 1
 #define GPR_HAVE_MSG_NOSIGNAL 1
+#define GPR_HAVE_UNIX_SOCKET 1
+#define GPR_HAVE_IP_PKTINFO 1
+#define GPR_HAVE_IPV6_RECVPKTINFO 1
 #elif defined(__linux__)
 #define GPR_POSIX_CRASH_HANDLER 1
 #define GPR_PLATFORM_STRING "linux"
@@ -150,10 +195,15 @@
 #define GPR_GCC_ATOMIC 1
 #define GPR_GCC_TLS 1
 #define GPR_LINUX 1
+#define GPR_LINUX_LOG
 #define GPR_LINUX_MULTIPOLL_WITH_EPOLL 1
 #define GPR_POSIX_WAKEUP_FD 1
 #define GPR_POSIX_SOCKET 1
 #define GPR_POSIX_SOCKETADDR 1
+#define GPR_SUPPORT_CHANNELS_FROM_FD 1
+#define GPR_HAVE_UNIX_SOCKET 1
+#define GPR_HAVE_IP_PKTINFO 1
+#define GPR_HAVE_IPV6_RECVPKTINFO 1
 #ifdef __GLIBC_PREREQ
 #if __GLIBC_PREREQ(2, 9)
 #define GPR_LINUX_EVENTFD 1
@@ -170,6 +220,7 @@
 #define GPR_POSIX_SOCKETUTILS
 #endif
 #define GPR_POSIX_FILE 1
+#define GPR_POSIX_TMPFILE 1
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
@@ -208,12 +259,16 @@
 #define GPR_POSIX_SOCKETUTILS 1
 #define GPR_POSIX_ENV 1
 #define GPR_POSIX_FILE 1
+#define GPR_POSIX_TMPFILE 1
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
 #define GPR_GETPID_IN_UNISTD_H 1
+#define GPR_SUPPORT_CHANNELS_FROM_FD 1
 #define GPR_HAVE_SO_NOSIGPIPE 1
+#define GPR_HAVE_UNIX_SOCKET 1
+#define GPR_HAVE_IP_PKTINFO 1
 #ifdef _LP64
 #define GPR_ARCH_64 1
 #else /* _LP64 */
@@ -236,19 +291,58 @@
 #define GPR_POSIX_SOCKETUTILS 1
 #define GPR_POSIX_ENV 1
 #define GPR_POSIX_FILE 1
+#define GPR_POSIX_TMPFILE 1
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
 #define GPR_GETPID_IN_UNISTD_H 1
+#define GPR_SUPPORT_CHANNELS_FROM_FD 1
 #define GPR_HAVE_SO_NOSIGPIPE 1
+#define GPR_HAVE_UNIX_SOCKET 1
+#define GPR_HAVE_IP_PKTINFO 1
+#define GPR_HAVE_IPV6_RECVPKTINFO 1
+#ifdef _LP64
+#define GPR_ARCH_64 1
+#else /* _LP64 */
+#define GPR_ARCH_32 1
+#endif /* _LP64 */
+#elif defined(__native_client__)
+#define GPR_PLATFORM_STRING "nacl"
+#ifndef _BSD_SOURCE
+#define _BSD_SOURCE
+#endif
+#ifndef _DEFAULT_SOURCE
+#define _DEFAULT_SOURCE
+#endif
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+#define GPR_CPU_POSIX 1
+#define GPR_GCC_ATOMIC 1
+#define GPR_GCC_TLS 1
+#define GPR_POSIX_LOG 1
+#define GPR_POSIX_MULTIPOLL_WITH_POLL 1
+#define GPR_POSIX_WAKEUP_FD 1
+#define GPR_POSIX_NO_SPECIAL_WAKEUP_FD 1
+#define GPR_POSIX_SOCKET 1
+#define GPR_POSIX_SOCKETADDR 1
+#define GPR_POSIX_SOCKETUTILS 1
+#define GPR_POSIX_ENV 1
+#define GPR_POSIX_FILE 1
+#define GPR_POSIX_TMPFILE 1
+#define GPR_POSIX_STRING 1
+#define GPR_POSIX_SUBPROCESS 1
+#define GPR_POSIX_SYNC 1
+#define GPR_POSIX_TIME 1
+#define GPR_GETPID_IN_UNISTD_H 1
 #ifdef _LP64
 #define GPR_ARCH_64 1
 #else /* _LP64 */
 #define GPR_ARCH_32 1
 #endif /* _LP64 */
 #else
-#error Could not auto-detect platform
+#error "Could not auto-detect platform"
 #endif
 #endif /* GPR_NO_AUTODETECT_PLATFORM */
 
@@ -301,19 +395,19 @@ typedef unsigned __int64 uint64_t;
 
 /* Validate platform combinations */
 #if defined(GPR_GCC_ATOMIC) + defined(GPR_GCC_SYNC) + \
-        defined(GPR_WIN32_ATOMIC) !=                  \
+        defined(GPR_WINDOWS_ATOMIC) !=                \
     1
-#error Must define exactly one of GPR_GCC_ATOMIC, GPR_GCC_SYNC, GPR_WIN32_ATOMIC
+#error Must define exactly one of GPR_GCC_ATOMIC, GPR_GCC_SYNC, GPR_WINDOWS_ATOMIC
 #endif
 
 #if defined(GPR_ARCH_32) + defined(GPR_ARCH_64) != 1
 #error Must define exactly one of GPR_ARCH_32, GPR_ARCH_64
 #endif
 
-#if defined(GPR_CPU_LINUX) + defined(GPR_CPU_POSIX) + defined(GPR_WIN32) + \
-        defined(GPR_CPU_IPHONE) + defined(GPR_CPU_CUSTOM) !=               \
+#if defined(GPR_CPU_LINUX) + defined(GPR_CPU_POSIX) + defined(GPR_WINDOWS) + \
+        defined(GPR_CPU_IPHONE) + defined(GPR_CPU_CUSTOM) !=                 \
     1
-#error Must define exactly one of GPR_CPU_LINUX, GPR_CPU_POSIX, GPR_WIN32, GPR_CPU_IPHONE, GPR_CPU_CUSTOM
+#error Must define exactly one of GPR_CPU_LINUX, GPR_CPU_POSIX, GPR_WINDOWS, GPR_CPU_IPHONE, GPR_CPU_CUSTOM
 #endif
 
 #if defined(GPR_POSIX_MULTIPOLL_WITH_POLL) && !defined(GPR_POSIX_SOCKET)
@@ -343,6 +437,15 @@ typedef unsigned __int64 uint64_t;
 #define GRPC_MUST_USE_RESULT
 #endif
 #endif
+
+#ifndef GPRC_PRINT_FORMAT_CHECK
+#ifdef __GNUC__
+#define GPRC_PRINT_FORMAT_CHECK(FORMAT_STR, ARGS) \
+  __attribute__((format(printf, FORMAT_STR, ARGS)))
+#else
+#define GPRC_PRINT_FORMAT_CHECK(FORMAT_STR, ARGS)
+#endif
+#endif /* GPRC_PRINT_FORMAT_CHECK */
 
 #if GPR_FORBID_UNREACHABLE_CODE
 #define GPR_UNREACHABLE_CODE(STATEMENT)

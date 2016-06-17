@@ -62,7 +62,7 @@ class _GRPCServicer(base.Servicer):
       if e.code is None and e.details is None:
         raise base.NoSuchMethodError(
             interfaces.StatusCode.UNIMPLEMENTED,
-            b'Method "%s" of service "%s" not implemented!' % (method, group))
+            'Method "%s" of service "%s" not implemented!' % (method, group))
       else:
         raise
 

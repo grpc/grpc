@@ -32,11 +32,11 @@
 import unittest
 
 from grpc.beta import implementations
+from src.proto.grpc.testing import test_pb2
 
 from tests.interop import _interop_test_case
 from tests.interop import methods
 from tests.interop import resources
-from tests.interop import test_pb2
 
 from tests.unit.beta import test_utilities
 
@@ -56,7 +56,7 @@ class SecureInteropTest(
     self.stub = test_pb2.beta_create_TestService_stub(
         test_utilities.not_really_secure_channel(
             '[::]', port, implementations.ssl_channel_credentials(
-                resources.test_root_certificates(), None, None),
+                resources.test_root_certificates()),
                 _SERVER_HOST_OVERRIDE))
 
   def tearDown(self):

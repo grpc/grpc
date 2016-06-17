@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_SUPPORT_TLS_GCC_H
-#define GRPC_SUPPORT_TLS_GCC_H
+#ifndef GRPC_SUPPORT_TLS_MSVC_H
+#define GRPC_SUPPORT_TLS_MSVC_H
 
 /* Thread local storage based on ms visual c compiler primitives.
    #include tls.h to use this - and see that file for documentation */
@@ -53,4 +53,4 @@ struct gpr_msvc_thread_local {
 #define gpr_tls_set(tls, new_value) (((tls)->value) = (new_value))
 #define gpr_tls_get(tls) ((tls)->value)
 
-#endif
+#endif /* GRPC_SUPPORT_TLS_MSVC_H */

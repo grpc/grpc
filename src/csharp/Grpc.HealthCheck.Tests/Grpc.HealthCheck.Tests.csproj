@@ -1,11 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{F8C6D937-C44B-4EE3-A431-B0FBAEACE47D}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Grpc.HealthCheck.Tests</RootNamespace>
     <AssemblyName>Grpc.HealthCheck.Tests</AssemblyName>
@@ -37,13 +37,6 @@
     <AssemblyOriginatorKeyFile>..\keys\Grpc.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Google.Protobuf, Version=3.0.0.0, Culture=neutral, PublicKeyToken=a7d26565bac4d604, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Google.Protobuf.3.0.0-beta2\lib\portable-net45+netcore45+wpa81+wp8\Google.Protobuf.dll</HintPath>
-    </Reference>
-    <Reference Include="nunit.framework">
-      <HintPath>..\packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -51,6 +44,15 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="Google.Protobuf">
+      <HintPath>..\packages\Google.Protobuf.3.0.0-beta3\lib\portable-net45+netcore45+wpa81+wp8\Google.Protobuf.dll</HintPath>
+    </Reference>
+    <Reference Include="nunit.framework">
+      <HintPath>..\packages\NUnit.3.2.0\lib\net45\nunit.framework.dll</HintPath>
+    </Reference>
+    <Reference Include="nunitlite">
+      <HintPath>..\packages\NUnitLite.3.2.0\lib\net45\nunitlite.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\Grpc.Core\Version.cs">
@@ -59,14 +61,15 @@
     <Compile Include="HealthServiceImplTest.cs" />
     <Compile Include="HealthClientServerTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="NUnitMain.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Grpc.Core\Grpc.Core.csproj">
-      <Project>{ccc4440e-49f7-4790-b0af-feabb0837ae7}</Project>
+      <Project>{CCC4440E-49F7-4790-B0AF-FEABB0837AE7}</Project>
       <Name>Grpc.Core</Name>
     </ProjectReference>
     <ProjectReference Include="..\Grpc.HealthCheck\Grpc.HealthCheck.csproj">
-      <Project>{aa5e328a-8835-49d7-98ed-c29f2b3049f0}</Project>
+      <Project>{AA5E328A-8835-49D7-98ED-C29F2B3049F0}</Project>
       <Name>Grpc.HealthCheck</Name>
     </ProjectReference>
   </ItemGroup>

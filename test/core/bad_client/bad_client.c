@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,17 +33,19 @@
 
 #include "test/core/bad_client/bad_client.h"
 
-#include "src/core/channel/channel_stack.h"
-#include "src/core/channel/http_server_filter.h"
-#include "src/core/iomgr/endpoint_pair.h"
-#include "src/core/surface/completion_queue.h"
-#include "src/core/surface/server.h"
-#include "src/core/support/string.h"
-#include "src/core/transport/chttp2_transport.h"
-
 #include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
+#include <stdio.h>
+#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/http_server_filter.h"
+#include "src/core/lib/iomgr/endpoint_pair.h"
+#include "src/core/lib/support/murmur_hash.h"
+#include "src/core/lib/support/string.h"
+#include "src/core/lib/surface/completion_queue.h"
+#include "src/core/lib/surface/server.h"
 
 typedef struct {
   grpc_server *server;
@@ -67,18 +69,28 @@ static void done_write(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
 
 static void server_setup_transport(void *ts, grpc_transport *transport) {
   thd_args *a = ts;
-  static grpc_channel_filter const *extra_filters[] = {
-      &grpc_http_server_filter};
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_server_setup_transport(&exec_ctx, a->server, transport, extra_filters,
-                              GPR_ARRAY_SIZE(extra_filters),
+  grpc_server_setup_transport(&exec_ctx, a->server, transport, NULL,
                               grpc_server_get_channel_args(a->server));
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
-                              const char *client_payload,
-                              size_t client_payload_length, uint32_t flags) {
+typedef struct {
+  grpc_bad_client_client_stream_validator validator;
+  gpr_slice_buffer incoming;
+  gpr_event read_done;
+} read_args;
+
+static void read_done(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+  read_args *a = arg;
+  a->validator(&a->incoming);
+  gpr_event_set(&a->read_done, (void *)1);
+}
+
+void grpc_run_bad_client_test(
+    grpc_bad_client_server_side_validator server_validator,
+    grpc_bad_client_client_stream_validator client_validator,
+    const char *client_payload, size_t client_payload_length, uint32_t flags) {
   grpc_endpoint_pair sfd;
   thd_args a;
   gpr_thd_id id;
@@ -105,15 +117,16 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
   sfd = grpc_iomgr_create_endpoint_pair("fixture", 65536);
 
   /* Create server, completion events */
-  a.server = grpc_server_create_from_filters(NULL, 0, NULL);
+  a.server = grpc_server_create(NULL, NULL);
   a.cq = grpc_completion_queue_create(NULL);
   gpr_event_init(&a.done_thd);
   gpr_event_init(&a.done_write);
-  a.validator = validator;
+  a.validator = server_validator;
   grpc_server_register_completion_queue(a.server, a.cq, NULL);
   a.registered_method =
       grpc_server_register_method(a.server, GRPC_BAD_CLIENT_REGISTERED_METHOD,
-                                  GRPC_BAD_CLIENT_REGISTERED_HOST);
+                                  GRPC_BAD_CLIENT_REGISTERED_HOST,
+                                  GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER, 0);
   grpc_server_start(a.server);
   transport = grpc_create_chttp2_transport(&exec_ctx, NULL, sfd.server, 0);
   server_setup_transport(&a, transport);
@@ -151,16 +164,31 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
 
   GPR_ASSERT(gpr_event_wait(&a.done_thd, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)));
 
-  /* Shutdown */
-  if (sfd.client) {
+  if (sfd.client != NULL) {
+    // Validate client stream, if requested.
+    if (client_validator != NULL) {
+      read_args args;
+      args.validator = client_validator;
+      gpr_slice_buffer_init(&args.incoming);
+      gpr_event_init(&args.read_done);
+      grpc_closure read_done_closure;
+      grpc_closure_init(&read_done_closure, read_done, &args);
+      grpc_endpoint_read(&exec_ctx, sfd.client, &args.incoming,
+                         &read_done_closure);
+      grpc_exec_ctx_finish(&exec_ctx);
+      GPR_ASSERT(
+          gpr_event_wait(&args.read_done, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)));
+      gpr_slice_buffer_destroy(&args.incoming);
+    }
+    // Shutdown.
     grpc_endpoint_shutdown(&exec_ctx, sfd.client);
     grpc_endpoint_destroy(&exec_ctx, sfd.client);
     grpc_exec_ctx_finish(&exec_ctx);
   }
   grpc_server_shutdown_and_notify(a.server, a.cq, NULL);
-  GPR_ASSERT(grpc_completion_queue_pluck(a.cq, NULL,
-                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1),
-                                         NULL).type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 a.cq, NULL, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1), NULL)
+                 .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(a.server);
   grpc_completion_queue_destroy(a.cq);
   gpr_slice_buffer_destroy(&outgoing);

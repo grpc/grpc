@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015-2016, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -64,6 +64,8 @@
 }
 @end
 
+// TODO(jcanizales): Split into one file per tested class.
+
 @interface RxLibraryUnitTests : XCTestCase
 @end
 
@@ -79,6 +81,7 @@
   // If:
   id<GRXWriteable> writeable = [GRXWriteable writeableWithSingleHandler:handler.block];
   [writeable writeValue:anyValue];
+  [writeable writesFinishedWithError:nil];
 
   // Then:
   XCTAssertEqual(handler.timesCalled, 1);
@@ -99,6 +102,54 @@
   XCTAssertEqual(handler.timesCalled, 1);
   XCTAssertEqualObjects(handler.value, nil);
   XCTAssertEqualObjects(handler.errorOrNil, anyError);
+}
+
+- (void)testWriteableSingleHandlerIsCalledOnlyOnce_ValueThenError {
+  // Given:
+  CapturingSingleValueHandler *handler = [CapturingSingleValueHandler handler];
+  id anyValue = @7;
+  NSError *anyError = [NSError errorWithDomain:@"domain" code:7 userInfo:nil];
+
+  // If:
+  id<GRXWriteable> writeable = [GRXWriteable writeableWithSingleHandler:handler.block];
+  [writeable writeValue:anyValue];
+  [writeable writesFinishedWithError:anyError];
+
+  // Then:
+  XCTAssertEqual(handler.timesCalled, 1);
+  XCTAssertEqualObjects(handler.value, anyValue);
+  XCTAssertEqualObjects(handler.errorOrNil, nil);
+}
+
+- (void)testWriteableSingleHandlerIsCalledOnlyOnce_ValueThenValue {
+  // Given:
+  CapturingSingleValueHandler *handler = [CapturingSingleValueHandler handler];
+  id anyValue = @7;
+
+  // If:
+  id<GRXWriteable> writeable = [GRXWriteable writeableWithSingleHandler:handler.block];
+  [writeable writeValue:anyValue];
+  [writeable writeValue:anyValue];
+  [writeable writesFinishedWithError:nil];
+
+  // Then:
+  XCTAssertEqual(handler.timesCalled, 1);
+  XCTAssertEqualObjects(handler.value, anyValue);
+  XCTAssertEqualObjects(handler.errorOrNil, nil);
+}
+
+- (void)testWriteableSingleHandlerFailsOnEmptyWriter {
+  // Given:
+  CapturingSingleValueHandler *handler = [CapturingSingleValueHandler handler];
+
+  // If:
+  id<GRXWriteable> writeable = [GRXWriteable writeableWithSingleHandler:handler.block];
+  [writeable writesFinishedWithError:nil];
+
+  // Then:
+  XCTAssertEqual(handler.timesCalled, 1);
+  XCTAssertEqualObjects(handler.value, nil);
+  XCTAssertNotNil(handler.errorOrNil);
 }
 
 #pragma mark BufferedPipe

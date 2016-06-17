@@ -29,10 +29,12 @@
 
 """Tests for the old '_low'."""
 
-import Queue
 import threading
 import time
 import unittest
+
+import six
+from six.moves import queue
 
 from grpc._adapter import _intermediary_low as _low
 
@@ -67,7 +69,7 @@ class LonelyClientTest(unittest.TestCase):
     second_event = completion_queue.get(after_deadline)
     self.assertIsNotNone(second_event)
     kinds = [event.kind for event in (first_event, second_event)]
-    self.assertItemsEqual(
+    six.assertCountEqual(self,
         (_low.Event.Kind.METADATA_ACCEPTED, _low.Event.Kind.FINISH),
         kinds)
 
@@ -99,7 +101,7 @@ class EchoTest(unittest.TestCase):
     self.server = _low.Server(self.server_completion_queue)
     port = self.server.add_http2_addr('[::]:0')
     self.server.start()
-    self.server_events = Queue.Queue()
+    self.server_events = queue.Queue()
     self.server_completion_queue_thread = threading.Thread(
         target=_drive_completion_queue,
         args=(self.server_completion_queue, self.server_events))
@@ -107,7 +109,7 @@ class EchoTest(unittest.TestCase):
 
     self.client_completion_queue = _low.CompletionQueue()
     self.channel = _low.Channel('%s:%d' % (self.host, port), None)
-    self.client_events = Queue.Queue()
+    self.client_events = queue.Queue()
     self.client_completion_queue_thread = threading.Thread(
         target=_drive_completion_queue,
         args=(self.client_completion_queue, self.client_events))
@@ -162,15 +164,15 @@ class EchoTest(unittest.TestCase):
     self.assertIsNotNone(service_accepted)
     self.assertIs(service_accepted.kind, _low.Event.Kind.SERVICE_ACCEPTED)
     self.assertIs(service_accepted.tag, service_tag)
-    self.assertEqual(method, service_accepted.service_acceptance.method)
-    self.assertEqual(self.host, service_accepted.service_acceptance.host)
+    self.assertEqual(method.encode(), service_accepted.service_acceptance.method)
+    self.assertEqual(self.host.encode(), service_accepted.service_acceptance.host)
     self.assertIsNotNone(service_accepted.service_acceptance.call)
     metadata = dict(service_accepted.metadata)
-    self.assertIn(client_metadata_key, metadata)
-    self.assertEqual(client_metadata_value, metadata[client_metadata_key])
-    self.assertIn(client_binary_metadata_key, metadata)
+    self.assertIn(client_metadata_key.encode(), metadata)
+    self.assertEqual(client_metadata_value.encode(), metadata[client_metadata_key.encode()])
+    self.assertIn(client_binary_metadata_key.encode(), metadata)
     self.assertEqual(client_binary_metadata_value,
-                     metadata[client_binary_metadata_key])
+                     metadata[client_binary_metadata_key.encode()])
     server_call = service_accepted.service_acceptance.call
     server_call.accept(self.server_completion_queue, finish_tag)
     server_call.add_metadata(server_leading_metadata_key,
@@ -184,12 +186,12 @@ class EchoTest(unittest.TestCase):
     self.assertEqual(_low.Event.Kind.METADATA_ACCEPTED, metadata_accepted.kind)
     self.assertEqual(metadata_tag, metadata_accepted.tag)
     metadata = dict(metadata_accepted.metadata)
-    self.assertIn(server_leading_metadata_key, metadata)
-    self.assertEqual(server_leading_metadata_value,
-                     metadata[server_leading_metadata_key])
-    self.assertIn(server_leading_binary_metadata_key, metadata)
+    self.assertIn(server_leading_metadata_key.encode(), metadata)
+    self.assertEqual(server_leading_metadata_value.encode(),
+                     metadata[server_leading_metadata_key.encode()])
+    self.assertIn(server_leading_binary_metadata_key.encode(), metadata)
     self.assertEqual(server_leading_binary_metadata_value,
-                     metadata[server_leading_binary_metadata_key])
+                     metadata[server_leading_binary_metadata_key.encode()])
 
     for datum in test_data:
       client_call.write(datum, write_tag, _low.WriteFlags.WRITE_NO_COMPRESS)
@@ -275,17 +277,17 @@ class EchoTest(unittest.TestCase):
     self.assertIsNone(read_accepted.bytes)
     self.assertEqual(_low.Event.Kind.FINISH, finish_accepted.kind)
     self.assertEqual(finish_tag, finish_accepted.tag)
-    self.assertEqual(_low.Status(_low.Code.OK, details), finish_accepted.status)
+    self.assertEqual(_low.Status(_low.Code.OK, details.encode()), finish_accepted.status)
     metadata = dict(finish_accepted.metadata)
-    self.assertIn(server_trailing_metadata_key, metadata)
-    self.assertEqual(server_trailing_metadata_value,
-                     metadata[server_trailing_metadata_key])
-    self.assertIn(server_trailing_binary_metadata_key, metadata)
+    self.assertIn(server_trailing_metadata_key.encode(), metadata)
+    self.assertEqual(server_trailing_metadata_value.encode(),
+                     metadata[server_trailing_metadata_key.encode()])
+    self.assertIn(server_trailing_binary_metadata_key.encode(), metadata)
     self.assertEqual(server_trailing_binary_metadata_value,
-                     metadata[server_trailing_binary_metadata_key])
+                     metadata[server_trailing_binary_metadata_key.encode()])
     self.assertSetEqual(set(key for key, _ in finish_accepted.metadata),
-                        set((server_trailing_metadata_key,
-                             server_trailing_binary_metadata_key,)))
+                        set((server_trailing_metadata_key.encode(),
+                             server_trailing_binary_metadata_key.encode(),)))
 
     self.assertSequenceEqual(test_data, server_data)
     self.assertSequenceEqual(test_data, client_data)
@@ -300,7 +302,8 @@ class EchoTest(unittest.TestCase):
     self._perform_echo_test([_BYTE_SEQUENCE])
 
   def testManyOneByteEchoes(self):
-    self._perform_echo_test(_BYTE_SEQUENCE)
+    self._perform_echo_test(
+        [_BYTE_SEQUENCE[i:i+1] for i in range(len(_BYTE_SEQUENCE))])
 
   def testManyManyByteEchoes(self):
     self._perform_echo_test(_BYTE_SEQUENCE_SEQUENCE)
@@ -315,7 +318,7 @@ class CancellationTest(unittest.TestCase):
     self.server = _low.Server(self.server_completion_queue)
     port = self.server.add_http2_addr('[::]:0')
     self.server.start()
-    self.server_events = Queue.Queue()
+    self.server_events = queue.Queue()
     self.server_completion_queue_thread = threading.Thread(
         target=_drive_completion_queue,
         args=(self.server_completion_queue, self.server_events))
@@ -323,7 +326,7 @@ class CancellationTest(unittest.TestCase):
 
     self.client_completion_queue = _low.CompletionQueue()
     self.channel = _low.Channel('%s:%d' % (self.host, port), None)
-    self.client_events = Queue.Queue()
+    self.client_events = queue.Queue()
     self.client_completion_queue_thread = threading.Thread(
         target=_drive_completion_queue,
         args=(self.client_completion_queue, self.client_events))
@@ -407,7 +410,7 @@ class CancellationTest(unittest.TestCase):
 
     finish_event = self.client_events.get()
     self.assertEqual(_low.Event.Kind.FINISH, finish_event.kind)
-    self.assertEqual(_low.Status(_low.Code.CANCELLED, 'Cancelled'),
+    self.assertEqual(_low.Status(_low.Code.CANCELLED, b'Cancelled'),
                                  finish_event.status)
 
     self.assertSequenceEqual(test_data, server_data)
