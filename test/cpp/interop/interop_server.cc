@@ -214,7 +214,15 @@ class TestServiceImpl : public TestService::Service {
           wopts.set_no_compression();
         }  // else, compression is already enabled via the context.
       }
-      write_success = writer->Write(response, wopts);
+      int time_us;
+      if ((time_us = request->response_parameters(i).interval_us()) > 0) {
+        // Sleep before response if needed
+        gpr_timespec sleep_time =
+            gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                         gpr_time_from_micros(time_us, GPR_TIMESPAN));
+        gpr_sleep_until(sleep_time);
+      }
+      write_success = writer->Write(response);
     }
     if (write_success) {
       return Status::OK;
@@ -255,6 +263,14 @@ class TestServiceImpl : public TestService::Service {
         response.mutable_payload()->set_type(request.payload().type());
         response.mutable_payload()->set_body(
             grpc::string(request.response_parameters(0).size(), '\0'));
+        int time_us;
+        if ((time_us = request.response_parameters(0).interval_us()) > 0) {
+          // Sleep before response if needed
+          gpr_timespec sleep_time =
+              gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                           gpr_time_from_micros(time_us, GPR_TIMESPAN));
+          gpr_sleep_until(sleep_time);
+        }
         write_success = stream->Write(response);
       }
     }
