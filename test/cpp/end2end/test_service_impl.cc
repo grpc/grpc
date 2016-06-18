@@ -33,6 +33,7 @@
 
 #include "test/cpp/end2end/test_service_impl.h"
 
+#include <string>
 #include <thread>
 
 #include <grpc++/security/credentials.h>
@@ -253,7 +254,7 @@ Status TestServiceImpl::ResponseStream(ServerContext* context,
   }
 
   for (int i = 0; i < kNumResponseStreamsMsgs; i++) {
-    response.set_message(request->message() + std::to_string(i));
+    response.set_message(request->message() + grpc::to_string(i));
     writer->Write(response);
   }
 

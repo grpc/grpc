@@ -197,8 +197,8 @@ Status ProtoServerReflection::GetAllExtensionNumbers(
 
   std::vector<const protobuf::FieldDescriptor*> extensions;
   descriptor_pool_->FindAllExtensions(desc, &extensions);
-  for (auto extension : extensions) {
-    response->add_extension_number(extension->number());
+  for (auto it = extensions.begin(); it != extensions.end(); it++) {
+    response->add_extension_number((*it)->number());
   }
   response->set_base_type_name(type);
   return Status::OK;
