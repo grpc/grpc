@@ -38,6 +38,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/lib/support/murmur_hash.h"
 
@@ -262,18 +263,19 @@ void grpc_chttp2_hptbl_set_max_bytes(grpc_chttp2_hptbl *tbl,
   tbl->max_bytes = max_bytes;
 }
 
-int grpc_chttp2_hptbl_set_current_table_size(grpc_chttp2_hptbl *tbl,
-                                             uint32_t bytes) {
+grpc_error *grpc_chttp2_hptbl_set_current_table_size(grpc_chttp2_hptbl *tbl,
+                                                     uint32_t bytes) {
   if (tbl->current_table_bytes == bytes) {
-    return 1;
+    return GRPC_ERROR_NONE;
   }
   if (bytes > tbl->max_bytes) {
-    if (grpc_http_trace) {
-      gpr_log(GPR_ERROR,
-              "Attempt to make hpack table %d bytes when max is %d bytes",
-              bytes, tbl->max_bytes);
-    }
-    return 0;
+    char *msg;
+    gpr_asprintf(&msg,
+                 "Attempt to make hpack table %d bytes when max is %d bytes",
+                 bytes, tbl->max_bytes);
+    grpc_error *err = GRPC_ERROR_CREATE(msg);
+    gpr_free(msg);
+    return err;
   }
   if (grpc_http_trace) {
     gpr_log(GPR_DEBUG, "Update hpack parser table size to %d", bytes);
@@ -291,23 +293,25 @@ int grpc_chttp2_hptbl_set_current_table_size(grpc_chttp2_hptbl *tbl,
       rebuild_ents(tbl, new_cap);
     }
   }
-  return 1;
+  return GRPC_ERROR_NONE;
 }
 
-int grpc_chttp2_hptbl_add(grpc_chttp2_hptbl *tbl, grpc_mdelem *md) {
+grpc_error *grpc_chttp2_hptbl_add(grpc_chttp2_hptbl *tbl, grpc_mdelem *md) {
   /* determine how many bytes of buffer this entry represents */
   size_t elem_bytes = GPR_SLICE_LENGTH(md->key->slice) +
                       GPR_SLICE_LENGTH(md->value->slice) +
                       GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
 
   if (tbl->current_table_bytes > tbl->max_bytes) {
-    if (grpc_http_trace) {
-      gpr_log(GPR_ERROR,
-              "HPACK max table size reduced to %d but not reflected by hpack "
-              "stream (still at %d)",
-              tbl->max_bytes, tbl->current_table_bytes);
-    }
-    return 0;
+    char *msg;
+    gpr_asprintf(
+        &msg,
+        "HPACK max table size reduced to %d but not reflected by hpack "
+        "stream (still at %d)",
+        tbl->max_bytes, tbl->current_table_bytes);
+    grpc_error *err = GRPC_ERROR_CREATE(msg);
+    gpr_free(msg);
+    return err;
   }
 
   /* we can't add elements bigger than the max table size */
@@ -324,7 +328,7 @@ int grpc_chttp2_hptbl_add(grpc_chttp2_hptbl *tbl, grpc_mdelem *md) {
     while (tbl->num_ents) {
       evict1(tbl);
     }
-    return 1;
+    return GRPC_ERROR_NONE;
   }
 
   /* evict entries to ensure no overflow */
@@ -339,7 +343,7 @@ int grpc_chttp2_hptbl_add(grpc_chttp2_hptbl *tbl, grpc_mdelem *md) {
   /* update accounting values */
   tbl->num_ents++;
   tbl->mem_used += (uint32_t)elem_bytes;
-  return 1;
+  return GRPC_ERROR_NONE;
 }
 
 grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(

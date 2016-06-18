@@ -191,15 +191,15 @@ void grpc_pollset_destroy(grpc_pollset *pollset) {
   g_event_engine->pollset_destroy(pollset);
 }
 
-void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
-                       grpc_pollset_worker **worker, gpr_timespec now,
-                       gpr_timespec deadline) {
-  g_event_engine->pollset_work(exec_ctx, pollset, worker, now, deadline);
+grpc_error *grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
+                              grpc_pollset_worker **worker, gpr_timespec now,
+                              gpr_timespec deadline) {
+  return g_event_engine->pollset_work(exec_ctx, pollset, worker, now, deadline);
 }
 
-void grpc_pollset_kick(grpc_pollset *pollset,
-                       grpc_pollset_worker *specific_worker) {
-  g_event_engine->pollset_kick(pollset, specific_worker);
+grpc_error *grpc_pollset_kick(grpc_pollset *pollset,
+                              grpc_pollset_worker *specific_worker) {
+  return g_event_engine->pollset_kick(pollset, specific_worker);
 }
 
 void grpc_pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
@@ -249,6 +249,6 @@ void grpc_pollset_set_del_fd(grpc_exec_ctx *exec_ctx,
   g_event_engine->pollset_set_del_fd(exec_ctx, pollset_set, fd);
 }
 
-void grpc_kick_poller(void) { g_event_engine->kick_poller(); }
+grpc_error *grpc_kick_poller(void) { return g_event_engine->kick_poller(); }
 
 #endif  // GPR_POSIX_SOCKET
