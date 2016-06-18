@@ -445,6 +445,10 @@ class PythonLanguage(object):
       return ('py27',)
     elif compiler == 'python3.4':
       return ('py34',)
+    elif compiler == 'python3.5':
+      return ('py35',)
+    elif compiler == 'python3.6':
+      return ('py36',)
     else:
       raise Exception('Compiler %s not supported.' % compiler)
 
@@ -836,7 +840,7 @@ argp.add_argument('--compiler',
                            'gcc4.4', 'gcc4.6', 'gcc4.9', 'gcc5.3',
                            'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
                            'vs2010', 'vs2013', 'vs2015',
-                           'python2.7', 'python3.4',
+                           'python2.7', 'python3.4', 'python3.5', 'python3.6',
                            'node0.12', 'node4', 'node5'],
                   default='default',
                   help='Selects compiler to use. Allowed values depend on the platform and language.')
