@@ -1211,7 +1211,12 @@ pc_cxx: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc
 
 pc_cxx_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc
 
+ifeq ($(EMBED_OPENSSL),true)
 privatelibs_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a $(LIBDIR)/$(CONFIG)/libinterop_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a $(LIBDIR)/$(CONFIG)/libinterop_server_main.a $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a
+else
+privatelibs_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a $(LIBDIR)/$(CONFIG)/libinterop_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a $(LIBDIR)/$(CONFIG)/libinterop_server_main.a $(LIBDIR)/$(CONFIG)/libqps.a
+endif
+
 
 ifeq ($(HAS_ZOOKEEPER),true)
 privatelibs_zookeeper: 
@@ -1377,6 +1382,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/uri_fuzzer_test_one_entry \
 
 
+ifeq ($(EMBED_OPENSSL),true)
 buildtests_cxx: buildtests_zookeeper privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/alarm_cpp_test \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
@@ -1459,6 +1465,54 @@ buildtests_cxx: buildtests_zookeeper privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/boringssl_v3name_test \
   $(BINDIR)/$(CONFIG)/boringssl_pqueue_test \
   $(BINDIR)/$(CONFIG)/boringssl_ssl_test \
+
+else
+buildtests_cxx: buildtests_zookeeper privatelibs_cxx \
+  $(BINDIR)/$(CONFIG)/alarm_cpp_test \
+  $(BINDIR)/$(CONFIG)/async_end2end_test \
+  $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
+  $(BINDIR)/$(CONFIG)/channel_arguments_test \
+  $(BINDIR)/$(CONFIG)/cli_call_test \
+  $(BINDIR)/$(CONFIG)/client_crash_test \
+  $(BINDIR)/$(CONFIG)/client_crash_test_server \
+  $(BINDIR)/$(CONFIG)/codegen_test_full \
+  $(BINDIR)/$(CONFIG)/codegen_test_minimal \
+  $(BINDIR)/$(CONFIG)/credentials_test \
+  $(BINDIR)/$(CONFIG)/cxx_byte_buffer_test \
+  $(BINDIR)/$(CONFIG)/cxx_slice_test \
+  $(BINDIR)/$(CONFIG)/cxx_string_ref_test \
+  $(BINDIR)/$(CONFIG)/cxx_time_test \
+  $(BINDIR)/$(CONFIG)/end2end_test \
+  $(BINDIR)/$(CONFIG)/generic_end2end_test \
+  $(BINDIR)/$(CONFIG)/golden_file_test \
+  $(BINDIR)/$(CONFIG)/grpc_cli \
+  $(BINDIR)/$(CONFIG)/grpclb_api_test \
+  $(BINDIR)/$(CONFIG)/hybrid_end2end_test \
+  $(BINDIR)/$(CONFIG)/interop_client \
+  $(BINDIR)/$(CONFIG)/interop_server \
+  $(BINDIR)/$(CONFIG)/interop_test \
+  $(BINDIR)/$(CONFIG)/json_run_localhost \
+  $(BINDIR)/$(CONFIG)/metrics_client \
+  $(BINDIR)/$(CONFIG)/mock_test \
+  $(BINDIR)/$(CONFIG)/proto_server_reflection_test \
+  $(BINDIR)/$(CONFIG)/qps_interarrival_test \
+  $(BINDIR)/$(CONFIG)/qps_json_driver \
+  $(BINDIR)/$(CONFIG)/qps_openloop_test \
+  $(BINDIR)/$(CONFIG)/qps_worker \
+  $(BINDIR)/$(CONFIG)/reconnect_interop_client \
+  $(BINDIR)/$(CONFIG)/reconnect_interop_server \
+  $(BINDIR)/$(CONFIG)/secure_auth_context_test \
+  $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test \
+  $(BINDIR)/$(CONFIG)/server_builder_plugin_test \
+  $(BINDIR)/$(CONFIG)/server_crash_test \
+  $(BINDIR)/$(CONFIG)/server_crash_test_client \
+  $(BINDIR)/$(CONFIG)/shutdown_test \
+  $(BINDIR)/$(CONFIG)/status_test \
+  $(BINDIR)/$(CONFIG)/streaming_throughput_test \
+  $(BINDIR)/$(CONFIG)/stress_test \
+  $(BINDIR)/$(CONFIG)/thread_stress_test \
+
+endif
 
 
 ifeq ($(HAS_ZOOKEEPER),true)
