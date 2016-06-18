@@ -172,6 +172,7 @@ class ClientAsyncWriter GRPC_FINAL : public ClientAsyncWriterInterface<W> {
                     R* response, void* tag)
       : context_(context), call_(channel->CreateCall(method, context, cq)) {
     finish_ops_.RecvMessage(response);
+    finish_ops_.AllowNoMessage();
 
     init_ops_.set_output_tag(tag);
     init_ops_.SendInitialMetadata(context->send_initial_metadata_,
@@ -298,8 +299,16 @@ class ClientAsyncReaderWriter GRPC_FINAL
 };
 
 template <class W, class R>
-class ServerAsyncReader GRPC_FINAL : public ServerAsyncStreamingInterface,
-                                     public AsyncReaderInterface<R> {
+class ServerAsyncReaderInterface : public ServerAsyncStreamingInterface,
+                                   public AsyncReaderInterface<R> {
+ public:
+  virtual void Finish(const W& msg, const Status& status, void* tag) = 0;
+
+  virtual void FinishWithError(const Status& status, void* tag) = 0;
+};
+
+template <class W, class R>
+class ServerAsyncReader GRPC_FINAL : public ServerAsyncReaderInterface<W, R> {
  public:
   explicit ServerAsyncReader(ServerContext* ctx)
       : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}
@@ -320,7 +329,7 @@ class ServerAsyncReader GRPC_FINAL : public ServerAsyncStreamingInterface,
     call_.PerformOps(&read_ops_);
   }
 
-  void Finish(const W& msg, const Status& status, void* tag) {
+  void Finish(const W& msg, const Status& status, void* tag) GRPC_OVERRIDE {
     finish_ops_.set_output_tag(tag);
     if (!ctx_->sent_initial_metadata_) {
       finish_ops_.SendInitialMetadata(ctx_->initial_metadata_,
@@ -337,7 +346,7 @@ class ServerAsyncReader GRPC_FINAL : public ServerAsyncStreamingInterface,
     call_.PerformOps(&finish_ops_);
   }
 
-  void FinishWithError(const Status& status, void* tag) {
+  void FinishWithError(const Status& status, void* tag) GRPC_OVERRIDE {
     GPR_CODEGEN_ASSERT(!status.ok());
     finish_ops_.set_output_tag(tag);
     if (!ctx_->sent_initial_metadata_) {
@@ -362,8 +371,14 @@ class ServerAsyncReader GRPC_FINAL : public ServerAsyncStreamingInterface,
 };
 
 template <class W>
-class ServerAsyncWriter GRPC_FINAL : public ServerAsyncStreamingInterface,
-                                     public AsyncWriterInterface<W> {
+class ServerAsyncWriterInterface : public ServerAsyncStreamingInterface,
+                                   public AsyncWriterInterface<W> {
+ public:
+  virtual void Finish(const Status& status, void* tag) = 0;
+};
+
+template <class W>
+class ServerAsyncWriter GRPC_FINAL : public ServerAsyncWriterInterface<W> {
  public:
   explicit ServerAsyncWriter(ServerContext* ctx)
       : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}
@@ -390,7 +405,7 @@ class ServerAsyncWriter GRPC_FINAL : public ServerAsyncStreamingInterface,
     call_.PerformOps(&write_ops_);
   }
 
-  void Finish(const Status& status, void* tag) {
+  void Finish(const Status& status, void* tag) GRPC_OVERRIDE {
     finish_ops_.set_output_tag(tag);
     if (!ctx_->sent_initial_metadata_) {
       finish_ops_.SendInitialMetadata(ctx_->initial_metadata_,
@@ -413,9 +428,16 @@ class ServerAsyncWriter GRPC_FINAL : public ServerAsyncStreamingInterface,
 
 /// Server-side interface for asynchronous bi-directional streaming.
 template <class W, class R>
-class ServerAsyncReaderWriter GRPC_FINAL : public ServerAsyncStreamingInterface,
-                                           public AsyncWriterInterface<W>,
-                                           public AsyncReaderInterface<R> {
+class ServerAsyncReaderWriterInterface : public ServerAsyncStreamingInterface,
+                                         public AsyncWriterInterface<W>,
+                                         public AsyncReaderInterface<R> {
+ public:
+  virtual void Finish(const Status& status, void* tag) = 0;
+};
+
+template <class W, class R>
+class ServerAsyncReaderWriter GRPC_FINAL
+    : public ServerAsyncReaderWriterInterface<W, R> {
  public:
   explicit ServerAsyncReaderWriter(ServerContext* ctx)
       : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}
@@ -448,7 +470,7 @@ class ServerAsyncReaderWriter GRPC_FINAL : public ServerAsyncStreamingInterface,
     call_.PerformOps(&write_ops_);
   }
 
-  void Finish(const Status& status, void* tag) {
+  void Finish(const Status& status, void* tag) GRPC_OVERRIDE {
     finish_ops_.set_output_tag(tag);
     if (!ctx_->sent_initial_metadata_) {
       finish_ops_.SendInitialMetadata(ctx_->initial_metadata_,

@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/cpp/common/core_codegen.h"
+#include <grpc++/impl/codegen/core_codegen.h>
 
 #include <stdlib.h>
 

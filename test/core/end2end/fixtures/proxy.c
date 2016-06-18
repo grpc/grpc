@@ -170,6 +170,7 @@ static void on_p2s_recv_initial_metadata(void *arg, int success) {
   grpc_op op;
   grpc_call_error err;
 
+  memset(&op, 0, sizeof(op));
   if (!pc->proxy->shutdown) {
     op.op = GRPC_OP_SEND_INITIAL_METADATA;
     op.flags = 0;
@@ -282,6 +283,8 @@ static void on_p2s_recv_msg(void *arg, int success) {
     err = grpc_call_start_batch(pc->c2p, &op, 1,
                                 new_closure(on_c2p_sent_message, pc), NULL);
     GPR_ASSERT(err == GRPC_CALL_OK);
+  } else {
+    grpc_byte_buffer_destroy(pc->p2s_msg);
   }
   unrefpc(pc, "on_p2s_recv_msg");
 }
@@ -327,6 +330,7 @@ static void on_new_call(void *arg, int success) {
 
   if (success) {
     grpc_op op;
+    memset(&op, 0, sizeof(op));
     proxy_call *pc = gpr_malloc(sizeof(*pc));
     memset(pc, 0, sizeof(*pc));
     pc->proxy = proxy;

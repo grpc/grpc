@@ -79,3 +79,7 @@
                      responsesWriteable:responsesWriteable];
 }
 @end
+
+@implementation GRPCProtoService
+
+@end

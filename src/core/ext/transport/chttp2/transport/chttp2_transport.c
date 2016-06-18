@@ -47,6 +47,7 @@
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/status_conversion.h"
 #include "src/core/ext/transport/chttp2/transport/timeout_encoding.h"
+#include "src/core/lib/http/parser.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/static_metadata.h"
@@ -107,7 +108,8 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
 static void cancel_from_api(grpc_exec_ctx *exec_ctx,
                             grpc_chttp2_transport_global *transport_global,
                             grpc_chttp2_stream_global *stream_global,
-                            grpc_status_code status);
+                            grpc_status_code status,
+                            gpr_slice *optional_message);
 
 static void close_from_api(grpc_exec_ctx *exec_ctx,
                            grpc_chttp2_transport_global *transport_global,
@@ -160,6 +162,8 @@ static void destruct_transport(grpc_exec_ctx *exec_ctx,
   gpr_mu_lock(&t->executor.mu);
 
   GPR_ASSERT(t->ep == NULL);
+
+  gpr_slice_unref(t->optional_drop_message);
 
   gpr_slice_buffer_destroy(&t->global.qbuf);
 
@@ -260,6 +264,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   t->parsing.deframe_state =
       is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0;
   t->writing.is_client = is_client;
+  t->optional_drop_message = gpr_empty_slice();
   grpc_connectivity_state_init(
       &t->channel_callback.state_tracker, GRPC_CHANNEL_READY,
       is_client ? "client_transport" : "server_transport");
@@ -444,7 +449,7 @@ static void close_transport_locked(grpc_exec_ctx *exec_ctx,
                                    void *arg_ignored) {
   if (!t->closed) {
     t->closed = 1;
-    connectivity_state_set(exec_ctx, &t->global, GRPC_CHANNEL_FATAL_FAILURE,
+    connectivity_state_set(exec_ctx, &t->global, GRPC_CHANNEL_SHUTDOWN,
                            "close_transport");
     if (t->ep) {
       allow_endpoint_shutdown_locked(exec_ctx, t);
@@ -804,8 +809,10 @@ void grpc_chttp2_add_incoming_goaway(
   gpr_free(msg);
   gpr_slice_unref(goaway_text);
   transport_global->seen_goaway = 1;
-  connectivity_state_set(exec_ctx, transport_global, GRPC_CHANNEL_FATAL_FAILURE,
-                         "got_goaway");
+  /* lie: use transient failure from the transport to indicate goaway has been
+   * received */
+  connectivity_state_set(exec_ctx, transport_global,
+                         GRPC_CHANNEL_TRANSIENT_FAILURE, "got_goaway");
 }
 
 static void maybe_start_some_streams(
@@ -859,7 +866,7 @@ static void maybe_start_some_streams(
          grpc_chttp2_list_pop_waiting_for_concurrency(transport_global,
                                                       &stream_global)) {
     cancel_from_api(exec_ctx, transport_global, stream_global,
-                    GRPC_STATUS_UNAVAILABLE);
+                    GRPC_STATUS_UNAVAILABLE, NULL);
   }
 }
 
@@ -936,7 +943,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
 
   if (op->cancel_with_status != GRPC_STATUS_OK) {
     cancel_from_api(exec_ctx, transport_global, stream_global,
-                    op->cancel_with_status);
+                    op->cancel_with_status, op->optional_close_message);
   }
 
   if (op->close_with_status != GRPC_STATUS_OK) {
@@ -957,10 +964,10 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
     if (metadata_size > metadata_peer_limit) {
       gpr_log(GPR_DEBUG,
               "to-be-sent initial metadata size exceeds peer limit "
-              "(%lu vs. %lu)",
+              "(%" PRIuPTR " vs. %" PRIuPTR ")",
               metadata_size, metadata_peer_limit);
       cancel_from_api(exec_ctx, transport_global, stream_global,
-                      GRPC_STATUS_RESOURCE_EXHAUSTED);
+                      GRPC_STATUS_RESOURCE_EXHAUSTED, NULL);
     } else {
       if (contains_non_ok_status(transport_global, op->send_initial_metadata)) {
         stream_global->seen_error = true;
@@ -1012,10 +1019,10 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
     if (metadata_size > metadata_peer_limit) {
       gpr_log(GPR_DEBUG,
               "to-be-sent trailing metadata size exceeds peer limit "
-              "(%lu vs. %lu)",
+              "(%" PRIuPTR " vs. %" PRIuPTR ")",
               metadata_size, metadata_peer_limit);
       cancel_from_api(exec_ctx, transport_global, stream_global,
-                      GRPC_STATUS_RESOURCE_EXHAUSTED);
+                      GRPC_STATUS_RESOURCE_EXHAUSTED, NULL);
     } else {
       if (contains_non_ok_status(transport_global,
                                  op->send_trailing_metadata)) {
@@ -1201,7 +1208,7 @@ static void check_read_ops(grpc_exec_ctx *exec_ctx,
         }
         if (stream_global->exceeded_metadata_size) {
           cancel_from_api(exec_ctx, transport_global, stream_global,
-                          GRPC_STATUS_RESOURCE_EXHAUSTED);
+                          GRPC_STATUS_RESOURCE_EXHAUSTED, NULL);
         }
       }
       grpc_chttp2_incoming_metadata_buffer_publish(
@@ -1240,7 +1247,7 @@ static void check_read_ops(grpc_exec_ctx *exec_ctx,
         }
         if (stream_global->exceeded_metadata_size) {
           cancel_from_api(exec_ctx, transport_global, stream_global,
-                          GRPC_STATUS_RESOURCE_EXHAUSTED);
+                          GRPC_STATUS_RESOURCE_EXHAUSTED, NULL);
         }
       }
       if (stream_global->all_incoming_byte_streams_finished) {
@@ -1303,7 +1310,8 @@ static void remove_stream(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 static void cancel_from_api(grpc_exec_ctx *exec_ctx,
                             grpc_chttp2_transport_global *transport_global,
                             grpc_chttp2_stream_global *stream_global,
-                            grpc_status_code status) {
+                            grpc_status_code status,
+                            gpr_slice *optional_message) {
   if (!stream_global->read_closed || !stream_global->write_closed) {
     if (stream_global->id != 0) {
       gpr_slice_buffer_add(
@@ -1313,8 +1321,12 @@ static void cancel_from_api(grpc_exec_ctx *exec_ctx,
               (uint32_t)grpc_chttp2_grpc_status_to_http2_error(status),
               &stream_global->stats.outgoing));
     }
+
+    if (optional_message) {
+      gpr_slice_ref(*optional_message);
+    }
     grpc_chttp2_fake_status(exec_ctx, transport_global, stream_global, status,
-                            NULL);
+                            optional_message);
   }
   if (status != GRPC_STATUS_OK && !stream_global->seen_error) {
     stream_global->seen_error = true;
@@ -1426,93 +1438,95 @@ static void close_from_api(grpc_exec_ctx *exec_ctx,
 
   GPR_ASSERT(status >= 0 && (int)status < 100);
 
-  GPR_ASSERT(stream_global->id != 0);
-
-  /* Hand roll a header block.
-     This is unnecessarily ugly - at some point we should find a more elegant
-     solution.
-     It's complicated by the fact that our send machinery would be dead by the
-     time we got around to sending this, so instead we ignore HPACK compression
-     and just write the uncompressed bytes onto the wire. */
-  status_hdr = gpr_slice_malloc(15 + (status >= 10));
-  p = GPR_SLICE_START_PTR(status_hdr);
-  *p++ = 0x40; /* literal header */
-  *p++ = 11;   /* len(grpc-status) */
-  *p++ = 'g';
-  *p++ = 'r';
-  *p++ = 'p';
-  *p++ = 'c';
-  *p++ = '-';
-  *p++ = 's';
-  *p++ = 't';
-  *p++ = 'a';
-  *p++ = 't';
-  *p++ = 'u';
-  *p++ = 's';
-  if (status < 10) {
-    *p++ = 1;
-    *p++ = (uint8_t)('0' + status);
-  } else {
-    *p++ = 2;
-    *p++ = (uint8_t)('0' + (status / 10));
-    *p++ = (uint8_t)('0' + (status % 10));
-  }
-  GPR_ASSERT(p == GPR_SLICE_END_PTR(status_hdr));
-  len += (uint32_t)GPR_SLICE_LENGTH(status_hdr);
-
-  if (optional_message) {
-    GPR_ASSERT(GPR_SLICE_LENGTH(*optional_message) < 127);
-    message_pfx = gpr_slice_malloc(15);
-    p = GPR_SLICE_START_PTR(message_pfx);
-    *p++ = 0x40;
-    *p++ = 12; /* len(grpc-message) */
+  if (stream_global->id != 0 && !transport_global->is_client) {
+    /* Hand roll a header block.
+       This is unnecessarily ugly - at some point we should find a more elegant
+       solution.
+       It's complicated by the fact that our send machinery would be dead by the
+       time we got around to sending this, so instead we ignore HPACK
+       compression
+       and just write the uncompressed bytes onto the wire. */
+    status_hdr = gpr_slice_malloc(15 + (status >= 10));
+    p = GPR_SLICE_START_PTR(status_hdr);
+    *p++ = 0x40; /* literal header */
+    *p++ = 11;   /* len(grpc-status) */
     *p++ = 'g';
     *p++ = 'r';
     *p++ = 'p';
     *p++ = 'c';
     *p++ = '-';
-    *p++ = 'm';
-    *p++ = 'e';
     *p++ = 's';
-    *p++ = 's';
+    *p++ = 't';
     *p++ = 'a';
-    *p++ = 'g';
-    *p++ = 'e';
-    *p++ = (uint8_t)GPR_SLICE_LENGTH(*optional_message);
-    GPR_ASSERT(p == GPR_SLICE_END_PTR(message_pfx));
-    len += (uint32_t)GPR_SLICE_LENGTH(message_pfx);
-    len += (uint32_t)GPR_SLICE_LENGTH(*optional_message);
+    *p++ = 't';
+    *p++ = 'u';
+    *p++ = 's';
+    if (status < 10) {
+      *p++ = 1;
+      *p++ = (uint8_t)('0' + status);
+    } else {
+      *p++ = 2;
+      *p++ = (uint8_t)('0' + (status / 10));
+      *p++ = (uint8_t)('0' + (status % 10));
+    }
+    GPR_ASSERT(p == GPR_SLICE_END_PTR(status_hdr));
+    len += (uint32_t)GPR_SLICE_LENGTH(status_hdr);
+
+    if (optional_message) {
+      GPR_ASSERT(GPR_SLICE_LENGTH(*optional_message) < 127);
+      message_pfx = gpr_slice_malloc(15);
+      p = GPR_SLICE_START_PTR(message_pfx);
+      *p++ = 0x40;
+      *p++ = 12; /* len(grpc-message) */
+      *p++ = 'g';
+      *p++ = 'r';
+      *p++ = 'p';
+      *p++ = 'c';
+      *p++ = '-';
+      *p++ = 'm';
+      *p++ = 'e';
+      *p++ = 's';
+      *p++ = 's';
+      *p++ = 'a';
+      *p++ = 'g';
+      *p++ = 'e';
+      *p++ = (uint8_t)GPR_SLICE_LENGTH(*optional_message);
+      GPR_ASSERT(p == GPR_SLICE_END_PTR(message_pfx));
+      len += (uint32_t)GPR_SLICE_LENGTH(message_pfx);
+      len += (uint32_t)GPR_SLICE_LENGTH(*optional_message);
+    }
+
+    hdr = gpr_slice_malloc(9);
+    p = GPR_SLICE_START_PTR(hdr);
+    *p++ = (uint8_t)(len >> 16);
+    *p++ = (uint8_t)(len >> 8);
+    *p++ = (uint8_t)(len);
+    *p++ = GRPC_CHTTP2_FRAME_HEADER;
+    *p++ = GRPC_CHTTP2_DATA_FLAG_END_STREAM | GRPC_CHTTP2_DATA_FLAG_END_HEADERS;
+    *p++ = (uint8_t)(stream_global->id >> 24);
+    *p++ = (uint8_t)(stream_global->id >> 16);
+    *p++ = (uint8_t)(stream_global->id >> 8);
+    *p++ = (uint8_t)(stream_global->id);
+    GPR_ASSERT(p == GPR_SLICE_END_PTR(hdr));
+
+    gpr_slice_buffer_add(&transport_global->qbuf, hdr);
+    gpr_slice_buffer_add(&transport_global->qbuf, status_hdr);
+    if (optional_message) {
+      gpr_slice_buffer_add(&transport_global->qbuf, message_pfx);
+      gpr_slice_buffer_add(&transport_global->qbuf,
+                           gpr_slice_ref(*optional_message));
+    }
+
+    gpr_slice_buffer_add(
+        &transport_global->qbuf,
+        grpc_chttp2_rst_stream_create(stream_global->id, GRPC_CHTTP2_NO_ERROR,
+                                      &stream_global->stats.outgoing));
+
+    if (optional_message) {
+      gpr_slice_ref(*optional_message);
+    }
   }
 
-  hdr = gpr_slice_malloc(9);
-  p = GPR_SLICE_START_PTR(hdr);
-  *p++ = (uint8_t)(len >> 16);
-  *p++ = (uint8_t)(len >> 8);
-  *p++ = (uint8_t)(len);
-  *p++ = GRPC_CHTTP2_FRAME_HEADER;
-  *p++ = GRPC_CHTTP2_DATA_FLAG_END_STREAM | GRPC_CHTTP2_DATA_FLAG_END_HEADERS;
-  *p++ = (uint8_t)(stream_global->id >> 24);
-  *p++ = (uint8_t)(stream_global->id >> 16);
-  *p++ = (uint8_t)(stream_global->id >> 8);
-  *p++ = (uint8_t)(stream_global->id);
-  GPR_ASSERT(p == GPR_SLICE_END_PTR(hdr));
-
-  gpr_slice_buffer_add(&transport_global->qbuf, hdr);
-  gpr_slice_buffer_add(&transport_global->qbuf, status_hdr);
-  if (optional_message) {
-    gpr_slice_buffer_add(&transport_global->qbuf, message_pfx);
-    gpr_slice_buffer_add(&transport_global->qbuf,
-                         gpr_slice_ref(*optional_message));
-  }
-
-  gpr_slice_buffer_add(
-      &transport_global->qbuf,
-      grpc_chttp2_rst_stream_create(stream_global->id, GRPC_CHTTP2_NO_ERROR,
-                                    &stream_global->stats.outgoing));
-
-  if (optional_message) {
-    gpr_slice_ref(*optional_message);
-  }
   grpc_chttp2_fake_status(exec_ctx, transport_global, stream_global, status,
                           optional_message);
   grpc_chttp2_mark_stream_closed(exec_ctx, transport_global, stream_global, 1,
@@ -1522,8 +1536,12 @@ static void close_from_api(grpc_exec_ctx *exec_ctx,
 static void cancel_stream_cb(grpc_chttp2_transport_global *transport_global,
                              void *user_data,
                              grpc_chttp2_stream_global *stream_global) {
+  grpc_chttp2_transport *transport = TRANSPORT_FROM_GLOBAL(transport_global);
   cancel_from_api(user_data, transport_global, stream_global,
-                  GRPC_STATUS_UNAVAILABLE);
+                  GRPC_STATUS_UNAVAILABLE,
+                  GPR_SLICE_IS_EMPTY(transport->optional_drop_message)
+                      ? NULL
+                      : &transport->optional_drop_message);
 }
 
 static void end_all_the_calls(grpc_exec_ctx *exec_ctx,
@@ -1599,6 +1617,29 @@ static void reading_action_locked(grpc_exec_ctx *exec_ctx,
   }
 }
 
+static bool try_http_parsing(grpc_exec_ctx *exec_ctx,
+                             grpc_chttp2_transport *t) {
+  grpc_http_parser parser;
+  size_t i = 0;
+  bool success = false;
+
+  grpc_http_parser_init(&parser);
+
+  for (; i < t->read_buffer.count &&
+         grpc_http_parser_parse(&parser, t->read_buffer.slices[i]);
+       i++)
+    ;
+  if (grpc_http_parser_eof(&parser) && parser.type == GRPC_HTTP_RESPONSE) {
+    success = true;
+    GRPC_CHTTP2_IF_TRACING(gpr_log(
+        GPR_DEBUG, "Trying to connect an http1.x server, received status:%d",
+        parser.http.response.status));
+  }
+
+  grpc_http_parser_destroy(&parser);
+  return success;
+}
+
 static void parsing_action(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   grpc_chttp2_transport *t = arg;
   GPR_TIMER_BEGIN("reading_action.parse", 0);
@@ -1610,6 +1651,14 @@ static void parsing_action(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
     ;
   if (i != t->read_buffer.count) {
     success = false;
+    gpr_slice_unref(t->optional_drop_message);
+    if (try_http_parsing(exec_ctx, t)) {
+      t->optional_drop_message = gpr_slice_from_copied_string(
+          "Connection dropped: received http1.x response");
+    } else {
+      t->optional_drop_message = gpr_slice_from_copied_string(
+          "Connection dropped: received unparseable response");
+    }
   }
   GPR_TIMER_END("reading_action.parse", 0);
   grpc_chttp2_run_with_global_lock(exec_ctx, t, NULL, post_parse_locked,
@@ -1730,6 +1779,13 @@ static void set_pollset(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   grpc_chttp2_run_with_global_lock(exec_ctx, (grpc_chttp2_transport *)gt,
                                    (grpc_chttp2_stream *)gs,
                                    add_to_pollset_locked, pollset, 0);
+}
+
+static void set_pollset_set(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
+                            grpc_stream *gs, grpc_pollset_set *pollset_set) {
+  grpc_chttp2_run_with_global_lock(exec_ctx, (grpc_chttp2_transport *)gt,
+                                   (grpc_chttp2_stream *)gs,
+                                   add_to_pollset_set_locked, pollset_set, 0);
 }
 
 /*******************************************************************************
@@ -1963,10 +2019,13 @@ static char *format_flowctl_context_var(const char *context, const char *var,
                                         int64_t val, uint32_t id,
                                         char **scope) {
   char *underscore_pos;
+  char *buf;
   char *result;
   if (context == NULL) {
     *scope = NULL;
-    gpr_asprintf(&result, "%s(%lld)", var, val);
+    gpr_asprintf(&buf, "%s(%" PRId64 ")", var, val);
+    result = gpr_leftpad(buf, ' ', 40);
+    gpr_free(buf);
     return result;
   }
   underscore_pos = strchr(context, '_');
@@ -1977,7 +2036,9 @@ static char *format_flowctl_context_var(const char *context, const char *var,
     gpr_asprintf(scope, "%s[%d]", tmp, id);
     gpr_free(tmp);
   }
-  gpr_asprintf(&result, "%s.%s(%lld)", underscore_pos + 1, var, val);
+  gpr_asprintf(&buf, "%s.%s(%" PRId64 ")", underscore_pos + 1, var, val);
+  result = gpr_leftpad(buf, ' ', 40);
+  gpr_free(buf);
   return result;
 }
 
@@ -1998,6 +2059,8 @@ void grpc_chttp2_flowctl_trace(const char *file, int line, const char *phase,
                                uint32_t stream_id, int64_t val1, int64_t val2) {
   char *scope1;
   char *scope2;
+  char *tmp_phase;
+  char *tmp_scope1;
   char *label1 =
       format_flowctl_context_var(context1, var1, val1, stream_id, &scope1);
   char *label2 =
@@ -2005,14 +2068,18 @@ void grpc_chttp2_flowctl_trace(const char *file, int line, const char *phase,
   char *clisvr = is_client ? "client" : "server";
   char *prefix;
 
-  gpr_asprintf(&prefix, "FLOW % 8s: %s % 11s ", phase, clisvr, scope1);
+  tmp_phase = gpr_leftpad(phase, ' ', 8);
+  tmp_scope1 = gpr_leftpad(scope1, ' ', 11);
+  gpr_asprintf(&prefix, "FLOW %s: %s %s ", phase, clisvr, scope1);
+  gpr_free(tmp_phase);
+  gpr_free(tmp_scope1);
 
   switch (op) {
     case GRPC_CHTTP2_FLOWCTL_MOVE:
       GPR_ASSERT(samestr(scope1, scope2));
       if (val2 != 0) {
         gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-                "%sMOVE   % 40s <- % 40s giving %d", prefix, label1, label2,
+                "%sMOVE   %s <- %s giving %" PRId64, prefix, label1, label2,
                 val1 + val2);
       }
       break;
@@ -2020,7 +2087,7 @@ void grpc_chttp2_flowctl_trace(const char *file, int line, const char *phase,
       GPR_ASSERT(val2 >= 0);
       if (val2 != 0) {
         gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-                "%sCREDIT % 40s by % 40s giving %d", prefix, label1, label2,
+                "%sCREDIT %s by %s giving %" PRId64, prefix, label1, label2,
                 val1 + val2);
       }
       break;
@@ -2028,7 +2095,7 @@ void grpc_chttp2_flowctl_trace(const char *file, int line, const char *phase,
       GPR_ASSERT(val2 >= 0);
       if (val2 != 0) {
         gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-                "%sDEBIT  % 40s by % 40s giving %d", prefix, label1, label2,
+                "%sDEBIT  %s by %s giving %" PRId64, prefix, label1, label2,
                 val1 - val2);
       }
       break;
@@ -2053,6 +2120,7 @@ static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
                                              "chttp2",
                                              init_stream,
                                              set_pollset,
+                                             set_pollset_set,
                                              perform_stream_op,
                                              perform_transport_op,
                                              destroy_stream,

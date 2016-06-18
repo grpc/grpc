@@ -37,7 +37,8 @@
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include "src/core/lib/security/credentials.h"
+#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/tsi/fake_transport_security.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"

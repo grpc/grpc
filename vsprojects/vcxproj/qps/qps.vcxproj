@@ -152,7 +152,7 @@
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\histogram.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\interarrival.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\limit_cores.h" />
-    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\perf_db_client.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\parse_json.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\qps_worker.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\report.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\qps\server.h" />
@@ -201,14 +201,6 @@
     </ClCompile>
     <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\services.grpc.pb.h">
     </ClInclude>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.pb.cc">
-    </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.pb.h">
-    </ClInclude>
-    <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.grpc.pb.cc">
-    </ClCompile>
-    <ClInclude Include="$(SolutionDir)\..\src\proto\grpc\testing\perf_db.grpc.pb.h">
-    </ClInclude>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\client_async.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\client_sync.cc">
@@ -217,7 +209,7 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\limit_cores.cc">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\perf_db_client.cc">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\parse_json.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\qps\qps_worker.cc">
     </ClCompile>

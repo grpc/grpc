@@ -148,11 +148,11 @@ class InsecureServerInsecureClient(unittest.TestCase):
     # Check that Python's user agent string is a part of the full user agent
     # string
     received_initial_metadata_dict = dict(received_initial_metadata)
-    self.assertIn('user-agent', received_initial_metadata_dict)
-    self.assertIn('Python-gRPC-{}'.format(_grpcio_metadata.__version__),
-                  received_initial_metadata_dict['user-agent'])
-    self.assertEqual(method, request_event.call_details.method)
-    self.assertEqual(host, request_event.call_details.host)
+    self.assertIn(b'user-agent', received_initial_metadata_dict)
+    self.assertIn('Python-gRPC-{}'.format(_grpcio_metadata.__version__).encode(),
+                  received_initial_metadata_dict[b'user-agent'])
+    self.assertEqual(method.encode(), request_event.call_details.method)
+    self.assertEqual(host.encode(), request_event.call_details.host)
     self.assertLess(abs(deadline - request_event.call_details.deadline),
                     deadline_tolerance)
 
@@ -198,12 +198,12 @@ class InsecureServerInsecureClient(unittest.TestCase):
             test_common.metadata_transmitted(server_initial_metadata,
                                              client_result.initial_metadata))
       elif client_result.type == _types.OpType.RECV_MESSAGE:
-        self.assertEqual(response, client_result.message)
+        self.assertEqual(response.encode(), client_result.message)
       elif client_result.type == _types.OpType.RECV_STATUS_ON_CLIENT:
         self.assertTrue(
             test_common.metadata_transmitted(server_trailing_metadata,
                                              client_result.trailing_metadata))
-        self.assertEqual(server_status_details, client_result.status.details)
+        self.assertEqual(server_status_details.encode(), client_result.status.details)
         self.assertEqual(server_status_code, client_result.status.code)
     self.assertEqual(set([
           _types.OpType.SEND_INITIAL_METADATA,
@@ -220,7 +220,7 @@ class InsecureServerInsecureClient(unittest.TestCase):
       self.assertNotIn(client_result.type, found_server_op_types)
       found_server_op_types.add(server_result.type)
       if server_result.type == _types.OpType.RECV_MESSAGE:
-        self.assertEqual(request, server_result.message)
+        self.assertEqual(request.encode(), server_result.message)
       elif server_result.type == _types.OpType.RECV_CLOSE_ON_SERVER:
         self.assertFalse(server_result.cancelled)
     self.assertEqual(set([

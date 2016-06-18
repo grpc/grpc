@@ -31,12 +31,16 @@
  *
  */
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
 
 #include "src/core/ext/client_config/uri_parser.h"
+
+bool squelch = true;
+bool leak_check = true;
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   char *s = gpr_malloc(size + 1);

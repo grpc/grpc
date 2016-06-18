@@ -55,6 +55,9 @@ typedef struct grpc_event_engine_vtable {
                             grpc_closure *closure);
   void (*fd_notify_on_write)(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                              grpc_closure *closure);
+  bool (*fd_is_shutdown)(grpc_fd *fd);
+  grpc_pollset *(*fd_get_read_notifier_pollset)(grpc_exec_ctx *exec_ctx,
+                                                grpc_fd *fd);
 
   void (*pollset_init)(grpc_pollset *pollset, gpr_mu **mu);
   void (*pollset_shutdown)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
@@ -114,7 +117,10 @@ int grpc_fd_wrapped_fd(grpc_fd *fd);
 void grpc_fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure *on_done,
                     int *release_fd, const char *reason);
 
-/* Cause any current callbacks to error out with GRPC_CALLBACK_CANCELLED. */
+/* Has grpc_fd_shutdown been called on an fd? */
+bool grpc_fd_is_shutdown(grpc_fd *fd);
+
+/* Cause any current and future callbacks to fail. */
 void grpc_fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd);
 
 /* Register read interest, causing read_cb to be called once when fd becomes
@@ -136,6 +142,10 @@ void grpc_fd_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 /* Exactly the same semantics as above, except based on writable events.  */
 void grpc_fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                              grpc_closure *closure);
+
+/* Return the read notifier pollset from the fd */
+grpc_pollset *grpc_fd_get_read_notifier_pollset(grpc_exec_ctx *exec_ctx,
+                                                grpc_fd *fd);
 
 /* pollset_posix functions */
 

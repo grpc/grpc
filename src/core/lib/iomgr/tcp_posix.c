@@ -408,7 +408,7 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 
   if (buf->length == 0) {
     GPR_TIMER_END("tcp_write", 0);
-    grpc_exec_ctx_enqueue(exec_ctx, cb, true, NULL);
+    grpc_exec_ctx_enqueue(exec_ctx, cb, !grpc_fd_is_shutdown(tcp->em_fd), NULL);
     return;
   }
   tcp->outgoing_buffer = buf;

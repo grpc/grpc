@@ -56,6 +56,13 @@ struct grpc_channel_credentials;
 + (nullable GRPCChannel *)secureChannelWithHost:(nonnull NSString *)host;
 
 /**
+ * Creates a secure channel to the specified @c host using Cronet as a transport mechanism.
+ */
+#ifdef GRPC_COMPILE_WITH_CRONET
++ (nullable GRPCChannel *)secureCronetChannelWithHost:(NSString *)host
+                                          channelArgs:(NSDictionary *)channelArgs;
+#endif
+/**
  * Creates a secure channel to the specified @c host using the specified @c credentials and
  * @c channelArgs. Only in tests should @c GRPC_SSL_TARGET_NAME_OVERRIDE_ARG channel arg be set.
  */

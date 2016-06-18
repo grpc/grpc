@@ -73,7 +73,6 @@ class QpsWorkerJob:
 
 def create_qpsworker_job(language, shortname=None,
                          port=10000, remote_host=None):
-  # TODO: support more languages
   cmdline = language.worker_cmdline() + ['--driver_port=%s' % port]
   if remote_host:
     user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, remote_host)
@@ -137,6 +136,17 @@ def create_netperf_jobspec(server_host='localhost', client_host=None,
   cmd = 'NETPERF_SERVER_HOST="%s" ' % server_host
   if bq_result_table:
     cmd += 'BQ_RESULT_TABLE="%s" ' % bq_result_table
+  if client_host:
+    # If netperf is running remotely, the env variables populated by Jenkins
+    # won't be available on the client, but we need them for uploading results
+    # to BigQuery.
+    jenkins_job_name = os.getenv('JOB_NAME')
+    if jenkins_job_name:
+      cmd += 'JOB_NAME="%s" ' % jenkins_job_name
+    jenkins_build_number = os.getenv('BUILD_NUMBER')
+    if jenkins_build_number:
+      cmd += 'BUILD_NUMBER="%s" ' % jenkins_build_number
+
   cmd += 'tools/run_tests/performance/run_netperf.sh'
   if client_host:
     user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, client_host)
@@ -293,7 +303,11 @@ def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*',
           # 'SERVER_LANGUAGE' is an indicator for this script to pick
           # a server in different language.
           custom_server_lang = scenario_json.get('SERVER_LANGUAGE', None)
+          custom_client_lang = scenario_json.get('CLIENT_LANGUAGE', None)
           scenario_json = scenario_config.remove_nonproto_fields(scenario_json)
+          if custom_server_lang and custom_client_lang:
+            raise Exception('Cannot set both custom CLIENT_LANGUAGE and SERVER_LANGUAGE'
+                            'in the same scenario')
           if custom_server_lang:
             if not workers_by_lang.get(custom_server_lang, []):
               print 'Warning: Skipping scenario %s as' % scenario_json['name']
@@ -303,6 +317,16 @@ def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*',
             for idx in range(0, scenario_json['num_servers']):
               # replace first X workers by workers of a different language
               workers[idx] = workers_by_lang[custom_server_lang][idx]
+          if custom_client_lang:
+            if not workers_by_lang.get(custom_client_lang, []):
+              print 'Warning: Skipping scenario %s as' % scenario_json['name']
+              print('CLIENT_LANGUAGE is set to %s yet the language has '
+                    'not been selected with -l' % custom_client_lang)
+              continue
+            for idx in range(scenario_json['num_servers'], len(workers)):
+              # replace all client workers by workers of a different language,
+              # leave num_server workers as they are server workers.
+              workers[idx] = workers_by_lang[custom_client_lang][idx]
           scenario = create_scenario_jobspec(scenario_json,
                                              workers,
                                              remote_host=remote_host,
@@ -348,9 +372,9 @@ argp.add_argument('-r', '--regex', default='.*', type=str,
 argp.add_argument('--bq_result_table', default=None, type=str,
                   help='Bigquery "dataset.table" to upload results to.')
 argp.add_argument('--category',
-                  choices=['smoketest','all'],
-                  default='smoketest',
-                  help='Select a category of tests to run. Smoketest runs by default.')
+                  choices=['smoketest','all','scalable'],
+                  default='all',
+                  help='Select a category of tests to run.')
 argp.add_argument('--netperf',
                   default=False,
                   action='store_const',
