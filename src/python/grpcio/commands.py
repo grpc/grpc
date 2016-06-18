@@ -182,7 +182,7 @@ class BuildProtoModules(setuptools.Command):
           '--plugin=protoc-gen-python-grpc={}'.format(
               self.grpc_python_plugin_command),
           '-I {}'.format(GRPC_STEM),
-          '-I .'.format(GRPC_STEM),
+          '-I .',
           '-I {}/third_party/protobuf/src'.format(GRPC_STEM),
           '--python_out={}'.format(PROTO_GEN_STEM),
           '--python-grpc_out={}'.format(PROTO_GEN_STEM),
