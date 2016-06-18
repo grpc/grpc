@@ -177,12 +177,17 @@ int main(int argc, char **argv) {
   fake_argv[0] = argv[0];
   grpc_test_init(1, fake_argv);
 
+  int warmup_seconds = 1;
+  int benchmark_seconds = 5;
+
   cl = gpr_cmdline_create("fling client");
   gpr_cmdline_add_int(cl, "payload_size", "Size of the payload to send",
                       &payload_size);
   gpr_cmdline_add_string(cl, "target", "Target host:port", &target);
   gpr_cmdline_add_flag(cl, "secure", "Run with security?", &secure);
   gpr_cmdline_add_string(cl, "scenario", "Scenario", &scenario_name);
+  gpr_cmdline_add_int(cl, "warmup", "Warmup seconds", &warmup_seconds);
+  gpr_cmdline_add_int(cl, "benchmark", "Benchmark seconds", &benchmark_seconds);
   gpr_cmdline_parse(cl, argc, argv);
   gpr_cmdline_destroy(cl);
 
@@ -206,8 +211,9 @@ int main(int argc, char **argv) {
 
   sc.init();
 
-  gpr_timespec end_warmup = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3);
-  gpr_timespec end_profiling = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(30);
+  gpr_timespec end_warmup = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(warmup_seconds);
+  gpr_timespec end_profiling =
+      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(warmup_seconds + benchmark_seconds);
 
   while (gpr_time_cmp(gpr_now(end_warmup.clock_type), end_warmup) < 0) {
     sc.do_one_step();
