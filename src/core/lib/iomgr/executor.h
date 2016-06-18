@@ -45,7 +45,7 @@ void grpc_executor_init();
 
 /** Enqueue \a closure for its eventual execution of \a f(arg) on a separate
  * thread */
-void grpc_executor_enqueue(grpc_closure *closure, bool success);
+void grpc_executor_push(grpc_closure *closure, grpc_error *error);
 
 /** Shutdown the executor, running all pending work as part of the call */
 void grpc_executor_shutdown();

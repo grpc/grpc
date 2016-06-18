@@ -159,11 +159,11 @@ static void set_pollset_set_do_nothing(grpc_exec_ctx *exec_ctx,
 static void enqueue_callbacks(grpc_closure *callback_list[]) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   if (callback_list[0]) {
-    grpc_exec_ctx_enqueue(&exec_ctx, callback_list[0], true, NULL);
+    grpc_exec_ctx_sched(&exec_ctx, callback_list[0], GRPC_ERROR_NONE, NULL);
     callback_list[0] = NULL;
   }
   if (callback_list[1]) {
-    grpc_exec_ctx_enqueue(&exec_ctx, callback_list[1], true, NULL);
+    grpc_exec_ctx_sched(&exec_ctx, callback_list[1], GRPC_ERROR_NONE, NULL);
     callback_list[1] = NULL;
   }
   grpc_exec_ctx_finish(&exec_ctx);

@@ -1235,7 +1235,7 @@ def _build_and_run(
         cache=cache if not xml_report else None,
         add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
     if resultset:
-      for k, v in resultset.iteritems():
+      for k, v in sorted(resultset.items()):
         num_runs, num_failures = _calculate_num_runs_failures(v)
         if num_failures == num_runs:  # what about infinite_runs???
           jobset.message('FAILED', k, do_newline=True)

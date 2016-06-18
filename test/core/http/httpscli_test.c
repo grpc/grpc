@@ -54,19 +54,20 @@ static gpr_timespec n_seconds_time(int seconds) {
   return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(seconds);
 }
 
-static void on_finish(grpc_exec_ctx *exec_ctx, void *arg,
-                      const grpc_httpcli_response *response) {
+static void on_finish(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   const char *expect =
       "<html><head><title>Hello world!</title></head>"
       "<body><p>This is a test</p></body></html>";
-  GPR_ASSERT(arg == (void *)42);
+  grpc_http_response *response = arg;
   GPR_ASSERT(response);
   GPR_ASSERT(response->status == 200);
   GPR_ASSERT(response->body_length == strlen(expect));
   GPR_ASSERT(0 == memcmp(expect, response->body, response->body_length));
   gpr_mu_lock(g_mu);
   g_done = 1;
-  grpc_pollset_kick(grpc_polling_entity_pollset(&g_pops), NULL);
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "pollset_kick",
+      grpc_pollset_kick(grpc_polling_entity_pollset(&g_pops), NULL)));
   gpr_mu_unlock(g_mu);
 }
 
@@ -87,19 +88,25 @@ static void test_get(int port) {
   req.http.path = "/get";
   req.handshaker = &grpc_httpcli_ssl;
 
+  grpc_http_response response;
+  memset(&response, 0, sizeof(response));
   grpc_httpcli_get(&exec_ctx, &g_context, &g_pops, &req, n_seconds_time(15),
-                   on_finish, (void *)42);
+                   grpc_closure_create(on_finish, &response), &response);
   gpr_mu_lock(g_mu);
   while (!g_done) {
     grpc_pollset_worker *worker = NULL;
-    grpc_pollset_work(&exec_ctx, grpc_polling_entity_pollset(&g_pops), &worker,
-                      gpr_now(GPR_CLOCK_MONOTONIC), n_seconds_time(20));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "pollset_work",
+        grpc_pollset_work(&exec_ctx, grpc_polling_entity_pollset(&g_pops),
+                          &worker, gpr_now(GPR_CLOCK_MONOTONIC),
+                          n_seconds_time(20))));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
     gpr_mu_lock(g_mu);
   }
   gpr_mu_unlock(g_mu);
   gpr_free(host);
+  grpc_http_response_destroy(&response);
 }
 
 static void test_post(int port) {
@@ -119,22 +126,29 @@ static void test_post(int port) {
   req.http.path = "/post";
   req.handshaker = &grpc_httpcli_ssl;
 
+  grpc_http_response response;
+  memset(&response, 0, sizeof(response));
   grpc_httpcli_post(&exec_ctx, &g_context, &g_pops, &req, "hello", 5,
-                    n_seconds_time(15), on_finish, (void *)42);
+                    n_seconds_time(15),
+                    grpc_closure_create(on_finish, &response), &response);
   gpr_mu_lock(g_mu);
   while (!g_done) {
     grpc_pollset_worker *worker = NULL;
-    grpc_pollset_work(&exec_ctx, grpc_polling_entity_pollset(&g_pops), &worker,
-                      gpr_now(GPR_CLOCK_MONOTONIC), n_seconds_time(20));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "pollset_work",
+        grpc_pollset_work(&exec_ctx, grpc_polling_entity_pollset(&g_pops),
+                          &worker, gpr_now(GPR_CLOCK_MONOTONIC),
+                          n_seconds_time(20))));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_finish(&exec_ctx);
     gpr_mu_lock(g_mu);
   }
   gpr_mu_unlock(g_mu);
   gpr_free(host);
+  grpc_http_response_destroy(&response);
 }
 
-static void destroy_pops(grpc_exec_ctx *exec_ctx, void *p, bool success) {
+static void destroy_pops(grpc_exec_ctx *exec_ctx, void *p, grpc_error *error) {
   grpc_pollset_destroy(grpc_polling_entity_pollset(p));
 }
 
