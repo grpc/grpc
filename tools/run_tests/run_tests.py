@@ -32,8 +32,6 @@
 
 import argparse
 import ast
-import glob
-import hashlib
 import itertools
 import json
 import multiprocessing
@@ -48,7 +46,6 @@ import tempfile
 import traceback
 import time
 import urllib2
-import uuid
 
 import jobset
 import report_utils

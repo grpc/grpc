@@ -34,13 +34,10 @@ import atexit
 import dockerjob
 import itertools
 import jobset
-import json
 import multiprocessing
 import os
-import re
 import subprocess
 import sys
-import tempfile
 import time
 import uuid
 
