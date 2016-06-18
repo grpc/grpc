@@ -64,11 +64,11 @@ typedef struct grpc_event_engine_vtable {
                            grpc_closure *closure);
   void (*pollset_reset)(grpc_pollset *pollset);
   void (*pollset_destroy)(grpc_pollset *pollset);
-  void (*pollset_work)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
-                       grpc_pollset_worker **worker, gpr_timespec now,
-                       gpr_timespec deadline);
-  void (*pollset_kick)(grpc_pollset *pollset,
-                       grpc_pollset_worker *specific_worker);
+  grpc_error *(*pollset_work)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
+                              grpc_pollset_worker **worker, gpr_timespec now,
+                              gpr_timespec deadline);
+  grpc_error *(*pollset_kick)(grpc_pollset *pollset,
+                              grpc_pollset_worker *specific_worker);
   void (*pollset_add_fd)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                          struct grpc_fd *fd);
 
@@ -91,7 +91,7 @@ typedef struct grpc_event_engine_vtable {
   void (*pollset_set_del_fd)(grpc_exec_ctx *exec_ctx,
                              grpc_pollset_set *pollset_set, grpc_fd *fd);
 
-  void (*kick_poller)(void);
+  grpc_error *(*kick_poller)(void);
 
   void (*shutdown_engine)(void);
 } grpc_event_engine_vtable;

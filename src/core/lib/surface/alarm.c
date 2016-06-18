@@ -48,9 +48,9 @@ struct grpc_alarm {
 static void do_nothing_end_completion(grpc_exec_ctx *exec_ctx, void *arg,
                                       grpc_cq_completion *c) {}
 
-static void alarm_cb(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+static void alarm_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   grpc_alarm *alarm = arg;
-  grpc_cq_end_op(exec_ctx, alarm->cq, alarm->tag, success,
+  grpc_cq_end_op(exec_ctx, alarm->cq, alarm->tag, error,
                  do_nothing_end_completion, NULL, &alarm->completion);
 }
 

@@ -62,7 +62,7 @@ static void thd_func(void *arg) {
   gpr_event_set(&a->done_thd, (void *)1);
 }
 
-static void done_write(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+static void done_write(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   thd_args *a = arg;
   gpr_event_set(&a->done_write, (void *)1);
 }
@@ -81,7 +81,7 @@ typedef struct {
   gpr_event read_done;
 } read_args;
 
-static void read_done(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+static void read_done(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   read_args *a = arg;
   a->validator(&a->incoming);
   gpr_event_set(&a->read_done, (void *)1);

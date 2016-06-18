@@ -174,7 +174,7 @@ class ServerBuilder {
   std::vector<Port> ports_;
   std::vector<ServerCompletionQueue*> cqs_;
   std::shared_ptr<ServerCredentials> creds_;
-  std::map<grpc::string, std::unique_ptr<ServerBuilderPlugin>> plugins_;
+  std::vector<std::unique_ptr<ServerBuilderPlugin>> plugins_;
   AsyncGenericService* generic_service_;
   struct {
     bool is_set;

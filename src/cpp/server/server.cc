@@ -67,7 +67,7 @@ static std::shared_ptr<Server::GlobalCallbacks> g_callbacks = nullptr;
 static gpr_once g_once_init_callbacks = GPR_ONCE_INIT;
 
 static void InitGlobalCallbacks() {
-  if (g_callbacks == nullptr) {
+  if (!g_callbacks) {
     g_callbacks.reset(new DefaultGlobalCallbacks());
   }
 }
@@ -324,8 +324,8 @@ Server::~Server() {
 }
 
 void Server::SetGlobalCallbacks(GlobalCallbacks* callbacks) {
-  GPR_ASSERT(g_callbacks == nullptr);
-  GPR_ASSERT(callbacks != nullptr);
+  GPR_ASSERT(!g_callbacks);
+  GPR_ASSERT(callbacks);
   g_callbacks.reset(callbacks);
 }
 

@@ -31,6 +31,7 @@
  *
  */
 
+#include <cinttypes>
 #include <deque>
 #include <list>
 #include <thread>
