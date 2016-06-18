@@ -422,7 +422,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 2, 
+    "cpu_cost": 1.5, 
     "exclude_configs": [], 
     "flaky": false, 
     "gtest": false, 
@@ -441,7 +441,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 2, 
+    "cpu_cost": 1.5, 
     "exclude_configs": [], 
     "flaky": false, 
     "gtest": false, 
@@ -690,7 +690,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 10, 
+    "cpu_cost": 7, 
     "exclude_configs": [], 
     "flaky": false, 
     "gtest": false, 
@@ -732,7 +732,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 10, 
+    "cpu_cost": 3, 
     "exclude_configs": [], 
     "flaky": false, 
     "gtest": false, 
@@ -753,7 +753,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 10, 
+    "cpu_cost": 1, 
     "exclude_configs": [], 
     "flaky": false, 
     "gtest": false, 
@@ -1205,7 +1205,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
     "gtest": false, 
@@ -1683,7 +1683,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.5, 
+    "cpu_cost": 0.2, 
     "exclude_configs": [], 
     "flaky": false, 
     "gtest": false, 
@@ -4470,7 +4470,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -4580,7 +4580,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -4866,7 +4866,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -4932,7 +4932,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -5020,7 +5020,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -5130,7 +5130,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -5306,7 +5306,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -5416,7 +5416,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -5702,7 +5702,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -5768,7 +5768,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -5856,7 +5856,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -5966,7 +5966,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -6137,7 +6137,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -6242,7 +6242,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -6515,7 +6515,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -6578,7 +6578,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -6662,7 +6662,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -6767,7 +6767,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -6931,7 +6931,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -7031,7 +7031,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -7231,7 +7231,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -7291,7 +7291,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -7351,7 +7351,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -7600,7 +7600,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -7710,7 +7710,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -7996,7 +7996,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -8062,7 +8062,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -8150,7 +8150,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -8260,7 +8260,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -8409,7 +8409,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -8489,7 +8489,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -8697,7 +8697,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -8745,7 +8745,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -8809,7 +8809,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -8889,7 +8889,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -9044,7 +9044,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -9154,7 +9154,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -9418,7 +9418,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -9484,7 +9484,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -9572,7 +9572,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -9682,7 +9682,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -9858,7 +9858,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -9968,7 +9968,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -10254,7 +10254,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -10320,7 +10320,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -10408,7 +10408,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -10518,7 +10518,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -10689,7 +10689,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -10794,7 +10794,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -11067,7 +11067,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -11130,7 +11130,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -11214,7 +11214,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -11319,7 +11319,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -11487,7 +11487,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -11781,7 +11781,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -11844,7 +11844,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -11991,7 +11991,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -12159,7 +12159,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -12264,7 +12264,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -12474,7 +12474,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -12537,7 +12537,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -12600,7 +12600,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -12852,7 +12852,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -12957,7 +12957,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -13146,7 +13146,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -13209,7 +13209,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -13272,7 +13272,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -13524,7 +13524,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -13629,7 +13629,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -13839,7 +13839,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -13902,7 +13902,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -13965,7 +13965,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -14222,7 +14222,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -14332,7 +14332,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -14618,7 +14618,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -14684,7 +14684,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -14772,7 +14772,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -14882,7 +14882,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -15058,7 +15058,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -15168,7 +15168,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -15454,7 +15454,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -15520,7 +15520,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -15608,7 +15608,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -15718,7 +15718,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -15889,7 +15889,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -16183,7 +16183,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -16246,7 +16246,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -16393,7 +16393,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -16557,7 +16557,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -16657,7 +16657,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -16897,7 +16897,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -16957,7 +16957,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -17037,7 +17037,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -17137,7 +17137,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -17284,7 +17284,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -17394,7 +17394,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -17680,7 +17680,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -17746,7 +17746,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -17834,7 +17834,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -17944,7 +17944,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -18098,7 +18098,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -18208,7 +18208,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -18494,7 +18494,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -18560,7 +18560,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -18648,7 +18648,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -18758,7 +18758,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -18905,7 +18905,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -19005,7 +19005,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -19205,7 +19205,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -19265,7 +19265,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -19325,7 +19325,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -19552,7 +19552,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -19662,7 +19662,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -19948,7 +19948,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -20014,7 +20014,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -20102,7 +20102,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -20212,7 +20212,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -20345,7 +20345,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -20425,7 +20425,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -20633,7 +20633,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -20681,7 +20681,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -20745,7 +20745,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -20825,7 +20825,7 @@
     "ci_platforms": [
       "linux"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -20958,7 +20958,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -21068,7 +21068,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -21332,7 +21332,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -21398,7 +21398,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -21486,7 +21486,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -21596,7 +21596,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -21750,7 +21750,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -21860,7 +21860,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -22146,7 +22146,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -22212,7 +22212,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -22300,7 +22300,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -22410,7 +22410,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -22560,7 +22560,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -22854,7 +22854,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -22917,7 +22917,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -23064,7 +23064,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -23211,7 +23211,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -23316,7 +23316,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -23526,7 +23526,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -23589,7 +23589,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -23652,7 +23652,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -23883,7 +23883,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -23988,7 +23988,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -24177,7 +24177,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -24240,7 +24240,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -24303,7 +24303,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -24540,7 +24540,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "msan"
     ], 
@@ -24655,7 +24655,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "msan"
     ], 
@@ -24885,7 +24885,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "msan"
     ], 
@@ -24954,7 +24954,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [
       "msan"
     ], 
@@ -25023,7 +25023,7 @@
       "linux", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [
       "msan"
     ], 
@@ -25267,7 +25267,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -25367,7 +25367,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -25607,7 +25607,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -25667,7 +25667,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -25747,7 +25747,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 0.1, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
@@ -25847,7 +25847,7 @@
       "mac", 
       "posix"
     ], 
-    "cpu_cost": 0.1, 
+    "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
