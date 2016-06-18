@@ -1445,7 +1445,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: fling_stream_test
-  cpu_cost: 2
+  cpu_cost: 1.5
   build: test
   language: c
   src:
@@ -1460,7 +1460,7 @@ targets:
   - linux
   - posix
 - name: fling_test
-  cpu_cost: 2
+  cpu_cost: 1.5
   build: test
   language: c
   src:
@@ -1584,7 +1584,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: gpr_stack_lockfree_test
-  cpu_cost: 10
+  cpu_cost: 7
   build: test
   language: c
   src:
@@ -1601,7 +1601,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: gpr_sync_test
-  cpu_cost: 10
+  cpu_cost: 3
   build: test
   language: c
   src:
@@ -1610,7 +1610,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: gpr_thd_test
-  cpu_cost: 10
+  cpu_cost: 1
   build: test
   language: c
   src:
@@ -1948,6 +1948,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: invalid_call_argument_test
+  cpu_cost: 0.1
   build: test
   language: c
   src:
@@ -2267,7 +2268,7 @@ targets:
   - linux
   - posix
 - name: tcp_posix_test
-  cpu_cost: 0.5
+  cpu_cost: 0.2
   build: test
   language: c
   src:
