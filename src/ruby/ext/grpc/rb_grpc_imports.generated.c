@@ -260,6 +260,8 @@ gpr_avl_unref_type gpr_avl_unref_import;
 gpr_avl_add_type gpr_avl_add_import;
 gpr_avl_remove_type gpr_avl_remove_import;
 gpr_avl_get_type gpr_avl_get_import;
+gpr_avl_maybe_get_type gpr_avl_maybe_get_import;
+gpr_avl_is_empty_type gpr_avl_is_empty_import;
 gpr_cmdline_create_type gpr_cmdline_create_import;
 gpr_cmdline_add_int_type gpr_cmdline_add_int_import;
 gpr_cmdline_add_flag_type gpr_cmdline_add_flag_import;
@@ -529,6 +531,8 @@ void grpc_rb_load_imports(HMODULE library) {
   gpr_avl_add_import = (gpr_avl_add_type) GetProcAddress(library, "gpr_avl_add");
   gpr_avl_remove_import = (gpr_avl_remove_type) GetProcAddress(library, "gpr_avl_remove");
   gpr_avl_get_import = (gpr_avl_get_type) GetProcAddress(library, "gpr_avl_get");
+  gpr_avl_maybe_get_import = (gpr_avl_maybe_get_type) GetProcAddress(library, "gpr_avl_maybe_get");
+  gpr_avl_is_empty_import = (gpr_avl_is_empty_type) GetProcAddress(library, "gpr_avl_is_empty");
   gpr_cmdline_create_import = (gpr_cmdline_create_type) GetProcAddress(library, "gpr_cmdline_create");
   gpr_cmdline_add_int_import = (gpr_cmdline_add_int_type) GetProcAddress(library, "gpr_cmdline_add_int");
   gpr_cmdline_add_flag_import = (gpr_cmdline_add_flag_type) GetProcAddress(library, "gpr_cmdline_add_flag");

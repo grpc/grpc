@@ -100,6 +100,7 @@ typedef struct batch_control {
   grpc_closure finish_batch;
   void *notify_tag;
   gpr_refcount steps_to_complete;
+  grpc_error *error;
 
   uint8_t send_initial_metadata;
   uint8_t send_message;
@@ -108,7 +109,6 @@ typedef struct batch_control {
   uint8_t recv_message;
   uint8_t recv_final_op;
   uint8_t is_notify_tag_closure;
-  uint8_t success;
 } batch_control;
 
 struct grpc_call {
@@ -221,9 +221,9 @@ static grpc_call_error close_with_status(grpc_exec_ctx *exec_ctx, grpc_call *c,
                                          grpc_status_code status,
                                          const char *description);
 static void destroy_call(grpc_exec_ctx *exec_ctx, void *call_stack,
-                         bool success);
+                         grpc_error *error);
 static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
-                                  bool success);
+                                  grpc_error *error);
 
 grpc_call *grpc_call_create(
     grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
@@ -360,7 +360,8 @@ void grpc_call_internal_unref(grpc_exec_ctx *exec_ctx, grpc_call *c REF_ARG) {
   GRPC_CALL_STACK_UNREF(exec_ctx, CALL_STACK_FROM_CALL(c), REF_REASON);
 }
 
-static void destroy_call(grpc_exec_ctx *exec_ctx, void *call, bool success) {
+static void destroy_call(grpc_exec_ctx *exec_ctx, void *call,
+                         grpc_error *error) {
   size_t i;
   int ii;
   grpc_call *c = call;
@@ -746,22 +747,23 @@ typedef struct termination_closure {
   enum { TC_CANCEL, TC_CLOSE } type;
 } termination_closure;
 
-static void done_termination(grpc_exec_ctx *exec_ctx, void *tcp, bool success) {
+static void done_termination(grpc_exec_ctx *exec_ctx, void *tcp,
+                             grpc_error *error) {
   termination_closure *tc = tcp;
-  if (tc->type == TC_CANCEL) {
-    GRPC_CALL_INTERNAL_UNREF(exec_ctx, tc->call, "cancel");
-  }
-  if (tc->type == TC_CLOSE) {
-    GRPC_CALL_INTERNAL_UNREF(exec_ctx, tc->call, "close");
+  switch (tc->type) {
+    case TC_CANCEL:
+      GRPC_CALL_INTERNAL_UNREF(exec_ctx, tc->call, "cancel");
+      break;
+    case TC_CLOSE:
+      GRPC_CALL_INTERNAL_UNREF(exec_ctx, tc->call, "close");
+      break;
   }
   gpr_slice_unref(tc->optional_message);
-  if (tc->op_closure != NULL) {
-    grpc_exec_ctx_enqueue(exec_ctx, tc->op_closure, true, NULL);
-  }
+  grpc_exec_ctx_sched(exec_ctx, tc->op_closure, GRPC_ERROR_NONE, NULL);
   gpr_free(tc);
 }
 
-static void send_cancel(grpc_exec_ctx *exec_ctx, void *tcp, bool success) {
+static void send_cancel(grpc_exec_ctx *exec_ctx, void *tcp, grpc_error *error) {
   grpc_transport_stream_op op;
   termination_closure *tc = tcp;
   memset(&op, 0, sizeof(op));
@@ -772,7 +774,7 @@ static void send_cancel(grpc_exec_ctx *exec_ctx, void *tcp, bool success) {
   execute_op(exec_ctx, tc->call, &op);
 }
 
-static void send_close(grpc_exec_ctx *exec_ctx, void *tcp, bool success) {
+static void send_close(grpc_exec_ctx *exec_ctx, void *tcp, grpc_error *error) {
   grpc_transport_stream_op op;
   termination_closure *tc = tcp;
   memset(&op, 0, sizeof(op));
@@ -803,7 +805,7 @@ static grpc_call_error terminate_with_status(grpc_exec_ctx *exec_ctx,
     grpc_closure_init(&tc->closure, send_close, tc);
     GRPC_CALL_INTERNAL_REF(tc->call, "close");
   }
-  grpc_exec_ctx_enqueue(exec_ctx, &tc->closure, true, NULL);
+  grpc_exec_ctx_sched(exec_ctx, &tc->closure, GRPC_ERROR_NONE, NULL);
   return GRPC_CALL_OK;
 }
 
@@ -866,11 +868,11 @@ grpc_call *grpc_call_from_top_element(grpc_call_element *elem) {
   return CALL_FROM_TOP_ELEM(elem);
 }
 
-static void call_alarm(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+static void call_alarm(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   grpc_call *call = arg;
   gpr_mu_lock(&call->mu);
   call->have_alarm = 0;
-  if (success) {
+  if (error != GRPC_ERROR_CANCELLED) {
     cancel_with_status(exec_ctx, call, GRPC_STATUS_DEADLINE_EXCEEDED,
                        "Deadline Exceeded");
   }
@@ -1056,7 +1058,8 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx,
                                   batch_control *bctl) {
   grpc_call *call = bctl->call;
   if (bctl->is_notify_tag_closure) {
-    grpc_exec_ctx_enqueue(exec_ctx, bctl->notify_tag, bctl->success, NULL);
+    /* unrefs bctl->error */
+    grpc_exec_ctx_sched(exec_ctx, bctl->notify_tag, bctl->error, NULL);
     gpr_mu_lock(&call->mu);
     bctl->call->used_batches =
         (uint8_t)(bctl->call->used_batches &
@@ -1064,7 +1067,8 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx,
     gpr_mu_unlock(&call->mu);
     GRPC_CALL_INTERNAL_UNREF(exec_ctx, call, "completion");
   } else {
-    grpc_cq_end_op(exec_ctx, bctl->call->cq, bctl->notify_tag, bctl->success,
+    /* unrefs bctl->error */
+    grpc_cq_end_op(exec_ctx, bctl->call->cq, bctl->notify_tag, bctl->error,
                    finish_batch_completion, bctl, &bctl->cq_completion);
   }
 }
@@ -1096,15 +1100,18 @@ static void continue_receiving_slices(grpc_exec_ctx *exec_ctx,
 }
 
 static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
-                                  bool success) {
+                                  grpc_error *error) {
   batch_control *bctl = bctlp;
   grpc_call *call = bctl->call;
 
-  if (success) {
+  if (error == GRPC_ERROR_NONE) {
     gpr_slice_buffer_add(&(*call->receiving_buffer)->data.raw.slice_buffer,
                          call->receiving_slice);
     continue_receiving_slices(exec_ctx, bctl);
   } else {
+    if (grpc_trace_operation_failures) {
+      GRPC_LOG_IF_ERROR("receiving_slice_ready", GRPC_ERROR_REF(error));
+    }
     grpc_byte_stream_destroy(exec_ctx, call->receiving_stream);
     call->receiving_stream = NULL;
     grpc_byte_buffer_destroy(*call->receiving_buffer);
@@ -1153,15 +1160,15 @@ static void process_data_after_md(grpc_exec_ctx *exec_ctx, batch_control *bctl,
 }
 
 static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
-                                   bool success) {
+                                   grpc_error *error) {
   batch_control *bctl = bctlp;
   grpc_call *call = bctl->call;
 
   gpr_mu_lock(&bctl->call->mu);
-  if (bctl->call->has_initial_md_been_received || !success ||
+  if (bctl->call->has_initial_md_been_received || error != GRPC_ERROR_NONE ||
       call->receiving_stream == NULL) {
     gpr_mu_unlock(&bctl->call->mu);
-    process_data_after_md(exec_ctx, bctlp, success);
+    process_data_after_md(exec_ctx, bctlp, error);
   } else {
     call->saved_receiving_stream_ready_bctlp = bctlp;
     gpr_mu_unlock(&bctl->call->mu);
@@ -1219,14 +1226,14 @@ static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
 }
 
 static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
-                                             void *bctlp, bool success) {
+                                             void *bctlp, grpc_error *error) {
   batch_control *bctl = bctlp;
   grpc_call *call = bctl->call;
 
   gpr_mu_lock(&call->mu);
 
-  if (!success) {
-    bctl->success = false;
+  if (error != GRPC_ERROR_NONE) {
+    bctl->error = GRPC_ERROR_REF(error);
   } else {
     grpc_metadata_batch *md =
         &call->metadata_batch[1 /* is_receiving */][0 /* is_trailing */];
@@ -1250,7 +1257,7 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
     grpc_closure *saved_rsr_closure = grpc_closure_create(
         receiving_stream_ready, call->saved_receiving_stream_ready_bctlp);
     call->saved_receiving_stream_ready_bctlp = NULL;
-    grpc_exec_ctx_enqueue(exec_ctx, saved_rsr_closure, success, NULL);
+    grpc_exec_ctx_sched(exec_ctx, saved_rsr_closure, error, NULL);
   }
 
   gpr_mu_unlock(&call->mu);
@@ -1260,15 +1267,18 @@ static void receiving_initial_metadata_ready(grpc_exec_ctx *exec_ctx,
   }
 }
 
-static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp, bool success) {
+static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp,
+                         grpc_error *error) {
   batch_control *bctl = bctlp;
   grpc_call *call = bctl->call;
   grpc_call *child_call;
   grpc_call *next_child_call;
 
+  GRPC_ERROR_REF(error);
+
   gpr_mu_lock(&call->mu);
   if (bctl->send_initial_metadata) {
-    if (!success) {
+    if (error != GRPC_ERROR_NONE) {
       set_status_code(call, STATUS_FROM_CORE, GRPC_STATUS_UNAVAILABLE);
     }
     grpc_metadata_batch_destroy(
@@ -1314,13 +1324,17 @@ static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp, bool success) {
                        call->final_op.server.cancelled);
     }
 
-    success = 1;
+    GRPC_ERROR_UNREF(error);
+    error = GRPC_ERROR_NONE;
   }
-  bctl->success = success != 0;
+  GRPC_ERROR_UNREF(bctl->error);
+  bctl->error = GRPC_ERROR_REF(error);
   gpr_mu_unlock(&call->mu);
   if (gpr_unref(&bctl->steps_to_complete)) {
     post_batch_completion(exec_ctx, bctl);
   }
+
+  GRPC_ERROR_UNREF(error);
 }
 
 static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
@@ -1350,7 +1364,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
 
   if (nops == 0) {
     GRPC_CALL_INTERNAL_REF(call, "completion");
-    bctl->success = 1;
+    bctl->error = GRPC_ERROR_NONE;
     if (!is_notify_tag_closure) {
       grpc_cq_begin_op(call->cq, notify_tag);
     }

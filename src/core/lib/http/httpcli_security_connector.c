@@ -61,6 +61,7 @@ static void httpcli_ssl_destroy(grpc_security_connector *sc) {
 static void httpcli_ssl_do_handshake(grpc_exec_ctx *exec_ctx,
                                      grpc_channel_security_connector *sc,
                                      grpc_endpoint *nonsecure_endpoint,
+                                     gpr_timespec deadline,
                                      grpc_security_handshake_done_cb cb,
                                      void *user_data) {
   grpc_httpcli_ssl_channel_security_connector *c =
@@ -79,7 +80,7 @@ static void httpcli_ssl_do_handshake(grpc_exec_ctx *exec_ctx,
     cb(exec_ctx, user_data, GRPC_SECURITY_ERROR, NULL, NULL);
   } else {
     grpc_do_security_handshake(exec_ctx, handshaker, &sc->base, true,
-                               nonsecure_endpoint, cb, user_data);
+                               nonsecure_endpoint, deadline, cb, user_data);
   }
 }
 
@@ -163,6 +164,7 @@ static void on_secure_transport_setup_done(grpc_exec_ctx *exec_ctx, void *rp,
 
 static void ssl_handshake(grpc_exec_ctx *exec_ctx, void *arg,
                           grpc_endpoint *tcp, const char *host,
+                          gpr_timespec deadline,
                           void (*on_done)(grpc_exec_ctx *exec_ctx, void *arg,
                                           grpc_endpoint *endpoint)) {
   grpc_channel_security_connector *sc = NULL;
@@ -181,7 +183,7 @@ static void ssl_handshake(grpc_exec_ctx *exec_ctx, void *arg,
                  pem_root_certs, pem_root_certs_size, host, &sc) ==
              GRPC_SECURITY_OK);
   grpc_channel_security_connector_do_handshake(
-      exec_ctx, sc, tcp, on_secure_transport_setup_done, c);
+      exec_ctx, sc, tcp, deadline, on_secure_transport_setup_done, c);
   GRPC_SECURITY_CONNECTOR_UNREF(&sc->base, "httpcli");
 }
 

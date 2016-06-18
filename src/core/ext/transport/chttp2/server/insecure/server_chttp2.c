@@ -35,6 +35,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/http_server_filter.h"
@@ -74,34 +75,40 @@ static void destroy(grpc_exec_ctx *exec_ctx, grpc_server *server, void *tcpp,
                     grpc_closure *destroy_done) {
   grpc_tcp_server *tcp = tcpp;
   grpc_tcp_server_unref(exec_ctx, tcp);
-  grpc_exec_ctx_enqueue(exec_ctx, destroy_done, true, NULL);
+  grpc_exec_ctx_sched(exec_ctx, destroy_done, GRPC_ERROR_NONE, NULL);
 }
 
 int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
   grpc_resolved_addresses *resolved = NULL;
   grpc_tcp_server *tcp = NULL;
   size_t i;
-  unsigned count = 0;
+  size_t count = 0;
   int port_num = -1;
   int port_temp;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_error *err = GRPC_ERROR_NONE;
 
   GRPC_API_TRACE("grpc_server_add_insecure_http2_port(server=%p, addr=%s)", 2,
                  (server, addr));
 
-  resolved = grpc_blocking_resolve_address(addr, "http");
-  if (!resolved) {
+  grpc_error **errors = NULL;
+  err = grpc_blocking_resolve_address(addr, "https", &resolved);
+  if (err != GRPC_ERROR_NONE) {
     goto error;
   }
 
-  tcp = grpc_tcp_server_create(NULL);
-  GPR_ASSERT(tcp);
+  err = grpc_tcp_server_create(NULL, &tcp);
+  if (err != GRPC_ERROR_NONE) {
+    goto error;
+  }
 
-  for (i = 0; i < resolved->naddrs; i++) {
-    port_temp = grpc_tcp_server_add_port(
+  const size_t naddrs = resolved->naddrs;
+  errors = gpr_malloc(sizeof(*errors) * naddrs);
+  for (i = 0; i < naddrs; i++) {
+    errors[i] = grpc_tcp_server_add_port(
         tcp, (struct sockaddr *)&resolved->addrs[i].addr,
-        resolved->addrs[i].len);
-    if (port_temp > 0) {
+        resolved->addrs[i].len, &port_temp);
+    if (errors[i] == GRPC_ERROR_NONE) {
       if (port_num == -1) {
         port_num = port_temp;
       } else {
@@ -111,14 +118,24 @@ int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
     }
   }
   if (count == 0) {
-    gpr_log(GPR_ERROR, "No address added out of total %" PRIuPTR " resolved",
-            resolved->naddrs);
+    char *msg;
+    gpr_asprintf(&msg, "No address added out of total %" PRIuPTR " resolved",
+                 naddrs);
+    err = GRPC_ERROR_CREATE_REFERENCING(msg, errors, naddrs);
+    gpr_free(msg);
     goto error;
-  }
-  if (count != resolved->naddrs) {
-    gpr_log(GPR_ERROR,
-            "Only %d addresses added out of total %" PRIuPTR " resolved", count,
-            resolved->naddrs);
+  } else if (count != naddrs) {
+    char *msg;
+    gpr_asprintf(&msg, "Only %" PRIuPTR
+                       " addresses added out of total %" PRIuPTR " resolved",
+                 count, naddrs);
+    err = GRPC_ERROR_CREATE_REFERENCING(msg, errors, naddrs);
+    gpr_free(msg);
+
+    const char *warning_message = grpc_error_string(err);
+    gpr_log(GPR_INFO, "WARNING: %s", warning_message);
+    grpc_error_free_string(warning_message);
+    /* we managed to bind some addresses: continue */
   }
   grpc_resolved_addresses_destroy(resolved);
 
@@ -128,6 +145,7 @@ int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
 
 /* Error path: cleanup and return */
 error:
+  GPR_ASSERT(err != GRPC_ERROR_NONE);
   if (resolved) {
     grpc_resolved_addresses_destroy(resolved);
   }
@@ -136,7 +154,18 @@ error:
   }
   port_num = 0;
 
+  const char *msg = grpc_error_string(err);
+  gpr_log(GPR_ERROR, "%s", msg);
+  grpc_error_free_string(msg);
+  GRPC_ERROR_UNREF(err);
+
 done:
   grpc_exec_ctx_finish(&exec_ctx);
+  if (errors != NULL) {
+    for (i = 0; i < naddrs; i++) {
+      GRPC_ERROR_UNREF(errors[i]);
+    }
+  }
+  gpr_free(errors);
   return port_num;
 }

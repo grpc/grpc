@@ -64,7 +64,7 @@ typedef struct {
   grpc_transport *transport;
 
   /** channel arguments (to be passed to the filters) */
-  const grpc_channel_args *channel_args;
+  grpc_channel_args *channel_args;
 } grpc_connect_out_args;
 
 struct grpc_connector_vtable {
