@@ -32,12 +32,20 @@
  */
 
 
-#ifndef TEST_GRPC_C_SERIALIZATION_PUBLIC_H
-#define TEST_GRPC_C_SERIALIZATION_PUBLIC_H
+#ifndef TEST_GRPC_C_COMPLETION_QUEUE_PUBLIC_H
+#define TEST_GRPC_C_COMPLETION_QUEUE_PUBLIC_H
 
-#include "grpc_c_public.h"
+#include <stdbool.h>
 
-typedef void (*GRPC_serializer)(GRPC_message input, GRPC_message *output);
-typedef void (*GRPC_deserializer)(GRPC_message input, GRPC_message *output);
+/// Tri-state return for GRPC_completion_queue_next
+enum GRPC_completion_queue_next_status {
+  GRPC_COMPLETION_QUEUE_SHUTDOWN,   ///< The completion queue has been shutdown.
+  GRPC_COMPLETION_QUEUE_GOT_EVENT,  ///< Got a new event; \a tag will be filled in with its
+                                    ///< associated value; \a ok indicating its success.
+  GRPC_COMPLETION_QUEUE_TIMEOUT     ///< deadline was reached.
+};
 
-#endif //TEST_GRPC_C_SERIALIZATION_PUBLIC_H
+/// \return true if read a regular event, false if the queue is shutting down.
+bool GRPC_completion_queue_next(void** tag, bool* ok);
+
+#endif //TEST_GRPC_C_COMPLETION_QUEUE_PUBLIC_H
