@@ -1171,7 +1171,7 @@ def secure_channel(target, credentials, options=None):
     A Channel to the target through which RPCs may be conducted.
   """
   from grpc import _channel
-  return _channel.Channel(target, options, credentials)
+  return _channel.Channel(target, options, credentials._credentials)
 
 
 def server(generic_rpc_handlers, thread_pool, options=None):
