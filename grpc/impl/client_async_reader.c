@@ -32,12 +32,4 @@
  */
 
 
-#ifndef TEST_GRPC_C_SERIALIZATION_PUBLIC_H
-#define TEST_GRPC_C_SERIALIZATION_PUBLIC_H
-
-#include "grpc_c_public.h"
-
-typedef void (*GRPC_serializer)(GRPC_message input, GRPC_message *output);
-typedef void (*GRPC_deserializer)(GRPC_message input, GRPC_message *output);
-
-#endif //TEST_GRPC_C_SERIALIZATION_PUBLIC_H
+#include "client_async_reader.h"
