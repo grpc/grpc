@@ -265,6 +265,7 @@ struct grpc_chttp2_transport_parsing {
   uint8_t incoming_frame_type;
   uint8_t incoming_frame_flags;
   uint8_t header_eof;
+  bool is_first_frame;
   uint32_t expect_continuation_stream_id;
   uint32_t incoming_frame_size;
   uint32_t incoming_stream_id;

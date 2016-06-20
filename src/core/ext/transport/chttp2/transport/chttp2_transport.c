@@ -264,6 +264,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   t->parsing.is_client = is_client;
   t->parsing.deframe_state =
       is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0;
+  t->parsing.is_first_frame = true;
   t->writing.is_client = is_client;
   t->optional_drop_message = gpr_empty_slice();
   grpc_connectivity_state_init(
@@ -1805,7 +1806,7 @@ static void post_reading_action_locked(grpc_exec_ctx *exec_ctx,
     UNREF_TRANSPORT(exec_ctx, t, "reading_action");
   }
 
-  GRPC_ERROR_UNREF(error);
+  GRPC_LOG_IF_ERROR("close_transport", error);
 }
 
 /*******************************************************************************
