@@ -35,6 +35,7 @@
 #define GRPCXX_CHANNEL_FILTER_H
 
 #include <grpc/grpc.h>
+#include <grpc++/impl/codegen/config.h>
 
 #include <functional>
 #include <vector>
@@ -94,7 +95,7 @@ namespace internal {
 
 // Defines static members for passing to C core.
 template <typename ChannelDataType, typename CallDataType>
-class ChannelFilter {
+class ChannelFilter GRPC_FINAL {
  public:
   static const size_t channel_data_size = sizeof(ChannelDataType);
 
