@@ -1093,6 +1093,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
     stream_global->recv_trailing_metadata_finished =
         add_closure_barrier(on_complete);
     stream_global->recv_trailing_metadata = op->recv_trailing_metadata;
+    stream_global->final_metadata_requested = true;
     grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
   }
 
@@ -1246,7 +1247,8 @@ static void check_read_ops(grpc_exec_ctx *exec_ctx,
       stream_global->recv_initial_metadata_ready = NULL;
     }
     if (stream_global->recv_message_ready != NULL) {
-      while (stream_global->seen_error &&
+      while (stream_global->final_metadata_requested &&
+             stream_global->seen_error &&
              (bs = grpc_chttp2_incoming_frame_queue_pop(
                   &stream_global->incoming_frames)) != NULL) {
         incoming_byte_stream_destroy_locked(exec_ctx, NULL, NULL, bs);
