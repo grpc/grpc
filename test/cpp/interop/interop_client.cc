@@ -31,10 +31,8 @@
  *
  */
 
-#include "test/cpp/interop/interop_client.h"
-
 #include <unistd.h>
-
+#include <cinttypes>
 #include <fstream>
 #include <memory>
 
@@ -51,11 +49,10 @@
 #include "src/proto/grpc/testing/messages.grpc.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/cpp/interop/client_helper.h"
+#include "test/cpp/interop/interop_client.h"
 
 namespace grpc {
 namespace testing {
-
-static const char* kRandomFile = "test/cpp/interop/rnd.dat";
 
 namespace {
 // The same value is defined by the Java client.
@@ -67,30 +64,26 @@ const int kReceiveDelayMilliSeconds = 20;
 const int kLargeRequestSize = 271828;
 const int kLargeResponseSize = 314159;
 
-CompressionType GetInteropCompressionTypeFromCompressionAlgorithm(
-    grpc_compression_algorithm algorithm) {
-  switch (algorithm) {
-    case GRPC_COMPRESS_NONE:
-      return CompressionType::NONE;
-    case GRPC_COMPRESS_GZIP:
-      return CompressionType::GZIP;
-    case GRPC_COMPRESS_DEFLATE:
-      return CompressionType::DEFLATE;
-    default:
-      GPR_ASSERT(false);
-  }
-}
-
 void NoopChecks(const InteropClientContextInspector& inspector,
                 const SimpleRequest* request, const SimpleResponse* response) {}
 
 void CompressionChecks(const InteropClientContextInspector& inspector,
                        const SimpleRequest* request,
                        const SimpleResponse* response) {
-  GPR_ASSERT(request->response_compression() ==
-             GetInteropCompressionTypeFromCompressionAlgorithm(
-                 inspector.GetCallCompressionAlgorithm()));
-  if (request->response_compression() == NONE) {
+  const grpc_compression_algorithm received_compression =
+      inspector.GetCallCompressionAlgorithm();
+  if (request->request_compressed_response() &&
+      received_compression == GRPC_COMPRESS_NONE) {
+    if (request->request_compressed_response() &&
+        received_compression == GRPC_COMPRESS_NONE) {
+      // Requested some compression, got NONE. This is an error.
+      gpr_log(GPR_ERROR,
+              "Failure: Requested compression but got uncompressed response "
+              "from server.");
+      abort();
+    }
+  }
+  if (!request->request_compressed_response()) {
     GPR_ASSERT(!(inspector.GetMessageFlags() & GRPC_WRITE_INTERNAL_COMPRESS));
   } else if (request->response_type() == PayloadType::COMPRESSABLE) {
     // requested compression and compressable response => results should always
@@ -211,20 +204,22 @@ bool InteropClient::PerformLargeUnary(SimpleRequest* request,
   custom_checks_fn(inspector, request, response);
 
   // Payload related checks.
-  if (request->response_type() != PayloadType::RANDOM) {
-    GPR_ASSERT(response->payload().type() == request->response_type());
-  }
+  GPR_ASSERT(response->payload().type() == request->response_type());
   switch (response->payload().type()) {
     case PayloadType::COMPRESSABLE:
       GPR_ASSERT(response->payload().body() ==
                  grpc::string(kLargeResponseSize, '\0'));
       break;
     case PayloadType::UNCOMPRESSABLE: {
-      std::ifstream rnd_file(kRandomFile);
-      GPR_ASSERT(rnd_file.good());
-      for (int i = 0; i < kLargeResponseSize; i++) {
-        GPR_ASSERT(response->payload().body()[i] == (char)rnd_file.get());
-      }
+      // We don't really check anything: We can't assert that the payload is
+      // uncompressed because it's the server's prerogative to decide on that,
+      // and different implementations decide differently (ie, Java always
+      // compresses when requested to do so, whereas C core throws away the
+      // compressed payload if the output is larger than the input).
+      // In addition, we don't compare the actual random bytes received because
+      // asserting that data is sent/received properly isn't the purpose of this
+      // test. Moreover, different implementations are also free to use
+      // different sets of random bytes.
     } break;
     default:
       GPR_ASSERT(false);
@@ -341,13 +336,13 @@ bool InteropClient::DoLargeUnary() {
 }
 
 bool InteropClient::DoLargeCompressedUnary() {
-  const CompressionType compression_types[] = {NONE, GZIP, DEFLATE};
-  const PayloadType payload_types[] = {COMPRESSABLE, UNCOMPRESSABLE, RANDOM};
+  const bool request_compression[] = {false, true};
+  const PayloadType payload_types[] = {COMPRESSABLE, UNCOMPRESSABLE};
   for (size_t i = 0; i < GPR_ARRAY_SIZE(payload_types); i++) {
-    for (size_t j = 0; j < GPR_ARRAY_SIZE(compression_types); j++) {
+    for (size_t j = 0; j < GPR_ARRAY_SIZE(request_compression); j++) {
       char* log_suffix;
       gpr_asprintf(&log_suffix, "(compression=%s; payload=%s)",
-                   CompressionType_Name(compression_types[j]).c_str(),
+                   request_compression[j] ? "true" : "false",
                    PayloadType_Name(payload_types[i]).c_str());
 
       gpr_log(GPR_DEBUG, "Sending a large compressed unary rpc %s.",
@@ -355,7 +350,7 @@ bool InteropClient::DoLargeCompressedUnary() {
       SimpleRequest request;
       SimpleResponse response;
       request.set_response_type(payload_types[i]);
-      request.set_response_compression(compression_types[j]);
+      request.set_request_compressed_response(request_compression[j]);
 
       if (!PerformLargeUnary(&request, &response, CompressionChecks)) {
         gpr_log(GPR_ERROR, "Large compressed unary failed %s", log_suffix);
@@ -437,7 +432,7 @@ bool InteropClient::DoResponseStreaming() {
     // most likely due to connection failure.
     gpr_log(GPR_ERROR,
             "DoResponseStreaming(): Read fewer streams (%d) than "
-            "response_stream_sizes.size() (%d)",
+            "response_stream_sizes.size() (%" PRIuPTR ")",
             i, response_stream_sizes.size());
     return TransientFailureOrAbort();
   }
@@ -452,23 +447,23 @@ bool InteropClient::DoResponseStreaming() {
 }
 
 bool InteropClient::DoResponseCompressedStreaming() {
-  const CompressionType compression_types[] = {NONE, GZIP, DEFLATE};
-  const PayloadType payload_types[] = {COMPRESSABLE, UNCOMPRESSABLE, RANDOM};
+  const bool request_compression[] = {false, true};
+  const PayloadType payload_types[] = {COMPRESSABLE, UNCOMPRESSABLE};
   for (size_t i = 0; i < GPR_ARRAY_SIZE(payload_types); i++) {
-    for (size_t j = 0; j < GPR_ARRAY_SIZE(compression_types); j++) {
+    for (size_t j = 0; j < GPR_ARRAY_SIZE(request_compression); j++) {
       ClientContext context;
       InteropClientContextInspector inspector(context);
       StreamingOutputCallRequest request;
 
       char* log_suffix;
       gpr_asprintf(&log_suffix, "(compression=%s; payload=%s)",
-                   CompressionType_Name(compression_types[j]).c_str(),
+                   request_compression[j] ? "true" : "false",
                    PayloadType_Name(payload_types[i]).c_str());
 
       gpr_log(GPR_DEBUG, "Receiving response streaming rpc %s.", log_suffix);
 
       request.set_response_type(payload_types[i]);
-      request.set_response_compression(compression_types[j]);
+      request.set_request_compressed_response(request_compression[j]);
 
       for (size_t k = 0; k < response_stream_sizes.size(); ++k) {
         ResponseParameters* response_parameter =
@@ -483,37 +478,32 @@ bool InteropClient::DoResponseCompressedStreaming() {
       size_t k = 0;
       while (stream->Read(&response)) {
         // Payload related checks.
-        if (request.response_type() != PayloadType::RANDOM) {
-          GPR_ASSERT(response.payload().type() == request.response_type());
-        }
+        GPR_ASSERT(response.payload().type() == request.response_type());
         switch (response.payload().type()) {
           case PayloadType::COMPRESSABLE:
             GPR_ASSERT(response.payload().body() ==
                        grpc::string(response_stream_sizes[k], '\0'));
             break;
-          case PayloadType::UNCOMPRESSABLE: {
-            std::ifstream rnd_file(kRandomFile);
-            GPR_ASSERT(rnd_file.good());
-            for (int n = 0; n < response_stream_sizes[k]; n++) {
-              GPR_ASSERT(response.payload().body()[n] == (char)rnd_file.get());
-            }
-          } break;
+          case PayloadType::UNCOMPRESSABLE:
+            break;
           default:
             GPR_ASSERT(false);
         }
 
         // Compression related checks.
-        GPR_ASSERT(request.response_compression() ==
-                   GetInteropCompressionTypeFromCompressionAlgorithm(
-                       inspector.GetCallCompressionAlgorithm()));
-        if (request.response_compression() == NONE) {
+        if (request.request_compressed_response()) {
+          GPR_ASSERT(inspector.GetCallCompressionAlgorithm() >
+                     GRPC_COMPRESS_NONE);
+          if (request.response_type() == PayloadType::COMPRESSABLE) {
+            // requested compression and compressable response => results should
+            // always be compressed.
+            GPR_ASSERT(inspector.GetMessageFlags() &
+                       GRPC_WRITE_INTERNAL_COMPRESS);
+          }
+        } else {
+          // requested *no* compression.
           GPR_ASSERT(
               !(inspector.GetMessageFlags() & GRPC_WRITE_INTERNAL_COMPRESS));
-        } else if (request.response_type() == PayloadType::COMPRESSABLE) {
-          // requested compression and compressable response => results should
-          // always be compressed.
-          GPR_ASSERT(inspector.GetMessageFlags() &
-                     GRPC_WRITE_INTERNAL_COMPRESS);
         }
 
         ++k;
@@ -526,9 +516,11 @@ bool InteropClient::DoResponseCompressedStreaming() {
         // stream->Read() failed before reading all the expected messages. This
         // is most likely due to a connection failure.
         gpr_log(GPR_ERROR,
-                "DoResponseCompressedStreaming(): Responses read (k=%d) is "
+                "DoResponseCompressedStreaming(): Responses read (k=%" PRIuPTR
+                ") is "
                 "less than the expected messages (i.e "
-                "response_stream_sizes.size() (%d)). (i=%d, j=%d)",
+                "response_stream_sizes.size() (%" PRIuPTR ")). (i=%" PRIuPTR
+                ", j=%" PRIuPTR ")",
                 k, response_stream_sizes.size(), i, j);
         return TransientFailureOrAbort();
       }
@@ -617,7 +609,7 @@ bool InteropClient::DoHalfDuplex() {
     // most likely due to a connection failure
     gpr_log(GPR_ERROR,
             "DoHalfDuplex(): Responses read (i=%d) are less than the expected "
-            "number of messages response_stream_sizes.size() (%d)",
+            "number of messages response_stream_sizes.size() (%" PRIuPTR ")",
             i, response_stream_sizes.size());
     return TransientFailureOrAbort();
   }

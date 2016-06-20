@@ -252,7 +252,7 @@ class PHPLanguage:
     return {}
 
   def unimplemented_test_cases(self):
-    return _SKIP_ADVANCED + _SKIP_COMPRESSION
+    return _SKIP_COMPRESSION
 
   def unimplemented_test_cases_server(self):
     return []
@@ -317,8 +317,7 @@ class PythonLanguage:
             'PYTHONPATH': '{}/src/python/gens'.format(DOCKER_WORKDIR_ROOT)}
 
   def unimplemented_test_cases(self):
-    return _SKIP_ADVANCED + _SKIP_COMPRESSION + ['jwt_token_creds',
-                                                 'per_rpc_creds']
+    return _SKIP_ADVANCED + _SKIP_COMPRESSION
 
   def unimplemented_test_cases_server(self):
     return _SKIP_ADVANCED + _SKIP_COMPRESSION

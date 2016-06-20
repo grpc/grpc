@@ -73,7 +73,7 @@ static void test_add_closure(void) {
   grpc_pollset_worker *worker = NULL;
   grpc_closure_init(&c, must_succeed, &done);
 
-  grpc_workqueue_push(&exec_ctx, wq, &c, GRPC_ERROR_NONE);
+  grpc_workqueue_enqueue(&exec_ctx, wq, &c, GRPC_ERROR_NONE);
   grpc_workqueue_add_to_pollset(&exec_ctx, wq, g_pollset);
 
   gpr_mu_lock(g_mu);
@@ -103,7 +103,7 @@ static void test_flush(void) {
   grpc_pollset_worker *worker = NULL;
   grpc_closure_init(&c, must_succeed, &done);
 
-  grpc_exec_ctx_push(&exec_ctx, &c, GRPC_ERROR_NONE, NULL);
+  grpc_exec_ctx_sched(&exec_ctx, &c, GRPC_ERROR_NONE, NULL);
   grpc_workqueue_flush(&exec_ctx, wq);
   grpc_workqueue_add_to_pollset(&exec_ctx, wq, g_pollset);
 

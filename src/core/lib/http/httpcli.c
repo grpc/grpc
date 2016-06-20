@@ -63,7 +63,7 @@ typedef struct {
   const grpc_httpcli_handshaker *handshaker;
   grpc_closure *on_done;
   grpc_httpcli_context *context;
-  grpc_pollset *pollset;
+  grpc_polling_entity *pollent;
   grpc_iomgr_object iomgr_obj;
   gpr_slice_buffer incoming;
   gpr_slice_buffer outgoing;
@@ -78,6 +78,7 @@ static grpc_httpcli_post_override g_post_override = NULL;
 
 static void plaintext_handshake(grpc_exec_ctx *exec_ctx, void *arg,
                                 grpc_endpoint *endpoint, const char *host,
+                                gpr_timespec deadline,
                                 void (*on_done)(grpc_exec_ctx *exec_ctx,
                                                 void *arg,
                                                 grpc_endpoint *endpoint)) {
@@ -100,9 +101,9 @@ static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req,
 
 static void finish(grpc_exec_ctx *exec_ctx, internal_request *req,
                    grpc_error *error) {
-  grpc_pollset_set_del_pollset(exec_ctx, req->context->pollset_set,
-                               req->pollset);
-  grpc_exec_ctx_push(exec_ctx, req->on_done, error, NULL);
+  grpc_polling_entity_del_from_pollset_set(exec_ctx, req->pollent,
+                                           req->context->pollset_set);
+  grpc_exec_ctx_sched(exec_ctx, req->on_done, error, NULL);
   grpc_http_parser_destroy(&req->parser);
   if (req->addresses != NULL) {
     grpc_resolved_addresses_destroy(req->addresses);
@@ -206,7 +207,7 @@ static void on_connected(grpc_exec_ctx *exec_ctx, void *arg,
   req->handshaker->handshake(
       exec_ctx, req, req->ep,
       req->ssl_host_override ? req->ssl_host_override : req->host,
-      on_handshake_done);
+      req->deadline, on_handshake_done);
 }
 
 static void next_address(grpc_exec_ctx *exec_ctx, internal_request *req,
@@ -240,7 +241,7 @@ static void on_resolved(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 
 static void internal_request_begin(grpc_exec_ctx *exec_ctx,
                                    grpc_httpcli_context *context,
-                                   grpc_pollset *pollset,
+                                   grpc_polling_entity *pollent,
                                    const grpc_httpcli_request *request,
                                    gpr_timespec deadline, grpc_closure *on_done,
                                    grpc_httpcli_response *response,
@@ -254,7 +255,7 @@ static void internal_request_begin(grpc_exec_ctx *exec_ctx,
   req->handshaker =
       request->handshaker ? request->handshaker : &grpc_httpcli_plaintext;
   req->context = context;
-  req->pollset = pollset;
+  req->pollent = pollent;
   req->overall_error = GRPC_ERROR_NONE;
   grpc_closure_init(&req->on_read, on_read, req);
   grpc_closure_init(&req->done_write, done_write, req);
@@ -264,14 +265,15 @@ static void internal_request_begin(grpc_exec_ctx *exec_ctx,
   req->host = gpr_strdup(request->host);
   req->ssl_host_override = gpr_strdup(request->ssl_host_override);
 
-  grpc_pollset_set_add_pollset(exec_ctx, req->context->pollset_set,
-                               req->pollset);
+  GPR_ASSERT(pollent);
+  grpc_polling_entity_add_to_pollset_set(exec_ctx, req->pollent,
+                                         req->context->pollset_set);
   grpc_resolve_address(exec_ctx, request->host, req->handshaker->default_port,
                        grpc_closure_create(on_resolved, req), &req->addresses);
 }
 
 void grpc_httpcli_get(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
-                      grpc_pollset *pollset,
+                      grpc_polling_entity *pollent,
                       const grpc_httpcli_request *request,
                       gpr_timespec deadline, grpc_closure *on_done,
                       grpc_httpcli_response *response) {
@@ -281,14 +283,14 @@ void grpc_httpcli_get(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
     return;
   }
   gpr_asprintf(&name, "HTTP:GET:%s:%s", request->host, request->http.path);
-  internal_request_begin(exec_ctx, context, pollset, request, deadline, on_done,
+  internal_request_begin(exec_ctx, context, pollent, request, deadline, on_done,
                          response, name,
                          grpc_httpcli_format_get_request(request));
   gpr_free(name);
 }
 
 void grpc_httpcli_post(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
-                       grpc_pollset *pollset,
+                       grpc_polling_entity *pollent,
                        const grpc_httpcli_request *request,
                        const char *body_bytes, size_t body_size,
                        gpr_timespec deadline, grpc_closure *on_done,
@@ -301,7 +303,7 @@ void grpc_httpcli_post(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
   }
   gpr_asprintf(&name, "HTTP:POST:%s:%s", request->host, request->http.path);
   internal_request_begin(
-      exec_ctx, context, pollset, request, deadline, on_done, response, name,
+      exec_ctx, context, pollent, request, deadline, on_done, response, name,
       grpc_httpcli_format_post_request(request, body_bytes, body_size));
   gpr_free(name);
 }

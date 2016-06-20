@@ -35,11 +35,11 @@
 
 #ifdef GPR_WINSOCK_SOCKET
 
-#include "src/core/lib/iomgr/sockaddr_win32.h"
+#include "src/core/lib/iomgr/sockaddr_windows.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/log_win32.h>
+#include <grpc/support/log_windows.h>
 #include <grpc/support/slice_buffer.h>
 #include <grpc/support/useful.h>
 
@@ -121,7 +121,7 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
   async_connect_unlock_and_cleanup(ac, socket);
   /* If the connection was aborted, the callback was already called when
      the deadline was met. */
-  grpc_exec_ctx_push(exec_ctx, on_done, error, NULL);
+  grpc_exec_ctx_sched(exec_ctx, on_done, error, NULL);
 }
 
 /* Tries to issue one async connection, then schedules both an IOCP
@@ -225,7 +225,7 @@ failure:
   } else if (sock != INVALID_SOCKET) {
     closesocket(sock);
   }
-  grpc_exec_ctx_push(exec_ctx, on_done, final_error, NULL);
+  grpc_exec_ctx_sched(exec_ctx, on_done, final_error, NULL);
 }
 
 #endif /* GPR_WINSOCK_SOCKET */

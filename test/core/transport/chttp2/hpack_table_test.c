@@ -139,7 +139,7 @@ static void test_many_additions(void) {
 
   grpc_chttp2_hptbl_init(&tbl);
 
-  for (i = 0; i < 1000000; i++) {
+  for (i = 0; i < 100000; i++) {
     grpc_mdelem *elem;
     gpr_asprintf(&key, "K:%d", i);
     gpr_asprintf(&value, "VALUE:%d", i);

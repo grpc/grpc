@@ -51,8 +51,8 @@ const char *grpc_connectivity_state_name(grpc_connectivity_state state) {
       return "READY";
     case GRPC_CHANNEL_TRANSIENT_FAILURE:
       return "TRANSIENT_FAILURE";
-    case GRPC_CHANNEL_FATAL_FAILURE:
-      return "FATAL_FAILURE";
+    case GRPC_CHANNEL_SHUTDOWN:
+      return "SHUTDOWN";
   }
   GPR_UNREACHABLE_CODE(return "UNKNOWN");
 }
@@ -73,13 +73,13 @@ void grpc_connectivity_state_destroy(grpc_exec_ctx *exec_ctx,
   while ((w = tracker->watchers)) {
     tracker->watchers = w->next;
 
-    if (GRPC_CHANNEL_FATAL_FAILURE != *w->current) {
-      *w->current = GRPC_CHANNEL_FATAL_FAILURE;
+    if (GRPC_CHANNEL_SHUTDOWN != *w->current) {
+      *w->current = GRPC_CHANNEL_SHUTDOWN;
       error = GRPC_ERROR_NONE;
     } else {
       error = GRPC_ERROR_CREATE("Shutdown connectivity owner");
     }
-    grpc_exec_ctx_push(exec_ctx, w->notify, error, NULL);
+    grpc_exec_ctx_sched(exec_ctx, w->notify, error, NULL);
     gpr_free(w);
   }
   GRPC_ERROR_UNREF(tracker->current_error);
@@ -114,7 +114,7 @@ int grpc_connectivity_state_notify_on_state_change(
   if (current == NULL) {
     grpc_connectivity_state_watcher *w = tracker->watchers;
     if (w != NULL && w->notify == notify) {
-      grpc_exec_ctx_push(exec_ctx, notify, GRPC_ERROR_CANCELLED, NULL);
+      grpc_exec_ctx_sched(exec_ctx, notify, GRPC_ERROR_CANCELLED, NULL);
       tracker->watchers = w->next;
       gpr_free(w);
       return 0;
@@ -122,7 +122,7 @@ int grpc_connectivity_state_notify_on_state_change(
     while (w != NULL) {
       grpc_connectivity_state_watcher *rm_candidate = w->next;
       if (rm_candidate != NULL && rm_candidate->notify == notify) {
-        grpc_exec_ctx_push(exec_ctx, notify, GRPC_ERROR_CANCELLED, NULL);
+        grpc_exec_ctx_sched(exec_ctx, notify, GRPC_ERROR_CANCELLED, NULL);
         w->next = w->next->next;
         gpr_free(rm_candidate);
         return 0;
@@ -133,8 +133,8 @@ int grpc_connectivity_state_notify_on_state_change(
   } else {
     if (tracker->current_state != *current) {
       *current = tracker->current_state;
-      grpc_exec_ctx_push(exec_ctx, notify,
-                         GRPC_ERROR_REF(tracker->current_error), NULL);
+      grpc_exec_ctx_sched(exec_ctx, notify,
+                          GRPC_ERROR_REF(tracker->current_error), NULL);
     } else {
       grpc_connectivity_state_watcher *w = gpr_malloc(sizeof(*w));
       w->current = current;
@@ -164,7 +164,7 @@ void grpc_connectivity_state_set(grpc_exec_ctx *exec_ctx,
     case GRPC_CHANNEL_READY:
       GPR_ASSERT(error == GRPC_ERROR_NONE);
       break;
-    case GRPC_CHANNEL_FATAL_FAILURE:
+    case GRPC_CHANNEL_SHUTDOWN:
     case GRPC_CHANNEL_TRANSIENT_FAILURE:
       GPR_ASSERT(error != GRPC_ERROR_NONE);
       break;
@@ -174,13 +174,13 @@ void grpc_connectivity_state_set(grpc_exec_ctx *exec_ctx,
   if (tracker->current_state == state) {
     return;
   }
-  GPR_ASSERT(tracker->current_state != GRPC_CHANNEL_FATAL_FAILURE);
+  GPR_ASSERT(tracker->current_state != GRPC_CHANNEL_SHUTDOWN);
   tracker->current_state = state;
   while ((w = tracker->watchers) != NULL) {
     *w->current = tracker->current_state;
     tracker->watchers = w->next;
-    grpc_exec_ctx_push(exec_ctx, w->notify,
-                       GRPC_ERROR_REF(tracker->current_error), NULL);
+    grpc_exec_ctx_sched(exec_ctx, w->notify,
+                        GRPC_ERROR_REF(tracker->current_error), NULL);
     gpr_free(w);
   }
 }

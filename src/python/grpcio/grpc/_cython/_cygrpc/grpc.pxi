@@ -80,6 +80,12 @@ cdef extern from "grpc/_cython/loader.h":
   gpr_timespec gpr_convert_clock_type(gpr_timespec t,
                                       gpr_clock_type target_clock) nogil
 
+  gpr_timespec gpr_time_from_millis(int64_t ms, gpr_clock_type type) nogil
+
+  gpr_timespec gpr_time_add(gpr_timespec a, gpr_timespec b) nogil
+
+  int gpr_time_cmp(gpr_timespec a, gpr_timespec b) nogil
+  
   ctypedef enum grpc_status_code:
     GRPC_STATUS_OK
     GRPC_STATUS_CANCELLED
@@ -208,7 +214,7 @@ cdef extern from "grpc/_cython/loader.h":
     GRPC_CHANNEL_CONNECTING
     GRPC_CHANNEL_READY
     GRPC_CHANNEL_TRANSIENT_FAILURE
-    GRPC_CHANNEL_FATAL_FAILURE
+    GRPC_CHANNEL_SHUTDOWN
 
   ctypedef struct grpc_metadata:
     const char *key
@@ -336,6 +342,8 @@ cdef extern from "grpc/_cython/loader.h":
   void grpc_server_register_completion_queue(grpc_server *server,
                                              grpc_completion_queue *cq,
                                              void *reserved) nogil
+  void grpc_server_register_non_listening_completion_queue(
+      grpc_server *server, grpc_completion_queue *cq, void *reserved) nogil
   int grpc_server_add_insecure_http2_port(
       grpc_server *server, const char *addr) nogil
   void grpc_server_start(grpc_server *server) nogil

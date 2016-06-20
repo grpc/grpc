@@ -28,9 +28,11 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from distutils import extension
+import errno
 import os
 import os.path
 import shlex
+import shutil
 import sys
 
 import setuptools
@@ -47,18 +49,41 @@ sys.path.insert(0, os.path.abspath('.'))
 # ourselves in w.r.t. the multitude of operating systems this ought to build on.
 # By default we assume a GCC-like compiler.
 EXTRA_COMPILE_ARGS = shlex.split(os.environ.get('GRPC_PYTHON_CFLAGS',
-                                                '-frtti -std=c++11'))
+                                                '-fno-wrapv -frtti -std=c++11'))
 EXTRA_LINK_ARGS = shlex.split(os.environ.get('GRPC_PYTHON_LDFLAGS',
                                              '-lpthread'))
 
+GRPC_PYTHON_TOOLS_PACKAGE = 'grpc.tools'
+GRPC_PYTHON_PROTO_RESOURCES_NAME = '_proto'
+
 import protoc_lib_deps
 import grpc_version
+
+def package_data():
+  tools_path = GRPC_PYTHON_TOOLS_PACKAGE.replace('.', os.path.sep)
+  proto_resources_path = os.path.join(tools_path,
+                                      GRPC_PYTHON_PROTO_RESOURCES_NAME)
+  proto_files = []
+  for proto_file in protoc_lib_deps.PROTO_FILES:
+    source = os.path.join(protoc_lib_deps.PROTO_INCLUDE, proto_file)
+    target = os.path.join(proto_resources_path, proto_file)
+    relative_target = os.path.join(GRPC_PYTHON_PROTO_RESOURCES_NAME, proto_file)
+    try:
+      os.makedirs(os.path.dirname(target))
+    except OSError as error:
+      if error.errno == errno.EEXIST:
+        pass
+      else:
+        raise
+    shutil.copy(source, target)
+    proto_files.append(relative_target)
+  return {GRPC_PYTHON_TOOLS_PACKAGE: proto_files}
 
 def protoc_ext_module():
   plugin_sources = [
       'grpc/tools/main.cc',
       'grpc_root/src/compiler/python_generator.cc'] + [
-      os.path.join('third_party/protobuf/src', cc_file)
+      os.path.join(protoc_lib_deps.CC_INCLUDE, cc_file)
       for cc_file in protoc_lib_deps.CC_FILES]
   plugin_ext = extension.Extension(
       name='grpc.tools.protoc_compiler',
@@ -67,7 +92,7 @@ def protoc_ext_module():
           '.',
           'grpc_root',
           'grpc_root/include',
-          'third_party/protobuf/src',
+          protoc_lib_deps.CC_INCLUDE,
       ],
       language='c++',
       define_macros=[('HAVE_PTHREAD', 1)],
@@ -88,9 +113,10 @@ setuptools.setup(
       protoc_ext_module(),
   ]),
   packages=setuptools.find_packages('.'),
-  # TODO(atash): Figure out why auditwheel doesn't like namespace packages.
-  #namespace_packages=['grpc'],
+  namespace_packages=['grpc'],
   install_requires=[
     'protobuf>=3.0.0a3',
+    'grpcio>=0.14.0',
   ],
+  package_data=package_data(),
 )

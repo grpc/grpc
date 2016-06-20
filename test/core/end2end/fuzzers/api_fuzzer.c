@@ -50,7 +50,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 // logging
 
-static const bool squelch = !true;
+bool squelch = true;
+bool leak_check = true;
 
 static void dont_log(gpr_log_func_args *args) {}
 
@@ -200,9 +201,9 @@ static void finish_resolve(grpc_exec_ctx *exec_ctx, void *arg,
     addrs->addrs = gpr_malloc(sizeof(*addrs->addrs));
     addrs->addrs[0].len = 0;
     *r->addrs = addrs;
-    grpc_exec_ctx_push(exec_ctx, r->on_done, GRPC_ERROR_NONE, NULL);
+    grpc_exec_ctx_sched(exec_ctx, r->on_done, GRPC_ERROR_NONE, NULL);
   } else {
-    grpc_exec_ctx_push(
+    grpc_exec_ctx_sched(
         exec_ctx, r->on_done,
         GRPC_ERROR_CREATE_REFERENCING("Resolution failed", &error, 1), NULL);
   }
@@ -247,7 +248,7 @@ static void do_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   future_connect *fc = arg;
   if (error != GRPC_ERROR_NONE) {
     *fc->ep = NULL;
-    grpc_exec_ctx_push(exec_ctx, fc->closure, GRPC_ERROR_REF(error), NULL);
+    grpc_exec_ctx_sched(exec_ctx, fc->closure, GRPC_ERROR_REF(error), NULL);
   } else if (g_server != NULL) {
     grpc_endpoint *client;
     grpc_endpoint *server;
@@ -259,7 +260,7 @@ static void do_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     grpc_server_setup_transport(exec_ctx, g_server, transport, NULL, NULL);
     grpc_chttp2_transport_start_reading(exec_ctx, transport, NULL, 0);
 
-    grpc_exec_ctx_push(exec_ctx, fc->closure, GRPC_ERROR_NONE, NULL);
+    grpc_exec_ctx_sched(exec_ctx, fc->closure, GRPC_ERROR_NONE, NULL);
   } else {
     sched_connect(exec_ctx, fc->closure, fc->ep, fc->deadline);
   }
@@ -270,8 +271,8 @@ static void sched_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                           grpc_endpoint **ep, gpr_timespec deadline) {
   if (gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) < 0) {
     *ep = NULL;
-    grpc_exec_ctx_push(exec_ctx, closure,
-                       GRPC_ERROR_CREATE("Connect deadline exceeded"), NULL);
+    grpc_exec_ctx_sched(exec_ctx, closure,
+                        GRPC_ERROR_CREATE("Connect deadline exceeded"), NULL);
     return;
   }
 
@@ -679,7 +680,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         if (g_channel != NULL) {
           grpc_connectivity_state st =
               grpc_channel_check_connectivity_state(g_channel, 0);
-          if (st != GRPC_CHANNEL_FATAL_FAILURE) {
+          if (st != GRPC_CHANNEL_SHUTDOWN) {
             gpr_timespec deadline = gpr_time_add(
                 gpr_now(GPR_CLOCK_REALTIME),
                 gpr_time_from_micros(read_uint32(&inp), GPR_TIMESPAN));
@@ -744,6 +745,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           break;
         }
         grpc_op *ops = gpr_malloc(sizeof(grpc_op) * num_ops);
+        memset(ops, 0, sizeof(grpc_op) * num_ops);
         bool ok = true;
         size_t i;
         grpc_op *op;

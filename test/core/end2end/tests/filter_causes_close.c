@@ -134,6 +134,7 @@ static void test_request(grpc_end2end_test_config config) {
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
@@ -216,7 +217,7 @@ static void recv_im_ready(grpc_exec_ctx *exec_ctx, void *arg,
                                        &message);
     grpc_call_next_op(exec_ctx, elem, &op);
   }
-  grpc_exec_ctx_push(
+  grpc_exec_ctx_sched(
       exec_ctx, calld->recv_im_ready,
       GRPC_ERROR_CREATE_REFERENCING("Forced call to close", &error, 1), NULL);
 }
@@ -236,6 +237,7 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                            grpc_call_element_args *args) {}
 
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                              const grpc_call_stats *stats,
                               void *and_free_memory) {}
 
 static void init_channel_elem(grpc_exec_ctx *exec_ctx,
@@ -250,7 +252,7 @@ static const grpc_channel_filter test_filter = {
     grpc_channel_next_op,
     sizeof(call_data),
     init_call_elem,
-    grpc_call_stack_ignore_set_pollset,
+    grpc_call_stack_ignore_set_pollset_or_pollset_set,
     destroy_call_elem,
     sizeof(channel_data),
     init_channel_elem,

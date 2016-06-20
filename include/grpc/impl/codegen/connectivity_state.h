@@ -49,7 +49,7 @@ typedef enum {
   /** channel has seen a failure but expects to recover */
   GRPC_CHANNEL_TRANSIENT_FAILURE,
   /** channel has seen a failure that it cannot recover from */
-  GRPC_CHANNEL_FATAL_FAILURE
+  GRPC_CHANNEL_SHUTDOWN
 } grpc_connectivity_state;
 
 #ifdef __cplusplus

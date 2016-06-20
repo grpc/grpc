@@ -262,6 +262,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\byte_buffer_reader.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\compression.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\status.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\byte_buffer_reader.h" />
@@ -274,7 +275,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_atomic.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_sync.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_win32.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\log.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h" />
@@ -282,7 +283,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_generic.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_win32.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\census.h" />
   </ItemGroup>
@@ -305,6 +306,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint_pair.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\error.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_and_epoll_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\exec_ctx.h" />
@@ -314,6 +316,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_internal.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\load_file.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\polling_entity.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_set.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_set_windows.h" />
@@ -322,7 +325,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_utils.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_win32.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_client.h" />
@@ -362,6 +365,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\static_metadata.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\transport.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\transport_impl.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_decoder.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_encoder.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\chttp2_transport.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\frame.h" />
@@ -399,6 +403,8 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\subchannel_call_holder.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\subchannel_index.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\uri_parser.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v1\load_balancer.pb.h" />
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb.h" />
@@ -408,6 +414,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\aggregation.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\census_interface.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\census_rpc_stats.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\gen\census.pb.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\grpc_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\mlog.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\rpc_metric_id.h" />
@@ -431,7 +438,7 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.c">
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\compression\compression_algorithm.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\compression\compression.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\compression\message_compress.c">
     </ClCompile>
@@ -453,6 +460,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\error.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_and_epoll_posix.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_posix.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_posix.c">
@@ -470,6 +479,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_windows.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\load_file.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\polling_entity.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_set_windows.c">
     </ClCompile>
@@ -585,6 +596,10 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\insecure\server_chttp2.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\insecure\server_chttp2_posix.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_decoder.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_encoder.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\chttp2_plugin.c">
@@ -631,6 +646,8 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\insecure\channel_create.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\insecure\channel_create_posix.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\channel_connectivity.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\client_channel.c">
@@ -673,6 +690,10 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\sockaddr\sockaddr_resolver.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting_filter.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\proto\grpc\lb\v1\load_balancer.pb.c">
@@ -688,6 +709,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\round_robin\round_robin.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\context.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\gen\census.pb.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\grpc_context.c">
     </ClCompile>

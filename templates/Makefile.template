@@ -923,6 +923,7 @@
 
   pc_cxx_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc
 
+  ifeq ($(EMBED_OPENSSL),true)
   privatelibs_cxx: \
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
@@ -931,6 +932,18 @@
   % endif
   % endif
   % endfor
+  
+  else
+  privatelibs_cxx: \
+  % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
+  % if lib.build == 'private' and lib.language == 'c++' and not lib.get('external_deps', None) and not lib.boringssl:
+   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
+  % endif
+  % endif
+  % endfor
+  
+  endif
 
 
   ifeq ($(HAS_ZOOKEEPER),true)
@@ -958,12 +971,23 @@
   % endfor
 
 
+  ifeq ($(EMBED_OPENSSL),true)
   buildtests_cxx: buildtests_zookeeper privatelibs_cxx <%text>\</%text>
   % for tgt in targets:
   % if tgt.build == 'test' and tgt.language == 'c++' and not tgt.get('external_deps', None):
     $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
   % endif
   % endfor
+  
+  else
+  buildtests_cxx: buildtests_zookeeper privatelibs_cxx <%text>\</%text>
+  % for tgt in targets:
+  % if tgt.build == 'test' and tgt.language == 'c++' and not tgt.get('external_deps', None) and not tgt.boringssl:
+    $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
+  % endif
+  % endfor
+  
+  endif
 
 
   ifeq ($(HAS_ZOOKEEPER),true)
@@ -1207,7 +1231,7 @@
   $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_zookeeper.pc:
   	$(E) "[MAKE]    Generating $@"
   	$(Q) mkdir -p $(@D)
-  	$(Q) echo -e "$(GRPC_ZOOKEEPER_PC_FILE)" >$@
+  	$(Q) echo "$(GRPC_ZOOKEEPER_PC_FILE)" | tr , '\n' >$@
 
   $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc:
   	$(E) "[MAKE]    Generating $@"
@@ -1431,17 +1455,19 @@
   	@echo "Your system looks ready to go."
   	@echo
   else
-  	@echo "We couldn't find protoc 3.0.0+ installed on your system. While this"
-  	@echo "won't prevent grpc from working, you won't be able to compile"
-  	@echo "and run any meaningful code with it."
+  	@echo "Warning: it looks like protoc 3.0.0+ isn't installed on your system,"
+  	@echo "which means that you won't be able to compile .proto files for use"
+  	@echo "with gRPC."
   	@echo
+  	@echo "If you are just using pre-compiled protocol buffers, or you otherwise"
+  	@echo "have no need to compile .proto files, you can ignore this."
   	@echo
-  	@echo "Please download and install protobuf 3.0.0+ from:"
+  	@echo "If you do need protobuf for some reason, you can download and install"
+  	@echo "it from:"
   	@echo
   	@echo "   https://github.com/google/protobuf/releases"
   	@echo
-  	@echo "Once you've done so, or if you think this message is in error,"
-  	@echo "you can re-run this check by doing:"
+  	@echo "Once you've done so, you can re-run this check by doing:"
   	@echo
   	@echo "   make verify-install"
   endif

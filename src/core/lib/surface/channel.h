@@ -42,6 +42,11 @@ grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
                                   grpc_channel_stack_type channel_stack_type,
                                   grpc_transport *optional_transport);
 
+grpc_call *grpc_channel_create_pollset_set_call(
+    grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
+    grpc_pollset_set *pollset_set, const char *method, const char *host,
+    gpr_timespec deadline, void *reserved);
+
 /** Get a (borrowed) pointer to this channels underlying channel stack */
 grpc_channel_stack *grpc_channel_get_channel_stack(grpc_channel *channel);
 
@@ -70,5 +75,9 @@ void grpc_channel_internal_unref(grpc_exec_ctx *exec_ctx,
 #define GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, channel, reason) \
   grpc_channel_internal_unref(exec_ctx, channel)
 #endif
+
+/** Return the channel's compression options. */
+grpc_compression_options grpc_channel_compression_options(
+    const grpc_channel *channel);
 
 #endif /* GRPC_CORE_LIB_SURFACE_CHANNEL_H */

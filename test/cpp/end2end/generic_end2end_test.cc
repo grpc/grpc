@@ -38,7 +38,7 @@
 #include <grpc++/create_channel.h>
 #include <grpc++/generic/async_generic_service.h>
 #include <grpc++/generic/generic_stub.h>
-#include <grpc++/impl/proto_utils.h>
+#include <grpc++/impl/codegen/proto_utils.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>

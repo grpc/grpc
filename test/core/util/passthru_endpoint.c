@@ -59,11 +59,11 @@ static void me_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   half *m = (half *)ep;
   gpr_mu_lock(&m->parent->mu);
   if (m->parent->shutdown) {
-    grpc_exec_ctx_push(exec_ctx, cb, GRPC_ERROR_CREATE("Already shutdown"),
-                       NULL);
+    grpc_exec_ctx_sched(exec_ctx, cb, GRPC_ERROR_CREATE("Already shutdown"),
+                        NULL);
   } else if (m->read_buffer.count > 0) {
     gpr_slice_buffer_swap(&m->read_buffer, slices);
-    grpc_exec_ctx_push(exec_ctx, cb, GRPC_ERROR_NONE, NULL);
+    grpc_exec_ctx_sched(exec_ctx, cb, GRPC_ERROR_NONE, NULL);
   } else {
     m->on_read = cb;
     m->on_read_out = slices;
@@ -87,7 +87,7 @@ static void me_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     for (size_t i = 0; i < slices->count; i++) {
       gpr_slice_buffer_add(m->on_read_out, gpr_slice_ref(slices->slices[i]));
     }
-    grpc_exec_ctx_push(exec_ctx, m->on_read, GRPC_ERROR_NONE, NULL);
+    grpc_exec_ctx_sched(exec_ctx, m->on_read, GRPC_ERROR_NONE, NULL);
     m->on_read = NULL;
   } else {
     for (size_t i = 0; i < slices->count; i++) {
@@ -95,7 +95,7 @@ static void me_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     }
   }
   gpr_mu_unlock(&m->parent->mu);
-  grpc_exec_ctx_push(exec_ctx, cb, error, NULL);
+  grpc_exec_ctx_sched(exec_ctx, cb, error, NULL);
 }
 
 static void me_add_to_pollset(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
@@ -109,14 +109,14 @@ static void me_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
   gpr_mu_lock(&m->parent->mu);
   m->parent->shutdown = true;
   if (m->on_read) {
-    grpc_exec_ctx_push(exec_ctx, m->on_read, GRPC_ERROR_CREATE("Shutdown"),
-                       NULL);
+    grpc_exec_ctx_sched(exec_ctx, m->on_read, GRPC_ERROR_CREATE("Shutdown"),
+                        NULL);
     m->on_read = NULL;
   }
   m = other_half(m);
   if (m->on_read) {
-    grpc_exec_ctx_push(exec_ctx, m->on_read, GRPC_ERROR_CREATE("Shutdown"),
-                       NULL);
+    grpc_exec_ctx_sched(exec_ctx, m->on_read, GRPC_ERROR_CREATE("Shutdown"),
+                        NULL);
     m->on_read = NULL;
   }
   gpr_mu_unlock(&m->parent->mu);

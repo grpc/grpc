@@ -32,9 +32,13 @@
  */
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -92,8 +96,13 @@ void test_bind_server_twice(void) {
   gpr_asprintf(&addr, "[::]:%d", port);
   grpc_server_register_completion_queue(server1, cq, NULL);
   grpc_server_register_completion_queue(server2, cq, NULL);
+  GPR_ASSERT(0 == grpc_server_add_secure_http2_port(server2, addr, NULL));
   GPR_ASSERT(port == grpc_server_add_insecure_http2_port(server1, addr));
   GPR_ASSERT(0 == grpc_server_add_insecure_http2_port(server2, addr));
+  grpc_server_credentials *fake_creds =
+      grpc_fake_transport_security_server_credentials_create();
+  GPR_ASSERT(0 == grpc_server_add_secure_http2_port(server2, addr, fake_creds));
+  grpc_server_credentials_release(fake_creds);
   grpc_server_shutdown_and_notify(server1, cq, NULL);
   grpc_server_shutdown_and_notify(server2, cq, NULL);
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL);
@@ -104,12 +113,68 @@ void test_bind_server_twice(void) {
   gpr_free(addr);
 }
 
+void test_bind_server_to_addr(const char *host, bool secure) {
+  int port = grpc_pick_unused_port_or_die();
+  char *addr;
+  gpr_join_host_port(&addr, host, port);
+  gpr_log(GPR_INFO, "Test bind to %s", addr);
+
+  grpc_server *server = grpc_server_create(NULL, NULL);
+  if (secure) {
+    grpc_server_credentials *fake_creds =
+        grpc_fake_transport_security_server_credentials_create();
+    GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, fake_creds));
+    grpc_server_credentials_release(fake_creds);
+  } else {
+    GPR_ASSERT(grpc_server_add_insecure_http2_port(server, addr));
+  }
+  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+  grpc_server_register_completion_queue(server, cq, NULL);
+  grpc_server_start(server);
+  grpc_server_shutdown_and_notify(server, cq, NULL);
+  grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL);
+  grpc_server_destroy(server);
+  grpc_completion_queue_destroy(cq);
+  gpr_free(addr);
+}
+
+static int external_dns_works(const char *host) {
+  grpc_resolved_addresses *res;
+  grpc_error *error = grpc_blocking_resolve_address(host, "80", &res);
+  GRPC_ERROR_UNREF(error);
+  if (res != NULL) {
+    grpc_resolved_addresses_destroy(res);
+    return 1;
+  }
+  return 0;
+}
+
+static void test_bind_server_to_addrs(const char **addrs, size_t n) {
+  for (size_t i = 0; i < n; i++) {
+    test_bind_server_to_addr(addrs[i], false);
+    test_bind_server_to_addr(addrs[i], true);
+  }
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   test_register_method_fail();
   test_request_call_on_no_server_cq();
   test_bind_server_twice();
+
+  static const char *addrs[] = {
+      "::1", "127.0.0.1", "::ffff:127.0.0.1", "localhost", "0.0.0.0", "::",
+  };
+  test_bind_server_to_addrs(addrs, GPR_ARRAY_SIZE(addrs));
+
+  if (external_dns_works("loopback46.unittest.grpc.io")) {
+    static const char *dns_addrs[] = {
+        "loopback46.unittest.grpc.io", "loopback4.unittest.grpc.io",
+    };
+    test_bind_server_to_addrs(dns_addrs, GPR_ARRAY_SIZE(dns_addrs));
+  }
+
   grpc_shutdown();
   return 0;
 }

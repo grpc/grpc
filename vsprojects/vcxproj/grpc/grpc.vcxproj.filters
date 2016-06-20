@@ -25,7 +25,7 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\compression\compression_algorithm.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\compression\compression.c">
       <Filter>src\core\lib\compression</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\compression\message_compress.c">
@@ -58,6 +58,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\error.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_and_epoll_posix.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_posix.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
@@ -83,6 +86,9 @@
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\load_file.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\polling_entity.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_set_windows.c">
@@ -256,6 +262,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\secure\server_secure_chttp2.c">
       <Filter>src\core\ext\transport\chttp2\server\secure</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_decoder.c">
+      <Filter>src\core\ext\transport\chttp2\transport</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_encoder.c">
       <Filter>src\core\ext\transport\chttp2\transport</Filter>
     </ClCompile>
@@ -343,7 +352,7 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\google_default\credentials_posix.c">
       <Filter>src\core\lib\security\credentials\google_default</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\google_default\credentials_win32.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\google_default\credentials_windows.c">
       <Filter>src\core\lib\security\credentials\google_default</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\security\credentials\google_default\google_default_credentials.c">
@@ -469,17 +478,14 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\insecure\server_chttp2.c">
       <Filter>src\core\ext\transport\chttp2\server\insecure</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\insecure\server_chttp2_posix.c">
+      <Filter>src\core\ext\transport\chttp2\server\insecure</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\insecure\channel_create.c">
       <Filter>src\core\ext\transport\chttp2\client\insecure</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\cronet\client\secure\cronet_channel_create.c">
-      <Filter>src\core\ext\transport\cronet\client\secure</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\cronet\transport\cronet_api_dummy.c">
-      <Filter>src\core\ext\transport\cronet\transport</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\cronet\transport\cronet_transport.c">
-      <Filter>src\core\ext\transport\cronet\transport</Filter>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\insecure\channel_create_posix.c">
+      <Filter>src\core\ext\transport\chttp2\client\insecure</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.c">
       <Filter>src\core\ext\lb_policy\grpclb</Filter>
@@ -508,8 +514,17 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\sockaddr\sockaddr_resolver.c">
       <Filter>src\core\ext\resolver\sockaddr</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting.c">
+      <Filter>src\core\ext\load_reporting</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting_filter.c">
+      <Filter>src\core\ext\load_reporting</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\context.c">
       <Filter>src\core\ext\census</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\gen\census.pb.c">
+      <Filter>src\core\ext\census\gen</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\grpc_context.c">
       <Filter>src\core\ext\census</Filter>
@@ -552,6 +567,9 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc.h">
       <Filter>include\grpc</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_posix.h">
+      <Filter>include\grpc</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\status.h">
       <Filter>include\grpc</Filter>
     </ClInclude>
@@ -588,7 +606,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_sync.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_win32.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_windows.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\log.h">
@@ -612,14 +630,11 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_win32.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_windows.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h">
       <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_cronet.h">
-      <Filter>include\grpc</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_security.h">
       <Filter>include\grpc</Filter>
@@ -686,6 +701,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\error.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_and_epoll_posix.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_posix.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
@@ -713,6 +731,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\load_file.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\polling_entity.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
@@ -737,7 +758,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_utils.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_win32.h">
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_windows.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils_posix.h">
@@ -856,6 +877,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\transport_impl.h">
       <Filter>src\core\lib\transport</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_decoder.h">
+      <Filter>src\core\ext\transport\chttp2\transport</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_encoder.h">
       <Filter>src\core\ext\transport\chttp2\transport</Filter>
@@ -1040,9 +1064,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\uri_parser.h">
       <Filter>src\core\ext\client_config</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\third_party\objective_c\Cronet\cronet_c_for_grpc.h">
-      <Filter>third_party\objective_c\Cronet</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.h">
       <Filter>src\core\ext\lb_policy\grpclb</Filter>
     </ClInclude>
@@ -1061,6 +1082,12 @@
     <ClInclude Include="$(SolutionDir)\..\third_party\nanopb\pb_encode.h">
       <Filter>third_party\nanopb</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting.h">
+      <Filter>src\core\ext\load_reporting</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting_filter.h">
+      <Filter>src\core\ext\load_reporting</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\aggregation.h">
       <Filter>src\core\ext\census</Filter>
     </ClInclude>
@@ -1069,6 +1096,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\census_rpc_stats.h">
       <Filter>src\core\ext\census</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\gen\census.pb.h">
+      <Filter>src\core\ext\census\gen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\grpc_filter.h">
       <Filter>src\core\ext\census</Filter>
@@ -1106,6 +1136,9 @@
     <Filter Include="src\core\ext\census">
       <UniqueIdentifier>{9bf70bd2-f553-11b2-c237-abd148971eea}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\core\ext\census\gen">
+      <UniqueIdentifier>{4a14dd37-5868-c656-7333-fa80574cbb07}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\core\ext\client_config">
       <UniqueIdentifier>{003725f8-37fc-80b5-deba-baae32caf915}</UniqueIdentifier>
     </Filter>
@@ -1132,6 +1165,9 @@
     </Filter>
     <Filter Include="src\core\ext\lb_policy\round_robin">
       <UniqueIdentifier>{2472d352-cf94-f317-646e-72b769cea846}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\load_reporting">
+      <UniqueIdentifier>{b6c863cd-a135-32e8-df03-02365f526f0d}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\ext\resolver">
       <UniqueIdentifier>{6bfa6808-9dcb-8990-deed-5cf58a149dda}</UniqueIdentifier>
@@ -1174,18 +1210,6 @@
     </Filter>
     <Filter Include="src\core\ext\transport\chttp2\transport">
       <UniqueIdentifier>{6f34254e-e69f-c9b4-156d-5024bade5408}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\ext\transport\cronet">
-      <UniqueIdentifier>{1e9c85e9-5522-7ef8-0017-7e19990a6194}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\ext\transport\cronet\client">
-      <UniqueIdentifier>{d0530883-75d9-b5f7-d594-26735a70ac7b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\ext\transport\cronet\client\secure">
-      <UniqueIdentifier>{4fa6fe90-b7a8-5c8f-d629-db1e68d89eed}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\ext\transport\cronet\transport">
-      <UniqueIdentifier>{31518af8-5860-6d0d-ff78-4059fce29ec2}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\lib">
       <UniqueIdentifier>{5b2ded3f-84a5-f6b4-2060-286c7d1dc945}</UniqueIdentifier>
@@ -1264,12 +1288,6 @@
     </Filter>
     <Filter Include="third_party\nanopb">
       <UniqueIdentifier>{93d6596d-330c-1d27-6f84-3c840e57869e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="third_party\objective_c">
-      <UniqueIdentifier>{3a56a516-857e-d2aa-95cc-11685baf4e8c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="third_party\objective_c\Cronet">
-      <UniqueIdentifier>{a165c6e3-0776-6f40-7351-d7865668e220}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

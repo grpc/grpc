@@ -44,6 +44,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/iomgr/ev_poll_and_epoll_posix.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/support/env.h"
 
@@ -61,7 +62,7 @@ typedef struct {
 } event_engine_factory;
 
 static const event_engine_factory g_factories[] = {
-    {"poll", grpc_init_poll_posix},
+    {"poll", grpc_init_poll_posix}, {"legacy", grpc_init_poll_and_epoll_posix},
 };
 
 static void add(const char *beg, const char *end, char ***ss, size_t *ns) {
@@ -150,6 +151,10 @@ void grpc_fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure *on_done,
 
 void grpc_fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
   g_event_engine->fd_shutdown(exec_ctx, fd);
+}
+
+bool grpc_fd_is_shutdown(grpc_fd *fd) {
+  return g_event_engine->fd_is_shutdown(fd);
 }
 
 void grpc_fd_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_fd *fd,

@@ -128,7 +128,7 @@ static void on_md_processing_done(
     grpc_metadata_batch_filter(calld->recv_initial_metadata, remove_consumed_md,
                                elem);
     grpc_metadata_array_destroy(&calld->md);
-    grpc_exec_ctx_push(&exec_ctx, calld->on_done_recv, GRPC_ERROR_NONE, NULL);
+    grpc_exec_ctx_sched(&exec_ctx, calld->on_done_recv, GRPC_ERROR_NONE, NULL);
   } else {
     gpr_slice message;
     grpc_transport_stream_op close_op;
@@ -146,10 +146,10 @@ static void on_md_processing_done(
     calld->transport_op.send_trailing_metadata = NULL;
     grpc_transport_stream_op_add_close(&close_op, status, &message);
     grpc_call_next_op(&exec_ctx, elem, &close_op);
-    grpc_exec_ctx_push(&exec_ctx, calld->on_done_recv,
-                       grpc_error_set_int(GRPC_ERROR_CREATE(error_details),
-                                          GRPC_ERROR_INT_GRPC_STATUS, status),
-                       NULL);
+    grpc_exec_ctx_sched(&exec_ctx, calld->on_done_recv,
+                        grpc_error_set_int(GRPC_ERROR_CREATE(error_details),
+                                           GRPC_ERROR_INT_GRPC_STATUS, status),
+                        NULL);
   }
 
   grpc_exec_ctx_finish(&exec_ctx);
@@ -169,8 +169,8 @@ static void auth_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
       return;
     }
   }
-  grpc_exec_ctx_push(exec_ctx, calld->on_done_recv, GRPC_ERROR_REF(error),
-                     NULL);
+  grpc_exec_ctx_sched(exec_ctx, calld->on_done_recv, GRPC_ERROR_REF(error),
+                      NULL);
 }
 
 static void set_recv_ops_md_callbacks(grpc_call_element *elem,
@@ -224,12 +224,9 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
       grpc_server_security_context_destroy;
 }
 
-static void set_pollset(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                        grpc_pollset *pollset) {}
-
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                              void *ignored) {}
+                              const grpc_call_stats *stats, void *ignored) {}
 
 /* Constructor for channel_data */
 static void init_channel_elem(grpc_exec_ctx *exec_ctx,
@@ -262,7 +259,14 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
 }
 
 const grpc_channel_filter grpc_server_auth_filter = {
-    auth_start_transport_op, grpc_channel_next_op, sizeof(call_data),
-    init_call_elem,          set_pollset,          destroy_call_elem,
-    sizeof(channel_data),    init_channel_elem,    destroy_channel_elem,
-    grpc_call_next_get_peer, "server-auth"};
+    auth_start_transport_op,
+    grpc_channel_next_op,
+    sizeof(call_data),
+    init_call_elem,
+    grpc_call_stack_ignore_set_pollset_or_pollset_set,
+    destroy_call_elem,
+    sizeof(channel_data),
+    init_channel_elem,
+    destroy_channel_elem,
+    grpc_call_next_get_peer,
+    "server-auth"};

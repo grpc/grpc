@@ -69,19 +69,22 @@ grpc_error *grpc_set_socket_reuse_port(int fd, int reuse);
 int grpc_ipv6_loopback_available(void);
 
 /* Tries to set SO_NOSIGPIPE if available on this platform.
-   Returns 1 on success, 0 on failure.
    If SO_NO_SIGPIPE is not available, returns 1. */
 grpc_error *grpc_set_socket_no_sigpipe_if_possible(int fd);
 
 /* Tries to set IP_PKTINFO if available on this platform.
-   Returns 1 on success, 0 on failure.
    If IP_PKTINFO is not available, returns 1. */
 grpc_error *grpc_set_socket_ip_pktinfo_if_possible(int fd);
 
 /* Tries to set IPV6_RECVPKTINFO if available on this platform.
-   Returns 1 on success, 0 on failure.
    If IPV6_RECVPKTINFO is not available, returns 1. */
 grpc_error *grpc_set_socket_ipv6_recvpktinfo_if_possible(int fd);
+
+/* Tries to set the socket's send buffer to given size. */
+grpc_error *grpc_set_socket_sndbuf(int fd, int buffer_size_bytes);
+
+/* Tries to set the socket's receive buffer to given size. */
+grpc_error *grpc_set_socket_rcvbuf(int fd, int buffer_size_bytes);
 
 /* An enum to keep track of IPv4/IPv6 socket modes.
 

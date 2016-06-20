@@ -186,7 +186,7 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
 
   if (!g_initialized) {
     timer->triggered = 1;
-    grpc_exec_ctx_push(
+    grpc_exec_ctx_sched(
         exec_ctx, &timer->closure,
         GRPC_ERROR_CREATE("Attempt to create timer before initialization"),
         NULL);
@@ -195,7 +195,7 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
 
   if (gpr_time_cmp(deadline, now) <= 0) {
     timer->triggered = 1;
-    grpc_exec_ctx_push(exec_ctx, &timer->closure, GRPC_ERROR_NONE, NULL);
+    grpc_exec_ctx_sched(exec_ctx, &timer->closure, GRPC_ERROR_NONE, NULL);
     return;
   }
 
@@ -247,7 +247,7 @@ void grpc_timer_cancel(grpc_exec_ctx *exec_ctx, grpc_timer *timer) {
   shard_type *shard = &g_shards[shard_idx(timer)];
   gpr_mu_lock(&shard->mu);
   if (!timer->triggered) {
-    grpc_exec_ctx_push(exec_ctx, &timer->closure, GRPC_ERROR_CANCELLED, NULL);
+    grpc_exec_ctx_sched(exec_ctx, &timer->closure, GRPC_ERROR_CANCELLED, NULL);
     timer->triggered = 1;
     if (timer->heap_index == INVALID_HEAP_INDEX) {
       list_remove(timer);
@@ -287,8 +287,8 @@ static int refill_queue(shard_type *shard, gpr_timespec now) {
   return !grpc_timer_heap_is_empty(&shard->heap);
 }
 
-/* This pops the next non-cancelled timer with deadline <= now from the queue,
-   or returns NULL if there isn't one.
+/* This pops the next non-cancelled timer with deadline <= now from the
+   queue, or returns NULL if there isn't one.
    REQUIRES: shard->mu locked */
 static grpc_timer *pop_one(shard_type *shard, gpr_timespec now) {
   grpc_timer *timer;
@@ -313,7 +313,7 @@ static size_t pop_timers(grpc_exec_ctx *exec_ctx, shard_type *shard,
   grpc_timer *timer;
   gpr_mu_lock(&shard->mu);
   while ((timer = pop_one(shard, now))) {
-    grpc_exec_ctx_push(exec_ctx, &timer->closure, GRPC_ERROR_REF(error), NULL);
+    grpc_exec_ctx_sched(exec_ctx, &timer->closure, GRPC_ERROR_REF(error), NULL);
     n++;
   }
   *new_min_deadline = compute_min_deadline(shard);

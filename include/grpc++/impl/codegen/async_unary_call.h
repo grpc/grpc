@@ -91,6 +91,7 @@ class ClientAsyncResponseReader GRPC_FINAL
       collection_->finish_buf_.RecvInitialMetadata(context_);
     }
     collection_->finish_buf_.RecvMessage(msg);
+    collection_->finish_buf_.AllowNoMessage();
     collection_->finish_buf_.ClientRecvStatus(context_, status);
     call_.PerformOps(&collection_->finish_buf_);
   }

@@ -61,7 +61,7 @@ class NotFoundTest(unittest.TestCase):
 
   def test_future_stream_unary_not_found(self):
     rpc_future = self._generic_stub.future_stream_unary(
-        'grupe', 'mevvod', b'def', test_constants.LONG_TIMEOUT)
+        'grupe', 'mevvod', [b'def'], test_constants.LONG_TIMEOUT)
     with self.assertRaises(face.LocalError) as exception_assertion_context:
       rpc_future.result()
     self.assertIs(

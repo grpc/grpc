@@ -290,8 +290,8 @@ void grpc_subchannel_weak_unref(grpc_exec_ctx *exec_ctx,
   gpr_atm old_refs;
   old_refs = ref_mutate(c, -(gpr_atm)1, 1 REF_MUTATE_PURPOSE("WEAK_UNREF"));
   if (old_refs == 1) {
-    grpc_exec_ctx_push(exec_ctx, grpc_closure_create(subchannel_destroy, c),
-                       GRPC_ERROR_NONE, NULL);
+    grpc_exec_ctx_sched(exec_ctx, grpc_closure_create(subchannel_destroy, c),
+                        GRPC_ERROR_NONE, NULL);
   }
 }
 
@@ -481,12 +481,12 @@ static void subchannel_on_child_state_changed(grpc_exec_ctx *exec_ctx, void *p,
   /* if we failed just leave this closure */
   if (sw->connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     /* any errors on a subchannel ==> we're done, create a new one */
-    sw->connectivity_state = GRPC_CHANNEL_FATAL_FAILURE;
+    sw->connectivity_state = GRPC_CHANNEL_SHUTDOWN;
   }
   grpc_connectivity_state_set(exec_ctx, &c->state_tracker,
                               sw->connectivity_state, GRPC_ERROR_REF(error),
                               "reflect_child");
-  if (sw->connectivity_state != GRPC_CHANNEL_FATAL_FAILURE) {
+  if (sw->connectivity_state != GRPC_CHANNEL_SHUTDOWN) {
     grpc_connected_subchannel_notify_on_state_change(
         exec_ctx, GET_CONNECTED_SUBCHANNEL(c, no_barrier), NULL,
         &sw->connectivity_state, &sw->closure);
@@ -621,6 +621,7 @@ static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
                                  grpc_error *error) {
   grpc_subchannel *c = arg;
+  grpc_channel_args *delete_channel_args = c->connecting_result.channel_args;
 
   GRPC_SUBCHANNEL_WEAK_REF(c, "connected");
   gpr_mu_lock(&c->mu);
@@ -638,13 +639,20 @@ static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
         "connect_failed");
     gpr_timespec time_til_next = gpr_time_sub(c->next_attempt, now);
     const char *errmsg = grpc_error_string(error);
-    gpr_log(GPR_INFO, "Connect failed, retry in %d.%09d seconds: %s",
-            time_til_next.tv_sec, time_til_next.tv_nsec, errmsg);
-    grpc_error_free_string(errmsg);
+    gpr_log(GPR_INFO, "Connect failed: %s", errmsg);
+    if (gpr_time_cmp(time_til_next, gpr_time_0(time_til_next.clock_type)) <=
+        0) {
+      gpr_log(GPR_INFO, "Retry immediately");
+    } else {
+      gpr_log(GPR_INFO, "Retry in %" PRId64 ".%09d seconds",
+              time_til_next.tv_sec, time_til_next.tv_nsec);
+    }
     grpc_timer_init(exec_ctx, &c->alarm, c->next_attempt, on_alarm, c, now);
+    grpc_error_free_string(errmsg);
   }
   gpr_mu_unlock(&c->mu);
   GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
+  grpc_channel_args_destroy(delete_channel_args);
 }
 
 /*
@@ -656,7 +664,7 @@ static void subchannel_call_destroy(grpc_exec_ctx *exec_ctx, void *call,
   grpc_subchannel_call *c = call;
   GPR_TIMER_BEGIN("grpc_subchannel_call_unref.destroy", 0);
   grpc_connected_subchannel *connection = c->connection;
-  grpc_call_stack_destroy(exec_ctx, SUBCHANNEL_CALL_TO_CALL_STACK(c), c);
+  grpc_call_stack_destroy(exec_ctx, SUBCHANNEL_CALL_TO_CALL_STACK(c), NULL, c);
   GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, connection, "subchannel_call");
   GPR_TIMER_END("grpc_subchannel_call_unref.destroy", 0);
 }
@@ -694,7 +702,7 @@ grpc_connected_subchannel *grpc_subchannel_get_connected_subchannel(
 
 grpc_subchannel_call *grpc_connected_subchannel_create_call(
     grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *con,
-    grpc_pollset *pollset) {
+    grpc_polling_entity *pollent) {
   grpc_channel_stack *chanstk = CHANNEL_STACK_FROM_CONNECTION(con);
   grpc_subchannel_call *call =
       gpr_malloc(sizeof(grpc_subchannel_call) + chanstk->call_stack_size);
@@ -703,7 +711,7 @@ grpc_subchannel_call *grpc_connected_subchannel_create_call(
   GRPC_CONNECTED_SUBCHANNEL_REF(con, "subchannel_call");
   grpc_call_stack_init(exec_ctx, chanstk, 1, subchannel_call_destroy, call,
                        NULL, NULL, callstk);
-  grpc_call_stack_set_pollset(exec_ctx, callstk, pollset);
+  grpc_call_stack_set_pollset_or_pollset_set(exec_ctx, callstk, pollent);
   return call;
 }
 

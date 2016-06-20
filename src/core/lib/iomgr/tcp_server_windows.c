@@ -41,7 +41,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/log_win32.h>
+#include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
@@ -121,7 +121,7 @@ grpc_error *grpc_tcp_server_create(grpc_closure *shutdown_complete,
 
 static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   if (s->shutdown_complete != NULL) {
-    grpc_exec_ctx_push(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE, NULL);
+    grpc_exec_ctx_sched(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE, NULL);
   }
 
   /* Now that the accepts have been aborted, we can destroy the sockets.

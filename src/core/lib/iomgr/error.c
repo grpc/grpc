@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,6 +33,7 @@
 
 #include "src/core/lib/iomgr/error.h"
 
+#include <inttypes.h>
 #include <stdbool.h>
 #include <string.h>
 
@@ -41,6 +42,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
+
+#ifdef GPR_WINDOWS
+#include <grpc/support/log_windows.h>
+#endif
 
 static void destroy_integer(void *key) {}
 
@@ -84,14 +89,10 @@ static const gpr_avl_vtable avl_vtable_errs = {
 
 static const char *error_int_name(grpc_error_ints key) {
   switch (key) {
-    case GRPC_ERROR_INT_STATUS_CODE:
-      return "status_code";
     case GRPC_ERROR_INT_ERRNO:
       return "errno";
     case GRPC_ERROR_INT_FILE_LINE:
       return "file_line";
-    case GRPC_ERROR_INT_WARNING:
-      return "warning";
     case GRPC_ERROR_INT_STREAM_ID:
       return "stream_id";
     case GRPC_ERROR_INT_GRPC_STATUS:
@@ -112,6 +113,8 @@ static const char *error_int_name(grpc_error_ints key) {
       return "fd";
     case GRPC_ERROR_INT_WSA_ERROR:
       return "wsa_error";
+    case GRPC_ERROR_INT_HTTP_STATUS:
+      return "http_status";
   }
   GPR_UNREACHABLE_CODE(return "unknown");
 }
@@ -336,7 +339,7 @@ static char *key_time(void *p) {
 
 static char *fmt_int(void *p) {
   char *s;
-  gpr_asprintf(&s, "%lld", (intptr_t)p);
+  gpr_asprintf(&s, "%" PRIdPTR, (intptr_t)p);
   return s;
 }
 
@@ -418,7 +421,7 @@ static char *fmt_time(void *p) {
       pfx = "";
       break;
   }
-  gpr_asprintf(&out, "\"%s%d.%09d\"", pfx, tm.tv_sec, tm.tv_nsec);
+  gpr_asprintf(&out, "\"%s%" PRId64 ".%09d\"", pfx, tm.tv_sec, tm.tv_nsec);
   return out;
 }
 
@@ -506,7 +509,7 @@ grpc_error *grpc_os_error(const char *file, int line, int err,
       GRPC_ERROR_STR_SYSCALL, call_name);
 }
 
-#ifdef GPR_WIN32
+#ifdef GPR_WINDOWS
 grpc_error *grpc_wsa_error(const char *file, int line, int err,
                            const char *call_name) {
   char *utf8_message = gpr_format_message(err);

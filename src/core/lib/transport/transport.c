@@ -60,7 +60,7 @@ void grpc_stream_unref(grpc_exec_ctx *exec_ctx,
                        grpc_stream_refcount *refcount) {
 #endif
   if (gpr_unref(&refcount->refs)) {
-    grpc_exec_ctx_push(exec_ctx, &refcount->destroy, GRPC_ERROR_NONE, NULL);
+    grpc_exec_ctx_sched(exec_ctx, &refcount->destroy, GRPC_ERROR_NONE, NULL);
   }
 }
 
@@ -125,10 +125,19 @@ void grpc_transport_perform_op(grpc_exec_ctx *exec_ctx,
   transport->vtable->perform_op(exec_ctx, transport, op);
 }
 
-void grpc_transport_set_pollset(grpc_exec_ctx *exec_ctx,
-                                grpc_transport *transport, grpc_stream *stream,
-                                grpc_pollset *pollset) {
-  transport->vtable->set_pollset(exec_ctx, transport, stream, pollset);
+void grpc_transport_set_pops(grpc_exec_ctx *exec_ctx, grpc_transport *transport,
+                             grpc_stream *stream,
+                             grpc_polling_entity *pollent) {
+  grpc_pollset *pollset;
+  grpc_pollset_set *pollset_set;
+  if ((pollset = grpc_polling_entity_pollset(pollent)) != NULL) {
+    transport->vtable->set_pollset(exec_ctx, transport, stream, pollset);
+  } else if ((pollset_set = grpc_polling_entity_pollset_set(pollent)) != NULL) {
+    transport->vtable->set_pollset_set(exec_ctx, transport, stream,
+                                       pollset_set);
+  } else {
+    abort();
+  }
 }
 
 void grpc_transport_destroy_stream(grpc_exec_ctx *exec_ctx,
@@ -146,11 +155,11 @@ char *grpc_transport_get_peer(grpc_exec_ctx *exec_ctx,
 void grpc_transport_stream_op_finish_with_failure(grpc_exec_ctx *exec_ctx,
                                                   grpc_transport_stream_op *op,
                                                   grpc_error *error) {
-  grpc_exec_ctx_push(exec_ctx, op->recv_message_ready, GRPC_ERROR_REF(error),
-                     NULL);
-  grpc_exec_ctx_push(exec_ctx, op->recv_initial_metadata_ready,
-                     GRPC_ERROR_REF(error), NULL);
-  grpc_exec_ctx_push(exec_ctx, op->on_complete, error, NULL);
+  grpc_exec_ctx_sched(exec_ctx, op->recv_message_ready, GRPC_ERROR_REF(error),
+                      NULL);
+  grpc_exec_ctx_sched(exec_ctx, op->recv_initial_metadata_ready,
+                      GRPC_ERROR_REF(error), NULL);
+  grpc_exec_ctx_sched(exec_ctx, op->on_complete, error, NULL);
 }
 
 void grpc_transport_stream_op_add_cancellation(grpc_transport_stream_op *op,

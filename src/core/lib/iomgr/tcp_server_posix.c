@@ -132,6 +132,9 @@ struct grpc_tcp_server {
   grpc_pollset **pollsets;
   /* number of pollsets in the pollsets array */
   size_t pollset_count;
+
+  /* next pollset to assign a channel to */
+  size_t next_pollset_to_assign;
 };
 
 static gpr_once check_init = GPR_ONCE_INIT;
@@ -178,13 +181,14 @@ grpc_error *grpc_tcp_server_create(grpc_closure *shutdown_complete,
   s->head = NULL;
   s->tail = NULL;
   s->nports = 0;
+  s->next_pollset_to_assign = 0;
   *server = s;
   return GRPC_ERROR_NONE;
 }
 
 static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   if (s->shutdown_complete != NULL) {
-    grpc_exec_ctx_push(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE, NULL);
+    grpc_exec_ctx_sched(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE, NULL);
   }
 
   gpr_mu_destroy(&s->mu);
@@ -364,7 +368,9 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *err) {
     goto error;
   }
 
-  read_notifier_pollset = grpc_fd_get_read_notifier_pollset(exec_ctx, sp->emfd);
+  read_notifier_pollset =
+      sp->server->pollsets[(sp->server->next_pollset_to_assign++) %
+                           sp->server->pollset_count];
 
   /* loop until accept4 returns EAGAIN, and then re-arm notification */
   for (;;) {
@@ -588,9 +594,9 @@ grpc_error *grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
       if (port == 0 && sp != NULL) {
         grpc_sockaddr_set_port((struct sockaddr *)&wild4, sp->port);
       }
-      addr = (struct sockaddr *)&wild4;
-      addr_len = sizeof(wild4);
     }
+    addr = (struct sockaddr *)&wild4;
+    addr_len = sizeof(wild4);
   }
 
   errs[1] = grpc_create_dualstack_socket(addr, SOCK_STREAM, 0, &dsmode, &fd);

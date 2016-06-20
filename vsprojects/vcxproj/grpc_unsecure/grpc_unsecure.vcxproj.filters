@@ -28,7 +28,7 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\channel\http_server_filter.c">
       <Filter>src\core\lib\channel</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\compression\compression_algorithm.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\compression\compression.c">
       <Filter>src\core\lib\compression</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\compression\message_compress.c">
@@ -61,6 +61,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\error.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_and_epoll_posix.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_posix.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
@@ -86,6 +89,9 @@
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\load_file.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\polling_entity.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_set_windows.c">
@@ -259,6 +265,12 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\insecure\server_chttp2.c">
       <Filter>src\core\ext\transport\chttp2\server\insecure</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\server\insecure\server_chttp2_posix.c">
+      <Filter>src\core\ext\transport\chttp2\server\insecure</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_decoder.c">
+      <Filter>src\core\ext\transport\chttp2\transport</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_encoder.c">
       <Filter>src\core\ext\transport\chttp2\transport</Filter>
     </ClCompile>
@@ -328,6 +340,9 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\insecure\channel_create.c">
       <Filter>src\core\ext\transport\chttp2\client\insecure</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\client\insecure\channel_create_posix.c">
+      <Filter>src\core\ext\transport\chttp2\client\insecure</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\client_config\channel_connectivity.c">
       <Filter>src\core\ext\client_config</Filter>
     </ClCompile>
@@ -391,6 +406,12 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\resolver\sockaddr\sockaddr_resolver.c">
       <Filter>src\core\ext\resolver\sockaddr</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting.c">
+      <Filter>src\core\ext\load_reporting</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting_filter.c">
+      <Filter>src\core\ext\load_reporting</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.c">
       <Filter>src\core\ext\lb_policy\grpclb</Filter>
     </ClCompile>
@@ -414,6 +435,9 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\context.c">
       <Filter>src\core\ext\census</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\gen\census.pb.c">
+      <Filter>src\core\ext\census\gen</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\census\grpc_context.c">
       <Filter>src\core\ext\census</Filter>
@@ -456,6 +480,9 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc.h">
       <Filter>include\grpc</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\grpc_posix.h">
+      <Filter>include\grpc</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\status.h">
       <Filter>include\grpc</Filter>
     </ClInclude>
@@ -492,7 +519,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_sync.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_win32.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_windows.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\log.h">
@@ -516,7 +543,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_win32.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_windows.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h">
@@ -581,6 +608,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\error.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_and_epoll_posix.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\ev_poll_posix.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
@@ -608,6 +638,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\load_file.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\polling_entity.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
@@ -632,7 +665,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_utils.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_win32.h">
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\sockaddr_windows.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_utils_posix.h">
@@ -752,6 +785,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\transport\transport_impl.h">
       <Filter>src\core\lib\transport</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_decoder.h">
+      <Filter>src\core\ext\transport\chttp2\transport</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\bin_encoder.h">
       <Filter>src\core\ext\transport\chttp2\transport</Filter>
     </ClInclude>
@@ -863,6 +899,12 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\uri_parser.h">
       <Filter>src\core\ext\client_config</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting.h">
+      <Filter>src\core\ext\load_reporting</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\load_reporting\load_reporting_filter.h">
+      <Filter>src\core\ext\load_reporting</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\lb_policy\grpclb\load_balancer_api.h">
       <Filter>src\core\ext\lb_policy\grpclb</Filter>
     </ClInclude>
@@ -889,6 +931,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\census_rpc_stats.h">
       <Filter>src\core\ext\census</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\gen\census.pb.h">
+      <Filter>src\core\ext\census\gen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\census\grpc_filter.h">
       <Filter>src\core\ext\census</Filter>
@@ -926,6 +971,9 @@
     <Filter Include="src\core\ext\census">
       <UniqueIdentifier>{3f21cd12-b8b9-18f8-8780-e21bbe2285d0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\core\ext\census\gen">
+      <UniqueIdentifier>{dfe53168-57b0-3ac4-d8ba-07fd958cc8f5}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\core\ext\client_config">
       <UniqueIdentifier>{25fa8af3-0a05-987c-741f-fa8ff9d65d51}</UniqueIdentifier>
     </Filter>
@@ -952,6 +1000,9 @@
     </Filter>
     <Filter Include="src\core\ext\lb_policy\round_robin">
       <UniqueIdentifier>{e5fc1091-5d60-404f-775b-686ef4b3266f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\load_reporting">
+      <UniqueIdentifier>{2d6e3879-24c7-06e2-b415-40ab18a3b918}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\ext\resolver">
       <UniqueIdentifier>{88c78e27-267a-95df-07c5-50e5fbc2f40c}</UniqueIdentifier>

@@ -72,7 +72,7 @@ static void test_code(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_exec_ctx_flush(&exec_ctx);
   grpc_exec_ctx_finish(&exec_ctx);
-  grpc_exec_ctx_push(&exec_ctx, &closure, GRPC_ERROR_CREATE("Foo"), NULL);
+  grpc_exec_ctx_sched(&exec_ctx, &closure, GRPC_ERROR_CREATE("Foo"), NULL);
   grpc_exec_ctx_enqueue_list(&exec_ctx, &closure_list, NULL);
 
   /* endpoint.h */

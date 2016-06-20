@@ -42,7 +42,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/log_win32.h>
+#include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/iomgr/iocp_windows.h"
@@ -123,7 +123,7 @@ static void socket_notify_on_iocp(grpc_exec_ctx *exec_ctx,
   gpr_mu_lock(&socket->state_mu);
   if (info->has_pending_iocp) {
     info->has_pending_iocp = 0;
-    grpc_exec_ctx_push(exec_ctx, closure, GRPC_ERROR_NONE, NULL);
+    grpc_exec_ctx_sched(exec_ctx, closure, GRPC_ERROR_NONE, NULL);
   } else {
     info->closure = closure;
   }
@@ -146,7 +146,7 @@ void grpc_socket_become_ready(grpc_exec_ctx *exec_ctx, grpc_winsocket *socket,
   GPR_ASSERT(!info->has_pending_iocp);
   gpr_mu_lock(&socket->state_mu);
   if (info->closure) {
-    grpc_exec_ctx_push(exec_ctx, info->closure, GRPC_ERROR_NONE, NULL);
+    grpc_exec_ctx_sched(exec_ctx, info->closure, GRPC_ERROR_NONE, NULL);
     info->closure = NULL;
   } else {
     info->has_pending_iocp = 1;

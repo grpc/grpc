@@ -29,7 +29,7 @@
 
 """Test-appropriate entry points into the gRPC Python Beta API."""
 
-from grpc._adapter import _intermediary_low
+import grpc
 from grpc.beta import implementations
 
 
@@ -48,9 +48,8 @@ def not_really_secure_channel(
     An implementations.Channel to the remote host through which RPCs may be
       conducted.
   """
-  hostport = '%s:%d' % (host, port)
-  intermediary_low_channel = _intermediary_low.Channel(
-      hostport, channel_credentials._low_credentials,
-      server_host_override=server_host_override)
-  return implementations.Channel(
-      intermediary_low_channel._internal, intermediary_low_channel)
+  target = '%s:%d' % (host, port)
+  channel = grpc.secure_channel(
+      target, channel_credentials._credentials,
+      ((b'grpc.ssl_target_name_override', server_host_override,),))
+  return implementations.Channel(channel)
