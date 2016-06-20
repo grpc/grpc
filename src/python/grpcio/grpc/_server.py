@@ -60,6 +60,8 @@ _CANCELLED = 'cancelled'
 _EMPTY_FLAGS = 0
 _EMPTY_METADATA = cygrpc.Metadata(())
 
+_UNEXPECTED_EXIT_SERVER_GRACE = 1.0
+
 
 def _serialized_request(request_event):
   return request_event.batch_operations[0].received_message.bytes()
@@ -85,7 +87,7 @@ def _abortion_code(state, code):
 
 
 def _details(state):
-  return b'' if state.details is None else state.details
+  return '' if state.details is None else state.details
 
 
 class _HandlerCallDetails(
@@ -189,7 +191,7 @@ def _receive_message(state, call, request_deserializer):
         if request is None:
           _abort(
               state, call, cygrpc.StatusCode.internal,
-              b'Exception deserializing request!')
+              'Exception deserializing request!')
         else:
           state.request = request
         state.condition.notify_all()
@@ -254,7 +256,7 @@ class _Context(grpc.ServicerContext):
       else:
         if self._state.initial_metadata_allowed:
           operation = cygrpc.operation_send_initial_metadata(
-              cygrpc.Metadata(initial_metadata), _EMPTY_FLAGS)
+              _common.metadata(initial_metadata), _EMPTY_FLAGS)
           self._rpc_event.operation_call.start_batch(
               cygrpc.Operations((operation,)),
               _send_initial_metadata(self._state))
@@ -340,12 +342,11 @@ def _unary_request(rpc_event, state, request_deserializer):
           state.condition.wait()
           if state.request is None:
             if state.client is _CLOSED:
-              details = b'"{}" requires exactly one request message.'.format(
+              details = '"{}" requires exactly one request message.'.format(
                   rpc_event.request_call_details.method)
-              # TODO(5992#issuecomment-220761992): really, what status code?
               _abort(
                   state, rpc_event.operation_call,
-                  cygrpc.StatusCode.unavailable, details)
+                  cygrpc.StatusCode.unimplemented, details)
               return None
             elif state.client is _CANCELLED:
               return None
@@ -363,7 +364,7 @@ def _call_behavior(rpc_event, state, behavior, argument, request_deserializer):
   except Exception as e:  # pylint: disable=broad-except
     with state.condition:
       if e not in state.rpc_errors:
-        details = b'Exception calling application: {}'.format(e)
+        details = 'Exception calling application: {}'.format(e)
         logging.exception(details)
         _abort(
             state, rpc_event.operation_call, cygrpc.StatusCode.unknown, details)
@@ -378,7 +379,7 @@ def _take_response_from_response_iterator(rpc_event, state, response_iterator):
   except Exception as e:  # pylint: disable=broad-except
     with state.condition:
       if e not in state.rpc_errors:
-        details = b'Exception iterating responses: {}'.format(e)
+        details = 'Exception iterating responses: {}'.format(e)
         logging.exception(details)
         _abort(
             state, rpc_event.operation_call, cygrpc.StatusCode.unknown, details)
@@ -391,7 +392,7 @@ def _serialize_response(rpc_event, state, response, response_serializer):
     with state.condition:
       _abort(
           state, rpc_event.operation_call, cygrpc.StatusCode.internal,
-          b'Failed to serialize response!')
+          'Failed to serialize response!')
     return None
   else:
     return serialized_response
@@ -544,7 +545,7 @@ def _handle_unrecognized_method(rpc_event):
       cygrpc.operation_receive_close_on_server(_EMPTY_FLAGS),
       cygrpc.operation_send_status_from_server(
           _EMPTY_METADATA, cygrpc.StatusCode.unimplemented,
-          b'Method not found!', _EMPTY_FLAGS),
+          'Method not found!', _EMPTY_FLAGS),
   )
   rpc_state = _RPCState()
   rpc_event.operation_call.start_batch(
@@ -670,17 +671,6 @@ def _serve(state):
             return
 
 
-def _start(state):
-  with state.lock:
-    if state.stage is not _ServerStage.STOPPED:
-      raise ValueError('Cannot start already-started server!')
-    state.server.start()
-    state.stage = _ServerStage.STARTED
-    _request_call(state)
-    thread = threading.Thread(target=_serve, args=(state,))
-    thread.start()
-
-
 def _stop(state, grace):
   with state.lock:
     if state.stage is _ServerStage.STOPPED:
@@ -717,6 +707,24 @@ def _stop(state, grace):
         return shutdown_event
   shutdown_event.wait()
   return shutdown_event
+
+
+def _start(state):
+  with state.lock:
+    if state.stage is not _ServerStage.STOPPED:
+      raise ValueError('Cannot start already-started server!')
+    state.server.start()
+    state.stage = _ServerStage.STARTED
+    _request_call(state)    
+    def cleanup_server(timeout):
+      if timeout is None:
+        _stop(state, _UNEXPECTED_EXIT_SERVER_GRACE).wait()
+      else:
+        _stop(state, timeout).wait()
+
+    thread = _common.CleanupThread(
+        cleanup_server, target=_serve, args=(state,))
+    thread.start()
 
 
 class Server(grpc.Server):

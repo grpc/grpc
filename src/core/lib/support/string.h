@@ -83,6 +83,10 @@ int int64_ttoa(int64_t value, char *output);
 /* Reverse a run of bytes */
 void gpr_reverse_bytes(char *str, int len);
 
+/* Pad a string with flag characters. The given length specifies the minimum
+   field width. The input string is never truncated. */
+char *gpr_leftpad(const char *str, char flag, size_t length);
+
 /* Join a set of strings, returning the resulting string.
    Total combined length (excluding null terminator) is returned in total_length
    if it is non-null. */

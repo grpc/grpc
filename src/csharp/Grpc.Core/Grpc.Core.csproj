@@ -136,6 +136,8 @@
     <Compile Include="Internal\ClientSideStatus.cs" />
     <Compile Include="Internal\ClockType.cs" />
     <Compile Include="Internal\CallError.cs" />
+    <Compile Include="Logging\LogLevel.cs" />
+    <Compile Include="Logging\LogLevelFilterLogger.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Grpc.Core.nuspec" />

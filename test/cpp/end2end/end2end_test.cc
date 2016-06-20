@@ -199,7 +199,10 @@ class TestScenario {
             credentials_type.c_str());
   }
   bool use_proxy;
-  const grpc::string credentials_type;
+  // Although the below grpc::string is logically const, we can't declare
+  // them const because of a limitation in the way old compilers (e.g., gcc-4.4)
+  // manage vector insertion using a copy constructor
+  grpc::string credentials_type;
 };
 
 class End2endTest : public ::testing::TestWithParam<TestScenario> {
@@ -329,7 +332,7 @@ class End2endServerTryCancelTest : public End2endTest {
 
     // Send server_try_cancel value in the client metadata
     context.AddMetadata(kServerTryCancelRequest,
-                        std::to_string(server_try_cancel));
+                        grpc::to_string(server_try_cancel));
 
     auto stream = stub_->RequestStream(&context, &response);
 
@@ -402,7 +405,7 @@ class End2endServerTryCancelTest : public End2endTest {
 
     // Send server_try_cancel in the client metadata
     context.AddMetadata(kServerTryCancelRequest,
-                        std::to_string(server_try_cancel));
+                        grpc::to_string(server_try_cancel));
 
     request.set_message("hello");
     auto stream = stub_->ResponseStream(&context, request);
@@ -413,7 +416,7 @@ class End2endServerTryCancelTest : public End2endTest {
         break;
       }
       EXPECT_EQ(response.message(),
-                request.message() + std::to_string(num_msgs_read));
+                request.message() + grpc::to_string(num_msgs_read));
       num_msgs_read++;
     }
     gpr_log(GPR_INFO, "Read %d messages", num_msgs_read);
@@ -479,14 +482,14 @@ class End2endServerTryCancelTest : public End2endTest {
 
     // Send server_try_cancel in the client metadata
     context.AddMetadata(kServerTryCancelRequest,
-                        std::to_string(server_try_cancel));
+                        grpc::to_string(server_try_cancel));
 
     auto stream = stub_->BidiStream(&context);
 
     int num_msgs_read = 0;
     int num_msgs_sent = 0;
     while (num_msgs_sent < num_messages) {
-      request.set_message("hello " + std::to_string(num_msgs_sent));
+      request.set_message("hello " + grpc::to_string(num_msgs_sent));
       if (!stream->Write(request)) {
         break;
       }
@@ -548,7 +551,7 @@ TEST_P(End2endServerTryCancelTest, RequestEchoServerCancel) {
   ClientContext context;
 
   context.AddMetadata(kServerTryCancelRequest,
-                      std::to_string(CANCEL_BEFORE_PROCESSING));
+                      grpc::to_string(CANCEL_BEFORE_PROCESSING));
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_FALSE(s.ok());
   EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
@@ -1014,6 +1017,16 @@ TEST_P(ProxyEnd2endTest, SimpleRpc) {
   SendRpc(stub_.get(), 1, false);
 }
 
+TEST_P(ProxyEnd2endTest, SimpleRpcWithEmptyMessages) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+
+  ClientContext context;
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_TRUE(s.ok());
+}
+
 TEST_P(ProxyEnd2endTest, MultipleRpcs) {
   ResetStub();
   std::vector<std::thread*> threads;
@@ -1421,9 +1434,9 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
   }
   for (auto it = credentials_types.begin(); it != credentials_types.end();
        ++it) {
-    scenarios.push_back(TestScenario(false, *it));
+    scenarios.emplace_back(false, *it);
     if (use_proxy) {
-      scenarios.push_back(TestScenario(true, *it));
+      scenarios.emplace_back(true, *it);
     }
   }
   return scenarios;

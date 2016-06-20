@@ -167,6 +167,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
                                "/foo", "foo.test.google.fr", deadline, NULL);
   GPR_ASSERT(c);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
@@ -201,6 +202,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
     cq_expect_completion(cqv, tag(101), 1);
     cq_verify(cqv);
 
+    memset(ops, 0, sizeof(ops));
     op = ops;
     op->op = GRPC_OP_SEND_INITIAL_METADATA;
     op->data.send_initial_metadata.count = 0;
@@ -271,7 +273,9 @@ void test_connect(const char *server_host, const char *client_host, int port,
 }
 
 int external_dns_works(const char *host) {
-  grpc_resolved_addresses *res = grpc_blocking_resolve_address(host, "80");
+  grpc_resolved_addresses *res;
+  grpc_error *error = grpc_blocking_resolve_address(host, "80", &res);
+  GRPC_ERROR_UNREF(error);
   if (res != NULL) {
     grpc_resolved_addresses_destroy(res);
     return 1;

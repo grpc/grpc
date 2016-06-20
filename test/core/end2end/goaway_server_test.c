@@ -46,8 +46,9 @@ static void *tag(intptr_t i) { return (void *)i; }
 
 static gpr_mu g_mu;
 static int g_resolve_port = -1;
-static grpc_resolved_addresses *(*iomgr_resolve_address)(
-    const char *name, const char *default_port);
+static grpc_error *(*iomgr_resolve_address)(const char *name,
+                                            const char *default_port,
+                                            grpc_resolved_addresses **addrs);
 
 static void set_resolve_port(int port) {
   gpr_mu_lock(&g_mu);
@@ -55,28 +56,28 @@ static void set_resolve_port(int port) {
   gpr_mu_unlock(&g_mu);
 }
 
-static grpc_resolved_addresses *my_resolve_address(const char *name,
-                                                   const char *addr) {
+static grpc_error *my_resolve_address(const char *name, const char *addr,
+                                      grpc_resolved_addresses **addrs) {
   if (0 != strcmp(name, "test")) {
-    return iomgr_resolve_address(name, addr);
+    return iomgr_resolve_address(name, addr, addrs);
   }
 
   gpr_mu_lock(&g_mu);
   if (g_resolve_port < 0) {
     gpr_mu_unlock(&g_mu);
-    return NULL;
+    return GRPC_ERROR_CREATE("Forced Failure");
   } else {
-    grpc_resolved_addresses *addrs = gpr_malloc(sizeof(*addrs));
-    addrs->naddrs = 1;
-    addrs->addrs = gpr_malloc(sizeof(*addrs->addrs));
-    memset(addrs->addrs, 0, sizeof(*addrs->addrs));
-    struct sockaddr_in *sa = (struct sockaddr_in *)addrs->addrs[0].addr;
+    *addrs = gpr_malloc(sizeof(**addrs));
+    (*addrs)->naddrs = 1;
+    (*addrs)->addrs = gpr_malloc(sizeof(*(*addrs)->addrs));
+    memset((*addrs)->addrs, 0, sizeof(*(*addrs)->addrs));
+    struct sockaddr_in *sa = (struct sockaddr_in *)(*addrs)->addrs[0].addr;
     sa->sin_family = AF_INET;
     sa->sin_addr.s_addr = htonl(0x7f000001);
     sa->sin_port = htons((uint16_t)g_resolve_port);
-    addrs->addrs[0].len = sizeof(*sa);
+    (*addrs)->addrs[0].len = sizeof(*sa);
     gpr_mu_unlock(&g_mu);
-    return addrs;
+    return GRPC_ERROR_NONE;
   }
 }
 
@@ -132,6 +133,7 @@ int main(int argc, char **argv) {
       chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq, "/foo", "127.0.0.1",
       GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20), NULL);
   /* send initial metadata to probe connectivity */
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
@@ -142,6 +144,7 @@ int main(int argc, char **argv) {
                                                    (size_t)(op - ops),
                                                    tag(0x101), NULL));
   /* and receive status to probe termination */
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv1;
@@ -183,6 +186,7 @@ int main(int argc, char **argv) {
                                         tag(0x9999));
 
   /* listen for close on the server call to probe for finishing */
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled1;
@@ -205,6 +209,7 @@ int main(int argc, char **argv) {
       chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq, "/foo", "127.0.0.1",
       GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20), NULL);
   /* send initial metadata to probe connectivity */
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
@@ -215,6 +220,7 @@ int main(int argc, char **argv) {
                                                    (size_t)(op - ops),
                                                    tag(0x201), NULL));
   /* and receive status to probe termination */
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv2;
@@ -249,6 +255,7 @@ int main(int argc, char **argv) {
   cq_verify(cqv);
 
   /* listen for close on the server call to probe for finishing */
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled2;

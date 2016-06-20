@@ -76,7 +76,8 @@ static bool is_load_reporting_enabled(const grpc_channel_args *a) {
   if (a == NULL) return false;
   for (size_t i = 0; i < a->num_args; i++) {
     if (0 == strcmp(a->args[i].key, GRPC_ARG_ENABLE_LOAD_REPORTING)) {
-      return a->args[i].value.pointer.p != NULL;
+      return a->args[i].type == GRPC_ARG_POINTER &&
+             a->args[i].value.pointer.p != NULL;
     }
   }
   return false;

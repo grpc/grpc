@@ -58,6 +58,7 @@ grpc_credentials_metadata_request *grpc_credentials_metadata_request_create(
     void *user_data) {
   grpc_credentials_metadata_request *r =
       gpr_malloc(sizeof(grpc_credentials_metadata_request));
+  memset(&r->response, 0, sizeof(r->response));
   r->creds = grpc_call_credentials_ref(creds);
   r->cb = cb;
   r->user_data = user_data;
@@ -67,6 +68,7 @@ grpc_credentials_metadata_request *grpc_credentials_metadata_request_create(
 void grpc_credentials_metadata_request_destroy(
     grpc_credentials_metadata_request *r) {
   grpc_call_credentials_unref(r->creds);
+  grpc_http_response_destroy(&r->response);
   gpr_free(r);
 }
 
@@ -111,7 +113,7 @@ void grpc_call_credentials_release(grpc_call_credentials *creds) {
 
 void grpc_call_credentials_get_request_metadata(
     grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds,
-    grpc_pollset *pollset, grpc_auth_metadata_context context,
+    grpc_polling_entity *pollent, grpc_auth_metadata_context context,
     grpc_credentials_metadata_cb cb, void *user_data) {
   if (creds == NULL || creds->vtable->get_request_metadata == NULL) {
     if (cb != NULL) {
@@ -119,7 +121,7 @@ void grpc_call_credentials_get_request_metadata(
     }
     return;
   }
-  creds->vtable->get_request_metadata(exec_ctx, creds, pollset, context, cb,
+  creds->vtable->get_request_metadata(exec_ctx, creds, pollent, context, cb,
                                       user_data);
 }
 

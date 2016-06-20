@@ -70,8 +70,8 @@ void grpc_auth_refresh_token_destruct(grpc_auth_refresh_token *refresh_token);
 typedef void (*grpc_fetch_oauth2_func)(grpc_exec_ctx *exec_ctx,
                                        grpc_credentials_metadata_request *req,
                                        grpc_httpcli_context *http_context,
-                                       grpc_pollset *pollset,
-                                       grpc_httpcli_response_cb response_cb,
+                                       grpc_polling_entity *pollent,
+                                       grpc_iomgr_cb_func cb,
                                        gpr_timespec deadline);
 typedef struct {
   grpc_call_credentials base;

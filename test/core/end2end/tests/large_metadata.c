@@ -142,6 +142,7 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
+  memset(ops, 0, sizeof(ops));
   // Client: send request.
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -183,6 +184,7 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   cq_expect_completion(cqv, tag(101), 1);
   cq_verify(cqv);
 
+  memset(ops, 0, sizeof(ops));
   // Server: send initial metadata and receive request.
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -201,6 +203,7 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   cq_expect_completion(cqv, tag(102), 1);
   cq_verify(cqv);
 
+  memset(ops, 0, sizeof(ops));
   // Server: receive close and send status.  This should trigger
   // completion of request on client.
   op = ops;

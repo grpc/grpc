@@ -94,7 +94,7 @@ static void plugin_md_request_metadata_ready(void *request,
 
 static void plugin_get_request_metadata(grpc_exec_ctx *exec_ctx,
                                         grpc_call_credentials *creds,
-                                        grpc_pollset *pollset,
+                                        grpc_polling_entity *pollent,
                                         grpc_auth_metadata_context context,
                                         grpc_credentials_metadata_cb cb,
                                         void *user_data) {
