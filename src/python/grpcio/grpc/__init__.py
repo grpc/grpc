@@ -212,14 +212,14 @@ class ChannelConnectivity(enum.Enum):
     READY: The channel is ready to conduct RPCs.
     TRANSIENT_FAILURE: The channel has seen a failure from which it expects to
       recover.
-    FATAL_FAILURE: The channel has seen a failure from which it cannot recover.
+    SHUTDOWN: The channel has seen a failure from which it cannot recover.
   """
   IDLE              = (_cygrpc.ConnectivityState.idle, 'idle')
   CONNECTING        = (_cygrpc.ConnectivityState.connecting, 'connecting')
   READY             = (_cygrpc.ConnectivityState.ready, 'ready')
   TRANSIENT_FAILURE = (
       _cygrpc.ConnectivityState.transient_failure, 'transient failure')
-  FATAL_FAILURE     = (_cygrpc.ConnectivityState.fatal_failure, 'fatal failure')
+  SHUTDOWN          = (_cygrpc.ConnectivityState.shutdown, 'shutdown')
 
 
 @enum.unique
@@ -1171,7 +1171,7 @@ def secure_channel(target, credentials, options=None):
     A Channel to the target through which RPCs may be conducted.
   """
   from grpc import _channel
-  return _channel.Channel(target, options, credentials)
+  return _channel.Channel(target, options, credentials._credentials)
 
 
 def server(generic_rpc_handlers, thread_pool, options=None):
@@ -1193,3 +1193,49 @@ def server(generic_rpc_handlers, thread_pool, options=None):
   """
   from grpc import _server
   return _server.Server(generic_rpc_handlers, thread_pool)
+
+
+###################################  __all__  #################################
+
+
+__all__ = (
+    'FutureTimeoutError',
+    'FutureCancelledError',
+    'Future',
+    'ChannelConnectivity',
+    'StatusCode',
+    'RpcError',
+    'RpcContext',
+    'Call',
+    'ChannelCredentials',
+    'CallCredentials',
+    'AuthMetadataContext',
+    'AuthMetadataPluginCallback',
+    'AuthMetadataPlugin',
+    'ServerCredentials',
+    'UnaryUnaryMultiCallable',
+    'UnaryStreamMultiCallable',
+    'StreamUnaryMultiCallable',
+    'StreamStreamMultiCallable',
+    'Channel',
+    'ServicerContext',
+    'RpcMethodHandler',
+    'HandlerCallDetails',
+    'GenericRpcHandler',
+    'Server',
+    'unary_unary_rpc_method_handler',
+    'unary_stream_rpc_method_handler',
+    'stream_unary_rpc_method_handler',
+    'stream_stream_rpc_method_handler',
+    'method_handlers_generic_handler',
+    'ssl_channel_credentials',
+    'metadata_call_credentials',
+    'access_token_call_credentials',
+    'composite_call_credentials',
+    'composite_channel_credentials',
+    'ssl_server_credentials',
+    'channel_ready_future',
+    'insecure_channel',
+    'secure_channel',
+    'server',
+)
