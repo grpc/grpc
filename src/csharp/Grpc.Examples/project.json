@@ -1,8 +1,4 @@
 {
-  "buildOptions": {
-    "compile": "**/*.cs"
-  },
-
   "dependencies": {
     "Grpc.Core": {
       "target": "project"

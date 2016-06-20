@@ -29,6 +29,8 @@ Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Grpc.IntegrationTesting.Qps
 EndProject
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Grpc.IntegrationTesting.Server", "Grpc.IntegrationTesting.Server\Grpc.IntegrationTesting.Server.xproj", "{881F7AD1-A84E-47A2-9402-115C63C4031E}"
 EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Grpc.IntegrationTesting.StressClient", "Grpc.IntegrationTesting.StressClient\Grpc.IntegrationTesting.StressClient.xproj", "{0EBC910B-8867-4D3E-8686-91F34183D839}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -87,6 +89,10 @@ Global
 		{881F7AD1-A84E-47A2-9402-115C63C4031E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{881F7AD1-A84E-47A2-9402-115C63C4031E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{881F7AD1-A84E-47A2-9402-115C63C4031E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0EBC910B-8867-4D3E-8686-91F34183D839}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0EBC910B-8867-4D3E-8686-91F34183D839}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0EBC910B-8867-4D3E-8686-91F34183D839}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0EBC910B-8867-4D3E-8686-91F34183D839}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

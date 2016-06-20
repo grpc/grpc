@@ -12,9 +12,6 @@
     "requireLicenseAcceptance": false,
     "tags": [ "gRPC health check" ]
   },
-  "buildOptions": {
-    "compile": "**/*.cs"
-  },
   "dependencies": {
     "Grpc.Core": "0.14.0-anexperiment",
     "Google.Protobuf": "3.0.0-beta3"

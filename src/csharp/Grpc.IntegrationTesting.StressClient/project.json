@@ -1,6 +1,5 @@
 {
   "buildOptions": {
-    "compile": "**/*.cs",
     "copyToOutput": {
       "mappings": {
         "nativelibs/windows_x64/grpc_csharp_ext.dll": "../../../vsprojects/x64/Debug/grpc_csharp_ext.dll",

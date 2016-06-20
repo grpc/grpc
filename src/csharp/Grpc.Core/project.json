@@ -22,7 +22,6 @@
     }
   },
   "buildOptions": {
-    "compile": "**/*.cs",
     "embed": [ "../../../etc/roots.pem" ]
   },
   "dependencies": {
