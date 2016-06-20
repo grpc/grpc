@@ -644,8 +644,7 @@ static void finish_global_actions(grpc_exec_ctx *exec_ctx,
 
   for (;;) {
     if (!t->executor.writing_active && !t->closed &&
-        grpc_chttp2_unlocking_check_writes(exec_ctx, &t->global, &t->writing,
-                                           t->executor.parsing_active)) {
+        grpc_chttp2_unlocking_check_writes(exec_ctx, &t->global, &t->writing)) {
       t->executor.writing_active = 1;
       REF_TRANSPORT(t, "writing");
       prevent_endpoint_shutdown(t);
