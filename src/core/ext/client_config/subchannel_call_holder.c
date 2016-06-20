@@ -43,14 +43,14 @@
 #define CANCELLED_CALL ((grpc_subchannel_call *)1)
 
 static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *holder,
-                             bool success);
+                             grpc_error *error);
 static void retry_ops(grpc_exec_ctx *exec_ctx, void *retry_ops_args,
-                      bool success);
+                      grpc_error *error);
 
 static void add_waiting_locked(grpc_subchannel_call_holder *holder,
                                grpc_transport_stream_op *op);
 static void fail_locked(grpc_exec_ctx *exec_ctx,
-                        grpc_subchannel_call_holder *holder);
+                        grpc_subchannel_call_holder *holder, grpc_error *error);
 static void retry_waiting_locked(grpc_exec_ctx *exec_ctx,
                                  grpc_subchannel_call_holder *holder);
 
@@ -91,7 +91,8 @@ void grpc_subchannel_call_holder_perform_op(grpc_exec_ctx *exec_ctx,
   grpc_subchannel_call *call = GET_CALL(holder);
   GPR_TIMER_BEGIN("grpc_subchannel_call_holder_perform_op", 0);
   if (call == CANCELLED_CALL) {
-    grpc_transport_stream_op_finish_with_failure(exec_ctx, op);
+    grpc_transport_stream_op_finish_with_failure(exec_ctx, op,
+                                                 GRPC_ERROR_CANCELLED);
     GPR_TIMER_END("grpc_subchannel_call_holder_perform_op", 0);
     return;
   }
@@ -107,7 +108,8 @@ retry:
   call = GET_CALL(holder);
   if (call == CANCELLED_CALL) {
     gpr_mu_unlock(&holder->mu);
-    grpc_transport_stream_op_finish_with_failure(exec_ctx, op);
+    grpc_transport_stream_op_finish_with_failure(exec_ctx, op,
+                                                 GRPC_ERROR_CANCELLED);
     GPR_TIMER_END("grpc_subchannel_call_holder_perform_op", 0);
     return;
   }
@@ -124,7 +126,10 @@ retry:
     } else {
       switch (holder->creation_phase) {
         case GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING:
-          fail_locked(exec_ctx, holder);
+          fail_locked(exec_ctx, holder,
+                      grpc_error_set_int(GRPC_ERROR_CREATE("Cancelled"),
+                                         GRPC_ERROR_INT_GRPC_STATUS,
+                                         op->cancel_with_status));
           break;
         case GRPC_SUBCHANNEL_CALL_HOLDER_PICKING_SUBCHANNEL:
           holder->pick_subchannel(exec_ctx, holder->pick_subchannel_arg, NULL,
@@ -132,7 +137,8 @@ retry:
           break;
       }
       gpr_mu_unlock(&holder->mu);
-      grpc_transport_stream_op_finish_with_failure(exec_ctx, op);
+      grpc_transport_stream_op_finish_with_failure(exec_ctx, op,
+                                                   GRPC_ERROR_CANCELLED);
       GPR_TIMER_END("grpc_subchannel_call_holder_perform_op", 0);
       return;
     }
@@ -168,7 +174,8 @@ retry:
   GPR_TIMER_END("grpc_subchannel_call_holder_perform_op", 0);
 }
 
-static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *arg,
+                             grpc_error *error) {
   grpc_subchannel_call_holder *holder = arg;
   gpr_mu_lock(&holder->mu);
   GPR_ASSERT(holder->creation_phase ==
@@ -176,10 +183,14 @@ static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
   holder->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING;
   if (holder->connected_subchannel == NULL) {
     gpr_atm_no_barrier_store(&holder->subchannel_call, 1);
-    fail_locked(exec_ctx, holder);
+    fail_locked(exec_ctx, holder,
+                GRPC_ERROR_CREATE_REFERENCING("Failed to create subchannel",
+                                              &error, 1));
   } else if (1 == gpr_atm_acq_load(&holder->subchannel_call)) {
     /* already cancelled before subchannel became ready */
-    fail_locked(exec_ctx, holder);
+    fail_locked(exec_ctx, holder,
+                GRPC_ERROR_CREATE_REFERENCING(
+                    "Cancelled before creating subchannel", &error, 1));
   } else {
     gpr_atm_rel_store(
         &holder->subchannel_call,
@@ -205,18 +216,18 @@ static void retry_waiting_locked(grpc_exec_ctx *exec_ctx,
   a->call = GET_CALL(holder);
   if (a->call == CANCELLED_CALL) {
     gpr_free(a);
-    fail_locked(exec_ctx, holder);
+    fail_locked(exec_ctx, holder, GRPC_ERROR_CANCELLED);
     return;
   }
   holder->waiting_ops = NULL;
   holder->waiting_ops_count = 0;
   holder->waiting_ops_capacity = 0;
   GRPC_SUBCHANNEL_CALL_REF(a->call, "retry_ops");
-  grpc_exec_ctx_enqueue(exec_ctx, grpc_closure_create(retry_ops, a), true,
-                        NULL);
+  grpc_exec_ctx_sched(exec_ctx, grpc_closure_create(retry_ops, a),
+                      GRPC_ERROR_NONE, NULL);
 }
 
-static void retry_ops(grpc_exec_ctx *exec_ctx, void *args, bool success) {
+static void retry_ops(grpc_exec_ctx *exec_ctx, void *args, grpc_error *error) {
   retry_ops_args *a = args;
   size_t i;
   for (i = 0; i < a->nops; i++) {
@@ -241,13 +252,15 @@ static void add_waiting_locked(grpc_subchannel_call_holder *holder,
 }
 
 static void fail_locked(grpc_exec_ctx *exec_ctx,
-                        grpc_subchannel_call_holder *holder) {
+                        grpc_subchannel_call_holder *holder,
+                        grpc_error *error) {
   size_t i;
   for (i = 0; i < holder->waiting_ops_count; i++) {
-    grpc_transport_stream_op_finish_with_failure(exec_ctx,
-                                                 &holder->waiting_ops[i]);
+    grpc_transport_stream_op_finish_with_failure(
+        exec_ctx, &holder->waiting_ops[i], GRPC_ERROR_REF(error));
   }
   holder->waiting_ops_count = 0;
+  GRPC_ERROR_UNREF(error);
 }
 
 char *grpc_subchannel_call_holder_get_peer(

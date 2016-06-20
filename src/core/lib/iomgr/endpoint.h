@@ -82,7 +82,7 @@ char *grpc_endpoint_get_peer(grpc_endpoint *ep);
 void grpc_endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                          gpr_slice_buffer *slices, grpc_closure *cb);
 
-/* Causes any pending read/write callbacks to run immediately with
+/* Causes any pending and future read/write callbacks to run immediately with
    success==0 */
 void grpc_endpoint_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep);
 void grpc_endpoint_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep);

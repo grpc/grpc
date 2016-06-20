@@ -793,6 +793,7 @@ argp.add_argument('-n', '--runs_per_test', default=1, type=runs_per_test_type,
         help='A positive integer or "inf". If "inf", all tests will run in an '
              'infinite loop. Especially useful in combination with "-f"')
 argp.add_argument('-r', '--regex', default='.*', type=str)
+argp.add_argument('--regex_exclude', default='', type=str)
 argp.add_argument('-j', '--jobs', default=multiprocessing.cpu_count(), type=int)
 argp.add_argument('-s', '--slowdown', default=1.0, type=float)
 argp.add_argument('-f', '--forever',
@@ -1209,7 +1210,9 @@ def _build_and_run(
       spec
       for language in languages
       for spec in language.test_specs()
-      if re.search(args.regex, spec.shortname))
+      if (re.search(args.regex, spec.shortname) and
+          (args.regex_exclude == '' or
+           not re.search(args.regex_exclude, spec.shortname))))
     # When running on travis, we want out test runs to be as similar as possible
     # for reproducibility purposes.
     if args.travis:
@@ -1232,7 +1235,7 @@ def _build_and_run(
         cache=cache if not xml_report else None,
         add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
     if resultset:
-      for k, v in resultset.iteritems():
+      for k, v in sorted(resultset.items()):
         num_runs, num_failures = _calculate_num_runs_failures(v)
         if num_failures == num_runs:  # what about infinite_runs???
           jobset.message('FAILED', k, do_newline=True)

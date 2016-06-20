@@ -60,7 +60,7 @@ void grpc_stream_unref(grpc_exec_ctx *exec_ctx,
                        grpc_stream_refcount *refcount) {
 #endif
   if (gpr_unref(&refcount->refs)) {
-    grpc_exec_ctx_enqueue(exec_ctx, &refcount->destroy, true, NULL);
+    grpc_exec_ctx_sched(exec_ctx, &refcount->destroy, GRPC_ERROR_NONE, NULL);
   }
 }
 
@@ -152,11 +152,14 @@ char *grpc_transport_get_peer(grpc_exec_ctx *exec_ctx,
   return transport->vtable->get_peer(exec_ctx, transport);
 }
 
-void grpc_transport_stream_op_finish_with_failure(
-    grpc_exec_ctx *exec_ctx, grpc_transport_stream_op *op) {
-  grpc_exec_ctx_enqueue(exec_ctx, op->recv_message_ready, false, NULL);
-  grpc_exec_ctx_enqueue(exec_ctx, op->recv_initial_metadata_ready, false, NULL);
-  grpc_exec_ctx_enqueue(exec_ctx, op->on_complete, false, NULL);
+void grpc_transport_stream_op_finish_with_failure(grpc_exec_ctx *exec_ctx,
+                                                  grpc_transport_stream_op *op,
+                                                  grpc_error *error) {
+  grpc_exec_ctx_sched(exec_ctx, op->recv_message_ready, GRPC_ERROR_REF(error),
+                      NULL);
+  grpc_exec_ctx_sched(exec_ctx, op->recv_initial_metadata_ready,
+                      GRPC_ERROR_REF(error), NULL);
+  grpc_exec_ctx_sched(exec_ctx, op->on_complete, error, NULL);
 }
 
 void grpc_transport_stream_op_add_cancellation(grpc_transport_stream_op *op,
@@ -181,11 +184,11 @@ typedef struct {
   grpc_closure closure;
 } close_message_data;
 
-static void free_message(grpc_exec_ctx *exec_ctx, void *p, bool iomgr_success) {
+static void free_message(grpc_exec_ctx *exec_ctx, void *p, grpc_error *error) {
   close_message_data *cmd = p;
   gpr_slice_unref(cmd->message);
   if (cmd->then_call != NULL) {
-    cmd->then_call->cb(exec_ctx, cmd->then_call->cb_arg, iomgr_success);
+    cmd->then_call->cb(exec_ctx, cmd->then_call->cb_arg, GRPC_ERROR_REF(error));
   }
   gpr_free(cmd);
 }

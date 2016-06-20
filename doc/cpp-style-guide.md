@@ -53,6 +53,12 @@ default capture). Other C++ functional features such as
   (../include/grpc++/impl/codegen/config.h). Instead, pointers should
   be checked for validity using their implicit conversion to `bool`.
   In other words, use `if (p)` rather than `if (p != nullptr)`
+- Do not initialize global/static pointer variables to `nullptr`. Just let
+  the compiler implicitly initialize them to `nullptr` (which it will
+  definitely do). The reason is that `nullptr` is an actual object in
+  our implementation rather than just a constant pointer value, so
+  static/global constructors will be called in a potentially
+  undesirable sequence.
 - Do not use `final` or `override` as these are not supported by some
   compilers. Instead use `GRPC_FINAL` and `GRPC_OVERRIDE` . These
   compile down to the traditional C++ forms for compilers that support

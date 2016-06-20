@@ -156,7 +156,7 @@ typedef struct grpc_transport_op {
   grpc_closure *on_connectivity_state_change;
   grpc_connectivity_state *connectivity_state;
   /** should the transport be disconnected */
-  int disconnect;
+  grpc_error *disconnect_with_error;
   /** should we send a goaway?
       after a goaway is sent, once there are no more active calls on
       the transport, the transport should disconnect */
@@ -217,7 +217,8 @@ void grpc_transport_destroy_stream(grpc_exec_ctx *exec_ctx,
                                    grpc_stream *stream, void *and_free_memory);
 
 void grpc_transport_stream_op_finish_with_failure(grpc_exec_ctx *exec_ctx,
-                                                  grpc_transport_stream_op *op);
+                                                  grpc_transport_stream_op *op,
+                                                  grpc_error *error);
 
 void grpc_transport_stream_op_add_cancellation(grpc_transport_stream_op *op,
                                                grpc_status_code status);

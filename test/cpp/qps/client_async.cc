@@ -249,7 +249,8 @@ class AsyncUnaryClient GRPC_FINAL
     : public AsyncClient<BenchmarkService::Stub, SimpleRequest> {
  public:
   explicit AsyncUnaryClient(const ClientConfig& config)
-      : AsyncClient(config, SetupCtx, BenchmarkStubCreator) {
+      : AsyncClient<BenchmarkService::Stub, SimpleRequest>(
+            config, SetupCtx, BenchmarkStubCreator) {
     StartThreads(num_async_threads_);
   }
   ~AsyncUnaryClient() GRPC_OVERRIDE { EndThreads(); }
@@ -376,7 +377,8 @@ class AsyncStreamingClient GRPC_FINAL
     : public AsyncClient<BenchmarkService::Stub, SimpleRequest> {
  public:
   explicit AsyncStreamingClient(const ClientConfig& config)
-      : AsyncClient(config, SetupCtx, BenchmarkStubCreator) {
+      : AsyncClient<BenchmarkService::Stub, SimpleRequest>(
+            config, SetupCtx, BenchmarkStubCreator) {
     StartThreads(num_async_threads_);
   }
 
@@ -511,7 +513,8 @@ class GenericAsyncStreamingClient GRPC_FINAL
     : public AsyncClient<grpc::GenericStub, ByteBuffer> {
  public:
   explicit GenericAsyncStreamingClient(const ClientConfig& config)
-      : AsyncClient(config, SetupCtx, GenericStubCreator) {
+      : AsyncClient<grpc::GenericStub, ByteBuffer>(config, SetupCtx,
+                                                   GenericStubCreator) {
     StartThreads(num_async_threads_);
   }
 
