@@ -96,8 +96,8 @@ static grpc_closure on_write;
 
 static void *tag(intptr_t t) { return (void *)t; }
 
-static void done_write(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
-  GPR_ASSERT(success);
+static void done_write(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
 
   gpr_atm_rel_store(&state.done_atm, 1);
 }
@@ -111,12 +111,11 @@ static void handle_write(grpc_exec_ctx *exec_ctx) {
   grpc_endpoint_write(exec_ctx, state.tcp, &state.outgoing_buffer, &on_write);
 }
 
-static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
-  GPR_ASSERT(success);
+static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
   state.incoming_data_length += state.temp_incoming_buffer.length;
 
   size_t i;
-  gpr_log(GPR_DEBUG, "read: success=%d", success);
   for (i = 0; i < state.temp_incoming_buffer.count; i++) {
     char *dump = gpr_dump_slice(state.temp_incoming_buffer.slices[i],
                                 GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -124,7 +123,8 @@ static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
     gpr_free(dump);
   }
 
-  gpr_log(GPR_DEBUG, "got %d bytes, http2 connect string is %d bytes",
+  gpr_log(GPR_DEBUG,
+          "got %" PRIuPTR " bytes, http2 connect string is %" PRIuMAX " bytes",
           state.incoming_data_length, GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
   if (state.incoming_data_length > GRPC_CHTTP2_CLIENT_CONNECT_STRLEN) {
     handle_write(exec_ctx);
@@ -239,8 +239,8 @@ static void actually_poll_server(void *arg) {
     bool done = gpr_atm_acq_load(&state.done_atm) != 0;
     gpr_timespec time_left =
         gpr_time_sub(deadline, gpr_now(GPR_CLOCK_REALTIME));
-    gpr_log(GPR_DEBUG, "done=%d, time_left=%d.%09d", done, time_left.tv_sec,
-            time_left.tv_nsec);
+    gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64 ".%09d", done,
+            time_left.tv_sec, time_left.tv_nsec);
     if (done || gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)) < 0) {
       break;
     }

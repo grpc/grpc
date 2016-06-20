@@ -1705,7 +1705,7 @@ static void parsing_action(grpc_exec_ctx *exec_ctx, void *arg,
     errors[1] = grpc_chttp2_perform_read(exec_ctx, &t->parsing,
                                          t->read_buffer.slices[i]);
   };
-  if (i != t->read_buffer.count) {
+  if (i != t->read_buffer.count || errors[1] != GRPC_ERROR_NONE) {
     gpr_slice_unref(t->optional_drop_message);
     errors[2] = try_http_parsing(exec_ctx, t);
     if (errors[2] != GRPC_ERROR_NONE) {
