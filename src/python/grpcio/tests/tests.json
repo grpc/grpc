@@ -1,6 +1,7 @@
 [
   "_api_test.AllTest",
   "_api_test.ChannelConnectivityTest",
+  "_api_test.ChannelTest",
   "_auth_test.AccessTokenCallCredentialsTest",
   "_auth_test.GoogleCallCredentialsTest",
   "_base_interface_test.AsyncEasyTest", 
