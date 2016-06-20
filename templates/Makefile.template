@@ -1251,12 +1251,12 @@
   $(GENDIR)/${p}.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc' % q for q in proto_deps.get(p, []))}
   	$(E) "[PROTOC]  Generating protobuf CC file from $<"
   	$(Q) mkdir -p `dirname $@`
-  	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
+  	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
   $(GENDIR)/${p}.grpc.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc $(GENDIR)/%s.grpc.pb.cc' % (q,q) for q in proto_deps.get(p, []))}
   	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
   	$(Q) mkdir -p `dirname $@`
-  	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
+  	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
   endif
 
   % endfor
