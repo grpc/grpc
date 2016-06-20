@@ -103,6 +103,7 @@ struct grpc_tcp_server {
 /* Public function. Allocates the proper data structures to hold a
    grpc_tcp_server. */
 grpc_error *grpc_tcp_server_create(grpc_closure *shutdown_complete,
+                                   const grpc_channel_args *args,
                                    grpc_tcp_server **server) {
   grpc_tcp_server *s = gpr_malloc(sizeof(grpc_tcp_server));
   gpr_ref_init(&s->refs, 1);
