@@ -1,9 +1,9 @@
 source 'https://github.com/CocoaPods/Specs.git'
 platform :ios, '8.0'
 
-pod 'Protobuf', :path => "../../../third_party/protobuf"
-pod 'BoringSSL', :podspec => ".."
-pod 'CronetFramework', :podspec => ".."
+pod 'Protobuf', :path => "../../../third_party/protobuf", :inhibit_warnings => true
+pod 'BoringSSL', :podspec => "..", :inhibit_warnings => true
+pod 'CronetFramework', :podspec => "..", :inhibit_warnings => true
 pod 'gRPC', :path => "../../.."
 pod 'RemoteTest', :path => "RemoteTestClient"
 
@@ -29,4 +29,19 @@ target 'InteropTestsLocalSSL' do
 end
 
 target 'InteropTestsLocalCleartext' do
+end
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'YES'
+    end
+    if target.name == 'gRPC'
+      target.build_configurations.each do |config|
+        # GPR_UNREACHABLE_CODE causes "Control may reach end of non-void
+        # function" warning
+        config.build_settings['GCC_WARN_ABOUT_RETURN_TYPE'] = 'NO'
+      end
+    end
+  end
 end
