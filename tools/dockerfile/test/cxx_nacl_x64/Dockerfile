@@ -93,7 +93,8 @@ RUN cd /chromium/src && ./build/install-build-deps.sh --nacl --no-prompt
 RUN cd /chromium && GYP_DEFINES=target_arch=arm gclient runhooks
 RUN cd /chromium/src && ./native_client_sdk/src/build_tools/build_sdk.py
 
-# TODO this could be hopelessly wrong. Download gflags and openssl ports. (The glibc toolchain does not supprt boringssl.)
+# Download gflags and openssl ports. (The glibc toolchain does not supprt
+# boringssl.)
 RUN mkdir /webports && cd /webports
 RUN gclient config --unmanaged --name=src \
   https://chromium.googlesource.com/webports.git
@@ -102,6 +103,7 @@ ENV NACL_SDK_ROOT /chromium/src/out/pepper_53/
 RUN git config --global user.email "why_does_webports_use_git_commit@example.com"
 RUN ./src/bin/webports -a x86_64 -t glibc install src/ports/gflags
 RUN ./src/bin/webports -a x86_64 -t glibc install src/ports/openssl
+# TODO why doesn't /webports exist after this?
 
 
 ENV POST_GIT_STEP tools/dockerfile/test/cxx_nacl_x64/post-git-setup.sh
