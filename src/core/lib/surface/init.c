@@ -170,6 +170,7 @@ void grpc_init(void) {
     grpc_register_tracer("queue_timeout", &grpc_cq_event_timeout_trace);
     // Default timeout trace to 1
     grpc_cq_event_timeout_trace = 1;
+    grpc_register_tracer("op_failure", &grpc_trace_operation_failures);
     grpc_security_pre_init();
     grpc_iomgr_init();
     grpc_executor_init();

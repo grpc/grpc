@@ -81,12 +81,13 @@ static char *get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
   return gpr_strdup("peer");
 }
 
-static void free_channel(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+static void free_channel(grpc_exec_ctx *exec_ctx, void *arg,
+                         grpc_error *error) {
   grpc_channel_stack_destroy(exec_ctx, arg);
   gpr_free(arg);
 }
 
-static void free_call(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+static void free_call(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   grpc_call_stack_destroy(exec_ctx, arg, NULL, NULL);
   gpr_free(arg);
 }

@@ -38,6 +38,7 @@
 #include <grpc/support/slice_buffer.h>
 #include <grpc/support/sync.h>
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/security/transport/tsi_error.h"
 #include "src/core/lib/support/string.h"
 #include "src/core/lib/tsi/transport_security_interface.h"
 
@@ -126,8 +127,8 @@ static void flush_read_staging_buffer(secure_endpoint *ep, uint8_t **cur,
 }
 
 static void call_read_cb(grpc_exec_ctx *exec_ctx, secure_endpoint *ep,
-                         bool success) {
-  if (grpc_trace_secure_endpoint) {
+                         grpc_error *error) {
+  if (false && grpc_trace_secure_endpoint) {
     size_t i;
     for (i = 0; i < ep->read_buffer->count; i++) {
       char *data = gpr_dump_slice(ep->read_buffer->slices[i],
@@ -137,11 +138,12 @@ static void call_read_cb(grpc_exec_ctx *exec_ctx, secure_endpoint *ep,
     }
   }
   ep->read_buffer = NULL;
-  grpc_exec_ctx_enqueue(exec_ctx, ep->read_cb, success, NULL);
+  grpc_exec_ctx_sched(exec_ctx, ep->read_cb, error, NULL);
   SECURE_ENDPOINT_UNREF(exec_ctx, ep, "read");
 }
 
-static void on_read(grpc_exec_ctx *exec_ctx, void *user_data, bool success) {
+static void on_read(grpc_exec_ctx *exec_ctx, void *user_data,
+                    grpc_error *error) {
   unsigned i;
   uint8_t keep_looping = 0;
   tsi_result result = TSI_OK;
@@ -149,9 +151,10 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *user_data, bool success) {
   uint8_t *cur = GPR_SLICE_START_PTR(ep->read_staging_buffer);
   uint8_t *end = GPR_SLICE_END_PTR(ep->read_staging_buffer);
 
-  if (!success) {
+  if (error != GRPC_ERROR_NONE) {
     gpr_slice_buffer_reset_and_unref(ep->read_buffer);
-    call_read_cb(exec_ctx, ep, 0);
+    call_read_cb(exec_ctx, ep, GRPC_ERROR_CREATE_REFERENCING(
+                                   "Secure read failed", &error, 1));
     return;
   }
 
@@ -208,11 +211,12 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *user_data, bool success) {
 
   if (result != TSI_OK) {
     gpr_slice_buffer_reset_and_unref(ep->read_buffer);
-    call_read_cb(exec_ctx, ep, 0);
+    call_read_cb(exec_ctx, ep, grpc_set_tsi_error_result(
+                                   GRPC_ERROR_CREATE("Unwrap failed"), result));
     return;
   }
 
-  call_read_cb(exec_ctx, ep, 1);
+  call_read_cb(exec_ctx, ep, GRPC_ERROR_NONE);
 }
 
 static void endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
@@ -226,7 +230,7 @@ static void endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
   if (ep->leftover_bytes.count) {
     gpr_slice_buffer_swap(&ep->leftover_bytes, &ep->source_buffer);
     GPR_ASSERT(ep->leftover_bytes.count == 0);
-    on_read(exec_ctx, ep, 1);
+    on_read(exec_ctx, ep, GRPC_ERROR_NONE);
     return;
   }
 
@@ -252,7 +256,7 @@ static void endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
 
   gpr_slice_buffer_reset_and_unref(&ep->output_buffer);
 
-  if (grpc_trace_secure_endpoint) {
+  if (false && grpc_trace_secure_endpoint) {
     for (i = 0; i < slices->count; i++) {
       char *data =
           gpr_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -315,7 +319,10 @@ static void endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
   if (result != TSI_OK) {
     /* TODO(yangg) do different things according to the error type? */
     gpr_slice_buffer_reset_and_unref(&ep->output_buffer);
-    grpc_exec_ctx_enqueue(exec_ctx, cb, false, NULL);
+    grpc_exec_ctx_sched(
+        exec_ctx, cb,
+        grpc_set_tsi_error_result(GRPC_ERROR_CREATE("Wrap failed"), result),
+        NULL);
     return;
   }
 

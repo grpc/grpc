@@ -109,7 +109,7 @@ void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   pollset->shutting_down = 1;
   grpc_pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
   if (!pollset->is_iocp_worker) {
-    grpc_exec_ctx_enqueue(exec_ctx, closure, true, NULL);
+    grpc_exec_ctx_sched(exec_ctx, closure, GRPC_ERROR_NONE, NULL);
   } else {
     pollset->on_shutdown = closure;
   }
@@ -127,9 +127,9 @@ void grpc_pollset_reset(grpc_pollset *pollset) {
   pollset->on_shutdown = NULL;
 }
 
-void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
-                       grpc_pollset_worker **worker_hdl, gpr_timespec now,
-                       gpr_timespec deadline) {
+grpc_error *grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
+                              grpc_pollset_worker **worker_hdl,
+                              gpr_timespec now, gpr_timespec deadline) {
   grpc_pollset_worker worker;
   *worker_hdl = &worker;
 
@@ -167,7 +167,8 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
       }
 
       if (pollset->shutting_down && pollset->on_shutdown != NULL) {
-        grpc_exec_ctx_enqueue(exec_ctx, pollset->on_shutdown, true, NULL);
+        grpc_exec_ctx_sched(exec_ctx, pollset->on_shutdown, GRPC_ERROR_NONE,
+                            NULL);
         pollset->on_shutdown = NULL;
       }
       goto done;
@@ -197,9 +198,11 @@ done:
   }
   gpr_cv_destroy(&worker.cv);
   *worker_hdl = NULL;
+  return GRPC_ERROR_NONE;
 }
 
-void grpc_pollset_kick(grpc_pollset *p, grpc_pollset_worker *specific_worker) {
+grpc_error *grpc_pollset_kick(grpc_pollset *p,
+                              grpc_pollset_worker *specific_worker) {
   if (specific_worker != NULL) {
     if (specific_worker == GRPC_POLLSET_KICK_BROADCAST) {
       for (specific_worker =
@@ -233,6 +236,7 @@ void grpc_pollset_kick(grpc_pollset *p, grpc_pollset_worker *specific_worker) {
       p->kicked_without_pollers = 1;
     }
   }
+  return GRPC_ERROR_NONE;
 }
 
 void grpc_kick_poller(void) { grpc_iocp_kick(); }
