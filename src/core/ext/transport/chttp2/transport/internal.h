@@ -440,6 +440,7 @@ typedef struct {
 
   bool published_initial_metadata;
   bool published_trailing_metadata;
+  bool final_metadata_requested;
 
   grpc_chttp2_incoming_metadata_buffer received_initial_metadata;
   grpc_chttp2_incoming_metadata_buffer received_trailing_metadata;

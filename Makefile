@@ -6389,6 +6389,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/simple_delayed_request.c \
     test/core/end2end/tests/simple_metadata.c \
     test/core/end2end/tests/simple_request.c \
+    test/core/end2end/tests/streaming_error_response.c \
     test/core/end2end/tests/trailing_metadata.c \
 
 PUBLIC_HEADERS_C += \
@@ -6465,6 +6466,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/simple_delayed_request.c \
     test/core/end2end/tests/simple_metadata.c \
     test/core/end2end/tests/simple_request.c \
+    test/core/end2end/tests/streaming_error_response.c \
     test/core/end2end/tests/trailing_metadata.c \
 
 PUBLIC_HEADERS_C += \
