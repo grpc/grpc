@@ -240,11 +240,11 @@ class UnaryCall(_Call, grpc.UnaryCall):
 class StreamingCall(_Call, grpc.StreamingCall):
 
   def response_iterator(self):
+    self._state.initial_metadata_event.wait()
     return self
 
   def _next(self):
     state = self._state
-    state.initial_metadata_event.wait()
     if state.code is grpc.StatusCode.OK:
       raise StopIteration()
     _validate(state)

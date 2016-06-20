@@ -70,6 +70,7 @@ class BenchmarkClient:
         connected_event.set()
     channel.subscribe(wait_for_ready, try_to_connect=True)
     connected_event.wait()
+    channel.unsubscribe(wait_for_ready)
 
     if config.payload_config.WhichOneof('payload') == 'simple_params':
       self._generic = False
