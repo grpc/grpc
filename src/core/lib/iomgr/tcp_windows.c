@@ -37,6 +37,7 @@
 
 #include <limits.h>
 
+#include "src/core/lib/iomgr/network_status_tracker.h"
 #include "src/core/lib/iomgr/sockaddr_windows.h"
 
 #include <grpc/support/alloc.h>
@@ -401,6 +402,9 @@ grpc_endpoint *grpc_tcp_create(grpc_winsocket *socket, char *peer_string) {
   grpc_closure_init(&tcp->on_read, on_read, tcp);
   grpc_closure_init(&tcp->on_write, on_write, tcp);
   tcp->peer_string = gpr_strdup(peer_string);
+  /* Tell network status tracking code about the new endpoint */
+  grpc_network_status_register_endpoint(&tcp->base);
+
   return &tcp->base;
 }
 

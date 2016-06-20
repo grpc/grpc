@@ -327,6 +327,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_internal.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\load_file.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\network_status_tracker.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\polling_entity.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_set.h" />
@@ -512,6 +513,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_windows.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\load_file.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\network_status_tracker.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\polling_entity.c">
     </ClCompile>

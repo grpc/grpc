@@ -104,6 +104,7 @@ CORE_SOURCE_FILES = [
   'src/core/lib/iomgr/iomgr_posix.c',
   'src/core/lib/iomgr/iomgr_windows.c',
   'src/core/lib/iomgr/load_file.c',
+  'src/core/lib/iomgr/network_status_tracker.c',
   'src/core/lib/iomgr/polling_entity.c',
   'src/core/lib/iomgr/pollset_set_windows.c',
   'src/core/lib/iomgr/pollset_windows.c',

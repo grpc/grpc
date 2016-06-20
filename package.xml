@@ -206,6 +206,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/load_file.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/network_status_tracker.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/polling_entity.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_set.h" role="src" />
@@ -361,6 +362,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/load_file.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/network_status_tracker.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/polling_entity.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_set_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_windows.c" role="src" />
