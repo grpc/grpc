@@ -42,12 +42,10 @@ class AllTest(unittest.TestCase):
 
   def testAll(self):
     expected_grpc_code_elements = (
-        'FutureTimeoutError',
-        'FutureCancelledError',
-        'Future',
         'ChannelConnectivity',
         'StatusCode',
         'RpcError',
+        'RpcTimeoutError',
         'RpcContext',
         'Call',
         'ChannelCredentials',
@@ -77,7 +75,6 @@ class AllTest(unittest.TestCase):
         'composite_call_credentials',
         'composite_channel_credentials',
         'ssl_server_credentials',
-        'channel_ready_future',
         'insecure_channel',
         'secure_channel',
         'server',

@@ -74,7 +74,7 @@ class _Callback(object):
 
 
 class ChannelConnectivityTest(unittest.TestCase):
-
+  
   def test_lonely_channel_connectivity(self):
     callback = _Callback()
 
@@ -135,12 +135,12 @@ class ChannelConnectivityTest(unittest.TestCase):
     self.assertNotIn(
         grpc.ChannelConnectivity.TRANSIENT_FAILURE, third_connectivities)
     self.assertNotIn(
-        grpc.ChannelConnectivity.FATAL_FAILURE, third_connectivities)
+        grpc.ChannelConnectivity.SHUTDOWN, third_connectivities)
     self.assertNotIn(
         grpc.ChannelConnectivity.TRANSIENT_FAILURE,
         fourth_connectivities)
     self.assertNotIn(
-        grpc.ChannelConnectivity.FATAL_FAILURE, fourth_connectivities)
+        grpc.ChannelConnectivity.SHUTDOWN, fourth_connectivities)
 
   def test_reachable_then_unreachable_channel_connectivity(self):
     server = _server.Server((), futures.ThreadPoolExecutor(max_workers=0))
@@ -155,6 +155,36 @@ class ChannelConnectivityTest(unittest.TestCase):
     server.stop(None)
     callback.block_until_connectivities_satisfy(_last_connectivity_is_not_ready)
     channel.unsubscribe(callback.update)
+
+  def test_wait_for_ready_immediately(self):
+    server = _server.Server((), futures.ThreadPoolExecutor(max_workers=0))
+    port = server.add_insecure_port('[::]:0')
+    server.start()
+
+    channel = _channel.Channel('localhost:{}'.format(port), None, None)
+    channel.wait_for_ready()
+
+  # TODO c-core can't connect to a server started after the channel
+  @unittest.skip("ISSUE")
+  def test_wait_for_ready_soon(self):
+    channel = _channel.Channel('localhost:9321', None, None)
+    def wait_then_start():
+      time.sleep(test_constants.SHORT_TIMEOUT)
+      server = _server.Server((), futures.ThreadPoolExecutor(max_workers=0))
+      port = server.add_insecure_port('[::]:9321')
+      server.start()
+    thread = threading.Thread(target=wait_then_start)
+    thread.start()
+    wait_start = time.time()
+    channel.wait_for_ready()
+    wait_end = time.time()
+    self.assertAlmostEqual(
+        wait_end - wait_start, test_constants.SHORT_TIMEOUT, places=2)
+
+  def test_wait_for_ready_timeout(self):
+    channel = _channel.Channel('localhost:12345', None, None)
+    with self.assertRaises(grpc.RpcTimeoutError):
+      channel.wait_for_ready(test_constants.SHORT_TIMEOUT)
 
 
 if __name__ == '__main__':

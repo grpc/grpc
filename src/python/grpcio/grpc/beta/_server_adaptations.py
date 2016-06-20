@@ -174,8 +174,10 @@ def _pipe_requests(request_iterator, request_consumer, servicer_context):
 def _adapt_unary_unary_event(unary_unary_event):
   def adaptation(request, servicer_context):
     callback = _Callback()
-    if not servicer_context.add_callback(callback.cancel):
-      raise abandonment.Abandoned()
+    with servicer_context._state.condition:
+      if not servicer_context.is_active():
+        raise abandonment.Abandoned()
+      servicer_context.add_done_callback(lambda x: callback.cancel())
     unary_unary_event(
         request, callback.consume_and_terminate,
         _FaceServicerContext(servicer_context))
@@ -186,8 +188,10 @@ def _adapt_unary_unary_event(unary_unary_event):
 def _adapt_unary_stream_event(unary_stream_event):
   def adaptation(request, servicer_context):
     callback = _Callback()
-    if not servicer_context.add_callback(callback.cancel):
-      raise abandonment.Abandoned()
+    with servicer_context._state.condition:
+      if not servicer_context.is_active():
+        raise abandonment.Abandoned()
+      servicer_context.add_done_callback(lambda x: callback.cancel())
     unary_stream_event(
         request, callback, _FaceServicerContext(servicer_context))
     while True:
@@ -202,8 +206,10 @@ def _adapt_unary_stream_event(unary_stream_event):
 def _adapt_stream_unary_event(stream_unary_event):
   def adaptation(request_iterator, servicer_context):
     callback = _Callback()
-    if not servicer_context.add_callback(callback.cancel):
-      raise abandonment.Abandoned()
+    with servicer_context._state.condition:
+      if not servicer_context.is_active():
+        raise abandonment.Abandoned()
+      servicer_context.add_done_callback(lambda x: callback.cancel())
     request_consumer = stream_unary_event(
         callback.consume_and_terminate, _FaceServicerContext(servicer_context))
     request_pipe_thread = threading.Thread(
@@ -217,8 +223,10 @@ def _adapt_stream_unary_event(stream_unary_event):
 def _adapt_stream_stream_event(stream_stream_event):
   def adaptation(request_iterator, servicer_context):
     callback = _Callback()
-    if not servicer_context.add_callback(callback.cancel):
-      raise abandonment.Abandoned()
+    with servicer_context._state.condition:
+      if not servicer_context.is_active():
+        raise abandonment.Abandoned()
+      servicer_context.add_done_callback(lambda x: callback.cancel())
     request_consumer = stream_stream_event(
         callback, _FaceServicerContext(servicer_context))
     request_pipe_thread = threading.Thread(
