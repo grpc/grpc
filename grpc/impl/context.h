@@ -43,7 +43,7 @@
 #include "call_ops.h"
 #include <stdbool.h>
 
-typedef struct grpc_call_set grpc_call_set;
+typedef struct grpc_call_op_set grpc_call_op_set;
 
 typedef struct grpc_context {
   grpc_channel *channel;
@@ -60,7 +60,7 @@ typedef struct grpc_context {
   grpc_status status;
 
   // used in async calls
-  grpc_call_set *set;
+  grpc_call_op_set *set;
   void *user_tag;
 } grpc_context;
 
