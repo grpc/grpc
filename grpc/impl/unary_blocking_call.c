@@ -49,20 +49,23 @@ GRPC_status GRPC_unary_blocking_call(GRPC_channel *channel, const GRPC_method *c
                                              NULL);
 
   grpc_call_set set = {
-    grpc_op_send_metadata,
-    grpc_op_recv_metadata,
-    grpc_op_send_object,
-    grpc_op_recv_object,
-    grpc_op_send_close,
-    grpc_op_recv_status
+    {
+      grpc_op_send_metadata,
+      grpc_op_recv_metadata,
+      grpc_op_send_object,
+      grpc_op_recv_object,
+      grpc_op_send_close,
+      grpc_op_recv_status
+    },
+    context
   };
 
   size_t nops;
   grpc_op ops[GRPC_MAX_OP_COUNT];
   grpc_fill_op_from_call_set(set, rpc_method, context, message, response, ops, &nops);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops, nops, TAG(set), NULL));
-  grpc_event ev = grpc_completion_queue_pluck(cq, TAG(set), context->deadline, NULL);
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops, nops, TAG(&set), NULL));
+  grpc_event ev = grpc_completion_queue_pluck(cq, TAG(&set), context->deadline, NULL);
   GPR_ASSERT(ev.success);
 
   grpc_finish_op_from_call_set(set, context);

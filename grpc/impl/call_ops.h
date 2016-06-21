@@ -42,6 +42,7 @@
 #include <stdbool.h>
 
 typedef GRPC_method grpc_method;
+typedef struct grpc_context grpc_context;
 
 typedef void (*grpc_op_filler)(grpc_op *op, const grpc_method *, grpc_context *, const grpc_message message, grpc_message *response);
 typedef void (*grpc_op_finisher)(grpc_context *, bool *status, int max_message_size);
@@ -53,12 +54,15 @@ typedef struct grpc_op_manager {
 
 enum { GRPC_MAX_OP_COUNT = 8 };
 
-typedef const grpc_op_manager grpc_call_set[GRPC_MAX_OP_COUNT];
+typedef struct grpc_call_set {
+  const grpc_op_manager op_managers[GRPC_MAX_OP_COUNT];
+  grpc_context * const context;
+} grpc_call_set;
 
-void grpc_fill_op_from_call_set(grpc_call_set set, const grpc_method *rpc_method, grpc_context *context,
+void grpc_fill_op_from_call_set(const grpc_call_set set, const grpc_method *rpc_method, grpc_context *context,
                                 const grpc_message message, void *response, grpc_op ops[], size_t *nops);
 
-void grpc_finish_op_from_call_set(grpc_call_set set, grpc_context *context);
+void grpc_finish_op_from_call_set(const grpc_call_set set, grpc_context *context);
 
 /* list of operations */
 

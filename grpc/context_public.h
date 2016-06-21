@@ -32,12 +32,12 @@
  */
 
 
-#ifndef TEST_GRPC_C_CONTEXT_PUBLIC_H_H
-#define TEST_GRPC_C_CONTEXT_PUBLIC_H_H
+#ifndef TEST_GRPC_C_CONTEXT_PUBLIC_H
+#define TEST_GRPC_C_CONTEXT_PUBLIC_H
 
 #include "grpc_c_public.h"
 
 GRPC_context *GRPC_context_create(GRPC_channel *chan);
 void GRPC_context_destroy(GRPC_context **context);
 
-#endif //TEST_GRPC_C_CONTEXT_PUBLIC_H_H
+#endif //TEST_GRPC_C_CONTEXT_PUBLIC_H

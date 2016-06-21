@@ -168,28 +168,26 @@ const grpc_op_manager grpc_op_recv_status = {
   op_recv_status_finish
 };
 
-typedef const grpc_op_manager grpc_call_set[GRPC_MAX_OP_COUNT];
-
-void grpc_fill_op_from_call_set(grpc_call_set set, const grpc_method *rpc_method, grpc_context *context,
+void grpc_fill_op_from_call_set(const grpc_call_set set, const grpc_method *rpc_method, grpc_context *context,
                                 const grpc_message message, void *response, grpc_op ops[], size_t *nops) {
   size_t count = 0;
   while (count < GRPC_MAX_OP_COUNT) {
-    if (set[count].fill == NULL && set[count].finish == NULL) break;   // end of call set
-    if (set[count].fill == NULL) continue;
-    set[count].fill(&ops[count], rpc_method, context, message, response);
+    if (set.op_managers[count].fill == NULL && set.op_managers[count].finish == NULL) break;   // end of call set
+    if (set.op_managers[count].fill == NULL) continue;
+    set.op_managers[count].fill(&ops[count], rpc_method, context, message, response);
     count++;
   }
   *nops = count;
 }
 
-void grpc_finish_op_from_call_set(grpc_call_set set, grpc_context *context) {
+void grpc_finish_op_from_call_set(const grpc_call_set set, grpc_context *context) {
   size_t count = 0;
   while (count < GRPC_MAX_OP_COUNT) {
-    if (set[count].fill == NULL && set[count].finish == NULL) break;   // end of call set
-    if (set[count].finish == NULL) continue;
-    size_t size = 100;  // ??
+    if (set.op_managers[count].fill == NULL && set.op_managers[count].finish == NULL) break;   // end of call set
+    if (set.op_managers[count].finish == NULL) continue;
+    size_t size = 100;  // todo(yifeit): hook up this value
     bool status;
-    set[count].finish(context, &status, size);
+    set.op_managers[count].finish(context, &status, size);
     count++;
   }
 }

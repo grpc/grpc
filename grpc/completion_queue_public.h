@@ -37,6 +37,8 @@
 
 #include <stdbool.h>
 
+typedef grpc_completion_queue GRPC_completion_queue;
+
 /// Tri-state return for GRPC_completion_queue_next
 enum GRPC_completion_queue_next_status {
   GRPC_COMPLETION_QUEUE_SHUTDOWN,   ///< The completion queue has been shutdown.
@@ -46,6 +48,6 @@ enum GRPC_completion_queue_next_status {
 };
 
 /// \return true if read a regular event, false if the queue is shutting down.
-bool GRPC_completion_queue_next(void** tag, bool* ok);
+bool GRPC_completion_queue_next(GRPC_completion_queue *cq, void** tag, bool* ok);
 
 #endif //TEST_GRPC_C_COMPLETION_QUEUE_PUBLIC_H
