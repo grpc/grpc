@@ -81,8 +81,8 @@ initial call. A client doesn't a priori (presently) know which algorithms a
 server supports. This issue can be addressed with an initial negotiation of
 capabilities or an automatic retry mechanism. These features will be implemented
 in the future. Currently however, compression levels are only supported at the
-server side, which is aware of the client's capabilities by virtue of the
-incoming.
+server side, which is aware of the client's capabilities through the incoming
+Message-Accept-Encoding header.
 
 ### Propagation to child RPCs
 
