@@ -285,8 +285,8 @@ static cronet_engine *cronetEngine = NULL;
   GRXBufferedPipe *requestsBuffer = [[GRXBufferedPipe alloc] init];
 
   GRPCProtoCall *call = [_service RPCToStreamingInputCallWithRequestsWriter:requestsBuffer
-                                                               handler:^(RMTStreamingInputCallResponse *response,
-                                                                         NSError *error) {
+                                                                    handler:^(RMTStreamingInputCallResponse *response,
+                                                                              NSError *error) {
     XCTAssertEqual(error.code, GRPC_STATUS_CANCELLED);
     [expectation fulfill];
   }];
