@@ -427,9 +427,6 @@
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc_unsecure\grpc_unsecure.vcxproj">
       <Project>{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}</Project>
     </ProjectReference>
-    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc\grpc.vcxproj">
-      <Project>{29D16885-7228-4C31-81ED-5F9187C7F2A9}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

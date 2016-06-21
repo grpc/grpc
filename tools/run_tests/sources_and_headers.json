@@ -4447,7 +4447,6 @@
   {
     "deps": [
       "gpr", 
-      "grpc", 
       "grpc++_base", 
       "grpc++_codegen_base", 
       "grpc++_codegen_base_src", 
@@ -6509,7 +6508,6 @@
   }, 
   {
     "deps": [
-      "grpc", 
       "grpc++_codegen_base"
     ], 
     "headers": [

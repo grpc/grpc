@@ -714,8 +714,6 @@ filegroups:
   - src/cpp/util/status.cc
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time.cc
-  deps:
-  - grpc
   uses:
   - grpc++_codegen_base
 - name: grpc++_codegen_base

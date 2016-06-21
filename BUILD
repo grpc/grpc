@@ -1594,7 +1594,6 @@ cc_library(
     "//external:protobuf_clib",
     ":gpr",
     ":grpc_unsecure",
-    ":grpc",
   ],
 )
 
