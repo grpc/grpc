@@ -44,8 +44,10 @@ void grpc_create_socketpair_if_unix(int sv[2]) {
   GPR_ASSERT(0);
 }
 
-grpc_resolved_addresses *grpc_resolve_unix_domain_address(const char *name) {
-  return NULL;
+grpc_error *grpc_resolve_unix_domain_address(
+    const char *name, grpc_resolved_addresses **addresses) {
+  *addresses = NULL;
+  return GRPC_ERROR_CREATE("Unix domain sockets are not supported on Windows");
 }
 
 int grpc_is_unix_socket(const struct sockaddr *addr) { return false; }

@@ -76,7 +76,7 @@ bool PrintMetrics(std::unique_ptr<MetricsService::Stub> stub, bool total_only,
   while (reader->Read(&gauge_response)) {
     if (gauge_response.value_case() == GaugeResponse::kLongValue) {
       if (!total_only) {
-        gpr_log(GPR_INFO, "%s: %ld", gauge_response.name().c_str(),
+        gpr_log(GPR_INFO, "%s: %lld", gauge_response.name().c_str(),
                 gauge_response.long_value());
       }
       overall_qps += gauge_response.long_value();

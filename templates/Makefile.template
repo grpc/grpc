@@ -923,6 +923,7 @@
 
   pc_cxx_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc
 
+  ifeq ($(EMBED_OPENSSL),true)
   privatelibs_cxx: \
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
@@ -931,6 +932,18 @@
   % endif
   % endif
   % endfor
+  
+  else
+  privatelibs_cxx: \
+  % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
+  % if lib.build == 'private' and lib.language == 'c++' and not lib.get('external_deps', None) and not lib.boringssl:
+   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
+  % endif
+  % endif
+  % endfor
+  
+  endif
 
 
   ifeq ($(HAS_ZOOKEEPER),true)
@@ -958,12 +971,23 @@
   % endfor
 
 
+  ifeq ($(EMBED_OPENSSL),true)
   buildtests_cxx: buildtests_zookeeper privatelibs_cxx <%text>\</%text>
   % for tgt in targets:
   % if tgt.build == 'test' and tgt.language == 'c++' and not tgt.get('external_deps', None):
     $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
   % endif
   % endfor
+  
+  else
+  buildtests_cxx: buildtests_zookeeper privatelibs_cxx <%text>\</%text>
+  % for tgt in targets:
+  % if tgt.build == 'test' and tgt.language == 'c++' and not tgt.get('external_deps', None) and not tgt.boringssl:
+    $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
+  % endif
+  % endfor
+  
+  endif
 
 
   ifeq ($(HAS_ZOOKEEPER),true)
@@ -1227,12 +1251,12 @@
   $(GENDIR)/${p}.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc' % q for q in proto_deps.get(p, []))}
   	$(E) "[PROTOC]  Generating protobuf CC file from $<"
   	$(Q) mkdir -p `dirname $@`
-  	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
+  	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
   $(GENDIR)/${p}.grpc.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc $(GENDIR)/%s.grpc.pb.cc' % (q,q) for q in proto_deps.get(p, []))}
   	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
   	$(Q) mkdir -p `dirname $@`
-  	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
+  	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
   endif
 
   % endfor

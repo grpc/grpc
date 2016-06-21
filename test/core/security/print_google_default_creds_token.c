@@ -67,7 +67,9 @@ static void on_metadata_response(grpc_exec_ctx *exec_ctx, void *user_data,
   }
   gpr_mu_lock(sync->mu);
   sync->is_done = 1;
-  grpc_pollset_kick(grpc_polling_entity_pollset(&sync->pops), NULL);
+  GRPC_LOG_IF_ERROR(
+      "pollset_kick",
+      grpc_pollset_kick(grpc_polling_entity_pollset(&sync->pops), NULL));
   gpr_mu_unlock(sync->mu);
 }
 
@@ -106,9 +108,13 @@ int main(int argc, char **argv) {
   gpr_mu_lock(sync.mu);
   while (!sync.is_done) {
     grpc_pollset_worker *worker = NULL;
-    grpc_pollset_work(&exec_ctx, grpc_polling_entity_pollset(&sync.pops),
-                      &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                      gpr_inf_future(GPR_CLOCK_MONOTONIC));
+    if (!GRPC_LOG_IF_ERROR(
+            "pollset_work",
+            grpc_pollset_work(&exec_ctx,
+                              grpc_polling_entity_pollset(&sync.pops), &worker,
+                              gpr_now(GPR_CLOCK_MONOTONIC),
+                              gpr_inf_future(GPR_CLOCK_MONOTONIC))))
+      sync.is_done = 1;
     gpr_mu_unlock(sync.mu);
     grpc_exec_ctx_flush(&exec_ctx);
     gpr_mu_lock(sync.mu);

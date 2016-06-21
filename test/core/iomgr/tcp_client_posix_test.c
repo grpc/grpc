@@ -63,22 +63,24 @@ static gpr_timespec test_deadline(void) {
 static void finish_connection() {
   gpr_mu_lock(g_mu);
   g_connections_complete++;
-  grpc_pollset_kick(g_pollset, NULL);
+  GPR_ASSERT(
+      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
   gpr_mu_unlock(g_mu);
 }
 
-static void must_succeed(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+static void must_succeed(grpc_exec_ctx *exec_ctx, void *arg,
+                         grpc_error *error) {
   GPR_ASSERT(g_connecting != NULL);
-  GPR_ASSERT(success);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
   grpc_endpoint_shutdown(exec_ctx, g_connecting);
   grpc_endpoint_destroy(exec_ctx, g_connecting);
   g_connecting = NULL;
   finish_connection();
 }
 
-static void must_fail(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+static void must_fail(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   GPR_ASSERT(g_connecting == NULL);
-  GPR_ASSERT(!success);
+  GPR_ASSERT(error != GRPC_ERROR_NONE);
   finish_connection();
 }
 
@@ -125,9 +127,11 @@ void test_succeeds(void) {
 
   while (g_connections_complete == connections_complete_before) {
     grpc_pollset_worker *worker = NULL;
-    grpc_pollset_work(&exec_ctx, g_pollset, &worker,
-                      gpr_now(GPR_CLOCK_MONOTONIC),
-                      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "pollset_work",
+        grpc_pollset_work(&exec_ctx, g_pollset, &worker,
+                          gpr_now(GPR_CLOCK_MONOTONIC),
+                          GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5))));
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_flush(&exec_ctx);
     gpr_mu_lock(g_mu);
@@ -168,7 +172,9 @@ void test_fails(void) {
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     gpr_timespec polling_deadline = test_deadline();
     if (!grpc_timer_check(&exec_ctx, now, &polling_deadline)) {
-      grpc_pollset_work(&exec_ctx, g_pollset, &worker, now, polling_deadline);
+      GPR_ASSERT(GRPC_LOG_IF_ERROR(
+          "pollset_work", grpc_pollset_work(&exec_ctx, g_pollset, &worker, now,
+                                            polling_deadline)));
     }
     gpr_mu_unlock(g_mu);
     grpc_exec_ctx_flush(&exec_ctx);
@@ -179,7 +185,8 @@ void test_fails(void) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, bool success) {
+static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
+                            grpc_error *error) {
   grpc_pollset_destroy(p);
 }
 

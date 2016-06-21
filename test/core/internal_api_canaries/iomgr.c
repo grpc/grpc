@@ -54,7 +54,7 @@ static void test_code(void) {
   grpc_closure closure;
   closure.cb = NULL;
   closure.cb_arg = NULL;
-  closure.final_data = 0;
+  closure.next_data.scratch = 0;
 
   grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
   closure_list.head = NULL;
@@ -65,15 +65,14 @@ static void test_code(void) {
   grpc_closure_create(NULL, NULL);
 
   grpc_closure_list_move(NULL, NULL);
-  grpc_closure_list_add(NULL, NULL, true);
-  bool x = grpc_closure_list_empty(closure_list);
-  grpc_closure_next(&closure);
+  grpc_closure_list_append(NULL, NULL, GRPC_ERROR_CREATE("Foo"));
+  grpc_closure_list_empty(closure_list);
 
   /* exec_ctx.h */
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_exec_ctx_flush(&exec_ctx);
   grpc_exec_ctx_finish(&exec_ctx);
-  grpc_exec_ctx_enqueue(&exec_ctx, &closure, x, NULL);
+  grpc_exec_ctx_sched(&exec_ctx, &closure, GRPC_ERROR_CREATE("Foo"), NULL);
   grpc_exec_ctx_enqueue_list(&exec_ctx, &closure_list, NULL);
 
   /* endpoint.h */
@@ -95,7 +94,7 @@ static void test_code(void) {
 
   /* executor.h */
   grpc_executor_init();
-  grpc_executor_enqueue(&closure, x);
+  grpc_executor_push(&closure, GRPC_ERROR_CREATE("Phi"));
   grpc_executor_shutdown();
 
   /* pollset.h */
@@ -104,9 +103,10 @@ static void test_code(void) {
   grpc_pollset_shutdown(NULL, NULL, NULL);
   grpc_pollset_reset(NULL);
   grpc_pollset_destroy(NULL);
-  grpc_pollset_work(NULL, NULL, NULL, gpr_now(GPR_CLOCK_REALTIME),
-                    gpr_now(GPR_CLOCK_MONOTONIC));
-  grpc_pollset_kick(NULL, NULL);
+  GRPC_ERROR_UNREF(grpc_pollset_work(NULL, NULL, NULL,
+                                     gpr_now(GPR_CLOCK_REALTIME),
+                                     gpr_now(GPR_CLOCK_MONOTONIC)));
+  GRPC_ERROR_UNREF(grpc_pollset_kick(NULL, NULL));
 }
 
 int main(void) {

@@ -54,7 +54,8 @@ GPRAPI char *gpr_strdup(const char *src);
 
    On error, returns -1 and sets *strp to NULL. If the format string is bad,
    the result is undefined. */
-GPRAPI int gpr_asprintf(char **strp, const char *format, ...);
+GPRAPI int gpr_asprintf(char **strp, const char *format, ...)
+    GPRC_PRINT_FORMAT_CHECK(2, 3);
 
 #ifdef __cplusplus
 }
