@@ -186,9 +186,9 @@ def _blocking_unary_unary(
         response_deserializer=response_deserializer)
     effective_metadata = _effective_metadata(metadata, metadata_transformer)
     if with_call:
-      response, call = multi_callable(
+      response, call = multi_callable.with_call(
           request, timeout=timeout, metadata=effective_metadata,
-          credentials=_credentials(protocol_options), with_call=True)
+          credentials=_credentials(protocol_options))
       return response, _Rendezvous(None, None, call)
     else:
       return multi_callable(
@@ -237,9 +237,9 @@ def _blocking_stream_unary(
         response_deserializer=response_deserializer)
     effective_metadata = _effective_metadata(metadata, metadata_transformer)
     if with_call:
-      response, call = multi_callable(
+      response, call = multi_callable.with_call(
           request_iterator, timeout=timeout, metadata=effective_metadata,
-          credentials=_credentials(protocol_options), with_call=True)
+          credentials=_credentials(protocol_options))
       return response, _Rendezvous(None, None, call)
     else:
       return multi_callable(
