@@ -42,13 +42,13 @@ and RPC settings (for example, if compression would result in small or negative
 gains).
 
 When a message from a client compressed with an unsupported algorithm is
-processed by a server, it WILL result in an INVALID\_ARGUMENT error. The server
-will include in its response a `grpc-accept-encoding` header specifying the
-algorithms it does accept. If an INTERNAL error is returned from the server
-despite having used one of the algorithms from the `grpc-accept-encoding`
-header, the cause MUST NOT be related to compression. Data sent from a server
-compressed with an algorithm not supported by the client WILL result in an
-INTERNAL error on the client side.
+processed by a server, it WILL result in an INVALID\_ARGUMENT error on the
+server. The server will then include in its response a `grpc-accept-encoding`
+header specifying the algorithms it does accept. If an INTERNAL error is
+returned from the server despite having used one of the algorithms from the
+`grpc-accept-encoding` header, the cause MUST NOT be related to compression.
+Data sent from a server compressed with an algorithm not supported by the client
+WILL result in an INTERNAL error on the client side.
 
 Note that a peer MAY choose to not disclose all the encodings it supports.
 However, if it receives a message compressed in an undisclosed but supported
