@@ -75,22 +75,24 @@ static void async_connect_unlock_and_cleanup(async_connect *ac,
   if (socket != NULL) grpc_winsocket_destroy(socket);
 }
 
-static void on_alarm(grpc_exec_ctx *exec_ctx, void *acp, bool occured) {
+static void on_alarm(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
   async_connect *ac = acp;
   gpr_mu_lock(&ac->mu);
-  if (ac->socket != NULL) {
-    grpc_winsocket_shutdown(ac->socket);
+  grpc_winsocket *socket = ac->socket;
+  ac->socket = NULL;
+  if (socket != NULL) {
+    grpc_winsocket_shutdown(socket);
   }
-  async_connect_unlock_and_cleanup(ac, ac->socket);
+  async_connect_unlock_and_cleanup(ac, socket);
 }
 
-static void on_connect(grpc_exec_ctx *exec_ctx, void *acp, bool from_iocp) {
+static void on_connect(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
   async_connect *ac = acp;
-  SOCKET sock = ac->socket->socket;
   grpc_endpoint **ep = ac->endpoint;
   GPR_ASSERT(*ep == NULL);
-  grpc_winsocket_callback_info *info = &ac->socket->write_info;
   grpc_closure *on_done = ac->on_done;
+
+  GRPC_ERROR_REF(error);
 
   gpr_mu_lock(&ac->mu);
   grpc_winsocket *socket = ac->socket;
@@ -101,17 +103,15 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *acp, bool from_iocp) {
 
   gpr_mu_lock(&ac->mu);
 
-  if (from_iocp && socket != NULL) {
+  if (error == GRPC_ERROR_NONE && socket != NULL) {
     DWORD transfered_bytes = 0;
     DWORD flags;
-    BOOL wsa_success = WSAGetOverlappedResult(sock, &info->overlapped,
-                                              &transfered_bytes, FALSE, &flags);
+    BOOL wsa_success =
+        WSAGetOverlappedResult(socket->socket, &socket->write_info.overlapped,
+                               &transfered_bytes, FALSE, &flags);
     GPR_ASSERT(transfered_bytes == 0);
     if (!wsa_success) {
-      char *utf8_message = gpr_format_message(WSAGetLastError());
-      gpr_log(GPR_ERROR, "on_connect error connecting to '%s': %s",
-              ac->addr_name, utf8_message);
-      gpr_free(utf8_message);
+      error = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx");
     } else {
       *ep = grpc_tcp_create(socket, ac->addr_name);
       socket = NULL;
@@ -121,7 +121,7 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *acp, bool from_iocp) {
   async_connect_unlock_and_cleanup(ac, socket);
   /* If the connection was aborted, the callback was already called when
      the deadline was met. */
-  on_done->cb(exec_ctx, on_done->cb_arg, *ep != NULL);
+  grpc_exec_ctx_sched(exec_ctx, on_done, error, NULL);
 }
 
 /* Tries to issue one async connection, then schedules both an IOCP
@@ -141,10 +141,8 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
   LPFN_CONNECTEX ConnectEx;
   GUID guid = WSAID_CONNECTEX;
   DWORD ioctl_num_bytes;
-  const char *message = NULL;
-  char *utf8_message;
   grpc_winsocket_callback_info *info;
-  int last_error;
+  grpc_error *error = GRPC_ERROR_NONE;
 
   *endpoint = NULL;
 
@@ -157,12 +155,12 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
   sock = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
                    WSA_FLAG_OVERLAPPED);
   if (sock == INVALID_SOCKET) {
-    message = "Unable to create socket: %s";
+    error = GRPC_WSA_ERROR(WSAGetLastError(), "WSASocket");
     goto failure;
   }
 
-  if (!grpc_tcp_prepare_socket(sock)) {
-    message = "Unable to set socket options: %s";
+  error = grpc_tcp_prepare_socket(sock);
+  if (error != GRPC_ERROR_NONE) {
     goto failure;
   }
 
@@ -173,7 +171,8 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
                &ConnectEx, sizeof(ConnectEx), &ioctl_num_bytes, NULL, NULL);
 
   if (status != 0) {
-    message = "Unable to retrieve ConnectEx pointer: %s";
+    error = GRPC_WSA_ERROR(WSAGetLastError(),
+                           "WSAIoctl(SIO_GET_EXTENSION_FUNCTION_POINTER)");
     goto failure;
   }
 
@@ -181,7 +180,7 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
 
   status = bind(sock, (struct sockaddr *)&local_address, sizeof(local_address));
   if (status != 0) {
-    message = "Unable to bind socket: %s";
+    error = GRPC_WSA_ERROR(WSAGetLastError(), "bind");
     goto failure;
   }
 
@@ -193,9 +192,9 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
   /* It wouldn't be unusual to get a success immediately. But we'll still get
      an IOCP notification, so let's ignore it. */
   if (!success) {
-    int error = WSAGetLastError();
-    if (error != ERROR_IO_PENDING) {
-      message = "ConnectEx failed: %s";
+    int last_error = WSAGetLastError();
+    if (last_error != ERROR_IO_PENDING) {
+      error = GRPC_WSA_ERROR(last_error, "ConnectEx");
       goto failure;
     }
   }
@@ -215,17 +214,18 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
   return;
 
 failure:
-  last_error = WSAGetLastError();
-  utf8_message = gpr_format_message(last_error);
-  gpr_log(GPR_ERROR, message, utf8_message);
-  gpr_log(GPR_ERROR, "last error = %d", last_error);
-  gpr_free(utf8_message);
+  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  char *target_uri = grpc_sockaddr_to_uri(addr);
+  grpc_error *final_error = grpc_error_set_str(
+      GRPC_ERROR_CREATE_REFERENCING("Failed to connect", &error, 1),
+      GRPC_ERROR_STR_TARGET_ADDRESS, target_uri);
+  GRPC_ERROR_UNREF(error);
   if (socket != NULL) {
     grpc_winsocket_destroy(socket);
   } else if (sock != INVALID_SOCKET) {
     closesocket(sock);
   }
-  grpc_exec_ctx_enqueue(exec_ctx, on_done, false, NULL);
+  grpc_exec_ctx_sched(exec_ctx, on_done, final_error, NULL);
 }
 
 #endif /* GPR_WINSOCK_SOCKET */

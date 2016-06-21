@@ -70,7 +70,6 @@ filegroups:
   - src/core/lib/support/backoff.h
   - src/core/lib/support/block_annotate.h
   - src/core/lib/support/env.h
-  - src/core/lib/support/load_file.h
   - src/core/lib/support/murmur_hash.h
   - src/core/lib/support/stack_lockfree.h
   - src/core/lib/support/string.h
@@ -94,7 +93,6 @@ filegroups:
   - src/core/lib/support/env_windows.c
   - src/core/lib/support/histogram.c
   - src/core/lib/support/host_port.c
-  - src/core/lib/support/load_file.c
   - src/core/lib/support/log.c
   - src/core/lib/support/log_android.c
   - src/core/lib/support/log_linux.c
@@ -174,6 +172,7 @@ filegroups:
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/endpoint.h
   - src/core/lib/iomgr/endpoint_pair.h
+  - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/ev_poll_and_epoll_posix.h
   - src/core/lib/iomgr/ev_poll_posix.h
   - src/core/lib/iomgr/ev_posix.h
@@ -183,6 +182,7 @@ filegroups:
   - src/core/lib/iomgr/iomgr.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/iomgr/iomgr_posix.h
+  - src/core/lib/iomgr/load_file.h
   - src/core/lib/iomgr/polling_entity.h
   - src/core/lib/iomgr/pollset.h
   - src/core/lib/iomgr/pollset_set.h
@@ -250,6 +250,7 @@ filegroups:
   - src/core/lib/iomgr/endpoint.c
   - src/core/lib/iomgr/endpoint_pair_posix.c
   - src/core/lib/iomgr/endpoint_pair_windows.c
+  - src/core/lib/iomgr/error.c
   - src/core/lib/iomgr/ev_poll_and_epoll_posix.c
   - src/core/lib/iomgr/ev_poll_posix.c
   - src/core/lib/iomgr/ev_posix.c
@@ -259,6 +260,7 @@ filegroups:
   - src/core/lib/iomgr/iomgr.c
   - src/core/lib/iomgr/iomgr_posix.c
   - src/core/lib/iomgr/iomgr_windows.c
+  - src/core/lib/iomgr/load_file.c
   - src/core/lib/iomgr/polling_entity.c
   - src/core/lib/iomgr/pollset_set_windows.c
   - src/core/lib/iomgr/pollset_windows.c
@@ -445,6 +447,7 @@ filegroups:
   - src/core/lib/security/transport/handshake.h
   - src/core/lib/security/transport/secure_endpoint.h
   - src/core/lib/security/transport/security_connector.h
+  - src/core/lib/security/transport/tsi_error.h
   - src/core/lib/security/util/b64.h
   - src/core/lib/security/util/json_util.h
   src:
@@ -469,6 +472,7 @@ filegroups:
   - src/core/lib/security/transport/secure_endpoint.c
   - src/core/lib/security/transport/security_connector.c
   - src/core/lib/security/transport/server_auth_filter.c
+  - src/core/lib/security/transport/tsi_error.c
   - src/core/lib/security/util/b64.c
   - src/core/lib/security/util/json_util.c
   - src/core/lib/surface/init_secure.c
@@ -902,21 +906,6 @@ libs:
   generate_plugin_registry: true
   secure: false
   vs_project_guid: '{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}'
-- name: grpc_zookeeper
-  build: all
-  language: c
-  public_headers:
-  - include/grpc/grpc_zookeeper.h
-  src:
-  - src/core/ext/resolver/zookeeper/zookeeper_resolver.c
-  deps:
-  - gpr
-  - grpc
-  external_deps:
-  - zookeeper
-  platforms:
-  - linux
-  secure: false
 - name: reconnect_server
   build: private
   language: c
@@ -1461,7 +1450,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: fling_stream_test
-  cpu_cost: 2
+  cpu_cost: 1.5
   build: test
   language: c
   src:
@@ -1476,7 +1465,7 @@ targets:
   - linux
   - posix
 - name: fling_test
-  cpu_cost: 2
+  cpu_cost: 1.5
   build: test
   language: c
   src:
@@ -1575,14 +1564,6 @@ targets:
   deps:
   - gpr_test_util
   - gpr
-- name: gpr_load_file_test
-  build: test
-  language: c
-  src:
-  - test/core/support/load_file_test.c
-  deps:
-  - gpr_test_util
-  - gpr
 - name: gpr_log_test
   build: test
   language: c
@@ -1608,7 +1589,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: gpr_stack_lockfree_test
-  cpu_cost: 10
+  cpu_cost: 7
   build: test
   language: c
   src:
@@ -1625,7 +1606,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: gpr_sync_test
-  cpu_cost: 10
+  cpu_cost: 3
   build: test
   language: c
   src:
@@ -1634,7 +1615,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: gpr_thd_test
-  cpu_cost: 10
+  cpu_cost: 1
   build: test
   language: c
   src:
@@ -1864,19 +1845,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: http_fuzzer_test
-  build: fuzzer
-  language: c
-  src:
-  - test/core/http/fuzzer.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  corpus_dirs:
-  - test/core/http/corpus
-  maxlen: 2048
 - name: http_parser_test
   build: test
   language: c
@@ -1887,6 +1855,32 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: http_request_fuzzer_test
+  build: fuzzer
+  language: c
+  src:
+  - test/core/http/request_fuzzer.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/http/corpus
+  maxlen: 2048
+- name: http_response_fuzzer_test
+  build: fuzzer
+  language: c
+  src:
+  - test/core/http/response_fuzzer.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/http/corpus
+  maxlen: 2048
 - name: httpcli_format_request_test
   build: test
   language: c
@@ -1969,6 +1963,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: invalid_call_argument_test
+  cpu_cost: 0.1
   build: test
   language: c
   src:
@@ -2047,6 +2042,16 @@ targets:
   language: c
   src:
   - test/core/client_config/lb_policies_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: load_file_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/load_file_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -2172,6 +2177,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: sequential_connectivity_test
+  build: test
+  language: c
+  src:
+  - test/core/surface/sequential_connectivity_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: server_chttp2_test
   build: test
   language: c
@@ -2268,7 +2283,7 @@ targets:
   - linux
   - posix
 - name: tcp_posix_test
-  cpu_cost: 0.5
+  cpu_cost: 0.2
   build: test
   language: c
   src:
@@ -3119,26 +3134,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: zookeeper_test
-  gtest: true
-  build: test
-  run: false
-  language: c++
-  src:
-  - src/proto/grpc/testing/echo.proto
-  - test/cpp/end2end/zookeeper_test.cc
-  deps:
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc_zookeeper
-  - grpc
-  - gpr_test_util
-  - gpr
-  external_deps:
-  - zookeeper
-  platforms:
-  - linux
 - name: public_headers_must_be_c89
   build: test
   language: c89

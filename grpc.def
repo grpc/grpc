@@ -222,6 +222,8 @@ EXPORTS
     gpr_avl_add
     gpr_avl_remove
     gpr_avl_get
+    gpr_avl_maybe_get
+    gpr_avl_is_empty
     gpr_cmdline_create
     gpr_cmdline_add_int
     gpr_cmdline_add_flag
