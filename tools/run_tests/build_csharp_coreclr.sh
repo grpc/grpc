@@ -36,3 +36,7 @@ cd $(dirname $0)/../../src/csharp
 dotnet restore .
 
 dotnet build -f netstandard1.5 --configuration $MSBUILD_CONFIG '**/project.json'
+
+# Grpc.IntegrationTesting doesn't get built by the previous command for some reason.
+# TODO(jtattermusch): get rid of the hack
+dotnet build -f netstandard1.5 --configuration $MSBUILD_CONFIG Grpc.IntegrationTesting/project.json
