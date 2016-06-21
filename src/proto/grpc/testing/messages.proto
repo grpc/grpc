@@ -32,6 +32,8 @@
 
 syntax = "proto3";
 
+package grpc.testing;
+
 // TODO(dgq): Go back to using well-known types once
 // https://github.com/grpc/grpc/issues/6980 has been fixed.
 // import "google/protobuf/wrappers.proto";
@@ -39,8 +41,6 @@ message BoolValue {
   // The bool value.
   bool value = 1;
 }
-
-package grpc.testing;
 
 // DEPRECATED, don't use. To be removed shortly.
 // The type of payload that should be returned.
