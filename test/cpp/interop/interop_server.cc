@@ -222,7 +222,7 @@ class TestServiceImpl : public TestService::Service {
                          gpr_time_from_micros(time_us, GPR_TIMESPAN));
         gpr_sleep_until(sleep_time);
       }
-      write_success = writer->Write(response);
+      write_success = writer->Write(response, wopts);
     }
     if (write_success) {
       return Status::OK;

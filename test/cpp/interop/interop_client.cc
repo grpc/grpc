@@ -537,20 +537,19 @@ bool InteropClient::DoServerCompressedStreaming() {
   InteropClientContextInspector inspector(context);
   StreamingOutputCallRequest request;
 
-  for (size_t i = 0; i < compressions.size(); i++) {
-    for (size_t j = 0; j < sizes.size(); j++) {
-      char* log_suffix;
-      gpr_asprintf(&log_suffix, "(compression=%s; size=%d)",
-                   compressions[i] ? "true" : "false", sizes[j]);
+  GPR_ASSERT(compressions.size() == sizes.size());
+  for (size_t i = 0; i < sizes.size(); i++) {
+    char* log_suffix;
+    gpr_asprintf(&log_suffix, "(compression=%s; size=%d)",
+                 compressions[i] ? "true" : "false", sizes[i]);
 
-      gpr_log(GPR_DEBUG, "Sending request streaming rpc %s.", log_suffix);
-      gpr_free(log_suffix);
+    gpr_log(GPR_DEBUG, "Sending request streaming rpc %s.", log_suffix);
+    gpr_free(log_suffix);
 
-      ResponseParameters* const response_parameter =
-          request.add_response_parameters();
-      response_parameter->mutable_compressed()->set_value(compressions[i]);
-      response_parameter->set_size(sizes[j]);
-    }
+    ResponseParameters* const response_parameter =
+        request.add_response_parameters();
+    response_parameter->mutable_compressed()->set_value(compressions[i]);
+    response_parameter->set_size(sizes[i]);
   }
   std::unique_ptr<ClientReader<StreamingOutputCallResponse>> stream(
       serviceStub_.Get()->StreamingOutputCall(&context, request));
@@ -574,14 +573,13 @@ bool InteropClient::DoServerCompressedStreaming() {
     ++k;
   }
 
-  if (k < response_stream_sizes.size()) {
+  if (k < sizes.size()) {
     // stream->Read() failed before reading all the expected messages. This
     // is most likely due to a connection failure.
-    gpr_log(GPR_ERROR,
-            "%s(): Responses read (k=%" PRIuPTR
-            ") is "
-            "less than the expected messages (i.e "
-            "response_stream_sizes.size() (%" PRIuPTR ")).",
+    gpr_log(GPR_ERROR, "%s(): Responses read (k=%" PRIuPTR
+                       ") is "
+                       "less than the expected messages (i.e "
+                       "response_stream_sizes.size() (%" PRIuPTR ")).",
             __func__, k, response_stream_sizes.size());
     return TransientFailureOrAbort();
   }
