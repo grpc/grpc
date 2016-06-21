@@ -72,8 +72,8 @@ void test_tcp_server_start(test_tcp_server *server, int port) {
   addr.sin_port = htons((uint16_t)port);
   memset(&addr.sin_addr, 0, sizeof(addr.sin_addr));
 
-  grpc_error *error =
-      grpc_tcp_server_create(&server->shutdown_complete, NULL, &server->tcp_server);
+  grpc_error *error = grpc_tcp_server_create(&server->shutdown_complete, NULL,
+                                             &server->tcp_server);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   error = grpc_tcp_server_add_port(server->tcp_server, &addr, sizeof(addr),
                                    &port_added);
