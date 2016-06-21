@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,16 +28,60 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# format argument via
+# $ echo '{...}' | python -mjson.tool
+read -r -d '' SCENARIOS_JSON_ARG <<'EOF'
+{
+    "scenarios": [
+        {
+            "benchmark_seconds": 5,
+            "client_config": {
+                "client_channels": 1,
+                "client_type": "SYNC_CLIENT",
+                "histogram_params": {
+                    "max_possible": 60000000000.0,
+                    "resolution": 0.01
+                },
+                "load_params": {
+                    "closed_loop": {}
+                },
+                "outstanding_rpcs_per_channel": 1,
+                "payload_config": {
+                    "simple_params": {
+                        "req_size": 0,
+                        "resp_size": 0
+                    }
+                },
+                "rpc_type": "UNARY",
+                "security_params": {
+                    "server_host_override": "foo.test.google.fr",
+                    "use_test_ca": true
+                }
+            },
+            "name": "cpp_protobuf_sync_unary_ping_pong_secure",
+            "num_clients": 1,
+            "num_servers": 1,
+            "server_config": {
+                "core_limit": 1,
+                "security_params": {
+                    "server_host_override": "foo.test.google.fr",
+                    "use_test_ca": true
+                },
+                "server_type": "SYNC_SERVER"
+            },
+            "spawn_local_worker_count": 2,
+            "warmup_seconds": 5
+        }
+    ]
+}
+
+EOF
+
 set -ex
 
 cd $(dirname $0)/../../..
 
-BINS="sync_unary_ping_pong_test sync_streaming_ping_pong_test"
 CPUS=`python -c 'import multiprocessing; print multiprocessing.cpu_count()'`
-
-make CONFIG=basicprof -j$CPUS $BINS
-
-mkdir -p reports
 
 # try to use pypy for generating reports
 # each trace dumps 7-8gig of text to disk, and processing this into a report is
@@ -49,35 +93,13 @@ else
   PYTHON=python2.7
 fi
 
-# start processes, interleaving report index generation
+make CONFIG=basicprof -j$CPUS qps_json_driver
+
+mkdir -p reports
 echo '<html><head></head><body>' > reports/index.html
-for bin in $BINS
-do
-  bins/basicprof/$bin
-  mv latency_trace.txt $bin.trace
-  echo "<a href='$bin.txt'>$bin</a><br/>" >> reports/index.html
-done
-pids=""
-# generate report pages... this will take some time
-# run them in parallel: they take 1 cpu each
-for bin in $BINS
-do
-  $PYTHON tools/profiling/latency_profile/profile_analyzer.py \
-    --source=$bin.trace --fmt=simple > reports/$bin.txt &
-  pids+=" $!"
-done
+bins/basicprof/qps_json_driver --scenarios_json="$SCENARIOS_JSON_ARG"
+echo '<pre>' >> reports/index.html
+$PYTHON tools/profiling/latency_profile/profile_analyzer.py \
+    --source=latency_trace.txt --fmt=simple >> reports/index.html
+echo '</pre>' >> reports/index.html
 echo '</body></html>' >> reports/index.html
-
-# make sure we kill the report generation if something goes wrong
-trap "kill $pids || true" 0
-
-# finally, wait for the background report generation to finish
-for pid in $pids
-do
-	if wait $pid
-	then
-		echo "Finished $pid"
-	else
-		exit 1
-	fi
-done
