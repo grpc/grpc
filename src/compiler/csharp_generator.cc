@@ -485,20 +485,6 @@ void GenerateBindServiceMethod(Printer* out, const ServiceDescriptor *service) {
   out->Print("\n");
 }
 
-void GenerateNewStubMethods(Printer* out, const ServiceDescriptor *service) {
-  out->Print("/// <summary>Creates a new client for $servicename$</summary>\n",
-             "servicename", GetServiceClassName(service));
-  out->Print("public static $classname$ NewClient(Channel channel)\n",
-             "classname", GetClientClassName(service));
-  out->Print("{\n");
-  out->Indent();
-  out->Print("return new $classname$(channel);\n", "classname",
-             GetClientClassName(service));
-  out->Outdent();
-  out->Print("}\n");
-  out->Print("\n");
-}
-
 void GenerateService(Printer* out, const ServiceDescriptor *service,
                      bool generate_client, bool generate_server,
                      bool internal_access) {
@@ -524,7 +510,6 @@ void GenerateService(Printer* out, const ServiceDescriptor *service,
   }
   if (generate_client) {
     GenerateClientStub(out, service);
-    GenerateNewStubMethods(out, service);
   }
   if (generate_server) {
     GenerateBindServiceMethod(out, service);
