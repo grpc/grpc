@@ -60,21 +60,21 @@ void ProtoServerReflectionPlugin::ChangeArguments(const grpc::string& name,
                                                   void* value) {}
 
 bool ProtoServerReflectionPlugin::has_sync_methods() const {
-  if (reflection_service_ != nullptr) {
+  if (reflection_service_) {
     return reflection_service_->has_synchronous_methods();
   }
   return false;
 }
 
 bool ProtoServerReflectionPlugin::has_async_methods() const {
-  if (reflection_service_ != nullptr) {
+  if (reflection_service_) {
     return reflection_service_->has_async_methods();
   }
   return false;
 }
 
-static std::unique_ptr<::grpc::ServerBuilderPlugin> CreateProtoReflection() {
-  return std::unique_ptr<::grpc::ServerBuilderPlugin>(
+static std::unique_ptr< ::grpc::ServerBuilderPlugin> CreateProtoReflection() {
+  return std::unique_ptr< ::grpc::ServerBuilderPlugin>(
       new ProtoServerReflectionPlugin());
 }
 

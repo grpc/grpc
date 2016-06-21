@@ -119,7 +119,7 @@ void grpc_connected_subchannel_process_transport_op(
 
 /** poll the current connectivity state of a channel */
 grpc_connectivity_state grpc_subchannel_check_connectivity(
-    grpc_subchannel *channel);
+    grpc_subchannel *channel, grpc_error **error);
 
 /** call notify when the connectivity state of a channel changes from *state.
     Updates *state with the new state of the channel */
