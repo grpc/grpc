@@ -291,11 +291,11 @@ void pi_unref_dbg(polling_island *pi, int ref_cnt, char *reason, char *file,
 #endif
 
 long pi_add_ref(polling_island *pi, int ref_cnt) {
-  return gpr_atm_no_barrier_fetch_add(&pi->ref_count, ref_cnt);
+  return gpr_atm_full_fetch_add(&pi->ref_count, ref_cnt);
 }
 
 long pi_unref(polling_island *pi, int ref_cnt) {
-  long old_cnt = gpr_atm_no_barrier_fetch_add(&pi->ref_count, -ref_cnt);
+  long old_cnt = gpr_atm_full_fetch_add(&pi->ref_count, -ref_cnt);
 
   /* If ref count went to zero, delete the polling island. Note that this need
      not be done under a lock. Once the ref count goes to zero, we are
@@ -311,6 +311,8 @@ long pi_unref(polling_island *pi, int ref_cnt) {
     if (next != NULL) {
       PI_UNREF(next, "pi_delete"); /* Recursive call */
     }
+  } else {
+    GPR_ASSERT(old_cnt > ref_cnt);
   }
 
   return old_cnt;
@@ -445,8 +447,8 @@ static polling_island *polling_island_create(grpc_fd *initial_fd) {
     pi->fds = NULL;
   }
 
-  gpr_atm_no_barrier_store(&pi->ref_count, 0);
-  gpr_atm_no_barrier_store(&pi->merged_to, NULL);
+  gpr_atm_rel_store(&pi->ref_count, 0);
+  gpr_atm_rel_store(&pi->merged_to, NULL);
 
   pi->epoll_fd = epoll_create1(EPOLL_CLOEXEC);
 
@@ -1347,7 +1349,7 @@ static void pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 
 static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                            grpc_fd *fd) {
-  /* TODO sreek - Double check if we need to get a pollset->mu lock here */
+  gpr_mu_lock(&pollset->mu);
   gpr_mu_lock(&pollset->pi_mu);
   gpr_mu_lock(&fd->pi_mu);
 
@@ -1401,6 +1403,7 @@ static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 
   gpr_mu_unlock(&fd->pi_mu);
   gpr_mu_unlock(&pollset->pi_mu);
+  gpr_mu_unlock(&pollset->mu);
 }
 
 /*******************************************************************************
