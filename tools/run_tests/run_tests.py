@@ -509,10 +509,11 @@ class CSharpLanguage(object):
         self._docker_distro = 'coreclr'
 
       if self.platform == 'mac':
-        # On Mac, official distribution of mono is 32bit.
         # TODO(jtattermusch): EMBED_ZLIB=true currently breaks the mac build
-        self._make_options = ['EMBED_OPENSSL=true',
-                              'CFLAGS=-m32', 'LDFLAGS=-m32']
+        self._make_options = ['EMBED_OPENSSL=true']
+        if self.args.compiler != 'coreclr':
+          # On Mac, official distribution of mono is 32bit.
+          self._make_options += ['CFLAGS=-m32', 'LDFLAGS=-m32']
       else:
         self._make_options = ['EMBED_OPENSSL=true', 'EMBED_ZLIB=true']
 
@@ -528,6 +529,9 @@ class CSharpLanguage(object):
     if self.args.compiler == 'coreclr':
       if self.platform == 'linux':
         assembly_subdir += '/netstandard1.5/debian.8-x64'
+        assembly_extension = ''
+      if self.platform == 'mac':
+        assembly_subdir += '/netstandard1.5/osx.10.11-x64'
         assembly_extension = ''
       else:
         assembly_subdir += '/netstandard1.5/win7-x64'
