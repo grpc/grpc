@@ -526,10 +526,11 @@ class CSharpLanguage(object):
     assembly_extension = '.exe'
 
     if self.args.compiler == 'coreclr':
-      # TODO(jtattermusch): make the runtime string platform-specific
-      #assembly_subdir += '/netstandard1.5/debian.8-x64'
-      #assembly_extension = ''
-      assembly_subdir += '/netstandard1.5/win7-x64'
+      if self.platform == 'linux':
+        assembly_subdir += '/netstandard1.5/debian.8-x64'
+        assembly_extension = ''
+      else:
+        assembly_subdir += '/netstandard1.5/win7-x64'
       runtime_cmd = []
     else:
       nunit_args += ['--noresult', '--workers=1']
