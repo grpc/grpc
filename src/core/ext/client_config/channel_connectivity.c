@@ -75,7 +75,6 @@ typedef enum {
 typedef struct {
   gpr_mu mu;
   callback_phase phase;
-  int success;
   grpc_closure on_complete;
   grpc_timer alarm;
   grpc_connectivity_state state;
@@ -122,7 +121,7 @@ static void finished_completion(grpc_exec_ctx *exec_ctx, void *pw,
 }
 
 static void partly_done(grpc_exec_ctx *exec_ctx, state_watcher *w,
-                        int due_to_completion) {
+                        bool due_to_completion, grpc_error *error) {
   int delete = 0;
 
   if (due_to_completion) {
@@ -130,14 +129,26 @@ static void partly_done(grpc_exec_ctx *exec_ctx, state_watcher *w,
   }
 
   gpr_mu_lock(&w->mu);
+
   if (due_to_completion) {
-    w->success = 1;
+    if (grpc_trace_operation_failures) {
+      GRPC_LOG_IF_ERROR("watch_completion_error", GRPC_ERROR_REF(error));
+    }
+    GRPC_ERROR_UNREF(error);
+    error = GRPC_ERROR_NONE;
+  } else {
+    if (error == GRPC_ERROR_NONE) {
+      error =
+          GRPC_ERROR_CREATE("Timed out waiting for connection state change");
+    } else if (error == GRPC_ERROR_CANCELLED) {
+      error = GRPC_ERROR_NONE;
+    }
   }
   switch (w->phase) {
     case WAITING:
       w->phase = CALLING_BACK;
-      grpc_cq_end_op(exec_ctx, w->cq, w->tag, w->success, finished_completion,
-                     w, &w->completion_storage);
+      grpc_cq_end_op(exec_ctx, w->cq, w->tag, GRPC_ERROR_REF(error),
+                     finished_completion, w, &w->completion_storage);
       break;
     case CALLING_BACK:
       w->phase = CALLING_BACK_AND_FINISHED;
@@ -153,14 +164,18 @@ static void partly_done(grpc_exec_ctx *exec_ctx, state_watcher *w,
   if (delete) {
     delete_state_watcher(exec_ctx, w);
   }
+
+  GRPC_ERROR_UNREF(error);
 }
 
-static void watch_complete(grpc_exec_ctx *exec_ctx, void *pw, bool success) {
-  partly_done(exec_ctx, pw, 1);
+static void watch_complete(grpc_exec_ctx *exec_ctx, void *pw,
+                           grpc_error *error) {
+  partly_done(exec_ctx, pw, true, GRPC_ERROR_REF(error));
 }
 
-static void timeout_complete(grpc_exec_ctx *exec_ctx, void *pw, bool success) {
-  partly_done(exec_ctx, pw, 0);
+static void timeout_complete(grpc_exec_ctx *exec_ctx, void *pw,
+                             grpc_error *error) {
+  partly_done(exec_ctx, pw, false, GRPC_ERROR_REF(error));
 }
 
 void grpc_channel_watch_connectivity_state(
@@ -185,7 +200,6 @@ void grpc_channel_watch_connectivity_state(
   grpc_closure_init(&w->on_complete, watch_complete, w);
   w->phase = WAITING;
   w->state = last_observed_state;
-  w->success = 0;
   w->cq = cq;
   w->tag = tag;
   w->channel = channel;

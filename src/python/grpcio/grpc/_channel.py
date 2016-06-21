@@ -814,6 +814,13 @@ def _options(options):
 class Channel(grpc.Channel):
 
   def __init__(self, target, options, credentials):
+    """Constructor.
+
+    Args:
+      target: The target to which to connect.
+      options: Configuration options for the channel.
+      credentials: A cygrpc.ChannelCredentials or None.
+    """
     self._channel = cygrpc.Channel(target, _options(options), credentials)
     self._call_state = _ChannelCallState(self._channel)
     self._connectivity_state = _ChannelConnectivityState(self._channel)

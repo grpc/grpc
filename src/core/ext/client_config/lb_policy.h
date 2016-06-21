@@ -77,8 +77,9 @@ struct grpc_lb_policy_vtable {
   void (*exit_idle)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy);
 
   /** check the current connectivity of the lb_policy */
-  grpc_connectivity_state (*check_connectivity)(grpc_exec_ctx *exec_ctx,
-                                                grpc_lb_policy *policy);
+  grpc_connectivity_state (*check_connectivity)(
+      grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
+      grpc_error **connectivity_error);
 
   /** call notify when the connectivity state of a channel changes from *state.
       Updates *state with the new state of the policy */
@@ -154,6 +155,7 @@ void grpc_lb_policy_notify_on_state_change(grpc_exec_ctx *exec_ctx,
                                            grpc_closure *closure);
 
 grpc_connectivity_state grpc_lb_policy_check_connectivity(
-    grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy);
+    grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
+    grpc_error **connectivity_error);
 
 #endif /* GRPC_CORE_EXT_CLIENT_CONFIG_LB_POLICY_H */
