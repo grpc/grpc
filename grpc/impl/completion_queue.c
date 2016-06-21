@@ -32,4 +32,32 @@
  */
 
 
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
 #include "completion_queue.h"
+#include "context.h"
+
+bool GRPC_completion_queue_next(GRPC_completion_queue *cq, void** tag, bool* ok) {
+  for (;;) {
+    grpc_call_set *set = NULL;
+    grpc_event ev = grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+    switch (ev.type) {
+      case GRPC_QUEUE_TIMEOUT:
+        return GRPC_COMPLETION_QUEUE_TIMEOUT;
+      case GRPC_QUEUE_SHUTDOWN:
+        return GRPC_COMPLETION_QUEUE_SHUTDOWN;
+      case GRPC_OP_COMPLETE:
+        set = (grpc_call_set *) ev.tag;
+        GPR_ASSERT(set != NULL);
+        GPR_ASSERT(set->context != NULL);
+        // run post-processing for async operations
+        grpc_finish_op_from_call_set(*set, set->context);
+
+        *tag = set->context->user_tag;
+        *ok = ev.success != 0;
+        return GRPC_COMPLETION_QUEUE_GOT_EVENT;
+    }
+  }
+}
+
+
