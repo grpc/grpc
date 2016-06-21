@@ -71,33 +71,39 @@ typedef struct {
   grpc_closure *closure;
 } async_connect;
 
-static int prepare_socket(const struct sockaddr *addr, int fd) {
-  if (fd < 0) {
-    goto error;
-  }
+static grpc_error *prepare_socket(const struct sockaddr *addr, int fd) {
+  grpc_error *err = GRPC_ERROR_NONE;
 
-  if (!grpc_set_socket_nonblocking(fd, 1) || !grpc_set_socket_cloexec(fd, 1) ||
-      (!grpc_is_unix_socket(addr) && !grpc_set_socket_low_latency(fd, 1)) ||
-      !grpc_set_socket_no_sigpipe_if_possible(fd)) {
-    gpr_log(GPR_ERROR, "Unable to configure socket %d: %s", fd,
-            strerror(errno));
-    goto error;
+  GPR_ASSERT(fd >= 0);
+
+  err = grpc_set_socket_nonblocking(fd, 1);
+  if (err != GRPC_ERROR_NONE) goto error;
+  err = grpc_set_socket_cloexec(fd, 1);
+  if (err != GRPC_ERROR_NONE) goto error;
+  if (!grpc_is_unix_socket(addr)) {
+    err = grpc_set_socket_low_latency(fd, 1);
+    if (err != GRPC_ERROR_NONE) goto error;
   }
-  return 1;
+  err = grpc_set_socket_no_sigpipe_if_possible(fd);
+  if (err != GRPC_ERROR_NONE) goto error;
+  goto done;
 
 error:
   if (fd >= 0) {
     close(fd);
   }
-  return 0;
+done:
+  return err;
 }
 
-static void tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp, bool success) {
+static void tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
   int done;
   async_connect *ac = acp;
   if (grpc_tcp_trace) {
-    gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: on_alarm: success=%d", ac->addr_str,
-            success);
+    const char *str = grpc_error_string(error);
+    gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: on_alarm: error=%s", ac->addr_str,
+            str);
+    grpc_error_free_string(str);
   }
   gpr_mu_lock(&ac->mu);
   if (ac->fd != NULL) {
@@ -112,7 +118,7 @@ static void tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp, bool success) {
   }
 }
 
-static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, bool success) {
+static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, grpc_error *error) {
   async_connect *ac = acp;
   int so_error = 0;
   socklen_t so_error_size;
@@ -122,9 +128,13 @@ static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, bool success) {
   grpc_closure *closure = ac->closure;
   grpc_fd *fd;
 
+  GRPC_ERROR_REF(error);
+
   if (grpc_tcp_trace) {
-    gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: on_writable: success=%d",
-            ac->addr_str, success);
+    const char *str = grpc_error_string(error);
+    gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: on_writable: error=%s",
+            ac->addr_str, str);
+    grpc_error_free_string(str);
   }
 
   gpr_mu_lock(&ac->mu);
@@ -136,15 +146,14 @@ static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, bool success) {
   grpc_timer_cancel(exec_ctx, &ac->alarm);
 
   gpr_mu_lock(&ac->mu);
-  if (success) {
+  if (error == GRPC_ERROR_NONE) {
     do {
       so_error_size = sizeof(so_error);
       err = getsockopt(grpc_fd_wrapped_fd(fd), SOL_SOCKET, SO_ERROR, &so_error,
                        &so_error_size);
     } while (err < 0 && errno == EINTR);
     if (err < 0) {
-      gpr_log(GPR_ERROR, "failed to connect to '%s': getsockopt(ERROR): %s",
-              ac->addr_str, strerror(errno));
+      error = GRPC_OS_ERROR(errno, "getsockopt");
       goto finish;
     } else if (so_error != 0) {
       if (so_error == ENOBUFS) {
@@ -169,14 +178,12 @@ static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, bool success) {
       } else {
         switch (so_error) {
           case ECONNREFUSED:
-            gpr_log(
-                GPR_ERROR,
-                "failed to connect to '%s': socket error: connection refused",
-                ac->addr_str);
+            error = grpc_error_set_int(error, GRPC_ERROR_INT_ERRNO, errno);
+            error = grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
+                                       "Connection refused");
             break;
           default:
-            gpr_log(GPR_ERROR, "failed to connect to '%s': socket error: %d",
-                    ac->addr_str, so_error);
+            error = GRPC_OS_ERROR(errno, "getsockopt(SO_ERROR)");
             break;
         }
         goto finish;
@@ -188,8 +195,8 @@ static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, bool success) {
       goto finish;
     }
   } else {
-    gpr_log(GPR_ERROR, "failed to connect to '%s': timeout occurred",
-            ac->addr_str);
+    error =
+        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR, "Timeout occurred");
     goto finish;
   }
 
@@ -203,12 +210,18 @@ finish:
   }
   done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
+  if (error != GRPC_ERROR_NONE) {
+    error = grpc_error_set_str(error, GRPC_ERROR_STR_DESCRIPTION,
+                               "Failed to connect to remote host");
+    error =
+        grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS, ac->addr_str);
+  }
   if (done) {
     gpr_mu_destroy(&ac->mu);
     gpr_free(ac->addr_str);
     gpr_free(ac);
   }
-  grpc_exec_ctx_enqueue(exec_ctx, closure, *ep != NULL, NULL);
+  grpc_exec_ctx_sched(exec_ctx, closure, error, NULL);
 }
 
 static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
@@ -225,6 +238,7 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
   grpc_fd *fdobj;
   char *name;
   char *addr_str;
+  grpc_error *error;
 
   *ep = NULL;
 
@@ -234,9 +248,10 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
     addr_len = sizeof(addr6_v4mapped);
   }
 
-  fd = grpc_create_dualstack_socket(addr, SOCK_STREAM, 0, &dsmode);
-  if (fd < 0) {
-    gpr_log(GPR_ERROR, "Unable to create socket: %s", strerror(errno));
+  error = grpc_create_dualstack_socket(addr, SOCK_STREAM, 0, &dsmode, &fd);
+  if (error != GRPC_ERROR_NONE) {
+    grpc_exec_ctx_sched(exec_ctx, closure, error, NULL);
+    return;
   }
   if (dsmode == GRPC_DSMODE_IPV4) {
     /* If we got an AF_INET socket, map the address back to IPv4. */
@@ -244,8 +259,8 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
     addr = (struct sockaddr *)&addr4_copy;
     addr_len = sizeof(addr4_copy);
   }
-  if (!prepare_socket(addr, fd)) {
-    grpc_exec_ctx_enqueue(exec_ctx, closure, false, NULL);
+  if ((error = prepare_socket(addr, fd)) != GRPC_ERROR_NONE) {
+    grpc_exec_ctx_sched(exec_ctx, closure, error, NULL);
     return;
   }
 
@@ -261,14 +276,14 @@ static void tcp_client_connect_impl(grpc_exec_ctx *exec_ctx,
 
   if (err >= 0) {
     *ep = grpc_tcp_create(fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, addr_str);
-    grpc_exec_ctx_enqueue(exec_ctx, closure, true, NULL);
+    grpc_exec_ctx_sched(exec_ctx, closure, GRPC_ERROR_NONE, NULL);
     goto done;
   }
 
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
-    gpr_log(GPR_ERROR, "connect error to '%s': %s", addr_str, strerror(errno));
     grpc_fd_orphan(exec_ctx, fdobj, NULL, NULL, "tcp_client_connect_error");
-    grpc_exec_ctx_enqueue(exec_ctx, closure, false, NULL);
+    grpc_exec_ctx_sched(exec_ctx, closure, GRPC_OS_ERROR(errno, "connect"),
+                        NULL);
     goto done;
   }
 

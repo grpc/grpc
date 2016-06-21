@@ -47,13 +47,14 @@ grpc_closure transport_op_cb;
 
 static void *tag(intptr_t x) { return (void *)x; }
 
-void verify_connectivity(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+void verify_connectivity(grpc_exec_ctx *exec_ctx, void *arg,
+                         grpc_error *error) {
   grpc_transport_op *op = arg;
   GPR_ASSERT(GRPC_CHANNEL_SHUTDOWN == *op->connectivity_state);
-  GPR_ASSERT(success);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
 }
 
-void do_nothing(grpc_exec_ctx *exec_ctx, void *arg, bool success) {}
+void do_nothing(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {}
 
 void test_transport_op(grpc_channel *channel) {
   grpc_transport_op op;

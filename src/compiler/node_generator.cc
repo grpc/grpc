@@ -74,8 +74,16 @@ grpc::string GetJSMessageFilename(const grpc::string& filename) {
 
 // Given a filename like foo/bar/baz.proto, returns the root directory
 // path ../../
-grpc::string GetRootPath(const grpc::string& filename) {
-  size_t slashes = std::count(filename.begin(), filename.end(), '/');
+grpc::string GetRootPath(const grpc::string& from_filename,
+                         const grpc::string& to_filename) {
+  if (to_filename.find("google/protobuf") == 0) {
+    // Well-known types (.proto files in the google/protobuf directory) are
+    // assumed to come from the 'google-protobuf' npm package.  We may want to
+    // generalize this exception later by letting others put generated code in
+    // their own npm packages.
+    return "google-protobuf/";
+  }
+  size_t slashes = std::count(from_filename.begin(), from_filename.end(), '/');
   if (slashes == 0) {
     return "./";
   }
@@ -90,7 +98,7 @@ grpc::string GetRootPath(const grpc::string& filename) {
 // from_file, assuming that both paths are relative to the same directory
 grpc::string GetRelativePath(const grpc::string& from_file,
                              const grpc::string& to_file) {
-  return GetRootPath(from_file) + to_file;
+  return GetRootPath(from_file, to_file) + to_file;
 }
 
 /* Finds all message types used in all services in the file, and returns them

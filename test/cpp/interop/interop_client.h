@@ -45,9 +45,9 @@ namespace grpc {
 namespace testing {
 
 // Function pointer for custom checks.
-using CheckerFn =
-    std::function<void(const InteropClientContextInspector&,
-                       const SimpleRequest*, const SimpleResponse*)>;
+typedef std::function<void(const InteropClientContextInspector&,
+                           const SimpleRequest*, const SimpleResponse*)>
+    CheckerFn;
 
 class InteropClient {
  public:
