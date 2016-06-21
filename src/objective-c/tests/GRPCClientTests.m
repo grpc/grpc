@@ -110,14 +110,14 @@ static GRPCProtoMethod *kUnaryCallMethod;
 
   // This method isn't implemented by the remote server.
   kInexistentMethod = [[GRPCProtoMethod alloc] initWithPackage:kPackage
-                                                   service:kService
-                                                    method:@"Inexistent"];
+                                                       service:kService
+                                                        method:@"Inexistent"];
   kEmptyCallMethod = [[GRPCProtoMethod alloc] initWithPackage:kPackage
-                                                  service:kService
-                                                   method:@"EmptyCall"];
+                                                      service:kService
+                                                       method:@"EmptyCall"];
   kUnaryCallMethod = [[GRPCProtoMethod alloc] initWithPackage:kPackage
-                                                  service:kService
-                                                   method:@"UnaryCall"];
+                                                      service:kService
+                                                       method:@"UnaryCall"];
 }
 
 - (void)testConnectionToRemoteServer {
@@ -303,9 +303,9 @@ static GRPCProtoMethod *kUnaryCallMethod;
 
   // Try to set parameters to nil for GRPCCall. This should cause an exception
   @try {
-    GRPCCall *call __unused = [[GRPCCall alloc] initWithHost:nil
-                                               path:nil
-                                     requestsWriter:nil];
+    (void)[[GRPCCall alloc] initWithHost:nil
+                                    path:nil
+                          requestsWriter:nil];
     XCTFail(@"Did not receive an exception when parameters are nil");
   } @catch(NSException *theException) {
     NSLog(@"Received exception as expected: %@", theException.name);
@@ -316,9 +316,9 @@ static GRPCProtoMethod *kUnaryCallMethod;
   GRXWriter *requestsWriter = [GRXWriter emptyWriter];
   [requestsWriter finishWithError:nil];
   @try {
-    GRPCCall *call __unused = [[GRPCCall alloc] initWithHost:kHostAddress
-                                               path:kUnaryCallMethod.HTTPPath
-                                     requestsWriter:requestsWriter];
+    (void)[[GRPCCall alloc] initWithHost:kHostAddress
+                                    path:kUnaryCallMethod.HTTPPath
+                          requestsWriter:requestsWriter];
     XCTFail(@"Did not receive an exception when GRXWriter has incorrect state.");
   } @catch(NSException *theException) {
     NSLog(@"Received exception as expected: %@", theException.name);

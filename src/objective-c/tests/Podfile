@@ -6,7 +6,7 @@ install! 'cocoapods', :deterministic_uuids => false
 def shared_pods
   pod 'Protobuf', :path => "../../../third_party/protobuf", :inhibit_warnings => true
   pod 'BoringSSL', :podspec => "..", :inhibit_warnings => true
-  pod 'CronetFramework', :podspec => "..", :inhibit_warnings => true
+  pod 'CronetFramework', :podspec => ".."
   pod 'gRPC', :path => "../../.."
   pod 'RemoteTest', :path => "RemoteTestClient"
 end
@@ -42,6 +42,7 @@ post_install do |installer|
     end
     if target.name == 'gRPC'
       target.build_configurations.each do |config|
+        # TODO(zyc) Remove this setting after the issue is resolved
         # GPR_UNREACHABLE_CODE causes "Control may reach end of non-void
         # function" warning
         config.build_settings['GCC_WARN_ABOUT_RETURN_TYPE'] = 'NO'
