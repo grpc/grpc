@@ -54,15 +54,15 @@ typedef struct grpc_op_manager {
 
 enum { GRPC_MAX_OP_COUNT = 8 };
 
-typedef struct grpc_call_set {
+typedef struct grpc_call_op_set {
   const grpc_op_manager op_managers[GRPC_MAX_OP_COUNT];
   grpc_context * const context;
-} grpc_call_set;
+} grpc_call_op_set;
 
-void grpc_fill_op_from_call_set(const grpc_call_set set, const grpc_method *rpc_method, grpc_context *context,
+void grpc_fill_op_from_call_set(const grpc_call_op_set set, const grpc_method *rpc_method, grpc_context *context,
                                 const grpc_message message, void *response, grpc_op ops[], size_t *nops);
 
-void grpc_finish_op_from_call_set(const grpc_call_set set, grpc_context *context);
+void grpc_finish_op_from_call_set(const grpc_call_op_set set, grpc_context *context);
 
 /* list of operations */
 
