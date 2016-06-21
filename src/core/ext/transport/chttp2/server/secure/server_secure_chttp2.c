@@ -37,6 +37,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
@@ -128,9 +129,11 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *statep, grpc_endpoint *tcp,
   state->state = statep;
   state_ref(state->state);
   state->accepting_pollset = accepting_pollset;
-  grpc_server_security_connector_do_handshake(exec_ctx, state->state->sc,
-                                              acceptor, tcp,
-                                              on_secure_handshake_done, state);
+  grpc_server_security_connector_do_handshake(
+      exec_ctx, state->state->sc, acceptor, tcp,
+      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                   gpr_time_from_seconds(120, GPR_TIMESPAN)),
+      on_secure_handshake_done, state);
 }
 
 /* Server callback: start listening on our ports */
@@ -141,11 +144,12 @@ static void start(grpc_exec_ctx *exec_ctx, grpc_server *server, void *statep,
                         on_accept, state);
 }
 
-static void destroy_done(grpc_exec_ctx *exec_ctx, void *statep, bool success) {
+static void destroy_done(grpc_exec_ctx *exec_ctx, void *statep,
+                         grpc_error *error) {
   server_secure_state *state = statep;
   if (state->destroy_callback != NULL) {
     state->destroy_callback->cb(exec_ctx, state->destroy_callback->cb_arg,
-                                success);
+                                GRPC_ERROR_REF(error));
   }
   grpc_server_security_connector_shutdown(exec_ctx, state->sc);
   state_unref(state);
@@ -171,12 +175,14 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   grpc_tcp_server *tcp = NULL;
   server_secure_state *state = NULL;
   size_t i;
-  unsigned count = 0;
+  size_t count = 0;
   int port_num = -1;
   int port_temp;
   grpc_security_status status = GRPC_SECURITY_ERROR;
   grpc_server_security_connector *sc = NULL;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_error *err = GRPC_ERROR_NONE;
+  grpc_error **errors = NULL;
 
   GRPC_API_TRACE(
       "grpc_server_add_secure_http2_port("
@@ -184,26 +190,34 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
       3, (server, addr, creds));
 
   /* create security context */
-  if (creds == NULL) goto error;
+  if (creds == NULL) {
+    err = GRPC_ERROR_CREATE(
+        "No credentials specified for secure server port (creds==NULL)");
+    goto error;
+  }
   status = grpc_server_credentials_create_security_connector(creds, &sc);
   if (status != GRPC_SECURITY_OK) {
-    gpr_log(GPR_ERROR,
-            "Unable to create secure server with credentials of type %s.",
-            creds->type);
+    char *msg;
+    gpr_asprintf(&msg,
+                 "Unable to create secure server with credentials of type %s.",
+                 creds->type);
+    err = grpc_error_set_int(GRPC_ERROR_CREATE(msg),
+                             GRPC_ERROR_INT_SECURITY_STATUS, status);
+    gpr_free(msg);
     goto error;
   }
   sc->channel_args = grpc_server_get_channel_args(server);
 
   /* resolve address */
-  resolved = grpc_blocking_resolve_address(addr, "https");
-  if (!resolved) {
+  err = grpc_blocking_resolve_address(addr, "https", &resolved);
+  if (err != GRPC_ERROR_NONE) {
     goto error;
   }
   state = gpr_malloc(sizeof(*state));
   memset(state, 0, sizeof(*state));
   grpc_closure_init(&state->destroy_closure, destroy_done, state);
-  tcp = grpc_tcp_server_create(&state->destroy_closure);
-  if (!tcp) {
+  err = grpc_tcp_server_create(&state->destroy_closure, &tcp);
+  if (err != GRPC_ERROR_NONE) {
     goto error;
   }
 
@@ -215,11 +229,12 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   gpr_mu_init(&state->mu);
   gpr_ref_init(&state->refcount, 1);
 
+  errors = gpr_malloc(sizeof(*errors) * resolved->naddrs);
   for (i = 0; i < resolved->naddrs; i++) {
-    port_temp = grpc_tcp_server_add_port(
+    errors[i] = grpc_tcp_server_add_port(
         tcp, (struct sockaddr *)&resolved->addrs[i].addr,
-        resolved->addrs[i].len);
-    if (port_temp > 0) {
+        resolved->addrs[i].len, &port_temp);
+    if (errors[i] == GRPC_ERROR_NONE) {
       if (port_num == -1) {
         port_num = port_temp;
       } else {
@@ -229,15 +244,31 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
     }
   }
   if (count == 0) {
-    gpr_log(GPR_ERROR, "No address added out of total %d resolved",
-            resolved->naddrs);
+    char *msg;
+    gpr_asprintf(&msg, "No address added out of total %" PRIuPTR " resolved",
+                 resolved->naddrs);
+    err = GRPC_ERROR_CREATE_REFERENCING(msg, errors, resolved->naddrs);
+    gpr_free(msg);
     goto error;
+  } else if (count != resolved->naddrs) {
+    char *msg;
+    gpr_asprintf(&msg, "Only %" PRIuPTR
+                       " addresses added out of total %" PRIuPTR " resolved",
+                 count, resolved->naddrs);
+    err = GRPC_ERROR_CREATE_REFERENCING(msg, errors, resolved->naddrs);
+    gpr_free(msg);
+
+    const char *warning_message = grpc_error_string(err);
+    gpr_log(GPR_INFO, "WARNING: %s", warning_message);
+    grpc_error_free_string(warning_message);
+    /* we managed to bind some addresses: continue */
+  } else {
+    for (i = 0; i < resolved->naddrs; i++) {
+      GRPC_ERROR_UNREF(errors[i]);
+    }
   }
-  if (count != resolved->naddrs) {
-    gpr_log(GPR_ERROR, "Only %d addresses added out of total %d resolved",
-            count, resolved->naddrs);
-    /* if it's an error, don't we want to goto error; here ? */
-  }
+  gpr_free(errors);
+  errors = NULL;
   grpc_resolved_addresses_destroy(resolved);
 
   /* Register with the server only upon success */
@@ -248,6 +279,13 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
 
 /* Error path: cleanup and return */
 error:
+  GPR_ASSERT(err != GRPC_ERROR_NONE);
+  if (errors != NULL) {
+    for (i = 0; i < resolved->naddrs; i++) {
+      GRPC_ERROR_UNREF(errors[i]);
+    }
+    gpr_free(errors);
+  }
   if (resolved) {
     grpc_resolved_addresses_destroy(resolved);
   }
@@ -262,5 +300,9 @@ error:
     }
   }
   grpc_exec_ctx_finish(&exec_ctx);
+  const char *msg = grpc_error_string(err);
+  GRPC_ERROR_UNREF(err);
+  gpr_log(GPR_ERROR, "%s", msg);
+  grpc_error_free_string(msg);
   return 0;
 }

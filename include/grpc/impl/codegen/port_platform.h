@@ -150,7 +150,11 @@
 #elif defined(ANDROID) || defined(__ANDROID__)
 #define GPR_PLATFORM_STRING "android"
 #define GPR_ANDROID 1
+#ifdef _LP64
+#define GPR_ARCH_64 1
+#else /* _LP64 */
 #define GPR_ARCH_32 1
+#endif /* _LP64 */
 #define GPR_CPU_LINUX 1
 #define GPR_GCC_SYNC 1
 #define GPR_GCC_TLS 1
@@ -433,6 +437,15 @@ typedef unsigned __int64 uint64_t;
 #define GRPC_MUST_USE_RESULT
 #endif
 #endif
+
+#ifndef GPRC_PRINT_FORMAT_CHECK
+#ifdef __GNUC__
+#define GPRC_PRINT_FORMAT_CHECK(FORMAT_STR, ARGS) \
+  __attribute__((format(printf, FORMAT_STR, ARGS)))
+#else
+#define GPRC_PRINT_FORMAT_CHECK(FORMAT_STR, ARGS)
+#endif
+#endif /* GPRC_PRINT_FORMAT_CHECK */
 
 #if GPR_FORBID_UNREACHABLE_CODE
 #define GPR_UNREACHABLE_CODE(STATEMENT)

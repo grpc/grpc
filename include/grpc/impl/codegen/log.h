@@ -34,6 +34,7 @@
 #ifndef GRPC_IMPL_CODEGEN_LOG_H
 #define GRPC_IMPL_CODEGEN_LOG_H
 
+#include <inttypes.h>
 #include <stdarg.h>
 #include <stdlib.h> /* for abort() */
 
@@ -74,7 +75,7 @@ const char *gpr_log_severity_string(gpr_log_severity severity);
 /* Log a message. It's advised to use GPR_xxx above to generate the context
  * for each message */
 GPRAPI void gpr_log(const char *file, int line, gpr_log_severity severity,
-                    const char *format, ...);
+                    const char *format, ...) GPRC_PRINT_FORMAT_CHECK(4, 5);
 
 GPRAPI void gpr_log_message(const char *file, int line,
                             gpr_log_severity severity, const char *message);

@@ -49,6 +49,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
@@ -57,10 +58,10 @@
 #include "src/core/lib/support/string.h"
 
 /* set a socket to non blocking mode */
-int grpc_set_socket_nonblocking(int fd, int non_blocking) {
+grpc_error *grpc_set_socket_nonblocking(int fd, int non_blocking) {
   int oldflags = fcntl(fd, F_GETFL, 0);
   if (oldflags < 0) {
-    return 0;
+    return GRPC_OS_ERROR(errno, "fcntl");
   }
 
   if (non_blocking) {
@@ -70,62 +71,71 @@ int grpc_set_socket_nonblocking(int fd, int non_blocking) {
   }
 
   if (fcntl(fd, F_SETFL, oldflags) != 0) {
-    return 0;
+    return GRPC_OS_ERROR(errno, "fcntl");
   }
 
-  return 1;
+  return GRPC_ERROR_NONE;
 }
 
-int grpc_set_socket_no_sigpipe_if_possible(int fd) {
+grpc_error *grpc_set_socket_no_sigpipe_if_possible(int fd) {
 #ifdef GPR_HAVE_SO_NOSIGPIPE
   int val = 1;
   int newval;
   socklen_t intlen = sizeof(newval);
-  return 0 == setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &val, sizeof(val)) &&
-         0 == getsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &newval, &intlen) &&
-         (newval != 0) == val;
-#else
-  return 1;
+  if (0 != setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &val, sizeof(val))) {
+    return GRPC_OS_ERROR(errno, "setsockopt(SO_NOSIGPIPE)");
+  }
+  if (0 != getsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &newval, &intlen)) {
+    return GRPC_OS_ERROR(errno, "getsockopt(SO_NOSIGPIPE)");
+  }
+  if ((newval != 0) != (val != 0)) {
+    return GRPC_ERROR_CREATE("Failed to set SO_NOSIGPIPE");
+  }
 #endif
+  return GRPC_ERROR_NONE;
 }
 
-int grpc_set_socket_ip_pktinfo_if_possible(int fd) {
+grpc_error *grpc_set_socket_ip_pktinfo_if_possible(int fd) {
 #ifdef GPR_HAVE_IP_PKTINFO
   int get_local_ip = 1;
-  return 0 == setsockopt(fd, IPPROTO_IP, IP_PKTINFO, &get_local_ip,
-                         sizeof(get_local_ip));
-#else
-  (void)fd;
-  return 1;
+  if (0 != setsockopt(fd, IPPROTO_IP, IP_PKTINFO, &get_local_ip,
+                      sizeof(get_local_ip))) {
+    return GRPC_OS_ERROR(errno, "setsockopt(IP_PKTINFO)");
+  }
 #endif
+  return GRPC_ERROR_NONE;
 }
 
-int grpc_set_socket_ipv6_recvpktinfo_if_possible(int fd) {
+grpc_error *grpc_set_socket_ipv6_recvpktinfo_if_possible(int fd) {
 #ifdef GPR_HAVE_IPV6_RECVPKTINFO
   int get_local_ip = 1;
-  return 0 == setsockopt(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, &get_local_ip,
-                         sizeof(get_local_ip));
-#else
-  (void)fd;
-  return 1;
+  if (0 != setsockopt(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, &get_local_ip,
+                      sizeof(get_local_ip))) {
+    return GRPC_OS_ERROR(errno, "setsockopt(IPV6_RECVPKTINFO)");
+  }
 #endif
+  return GRPC_ERROR_NONE;
 }
 
-int grpc_set_socket_sndbuf(int fd, int buffer_size_bytes) {
+grpc_error *grpc_set_socket_sndbuf(int fd, int buffer_size_bytes) {
   return 0 == setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &buffer_size_bytes,
-                         sizeof(buffer_size_bytes));
+                         sizeof(buffer_size_bytes))
+             ? GRPC_ERROR_NONE
+             : GRPC_OS_ERROR(errno, "setsockopt(SO_SNDBUF)");
 }
 
-int grpc_set_socket_rcvbuf(int fd, int buffer_size_bytes) {
+grpc_error *grpc_set_socket_rcvbuf(int fd, int buffer_size_bytes) {
   return 0 == setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &buffer_size_bytes,
-                         sizeof(buffer_size_bytes));
+                         sizeof(buffer_size_bytes))
+             ? GRPC_ERROR_NONE
+             : GRPC_OS_ERROR(errno, "setsockopt(SO_RCVBUF)");
 }
 
 /* set a socket to close on exec */
-int grpc_set_socket_cloexec(int fd, int close_on_exec) {
+grpc_error *grpc_set_socket_cloexec(int fd, int close_on_exec) {
   int oldflags = fcntl(fd, F_GETFD, 0);
   if (oldflags < 0) {
-    return 0;
+    return GRPC_OS_ERROR(errno, "fcntl");
   }
 
   if (close_on_exec) {
@@ -135,30 +145,45 @@ int grpc_set_socket_cloexec(int fd, int close_on_exec) {
   }
 
   if (fcntl(fd, F_SETFD, oldflags) != 0) {
-    return 0;
+    return GRPC_OS_ERROR(errno, "fcntl");
   }
 
-  return 1;
+  return GRPC_ERROR_NONE;
 }
 
 /* set a socket to reuse old addresses */
-int grpc_set_socket_reuse_addr(int fd, int reuse) {
+grpc_error *grpc_set_socket_reuse_addr(int fd, int reuse) {
   int val = (reuse != 0);
   int newval;
   socklen_t intlen = sizeof(newval);
-  return 0 == setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) &&
-         0 == getsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &newval, &intlen) &&
-         (newval != 0) == val;
+  if (0 != setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val))) {
+    return GRPC_OS_ERROR(errno, "setsockopt(SO_REUSEADDR)");
+  }
+  if (0 != getsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &newval, &intlen)) {
+    return GRPC_OS_ERROR(errno, "getsockopt(SO_REUSEADDR)");
+  }
+  if ((newval != 0) != val) {
+    return GRPC_ERROR_CREATE("Failed to set SO_REUSEADDR");
+  }
+
+  return GRPC_ERROR_NONE;
 }
 
 /* disable nagle */
-int grpc_set_socket_low_latency(int fd, int low_latency) {
+grpc_error *grpc_set_socket_low_latency(int fd, int low_latency) {
   int val = (low_latency != 0);
   int newval;
   socklen_t intlen = sizeof(newval);
-  return 0 == setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val)) &&
-         0 == getsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &newval, &intlen) &&
-         (newval != 0) == val;
+  if (0 != setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val))) {
+    return GRPC_OS_ERROR(errno, "setsockopt(TCP_NODELAY)");
+  }
+  if (0 != getsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &newval, &intlen)) {
+    return GRPC_OS_ERROR(errno, "getsockopt(TCP_NODELAY)");
+  }
+  if ((newval != 0) != val) {
+    return GRPC_ERROR_CREATE("Failed to set TCP_NODELAY");
+  }
+  return GRPC_ERROR_NONE;
 }
 
 static gpr_once g_probe_ipv6_once = GPR_ONCE_INIT;
@@ -206,35 +231,47 @@ static int set_socket_dualstack(int fd) {
   }
 }
 
-int grpc_create_dualstack_socket(const struct sockaddr *addr, int type,
-                                 int protocol, grpc_dualstack_mode *dsmode) {
+static grpc_error *error_for_fd(int fd, const struct sockaddr *addr) {
+  if (fd >= 0) return GRPC_ERROR_NONE;
+  char *addr_str;
+  grpc_sockaddr_to_string(&addr_str, addr, 0);
+  grpc_error *err = grpc_error_set_str(GRPC_OS_ERROR(errno, "socket"),
+                                       GRPC_ERROR_STR_TARGET_ADDRESS, addr_str);
+  gpr_free(addr_str);
+  return err;
+}
+
+grpc_error *grpc_create_dualstack_socket(const struct sockaddr *addr, int type,
+                                         int protocol,
+                                         grpc_dualstack_mode *dsmode,
+                                         int *newfd) {
   int family = addr->sa_family;
   if (family == AF_INET6) {
-    int fd;
     if (grpc_ipv6_loopback_available()) {
-      fd = socket(family, type, protocol);
+      *newfd = socket(family, type, protocol);
     } else {
-      fd = -1;
+      *newfd = -1;
       errno = EAFNOSUPPORT;
     }
     /* Check if we've got a valid dualstack socket. */
-    if (fd >= 0 && set_socket_dualstack(fd)) {
+    if (*newfd >= 0 && set_socket_dualstack(*newfd)) {
       *dsmode = GRPC_DSMODE_DUALSTACK;
-      return fd;
+      return GRPC_ERROR_NONE;
     }
     /* If this isn't an IPv4 address, then return whatever we've got. */
     if (!grpc_sockaddr_is_v4mapped(addr, NULL)) {
       *dsmode = GRPC_DSMODE_IPV6;
-      return fd;
+      return error_for_fd(*newfd, addr);
     }
     /* Fall back to AF_INET. */
-    if (fd >= 0) {
-      close(fd);
+    if (*newfd >= 0) {
+      close(*newfd);
     }
     family = AF_INET;
   }
   *dsmode = family == AF_INET ? GRPC_DSMODE_IPV4 : GRPC_DSMODE_NONE;
-  return socket(family, type, protocol);
+  *newfd = socket(family, type, protocol);
+  return error_for_fd(*newfd, addr);
 }
 
 #endif

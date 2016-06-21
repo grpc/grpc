@@ -39,15 +39,15 @@
  * This test is NOT expected to be run directly.
  ******************************************************************************/
 
+#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/support/env.h"
-#include "src/core/lib/support/load_file.h"
 #include "src/core/lib/support/tmpfile.h"
 
 static void test_code(void) {
   /* env.h */
   gpr_set_env("abc", gpr_getenv("xyz"));
   /* load_file.h */
-  gpr_load_file("abc", 1, NULL);
+  grpc_load_file("abc", 1, NULL);
   /* tmpfile.h */
   fclose(gpr_tmpfile("foo", NULL));
 }
