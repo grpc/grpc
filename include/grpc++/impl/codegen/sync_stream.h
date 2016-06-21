@@ -71,8 +71,8 @@ class ReaderInterface {
   virtual ~ReaderInterface() {}
 
   /// Blocking read a message and parse to \a msg. Returns \a true on success.
-  /// This is thread-safe with respect to other streaming APIs except for Finish
-  /// on the same stream. (Finish must be called as described above.)
+  /// This is thread-safe with respect to other streaming APIs except for \a
+  /// Finish on the same stream. (\a Finish must be called as described above.)
   ///
   /// \param[out] msg The read message.
   ///
@@ -89,7 +89,7 @@ class WriterInterface {
   virtual ~WriterInterface() {}
 
   /// Blocking write \a msg to the stream with options.
-  /// This is thread-safe with respect to Read
+  /// This is thread-safe with respect to \a Read
   ///
   /// \param msg The message to be written to the stream.
   /// \param options Options affecting the write operation.
@@ -98,7 +98,7 @@ class WriterInterface {
   virtual bool Write(const W& msg, const WriteOptions& options) = 0;
 
   /// Blocking write \a msg to the stream with default options.
-  /// This is thread-safe with respect to Read
+  /// This is thread-safe with respect to \a Read
   ///
   /// \param msg The message to be written to the stream.
   ///
@@ -179,7 +179,7 @@ class ClientWriterInterface : public ClientStreamingInterface,
  public:
   /// Half close writing from the client.
   /// Block until currently-pending writes are completed.
-  /// Thread safe with respect to Read operations only
+  /// Thread safe with respect to \a Read operations only
   ///
   /// \return Whether the writes were successful.
   virtual bool WritesDone() = 0;
@@ -263,7 +263,7 @@ class ClientReaderWriterInterface : public ClientStreamingInterface,
   virtual void WaitForInitialMetadata() = 0;
 
   /// Block until currently-pending writes are completed.
-  /// Thread-safe with respect to Read
+  /// Thread-safe with respect to \a Read
   ///
   /// \return Whether the writes were successful.
   virtual bool WritesDone() = 0;
