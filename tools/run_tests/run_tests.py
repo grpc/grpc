@@ -509,6 +509,8 @@ class CSharpLanguage(object):
       _check_compiler(self.args.compiler, ['default', 'coreclr'])
       if self.platform == 'linux' and self.args.compiler == 'coreclr':
         self._docker_distro = 'coreclr'
+      else:
+        self._docker_distro = 'jessie'
 
       if self.platform == 'mac':
         # TODO(jtattermusch): EMBED_ZLIB=true currently breaks the mac build
