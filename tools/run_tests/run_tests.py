@@ -501,8 +501,10 @@ class CSharpLanguage(object):
     if self.platform == 'windows':
       # Explicitly choosing between x86 and x64 arch doesn't work yet
       _check_arch(self.args.arch, ['default'])
+      # CoreCLR use 64bit runtime by default.
+      arch_option = 'x64' if self.args.compiler == 'coreclr' else self.args.arch
       self._make_options = [_windows_toolset_option(self.args.compiler),
-                            _windows_arch_option(self.args.arch)]
+                            _windows_arch_option(arch_option)]
     else:
       _check_compiler(self.args.compiler, ['default', 'coreclr'])
       if self.platform == 'linux' and self.args.compiler == 'coreclr':
