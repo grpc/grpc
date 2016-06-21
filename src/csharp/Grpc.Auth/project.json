@@ -1,5 +1,5 @@
 {
-  "version": "0.14.0-anexperiment",
+  "version": "0.15.0-dev",
   "title": "gRPC C# Auth",
   "authors": [ "Google Inc." ],
   "copyright": "Copyright 2015, Google Inc.",
@@ -13,7 +13,7 @@
     "tags": [ "gRPC RPC Protocol HTTP/2 Auth OAuth2" ],
   },
   "dependencies": {
-    "Grpc.Core": "0.14.0-anexperiment",
+    "Grpc.Core": "0.15.0-dev",
     "Google.Apis.Auth": "1.11.1"
   },
   "frameworks": {

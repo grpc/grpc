@@ -1,5 +1,5 @@
 {
-  "version": "0.14.0-anexperiment",
+  "version": "0.15.0-dev",
   "title": "gRPC C# Healthchecking",
   "authors": [ "Google Inc." ],
   "copyright": "Copyright 2015, Google Inc.",
@@ -13,7 +13,7 @@
     "tags": [ "gRPC health check" ]
   },
   "dependencies": {
-    "Grpc.Core": "0.14.0-anexperiment",
+    "Grpc.Core": "0.15.0-dev",
     "Google.Protobuf": "3.0.0-beta3"
   },
   "frameworks": {

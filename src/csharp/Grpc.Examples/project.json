@@ -1,4 +1,7 @@
 {
+  "buildOptions": {
+  },
+
   "dependencies": {
     "Grpc.Core": {
       "target": "project"
