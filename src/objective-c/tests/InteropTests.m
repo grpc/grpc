@@ -284,9 +284,10 @@ static cronet_engine *cronetEngine = NULL;
   // A buffered pipe to which we never write any value acts as a writer that just hangs.
   GRXBufferedPipe *requestsBuffer = [[GRXBufferedPipe alloc] init];
 
-  GRPCProtoCall *call = [_service RPCToStreamingInputCallWithRequestsWriter:requestsBuffer
-                                                                    handler:^(RMTStreamingInputCallResponse *response,
-                                                                              NSError *error) {
+  GRPCProtoCall *call =
+      [_service RPCToStreamingInputCallWithRequestsWriter:requestsBuffer
+                                                  handler:^(RMTStreamingInputCallResponse *response,
+                                                            NSError *error) {
     XCTAssertEqual(error.code, GRPC_STATUS_CANCELLED);
     [expectation fulfill];
   }];
