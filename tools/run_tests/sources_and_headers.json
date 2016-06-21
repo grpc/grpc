@@ -953,22 +953,6 @@
     ], 
     "headers": [], 
     "language": "c", 
-    "name": "grpclb_test", 
-    "src": [
-      "test/core/client_config/grpclb_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
     "name": "hpack_parser_fuzzer_test", 
     "src": [
       "test/core/transport/chttp2/hpack_parser_fuzzer_test.c"
@@ -2227,6 +2211,27 @@
     "name": "grpclb_api_test", 
     "src": [
       "test/cpp/grpclb/grpclb_api_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h", 
+      "src/proto/grpc/lb/v1/load_balancer.pb.h"
+    ], 
+    "language": "c++", 
+    "name": "grpclb_test", 
+    "src": [
+      "test/cpp/grpclb/grpclb_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4222,6 +4227,7 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
+      "grpc_base", 
       "grpc_test_util_base"
     ], 
     "headers": [

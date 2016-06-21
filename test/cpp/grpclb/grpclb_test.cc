@@ -34,6 +34,7 @@
 #include <stdarg.h>
 #include <string.h>
 
+extern "C" {
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
@@ -52,6 +53,7 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+}
 
 #define NUM_BACKENDS 4
 
@@ -95,7 +97,8 @@ static gpr_slice build_response_payload_slice(const char *host, int *ports,
     }
     ...
   } */
-  char **hostports_vec = gpr_malloc(sizeof(char *) * nports);
+  char **hostports_vec =
+      static_cast<char **>(gpr_malloc(sizeof(char *) * nports));
   for (size_t i = 0; i < nports; i++) {
     gpr_join_host_port(&hostports_vec[i], "127.0.0.1", ports[i]);
   }
@@ -118,7 +121,7 @@ static gpr_slice build_response_payload_slice(const char *host, int *ports,
   const size_t fsize = (size_t)ftell(f);
   rewind(f);
 
-  char *serialized_response = gpr_malloc(fsize);
+  char *serialized_response = static_cast<char *>(gpr_malloc(fsize));
   GPR_ASSERT(fread(serialized_response, fsize, 1, f) == 1);
   fclose(f);
   gpr_free(output_fname);
@@ -519,9 +522,9 @@ static void setup_server(const char *host, server_fixture *sf) {
   int assigned_port;
 
   sf->cq = grpc_completion_queue_create(NULL);
-  char *colon_idx = strchr(host, ':');
+  const char *colon_idx = strchr(host, ':');
   if (colon_idx) {
-    char *port_str = colon_idx + 1;
+    const char *port_str = colon_idx + 1;
     sf->port = atoi(port_str);
     sf->servers_hostport = gpr_strdup(host);
   } else {
@@ -558,12 +561,12 @@ static void teardown_server(server_fixture *sf) {
 }
 
 static void fork_backend_server(void *arg) {
-  server_fixture *sf = arg;
+  server_fixture *sf = static_cast<server_fixture *>(arg);
   start_backend_server(sf);
 }
 
 static void fork_lb_server(void *arg) {
-  test_fixture *tf = arg;
+  test_fixture *tf = static_cast<test_fixture *>(arg);
   int ports[NUM_BACKENDS];
   for (int i = 0; i < NUM_BACKENDS; i++) {
     ports[i] = tf->lb_backends[i].port;

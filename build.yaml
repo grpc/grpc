@@ -866,6 +866,7 @@ libs:
   - grpc
   filegroups:
   - grpc_test_util_base
+  - grpc_base
   vs_project_guid: '{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}'
 - name: grpc_test_util_unsecure
   build: private
@@ -1820,16 +1821,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: grpclb_test
-  build: test
-  language: c
-  src:
-  - test/core/client_config/grpclb_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
 - name: hpack_parser_fuzzer_test
   build: fuzzer
   language: c
@@ -2734,6 +2725,20 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
+- name: grpclb_test
+  gtest: false
+  build: test
+  language: c++
+  src:
+  - src/proto/grpc/lb/v1/load_balancer.proto
+  - test/cpp/grpclb/grpclb_test.cc
+  deps:
+  - gpr
+  - gpr_test_util
+  - grpc
+  - grpc++
+  - grpc++_test_util
+  - grpc_test_util
 - name: hybrid_end2end_test
   gtest: true
   build: test
