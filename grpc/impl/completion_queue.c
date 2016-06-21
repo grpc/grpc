@@ -39,7 +39,7 @@
 
 bool GRPC_completion_queue_next(GRPC_completion_queue *cq, void** tag, bool* ok) {
   for (;;) {
-    grpc_call_set *set = NULL;
+    grpc_call_op_set *set = NULL;
     grpc_event ev = grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
     switch (ev.type) {
       case GRPC_QUEUE_TIMEOUT:
@@ -47,7 +47,7 @@ bool GRPC_completion_queue_next(GRPC_completion_queue *cq, void** tag, bool* ok)
       case GRPC_QUEUE_SHUTDOWN:
         return GRPC_COMPLETION_QUEUE_SHUTDOWN;
       case GRPC_OP_COMPLETE:
-        set = (grpc_call_set *) ev.tag;
+        set = (grpc_call_op_set *) ev.tag;
         GPR_ASSERT(set != NULL);
         GPR_ASSERT(set->context != NULL);
         // run post-processing for async operations
