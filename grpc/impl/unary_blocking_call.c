@@ -48,7 +48,7 @@ GRPC_status GRPC_unary_blocking_call(GRPC_channel *channel, const GRPC_method *c
                                              context->deadline,
                                              NULL);
 
-  grpc_call_set set = {
+  grpc_call_op_set set = {
     {
       grpc_op_send_metadata,
       grpc_op_recv_metadata,

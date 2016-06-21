@@ -168,7 +168,7 @@ const grpc_op_manager grpc_op_recv_status = {
   op_recv_status_finish
 };
 
-void grpc_fill_op_from_call_set(const grpc_call_set set, const grpc_method *rpc_method, grpc_context *context,
+void grpc_fill_op_from_call_set(const grpc_call_op_set set, const grpc_method *rpc_method, grpc_context *context,
                                 const grpc_message message, void *response, grpc_op ops[], size_t *nops) {
   size_t count = 0;
   while (count < GRPC_MAX_OP_COUNT) {
@@ -180,7 +180,7 @@ void grpc_fill_op_from_call_set(const grpc_call_set set, const grpc_method *rpc_
   *nops = count;
 }
 
-void grpc_finish_op_from_call_set(const grpc_call_set set, grpc_context *context) {
+void grpc_finish_op_from_call_set(const grpc_call_op_set set, grpc_context *context) {
   size_t count = 0;
   while (count < GRPC_MAX_OP_COUNT) {
     if (set.op_managers[count].fill == NULL && set.op_managers[count].finish == NULL) break;   // end of call set
