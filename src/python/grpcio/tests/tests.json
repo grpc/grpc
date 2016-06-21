@@ -24,6 +24,7 @@
   "_implementations_test.ChannelCredentialsTest", 
   "_insecure_interop_test.InsecureInteropTest", 
   "_logging_pool_test.LoggingPoolTest", 
+  "_metadata_code_details_test.MetadataCodeDetailsTest",
   "_metadata_test.MetadataTest",
   "_not_found_test.NotFoundTest", 
   "_python_plugin_test.PythonPluginTest",
