@@ -32,7 +32,13 @@
 
 syntax = "proto3";
 
-import "google/protobuf/wrappers.proto";
+// TODO(dgq): Go back to using well-known types once
+// https://github.com/grpc/grpc/issues/6980 has been fixed.
+// import "google/protobuf/wrappers.proto";
+message BoolValue {
+  // The bool value.
+  bool value = 1;
+}
 
 package grpc.testing;
 
@@ -82,13 +88,13 @@ message SimpleRequest {
   // "nullable" in order to interoperate seamlessly with clients not able to
   // implement the full compression tests by introspecting the call to verify
   // the response's compression status.
-  google.protobuf.BoolValue response_compressed = 6;
+  BoolValue response_compressed = 6;
 
   // Whether server should return a given status
   EchoStatus response_status = 7;
 
   // Whether the server should expect this request to be compressed.
-  google.protobuf.BoolValue expect_compressed = 8;
+  BoolValue expect_compressed = 8;
 }
 
 // Unary response, as configured by the request.
@@ -111,7 +117,7 @@ message StreamingInputCallRequest {
   // is "nullable" in order to interoperate seamlessly with servers not able to
   // implement the full compression tests by introspecting the call to verify
   // the request's compression status.
-  google.protobuf.BoolValue expect_compressed = 2;
+  BoolValue expect_compressed = 2;
 
   // Not expecting any payload from the response.
 }
@@ -135,7 +141,7 @@ message ResponseParameters {
   // "nullable" in order to interoperate seamlessly with clients not able to
   // implement the full compression tests by introspecting the call to verify
   // the response's compression status.
-  google.protobuf.BoolValue compressed = 3;
+  BoolValue compressed = 3;
 }
 
 // Server-streaming request.
