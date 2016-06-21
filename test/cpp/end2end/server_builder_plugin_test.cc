@@ -188,6 +188,8 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
   void StartServer() {
     grpc::string server_address = "localhost:" + to_string(port_);
     builder_->AddListeningPort(server_address, InsecureServerCredentials());
+    // we run some tests without a service, and for those we need to supply a
+    // frequently polled completion queue
     cq_ = builder_->AddCompletionQueue();
     cq_thread_ = grpc::thread(std::bind(&ServerBuilderPluginTest::RunCQ, this));
     server_ = builder_->BuildAndStart();
