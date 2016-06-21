@@ -396,11 +396,11 @@ class PythonLanguage:
 
     yield _ping_pong_scenario(
         'python_protobuf_sync_streaming_ping_pong', rpc_type='STREAMING',
-        client_type='SYNC_CLIENT', server_type='SYNC_SERVER')
+        client_type='SYNC_CLIENT', server_type='SYNC_SERVER', categories=[SMOKETEST])
 
     yield _ping_pong_scenario(
         'python_protobuf_async_unary_ping_pong', rpc_type='UNARY',
-        client_type='ASYNC_CLIENT', server_type='SYNC_SERVER')
+        client_type='ASYNC_CLIENT', server_type='SYNC_SERVER', categories=[SMOKETEST])
 
     yield _ping_pong_scenario(
         'python_protobuf_sync_unary_ping_pong', rpc_type='UNARY',
@@ -410,12 +410,12 @@ class PythonLanguage:
     yield _ping_pong_scenario(
         'python_protobuf_sync_unary_qps_unconstrained', rpc_type='UNARY',
         client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
-        unconstrained_client='sync')
+        unconstrained_client='sync', categories=[SMOKETEST])
 
     yield _ping_pong_scenario(
         'python_protobuf_sync_streaming_qps_unconstrained', rpc_type='STREAMING',
         client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
-        unconstrained_client='sync')
+        unconstrained_client='sync', categories=[SMOKETEST])
 
     yield _ping_pong_scenario(
         'python_to_cpp_protobuf_sync_unary_ping_pong', rpc_type='UNARY',
@@ -426,7 +426,7 @@ class PythonLanguage:
     yield _ping_pong_scenario(
         'python_to_cpp_protobuf_sync_streaming_ping_pong', rpc_type='STREAMING',
         client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
-        server_language='c++', server_core_limit=1, async_server_threads=1)
+        server_language='c++', server_core_limit=1, async_server_threads=1, categories=[SMOKETEST])
 
   def __str__(self):
     return 'python'

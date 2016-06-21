@@ -37,13 +37,17 @@ cdef class Call:
     self.c_call = NULL
     self.references = []
 
-  def start_batch(self, operations, tag):
+  def start_batch(self, operations, tag, server_side=False):
     if not self.is_valid:
       raise ValueError("invalid call object cannot be used from Python")
     cdef grpc_call_error result
     cdef Operations cy_operations = Operations(operations)
     cdef OperationTag operation_tag = OperationTag(tag)
-    operation_tag.operation_call = self
+    # The default behavior when a call goes out of scope is to cancel if 
+    # still in progress.  This is fine for client side, but we need to 
+    # be more careful server side.
+    if server_side:
+      operation_tag.operation_call = self
     operation_tag.batch_operations = cy_operations
     cpython.Py_INCREF(operation_tag)
     with nogil:

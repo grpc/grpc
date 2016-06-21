@@ -34,6 +34,7 @@ import enum
 import logging
 import threading
 import time
+import weakref
 
 import grpc
 from grpc import _common
@@ -112,10 +113,11 @@ class _RPCState(object):
     self.statused = False
     self.rpc_errors = []
     self.callbacks = []
+    self.context = None
 
 
 def _raise_rpc_error(state):
-  rpc_error = grpc.RpcError()
+  rpc_error = grpc.RpcError(state.code, state.details)
   state.rpc_errors.append(rpc_error)
   raise rpc_error
 
@@ -159,7 +161,7 @@ def _abort(state, call, code, details):
       token = _SEND_STATUS_FROM_SERVER_TOKEN
     call.start_batch(
         cygrpc.Operations(operations),
-        _send_status_from_server(state, token))
+        _send_status_from_server(state, token), server_side=True)
     state.statused = True
     state.due.add(token)
 
@@ -220,6 +222,7 @@ class _Context(grpc.ServicerContext):
     self._rpc_event = rpc_event
     self._state = state
     self._request_deserializer = request_deserializer
+    self._state.context = weakref.ref(self)
 
   def is_active(self):
     with self._state.condition:
@@ -231,13 +234,13 @@ class _Context(grpc.ServicerContext):
   def cancel(self):
     self._rpc_event.operation_call.cancel()
 
-  def add_callback(self, callback):
+  def add_done_callback(self, callback):
     with self._state.condition:
       if self._state.callbacks is None:
-        return False
+        callable_util.call_logging_exceptions(
+            callback, 'Exception calling callback!', self)
       else:
         self._state.callbacks.append(callback)
-        return True
 
   def disable_next_message_compression(self):
     with self._state.condition:
@@ -259,7 +262,7 @@ class _Context(grpc.ServicerContext):
               _common.metadata(initial_metadata), _EMPTY_FLAGS)
           self._rpc_event.operation_call.start_batch(
               cygrpc.Operations((operation,)),
-              _send_initial_metadata(self._state))
+              _send_initial_metadata(self._state), server_side=True)
           self._state.initial_metadata_allowed = False
           self._state.due.add(_SEND_INITIAL_METADATA_TOKEN)
         else:
@@ -293,7 +296,8 @@ class _RequestIterator(object):
     else:
       self._call.start_batch(
           cygrpc.Operations((cygrpc.operation_receive_message(_EMPTY_FLAGS),)),
-          _receive_message(self._state, self._call, self._request_deserializer))
+          _receive_message(self._state, self._call, self._request_deserializer),
+          server_side=True)
       self._state.due.add(_RECEIVE_MESSAGE_TOKEN)
 
   def _look_for_request(self):
@@ -336,7 +340,8 @@ def _unary_request(rpc_event, state, request_deserializer):
             cygrpc.Operations(
                 (cygrpc.operation_receive_message(_EMPTY_FLAGS),)),
             _receive_message(
-                state, rpc_event.operation_call, request_deserializer))
+                state, rpc_event.operation_call, request_deserializer),
+            server_side=True)
         state.due.add(_RECEIVE_MESSAGE_TOKEN)
         while True:
           state.condition.wait()
@@ -417,7 +422,8 @@ def _send_response(rpc_event, state, serialized_response):
         )
         token = _SEND_MESSAGE_TOKEN
       rpc_event.operation_call.start_batch(
-          cygrpc.Operations(operations), _send_message(state, token))
+          cygrpc.Operations(operations), _send_message(state, token),
+          server_side=True)
       state.due.add(token)
       while True:
         state.condition.wait()
@@ -444,7 +450,8 @@ def _status(rpc_event, state, serialized_response):
             serialized_response, _EMPTY_FLAGS))
       rpc_event.operation_call.start_batch(
           cygrpc.Operations(operations),
-          _send_status_from_server(state, _SEND_STATUS_FROM_SERVER_TOKEN))
+          _send_status_from_server(state, _SEND_STATUS_FROM_SERVER_TOKEN),
+          server_side=True)
       state.statused = True
       state.due.add(_SEND_STATUS_FROM_SERVER_TOKEN)
 
@@ -549,7 +556,7 @@ def _handle_unrecognized_method(rpc_event):
   )
   rpc_state = _RPCState()
   rpc_event.operation_call.start_batch(
-      operations, lambda ignored_event: (rpc_state, (),))
+      operations, lambda ignored_event: (rpc_state, (),), server_side=True)
   return rpc_state
 
 
@@ -559,7 +566,7 @@ def _handle_with_method_handler(rpc_event, method_handler, thread_pool):
     rpc_event.operation_call.start_batch(
         cygrpc.Operations(
             (cygrpc.operation_receive_close_on_server(_EMPTY_FLAGS),)),
-        _receive_close_on_server(state))
+        _receive_close_on_server(state), server_side=True)
     state.due.add(_RECEIVE_CLOSE_ON_SERVER_TOKEN)
     if method_handler.request_streaming:
       if method_handler.response_streaming:
@@ -663,7 +670,7 @@ def _serve(state):
       rpc_state, callbacks = event.tag(event)
       for callback in callbacks:
         callable_util.call_logging_exceptions(
-            callback, 'Exception calling callback!')
+            callback, 'Exception calling callback!', rpc_state.context())
       if rpc_state is not None:
         with state.lock:
           state.rpc_states.remove(rpc_state)
@@ -715,7 +722,7 @@ def _start(state):
       raise ValueError('Cannot start already-started server!')
     state.server.start()
     state.stage = _ServerStage.STARTED
-    _request_call(state)    
+    _request_call(state)
     def cleanup_server(timeout):
       if timeout is None:
         _stop(state, _UNEXPECTED_EXIT_SERVER_GRACE).wait()

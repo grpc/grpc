@@ -8,7 +8,6 @@
   "_beta_features_test.ContextManagementAndLifecycleTest", 
   "_cancel_many_calls_test.CancelManyCallsTest",
   "_channel_connectivity_test.ChannelConnectivityTest",
-  "_channel_ready_future_test.ChannelReadyFutureTest",
   "_channel_test.ChannelTest", 
   "_connectivity_channel_test.ChannelConnectivityTest", 
   "_connectivity_channel_test.ConnectivityStatesTest",

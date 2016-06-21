@@ -70,13 +70,13 @@ def _abortion(rpc_error_call):
       rpc_error_call.trailing_metadata(), code, rpc_error_code.details())
 
 
-def _abortion_error(rpc_error_call):
-  code = rpc_error_call.code()
+def _abortion_error(rpc_error_call, call):
+  code = rpc_error_call.code
   pair = _STATUS_CODE_TO_ABORTION_KIND_AND_ABORTION_ERROR_CLASS.get(code)
   exception_class = face.AbortionError if pair is None else pair[1]
   return exception_class(
-      rpc_error_call.initial_metadata(), rpc_error_call.trailing_metadata(),
-      code, rpc_error_call.details())
+      call.initial_metadata(), call.trailing_metadata(),
+      code, rpc_error_call.details)
 
 
 class _InvocationProtocolContext(interfaces.GRPCInvocationContext):
@@ -87,61 +87,68 @@ class _InvocationProtocolContext(interfaces.GRPCInvocationContext):
 
 class _Rendezvous(future.Future, face.Call):
 
-  def __init__(self, response_future, response_iterator, call):
-    self._future = response_future
-    self._iterator = response_iterator
+  def __init__(self, call):
     self._call = call
+    self._cancelled = False
 
   def cancel(self):
-    return self._call.cancel()
+    if self._call.is_active():
+      self._call.cancel()
+      self._call.cancelled = True
+    
+    return False
 
   def cancelled(self):
-    return self._future.cancelled()
+    return self._call.cancelled
 
   def running(self):
-    return self._future.running()
+    return self._call.is_active()
 
   def done(self):
-    return self._future.done()
+    return not self._call.is_active()
 
   def result(self, timeout=None):
     try:
-      return self._future.result(timeout=timeout)
-    except grpc.RpcError as rpc_error_call:
-      raise _abortion_error(rpc_error_call)
-    except grpc.FutureTimeoutError:
+      return self._call.response(timeout=timeout)
+    except grpc.RpcTimeoutError as rpc_error_call:
       raise future.TimeoutError()
-    except grpc.FutureCancelledError:
-      raise future.CancelledError()
+    except grpc.RpcError as rpc_error_call:
+      if rpc_error_call.code == grpc.StatusCode.CANCELLED:
+        raise future.CancelledError()
+      else: 
+        raise _abortion_error(rpc_error_call, self._call)
 
   def exception(self, timeout=None):
     try:
-      rpc_error_call = self._future.exception(timeout=timeout)
-      return _abortion_error(rpc_error_call)
-    except grpc.FutureTimeoutError:
-      raise future.TimeoutError()
-    except grpc.FutureCancelledError:
-      raise future.CancelledError()
+      result = self.result(timeout)
+    except future.TimeoutError:
+      raise
+    except future.CancelledError:
+      raise
+    except Exception as e:
+      return e
 
   def traceback(self, timeout=None):
     try:
-      return self._future.traceback(timeout=timeout)
-    except grpc.FutureTimeoutError:
-      raise future.TimeoutError()
-    except grpc.FutureCancelledError:
-      raise future.CancelledError()
+      return self.result(timeout)
+    except future.TimeoutError:
+      raise
+    except future.CancelledError:
+      raise
+    except Exception as e:
+      return traceback.format_exc()
 
   def add_done_callback(self, fn):
-    self._future.add_done_callback(lambda ignored_callback: fn(self))
+    self._call.add_done_callback(lambda ignored_callback: fn(self))
 
   def __iter__(self):
     return self
 
   def _next(self):
     try:
-      return next(self._iterator)
+      return next(self._call.response_iterator())
     except grpc.RpcError as rpc_error_call:
-      raise _abortion_error(rpc_error_call)
+      raise _abortion_error(rpc_error_call, self._call)
 
   def __next__(self):
     return self._next()
@@ -156,9 +163,8 @@ class _Rendezvous(future.Future, face.Call):
     return self._call.time_remaining()
 
   def add_abortion_callback(self, abortion_callback):
-    registered = self._call.add_callback(
-        lambda: abortion_callback(_abortion(self._call)))
-    return None if registered else _abortion(self._call)
+    raise NotImplementedError(
+        'add_abortion_callback no longer supported client-side!')
 
   def protocol_context(self):
     return _InvocationProtocolContext()
@@ -185,17 +191,15 @@ def _blocking_unary_unary(
         request_serializer=request_serializer,
         response_deserializer=response_deserializer)
     effective_metadata = _effective_metadata(metadata, metadata_transformer)
-    if with_call:
-      response, call = multi_callable(
-          request, timeout=timeout, metadata=effective_metadata,
-          credentials=_credentials(protocol_options), with_call=True)
-      return response, _Rendezvous(None, None, call)
-    else:
-      return multi_callable(
+    call = multi_callable.call(
           request, timeout=timeout, metadata=effective_metadata,
           credentials=_credentials(protocol_options))
+    if with_call:
+      return call.response(), _Rendezvous(call)
+    else:
+      return call.response()
   except grpc.RpcError as rpc_error_call:
-    raise _abortion_error(rpc_error_call)
+    raise _abortion_error(rpc_error_call, call)
 
 
 def _future_unary_unary(
@@ -206,10 +210,10 @@ def _future_unary_unary(
       request_serializer=request_serializer,
       response_deserializer=response_deserializer)
   effective_metadata = _effective_metadata(metadata, metadata_transformer)
-  response_future = multi_callable.future(
+  call = multi_callable.call_async(
       request, timeout=timeout, metadata=effective_metadata,
       credentials=_credentials(protocol_options))
-  return _Rendezvous(response_future, None, response_future)
+  return _Rendezvous(call)
 
 
 def _unary_stream(
@@ -220,10 +224,10 @@ def _unary_stream(
       request_serializer=request_serializer,
       response_deserializer=response_deserializer)
   effective_metadata = _effective_metadata(metadata, metadata_transformer)
-  response_iterator = multi_callable(
+  call = multi_callable.call_async(
       request, timeout=timeout, metadata=effective_metadata,
       credentials=_credentials(protocol_options))
-  return _Rendezvous(None, response_iterator, response_iterator)
+  return _Rendezvous(call)
 
 
 def _blocking_stream_unary(
@@ -236,17 +240,15 @@ def _blocking_stream_unary(
         request_serializer=request_serializer,
         response_deserializer=response_deserializer)
     effective_metadata = _effective_metadata(metadata, metadata_transformer)
-    if with_call:
-      response, call = multi_callable(
-          request_iterator, timeout=timeout, metadata=effective_metadata,
-          credentials=_credentials(protocol_options), with_call=True)
-      return response, _Rendezvous(None, None, call)
-    else:
-      return multi_callable(
+    call = multi_callable.call(
           request_iterator, timeout=timeout, metadata=effective_metadata,
           credentials=_credentials(protocol_options))
+    if with_call:
+      return call.response(), _Rendezvous(call)
+    else:
+      return call.response()
   except grpc.RpcError as rpc_error_call:
-    raise _abortion_error(rpc_error_call)
+    raise _abortion_error(rpc_error_call, call)
 
 
 def _future_stream_unary(
@@ -258,10 +260,10 @@ def _future_stream_unary(
       request_serializer=request_serializer,
       response_deserializer=response_deserializer)
   effective_metadata = _effective_metadata(metadata, metadata_transformer)
-  response_future = multi_callable.future(
+  call = multi_callable.call_async(
       request_iterator, timeout=timeout, metadata=effective_metadata,
       credentials=_credentials(protocol_options))
-  return _Rendezvous(response_future, None, response_future)
+  return _Rendezvous(call)
 
 
 def _stream_stream(
@@ -273,10 +275,10 @@ def _stream_stream(
       request_serializer=request_serializer,
       response_deserializer=response_deserializer)
   effective_metadata = _effective_metadata(metadata, metadata_transformer)
-  response_iterator = multi_callable(
+  call = multi_callable.call_async(
       request_iterator, timeout=timeout, metadata=effective_metadata,
       credentials=_credentials(protocol_options))
-  return _Rendezvous(None, response_iterator, response_iterator)
+  return _Rendezvous(call)
 
 
 class _UnaryUnaryMultiCallable(face.UnaryUnaryMultiCallable):
