@@ -1706,10 +1706,9 @@ targets:
   src:
   - test/core/security/create_jwt.c
   deps:
-  - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
+  secure: true
 - name: grpc_credentials_test
   build: test
   language: c
@@ -1721,7 +1720,8 @@ targets:
   - gpr_test_util
   - gpr
 - name: grpc_fetch_oauth2
-  build: tool
+  build: test
+  run: false
   language: c
   src:
   - test/core/security/fetch_oauth2.c
@@ -1770,9 +1770,7 @@ targets:
   src:
   - test/core/security/print_google_default_creds_token.c
   deps:
-  - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: grpc_security_connector_test
   build: test
@@ -1790,9 +1788,7 @@ targets:
   src:
   - test/core/security/verify_jwt.c
   deps:
-  - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: hpack_parser_fuzzer_test
   build: fuzzer
