@@ -45,6 +45,8 @@
       deps = ["ssl"]
     if target_dict['name'] in ['grpc++', 'grpc++_unsecure', 'grpc++_codegen_lib']:
       deps.append("libprotobuf")
+    elif target_dict['name'] in ['grpc']:
+      deps.append("zlibstatic")
     for d in target_dict.get('deps', []):
       deps.append(d)
     return deps
@@ -52,13 +54,20 @@
 
   cmake_minimum_required(VERSION 2.8)
 
-  if (NOT BORINGSSL_ROOT_DIR)
+  set(PACKAGE_NAME      "grpc")
+  set(PACKAGE_VERSION   "${settings.core_version}")
+  set(PACKAGE_STRING    "<%text>${PACKAGE_NAME} ${PACKAGE_VERSION}</%text>")
+  set(PACKAGE_TARNAME   "<%text>${PACKAGE_NAME}-${PACKAGE_VERSION}</%text>")
+  set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
+  project(<%text>${PACKAGE_NAME}</%text> C CXX)
+
+  if(NOT BORINGSSL_ROOT_DIR)
     set(BORINGSSL_ROOT_DIR <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/boringssl)
   endif()
-  if (NOT PROTOBUF_ROOT_DIR)
+  if(NOT PROTOBUF_ROOT_DIR)
     set(PROTOBUF_ROOT_DIR <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/protobuf)
   endif()
-  if (NOT ZLIB_ROOT_DIR)
+  if(NOT ZLIB_ROOT_DIR)
     set(ZLIB_ROOT_DIR <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/zlib)
   endif()
 
@@ -66,17 +75,17 @@
   add_subdirectory(<%text>${PROTOBUF_ROOT_DIR}</%text>/cmake third_party/protobuf)
   add_subdirectory(<%text>${ZLIB_ROOT_DIR}</%text> third_party/zlib)
 
-  set(CMAKE_C_FLAGS "<%text>${CMAKE_C_FLAGS}</%text> -std=c11")
+  set(CMAKE_C_FLAGS   "<%text>${CMAKE_C_FLAGS}</%text>   -std=c11")
   set(CMAKE_CXX_FLAGS "<%text>${CMAKE_CXX_FLAGS}</%text> -std=c++11")
 
   % for lib in libs:
-  % if lib.build in ["all", "protoc"]:
+  % if lib.build in ["all", "protoc", "tool"]:
     ${cc_library(lib)}
   % endif
   % endfor
 
   % for tgt in targets:
-  % if tgt.build == 'protoc':
+  % if tgt.build in ["all", "protoc", "tool"]:
   ${cc_binary(tgt)}
   % endif
   % endfor

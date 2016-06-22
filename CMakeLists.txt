@@ -38,13 +38,20 @@
 
 cmake_minimum_required(VERSION 2.8)
 
-if (NOT BORINGSSL_ROOT_DIR)
+set(PACKAGE_NAME      "grpc")
+set(PACKAGE_VERSION   "0.15.0-dev")
+set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
+set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
+set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
+project(${PACKAGE_NAME} C CXX)
+
+if(NOT BORINGSSL_ROOT_DIR)
   set(BORINGSSL_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/boringssl)
 endif()
-if (NOT PROTOBUF_ROOT_DIR)
+if(NOT PROTOBUF_ROOT_DIR)
   set(PROTOBUF_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protobuf)
 endif()
-if (NOT ZLIB_ROOT_DIR)
+if(NOT ZLIB_ROOT_DIR)
   set(ZLIB_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/zlib)
 endif()
 
@@ -52,7 +59,7 @@ add_subdirectory(${BORINGSSL_ROOT_DIR} third_party/boringssl)
 add_subdirectory(${PROTOBUF_ROOT_DIR}/cmake third_party/protobuf)
 add_subdirectory(${ZLIB_ROOT_DIR} third_party/zlib)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11")
+set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -std=c11")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
   
@@ -313,6 +320,7 @@ target_include_directories(grpc
 
 target_link_libraries(grpc
   ssl
+  zlibstatic
   gpr
 )
 
@@ -829,6 +837,98 @@ target_link_libraries(grpc_csharp_ext
   gpr
 )
 
+
+
+add_executable(gen_hpack_tables
+  tools/codegen/core/gen_hpack_tables.c
+)
+
+target_include_directories(gen_hpack_tables
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+)
+
+target_link_libraries(gen_hpack_tables
+  gpr
+  grpc
+)
+
+
+add_executable(gen_legal_metadata_characters
+  tools/codegen/core/gen_legal_metadata_characters.c
+)
+
+target_include_directories(gen_legal_metadata_characters
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+)
+
+
+
+add_executable(grpc_create_jwt
+  test/core/security/create_jwt.c
+)
+
+target_include_directories(grpc_create_jwt
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+)
+
+target_link_libraries(grpc_create_jwt
+  ssl
+  grpc
+  gpr
+)
+
+
+add_executable(grpc_print_google_default_creds_token
+  test/core/security/print_google_default_creds_token.c
+)
+
+target_include_directories(grpc_print_google_default_creds_token
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+)
+
+target_link_libraries(grpc_print_google_default_creds_token
+  grpc
+  gpr
+)
+
+
+add_executable(grpc_verify_jwt
+  test/core/security/verify_jwt.c
+)
+
+target_include_directories(grpc_verify_jwt
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+)
+
+target_link_libraries(grpc_verify_jwt
+  grpc
+  gpr
+)
 
 
 add_executable(grpc_cpp_plugin
