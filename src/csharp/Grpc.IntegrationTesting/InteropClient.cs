@@ -240,13 +240,11 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("running large_unary");
             var request = new SimpleRequest
             {
-                ResponseType = PayloadType.Compressable,
                 ResponseSize = 314159,
                 Payload = CreateZerosPayload(271828)
             };
             var response = client.UnaryCall(request);
 
-            Assert.AreEqual(PayloadType.Compressable, response.Payload.Type);
             Assert.AreEqual(314159, response.Payload.Body.Length);
             Console.WriteLine("Passed!");
         }
@@ -275,17 +273,12 @@ namespace Grpc.IntegrationTesting
 
             var request = new StreamingOutputCallRequest
             {
-                ResponseType = PayloadType.Compressable,
                 ResponseParameters = { bodySizes.Select((size) => new ResponseParameters { Size = size }) }
             };
 
             using (var call = client.StreamingOutputCall(request))
             {
                 var responseList = await call.ResponseStream.ToListAsync();
-                foreach (var res in responseList)
-                {
-                    Assert.AreEqual(PayloadType.Compressable, res.Payload.Type);
-                }
                 CollectionAssert.AreEqual(bodySizes, responseList.Select((item) => item.Payload.Body.Length));
             }
             Console.WriteLine("Passed!");
@@ -299,46 +292,38 @@ namespace Grpc.IntegrationTesting
             {
                 await call.RequestStream.WriteAsync(new StreamingOutputCallRequest
                 {
-                    ResponseType = PayloadType.Compressable,
                     ResponseParameters = { new ResponseParameters { Size = 31415 } },
                     Payload = CreateZerosPayload(27182)
                 });
 
                 Assert.IsTrue(await call.ResponseStream.MoveNext());
-                Assert.AreEqual(PayloadType.Compressable, call.ResponseStream.Current.Payload.Type);
                 Assert.AreEqual(31415, call.ResponseStream.Current.Payload.Body.Length);
 
                 await call.RequestStream.WriteAsync(new StreamingOutputCallRequest
                 {
-                    ResponseType = PayloadType.Compressable,
                     ResponseParameters = { new ResponseParameters { Size = 9 } },
                     Payload = CreateZerosPayload(8)
                 });
 
                 Assert.IsTrue(await call.ResponseStream.MoveNext());
-                Assert.AreEqual(PayloadType.Compressable, call.ResponseStream.Current.Payload.Type);
                 Assert.AreEqual(9, call.ResponseStream.Current.Payload.Body.Length);
 
                 await call.RequestStream.WriteAsync(new StreamingOutputCallRequest
                 {
-                    ResponseType = PayloadType.Compressable,
                     ResponseParameters = { new ResponseParameters { Size = 2653 } },
                     Payload = CreateZerosPayload(1828)
                 });
 
                 Assert.IsTrue(await call.ResponseStream.MoveNext());
-                Assert.AreEqual(PayloadType.Compressable, call.ResponseStream.Current.Payload.Type);
                 Assert.AreEqual(2653, call.ResponseStream.Current.Payload.Body.Length);
 
                 await call.RequestStream.WriteAsync(new StreamingOutputCallRequest
                 {
-                    ResponseType = PayloadType.Compressable,
                     ResponseParameters = { new ResponseParameters { Size = 58979 } },
                     Payload = CreateZerosPayload(45904)
                 });
 
                 Assert.IsTrue(await call.ResponseStream.MoveNext());
-                Assert.AreEqual(PayloadType.Compressable, call.ResponseStream.Current.Payload.Type);
                 Assert.AreEqual(58979, call.ResponseStream.Current.Payload.Body.Length);
 
                 await call.RequestStream.CompleteAsync();
@@ -367,7 +352,6 @@ namespace Grpc.IntegrationTesting
 
             var request = new SimpleRequest
             {
-                ResponseType = PayloadType.Compressable,
                 ResponseSize = 314159,
                 Payload = CreateZerosPayload(271828),
                 FillUsername = true,
@@ -377,7 +361,6 @@ namespace Grpc.IntegrationTesting
             // not setting credentials here because they were set on channel already
             var response = client.UnaryCall(request);
 
-            Assert.AreEqual(PayloadType.Compressable, response.Payload.Type);
             Assert.AreEqual(314159, response.Payload.Body.Length);
             Assert.False(string.IsNullOrEmpty(response.OauthScope));
             Assert.True(oauthScope.Contains(response.OauthScope));
@@ -391,7 +374,6 @@ namespace Grpc.IntegrationTesting
            
             var request = new SimpleRequest
             {
-                ResponseType = PayloadType.Compressable,
                 ResponseSize = 314159,
                 Payload = CreateZerosPayload(271828),
                 FillUsername = true,
@@ -400,7 +382,6 @@ namespace Grpc.IntegrationTesting
             // not setting credentials here because they were set on channel already
             var response = client.UnaryCall(request);
 
-            Assert.AreEqual(PayloadType.Compressable, response.Payload.Type);
             Assert.AreEqual(314159, response.Payload.Body.Length);
             Assert.AreEqual(GetEmailFromServiceAccountFile(), response.Username);
             Console.WriteLine("Passed!");
@@ -480,13 +461,11 @@ namespace Grpc.IntegrationTesting
             {
                 await call.RequestStream.WriteAsync(new StreamingOutputCallRequest
                 {
-                    ResponseType = PayloadType.Compressable,
                     ResponseParameters = { new ResponseParameters { Size = 31415 } },
                     Payload = CreateZerosPayload(27182)
                 });
 
                 Assert.IsTrue(await call.ResponseStream.MoveNext());
-                Assert.AreEqual(PayloadType.Compressable, call.ResponseStream.Current.Payload.Type);
                 Assert.AreEqual(31415, call.ResponseStream.Current.Payload.Body.Length);
 
                 cts.Cancel();
@@ -546,7 +525,6 @@ namespace Grpc.IntegrationTesting
                 // step 1: test unary call
                 var request = new SimpleRequest
                 {
-                    ResponseType = PayloadType.Compressable,
                     ResponseSize = 314159,
                     Payload = CreateZerosPayload(271828)
                 };
@@ -565,7 +543,6 @@ namespace Grpc.IntegrationTesting
                 // step 2: test full duplex call
                 var request = new StreamingOutputCallRequest
                 {
-                    ResponseType = PayloadType.Compressable,
                     ResponseParameters = { new ResponseParameters { Size = 31415 } },
                     Payload = CreateZerosPayload(27182)
                 };
