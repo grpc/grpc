@@ -57,6 +57,10 @@ enum { GRPC_MAX_OP_COUNT = 8 };
 typedef struct grpc_call_op_set {
   const grpc_op_manager op_managers[GRPC_MAX_OP_COUNT];
   grpc_context * const context;
+
+  /* if this is true (default false), the event tagged by this call_op_set will not be emitted
+   * from the completion queue wrapper. */
+  bool hide_from_user;
 } grpc_call_op_set;
 
 void grpc_fill_op_from_call_set(const grpc_call_op_set set, const grpc_method *rpc_method, grpc_context *context,
