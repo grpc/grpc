@@ -345,9 +345,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     // Reduce channel count so that total channels specified is held regardless
     // of the number of clients available
     size_t num_channels =
-        (i == num_clients - 1)
-            ? channels_allocated - client_config.client_channels()
-            : client_config.client_channels() / num_clients;
+        (client_channels - channels_allocated) / (num_clients - i);
     channels_allocated += num_channels;
     per_client_config.set_client_channels(num_channels);
 
