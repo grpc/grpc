@@ -128,6 +128,7 @@ grpc::string GetHeaderIncludes(File *file,
     static const char *headers_strs[] = {
       "grpc++/impl/codegen/async_stream.h",
       "grpc++/impl/codegen/async_unary_call.h",
+      "grpc++/impl/codegen/fc_unary.h",
       "grpc++/impl/codegen/proto_utils.h",
       "grpc++/impl/codegen/rpc_method.h",
       "grpc++/impl/codegen/service_type.h",
@@ -642,9 +643,8 @@ void PrintHeaderServerMethodFCUnary(
         *vars,
         "// replace default version of this method with FCUnary\n"
         "::grpc::Status $Method$("
-        "::grpc::ServerContext* context, ::grpc::FCUnary<$Request$,$Response$>* streaming_unary)"
+        "::grpc::ServerContext* context, ::grpc::FCUnary< $Request$,$Response$>* streaming_unary)"
         " GRPC_FINAL GRPC_OVERRIDE;\n");
-    printer->Print("}\n");
     printer->Outdent();
     printer->Print(*vars, "};\n");
   }
@@ -815,6 +815,12 @@ void PrintHeaderService(Printer *printer,
     PrintHeaderServerMethodGeneric(printer, service->method(i).get(), vars);
   }
 
+  // Server side - FC Unary
+  for (int i = 0; i < service->method_count(); ++i) {
+    (*vars)["Idx"] = as_string(i);
+    PrintHeaderServerMethodFCUnary(printer, service->method(i).get(), vars);
+  }
+
   printer->Outdent();
   printer->Print("};\n");
   printer->Print(service->GetTrailingComments().c_str());
@@ -917,6 +923,7 @@ grpc::string GetSourceIncludes(File *file,
       "grpc++/impl/codegen/async_unary_call.h",
       "grpc++/impl/codegen/channel_interface.h",
       "grpc++/impl/codegen/client_unary_call.h",
+      "grpc++/impl/codegen/fc_unary.h",
       "grpc++/impl/codegen/method_handler_impl.h",
       "grpc++/impl/codegen/rpc_service_method.h",
       "grpc++/impl/codegen/service_type.h",

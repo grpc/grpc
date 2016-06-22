@@ -35,6 +35,7 @@
 #define GRPCXX_IMPL_CODEGEN_FC_UNARY_H
 
 #include <grpc++/impl/codegen/call.h>
+#include <grpc++/impl/codegen/completion_queue.h>
 #include <grpc++/impl/codegen/core_codegen_interface.h>
 #include <grpc++/impl/codegen/server_context.h>
 
