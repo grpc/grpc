@@ -56,7 +56,7 @@ namespace Grpc.Core.Tests
                 Console.Error.WriteLine("You are using and old version of NUnit that doesn't support async tests and skips them instead. " +
                 "This test has failed to indicate that.");
                 Console.Error.Flush();
-                Environment.Exit(1);
+                throw new Exception("NUnitVersionTest has failed.");
             }
         }
 

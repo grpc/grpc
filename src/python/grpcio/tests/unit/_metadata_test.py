@@ -173,8 +173,8 @@ class MetadataTest(unittest.TestCase):
 
   def testUnaryUnary(self):
     multi_callable = self._channel.unary_unary(_UNARY_UNARY)
-    unused_response, call = multi_callable(
-        _REQUEST, metadata=_CLIENT_METADATA, with_call=True)
+    unused_response, call = multi_callable.with_call(
+        _REQUEST, metadata=_CLIENT_METADATA)
     self.assertTrue(test_common.metadata_transmitted(
         _SERVER_INITIAL_METADATA, call.initial_metadata()))
     self.assertTrue(test_common.metadata_transmitted(
@@ -192,9 +192,9 @@ class MetadataTest(unittest.TestCase):
 
   def testStreamUnary(self):
     multi_callable = self._channel.stream_unary(_STREAM_UNARY)
-    unused_response, call = multi_callable(
+    unused_response, call = multi_callable.with_call(
         [_REQUEST] * test_constants.STREAM_LENGTH,
-        metadata=_CLIENT_METADATA, with_call=True)
+        metadata=_CLIENT_METADATA)
     self.assertTrue(test_common.metadata_transmitted(
         _SERVER_INITIAL_METADATA, call.initial_metadata()))
     self.assertTrue(test_common.metadata_transmitted(

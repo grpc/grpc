@@ -4380,7 +4380,7 @@ LIBINTEROP_SERVER_MAIN_SRC = \
     $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc \
-    test/cpp/interop/server_main.cc \
+    test/cpp/interop/interop_server.cc \
 
 PUBLIC_HEADERS_CXX += \
 
@@ -4426,7 +4426,7 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBINTEROP_SERVER_MAIN_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/interop/server_main.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/interop/interop_server.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
 
 
 LIBQPS_SRC = \
@@ -6393,6 +6393,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/simple_delayed_request.c \
     test/core/end2end/tests/simple_metadata.c \
     test/core/end2end/tests/simple_request.c \
+    test/core/end2end/tests/streaming_error_response.c \
     test/core/end2end/tests/trailing_metadata.c \
 
 PUBLIC_HEADERS_C += \
@@ -6469,6 +6470,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/simple_delayed_request.c \
     test/core/end2end/tests/simple_metadata.c \
     test/core/end2end/tests/simple_request.c \
+    test/core/end2end/tests/streaming_error_response.c \
     test/core/end2end/tests/trailing_metadata.c \
 
 PUBLIC_HEADERS_C += \
@@ -14973,8 +14975,8 @@ test/cpp/end2end/test_service_impl.cc: $(OPENSSL_DEP)
 test/cpp/interop/client.cc: $(OPENSSL_DEP)
 test/cpp/interop/client_helper.cc: $(OPENSSL_DEP)
 test/cpp/interop/interop_client.cc: $(OPENSSL_DEP)
+test/cpp/interop/interop_server.cc: $(OPENSSL_DEP)
 test/cpp/interop/server_helper.cc: $(OPENSSL_DEP)
-test/cpp/interop/server_main.cc: $(OPENSSL_DEP)
 test/cpp/qps/client_async.cc: $(OPENSSL_DEP)
 test/cpp/qps/client_sync.cc: $(OPENSSL_DEP)
 test/cpp/qps/driver.cc: $(OPENSSL_DEP)

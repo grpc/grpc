@@ -45,7 +45,7 @@ static void finalize_outbuf(grpc_exec_ctx *exec_ctx,
 
 int grpc_chttp2_unlocking_check_writes(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_transport_writing *transport_writing, int is_parsing) {
+    grpc_chttp2_transport_writing *transport_writing) {
   grpc_chttp2_stream_global *stream_global;
   grpc_chttp2_stream_writing *stream_writing;
 
@@ -61,7 +61,7 @@ int grpc_chttp2_unlocking_check_writes(
                                 [GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE]);
 
   if (transport_global->dirtied_local_settings &&
-      !transport_global->sent_local_settings && !is_parsing) {
+      !transport_global->sent_local_settings) {
     gpr_slice_buffer_add(
         &transport_writing->outbuf,
         grpc_chttp2_settings_create(

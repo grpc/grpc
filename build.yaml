@@ -1117,7 +1117,7 @@ libs:
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/test.proto
-  - test/cpp/interop/server_main.cc
+  - test/cpp/interop/interop_server.cc
   deps:
   - interop_server_helper
   - grpc++_test_util
