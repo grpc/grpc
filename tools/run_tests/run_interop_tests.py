@@ -55,7 +55,7 @@ os.chdir(ROOT)
 _DEFAULT_SERVER_PORT=8080
 
 _SKIP_COMPRESSION = ['client_compressed_unary',
-                     'client_compressed_streaming'
+                     'client_compressed_streaming',
                      'server_compressed_unary',
                      'server_compressed_streaming']
 
