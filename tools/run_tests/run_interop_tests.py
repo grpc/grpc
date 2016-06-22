@@ -54,7 +54,9 @@ os.chdir(ROOT)
 
 _DEFAULT_SERVER_PORT=8080
 
-_SKIP_COMPRESSION = ['large_compressed_unary',
+_SKIP_COMPRESSION = ['client_compressed_unary',
+                     'client_compressed_streaming',
+                     'server_compressed_unary',
                      'server_compressed_streaming']
 
 _SKIP_ADVANCED = ['custom_metadata', 'status_code_and_message',
@@ -345,7 +347,8 @@ _TEST_CASES = ['large_unary', 'empty_unary', 'ping_pong',
                'cancel_after_begin', 'cancel_after_first_response',
                'timeout_on_sleeping_server', 'custom_metadata',
                'status_code_and_message', 'unimplemented_method',
-               'large_compressed_unary', 'server_compressed_streaming']
+               'client_compressed_unary', 'server_compressed_unary',
+               'client_compressed_streaming', 'server_compressed_streaming']
 
 _AUTH_TEST_CASES = ['compute_engine_creds', 'jwt_token_creds',
                     'oauth2_auth_token', 'per_rpc_creds']
