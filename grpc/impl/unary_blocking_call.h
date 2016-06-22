@@ -34,9 +34,6 @@
 #ifndef TEST_GRPC_C_UNARY_BLOCKING_CALL_H
 #define TEST_GRPC_C_UNARY_BLOCKING_CALL_H
 
-#include "../grpc_c_public.h"
-#include "context.h"
 
-#define TAG(x) ((void *)x)
 
 #endif //TEST_GRPC_C_UNARY_BLOCKING_CALL_H

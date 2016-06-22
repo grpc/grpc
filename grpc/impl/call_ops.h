@@ -61,6 +61,9 @@ typedef struct grpc_call_op_set {
   /* if this is true (default false), the event tagged by this call_op_set will not be emitted
    * from the completion queue wrapper. */
   bool hide_from_user;
+
+  // used in async calls
+  void *user_tag;
 } grpc_call_op_set;
 
 void grpc_fill_op_from_call_set(const grpc_call_op_set set, const grpc_method *rpc_method, grpc_context *context,
