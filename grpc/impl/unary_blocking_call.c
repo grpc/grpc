@@ -32,7 +32,10 @@
  */
 
 #include "unary_blocking_call.h"
+#include "../grpc_c_public.h"
+#include "context.h"
 #include "call_ops.h"
+#include "tag.h"
 #include "completion_queue.h"
 #include <stdio.h>
 #include <grpc/support/log.h>
@@ -48,7 +51,7 @@ GRPC_status GRPC_unary_blocking_call(GRPC_channel *channel, const GRPC_method *c
                                              "",
                                              context->deadline,
                                              NULL);
-
+  context->call = call;
   grpc_call_op_set set = {
     {
       grpc_op_send_metadata,
@@ -58,19 +61,19 @@ GRPC_status GRPC_unary_blocking_call(GRPC_channel *channel, const GRPC_method *c
       grpc_op_send_close,
       grpc_op_recv_status
     },
-    context
+    context,
+    .user_tag = TAG(&set)
   };
 
   size_t nops;
   grpc_op ops[GRPC_MAX_OP_COUNT];
   grpc_fill_op_from_call_set(set, rpc_method, context, message, response, ops, &nops);
 
-  context->user_tag = TAG(&set);
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops, nops, TAG(&set), NULL));
   for (;;) {
     void *tag;
     bool ok;
-    GRPC_completion_queue_next_status status = GRPC_completion_queue_next_deadline(cq, context->deadline, &tag, &ok);
+    GRPC_completion_queue_next_status status = GRPC_commit_call_and_wait_deadline(cq, context->deadline, &tag, &ok);
     GPR_ASSERT(status == GRPC_COMPLETION_QUEUE_GOT_EVENT);
     GPR_ASSERT(ok);
     if (tag == TAG(&set)) {
@@ -81,12 +84,9 @@ GRPC_status GRPC_unary_blocking_call(GRPC_channel *channel, const GRPC_method *c
   grpc_finish_op_from_call_set(set, context);
   GPR_ASSERT(context->status.code == GRPC_STATUS_OK);
 
-  grpc_completion_queue_shutdown(cq);
-  for (;;) {
-    void *tag;
-    bool ok;
-    if (GRPC_completion_queue_next(cq, &tag, &ok) == GRPC_COMPLETION_QUEUE_SHUTDOWN) break;
-  }
-  grpc_completion_queue_destroy(cq);
+  GRPC_completion_queue_shutdown_and_destroy(cq);
   grpc_call_destroy(call);
+  context->call = NULL;
+
+  return context->status;
 }

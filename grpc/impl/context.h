@@ -40,29 +40,32 @@
 #include <grpc/grpc.h>
 #include "status.h"
 #include "message.h"
+#include "call_ops.h"
 #include <stdbool.h>
 
 typedef struct grpc_call_op_set grpc_call_op_set;
 
 typedef struct grpc_context {
-  grpc_channel *channel;
-  grpc_call *call;
   grpc_metadata *send_metadata_array;
   grpc_metadata_array recv_metadata_array;
   grpc_metadata_array trailing_metadata_array;
   gpr_timespec deadline;
   grpc_byte_buffer *recv_buffer;
-  grpc_message *response;
-  bool got_message;
+
+  // serialization mechanism used in this call
   GRPC_serializer serialize;
   GRPC_deserializer deserialize;
+
+  // status of the call
   grpc_status status;
 
   // state tracking
   bool initial_metadata_received;
-
-  // used in async calls
-  void *user_tag;
+  bool message_received;
+  GRPC_method rpc_method;
+  grpc_channel *channel;
+  grpc_message *response;
+  grpc_call *call;
 } grpc_context;
 
 typedef grpc_context GRPC_context;

@@ -49,7 +49,7 @@ typedef struct GRPC_method {
     SERVER_STREAMING,  // response streaming
     BIDI_STREAMING
   } type;
-  const char* const name;
+  const char* name;
 } GRPC_method;
 
 GRPC_status GRPC_unary_blocking_call(GRPC_channel *channel, const GRPC_method *const rpc_method,

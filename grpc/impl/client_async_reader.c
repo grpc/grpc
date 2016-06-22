@@ -32,20 +32,24 @@
  */
 
 
+#include <grpc/support/log.h>
 #include "client_async_reader.h"
 #include "alloc.h"
 #include "../client_async_reader_public.h"
+#include "tag.h"
 
-GRPC_client_async_response_reader *GRPC_unary_async_call(GRPC_channel *channel, GRPC_completion_queue *cq, const GRPC_method *const rpc_method,
-                           GRPC_context *const context, const GRPC_message message, GRPC_message *response, void *tag) {
+GRPC_client_async_response_reader *GRPC_unary_async_call(GRPC_channel *channel, GRPC_completion_queue *cq, const GRPC_method rpc_method,
+                           const GRPC_message request, GRPC_context *context) {
   grpc_call *call = grpc_channel_create_call(channel,
                                              NULL,
                                              GRPC_PROPAGATE_DEFAULTS,
                                              cq,
-                                             rpc_method->name,
+                                             rpc_method.name,
                                              "",
                                              context->deadline,
                                              NULL);
+  context->call = call;
+  context->rpc_method = rpc_method;
   GRPC_client_async_response_reader *reader = GRPC_ALLOC_STRUCT(GRPC_client_async_response_reader, {
     .context = context,
     .call = call,
@@ -76,7 +80,25 @@ GRPC_client_async_response_reader *GRPC_unary_async_call(GRPC_channel *channel, 
 
   size_t nops;
   grpc_op ops[GRPC_MAX_OP_COUNT];
-  grpc_fill_op_from_call_set(reader->init_buf, rpc_method, context, message, response, ops, &nops);
+  grpc_fill_op_from_call_set(reader->init_buf, &rpc_method, context, request, NULL, ops, &nops);
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops, nops, TAG(&reader->init_buf), NULL));
 
   return reader;
 }
+
+void GRPC_client_async_read_metadata(GRPC_client_async_response_reader *reader, void *tag) {
+  size_t nops;
+  grpc_op ops[GRPC_MAX_OP_COUNT];
+  reader->meta_buf.user_tag = tag;
+  grpc_fill_op_from_call_set(reader->meta_buf, &reader->context->rpc_method, reader->context, (GRPC_message) { }, NULL, ops, &nops);
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(reader->context->call, ops, nops, TAG(&reader->finish_buf), NULL));
+}
+
+void GRPC_client_async_finish(GRPC_client_async_response_reader *reader, GRPC_message *response, void *tag) {
+  size_t nops;
+  grpc_op ops[GRPC_MAX_OP_COUNT];
+  reader->finish_buf.user_tag = tag;
+  grpc_fill_op_from_call_set(reader->finish_buf, &reader->context->rpc_method, reader->context, (GRPC_message) { }, response, ops, &nops);
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(reader->context->call, ops, nops, TAG(&reader->finish_buf), NULL));
+}
+
