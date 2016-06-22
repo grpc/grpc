@@ -55,13 +55,13 @@
 
 #define HTTP2_RESP(STATUS_CODE)          \
   "\x00\x00\x00\x04\x00\x00\x00\x00\x00" \
-  "\x00\x00"                             \
-  "7\x01\x04\x00\x00\x00\x01"            \
+  "\x00\x00>\x01\x04\x00\x00\x00\x01"    \
   "\x10\x0e"                             \
   "content-length\x01"                   \
   "0"                                    \
   "\x10\x0c"                             \
-  "content-type\x09text/html"            \
+  "content-type\x10"                     \
+  "application/grpc"                     \
   "\x10\x07:status\x03" #STATUS_CODE
 
 #define UNPARSEABLE_RESP "Bad Request\n"
@@ -119,7 +119,7 @@ static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   for (i = 0; i < state.temp_incoming_buffer.count; i++) {
     char *dump = gpr_dump_slice(state.temp_incoming_buffer.slices[i],
                                 GPR_DUMP_HEX | GPR_DUMP_ASCII);
-    gpr_log(GPR_DEBUG, "%s", dump);
+    gpr_log(GPR_DEBUG, "Server received: %s", dump);
     gpr_free(dump);
   }
 
@@ -175,6 +175,7 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
@@ -209,6 +210,9 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   gpr_log(GPR_DEBUG, "Rpc status: %d, details: %s", status, details);
   GPR_ASSERT(status == expected_status);
   GPR_ASSERT(0 == strcmp(details, expected_detail));
+
+  grpc_metadata_array_destroy(&initial_metadata_recv);
+  grpc_metadata_array_destroy(&trailing_metadata_recv);
   gpr_free(details);
   cq_verifier_destroy(cqv);
 }
