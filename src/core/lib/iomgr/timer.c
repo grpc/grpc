@@ -73,7 +73,7 @@ static shard_type *g_shard_queue[NUM_SHARDS];
 static bool g_initialized = false;
 
 static int run_some_expired_timers(grpc_exec_ctx *exec_ctx, gpr_timespec now,
-                                   gpr_timespec *next, int success);
+                                   gpr_timespec *next, grpc_error *error);
 
 static gpr_timespec compute_min_deadline(shard_type *shard) {
   return grpc_timer_heap_is_empty(&shard->heap)
@@ -105,7 +105,8 @@ void grpc_timer_list_init(gpr_timespec now) {
 
 void grpc_timer_list_shutdown(grpc_exec_ctx *exec_ctx) {
   int i;
-  run_some_expired_timers(exec_ctx, gpr_inf_future(g_clock_type), NULL, 0);
+  run_some_expired_timers(exec_ctx, gpr_inf_future(g_clock_type), NULL,
+                          GRPC_ERROR_CREATE("Timer list shutdown"));
   for (i = 0; i < NUM_SHARDS; i++) {
     shard_type *shard = &g_shards[i];
     gpr_mu_destroy(&shard->mu);
@@ -185,13 +186,16 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
 
   if (!g_initialized) {
     timer->triggered = 1;
-    grpc_exec_ctx_enqueue(exec_ctx, &timer->closure, false, NULL);
+    grpc_exec_ctx_sched(
+        exec_ctx, &timer->closure,
+        GRPC_ERROR_CREATE("Attempt to create timer before initialization"),
+        NULL);
     return;
   }
 
   if (gpr_time_cmp(deadline, now) <= 0) {
     timer->triggered = 1;
-    grpc_exec_ctx_enqueue(exec_ctx, &timer->closure, true, NULL);
+    grpc_exec_ctx_sched(exec_ctx, &timer->closure, GRPC_ERROR_NONE, NULL);
     return;
   }
 
@@ -235,10 +239,15 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
 }
 
 void grpc_timer_cancel(grpc_exec_ctx *exec_ctx, grpc_timer *timer) {
+  if (!g_initialized) {
+    /* must have already been cancelled, also the shard mutex is invalid */
+    return;
+  }
+
   shard_type *shard = &g_shards[shard_idx(timer)];
   gpr_mu_lock(&shard->mu);
   if (!timer->triggered) {
-    grpc_exec_ctx_enqueue(exec_ctx, &timer->closure, false, NULL);
+    grpc_exec_ctx_sched(exec_ctx, &timer->closure, GRPC_ERROR_CANCELLED, NULL);
     timer->triggered = 1;
     if (timer->heap_index == INVALID_HEAP_INDEX) {
       list_remove(timer);
@@ -299,12 +308,12 @@ static grpc_timer *pop_one(shard_type *shard, gpr_timespec now) {
 /* REQUIRES: shard->mu unlocked */
 static size_t pop_timers(grpc_exec_ctx *exec_ctx, shard_type *shard,
                          gpr_timespec now, gpr_timespec *new_min_deadline,
-                         int success) {
+                         grpc_error *error) {
   size_t n = 0;
   grpc_timer *timer;
   gpr_mu_lock(&shard->mu);
   while ((timer = pop_one(shard, now))) {
-    grpc_exec_ctx_enqueue(exec_ctx, &timer->closure, success, NULL);
+    grpc_exec_ctx_sched(exec_ctx, &timer->closure, GRPC_ERROR_REF(error), NULL);
     n++;
   }
   *new_min_deadline = compute_min_deadline(shard);
@@ -313,7 +322,7 @@ static size_t pop_timers(grpc_exec_ctx *exec_ctx, shard_type *shard,
 }
 
 static int run_some_expired_timers(grpc_exec_ctx *exec_ctx, gpr_timespec now,
-                                   gpr_timespec *next, int success) {
+                                   gpr_timespec *next, grpc_error *error) {
   size_t n = 0;
 
   /* TODO(ctiller): verify that there are any timers (atomically) here */
@@ -327,8 +336,8 @@ static int run_some_expired_timers(grpc_exec_ctx *exec_ctx, gpr_timespec now,
       /* For efficiency, we pop as many available timers as we can from the
          shard.  This may violate perfect timer deadline ordering, but that
          shouldn't be a big deal because we don't make ordering guarantees. */
-      n += pop_timers(exec_ctx, g_shard_queue[0], now, &new_min_deadline,
-                      success);
+      n +=
+          pop_timers(exec_ctx, g_shard_queue[0], now, &new_min_deadline, error);
 
       /* An grpc_timer_init() on the shard could intervene here, adding a new
          timer that is earlier than new_min_deadline.  However,
@@ -359,6 +368,8 @@ static int run_some_expired_timers(grpc_exec_ctx *exec_ctx, gpr_timespec now,
         *next, gpr_time_add(now, gpr_time_from_millis(1, GPR_TIMESPAN)));
   }
 
+  GRPC_ERROR_UNREF(error);
+
   return (int)n;
 }
 
@@ -367,5 +378,7 @@ bool grpc_timer_check(grpc_exec_ctx *exec_ctx, gpr_timespec now,
   GPR_ASSERT(now.clock_type == g_clock_type);
   return run_some_expired_timers(
       exec_ctx, now, next,
-      gpr_time_cmp(now, gpr_inf_future(now.clock_type)) != 0);
+      gpr_time_cmp(now, gpr_inf_future(now.clock_type)) != 0
+          ? GRPC_ERROR_NONE
+          : GRPC_ERROR_CREATE("Shutting down timer system"));
 }

@@ -56,6 +56,10 @@ class BaseStub
      */
     public function __construct($hostname, $opts, $channel = null)
     {
+        $ssl_roots = file_get_contents(
+            dirname(__FILE__).'/../../../../etc/roots.pem');
+        ChannelCredentials::setDefaultRootsPem($ssl_roots);
+
         $this->hostname = $hostname;
         $this->update_metadata = null;
         if (isset($opts['update_metadata'])) {

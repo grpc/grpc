@@ -39,19 +39,19 @@ cd $(dirname $0)/../../..
 killall -9 qps_worker || true
 
 # C#
-ps -C mono -o pid=,cmd= | grep QpsWorker | awk '{print $1}' | xargs kill -9
+ps -C mono -o pid=,cmd= | grep QpsWorker | awk '{print $1}' | xargs kill -9 || true
 
 # Ruby
-ps -C ruby -o pid=,cmd= | grep 'qps/worker.rb' | awk '{print $1}' | xargs kill -9
+ps -C ruby -o pid=,cmd= | grep 'qps/worker.rb' | awk '{print $1}' | xargs kill -9 || true
 
 # Node
-ps -C node -o pid=,cmd= | grep 'performance/worker.js' | awk '{print $1}' | xargs kill -9
+ps -C node -o pid=,cmd= | grep 'performance/worker.js' | awk '{print $1}' | xargs kill -9 || true
 
 # Python
-ps -C python -o pid=,cmd= | grep 'qps_worker.py' | awk '{print $1}' | xargs kill -9
+ps -C python -o pid=,cmd= | grep 'qps_worker.py' | awk '{print $1}' | xargs kill -9 || true
 
 # Java
-jps | grep LoadWorker | awk '{print $1}' | xargs kill -9
+jps | grep LoadWorker | awk '{print $1}' | xargs kill -9 || true
 
 # Go
 killall -9 worker || true

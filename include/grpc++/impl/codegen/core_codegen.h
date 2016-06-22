@@ -42,42 +42,44 @@ namespace grpc {
 /// Implementation of the core codegen interface.
 class CoreCodegen : public CoreCodegenInterface {
  private:
-  grpc_completion_queue* grpc_completion_queue_create(void* reserved) override;
-  void grpc_completion_queue_destroy(grpc_completion_queue* cq) override;
+  grpc_completion_queue* grpc_completion_queue_create(void* reserved)
+      GRPC_OVERRIDE;
+  void grpc_completion_queue_destroy(grpc_completion_queue* cq) GRPC_OVERRIDE;
   grpc_event grpc_completion_queue_pluck(grpc_completion_queue* cq, void* tag,
                                          gpr_timespec deadline,
-                                         void* reserved) override;
+                                         void* reserved) GRPC_OVERRIDE;
 
-  void* gpr_malloc(size_t size) override;
-  void gpr_free(void* p) override;
+  void* gpr_malloc(size_t size) GRPC_OVERRIDE;
+  void gpr_free(void* p) GRPC_OVERRIDE;
 
-  void grpc_byte_buffer_destroy(grpc_byte_buffer* bb) override;
+  void grpc_byte_buffer_destroy(grpc_byte_buffer* bb) GRPC_OVERRIDE;
 
   void grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,
-                                    grpc_byte_buffer* buffer) override;
-  void grpc_byte_buffer_reader_destroy(
-      grpc_byte_buffer_reader* reader) override;
+                                    grpc_byte_buffer* buffer) GRPC_OVERRIDE;
+  void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader* reader)
+      GRPC_OVERRIDE;
   int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader* reader,
-                                   gpr_slice* slice) override;
+                                   gpr_slice* slice) GRPC_OVERRIDE;
 
   grpc_byte_buffer* grpc_raw_byte_buffer_create(gpr_slice* slice,
-                                                size_t nslices) override;
+                                                size_t nslices) GRPC_OVERRIDE;
 
-  gpr_slice gpr_slice_malloc(size_t length) override;
-  void gpr_slice_unref(gpr_slice slice) override;
-  gpr_slice gpr_slice_split_tail(gpr_slice* s, size_t split) override;
-  void gpr_slice_buffer_add(gpr_slice_buffer* sb, gpr_slice slice) override;
-  void gpr_slice_buffer_pop(gpr_slice_buffer* sb) override;
+  gpr_slice gpr_slice_malloc(size_t length) GRPC_OVERRIDE;
+  void gpr_slice_unref(gpr_slice slice) GRPC_OVERRIDE;
+  gpr_slice gpr_slice_split_tail(gpr_slice* s, size_t split) GRPC_OVERRIDE;
+  void gpr_slice_buffer_add(gpr_slice_buffer* sb,
+                            gpr_slice slice) GRPC_OVERRIDE;
+  void gpr_slice_buffer_pop(gpr_slice_buffer* sb) GRPC_OVERRIDE;
 
-  void grpc_metadata_array_init(grpc_metadata_array* array) override;
-  void grpc_metadata_array_destroy(grpc_metadata_array* array) override;
+  void grpc_metadata_array_init(grpc_metadata_array* array) GRPC_OVERRIDE;
+  void grpc_metadata_array_destroy(grpc_metadata_array* array) GRPC_OVERRIDE;
 
-  gpr_timespec gpr_inf_future(gpr_clock_type type) override;
+  gpr_timespec gpr_inf_future(gpr_clock_type type) GRPC_OVERRIDE;
 
-  virtual const Status& ok() override;
-  virtual const Status& cancelled() override;
+  virtual const Status& ok() GRPC_OVERRIDE;
+  virtual const Status& cancelled() GRPC_OVERRIDE;
 
-  void assert_fail(const char* failed_assertion) override;
+  void assert_fail(const char* failed_assertion) GRPC_OVERRIDE;
 };
 
 }  // namespace grpc

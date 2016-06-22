@@ -96,4 +96,6 @@ void gpr_log_verbosity_init() {
   }
 }
 
-void gpr_set_log_function(gpr_log_func f) { g_log_func = f; }
+void gpr_set_log_function(gpr_log_func f) {
+  g_log_func = f ? f : gpr_default_log;
+}

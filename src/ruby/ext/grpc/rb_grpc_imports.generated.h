@@ -734,6 +734,12 @@ extern gpr_avl_remove_type gpr_avl_remove_import;
 typedef void *(*gpr_avl_get_type)(gpr_avl avl, void *key);
 extern gpr_avl_get_type gpr_avl_get_import;
 #define gpr_avl_get gpr_avl_get_import
+typedef int(*gpr_avl_maybe_get_type)(gpr_avl avl, void *key, void **value);
+extern gpr_avl_maybe_get_type gpr_avl_maybe_get_import;
+#define gpr_avl_maybe_get gpr_avl_maybe_get_import
+typedef int(*gpr_avl_is_empty_type)(gpr_avl avl);
+extern gpr_avl_is_empty_type gpr_avl_is_empty_import;
+#define gpr_avl_is_empty gpr_avl_is_empty_import
 typedef gpr_cmdline *(*gpr_cmdline_create_type)(const char *description);
 extern gpr_cmdline_create_type gpr_cmdline_create_import;
 #define gpr_cmdline_create gpr_cmdline_create_import
