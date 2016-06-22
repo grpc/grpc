@@ -37,6 +37,10 @@
 #include "completion_queue.h"
 #include "call_ops.h"
 
+GRPC_completion_queue *GRPC_completion_queue_create() {
+  return grpc_completion_queue_create(NULL);
+}
+
 GRPC_completion_queue_next_status GRPC_completion_queue_next_deadline(GRPC_completion_queue *cq, gpr_timespec deadline, void **tag, bool *ok) {
   for (;;) {
     grpc_call_op_set *set = NULL;

@@ -33,3 +33,50 @@
 
 
 #include "client_async_reader.h"
+#include "alloc.h"
+#include "../client_async_reader_public.h"
+
+GRPC_client_async_response_reader *GRPC_unary_async_call(GRPC_channel *channel, GRPC_completion_queue *cq, const GRPC_method *const rpc_method,
+                           GRPC_context *const context, const GRPC_message message, GRPC_message *response, void *tag) {
+  grpc_call *call = grpc_channel_create_call(channel,
+                                             NULL,
+                                             GRPC_PROPAGATE_DEFAULTS,
+                                             cq,
+                                             rpc_method->name,
+                                             "",
+                                             context->deadline,
+                                             NULL);
+  GRPC_client_async_response_reader *reader = GRPC_ALLOC_STRUCT(GRPC_client_async_response_reader, {
+    .context = context,
+    .call = call,
+    .init_buf = {
+      {
+        grpc_op_send_metadata,
+        grpc_op_send_object,
+        grpc_op_send_close
+      },
+      context,
+      .hide_from_user = true
+    },
+    .meta_buf = {
+      {
+        grpc_op_recv_metadata
+      },
+      context
+    },
+    .finish_buf = {
+      {
+        grpc_op_recv_metadata,
+        grpc_op_recv_object,
+        grpc_op_recv_status
+      },
+      context
+    }
+  });
+
+  size_t nops;
+  grpc_op ops[GRPC_MAX_OP_COUNT];
+  grpc_fill_op_from_call_set(reader->init_buf, rpc_method, context, message, response, ops, &nops);
+
+  return reader;
+}

@@ -35,4 +35,15 @@
 #ifndef TEST_GRPC_C_CLIENT_ASYNC_READER_H
 #define TEST_GRPC_C_CLIENT_ASYNC_READER_H
 
+#include "call_ops.h"
+
+typedef struct grpc_client_async_response_reader {
+  grpc_call_op_set init_buf;
+  grpc_call_op_set meta_buf;
+  grpc_call_op_set finish_buf;
+
+  grpc_context *context;
+  grpc_call *call;
+} grpc_client_async_response_reader;
+
 #endif //TEST_GRPC_C_CLIENT_ASYNC_READER_H

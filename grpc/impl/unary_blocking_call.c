@@ -39,7 +39,7 @@
 
 GRPC_status GRPC_unary_blocking_call(GRPC_channel *channel, const GRPC_method *const rpc_method,
                                      GRPC_context *const context, const GRPC_message message, GRPC_message *response) {
-  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+  grpc_completion_queue *cq = GRPC_completion_queue_create();
   grpc_call *call = grpc_channel_create_call(channel,
                                              NULL,
                                              GRPC_PROPAGATE_DEFAULTS,

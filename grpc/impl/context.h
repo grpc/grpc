@@ -58,6 +58,9 @@ typedef struct grpc_context {
   GRPC_deserializer deserialize;
   grpc_status status;
 
+  // state tracking
+  bool initial_metadata_received;
+
   // used in async calls
   void *user_tag;
 } grpc_context;
