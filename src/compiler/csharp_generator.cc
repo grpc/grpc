@@ -333,22 +333,28 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor *service) {
   out->Indent();
 
   // constructors
+  out->Print("/// <summary>Creates a new client for $servicename$</summary>\n"
+             "/// <param name=\"channel\">The channel to use to make remote calls.</param>\n",
+             "servicename", GetServiceClassName(service));
   out->Print("public $name$(Channel channel) : base(channel)\n",
              "name", GetClientClassName(service));
   out->Print("{\n");
   out->Print("}\n");
+  out->Print("/// <summary>Creates a new client for $servicename$ that uses a custom <c>CallInvoker</c>.</summary>\n"
+             "/// <param name=\"callInvoker\">The callInvoker to use to make remote calls.</param>\n",
+             "servicename", GetServiceClassName(service));
   out->Print("public $name$(CallInvoker callInvoker) : base(callInvoker)\n",
              "name", GetClientClassName(service));
   out->Print("{\n");
   out->Print("}\n");
-  out->Print("///<summary>Protected parameterless constructor to allow creation"
+  out->Print("/// <summary>Protected parameterless constructor to allow creation"
              " of test doubles.</summary>\n");
   out->Print("protected $name$() : base()\n",
              "name", GetClientClassName(service));
   out->Print("{\n");
   out->Print("}\n");
-  out->Print("///<summary>Protected constructor to allow creation of configured"
-             " clients.</summary>\n");
+  out->Print("/// <summary>Protected constructor to allow creation of configured clients.</summary>\n"
+             "/// <param name=\"configuration\">The client configuration.</param>\n");
   out->Print("protected $name$(ClientBaseConfiguration configuration)"
              " : base(configuration)\n",
              "name", GetClientClassName(service));
