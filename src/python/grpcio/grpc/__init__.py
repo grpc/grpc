@@ -436,9 +436,7 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
   """Affords invoking a unary-unary RPC."""
 
   @abc.abstractmethod
-  def __call__(
-      self, request, timeout=None, metadata=None, credentials=None,
-      with_call=False):
+  def __call__(self, request, timeout=None, metadata=None, credentials=None):
     """Synchronously invokes the underlying RPC.
 
     Args:
@@ -447,12 +445,30 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
       metadata: An optional sequence of pairs of bytes to be transmitted to the
         service-side of the RPC.
       credentials: An optional CallCredentials for the RPC.
-      with_call: Whether or not to include return a Call for the RPC in addition
-        to the response.
 
     Returns:
-      The response value for the RPC, and a Call for the RPC if with_call was
-        set to True at invocation.
+      The response value for the RPC.
+
+    Raises:
+      RpcError: Indicating that the RPC terminated with non-OK status. The
+        raised RpcError will also be a Call for the RPC affording the RPC's
+        metadata, status code, and details.
+    """
+    raise NotImplementedError()
+
+  @abc.abstractmethod
+  def with_call(self, request, timeout=None, metadata=None, credentials=None):
+    """Synchronously invokes the underlying RPC.
+
+    Args:
+      request: The request value for the RPC.
+      timeout: An optional durating of time in seconds to allow for the RPC.
+      metadata: An optional sequence of pairs of bytes to be transmitted to the
+        service-side of the RPC.
+      credentials: An optional CallCredentials for the RPC.
+
+    Returns:
+      The response value for the RPC and a Call value for the RPC.
 
     Raises:
       RpcError: Indicating that the RPC terminated with non-OK status. The
@@ -508,8 +524,7 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
 
   @abc.abstractmethod
   def __call__(
-      self, request_iterator, timeout=None, metadata=None, credentials=None,
-      with_call=False):
+      self, request_iterator, timeout=None, metadata=None, credentials=None):
     """Synchronously invokes the underlying RPC.
 
     Args:
@@ -518,12 +533,32 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
       metadata: An optional sequence of pairs of bytes to be transmitted to the
         service-side of the RPC.
       credentials: An optional CallCredentials for the RPC.
-      with_call: Whether or not to include return a Call for the RPC in addition
-        to the response.
 
     Returns:
       The response value for the RPC, and a Call for the RPC if with_call was
         set to True at invocation.
+
+    Raises:
+      RpcError: Indicating that the RPC terminated with non-OK status. The
+        raised RpcError will also be a Call for the RPC affording the RPC's
+        metadata, status code, and details.
+    """
+    raise NotImplementedError()
+
+  @abc.abstractmethod
+  def with_call(
+      self, request_iterator, timeout=None, metadata=None, credentials=None):
+    """Synchronously invokes the underlying RPC.
+
+    Args:
+      request_iterator: An iterator that yields request values for the RPC.
+      timeout: An optional duration of time in seconds to allow for the RPC.
+      metadata: An optional sequence of pairs of bytes to be transmitted to the
+        service-side of the RPC.
+      credentials: An optional CallCredentials for the RPC.
+
+    Returns:
+      The response value for the RPC and a Call for the RPC.
 
     Raises:
       RpcError: Indicating that the RPC terminated with non-OK status. The
