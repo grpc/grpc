@@ -34,9 +34,8 @@
 #include "src/core/lib/iomgr/ev_epoll_linux.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 
-#include <poll.h>
+#include <errno.h>
 #include <string.h>
-#include <sys/eventfd.h>
 #include <unistd.h>
 
 #include <grpc/support/alloc.h>
@@ -55,28 +54,29 @@ typedef struct test_fd {
   grpc_fd *fd;
 } test_fd;
 
-static void test_fd_init(test_fd *fds, int num_fds) {
+/* num_fds should be an even number */
+static void test_fd_init(test_fd *tfds, int *fds, int num_fds) {
   int i;
   for (i = 0; i < num_fds; i++) {
-    fds[i].inner_fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
-    fds[i].fd = grpc_fd_create(fds[i].inner_fd, "test_fd");
+    tfds[i].inner_fd = fds[i];
+    tfds[i].fd = grpc_fd_create(fds[i], "test_fd");
   }
 }
 
-static void test_fd_cleanup(grpc_exec_ctx *exec_ctx, test_fd *fds,
+static void test_fd_cleanup(grpc_exec_ctx *exec_ctx, test_fd *tfds,
                             int num_fds) {
   int release_fd;
   int i;
 
   for (i = 0; i < num_fds; i++) {
-    grpc_fd_shutdown(exec_ctx, fds[i].fd);
+    grpc_fd_shutdown(exec_ctx, tfds[i].fd);
     grpc_exec_ctx_flush(exec_ctx);
 
-    grpc_fd_orphan(exec_ctx, fds[i].fd, NULL, &release_fd, "test_fd_cleanup");
+    grpc_fd_orphan(exec_ctx, tfds[i].fd, NULL, &release_fd, "test_fd_cleanup");
     grpc_exec_ctx_flush(exec_ctx);
 
-    GPR_ASSERT(release_fd == fds[i].inner_fd);
-    close(fds[i].inner_fd);
+    GPR_ASSERT(release_fd == tfds[i].inner_fd);
+    close(tfds[i].inner_fd);
   }
 }
 
@@ -121,12 +121,25 @@ static void test_pollset_cleanup(grpc_exec_ctx *exec_ctx,
  * */
 static void test_add_fd_to_pollset() {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  test_fd fds[NUM_FDS];
+  test_fd tfds[NUM_FDS];
+  int fds[NUM_FDS];
   test_pollset pollsets[NUM_POLLSETS];
   void *expected_pi = NULL;
   int i;
+  int r;
 
-  test_fd_init(fds, NUM_FDS);
+  /* Create some dummy file descriptors (using pipe fds for this test. Could be
+     anything). Also NUM_FDS should be even for this test. */
+  for (i = 0; i < NUM_FDS; i = i + 2) {
+    r = pipe(fds + i);
+    if (r != 0) {
+      gpr_log(GPR_ERROR, "Error in creating pipe. %d (%s)", errno,
+              strerror(errno));
+      return;
+    }
+  }
+
+  test_fd_init(tfds, fds, NUM_FDS);
   test_pollset_init(pollsets, NUM_POLLSETS);
 
   /*Step 1.
@@ -156,41 +169,41 @@ static void test_add_fd_to_pollset() {
 
   /* == Step 1 == */
   for (i = 0; i <= 2; i++) {
-    grpc_pollset_add_fd(&exec_ctx, pollsets[0].pollset, fds[i].fd);
+    grpc_pollset_add_fd(&exec_ctx, pollsets[0].pollset, tfds[i].fd);
     grpc_exec_ctx_flush(&exec_ctx);
   }
 
   for (i = 3; i <= 4; i++) {
-    grpc_pollset_add_fd(&exec_ctx, pollsets[1].pollset, fds[i].fd);
+    grpc_pollset_add_fd(&exec_ctx, pollsets[1].pollset, tfds[i].fd);
     grpc_exec_ctx_flush(&exec_ctx);
   }
 
   for (i = 5; i <= 7; i++) {
-    grpc_pollset_add_fd(&exec_ctx, pollsets[2].pollset, fds[i].fd);
+    grpc_pollset_add_fd(&exec_ctx, pollsets[2].pollset, tfds[i].fd);
     grpc_exec_ctx_flush(&exec_ctx);
   }
 
   /* == Step 2 == */
   for (i = 0; i <= 1; i++) {
-    grpc_pollset_add_fd(&exec_ctx, pollsets[3].pollset, fds[i].fd);
+    grpc_pollset_add_fd(&exec_ctx, pollsets[3].pollset, tfds[i].fd);
     grpc_exec_ctx_flush(&exec_ctx);
   }
 
   /* == Step 3 == */
-  grpc_pollset_add_fd(&exec_ctx, pollsets[1].pollset, fds[0].fd);
+  grpc_pollset_add_fd(&exec_ctx, pollsets[1].pollset, tfds[0].fd);
   grpc_exec_ctx_flush(&exec_ctx);
 
   /* == Step 4 == */
-  grpc_pollset_add_fd(&exec_ctx, pollsets[2].pollset, fds[3].fd);
+  grpc_pollset_add_fd(&exec_ctx, pollsets[2].pollset, tfds[3].fd);
   grpc_exec_ctx_flush(&exec_ctx);
 
   /* All polling islands are merged at this point */
 
   /* Compare Fd:0's polling island with that of all other Fds */
-  expected_pi = grpc_fd_get_polling_island(fds[0].fd);
+  expected_pi = grpc_fd_get_polling_island(tfds[0].fd);
   for (i = 1; i < NUM_FDS; i++) {
     GPR_ASSERT(grpc_are_polling_islands_equal(
-        expected_pi, grpc_fd_get_polling_island(fds[i].fd)));
+        expected_pi, grpc_fd_get_polling_island(tfds[i].fd)));
   }
 
   /* Compare Fd:0's polling island with that of all other pollsets */
@@ -199,7 +212,7 @@ static void test_add_fd_to_pollset() {
         expected_pi, grpc_pollset_get_polling_island(pollsets[i].pollset)));
   }
 
-  test_fd_cleanup(&exec_ctx, fds, NUM_FDS);
+  test_fd_cleanup(&exec_ctx, tfds, NUM_FDS);
   test_pollset_cleanup(&exec_ctx, pollsets, NUM_POLLSETS);
   grpc_exec_ctx_finish(&exec_ctx);
 }
