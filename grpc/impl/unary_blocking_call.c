@@ -33,6 +33,7 @@
 
 #include "unary_blocking_call.h"
 #include "call_ops.h"
+#include "completion_queue.h"
 #include <stdio.h>
 #include <grpc/support/log.h>
 
@@ -64,9 +65,18 @@ GRPC_status GRPC_unary_blocking_call(GRPC_channel *channel, const GRPC_method *c
   grpc_op ops[GRPC_MAX_OP_COUNT];
   grpc_fill_op_from_call_set(set, rpc_method, context, message, response, ops, &nops);
 
+  context->user_tag = TAG(&set);
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops, nops, TAG(&set), NULL));
-  grpc_event ev = grpc_completion_queue_pluck(cq, TAG(&set), context->deadline, NULL);
-  GPR_ASSERT(ev.success);
+  for (;;) {
+    void *tag;
+    bool ok;
+    GRPC_completion_queue_next_status status = GRPC_completion_queue_next_deadline(cq, context->deadline, &tag, &ok);
+    GPR_ASSERT(status == GRPC_COMPLETION_QUEUE_GOT_EVENT);
+    GPR_ASSERT(ok);
+    if (tag == TAG(&set)) {
+      break;
+    }
+  }
 
   grpc_finish_op_from_call_set(set, context);
   GPR_ASSERT(context->status.code == GRPC_STATUS_OK);
