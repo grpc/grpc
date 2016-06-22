@@ -942,15 +942,19 @@ static grpc_pollset *fd_get_read_notifier_pollset(grpc_exec_ctx *exec_ctx,
   return notifier;
 }
 
+/* Might be called multiple times */
 static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
   gpr_mu_lock(&fd->mu);
-  GPR_ASSERT(!fd->shutdown);
-  fd->shutdown = true;
+  /* Do the actual shutdown only once */
+  if (!fd->shutdown) {
+    fd->shutdown = true;
 
-  /* Flush any pending read and write closures. Since fd->shutdown is 'true' at
-     this point, the closures would be called with 'success = false' */
-  set_ready_locked(exec_ctx, fd, &fd->read_closure);
-  set_ready_locked(exec_ctx, fd, &fd->write_closure);
+    shutdown(fd->fd, SHUT_RDWR);
+    /* Flush any pending read and write closures. Since fd->shutdown is 'true'
+       at this point, the closures would be called with 'success = false' */
+    set_ready_locked(exec_ctx, fd, &fd->read_closure);
+    set_ready_locked(exec_ctx, fd, &fd->write_closure);
+  }
   gpr_mu_unlock(&fd->mu);
 }
 
