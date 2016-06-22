@@ -270,11 +270,12 @@ static void run_test(const char *response_payload,
                      grpc_status_code expected_status,
                      const char *expected_detail) {
   test_tcp_server test_server;
-  server_port = grpc_pick_unused_port_or_die();
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   gpr_event ev;
-  gpr_event_init(&ev);
 
+  grpc_init();
+  gpr_event_init(&ev);
+  server_port = grpc_pick_unused_port_or_die();
   test_tcp_server_init(&test_server, on_connect, &test_server);
   test_tcp_server_start(&test_server, server_port);
   state.response_payload = response_payload;
@@ -291,11 +292,12 @@ static void run_test(const char *response_payload,
   grpc_exec_ctx_finish(&exec_ctx);
   cleanup_rpc();
   test_tcp_server_destroy(&test_server);
+
+  grpc_shutdown();
 }
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
-  grpc_init();
 
   /* status defined in hpack static table */
   run_test(HTTP2_RESP(204), sizeof(HTTP2_RESP(204)) - 1, GRPC_STATUS_CANCELLED,
@@ -334,6 +336,5 @@ int main(int argc, char **argv) {
   run_test(HTTP1_RESP, sizeof(HTTP1_RESP) - 1, GRPC_STATUS_UNAVAILABLE,
            HTTP1_DETAIL_MSG);
 
-  grpc_shutdown();
   return 0;
 }
