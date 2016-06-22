@@ -96,10 +96,11 @@ fi
 make CONFIG=basicprof -j$CPUS qps_json_driver
 
 mkdir -p reports
-echo '<html><head></head><body>' > reports/index.html
 bins/basicprof/qps_json_driver --scenarios_json="$SCENARIOS_JSON_ARG"
-echo '<pre>' >> reports/index.html
+
+echo '<html><head></head><body>Latency profile for:<br/>' > reports/index.html
+echo "<p><pre>${SCENARIOS_JSON_ARG}</pre></p>" >> reports/index.html
+echo '<p><pre>' >> reports/index.html
 $PYTHON tools/profiling/latency_profile/profile_analyzer.py \
     --source=latency_trace.txt --fmt=simple >> reports/index.html
-echo '</pre>' >> reports/index.html
-echo '</body></html>' >> reports/index.html
+echo '</pre></p></body></html>' >> reports/index.html
