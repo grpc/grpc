@@ -40,11 +40,12 @@ static void op_noop_finish(grpc_context *context, bool *status, int max_message_
 
 }
 
-static void op_send_metadata_fill(grpc_op *op, const grpc_method *method, grpc_context *context, const grpc_message message, grpc_message *response) {
+static bool op_send_metadata_fill(grpc_op *op, const grpc_method *method, grpc_context *context, const grpc_message message, grpc_message *response) {
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
   op->reserved = NULL;
+  return true;
 }
 
 static void op_send_metadata_finish(grpc_context *context, bool *status, int max_message_size) {
@@ -56,7 +57,7 @@ const grpc_op_manager grpc_op_send_metadata = {
   op_send_metadata_finish
 };
 
-static void op_send_object_fill(grpc_op *op, const grpc_method *method, grpc_context *context, const grpc_message message, grpc_message *response) {
+static bool op_send_object_fill(grpc_op *op, const grpc_method *method, grpc_context *context, const grpc_message message, grpc_message *response) {
   op->op = GRPC_OP_SEND_MESSAGE;
 
   grpc_message serialized;
@@ -70,6 +71,7 @@ static void op_send_object_fill(grpc_op *op, const grpc_method *method, grpc_con
 
   op->flags = 0;
   op->reserved = NULL;
+  return true;
 }
 
 static void op_send_object_finish(grpc_context *context, bool *status, int max_message_size) {
@@ -81,15 +83,18 @@ const grpc_op_manager grpc_op_send_object = {
   op_send_object_finish
 };
 
-static void op_recv_metadata_fill(grpc_op *op, const grpc_method *method, grpc_context *context, const grpc_message message, grpc_message *response) {
+static bool op_recv_metadata_fill(grpc_op *op, const grpc_method *method, grpc_context *context, const grpc_message message, grpc_message *response) {
+  if (context->initial_metadata_received) return false;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   grpc_metadata_array_init(&context->recv_metadata_array);
   op->data.recv_initial_metadata = &context->recv_metadata_array;
   op->flags = 0;
   op->reserved = NULL;
+  return true;
 }
 
 static void op_recv_metadata_finish(grpc_context *context, bool *status, int max_message_size) {
+  context->initial_metadata_received = true;
 }
 
 const grpc_op_manager grpc_op_recv_metadata = {
@@ -97,7 +102,7 @@ const grpc_op_manager grpc_op_recv_metadata = {
   op_recv_metadata_finish
 };
 
-static void op_recv_object_fill(grpc_op *op, const grpc_method *method, grpc_context *context, const grpc_message message, grpc_message *response) {
+static bool op_recv_object_fill(grpc_op *op, const grpc_method *method, grpc_context *context, const grpc_message message, grpc_message *response) {
   context->got_message = false;
   context->response = response;
   op->op = GRPC_OP_RECV_MESSAGE;
@@ -105,6 +110,7 @@ static void op_recv_object_fill(grpc_op *op, const grpc_method *method, grpc_con
   op->data.recv_message = &context->recv_buffer;
   op->flags = 0;
   op->reserved = NULL;
+  return true;
 }
 
 static void op_recv_object_finish(grpc_context *context, bool *status, int max_message_size) {
@@ -132,10 +138,11 @@ const grpc_op_manager grpc_op_recv_object = {
   op_recv_object_finish
 };
 
-static void op_send_close_fill(grpc_op *op, const grpc_method *method, grpc_context *context, const grpc_message message, grpc_message *response) {
+static bool op_send_close_fill(grpc_op *op, const grpc_method *method, grpc_context *context, const grpc_message message, grpc_message *response) {
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op->flags = 0;
   op->reserved = NULL;
+  return true;
 }
 
 static void op_send_close_finish(grpc_context *context, bool *status, int max_message_size) {
@@ -146,7 +153,7 @@ const grpc_op_manager grpc_op_send_close = {
   op_send_close_finish
 };
 
-static void op_recv_status_fill(grpc_op *op, const grpc_method *method, grpc_context *context, const grpc_message message, grpc_message *response) {
+static bool op_recv_status_fill(grpc_op *op, const grpc_method *method, grpc_context *context, const grpc_message message, grpc_message *response) {
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   grpc_metadata_array_init(&context->trailing_metadata_array);
   context->status.details = NULL;
@@ -158,6 +165,7 @@ static void op_recv_status_fill(grpc_op *op, const grpc_method *method, grpc_con
   op->data.recv_status_on_client.status_details_capacity = &context->status.details_length;
   op->flags = 0;
   op->reserved = NULL;
+  return true;
 }
 
 static void op_recv_status_finish(grpc_context *context, bool *status, int max_message_size) {
@@ -170,14 +178,17 @@ const grpc_op_manager grpc_op_recv_status = {
 
 void grpc_fill_op_from_call_set(const grpc_call_op_set set, const grpc_method *rpc_method, grpc_context *context,
                                 const grpc_message message, void *response, grpc_op ops[], size_t *nops) {
-  size_t count = 0;
-  while (count < GRPC_MAX_OP_COUNT) {
-    if (set.op_managers[count].fill == NULL && set.op_managers[count].finish == NULL) break;   // end of call set
-    if (set.op_managers[count].fill == NULL) continue;
-    set.op_managers[count].fill(&ops[count], rpc_method, context, message, response);
-    count++;
+  size_t manager = 0;
+  size_t filled = 0;
+  while (manager < GRPC_MAX_OP_COUNT) {
+    if (set.op_managers[manager].fill == NULL && set.op_managers[manager].finish == NULL) break;   // end of call set
+    if (set.op_managers[manager].fill == NULL) continue;
+    bool result = set.op_managers[manager].fill(&ops[filled], rpc_method, context, message, response);
+    manager++;
+    if (result)
+      filled++;
   }
-  *nops = count;
+  *nops = filled;
 }
 
 void grpc_finish_op_from_call_set(const grpc_call_op_set set, grpc_context *context) {
