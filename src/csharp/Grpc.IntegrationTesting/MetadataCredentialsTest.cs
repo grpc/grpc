@@ -88,7 +88,7 @@ namespace Grpc.IntegrationTesting
             var channelCredentials = ChannelCredentials.Create(TestCredentials.CreateSslCredentials(),
                 CallCredentials.FromInterceptor(asyncAuthInterceptor));
             channel = new Channel(Host, server.Ports.Single().BoundPort, channelCredentials, options);
-            client = TestService.NewClient(channel);
+            client = new TestService.TestServiceClient(channel);
 
             client.UnaryCall(new SimpleRequest { });
         }
@@ -97,7 +97,7 @@ namespace Grpc.IntegrationTesting
         public void MetadataCredentials_PerCall()
         {
             channel = new Channel(Host, server.Ports.Single().BoundPort, TestCredentials.CreateSslCredentials(), options);
-            client = TestService.NewClient(channel);
+            client = new TestService.TestServiceClient(channel);
 
             var callCredentials = CallCredentials.FromInterceptor(asyncAuthInterceptor);
             client.UnaryCall(new SimpleRequest { }, new CallOptions(credentials: callCredentials));
