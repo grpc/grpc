@@ -379,6 +379,7 @@ static void win_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
 }
 
 static void win_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
+  grpc_network_status_unregister_endpoint(ep);
   grpc_tcp *tcp = (grpc_tcp *)ep;
   TCP_UNREF(tcp, "destroy");
 }

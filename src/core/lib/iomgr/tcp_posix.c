@@ -153,6 +153,7 @@ static void tcp_ref(grpc_tcp *tcp) { gpr_ref(&tcp->refcount); }
 #endif
 
 static void tcp_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
+  grpc_network_status_unregister_endpoint(ep);
   grpc_tcp *tcp = (grpc_tcp *)ep;
   TCP_UNREF(exec_ctx, tcp, "destroy");
 }

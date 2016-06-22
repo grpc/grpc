@@ -33,6 +33,7 @@
 
 #include "src/core/lib/iomgr/endpoint.h"
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 typedef struct endpoint_ll_node {
   grpc_endpoint *ep;
@@ -40,9 +41,13 @@ typedef struct endpoint_ll_node {
 } endpoint_ll_node;
 
 static endpoint_ll_node *head = NULL;
+static gpr_mu g_endpoint_mutex;
+static bool g_init_done = false;
 
-// TODO(makarandd): Install callback with OS to monitor network status.
 void grpc_initialize_network_status_monitor() {
+  g_init_done = true;
+  gpr_mu_init(&g_endpoint_mutex);
+  // TODO(makarandd): Install callback with OS to monitor network status.
 }
 
 void grpc_destroy_network_status_monitor() {
@@ -51,9 +56,15 @@ void grpc_destroy_network_status_monitor() {
     gpr_free(curr);
     curr = next;
   }
+  gpr_mu_destroy(&g_endpoint_mutex);
 }
 
 void grpc_network_status_register_endpoint(grpc_endpoint *ep) {
+  if (!g_init_done) {
+    grpc_initialize_network_status_monitor();
+  }
+  gpr_mu_lock(&g_endpoint_mutex);
+  gpr_log(GPR_DEBUG, "Register endpoint %p", ep);
   if (head == NULL) {
     head = (endpoint_ll_node *)gpr_malloc(sizeof(endpoint_ll_node));
     head->ep = ep;
@@ -64,19 +75,50 @@ void grpc_network_status_register_endpoint(grpc_endpoint *ep) {
     head->ep = ep;
     head->next = prev_head;
   }
+  gpr_mu_unlock(&g_endpoint_mutex);
+}
+
+void grpc_network_status_unregister_endpoint(grpc_endpoint *ep) {
+  gpr_mu_lock(&g_endpoint_mutex);
+  GPR_ASSERT(head);
+  gpr_log(GPR_DEBUG, "Unregister endpoint %p", ep);
+  bool found = false;
+  endpoint_ll_node *prev = head;
+  // if we're unregistering the head, just move head to the next
+  if (ep == head->ep) {
+      head = head->next;
+      gpr_free(prev);
+      found = true;
+  } else {
+    for (endpoint_ll_node *curr = head->next; curr != NULL; curr = curr->next) {
+      if (ep == curr->ep) {
+        prev->next = curr->next;
+        gpr_free(curr);
+        found = true;
+        break;
+      }
+      prev = curr;
+    }
+  }
+  gpr_mu_unlock(&g_endpoint_mutex);
+  GPR_ASSERT(found);
 }
 
 // Walk the linked-list from head and execute shutdown. It is possible that
 // other threads might be in the process of shutdown as well, but that has
-// no side effect.
+// no side effect since endpoint shutdown is idempotent.
 void grpc_network_status_shutdown_all_endpoints() {
+  gpr_mu_lock(&g_endpoint_mutex);
   if (head == NULL) {
+    gpr_mu_unlock(&g_endpoint_mutex);
     return;
   }
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   for (endpoint_ll_node *curr = head; curr != NULL; curr = curr->next) {
+    gpr_log(GPR_DEBUG, "Shutting down endpoint %p", curr->ep);
     curr->ep->vtable->shutdown(&exec_ctx, curr->ep);
   }
+  gpr_mu_unlock(&g_endpoint_mutex);
   grpc_exec_ctx_finish(&exec_ctx);
 }
