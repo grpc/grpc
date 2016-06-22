@@ -54,7 +54,7 @@
 grpc_poll_function_type grpc_poll_function = poll;
 
 static const grpc_event_engine_vtable *g_event_engine;
-static const char* g_poll_strategy_name = NULL;
+static const char *g_poll_strategy_name = NULL;
 
 typedef const grpc_event_engine_vtable *(*event_engine_factory_fn)(void);
 
@@ -111,9 +111,7 @@ static void try_engine(const char *engine) {
 }
 
 /* Call this only after calling grpc_event_engine_init() */
-const char *grpc_get_poll_strategy_name() {
-  return g_poll_strategy_name;
-}
+const char *grpc_get_poll_strategy_name() { return g_poll_strategy_name; }
 
 void grpc_event_engine_init(void) {
   char *s = gpr_getenv("GRPC_POLL_STRATEGY");
