@@ -35,12 +35,12 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include "completion_queue.h"
-#include "context.h"
+#include "call_ops.h"
 
-bool GRPC_completion_queue_next(GRPC_completion_queue *cq, void** tag, bool* ok) {
+GRPC_completion_queue_next_status GRPC_completion_queue_next_deadline(GRPC_completion_queue *cq, gpr_timespec deadline, void **tag, bool *ok) {
   for (;;) {
     grpc_call_op_set *set = NULL;
-    grpc_event ev = grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+    grpc_event ev = grpc_completion_queue_next(cq, deadline, NULL);
     switch (ev.type) {
       case GRPC_QUEUE_TIMEOUT:
         return GRPC_COMPLETION_QUEUE_TIMEOUT;
@@ -53,6 +53,11 @@ bool GRPC_completion_queue_next(GRPC_completion_queue *cq, void** tag, bool* ok)
         // run post-processing for async operations
         grpc_finish_op_from_call_set(*set, set->context);
 
+        if (set->hide_from_user) {
+          // don't touch user supplied pointers
+          continue;
+        }
+
         *tag = set->context->user_tag;
         *ok = ev.success != 0;
         return GRPC_COMPLETION_QUEUE_GOT_EVENT;
@@ -60,4 +65,6 @@ bool GRPC_completion_queue_next(GRPC_completion_queue *cq, void** tag, bool* ok)
   }
 }
 
-
+GRPC_completion_queue_next_status GRPC_completion_queue_next(GRPC_completion_queue *cq, void **tag, bool *ok) {
+  return GRPC_completion_queue_next_deadline(cq, gpr_inf_future(GPR_CLOCK_REALTIME), tag, ok);
+}
