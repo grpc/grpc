@@ -30,7 +30,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+#include <grpc/support/port_platform.h>
 
+/* This test only relevant on linux systems where epoll() is available */
+#ifdef GPR_LINUX_EPOLL
 #include "src/core/lib/iomgr/ev_epoll_linux.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 
@@ -128,8 +131,10 @@ static void test_add_fd_to_pollset() {
   int i;
   int r;
 
-  /* Create some dummy file descriptors (using pipe fds for this test. Could be
-     anything). Also NUM_FDS should be even for this test. */
+  /* Create some dummy file descriptors. Currently using pipe file descriptors
+   * for this test but we could use any other type of file descriptors. Also,
+   * since pipe() used in this test creates two fds in each call, NUM_FDS should
+   * be an even number */
   for (i = 0; i < NUM_FDS; i = i + 2) {
     r = pipe(fds + i);
     if (r != 0) {
@@ -234,3 +239,4 @@ int main(int argc, char **argv) {
   grpc_iomgr_shutdown();
   return 0;
 }
+#endif /* defined(GPR_LINUX_EPOLL) */

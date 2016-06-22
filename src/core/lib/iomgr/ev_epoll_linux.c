@@ -34,6 +34,7 @@
 #include <grpc/grpc_posix.h>
 #include <grpc/support/port_platform.h>
 
+/* This polling engine is only relevant on linux kernels supporting epoll() */
 #ifdef GPR_LINUX_EPOLL
 
 #include "src/core/lib/iomgr/ev_epoll_linux.h"
@@ -322,7 +323,7 @@ static void polling_island_add_fds_locked(polling_island *pi, grpc_fd **fds,
 
 #ifdef GRPC_TSAN
   /* See the definition of g_epoll_sync for more context */
-  gpr_atm_rel_store(&g_epoll_sync, 0);
+  gpr_atm_rel_store(&g_epoll_sync, (gpr_atm) 0);
 #endif /* defined(GRPC_TSAN) */
 
   for (i = 0; i < fd_count; i++) {
@@ -442,8 +443,8 @@ static polling_island *polling_island_create(grpc_fd *initial_fd) {
     pi->fds = NULL;
   }
 
-  gpr_atm_rel_store(&pi->ref_count, 0);
-  gpr_atm_rel_store(&pi->merged_to, NULL);
+  gpr_atm_rel_store(&pi->ref_count, (gpr_atm) 0);
+  gpr_atm_rel_store(&pi->merged_to, (gpr_atm) NULL);
 
   pi->epoll_fd = epoll_create1(EPOLL_CLOEXEC);
 
@@ -472,7 +473,7 @@ static polling_island *polling_island_create(grpc_fd *initial_fd) {
 static void polling_island_delete(polling_island *pi) {
   GPR_ASSERT(pi->fd_cnt == 0);
 
-  gpr_atm_rel_store(&pi->merged_to, NULL);
+  gpr_atm_rel_store(&pi->merged_to, (gpr_atm) NULL);
 
   close(pi->epoll_fd);
   pi->epoll_fd = -1;
@@ -648,7 +649,7 @@ static polling_island *polling_island_merge(polling_island *p,
   polling_island_add_wakeup_fd_locked(p, &polling_island_wakeup_fd);
 
   /* Add the 'merged_to' link from p --> q */
-  gpr_atm_rel_store(&p->merged_to, q);
+  gpr_atm_rel_store(&p->merged_to, (gpr_atm) q);
   PI_ADD_REF(q, "pi_merge"); /* To account for the new incoming ref from p */
 
   gpr_mu_unlock(&p->mu);
@@ -810,7 +811,7 @@ static grpc_fd *fd_create(int fd, const char *name) {
      holding a lock to it anyway. */
   gpr_mu_lock(&new_fd->mu);
 
-  gpr_atm_rel_store(&new_fd->refst, 1);
+  gpr_atm_rel_store(&new_fd->refst, (gpr_atm) 1);
   new_fd->fd = fd;
   new_fd->shutdown = false;
   new_fd->orphaned = false;
