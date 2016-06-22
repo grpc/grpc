@@ -942,6 +942,13 @@ static grpc_pollset *fd_get_read_notifier_pollset(grpc_exec_ctx *exec_ctx,
   return notifier;
 }
 
+static bool fd_is_shutdown(grpc_fd *fd) {
+  gpr_mu_lock(&fd->mu);
+  const bool r = fd->shutdown;
+  gpr_mu_unlock(&fd->mu);
+  return r;
+}
+
 /* Might be called multiple times */
 static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
   gpr_mu_lock(&fd->mu);
@@ -1659,6 +1666,7 @@ static const grpc_event_engine_vtable vtable = {
     .fd_wrapped_fd = fd_wrapped_fd,
     .fd_orphan = fd_orphan,
     .fd_shutdown = fd_shutdown,
+    .fd_is_shutdown = fd_is_shutdown,
     .fd_notify_on_read = fd_notify_on_read,
     .fd_notify_on_write = fd_notify_on_write,
     .fd_get_read_notifier_pollset = fd_get_read_notifier_pollset,
