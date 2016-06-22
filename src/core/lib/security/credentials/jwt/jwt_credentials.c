@@ -149,10 +149,10 @@ grpc_call_credentials *grpc_service_account_jwt_access_credentials_create(
       "grpc_service_account_jwt_access_credentials_create("
       "json_key=%s, "
       "token_lifetime="
-      "gpr_timespec { tv_sec: %lld, tv_nsec: %d, clock_type: %d }, "
+      "gpr_timespec { tv_sec: %"PRId64", tv_nsec: %d, clock_type: %d }, "
       "reserved=%p)",
       5,
-      (json_key, (long long)token_lifetime.tv_sec, (int)token_lifetime.tv_nsec,
+      (json_key, token_lifetime.tv_sec, token_lifetime.tv_nsec,
        (int)token_lifetime.clock_type, reserved));
   GPR_ASSERT(reserved == NULL);
   return grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
