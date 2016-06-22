@@ -126,6 +126,7 @@ END2END_TESTS = {
     'simple_delayed_request': connectivity_test_options,
     'simple_metadata': default_test_options,
     'simple_request': default_test_options,
+    'streaming_error_response': default_test_options,
     'trailing_metadata': default_test_options,
 }
 
