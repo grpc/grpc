@@ -82,10 +82,11 @@ GRPC_status GRPC_unary_blocking_call(GRPC_channel *channel, const GRPC_method *c
   GPR_ASSERT(context->status.code == GRPC_STATUS_OK);
 
   grpc_completion_queue_shutdown(cq);
-  while (
-    grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL)
-      .type != GRPC_QUEUE_SHUTDOWN)
-    ;
+  for (;;) {
+    void *tag;
+    bool ok;
+    if (GRPC_completion_queue_next(cq, &tag, &ok) == GRPC_COMPLETION_QUEUE_SHUTDOWN) break;
+  }
   grpc_completion_queue_destroy(cq);
   grpc_call_destroy(call);
 }
