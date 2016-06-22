@@ -99,6 +99,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Grpc.Core.Tests.project.json" />
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -56,5 +56,8 @@
       <Project>{C61154BA-DD4A-4838-8420-0162A28925E0}</Project>
       <Name>Grpc.IntegrationTesting</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Grpc.IntegrationTesting.StressClient.project.json" />
   </ItemGroup>
 </Project>

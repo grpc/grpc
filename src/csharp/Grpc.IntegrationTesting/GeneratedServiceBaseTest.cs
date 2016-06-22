@@ -40,7 +40,6 @@ using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Utils;
 using Grpc.Testing;
-using Moq;
 using NUnit.Framework;
 
 namespace Grpc.IntegrationTesting
