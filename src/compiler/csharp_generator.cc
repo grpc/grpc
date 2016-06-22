@@ -459,12 +459,12 @@ void GenerateBindServiceMethod(Printer* out, const ServiceDescriptor *service) {
   out->Print(
       "/// <summary>Creates service definition that can be registered with a server</summary>\n");
   out->Print(
-      "public static ServerServiceDefinition BindService($implclass$ serviceImpl)\n",
+      "public static ServerServiceDefinition BindService($implclass$ serviceImpl, string prefix = null)\n",
       "implclass", GetServerClassName(service));
   out->Print("{\n");
   out->Indent();
 
-  out->Print("return ServerServiceDefinition.CreateBuilder()\n");
+  out->Print("return ServerServiceDefinition.CreateBuilder(prefix)\n");
   out->Indent();
   out->Indent();
   for (int i = 0; i < service->method_count(); i++) {
@@ -494,6 +494,16 @@ void GenerateNewStubMethods(Printer* out, const ServiceDescriptor *service) {
   out->Indent();
   out->Print("return new $classname$(channel);\n", "classname",
              GetClientClassName(service));
+  out->Outdent();
+  out->Print("}\n");
+  out->Print("\n");
+
+  out->Print("public static $classname$ NewClient(CallInvoker callInvoker)\n",
+	  "classname", GetClientClassName(service));
+  out->Print("{\n");
+  out->Indent();
+  out->Print("return new $classname$(callInvoker);\n", "classname",
+	  GetClientClassName(service));
   out->Outdent();
   out->Print("}\n");
   out->Print("\n");

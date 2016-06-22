@@ -45,11 +45,21 @@ namespace Grpc.Core
     /// </summary>
     public class ServerServiceDefinition
     {
+        readonly string prefixName;
         readonly ReadOnlyDictionary<string, IServerCallHandler> callHandlers;
 
-        private ServerServiceDefinition(Dictionary<string, IServerCallHandler> callHandlers)
+        private ServerServiceDefinition(string prefixName, Dictionary<string, IServerCallHandler> callHandlers)
         {
+            this.prefixName = prefixName;
             this.callHandlers = new ReadOnlyDictionary<string, IServerCallHandler>(callHandlers);
+        }
+
+        /// <summary>
+        /// The prefix name to be used before the methods full name.
+        /// </summary>
+        public string PrefixName
+        {
+            get { return this.prefixName; }
         }
 
         internal IDictionary<string, IServerCallHandler> CallHandlers
@@ -64,9 +74,10 @@ namespace Grpc.Core
         /// Creates a new builder object for <c>ServerServiceDefinition</c>.
         /// </summary>
         /// <returns>The builder object.</returns>
-        public static Builder CreateBuilder()
+        /// <param name="prefixName">The prefix name.</param>
+        public static Builder CreateBuilder(string prefixName = null)
         {
-            return new Builder();
+            return new Builder(prefixName);
         }
 
         /// <summary>
@@ -74,13 +85,19 @@ namespace Grpc.Core
         /// </summary>
         public class Builder
         {
+            private string prefixName;
+            private string prefix;
+
             readonly Dictionary<string, IServerCallHandler> callHandlers = new Dictionary<string, IServerCallHandler>();
 
             /// <summary>
             /// Creates a new instance of builder.
             /// </summary>
-            public Builder()
+            /// <param name="prefixName">The prefix name.</param>
+            public Builder(string prefixName)
             {
+                this.prefixName = prefixName;
+                this.prefix = prefixName != null ? "/" + prefixName : string.Empty;
             }
 
             /// <summary>
@@ -97,7 +114,7 @@ namespace Grpc.Core
                     where TRequest : class
                     where TResponse : class
             {
-                callHandlers.Add(method.FullName, ServerCalls.UnaryCall(method, handler));
+                callHandlers.Add(prefix + method.FullName, ServerCalls.UnaryCall(method, handler));
                 return this;
             }
 
@@ -115,7 +132,7 @@ namespace Grpc.Core
                     where TRequest : class
                     where TResponse : class
             {
-                callHandlers.Add(method.FullName, ServerCalls.ClientStreamingCall(method, handler));
+                callHandlers.Add(prefix + method.FullName, ServerCalls.ClientStreamingCall(method, handler));
                 return this;
             }
 
@@ -133,7 +150,7 @@ namespace Grpc.Core
                     where TRequest : class
                     where TResponse : class
             {
-                callHandlers.Add(method.FullName, ServerCalls.ServerStreamingCall(method, handler));
+                callHandlers.Add(prefix + method.FullName, ServerCalls.ServerStreamingCall(method, handler));
                 return this;
             }
 
@@ -151,7 +168,7 @@ namespace Grpc.Core
                     where TRequest : class
                     where TResponse : class
             {
-                callHandlers.Add(method.FullName, ServerCalls.DuplexStreamingCall(method, handler));
+                callHandlers.Add(prefix + method.FullName, ServerCalls.DuplexStreamingCall(method, handler));
                 return this;
             }
 
@@ -161,7 +178,7 @@ namespace Grpc.Core
             /// <returns>The <c>ServerServiceDefinition</c> object.</returns>
             public ServerServiceDefinition Build()
             {
-                return new ServerServiceDefinition(callHandlers);
+                return new ServerServiceDefinition(prefixName, callHandlers);
             }
         }
     }
