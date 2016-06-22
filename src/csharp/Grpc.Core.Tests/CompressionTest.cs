@@ -125,7 +125,7 @@ namespace Grpc.Core.Tests
         {
             var compressionMetadata = new Metadata
             {
-                { new Metadata.Entry("grpc-internal-encoding-request", "gzip") }
+                { new Metadata.Entry(Metadata.CompressionRequestAlgorithmMetadataKey, "gzip") }
             };
 
             helper.UnaryHandler = new UnaryServerMethod<string, string>(async (req, context) =>

@@ -724,7 +724,7 @@ namespace Grpc.IntegrationTesting
             var algorithmName = compressed ? "gzip" : "identity";
             return new Metadata
             {
-                { new Metadata.Entry("grpc-internal-encoding-request", algorithmName) }
+                { new Metadata.Entry(Metadata.CompressionRequestAlgorithmMetadataKey, algorithmName) }
             };
         }
 
