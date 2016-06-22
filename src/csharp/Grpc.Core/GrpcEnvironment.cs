@@ -105,7 +105,7 @@ namespace Grpc.Core
 
             if (instanceToShutdown != null)
             {
-                await instanceToShutdown.ShutdownAsync();
+                await instanceToShutdown.ShutdownAsync().ConfigureAwait(false);
             }
         }
 
