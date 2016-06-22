@@ -239,4 +239,6 @@ int main(int argc, char **argv) {
   grpc_iomgr_shutdown();
   return 0;
 }
-#endif /* defined(GPR_LINUX_EPOLL) */
+#else /* defined(GPR_LINUX_EPOLL) */
+int main(int argc, char **argv) { return 0; }
+#endif /* !defined(GPR_LINUX_EPOLL) */
