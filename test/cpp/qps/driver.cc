@@ -31,6 +31,7 @@
  *
  */
 
+#include <inttypes.h>
 #include <deque>
 #include <list>
 #include <thread>
@@ -345,9 +346,11 @@ std::unique_ptr<ScenarioResult> RunScenario(
     // Reduce channel count so that total channels specified is held regardless
     // of the number of clients available
     size_t num_channels =
-        (client_channels - channels_allocated) / (num_clients - i);
+        (client_config.client_channels() - channels_allocated) /
+        (num_clients - i);
     channels_allocated += num_channels;
-    gpr_log(GPR_DEBUG, "Client %d gets %d channels", i, num_channels);
+    gpr_log(GPR_DEBUG, "Client %" PRIdPTR " gets %" PRIdPTR " channels", i,
+            num_channels);
     per_client_config.set_client_channels(num_channels);
 
     ClientArgs args;
