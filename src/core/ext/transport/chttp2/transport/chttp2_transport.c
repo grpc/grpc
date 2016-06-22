@@ -264,6 +264,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   t->parsing.is_client = is_client;
   t->parsing.deframe_state =
       is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0;
+  t->parsing.is_first_frame = true;
   t->writing.is_client = is_client;
   t->optional_drop_message = gpr_empty_slice();
   grpc_connectivity_state_init(
@@ -643,8 +644,7 @@ static void finish_global_actions(grpc_exec_ctx *exec_ctx,
 
   for (;;) {
     if (!t->executor.writing_active && !t->closed &&
-        grpc_chttp2_unlocking_check_writes(exec_ctx, &t->global, &t->writing,
-                                           t->executor.parsing_active)) {
+        grpc_chttp2_unlocking_check_writes(exec_ctx, &t->global, &t->writing)) {
       t->executor.writing_active = 1;
       REF_TRANSPORT(t, "writing");
       prevent_endpoint_shutdown(t);
@@ -1093,6 +1093,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
     stream_global->recv_trailing_metadata_finished =
         add_closure_barrier(on_complete);
     stream_global->recv_trailing_metadata = op->recv_trailing_metadata;
+    stream_global->final_metadata_requested = true;
     grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
   }
 
@@ -1246,7 +1247,8 @@ static void check_read_ops(grpc_exec_ctx *exec_ctx,
       stream_global->recv_initial_metadata_ready = NULL;
     }
     if (stream_global->recv_message_ready != NULL) {
-      while (stream_global->seen_error &&
+      while (stream_global->final_metadata_requested &&
+             stream_global->seen_error &&
              (bs = grpc_chttp2_incoming_frame_queue_pop(
                   &stream_global->incoming_frames)) != NULL) {
         incoming_byte_stream_destroy_locked(exec_ctx, NULL, NULL, bs);
@@ -1805,7 +1807,7 @@ static void post_reading_action_locked(grpc_exec_ctx *exec_ctx,
     UNREF_TRANSPORT(exec_ctx, t, "reading_action");
   }
 
-  GRPC_ERROR_UNREF(error);
+  GRPC_LOG_IF_ERROR("close_transport", error);
 }
 
 /*******************************************************************************
