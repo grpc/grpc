@@ -35,6 +35,7 @@
 #define GRPCXX_IMPL_CODEGEN_METHOD_HANDLER_IMPL_H
 
 #include <grpc++/impl/codegen/core_codegen_interface.h>
+#include <grpc++/impl/codegen/fc_unary.h>
 #include <grpc++/impl/codegen/rpc_service_method.h>
 #include <grpc++/impl/codegen/sync_stream.h>
 
@@ -187,6 +188,40 @@ class BidiStreamingHandler : public MethodHandler {
   std::function<Status(ServiceType*, ServerContext*,
                        ServerReaderWriter<ResponseType, RequestType>*)>
       func_;
+  ServiceType* service_;
+};
+
+// A wrapper class of an application provided rpc method handler
+// specifically to apply to the flow-controlled implementation of a unary
+// method
+template <class ServiceType, class RequestType, class ResponseType>
+class FCUnaryMethodHandler : public MethodHandler {
+ public:
+  FCUnaryMethodHandler(std::function<Status(ServiceType*, ServerContext*,
+					    FCUnary<RequestType,ResponseType>*)>
+                       func, ServiceType* service)
+    : func_(func), service_(service) {}
+
+  void RunHandler(const HandlerParameter& param) GRPC_FINAL {
+    FCUnary<RequestType, ResponseType> fc_unary(param.call,
+						param.server_context,
+						param.max_message_size);
+    Status status = func_(service_, param.server_context, &fc_unary);
+    if (!param.server_context->sent_initial_metadata_) {
+      // means that the write never happened, which is bad
+    } else {
+      CallOpSet<CallOpServerSendStatus> ops;
+      ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
+      param.call->PerformOps(&ops);
+      param.call->cq()->Pluck(&ops);
+    }
+  }
+ private:
+  // Application provided rpc handler function.
+  std::function<Status(ServiceType*, ServerContext*,
+                       FCUnary<RequestType, ResponseType>*)>
+    func_;
+  // The class the above handler function lives in.
   ServiceType* service_;
 };
 

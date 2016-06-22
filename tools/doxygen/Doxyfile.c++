@@ -800,6 +800,7 @@ include/grpc++/support/async_unary_call.h \
 include/grpc++/support/byte_buffer.h \
 include/grpc++/support/channel_arguments.h \
 include/grpc++/support/config.h \
+include/grpc++/support/fc_unary.h \
 include/grpc++/support/slice.h \
 include/grpc++/support/status.h \
 include/grpc++/support/status_code_enum.h \
@@ -819,6 +820,7 @@ include/grpc++/impl/codegen/completion_queue_tag.h \
 include/grpc++/impl/codegen/config.h \
 include/grpc++/impl/codegen/core_codegen_interface.h \
 include/grpc++/impl/codegen/create_auth_context.h \
+include/grpc++/impl/codegen/fc_unary.h \
 include/grpc++/impl/codegen/grpc_library.h \
 include/grpc++/impl/codegen/method_handler_impl.h \
 include/grpc++/impl/codegen/rpc_method.h \

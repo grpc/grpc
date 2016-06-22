@@ -69,6 +69,9 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\create_auth_context.h">
       <Filter>include\grpc++\impl\codegen</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\fc_unary.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\grpc_library.h">
       <Filter>include\grpc++\impl\codegen</Filter>
     </ClInclude>

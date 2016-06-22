@@ -606,6 +606,50 @@ void PrintHeaderServerMethodAsync(
   printer->Print(*vars, "};\n");
 }
 
+void PrintHeaderServerMethodFCUnary(
+    Printer *printer,
+    const Method *method,
+    std::map<grpc::string, grpc::string> *vars) {
+  (*vars)["Method"] = method->name();
+  (*vars)["Request"] = method->input_type_name();
+  (*vars)["Response"] = method->output_type_name();
+  if (method->NoStreaming()) {
+    printer->Print(*vars, "template <class BaseClass>\n");
+    printer->Print(*vars,
+		   "class WithFCUnaryMethod_$Method$ : public BaseClass {\n");
+    printer->Print(
+      " private:\n"
+      "  void BaseClassMustBeDerivedFromService(const Service *service) {}\n");
+    printer->Print(" public:\n");
+    printer->Indent();
+    printer->Print(*vars,
+		   "WithFCUnaryMethod_$Method$() {\n"
+		   "}\n");
+    printer->Print(*vars,
+		   "~WithFCUnaryMethod_$Method$() GRPC_OVERRIDE {\n"
+		   "  BaseClassMustBeDerivedFromService(this);\n"
+		   "}\n");
+    printer->Print(
+        *vars,
+        "// disable regular version of this method\n"
+        "::grpc::Status $Method$("
+        "::grpc::ServerContext* context, const $Request$* request, "
+        "$Response$* response) GRPC_FINAL GRPC_OVERRIDE {\n"
+        "  abort();\n"
+        "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
+        "}\n");
+    printer->Print(
+        *vars,
+        "// replace default version of this method with FCUnary\n"
+        "::grpc::Status $Method$("
+        "::grpc::ServerContext* context, ::grpc::FCUnary<$Request$,$Response$>* streaming_unary)"
+        " GRPC_FINAL GRPC_OVERRIDE;\n");
+    printer->Print("}\n");
+    printer->Outdent();
+    printer->Print(*vars, "};\n");
+  }
+}
+
 void PrintHeaderServerMethodGeneric(
     Printer *printer,
     const Method *method,

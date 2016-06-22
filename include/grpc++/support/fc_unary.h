@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,44 +31,9 @@
  *
  */
 
-#ifndef GRPCXX_IMPL_CODEGEN_RPC_METHOD_H
-#define GRPCXX_IMPL_CODEGEN_RPC_METHOD_H
+#ifndef GRPCXX_SUPPORT_FC_UNARY_H
+#define GRPCXX_SUPPORT_FC_UNARY_H
 
-#include <memory>
+#include <grpc++/impl/codegen/fc_unary.h>
 
-#include <grpc++/impl/codegen/channel_interface.h>
-
-namespace grpc {
-
-class RpcMethod {
- public:
-  enum RpcType {
-    NORMAL_RPC = 0,
-    CLIENT_STREAMING,  // request streaming
-    SERVER_STREAMING,  // response streaming
-    BIDI_STREAMING,
-    FC_UNARY // flow-controlled unary call
-  };
-
-  RpcMethod(const char* name, RpcType type)
-      : name_(name), method_type_(type), channel_tag_(NULL) {}
-
-  RpcMethod(const char* name, RpcType type,
-            const std::shared_ptr<ChannelInterface>& channel)
-      : name_(name),
-        method_type_(type),
-        channel_tag_(channel->RegisterMethod(name)) {}
-
-  const char* name() const { return name_; }
-  RpcType method_type() const { return method_type_; }
-  void* channel_tag() const { return channel_tag_; }
-
- private:
-  const char* const name_;
-  const RpcType method_type_;
-  void* const channel_tag_;
-};
-
-}  // namespace grpc
-
-#endif  // GRPCXX_IMPL_CODEGEN_RPC_METHOD_H
+#endif  // GRPCXX_SUPPORT_FC_UNARY_H

@@ -298,6 +298,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\byte_buffer.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\channel_arguments.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\config.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\fc_unary.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\slice.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\status.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\status_code_enum.h" />
@@ -317,6 +318,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\core_codegen_interface.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\create_auth_context.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\fc_unary.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\grpc_library.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\method_handler_impl.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\rpc_method.h" />

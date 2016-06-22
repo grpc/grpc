@@ -341,6 +341,7 @@ static grpc_server_register_method_payload_handling PayloadHandlingForMethod(
       return GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER;
     case RpcMethod::CLIENT_STREAMING:
     case RpcMethod::BIDI_STREAMING:
+    case RpcMethod::FC_UNARY:
       return GRPC_SRM_PAYLOAD_NONE;
   }
   GPR_UNREACHABLE_CODE(return GRPC_SRM_PAYLOAD_NONE;);
