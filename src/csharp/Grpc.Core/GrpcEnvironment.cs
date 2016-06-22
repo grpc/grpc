@@ -352,8 +352,12 @@ namespace Grpc.Core
                 {
                     if (!hooksRegistered)
                     {
+                        // TODO(jtattermusch): register shutdownhooks for CoreCLR as well
+#if !NETSTANDARD1_5
+
                         AppDomain.CurrentDomain.ProcessExit += ShutdownHookHandler;
                         AppDomain.CurrentDomain.DomainUnload += ShutdownHookHandler;
+#endif
                     }
                     hooksRegistered = true;
                 }

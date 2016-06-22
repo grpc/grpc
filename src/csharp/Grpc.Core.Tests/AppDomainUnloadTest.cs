@@ -32,13 +32,7 @@
 #endregion
 
 using System;
-using System.Diagnostics;
-using System.Linq;
-using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
-using Grpc.Core;
-using Grpc.Core.Internal;
 using Grpc.Core.Utils;
 using NUnit.Framework;
 
@@ -46,6 +40,13 @@ namespace Grpc.Core.Tests
 {
     public class AppDomainUnloadTest
     {
+#if NETSTANDARD1_5
+        [Test]
+        [Ignore("Not supported for CoreCLR")]
+        public void AppDomainUnloadHookCanCleanupAbandonedCall()
+        {
+        }
+#else
         [Test]
         public void AppDomainUnloadHookCanCleanupAbandonedCall()
         {
@@ -86,5 +87,6 @@ namespace Grpc.Core.Tests
                 readyToShutdown.Task.Wait();  // make sure handler is running
             }
         }
+#endif
     }
 }
