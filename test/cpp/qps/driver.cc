@@ -347,6 +347,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     size_t num_channels =
         (client_channels - channels_allocated) / (num_clients - i);
     channels_allocated += num_channels;
+    gpr_log(GPR_DEBUG, "Client %d gets %d channels", i, num_channels);
     per_client_config.set_client_channels(num_channels);
 
     ClientArgs args;
