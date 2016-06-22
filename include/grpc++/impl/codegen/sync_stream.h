@@ -71,8 +71,9 @@ class ReaderInterface {
   virtual ~ReaderInterface() {}
 
   /// Blocking read a message and parse to \a msg. Returns \a true on success.
-  /// This is thread-safe with respect to other streaming APIs except for \a
-  /// Finish on the same stream. (\a Finish must be called as described above.)
+  /// This is thread-safe with respect to \a Write or \WritesDone methods on
+  /// the same stream. It should not be called concurrently with another \a
+  /// Read on the same stream as the order of delivery will not be defined.
   ///
   /// \param[out] msg The read message.
   ///

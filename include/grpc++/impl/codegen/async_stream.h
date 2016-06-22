@@ -74,8 +74,11 @@ class AsyncReaderInterface {
 
   /// Read a message of type \a R into \a msg. Completion will be notified by \a
   /// tag on the associated completion queue.
-  /// This is thread-safe with respect to other streaming APIs except for \a
-  /// Finish on the same stream.
+  /// This is thread-safe with respect to \a Write or \a WritesDone methods. It
+  /// should not be called concurrently with other streaming APIs
+  /// on the same stream. It is not meaningful to call it concurrently
+  /// with another \a Read on the same stream since reads on the same stream
+  /// are delivered in order.
   ///
   /// \param[out] msg Where to eventually store the read message.
   /// \param[in] tag The tag identifying the operation.
