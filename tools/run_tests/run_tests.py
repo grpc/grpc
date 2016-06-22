@@ -603,8 +603,8 @@ class ObjCLanguage(object):
   def test_specs(self):
     return [self.config.job_spec(['src/objective-c/tests/run_tests.sh'], None,
                                   environ=_FORCE_ENVIRON_FOR_WRAPPERS),
-            self.config.job_spec(['src/objective-c/tests/build_example_test.sh'], None,
-                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
+            self.config.job_spec(['src/objective-c/tests/build_example_test.sh'],
+                                 None, environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
     return []
