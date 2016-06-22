@@ -32,23 +32,15 @@
  */
 
 
-#ifndef TEST_GRPC_C_COMPLETION_QUEUE_PUBLIC_H
-#define TEST_GRPC_C_COMPLETION_QUEUE_PUBLIC_H
+#ifndef TEST_GRPC_C_CLIENT_ASYNC_READER_PUBLIC_H
+#define TEST_GRPC_C_CLIENT_ASYNC_READER_PUBLIC_H
 
-#include <stdbool.h>
+#include "impl/completion_queue.h"
+#include "grpc_c_public.h"
 
-typedef grpc_completion_queue GRPC_completion_queue;
+typedef struct grpc_client_async_response_reader GRPC_client_async_response_reader;
 
-/// Tri-state return for GRPC_completion_queue_next
-typedef enum GRPC_completion_queue_next_status {
-  GRPC_COMPLETION_QUEUE_SHUTDOWN,   ///< The completion queue has been shutdown.
-  GRPC_COMPLETION_QUEUE_GOT_EVENT,  ///< Got a new event; \a tag will be filled in with its
-                                    ///< associated value; \a ok indicating its success.
-  GRPC_COMPLETION_QUEUE_TIMEOUT     ///< deadline was reached.
-} GRPC_completion_queue_next_status;
+GRPC_client_async_response_reader *GRPC_unary_async_call(GRPC_channel *channel, GRPC_completion_queue *cq, const GRPC_method *const rpc_method,
+                                     GRPC_context *const context, const GRPC_message message, GRPC_message *response, void *tag);
 
-GRPC_completion_queue *GRPC_completion_queue_create();
-GRPC_completion_queue_next_status GRPC_completion_queue_next(GRPC_completion_queue *cq, void **tag, bool *ok);
-GRPC_completion_queue_next_status GRPC_completion_queue_next_deadline(GRPC_completion_queue *cq, gpr_timespec deadline, void **tag, bool *ok);
-
-#endif //TEST_GRPC_C_COMPLETION_QUEUE_PUBLIC_H
+#endif //TEST_GRPC_C_CLIENT_ASYNC_READER_PUBLIC_H
