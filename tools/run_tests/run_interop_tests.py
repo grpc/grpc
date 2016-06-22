@@ -54,10 +54,13 @@ os.chdir(ROOT)
 
 _DEFAULT_SERVER_PORT=8080
 
-_SKIP_COMPRESSION = ['client_compressed_unary',
-                     'client_compressed_streaming',
-                     'server_compressed_unary',
-                     'server_compressed_streaming']
+_SKIP_CLIENT_COMPRESSION = ['client_compressed_unary',
+                            'client_compressed_streaming']
+
+_SKIP_SERVER_COMPRESSION = ['server_compressed_unary',
+                            'server_compressed_streaming']
+
+_SKIP_COMPRESSION = _SKIP_CLIENT_COMPRESSION + _SKIP_SERVER_COMPRESSION
 
 _SKIP_ADVANCED = ['custom_metadata', 'status_code_and_message',
                   'unimplemented_method']
@@ -113,7 +116,7 @@ class CSharpLanguage:
     return {}
 
   def unimplemented_test_cases(self):
-    return _SKIP_COMPRESSION
+    return _SKIP_SERVER_COMPRESSION
 
   def unimplemented_test_cases_server(self):
     return _SKIP_COMPRESSION
