@@ -31,9 +31,9 @@
  *
  */
 
-#include "src/core/lib/iomgr/endpoint.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include "src/core/lib/iomgr/endpoint.h"
 
 typedef struct endpoint_ll_node {
   grpc_endpoint *ep;
@@ -51,7 +51,7 @@ void grpc_initialize_network_status_monitor() {
 }
 
 void grpc_destroy_network_status_monitor() {
-  for (endpoint_ll_node *curr = head; curr != NULL; ) {
+  for (endpoint_ll_node *curr = head; curr != NULL;) {
     endpoint_ll_node *next = curr->next;
     gpr_free(curr);
     curr = next;
@@ -86,9 +86,9 @@ void grpc_network_status_unregister_endpoint(grpc_endpoint *ep) {
   endpoint_ll_node *prev = head;
   // if we're unregistering the head, just move head to the next
   if (ep == head->ep) {
-      head = head->next;
-      gpr_free(prev);
-      found = true;
+    head = head->next;
+    gpr_free(prev);
+    found = true;
   } else {
     for (endpoint_ll_node *curr = head->next; curr != NULL; curr = curr->next) {
       if (ep == curr->ep) {
