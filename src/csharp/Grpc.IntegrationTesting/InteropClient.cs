@@ -222,6 +222,12 @@ namespace Grpc.IntegrationTesting
                 case "unimplemented_method":
                     RunUnimplementedMethod(new UnimplementedService.UnimplementedServiceClient(channel));
                     break;
+                case "client_compressed_unary":
+                    RunClientCompressedUnary(client);
+                    break;
+                case "client_compressed_streaming":
+                    await RunClientCompressedStreamingAsync(client);
+                    break;
                 default:
                     throw new ArgumentException("Unknown test case " + options.TestCase);
             }
@@ -615,9 +621,111 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
+        public static void RunClientCompressedUnary(TestService.TestServiceClient client)
+        {
+            Console.WriteLine("running client_compressed_unary");
+            var probeRequest = new SimpleRequest
+            {
+                ExpectCompressed = new BoolValue
+                {
+                    Value = true  // lie about compression
+                },
+                ResponseSize = 314159,
+                Payload = CreateZerosPayload(271828)
+            };
+            var e = Assert.Throws<RpcException>(() => client.UnaryCall(probeRequest, CreateClientCompressionMetadata(false)));
+            Assert.AreEqual(StatusCode.InvalidArgument, e.Status.StatusCode);
+
+            var compressedRequest = new SimpleRequest
+            {
+                ExpectCompressed = new BoolValue
+                {
+                    Value = true
+                },
+                ResponseSize = 314159,
+                Payload = CreateZerosPayload(271828)
+            };
+            var response1 = client.UnaryCall(compressedRequest, CreateClientCompressionMetadata(true));
+            Assert.AreEqual(314159, response1.Payload.Body.Length);
+
+            var uncompressedRequest = new SimpleRequest
+            {
+                ExpectCompressed = new BoolValue
+                {
+                    Value = false
+                },
+                ResponseSize = 314159,
+                Payload = CreateZerosPayload(271828)
+            };
+            var response2 = client.UnaryCall(uncompressedRequest, CreateClientCompressionMetadata(false));
+            Assert.AreEqual(314159, response2.Payload.Body.Length);
+
+            Console.WriteLine("Passed!");
+        }
+
+        public static async Task RunClientCompressedStreamingAsync(TestService.TestServiceClient client)
+        {
+            Console.WriteLine("running client_compressed_streaming");
+            try
+            {
+                var probeCall = client.StreamingInputCall(CreateClientCompressionMetadata(false));
+                await probeCall.RequestStream.WriteAsync(new StreamingInputCallRequest
+                {
+                    ExpectCompressed = new BoolValue
+                    {
+                        Value = true
+                    },
+                    Payload = CreateZerosPayload(27182)
+                });
+
+                // cannot use Assert.ThrowsAsync because it uses Task.Wait and would deadlock.
+                await probeCall;
+                Assert.Fail();
+            }
+            catch (RpcException e)
+            {
+                Assert.AreEqual(StatusCode.InvalidArgument, e.Status.StatusCode);
+            }
+
+            var call = client.StreamingInputCall(CreateClientCompressionMetadata(true));
+            await call.RequestStream.WriteAsync(new StreamingInputCallRequest
+            {
+                ExpectCompressed = new BoolValue
+                {
+                    Value = true
+                },
+                Payload = CreateZerosPayload(27182)
+            });
+
+            call.RequestStream.WriteOptions = new WriteOptions(WriteFlags.NoCompress);
+            await call.RequestStream.WriteAsync(new StreamingInputCallRequest
+            {
+                ExpectCompressed = new BoolValue
+                {
+                    Value = false
+                },
+                Payload = CreateZerosPayload(45904)
+            });
+            await call.RequestStream.CompleteAsync();
+
+            var response = await call.ResponseAsync;
+            Assert.AreEqual(73086, response.AggregatedPayloadSize);
+
+            Console.WriteLine("Passed!");
+        }
+
         private static Payload CreateZerosPayload(int size)
         {
             return new Payload { Body = ByteString.CopyFrom(new byte[size]) };
+        }
+
+        private static Metadata CreateClientCompressionMetadata(bool compressed)
+        {
+            var algorithmName = compressed ? "gzip" : "identity";
+            return new Metadata
+            {
+                { new Metadata.Entry("grpc-internal-encoding-request", algorithmName) }
+            };
         }
 
         // extracts the client_email field from service account file used for auth test cases
