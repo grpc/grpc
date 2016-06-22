@@ -194,8 +194,6 @@ class TestServiceImpl : public TestService::Service {
       ServerContext* context, const StreamingOutputCallRequest* request,
       ServerWriter<StreamingOutputCallResponse>* writer) {
     StreamingOutputCallResponse response;
-    // Compress by default. Disabled on a per-message basis.
-    context->set_compression_level(GRPC_COMPRESS_LEVEL_HIGH);
     bool write_success = true;
     for (int i = 0; write_success && i < request->response_parameters_size();
          i++) {
@@ -206,6 +204,8 @@ class TestServiceImpl : public TestService::Service {
       }
       WriteOptions wopts;
       if (request->response_parameters(i).has_compressed()) {
+        // Compress by default. Disabled on a per-message basis.
+        context->set_compression_level(GRPC_COMPRESS_LEVEL_HIGH);
         const bool compression_requested =
             request->response_parameters(i).compressed().value();
         gpr_log(GPR_DEBUG, "Request for compression (%s) present for %s",
