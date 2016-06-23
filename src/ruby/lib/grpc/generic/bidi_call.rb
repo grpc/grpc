@@ -173,6 +173,14 @@ module GRPC
         finished
       end
       GRPC.logger.debug('bidi-write-loop: finished')
+    rescue GRPC::Core::CallError => e
+      # This is almost definitely caused by a status arriving while still
+      # writing. Don't re-throw the error
+      GRPC.logger.warn('bidi-write-loop: ended with error')
+      GRPC.logger.warn(e)
+      notify_done
+      @writes_complete = true
+      finished
     rescue StandardError => e
       GRPC.logger.warn('bidi-write-loop: failed')
       GRPC.logger.warn(e)
