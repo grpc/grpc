@@ -119,7 +119,7 @@ char *grpc_transport_stream_op_string(grpc_transport_stream_op *op) {
     gpr_strvec_add(&b, gpr_strdup("RECV_TRAILING_METADATA"));
   }
 
-  if (op->cancel_error != GRPC_STATUS_OK) {
+  if (op->cancel_error != GRPC_ERROR_NONE) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
     first = 0;
     const char *msg = grpc_error_string(op->cancel_error);
@@ -128,7 +128,7 @@ char *grpc_transport_stream_op_string(grpc_transport_stream_op *op) {
     gpr_strvec_add(&b, tmp);
   }
 
-  if (op->close_error != GRPC_STATUS_OK) {
+  if (op->close_error != GRPC_ERROR_NONE) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
     first = 0;
     const char *msg = grpc_error_string(op->close_error);
