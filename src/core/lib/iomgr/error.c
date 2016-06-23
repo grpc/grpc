@@ -37,6 +37,7 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/avl.h>
 #include <grpc/support/log.h>
@@ -115,6 +116,8 @@ static const char *error_int_name(grpc_error_ints key) {
       return "wsa_error";
     case GRPC_ERROR_INT_HTTP_STATUS:
       return "http_status";
+    case GRPC_ERROR_INT_LIMIT:
+      return "limit";
   }
   GPR_UNREACHABLE_CODE(return "unknown");
 }
@@ -271,6 +274,12 @@ grpc_error *grpc_error_set_int(grpc_error *src, grpc_error_ints which,
 
 bool grpc_error_get_int(grpc_error *err, grpc_error_ints which, intptr_t *p) {
   void *pp;
+  if (is_special(err)) {
+    if (err == GRPC_ERROR_CANCELLED && which == GRPC_ERROR_INT_GRPC_STATUS) {
+      return GRPC_STATUS_CANCELLED;
+    }
+    return false;
+  }
   if (gpr_avl_maybe_get(err->ints, (void *)(uintptr_t)which, &pp)) {
     if (p != NULL) *p = (intptr_t)pp;
     return true;
@@ -284,6 +293,11 @@ grpc_error *grpc_error_set_str(grpc_error *src, grpc_error_strs which,
   new->strs =
       gpr_avl_add(new->strs, (void *)(uintptr_t)which, gpr_strdup(value));
   return new;
+}
+
+const char *grpc_error_get_str(grpc_error *err, grpc_error_strs which) {
+  if (is_special(err)) return NULL;
+  return gpr_avl_get(err->strs, (void *)(uintptr_t)which);
 }
 
 grpc_error *grpc_error_add_child(grpc_error *src, grpc_error *child) {

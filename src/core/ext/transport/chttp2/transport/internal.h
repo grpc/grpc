@@ -384,9 +384,6 @@ struct grpc_chttp2_transport {
 
   /** Transport op to be applied post-parsing */
   grpc_transport_op *post_parsing_op;
-
-  /** Message explaining the reason of dropping connection */
-  gpr_slice optional_drop_message;
 };
 
 typedef struct {
