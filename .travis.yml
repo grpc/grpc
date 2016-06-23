@@ -14,22 +14,31 @@ before_install:
   - pushd third_party/protobuf
   - git checkout v3.0.0-beta-3
   - popd
-install:
-  - make grpc_objective_c_plugin
-  - pushd src/objective-c/tests
-  - pod install
-  - popd
-before_script:
-  - make interop_server
-  - bins/$CONFIG/interop_server --port=5050 &
-  - bins/$CONFIG/interop_server --port=5051 --use_tls &
-xcode_workspace: src/objective-c/tests/Tests.xcworkspace
-xcode_scheme:
-  - RxLibraryUnitTests
-  - InteropTestsLocalSSL
-  - InteropTestsLocalCleartext
-  # TODO(jcanizales): Investigate why they time out:
-  # - InteropTestsRemote
+matrix:
+  include:
+    - install:
+        - make grpc_objective_c_plugin
+        - pushd src/objective-c/tests
+        - pod install
+        - popd
+      before_script:
+        - make interop_server
+        - bins/$CONFIG/interop_server --port=5050 &
+        - bins/$CONFIG/interop_server --port=5051 --use_tls &
+      xcode_workspace: src/objective-c/tests/Tests.xcworkspace
+      xcode_scheme:
+        - RxLibraryUnitTests
+        - InteropTestsLocalSSL
+        - InteropTestsLocalCleartext
+        # TODO(jcanizales): Investigate why they time out:
+        # - InteropTestsRemote
+    - install:
+        - make grpc_objective_c_plugin
+        - pushd examples/objective-c/helloworld
+        - pod install
+        - popd
+      xcode_workspace: examples/objective-c/helloworld/HelloWorld.xcworkspace
+      xcode_scheme: HelloWorld
 xcode_sdk: iphonesimulator9.3
 notifications:
   email: false
