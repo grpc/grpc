@@ -113,6 +113,7 @@ class BidiStreamingCall extends AbstractCall
         ]);
 
         $this->trailing_metadata = $status_event->status->metadata;
+
         return $status_event->status;
     }
 }
