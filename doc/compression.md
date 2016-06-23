@@ -42,7 +42,7 @@ and RPC settings (for example, if compression would result in small or negative
 gains).
 
 When a message from a client compressed with an unsupported algorithm is
-processed by a server, it WILL result in a `UNIMPLEMENTED` error status on the
+processed by a server, it WILL result in an `UNIMPLEMENTED` error status on the
 server. The server will then include in its response a `grpc-accept-encoding`
 header specifying the algorithms it does accept. If an `UNIMPLEMENTED` error
 status is returned from the server despite having used one of the algorithms
