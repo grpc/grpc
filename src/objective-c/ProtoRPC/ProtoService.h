@@ -55,6 +55,9 @@ __attribute__((deprecated("Please use GRPCProtoService.")))
  * This subclass is empty now. Eventually we'll remove ProtoService class
  * to avoid potential naming conflict
  */
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 @interface GRPCProtoService : ProtoService
+#pragma clang diagnostic pop
 
 @end
