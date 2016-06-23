@@ -45,10 +45,9 @@ void grpc_buffer_pool_unregister_user(grpc_buffer_pool *pool,
                                       grpc_buffer_pool_user *user);
 
 void grpc_buffer_pool_acquire(grpc_exec_ctx *exec_ctx, grpc_buffer_pool *pool,
-                              grpc_buffer_pool_user *user, size_t amount,
-                              grpc_closure *on_ready);
+                              size_t amount, grpc_closure *on_ready);
 void grpc_buffer_pool_release(grpc_exec_ctx *exec_ctx, grpc_buffer_pool *pool,
-                              grpc_buffer_pool_user *user, size_t amount);
+                              size_t amount);
 
 int16_t grpc_buffer_pool_query(grpc_buffer_pool *pool);
 

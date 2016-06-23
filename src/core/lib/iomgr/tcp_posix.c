@@ -53,6 +53,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/iomgr/buffer_pool.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/string.h"
@@ -68,6 +69,8 @@ typedef GPR_MSG_IOVLEN_TYPE msg_iovlen_type;
 #else
 typedef size_t msg_iovlen_type;
 #endif
+
+#define MAX_READ_IOVEC 4
 
 int grpc_tcp_trace = 0;
 
@@ -160,7 +163,7 @@ static void call_read_cb(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
                          grpc_error *error) {
   grpc_closure *cb = tcp->read_cb;
 
-  if (false && grpc_tcp_trace) {
+  if (grpc_tcp_trace) {
     size_t i;
     const char *str = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "read: error=%s", str);
@@ -178,8 +181,8 @@ static void call_read_cb(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp,
   grpc_exec_ctx_sched(exec_ctx, cb, error, NULL);
 }
 
-#define MAX_READ_IOVEC 4
-static void tcp_continue_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
+static void tcp_allocated_recv(grpc_exec_ctx *exec_ctx, void *arg,
+                               grpc_error *error) {
   struct msghdr msg;
   struct iovec iov[MAX_READ_IOVEC];
   ssize_t read_bytes;
@@ -190,10 +193,14 @@ static void tcp_continue_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   GPR_ASSERT(tcp->incoming_buffer->count <= MAX_READ_IOVEC);
   GPR_TIMER_BEGIN("tcp_continue_read", 0);
 
-  while (tcp->incoming_buffer->count < (size_t)tcp->iov_size) {
-    gpr_slice_buffer_add_indexed(tcp->incoming_buffer,
-                                 gpr_slice_malloc(tcp->slice_size));
+  if (error != GRPC_ERROR_NONE) {
+    gpr_slice_buffer_reset_and_unref(tcp->incoming_buffer);
+    call_read_cb(exec_ctx, tcp,
+                 GRPC_ERROR_CREATE_REFERENCING(
+                     "Failed to acquire memory for tcp read", &error, 1));
+    return;
   }
+
   for (i = 0; i < tcp->incoming_buffer->count; i++) {
     iov[i].iov_base = GPR_SLICE_START_PTR(tcp->incoming_buffer->slices[i]);
     iov[i].iov_len = GPR_SLICE_LENGTH(tcp->incoming_buffer->slices[i]);
@@ -248,6 +255,12 @@ static void tcp_continue_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   }
 
   GPR_TIMER_END("tcp_continue_read", 0);
+}
+
+static void tcp_continue_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
+  grpc_buffer_pool_slice_alloc(tcp->buffer_pool,
+                               tcp->iov_size - tcp->incoming_buffer->count,
+                               tcp->slice_size, &tcp->on_allocated_recv);
 }
 
 static void tcp_handle_read(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
