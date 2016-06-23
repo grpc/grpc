@@ -81,7 +81,7 @@ static NSString * const kHostAddress = @"localhost:50051";
  * not to have a feature.
  */
 @interface GetFeatureViewController : UIViewController {
-  RTGRouteGuide *service;
+  RTGRouteGuide *_service;
 }
 @property (weak, nonatomic) IBOutlet UILabel *outputLabel;
 @end
@@ -90,6 +90,7 @@ static NSString * const kHostAddress = @"localhost:50051";
 
 - (void)execRequest {
   void (^handler)(RTGFeature *response, NSError *error) = ^(RTGFeature *response, NSError *error) {
+    // TODO(makdharma): Remove boilerplate by consolidating into one log function.
     if (response.name.length) {
       NSString *str =[NSString stringWithFormat:@"%@\nFound feature called %@ at %@.", self.outputLabel.text, response.location, response.name];
       self.outputLabel.text = str;
@@ -109,8 +110,8 @@ static NSString * const kHostAddress = @"localhost:50051";
   point.latitude = 409146138;
   point.longitude = -746188906;
 
-  [service getFeatureWithRequest:point handler:handler];
-  [service getFeatureWithRequest:[RTGPoint message] handler:handler];
+  [_service getFeatureWithRequest:point handler:handler];
+  [_service getFeatureWithRequest:[RTGPoint message] handler:handler];
 }
 
 - (void)viewDidLoad {
@@ -119,7 +120,7 @@ static NSString * const kHostAddress = @"localhost:50051";
   // This only needs to be done once per host, before creating service objects for that host.
   [GRPCCall useInsecureConnectionsForHost:kHostAddress];
 
-  service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
+  _service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
@@ -139,7 +140,7 @@ static NSString * const kHostAddress = @"localhost:50051";
  * the pre-generated database. Prints each response as it comes in.
  */
 @interface ListFeaturesViewController : UIViewController {
-  RTGRouteGuide *service;
+  RTGRouteGuide *_service;
 }
 @property (weak, nonatomic) IBOutlet UILabel *outputLabel;
 
@@ -155,7 +156,7 @@ static NSString * const kHostAddress = @"localhost:50051";
   rectangle.hi.longitude = -745E6;
 
   NSLog(@"Looking for features between %@ and %@", rectangle.lo, rectangle.hi);
-  [service listFeaturesWithRequest:rectangle
+  [_service listFeaturesWithRequest:rectangle
                       eventHandler:^(BOOL done, RTGFeature *response, NSError *error) {
     if (response) {
       NSString *str =[NSString stringWithFormat:@"%@\nFound feature at %@ called %@.", self.outputLabel.text, response.location, response.name];
@@ -172,7 +173,7 @@ static NSString * const kHostAddress = @"localhost:50051";
 - (void)viewDidLoad {
   [super viewDidLoad];
 
-  service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
+  _service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
@@ -193,7 +194,7 @@ static NSString * const kHostAddress = @"localhost:50051";
  * server.
  */
 @interface RecordRouteViewController : UIViewController {
-  RTGRouteGuide *service;
+  RTGRouteGuide *_service;
 }
 @property (weak, nonatomic) IBOutlet UILabel *outputLabel;
 
@@ -217,7 +218,7 @@ static NSString * const kHostAddress = @"localhost:50051";
     return location;
   }];
 
-  [service recordRouteWithRequestsWriter:locations
+  [_service recordRouteWithRequestsWriter:locations
                                  handler:^(RTGRouteSummary *response, NSError *error) {
     if (response) {
       NSString *str =[NSString stringWithFormat:
@@ -241,7 +242,7 @@ static NSString * const kHostAddress = @"localhost:50051";
 - (void)viewDidLoad {
   [super viewDidLoad];
 
-  service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
+  _service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
@@ -261,7 +262,7 @@ static NSString * const kHostAddress = @"localhost:50051";
  * the server.
  */
 @interface RouteChatViewController : UIViewController {
-  RTGRouteGuide *service;
+  RTGRouteGuide *_service;
 }
 @property (weak, nonatomic) IBOutlet UILabel *outputLabel;
 
@@ -279,7 +280,7 @@ static NSString * const kHostAddress = @"localhost:50051";
     return note;
   }];
 
-  [service routeChatWithRequestsWriter:notesWriter
+  [_service routeChatWithRequestsWriter:notesWriter
                           eventHandler:^(BOOL done, RTGRouteNote *note, NSError *error) {
     if (note) {
       NSString *str =[NSString stringWithFormat:@"%@\nGot message %@ at %@",
@@ -300,7 +301,7 @@ static NSString * const kHostAddress = @"localhost:50051";
 - (void)viewDidLoad {
   [super viewDidLoad];
 
-  service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
+  _service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
