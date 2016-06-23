@@ -192,7 +192,7 @@ static void add_error(grpc_transport_stream_op *op, grpc_error **which,
 void grpc_transport_stream_op_add_cancellation(grpc_transport_stream_op *op,
                                                grpc_status_code status) {
   GPR_ASSERT(status != GRPC_STATUS_OK);
-  if (op->cancel_error == GRPC_STATUS_OK) {
+  if (op->cancel_error == GRPC_ERROR_NONE) {
     op->cancel_error = grpc_error_set_int(GRPC_ERROR_CANCELLED,
                                           GRPC_ERROR_INT_GRPC_STATUS, status);
     op->close_error = GRPC_ERROR_NONE;
