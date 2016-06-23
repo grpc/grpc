@@ -170,6 +170,7 @@ void grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
   char *user_data;
   size_t i;
 
+  gpr_log(GPR_DEBUG, "grpc_call_stack_init -> init_call_elem");
   call_stack->count = count;
   GRPC_STREAM_REF_INIT(&call_stack->refcount, initial_refs, destroy,
                        destroy_arg, "CALL_STACK");

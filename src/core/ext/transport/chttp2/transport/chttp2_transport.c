@@ -502,7 +502,7 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   grpc_chttp2_stream *s = (grpc_chttp2_stream *)gs;
 
   memset(s, 0, sizeof(*s));
-
+  gpr_log(GPR_DEBUG, "init_stream");
   s->refcount = refcount;
   /* We reserve one 'active stream' that's dropped when the stream is
      read-closed. The others are for incoming_byte_streams that are actively
@@ -829,6 +829,8 @@ static void maybe_start_some_streams(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global) {
   grpc_chttp2_stream_global *stream_global;
   uint32_t stream_incoming_window;
+
+  gpr_log(GPR_DEBUG, "maybe_start_some_streams");
   /* start streams where we have free grpc_chttp2_stream ids and free
    * concurrency */
   while (transport_global->next_stream_id <= MAX_CLIENT_STREAM_ID &&
@@ -969,6 +971,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
   }
 
   if (op->send_initial_metadata != NULL) {
+    gpr_log(GPR_DEBUG, "op->send_initial_metadata != NULL");
     GPR_ASSERT(stream_global->send_initial_metadata_finished == NULL);
     stream_global->send_initial_metadata_finished =
         add_closure_barrier(on_complete);
@@ -995,6 +998,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
           GPR_ASSERT(stream_global->id == 0);
           grpc_chttp2_list_add_waiting_for_concurrency(transport_global,
                                                        stream_global);
+          gpr_log(GPR_DEBUG, "!stream_global->write_closed");
           maybe_start_some_streams(exec_ctx, transport_global);
         } else {
           GPR_ASSERT(stream_global->id != 0);
