@@ -649,7 +649,7 @@ void PrintHeaderServerMethodFCUnary(
         *vars,
         "// replace default version of this method with FCUnary\n"
         "::grpc::Status $Method$("
-        "::grpc::ServerContext* context, ::grpc::FCUnary< $Request$,$Response$>* streaming_unary)"
+        "::grpc::ServerContext* context, ::grpc::FCUnary< $Request$,$Response$>* fc_unary)"
         " GRPC_FINAL GRPC_OVERRIDE;\n");
     printer->Outdent();
     printer->Print(*vars, "};\n");
