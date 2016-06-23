@@ -37,9 +37,10 @@ set NUGET=C:\nuget\nuget.exe
 
 mkdir src\python\grpcio\grpc\_cython\_windows
 
+@rem TODO(atash): maybe we could avoid the grpc_c.(32|64).python shim below if
+@rem this used the right python build?
 copy /Y vsprojects\Release\grpc_dll.dll src\python\grpcio\grpc\_cython\_windows\grpc_c.32.python || goto :error
 copy /Y vsprojects\x64\Release\grpc_dll.dll src\python\grpcio\grpc\_cython\_windows\grpc_c.64.python || goto :error
-
 
 set PATH=C:\%1;C:\%1\scripts;C:\msys64\mingw%2\bin;%PATH%
 
@@ -50,12 +51,6 @@ pip install -rrequirements.txt
 set GRPC_PYTHON_USE_CUSTOM_BDIST=0
 set GRPC_PYTHON_BUILD_WITH_CYTHON=1
 
-@rem TODO(atash): maybe we could avoid the grpc_c.(32|64).python shim above if
-@rem this used the right python build?
-python setup.py bdist_wheel
-
-@rem Build gRPC Python tools
-@rem
 @rem Because this is windows and *everything seems to hate Windows* we have to
 @rem set all of these flags ourselves because Python won't help us (see the
 @rem setup.py of the grpcio_tools project).
@@ -70,6 +65,18 @@ set GRPC_PYTHON_CFLAGS=-fno-wrapv -frtti -std=c++11
 python -c "from distutils.cygwinccompiler import get_msvcr; print(get_msvcr()[0])" > temp.txt
 set /p PYTHON_MSVCR=<temp.txt
 set GRPC_PYTHON_LDFLAGS=-static-libgcc -static-libstdc++ -mcrtdll=%PYTHON_MSVCR% -static -lpthread
+
+
+@rem Build gRPC
+if %2 == 32 (
+  python setup.py build_ext -c mingw32
+) else (
+  python setup.py build_ext -c mingw32 -DMS_WIN64
+)
+python setup.py bdist_wheel
+
+
+@rem Build gRPC Python tools
 python tools\distrib\python\make_grpcio_tools.py
 if %2 == 32 (
   python tools\distrib\python\grpcio_tools\setup.py build_ext -c mingw32
