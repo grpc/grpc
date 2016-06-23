@@ -46,7 +46,7 @@
 #include "test/core/util/port.h"
 
 static void on_server_destroyed(grpc_exec_ctx *exec_ctx, void *data,
-                                bool success) {
+                                grpc_error *error) {
   test_tcp_server *server = data;
   server->shutdown = 1;
 }
@@ -72,9 +72,12 @@ void test_tcp_server_start(test_tcp_server *server, int port) {
   addr.sin_port = htons((uint16_t)port);
   memset(&addr.sin_addr, 0, sizeof(addr.sin_addr));
 
-  server->tcp_server = grpc_tcp_server_create(&server->shutdown_complete);
-  port_added =
-      grpc_tcp_server_add_port(server->tcp_server, &addr, sizeof(addr));
+  grpc_error *error =
+      grpc_tcp_server_create(&server->shutdown_complete, &server->tcp_server);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  error = grpc_tcp_server_add_port(server->tcp_server, &addr, sizeof(addr),
+                                   &port_added);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(port_added == port);
 
   grpc_tcp_server_start(&exec_ctx, server->tcp_server, &server->pollset, 1,
@@ -91,13 +94,14 @@ void test_tcp_server_poll(test_tcp_server *server, int seconds) {
                    gpr_time_from_seconds(seconds, GPR_TIMESPAN));
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   gpr_mu_lock(server->mu);
-  grpc_pollset_work(&exec_ctx, server->pollset, &worker,
-                    gpr_now(GPR_CLOCK_MONOTONIC), deadline);
+  GRPC_LOG_IF_ERROR("pollset_work",
+                    grpc_pollset_work(&exec_ctx, server->pollset, &worker,
+                                      gpr_now(GPR_CLOCK_MONOTONIC), deadline));
   gpr_mu_unlock(server->mu);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void do_nothing(grpc_exec_ctx *exec_ctx, void *arg, bool success) {}
+static void do_nothing(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {}
 
 void test_tcp_server_destroy(test_tcp_server *server) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;

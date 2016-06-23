@@ -27,7 +27,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Test of gRPC Python's application-layer API."""
+"""Test of RPCs made against gRPC Python's application-layer API."""
 
 import itertools
 import threading
@@ -41,9 +41,9 @@ from tests.unit.framework.common import test_constants
 from tests.unit.framework.common import test_control
 
 _SERIALIZE_REQUEST = lambda bytestring: bytestring * 2
-_DESERIALIZE_REQUEST = lambda bytestring: bytestring[len(bytestring) / 2:]
+_DESERIALIZE_REQUEST = lambda bytestring: bytestring[len(bytestring) // 2:]
 _SERIALIZE_RESPONSE = lambda bytestring: bytestring * 3
-_DESERIALIZE_RESPONSE = lambda bytestring: bytestring[:len(bytestring) / 3]
+_DESERIALIZE_RESPONSE = lambda bytestring: bytestring[:len(bytestring) // 3]
 
 _UNARY_UNARY = b'/test/UnaryUnary'
 _UNARY_STREAM = b'/test/UnaryStream'
@@ -189,14 +189,7 @@ class RPCTest(unittest.TestCase):
     self._server.add_generic_rpc_handlers((_GenericHandler(self._handler),))
     self._server.start()
 
-    self._channel = grpc.insecure_channel(b'localhost:%d' % port)
-
-  # TODO(nathaniel): Why is this necessary, and only in some development
-  # environments?
-  def tearDown(self):
-    del self._channel
-    del self._server
-    del self._server_pool
+    self._channel = grpc.insecure_channel('localhost:%d' % port)
 
   def testUnrecognizedMethod(self):
     request = b'abc'
@@ -223,10 +216,9 @@ class RPCTest(unittest.TestCase):
     expected_response = self._handler.handle_unary_unary(request, None)
 
     multi_callable = _unary_unary_multi_callable(self._channel)
-    response, call = multi_callable(
+    response, call = multi_callable.with_call(
         request, metadata=(
-            (b'test', b'SuccessfulUnaryRequestBlockingUnaryResponseWithCall'),),
-        with_call=True)
+            (b'test', b'SuccessfulUnaryRequestBlockingUnaryResponseWithCall'),))
 
     self.assertEqual(expected_response, response)
     self.assertIs(grpc.StatusCode.OK, call.code())
@@ -273,11 +265,11 @@ class RPCTest(unittest.TestCase):
     request_iterator = iter(requests)
 
     multi_callable = _stream_unary_multi_callable(self._channel)
-    response, call = multi_callable(
+    response, call = multi_callable.with_call(
         request_iterator,
         metadata=(
             (b'test', b'SuccessfulStreamRequestBlockingUnaryResponseWithCall'),
-        ), with_call=True)
+        ))
 
     self.assertEqual(expected_response, response)
     self.assertIs(grpc.StatusCode.OK, call.code())
@@ -532,10 +524,9 @@ class RPCTest(unittest.TestCase):
     multi_callable = _unary_unary_multi_callable(self._channel)
     with self._control.pause():
       with self.assertRaises(grpc.RpcError) as exception_context:
-        multi_callable(
+        multi_callable.with_call(
             request, timeout=test_constants.SHORT_TIMEOUT,
-            metadata=((b'test', b'ExpiredUnaryRequestBlockingUnaryResponse'),),
-            with_call=True)
+            metadata=((b'test', b'ExpiredUnaryRequestBlockingUnaryResponse'),))
 
     self.assertIsNotNone(exception_context.exception.initial_metadata())
     self.assertIs(
@@ -647,10 +638,9 @@ class RPCTest(unittest.TestCase):
     multi_callable = _unary_unary_multi_callable(self._channel)
     with self._control.fail():
       with self.assertRaises(grpc.RpcError) as exception_context:
-        multi_callable(
+        multi_callable.with_call(
             request,
-            metadata=((b'test', b'FailedUnaryRequestBlockingUnaryResponse'),),
-            with_call=True)
+            metadata=((b'test', b'FailedUnaryRequestBlockingUnaryResponse'),))
 
     self.assertIs(grpc.StatusCode.UNKNOWN, exception_context.exception.code())
 

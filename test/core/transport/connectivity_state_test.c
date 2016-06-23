@@ -43,14 +43,15 @@
 
 int g_counter;
 
-static void must_succeed(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
-  GPR_ASSERT(success);
+static void must_succeed(grpc_exec_ctx *exec_ctx, void *arg,
+                         grpc_error *error) {
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(arg == THE_ARG);
   g_counter++;
 }
 
-static void must_fail(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
-  GPR_ASSERT(!success);
+static void must_fail(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+  GPR_ASSERT(error != GRPC_ERROR_NONE);
   GPR_ASSERT(arg == THE_ARG);
   g_counter++;
 }
@@ -66,17 +67,19 @@ static void test_connectivity_state_name(void) {
   GPR_ASSERT(
       0 == strcmp(grpc_connectivity_state_name(GRPC_CHANNEL_TRANSIENT_FAILURE),
                   "TRANSIENT_FAILURE"));
-  GPR_ASSERT(0 ==
-             strcmp(grpc_connectivity_state_name(GRPC_CHANNEL_FATAL_FAILURE),
-                    "FATAL_FAILURE"));
+  GPR_ASSERT(0 == strcmp(grpc_connectivity_state_name(GRPC_CHANNEL_SHUTDOWN),
+                         "SHUTDOWN"));
 }
 
 static void test_check(void) {
   grpc_connectivity_state_tracker tracker;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_error *error;
   gpr_log(GPR_DEBUG, "test_check");
   grpc_connectivity_state_init(&tracker, GRPC_CHANNEL_IDLE, "xxx");
-  GPR_ASSERT(grpc_connectivity_state_check(&tracker) == GRPC_CHANNEL_IDLE);
+  GPR_ASSERT(grpc_connectivity_state_check(&tracker, &error) ==
+             GRPC_CHANNEL_IDLE);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
   grpc_connectivity_state_destroy(&exec_ctx, &tracker);
   grpc_exec_ctx_finish(&exec_ctx);
 }
@@ -119,26 +122,26 @@ static void test_subscribe_then_destroy(void) {
   GPR_ASSERT(g_counter == 0);
   grpc_connectivity_state_destroy(&exec_ctx, &tracker);
   grpc_exec_ctx_finish(&exec_ctx);
-  GPR_ASSERT(state == GRPC_CHANNEL_FATAL_FAILURE);
+  GPR_ASSERT(state == GRPC_CHANNEL_SHUTDOWN);
   GPR_ASSERT(g_counter == 1);
 }
 
 static void test_subscribe_with_failure_then_destroy(void) {
   grpc_connectivity_state_tracker tracker;
   grpc_closure *closure = grpc_closure_create(must_fail, THE_ARG);
-  grpc_connectivity_state state = GRPC_CHANNEL_FATAL_FAILURE;
+  grpc_connectivity_state state = GRPC_CHANNEL_SHUTDOWN;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   gpr_log(GPR_DEBUG, "test_subscribe_with_failure_then_destroy");
   g_counter = 0;
-  grpc_connectivity_state_init(&tracker, GRPC_CHANNEL_FATAL_FAILURE, "xxx");
+  grpc_connectivity_state_init(&tracker, GRPC_CHANNEL_SHUTDOWN, "xxx");
   GPR_ASSERT(0 == grpc_connectivity_state_notify_on_state_change(
                       &exec_ctx, &tracker, &state, closure));
   grpc_exec_ctx_flush(&exec_ctx);
-  GPR_ASSERT(state == GRPC_CHANNEL_FATAL_FAILURE);
+  GPR_ASSERT(state == GRPC_CHANNEL_SHUTDOWN);
   GPR_ASSERT(g_counter == 0);
   grpc_connectivity_state_destroy(&exec_ctx, &tracker);
   grpc_exec_ctx_finish(&exec_ctx);
-  GPR_ASSERT(state == GRPC_CHANNEL_FATAL_FAILURE);
+  GPR_ASSERT(state == GRPC_CHANNEL_SHUTDOWN);
   GPR_ASSERT(g_counter == 1);
 }
 

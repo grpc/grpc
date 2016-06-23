@@ -40,8 +40,6 @@ cp -r /var/local/jenkins/service_account $HOME || true
 cd /var/local/git/grpc
 rvm --default use ruby-2.1
 
-make install-certs
-
 # gRPC core and protobuf need to be installed
 make install
 

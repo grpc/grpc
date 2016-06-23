@@ -138,8 +138,12 @@ bool StressTestInteropClient::RunTest(TestCaseType test_case) {
       is_success = interop_client_->DoLargeUnary();
       break;
     }
-    case LARGE_COMPRESSED_UNARY: {
-      is_success = interop_client_->DoLargeCompressedUnary();
+    case CLIENT_COMPRESSED_UNARY: {
+      is_success = interop_client_->DoClientCompressedUnary();
+      break;
+    }
+    case CLIENT_COMPRESSED_STREAMING: {
+      is_success = interop_client_->DoClientCompressedStreaming();
       break;
     }
     case CLIENT_STREAMING: {
@@ -150,8 +154,12 @@ bool StressTestInteropClient::RunTest(TestCaseType test_case) {
       is_success = interop_client_->DoResponseStreaming();
       break;
     }
+    case SERVER_COMPRESSED_UNARY: {
+      is_success = interop_client_->DoServerCompressedUnary();
+      break;
+    }
     case SERVER_COMPRESSED_STREAMING: {
-      is_success = interop_client_->DoResponseCompressedStreaming();
+      is_success = interop_client_->DoServerCompressedStreaming();
       break;
     }
     case SLOW_CONSUMER: {

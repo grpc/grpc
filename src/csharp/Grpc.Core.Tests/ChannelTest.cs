@@ -71,7 +71,7 @@ namespace Grpc.Core.Tests
         public void WaitForStateChangedAsync_InvalidArgument()
         {
             var channel = new Channel("localhost", ChannelCredentials.Insecure);
-            Assert.ThrowsAsync(typeof(ArgumentException), async () => await channel.WaitForStateChangedAsync(ChannelState.FatalFailure));
+            Assert.ThrowsAsync(typeof(ArgumentException), async () => await channel.WaitForStateChangedAsync(ChannelState.Shutdown));
             channel.ShutdownAsync().Wait();
         }
 
@@ -102,11 +102,11 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
-        public async Task StateIsFatalFailureAfterShutdown()
+        public async Task StateIsShutdownAfterShutdown()
         {
             var channel = new Channel("localhost", ChannelCredentials.Insecure);
             await channel.ShutdownAsync();
-            Assert.AreEqual(ChannelState.FatalFailure, channel.State);
+            Assert.AreEqual(ChannelState.Shutdown, channel.State);
         }
 
         [Test]

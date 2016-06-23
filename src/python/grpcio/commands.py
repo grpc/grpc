@@ -182,6 +182,8 @@ class BuildProtoModules(setuptools.Command):
           '--plugin=protoc-gen-python-grpc={}'.format(
               self.grpc_python_plugin_command),
           '-I {}'.format(GRPC_STEM),
+          '-I .',
+          '-I {}/third_party/protobuf/src'.format(GRPC_STEM),
           '--python_out={}'.format(PROTO_GEN_STEM),
           '--python-grpc_out={}'.format(PROTO_GEN_STEM),
       ] + [path]
@@ -191,7 +193,7 @@ class BuildProtoModules(setuptools.Command):
       except subprocess.CalledProcessError as e:
         sys.stderr.write(
             'warning: Command:\n{}\nMessage:\n{}\nOutput:\n{}'.format(
-                command, e.message, e.output))
+                command, str(e), e.output))
 
     # Generated proto directories dont include __init__.py, but
     # these are needed for python package resolution

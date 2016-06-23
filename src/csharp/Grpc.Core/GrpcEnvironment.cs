@@ -35,6 +35,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Grpc.Core.Internal;
 using Grpc.Core.Logging;
 using Grpc.Core.Utils;
@@ -46,6 +47,7 @@ namespace Grpc.Core
     /// </summary>
     public class GrpcEnvironment
     {
+        const LogLevel DefaultLogLevel = LogLevel.Info;
         const int MinDefaultThreadPoolSize = 4;
 
         static object staticLock = new object();
@@ -53,12 +55,16 @@ namespace Grpc.Core
         static int refCount;
         static int? customThreadPoolSize;
         static int? customCompletionQueueCount;
+        static readonly HashSet<Channel> registeredChannels = new HashSet<Channel>();
+        static readonly HashSet<Server> registeredServers = new HashSet<Server>();
 
-        static ILogger logger = new ConsoleLogger();
+        static ILogger logger = new LogLevelFilterLogger(new ConsoleLogger(), DefaultLogLevel);
 
+        readonly object myLock = new object();
         readonly GrpcThreadPool threadPool;
         readonly DebugStats debugStats = new DebugStats();
         readonly AtomicCounter cqPickerCounter = new AtomicCounter();
+
         bool isClosed;
 
         /// <summary>
@@ -67,6 +73,8 @@ namespace Grpc.Core
         /// </summary>
         internal static GrpcEnvironment AddRef()
         {
+            ShutdownHooks.Register();
+
             lock (staticLock)
             {
                 refCount++;
@@ -79,20 +87,25 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// Decrements the reference count for currently active environment and shuts down the gRPC environment if reference count drops to zero.
-        /// (and blocks until the environment has been fully shutdown).
+        /// Decrements the reference count for currently active environment and asynchronously shuts down the gRPC environment if reference count drops to zero.
         /// </summary>
-        internal static void Release()
+        internal static async Task ReleaseAsync()
         {
+            GrpcEnvironment instanceToShutdown = null;
             lock (staticLock)
             {
                 GrpcPreconditions.CheckState(refCount > 0);
                 refCount--;
                 if (refCount == 0)
                 {
-                    instance.Close();
+                    instanceToShutdown = instance;
                     instance = null;
                 }
+            }
+
+            if (instanceToShutdown != null)
+            {
+                await instanceToShutdown.ShutdownAsync().ConfigureAwait(false);
             }
         }
 
@@ -102,6 +115,68 @@ namespace Grpc.Core
             {
                 return refCount;
             }
+        }
+
+        internal static void RegisterChannel(Channel channel)
+        {
+            lock (staticLock)
+            {
+                GrpcPreconditions.CheckNotNull(channel);
+                registeredChannels.Add(channel);
+            }
+        }
+
+        internal static void UnregisterChannel(Channel channel)
+        {
+            lock (staticLock)
+            {
+                GrpcPreconditions.CheckNotNull(channel);
+                GrpcPreconditions.CheckArgument(registeredChannels.Remove(channel), "Channel not found in the registered channels set.");
+            }
+        }
+
+        internal static void RegisterServer(Server server)
+        {
+            lock (staticLock)
+            {
+                GrpcPreconditions.CheckNotNull(server);
+                registeredServers.Add(server);
+            }
+        }
+
+        internal static void UnregisterServer(Server server)
+        {
+            lock (staticLock)
+            {
+                GrpcPreconditions.CheckNotNull(server);
+                GrpcPreconditions.CheckArgument(registeredServers.Remove(server), "Server not found in the registered servers set.");
+            }
+        }
+
+        /// <summary>
+        /// Requests shutdown of all channels created by the current process.
+        /// </summary>
+        public static Task ShutdownChannelsAsync()
+        {
+            HashSet<Channel> snapshot = null;
+            lock (staticLock)
+            {
+                snapshot = new HashSet<Channel>(registeredChannels);
+            }
+            return Task.WhenAll(snapshot.Select((channel) => channel.ShutdownAsync()));
+        }
+
+        /// <summary>
+        /// Requests immediate shutdown of all servers created by the current process.
+        /// </summary>
+        public static Task KillServersAsync()
+        {
+            HashSet<Server> snapshot = null;
+            lock (staticLock)
+            {
+                snapshot = new HashSet<Server>(registeredServers);
+            }
+            return Task.WhenAll(snapshot.Select((server) => server.KillAsync()));
         }
 
         /// <summary>
@@ -180,6 +255,14 @@ namespace Grpc.Core
             }
         }
 
+        internal bool IsAlive
+        {
+            get
+            {
+                return this.threadPool.IsAlive;
+            }
+        }
+
         /// <summary>
         /// Picks a completion queue in a round-robin fashion.
         /// Shouldn't be invoked on a per-call basis (used at per-channel basis).
@@ -223,13 +306,13 @@ namespace Grpc.Core
         /// <summary>
         /// Shuts down this environment.
         /// </summary>
-        private void Close()
+        private async Task ShutdownAsync()
         {
             if (isClosed)
             {
                 throw new InvalidOperationException("Close has already been called");
             }
-            threadPool.Stop();
+            await threadPool.StopAsync().ConfigureAwait(false);
             GrpcNativeShutdown();
             isClosed = true;
 
@@ -256,6 +339,37 @@ namespace Grpc.Core
             }
             // by default, create a completion queue for each thread
             return GetThreadPoolSizeOrDefault();
+        }
+
+        private static class ShutdownHooks
+        {
+            static object staticLock = new object();
+            static bool hooksRegistered;
+
+            public static void Register()
+            {
+                lock (staticLock)
+                {
+                    if (!hooksRegistered)
+                    {
+                        // TODO(jtattermusch): register shutdownhooks for CoreCLR as well
+#if !NETSTANDARD1_5
+
+                        AppDomain.CurrentDomain.ProcessExit += ShutdownHookHandler;
+                        AppDomain.CurrentDomain.DomainUnload += ShutdownHookHandler;
+#endif
+                    }
+                    hooksRegistered = true;
+                }
+            }
+
+            /// <summary>
+            /// Handler for AppDomain.DomainUnload and AppDomain.ProcessExit hooks.
+            /// </summary>
+            private static void ShutdownHookHandler(object sender, EventArgs e)
+            {
+                Task.WaitAll(GrpcEnvironment.ShutdownChannelsAsync(), GrpcEnvironment.KillServersAsync());
+            }
         }
     }
 }

@@ -88,7 +88,11 @@ static void parse(const char *s) {
   split(s, &strings, &nstrings);
 
   for (i = 0; i < nstrings; i++) {
-    grpc_tracer_set_enabled(strings[i], 1);
+    if (strings[i][0] == '-') {
+      grpc_tracer_set_enabled(strings[i] + 1, 0);
+    } else {
+      grpc_tracer_set_enabled(strings[i], 1);
+    }
   }
 
   for (i = 0; i < nstrings; i++) {
@@ -117,7 +121,7 @@ int grpc_tracer_set_enabled(const char *name, int enabled) {
   tracer *t;
   if (0 == strcmp(name, "all")) {
     for (t = tracers; t; t = t->next) {
-      *t->flag = 1;
+      *t->flag = enabled;
     }
   } else {
     int found = 0;

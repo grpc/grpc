@@ -38,7 +38,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/lib/support/load_file.h"
+#include "src/core/lib/iomgr/load_file.h"
 
 #include "test/core/bad_ssl/server_common.h"
 #include "test/core/end2end/data/ssl_test_data.h"
@@ -52,16 +52,15 @@ int main(int argc, char **argv) {
   grpc_server_credentials *ssl_creds;
   grpc_server *server;
   gpr_slice cert_slice, key_slice;
-  int ok;
 
   grpc_init();
 
-  cert_slice =
-      gpr_load_file("src/core/lib/tsi/test_creds/badserver.pem", 1, &ok);
-  GPR_ASSERT(ok);
-  key_slice =
-      gpr_load_file("src/core/lib/tsi/test_creds/badserver.key", 1, &ok);
-  GPR_ASSERT(ok);
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "load_file", grpc_load_file("src/core/lib/tsi/test_creds/badserver.pem",
+                                  1, &cert_slice)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "load_file", grpc_load_file("src/core/lib/tsi/test_creds/badserver.key",
+                                  1, &key_slice)));
   pem_key_cert_pair.private_key = (const char *)GPR_SLICE_START_PTR(key_slice);
   pem_key_cert_pair.cert_chain = (const char *)GPR_SLICE_START_PTR(cert_slice);
 

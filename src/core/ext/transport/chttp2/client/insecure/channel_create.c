@@ -79,11 +79,11 @@ static void connector_unref(grpc_exec_ctx *exec_ctx, grpc_connector *con) {
 }
 
 static void on_initial_connect_string_sent(grpc_exec_ctx *exec_ctx, void *arg,
-                                           bool success) {
+                                           grpc_error *error) {
   connector_unref(exec_ctx, arg);
 }
 
-static void connected(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   connector *c = arg;
   grpc_closure *notify;
   grpc_endpoint *tcp = c->tcp;
@@ -103,13 +103,13 @@ static void connected(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
     grpc_chttp2_transport_start_reading(exec_ctx, c->result->transport, NULL,
                                         0);
     GPR_ASSERT(c->result->transport);
-    c->result->channel_args = c->args.channel_args;
+    c->result->channel_args = grpc_channel_args_copy(c->args.channel_args);
   } else {
     memset(c->result, 0, sizeof(*c->result));
   }
   notify = c->notify;
   c->notify = NULL;
-  notify->cb(exec_ctx, notify->cb_arg, 1);
+  grpc_exec_ctx_sched(exec_ctx, notify, GRPC_ERROR_REF(error), NULL);
 }
 
 static void connector_shutdown(grpc_exec_ctx *exec_ctx, grpc_connector *con) {}

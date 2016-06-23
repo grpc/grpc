@@ -1,5 +1,7 @@
+*.xproj.user
 *.userprefs
 *.csproj.user
+*.lock.json
 StyleCop.Cache
 test-results
 packages

@@ -55,6 +55,7 @@ typedef struct grpc_event_engine_vtable {
                             grpc_closure *closure);
   void (*fd_notify_on_write)(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                              grpc_closure *closure);
+  bool (*fd_is_shutdown)(grpc_fd *fd);
   grpc_pollset *(*fd_get_read_notifier_pollset)(grpc_exec_ctx *exec_ctx,
                                                 grpc_fd *fd);
 
@@ -63,11 +64,11 @@ typedef struct grpc_event_engine_vtable {
                            grpc_closure *closure);
   void (*pollset_reset)(grpc_pollset *pollset);
   void (*pollset_destroy)(grpc_pollset *pollset);
-  void (*pollset_work)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
-                       grpc_pollset_worker **worker, gpr_timespec now,
-                       gpr_timespec deadline);
-  void (*pollset_kick)(grpc_pollset *pollset,
-                       grpc_pollset_worker *specific_worker);
+  grpc_error *(*pollset_work)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
+                              grpc_pollset_worker **worker, gpr_timespec now,
+                              gpr_timespec deadline);
+  grpc_error *(*pollset_kick)(grpc_pollset *pollset,
+                              grpc_pollset_worker *specific_worker);
   void (*pollset_add_fd)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                          struct grpc_fd *fd);
 
@@ -90,7 +91,7 @@ typedef struct grpc_event_engine_vtable {
   void (*pollset_set_del_fd)(grpc_exec_ctx *exec_ctx,
                              grpc_pollset_set *pollset_set, grpc_fd *fd);
 
-  void (*kick_poller)(void);
+  grpc_error *(*kick_poller)(void);
 
   void (*shutdown_engine)(void);
 } grpc_event_engine_vtable;
@@ -116,7 +117,10 @@ int grpc_fd_wrapped_fd(grpc_fd *fd);
 void grpc_fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure *on_done,
                     int *release_fd, const char *reason);
 
-/* Cause any current callbacks to error out with GRPC_CALLBACK_CANCELLED. */
+/* Has grpc_fd_shutdown been called on an fd? */
+bool grpc_fd_is_shutdown(grpc_fd *fd);
+
+/* Cause any current and future callbacks to fail. */
 void grpc_fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd);
 
 /* Register read interest, causing read_cb to be called once when fd becomes
