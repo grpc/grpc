@@ -779,6 +779,7 @@ static grpc_error *init_header_frame_parser(
   stream_parsing = grpc_chttp2_parsing_lookup_stream(
       transport_parsing, transport_parsing->incoming_stream_id);
   if (stream_parsing == NULL) {
+    gpr_log(GPR_INFO, "stream_parsing == NULL, stream_id: %" PRIu32, transport_parsing->incoming_stream_id);
     if (is_continuation) {
       gpr_log(GPR_ERROR,
               "grpc_chttp2_stream disbanded before CONTINUATION received");

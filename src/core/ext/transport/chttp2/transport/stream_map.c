@@ -77,6 +77,7 @@ void grpc_chttp2_stream_map_add(grpc_chttp2_stream_map *map, uint32_t key,
 
   GPR_ASSERT(count == 0 || keys[count - 1] < key);
   GPR_ASSERT(value);
+  gpr_log(GPR_DEBUG, "grpc_chttp2_stream_map_add");
 
   if (count == capacity) {
     if (map->free > capacity / 4) {

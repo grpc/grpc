@@ -172,6 +172,8 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
       state.channel, NULL, GRPC_PROPAGATE_DEFAULTS, state.cq, "/Service/Method",
       "localhost", gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
 
+  GPR_ASSERT(state.call);
+
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
 
