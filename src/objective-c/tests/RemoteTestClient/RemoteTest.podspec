@@ -22,7 +22,7 @@ Pod::Spec.new do |s|
     ms.source_files = "*.pbobjc.{h,m}"
     ms.header_mappings_dir = "."
     ms.requires_arc = false
-    ms.dependency "Protobuf", "~> 3.0.0-beta-2"
+    ms.dependency "Protobuf", "~> 3.0.0-beta-3.1"
     # This is needed by all pods that depend on Protobuf:
     ms.pod_target_xcconfig = {
       'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=1',
