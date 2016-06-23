@@ -121,6 +121,7 @@ struct grpc_fd {
 };
 
 /* Reference counting for fds */
+// #define GRPC_FD_REF_COUNT_DEBUG
 #ifdef GRPC_FD_REF_COUNT_DEBUG
 static void fd_ref(grpc_fd *fd, const char *reason, const char *file, int line);
 static void fd_unref(grpc_fd *fd, const char *reason, const char *file,
@@ -147,13 +148,13 @@ static void fd_global_shutdown(void);
 // #define GRPC_PI_REF_COUNT_DEBUG
 #ifdef GRPC_PI_REF_COUNT_DEBUG
 
-#define PI_ADD_REF(p, r) pi_add_ref_dbg((p), 1, (r), __FILE__, __LINE__)
-#define PI_UNREF(p, r) pi_unref_dbg((p), 1, (r), __FILE__, __LINE__)
+#define PI_ADD_REF(p, r) pi_add_ref_dbg((p), (r), __FILE__, __LINE__)
+#define PI_UNREF(p, r) pi_unref_dbg((p), (r), __FILE__, __LINE__)
 
 #else /* defined(GRPC_PI_REF_COUNT_DEBUG) */
 
-#define PI_ADD_REF(p, r) pi_add_ref((p), 1)
-#define PI_UNREF(p, r) pi_unref((p), 1)
+#define PI_ADD_REF(p, r) pi_add_ref((p))
+#define PI_UNREF(p, r) pi_unref((p))
 
 #endif /* !defined(GPRC_PI_REF_COUNT_DEBUG) */
 
@@ -164,7 +165,7 @@ typedef struct polling_island {
      Once the ref count becomes zero, this structure is destroyed which means
      we should ensure that there is never a scenario where a PI_ADD_REF() is
      racing with a PI_UNREF() that just made the ref_count zero. */
-  gpr_atm ref_count;
+  gpr_refcount ref_count;
 
   /* Pointer to the polling_island this merged into.
    * merged_to value is only set once in polling_island's lifetime (and that too
@@ -281,50 +282,42 @@ gpr_atm g_epoll_sync;
 #endif /* defined(GRPC_TSAN) */
 
 #ifdef GRPC_PI_REF_COUNT_DEBUG
-long pi_add_ref(polling_island *pi, int ref_cnt);
-long pi_unref(polling_island *pi, int ref_cnt);
+void pi_add_ref(polling_island *pi);
+void pi_unref(polling_island *pi);
 
-void pi_add_ref_dbg(polling_island *pi, int ref_cnt, char *reason, char *file,
-                    int line) {
-  long old_cnt = pi_add_ref(pi, ref_cnt);
-  gpr_log(GPR_DEBUG, "Add ref pi: %p, old:%ld -> new:%ld (%s) - (%s, %d)",
-          (void *)pi, old_cnt, (old_cnt + ref_cnt), reason, file, line);
+void pi_add_ref_dbg(polling_island *pi, char *reason, char *file, int line) {
+  long old_cnt = gpr_atm_acq_load(&(pi->ref_count.count));
+  pi_add_ref(pi);
+  gpr_log(GPR_DEBUG, "Add ref pi: %p, old: %ld -> new:%ld (%s) - (%s, %d)",
+          (void *)pi, old_cnt, old_cnt + 1, reason, file, line);
 }
 
-void pi_unref_dbg(polling_island *pi, int ref_cnt, char *reason, char *file,
-                  int line) {
-  long old_cnt = pi_unref(pi, ref_cnt);
+void pi_unref_dbg(polling_island *pi, char *reason, char *file, int line) {
+  long old_cnt = gpr_atm_acq_load(&(pi->ref_count.count));
+  pi_unref(pi);
   gpr_log(GPR_DEBUG, "Unref pi: %p, old:%ld -> new:%ld (%s) - (%s, %d)",
-          (void *)pi, old_cnt, (old_cnt - ref_cnt), reason, file, line);
+          (void *)pi, old_cnt, (old_cnt - 1), reason, file, line);
 }
 #endif
 
-long pi_add_ref(polling_island *pi, int ref_cnt) {
-  return gpr_atm_full_fetch_add(&pi->ref_count, ref_cnt);
-}
+void pi_add_ref(polling_island *pi) { gpr_ref(&pi->ref_count); }
 
-long pi_unref(polling_island *pi, int ref_cnt) {
-  long old_cnt = gpr_atm_full_fetch_add(&pi->ref_count, -ref_cnt);
-
-  /* If ref count went to zero, delete the polling island. Note that this need
-     not be done under a lock. Once the ref count goes to zero, we are
-     guaranteed that no one else holds a reference to the polling island (and
-     that there is no racing pi_add_ref() call either.
+void pi_unref(polling_island *pi) {
+  /* If ref count went to zero, delete the polling island.
+     Note that this deletion not be done under a lock. Once the ref count goes
+     to zero, we are guaranteed that no one else holds a reference to the
+     polling island (and that there is no racing pi_add_ref() call either).
 
      Also, if we are deleting the polling island and the merged_to field is
      non-empty, we should remove a ref to the merged_to polling island
    */
-  if (old_cnt == ref_cnt) {
+  if (gpr_unref(&pi->ref_count)) {
     polling_island *next = (polling_island *)gpr_atm_acq_load(&pi->merged_to);
     polling_island_delete(pi);
     if (next != NULL) {
       PI_UNREF(next, "pi_delete"); /* Recursive call */
     }
-  } else {
-    GPR_ASSERT(old_cnt > ref_cnt);
   }
-
-  return old_cnt;
 }
 
 /* The caller is expected to hold pi->mu lock before calling this function */
@@ -482,7 +475,7 @@ static polling_island *polling_island_create(grpc_fd *initial_fd,
     pi->fds = NULL;
   }
 
-  gpr_atm_rel_store(&pi->ref_count, (gpr_atm)0);
+  gpr_ref_init(&pi->ref_count, 0);
   gpr_atm_rel_store(&pi->merged_to, (gpr_atm)NULL);
 
   pi->epoll_fd = epoll_create1(EPOLL_CLOEXEC);
@@ -762,8 +755,8 @@ static gpr_mu fd_freelist_mu;
 #define UNREF_BY(fd, n, reason) unref_by(fd, n, reason, __FILE__, __LINE__)
 static void ref_by(grpc_fd *fd, int n, const char *reason, const char *file,
                    int line) {
-  gpr_log(GPR_DEBUG, "FD %d %p   ref %d %d -> %d [%s; %s:%d]", fd->fd, fd, n,
-          gpr_atm_no_barrier_load(&fd->refst),
+  gpr_log(GPR_DEBUG, "FD %d %p   ref %d %ld -> %ld [%s; %s:%d]", fd->fd,
+          (void *)fd, n, gpr_atm_no_barrier_load(&fd->refst),
           gpr_atm_no_barrier_load(&fd->refst) + n, reason, file, line);
 #else
 #define REF_BY(fd, n, reason) ref_by(fd, n)
@@ -777,8 +770,8 @@ static void ref_by(grpc_fd *fd, int n) {
 static void unref_by(grpc_fd *fd, int n, const char *reason, const char *file,
                      int line) {
   gpr_atm old;
-  gpr_log(GPR_DEBUG, "FD %d %p unref %d %d -> %d [%s; %s:%d]", fd->fd, fd, n,
-          gpr_atm_no_barrier_load(&fd->refst),
+  gpr_log(GPR_DEBUG, "FD %d %p unref %d %ld -> %ld [%s; %s:%d]", fd->fd,
+          (void *)fd, n, gpr_atm_no_barrier_load(&fd->refst),
           gpr_atm_no_barrier_load(&fd->refst) - n, reason, file, line);
 #else
 static void unref_by(grpc_fd *fd, int n) {
@@ -865,10 +858,10 @@ static grpc_fd *fd_create(int fd, const char *name) {
   char *fd_name;
   gpr_asprintf(&fd_name, "%s fd=%d", name, fd);
   grpc_iomgr_register_object(&new_fd->iomgr_object, fd_name);
-  gpr_free(fd_name);
 #ifdef GRPC_FD_REF_COUNT_DEBUG
-  gpr_log(GPR_DEBUG, "FD %d %p create %s", fd, r, fd_name);
+  gpr_log(GPR_DEBUG, "FD %d %p create %s", fd, (void *)new_fd, fd_name);
 #endif
+  gpr_free(fd_name);
   return new_fd;
 }
 
