@@ -34,16 +34,12 @@ import argparse
 import itertools
 import jobset
 import json
-import multiprocessing
 import os
 import pipes
 import re
-import subprocess
 import sys
-import tempfile
 import time
 import traceback
-import uuid
 import performance.scenario_config as scenario_config
 
 

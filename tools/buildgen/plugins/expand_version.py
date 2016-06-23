@@ -35,8 +35,6 @@ a custom version string for each language's package.
 """
 
 
-import re
-
 LANGUAGES = [
   'core', 
   'cpp', 

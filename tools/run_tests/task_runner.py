@@ -31,7 +31,6 @@
 """Runs selected gRPC test/build tasks."""
 
 import argparse
-import atexit
 import jobset
 import multiprocessing
 import sys
