@@ -129,6 +129,7 @@ grpc::string GetHeaderIncludes(File *file,
       "grpc++/impl/codegen/async_stream.h",
       "grpc++/impl/codegen/async_unary_call.h",
       "grpc++/impl/codegen/fc_unary.h",
+      "grpc++/impl/codegen/method_handler_impl.h",
       "grpc++/impl/codegen/proto_utils.h",
       "grpc++/impl/codegen/rpc_method.h",
       "grpc++/impl/codegen/service_type.h",
@@ -625,6 +626,11 @@ void PrintHeaderServerMethodFCUnary(
     printer->Indent();
     printer->Print(*vars,
 		   "WithFCUnaryMethod_$Method$() {\n"
+		   "  ::grpc::Status (*fn)(::grpc::ServerContext*, ::grpc::FCUnary< $Request$,$Response$>*) = this->WithFCUnaryMethod_$Method$<BaseClass>::$Method$;\n"
+		   "  ::grpc::Service::MarkMethodFCUnary($Idx$,\n"
+		   "    new ::grpc::FCUnaryMethodHandler<Service, "
+		   "$Request$, "
+		   "$Response$>(fn, this));\n"
 		   "}\n");
     printer->Print(*vars,
 		   "~WithFCUnaryMethod_$Method$() GRPC_OVERRIDE {\n"
@@ -1138,6 +1144,9 @@ void PrintSourceService(Printer *printer,
     (*vars)["Idx"] = as_string(i);
     if (method->NoStreaming()) {
       (*vars)["StreamingType"] = "NORMAL_RPC";
+      // NOTE: There is no reason to consider FC_UNARY as a separate
+      // category here since this part is setting up the client-side stub
+      // and this appears as a NORMAL_RPC from the client-side.
     } else if (method->ClientOnlyStreaming()) {
       (*vars)["StreamingType"] = "CLIENT_STREAMING";
     } else if (method->ServerOnlyStreaming()) {

@@ -147,6 +147,13 @@ class Service {
     methods_[index].reset();
   }
 
+  void MarkMethodFCUnary(int index, MethodHandler* fc_unary_method) {
+    GPR_CODEGEN_ASSERT(methods_[index] && methods_[index]->handler() &&
+		       "Cannot mark an async or generic method as FCUnary");
+    methods_[index]->SetMethodType(::grpc::RpcMethod::FC_UNARY);
+    methods_[index]->SetHandler(fc_unary_method);
+  }
+
  private:
   friend class Server;
   friend class ServerInterface;
