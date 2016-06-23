@@ -80,13 +80,14 @@ static NSString * const kHostAddress = @"localhost:50051";
  * Run the getFeature demo. Calls getFeature with a point known to have a feature and a point known
  * not to have a feature.
  */
-@interface GetFeatureViewController : UIViewController {
-  RTGRouteGuide *_service;
-}
+@interface GetFeatureViewController : UIViewController
+
 @property (weak, nonatomic) IBOutlet UILabel *outputLabel;
+
 @end
 
 @implementation GetFeatureViewController
+RTGRouteGuide *_service;
 
 - (void)execRequest {
   void (^handler)(RTGFeature *response, NSError *error) = ^(RTGFeature *response, NSError *error) {
@@ -139,14 +140,14 @@ static NSString * const kHostAddress = @"localhost:50051";
  * Run the listFeatures demo. Calls listFeatures with a rectangle containing all of the features in
  * the pre-generated database. Prints each response as it comes in.
  */
-@interface ListFeaturesViewController : UIViewController {
-  RTGRouteGuide *_service;
-}
+@interface ListFeaturesViewController : UIViewController
+
 @property (weak, nonatomic) IBOutlet UILabel *outputLabel;
 
 @end
 
 @implementation ListFeaturesViewController
+RTGRouteGuide *_service;
 
 - (void)execRequest {
   RTGRectangle *rectangle = [RTGRectangle message];
@@ -193,14 +194,14 @@ static NSString * const kHostAddress = @"localhost:50051";
  * database with a variable delay in between. Prints the statistics when they are sent from the
  * server.
  */
-@interface RecordRouteViewController : UIViewController {
-  RTGRouteGuide *_service;
-}
+@interface RecordRouteViewController : UIViewController
+
 @property (weak, nonatomic) IBOutlet UILabel *outputLabel;
 
 @end
 
 @implementation RecordRouteViewController
+RTGRouteGuide *_service;
 
 - (void)execRequest {
   NSString *dataBasePath = [NSBundle.mainBundle pathForResource:@"route_guide_db"
@@ -233,7 +234,7 @@ static NSString * const kHostAddress = @"localhost:50051";
       NSLog(@"It took %i seconds", response.elapsedTime);
     } else {
       NSString *str =[NSString stringWithFormat:@"%@\nRPC error: %@", self.outputLabel.text, error];
-      self.outputLabel.text = str; 
+      self.outputLabel.text = str;
       NSLog(@"RPC error: %@", error);
     }
   }];
@@ -261,14 +262,14 @@ static NSString * const kHostAddress = @"localhost:50051";
  * Run the routeChat demo. Send some chat messages, and print any chat messages that are sent from
  * the server.
  */
-@interface RouteChatViewController : UIViewController {
-  RTGRouteGuide *_service;
-}
+@interface RouteChatViewController : UIViewController
+
 @property (weak, nonatomic) IBOutlet UILabel *outputLabel;
 
 @end
 
 @implementation RouteChatViewController
+RTGRouteGuide *_service;
 
 - (void)execRequest {
   NSArray *notes = @[[RTGRouteNote noteWithMessage:@"First message" latitude:0 longitude:0],
@@ -305,6 +306,7 @@ static NSString * const kHostAddress = @"localhost:50051";
 }
 
 - (void)viewDidAppear:(BOOL)animated {
+  // TODO(makarandd): Set these properties through UI builder
   self.outputLabel.text = @"RPC log:";
   self.outputLabel.numberOfLines = 0;
   self.outputLabel.font = [UIFont fontWithName:@"Helvetica Neue" size:8.0];
