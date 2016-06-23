@@ -101,7 +101,7 @@ class ZookeeperTest : public ::testing::Test {
       zookeeper_address_ = addr_str;
       gpr_free(addr);
     }
-    gpr_log(GPR_DEBUG, zookeeper_address_.c_str());
+    gpr_log(GPR_DEBUG, "%s", zookeeper_address_.c_str());
 
     // Connects to zookeeper server
     zoo_set_debug_level(ZOO_LOG_LEVEL_WARN);

@@ -4,7 +4,6 @@
     "name": "grpc/grpc",
     "type": "library",
     "description": "gRPC library for PHP",
-    "version": "${settings.php_version.php()}",
     "keywords": ["rpc"],
     "homepage": "http://grpc.io",
     "license": "BSD-3-Clause",

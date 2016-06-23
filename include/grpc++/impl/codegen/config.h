@@ -54,6 +54,7 @@
 // nullptr was added in gcc 4.6
 #if (__GNUC__ * 100 + __GNUC_MINOR__ < 406)
 #define GRPC_CXX0X_NO_NULLPTR 1
+#define GRPC_CXX0X_LIMITED_TOSTRING 1
 #endif
 // final and override were added in gcc 4.7
 #if (__GNUC__ * 100 + __GNUC_MINOR__ < 407)
@@ -78,6 +79,7 @@
 #endif
 
 #ifdef GRPC_CXX0X_NO_NULLPTR
+#include <functional>
 #include <memory>
 namespace grpc {
 const class {
@@ -95,6 +97,10 @@ const class {
     return std::shared_ptr<T>(static_cast<T *>(0));
   }
   operator bool() const { return false; }
+  template <class F>
+  operator std::function<F>() const {
+    return std::function<F>();
+  }
 
  private:
   void operator&() const = delete;
@@ -110,6 +116,17 @@ const class {
 namespace grpc {
 
 typedef GRPC_CUSTOM_STRING string;
+
+#ifdef GRPC_CXX0X_LIMITED_TOSTRING
+inline grpc::string to_string(const int x) {
+  return std::to_string(static_cast<const long long int>(x));
+}
+inline grpc::string to_string(const unsigned int x) {
+  return std::to_string(static_cast<const long long unsigned int>(x));
+}
+#else
+using std::to_string;
+#endif
 
 }  // namespace grpc
 

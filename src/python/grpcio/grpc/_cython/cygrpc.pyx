@@ -35,6 +35,7 @@ import sys
 
 # TODO(atash): figure out why the coverage tool gets confused about the Cython
 # coverage plugin when the following files don't have a '.pxi' suffix.
+include "grpc/_cython/_cygrpc/grpc_string.pyx.pxi"
 include "grpc/_cython/_cygrpc/call.pyx.pxi"
 include "grpc/_cython/_cygrpc/channel.pyx.pxi"
 include "grpc/_cython/_cygrpc/credentials.pyx.pxi"

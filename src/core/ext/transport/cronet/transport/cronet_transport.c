@@ -152,14 +152,18 @@ static void next_recv_step(stream_obj *s, enum e_caller caller);
 static void set_pollset_do_nothing(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
                                    grpc_stream *gs, grpc_pollset *pollset) {}
 
+static void set_pollset_set_do_nothing(grpc_exec_ctx *exec_ctx,
+                                       grpc_transport *gt, grpc_stream *gs,
+                                       grpc_pollset_set *pollset_set) {}
+
 static void enqueue_callbacks(grpc_closure *callback_list[]) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   if (callback_list[0]) {
-    grpc_exec_ctx_enqueue(&exec_ctx, callback_list[0], true, NULL);
+    grpc_exec_ctx_sched(&exec_ctx, callback_list[0], GRPC_ERROR_NONE, NULL);
     callback_list[0] = NULL;
   }
   if (callback_list[1]) {
-    grpc_exec_ctx_enqueue(&exec_ctx, callback_list[1], true, NULL);
+    grpc_exec_ctx_sched(&exec_ctx, callback_list[1], GRPC_ERROR_NONE, NULL);
     callback_list[1] = NULL;
   }
   grpc_exec_ctx_finish(&exec_ctx);
@@ -646,7 +650,13 @@ static void destroy_transport(grpc_exec_ctx *exec_ctx, grpc_transport *gt) {
   }
 }
 
-const grpc_transport_vtable grpc_cronet_vtable = {
-    sizeof(stream_obj),     "cronet_http",     init_stream,
-    set_pollset_do_nothing, perform_stream_op, NULL,
-    destroy_stream,         destroy_transport, NULL};
+const grpc_transport_vtable grpc_cronet_vtable = {sizeof(stream_obj),
+                                                  "cronet_http",
+                                                  init_stream,
+                                                  set_pollset_do_nothing,
+                                                  set_pollset_set_do_nothing,
+                                                  perform_stream_op,
+                                                  NULL,
+                                                  destroy_stream,
+                                                  destroy_transport,
+                                                  NULL};

@@ -36,7 +36,9 @@
 
   RUN apt-get update && apt-get install -y ${'\\'}
     gcc-4.4 ${'\\'}
-    gcc-4.4-multilib
+    gcc-4.4-multilib ${'\\'}
+    g++-4.4 ${'\\'}
+    g++-4.4-multilib
 
   RUN wget ${openssl_fallback.base_uri + openssl_fallback.tarball}
 

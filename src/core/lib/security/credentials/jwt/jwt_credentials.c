@@ -64,7 +64,7 @@ static void jwt_destruct(grpc_call_credentials *creds) {
 
 static void jwt_get_request_metadata(grpc_exec_ctx *exec_ctx,
                                      grpc_call_credentials *creds,
-                                     grpc_pollset *pollset,
+                                     grpc_polling_entity *pollent,
                                      grpc_auth_metadata_context context,
                                      grpc_credentials_metadata_cb cb,
                                      void *user_data) {

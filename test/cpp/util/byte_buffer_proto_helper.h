@@ -36,8 +36,8 @@
 
 #include <memory>
 
+#include <grpc++/impl/codegen/config_protobuf.h>
 #include <grpc++/support/byte_buffer.h>
-#include <grpc++/support/config_protobuf.h>
 
 namespace grpc {
 namespace testing {

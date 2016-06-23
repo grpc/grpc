@@ -69,6 +69,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Grpc.Examples.Tests.project.json" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
