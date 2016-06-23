@@ -34,7 +34,6 @@
     "index.js",
     "bin/protoc.js",
     "bin/protoc_plugin.js",
-    "bin/google/protobuf",
     "LICENSE"
   ],
   "main": "index.js"
