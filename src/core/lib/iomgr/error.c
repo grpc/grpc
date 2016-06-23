@@ -276,7 +276,8 @@ bool grpc_error_get_int(grpc_error *err, grpc_error_ints which, intptr_t *p) {
   void *pp;
   if (is_special(err)) {
     if (err == GRPC_ERROR_CANCELLED && which == GRPC_ERROR_INT_GRPC_STATUS) {
-      return GRPC_STATUS_CANCELLED;
+      *p = GRPC_STATUS_CANCELLED;
+      return true;
     }
     return false;
   }
