@@ -56,10 +56,12 @@ static void invoke_lr_fn_locked(grpc_load_reporting_config *lrc,
 }
 
 /* Constructor for call_data */
-static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                           grpc_call_element_args *args) {
+static grpc_error* init_call_elem(grpc_exec_ctx *exec_ctx,
+                                  grpc_call_element *elem,
+                                  grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
   memset(calld, 0, sizeof(call_data));
+  return GRPC_ERROR_NONE;
 }
 
 /* Destructor for call_data */

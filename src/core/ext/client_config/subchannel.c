@@ -709,8 +709,11 @@ grpc_subchannel_call *grpc_connected_subchannel_create_call(
   grpc_call_stack *callstk = SUBCHANNEL_CALL_TO_CALL_STACK(call);
   call->connection = con;
   GRPC_CONNECTED_SUBCHANNEL_REF(con, "subchannel_call");
-  grpc_call_stack_init(exec_ctx, chanstk, 1, subchannel_call_destroy, call,
-                       NULL, NULL, callstk);
+  grpc_error* error = grpc_call_stack_init(exec_ctx, chanstk, 1,
+                                           subchannel_call_destroy, call,
+                                           NULL, NULL, callstk);
+// FIXME: handle error (probably requires changing this function's API)
+GPR_ASSERT(error == GRPC_ERROR_NONE);
   grpc_call_stack_set_pollset_or_pollset_set(exec_ctx, callstk, pollent);
   return call;
 }

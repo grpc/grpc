@@ -264,10 +264,12 @@ static void auth_start_transport_op(grpc_exec_ctx *exec_ctx,
 }
 
 /* Constructor for call_data */
-static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                           grpc_call_element_args *args) {
+static grpc_error* init_call_elem(grpc_exec_ctx *exec_ctx,
+                                  grpc_call_element *elem,
+                                  grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
   memset(calld, 0, sizeof(*calld));
+  return GRPC_ERROR_NONE;
 }
 
 static void set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,

@@ -169,11 +169,13 @@ static void hc_start_transport_op(grpc_exec_ctx *exec_ctx,
 }
 
 /* Constructor for call_data */
-static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                           grpc_call_element_args *args) {
+static grpc_error* init_call_elem(grpc_exec_ctx *exec_ctx,
+                                  grpc_call_element *elem,
+                                  grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
   calld->on_done_recv = NULL;
   grpc_closure_init(&calld->hc_on_recv, hc_on_recv, elem);
+  return GRPC_ERROR_NONE;
 }
 
 /* Destructor for call_data */

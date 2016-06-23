@@ -81,16 +81,17 @@ static void con_start_transport_op(grpc_exec_ctx *exec_ctx,
 }
 
 /* Constructor for call_data */
-static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                           grpc_call_element_args *args) {
+static grpc_error* init_call_elem(grpc_exec_ctx *exec_ctx,
+                                  grpc_call_element *elem,
+                                  grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
-  int r;
-
-  r = grpc_transport_init_stream(
+  int r = grpc_transport_init_stream(
       exec_ctx, chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA(calld),
       &args->call_stack->refcount, args->server_transport_data);
-  GPR_ASSERT(r == 0);
+  return r == 0
+         ? GRPC_ERROR_NONE
+         : GRPC_ERROR_CREATE("transport initialization failed");
 }
 
 static void set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,

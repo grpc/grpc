@@ -110,8 +110,9 @@ typedef struct {
      on a client; if it is non-NULL, then it points to memory owned by the
      transport and is on the server. Most filters want to ignore this
      argument. */
-  void (*init_call_elem)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                         grpc_call_element_args *args);
+  grpc_error* (*init_call_elem)(grpc_exec_ctx *exec_ctx,
+                                grpc_call_element *elem,
+                                grpc_call_element_args *args);
   void (*set_pollset_or_pollset_set)(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
                                      grpc_polling_entity *pollent);
@@ -209,12 +210,13 @@ void grpc_channel_stack_destroy(grpc_exec_ctx *exec_ctx,
 /* Initialize a call stack given a channel stack. transport_server_data is
    expected to be NULL on a client, or an opaque transport owned pointer on the
    server. */
-void grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
-                          grpc_channel_stack *channel_stack, int initial_refs,
-                          grpc_iomgr_cb_func destroy, void *destroy_arg,
-                          grpc_call_context_element *context,
-                          const void *transport_server_data,
-                          grpc_call_stack *call_stack);
+grpc_error* grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
+                                 grpc_channel_stack *channel_stack,
+                                 int initial_refs, grpc_iomgr_cb_func destroy,
+                                 void *destroy_arg,
+                                 grpc_call_context_element *context,
+                                 const void *transport_server_data,
+                                 grpc_call_stack *call_stack);
 /* Set a pollset or a pollset_set for a call stack: must occur before the first
  * op is started */
 void grpc_call_stack_set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,

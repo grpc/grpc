@@ -224,13 +224,15 @@ static void hs_start_transport_op(grpc_exec_ctx *exec_ctx,
 }
 
 /* Constructor for call_data */
-static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                           grpc_call_element_args *args) {
+static grpc_error* init_call_elem(grpc_exec_ctx *exec_ctx,
+                                  grpc_call_element *elem,
+                                  grpc_call_element_args *args) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   /* initialize members */
   memset(calld, 0, sizeof(*calld));
   grpc_closure_init(&calld->hs_on_recv, hs_on_recv, elem);
+  return GRPC_ERROR_NONE;
 }
 
 /* Destructor for call_data */

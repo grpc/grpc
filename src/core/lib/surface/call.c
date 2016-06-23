@@ -262,9 +262,12 @@ grpc_call *grpc_call_create(
   call->send_deadline = send_deadline;
   GRPC_CHANNEL_INTERNAL_REF(channel, "call");
   /* initial refcount dropped by grpc_call_destroy */
-  grpc_call_stack_init(&exec_ctx, channel_stack, 1, destroy_call, call,
-                       call->context, server_transport_data,
-                       CALL_STACK_FROM_CALL(call));
+  grpc_error* error = grpc_call_stack_init(&exec_ctx, channel_stack, 1,
+                                           destroy_call, call, call->context,
+                                           server_transport_data,
+                                           CALL_STACK_FROM_CALL(call));
+// FIXME: handle error (probably requires changing this function's API)
+GPR_ASSERT(error == GRPC_ERROR_NONE);
   if (cq != NULL) {
     GPR_ASSERT(
         pollset_set_alternative == NULL &&

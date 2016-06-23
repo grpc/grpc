@@ -53,10 +53,12 @@ static void channel_init_func(grpc_exec_ctx *exec_ctx,
   *(int *)(elem->channel_data) = 0;
 }
 
-static void call_init_func(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                           grpc_call_element_args *args) {
+static grpc_error* call_init_func(grpc_exec_ctx *exec_ctx,
+                                  grpc_call_element *elem,
+                                  grpc_call_element_args *args) {
   ++*(int *)(elem->channel_data);
   *(int *)(elem->call_data) = 0;
+  return GRPC_ERROR_NONE;
 }
 
 static void channel_destroy_func(grpc_exec_ctx *exec_ctx,
@@ -132,8 +134,10 @@ static void test_create_channel_stack(void) {
   GPR_ASSERT(*channel_data == 0);
 
   call_stack = gpr_malloc(channel_stack->call_stack_size);
-  grpc_call_stack_init(&exec_ctx, channel_stack, 1, free_call, call_stack, NULL,
-                       NULL, call_stack);
+  grpc_error* error = grpc_call_stack_init(&exec_ctx, channel_stack, 1,
+                                           free_call, call_stack, NULL, NULL,
+                                           call_stack);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(call_stack->count == 1);
   call_elem = grpc_call_stack_element(call_stack, 0);
   GPR_ASSERT(call_elem->filter == channel_elem->filter);
