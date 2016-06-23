@@ -49,7 +49,7 @@ namespace Grpc.HealthCheck.Tests
         {
             // Make logger immune to NUnit capturing stdout and stderr to workaround https://github.com/nunit/nunit/issues/1406.
             GrpcEnvironment.SetLogger(new TextWriterLogger(Console.Error));
-#if DOTNET5_4
+#if NETSTANDARD1_5
             return new AutoRun(typeof(NUnitMain).GetTypeInfo().Assembly).Execute(args, new ExtendedTextWrapper(Console.Out), Console.In);
 #else
             return new AutoRun().Execute(args);

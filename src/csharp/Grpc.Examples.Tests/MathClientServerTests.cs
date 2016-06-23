@@ -110,7 +110,7 @@ namespace Math.Tests
             {
                 var responses = await call.ResponseStream.ToListAsync();
                 CollectionAssert.AreEqual(new List<long> { 1, 1, 2, 3, 5, 8 },
-                    responses.ConvertAll((n) => n.Num_));
+                    responses.Select((n) => n.Num_));
             }
         }
 
@@ -162,7 +162,7 @@ namespace Math.Tests
         {
             using (var call = client.Sum())
             {
-                var numbers = new List<long> { 10, 20, 30 }.ConvertAll(n => new Num { Num_ = n });
+                var numbers = new List<long> { 10, 20, 30 }.Select(n => new Num { Num_ = n });
 
                 await call.RequestStream.WriteAllAsync(numbers);
                 var result = await call.ResponseAsync;
@@ -185,8 +185,8 @@ namespace Math.Tests
                 await call.RequestStream.WriteAllAsync(divArgsList);
                 var result = await call.ResponseStream.ToListAsync();
 
-                CollectionAssert.AreEqual(new long[] { 3, 4, 3 }, result.ConvertAll((divReply) => divReply.Quotient));
-                CollectionAssert.AreEqual(new long[] { 1, 16, 1 }, result.ConvertAll((divReply) => divReply.Remainder));
+                CollectionAssert.AreEqual(new long[] { 3, 4, 3 }, result.Select((divReply) => divReply.Quotient));
+                CollectionAssert.AreEqual(new long[] { 1, 16, 1 }, result.Select((divReply) => divReply.Remainder));
             }
         }
     }

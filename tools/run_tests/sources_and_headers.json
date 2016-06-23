@@ -4624,7 +4624,7 @@
     "language": "c++", 
     "name": "interop_server_main", 
     "src": [
-      "test/cpp/interop/server_main.cc"
+      "test/cpp/interop/interop_server.cc"
     ], 
     "third_party": false, 
     "type": "lib"

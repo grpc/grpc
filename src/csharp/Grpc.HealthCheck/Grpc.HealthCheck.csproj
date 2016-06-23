@@ -65,6 +65,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Grpc.HealthCheck.nuspec" />
+    <None Include="Grpc.HealthCheck.project.json" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
