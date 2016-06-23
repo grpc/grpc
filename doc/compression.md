@@ -42,13 +42,13 @@ and RPC settings (for example, if compression would result in small or negative
 gains).
 
 When a message from a client compressed with an unsupported algorithm is
-processed by a server, it WILL result in an INVALID\_ARGUMENT error on the
+processed by a server, it WILL result in a `UNIMPLEMENTED` error status on the
 server. The server will then include in its response a `grpc-accept-encoding`
-header specifying the algorithms it does accept. If an INTERNAL error is
-returned from the server despite having used one of the algorithms from the
-`grpc-accept-encoding` header, the cause MUST NOT be related to compression.
-Data sent from a server compressed with an algorithm not supported by the client
-WILL result in an INTERNAL error on the client side.
+header specifying the algorithms it does accept. If an `UNIMPLEMENTED` error
+status is returned from the server despite having used one of the algorithms
+from the `grpc-accept-encoding` header, the cause MUST NOT be related to
+compression. Data sent from a server compressed with an algorithm not supported
+by the client WILL result in an `INTERNAL` error status on the client side.
 
 Note that a peer MAY choose to not disclose all the encodings it supports.
 However, if it receives a message compressed in an undisclosed but supported
@@ -99,13 +99,20 @@ compressed.
 channel compression configuration MUST be used.
 1. When a compression method (including no compression) is specified for an
 outgoing message, the message MUST be compressed accordingly.
-1. A message compressed in a way not supported by its endpoint MUST fail with
-INVALID\_ARGUMENT status, its associated description indicating the unsupported
-condition as well as the supported ones. The returned `grpc-accept-encoding`
-header MUST NOT contain the compression method (encoding) used.
+1. A message compressed by a client in a way not supported by its server MUST
+fail with status `UNIMPLEMENTED`, its associated description indicating the
+unsupported condition as well as the supported ones. The returned
+`grpc-accept-encoding` header MUST NOT contain the compression method
+(encoding) used.
+1. A message compressed by a server in a way not supported by its client MUST
+fail with status `INTERNAL`, its associated description indicating the
+unsupported condition as well as the supported ones. The returned
+`grpc-accept-encoding` header MUST NOT contain the compression method
+(encoding) used.
 1. An ill-constructed message with its [Compressed-Flag
 bit](PROTOCOL-HTTP2.md#compressed-flag)
 set but lacking a
 "[grpc-encoding](PROTOCOL-HTTP2.md#message-encoding)"
-entry different from _identity_ in its metadata MUST fail with INTERNAL status,
-its associated description indicating the invalid Compressed-Flag condition.
+entry different from _identity_ in its metadata MUST fail with `INTERNAL`
+status, its associated description indicating the invalid Compressed-Flag
+condition.
