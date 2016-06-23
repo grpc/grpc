@@ -270,12 +270,10 @@ grpc_call *grpc_call_create(
     intptr_t status;
     if (!grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &status))
       status = GRPC_STATUS_UNKNOWN;
-    const char* error_string = grpc_error_string(error);
-    received_status* status_struct = &call->status[STATUS_FROM_CORE];
-    status_struct->is_set = true;
-    status_struct->code = status;
-    status_struct->details = grpc_mdstr_from_string(error_string);
-    grpc_error_free_string(error_string);
+    const char* error_str = grpc_error_get_str(error,
+                                               GRPC_ERROR_STR_DESCRIPTION);
+    close_with_status(&exec_ctx, call, status,
+                      error_str == NULL ?  "unknown error" : error_str);
     grpc_error_unref(error);
   }
   if (cq != NULL) {

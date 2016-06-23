@@ -286,6 +286,12 @@ grpc_error *grpc_error_set_str(grpc_error *src, grpc_error_strs which,
   return new;
 }
 
+const char *grpc_error_get_str(grpc_error *error, grpc_error_strs which) {
+  void *s = NULL;
+  gpr_avl_maybe_get(error->strs, (void *)(uintptr_t)which, &s);
+  return s;
+}
+
 grpc_error *grpc_error_add_child(grpc_error *src, grpc_error *child) {
   grpc_error *new = copy_error_and_unref(src);
   new->errs = gpr_avl_add(new->errs, (void *)(new->next_err++), child);

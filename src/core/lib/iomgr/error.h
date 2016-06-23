@@ -169,6 +169,9 @@ grpc_error *grpc_error_set_time(grpc_error *src, grpc_error_times which,
                                 gpr_timespec value);
 grpc_error *grpc_error_set_str(grpc_error *src, grpc_error_strs which,
                                const char *value);
+/// Returns NULL if the specified string is not set.
+/// Caller does NOT own return value.
+const char *grpc_error_get_str(grpc_error *error, grpc_error_strs which);
 /// Add a child error: an error that is believed to have contributed to this
 /// error occurring. Allows root causing high level errors from lower level
 /// errors that contributed to them.
