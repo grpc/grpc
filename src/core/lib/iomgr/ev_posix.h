@@ -100,7 +100,7 @@ void grpc_event_engine_init(void);
 void grpc_event_engine_shutdown(void);
 
 /* Return the name of the poll strategy */
-const char* grpc_get_poll_strategy_name();
+const char *grpc_get_poll_strategy_name();
 
 /* Create a wrapped file descriptor.
    Requires fd is a non-blocking file descriptor.
