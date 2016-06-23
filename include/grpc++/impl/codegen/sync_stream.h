@@ -70,6 +70,9 @@ class ReaderInterface {
  public:
   virtual ~ReaderInterface() {}
 
+  /// Upper bound on the next message size available for reading on this stream
+  virtual uint32_t NextMessageSize() = 0;
+
   /// Blocking read a message and parse to \a msg. Returns \a true on success.
   ///
   /// \param[out] msg The read message.
@@ -142,6 +145,8 @@ class ClientReader GRPC_FINAL : public ClientReaderInterface<R> {
     call_.PerformOps(&ops);
     cq_.Pluck(&ops);  /// status ignored
   }
+
+  uint32_t NextMessageSize() GRPC_OVERRIDE {return call_.max_message_size();}
 
   bool Read(R* msg) GRPC_OVERRIDE {
     CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>> ops;
@@ -286,6 +291,8 @@ class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
     cq_.Pluck(&ops);  // status ignored
   }
 
+  uint32_t NextMessageSize() GRPC_OVERRIDE {return call_.max_message_size();}
+
   bool Read(R* msg) GRPC_OVERRIDE {
     CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>> ops;
     if (!context_->initial_metadata_received_) {
@@ -344,6 +351,8 @@ class ServerReader GRPC_FINAL : public ReaderInterface<R> {
     call_->PerformOps(&ops);
     call_->cq()->Pluck(&ops);
   }
+
+  uint32_t NextMessageSize() GRPC_OVERRIDE {return call_->max_message_size();}
 
   bool Read(R* msg) GRPC_OVERRIDE {
     CallOpSet<CallOpRecvMessage<R>> ops;
@@ -410,6 +419,8 @@ class ServerReaderWriter GRPC_FINAL : public WriterInterface<W>,
     call_->PerformOps(&ops);
     call_->cq()->Pluck(&ops);
   }
+
+  uint32_t NextMessageSize() GRPC_OVERRIDE {return call_->max_message_size();}
 
   bool Read(R* msg) GRPC_OVERRIDE {
     CallOpSet<CallOpRecvMessage<R>> ops;

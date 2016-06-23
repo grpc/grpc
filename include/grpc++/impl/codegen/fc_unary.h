@@ -45,16 +45,17 @@ namespace grpc {
 /// of a hybrid between conventional unary and streaming. This is invoked
 /// through a unary call on the client side, but the server responds to it
 /// as though it were a single-ping-pong streaming call. The server can use
-/// the \a Size method to determine an upper-bound on the size of the message
+/// the \a NextMessageSize method to determine an upper-bound on the size of
+/// the message.
 /// A key difference relative to streaming: an FCUnary must have exactly 1 Read
 /// and exactly 1 Write, in that order, to function correctly.
-/// Otherwise, the RPC is in error
+/// Otherwise, the RPC is in error.
 template <class RequestType, class ResponseType>
   class FCUnary GRPC_FINAL {
  public:
- FCUnary(Call* call, ServerContext* ctx, int max_message_size): call_(call), ctx_(ctx), max_msg_size_(max_message_size), read_done_(false), write_done_(false) {}
+ FCUnary(Call* call, ServerContext* ctx): call_(call), ctx_(ctx), read_done_(false), write_done_(false) {}
   ~FCUnary() {}
-  uint32_t Size() {return max_msg_size_;}
+  uint32_t NextMessageSize() {return call_->max_message_size();}
   bool Read(RequestType *request) {
     if (read_done_) {
       return false;      
@@ -88,7 +89,6 @@ template <class RequestType, class ResponseType>
  private:
   Call* const call_;
   ServerContext* const ctx_;
-  const int max_msg_size_;
   bool read_done_;
   bool write_done_;
 };

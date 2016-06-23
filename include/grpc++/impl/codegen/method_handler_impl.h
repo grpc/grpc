@@ -204,8 +204,7 @@ class FCUnaryMethodHandler : public MethodHandler {
 
   void RunHandler(const HandlerParameter& param) GRPC_FINAL {
     FCUnary<RequestType, ResponseType> fc_unary(param.call,
-						param.server_context,
-						param.max_message_size);
+						param.server_context);
     Status status = func_(service_, param.server_context, &fc_unary);
     if (!param.server_context->sent_initial_metadata_) {
       // means that the write never happened, which is bad
