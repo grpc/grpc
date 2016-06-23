@@ -71,17 +71,22 @@ namespace Grpc.Health.V1 {
     /// <summary>Client for Health</summary>
     public class HealthClient : ClientBase<HealthClient>
     {
+      /// <summary>Creates a new client for Health</summary>
+      /// <param name="channel">The channel to use to make remote calls.</param>
       public HealthClient(Channel channel) : base(channel)
       {
       }
+      /// <summary>Creates a new client for Health that uses a custom <c>CallInvoker</c>.</summary>
+      /// <param name="callInvoker">The callInvoker to use to make remote calls.</param>
       public HealthClient(CallInvoker callInvoker) : base(callInvoker)
       {
       }
-      ///<summary>Protected parameterless constructor to allow creation of test doubles.</summary>
+      /// <summary>Protected parameterless constructor to allow creation of test doubles.</summary>
       protected HealthClient() : base()
       {
       }
-      ///<summary>Protected constructor to allow creation of configured clients.</summary>
+      /// <summary>Protected constructor to allow creation of configured clients.</summary>
+      /// <param name="configuration">The client configuration.</param>
       protected HealthClient(ClientBaseConfiguration configuration) : base(configuration)
       {
       }
@@ -106,12 +111,6 @@ namespace Grpc.Health.V1 {
       {
         return new HealthClient(configuration);
       }
-    }
-
-    /// <summary>Creates a new client for Health</summary>
-    public static HealthClient NewClient(Channel channel)
-    {
-      return new HealthClient(channel);
     }
 
     /// <summary>Creates service definition that can be registered with a server</summary>
