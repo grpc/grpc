@@ -135,12 +135,12 @@ class ChannelConnectivityTest(unittest.TestCase):
     self.assertNotIn(
         grpc.ChannelConnectivity.TRANSIENT_FAILURE, third_connectivities)
     self.assertNotIn(
-        grpc.ChannelConnectivity.FATAL_FAILURE, third_connectivities)
+        grpc.ChannelConnectivity.SHUTDOWN, third_connectivities)
     self.assertNotIn(
         grpc.ChannelConnectivity.TRANSIENT_FAILURE,
         fourth_connectivities)
     self.assertNotIn(
-        grpc.ChannelConnectivity.FATAL_FAILURE, fourth_connectivities)
+        grpc.ChannelConnectivity.SHUTDOWN, fourth_connectivities)
 
   def test_reachable_then_unreachable_channel_connectivity(self):
     server = _server.Server((), futures.ThreadPoolExecutor(max_workers=0))

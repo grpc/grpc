@@ -129,6 +129,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Grpc.IntegrationTesting.project.json" />
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>

@@ -1,0 +1,24 @@
+%YAML 1.2
+--- |
+  {
+    <%include file="../build_options.include" args="executable=True"/>
+    "dependencies": {
+      "Grpc.Core": {
+        "target": "project"
+      },
+      "Newtonsoft.Json": "8.0.3",
+      "NUnit": "3.2.0",
+      "NUnitLite": "3.2.0-*"
+    },
+    "frameworks": {
+      "net45": { },
+      "netstandard1.5": {
+        "imports": [
+          "portable-net45"
+        ],
+        "dependencies": {
+          "NETStandard.Library": "1.5.0-rc2-24027"
+        }
+      }
+    },
+  }

@@ -249,10 +249,12 @@ grpcsharp_batch_context_recv_initial_metadata(
 
 GPR_EXPORT intptr_t GPR_CALLTYPE grpcsharp_batch_context_recv_message_length(
     const grpcsharp_batch_context *ctx) {
+  grpc_byte_buffer_reader reader;
   if (!ctx->recv_message) {
     return -1;
   }
-  return (intptr_t)grpc_byte_buffer_length(ctx->recv_message);
+  grpc_byte_buffer_reader_init(&reader, ctx->recv_message);
+  return (intptr_t)grpc_byte_buffer_length(reader.buffer_out);
 }
 
 /*
