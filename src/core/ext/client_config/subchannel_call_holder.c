@@ -84,6 +84,11 @@ void grpc_subchannel_call_holder_destroy(grpc_exec_ctx *exec_ctx,
   gpr_free(holder->waiting_ops);
 }
 
+// The logic here is fairly complicated, due to (a) the fact that we
+// need to handle the case where we receive the send op before the
+// initial metadata op, and (b) the need for efficiency, especially in
+// the streaming case.
+// TODO(ctiller): Explain this more thoroughly.
 void grpc_subchannel_call_holder_perform_op(grpc_exec_ctx *exec_ctx,
                                             grpc_subchannel_call_holder *holder,
                                             grpc_transport_stream_op *op) {
@@ -121,7 +126,8 @@ retry:
   }
   /* if this is a cancellation, then we can raise our cancelled flag */
   if (op->cancel_with_status != GRPC_STATUS_OK) {
-    if (!gpr_atm_rel_cas(&holder->subchannel_call, 0, 1)) {
+    if (!gpr_atm_rel_cas(&holder->subchannel_call, 0,
+                         (gpr_atm)(uintptr_t)CANCELLED_CALL)) {
       goto retry;
     } else {
       switch (holder->creation_phase) {
@@ -161,10 +167,17 @@ retry:
   /* if we've got a subchannel, then let's ask it to create a call */
   if (holder->creation_phase == GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING &&
       holder->connected_subchannel != NULL) {
-    gpr_atm_rel_store(
-        &holder->subchannel_call,
-        (gpr_atm)(uintptr_t)grpc_connected_subchannel_create_call(
-            exec_ctx, holder->connected_subchannel, holder->pollent));
+    grpc_subchannel_call* subchannel_call = NULL;
+    grpc_error* error = grpc_connected_subchannel_create_call(
+        exec_ctx, holder->connected_subchannel, holder->pollent,
+        &subchannel_call);
+    if (error != GRPC_ERROR_NONE) {
+      subchannel_call = CANCELLED_CALL;
+      fail_locked(exec_ctx, holder, error);
+      grpc_transport_stream_op_finish_with_failure(exec_ctx, op, error);
+    }
+    gpr_atm_rel_store(&holder->subchannel_call,
+                      (gpr_atm)(uintptr_t)subchannel_call);
     retry_waiting_locked(exec_ctx, holder);
     goto retry;
   }
@@ -192,10 +205,17 @@ static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *arg,
                 GRPC_ERROR_CREATE_REFERENCING(
                     "Cancelled before creating subchannel", &error, 1));
   } else {
-    gpr_atm_rel_store(
-        &holder->subchannel_call,
-        (gpr_atm)(uintptr_t)grpc_connected_subchannel_create_call(
-            exec_ctx, holder->connected_subchannel, holder->pollent));
+    grpc_subchannel_call* subchannel_call = NULL;
+    grpc_error* new_error = grpc_connected_subchannel_create_call(
+        exec_ctx, holder->connected_subchannel, holder->pollent,
+        &subchannel_call);
+    if (new_error != GRPC_ERROR_NONE) {
+      grpc_error_add_child(new_error, error);
+      subchannel_call = CANCELLED_CALL;
+      fail_locked(exec_ctx, holder, new_error);
+    }
+    gpr_atm_rel_store(&holder->subchannel_call,
+                      (gpr_atm)(uintptr_t)subchannel_call);
     retry_waiting_locked(exec_ctx, holder);
   }
   gpr_mu_unlock(&holder->mu);
