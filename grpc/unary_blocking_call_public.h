@@ -32,25 +32,12 @@
  */
 
 
-#ifndef TEST_GRPC_C_GRPC_C_PUBLIC_H
-#define TEST_GRPC_C_GRPC_C_PUBLIC_H
+#ifndef TEST_GRPC_C_UNARY_BLOCKING_CALL_PUBLIC_H
+#define TEST_GRPC_C_UNARY_BLOCKING_CALL_PUBLIC_H
 
-#include <stdlib.h>
-#include "message_public.h"
+#include "grpc_c_public.h"
 
-typedef struct grpc_channel GRPC_channel;
-typedef struct grpc_status GRPC_status;
-typedef struct grpc_context GRPC_context;
+GRPC_status GRPC_unary_blocking_call(GRPC_channel *channel, const GRPC_method *const rpc_method,
+                                     GRPC_context *const context, const GRPC_message message, GRPC_message *response);
 
-typedef struct GRPC_method {
-  enum RpcType {
-    NORMAL_RPC = 0,
-    CLIENT_STREAMING,  // request streaming
-    SERVER_STREAMING,  // response streaming
-    BIDI_STREAMING
-  } type;
-  const char* name;
-} GRPC_method;
-
-
-#endif //TEST_GRPC_C_GRPC_C_PUBLIC_H
+#endif //TEST_GRPC_C_UNARY_BLOCKING_CALL_PUBLIC_H
