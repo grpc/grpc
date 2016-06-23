@@ -37,7 +37,8 @@
 
 #include <stdbool.h>
 
-typedef grpc_completion_queue GRPC_completion_queue;
+typedef struct grpc_completion_queue GRPC_completion_queue;
+typedef struct gpr_timespec gpr_timespec;
 
 /// Tri-state return for GRPC_commit_call_and_wait
 typedef enum GRPC_completion_queue_next_status {

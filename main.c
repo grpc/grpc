@@ -35,6 +35,7 @@
 #include <assert.h>
 #include <string.h>
 #include "grpc/grpc_c_public.h"
+#include "grpc/status_code_public.h"
 #include "grpc/status_public.h"
 #include "grpc/context_public.h"
 #include "grpc/channel_public.h"
