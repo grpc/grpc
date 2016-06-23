@@ -60,6 +60,11 @@ extern "C" {
 
 #define NUM_BACKENDS 4
 
+// TODO(dgq): Other scenarios in need of testing:
+// - Send identical serverlist update
+// - Test reception of invalid serverlist
+// - Test pinging
+
 namespace grpc {
 namespace {
 
@@ -95,15 +100,14 @@ static void *tag(intptr_t t) { return (void *)t; }
 static gpr_slice build_response_payload_slice(
     const char *host, int *ports, size_t nports,
     int64_t expiration_interval_secs, int32_t expiration_interval_nanos) {
-  /*
-  server_list {
-    servers {
-      ip_address: "127.0.0.1"
-      port: ...
-      load_balance_token: "token..."
-    }
-    ...
-  } */
+  // server_list {
+  //   servers {
+  //     ip_address: "127.0.0.1"
+  //     port: ...
+  //     load_balance_token: "token..."
+  //   }
+  //   ...
+  // }
   grpc::lb::v1::LoadBalanceResponse response;
   auto *serverlist = response.mutable_server_list();
 
@@ -184,7 +188,7 @@ static void start_lb_server(server_fixture *sf, int *ports, size_t nports,
   GPR_ASSERT(GRPC_CALL_OK == error);
   gpr_log(GPR_INFO, "LB Server[%s] after tag 201", sf->servers_hostport);
 
-  /* receive request for backends */
+  // receive request for backends 
   op = ops;
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message = &request_payload_recv;
