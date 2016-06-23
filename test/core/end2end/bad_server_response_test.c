@@ -126,7 +126,8 @@ static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   gpr_log(GPR_DEBUG,
           "got %" PRIuPTR " bytes, http2 connect string is %" PRIuPTR " bytes",
           state.incoming_data_length, GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
-  if (state.incoming_data_length > GRPC_CHTTP2_CLIENT_CONNECT_STRLEN) {
+  // if (state.incoming_data_length > GRPC_CHTTP2_CLIENT_CONNECT_STRLEN) {
+  if (state.incoming_data_length > 310) {
     handle_write(exec_ctx);
   } else {
     grpc_endpoint_read(exec_ctx, state.tcp, &state.temp_incoming_buffer,

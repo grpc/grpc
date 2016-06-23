@@ -703,6 +703,7 @@ grpc_connected_subchannel *grpc_subchannel_get_connected_subchannel(
 grpc_subchannel_call *grpc_connected_subchannel_create_call(
     grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *con,
     grpc_polling_entity *pollent) {
+  gpr_log(GPR_DEBUG, "grpc_connected_subchannel_create_call");
   grpc_channel_stack *chanstk = CHANNEL_STACK_FROM_CONNECTION(con);
   grpc_subchannel_call *call =
       gpr_malloc(sizeof(grpc_subchannel_call) + chanstk->call_stack_size);
