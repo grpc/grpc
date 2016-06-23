@@ -1,0 +1,35 @@
+{
+  "version": "0.15.0-dev",
+  "title": "gRPC C# Healthchecking",
+  "authors": [ "Google Inc." ],
+  "copyright": "Copyright 2015, Google Inc.",
+  "packOptions": {
+    "summary": "Implementation of gRPC health service",
+    "description": "Example implementation of grpc.health.v1 service that can be used for health-checking.",
+    "owners": [ "grpc-packages" ],
+    "licenseUrl": "https://github.com/grpc/grpc/blob/master/LICENSE",
+    "projectUrl": "https://github.com/grpc/grpc",
+    "requireLicenseAcceptance": false,
+    "tags": [ "gRPC health check" ]
+  },
+  "dependencies": {
+    "Grpc.Core": "0.15.0-dev",
+    "Google.Protobuf": "3.0.0-beta3"
+  },
+  "frameworks": {
+    "net45": {
+      "frameworkAssemblies": {
+        "System.Runtime": "",
+        "System.IO": ""
+      }
+    },
+    "netstandard1.5": {
+      "imports": [
+        "portable-net45"
+      ],
+      "dependencies": {
+        "NETStandard.Library": "1.5.0-rc2-24027"
+      }
+    }
+  }
+}
