@@ -41,7 +41,7 @@
  */
 + (BOOL)setTLSPEMRootCerts:(nullable NSString *)pemRootCert
                    forHost:(nonnull NSString *)host
-                     error:(NSError **)errorPtr;
+                     error:(NSError * _Nullable * _Nullable)errorPtr;
 /**
  * Configures @c host with TLS/SSL Client Credentials and optionally trusted root Certificate
  * Authorities. If @c pemRootCerts is nil, the default CA Certificates bundled with gRPC will be
@@ -51,6 +51,6 @@
             withPrivateKey:(nullable NSString *)pemPrivateKey
              withCertChain:(nullable NSString *)pemCertChain
                    forHost:(nonnull NSString *)host
-                     error:(NSError **)errorPtr;
+                     error:(NSError * _Nullable * _Nullable)errorPtr;
 
 @end

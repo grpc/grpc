@@ -72,6 +72,10 @@ uint32_t InteropServerContextInspector::GetEncodingsAcceptedByClient() const {
   return grpc_call_test_only_get_encodings_accepted_by_peer(context_.call_);
 }
 
+uint32_t InteropServerContextInspector::GetMessageFlags() const {
+  return grpc_call_test_only_get_message_flags(context_.call_);
+}
+
 std::shared_ptr<const AuthContext>
 InteropServerContextInspector::GetAuthContext() const {
   return context_.auth_context();

@@ -100,5 +100,12 @@ class ChannelConnectivityTest(unittest.TestCase):
         tuple(grpc.ChannelConnectivity))
 
 
+class ChannelTest(unittest.TestCase):
+
+  def test_secure_channel(self):
+    channel_credentials = grpc.ssl_channel_credentials()
+    channel = grpc.secure_channel('google.com:443', channel_credentials)
+
+
 if __name__ == '__main__':
   unittest.main(verbosity=2)
