@@ -64,7 +64,6 @@ void grpc_network_status_register_endpoint(grpc_endpoint *ep) {
     grpc_initialize_network_status_monitor();
   }
   gpr_mu_lock(&g_endpoint_mutex);
-  gpr_log(GPR_DEBUG, "Register endpoint %p", ep);
   if (head == NULL) {
     head = (endpoint_ll_node *)gpr_malloc(sizeof(endpoint_ll_node));
     head->ep = ep;
@@ -81,7 +80,6 @@ void grpc_network_status_register_endpoint(grpc_endpoint *ep) {
 void grpc_network_status_unregister_endpoint(grpc_endpoint *ep) {
   gpr_mu_lock(&g_endpoint_mutex);
   GPR_ASSERT(head);
-  gpr_log(GPR_DEBUG, "Unregister endpoint %p", ep);
   bool found = false;
   endpoint_ll_node *prev = head;
   // if we're unregistering the head, just move head to the next
@@ -116,7 +114,6 @@ void grpc_network_status_shutdown_all_endpoints() {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   for (endpoint_ll_node *curr = head; curr != NULL; curr = curr->next) {
-    gpr_log(GPR_DEBUG, "Shutting down endpoint %p", curr->ep);
     curr->ep->vtable->shutdown(&exec_ctx, curr->ep);
   }
   gpr_mu_unlock(&g_endpoint_mutex);
