@@ -86,8 +86,9 @@ static NSString * const kHostAddress = @"localhost:50051";
 
 @end
 
-@implementation GetFeatureViewController
-RTGRouteGuide *_service;
+@implementation GetFeatureViewController {
+  RTGRouteGuide *_service;
+}
 
 - (void)execRequest {
   void (^handler)(RTGFeature *response, NSError *error) = ^(RTGFeature *response, NSError *error) {
@@ -146,8 +147,9 @@ RTGRouteGuide *_service;
 
 @end
 
-@implementation ListFeaturesViewController
-RTGRouteGuide *_service;
+@implementation ListFeaturesViewController {
+  RTGRouteGuide *_service;
+}
 
 - (void)execRequest {
   RTGRectangle *rectangle = [RTGRectangle message];
@@ -200,8 +202,9 @@ RTGRouteGuide *_service;
 
 @end
 
-@implementation RecordRouteViewController
-RTGRouteGuide *_service;
+@implementation RecordRouteViewController {
+  RTGRouteGuide *_service;
+}
 
 - (void)execRequest {
   NSString *dataBasePath = [NSBundle.mainBundle pathForResource:@"route_guide_db"
@@ -268,8 +271,9 @@ RTGRouteGuide *_service;
 
 @end
 
-@implementation RouteChatViewController
-RTGRouteGuide *_service;
+@implementation RouteChatViewController {
+  RTGRouteGuide *_service;
+}
 
 - (void)execRequest {
   NSArray *notes = @[[RTGRouteNote noteWithMessage:@"First message" latitude:0 longitude:0],
