@@ -38,7 +38,8 @@
 #include "grpc/status_public.h"
 #include "grpc/context_public.h"
 #include "grpc/channel_public.h"
-#include "grpc/client_async_reader_public.h"
+#include "grpc/unary_async_call_public.h"
+#include "grpc/unary_blocking_call_public.h"
 
 static void async_say_hello(GRPC_channel *chan, GRPC_completion_queue *cq);
 static void *async_say_hello_worker(void *param);

@@ -33,9 +33,9 @@
 
 
 #include <grpc/support/log.h>
-#include "client_async_reader.h"
+#include "unary_async_call.h"
 #include "alloc.h"
-#include "../client_async_reader_public.h"
+#include "../unary_async_call_public.h"
 #include "tag.h"
 
 GRPC_client_async_response_reader *GRPC_unary_async_call(GRPC_channel *channel, GRPC_completion_queue *cq, const GRPC_method rpc_method,
