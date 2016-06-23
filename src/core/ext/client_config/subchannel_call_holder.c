@@ -167,8 +167,8 @@ retry:
   /* if we've got a subchannel, then let's ask it to create a call */
   if (holder->creation_phase == GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING &&
       holder->connected_subchannel != NULL) {
-    grpc_subchannel_call* subchannel_call = NULL;
-    grpc_error* error = grpc_connected_subchannel_create_call(
+    grpc_subchannel_call *subchannel_call = NULL;
+    grpc_error *error = grpc_connected_subchannel_create_call(
         exec_ctx, holder->connected_subchannel, holder->pollent,
         &subchannel_call);
     if (error != GRPC_ERROR_NONE) {
@@ -205,8 +205,8 @@ static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *arg,
                 GRPC_ERROR_CREATE_REFERENCING(
                     "Cancelled before creating subchannel", &error, 1));
   } else {
-    grpc_subchannel_call* subchannel_call = NULL;
-    grpc_error* new_error = grpc_connected_subchannel_create_call(
+    grpc_subchannel_call *subchannel_call = NULL;
+    grpc_error *new_error = grpc_connected_subchannel_create_call(
         exec_ctx, holder->connected_subchannel, holder->pollent,
         &subchannel_call);
     if (new_error != GRPC_ERROR_NONE) {

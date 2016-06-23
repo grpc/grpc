@@ -708,11 +708,11 @@ grpc_error *grpc_connected_subchannel_create_call(
   grpc_call_stack *callstk = SUBCHANNEL_CALL_TO_CALL_STACK(*call);
   (*call)->connection = con;
   GRPC_CONNECTED_SUBCHANNEL_REF(con, "subchannel_call");
-  grpc_error* error = grpc_call_stack_init(exec_ctx, chanstk, 1,
-                                           subchannel_call_destroy, *call,
-                                           NULL, NULL, callstk);
+  grpc_error *error =
+      grpc_call_stack_init(exec_ctx, chanstk, 1, subchannel_call_destroy, *call,
+                           NULL, NULL, callstk);
   if (error != GRPC_ERROR_NONE) {
-    const char* error_string = grpc_error_string(error);
+    const char *error_string = grpc_error_string(error);
     gpr_log(GPR_ERROR, "error: %s", error_string);
     grpc_error_free_string(error_string);
     return error;

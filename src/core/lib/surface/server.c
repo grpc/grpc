@@ -848,7 +848,7 @@ static void channel_connectivity_changed(grpc_exec_ctx *exec_ctx, void *cd,
   }
 }
 
-static grpc_error* init_call_elem(grpc_exec_ctx *exec_ctx,
+static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
                                   grpc_call_element_args *args) {
   call_data *calld = elem->call_data;

@@ -262,18 +262,17 @@ grpc_call *grpc_call_create(
   call->send_deadline = send_deadline;
   GRPC_CHANNEL_INTERNAL_REF(channel, "call");
   /* initial refcount dropped by grpc_call_destroy */
-  grpc_error* error = grpc_call_stack_init(&exec_ctx, channel_stack, 1,
-                                           destroy_call, call, call->context,
-                                           server_transport_data,
-                                           CALL_STACK_FROM_CALL(call));
+  grpc_error *error = grpc_call_stack_init(
+      &exec_ctx, channel_stack, 1, destroy_call, call, call->context,
+      server_transport_data, CALL_STACK_FROM_CALL(call));
   if (error != GRPC_ERROR_NONE) {
     intptr_t status;
     if (!grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &status))
       status = GRPC_STATUS_UNKNOWN;
-    const char* error_str = grpc_error_get_str(error,
-                                               GRPC_ERROR_STR_DESCRIPTION);
+    const char *error_str =
+        grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION);
     close_with_status(&exec_ctx, call, status,
-                      error_str == NULL ?  "unknown error" : error_str);
+                      error_str == NULL ? "unknown error" : error_str);
     grpc_error_unref(error);
   }
   if (cq != NULL) {

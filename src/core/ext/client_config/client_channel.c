@@ -430,7 +430,7 @@ static int cc_pick_subchannel(grpc_exec_ctx *exec_ctx, void *elemp,
 }
 
 /* Constructor for call_data */
-static grpc_error* init_call_elem(grpc_exec_ctx *exec_ctx,
+static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
                                   grpc_call_element_args *args) {
   grpc_subchannel_call_holder_init(elem->call_data, cc_pick_subchannel, elem,

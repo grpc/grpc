@@ -256,7 +256,7 @@ static void compress_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
 }
 
 /* Constructor for call_data */
-static grpc_error* init_call_elem(grpc_exec_ctx *exec_ctx,
+static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
                                   grpc_call_element_args *args) {
   /* grab pointers to our data from the call element */

@@ -200,7 +200,7 @@ static void test_request(grpc_end2end_test_config config) {
  * Test filter - always fails to initialize a call
  */
 
-static grpc_error* init_call_elem(grpc_exec_ctx *exec_ctx,
+static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
                                   grpc_call_element_args *args) {
   return grpc_error_set_int(GRPC_ERROR_CREATE("access denied"),

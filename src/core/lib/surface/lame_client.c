@@ -107,7 +107,7 @@ static void lame_start_transport_op(grpc_exec_ctx *exec_ctx,
   GRPC_ERROR_UNREF(op->disconnect_with_error);
 }
 
-static grpc_error* init_call_elem(grpc_exec_ctx *exec_ctx,
+static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
                                   grpc_call_element_args *args) {
   return GRPC_ERROR_NONE;

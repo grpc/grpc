@@ -110,7 +110,7 @@ typedef struct {
      on a client; if it is non-NULL, then it points to memory owned by the
      transport and is on the server. Most filters want to ignore this
      argument. */
-  grpc_error* (*init_call_elem)(grpc_exec_ctx *exec_ctx,
+  grpc_error *(*init_call_elem)(grpc_exec_ctx *exec_ctx,
                                 grpc_call_element *elem,
                                 grpc_call_element_args *args);
   void (*set_pollset_or_pollset_set)(grpc_exec_ctx *exec_ctx,
@@ -210,7 +210,7 @@ void grpc_channel_stack_destroy(grpc_exec_ctx *exec_ctx,
 /* Initialize a call stack given a channel stack. transport_server_data is
    expected to be NULL on a client, or an opaque transport owned pointer on the
    server. */
-grpc_error* grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
+grpc_error *grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_stack *channel_stack,
                                  int initial_refs, grpc_iomgr_cb_func destroy,
                                  void *destroy_arg,
