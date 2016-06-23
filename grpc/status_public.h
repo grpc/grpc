@@ -32,10 +32,15 @@
  */
 
 
-#ifndef TEST_GRPC_C_STATUS_CODE_PUBLIC_H
-#define TEST_GRPC_C_STATUS_CODE_PUBLIC_H
+#ifndef TEST_GRPC_C_STATUS_PUBLIC_H
+#define TEST_GRPC_C_STATUS_PUBLIC_H
 
-#include "status_code_public.h"
-#include "impl/status.h"
+typedef struct grpc_status {
+  grpc_status_code code;
+  char *details;
+  size_t details_length;
+} grpc_status;
+
+typedef grpc_status GRPC_status;
 
 #endif //TEST_GRPC_C_STATUS_CODE_PUBLIC_H
