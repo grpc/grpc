@@ -4640,7 +4640,7 @@
     "language": "c++", 
     "name": "interop_server_main", 
     "src": [
-      "test/cpp/interop/server_main.cc"
+      "test/cpp/interop/interop_server.cc"
     ], 
     "third_party": false, 
     "type": "lib"
@@ -5416,6 +5416,7 @@
       "test/core/end2end/tests/simple_delayed_request.c", 
       "test/core/end2end/tests/simple_metadata.c", 
       "test/core/end2end/tests/simple_request.c", 
+      "test/core/end2end/tests/streaming_error_response.c", 
       "test/core/end2end/tests/trailing_metadata.c"
     ], 
     "third_party": false, 
@@ -5474,6 +5475,7 @@
       "test/core/end2end/tests/simple_delayed_request.c", 
       "test/core/end2end/tests/simple_metadata.c", 
       "test/core/end2end/tests/simple_request.c", 
+      "test/core/end2end/tests/streaming_error_response.c", 
       "test/core/end2end/tests/trailing_metadata.c"
     ], 
     "third_party": false, 

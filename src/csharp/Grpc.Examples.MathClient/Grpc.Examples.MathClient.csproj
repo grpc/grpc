@@ -57,4 +57,7 @@
       <Name>Grpc.Examples</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Grpc.Examples.MathClient.project.json" />
+  </ItemGroup>
 </Project>

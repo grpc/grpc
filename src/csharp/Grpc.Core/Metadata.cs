@@ -63,6 +63,13 @@ namespace Grpc.Core
         /// </summary>
         public static readonly Metadata Empty = new Metadata().Freeze();
 
+        /// <summary>
+        /// To be used in initial metadata to request specific compression algorithm
+        /// for given call. Direct selection of compression algorithms is an internal
+        /// feature and is not part of public API.
+        /// </summary>
+        internal const string CompressionRequestAlgorithmMetadataKey = "grpc-internal-encoding-request";
+
         readonly List<Entry> entries;
         bool readOnly;
 

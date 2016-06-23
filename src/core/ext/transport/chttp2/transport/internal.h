@@ -265,6 +265,7 @@ struct grpc_chttp2_transport_parsing {
   uint8_t incoming_frame_type;
   uint8_t incoming_frame_flags;
   uint8_t header_eof;
+  bool is_first_frame;
   uint32_t expect_continuation_stream_id;
   uint32_t incoming_frame_size;
   uint32_t incoming_stream_id;
@@ -440,6 +441,7 @@ typedef struct {
 
   bool published_initial_metadata;
   bool published_trailing_metadata;
+  bool final_metadata_requested;
 
   grpc_chttp2_incoming_metadata_buffer received_initial_metadata;
   grpc_chttp2_incoming_metadata_buffer received_trailing_metadata;
@@ -524,8 +526,7 @@ struct grpc_chttp2_stream {
     are required, and schedule them if so */
 int grpc_chttp2_unlocking_check_writes(grpc_exec_ctx *exec_ctx,
                                        grpc_chttp2_transport_global *global,
-                                       grpc_chttp2_transport_writing *writing,
-                                       int is_parsing);
+                                       grpc_chttp2_transport_writing *writing);
 void grpc_chttp2_perform_writes(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_writing *transport_writing,
     grpc_endpoint *endpoint);
