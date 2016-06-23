@@ -396,7 +396,7 @@ static grpc_error *add_socket_to_server(grpc_tcp_server *s, SOCKET sock,
                                         size_t addr_len, unsigned port_index,
                                         grpc_tcp_listener **listener) {
   grpc_tcp_listener *sp = NULL;
-  int port;
+  int port = -1;
   int status;
   GUID guid = WSAID_ACCEPTEX;
   DWORD ioctl_num_bytes;
