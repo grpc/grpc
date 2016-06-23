@@ -425,7 +425,7 @@ class PythonLanguage(object):
     return []
 
   def build_steps(self):
-    return [['tools/run_tests/build_python.sh', tox_env]
+    return [['tools/run_tests/build_python.sh', tox_env] 
             for tox_env in self._tox_envs]
 
   def post_tests_steps(self):
