@@ -35,7 +35,7 @@
 #ifndef TEST_GRPC_C_CLIENT_ASYNC_READER_PUBLIC_H
 #define TEST_GRPC_C_CLIENT_ASYNC_READER_PUBLIC_H
 
-#include "impl/completion_queue.h"
+#include "completion_queue_public.h"
 #include "grpc_c_public.h"
 
 typedef struct grpc_client_async_response_reader GRPC_client_async_response_reader;
