@@ -199,7 +199,7 @@ grpc_channel_args * buildChannelArgs(NSDictionary *dictionary) {
                                   NULL, GRPC_PROPAGATE_DEFAULTS,
                                   queue.unmanagedQueue,
                                   path.UTF8String,
-                                  NULL,
+                                  NULL, // Passing NULL for host
                                   gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
 }
 
