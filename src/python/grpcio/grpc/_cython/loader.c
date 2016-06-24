@@ -31,6 +31,7 @@
  *
  */
 
+#include <Python.h>
 #include "loader.h"
 
 #ifdef __cplusplus
@@ -61,6 +62,18 @@ int pygrpc_load_core(char *path) {
 int pygrpc_load_core(char *path) { return 1; }
 
 #endif  /* !GPR_WINDOWS */
+
+//Cython doesn't have Py_AtExit bindings, so we call the C_API directly
+int pygrpc_initialize_core(void) {
+  int result;
+  grpc_init();
+  result = Py_AtExit(grpc_shutdown);
+  if (result < 0) {
+    return 0;
+  }
+
+  return 1;
+}
 
 #ifdef __cplusplus
 }
