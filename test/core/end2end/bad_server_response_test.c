@@ -39,7 +39,7 @@
 #include <grpc/support/slice.h>
 #include <grpc/support/thd.h>
 
-#include "src/core/ext/transport/chttp2/transport/internal.h"
+// #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/support/string.h"
 #include "test/core/end2end/cq_verifier.h"
@@ -73,6 +73,9 @@
 
 #define UNPARSEABLE_DETAIL_MSG \
   "Connection dropped: received unparseable response"
+
+/* TODO(zyc) Check the content of incomming data instead of using this length */
+#define EXPECTED_INCOMING_DATA_LENGTH (size_t)310
 
 struct rpc_state {
   char *target;
@@ -124,9 +127,9 @@ static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   }
 
   gpr_log(GPR_DEBUG,
-          "got %" PRIuPTR " bytes, http2 connect string is %" PRIuPTR " bytes",
-          state.incoming_data_length, GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
-  if (state.incoming_data_length > GRPC_CHTTP2_CLIENT_CONNECT_STRLEN) {
+          "got %" PRIuPTR " bytes, expected %" PRIuPTR " bytes",
+          state.incoming_data_length, EXPECTED_INCOMING_DATA_LENGTH);
+  if (state.incoming_data_length > EXPECTED_INCOMING_DATA_LENGTH) {
     handle_write(exec_ctx);
   } else {
     grpc_endpoint_read(exec_ctx, state.tcp, &state.temp_incoming_buffer,
@@ -143,6 +146,7 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
   gpr_slice_buffer_init(&state.temp_incoming_buffer);
   gpr_slice_buffer_init(&state.outgoing_buffer);
   state.tcp = tcp;
+  state.incoming_data_length = 0;
   grpc_endpoint_add_to_pollset(exec_ctx, tcp, server->pollset);
   grpc_endpoint_read(exec_ctx, tcp, &state.temp_incoming_buffer, &on_read);
 }
