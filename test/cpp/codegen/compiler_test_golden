@@ -43,6 +43,8 @@
 
 #include <grpc++/impl/codegen/async_stream.h>
 #include <grpc++/impl/codegen/async_unary_call.h>
+#include <grpc++/impl/codegen/fc_unary.h>
+#include <grpc++/impl/codegen/method_handler_impl.h>
 #include <grpc++/impl/codegen/proto_utils.h>
 #include <grpc++/impl/codegen/rpc_method.h>
 #include <grpc++/impl/codegen/service_type.h>
@@ -206,6 +208,26 @@ class ServiceA GRPC_FINAL {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
   };
+  template <class BaseClass>
+  class WithFCUnaryMethod_MethodA1 : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service *service) {}
+   public:
+    WithFCUnaryMethod_MethodA1() {
+      ::grpc::Service::MarkMethodFCUnary(0,
+        new ::grpc::FCUnaryMethodHandler<Service, ::grpc::testing::Request, ::grpc::testing::Response>(std::bind(&WithFCUnaryMethod_MethodA1<BaseClass>::FCMethodA1, this, std::placeholders::_1, std::placeholders::_2)));
+    }
+    ~WithFCUnaryMethod_MethodA1() GRPC_OVERRIDE {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status MethodA1(::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response) GRPC_FINAL GRPC_OVERRIDE {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of this method with FCUnary
+    virtual ::grpc::Status FCMethodA1(::grpc::ServerContext* context, ::grpc::FCUnary< ::grpc::testing::Request,::grpc::testing::Response>* fc_unary) = 0;
+  };
 };
 
 // ServiceB leading comment 1
@@ -283,6 +305,26 @@ class ServiceB GRPC_FINAL {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
+  };
+  template <class BaseClass>
+  class WithFCUnaryMethod_MethodB1 : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service *service) {}
+   public:
+    WithFCUnaryMethod_MethodB1() {
+      ::grpc::Service::MarkMethodFCUnary(0,
+        new ::grpc::FCUnaryMethodHandler<Service, ::grpc::testing::Request, ::grpc::testing::Response>(std::bind(&WithFCUnaryMethod_MethodB1<BaseClass>::FCMethodB1, this, std::placeholders::_1, std::placeholders::_2)));
+    }
+    ~WithFCUnaryMethod_MethodB1() GRPC_OVERRIDE {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status MethodB1(::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response) GRPC_FINAL GRPC_OVERRIDE {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of this method with FCUnary
+    virtual ::grpc::Status FCMethodB1(::grpc::ServerContext* context, ::grpc::FCUnary< ::grpc::testing::Request,::grpc::testing::Response>* fc_unary) = 0;
   };
 };
 // ServiceB trailing comment 1
