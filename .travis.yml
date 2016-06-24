@@ -33,8 +33,9 @@ matrix:
         # TODO(jcanizales): Investigate why they time out:
         # - InteropTestsRemote
     - env:
-        - SCHEME=HelloWorld
-        - SCHEME=AuthSample
+        matrix:
+          - SCHEME=HelloWorld
+          - SCHEME=AuthSample
       install:
         - make grpc_objective_c_plugin
         - install bins/opt/grpc_objective_c_plugin /usr/local/bin/protoc-gen-objcgrpc
