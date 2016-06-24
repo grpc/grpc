@@ -32,15 +32,18 @@ matrix:
         - InteropTestsLocalCleartext
         # TODO(jcanizales): Investigate why they time out:
         # - InteropTestsRemote
-    - install:
+    - env:
+        - SCHEME=HelloWorld
+        - SCHEME=AuthSample
+      install:
         - make grpc_objective_c_plugin
-        - install bins/opt/grpc_objective_c_plugin /usr/local/bin/grpc_objective_c_plugin
+        - install bins/opt/grpc_objective_c_plugin /usr/local/bin/protoc-gen-objcgrpc
         - install bins/opt/protobuf/protoc /usr/local/bin/protoc
         - pushd examples/objective-c/helloworld
         - pod install
         - popd
       xcode_workspace: examples/objective-c/helloworld/HelloWorld.xcworkspace
-      xcode_scheme: HelloWorld
+      xcode_scheme: $SCHEME
 xcode_sdk: iphonesimulator9.3
 notifications:
   email: false
