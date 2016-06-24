@@ -21,7 +21,6 @@ before_install:
 install:
   - make grpc_objective_c_plugin
   - install bins/opt/grpc_objective_c_plugin /usr/local/bin/grpc_objective_c_plugin
-
 matrix:
   include:
     - install:
