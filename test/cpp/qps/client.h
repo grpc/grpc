@@ -38,7 +38,9 @@
 #include <mutex>
 #include <vector>
 
+#include <grpc++/channel.h>
 #include <grpc++/support/byte_buffer.h>
+#include <grpc++/support/channel_arguments.h>
 #include <grpc++/support/slice.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -123,13 +125,15 @@ class Client {
     if (reset) {
       Histogram* to_merge = new Histogram[threads_.size()];
       for (size_t i = 0; i < threads_.size(); i++) {
-        threads_[i]->Swap(&to_merge[i]);
+        threads_[i]->BeginSwap(&to_merge[i]);
+      }
+      std::unique_ptr<UsageTimer> timer(new UsageTimer);
+      timer_.swap(timer);
+      for (size_t i = 0; i < threads_.size(); i++) {
+        threads_[i]->EndSwap();
         latencies.Merge(to_merge[i]);
       }
       delete[] to_merge;
-
-      std::unique_ptr<UsageTimer> timer(new UsageTimer);
-      timer_.swap(timer);
       timer_result = timer->Mark();
     } else {
       // merge snapshots of each thread histogram
@@ -211,6 +215,7 @@ class Client {
    public:
     Thread(Client* client, size_t idx)
         : done_(false),
+          new_stats_(nullptr),
           client_(client),
           idx_(idx),
           impl_(&Thread::ThreadFunc, this) {}
@@ -223,9 +228,16 @@ class Client {
       impl_.join();
     }
 
-    void Swap(Histogram* n) {
+    void BeginSwap(Histogram* n) {
       std::lock_guard<std::mutex> g(mu_);
-      n->Swap(&histogram_);
+      new_stats_ = n;
+    }
+
+    void EndSwap() {
+      std::unique_lock<std::mutex> g(mu_);
+      while (new_stats_ != nullptr) {
+        cv_.wait(g);
+      };
     }
 
     void MergeStatsInto(Histogram* hist) {
@@ -239,11 +251,10 @@ class Client {
 
     void ThreadFunc() {
       for (;;) {
-        // lock since the thread should only be doing one thing at a time
-        std::lock_guard<std::mutex> g(mu_);
         // run the loop body
         const bool thread_still_ok = client_->ThreadFunc(&histogram_, idx_);
-        // see if we're done
+        // lock, see if we're done
+        std::lock_guard<std::mutex> g(mu_);
         if (!thread_still_ok) {
           gpr_log(GPR_ERROR, "Finishing client thread due to RPC error");
           done_ = true;
@@ -251,11 +262,19 @@ class Client {
         if (done_) {
           return;
         }
+        // check if we're resetting stats, swap out the histogram if so
+        if (new_stats_) {
+          new_stats_->Swap(&histogram_);
+          new_stats_ = nullptr;
+          cv_.notify_one();
+        }
       }
     }
 
     std::mutex mu_;
+    std::condition_variable cv_;
     bool done_;
+    Histogram* new_stats_;
     Histogram histogram_;
     Client* client_;
     const size_t idx_;
@@ -280,7 +299,7 @@ class ClientImpl : public Client {
         create_stub_(create_stub) {
     for (int i = 0; i < config.client_channels(); i++) {
       channels_[i].init(config.server_targets(i % config.server_targets_size()),
-                        config, create_stub_);
+                        config, create_stub_, i);
     }
 
     ClientRequestCreator<RequestType> create_req(&request_,
@@ -303,14 +322,21 @@ class ClientImpl : public Client {
     }
     void init(const grpc::string& target, const ClientConfig& config,
               std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)>
-                  create_stub) {
+                  create_stub,
+              int shard) {
       // We have to use a 2-phase init like this with a default
       // constructor followed by an initializer function to make
       // old compilers happy with using this in std::vector
+      ChannelArguments args;
+      args.SetInt("shard_to_ensure_no_subchannel_merges", shard);
       channel_ = CreateTestChannel(
           target, config.security_params().server_host_override(),
-          config.has_security_params(),
-          !config.security_params().use_test_ca());
+          config.has_security_params(), !config.security_params().use_test_ca(),
+          std::shared_ptr<CallCredentials>(), args);
+      gpr_log(GPR_INFO, "Connecting to %s", target.c_str());
+      GPR_ASSERT(channel_->WaitForConnected(
+          gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                       gpr_time_from_seconds(30, GPR_TIMESPAN))));
       stub_ = create_stub(channel_);
     }
     Channel* get_channel() { return channel_.get(); }

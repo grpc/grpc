@@ -36,6 +36,7 @@
 
 #include <list>
 #include <memory>
+#include <vector>
 
 #include <grpc++/completion_queue.h>
 #include <grpc++/impl/call.h>
@@ -57,6 +58,7 @@ class GenericServerContext;
 class AsyncGenericService;
 class ServerAsyncStreamingInterface;
 class ServerContext;
+class ServerInitializer;
 class ThreadPoolInterface;
 
 /// Models a gRPC server.
@@ -91,9 +93,16 @@ class Server GRPC_FINAL : public ServerInterface, private GrpcLibraryCodegen {
   /// until all server objects in the process have been destroyed.
   static void SetGlobalCallbacks(GlobalCallbacks* callbacks);
 
+  // Returns a \em raw pointer to the underlying grpc_server instance.
+  grpc_server* c_server();
+
+  // Returns a \em raw pointer to the underlying CompletionQueue.
+  CompletionQueue* completion_queue();
+
  private:
   friend class AsyncGenericService;
   friend class ServerBuilder;
+  friend class ServerInitializer;
 
   class SyncRequest;
   class AsyncRequest;
@@ -159,6 +168,8 @@ class Server GRPC_FINAL : public ServerInterface, private GrpcLibraryCodegen {
 
   grpc_server* server() GRPC_OVERRIDE { return server_; };
 
+  ServerInitializer* initializer();
+
   const int max_message_size_;
 
   // Completion queue.
@@ -175,6 +186,7 @@ class Server GRPC_FINAL : public ServerInterface, private GrpcLibraryCodegen {
   std::shared_ptr<GlobalCallbacks> global_callbacks_;
 
   std::list<SyncRequest>* sync_methods_;
+  std::vector<grpc::string> services_;
   std::unique_ptr<RpcServiceMethod> unknown_method_;
   bool has_generic_service_;
 
@@ -184,6 +196,8 @@ class Server GRPC_FINAL : public ServerInterface, private GrpcLibraryCodegen {
   ThreadPoolInterface* thread_pool_;
   // Whether the thread pool is created and owned by the server.
   bool thread_pool_owned_;
+
+  std::unique_ptr<ServerInitializer> server_initializer_;
 };
 
 }  // namespace grpc

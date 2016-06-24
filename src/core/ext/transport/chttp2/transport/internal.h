@@ -156,7 +156,7 @@ struct grpc_chttp2_incoming_byte_stream {
   grpc_byte_stream base;
   gpr_refcount refs;
   struct grpc_chttp2_incoming_byte_stream *next_message;
-  int failed;
+  grpc_error *error;
 
   grpc_chttp2_transport *transport;
   grpc_chttp2_stream *stream;
@@ -236,9 +236,6 @@ struct grpc_chttp2_transport_parsing {
   /** was a goaway frame received? */
   uint8_t goaway_received;
 
-  /** the last sent max_table_size setting */
-  uint32_t last_sent_max_table_size;
-
   /** initial window change */
   int64_t initial_window_update;
 
@@ -268,20 +265,26 @@ struct grpc_chttp2_transport_parsing {
   uint8_t incoming_frame_type;
   uint8_t incoming_frame_flags;
   uint8_t header_eof;
+  bool is_first_frame;
   uint32_t expect_continuation_stream_id;
   uint32_t incoming_frame_size;
   uint32_t incoming_stream_id;
 
+  /* current max frame size */
+  uint32_t max_frame_size;
+
   /* active parser */
   void *parser_data;
   grpc_chttp2_stream_parsing *incoming_stream;
-  grpc_chttp2_parse_error (*parser)(
-      grpc_exec_ctx *exec_ctx, void *parser_user_data,
-      grpc_chttp2_transport_parsing *transport_parsing,
-      grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last);
+  grpc_error *(*parser)(grpc_exec_ctx *exec_ctx, void *parser_user_data,
+                        grpc_chttp2_transport_parsing *transport_parsing,
+                        grpc_chttp2_stream_parsing *stream_parsing,
+                        gpr_slice slice, int is_last);
 
   /* received settings */
   uint32_t settings[GRPC_CHTTP2_NUM_SETTINGS];
+  /* last settings that were sent */
+  uint32_t last_sent_settings[GRPC_CHTTP2_NUM_SETTINGS];
 
   /* goaway data */
   grpc_status_code goaway_error;
@@ -321,7 +324,8 @@ struct grpc_chttp2_transport {
     /** is a thread currently parsing */
     bool parsing_active;
 
-    grpc_chttp2_executor_action_header *pending_actions;
+    grpc_chttp2_executor_action_header *pending_actions_head;
+    grpc_chttp2_executor_action_header *pending_actions_tail;
   } executor;
 
   /** is the transport destroying itself? */
@@ -380,6 +384,9 @@ struct grpc_chttp2_transport {
 
   /** Transport op to be applied post-parsing */
   grpc_transport_op *post_parsing_op;
+
+  /** Message explaining the reason of dropping connection */
+  gpr_slice optional_drop_message;
 };
 
 typedef struct {
@@ -419,23 +426,22 @@ typedef struct {
   /** number of streams that are currently being read */
   gpr_refcount active_streams;
 
-  /** when the application requests writes be closed, the write_closed is
-      'queued'; when the close is flow controlled into the send path, we are
-      'sending' it; when the write has been performed it is 'sent' */
+  /** Is this stream closed for writing. */
   bool write_closed;
-  /** is this stream reading half-closed (boolean) */
+  /** Is this stream reading half-closed. */
   bool read_closed;
-  /** are all published incoming byte streams closed */
+  /** Are all published incoming byte streams closed. */
   bool all_incoming_byte_streams_finished;
-  /** is this stream in the stream map? (boolean) */
+  /** Is this stream in the stream map. */
   bool in_stream_map;
-  /** has this stream seen an error? if 1, then pending incoming frames
-      can be thrown away */
+  /** Has this stream seen an error.
+      If true, then pending incoming frames can be thrown away. */
   bool seen_error;
+  bool exceeded_metadata_size;
 
   bool published_initial_metadata;
   bool published_trailing_metadata;
-  bool faked_trailing_metadata;
+  bool final_metadata_requested;
 
   grpc_chttp2_incoming_metadata_buffer received_initial_metadata;
   grpc_chttp2_incoming_metadata_buffer received_trailing_metadata;
@@ -467,24 +473,23 @@ typedef struct {
 } grpc_chttp2_stream_writing;
 
 struct grpc_chttp2_stream_parsing {
+  /** saw some stream level error */
+  grpc_error *forced_close_error;
   /** HTTP2 stream id for this stream, or zero if one has not been assigned */
   uint32_t id;
   /** has this stream received a close */
   uint8_t received_close;
-  /** saw a rst_stream */
-  uint8_t saw_rst_stream;
   /** how many header frames have we received? */
   uint8_t header_frames_received;
   /** which metadata did we get (on this parse) */
   uint8_t got_metadata_on_parse[2];
   /** should we raise the seen_error flag in transport_global */
-  uint8_t seen_error;
+  bool seen_error;
+  bool exceeded_metadata_size;
   /** window available for peer to send to us */
   int64_t incoming_window;
   /** parsing state for data frames */
   grpc_chttp2_data_parser data_parser;
-  /** reason give to rst_stream */
-  uint32_t rst_stream_reason;
   /** amount of window given */
   int64_t outgoing_window;
   /** number of bytes received - reset at end of parse thread execution */
@@ -521,13 +526,12 @@ struct grpc_chttp2_stream {
     are required, and schedule them if so */
 int grpc_chttp2_unlocking_check_writes(grpc_exec_ctx *exec_ctx,
                                        grpc_chttp2_transport_global *global,
-                                       grpc_chttp2_transport_writing *writing,
-                                       int is_parsing);
+                                       grpc_chttp2_transport_writing *writing);
 void grpc_chttp2_perform_writes(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_writing *transport_writing,
     grpc_endpoint *endpoint);
 void grpc_chttp2_terminate_writing(grpc_exec_ctx *exec_ctx,
-                                   void *transport_writing, bool success);
+                                   void *transport_writing, grpc_error *error);
 void grpc_chttp2_cleanup_writing(grpc_exec_ctx *exec_ctx,
                                  grpc_chttp2_transport_global *global,
                                  grpc_chttp2_transport_writing *writing);
@@ -536,9 +540,9 @@ void grpc_chttp2_prepare_to_read(grpc_chttp2_transport_global *global,
                                  grpc_chttp2_transport_parsing *parsing);
 /** Process one slice of incoming data; return 1 if the connection is still
     viable after reading, or 0 if the connection should be torn down */
-int grpc_chttp2_perform_read(grpc_exec_ctx *exec_ctx,
-                             grpc_chttp2_transport_parsing *transport_parsing,
-                             gpr_slice slice);
+grpc_error *grpc_chttp2_perform_read(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_parsing *transport_parsing,
+    gpr_slice slice);
 void grpc_chttp2_publish_reads(grpc_exec_ctx *exec_ctx,
                                grpc_chttp2_transport_global *global,
                                grpc_chttp2_transport_parsing *parsing);
@@ -668,9 +672,10 @@ void grpc_chttp2_for_all_streams(
 void grpc_chttp2_parsing_become_skip_parser(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_parsing *transport_parsing);
 
-void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
-                                       grpc_chttp2_stream_global *stream_global,
-                                       grpc_closure **pclosure, int success);
+void grpc_chttp2_complete_closure_step(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global, grpc_closure **pclosure,
+    grpc_error *error);
 
 void grpc_chttp2_run_with_global_lock(grpc_exec_ctx *exec_ctx,
                                       grpc_chttp2_transport *transport,
@@ -773,8 +778,8 @@ void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx,
                              grpc_status_code status, gpr_slice *details);
 void grpc_chttp2_mark_stream_closed(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global *stream_global, int close_reads,
-    int close_writes);
+    grpc_chttp2_stream_global *stream_global, int close_reads, int close_writes,
+    grpc_error *error);
 void grpc_chttp2_start_writing(grpc_exec_ctx *exec_ctx,
                                grpc_chttp2_transport_global *transport_global);
 
@@ -806,8 +811,8 @@ void grpc_chttp2_incoming_byte_stream_push(grpc_exec_ctx *exec_ctx,
                                            grpc_chttp2_incoming_byte_stream *bs,
                                            gpr_slice slice);
 void grpc_chttp2_incoming_byte_stream_finished(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_byte_stream *bs, int success,
-    int from_parsing_thread);
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_byte_stream *bs,
+    grpc_error *error, int from_parsing_thread);
 
 void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx,
                           grpc_chttp2_transport_parsing *parsing,

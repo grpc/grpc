@@ -39,10 +39,8 @@
 #include "src/compiler/node_generator.h"
 #include "src/compiler/node_generator_helpers.h"
 
-using grpc_node_generator::GetImports;
+using grpc_node_generator::GenerateFile;
 using grpc_node_generator::GetJSServiceFilename;
-using grpc_node_generator::GetServices;
-using grpc_node_generator::GetTransformers;
 
 class NodeGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
  public:
@@ -53,9 +51,7 @@ class NodeGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
                 const grpc::string &parameter,
                 grpc::protobuf::compiler::GeneratorContext *context,
                 grpc::string *error) const {
-    grpc::string code = GetImports(file) +
-        GetTransformers(file) +
-        GetServices(file);
+    grpc::string code = GenerateFile(file);
     if (code.size() == 0) {
       return true;
     }

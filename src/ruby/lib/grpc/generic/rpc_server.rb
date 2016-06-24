@@ -32,42 +32,8 @@ require_relative 'active_call'
 require_relative 'service'
 require 'thread'
 
-# A global that contains signals the gRPC servers should respond to.
-$grpc_signals = []
-
 # GRPC contains the General RPC module.
 module GRPC
-  # Handles the signals in $grpc_signals.
-  #
-  # @return false if the server should exit, true if not.
-  def handle_signals
-    loop do
-      sig = $grpc_signals.shift
-      case sig
-      when 'INT'
-        return false
-      when 'TERM'
-        return false
-      when nil
-        return true
-      end
-    end
-    true
-  end
-  module_function :handle_signals
-
-  # Sets up a signal handler that adds signals to the signal handling global.
-  #
-  # Signal handlers should do as little as humanly possible.
-  # Here, they just add themselves to $grpc_signals
-  #
-  # RpcServer (and later other parts of gRPC) monitors the signals
-  # $grpc_signals in its own non-signal context.
-  def trap_signals
-    %w(INT TERM).each { |sig| trap(sig) { $grpc_signals << sig } }
-  end
-  module_function :trap_signals
-
   # Pool is a simple thread pool.
   class Pool
     # Default keep alive period is 1s
@@ -203,14 +169,6 @@ module GRPC
       alt_cq
     end
 
-    # setup_srv is used by #initialize to constuct a Core::Server from its
-    # arguments.
-    def self.setup_srv(alt_srv, cq, **kw)
-      return Core::Server.new(cq, kw) if alt_srv.nil?
-      fail(TypeError, '!Server') unless alt_srv.is_a? Core::Server
-      alt_srv
-    end
-
     # setup_connect_md_proc is used by #initialize to validate the
     # connect_md_proc.
     def self.setup_connect_md_proc(a_proc)
@@ -226,9 +184,6 @@ module GRPC
     # There are some specific keyword args used to configure the RpcServer
     # instance, however other arbitrary are allowed and when present are used
     # to configure the listeninng connection set up by the RpcServer.
-    #
-    # * server_override: which if passed must be a [GRPC::Core::Server].  When
-    # present.
     #
     # * poll_period: when present, the server polls for new events with this
     # period
@@ -251,13 +206,15 @@ module GRPC
     # when non-nil is a proc for determining metadata to to send back the client
     # on receiving an invocation req.  The proc signature is:
     # {key: val, ..} func(method_name, {key: val, ...})
+    #
+    # * server_args:
+    # A server arguments hash to be passed down to the underlying core server
     def initialize(pool_size:DEFAULT_POOL_SIZE,
                    max_waiting_requests:DEFAULT_MAX_WAITING_REQUESTS,
                    poll_period:DEFAULT_POLL_PERIOD,
                    completion_queue_override:nil,
-                   server_override:nil,
                    connect_md_proc:nil,
-                   **kw)
+                   server_args:{})
       @connect_md_proc = RpcServer.setup_connect_md_proc(connect_md_proc)
       @cq = RpcServer.setup_cq(completion_queue_override)
       @max_waiting_requests = max_waiting_requests
@@ -269,7 +226,7 @@ module GRPC
       # running_state can take 4 values: :not_started, :running, :stopping, and
       # :stopped. State transitions can only proceed in that order.
       @running_state = :not_started
-      @server = RpcServer.setup_srv(server_override, @cq, **kw)
+      @server = Core::Server.new(@cq, server_args)
     end
 
     # stops a running server
@@ -326,25 +283,6 @@ module GRPC
         @run_cond.wait(@run_mutex, timeout) if @running_state == :not_started
         return @running_state == :running
       end
-    end
-
-    # Runs the server in its own thread, then waits for signal INT or TERM on
-    # the current thread to terminate it.
-    def run_till_terminated
-      GRPC.trap_signals
-      stopped = false
-      t = Thread.new do
-        run
-        stopped = true
-      end
-      wait_till_running
-      loop do
-        sleep SIGNAL_CHECK_PERIOD
-        break if stopped
-        break unless GRPC.handle_signals
-      end
-      stop
-      t.join
     end
 
     # handle registration of classes
@@ -408,6 +346,8 @@ module GRPC
       loop_handle_server_calls
     end
 
+    alias_method :run_till_terminated, :run
+
     # Sends RESOURCE_EXHAUSTED if there are too many unprocessed jobs
     def available?(an_rpc)
       jobs_count, max = @pool.jobs_waiting, @max_waiting_requests
@@ -415,8 +355,8 @@ module GRPC
       return an_rpc if @pool.jobs_waiting <= @max_waiting_requests
       GRPC.logger.warn("NOT AVAILABLE: too many jobs_waiting: #{an_rpc}")
       noop = proc { |x| x }
-      c = ActiveCall.new(an_rpc.call, @cq, noop, noop, an_rpc.deadline)
-      c.send_status(StatusCodes::RESOURCE_EXHAUSTED, '')
+      c = ActiveCall.new(an_rpc.call, an_rpc.cq, noop, noop, an_rpc.deadline)
+      c.send_status(GRPC::Core::StatusCodes::RESOURCE_EXHAUSTED, '')
       nil
     end
 
@@ -426,8 +366,8 @@ module GRPC
       return an_rpc if rpc_descs.key?(mth)
       GRPC.logger.warn("UNIMPLEMENTED: #{an_rpc}")
       noop = proc { |x| x }
-      c = ActiveCall.new(an_rpc.call, @cq, noop, noop, an_rpc.deadline)
-      c.send_status(StatusCodes::UNIMPLEMENTED, '')
+      c = ActiveCall.new(an_rpc.call, an_rpc.cq, noop, noop, an_rpc.deadline)
+      c.send_status(GRPC::Core::StatusCodes::UNIMPLEMENTED, '')
       nil
     end
 
@@ -437,13 +377,19 @@ module GRPC
       loop_tag = Object.new
       while running_state == :running
         begin
-          an_rpc = @server.request_call(@cq, loop_tag, INFINITE_FUTURE)
+          comp_queue = Core::CompletionQueue.new
+          an_rpc = @server.request_call(comp_queue, loop_tag, INFINITE_FUTURE)
           break if (!an_rpc.nil?) && an_rpc.call.nil?
           active_call = new_active_server_call(an_rpc)
           unless active_call.nil?
             @pool.schedule(active_call) do |ac|
               c, mth = ac
-              rpc_descs[mth].run_server_method(c, rpc_handlers[mth])
+              begin
+                rpc_descs[mth].run_server_method(c, rpc_handlers[mth])
+              rescue StandardError
+                c.send_status(GRPC::Core::StatusCodes::INTERNAL,
+                              'Server handler failed')
+              end
             end
           end
         rescue Core::CallError, RuntimeError => e
@@ -471,15 +417,16 @@ module GRPC
       unless @connect_md_proc.nil?
         connect_md = @connect_md_proc.call(an_rpc.method, an_rpc.metadata)
       end
-      an_rpc.call.run_batch(@cq, handle_call_tag, INFINITE_FUTURE,
+      an_rpc.call.run_batch(an_rpc.cq, handle_call_tag, INFINITE_FUTURE,
                             SEND_INITIAL_METADATA => connect_md)
+
       return nil unless available?(an_rpc)
       return nil unless implemented?(an_rpc)
 
       # Create the ActiveCall
       GRPC.logger.info("deadline is #{an_rpc.deadline}; (now=#{Time.now})")
       rpc_desc = rpc_descs[an_rpc.method.to_sym]
-      c = ActiveCall.new(an_rpc.call, @cq,
+      c = ActiveCall.new(an_rpc.call, an_rpc.cq,
                          rpc_desc.marshal_proc, rpc_desc.unmarshal_proc(:input),
                          an_rpc.deadline)
       mth = an_rpc.method.to_sym
@@ -500,10 +447,8 @@ module GRPC
       unless cls.include?(GenericService)
         fail "#{cls} must 'include GenericService'"
       end
-      if cls.rpc_descs.size.zero?
-        fail "#{cls} should specify some rpc descriptions"
-      end
-      cls.assert_rpc_descs_have_methods
+      fail "#{cls} should specify some rpc descriptions" if
+        cls.rpc_descs.size.zero?
     end
 
     # This should be called while holding @run_mutex

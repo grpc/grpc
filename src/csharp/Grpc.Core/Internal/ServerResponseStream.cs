@@ -52,23 +52,12 @@ namespace Grpc.Core.Internal
 
         public Task WriteAsync(TResponse message)
         {
-            var taskSource = new AsyncCompletionTaskSource<object>();
-            call.StartSendMessage(message, GetWriteFlags(), taskSource.CompletionDelegate);
-            return taskSource.Task;
-        }
-
-        public Task WriteStatusAsync(Status status, Metadata trailers)
-        {
-            var taskSource = new AsyncCompletionTaskSource<object>();
-            call.StartSendStatusFromServer(status, trailers, taskSource.CompletionDelegate);
-            return taskSource.Task;
+            return call.SendMessageAsync(message, GetWriteFlags());
         }
 
         public Task WriteResponseHeadersAsync(Metadata responseHeaders)
         {
-            var taskSource = new AsyncCompletionTaskSource<object>();
-            call.StartSendInitialMetadata(responseHeaders, taskSource.CompletionDelegate);
-            return taskSource.Task;
+            return call.SendInitialMetadataAsync(responseHeaders);
         }
 
         public WriteOptions WriteOptions

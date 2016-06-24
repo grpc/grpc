@@ -31,6 +31,7 @@
  *
  */
 
+#include <cinttypes>
 #include <deque>
 #include <list>
 #include <thread>
@@ -43,7 +44,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
-#include <gtest/gtest.h>
 
 #include "src/core/lib/support/env.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
@@ -83,6 +83,7 @@ static std::unordered_map<string, std::deque<int>> get_hosts_and_cores(
       auto stub = WorkerService::NewStub(
           CreateChannel(*it, InsecureChannelCredentials()));
       grpc::ClientContext ctx;
+      ctx.set_fail_fast(false);
       CoreRequest dummy;
       CoreResponse cores;
       grpc::Status s = stub->CoreCount(&ctx, dummy, &cores);
@@ -166,6 +167,7 @@ namespace runsc {
 static ClientContext* AllocContext(list<ClientContext>* contexts) {
   contexts->emplace_back();
   auto context = &contexts->back();
+  context->set_fail_fast(false);
   return context;
 }
 
@@ -243,8 +245,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // where class contained in std::vector must have a copy constructor
   auto* servers = new ServerData[num_servers];
   for (size_t i = 0; i < num_servers; i++) {
-    gpr_log(GPR_INFO, "Starting server on %s (worker #%d)", workers[i].c_str(),
-            i);
+    gpr_log(GPR_INFO, "Starting server on %s (worker #%" PRIuPTR ")",
+            workers[i].c_str(), i);
     servers[i].stub = WorkerService::NewStub(
         CreateChannel(workers[i], InsecureChannelCredentials()));
 
@@ -306,8 +308,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
   auto* clients = new ClientData[num_clients];
   for (size_t i = 0; i < num_clients; i++) {
     const auto& worker = workers[i + num_servers];
-    gpr_log(GPR_INFO, "Starting client on %s (worker #%d)", worker.c_str(),
-            i + num_servers);
+    gpr_log(GPR_INFO, "Starting client on %s (worker #%" PRIuPTR ")",
+            worker.c_str(), i + num_servers);
     clients[i].stub = WorkerService::NewStub(
         CreateChannel(worker, InsecureChannelCredentials()));
     ClientConfig per_client_config = client_config;
@@ -435,6 +437,7 @@ void RunQuit() {
         CreateChannel(workers[i], InsecureChannelCredentials()));
     Void dummy;
     grpc::ClientContext ctx;
+    ctx.set_fail_fast(false);
     GPR_ASSERT(stub->QuitWorker(&ctx, dummy, &dummy).ok());
   }
 }

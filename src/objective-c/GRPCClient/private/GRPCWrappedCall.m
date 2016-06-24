@@ -72,6 +72,8 @@
     _op.op = GRPC_OP_SEND_INITIAL_METADATA;
     _op.data.send_initial_metadata.count = metadata.count;
     _op.data.send_initial_metadata.metadata = metadata.grpc_metadataArray;
+    _op.data.send_initial_metadata.maybe_compression_level.is_set = false;
+    _op.data.send_initial_metadata.maybe_compression_level.level = 0;
     _handler = handler;
   }
   return self;

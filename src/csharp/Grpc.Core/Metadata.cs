@@ -63,6 +63,13 @@ namespace Grpc.Core
         /// </summary>
         public static readonly Metadata Empty = new Metadata().Freeze();
 
+        /// <summary>
+        /// To be used in initial metadata to request specific compression algorithm
+        /// for given call. Direct selection of compression algorithms is an internal
+        /// feature and is not part of public API.
+        /// </summary>
+        internal const string CompressionRequestAlgorithmMetadataKey = "grpc-internal-encoding-request";
+
         readonly List<Entry> entries;
         bool readOnly;
 
@@ -95,6 +102,7 @@ namespace Grpc.Core
 
         public void Insert(int index, Metadata.Entry item)
         {
+            GrpcPreconditions.CheckNotNull(item);
             CheckWriteable();
             entries.Insert(index, item);
         }
@@ -114,6 +122,7 @@ namespace Grpc.Core
 
             set
             {
+                GrpcPreconditions.CheckNotNull(value);
                 CheckWriteable();
                 entries[index] = value;
             }
@@ -121,6 +130,7 @@ namespace Grpc.Core
 
         public void Add(Metadata.Entry item)
         {
+            GrpcPreconditions.CheckNotNull(item);
             CheckWriteable();
             entries.Add(item);
         }
@@ -187,7 +197,7 @@ namespace Grpc.Core
         /// <summary>
         /// Metadata entry
         /// </summary>
-        public struct Entry
+        public class Entry
         {
             private static readonly Encoding Encoding = Encoding.ASCII;
             private static readonly Regex ValidKeyRegex = new Regex("^[a-z0-9_-]+$");

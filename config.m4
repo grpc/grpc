@@ -48,39 +48,38 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/support/cpu_windows.c \
     src/core/lib/support/env_linux.c \
     src/core/lib/support/env_posix.c \
-    src/core/lib/support/env_win32.c \
+    src/core/lib/support/env_windows.c \
     src/core/lib/support/histogram.c \
     src/core/lib/support/host_port.c \
-    src/core/lib/support/load_file.c \
     src/core/lib/support/log.c \
     src/core/lib/support/log_android.c \
     src/core/lib/support/log_linux.c \
     src/core/lib/support/log_posix.c \
-    src/core/lib/support/log_win32.c \
+    src/core/lib/support/log_windows.c \
     src/core/lib/support/murmur_hash.c \
     src/core/lib/support/slice.c \
     src/core/lib/support/slice_buffer.c \
     src/core/lib/support/stack_lockfree.c \
     src/core/lib/support/string.c \
     src/core/lib/support/string_posix.c \
-    src/core/lib/support/string_util_win32.c \
-    src/core/lib/support/string_win32.c \
+    src/core/lib/support/string_util_windows.c \
+    src/core/lib/support/string_windows.c \
     src/core/lib/support/subprocess_posix.c \
     src/core/lib/support/subprocess_windows.c \
     src/core/lib/support/sync.c \
     src/core/lib/support/sync_posix.c \
-    src/core/lib/support/sync_win32.c \
+    src/core/lib/support/sync_windows.c \
     src/core/lib/support/thd.c \
     src/core/lib/support/thd_posix.c \
-    src/core/lib/support/thd_win32.c \
+    src/core/lib/support/thd_windows.c \
     src/core/lib/support/time.c \
     src/core/lib/support/time_posix.c \
     src/core/lib/support/time_precise.c \
-    src/core/lib/support/time_win32.c \
+    src/core/lib/support/time_windows.c \
     src/core/lib/support/tls_pthread.c \
     src/core/lib/support/tmpfile_msys.c \
     src/core/lib/support/tmpfile_posix.c \
-    src/core/lib/support/tmpfile_win32.c \
+    src/core/lib/support/tmpfile_windows.c \
     src/core/lib/support/wrap_memcpy.c \
     src/core/lib/surface/init.c \
     src/core/lib/channel/channel_args.c \
@@ -90,7 +89,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/channel/connected_channel.c \
     src/core/lib/channel/http_client_filter.c \
     src/core/lib/channel/http_server_filter.c \
-    src/core/lib/compression/compression_algorithm.c \
+    src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/debug/trace.c \
     src/core/lib/http/format_request.c \
@@ -100,7 +99,9 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/endpoint.c \
     src/core/lib/iomgr/endpoint_pair_posix.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
+    src/core/lib/iomgr/error.c \
     src/core/lib/iomgr/ev_poll_and_epoll_posix.c \
+    src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
     src/core/lib/iomgr/exec_ctx.c \
     src/core/lib/iomgr/executor.c \
@@ -108,6 +109,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/iomgr.c \
     src/core/lib/iomgr/iomgr_posix.c \
     src/core/lib/iomgr/iomgr_windows.c \
+    src/core/lib/iomgr/load_file.c \
+    src/core/lib/iomgr/polling_entity.c \
     src/core/lib/iomgr/pollset_set_windows.c \
     src/core/lib/iomgr/pollset_windows.c \
     src/core/lib/iomgr/resolve_address_posix.c \
@@ -165,6 +168,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/transport/transport.c \
     src/core/lib/transport/transport_op_string.c \
     src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c \
+    src/core/ext/transport/chttp2/transport/bin_decoder.c \
     src/core/ext/transport/chttp2/transport/bin_encoder.c \
     src/core/ext/transport/chttp2/transport/chttp2_plugin.c \
     src/core/ext/transport/chttp2/transport/chttp2_transport.c \
@@ -188,20 +192,29 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/transport/writing.c \
     src/core/ext/transport/chttp2/alpn/alpn.c \
     src/core/lib/http/httpcli_security_connector.c \
-    src/core/lib/security/b64.c \
-    src/core/lib/security/client_auth_filter.c \
-    src/core/lib/security/credentials.c \
-    src/core/lib/security/credentials_metadata.c \
-    src/core/lib/security/credentials_posix.c \
-    src/core/lib/security/credentials_win32.c \
-    src/core/lib/security/google_default_credentials.c \
-    src/core/lib/security/handshake.c \
-    src/core/lib/security/json_token.c \
-    src/core/lib/security/jwt_verifier.c \
-    src/core/lib/security/secure_endpoint.c \
-    src/core/lib/security/security_connector.c \
-    src/core/lib/security/security_context.c \
-    src/core/lib/security/server_auth_filter.c \
+    src/core/lib/security/context/security_context.c \
+    src/core/lib/security/credentials/composite/composite_credentials.c \
+    src/core/lib/security/credentials/credentials.c \
+    src/core/lib/security/credentials/credentials_metadata.c \
+    src/core/lib/security/credentials/fake/fake_credentials.c \
+    src/core/lib/security/credentials/google_default/credentials_posix.c \
+    src/core/lib/security/credentials/google_default/credentials_windows.c \
+    src/core/lib/security/credentials/google_default/google_default_credentials.c \
+    src/core/lib/security/credentials/iam/iam_credentials.c \
+    src/core/lib/security/credentials/jwt/json_token.c \
+    src/core/lib/security/credentials/jwt/jwt_credentials.c \
+    src/core/lib/security/credentials/jwt/jwt_verifier.c \
+    src/core/lib/security/credentials/oauth2/oauth2_credentials.c \
+    src/core/lib/security/credentials/plugin/plugin_credentials.c \
+    src/core/lib/security/credentials/ssl/ssl_credentials.c \
+    src/core/lib/security/transport/client_auth_filter.c \
+    src/core/lib/security/transport/handshake.c \
+    src/core/lib/security/transport/secure_endpoint.c \
+    src/core/lib/security/transport/security_connector.c \
+    src/core/lib/security/transport/server_auth_filter.c \
+    src/core/lib/security/transport/tsi_error.c \
+    src/core/lib/security/util/b64.c \
+    src/core/lib/security/util/json_util.c \
     src/core/lib/surface/init_secure.c \
     src/core/lib/tsi/fake_transport_security.c \
     src/core/lib/tsi/ssl_transport_security.c \
@@ -227,9 +240,11 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/client_config/subchannel_index.c \
     src/core/ext/client_config/uri_parser.c \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
+    src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
+    src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c \
     src/core/ext/lb_policy/grpclb/load_balancer_api.c \
-    src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0/load_balancer.pb.c \
+    src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
     third_party/nanopb/pb_common.c \
     third_party/nanopb/pb_decode.c \
     third_party/nanopb/pb_encode.c \
@@ -237,7 +252,10 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/lb_policy/round_robin/round_robin.c \
     src/core/ext/resolver/dns/native/dns_resolver.c \
     src/core/ext/resolver/sockaddr/sockaddr_resolver.c \
+    src/core/ext/load_reporting/load_reporting.c \
+    src/core/ext/load_reporting/load_reporting_filter.c \
     src/core/ext/census/context.c \
+    src/core/ext/census/gen/census.pb.c \
     src/core/ext/census/grpc_context.c \
     src/core/ext/census/grpc_filter.c \
     src/core/ext/census/grpc_plugin.c \
@@ -553,11 +571,13 @@ if test "$PHP_GRPC" != "no"; then
 
   PHP_ADD_BUILD_DIR($ext_builddir/src/boringssl)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/census)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/census/gen)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/client_config)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/grpclb)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/grpclb/proto/grpc/lb/v0)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/pick_first)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/round_robin)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/load_reporting)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/resolver/dns/native)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/resolver/sockaddr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/alpn)
@@ -573,7 +593,18 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/json)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/profiling)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/context)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/composite)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/fake)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/google_default)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/iam)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/jwt)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/oauth2)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/plugin)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/ssl)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/transport)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/util)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/support)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/surface)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/transport)

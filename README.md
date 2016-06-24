@@ -11,9 +11,11 @@ Copyright 2015 Google Inc.
 
 You can find more detailed documentation and examples in the [doc](doc) and [examples](examples) directories respectively.
 
-#Installation
+#Installation & Testing
 
 See [INSTALL](INSTALL.md) for installation instructions for various platforms.
+
+See [tools/run_tests](tools/run_tests) for more guidance on how to run various test suites (e.g. unit tests, interop tests, benchmarks)
 
 #Repository Structure & Status
 

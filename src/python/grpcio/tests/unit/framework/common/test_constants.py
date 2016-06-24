@@ -49,8 +49,13 @@ STREAM_LENGTH = 200
 # The size of payloads to transmit in tests.
 PAYLOAD_SIZE = 256 * 1024 + 17
 
-# The parallelism to use in tests of parallel RPCs.
-PARALLELISM = 200
+# The concurrency to use in tests of concurrent RPCs that will not create as
+# many threads as RPCs.
+RPC_CONCURRENCY = 200
+
+# The concurrency to use in tests of concurrent RPCs that will create as many
+# threads as RPCs.
+THREAD_CONCURRENCY = 25
 
 # The size of thread pools to use in tests.
 POOL_SIZE = 10

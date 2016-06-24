@@ -115,6 +115,8 @@ typedef struct {
 /* Channel argument keys: */
 /** Enable census for tracing and stats collection */
 #define GRPC_ARG_ENABLE_CENSUS "grpc.census"
+/** Enable load reporting */
+#define GRPC_ARG_ENABLE_LOAD_REPORTING "grpc.loadreporting"
 /** Maximum number of concurrent incoming streams to allow on a http2
     connection */
 #define GRPC_ARG_MAX_CONCURRENT_STREAMS "grpc.max_concurrent_streams"
@@ -152,6 +154,8 @@ typedef struct {
    channel). If this parameter is specified and the underlying is not an SSL
    channel, it will just be ignored. */
 #define GRPC_SSL_TARGET_NAME_OVERRIDE_ARG "grpc.ssl_target_name_override"
+/* Maximum metadata size */
+#define GRPC_ARG_MAX_METADATA_SIZE "grpc.max_metadata_size"
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
     particular operation, the grpc_call_error returned will be GRPC_CALL_OK.
@@ -307,7 +311,9 @@ typedef enum {
   GRPC_OP_RECV_STATUS_ON_CLIENT,
   /** Receive close on the server: one and only one must be made on the
       server.
-      This op completes after the close has been received by the server. */
+      This op completes after the close has been received by the server.
+      This operation always succeeds, meaning ops paired with this operation
+      will also appear to succeed, even though they may not have. */
   GRPC_OP_RECV_CLOSE_ON_SERVER
 } grpc_op_type;
 
@@ -328,6 +334,12 @@ typedef struct grpc_op {
     struct {
       size_t count;
       grpc_metadata *metadata;
+      /** If \a is_set, \a compression_level will be used for the call.
+       * Otherwise, \a compression_level won't be considered */
+      struct {
+        uint8_t is_set;
+        grpc_compression_level level;
+      } maybe_compression_level;
     } send_initial_metadata;
     grpc_byte_buffer *send_message;
     struct {

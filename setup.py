@@ -33,9 +33,11 @@ import os
 import os.path
 import shutil
 import sys
+import sysconfig
 
 from distutils import core as _core
 from distutils import extension as _extension
+import pkg_resources
 import setuptools
 from setuptools.command import egg_info
 
@@ -54,7 +56,6 @@ sys.path.insert(0, os.path.abspath(PYTHON_STEM))
 
 # Break import-style to ensure we can actually find our in-repo dependencies.
 import commands
-import precompiled
 import grpc_core_dependencies
 import grpc_version
 
@@ -109,6 +110,16 @@ if "linux" in sys.platform or "darwin" in sys.platform:
 
   pymodinit = '__attribute__((visibility ("default"))) {}'.format(pymodinit_type)
   DEFINE_MACROS += (('PyMODINIT_FUNC', pymodinit),)
+
+
+# By default, Python3 distutils enforces compatibility of
+# c plugins (.so files) with the OSX version Python3 was built with.
+# For Python3.4, this is OSX 10.6, but we need Thread Local Support (__thread)
+if 'darwin' in sys.platform and PY3:
+  mac_target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
+  if mac_target and (pkg_resources.parse_version(mac_target) <
+                     pkg_resources.parse_version('10.7.0')):
+    os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
 
 
 def cython_extensions(module_names, extra_sources, include_dirs,
@@ -173,7 +184,6 @@ COMMAND_CLASS = {
     'build_project_metadata': commands.BuildProjectMetadata,
     'build_py': commands.BuildPy,
     'build_ext': commands.BuildExt,
-    'build_tagged_ext': precompiled.BuildTaggedExt,
     'gather': commands.Gather,
     'run_interop': commands.RunInterop,
     'test_lite': commands.TestLite
@@ -204,7 +214,7 @@ TEST_PACKAGE_DATA = {
 }
 
 TESTS_REQUIRE = (
-    'oauth2client>=1.4.7',
+    'oauth2client>=2.1.0',
     'protobuf>=3.0.0a3',
     'coverage>=4.0',
 ) + INSTALL_REQUIRES
@@ -229,23 +239,19 @@ else:
   PACKAGES = setuptools.find_packages(
       PYTHON_STEM, exclude=['tests', 'tests.*'])
 
-setup_arguments = {
-    'name': 'grpcio',
-    'version': grpc_version.VERSION,
-    'license': LICENSE,
-    'ext_modules': CYTHON_EXTENSION_MODULES,
-    'packages': list(PACKAGES),
-    'package_dir': PACKAGE_DIRECTORIES,
-    'package_data': PACKAGE_DATA,
-    'install_requires': INSTALL_REQUIRES,
-    'setup_requires': SETUP_REQUIRES,
-    'cmdclass': COMMAND_CLASS,
-    'tests_require': TESTS_REQUIRE,
-    'test_suite': TEST_SUITE,
-    'test_loader': TEST_LOADER,
-    'test_runner': TEST_RUNNER,
-}
-
-precompiled.update_setup_arguments(setup_arguments)
-
-setuptools.setup(**setup_arguments)
+setuptools.setup(
+  name='grpcio',
+  version=grpc_version.VERSION,
+  license=LICENSE,
+  ext_modules=CYTHON_EXTENSION_MODULES,
+  packages=list(PACKAGES),
+  package_dir=PACKAGE_DIRECTORIES,
+  package_data=PACKAGE_DATA,
+  install_requires=INSTALL_REQUIRES,
+  setup_requires=SETUP_REQUIRES,
+  cmdclass=COMMAND_CLASS,
+  tests_require=TESTS_REQUIRE,
+  test_suite=TEST_SUITE,
+  test_loader=TEST_LOADER,
+  test_runner=TEST_RUNNER,
+)

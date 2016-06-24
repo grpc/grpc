@@ -67,58 +67,6 @@ namespace Grpc.Testing {
       get { return global::Grpc.Testing.ServicesReflection.Descriptor.Services[0]; }
     }
 
-    /// <summary>Client for BenchmarkService</summary>
-    [System.Obsolete("Client side interfaced will be removed in the next release. Use client class directly.")]
-    public interface IBenchmarkServiceClient
-    {
-      /// <summary>
-      ///  One request followed by one response.
-      ///  The server returns the client payload as-is.
-      /// </summary>
-      global::Grpc.Testing.SimpleResponse UnaryCall(global::Grpc.Testing.SimpleRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      /// <summary>
-      ///  One request followed by one response.
-      ///  The server returns the client payload as-is.
-      /// </summary>
-      global::Grpc.Testing.SimpleResponse UnaryCall(global::Grpc.Testing.SimpleRequest request, CallOptions options);
-      /// <summary>
-      ///  One request followed by one response.
-      ///  The server returns the client payload as-is.
-      /// </summary>
-      AsyncUnaryCall<global::Grpc.Testing.SimpleResponse> UnaryCallAsync(global::Grpc.Testing.SimpleRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      /// <summary>
-      ///  One request followed by one response.
-      ///  The server returns the client payload as-is.
-      /// </summary>
-      AsyncUnaryCall<global::Grpc.Testing.SimpleResponse> UnaryCallAsync(global::Grpc.Testing.SimpleRequest request, CallOptions options);
-      /// <summary>
-      ///  One request followed by one response.
-      ///  The server returns the client payload as-is.
-      /// </summary>
-      AsyncDuplexStreamingCall<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse> StreamingCall(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      /// <summary>
-      ///  One request followed by one response.
-      ///  The server returns the client payload as-is.
-      /// </summary>
-      AsyncDuplexStreamingCall<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse> StreamingCall(CallOptions options);
-    }
-
-    /// <summary>Interface of server-side implementations of BenchmarkService</summary>
-    [System.Obsolete("Service implementations should inherit from the generated abstract base class instead.")]
-    public interface IBenchmarkService
-    {
-      /// <summary>
-      ///  One request followed by one response.
-      ///  The server returns the client payload as-is.
-      /// </summary>
-      Task<global::Grpc.Testing.SimpleResponse> UnaryCall(global::Grpc.Testing.SimpleRequest request, ServerCallContext context);
-      /// <summary>
-      ///  One request followed by one response.
-      ///  The server returns the client payload as-is.
-      /// </summary>
-      Task StreamingCall(IAsyncStreamReader<global::Grpc.Testing.SimpleRequest> requestStream, IServerStreamWriter<global::Grpc.Testing.SimpleResponse> responseStream, ServerCallContext context);
-    }
-
     /// <summary>Base class for server-side implementations of BenchmarkService</summary>
     public abstract class BenchmarkServiceBase
     {
@@ -126,7 +74,7 @@ namespace Grpc.Testing {
       ///  One request followed by one response.
       ///  The server returns the client payload as-is.
       /// </summary>
-      public virtual Task<global::Grpc.Testing.SimpleResponse> UnaryCall(global::Grpc.Testing.SimpleRequest request, ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.SimpleResponse> UnaryCall(global::Grpc.Testing.SimpleRequest request, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }
@@ -135,7 +83,7 @@ namespace Grpc.Testing {
       ///  One request followed by one response.
       ///  The server returns the client payload as-is.
       /// </summary>
-      public virtual Task StreamingCall(IAsyncStreamReader<global::Grpc.Testing.SimpleRequest> requestStream, IServerStreamWriter<global::Grpc.Testing.SimpleResponse> responseStream, ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task StreamingCall(IAsyncStreamReader<global::Grpc.Testing.SimpleRequest> requestStream, IServerStreamWriter<global::Grpc.Testing.SimpleResponse> responseStream, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }
@@ -143,21 +91,24 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Client for BenchmarkService</summary>
-    #pragma warning disable 0618
-    public class BenchmarkServiceClient : ClientBase<BenchmarkServiceClient>, IBenchmarkServiceClient
-    #pragma warning restore 0618
+    public class BenchmarkServiceClient : ClientBase<BenchmarkServiceClient>
     {
+      /// <summary>Creates a new client for BenchmarkService</summary>
+      /// <param name="channel">The channel to use to make remote calls.</param>
       public BenchmarkServiceClient(Channel channel) : base(channel)
       {
       }
+      /// <summary>Creates a new client for BenchmarkService that uses a custom <c>CallInvoker</c>.</summary>
+      /// <param name="callInvoker">The callInvoker to use to make remote calls.</param>
       public BenchmarkServiceClient(CallInvoker callInvoker) : base(callInvoker)
       {
       }
-      ///<summary>Protected parameterless constructor to allow creation of test doubles.</summary>
+      /// <summary>Protected parameterless constructor to allow creation of test doubles.</summary>
       protected BenchmarkServiceClient() : base()
       {
       }
-      ///<summary>Protected constructor to allow creation of configured clients.</summary>
+      /// <summary>Protected constructor to allow creation of configured clients.</summary>
+      /// <param name="configuration">The client configuration.</param>
       protected BenchmarkServiceClient(ClientBaseConfiguration configuration) : base(configuration)
       {
       }
@@ -216,28 +167,10 @@ namespace Grpc.Testing {
       }
     }
 
-    /// <summary>Creates a new client for BenchmarkService</summary>
-    public static BenchmarkServiceClient NewClient(Channel channel)
-    {
-      return new BenchmarkServiceClient(channel);
-    }
-
     /// <summary>Creates service definition that can be registered with a server</summary>
-    #pragma warning disable 0618
-    public static ServerServiceDefinition BindService(IBenchmarkService serviceImpl)
-    #pragma warning restore 0618
-    {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
-          .AddMethod(__Method_UnaryCall, serviceImpl.UnaryCall)
-          .AddMethod(__Method_StreamingCall, serviceImpl.StreamingCall).Build();
-    }
-
-    /// <summary>Creates service definition that can be registered with a server</summary>
-    #pragma warning disable 0618
     public static ServerServiceDefinition BindService(BenchmarkServiceBase serviceImpl)
-    #pragma warning restore 0618
     {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+      return ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_UnaryCall, serviceImpl.UnaryCall)
           .AddMethod(__Method_StreamingCall, serviceImpl.StreamingCall).Build();
     }
@@ -289,112 +222,6 @@ namespace Grpc.Testing {
       get { return global::Grpc.Testing.ServicesReflection.Descriptor.Services[1]; }
     }
 
-    /// <summary>Client for WorkerService</summary>
-    [System.Obsolete("Client side interfaced will be removed in the next release. Use client class directly.")]
-    public interface IWorkerServiceClient
-    {
-      /// <summary>
-      ///  Start server with specified workload.
-      ///  First request sent specifies the ServerConfig followed by ServerStatus
-      ///  response. After that, a "Mark" can be sent anytime to request the latest
-      ///  stats. Closing the stream will initiate shutdown of the test server
-      ///  and once the shutdown has finished, the OK status is sent to terminate
-      ///  this RPC.
-      /// </summary>
-      AsyncDuplexStreamingCall<global::Grpc.Testing.ServerArgs, global::Grpc.Testing.ServerStatus> RunServer(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      /// <summary>
-      ///  Start server with specified workload.
-      ///  First request sent specifies the ServerConfig followed by ServerStatus
-      ///  response. After that, a "Mark" can be sent anytime to request the latest
-      ///  stats. Closing the stream will initiate shutdown of the test server
-      ///  and once the shutdown has finished, the OK status is sent to terminate
-      ///  this RPC.
-      /// </summary>
-      AsyncDuplexStreamingCall<global::Grpc.Testing.ServerArgs, global::Grpc.Testing.ServerStatus> RunServer(CallOptions options);
-      /// <summary>
-      ///  Start client with specified workload.
-      ///  First request sent specifies the ClientConfig followed by ClientStatus
-      ///  response. After that, a "Mark" can be sent anytime to request the latest
-      ///  stats. Closing the stream will initiate shutdown of the test client
-      ///  and once the shutdown has finished, the OK status is sent to terminate
-      ///  this RPC.
-      /// </summary>
-      AsyncDuplexStreamingCall<global::Grpc.Testing.ClientArgs, global::Grpc.Testing.ClientStatus> RunClient(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      /// <summary>
-      ///  Start client with specified workload.
-      ///  First request sent specifies the ClientConfig followed by ClientStatus
-      ///  response. After that, a "Mark" can be sent anytime to request the latest
-      ///  stats. Closing the stream will initiate shutdown of the test client
-      ///  and once the shutdown has finished, the OK status is sent to terminate
-      ///  this RPC.
-      /// </summary>
-      AsyncDuplexStreamingCall<global::Grpc.Testing.ClientArgs, global::Grpc.Testing.ClientStatus> RunClient(CallOptions options);
-      /// <summary>
-      ///  Just return the core count - unary call
-      /// </summary>
-      global::Grpc.Testing.CoreResponse CoreCount(global::Grpc.Testing.CoreRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      /// <summary>
-      ///  Just return the core count - unary call
-      /// </summary>
-      global::Grpc.Testing.CoreResponse CoreCount(global::Grpc.Testing.CoreRequest request, CallOptions options);
-      /// <summary>
-      ///  Just return the core count - unary call
-      /// </summary>
-      AsyncUnaryCall<global::Grpc.Testing.CoreResponse> CoreCountAsync(global::Grpc.Testing.CoreRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      /// <summary>
-      ///  Just return the core count - unary call
-      /// </summary>
-      AsyncUnaryCall<global::Grpc.Testing.CoreResponse> CoreCountAsync(global::Grpc.Testing.CoreRequest request, CallOptions options);
-      /// <summary>
-      ///  Quit this worker
-      /// </summary>
-      global::Grpc.Testing.Void QuitWorker(global::Grpc.Testing.Void request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      /// <summary>
-      ///  Quit this worker
-      /// </summary>
-      global::Grpc.Testing.Void QuitWorker(global::Grpc.Testing.Void request, CallOptions options);
-      /// <summary>
-      ///  Quit this worker
-      /// </summary>
-      AsyncUnaryCall<global::Grpc.Testing.Void> QuitWorkerAsync(global::Grpc.Testing.Void request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      /// <summary>
-      ///  Quit this worker
-      /// </summary>
-      AsyncUnaryCall<global::Grpc.Testing.Void> QuitWorkerAsync(global::Grpc.Testing.Void request, CallOptions options);
-    }
-
-    /// <summary>Interface of server-side implementations of WorkerService</summary>
-    [System.Obsolete("Service implementations should inherit from the generated abstract base class instead.")]
-    public interface IWorkerService
-    {
-      /// <summary>
-      ///  Start server with specified workload.
-      ///  First request sent specifies the ServerConfig followed by ServerStatus
-      ///  response. After that, a "Mark" can be sent anytime to request the latest
-      ///  stats. Closing the stream will initiate shutdown of the test server
-      ///  and once the shutdown has finished, the OK status is sent to terminate
-      ///  this RPC.
-      /// </summary>
-      Task RunServer(IAsyncStreamReader<global::Grpc.Testing.ServerArgs> requestStream, IServerStreamWriter<global::Grpc.Testing.ServerStatus> responseStream, ServerCallContext context);
-      /// <summary>
-      ///  Start client with specified workload.
-      ///  First request sent specifies the ClientConfig followed by ClientStatus
-      ///  response. After that, a "Mark" can be sent anytime to request the latest
-      ///  stats. Closing the stream will initiate shutdown of the test client
-      ///  and once the shutdown has finished, the OK status is sent to terminate
-      ///  this RPC.
-      /// </summary>
-      Task RunClient(IAsyncStreamReader<global::Grpc.Testing.ClientArgs> requestStream, IServerStreamWriter<global::Grpc.Testing.ClientStatus> responseStream, ServerCallContext context);
-      /// <summary>
-      ///  Just return the core count - unary call
-      /// </summary>
-      Task<global::Grpc.Testing.CoreResponse> CoreCount(global::Grpc.Testing.CoreRequest request, ServerCallContext context);
-      /// <summary>
-      ///  Quit this worker
-      /// </summary>
-      Task<global::Grpc.Testing.Void> QuitWorker(global::Grpc.Testing.Void request, ServerCallContext context);
-    }
-
     /// <summary>Base class for server-side implementations of WorkerService</summary>
     public abstract class WorkerServiceBase
     {
@@ -406,7 +233,7 @@ namespace Grpc.Testing {
       ///  and once the shutdown has finished, the OK status is sent to terminate
       ///  this RPC.
       /// </summary>
-      public virtual Task RunServer(IAsyncStreamReader<global::Grpc.Testing.ServerArgs> requestStream, IServerStreamWriter<global::Grpc.Testing.ServerStatus> responseStream, ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task RunServer(IAsyncStreamReader<global::Grpc.Testing.ServerArgs> requestStream, IServerStreamWriter<global::Grpc.Testing.ServerStatus> responseStream, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }
@@ -419,7 +246,7 @@ namespace Grpc.Testing {
       ///  and once the shutdown has finished, the OK status is sent to terminate
       ///  this RPC.
       /// </summary>
-      public virtual Task RunClient(IAsyncStreamReader<global::Grpc.Testing.ClientArgs> requestStream, IServerStreamWriter<global::Grpc.Testing.ClientStatus> responseStream, ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task RunClient(IAsyncStreamReader<global::Grpc.Testing.ClientArgs> requestStream, IServerStreamWriter<global::Grpc.Testing.ClientStatus> responseStream, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }
@@ -427,7 +254,7 @@ namespace Grpc.Testing {
       /// <summary>
       ///  Just return the core count - unary call
       /// </summary>
-      public virtual Task<global::Grpc.Testing.CoreResponse> CoreCount(global::Grpc.Testing.CoreRequest request, ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.CoreResponse> CoreCount(global::Grpc.Testing.CoreRequest request, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }
@@ -435,7 +262,7 @@ namespace Grpc.Testing {
       /// <summary>
       ///  Quit this worker
       /// </summary>
-      public virtual Task<global::Grpc.Testing.Void> QuitWorker(global::Grpc.Testing.Void request, ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task<global::Grpc.Testing.Void> QuitWorker(global::Grpc.Testing.Void request, ServerCallContext context)
       {
         throw new RpcException(new Status(StatusCode.Unimplemented, ""));
       }
@@ -443,21 +270,24 @@ namespace Grpc.Testing {
     }
 
     /// <summary>Client for WorkerService</summary>
-    #pragma warning disable 0618
-    public class WorkerServiceClient : ClientBase<WorkerServiceClient>, IWorkerServiceClient
-    #pragma warning restore 0618
+    public class WorkerServiceClient : ClientBase<WorkerServiceClient>
     {
+      /// <summary>Creates a new client for WorkerService</summary>
+      /// <param name="channel">The channel to use to make remote calls.</param>
       public WorkerServiceClient(Channel channel) : base(channel)
       {
       }
+      /// <summary>Creates a new client for WorkerService that uses a custom <c>CallInvoker</c>.</summary>
+      /// <param name="callInvoker">The callInvoker to use to make remote calls.</param>
       public WorkerServiceClient(CallInvoker callInvoker) : base(callInvoker)
       {
       }
-      ///<summary>Protected parameterless constructor to allow creation of test doubles.</summary>
+      /// <summary>Protected parameterless constructor to allow creation of test doubles.</summary>
       protected WorkerServiceClient() : base()
       {
       }
-      ///<summary>Protected constructor to allow creation of configured clients.</summary>
+      /// <summary>Protected constructor to allow creation of configured clients.</summary>
+      /// <param name="configuration">The client configuration.</param>
       protected WorkerServiceClient(ClientBaseConfiguration configuration) : base(configuration)
       {
       }
@@ -572,30 +402,10 @@ namespace Grpc.Testing {
       }
     }
 
-    /// <summary>Creates a new client for WorkerService</summary>
-    public static WorkerServiceClient NewClient(Channel channel)
-    {
-      return new WorkerServiceClient(channel);
-    }
-
     /// <summary>Creates service definition that can be registered with a server</summary>
-    #pragma warning disable 0618
-    public static ServerServiceDefinition BindService(IWorkerService serviceImpl)
-    #pragma warning restore 0618
-    {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
-          .AddMethod(__Method_RunServer, serviceImpl.RunServer)
-          .AddMethod(__Method_RunClient, serviceImpl.RunClient)
-          .AddMethod(__Method_CoreCount, serviceImpl.CoreCount)
-          .AddMethod(__Method_QuitWorker, serviceImpl.QuitWorker).Build();
-    }
-
-    /// <summary>Creates service definition that can be registered with a server</summary>
-    #pragma warning disable 0618
     public static ServerServiceDefinition BindService(WorkerServiceBase serviceImpl)
-    #pragma warning restore 0618
     {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+      return ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_RunServer, serviceImpl.RunServer)
           .AddMethod(__Method_RunClient, serviceImpl.RunClient)
           .AddMethod(__Method_CoreCount, serviceImpl.CoreCount)

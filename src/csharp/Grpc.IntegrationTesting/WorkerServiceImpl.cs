@@ -64,7 +64,7 @@ namespace Grpc.Testing
             {
                 Stats = runner.GetStats(false),
                 Port = runner.BoundPort,
-                Cores = 0,  // TODO: set number of cores
+                Cores = Environment.ProcessorCount,
             });
                 
             while (await requestStream.MoveNext())
