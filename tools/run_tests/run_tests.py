@@ -661,7 +661,7 @@ class Sanity(object):
   def test_specs(self):
     import yaml
     with open('tools/run_tests/sanity/sanity_tests.yaml', 'r') as f:
-      return [self.config.job_spec(cmd['script'].split(), None,
+      return [self.config.job_spec(cmd['script'].split(),
                                    timeout_seconds=None, environ={'TEST': 'true'},
                                    cpu_cost=cmd.get('cpu_cost', 1))
               for cmd in yaml.load(f)]
