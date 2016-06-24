@@ -248,7 +248,10 @@ static grpc_error *copy_error_and_unref(grpc_error *in) {
   if (is_special(in)) {
     if (in == GRPC_ERROR_NONE) return GRPC_ERROR_CREATE("no error");
     if (in == GRPC_ERROR_OOM) return GRPC_ERROR_CREATE("oom");
-    if (in == GRPC_ERROR_CANCELLED) return GRPC_ERROR_CREATE("cancelled");
+    if (in == GRPC_ERROR_CANCELLED)
+      return grpc_error_set_int(GRPC_ERROR_CREATE("cancelled"),
+                                GRPC_ERROR_INT_GRPC_STATUS,
+                                GRPC_STATUS_CANCELLED);
     return GRPC_ERROR_CREATE("unknown");
   }
   grpc_error *out = gpr_malloc(sizeof(*out));

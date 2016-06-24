@@ -407,9 +407,10 @@ static void set_status_code(grpc_call *call, status_source source,
 static void set_status_details(grpc_call *call, status_source source,
                                grpc_mdstr *status) {
   if (call->status[source].details != NULL) {
-    GRPC_MDSTR_UNREF(call->status[source].details);
+    GRPC_MDSTR_UNREF(status);
+  } else {
+    call->status[source].details = status;
   }
-  call->status[source].details = status;
 }
 
 static void get_final_status(grpc_call *call,
