@@ -143,6 +143,7 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
   grpc_closure_init(&on_write, done_write, NULL);
   gpr_slice_buffer_init(&state.temp_incoming_buffer);
   gpr_slice_buffer_init(&state.outgoing_buffer);
+  state.incoming_data_length = 0;
   state.tcp = tcp;
   grpc_endpoint_add_to_pollset(exec_ctx, tcp, server->pollset);
   grpc_endpoint_read(exec_ctx, tcp, &state.temp_incoming_buffer, &on_read);
