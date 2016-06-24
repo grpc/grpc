@@ -5,6 +5,9 @@ env:
     - CONFIG=opt
     - TEST=objc
     - JOBS=1
+  matrix:
+    - TEST_PATH=src/objective-c/tests WORKSPACE=Tests.xcworkspace SCHEME=RxLibraryUnitTests
+    - TEST_PATH=examples/objective-c/helloworld WORKSPACE=HelloWorld.xcworkspace SCHEME=HelloWorld
 before_install:
   - pod --version
   - gem uninstall cocoapods -a
@@ -14,37 +17,19 @@ before_install:
   - pushd third_party/protobuf
   - git checkout v3.0.0-beta-3
   - popd
-matrix:
-  include:
-    - install:
-        - make grpc_objective_c_plugin
-        - pushd src/objective-c/tests
-        - pod install
-        - popd
-      before_script:
-        - make interop_server
-        - bins/$CONFIG/interop_server --port=5050 &
-        - bins/$CONFIG/interop_server --port=5051 --use_tls &
-      xcode_workspace: src/objective-c/tests/Tests.xcworkspace
-      xcode_scheme:
-        - RxLibraryUnitTests
-        - InteropTestsLocalSSL
-        - InteropTestsLocalCleartext
-        # TODO(jcanizales): Investigate why they time out:
-        # - InteropTestsRemote
-    - env:
-        matrix:
-          - SCHEME=HelloWorld
-          - SCHEME=AuthSample
-      install:
-        - make grpc_objective_c_plugin
-        - install bins/opt/grpc_objective_c_plugin /usr/local/bin/protoc-gen-objcgrpc
-        - install bins/opt/protobuf/protoc /usr/local/bin/protoc
-        - pushd examples/objective-c/helloworld
-        - pod install
-        - popd
-      xcode_workspace: examples/objective-c/helloworld/HelloWorld.xcworkspace
-      xcode_scheme: $SCHEME
+install:
+  - make grpc_objective_c_plugin
+  - install bins/opt/grpc_objective_c_plugin /usr/local/bin/protoc-gen-objcgrpc
+  - install bins/opt/protobuf/protoc /usr/local/bin/protoc
+  - pushd $TEST_PATH
+  - pod install
+  - popd
+before_script:
+  - make interop_server
+  - bins/$CONFIG/interop_server --port=5050 &
+  - bins/$CONFIG/interop_server --port=5051 --use_tls &
+xcode_workspace: $TEST_PATH/$WORKSPACE
+xcode_scheme: $SCHEME
 xcode_sdk: iphonesimulator9.3
 notifications:
   email: false
