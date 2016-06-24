@@ -48,8 +48,8 @@ install:
 before_script:
   - if [[ ${INTEROP_SERVER} ]]; then
       make interop_server;
-      bins/$CONFIG/interop_server --port=5050 &;
-      bins/$CONFIG/interop_server --port=5051 --use_tls &;
+      (bins/$CONFIG/interop_server --port=5050 &);
+      (bins/$CONFIG/interop_server --port=5051 --use_tls &);
     fi
 script:
   - if [[ ${BUILD_ONLY} ]]; then
