@@ -13,11 +13,18 @@ before_install:
   - brew install gflags
   - pushd third_party/protobuf
   - git checkout v3.0.0-beta-3
+  - ./autogen.sh
+  - ./configure
+  - make
+  - make install
   - popd
+install:
+  - make grpc_objective_c_plugin
+  - install bins/opt/grpc_objective_c_plugin /usr/local/bin/grpc_objective_c_plugin
+
 matrix:
   include:
     - install:
-        - make grpc_objective_c_plugin
         - pushd src/objective-c/tests
         - pod install
         - popd
