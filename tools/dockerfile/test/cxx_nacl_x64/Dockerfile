@@ -102,8 +102,8 @@ RUN cd /webports && gclient sync
 ENV NACL_SDK_ROOT /chromium/src/out/pepper_53/
 RUN cd /webports && \
   git config --global user.email "why_does_webports_use_git_commit@example.com"
-RUN ./webports/src/bin/webports -a x86_64 -t glibc install src/ports/gflags
-RUN ./webports/src/bin/webports -a x86_64 -t glibc install src/ports/openssl
+RUN ./webports/src/bin/webports -a x86_64 -t glibc install /webports/src/ports/gflags
+RUN ./webports/src/bin/webports -a x86_64 -t glibc install /webports/src/ports/openssl
 
 
 ENV POST_GIT_STEP tools/dockerfile/test/cxx_nacl_x64/post-git-setup.sh
