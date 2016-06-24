@@ -336,7 +336,7 @@ void grpc_channel_destroy(grpc_channel *channel) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   GRPC_API_TRACE("grpc_channel_destroy(channel=%p)", 1, (channel));
   memset(&op, 0, sizeof(op));
-  op.disconnect = 1;
+  op.disconnect = true;
   elem = grpc_channel_stack_element(CHANNEL_STACK_FROM_CHANNEL(channel), 0);
   elem->filter->start_transport_op(&exec_ctx, elem, &op);
 
