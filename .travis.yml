@@ -28,7 +28,7 @@ before_script:
   - make interop_server
   - bins/$CONFIG/interop_server --port=5050 &
   - bins/$CONFIG/interop_server --port=5051 --use_tls &
-scritp:
+script:
   - if [[ ${HAS_TEST} ]]; then
       xctool -workspace "$TEST_PATH\\$WORKSPACE" -scheme "$SCHEME" -sdk iphonesimulator9.3 build test
     else
