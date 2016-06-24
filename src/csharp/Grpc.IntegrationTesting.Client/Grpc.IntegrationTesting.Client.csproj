@@ -83,6 +83,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Grpc.IntegrationTesting.Client.project.json" />
     <None Include="packages.config" />
   </ItemGroup>
 </Project>

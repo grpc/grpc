@@ -64,12 +64,14 @@ class InteropClient {
 
   bool DoEmpty();
   bool DoLargeUnary();
-  bool DoLargeCompressedUnary();
+  bool DoServerCompressedUnary();
+  bool DoClientCompressedUnary();
   bool DoPingPong();
   bool DoHalfDuplex();
   bool DoRequestStreaming();
   bool DoResponseStreaming();
-  bool DoResponseCompressedStreaming();
+  bool DoServerCompressedStreaming();
+  bool DoClientCompressedStreaming();
   bool DoResponseStreamingWithSlowConsumer();
   bool DoCancelAfterBegin();
   bool DoCancelAfterFirstResponse();

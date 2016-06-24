@@ -93,17 +93,22 @@ namespace Grpc.Testing {
     /// <summary>Client for BenchmarkService</summary>
     public class BenchmarkServiceClient : ClientBase<BenchmarkServiceClient>
     {
+      /// <summary>Creates a new client for BenchmarkService</summary>
+      /// <param name="channel">The channel to use to make remote calls.</param>
       public BenchmarkServiceClient(Channel channel) : base(channel)
       {
       }
+      /// <summary>Creates a new client for BenchmarkService that uses a custom <c>CallInvoker</c>.</summary>
+      /// <param name="callInvoker">The callInvoker to use to make remote calls.</param>
       public BenchmarkServiceClient(CallInvoker callInvoker) : base(callInvoker)
       {
       }
-      ///<summary>Protected parameterless constructor to allow creation of test doubles.</summary>
+      /// <summary>Protected parameterless constructor to allow creation of test doubles.</summary>
       protected BenchmarkServiceClient() : base()
       {
       }
-      ///<summary>Protected constructor to allow creation of configured clients.</summary>
+      /// <summary>Protected constructor to allow creation of configured clients.</summary>
+      /// <param name="configuration">The client configuration.</param>
       protected BenchmarkServiceClient(ClientBaseConfiguration configuration) : base(configuration)
       {
       }
@@ -160,12 +165,6 @@ namespace Grpc.Testing {
       {
         return new BenchmarkServiceClient(configuration);
       }
-    }
-
-    /// <summary>Creates a new client for BenchmarkService</summary>
-    public static BenchmarkServiceClient NewClient(Channel channel)
-    {
-      return new BenchmarkServiceClient(channel);
     }
 
     /// <summary>Creates service definition that can be registered with a server</summary>
@@ -273,17 +272,22 @@ namespace Grpc.Testing {
     /// <summary>Client for WorkerService</summary>
     public class WorkerServiceClient : ClientBase<WorkerServiceClient>
     {
+      /// <summary>Creates a new client for WorkerService</summary>
+      /// <param name="channel">The channel to use to make remote calls.</param>
       public WorkerServiceClient(Channel channel) : base(channel)
       {
       }
+      /// <summary>Creates a new client for WorkerService that uses a custom <c>CallInvoker</c>.</summary>
+      /// <param name="callInvoker">The callInvoker to use to make remote calls.</param>
       public WorkerServiceClient(CallInvoker callInvoker) : base(callInvoker)
       {
       }
-      ///<summary>Protected parameterless constructor to allow creation of test doubles.</summary>
+      /// <summary>Protected parameterless constructor to allow creation of test doubles.</summary>
       protected WorkerServiceClient() : base()
       {
       }
-      ///<summary>Protected constructor to allow creation of configured clients.</summary>
+      /// <summary>Protected constructor to allow creation of configured clients.</summary>
+      /// <param name="configuration">The client configuration.</param>
       protected WorkerServiceClient(ClientBaseConfiguration configuration) : base(configuration)
       {
       }
@@ -396,12 +400,6 @@ namespace Grpc.Testing {
       {
         return new WorkerServiceClient(configuration);
       }
-    }
-
-    /// <summary>Creates a new client for WorkerService</summary>
-    public static WorkerServiceClient NewClient(Channel channel)
-    {
-      return new WorkerServiceClient(channel);
     }
 
     /// <summary>Creates service definition that can be registered with a server</summary>

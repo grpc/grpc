@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,6 +48,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/transport/byte_stream.h"
 #include "src/proto/grpc/testing/empty.grpc.pb.h"
 #include "src/proto/grpc/testing/messages.grpc.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
@@ -64,10 +65,10 @@ using grpc::ServerCredentials;
 using grpc::ServerReader;
 using grpc::ServerReaderWriter;
 using grpc::ServerWriter;
+using grpc::WriteOptions;
 using grpc::SslServerCredentialsOptions;
 using grpc::testing::InteropServerContextInspector;
 using grpc::testing::Payload;
-using grpc::testing::PayloadType;
 using grpc::testing::SimpleRequest;
 using grpc::testing::SimpleResponse;
 using grpc::testing::StreamingInputCallRequest;
@@ -78,7 +79,6 @@ using grpc::testing::TestService;
 using grpc::Status;
 
 static bool got_sigint = false;
-static const char* kRandomFile = "test/cpp/interop/rnd.dat";
 
 const char kEchoInitialMetadataKey[] = "x-grpc-test-echo-initial";
 const char kEchoTrailingBinMetadataKey[] = "x-grpc-test-echo-trailing-bin";
@@ -110,34 +110,41 @@ void MaybeEchoMetadata(ServerContext* context) {
   }
 }
 
-bool SetPayload(PayloadType response_type, int size, Payload* payload) {
-  payload->set_type(response_type);
-  switch (response_type) {
-    case PayloadType::COMPRESSABLE: {
-      std::unique_ptr<char[]> body(new char[size]());
-      payload->set_body(body.get(), size);
-    } break;
-    case PayloadType::UNCOMPRESSABLE: {
-      std::unique_ptr<char[]> body(new char[size]());
-      std::ifstream rnd_file(kRandomFile);
-      GPR_ASSERT(rnd_file.good());
-      rnd_file.read(body.get(), size);
-      GPR_ASSERT(!rnd_file.eof());  // Requested more rnd bytes than available
-      payload->set_body(body.get(), size);
-    } break;
-    default:
-      GPR_ASSERT(false);
-  }
+bool SetPayload(int size, Payload* payload) {
+  std::unique_ptr<char[]> body(new char[size]());
+  payload->set_body(body.get(), size);
   return true;
 }
 
-template <typename RequestType>
-void SetResponseCompression(ServerContext* context,
-                            const RequestType& request) {
-  if (request.request_compressed_response()) {
-    // Any level would do, let's go for HIGH because we are overachievers.
-    context->set_compression_level(GRPC_COMPRESS_LEVEL_HIGH);
+bool CheckExpectedCompression(const ServerContext& context,
+                              const bool compression_expected) {
+  const InteropServerContextInspector inspector(context);
+  const grpc_compression_algorithm received_compression =
+      inspector.GetCallCompressionAlgorithm();
+
+  if (compression_expected) {
+    if (received_compression == GRPC_COMPRESS_NONE) {
+      // Expected some compression, got NONE. This is an error.
+      gpr_log(GPR_ERROR,
+              "Expected compression but got uncompressed request from client.");
+      return false;
+    }
+    if (!(inspector.GetMessageFlags() & GRPC_WRITE_INTERNAL_COMPRESS)) {
+      gpr_log(GPR_ERROR,
+              "Failure: Requested compression in a compressable request, but "
+              "compression bit in message flags not set.");
+      return false;
+    }
+  } else {
+    // Didn't expect compression -> make sure the request is uncompressed
+    if (inspector.GetMessageFlags() & GRPC_WRITE_INTERNAL_COMPRESS) {
+      gpr_log(GPR_ERROR,
+              "Failure: Didn't requested compression, but compression bit in "
+              "message flags set.");
+      return false;
+    }
   }
+  return true;
 }
 
 class TestServiceImpl : public TestService::Service {
@@ -151,11 +158,26 @@ class TestServiceImpl : public TestService::Service {
   Status UnaryCall(ServerContext* context, const SimpleRequest* request,
                    SimpleResponse* response) {
     MaybeEchoMetadata(context);
-    SetResponseCompression(context, *request);
+    if (request->has_response_compressed()) {
+      const bool compression_requested = request->response_compressed().value();
+      gpr_log(GPR_DEBUG, "Request for compression (%s) present for %s",
+              compression_requested ? "enabled" : "disabled", __func__);
+      if (compression_requested) {
+        // Any level would do, let's go for HIGH because we are overachievers.
+        context->set_compression_level(GRPC_COMPRESS_LEVEL_HIGH);
+      } else {
+        context->set_compression_level(GRPC_COMPRESS_LEVEL_NONE);
+      }
+    }
+    if (!CheckExpectedCompression(*context,
+                                  request->expect_compressed().value())) {
+      return Status(grpc::StatusCode::INVALID_ARGUMENT,
+                    "Compressed request expectation not met.");
+    }
     if (request->response_size() > 0) {
-      if (!SetPayload(request->response_type(), request->response_size(),
-                      response->mutable_payload())) {
-        return Status(grpc::StatusCode::INTERNAL, "Error creating payload.");
+      if (!SetPayload(request->response_size(), response->mutable_payload())) {
+        return Status(grpc::StatusCode::INVALID_ARGUMENT,
+                      "Error creating payload.");
       }
     }
 
@@ -171,15 +193,26 @@ class TestServiceImpl : public TestService::Service {
   Status StreamingOutputCall(
       ServerContext* context, const StreamingOutputCallRequest* request,
       ServerWriter<StreamingOutputCallResponse>* writer) {
-    SetResponseCompression(context, *request);
     StreamingOutputCallResponse response;
     bool write_success = true;
     for (int i = 0; write_success && i < request->response_parameters_size();
          i++) {
-      if (!SetPayload(request->response_type(),
-                      request->response_parameters(i).size(),
+      if (!SetPayload(request->response_parameters(i).size(),
                       response.mutable_payload())) {
-        return Status(grpc::StatusCode::INTERNAL, "Error creating payload.");
+        return Status(grpc::StatusCode::INVALID_ARGUMENT,
+                      "Error creating payload.");
+      }
+      WriteOptions wopts;
+      if (request->response_parameters(i).has_compressed()) {
+        // Compress by default. Disabled on a per-message basis.
+        context->set_compression_level(GRPC_COMPRESS_LEVEL_HIGH);
+        const bool compression_requested =
+            request->response_parameters(i).compressed().value();
+        gpr_log(GPR_DEBUG, "Request for compression (%s) present for %s",
+                compression_requested ? "enabled" : "disabled", __func__);
+        if (!compression_requested) {
+          wopts.set_no_compression();
+        }  // else, compression is already enabled via the context.
       }
       int time_us;
       if ((time_us = request->response_parameters(i).interval_us()) > 0) {
@@ -189,7 +222,7 @@ class TestServiceImpl : public TestService::Service {
                          gpr_time_from_micros(time_us, GPR_TIMESPAN));
         gpr_sleep_until(sleep_time);
       }
-      write_success = writer->Write(response);
+      write_success = writer->Write(response, wopts);
     }
     if (write_success) {
       return Status::OK;
@@ -204,6 +237,11 @@ class TestServiceImpl : public TestService::Service {
     StreamingInputCallRequest request;
     int aggregated_payload_size = 0;
     while (reader->Read(&request)) {
+      if (!CheckExpectedCompression(*context,
+                                    request.expect_compressed().value())) {
+        return Status(grpc::StatusCode::INVALID_ARGUMENT,
+                      "Compressed request expectation not met.");
+      }
       if (request.has_payload()) {
         aggregated_payload_size += request.payload().body().size();
       }
@@ -221,7 +259,6 @@ class TestServiceImpl : public TestService::Service {
     StreamingOutputCallResponse response;
     bool write_success = true;
     while (write_success && stream->Read(&request)) {
-      SetResponseCompression(context, request);
       if (request.response_parameters_size() != 0) {
         response.mutable_payload()->set_type(request.payload().type());
         response.mutable_payload()->set_body(
