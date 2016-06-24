@@ -626,11 +626,11 @@ void PrintHeaderServerMethodFCUnary(
     printer->Indent();
     printer->Print(*vars,
 		   "WithFCUnaryMethod_$Method$() {\n"
-		   "  ::grpc::Status (*fn)(::grpc::ServerContext*, ::grpc::FCUnary< $Request$,$Response$>*) = this->WithFCUnaryMethod_$Method$<BaseClass>::$Method$;\n"
 		   "  ::grpc::Service::MarkMethodFCUnary($Idx$,\n"
 		   "    new ::grpc::FCUnaryMethodHandler<Service, "
 		   "$Request$, "
-		   "$Response$>(fn, this));\n"
+		   "$Response$>("
+		   "std::bind(&WithFCUnaryMethod_$Method$<BaseClass>::FC$Method$, this, std::placeholders::_1, std::placeholders::_2)));\n"
 		   "}\n");
     printer->Print(*vars,
 		   "~WithFCUnaryMethod_$Method$() GRPC_OVERRIDE {\n"
@@ -648,9 +648,9 @@ void PrintHeaderServerMethodFCUnary(
     printer->Print(
         *vars,
         "// replace default version of this method with FCUnary\n"
-        "::grpc::Status $Method$("
+        "virtual ::grpc::Status FC$Method$("
         "::grpc::ServerContext* context, ::grpc::FCUnary< $Request$,$Response$>* fc_unary)"
-        " GRPC_FINAL GRPC_OVERRIDE;\n");
+        " = 0;\n");
     printer->Outdent();
     printer->Print(*vars, "};\n");
   }

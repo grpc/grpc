@@ -193,19 +193,22 @@ class BidiStreamingHandler : public MethodHandler {
 
 // A wrapper class of an application provided rpc method handler
 // specifically to apply to the flow-controlled implementation of a unary
-// method
+// method.
+/// The argument to the constructor should be a member function already
+/// bound to the appropriate service instance. The declaration gets too complicated
+/// otherwise.
 template <class ServiceType, class RequestType, class ResponseType>
 class FCUnaryMethodHandler : public MethodHandler {
  public:
-  FCUnaryMethodHandler(std::function<Status(ServiceType*, ServerContext*,
+  FCUnaryMethodHandler(std::function<Status(ServerContext*,
 					    FCUnary<RequestType,ResponseType>*)>
-                       func, ServiceType* service)
-    : func_(func), service_(service) {}
+                       func)
+    : func_(func) {}
 
   void RunHandler(const HandlerParameter& param) GRPC_FINAL {
     FCUnary<RequestType, ResponseType> fc_unary(param.call,
 						param.server_context);
-    Status status = func_(service_, param.server_context, &fc_unary);
+    Status status = func_(param.server_context, &fc_unary);
     if (!param.server_context->sent_initial_metadata_) {
       // means that the write never happened, which is bad
     } else {
@@ -216,12 +219,10 @@ class FCUnaryMethodHandler : public MethodHandler {
     }
   }
  private:
-  // Application provided rpc handler function.
-  std::function<Status(ServiceType*, ServerContext*,
+  // Application provided rpc handler function, already bound to its service.
+  std::function<Status(ServerContext*,
                        FCUnary<RequestType, ResponseType>*)>
     func_;
-  // The class the above handler function lives in.
-  ServiceType* service_;
 };
 
 // Handle unknown method by returning UNIMPLEMENTED error.

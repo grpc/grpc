@@ -67,6 +67,8 @@ template <class W>
 class ServerWriter;
 template <class W, class R>
 class ServerReaderWriter;
+template <class Req, class Resp>
+class FCUnary;
 template <class ServiceType, class RequestType, class ResponseType>
 class RpcMethodHandler;
 template <class ServiceType, class RequestType, class ResponseType>
@@ -75,6 +77,8 @@ template <class ServiceType, class RequestType, class ResponseType>
 class ServerStreamingHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class BidiStreamingHandler;
+template <class ServiceType, class RequestType, class ResponseType>
+class FCUnaryMethodHandler;
 class UnknownMethodHandler;
 
 class Call;
@@ -177,6 +181,8 @@ class ServerContext {
   friend class ::grpc::ServerWriter;
   template <class W, class R>
   friend class ::grpc::ServerReaderWriter;
+  template <class Req, class Resp>
+  friend class ::grpc::FCUnary;
   template <class ServiceType, class RequestType, class ResponseType>
   friend class RpcMethodHandler;
   template <class ServiceType, class RequestType, class ResponseType>
@@ -185,6 +191,8 @@ class ServerContext {
   friend class ServerStreamingHandler;
   template <class ServiceType, class RequestType, class ResponseType>
   friend class BidiStreamingHandler;
+  template <class ServiceType, class RequestType, class ResponseType>
+  friend class FCUnaryMethodHandler;
   friend class UnknownMethodHandler;
   friend class ::grpc::ClientContext;
 
