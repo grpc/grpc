@@ -6,8 +6,8 @@ env:
     - TEST=objc
     - JOBS=1
   matrix:
-    - TEST_PATH=src/objective-c/tests WORKSPACE=Tests.xcworkspace SCHEME=RxLibraryUnitTests
-    - TEST_PATH=examples/objective-c/helloworld WORKSPACE=HelloWorld.xcworkspace SCHEME=HelloWorld
+    - TEST_PATH="src/objective-c/tests" WORKSPACE="Tests.xcworkspace" SCHEME="RxLibraryUnitTests" HAS_TEST=true
+    - TEST_PATH="examples/objective-c/helloworld" WORKSPACE="HelloWorld.xcworkspace" SCHEME="HelloWorld" HAS_TEST=false
 before_install:
   - pod --version
   - gem uninstall cocoapods -a
@@ -28,8 +28,11 @@ before_script:
   - make interop_server
   - bins/$CONFIG/interop_server --port=5050 &
   - bins/$CONFIG/interop_server --port=5051 --use_tls &
-xcode_workspace: $TEST_PATH/$WORKSPACE
-xcode_scheme: $SCHEME
-xcode_sdk: iphonesimulator9.3
+scritp:
+  - if [[ ${HAS_TEST} ]]; then
+      xctool -workspace "$TEST_PATH\\$WORKSPACE" -scheme "$SCHEME" -sdk iphonesimulator9.3 build test
+    else
+      xctool -workspace "$TEST_PATH\\$WORKSPACE" -scheme "$SCHEME" -sdk iphonesimulator9.3 clean build
+    fi
 notifications:
   email: false
