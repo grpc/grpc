@@ -250,7 +250,7 @@
 
     // Each completion queue consumes one thread. There's a trade to be made between creating and
     // consuming too many threads and having contention of multiple calls in a single completion
-    // queue. Currently we favor latency and use one per call.
+    // queue. Currently we use a singleton queue.
     _queue = [GRPCCompletionQueue completionQueue];
 
     _call = [[GRPCHost hostWithAddress:host] unmanagedCallWithPath:path completionQueue:_queue];
