@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/lib/http/parser.h"
+#include "src/core/ext/http/parser.h"
 
 #include <stdarg.h>
 #include <string.h>

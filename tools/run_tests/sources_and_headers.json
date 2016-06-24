@@ -5728,9 +5728,6 @@
       "src/core/lib/compression/algorithm_metadata.h", 
       "src/core/lib/compression/message_compress.h", 
       "src/core/lib/debug/trace.h", 
-      "src/core/lib/http/format_request.h", 
-      "src/core/lib/http/httpcli.h", 
-      "src/core/lib/http/parser.h", 
       "src/core/lib/iomgr/closure.h", 
       "src/core/lib/iomgr/endpoint.h", 
       "src/core/lib/iomgr/endpoint_pair.h", 
@@ -5771,10 +5768,6 @@
       "src/core/lib/iomgr/workqueue.h", 
       "src/core/lib/iomgr/workqueue_posix.h", 
       "src/core/lib/iomgr/workqueue_windows.h", 
-      "src/core/lib/json/json.h", 
-      "src/core/lib/json/json_common.h", 
-      "src/core/lib/json/json_reader.h", 
-      "src/core/lib/json/json_writer.h", 
       "src/core/lib/surface/api_trace.h", 
       "src/core/lib/surface/call.h", 
       "src/core/lib/surface/call_test_only.h", 
@@ -5825,12 +5818,6 @@
       "src/core/lib/compression/message_compress.h", 
       "src/core/lib/debug/trace.c", 
       "src/core/lib/debug/trace.h", 
-      "src/core/lib/http/format_request.c", 
-      "src/core/lib/http/format_request.h", 
-      "src/core/lib/http/httpcli.c", 
-      "src/core/lib/http/httpcli.h", 
-      "src/core/lib/http/parser.c", 
-      "src/core/lib/http/parser.h", 
       "src/core/lib/iomgr/closure.c", 
       "src/core/lib/iomgr/closure.h", 
       "src/core/lib/iomgr/endpoint.c", 
@@ -5914,14 +5901,6 @@
       "src/core/lib/iomgr/workqueue_posix.h", 
       "src/core/lib/iomgr/workqueue_windows.c", 
       "src/core/lib/iomgr/workqueue_windows.h", 
-      "src/core/lib/json/json.c", 
-      "src/core/lib/json/json.h", 
-      "src/core/lib/json/json_common.h", 
-      "src/core/lib/json/json_reader.c", 
-      "src/core/lib/json/json_reader.h", 
-      "src/core/lib/json/json_string.c", 
-      "src/core/lib/json/json_writer.c", 
-      "src/core/lib/json/json_writer.h", 
       "src/core/lib/surface/alarm.c", 
       "src/core/lib/surface/api_trace.c", 
       "src/core/lib/surface/api_trace.h", 
@@ -6063,6 +6042,65 @@
     "type": "filegroup"
   }, 
   {
+    "deps": [], 
+    "headers": [
+      "src/core/ext/http/format_request.h", 
+      "src/core/ext/http/httpcli.h", 
+      "src/core/ext/http/parser.h"
+    ], 
+    "language": "c", 
+    "name": "grpc_http", 
+    "src": [
+      "src/core/ext/http/format_request.c", 
+      "src/core/ext/http/format_request.h", 
+      "src/core/ext/http/httpcli.c", 
+      "src/core/ext/http/httpcli.h", 
+      "src/core/ext/http/parser.c", 
+      "src/core/ext/http/parser.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "grpc_http"
+    ], 
+    "headers": [
+      "src/core/ext/https/httpscli.h"
+    ], 
+    "language": "c", 
+    "name": "grpc_https", 
+    "src": [
+      "src/core/ext/https/httpcli_security_connector.c", 
+      "src/core/ext/https/httpscli.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
+      "src/core/ext/json/json.h", 
+      "src/core/ext/json/json_common.h", 
+      "src/core/ext/json/json_reader.h", 
+      "src/core/ext/json/json_writer.h"
+    ], 
+    "language": "c", 
+    "name": "grpc_json", 
+    "src": [
+      "src/core/ext/json/json.c", 
+      "src/core/ext/json/json.h", 
+      "src/core/ext/json/json_common.h", 
+      "src/core/ext/json/json_reader.c", 
+      "src/core/ext/json/json_reader.h", 
+      "src/core/ext/json/json_string.c", 
+      "src/core/ext/json/json_writer.c", 
+      "src/core/ext/json/json_writer.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
     "deps": [
       "gpr", 
       "grpc_base", 
@@ -6168,81 +6206,234 @@
     "deps": [
       "gpr", 
       "grpc_base", 
+      "grpc_security_context", 
+      "grpc_security_credentials", 
+      "grpc_security_credentials_composite", 
+      "grpc_security_credentials_fake", 
+      "grpc_security_credentials_google_default", 
+      "grpc_security_credentials_iam", 
+      "grpc_security_credentials_jwt", 
+      "grpc_security_credentials_oauth2", 
+      "grpc_security_credentials_plugin", 
+      "grpc_security_credentials_ssl", 
+      "grpc_security_transport", 
       "grpc_transport_chttp2_alpn", 
       "tsi"
     ], 
     "headers": [
       "include/grpc/grpc_security.h", 
-      "include/grpc/grpc_security_constants.h", 
-      "src/core/lib/security/context/security_context.h", 
-      "src/core/lib/security/credentials/composite/composite_credentials.h", 
-      "src/core/lib/security/credentials/credentials.h", 
-      "src/core/lib/security/credentials/fake/fake_credentials.h", 
-      "src/core/lib/security/credentials/google_default/google_default_credentials.h", 
-      "src/core/lib/security/credentials/iam/iam_credentials.h", 
-      "src/core/lib/security/credentials/jwt/json_token.h", 
-      "src/core/lib/security/credentials/jwt/jwt_credentials.h", 
-      "src/core/lib/security/credentials/jwt/jwt_verifier.h", 
-      "src/core/lib/security/credentials/oauth2/oauth2_credentials.h", 
-      "src/core/lib/security/credentials/plugin/plugin_credentials.h", 
-      "src/core/lib/security/credentials/ssl/ssl_credentials.h", 
-      "src/core/lib/security/transport/auth_filters.h", 
-      "src/core/lib/security/transport/handshake.h", 
-      "src/core/lib/security/transport/secure_endpoint.h", 
-      "src/core/lib/security/transport/security_connector.h", 
-      "src/core/lib/security/transport/tsi_error.h", 
-      "src/core/lib/security/util/b64.h", 
-      "src/core/lib/security/util/json_util.h"
+      "include/grpc/grpc_security_constants.h"
     ], 
     "language": "c", 
     "name": "grpc_secure", 
     "src": [
       "include/grpc/grpc_security.h", 
       "include/grpc/grpc_security_constants.h", 
-      "src/core/lib/http/httpcli_security_connector.c", 
-      "src/core/lib/security/context/security_context.c", 
-      "src/core/lib/security/context/security_context.h", 
-      "src/core/lib/security/credentials/composite/composite_credentials.c", 
-      "src/core/lib/security/credentials/composite/composite_credentials.h", 
-      "src/core/lib/security/credentials/credentials.c", 
-      "src/core/lib/security/credentials/credentials.h", 
-      "src/core/lib/security/credentials/credentials_metadata.c", 
-      "src/core/lib/security/credentials/fake/fake_credentials.c", 
-      "src/core/lib/security/credentials/fake/fake_credentials.h", 
-      "src/core/lib/security/credentials/google_default/credentials_posix.c", 
-      "src/core/lib/security/credentials/google_default/credentials_windows.c", 
-      "src/core/lib/security/credentials/google_default/google_default_credentials.c", 
-      "src/core/lib/security/credentials/google_default/google_default_credentials.h", 
-      "src/core/lib/security/credentials/iam/iam_credentials.c", 
-      "src/core/lib/security/credentials/iam/iam_credentials.h", 
-      "src/core/lib/security/credentials/jwt/json_token.c", 
-      "src/core/lib/security/credentials/jwt/json_token.h", 
-      "src/core/lib/security/credentials/jwt/jwt_credentials.c", 
-      "src/core/lib/security/credentials/jwt/jwt_credentials.h", 
-      "src/core/lib/security/credentials/jwt/jwt_verifier.c", 
-      "src/core/lib/security/credentials/jwt/jwt_verifier.h", 
-      "src/core/lib/security/credentials/oauth2/oauth2_credentials.c", 
-      "src/core/lib/security/credentials/oauth2/oauth2_credentials.h", 
-      "src/core/lib/security/credentials/plugin/plugin_credentials.c", 
-      "src/core/lib/security/credentials/plugin/plugin_credentials.h", 
-      "src/core/lib/security/credentials/ssl/ssl_credentials.c", 
-      "src/core/lib/security/credentials/ssl/ssl_credentials.h", 
-      "src/core/lib/security/transport/auth_filters.h", 
-      "src/core/lib/security/transport/client_auth_filter.c", 
-      "src/core/lib/security/transport/handshake.c", 
-      "src/core/lib/security/transport/handshake.h", 
-      "src/core/lib/security/transport/secure_endpoint.c", 
-      "src/core/lib/security/transport/secure_endpoint.h", 
-      "src/core/lib/security/transport/security_connector.c", 
-      "src/core/lib/security/transport/security_connector.h", 
-      "src/core/lib/security/transport/server_auth_filter.c", 
-      "src/core/lib/security/transport/tsi_error.c", 
-      "src/core/lib/security/transport/tsi_error.h", 
-      "src/core/lib/security/util/b64.c", 
-      "src/core/lib/security/util/b64.h", 
-      "src/core/lib/security/util/json_util.c", 
-      "src/core/lib/security/util/json_util.h", 
       "src/core/lib/surface/init_secure.c"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
+      "src/core/ext/security/context/security_context.h"
+    ], 
+    "language": "c", 
+    "name": "grpc_security_context", 
+    "src": [
+      "src/core/ext/security/context/security_context.c", 
+      "src/core/ext/security/context/security_context.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
+      "src/core/ext/security/credentials/credentials.h"
+    ], 
+    "language": "c", 
+    "name": "grpc_security_credentials", 
+    "src": [
+      "src/core/ext/security/credentials/credentials.c", 
+      "src/core/ext/security/credentials/credentials.h", 
+      "src/core/ext/security/credentials/credentials_metadata.c"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
+      "src/core/ext/security/credentials/composite/composite_credentials.h"
+    ], 
+    "language": "c", 
+    "name": "grpc_security_credentials_composite", 
+    "src": [
+      "src/core/ext/security/credentials/composite/composite_credentials.c", 
+      "src/core/ext/security/credentials/composite/composite_credentials.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
+      "src/core/ext/security/credentials/fake/fake_credentials.h"
+    ], 
+    "language": "c", 
+    "name": "grpc_security_credentials_fake", 
+    "src": [
+      "src/core/ext/security/credentials/fake/fake_credentials.c", 
+      "src/core/ext/security/credentials/fake/fake_credentials.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
+      "src/core/ext/security/credentials/google_default/google_default_credentials.h"
+    ], 
+    "language": "c", 
+    "name": "grpc_security_credentials_google_default", 
+    "src": [
+      "src/core/ext/security/credentials/google_default/credentials_posix.c", 
+      "src/core/ext/security/credentials/google_default/credentials_windows.c", 
+      "src/core/ext/security/credentials/google_default/google_default_credentials.c", 
+      "src/core/ext/security/credentials/google_default/google_default_credentials.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
+      "src/core/ext/security/credentials/iam/iam_credentials.h"
+    ], 
+    "language": "c", 
+    "name": "grpc_security_credentials_iam", 
+    "src": [
+      "src/core/ext/security/credentials/iam/iam_credentials.c", 
+      "src/core/ext/security/credentials/iam/iam_credentials.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
+      "src/core/ext/security/credentials/jwt/json_token.h", 
+      "src/core/ext/security/credentials/jwt/jwt_credentials.h", 
+      "src/core/ext/security/credentials/jwt/jwt_verifier.h"
+    ], 
+    "language": "c", 
+    "name": "grpc_security_credentials_jwt", 
+    "src": [
+      "src/core/ext/security/credentials/jwt/json_token.c", 
+      "src/core/ext/security/credentials/jwt/json_token.h", 
+      "src/core/ext/security/credentials/jwt/jwt_credentials.c", 
+      "src/core/ext/security/credentials/jwt/jwt_credentials.h", 
+      "src/core/ext/security/credentials/jwt/jwt_verifier.c", 
+      "src/core/ext/security/credentials/jwt/jwt_verifier.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
+      "src/core/ext/security/credentials/oauth2/oauth2_credentials.h"
+    ], 
+    "language": "c", 
+    "name": "grpc_security_credentials_oauth2", 
+    "src": [
+      "src/core/ext/security/credentials/oauth2/oauth2_credentials.c", 
+      "src/core/ext/security/credentials/oauth2/oauth2_credentials.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
+      "src/core/ext/security/credentials/plugin/plugin_credentials.h"
+    ], 
+    "language": "c", 
+    "name": "grpc_security_credentials_plugin", 
+    "src": [
+      "src/core/ext/security/credentials/plugin/plugin_credentials.c", 
+      "src/core/ext/security/credentials/plugin/plugin_credentials.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
+      "src/core/ext/security/credentials/ssl/ssl_credentials.h"
+    ], 
+    "language": "c", 
+    "name": "grpc_security_credentials_ssl", 
+    "src": [
+      "src/core/ext/security/credentials/ssl/ssl_credentials.c", 
+      "src/core/ext/security/credentials/ssl/ssl_credentials.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
+      "src/core/ext/security/transport/auth_filters.h", 
+      "src/core/ext/security/transport/handshake.h", 
+      "src/core/ext/security/transport/secure_endpoint.h", 
+      "src/core/ext/security/transport/security_connector.h", 
+      "src/core/ext/security/transport/tsi_error.h"
+    ], 
+    "language": "c", 
+    "name": "grpc_security_transport", 
+    "src": [
+      "src/core/ext/security/transport/auth_filters.h", 
+      "src/core/ext/security/transport/client_auth_filter.c", 
+      "src/core/ext/security/transport/handshake.c", 
+      "src/core/ext/security/transport/handshake.h", 
+      "src/core/ext/security/transport/secure_endpoint.c", 
+      "src/core/ext/security/transport/secure_endpoint.h", 
+      "src/core/ext/security/transport/security_connector.c", 
+      "src/core/ext/security/transport/security_connector.h", 
+      "src/core/ext/security/transport/server_auth_filter.c", 
+      "src/core/ext/security/transport/tsi_error.c", 
+      "src/core/ext/security/transport/tsi_error.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
+      "src/core/ext/security/util/b64.h"
+    ], 
+    "language": "c", 
+    "name": "grpc_security_util_b64", 
+    "src": [
+      "src/core/ext/security/util/b64.c", 
+      "src/core/ext/security/util/b64.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
+      "src/core/ext/security/util/json_util.h"
+    ], 
+    "language": "c", 
+    "name": "grpc_security_util_json", 
+    "src": [
+      "src/core/ext/security/util/json_util.c", 
+      "src/core/ext/security/util/json_util.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -6250,7 +6441,8 @@
   {
     "deps": [
       "gpr_test_util", 
-      "grpc"
+      "grpc", 
+      "grpc_http"
     ], 
     "headers": [
       "test/core/end2end/cq_verifier.h", 
@@ -6299,6 +6491,7 @@
     "deps": [
       "gpr", 
       "grpc_base", 
+      "grpc_http", 
       "grpc_transport_chttp2_alpn"
     ], 
     "headers": [
@@ -6495,23 +6688,23 @@
       "gpr"
     ], 
     "headers": [
-      "src/core/lib/tsi/fake_transport_security.h", 
-      "src/core/lib/tsi/ssl_transport_security.h", 
-      "src/core/lib/tsi/ssl_types.h", 
-      "src/core/lib/tsi/transport_security.h", 
-      "src/core/lib/tsi/transport_security_interface.h"
+      "src/core/ext/tsi/fake_transport_security.h", 
+      "src/core/ext/tsi/ssl_transport_security.h", 
+      "src/core/ext/tsi/ssl_types.h", 
+      "src/core/ext/tsi/transport_security.h", 
+      "src/core/ext/tsi/transport_security_interface.h"
     ], 
     "language": "c", 
     "name": "tsi", 
     "src": [
-      "src/core/lib/tsi/fake_transport_security.c", 
-      "src/core/lib/tsi/fake_transport_security.h", 
-      "src/core/lib/tsi/ssl_transport_security.c", 
-      "src/core/lib/tsi/ssl_transport_security.h", 
-      "src/core/lib/tsi/ssl_types.h", 
-      "src/core/lib/tsi/transport_security.c", 
-      "src/core/lib/tsi/transport_security.h", 
-      "src/core/lib/tsi/transport_security_interface.h"
+      "src/core/ext/tsi/fake_transport_security.c", 
+      "src/core/ext/tsi/fake_transport_security.h", 
+      "src/core/ext/tsi/ssl_transport_security.c", 
+      "src/core/ext/tsi/ssl_transport_security.h", 
+      "src/core/ext/tsi/ssl_types.h", 
+      "src/core/ext/tsi/transport_security.c", 
+      "src/core/ext/tsi/transport_security.h", 
+      "src/core/ext/tsi/transport_security_interface.h"
     ], 
     "third_party": false, 
     "type": "filegroup"

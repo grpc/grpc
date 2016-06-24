@@ -40,13 +40,13 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#include "src/core/ext/http/parser.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/compress_filter.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/channel/http_client_filter.h"
 #include "src/core/lib/channel/http_server_filter.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/profiling/timers.h"

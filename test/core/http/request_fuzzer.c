@@ -37,7 +37,7 @@
 
 #include <grpc/support/alloc.h>
 
-#include "src/core/lib/http/parser.h"
+#include "src/core/ext/http/parser.h"
 
 bool squelch = true;
 bool leak_check = true;

@@ -299,9 +299,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\compression\algorithm_metadata.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\compression\message_compress.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\debug\trace.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\http\format_request.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\http\httpcli.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\http\parser.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\closure.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\endpoint_pair.h" />
@@ -342,10 +339,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue_windows.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_common.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_reader.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_writer.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\api_trace.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\call.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\call_test_only.h" />
@@ -386,6 +379,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\stream_map.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\timeout_encoding.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\varint.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\http\format_request.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\http\httpcli.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\http\parser.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\alpn\alpn.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\client_channel.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\client_config\client_channel_factory.h" />
@@ -443,12 +439,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\compression\message_compress.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\debug\trace.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\http\format_request.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\http\httpcli.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\http\parser.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\closure.c">
     </ClCompile>
@@ -535,14 +525,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue_posix.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue_windows.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json_reader.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json_string.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json_writer.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\alarm.c">
     </ClCompile>
@@ -641,6 +623,12 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\varint.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\writing.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\http\format_request.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\http\httpcli.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\http\parser.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\alpn\alpn.c">
     </ClCompile>

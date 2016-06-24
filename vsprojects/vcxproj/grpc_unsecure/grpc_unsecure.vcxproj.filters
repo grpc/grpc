@@ -37,15 +37,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\debug\trace.c">
       <Filter>src\core\lib\debug</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\http\format_request.c">
-      <Filter>src\core\lib\http</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\http\httpcli.c">
-      <Filter>src\core\lib\http</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\http\parser.c">
-      <Filter>src\core\lib\http</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\closure.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
@@ -174,18 +165,6 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue_windows.c">
       <Filter>src\core\lib\iomgr</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json.c">
-      <Filter>src\core\lib\json</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json_reader.c">
-      <Filter>src\core\lib\json</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json_string.c">
-      <Filter>src\core\lib\json</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\json\json_writer.c">
-      <Filter>src\core\lib\json</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\alarm.c">
       <Filter>src\core\lib\surface</Filter>
@@ -333,6 +312,15 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\writing.c">
       <Filter>src\core\ext\transport\chttp2\transport</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\http\format_request.c">
+      <Filter>src\core\ext\http</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\http\httpcli.c">
+      <Filter>src\core\ext\http</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\http\parser.c">
+      <Filter>src\core\ext\http</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\alpn\alpn.c">
       <Filter>src\core\ext\transport\chttp2\alpn</Filter>
@@ -587,15 +575,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\debug\trace.h">
       <Filter>src\core\lib\debug</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\http\format_request.h">
-      <Filter>src\core\lib\http</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\http\httpcli.h">
-      <Filter>src\core\lib\http</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\http\parser.h">
-      <Filter>src\core\lib\http</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\closure.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
@@ -716,18 +695,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\workqueue_windows.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json.h">
-      <Filter>src\core\lib\json</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_common.h">
-      <Filter>src\core\lib\json</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_reader.h">
-      <Filter>src\core\lib\json</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\json\json_writer.h">
-      <Filter>src\core\lib\json</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\surface\api_trace.h">
       <Filter>src\core\lib\surface</Filter>
     </ClInclude>
@@ -847,6 +814,15 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\transport\varint.h">
       <Filter>src\core\ext\transport\chttp2\transport</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\http\format_request.h">
+      <Filter>src\core\ext\http</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\http\httpcli.h">
+      <Filter>src\core\ext\http</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\http\parser.h">
+      <Filter>src\core\ext\http</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\transport\chttp2\alpn\alpn.h">
       <Filter>src\core\ext\transport\chttp2\alpn</Filter>
@@ -977,6 +953,9 @@
     <Filter Include="src\core\ext\client_config">
       <UniqueIdentifier>{25fa8af3-0a05-987c-741f-fa8ff9d65d51}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\core\ext\http">
+      <UniqueIdentifier>{8301dc29-a054-0f91-01c2-364b12c136e5}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\core\ext\lb_policy">
       <UniqueIdentifier>{a23781d2-27e4-7cb0-12cd-59782ecb21ce}</UniqueIdentifier>
     </Filter>
@@ -1052,14 +1031,8 @@
     <Filter Include="src\core\lib\debug">
       <UniqueIdentifier>{7f23789d-f18a-2a2d-60fe-a87dc656f539}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\lib\http">
-      <UniqueIdentifier>{748c8078-2027-8641-f485-1d4c66466e79}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\core\lib\iomgr">
       <UniqueIdentifier>{bb1a1cf2-6824-08f0-a9bd-3fafcaf13042}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\lib\json">
-      <UniqueIdentifier>{681cdaeb-c47f-8853-d985-bf13c2873947}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\lib\surface">
       <UniqueIdentifier>{506dc3b3-d884-2b59-0dfa-57ed6affa2d3}</UniqueIdentifier>

@@ -160,6 +160,9 @@
     <ClInclude Include="$(SolutionDir)\..\test\core\util\port.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\util\port_server_client.h" />
     <ClInclude Include="$(SolutionDir)\..\test\core\util\slice_splitter.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\http\format_request.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\http\httpcli.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\http\parser.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\test\core\end2end\data\client_certs.c">
@@ -195,6 +198,12 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\util\port_windows.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\core\util\slice_splitter.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\http\format_request.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\http\httpcli.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\http\parser.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

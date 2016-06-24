@@ -2560,9 +2560,6 @@ LIBGRPC_SRC = \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/debug/trace.c \
-    src/core/lib/http/format_request.c \
-    src/core/lib/http/httpcli.c \
-    src/core/lib/http/parser.c \
     src/core/lib/iomgr/closure.c \
     src/core/lib/iomgr/endpoint.c \
     src/core/lib/iomgr/endpoint_pair_posix.c \
@@ -2606,10 +2603,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/wakeup_fd_posix.c \
     src/core/lib/iomgr/workqueue_posix.c \
     src/core/lib/iomgr/workqueue_windows.c \
-    src/core/lib/json/json.c \
-    src/core/lib/json/json_reader.c \
-    src/core/lib/json/json_string.c \
-    src/core/lib/json/json_writer.c \
     src/core/lib/surface/alarm.c \
     src/core/lib/surface/api_trace.c \
     src/core/lib/surface/byte_buffer.c \
@@ -2658,35 +2651,35 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/transport/timeout_encoding.c \
     src/core/ext/transport/chttp2/transport/varint.c \
     src/core/ext/transport/chttp2/transport/writing.c \
+    src/core/ext/http/format_request.c \
+    src/core/ext/http/httpcli.c \
+    src/core/ext/http/parser.c \
     src/core/ext/transport/chttp2/alpn/alpn.c \
-    src/core/lib/http/httpcli_security_connector.c \
-    src/core/lib/security/context/security_context.c \
-    src/core/lib/security/credentials/composite/composite_credentials.c \
-    src/core/lib/security/credentials/credentials.c \
-    src/core/lib/security/credentials/credentials_metadata.c \
-    src/core/lib/security/credentials/fake/fake_credentials.c \
-    src/core/lib/security/credentials/google_default/credentials_posix.c \
-    src/core/lib/security/credentials/google_default/credentials_windows.c \
-    src/core/lib/security/credentials/google_default/google_default_credentials.c \
-    src/core/lib/security/credentials/iam/iam_credentials.c \
-    src/core/lib/security/credentials/jwt/json_token.c \
-    src/core/lib/security/credentials/jwt/jwt_credentials.c \
-    src/core/lib/security/credentials/jwt/jwt_verifier.c \
-    src/core/lib/security/credentials/oauth2/oauth2_credentials.c \
-    src/core/lib/security/credentials/plugin/plugin_credentials.c \
-    src/core/lib/security/credentials/ssl/ssl_credentials.c \
-    src/core/lib/security/transport/client_auth_filter.c \
-    src/core/lib/security/transport/handshake.c \
-    src/core/lib/security/transport/secure_endpoint.c \
-    src/core/lib/security/transport/security_connector.c \
-    src/core/lib/security/transport/server_auth_filter.c \
-    src/core/lib/security/transport/tsi_error.c \
-    src/core/lib/security/util/b64.c \
-    src/core/lib/security/util/json_util.c \
     src/core/lib/surface/init_secure.c \
-    src/core/lib/tsi/fake_transport_security.c \
-    src/core/lib/tsi/ssl_transport_security.c \
-    src/core/lib/tsi/transport_security.c \
+    src/core/ext/security/context/security_context.c \
+    src/core/ext/security/credentials/credentials.c \
+    src/core/ext/security/credentials/credentials_metadata.c \
+    src/core/ext/security/credentials/fake/fake_credentials.c \
+    src/core/ext/security/credentials/composite/composite_credentials.c \
+    src/core/ext/security/credentials/iam/iam_credentials.c \
+    src/core/ext/security/credentials/jwt/json_token.c \
+    src/core/ext/security/credentials/jwt/jwt_credentials.c \
+    src/core/ext/security/credentials/jwt/jwt_verifier.c \
+    src/core/ext/security/credentials/ssl/ssl_credentials.c \
+    src/core/ext/security/credentials/oauth2/oauth2_credentials.c \
+    src/core/ext/security/credentials/plugin/plugin_credentials.c \
+    src/core/ext/security/credentials/google_default/credentials_posix.c \
+    src/core/ext/security/credentials/google_default/credentials_windows.c \
+    src/core/ext/security/credentials/google_default/google_default_credentials.c \
+    src/core/ext/security/transport/client_auth_filter.c \
+    src/core/ext/security/transport/handshake.c \
+    src/core/ext/security/transport/secure_endpoint.c \
+    src/core/ext/security/transport/security_connector.c \
+    src/core/ext/security/transport/server_auth_filter.c \
+    src/core/ext/security/transport/tsi_error.c \
+    src/core/ext/tsi/fake_transport_security.c \
+    src/core/ext/tsi/ssl_transport_security.c \
+    src/core/ext/tsi/transport_security.c \
     src/core/ext/transport/chttp2/client/secure/secure_channel_create.c \
     src/core/ext/client_config/channel_connectivity.c \
     src/core/ext/client_config/client_channel.c \
@@ -2830,9 +2823,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/debug/trace.c \
-    src/core/lib/http/format_request.c \
-    src/core/lib/http/httpcli.c \
-    src/core/lib/http/parser.c \
     src/core/lib/iomgr/closure.c \
     src/core/lib/iomgr/endpoint.c \
     src/core/lib/iomgr/endpoint_pair_posix.c \
@@ -2876,10 +2866,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/wakeup_fd_posix.c \
     src/core/lib/iomgr/workqueue_posix.c \
     src/core/lib/iomgr/workqueue_windows.c \
-    src/core/lib/json/json.c \
-    src/core/lib/json/json_reader.c \
-    src/core/lib/json/json_string.c \
-    src/core/lib/json/json_writer.c \
     src/core/lib/surface/alarm.c \
     src/core/lib/surface/api_trace.c \
     src/core/lib/surface/byte_buffer.c \
@@ -2930,6 +2916,9 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/transport/chttp2/transport/timeout_encoding.c \
     src/core/ext/transport/chttp2/transport/varint.c \
     src/core/ext/transport/chttp2/transport/writing.c \
+    src/core/ext/http/format_request.c \
+    src/core/ext/http/httpcli.c \
+    src/core/ext/http/parser.c \
     src/core/ext/transport/chttp2/alpn/alpn.c \
     src/core/plugin_registry/grpc_cronet_plugin_registry.c \
 
@@ -3033,6 +3022,9 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/util/port_server_client.c \
     test/core/util/port_windows.c \
     test/core/util/slice_splitter.c \
+    src/core/ext/http/format_request.c \
+    src/core/ext/http/httpcli.c \
+    src/core/ext/http/parser.c \
 
 PUBLIC_HEADERS_C += \
 
@@ -3083,6 +3075,9 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     test/core/util/port_server_client.c \
     test/core/util/port_windows.c \
     test/core/util/slice_splitter.c \
+    src/core/ext/http/format_request.c \
+    src/core/ext/http/httpcli.c \
+    src/core/ext/http/parser.c \
 
 PUBLIC_HEADERS_C += \
 
@@ -3119,9 +3114,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/debug/trace.c \
-    src/core/lib/http/format_request.c \
-    src/core/lib/http/httpcli.c \
-    src/core/lib/http/parser.c \
     src/core/lib/iomgr/closure.c \
     src/core/lib/iomgr/endpoint.c \
     src/core/lib/iomgr/endpoint_pair_posix.c \
@@ -3165,10 +3157,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/wakeup_fd_posix.c \
     src/core/lib/iomgr/workqueue_posix.c \
     src/core/lib/iomgr/workqueue_windows.c \
-    src/core/lib/json/json.c \
-    src/core/lib/json/json_reader.c \
-    src/core/lib/json/json_string.c \
-    src/core/lib/json/json_writer.c \
     src/core/lib/surface/alarm.c \
     src/core/lib/surface/api_trace.c \
     src/core/lib/surface/byte_buffer.c \
@@ -3218,6 +3206,9 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/transport/chttp2/transport/timeout_encoding.c \
     src/core/ext/transport/chttp2/transport/varint.c \
     src/core/ext/transport/chttp2/transport/writing.c \
+    src/core/ext/http/format_request.c \
+    src/core/ext/http/httpcli.c \
+    src/core/ext/http/parser.c \
     src/core/ext/transport/chttp2/alpn/alpn.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c \
@@ -14868,39 +14859,36 @@ ifneq ($(OPENSSL_DEP),)
 # This is to ensure the embedded OpenSSL is built beforehand, properly
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
+src/core/ext/security/context/security_context.c: $(OPENSSL_DEP)
+src/core/ext/security/credentials/composite/composite_credentials.c: $(OPENSSL_DEP)
+src/core/ext/security/credentials/credentials.c: $(OPENSSL_DEP)
+src/core/ext/security/credentials/credentials_metadata.c: $(OPENSSL_DEP)
+src/core/ext/security/credentials/fake/fake_credentials.c: $(OPENSSL_DEP)
+src/core/ext/security/credentials/google_default/credentials_posix.c: $(OPENSSL_DEP)
+src/core/ext/security/credentials/google_default/credentials_windows.c: $(OPENSSL_DEP)
+src/core/ext/security/credentials/google_default/google_default_credentials.c: $(OPENSSL_DEP)
+src/core/ext/security/credentials/iam/iam_credentials.c: $(OPENSSL_DEP)
+src/core/ext/security/credentials/jwt/json_token.c: $(OPENSSL_DEP)
+src/core/ext/security/credentials/jwt/jwt_credentials.c: $(OPENSSL_DEP)
+src/core/ext/security/credentials/jwt/jwt_verifier.c: $(OPENSSL_DEP)
+src/core/ext/security/credentials/oauth2/oauth2_credentials.c: $(OPENSSL_DEP)
+src/core/ext/security/credentials/plugin/plugin_credentials.c: $(OPENSSL_DEP)
+src/core/ext/security/credentials/ssl/ssl_credentials.c: $(OPENSSL_DEP)
+src/core/ext/security/transport/client_auth_filter.c: $(OPENSSL_DEP)
+src/core/ext/security/transport/handshake.c: $(OPENSSL_DEP)
+src/core/ext/security/transport/secure_endpoint.c: $(OPENSSL_DEP)
+src/core/ext/security/transport/security_connector.c: $(OPENSSL_DEP)
+src/core/ext/security/transport/server_auth_filter.c: $(OPENSSL_DEP)
+src/core/ext/security/transport/tsi_error.c: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/client/secure/secure_channel_create.c: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c: $(OPENSSL_DEP)
 src/core/ext/transport/cronet/client/secure/cronet_channel_create.c: $(OPENSSL_DEP)
 src/core/ext/transport/cronet/transport/cronet_api_dummy.c: $(OPENSSL_DEP)
 src/core/ext/transport/cronet/transport/cronet_transport.c: $(OPENSSL_DEP)
-src/core/lib/http/httpcli_security_connector.c: $(OPENSSL_DEP)
-src/core/lib/security/context/security_context.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials/composite/composite_credentials.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials/credentials.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials/credentials_metadata.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials/fake/fake_credentials.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials/google_default/credentials_posix.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials/google_default/credentials_windows.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials/google_default/google_default_credentials.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials/iam/iam_credentials.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials/jwt/json_token.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials/jwt/jwt_credentials.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials/jwt/jwt_verifier.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials/oauth2/oauth2_credentials.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials/plugin/plugin_credentials.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials/ssl/ssl_credentials.c: $(OPENSSL_DEP)
-src/core/lib/security/transport/client_auth_filter.c: $(OPENSSL_DEP)
-src/core/lib/security/transport/handshake.c: $(OPENSSL_DEP)
-src/core/lib/security/transport/secure_endpoint.c: $(OPENSSL_DEP)
-src/core/lib/security/transport/security_connector.c: $(OPENSSL_DEP)
-src/core/lib/security/transport/server_auth_filter.c: $(OPENSSL_DEP)
-src/core/lib/security/transport/tsi_error.c: $(OPENSSL_DEP)
-src/core/lib/security/util/b64.c: $(OPENSSL_DEP)
-src/core/lib/security/util/json_util.c: $(OPENSSL_DEP)
+src/core/ext/tsi/fake_transport_security.c: $(OPENSSL_DEP)
+src/core/ext/tsi/ssl_transport_security.c: $(OPENSSL_DEP)
+src/core/ext/tsi/transport_security.c: $(OPENSSL_DEP)
 src/core/lib/surface/init_secure.c: $(OPENSSL_DEP)
-src/core/lib/tsi/fake_transport_security.c: $(OPENSSL_DEP)
-src/core/lib/tsi/ssl_transport_security.c: $(OPENSSL_DEP)
-src/core/lib/tsi/transport_security.c: $(OPENSSL_DEP)
 src/core/plugin_registry/grpc_cronet_plugin_registry.c: $(OPENSSL_DEP)
 src/core/plugin_registry/grpc_plugin_registry.c: $(OPENSSL_DEP)
 src/cpp/client/secure_credentials.cc: $(OPENSSL_DEP)

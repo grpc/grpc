@@ -92,9 +92,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/compression/compression.c \
     src/core/lib/compression/message_compress.c \
     src/core/lib/debug/trace.c \
-    src/core/lib/http/format_request.c \
-    src/core/lib/http/httpcli.c \
-    src/core/lib/http/parser.c \
     src/core/lib/iomgr/closure.c \
     src/core/lib/iomgr/endpoint.c \
     src/core/lib/iomgr/endpoint_pair_posix.c \
@@ -138,10 +135,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/wakeup_fd_posix.c \
     src/core/lib/iomgr/workqueue_posix.c \
     src/core/lib/iomgr/workqueue_windows.c \
-    src/core/lib/json/json.c \
-    src/core/lib/json/json_reader.c \
-    src/core/lib/json/json_string.c \
-    src/core/lib/json/json_writer.c \
     src/core/lib/surface/alarm.c \
     src/core/lib/surface/api_trace.c \
     src/core/lib/surface/byte_buffer.c \
@@ -190,35 +183,35 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/transport/timeout_encoding.c \
     src/core/ext/transport/chttp2/transport/varint.c \
     src/core/ext/transport/chttp2/transport/writing.c \
+    src/core/ext/http/format_request.c \
+    src/core/ext/http/httpcli.c \
+    src/core/ext/http/parser.c \
     src/core/ext/transport/chttp2/alpn/alpn.c \
-    src/core/lib/http/httpcli_security_connector.c \
-    src/core/lib/security/context/security_context.c \
-    src/core/lib/security/credentials/composite/composite_credentials.c \
-    src/core/lib/security/credentials/credentials.c \
-    src/core/lib/security/credentials/credentials_metadata.c \
-    src/core/lib/security/credentials/fake/fake_credentials.c \
-    src/core/lib/security/credentials/google_default/credentials_posix.c \
-    src/core/lib/security/credentials/google_default/credentials_windows.c \
-    src/core/lib/security/credentials/google_default/google_default_credentials.c \
-    src/core/lib/security/credentials/iam/iam_credentials.c \
-    src/core/lib/security/credentials/jwt/json_token.c \
-    src/core/lib/security/credentials/jwt/jwt_credentials.c \
-    src/core/lib/security/credentials/jwt/jwt_verifier.c \
-    src/core/lib/security/credentials/oauth2/oauth2_credentials.c \
-    src/core/lib/security/credentials/plugin/plugin_credentials.c \
-    src/core/lib/security/credentials/ssl/ssl_credentials.c \
-    src/core/lib/security/transport/client_auth_filter.c \
-    src/core/lib/security/transport/handshake.c \
-    src/core/lib/security/transport/secure_endpoint.c \
-    src/core/lib/security/transport/security_connector.c \
-    src/core/lib/security/transport/server_auth_filter.c \
-    src/core/lib/security/transport/tsi_error.c \
-    src/core/lib/security/util/b64.c \
-    src/core/lib/security/util/json_util.c \
     src/core/lib/surface/init_secure.c \
-    src/core/lib/tsi/fake_transport_security.c \
-    src/core/lib/tsi/ssl_transport_security.c \
-    src/core/lib/tsi/transport_security.c \
+    src/core/ext/security/context/security_context.c \
+    src/core/ext/security/credentials/credentials.c \
+    src/core/ext/security/credentials/credentials_metadata.c \
+    src/core/ext/security/credentials/fake/fake_credentials.c \
+    src/core/ext/security/credentials/composite/composite_credentials.c \
+    src/core/ext/security/credentials/iam/iam_credentials.c \
+    src/core/ext/security/credentials/jwt/json_token.c \
+    src/core/ext/security/credentials/jwt/jwt_credentials.c \
+    src/core/ext/security/credentials/jwt/jwt_verifier.c \
+    src/core/ext/security/credentials/ssl/ssl_credentials.c \
+    src/core/ext/security/credentials/oauth2/oauth2_credentials.c \
+    src/core/ext/security/credentials/plugin/plugin_credentials.c \
+    src/core/ext/security/credentials/google_default/credentials_posix.c \
+    src/core/ext/security/credentials/google_default/credentials_windows.c \
+    src/core/ext/security/credentials/google_default/google_default_credentials.c \
+    src/core/ext/security/transport/client_auth_filter.c \
+    src/core/ext/security/transport/handshake.c \
+    src/core/ext/security/transport/secure_endpoint.c \
+    src/core/ext/security/transport/security_connector.c \
+    src/core/ext/security/transport/server_auth_filter.c \
+    src/core/ext/security/transport/tsi_error.c \
+    src/core/ext/tsi/fake_transport_security.c \
+    src/core/ext/tsi/ssl_transport_security.c \
+    src/core/ext/tsi/transport_security.c \
     src/core/ext/transport/chttp2/client/secure/secure_channel_create.c \
     src/core/ext/client_config/channel_connectivity.c \
     src/core/ext/client_config/client_channel.c \
@@ -573,6 +566,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/census)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/census/gen)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/client_config)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/http)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/grpclb)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/pick_first)
@@ -580,35 +574,32 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/load_reporting)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/resolver/dns/native)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/resolver/sockaddr)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/security/context)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/security/credentials)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/security/credentials/composite)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/security/credentials/fake)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/security/credentials/google_default)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/security/credentials/iam)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/security/credentials/jwt)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/security/credentials/oauth2)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/security/credentials/plugin)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/security/credentials/ssl)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/security/transport)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/alpn)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/client/insecure)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/client/secure)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/server/insecure)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/server/secure)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/transport)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/tsi)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/channel)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/compression)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/debug)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/http)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/json)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/profiling)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/context)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/composite)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/fake)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/google_default)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/iam)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/jwt)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/oauth2)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/plugin)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/ssl)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/transport)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/util)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/support)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/surface)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/transport)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/tsi)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/plugin_registry)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/aes)

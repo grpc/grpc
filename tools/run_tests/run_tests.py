@@ -164,7 +164,7 @@ class CLanguage(object):
                             else ['all'])
       for polling_strategy in polling_strategies:
         env={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
-                 _ROOT + '/src/core/lib/tsi/test_creds/ca.pem',
+                 _ROOT + '/src/core/ext/tsi/test_creds/ca.pem',
              'GRPC_POLL_STRATEGY': polling_strategy}
         shortname_ext = '' if polling_strategy=='all' else ' polling=%s' % polling_strategy
         if self.config.build_config in target['exclude_configs']:
@@ -425,7 +425,7 @@ class PythonLanguage(object):
     return []
 
   def build_steps(self):
-    return [['tools/run_tests/build_python.sh', tox_env] 
+    return [['tools/run_tests/build_python.sh', tox_env]
             for tox_env in self._tox_envs]
 
   def post_tests_steps(self):

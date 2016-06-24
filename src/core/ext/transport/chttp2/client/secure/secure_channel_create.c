@@ -42,15 +42,15 @@
 
 #include "src/core/ext/client_config/client_channel.h"
 #include "src/core/ext/client_config/resolver_registry.h"
+#include "src/core/ext/security/context/security_context.h"
+#include "src/core/ext/security/credentials/credentials.h"
+#include "src/core/ext/security/transport/auth_filters.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/tcp_client.h"
-#include "src/core/lib/security/context/security_context.h"
-#include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/tsi/transport_security_interface.h"
+#include "src/core/ext/tsi/transport_security_interface.h"
 
 typedef struct {
   grpc_connector base;

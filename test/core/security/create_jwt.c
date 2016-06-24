@@ -34,8 +34,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "src/core/ext/security/credentials/jwt/jwt_credentials.h"
 #include "src/core/lib/iomgr/load_file.h"
-#include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/cmdline.h>

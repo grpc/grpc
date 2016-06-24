@@ -166,9 +166,6 @@ filegroups:
   - src/core/lib/compression/algorithm_metadata.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/debug/trace.h
-  - src/core/lib/http/format_request.h
-  - src/core/lib/http/httpcli.h
-  - src/core/lib/http/parser.h
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/endpoint.h
   - src/core/lib/iomgr/endpoint_pair.h
@@ -209,10 +206,6 @@ filegroups:
   - src/core/lib/iomgr/workqueue.h
   - src/core/lib/iomgr/workqueue_posix.h
   - src/core/lib/iomgr/workqueue_windows.h
-  - src/core/lib/json/json.h
-  - src/core/lib/json/json_common.h
-  - src/core/lib/json/json_reader.h
-  - src/core/lib/json/json_writer.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
@@ -243,9 +236,6 @@ filegroups:
   - src/core/lib/compression/compression.c
   - src/core/lib/compression/message_compress.c
   - src/core/lib/debug/trace.c
-  - src/core/lib/http/format_request.c
-  - src/core/lib/http/httpcli.c
-  - src/core/lib/http/parser.c
   - src/core/lib/iomgr/closure.c
   - src/core/lib/iomgr/endpoint.c
   - src/core/lib/iomgr/endpoint_pair_posix.c
@@ -289,10 +279,6 @@ filegroups:
   - src/core/lib/iomgr/wakeup_fd_posix.c
   - src/core/lib/iomgr/workqueue_posix.c
   - src/core/lib/iomgr/workqueue_windows.c
-  - src/core/lib/json/json.c
-  - src/core/lib/json/json_reader.c
-  - src/core/lib/json/json_string.c
-  - src/core/lib/json/json_writer.c
   - src/core/lib/surface/alarm.c
   - src/core/lib/surface/api_trace.c
   - src/core/lib/surface/byte_buffer.c
@@ -374,6 +360,33 @@ filegroups:
   - include/grpc/impl/codegen/status.h
   uses:
   - gpr_codegen
+- name: grpc_http
+  headers:
+  - src/core/ext/http/format_request.h
+  - src/core/ext/http/httpcli.h
+  - src/core/ext/http/parser.h
+  src:
+  - src/core/ext/http/format_request.c
+  - src/core/ext/http/httpcli.c
+  - src/core/ext/http/parser.c
+- name: grpc_https
+  headers:
+  - src/core/ext/https/httpscli.h
+  src:
+  - src/core/ext/https/httpcli_security_connector.c
+  uses:
+  - grpc_http
+- name: grpc_json
+  headers:
+  - src/core/ext/json/json.h
+  - src/core/ext/json/json_common.h
+  - src/core/ext/json/json_reader.h
+  - src/core/ext/json/json_writer.h
+  src:
+  - src/core/ext/json/json.c
+  - src/core/ext/json/json_reader.c
+  - src/core/ext/json/json_string.c
+  - src/core/ext/json/json_writer.c
 - name: grpc_lb_policy_grpclb
   headers:
   - src/core/ext/lb_policy/grpclb/load_balancer_api.h
@@ -427,57 +440,105 @@ filegroups:
   public_headers:
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
-  headers:
-  - src/core/lib/security/context/security_context.h
-  - src/core/lib/security/credentials/composite/composite_credentials.h
-  - src/core/lib/security/credentials/credentials.h
-  - src/core/lib/security/credentials/fake/fake_credentials.h
-  - src/core/lib/security/credentials/google_default/google_default_credentials.h
-  - src/core/lib/security/credentials/iam/iam_credentials.h
-  - src/core/lib/security/credentials/jwt/json_token.h
-  - src/core/lib/security/credentials/jwt/jwt_credentials.h
-  - src/core/lib/security/credentials/jwt/jwt_verifier.h
-  - src/core/lib/security/credentials/oauth2/oauth2_credentials.h
-  - src/core/lib/security/credentials/plugin/plugin_credentials.h
-  - src/core/lib/security/credentials/ssl/ssl_credentials.h
-  - src/core/lib/security/transport/auth_filters.h
-  - src/core/lib/security/transport/handshake.h
-  - src/core/lib/security/transport/secure_endpoint.h
-  - src/core/lib/security/transport/security_connector.h
-  - src/core/lib/security/transport/tsi_error.h
-  - src/core/lib/security/util/b64.h
-  - src/core/lib/security/util/json_util.h
   src:
-  - src/core/lib/http/httpcli_security_connector.c
-  - src/core/lib/security/context/security_context.c
-  - src/core/lib/security/credentials/composite/composite_credentials.c
-  - src/core/lib/security/credentials/credentials.c
-  - src/core/lib/security/credentials/credentials_metadata.c
-  - src/core/lib/security/credentials/fake/fake_credentials.c
-  - src/core/lib/security/credentials/google_default/credentials_posix.c
-  - src/core/lib/security/credentials/google_default/credentials_windows.c
-  - src/core/lib/security/credentials/google_default/google_default_credentials.c
-  - src/core/lib/security/credentials/iam/iam_credentials.c
-  - src/core/lib/security/credentials/jwt/json_token.c
-  - src/core/lib/security/credentials/jwt/jwt_credentials.c
-  - src/core/lib/security/credentials/jwt/jwt_verifier.c
-  - src/core/lib/security/credentials/oauth2/oauth2_credentials.c
-  - src/core/lib/security/credentials/plugin/plugin_credentials.c
-  - src/core/lib/security/credentials/ssl/ssl_credentials.c
-  - src/core/lib/security/transport/client_auth_filter.c
-  - src/core/lib/security/transport/handshake.c
-  - src/core/lib/security/transport/secure_endpoint.c
-  - src/core/lib/security/transport/security_connector.c
-  - src/core/lib/security/transport/server_auth_filter.c
-  - src/core/lib/security/transport/tsi_error.c
-  - src/core/lib/security/util/b64.c
-  - src/core/lib/security/util/json_util.c
   - src/core/lib/surface/init_secure.c
   secure: true
   uses:
   - grpc_base
   - grpc_transport_chttp2_alpn
+  - grpc_security_context
+  - grpc_security_credentials
+  - grpc_security_credentials_fake
+  - grpc_security_credentials_composite
+  - grpc_security_credentials_iam
+  - grpc_security_credentials_jwt
+  - grpc_security_credentials_ssl
+  - grpc_security_credentials_oauth2
+  - grpc_security_credentials_plugin
+  - grpc_security_credentials_google_default
+  - grpc_security_transport
   - tsi
+- name: grpc_security_context
+  headers:
+  - src/core/ext/security/context/security_context.h
+  src:
+  - src/core/ext/security/context/security_context.c
+- name: grpc_security_credentials
+  headers:
+  - src/core/ext/security/credentials/credentials.h
+  src:
+  - src/core/ext/security/credentials/credentials.c
+  - src/core/ext/security/credentials/credentials_metadata.c
+- name: grpc_security_credentials_composite
+  headers:
+  - src/core/ext/security/credentials/composite/composite_credentials.h
+  src:
+  - src/core/ext/security/credentials/composite/composite_credentials.c
+- name: grpc_security_credentials_fake
+  headers:
+  - src/core/ext/security/credentials/fake/fake_credentials.h
+  src:
+  - src/core/ext/security/credentials/fake/fake_credentials.c
+- name: grpc_security_credentials_google_default
+  headers:
+  - src/core/ext/security/credentials/google_default/google_default_credentials.h
+  src:
+  - src/core/ext/security/credentials/google_default/credentials_posix.c
+  - src/core/ext/security/credentials/google_default/credentials_windows.c
+  - src/core/ext/security/credentials/google_default/google_default_credentials.c
+- name: grpc_security_credentials_iam
+  headers:
+  - src/core/ext/security/credentials/iam/iam_credentials.h
+  src:
+  - src/core/ext/security/credentials/iam/iam_credentials.c
+- name: grpc_security_credentials_jwt
+  headers:
+  - src/core/ext/security/credentials/jwt/json_token.h
+  - src/core/ext/security/credentials/jwt/jwt_credentials.h
+  - src/core/ext/security/credentials/jwt/jwt_verifier.h
+  src:
+  - src/core/ext/security/credentials/jwt/json_token.c
+  - src/core/ext/security/credentials/jwt/jwt_credentials.c
+  - src/core/ext/security/credentials/jwt/jwt_verifier.c
+- name: grpc_security_credentials_oauth2
+  headers:
+  - src/core/ext/security/credentials/oauth2/oauth2_credentials.h
+  src:
+  - src/core/ext/security/credentials/oauth2/oauth2_credentials.c
+- name: grpc_security_credentials_plugin
+  headers:
+  - src/core/ext/security/credentials/plugin/plugin_credentials.h
+  src:
+  - src/core/ext/security/credentials/plugin/plugin_credentials.c
+- name: grpc_security_credentials_ssl
+  headers:
+  - src/core/ext/security/credentials/ssl/ssl_credentials.h
+  src:
+  - src/core/ext/security/credentials/ssl/ssl_credentials.c
+- name: grpc_security_transport
+  headers:
+  - src/core/ext/security/transport/auth_filters.h
+  - src/core/ext/security/transport/handshake.h
+  - src/core/ext/security/transport/secure_endpoint.h
+  - src/core/ext/security/transport/security_connector.h
+  - src/core/ext/security/transport/tsi_error.h
+  src:
+  - src/core/ext/security/transport/client_auth_filter.c
+  - src/core/ext/security/transport/handshake.c
+  - src/core/ext/security/transport/secure_endpoint.c
+  - src/core/ext/security/transport/security_connector.c
+  - src/core/ext/security/transport/server_auth_filter.c
+  - src/core/ext/security/transport/tsi_error.c
+- name: grpc_security_util_b64
+  headers:
+  - src/core/ext/security/util/b64.h
+  src:
+  - src/core/ext/security/util/b64.c
+- name: grpc_security_util_json
+  headers:
+  - src/core/ext/security/util/json_util.h
+  src:
+  - src/core/ext/security/util/json_util.c
 - name: grpc_test_util_base
   build: test
   headers:
@@ -508,6 +569,8 @@ filegroups:
   deps:
   - grpc
   - gpr_test_util
+  uses:
+  - grpc_http
 - name: grpc_transport_chttp2
   headers:
   - src/core/ext/transport/chttp2/transport/bin_decoder.h
@@ -557,6 +620,7 @@ filegroups:
   plugin: grpc_chttp2_plugin
   uses:
   - grpc_base
+  - grpc_http
   - grpc_transport_chttp2_alpn
 - name: grpc_transport_chttp2_alpn
   headers:
@@ -617,15 +681,15 @@ filegroups:
   - third_party/nanopb/pb_encode.c
 - name: tsi
   headers:
-  - src/core/lib/tsi/fake_transport_security.h
-  - src/core/lib/tsi/ssl_transport_security.h
-  - src/core/lib/tsi/ssl_types.h
-  - src/core/lib/tsi/transport_security.h
-  - src/core/lib/tsi/transport_security_interface.h
+  - src/core/ext/tsi/fake_transport_security.h
+  - src/core/ext/tsi/ssl_transport_security.h
+  - src/core/ext/tsi/ssl_types.h
+  - src/core/ext/tsi/transport_security.h
+  - src/core/ext/tsi/transport_security_interface.h
   src:
-  - src/core/lib/tsi/fake_transport_security.c
-  - src/core/lib/tsi/ssl_transport_security.c
-  - src/core/lib/tsi/transport_security.c
+  - src/core/ext/tsi/fake_transport_security.c
+  - src/core/ext/tsi/ssl_transport_security.c
+  - src/core/ext/tsi/transport_security.c
   deps:
   - gpr
   secure: true

@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/lib/http/httpcli.h"
+#include "src/core/ext/http/httpcli.h"
 
 #include <string.h>
 

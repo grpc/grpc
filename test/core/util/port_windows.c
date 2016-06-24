@@ -46,7 +46,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/http/httpcli.h"
+#include "src/core/ext/http/httpcli.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/support/env.h"
 #include "test/core/util/port_server_client.h"

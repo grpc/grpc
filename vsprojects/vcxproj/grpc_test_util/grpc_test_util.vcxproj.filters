@@ -52,6 +52,15 @@
     <ClCompile Include="$(SolutionDir)\..\test\core\util\slice_splitter.c">
       <Filter>test\core\util</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\http\format_request.c">
+      <Filter>src\core\ext\http</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\http\httpcli.c">
+      <Filter>src\core\ext\http</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\http\parser.c">
+      <Filter>src\core\ext\http</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\test\core\end2end\data\ssl_test_data.h">
@@ -93,9 +102,30 @@
     <ClInclude Include="$(SolutionDir)\..\test\core\util\slice_splitter.h">
       <Filter>test\core\util</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\http\format_request.h">
+      <Filter>src\core\ext\http</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\http\httpcli.h">
+      <Filter>src\core\ext\http</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\http\parser.h">
+      <Filter>src\core\ext\http</Filter>
+    </ClInclude>
   </ItemGroup>
 
   <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{7d107d7c-1da3-9525-3ba1-3a411b552ea8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core">
+      <UniqueIdentifier>{f7bfac91-5eb2-dea7-4601-6c63edbbf997}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext">
+      <UniqueIdentifier>{5db70e06-741d-708c-bf0a-b59f8ca1f8bd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\http">
+      <UniqueIdentifier>{1692b068-49b7-b6f5-e043-24bbe160b29a}</UniqueIdentifier>
+    </Filter>
     <Filter Include="test">
       <UniqueIdentifier>{a2783de3-4fcf-718d-a859-c2108350ff33}</UniqueIdentifier>
     </Filter>

@@ -42,8 +42,8 @@
 #include <grpc/support/slice.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/ext/security/credentials/credentials.h"
 #include "src/core/lib/iomgr/load_file.h"
-#include "src/core/lib/security/credentials/credentials.h"
 #include "test/core/security/oauth2_utils.h"
 
 static grpc_call_credentials *create_refresh_token_creds(
