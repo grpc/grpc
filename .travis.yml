@@ -30,9 +30,9 @@ before_script:
   - bins/$CONFIG/interop_server --port=5051 --use_tls &
 script:
   - if [[ ${HAS_TEST} ]]; then
-      xctool -workspace "$TEST_PATH\\$WORKSPACE" -scheme "$SCHEME" -sdk iphonesimulator9.3 build test
+      xctool -workspace "$TEST_PATH/$WORKSPACE" -scheme "$SCHEME" -sdk iphonesimulator9.3 build test
     else
-      xctool -workspace "$TEST_PATH\\$WORKSPACE" -scheme "$SCHEME" -sdk iphonesimulator9.3 clean build
+      xctool -workspace "$TEST_PATH/$WORKSPACE" -scheme "$SCHEME" -sdk iphonesimulator9.3 clean build
     fi
 notifications:
   email: false
