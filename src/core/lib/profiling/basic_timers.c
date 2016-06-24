@@ -141,11 +141,11 @@ static void write_log(gpr_timer_log *log) {
       entry->tm = gpr_time_0(entry->tm.clock_type);
     }
     fprintf(output_file,
-            "{\"t\": %"PRId64".%09d, \"thd\": \"%d\", \"type\": \"%c\", \"tag\": "
+            "{\"t\": %" PRId64
+            ".%09d, \"thd\": \"%d\", \"type\": \"%c\", \"tag\": "
             "\"%s\", \"file\": \"%s\", \"line\": %d, \"imp\": %d}\n",
-            entry->tm.tv_sec, entry->tm.tv_nsec, entry->thd,
-            entry->type, entry->tagstr, entry->file, entry->line,
-            entry->important);
+            entry->tm.tv_sec, entry->tm.tv_nsec, entry->thd, entry->type,
+            entry->tagstr, entry->file, entry->line, entry->important);
   }
 }
 
