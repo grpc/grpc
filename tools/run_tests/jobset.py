@@ -363,7 +363,7 @@ class Jobset(object):
     self._running.add(job)
     if not self.resultset.has_key(job.GetSpec().shortname):
       self.resultset[job.GetSpec().shortname] = []
-      return True
+    return True
 
   def reap(self):
     """Collect the dead jobs."""
