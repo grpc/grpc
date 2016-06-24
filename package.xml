@@ -281,8 +281,15 @@
     <file baseinstalldir="/" name="src/core/ext/security/credentials/jwt/json_token.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/security/credentials/jwt/jwt_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/security/credentials/jwt/jwt_verifier.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/security/util/b64.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/security/util/json_util.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/json/json.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/json/json_common.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/json/json_reader.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/json/json_writer.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/security/credentials/ssl/ssl_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/security/credentials/oauth2/oauth2_credentials.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/https/httpscli.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/security/credentials/plugin/plugin_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/security/credentials/google_default/google_default_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/security/transport/auth_filters.h" role="src" />
@@ -442,8 +449,15 @@
     <file baseinstalldir="/" name="src/core/ext/security/credentials/jwt/json_token.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/security/credentials/jwt/jwt_credentials.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/security/credentials/jwt/jwt_verifier.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/security/util/b64.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/security/util/json_util.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/json/json.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/json/json_reader.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/json/json_string.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/json/json_writer.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/security/credentials/ssl/ssl_credentials.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/security/credentials/oauth2/oauth2_credentials.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/https/httpcli_security_connector.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/security/credentials/plugin/plugin_credentials.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/security/credentials/google_default/credentials_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/security/credentials/google_default/credentials_windows.c" role="src" />

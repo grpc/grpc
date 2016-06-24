@@ -349,11 +349,32 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\security\credentials\jwt\jwt_verifier.c">
       <Filter>src\core\ext\security\credentials\jwt</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\security\util\b64.c">
+      <Filter>src\core\ext\security\util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\security\util\json_util.c">
+      <Filter>src\core\ext\security\util</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\json\json.c">
+      <Filter>src\core\ext\json</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\json\json_reader.c">
+      <Filter>src\core\ext\json</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\json\json_string.c">
+      <Filter>src\core\ext\json</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\json\json_writer.c">
+      <Filter>src\core\ext\json</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\security\credentials\ssl\ssl_credentials.c">
       <Filter>src\core\ext\security\credentials\ssl</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\security\credentials\oauth2\oauth2_credentials.c">
       <Filter>src\core\ext\security\credentials\oauth2</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\https\httpcli_security_connector.c">
+      <Filter>src\core\ext\https</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\security\credentials\plugin\plugin_credentials.c">
       <Filter>src\core\ext\security\credentials\plugin</Filter>
@@ -935,11 +956,32 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\security\credentials\jwt\jwt_verifier.h">
       <Filter>src\core\ext\security\credentials\jwt</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\security\util\b64.h">
+      <Filter>src\core\ext\security\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\security\util\json_util.h">
+      <Filter>src\core\ext\security\util</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\json\json.h">
+      <Filter>src\core\ext\json</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\json\json_common.h">
+      <Filter>src\core\ext\json</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\json\json_reader.h">
+      <Filter>src\core\ext\json</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\json\json_writer.h">
+      <Filter>src\core\ext\json</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\security\credentials\ssl\ssl_credentials.h">
       <Filter>src\core\ext\security\credentials\ssl</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\security\credentials\oauth2\oauth2_credentials.h">
       <Filter>src\core\ext\security\credentials\oauth2</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\https\httpscli.h">
+      <Filter>src\core\ext\https</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\security\credentials\plugin\plugin_credentials.h">
       <Filter>src\core\ext\security\credentials\plugin</Filter>
@@ -1106,6 +1148,12 @@
     <Filter Include="src\core\ext\http">
       <UniqueIdentifier>{bdfe542a-3f3c-9eb5-aa30-7de6071cbec6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\core\ext\https">
+      <UniqueIdentifier>{57642466-95bd-689c-6959-3dd72cf4cdb6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\json">
+      <UniqueIdentifier>{1c6c1df4-b02b-7a72-f5cc-a2b25123305e}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\core\ext\lb_policy">
       <UniqueIdentifier>{030f00ff-6c54-76c8-12df-37e3008335d1}</UniqueIdentifier>
     </Filter>
@@ -1180,6 +1228,9 @@
     </Filter>
     <Filter Include="src\core\ext\security\transport">
       <UniqueIdentifier>{5db60650-0509-16bf-7e72-b73fe9bbbbd3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\ext\security\util">
+      <UniqueIdentifier>{6ee7732d-584b-e448-fdd5-e5bb92b03879}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\ext\transport">
       <UniqueIdentifier>{e3abfd0a-064e-0f2f-c8e8-7c5a7e98142a}</UniqueIdentifier>

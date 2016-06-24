@@ -369,6 +369,8 @@ filegroups:
   - src/core/ext/http/format_request.c
   - src/core/ext/http/httpcli.c
   - src/core/ext/http/parser.c
+  uses:
+  - grpc_base
 - name: grpc_https
   headers:
   - src/core/ext/https/httpscli.h
@@ -376,6 +378,8 @@ filegroups:
   - src/core/ext/https/httpcli_security_connector.c
   uses:
   - grpc_http
+  - grpc_base
+  - grpc_security_handshake
 - name: grpc_json
   headers:
   - src/core/ext/json/json.h
@@ -387,6 +391,8 @@ filegroups:
   - src/core/ext/json/json_reader.c
   - src/core/ext/json/json_string.c
   - src/core/ext/json/json_writer.c
+  uses:
+  - grpc_base
 - name: grpc_lb_policy_grpclb
   headers:
   - src/core/ext/lb_policy/grpclb/load_balancer_api.h
@@ -437,17 +443,12 @@ filegroups:
   - grpc_base
   - grpc_client_config
 - name: grpc_secure
-  public_headers:
-  - include/grpc/grpc_security.h
-  - include/grpc/grpc_security_constants.h
   src:
   - src/core/lib/surface/init_secure.c
   secure: true
   uses:
   - grpc_base
-  - grpc_transport_chttp2_alpn
-  - grpc_security_context
-  - grpc_security_credentials
+  - grpc_security_base
   - grpc_security_credentials_fake
   - grpc_security_credentials_composite
   - grpc_security_credentials_iam
@@ -456,29 +457,48 @@ filegroups:
   - grpc_security_credentials_oauth2
   - grpc_security_credentials_plugin
   - grpc_security_credentials_google_default
-  - grpc_security_transport
-  - tsi
-- name: grpc_security_context
+  - grpc_security_connector
+  - grpc_security_auth_filters
+- name: grpc_security_auth_filters
+  headers:
+  - src/core/ext/security/transport/auth_filters.h
+  src:
+  - src/core/ext/security/transport/client_auth_filter.c
+  - src/core/ext/security/transport/server_auth_filter.c
+- name: grpc_security_base
+  public_headers:
+  - include/grpc/grpc_security.h
+  - include/grpc/grpc_security_constants.h
   headers:
   - src/core/ext/security/context/security_context.h
-  src:
-  - src/core/ext/security/context/security_context.c
-- name: grpc_security_credentials
-  headers:
   - src/core/ext/security/credentials/credentials.h
   src:
+  - src/core/ext/security/context/security_context.c
   - src/core/ext/security/credentials/credentials.c
   - src/core/ext/security/credentials/credentials_metadata.c
+  uses:
+  - grpc_base
+  - grpc_security_util_json
+  - tsi
+- name: grpc_security_connector
+  headers:
+  - src/core/ext/security/transport/security_connector.h
+  src:
+  - src/core/ext/security/transport/security_connector.c
 - name: grpc_security_credentials_composite
   headers:
   - src/core/ext/security/credentials/composite/composite_credentials.h
   src:
   - src/core/ext/security/credentials/composite/composite_credentials.c
+  uses:
+  - grpc_security_base
 - name: grpc_security_credentials_fake
   headers:
   - src/core/ext/security/credentials/fake/fake_credentials.h
   src:
   - src/core/ext/security/credentials/fake/fake_credentials.c
+  uses:
+  - grpc_security_base
 - name: grpc_security_credentials_google_default
   headers:
   - src/core/ext/security/credentials/google_default/google_default_credentials.h
@@ -486,11 +506,19 @@ filegroups:
   - src/core/ext/security/credentials/google_default/credentials_posix.c
   - src/core/ext/security/credentials/google_default/credentials_windows.c
   - src/core/ext/security/credentials/google_default/google_default_credentials.c
+  uses:
+  - grpc_security_base
+  - grpc_https
+  - grpc_base
+  - grpc_security_credentials_oauth2
+  - grpc_security_credentials_jwt
 - name: grpc_security_credentials_iam
   headers:
   - src/core/ext/security/credentials/iam/iam_credentials.h
   src:
   - src/core/ext/security/credentials/iam/iam_credentials.c
+  uses:
+  - grpc_security_base
 - name: grpc_security_credentials_jwt
   headers:
   - src/core/ext/security/credentials/jwt/json_token.h
@@ -500,45 +528,71 @@ filegroups:
   - src/core/ext/security/credentials/jwt/json_token.c
   - src/core/ext/security/credentials/jwt/jwt_credentials.c
   - src/core/ext/security/credentials/jwt/jwt_verifier.c
+  uses:
+  - grpc_security_util_b64
+  - grpc_security_util_json
+  - grpc_base
+  - grpc_security_base
 - name: grpc_security_credentials_oauth2
   headers:
   - src/core/ext/security/credentials/oauth2/oauth2_credentials.h
   src:
   - src/core/ext/security/credentials/oauth2/oauth2_credentials.c
+  uses:
+  - grpc_https
+  - grpc_security_util_json
+  - grpc_security_base
 - name: grpc_security_credentials_plugin
   headers:
   - src/core/ext/security/credentials/plugin/plugin_credentials.h
   src:
   - src/core/ext/security/credentials/plugin/plugin_credentials.c
+  uses:
+  - grpc_security_base
 - name: grpc_security_credentials_ssl
   headers:
   - src/core/ext/security/credentials/ssl/ssl_credentials.h
   src:
   - src/core/ext/security/credentials/ssl/ssl_credentials.c
-- name: grpc_security_transport
+  uses:
+  - grpc_security_base
+- name: grpc_security_handshake
   headers:
-  - src/core/ext/security/transport/auth_filters.h
   - src/core/ext/security/transport/handshake.h
+  src:
+  - src/core/ext/security/transport/handshake.c
+- name: grpc_security_secure_endpoint
+  headers:
   - src/core/ext/security/transport/secure_endpoint.h
-  - src/core/ext/security/transport/security_connector.h
+  src:
+  - src/core/ext/security/transport/secure_endpoint.c
+  uses:
+  - tsi
+  - grpc_base
+  - grpc_security_tsi_error
+- name: grpc_security_tsi_error
+  headers:
   - src/core/ext/security/transport/tsi_error.h
   src:
-  - src/core/ext/security/transport/client_auth_filter.c
-  - src/core/ext/security/transport/handshake.c
-  - src/core/ext/security/transport/secure_endpoint.c
-  - src/core/ext/security/transport/security_connector.c
-  - src/core/ext/security/transport/server_auth_filter.c
   - src/core/ext/security/transport/tsi_error.c
+  uses:
+  - tsi
+  - grpc_base
 - name: grpc_security_util_b64
   headers:
   - src/core/ext/security/util/b64.h
   src:
   - src/core/ext/security/util/b64.c
+  uses:
+  - gpr_base
 - name: grpc_security_util_json
   headers:
   - src/core/ext/security/util/json_util.h
   src:
   - src/core/ext/security/util/json_util.c
+  uses:
+  - grpc_json
+  - gpr_base
 - name: grpc_test_util_base
   build: test
   headers:

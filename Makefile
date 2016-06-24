@@ -2665,8 +2665,15 @@ LIBGRPC_SRC = \
     src/core/ext/security/credentials/jwt/json_token.c \
     src/core/ext/security/credentials/jwt/jwt_credentials.c \
     src/core/ext/security/credentials/jwt/jwt_verifier.c \
+    src/core/ext/security/util/b64.c \
+    src/core/ext/security/util/json_util.c \
+    src/core/ext/json/json.c \
+    src/core/ext/json/json_reader.c \
+    src/core/ext/json/json_string.c \
+    src/core/ext/json/json_writer.c \
     src/core/ext/security/credentials/ssl/ssl_credentials.c \
     src/core/ext/security/credentials/oauth2/oauth2_credentials.c \
+    src/core/ext/https/httpcli_security_connector.c \
     src/core/ext/security/credentials/plugin/plugin_credentials.c \
     src/core/ext/security/credentials/google_default/credentials_posix.c \
     src/core/ext/security/credentials/google_default/credentials_windows.c \
@@ -14859,6 +14866,11 @@ ifneq ($(OPENSSL_DEP),)
 # This is to ensure the embedded OpenSSL is built beforehand, properly
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
+src/core/ext/https/httpcli_security_connector.c: $(OPENSSL_DEP)
+src/core/ext/json/json.c: $(OPENSSL_DEP)
+src/core/ext/json/json_reader.c: $(OPENSSL_DEP)
+src/core/ext/json/json_string.c: $(OPENSSL_DEP)
+src/core/ext/json/json_writer.c: $(OPENSSL_DEP)
 src/core/ext/security/context/security_context.c: $(OPENSSL_DEP)
 src/core/ext/security/credentials/composite/composite_credentials.c: $(OPENSSL_DEP)
 src/core/ext/security/credentials/credentials.c: $(OPENSSL_DEP)
@@ -14880,6 +14892,8 @@ src/core/ext/security/transport/secure_endpoint.c: $(OPENSSL_DEP)
 src/core/ext/security/transport/security_connector.c: $(OPENSSL_DEP)
 src/core/ext/security/transport/server_auth_filter.c: $(OPENSSL_DEP)
 src/core/ext/security/transport/tsi_error.c: $(OPENSSL_DEP)
+src/core/ext/security/util/b64.c: $(OPENSSL_DEP)
+src/core/ext/security/util/json_util.c: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/client/secure/secure_channel_create.c: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c: $(OPENSSL_DEP)
 src/core/ext/transport/cronet/client/secure/cronet_channel_create.c: $(OPENSSL_DEP)

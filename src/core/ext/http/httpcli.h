@@ -63,7 +63,6 @@ typedef struct {
 } grpc_httpcli_handshaker;
 
 extern const grpc_httpcli_handshaker grpc_httpcli_plaintext;
-extern const grpc_httpcli_handshaker grpc_httpcli_ssl;
 
 /* A request */
 typedef struct grpc_httpcli_request {

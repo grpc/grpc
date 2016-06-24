@@ -39,9 +39,9 @@
 #include <grpc/support/sync.h>
 #include "src/core/lib/transport/metadata_batch.h"
 
-#include "src/core/ext/security/transport/security_connector.h"
 #include "src/core/ext/http/httpcli.h"
 #include "src/core/ext/http/parser.h"
+#include "src/core/ext/security/transport/security_connector.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 
 struct grpc_http_response;

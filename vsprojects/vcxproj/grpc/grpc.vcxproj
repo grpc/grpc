@@ -402,8 +402,15 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\security\credentials\jwt\json_token.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\security\credentials\jwt\jwt_credentials.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\security\credentials\jwt\jwt_verifier.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\security\util\b64.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\security\util\json_util.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\json\json.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\json\json_common.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\json\json_reader.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\json\json_writer.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\security\credentials\ssl\ssl_credentials.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\security\credentials\oauth2\oauth2_credentials.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\core\ext\https\httpscli.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\security\credentials\plugin\plugin_credentials.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\security\credentials\google_default\google_default_credentials.h" />
     <ClInclude Include="$(SolutionDir)\..\src\core\ext\security\transport\auth_filters.h" />
@@ -681,9 +688,23 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\security\credentials\jwt\jwt_verifier.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\security\util\b64.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\security\util\json_util.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\json\json.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\json\json_reader.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\json\json_string.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\json\json_writer.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\security\credentials\ssl\ssl_credentials.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\security\credentials\oauth2\oauth2_credentials.c">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\ext\https\httpcli_security_connector.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\ext\security\credentials\plugin\plugin_credentials.c">
     </ClCompile>

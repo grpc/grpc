@@ -197,8 +197,15 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/security/credentials/jwt/json_token.c \
     src/core/ext/security/credentials/jwt/jwt_credentials.c \
     src/core/ext/security/credentials/jwt/jwt_verifier.c \
+    src/core/ext/security/util/b64.c \
+    src/core/ext/security/util/json_util.c \
+    src/core/ext/json/json.c \
+    src/core/ext/json/json_reader.c \
+    src/core/ext/json/json_string.c \
+    src/core/ext/json/json_writer.c \
     src/core/ext/security/credentials/ssl/ssl_credentials.c \
     src/core/ext/security/credentials/oauth2/oauth2_credentials.c \
+    src/core/ext/https/httpcli_security_connector.c \
     src/core/ext/security/credentials/plugin/plugin_credentials.c \
     src/core/ext/security/credentials/google_default/credentials_posix.c \
     src/core/ext/security/credentials/google_default/credentials_windows.c \
@@ -567,6 +574,8 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/census/gen)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/client_config)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/http)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/https)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/json)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/grpclb)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/grpclb/proto/grpc/lb/v1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/lb_policy/pick_first)
@@ -585,6 +594,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/security/credentials/plugin)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/security/credentials/ssl)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/security/transport)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/security/util)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/alpn)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/client/insecure)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/client/secure)

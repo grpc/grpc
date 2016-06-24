@@ -6042,7 +6042,10 @@
     "type": "filegroup"
   }, 
   {
-    "deps": [], 
+    "deps": [
+      "gpr", 
+      "grpc_base"
+    ], 
     "headers": [
       "src/core/ext/http/format_request.h", 
       "src/core/ext/http/httpcli.h", 
@@ -6063,7 +6066,10 @@
   }, 
   {
     "deps": [
-      "grpc_http"
+      "gpr", 
+      "grpc_base", 
+      "grpc_http", 
+      "grpc_security_handshake"
     ], 
     "headers": [
       "src/core/ext/https/httpscli.h"
@@ -6078,7 +6084,10 @@
     "type": "filegroup"
   }, 
   {
-    "deps": [], 
+    "deps": [
+      "gpr", 
+      "grpc_base"
+    ], 
     "headers": [
       "src/core/ext/json/json.h", 
       "src/core/ext/json/json_common.h", 
@@ -6206,8 +6215,9 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_security_context", 
-      "grpc_security_credentials", 
+      "grpc_security_auth_filters", 
+      "grpc_security_base", 
+      "grpc_security_connector", 
       "grpc_security_credentials_composite", 
       "grpc_security_credentials_fake", 
       "grpc_security_credentials_google_default", 
@@ -6215,20 +6225,12 @@
       "grpc_security_credentials_jwt", 
       "grpc_security_credentials_oauth2", 
       "grpc_security_credentials_plugin", 
-      "grpc_security_credentials_ssl", 
-      "grpc_security_transport", 
-      "grpc_transport_chttp2_alpn", 
-      "tsi"
+      "grpc_security_credentials_ssl"
     ], 
-    "headers": [
-      "include/grpc/grpc_security.h", 
-      "include/grpc/grpc_security_constants.h"
-    ], 
+    "headers": [], 
     "language": "c", 
     "name": "grpc_secure", 
     "src": [
-      "include/grpc/grpc_security.h", 
-      "include/grpc/grpc_security_constants.h", 
       "src/core/lib/surface/init_secure.c"
     ], 
     "third_party": false, 
@@ -6237,25 +6239,38 @@
   {
     "deps": [], 
     "headers": [
-      "src/core/ext/security/context/security_context.h"
+      "src/core/ext/security/transport/auth_filters.h"
     ], 
     "language": "c", 
-    "name": "grpc_security_context", 
+    "name": "grpc_security_auth_filters", 
     "src": [
-      "src/core/ext/security/context/security_context.c", 
-      "src/core/ext/security/context/security_context.h"
+      "src/core/ext/security/transport/auth_filters.h", 
+      "src/core/ext/security/transport/client_auth_filter.c", 
+      "src/core/ext/security/transport/server_auth_filter.c"
     ], 
     "third_party": false, 
     "type": "filegroup"
   }, 
   {
-    "deps": [], 
+    "deps": [
+      "gpr", 
+      "grpc_base", 
+      "grpc_security_util_json", 
+      "tsi"
+    ], 
     "headers": [
+      "include/grpc/grpc_security.h", 
+      "include/grpc/grpc_security_constants.h", 
+      "src/core/ext/security/context/security_context.h", 
       "src/core/ext/security/credentials/credentials.h"
     ], 
     "language": "c", 
-    "name": "grpc_security_credentials", 
+    "name": "grpc_security_base", 
     "src": [
+      "include/grpc/grpc_security.h", 
+      "include/grpc/grpc_security_constants.h", 
+      "src/core/ext/security/context/security_context.c", 
+      "src/core/ext/security/context/security_context.h", 
       "src/core/ext/security/credentials/credentials.c", 
       "src/core/ext/security/credentials/credentials.h", 
       "src/core/ext/security/credentials/credentials_metadata.c"
@@ -6265,6 +6280,23 @@
   }, 
   {
     "deps": [], 
+    "headers": [
+      "src/core/ext/security/transport/security_connector.h"
+    ], 
+    "language": "c", 
+    "name": "grpc_security_connector", 
+    "src": [
+      "src/core/ext/security/transport/security_connector.c", 
+      "src/core/ext/security/transport/security_connector.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_security_base"
+    ], 
     "headers": [
       "src/core/ext/security/credentials/composite/composite_credentials.h"
     ], 
@@ -6278,7 +6310,10 @@
     "type": "filegroup"
   }, 
   {
-    "deps": [], 
+    "deps": [
+      "gpr", 
+      "grpc_security_base"
+    ], 
     "headers": [
       "src/core/ext/security/credentials/fake/fake_credentials.h"
     ], 
@@ -6292,7 +6327,14 @@
     "type": "filegroup"
   }, 
   {
-    "deps": [], 
+    "deps": [
+      "gpr", 
+      "grpc_base", 
+      "grpc_https", 
+      "grpc_security_base", 
+      "grpc_security_credentials_jwt", 
+      "grpc_security_credentials_oauth2"
+    ], 
     "headers": [
       "src/core/ext/security/credentials/google_default/google_default_credentials.h"
     ], 
@@ -6308,7 +6350,10 @@
     "type": "filegroup"
   }, 
   {
-    "deps": [], 
+    "deps": [
+      "gpr", 
+      "grpc_security_base"
+    ], 
     "headers": [
       "src/core/ext/security/credentials/iam/iam_credentials.h"
     ], 
@@ -6322,7 +6367,13 @@
     "type": "filegroup"
   }, 
   {
-    "deps": [], 
+    "deps": [
+      "gpr", 
+      "grpc_base", 
+      "grpc_security_base", 
+      "grpc_security_util_b64", 
+      "grpc_security_util_json"
+    ], 
     "headers": [
       "src/core/ext/security/credentials/jwt/json_token.h", 
       "src/core/ext/security/credentials/jwt/jwt_credentials.h", 
@@ -6342,7 +6393,12 @@
     "type": "filegroup"
   }, 
   {
-    "deps": [], 
+    "deps": [
+      "gpr", 
+      "grpc_https", 
+      "grpc_security_base", 
+      "grpc_security_util_json"
+    ], 
     "headers": [
       "src/core/ext/security/credentials/oauth2/oauth2_credentials.h"
     ], 
@@ -6356,7 +6412,10 @@
     "type": "filegroup"
   }, 
   {
-    "deps": [], 
+    "deps": [
+      "gpr", 
+      "grpc_security_base"
+    ], 
     "headers": [
       "src/core/ext/security/credentials/plugin/plugin_credentials.h"
     ], 
@@ -6370,7 +6429,10 @@
     "type": "filegroup"
   }, 
   {
-    "deps": [], 
+    "deps": [
+      "gpr", 
+      "grpc_security_base"
+    ], 
     "headers": [
       "src/core/ext/security/credentials/ssl/ssl_credentials.h"
     ], 
@@ -6386,24 +6448,48 @@
   {
     "deps": [], 
     "headers": [
-      "src/core/ext/security/transport/auth_filters.h", 
-      "src/core/ext/security/transport/handshake.h", 
-      "src/core/ext/security/transport/secure_endpoint.h", 
-      "src/core/ext/security/transport/security_connector.h", 
+      "src/core/ext/security/transport/handshake.h"
+    ], 
+    "language": "c", 
+    "name": "grpc_security_handshake", 
+    "src": [
+      "src/core/ext/security/transport/handshake.c", 
+      "src/core/ext/security/transport/handshake.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base", 
+      "grpc_security_tsi_error", 
+      "tsi"
+    ], 
+    "headers": [
+      "src/core/ext/security/transport/secure_endpoint.h"
+    ], 
+    "language": "c", 
+    "name": "grpc_security_secure_endpoint", 
+    "src": [
+      "src/core/ext/security/transport/secure_endpoint.c", 
+      "src/core/ext/security/transport/secure_endpoint.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base", 
+      "tsi"
+    ], 
+    "headers": [
       "src/core/ext/security/transport/tsi_error.h"
     ], 
     "language": "c", 
-    "name": "grpc_security_transport", 
+    "name": "grpc_security_tsi_error", 
     "src": [
-      "src/core/ext/security/transport/auth_filters.h", 
-      "src/core/ext/security/transport/client_auth_filter.c", 
-      "src/core/ext/security/transport/handshake.c", 
-      "src/core/ext/security/transport/handshake.h", 
-      "src/core/ext/security/transport/secure_endpoint.c", 
-      "src/core/ext/security/transport/secure_endpoint.h", 
-      "src/core/ext/security/transport/security_connector.c", 
-      "src/core/ext/security/transport/security_connector.h", 
-      "src/core/ext/security/transport/server_auth_filter.c", 
       "src/core/ext/security/transport/tsi_error.c", 
       "src/core/ext/security/transport/tsi_error.h"
     ], 
@@ -6411,7 +6497,9 @@
     "type": "filegroup"
   }, 
   {
-    "deps": [], 
+    "deps": [
+      "gpr_base"
+    ], 
     "headers": [
       "src/core/ext/security/util/b64.h"
     ], 
@@ -6425,7 +6513,11 @@
     "type": "filegroup"
   }, 
   {
-    "deps": [], 
+    "deps": [
+      "gpr", 
+      "gpr_base", 
+      "grpc_json"
+    ], 
     "headers": [
       "src/core/ext/security/util/json_util.h"
     ], 
@@ -6440,6 +6532,7 @@
   }, 
   {
     "deps": [
+      "gpr", 
       "gpr_test_util", 
       "grpc", 
       "grpc_http"
