@@ -75,6 +75,8 @@ bool CheckIsLocalhost(const grpc::string& addr) {
          addr.substr(0, kIpv6.size()) == kIpv6;
 }
 
+const char kTestCredsPluginErrorMsg[] = "Could not find plugin metadata.";
+
 class TestMetadataCredentialsPlugin : public MetadataCredentialsPlugin {
  public:
   static const char kMetadataKey[];
@@ -99,7 +101,7 @@ class TestMetadataCredentialsPlugin : public MetadataCredentialsPlugin {
       metadata->insert(std::make_pair(kMetadataKey, metadata_value_));
       return Status::OK;
     } else {
-      return Status(StatusCode::NOT_FOUND, "Could not find plugin metadata.");
+      return Status(StatusCode::NOT_FOUND, kTestCredsPluginErrorMsg);
     }
   }
 
@@ -1331,6 +1333,7 @@ TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginFailure) {
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_FALSE(s.ok());
   EXPECT_EQ(s.error_code(), StatusCode::UNAUTHENTICATED);
+  EXPECT_EQ(s.error_message(), kTestCredsPluginErrorMsg);
 }
 
 TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginAndProcessorSuccess) {
@@ -1388,6 +1391,7 @@ TEST_P(SecureEnd2endTest, BlockingAuthMetadataPluginFailure) {
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_FALSE(s.ok());
   EXPECT_EQ(s.error_code(), StatusCode::UNAUTHENTICATED);
+  EXPECT_EQ(s.error_message(), kTestCredsPluginErrorMsg);
 }
 
 TEST_P(SecureEnd2endTest, ClientAuthContext) {

@@ -156,11 +156,10 @@ void grpc_credentials_md_store_unref(grpc_credentials_md_store *store);
 
 /* --- grpc_call_credentials. --- */
 
-typedef void (*grpc_credentials_metadata_cb)(grpc_exec_ctx *exec_ctx,
-                                             void *user_data,
-                                             grpc_credentials_md *md_elems,
-                                             size_t num_md,
-                                             grpc_credentials_status status);
+/* error_details must be NULL if status is GRPC_CREDENTIALS_OK. */
+typedef void (*grpc_credentials_metadata_cb)(
+    grpc_exec_ctx *exec_ctx, void *user_data, grpc_credentials_md *md_elems,
+    size_t num_md, grpc_credentials_status status, const char *error_details);
 
 typedef struct {
   void (*destruct)(grpc_call_credentials *c);

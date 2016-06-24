@@ -72,11 +72,12 @@ static void composite_call_md_context_destroy(
 static void composite_call_metadata_cb(grpc_exec_ctx *exec_ctx, void *user_data,
                                        grpc_credentials_md *md_elems,
                                        size_t num_md,
-                                       grpc_credentials_status status) {
+                                       grpc_credentials_status status,
+                                       const char *error_details) {
   grpc_composite_call_credentials_metadata_context *ctx =
       (grpc_composite_call_credentials_metadata_context *)user_data;
   if (status != GRPC_CREDENTIALS_OK) {
-    ctx->cb(exec_ctx, ctx->user_data, NULL, 0, status);
+    ctx->cb(exec_ctx, ctx->user_data, NULL, 0, status, error_details);
     return;
   }
 
@@ -101,7 +102,7 @@ static void composite_call_metadata_cb(grpc_exec_ctx *exec_ctx, void *user_data,
 
   /* We're done!. */
   ctx->cb(exec_ctx, ctx->user_data, ctx->md_elems->entries,
-          ctx->md_elems->num_entries, GRPC_CREDENTIALS_OK);
+          ctx->md_elems->num_entries, GRPC_CREDENTIALS_OK, NULL);
   composite_call_md_context_destroy(ctx);
 }
 

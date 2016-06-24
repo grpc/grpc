@@ -113,10 +113,11 @@ static void jwt_get_request_metadata(grpc_exec_ctx *exec_ctx,
 
   if (jwt_md != NULL) {
     cb(exec_ctx, user_data, jwt_md->entries, jwt_md->num_entries,
-       GRPC_CREDENTIALS_OK);
+       GRPC_CREDENTIALS_OK, NULL);
     grpc_credentials_md_store_unref(jwt_md);
   } else {
-    cb(exec_ctx, user_data, NULL, 0, GRPC_CREDENTIALS_ERROR);
+    cb(exec_ctx, user_data, NULL, 0, GRPC_CREDENTIALS_ERROR,
+       "Could not generate JWT.");
   }
 }
 
