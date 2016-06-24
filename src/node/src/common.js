@@ -157,3 +157,24 @@ exports.getProtobufServiceAttrs = function getProtobufServiceAttrs(service,
     }];
   }));
 };
+
+/**
+ * The logger object for the gRPC module. Defaults to console.
+ */
+exports.logger = console;
+
+/**
+ * The current logging verbosity. 0 corresponds to logging everything
+ */
+exports.logVerbosity = 0;
+
+/**
+ * Log a message if the severity is at least as high as the current verbosity
+ * @param {Number} severity A value of the grpc.logVerbosity map
+ * @param {String} message The message to log
+ */
+exports.log = function log(severity, message) {
+  if (severity >= exports.logVerbosity) {
+    exports.logger.error(message);
+  }
+};
