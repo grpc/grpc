@@ -451,7 +451,7 @@ class RubyLanguage(object):
     _check_compiler(self.args.compiler, ['default'])
 
   def test_specs(self):
-    return [self.config.job_spec(['tools/run_tests/run_ruby.sh'], None,
+    return [self.config.job_spec(['tools/run_tests/run_ruby.sh'],
                                  timeout_seconds=10*60,
                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
