@@ -347,7 +347,10 @@ static cronet_engine *cronetEngine = NULL;
   [_service emptyCallWithRequest:request handler:^(RMTEmpty *response, NSError *error) {
     XCTAssertNil(error, @"First RPC finished with unexpected error: %@", error);
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     [GRPCCall closeOpenConnections];
+#pragma clang diagnostic pop
 
     [_service emptyCallWithRequest:request handler:^(RMTEmpty *response, NSError *error) {
       XCTAssertNil(error, @"Second RPC finished with unexpected error: %@", error);
