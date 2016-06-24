@@ -34,6 +34,8 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H
 #define GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H
 
+#include <stdbool.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/slice.h>
@@ -64,7 +66,7 @@ typedef struct grpc_metadata_batch {
 void grpc_metadata_batch_init(grpc_metadata_batch *batch);
 void grpc_metadata_batch_destroy(grpc_metadata_batch *batch);
 void grpc_metadata_batch_clear(grpc_metadata_batch *batch);
-int grpc_metadata_batch_is_empty(grpc_metadata_batch *batch);
+bool grpc_metadata_batch_is_empty(grpc_metadata_batch *batch);
 
 /* Returns the transport size of the batch. */
 size_t grpc_metadata_batch_size(grpc_metadata_batch *batch);
