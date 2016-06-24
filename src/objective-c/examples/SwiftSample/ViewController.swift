@@ -71,6 +71,7 @@ class ViewController: UIViewController {
       NSLog("2. Response trailers: \(RPC.responseTrailers)")
     }
 
+    // TODO(jcanizales): Revert to using subscript syntax once XCode 8 is released.
     RPC.requestHeaders.setObject("My value", forKey: "My-Header")
 
     RPC.start()
