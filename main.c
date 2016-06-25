@@ -34,6 +34,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
+#include <pthread.h>
 #include "grpc/grpc_c_public.h"
 #include "grpc/status_code_public.h"
 #include "grpc/status_public.h"
@@ -82,7 +83,7 @@ int main(int argc, char **argv) {
     printf("Waiting\n");
     void *tag;
     bool ok;
-    GRPC_commit_call_and_wait(cq, &tag, &ok);
+    GRPC_commit_ops_and_wait(cq, &tag, &ok);
     assert(ok);
     assert(tag == (void*) 12345);
     char *response_string = malloc(resp.length - 2 + 1);
@@ -142,7 +143,11 @@ static void *async_say_hello_worker(void *param) {
   for (i = 0; i < 10; i++) {
     void *tag;
     bool ok;
-    GRPC_commit_call_and_wait(cq, &tag, &ok);
+    GRPC_completion_queue_operation_status status = GRPC_commit_ops_and_wait(cq, &tag, &ok);
+    if (status == GRPC_COMPLETION_QUEUE_SHUTDOWN) {
+      printf("Worker thread shutting down\n");
+      return NULL;
+    }
     assert(ok);
     assert(tag != NULL);
     async_client *client = (async_client *) tag;
