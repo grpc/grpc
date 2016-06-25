@@ -58,7 +58,7 @@
                  requestedResponseSize:(NSNumber *)responseSize {
   RMTStreamingOutputCallRequest *request = [self message];
   RMTResponseParameters *parameters = [RMTResponseParameters message];
-  parameters.size = (int)responseSize.integerValue;
+  parameters.size = responseSize.intValue;
   [request.responseParametersArray addObject:parameters];
   request.payload.body = [NSMutableData dataWithLength:payloadSize.unsignedIntegerValue];
   return request;
@@ -188,7 +188,7 @@ static cronet_engine *cronetEngine = NULL;
   RMTStreamingOutputCallRequest *request = [RMTStreamingOutputCallRequest message];
   for (NSNumber *size in expectedSizes) {
     RMTResponseParameters *parameters = [RMTResponseParameters message];
-    parameters.size = (int)[size integerValue];
+    parameters.size = [size intValue];
     [request.responseParametersArray addObject:parameters];
   }
 
