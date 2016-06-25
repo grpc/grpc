@@ -414,7 +414,7 @@ E = @echo
 Q = @
 endif
 
-VERSION = 0.15.0-dev
+VERSION = 0.16.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)

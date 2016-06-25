@@ -31,6 +31,7 @@
 
 import os
 import os.path
+import shlex
 import shutil
 import sys
 import sysconfig
@@ -99,8 +100,9 @@ if not "win32" in sys.platform:
 
 DEFINE_MACROS = (('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600), ('GPR_BACKWARDS_COMPATIBILITY_MODE', 1),)
 
-LDFLAGS = ()
-CFLAGS = ()
+LDFLAGS = shlex.split(os.environ.get('GRPC_PYTHON_LDFLAGS', ''))
+CFLAGS = shlex.split(os.environ.get('GRPC_PYTHON_CFLAGS', ''))
+
 if "linux" in sys.platform:
   LDFLAGS += ('-Wl,-wrap,memcpy',)
 if "linux" in sys.platform or "darwin" in sys.platform:
