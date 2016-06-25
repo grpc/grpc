@@ -34,13 +34,13 @@
 #include <string.h>
 #include "id_serialization.h"
 
-void GRPC_id_serialize(grpc_message input, grpc_message *output) {
+void GRPC_id_serialize(const grpc_message input, grpc_message *output) {
   output->data = malloc(input.length);
   memcpy(output->data, input.data, input.length);
   output->length = input.length;
 }
 
-void GRPC_id_deserialize(grpc_message input, grpc_message *output) {
+void GRPC_id_deserialize(const grpc_message input, grpc_message *output) {
   output->data = malloc(input.length);
   memcpy(output->data, input.data, input.length);
   output->length = input.length;
