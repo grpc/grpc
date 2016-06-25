@@ -10,6 +10,7 @@
   "_channel_connectivity_test.ChannelConnectivityTest",
   "_channel_ready_future_test.ChannelReadyFutureTest",
   "_channel_test.ChannelTest", 
+  "_compression_test.CompressionTest",
   "_connectivity_channel_test.ChannelConnectivityTest", 
   "_connectivity_channel_test.ConnectivityStatesTest",
   "_empty_message_test.EmptyMessageTest",
