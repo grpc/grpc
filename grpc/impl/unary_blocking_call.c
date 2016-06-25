@@ -73,7 +73,7 @@ GRPC_status GRPC_unary_blocking_call(GRPC_channel *channel, const GRPC_method *c
   for (;;) {
     void *tag;
     bool ok;
-    GRPC_completion_queue_next_status status = GRPC_commit_call_and_wait_deadline(cq, context->deadline, &tag, &ok);
+    GRPC_completion_queue_operation_status status = GRPC_commit_ops_and_wait_deadline(cq, context->deadline, &tag, &ok);
     GPR_ASSERT(status == GRPC_COMPLETION_QUEUE_GOT_EVENT);
     GPR_ASSERT(ok);
     if (tag == TAG(&set)) {
