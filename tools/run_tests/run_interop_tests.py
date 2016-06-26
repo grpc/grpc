@@ -42,7 +42,6 @@ import re
 import report_utils
 import subprocess
 import sys
-import tempfile
 import time
 import uuid
 

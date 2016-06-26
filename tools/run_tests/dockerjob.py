@@ -30,7 +30,6 @@
 """Helpers to run docker instances as jobs."""
 
 import jobset
-import tempfile
 import time
 import uuid
 import os

@@ -29,13 +29,8 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import datetime
-import json
 import os
-import re
-import select
-import subprocess
 import sys
-import time
 
 # Import big_query_utils module
 bq_utils_dir = os.path.abspath(os.path.join(

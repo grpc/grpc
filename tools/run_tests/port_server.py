@@ -32,8 +32,6 @@
 
 import argparse
 import BaseHTTPServer
-import hashlib
-import os
 import socket
 import sys
 import time

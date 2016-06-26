@@ -35,7 +35,6 @@
    Write a set of strings containing a hpack encoded http2 frame that
    represents said headers."""
 
-import json
 import sys
 
 set_end_stream = len(sys.argv) > 1 and sys.argv[1] == '--set_end_stream'

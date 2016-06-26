@@ -33,8 +33,6 @@ import os
 import resource
 import select
 import subprocess
-import sys
-import time
 
 from stress_test_utils import BigQueryHelper
 from stress_test_utils import EventType
