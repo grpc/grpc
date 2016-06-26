@@ -1114,10 +1114,10 @@ static grpc_error *pollset_kick(grpc_pollset *p,
             append_error(&error, pollset_worker_kick(worker), err_desc);
           }
         }
+        GPR_TIMER_END("pollset_kick.broadcast", 0);
       } else {
         p->kicked_without_pollers = true;
       }
-      GPR_TIMER_END("pollset_kick.broadcast", 0);
     } else {
       GPR_TIMER_MARK("kicked_specifically", 0);
       if (gpr_tls_get(&g_current_thread_worker) != (intptr_t)worker) {
