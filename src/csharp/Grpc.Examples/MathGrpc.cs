@@ -128,17 +128,22 @@ namespace Math {
     /// <summary>Client for Math</summary>
     public class MathClient : ClientBase<MathClient>
     {
+      /// <summary>Creates a new client for Math</summary>
+      /// <param name="channel">The channel to use to make remote calls.</param>
       public MathClient(Channel channel) : base(channel)
       {
       }
+      /// <summary>Creates a new client for Math that uses a custom <c>CallInvoker</c>.</summary>
+      /// <param name="callInvoker">The callInvoker to use to make remote calls.</param>
       public MathClient(CallInvoker callInvoker) : base(callInvoker)
       {
       }
-      ///<summary>Protected parameterless constructor to allow creation of test doubles.</summary>
+      /// <summary>Protected parameterless constructor to allow creation of test doubles.</summary>
       protected MathClient() : base()
       {
       }
-      ///<summary>Protected constructor to allow creation of configured clients.</summary>
+      /// <summary>Protected constructor to allow creation of configured clients.</summary>
+      /// <param name="configuration">The client configuration.</param>
       protected MathClient(ClientBaseConfiguration configuration) : base(configuration)
       {
       }
@@ -233,12 +238,6 @@ namespace Math {
       {
         return new MathClient(configuration);
       }
-    }
-
-    /// <summary>Creates a new client for Math</summary>
-    public static MathClient NewClient(Channel channel)
-    {
-      return new MathClient(channel);
     }
 
     /// <summary>Creates service definition that can be registered with a server</summary>

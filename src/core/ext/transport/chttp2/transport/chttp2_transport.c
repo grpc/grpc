@@ -1557,17 +1557,15 @@ static void close_from_api(grpc_exec_ctx *exec_ctx,
       gpr_slice_buffer_add(&transport_global->qbuf,
                            gpr_slice_ref(*optional_message));
     }
-
     gpr_slice_buffer_add(
         &transport_global->qbuf,
         grpc_chttp2_rst_stream_create(stream_global->id, GRPC_CHTTP2_NO_ERROR,
                                       &stream_global->stats.outgoing));
-
-    if (optional_message) {
-      gpr_slice_ref(*optional_message);
-    }
   }
 
+  if (optional_message) {
+    gpr_slice_ref(*optional_message);
+  }
   grpc_chttp2_fake_status(exec_ctx, transport_global, stream_global, status,
                           optional_message);
   grpc_error *err = GRPC_ERROR_CREATE("Stream closed");

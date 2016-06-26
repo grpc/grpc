@@ -235,10 +235,11 @@ static void on_oauth2_token_fetcher_http_response(grpc_exec_ctx *exec_ctx,
     c->token_expiration =
         gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), token_lifetime);
     r->cb(exec_ctx, r->user_data, c->access_token_md->entries,
-          c->access_token_md->num_entries, status);
+          c->access_token_md->num_entries, GRPC_CREDENTIALS_OK, NULL);
   } else {
     c->token_expiration = gpr_inf_past(GPR_CLOCK_REALTIME);
-    r->cb(exec_ctx, r->user_data, NULL, 0, status);
+    r->cb(exec_ctx, r->user_data, NULL, 0, status,
+          "Error occured when fetching oauth2 token.");
   }
   gpr_mu_unlock(&c->mu);
   grpc_credentials_metadata_request_destroy(r);
@@ -266,7 +267,7 @@ static void oauth2_token_fetcher_get_request_metadata(
   }
   if (cached_access_token_md != NULL) {
     cb(exec_ctx, user_data, cached_access_token_md->entries,
-       cached_access_token_md->num_entries, GRPC_CREDENTIALS_OK);
+       cached_access_token_md->num_entries, GRPC_CREDENTIALS_OK, NULL);
     grpc_credentials_md_store_unref(cached_access_token_md);
   } else {
     c->fetch_func(
@@ -404,7 +405,8 @@ static void access_token_get_request_metadata(
     grpc_polling_entity *pollent, grpc_auth_metadata_context context,
     grpc_credentials_metadata_cb cb, void *user_data) {
   grpc_access_token_credentials *c = (grpc_access_token_credentials *)creds;
-  cb(exec_ctx, user_data, c->access_token_md->entries, 1, GRPC_CREDENTIALS_OK);
+  cb(exec_ctx, user_data, c->access_token_md->entries, 1, GRPC_CREDENTIALS_OK,
+     NULL);
 }
 
 static grpc_call_credentials_vtable access_token_vtable = {

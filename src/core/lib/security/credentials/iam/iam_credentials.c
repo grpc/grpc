@@ -55,7 +55,7 @@ static void iam_get_request_metadata(grpc_exec_ctx *exec_ctx,
                                      void *user_data) {
   grpc_google_iam_credentials *c = (grpc_google_iam_credentials *)creds;
   cb(exec_ctx, user_data, c->iam_md->entries, c->iam_md->num_entries,
-     GRPC_CREDENTIALS_OK);
+     GRPC_CREDENTIALS_OK, NULL);
 }
 
 static grpc_call_credentials_vtable iam_vtable = {iam_destruct,

@@ -380,6 +380,21 @@
   {
     "args": [], 
     "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c", 
+    "name": "ev_epoll_linux_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "args": [], 
+    "ci_platforms": [
       "linux", 
       "mac", 
       "posix"
@@ -732,7 +747,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 3, 
+    "cpu_cost": 10, 
     "exclude_configs": [], 
     "flaky": false, 
     "gtest": false, 
@@ -753,7 +768,7 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 1, 
+    "cpu_cost": 10, 
     "exclude_configs": [], 
     "flaky": false, 
     "gtest": false, 
