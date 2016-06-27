@@ -32,11 +32,19 @@
  */
 
 
-#ifndef TEST_GRPC_C_COMPLETION_QUEUE_H
-#define TEST_GRPC_C_COMPLETION_QUEUE_H
+#ifndef TEST_GRPC_C_CLIENT_STREAMING_BLOCKING_CALL_H
+#define TEST_GRPC_C_CLIENT_STREAMING_BLOCKING_CALL_H
 
-#include "../completion_queue_public.h"
+#include "../client_streaming_blocking_call_public.h"
+#include "call_ops.h"
 
-bool GRPC_completion_queue_pluck_internal(GRPC_completion_queue *cq, void *tag);
+typedef struct grpc_client_writer {
+  grpc_call_op_set finish_ops;
 
-#endif //TEST_GRPC_C_COMPLETION_QUEUE_H
+  grpc_context *context;
+  grpc_call *call;
+  grpc_completion_queue *cq;
+  grpc_message *response;
+} grpc_client_writer;
+
+#endif //TEST_GRPC_C_CLIENT_STREAMING_BLOCKING_CALL_H

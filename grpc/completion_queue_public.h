@@ -49,6 +49,8 @@ typedef enum GRPC_completion_queue_next_status {
 } GRPC_completion_queue_operation_status;
 
 GRPC_completion_queue *GRPC_completion_queue_create();
+void GRPC_completion_queue_shutdown(GRPC_completion_queue *cq);
+void GRPC_completion_queue_destroy(GRPC_completion_queue *cq);
 void GRPC_completion_queue_shutdown_and_destroy(GRPC_completion_queue *cq);
 GRPC_completion_queue_operation_status GRPC_commit_ops_and_wait(GRPC_completion_queue *cq, void **tag, bool *ok);
 GRPC_completion_queue_operation_status GRPC_commit_ops_and_wait_deadline(GRPC_completion_queue *cq,
