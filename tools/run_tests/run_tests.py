@@ -390,7 +390,6 @@ class PythonLanguage(object):
     if self.config.build_config != 'gcov':
       return [self.config.job_spec(
           ['tools/run_tests/run_python.sh', tox_env],
-          None,
           environ=dict(environment.items() +
                        [('GRPC_PYTHON_TESTRUNNER_FILTER', suite_name)]),
           shortname='%s.test.%s' % (tox_env, suite_name),
@@ -399,7 +398,6 @@ class PythonLanguage(object):
           for tox_env in self._tox_envs]
     else:
       return [self.config.job_spec(['tools/run_tests/run_python.sh', tox_env],
-                                   None,
                                    environ=environment,
                                    shortname='%s.test.coverage' % tox_env,
                                    timeout_seconds=15*60)
