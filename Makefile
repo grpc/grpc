@@ -2580,6 +2580,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/iomgr_posix.c \
     src/core/lib/iomgr/iomgr_windows.c \
     src/core/lib/iomgr/load_file.c \
+    src/core/lib/iomgr/network_status_tracker.c \
     src/core/lib/iomgr/polling_entity.c \
     src/core/lib/iomgr/pollset_set_windows.c \
     src/core/lib/iomgr/pollset_windows.c \
@@ -2851,6 +2852,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/iomgr_posix.c \
     src/core/lib/iomgr/iomgr_windows.c \
     src/core/lib/iomgr/load_file.c \
+    src/core/lib/iomgr/network_status_tracker.c \
     src/core/lib/iomgr/polling_entity.c \
     src/core/lib/iomgr/pollset_set_windows.c \
     src/core/lib/iomgr/pollset_windows.c \
@@ -3191,6 +3193,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/iomgr_posix.c \
     src/core/lib/iomgr/iomgr_windows.c \
     src/core/lib/iomgr/load_file.c \
+    src/core/lib/iomgr/network_status_tracker.c \
     src/core/lib/iomgr/polling_entity.c \
     src/core/lib/iomgr/pollset_set_windows.c \
     src/core/lib/iomgr/pollset_windows.c \
@@ -6384,6 +6387,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/max_concurrent_streams.c \
     test/core/end2end/tests/max_message_length.c \
     test/core/end2end/tests/negative_deadline.c \
+    test/core/end2end/tests/network_status_change.c \
     test/core/end2end/tests/no_op.c \
     test/core/end2end/tests/payload.c \
     test/core/end2end/tests/ping.c \
@@ -6461,6 +6465,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/max_concurrent_streams.c \
     test/core/end2end/tests/max_message_length.c \
     test/core/end2end/tests/negative_deadline.c \
+    test/core/end2end/tests/network_status_change.c \
     test/core/end2end/tests/no_op.c \
     test/core/end2end/tests/payload.c \
     test/core/end2end/tests/ping.c \
