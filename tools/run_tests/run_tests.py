@@ -824,6 +824,8 @@ argp.add_argument('--update_submodules', default=[], nargs='*',
 argp.add_argument('-a', '--antagonists', default=0, type=int)
 argp.add_argument('-x', '--xml_report', default=None, type=str,
         help='Generates a JUnit-compatible XML report')
+argp.add_argument('--force_default_poller', default=False, action='store_const', const=True,
+                  help='Dont try to iterate over many polling strategies when they exist')
 args = argp.parse_args()
 
 jobset.measure_cpu_costs = args.measure_cpu_costs

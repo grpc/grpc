@@ -31,7 +31,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'BoringSSL'
-  s.version  = '2.0'
+  s.version  = '3.0'
   s.summary  = 'BoringSSL is a fork of OpenSSL that is designed to meet Google’s needs.'
   # Adapted from the homepage:
   s.description = <<-DESC
@@ -69,15 +69,19 @@ Pod::Spec.new do |s|
   s.source = { :git => 'https://boringssl.googlesource.com/boringssl',
                :tag => 'version_for_cocoapods_2.0' }
 
+  name = 'openssl'
+  s.module_name = name
+  s.header_dir = name
+
   s.source_files = 'ssl/*.{h,c}',
                    'ssl/**/*.{h,c}',
                    '*.{h,c}',
                    'crypto/*.{h,c}',
                    'crypto/**/*.{h,c}',
                    'include/openssl/*.h'
-
   s.public_header_files = 'include/openssl/*.h'
-  s.header_mappings_dir = 'include'
+  s.header_mappings_dir = 'include/openssl'
+  s.module_map = 'include/openssl/module.modulemap'
 
   s.exclude_files = "**/*_test.*"
 
@@ -91,6 +95,35 @@ Pod::Spec.new do |s|
     # OpenSSL in a Swift bridging header (complex.h defines "I", and it's as if the compiler
     # included it in every bridged header).
     sed -E -i '.back' 's/\\*I,/*i,/g' include/openssl/rsa.h
+
+    # Replace `#include "../crypto/internal.h"` in e_tls.c with `#include "../internal.h"`. The
+    # former assumes crypto/ is in the headers search path, which is hard to enforce when using
+    # dynamic frameworks. The latters always works, being relative to the current file.
+    sed -E -i '.back' 's/crypto\\///g' crypto/cipher/e_tls.c
+
+    # Add a module map and an umbrella header
+    cat > include/openssl/umbrella.h <<EOF
+      #include "ssl.h"
+      #include "crypto.h"
+
+    EOF
+    cat > include/openssl/module.modulemap <<EOF
+      framework module openssl {
+        umbrella header "umbrella.h"
+        export *
+        module * { export * }
+      }
+    EOF
+
+    # #include <inttypes.h> fails to compile when building a dynamic framework. libgit2 in
+    # https://github.com/libgit2/libgit2/commit/1ddada422caf8e72ba97dca2568d2bf879fed5f2 and libvpx
+    # in https://chromium.googlesource.com/webm/libvpx/+/1bec0c5a7e885ec792f6bb658eb3f34ad8f37b15
+    # work around it by removing the include. We need four of its macros, so we expand them here.
+    sed -E -i '.back' '/<inttypes.h>/d' include/openssl/bn.h
+    sed -E -i '.back' 's/PRIu32/"u"/g' include/openssl/bn.h
+    sed -E -i '.back' 's/PRIx32/"x"/g' include/openssl/bn.h
+    sed -E -i '.back' 's/PRIu64/"llu"/g' include/openssl/bn.h
+    sed -E -i '.back' 's/PRIx64/"llx"/g' include/openssl/bn.h
 
     # This is a bit ridiculous, but requiring people to install Go in order to build is slightly
     # more ridiculous IMO. To save you from scrolling, this is the last part of the podspec.

@@ -35,10 +35,10 @@
 
 
 Pod::Spec.new do |s|
-  s.name     = 'gRPC'
+  s.name     = 'gRPC-ProtoRPC'
   version = '0.14.0'
   s.version  = version
-  s.summary  = 'gRPC client library for iOS/OSX'
+  s.summary  = 'RPC library for Protocol Buffers, based on gRPC'
   s.homepage = 'http://www.grpc.io'
   s.license  = 'New BSD'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
@@ -51,18 +51,19 @@ Pod::Spec.new do |s|
   s.ios.deployment_target = '7.1'
   s.osx.deployment_target = '10.9'
 
-  name = 'GRPCClient'
+  name = 'ProtoRPC'
   s.module_name = name
   s.header_dir = name
 
-  src_dir = 'src/objective-c/GRPCClient'
-  s.source_files = "#{src_dir}/*.{h,m}", "#{src_dir}/**/*.{h,m}"
-  s.private_header_files = "#{src_dir}/private/*.h"
+  src_dir = 'src/objective-c/ProtoRPC'
+  s.source_files = "#{src_dir}/*.{h,m}"
   s.header_mappings_dir = "#{src_dir}"
 
-  s.dependency 'gRPC-Core', version
+  s.dependency 'gRPC', version
   s.dependency 'gRPC-RxLibrary', version
-
-  # Certificates, to be able to establish TLS connections:
-  s.resource_bundles = { 'gRPCCertificates' => ['etc/roots.pem'] }
+  s.dependency 'Protobuf', '~> 3.0.0-beta-3.1'
+  # This is needed by all pods that depend on Protobuf:
+  s.pod_target_xcconfig = {
+    'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=1',
+  }
 end
