@@ -41,6 +41,14 @@ GRPC_completion_queue *GRPC_completion_queue_create() {
   return grpc_completion_queue_create(NULL);
 }
 
+void GRPC_completion_queue_shutdown(GRPC_completion_queue *cq) {
+  grpc_completion_queue_shutdown(cq);
+}
+
+void GRPC_completion_queue_destroy(GRPC_completion_queue *cq) {
+  grpc_completion_queue_destroy(cq);
+}
+
 void GRPC_completion_queue_shutdown_and_destroy(GRPC_completion_queue *cq) {
   grpc_completion_queue_shutdown(cq);
   for (;;) {
@@ -83,4 +91,16 @@ GRPC_completion_queue_operation_status GRPC_commit_ops_and_wait_deadline(GRPC_co
 
 GRPC_completion_queue_operation_status GRPC_commit_ops_and_wait(GRPC_completion_queue *cq, void **tag, bool *ok) {
   return GRPC_commit_ops_and_wait_deadline(cq, gpr_inf_future(GPR_CLOCK_REALTIME), tag, ok);
+}
+
+bool GRPC_completion_queue_pluck_internal(GRPC_completion_queue *cq, void *tag) {
+  gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
+  grpc_event ev = grpc_completion_queue_pluck(cq, tag, deadline, NULL);
+  grpc_call_op_set *set = (grpc_call_op_set *) ev.tag;
+  GPR_ASSERT(set != NULL);
+  GPR_ASSERT(set->context != NULL);
+  GPR_ASSERT(set->user_tag == ev.tag);
+  // run post-processing
+  grpc_finish_op_from_call_set(*set, set->context);
+  return ev.success != 0;
 }
