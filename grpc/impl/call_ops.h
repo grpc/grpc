@@ -64,6 +64,7 @@ typedef struct grpc_call_op_set {
 
   // used in async calls
   void *user_tag;
+  bool *user_done;    // for clients reading a stream
 } grpc_call_op_set;
 
 void grpc_fill_op_from_call_set(const grpc_call_op_set set, const grpc_method *rpc_method, grpc_context *context,
