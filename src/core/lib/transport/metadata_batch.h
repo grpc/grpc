@@ -42,6 +42,10 @@
 #include <grpc/support/time.h>
 #include "src/core/lib/transport/metadata.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct grpc_linked_mdelem {
   grpc_mdelem *md;
   struct grpc_linked_mdelem *next;
@@ -125,6 +129,10 @@ void grpc_metadata_batch_assert_ok(grpc_metadata_batch *comd);
 #define grpc_metadata_batch_assert_ok(comd) \
   do {                                      \
   } while (0)
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H */

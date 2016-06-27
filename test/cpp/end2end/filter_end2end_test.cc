@@ -125,11 +125,11 @@ class CallDataImpl : public CallData {
       : CallData(channel_data) {}
 
   void StartTransportStreamOp(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
-                              grpc_transport_stream_op* op) GRPC_OVERRIDE {
+                              TransportStreamOp* op) GRPC_OVERRIDE {
     // Incrementing the counter could be done from the ctor, but we want
     // to test that the individual methods are actually called correctly.
-    if (op->recv_initial_metadata != nullptr) IncrementCallCounter();
-    grpc_call_next_op(exec_ctx, elem, op);
+    if (op->recv_initial_metadata() != nullptr) IncrementCallCounter();
+    grpc_call_next_op(exec_ctx, elem, op->op());
   }
 };
 

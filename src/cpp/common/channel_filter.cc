@@ -33,9 +33,24 @@
 
 #include <grpc++/channel_filter.h>
 
+#include <string.h>
+
 #include "src/core/lib/channel/channel_stack.h"
 
 namespace grpc {
+
+//
+// MetadataBatch
+//
+
+grpc_linked_mdelem* MetadataBatch::AddMetadata(
+    const string& key, const string& value) {
+  grpc_linked_mdelem *storage = new grpc_linked_mdelem;
+  memset(storage, 0, sizeof(grpc_linked_mdelem));
+  storage->md = grpc_mdelem_from_strings(key.c_str(), value.c_str());
+  grpc_metadata_batch_link_head(batch_, storage);
+  return storage;
+}
 
 //
 // ChannelData
@@ -43,8 +58,8 @@ namespace grpc {
 
 void ChannelData::StartTransportOp(grpc_exec_ctx *exec_ctx,
                                    grpc_channel_element *elem,
-                                   grpc_transport_op *op) {
-  grpc_channel_next_op(exec_ctx, elem, op);
+                                   TransportOp *op) {
+  grpc_channel_next_op(exec_ctx, elem, op->op());
 }
 
 //
@@ -53,8 +68,8 @@ void ChannelData::StartTransportOp(grpc_exec_ctx *exec_ctx,
 
 void CallData::StartTransportStreamOp(grpc_exec_ctx *exec_ctx,
                                       grpc_call_element *elem,
-                                      grpc_transport_stream_op *op) {
-  grpc_call_next_op(exec_ctx, elem, op);
+                                      TransportStreamOp *op) {
+  grpc_call_next_op(exec_ctx, elem, op->op());
 }
 
 void CallData::SetPollsetOrPollsetSet(grpc_exec_ctx *exec_ctx,
