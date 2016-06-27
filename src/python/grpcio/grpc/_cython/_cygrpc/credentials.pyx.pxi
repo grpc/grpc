@@ -82,7 +82,7 @@ cdef class ServerCredentials:
 
 cdef class CredentialsMetadataPlugin:
 
-  def __cinit__(self, object plugin_callback, name):
+  def __cinit__(self, object plugin_callback, bytes name):
     """
     Args:
       plugin_callback (callable): Callback accepting a service URL (str/bytes)
@@ -91,9 +91,8 @@ cdef class CredentialsMetadataPlugin:
         when called should be non-blocking and eventually call the callback
         object with the appropriate status code/details and metadata (if
         successful).
-      name (str): Plugin name.
+      name (bytes): Plugin name.
     """
-    name = str_to_bytes(name)
     if not callable(plugin_callback):
       raise ValueError('expected callable plugin_callback')
     self.plugin_callback = plugin_callback
@@ -130,8 +129,7 @@ cdef void plugin_get_metadata(
     grpc_credentials_plugin_metadata_cb cb, void *user_data) with gil:
   def python_callback(
       Metadata metadata, grpc_status_code status,
-      error_details):
-    error_details = str_to_bytes(error_details)
+      bytes error_details):
     cb(user_data, metadata.c_metadata_array.metadata,
        metadata.c_metadata_array.count, status, error_details)
   cdef CredentialsMetadataPlugin self = <CredentialsMetadataPlugin>state
