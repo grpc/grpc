@@ -189,10 +189,11 @@ void grpc_channel_watch_connectivity_state(
   GRPC_API_TRACE(
       "grpc_channel_watch_connectivity_state("
       "channel=%p, last_observed_state=%d, "
-      "deadline=gpr_timespec { tv_sec: %"PRId64", tv_nsec: %d, clock_type: %d }, "
+      "deadline=gpr_timespec { tv_sec: %" PRId64
+      ", tv_nsec: %d, clock_type: %d }, "
       "cq=%p, tag=%p)",
-      7, (channel, (int)last_observed_state, deadline.tv_sec,
-          deadline.tv_nsec, (int)deadline.clock_type, cq, tag));
+      7, (channel, (int)last_observed_state, deadline.tv_sec, deadline.tv_nsec,
+          (int)deadline.clock_type, cq, tag));
 
   grpc_cq_begin_op(cq, tag);
 
