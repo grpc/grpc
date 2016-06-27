@@ -33,7 +33,6 @@
 import argparse
 import ast
 import glob
-import hashlib
 import itertools
 import json
 import multiprocessing
@@ -63,7 +62,7 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {}
 
 
 _POLLING_STRATEGIES = {
-  'linux': ['poll', 'legacy']
+  'linux': ['epoll', 'poll', 'legacy']
 }
 
 
@@ -78,24 +77,18 @@ class Config(object):
     if environ is None:
       environ = {}
     self.build_config = config
-    self.allow_hashing = (config != 'gcov')
     self.environ = environ
     self.environ['CONFIG'] = config
     self.tool_prefix = tool_prefix
     self.timeout_multiplier = timeout_multiplier
 
-  def job_spec(self, cmdline, hash_targets, timeout_seconds=5*60,
+  def job_spec(self, cmdline, timeout_seconds=5*60,
                shortname=None, environ={}, cpu_cost=1.0, flaky=False):
     """Construct a jobset.JobSpec for a test under this config
 
        Args:
          cmdline:      a list of strings specifying the command line the test
                        would like to run
-         hash_targets: either None (don't do caching of test results), or
-                       a list of strings specifying files to include in a
-                       binary hash to check if a test has changed
-                       -- if used, all artifacts needed to run the test must
-                          be listed
     """
     actual_environ = self.environ.copy()
     for k, v in environ.iteritems():
@@ -105,8 +98,6 @@ class Config(object):
                           environ=actual_environ,
                           cpu_cost=cpu_cost,
                           timeout_seconds=(self.timeout_multiplier * timeout_seconds if timeout_seconds else None),
-                          hash_targets=hash_targets
-                              if self.allow_hashing else None,
                           flake_retries=5 if flaky or args.allow_flakes else 0,
                           timeout_retries=3 if args.allow_flakes else 0)
 
@@ -399,7 +390,6 @@ class PythonLanguage(object):
     if self.config.build_config != 'gcov':
       return [self.config.job_spec(
           ['tools/run_tests/run_python.sh', tox_env],
-          None,
           environ=dict(environment.items() +
                        [('GRPC_PYTHON_TESTRUNNER_FILTER', suite_name)]),
           shortname='%s.test.%s' % (tox_env, suite_name),
@@ -408,7 +398,6 @@ class PythonLanguage(object):
           for tox_env in self._tox_envs]
     else:
       return [self.config.job_spec(['tools/run_tests/run_python.sh', tox_env],
-                                   None,
                                    environ=environment,
                                    shortname='%s.test.coverage' % tox_env,
                                    timeout_seconds=15*60)
@@ -425,7 +414,7 @@ class PythonLanguage(object):
     return []
 
   def build_steps(self):
-    return [['tools/run_tests/build_python.sh', tox_env] 
+    return [['tools/run_tests/build_python.sh', tox_env]
             for tox_env in self._tox_envs]
 
   def post_tests_steps(self):
@@ -460,7 +449,7 @@ class RubyLanguage(object):
     _check_compiler(self.args.compiler, ['default'])
 
   def test_specs(self):
-    return [self.config.job_spec(['tools/run_tests/run_ruby.sh'], None,
+    return [self.config.job_spec(['tools/run_tests/run_ruby.sh'],
                                  timeout_seconds=10*60,
                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
@@ -670,7 +659,7 @@ class Sanity(object):
   def test_specs(self):
     import yaml
     with open('tools/run_tests/sanity/sanity_tests.yaml', 'r') as f:
-      return [self.config.job_spec(cmd['script'].split(), None,
+      return [self.config.job_spec(cmd['script'].split(),
                                    timeout_seconds=None, environ={'TEST': 'true'},
                                    cpu_cost=cmd.get('cpu_cost', 1))
               for cmd in yaml.load(f)]
@@ -1058,46 +1047,6 @@ runs_per_test = args.runs_per_test
 forever = args.forever
 
 
-class TestCache(object):
-  """Cache for running tests."""
-
-  def __init__(self, use_cache_results):
-    self._last_successful_run = {}
-    self._use_cache_results = use_cache_results
-    self._last_save = time.time()
-
-  def should_run(self, cmdline, bin_hash):
-    if cmdline not in self._last_successful_run:
-      return True
-    if self._last_successful_run[cmdline] != bin_hash:
-      return True
-    if not self._use_cache_results:
-      return True
-    return False
-
-  def finished(self, cmdline, bin_hash):
-    self._last_successful_run[cmdline] = bin_hash
-    if time.time() - self._last_save > 1:
-      self.save()
-
-  def dump(self):
-    return [{'cmdline': k, 'hash': v}
-            for k, v in self._last_successful_run.iteritems()]
-
-  def parse(self, exdump):
-    self._last_successful_run = dict((o['cmdline'], o['hash']) for o in exdump)
-
-  def save(self):
-    with open('.run_tests_cache', 'w') as f:
-      f.write(json.dumps(self.dump()))
-    self._last_save = time.time()
-
-  def maybe_load(self):
-    if os.path.exists('.run_tests_cache'):
-      with open('.run_tests_cache') as f:
-        self.parse(json.loads(f.read()))
-
-
 def _start_port_server(port_server_port):
   # check if a compatible port server is running
   # if incompatible (version mismatch) ==> start a new one
@@ -1217,7 +1166,7 @@ class BuildAndRunError(object):
 
 # returns a list of things that failed (or an empty list on success)
 def _build_and_run(
-    check_cancelled, newline_on_success, cache, xml_report=None, build_only=False):
+    check_cancelled, newline_on_success, xml_report=None, build_only=False):
   """Do one pass of building & running tests."""
   # build latest sequentially
   num_failures, resultset = jobset.run(
@@ -1266,7 +1215,6 @@ def _build_and_run(
         all_runs, check_cancelled, newline_on_success=newline_on_success,
         travis=args.travis, infinite_runs=infinite_runs, maxjobs=args.jobs,
         stop_on_failure=args.stop_on_failure,
-        cache=cache if not xml_report else None,
         add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
     if resultset:
       for k, v in sorted(resultset.items()):
@@ -1295,13 +1243,8 @@ def _build_and_run(
   if num_test_failures:
     out.append(BuildAndRunError.TEST)
 
-  if cache: cache.save()
-
   return out
 
-
-test_cache = TestCache(runs_per_test == 1)
-test_cache.maybe_load()
 
 if forever:
   success = True
@@ -1312,7 +1255,6 @@ if forever:
     previous_success = success
     errors = _build_and_run(check_cancelled=have_files_changed,
                             newline_on_success=False,
-                            cache=test_cache,
                             build_only=args.build_only) == 0
     if not previous_success and not errors:
       jobset.message('SUCCESS',
@@ -1324,7 +1266,6 @@ if forever:
 else:
   errors = _build_and_run(check_cancelled=lambda: False,
                           newline_on_success=args.newline_on_success,
-                          cache=test_cache,
                           xml_report=args.xml_report,
                           build_only=args.build_only)
   if not errors:
