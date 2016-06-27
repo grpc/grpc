@@ -439,6 +439,9 @@ typedef struct {
   bool seen_error;
   bool exceeded_metadata_size;
 
+  /** the error that resulted in this stream being removed */
+  grpc_error *removal_error;
+
   bool published_initial_metadata;
   bool published_trailing_metadata;
   bool final_metadata_requested;

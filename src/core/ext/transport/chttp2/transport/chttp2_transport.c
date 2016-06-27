@@ -594,6 +594,7 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_incoming_metadata_buffer_destroy(
       &s->global.received_trailing_metadata);
   gpr_slice_buffer_destroy(&s->writing.flow_controlled_buffer);
+  GRPC_ERROR_UNREF(s->global.removal_error);
 
   UNREF_TRANSPORT(exec_ctx, t, "stream");
 
@@ -1316,15 +1317,15 @@ static void remove_stream(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   }
   if (s->parsing.data_parser.parsing_frame != NULL) {
     grpc_chttp2_incoming_byte_stream_finished(
-        exec_ctx, s->parsing.data_parser.parsing_frame,
-        GRPC_ERROR_CREATE_REFERENCING("Stream removed", &error, 1), 0);
+        exec_ctx, s->parsing.data_parser.parsing_frame, GRPC_ERROR_REF(error),
+        0);
     s->parsing.data_parser.parsing_frame = NULL;
   }
 
   if (grpc_chttp2_unregister_stream(t, s) && t->global.sent_goaway) {
     close_transport_locked(
-        exec_ctx, t,
-        GRPC_ERROR_CREATE("Last stream closed after sending GOAWAY"));
+        exec_ctx, t, GRPC_ERROR_CREATE_REFERENCING(
+                         "Last stream closed after sending GOAWAY", &error, 1));
   }
   if (grpc_chttp2_list_remove_writable_stream(&t->global, &s->global)) {
     GRPC_CHTTP2_STREAM_UNREF(exec_ctx, &s->global, "chttp2_writing");
@@ -1451,6 +1452,7 @@ void grpc_chttp2_mark_stream_closed(
     }
   }
   if (stream_global->read_closed && stream_global->write_closed) {
+    stream_global->removal_error = GRPC_ERROR_REF(error);
     if (stream_global->id != 0 &&
         TRANSPORT_FROM_GLOBAL(transport_global)->executor.parsing_active) {
       grpc_chttp2_list_add_closed_waiting_for_parsing(transport_global,
@@ -1765,7 +1767,7 @@ static void post_parse_locked(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     GPR_ASSERT(stream_global->write_closed);
     GPR_ASSERT(stream_global->read_closed);
     remove_stream(exec_ctx, t, stream_global->id,
-                  GRPC_ERROR_CREATE("Stream removed"));
+                  GRPC_ERROR_REF(stream_global->removal_error));
     GRPC_CHTTP2_STREAM_UNREF(exec_ctx, stream_global, "chttp2");
   }
 
