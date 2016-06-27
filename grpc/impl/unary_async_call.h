@@ -42,6 +42,7 @@ typedef struct grpc_client_async_response_reader {
   grpc_call_op_set meta_buf;
   grpc_call_op_set finish_buf;
 
+  grpc_completion_queue *cq;
   grpc_context *context;
   grpc_call *call;
 } grpc_client_async_response_reader;
