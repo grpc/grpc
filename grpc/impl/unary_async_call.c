@@ -80,7 +80,7 @@ GRPC_client_async_response_reader *GRPC_unary_async_call(GRPC_channel *channel, 
 
   size_t nops;
   grpc_op ops[GRPC_MAX_OP_COUNT];
-  grpc_fill_op_from_call_set(reader->init_buf, &rpc_method, context, request, NULL, ops, &nops);
+  grpc_fill_op_from_call_set(&reader->init_buf, &rpc_method, context, request, NULL, ops, &nops);
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops, nops, TAG(&reader->init_buf), NULL));
 
   return reader;
@@ -90,7 +90,7 @@ void GRPC_client_async_read_metadata(GRPC_client_async_response_reader *reader, 
   size_t nops;
   grpc_op ops[GRPC_MAX_OP_COUNT];
   reader->meta_buf.user_tag = tag;
-  grpc_fill_op_from_call_set(reader->meta_buf, &reader->context->rpc_method, reader->context, (GRPC_message) { }, NULL, ops, &nops);
+  grpc_fill_op_from_call_set(&reader->meta_buf, &reader->context->rpc_method, reader->context, (GRPC_message) { }, NULL, ops, &nops);
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(reader->context->call, ops, nops, TAG(&reader->finish_buf), NULL));
 }
 
@@ -98,7 +98,7 @@ void GRPC_client_async_finish(GRPC_client_async_response_reader *reader, GRPC_me
   size_t nops;
   grpc_op ops[GRPC_MAX_OP_COUNT];
   reader->finish_buf.user_tag = tag;
-  grpc_fill_op_from_call_set(reader->finish_buf, &reader->context->rpc_method, reader->context, (GRPC_message) { }, response, ops, &nops);
+  grpc_fill_op_from_call_set(&reader->finish_buf, &reader->context->rpc_method, reader->context, (GRPC_message) { }, response, ops, &nops);
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(reader->context->call, ops, nops, TAG(&reader->finish_buf), NULL));
 }
 
