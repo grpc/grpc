@@ -54,8 +54,11 @@ To know about the list of available commands, do this:
 `./tools/run_tests/run_tests.py -h`
 
 If you are running tests for ObjC on osx, follow these steps before running tests:
+* install Xcode command-line tools by running
+`sudo xcode-select --install`
 * install macports from https://www.macports.org/install.php
 * install autoconf, automake, libtool, gflags, cmake using macports
+* restart your terminal window or run source ~/.bash_profile to pick up the new PATH changes.
 
 ## Adding or removing source code
 
