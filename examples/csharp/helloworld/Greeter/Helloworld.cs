@@ -31,9 +31,9 @@ namespace Helloworld {
             "cm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
-          new pbr::GeneratedCodeInfo(null, new pbr::GeneratedCodeInfo[] {
-            new pbr::GeneratedCodeInfo(typeof(global::Helloworld.HelloRequest), global::Helloworld.HelloRequest.Parser, new[]{ "Name" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Helloworld.HelloReply), global::Helloworld.HelloReply.Parser, new[]{ "Message" }, null, null, null)
+          new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::Helloworld.HelloRequest), global::Helloworld.HelloRequest.Parser, new[]{ "Name" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Helloworld.HelloReply), global::Helloworld.HelloReply.Parser, new[]{ "Message" }, null, null, null)
           }));
     }
     #endregion
@@ -76,7 +76,7 @@ namespace Helloworld {
     public string Name {
       get { return name_; }
       set {
-        name_ = pb::Preconditions.CheckNotNull(value, "value");
+        name_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
@@ -182,7 +182,7 @@ namespace Helloworld {
     public string Message {
       get { return message_; }
       set {
-        message_ = pb::Preconditions.CheckNotNull(value, "value");
+        message_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
