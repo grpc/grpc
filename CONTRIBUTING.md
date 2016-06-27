@@ -53,6 +53,10 @@ To know about the list of available commands, do this:
 
 `./tools/run_tests/run_tests.py -h`
 
+If you are running tests for ObjC on osx, follow these steps before running tests:
+* install macports from https://www.macports.org/install.php
+* install autoconf, automake, libtool, gflags, cmake using macports
+
 ## Adding or removing source code
 
 Each language uses its own build system to work. Currently, the root's Makefile
