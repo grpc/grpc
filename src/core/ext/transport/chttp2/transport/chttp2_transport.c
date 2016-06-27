@@ -642,6 +642,8 @@ static void finish_global_actions(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_executor_action_header *hdr;
   grpc_chttp2_executor_action_header *next;
 
+  GPR_TIMER_BEGIN("finish_global_actions", 0);
+
   for (;;) {
     if (!t->executor.writing_active && !t->closed &&
         grpc_chttp2_unlocking_check_writes(exec_ctx, &t->global, &t->writing)) {
@@ -659,7 +661,9 @@ static void finish_global_actions(grpc_exec_ctx *exec_ctx,
           NULL;
       gpr_mu_unlock(&t->executor.mu);
       while (hdr != NULL) {
+        GPR_TIMER_BEGIN("chttp2:locked_action", 0);
         hdr->action(exec_ctx, t, hdr->stream, hdr->arg);
+        GPR_TIMER_END("chttp2:locked_action", 0);
         next = hdr->next;
         gpr_free(hdr);
         UNREF_TRANSPORT(exec_ctx, t, "pending_action");
@@ -672,6 +676,8 @@ static void finish_global_actions(grpc_exec_ctx *exec_ctx,
     gpr_mu_unlock(&t->executor.mu);
     break;
   }
+
+  GPR_TIMER_END("finish_global_actions", 0);
 }
 
 void grpc_chttp2_run_with_global_lock(grpc_exec_ctx *exec_ctx,
@@ -681,6 +687,8 @@ void grpc_chttp2_run_with_global_lock(grpc_exec_ctx *exec_ctx,
                                       void *arg, size_t sizeof_arg) {
   grpc_chttp2_executor_action_header *hdr;
 
+  GPR_TIMER_BEGIN("grpc_chttp2_run_with_global_lock", 0);
+
   REF_TRANSPORT(t, "run_global");
   gpr_mu_lock(&t->executor.mu);
 
@@ -689,7 +697,9 @@ void grpc_chttp2_run_with_global_lock(grpc_exec_ctx *exec_ctx,
       t->executor.global_active = 1;
       gpr_mu_unlock(&t->executor.mu);
 
+      GPR_TIMER_BEGIN("chttp2:locked_action", 0);
       action(exec_ctx, t, optional_stream, arg);
+      GPR_TIMER_END("chttp2:locked_action", 0);
 
       finish_global_actions(exec_ctx, t);
     } else {
@@ -726,6 +736,8 @@ void grpc_chttp2_run_with_global_lock(grpc_exec_ctx *exec_ctx,
   }
 
   UNREF_TRANSPORT(exec_ctx, t, "run_global");
+
+  GPR_TIMER_END("grpc_chttp2_run_with_global_lock", 0);
 }
 
 /*******************************************************************************
