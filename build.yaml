@@ -2352,16 +2352,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: timers_test
-  build: test
-  language: c
-  src:
-  - test/core/profiling/timers_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
 - name: transport_connectivity_state_test
   build: test
   language: c
