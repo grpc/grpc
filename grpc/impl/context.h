@@ -50,7 +50,6 @@ typedef struct grpc_context {
   grpc_metadata_array recv_metadata_array;
   grpc_metadata_array trailing_metadata_array;
   gpr_timespec deadline;
-  grpc_byte_buffer *recv_buffer;
 
   // serialization mechanism used in this call
   GRPC_serializer serialize;
@@ -64,7 +63,6 @@ typedef struct grpc_context {
   bool message_received;
   GRPC_method rpc_method;
   grpc_channel *channel;
-  grpc_message *response;
   grpc_call *call;
 } grpc_context;
 

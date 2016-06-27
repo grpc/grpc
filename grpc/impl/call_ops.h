@@ -43,9 +43,10 @@
 
 typedef GRPC_method grpc_method;
 typedef struct grpc_context grpc_context;
+typedef struct grpc_call_op_set grpc_call_op_set;
 
-typedef bool (*grpc_op_filler)(grpc_op *op, const grpc_method *, grpc_context *, const grpc_message message, grpc_message *response);
-typedef void (*grpc_op_finisher)(grpc_context *, bool *status, int max_message_size);
+typedef bool (*grpc_op_filler)(grpc_op *op, const grpc_method *, grpc_context *, grpc_call_op_set *, const grpc_message message, grpc_message *response);
+typedef void (*grpc_op_finisher)(grpc_context *, grpc_call_op_set *, bool *status, int max_message_size);
 
 typedef struct grpc_op_manager {
   const grpc_op_filler fill;
@@ -58,6 +59,10 @@ typedef struct grpc_call_op_set {
   const grpc_op_manager op_managers[GRPC_MAX_OP_COUNT];
   grpc_context * const context;
 
+  /* these are used by individual operations */
+  grpc_message *response;
+  grpc_byte_buffer *recv_buffer;
+
   /* if this is true (default false), the event tagged by this call_op_set will not be emitted
    * from the completion queue wrapper. */
   bool hide_from_user;
@@ -67,10 +72,10 @@ typedef struct grpc_call_op_set {
   bool *user_done;    // for clients reading a stream
 } grpc_call_op_set;
 
-void grpc_fill_op_from_call_set(const grpc_call_op_set set, const grpc_method *rpc_method, grpc_context *context,
+void grpc_fill_op_from_call_set(grpc_call_op_set *set, const grpc_method *rpc_method, grpc_context *context,
                                 const grpc_message message, void *response, grpc_op ops[], size_t *nops);
 
-void grpc_finish_op_from_call_set(const grpc_call_op_set set, grpc_context *context);
+void grpc_finish_op_from_call_set(grpc_call_op_set *set, grpc_context *context);
 
 /* list of operations */
 
