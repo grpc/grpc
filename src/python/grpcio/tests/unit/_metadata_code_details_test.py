@@ -189,7 +189,7 @@ class MetadataCodeDetailsTest(unittest.TestCase):
     self._servicer = _Servicer()
     self._server_pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
     self._server = grpc.server(
-        (_generic_handler(self._servicer),), self._server_pool)
+        self._server_pool, handlers=(_generic_handler(self._servicer),))
     port = self._server.add_insecure_port('[::]:0')
     self._server.start()
 

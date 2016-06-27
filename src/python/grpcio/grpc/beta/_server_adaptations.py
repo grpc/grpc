@@ -364,4 +364,5 @@ def server(
         _DEFAULT_POOL_SIZE if thread_pool_size is None else thread_pool_size)
   else:
     effective_thread_pool = thread_pool
-  return _Server(grpc.server((generic_rpc_handler,), effective_thread_pool))
+  return _Server(
+      grpc.server(effective_thread_pool, handlers=(generic_rpc_handler,)))
