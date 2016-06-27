@@ -366,6 +366,46 @@ class NamedTests
     op.wait
   end
 
+  # TODO(yangg) use constants instead of hardcoded values
+  def client_compressed_unary
+    metadata_key = 'grpc-internal-encoding-request'
+    compression_none = 'identity'
+    compression_gzip = 'gzip'
+    req_size, wanted_response_size = 271_828, 314_159
+    payload = Payload.new(body: nulls(req_size))
+    expect_compressed = BoolValue.new(value: true)
+    req = SimpleRequest.new(response_size: wanted_response_size,
+                            payload: payload,
+                            expect_compressed: expect_compressed)
+    begin
+      resp = @stub.unary_call(req, metadata: {metadata_key => compression_none})
+      fail 'Should have raised GRPC::BadStatus(INVALID_ARGUMENT)'
+    rescue GRPC::BadStatus => e
+      assert("#{__callee__}: status should be INVALID_ARGUMENT") do
+        e.code == GRPC::Core::StatusCodes::INVALID_ARGUMENT
+      end
+    end
+    compressions = [true, false]
+    compressions.each do |compression|
+      if compression
+        metadata = {metadata_key => compression_gzip}
+      else
+        metadata = {metadata_key => compression_none}
+      end
+      expect_compressed = BoolValue.new(value: compression)
+      req = SimpleRequest.new(response_size: wanted_response_size,
+                              payload: payload,
+                              expect_compressed: expect_compressed)
+      resp = @stub.unary_call(req, metadata: metadata)
+      assert('payload body has the wrong length') do
+        wanted_response_size == resp.payload.body.length
+      end
+      assert('payload body is invalid') do
+        nulls(wanted_response_size) == resp.payload.body
+      end
+    end
+  end
+
   def all
     all_methods = NamedTests.instance_methods(false).map(&:to_s)
     all_methods.each do |m|
