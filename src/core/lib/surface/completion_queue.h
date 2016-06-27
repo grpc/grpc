@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,6 +39,8 @@
 #include <grpc/grpc.h>
 #include "src/core/lib/iomgr/pollset.h"
 
+extern int grpc_trace_operation_failures;
+
 typedef struct grpc_cq_completion {
   /** user supplied tag */
   void *tag;
@@ -75,13 +77,16 @@ void grpc_cq_begin_op(grpc_completion_queue *cc, void *tag);
 /* Queue a GRPC_OP_COMPLETED operation; tag must correspond to the tag passed to
    grpc_cq_begin_op */
 void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
-                    void *tag, int success,
+                    void *tag, grpc_error *error,
                     void (*done)(grpc_exec_ctx *exec_ctx, void *done_arg,
                                  grpc_cq_completion *storage),
                     void *done_arg, grpc_cq_completion *storage);
 
 grpc_pollset *grpc_cq_pollset(grpc_completion_queue *cc);
+grpc_completion_queue *grpc_cq_from_pollset(grpc_pollset *ps);
 
+void grpc_cq_mark_non_listening_server_cq(grpc_completion_queue *cc);
+bool grpc_cq_is_non_listening_server_cq(grpc_completion_queue *cc);
 void grpc_cq_mark_server_cq(grpc_completion_queue *cc);
 int grpc_cq_is_server_cq(grpc_completion_queue *cc);
 

@@ -114,7 +114,7 @@ class ConnectivityState(enum.IntEnum):
   CONNECTING        = cygrpc.ConnectivityState.connecting
   READY             = cygrpc.ConnectivityState.ready
   TRANSIENT_FAILURE = cygrpc.ConnectivityState.transient_failure
-  FATAL_FAILURE     = cygrpc.ConnectivityState.fatal_failure
+  FATAL_FAILURE     = cygrpc.ConnectivityState.shutdown
 
 
 class Status(collections.namedtuple(
@@ -152,7 +152,7 @@ class OpArgs(collections.namedtuple(
         'trailing_metadata',
         'message',
         'status',
-        'write_flags',
+        'flags',
     ])):
   """Arguments passed into a GRPC operation.
 
@@ -165,7 +165,7 @@ class OpArgs(collections.namedtuple(
     message (bytes): Only valid if type == OpType.SEND_MESSAGE, else is None.
     status (Status): Only valid if type == OpType.SEND_STATUS_FROM_SERVER, else
       is None.
-    write_flags (int): a bit OR'ing of 0 or more OpWriteFlags values.
+    flags (int): a bitwise OR'ing of 0 or more OpWriteFlags values.
   """
 
   @staticmethod

@@ -31,6 +31,7 @@
  *
  */
 
+#include <cinttypes>
 #include <memory>
 #include <thread>
 
@@ -199,6 +200,27 @@ class Verifier {
   bool spin_;
 };
 
+// This class disables the server builder plugins that may add sync services to
+// the server. If there are sync services, UnimplementedRpc test will triger
+// the sync unkown rpc routine on the server side, rather than the async one
+// that needs to be tested here.
+class ServerBuilderSyncPluginDisabler : public ::grpc::ServerBuilderOption {
+ public:
+  void UpdateArguments(ChannelArguments* arg) GRPC_OVERRIDE {}
+
+  void UpdatePlugins(std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins)
+      GRPC_OVERRIDE {
+    auto plugin = plugins->begin();
+    while (plugin != plugins->end()) {
+      if ((*plugin)->has_sync_methods()) {
+        plugins->erase(plugin++);
+      } else {
+        plugin++;
+      }
+    }
+  }
+};
+
 class TestScenario {
  public:
   TestScenario(bool non_block, const grpc::string& creds_type,
@@ -207,13 +229,17 @@ class TestScenario {
         credentials_type(creds_type),
         message_content(content) {}
   void Log() const {
-    gpr_log(GPR_INFO,
-            "Scenario: disable_blocking %d, credentials %s, message size %d",
-            disable_blocking, credentials_type.c_str(), message_content.size());
+    gpr_log(
+        GPR_INFO,
+        "Scenario: disable_blocking %d, credentials %s, message size %" PRIuPTR,
+        disable_blocking, credentials_type.c_str(), message_content.size());
   }
   bool disable_blocking;
-  const grpc::string credentials_type;
-  const grpc::string message_content;
+  // Although the below grpc::string's are logically const, we can't declare
+  // them const because of a limitation in the way old compilers (e.g., gcc-4.4)
+  // manage vector insertion using a copy constructor
+  grpc::string credentials_type;
+  grpc::string message_content;
 };
 
 class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
@@ -223,8 +249,8 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
   void SetUp() GRPC_OVERRIDE {
     poll_overrider_.reset(new PollingOverrider(!GetParam().disable_blocking));
 
-    int port = grpc_pick_unused_port_or_die();
-    server_address_ << "localhost:" << port;
+    port_ = grpc_pick_unused_port_or_die();
+    server_address_ << "localhost:" << port_;
 
     // Setup server
     ServerBuilder builder;
@@ -232,6 +258,12 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
     builder.AddListeningPort(server_address_.str(), server_creds);
     builder.RegisterService(&service_);
     cq_ = builder.AddCompletionQueue();
+
+    // TODO(zyc): make a test option to choose wheather sync plugins should be
+    // deleted
+    std::unique_ptr<ServerBuilderOption> sync_plugin_disabler(
+        new ServerBuilderSyncPluginDisabler());
+    builder.SetOption(move(sync_plugin_disabler));
     server_ = builder.BuildAndStart();
 
     gpr_tls_set(&g_is_async_end2end_test, 1);
@@ -246,6 +278,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
       ;
     poll_overrider_.reset();
     gpr_tls_set(&g_is_async_end2end_test, 0);
+    grpc_recycle_unused_port(port_);
   }
 
   void ResetStub() {
@@ -297,6 +330,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
   std::unique_ptr<Server> server_;
   grpc::testing::EchoTestService::AsyncService service_;
   std::ostringstream server_address_;
+  int port_;
 
   std::unique_ptr<PollingOverrider> poll_overrider_;
 };
@@ -789,7 +823,7 @@ TEST_P(AsyncEnd2endTest, ServerCheckCancellation) {
   EXPECT_TRUE(srv_ctx.IsCancelled());
 
   response_reader->Finish(&recv_response, &recv_status, tag(4));
-  Verifier(GetParam().disable_blocking).Expect(4, false).Verify(cq_.get());
+  Verifier(GetParam().disable_blocking).Expect(4, true).Verify(cq_.get());
 
   EXPECT_EQ(StatusCode::CANCELLED, recv_status.error_code());
 }
@@ -851,7 +885,7 @@ TEST_P(AsyncEnd2endTest, UnimplementedRpc) {
       stub->AsyncUnimplemented(&cli_ctx, send_request, cq_.get()));
 
   response_reader->Finish(&recv_response, &recv_status, tag(4));
-  Verifier(GetParam().disable_blocking).Expect(4, false).Verify(cq_.get());
+  Verifier(GetParam().disable_blocking).Expect(4, true).Verify(cq_.get());
 
   EXPECT_EQ(StatusCode::UNIMPLEMENTED, recv_status.error_code());
   EXPECT_EQ("", recv_status.error_message());
@@ -909,7 +943,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
 
     // Client sends 3 messages (tags 3, 4 and 5)
     for (int tag_idx = 3; tag_idx <= 5; tag_idx++) {
-      send_request.set_message("Ping " + std::to_string(tag_idx));
+      send_request.set_message("Ping " + grpc::to_string(tag_idx));
       cli_stream->Write(send_request, tag(tag_idx));
       Verifier(GetParam().disable_blocking)
           .Expect(tag_idx, true)
@@ -996,9 +1030,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
 
     // Client will see the cancellation
     cli_stream->Finish(&recv_status, tag(10));
-    // TODO(sreek): The expectation here should be true. This is a bug (github
-    // issue #4972)
-    Verifier(GetParam().disable_blocking).Expect(10, false).Verify(cq_.get());
+    Verifier(GetParam().disable_blocking).Expect(10, true).Verify(cq_.get());
     EXPECT_FALSE(recv_status.ok());
     EXPECT_EQ(::grpc::StatusCode::CANCELLED, recv_status.error_code());
   }
@@ -1077,7 +1109,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     // Server sends three messages (tags 3, 4 and 5)
     // But if want_done tag is true, we might also see tag 11
     for (int tag_idx = 3; tag_idx <= 5; tag_idx++) {
-      send_response.set_message("Pong " + std::to_string(tag_idx));
+      send_response.set_message("Pong " + grpc::to_string(tag_idx));
       srv_stream.Write(send_response, tag(tag_idx));
       // Note that we'll add something to the verifier and verify that
       // something was seen, but it might be tag 11 and not what we
@@ -1368,9 +1400,9 @@ std::vector<TestScenario> CreateTestScenarios(bool test_disable_blocking,
   for (auto cred = credentials_types.begin(); cred != credentials_types.end();
        ++cred) {
     for (auto msg = messages.begin(); msg != messages.end(); msg++) {
-      scenarios.push_back(TestScenario(false, *cred, *msg));
+      scenarios.emplace_back(false, *cred, *msg);
       if (test_disable_blocking) {
-        scenarios.push_back(TestScenario(true, *cred, *msg));
+        scenarios.emplace_back(true, *cred, *msg);
       }
     }
   }

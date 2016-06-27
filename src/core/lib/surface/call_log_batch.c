@@ -112,7 +112,7 @@ void grpc_call_log_batch(char *file, int line, gpr_log_severity severity,
   size_t i;
   for (i = 0; i < nops; i++) {
     tmp = grpc_op_string(&ops[i]);
-    gpr_log(file, line, severity, "ops[%d]: %s", i, tmp);
+    gpr_log(file, line, severity, "ops[%" PRIuPTR "]: %s", i, tmp);
     gpr_free(tmp);
   }
 }

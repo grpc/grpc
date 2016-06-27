@@ -63,6 +63,12 @@ static void test_no_op(void) {
   shutdown_and_destroy(grpc_completion_queue_create(NULL));
 }
 
+static void test_pollset_conversion(void) {
+  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+  GPR_ASSERT(grpc_cq_from_pollset(grpc_cq_pollset(cq)) == cq);
+  shutdown_and_destroy(cq);
+}
+
 static void test_wait_empty(void) {
   grpc_completion_queue *cc;
   grpc_event event;
@@ -90,8 +96,8 @@ static void test_cq_end_op(void) {
   cc = grpc_completion_queue_create(NULL);
 
   grpc_cq_begin_op(cc, tag);
-  grpc_cq_end_op(&exec_ctx, cc, tag, 1, do_nothing_end_completion, NULL,
-                 &completion);
+  grpc_cq_end_op(&exec_ctx, cc, tag, GRPC_ERROR_NONE, do_nothing_end_completion,
+                 NULL, &completion);
 
   ev = grpc_completion_queue_next(cc, gpr_inf_past(GPR_CLOCK_REALTIME), NULL);
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
@@ -149,8 +155,8 @@ static void test_pluck(void) {
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
     grpc_cq_begin_op(cc, tags[i]);
-    grpc_cq_end_op(&exec_ctx, cc, tags[i], 1, do_nothing_end_completion, NULL,
-                   &completions[i]);
+    grpc_cq_end_op(&exec_ctx, cc, tags[i], GRPC_ERROR_NONE,
+                   do_nothing_end_completion, NULL, &completions[i]);
   }
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
@@ -161,8 +167,8 @@ static void test_pluck(void) {
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
     grpc_cq_begin_op(cc, tags[i]);
-    grpc_cq_end_op(&exec_ctx, cc, tags[i], 1, do_nothing_end_completion, NULL,
-                   &completions[i]);
+    grpc_cq_end_op(&exec_ctx, cc, tags[i], GRPC_ERROR_NONE,
+                   do_nothing_end_completion, NULL, &completions[i]);
   }
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
@@ -234,8 +240,8 @@ static void test_too_many_plucks(void) {
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
     grpc_cq_begin_op(cc, tags[i]);
-    grpc_cq_end_op(&exec_ctx, cc, tags[i], 1, do_nothing_end_completion, NULL,
-                   &completions[i]);
+    grpc_cq_end_op(&exec_ctx, cc, tags[i], GRPC_ERROR_NONE,
+                   do_nothing_end_completion, NULL, &completions[i]);
   }
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
@@ -288,8 +294,9 @@ static void producer_thread(void *arg) {
 
   gpr_log(GPR_INFO, "producer %d phase 2", opt->id);
   for (i = 0; i < TEST_THREAD_EVENTS; i++) {
-    grpc_cq_end_op(&exec_ctx, opt->cc, (void *)(intptr_t)1, 1, free_completion,
-                   NULL, gpr_malloc(sizeof(grpc_cq_completion)));
+    grpc_cq_end_op(&exec_ctx, opt->cc, (void *)(intptr_t)1, GRPC_ERROR_NONE,
+                   free_completion, NULL,
+                   gpr_malloc(sizeof(grpc_cq_completion)));
     opt->events_triggered++;
     grpc_exec_ctx_finish(&exec_ctx);
   }
@@ -342,8 +349,8 @@ static void test_threading(size_t producers, size_t consumers) {
   size_t total_consumed = 0;
   static int optid = 101;
 
-  gpr_log(GPR_INFO, "%s: %d producers, %d consumers", "test_threading",
-          producers, consumers);
+  gpr_log(GPR_INFO, "%s: %" PRIuPTR " producers, %" PRIuPTR " consumers",
+          "test_threading", producers, consumers);
 
   /* start all threads: they will wait for phase1 */
   for (i = 0; i < producers + consumers; i++) {
@@ -408,6 +415,7 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   test_no_op();
+  test_pollset_conversion();
   test_wait_empty();
   test_shutdown_then_next_polling();
   test_shutdown_then_next_with_timeout();

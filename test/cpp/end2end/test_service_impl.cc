@@ -33,6 +33,7 @@
 
 #include "test/cpp/end2end/test_service_impl.h"
 
+#include <string>
 #include <thread>
 
 #include <grpc++/security/credentials.h>
@@ -134,6 +135,14 @@ Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
          iter != client_metadata.end(); ++iter) {
       context->AddTrailingMetadata(ToString(iter->first),
                                    ToString(iter->second));
+    }
+    // Terminate rpc with error and debug info in trailer.
+    if (request->param().debug_info().stack_entries_size() ||
+        !request->param().debug_info().detail().empty()) {
+      grpc::string serialized_debug_info =
+          request->param().debug_info().SerializeAsString();
+      context->AddTrailingMetadata(kDebugInfoTrailerKey, serialized_debug_info);
+      return Status::CANCELLED;
     }
   }
   if (request->has_param() &&
@@ -245,7 +254,7 @@ Status TestServiceImpl::ResponseStream(ServerContext* context,
   }
 
   for (int i = 0; i < kNumResponseStreamsMsgs; i++) {
-    response.set_message(request->message() + std::to_string(i));
+    response.set_message(request->message() + grpc::to_string(i));
     writer->Write(response);
   }
 

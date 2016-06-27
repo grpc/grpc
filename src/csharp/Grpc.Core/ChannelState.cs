@@ -64,6 +64,6 @@ namespace Grpc.Core
         /// <summary>
         /// Channel has seen a failure that it cannot recover from
         /// </summary>
-        FatalFailure
+        Shutdown
     }
 }

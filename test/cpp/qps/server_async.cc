@@ -37,7 +37,6 @@
 #include <mutex>
 #include <thread>
 
-#include <gflags/gflags.h>
 #include <grpc++/generic/async_generic_service.h>
 #include <grpc++/security/server_credentials.h>
 #include <grpc++/server.h>
@@ -48,7 +47,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
-#include <gtest/gtest.h>
 
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 #include "test/core/util/test_config.h"
@@ -73,7 +71,8 @@ class AsyncQpsServerTest : public Server {
                          CompletionQueue *, ServerCompletionQueue *, void *)>
           request_streaming_function,
       std::function<grpc::Status(const PayloadConfig &, const RequestType *,
-                                 ResponseType *)> process_rpc)
+                                 ResponseType *)>
+          process_rpc)
       : Server(config) {
     char *server_address = NULL;
 
@@ -130,10 +129,10 @@ class AsyncQpsServerTest : public Server {
     }
   }
   ~AsyncQpsServerTest() {
-    server_->Shutdown();
     for (auto ss = shutdown_state_.begin(); ss != shutdown_state_.end(); ++ss) {
       (*ss)->set_shutdown();
     }
+    server_->Shutdown();
     for (auto thr = threads_.begin(); thr != threads_.end(); thr++) {
       thr->join();
     }
@@ -190,7 +189,8 @@ class AsyncQpsServerTest : public Server {
     ServerRpcContextUnaryImpl(
         std::function<void(ServerContextType *, RequestType *,
                            grpc::ServerAsyncResponseWriter<ResponseType> *,
-                           void *)> request_method,
+                           void *)>
+            request_method,
         std::function<grpc::Status(const RequestType *, ResponseType *)>
             invoke_method)
         : srv_ctx_(new ServerContextType),
