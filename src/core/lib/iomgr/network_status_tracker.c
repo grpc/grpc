@@ -34,6 +34,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/network_monitor.h"
 
 typedef struct endpoint_ll_node {
   grpc_endpoint *ep;
@@ -44,13 +45,18 @@ static endpoint_ll_node *head = NULL;
 static gpr_mu g_endpoint_mutex;
 static bool g_init_done = false;
 
+void grpc_network_status_shutdown_all_endpoints();
+
 void grpc_initialize_network_status_monitor() {
   g_init_done = true;
   gpr_mu_init(&g_endpoint_mutex);
   // TODO(makarandd): Install callback with OS to monitor network status.
+  grpc_start_connectivity_monitor("0.0.0.0",
+                                  &grpc_network_status_shutdown_all_endpoints);
 }
 
 void grpc_destroy_network_status_monitor() {
+  grpc_stop_connectivity_monitor();
   for (endpoint_ll_node *curr = head; curr != NULL;) {
     endpoint_ll_node *next = curr->next;
     gpr_free(curr);

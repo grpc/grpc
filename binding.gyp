@@ -592,6 +592,7 @@
         'src/core/lib/iomgr/iomgr_posix.c',
         'src/core/lib/iomgr/iomgr_windows.c',
         'src/core/lib/iomgr/load_file.c',
+        'src/core/lib/iomgr/network_monitor.c',
         'src/core/lib/iomgr/network_monitor_darwin.c',
         'src/core/lib/iomgr/network_status_tracker.c',
         'src/core/lib/iomgr/polling_entity.c',

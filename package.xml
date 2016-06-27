@@ -365,6 +365,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_posix.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_windows.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/load_file.c" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/network_monitor.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/network_monitor_darwin.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/network_status_tracker.c" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/polling_entity.c" role="src" />

@@ -358,6 +358,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/iomgr_posix.c )
   s.files += %w( src/core/lib/iomgr/iomgr_windows.c )
   s.files += %w( src/core/lib/iomgr/load_file.c )
+  s.files += %w( src/core/lib/iomgr/network_monitor.c )
   s.files += %w( src/core/lib/iomgr/network_monitor_darwin.c )
   s.files += %w( src/core/lib/iomgr/network_status_tracker.c )
   s.files += %w( src/core/lib/iomgr/polling_entity.c )

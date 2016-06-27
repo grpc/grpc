@@ -265,6 +265,7 @@ filegroups:
   - src/core/lib/iomgr/iomgr_posix.c
   - src/core/lib/iomgr/iomgr_windows.c
   - src/core/lib/iomgr/load_file.c
+  - src/core/lib/iomgr/network_monitor.c
   - src/core/lib/iomgr/network_monitor_darwin.c
   - src/core/lib/iomgr/network_status_tracker.c
   - src/core/lib/iomgr/polling_entity.c
@@ -823,6 +824,7 @@ libs:
   language: c
   src:
   - src/core/lib/surface/init.c
+  LDFLAGS: $(if $(subst Darwin,,$(SYSTEM)),,-framework CoreFoundation -framework SystemConfiguration)
   baselib: true
   deps_linkage: static
   dll: true
