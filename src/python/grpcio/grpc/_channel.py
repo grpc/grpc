@@ -179,6 +179,7 @@ def _event_handler(state, call, response_deserializer):
 def _consume_request_iterator(
     request_iterator, state, call, request_serializer):
   event_handler = _event_handler(state, call, None)
+
   def consume_request_iterator():
     for request in request_iterator:
       serialized_request = _common.serialize(request, request_serializer)
@@ -212,8 +213,18 @@ def _consume_request_iterator(
         )
         call.start_batch(cygrpc.Operations(operations), event_handler)
         state.due.add(cygrpc.OperationType.send_close_from_client)
-  thread = threading.Thread(target=consume_request_iterator)
-  thread.start()
+
+  def stop_consumption_thread(timeout):
+    with state.condition:
+      if state.code is None:
+        call.cancel()
+        state.cancelled = True
+        _abort(state, grpc.StatusCode.CANCELLED, 'Cancelled!')
+        state.condition.notify_all()
+
+  consumption_thread = _common.CleanupThread(
+      stop_consumption_thread, target=consume_request_iterator)
+  consumption_thread.start()
 
 
 class _Rendezvous(grpc.RpcError, grpc.Future, grpc.Call):
@@ -652,16 +663,27 @@ class _ChannelCallState(object):
     self.managed_calls = None
 
 
-def _call_spin(state):
-  while True:
-    event = state.completion_queue.poll()
-    completed_call = event.tag(event)
-    if completed_call is not None:
-      with state.lock:
-        state.managed_calls.remove(completed_call)
-        if not state.managed_calls:
-          state.managed_calls = None
-          return
+def _run_channel_spin_thread(state):
+  def channel_spin():
+    while True:
+      event = state.completion_queue.poll()
+      completed_call = event.tag(event)
+      if completed_call is not None:
+        with state.lock:
+          state.managed_calls.remove(completed_call)
+          if not state.managed_calls:
+            state.managed_calls = None
+            return
+
+  def stop_channel_spin(timeout):
+    with state.lock:
+      if state.managed_calls is not None:
+        for call in state.managed_calls:
+          call.cancel()
+
+  channel_spin_thread = _common.CleanupThread(
+      stop_channel_spin, target=channel_spin)
+  channel_spin_thread.start()
 
 
 def _create_channel_managed_call(state):
@@ -690,8 +712,7 @@ def _create_channel_managed_call(state):
           parent, flags, state.completion_queue, method, host, deadline)
       if state.managed_calls is None:
         state.managed_calls = set((call,))
-        spin_thread = threading.Thread(target=_call_spin, args=(state,))
-        spin_thread.start()
+        _run_channel_spin_thread(state)
       else:
         state.managed_calls.add(call)
       return call
@@ -784,11 +805,18 @@ def _poll_connectivity(state, channel, initial_try_to_connect):
             _spawn_delivery(state, callbacks)
 
 
+def _moot(state):
+  with state.lock:
+    del state.callbacks_and_connectivities[:]
+
+
 def _subscribe(state, callback, try_to_connect):
   with state.lock:
     if not state.callbacks_and_connectivities and not state.polling:
-      polling_thread = threading.Thread(
-          target=_poll_connectivity,
+      def cancel_all_subscriptions(timeout):
+        _moot(state)
+      polling_thread = _common.CleanupThread(
+          cancel_all_subscriptions, target=_poll_connectivity,
           args=(state, state.channel, bool(try_to_connect)))
       polling_thread.start()
       state.polling = True
@@ -810,11 +838,6 @@ def _unsubscribe(state, callback):
       if callback == subscribed_callback:
         state.callbacks_and_connectivities.pop(index)
         break
-
-
-def _moot(state):
-  with state.lock:
-    del state.callbacks_and_connectivities[:]
 
 
 def _options(options):
