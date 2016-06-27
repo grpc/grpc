@@ -73,10 +73,10 @@
                                                                  service:_serviceName
                                                                   method:method];
   return [[GRPCProtoCall alloc] initWithHost:_host
-                                 method:methodName
-                         requestsWriter:requestsWriter
-                          responseClass:responseClass
-                     responsesWriteable:responsesWriteable];
+                                      method:methodName
+                              requestsWriter:requestsWriter
+                               responseClass:responseClass
+                          responsesWriteable:responsesWriteable];
 }
 @end
 
