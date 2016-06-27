@@ -7,7 +7,7 @@ settings:
   '#3': Use "-preN" suffixes to identify pre-release versions
   '#4': Per-language overrides are possible with (eg) ruby_version tag here
   '#5': See the expand_version.py for all the quirks here
-  version: 0.15.0-dev
+  version: 0.16.0-dev
 filegroups:
 - name: census
   public_headers:
@@ -173,6 +173,7 @@ filegroups:
   - src/core/lib/iomgr/endpoint.h
   - src/core/lib/iomgr/endpoint_pair.h
   - src/core/lib/iomgr/error.h
+  - src/core/lib/iomgr/ev_epoll_linux.h
   - src/core/lib/iomgr/ev_poll_and_epoll_posix.h
   - src/core/lib/iomgr/ev_poll_posix.h
   - src/core/lib/iomgr/ev_posix.h
@@ -251,6 +252,7 @@ filegroups:
   - src/core/lib/iomgr/endpoint_pair_posix.c
   - src/core/lib/iomgr/endpoint_pair_windows.c
   - src/core/lib/iomgr/error.c
+  - src/core/lib/iomgr/ev_epoll_linux.c
   - src/core/lib/iomgr/ev_poll_and_epoll_posix.c
   - src/core/lib/iomgr/ev_poll_posix.c
   - src/core/lib/iomgr/ev_posix.c
@@ -1394,6 +1396,18 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: ev_epoll_linux_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/ev_epoll_linux_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - linux
 - name: fd_conservation_posix_test
   build: test
   language: c
@@ -1601,7 +1615,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: gpr_sync_test
-  cpu_cost: 3
+  cpu_cost: 10
   build: test
   language: c
   src:
@@ -1610,7 +1624,7 @@ targets:
   - gpr_test_util
   - gpr
 - name: gpr_thd_test
-  cpu_cost: 1
+  cpu_cost: 10
   build: test
   language: c
   src:
@@ -3269,6 +3283,7 @@ configs:
     CPPFLAGS: -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
       -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
+    DEFINES: GRPC_TSAN
     LD: clang
     LDFLAGS: -fsanitize=thread
     LDXX: clang++

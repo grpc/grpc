@@ -1608,7 +1608,6 @@ static void close_from_api(grpc_exec_ctx *exec_ctx,
       gpr_slice_buffer_add(&transport_global->qbuf,
                            gpr_slice_from_copied_string(optional_message));
     }
-
     gpr_slice_buffer_add(
         &transport_global->qbuf,
         grpc_chttp2_rst_stream_create(stream_global->id, GRPC_CHTTP2_NO_ERROR,

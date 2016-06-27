@@ -62,7 +62,7 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {}
 
 
 _POLLING_STRATEGIES = {
-  'linux': ['poll', 'legacy']
+  'linux': ['epoll', 'poll', 'legacy']
 }
 
 
@@ -390,7 +390,6 @@ class PythonLanguage(object):
     if self.config.build_config != 'gcov':
       return [self.config.job_spec(
           ['tools/run_tests/run_python.sh', tox_env],
-          None,
           environ=dict(environment.items() +
                        [('GRPC_PYTHON_TESTRUNNER_FILTER', suite_name)]),
           shortname='%s.test.%s' % (tox_env, suite_name),
@@ -399,7 +398,6 @@ class PythonLanguage(object):
           for tox_env in self._tox_envs]
     else:
       return [self.config.job_spec(['tools/run_tests/run_python.sh', tox_env],
-                                   None,
                                    environ=environment,
                                    shortname='%s.test.coverage' % tox_env,
                                    timeout_seconds=15*60)
@@ -661,7 +659,7 @@ class Sanity(object):
   def test_specs(self):
     import yaml
     with open('tools/run_tests/sanity/sanity_tests.yaml', 'r') as f:
-      return [self.config.job_spec(cmd['script'].split(), None,
+      return [self.config.job_spec(cmd['script'].split(),
                                    timeout_seconds=None, environ={'TEST': 'true'},
                                    cpu_cost=cmd.get('cpu_cost', 1))
               for cmd in yaml.load(f)]

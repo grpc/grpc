@@ -63,8 +63,8 @@ static void put_metadata_list(gpr_strvec *b, grpc_metadata_batch md) {
   }
   if (gpr_time_cmp(md.deadline, gpr_inf_future(md.deadline.clock_type)) != 0) {
     char *tmp;
-    gpr_asprintf(&tmp, " deadline=%lld.%09d", (long long)md.deadline.tv_sec,
-                 (int)md.deadline.tv_nsec);
+    gpr_asprintf(&tmp, " deadline=%" PRId64 ".%09d", md.deadline.tv_sec,
+                 md.deadline.tv_nsec);
     gpr_strvec_add(b, tmp);
   }
 }
