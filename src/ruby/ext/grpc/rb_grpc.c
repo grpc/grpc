@@ -49,6 +49,7 @@
 #include "rb_loader.h"
 #include "rb_server.h"
 #include "rb_server_credentials.h"
+#include "rb_compression_options.h"
 
 static VALUE grpc_rb_cTimeVal = Qnil;
 
@@ -332,4 +333,5 @@ void Init_grpc_c() {
   Init_grpc_server_credentials();
   Init_grpc_status_codes();
   Init_grpc_time_consts();
+  Init_grpc_compression_options();
 }
