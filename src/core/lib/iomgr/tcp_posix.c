@@ -35,6 +35,7 @@
 
 #ifdef GPR_POSIX_SOCKET
 
+#include "src/core/lib/iomgr/network_status_tracker.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 
 #include <errno.h>
@@ -152,6 +153,7 @@ static void tcp_ref(grpc_tcp *tcp) { gpr_ref(&tcp->refcount); }
 #endif
 
 static void tcp_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
+  grpc_network_status_unregister_endpoint(ep);
   grpc_tcp *tcp = (grpc_tcp *)ep;
   TCP_UNREF(exec_ctx, tcp, "destroy");
 }
@@ -474,6 +476,8 @@ grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd, size_t slice_size,
   tcp->write_closure.cb = tcp_handle_write;
   tcp->write_closure.cb_arg = tcp;
   gpr_slice_buffer_init(&tcp->last_read_buffer);
+  /* Tell network status tracker about new endpoint */
+  grpc_network_status_register_endpoint(&tcp->base);
 
   return &tcp->base;
 }

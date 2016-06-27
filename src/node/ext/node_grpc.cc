@@ -265,8 +265,8 @@ void InitLogConstants(Local<Object> exports) {
   Nan::Set(log_verbosity, Nan::New("DEBUG").ToLocalChecked(), DEBUG);
   Local<Value> INFO(Nan::New<Uint32, uint32_t>(GPR_LOG_SEVERITY_INFO));
   Nan::Set(log_verbosity, Nan::New("INFO").ToLocalChecked(), INFO);
-  Local<Value> ERROR(Nan::New<Uint32, uint32_t>(GPR_LOG_SEVERITY_ERROR));
-  Nan::Set(log_verbosity, Nan::New("ERROR").ToLocalChecked(), ERROR);
+  Local<Value> LOG_ERROR(Nan::New<Uint32, uint32_t>(GPR_LOG_SEVERITY_ERROR));
+  Nan::Set(log_verbosity, Nan::New("ERROR").ToLocalChecked(), LOG_ERROR);
 }
 
 NAN_METHOD(MetadataKeyIsLegal) {
