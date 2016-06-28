@@ -8,6 +8,10 @@
   "configurations": {
     "Debug": {
       "buildOptions": {
+        "define": [ "SIGNED" ],
+        "keyFile": "../keys/Grpc.snk",
+        "publicSign": true,
+        "xmlDoc": true,
         "copyToOutput": {
           % if includeData:
           "include": "data/*",
@@ -23,6 +27,10 @@
     },
     "Release": {
       "buildOptions": {
+        "define": [ "SIGNED" ],
+        "keyFile": "../keys/Grpc.snk",
+        "publicSign": true,
+        "xmlDoc": true,
         "copyToOutput": {
           % if includeData:
           "include": "data/*",
