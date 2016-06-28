@@ -62,6 +62,7 @@ typedef struct grpc_call_op_set {
   /* these are used by individual operations */
   grpc_message *response;
   grpc_byte_buffer *recv_buffer;
+  bool message_received;
 
   /* if this is true (default false), the event tagged by this call_op_set will not be emitted
    * from the completion queue wrapper. */

@@ -43,6 +43,7 @@
 #include "grpc/unary_async_call_public.h"
 #include "grpc/unary_blocking_call_public.h"
 #include "grpc/client_streaming_blocking_call_public.h"
+#include "grpc/server_streaming_blocking_call_public.h"
 
 static void async_say_hello(GRPC_channel *chan, GRPC_completion_queue *cq);
 static void *async_say_hello_worker(void *param);
@@ -157,6 +158,33 @@ int main(int argc, char **argv) {
     response_string[resp.length - 2] = '\0';
     printf("Server said: %s\n", response_string);    // skip to the string in serialized protobuf object
     GRPC_message_destroy(&resp);
+    GRPC_context_destroy(&context);
+  }
+
+  {
+    printf("Testing blocking server streaming call\n");
+    GRPC_method method = {NORMAL_RPC, "/helloworld.ServerStreamingGreeter/sayHello"};
+    GRPC_context *context = GRPC_context_create(chan);
+    // hardcoded string for "gRPC-C"
+    char str[] = {0x0A, 0x06, 0x67, 0x52, 0x50, 0x43, 0x2D, 0x43};
+    GRPC_message msg = {str, sizeof(str)};
+
+    GRPC_client_reader *reader = GRPC_server_streaming_blocking_call(chan, method, context, msg);
+
+    // using char array to hold RPC result while protobuf is not there yet
+    GRPC_message resp;
+
+    while (GRPC_server_streaming_blocking_read(reader, &resp)) {
+      char *response_string = malloc(resp.length - 2 + 1);
+      memcpy(response_string, ((char *) resp.data) + 2, resp.length - 2);
+      response_string[resp.length - 2] = '\0';
+      printf("Server said: %s\n", response_string);    // skip to the string in serialized protobuf object
+      GRPC_message_destroy(&resp);
+    }
+
+    GRPC_status status = GRPC_client_reader_terminate(reader);
+    assert(status.code == GRPC_STATUS_OK);
+
     GRPC_context_destroy(&context);
   }
 
