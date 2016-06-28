@@ -161,14 +161,24 @@ class _Callback(stream.Consumer):
           self._condition.wait()
 
 
-def _pipe_requests(request_iterator, request_consumer, servicer_context):
-  for request in request_iterator:
-    if not servicer_context.is_active():
-      return
-    request_consumer.consume(request)
-    if not servicer_context.is_active():
-      return
-  request_consumer.terminate()
+def _run_request_pipe_thread(request_iterator, request_consumer,
+                             servicer_context):
+  thread_joined = threading.Event()
+  def pipe_requests():
+    for request in request_iterator:
+      if not servicer_context.is_active() or thread_joined.is_set():
+        return
+      request_consumer.consume(request)
+      if not servicer_context.is_active() or thread_joined.is_set():
+        return
+    request_consumer.terminate()
+
+  def stop_request_pipe(timeout):
+    thread_joined.set()
+
+  request_pipe_thread = _common.CleanupThread(
+      stop_request_pipe, target=pipe_requests)
+  request_pipe_thread.start()
 
 
 def _adapt_unary_unary_event(unary_unary_event):
@@ -206,10 +216,8 @@ def _adapt_stream_unary_event(stream_unary_event):
       raise abandonment.Abandoned()
     request_consumer = stream_unary_event(
         callback.consume_and_terminate, _FaceServicerContext(servicer_context))
-    request_pipe_thread = threading.Thread(
-        target=_pipe_requests,
-        args=(request_iterator, request_consumer, servicer_context,))
-    request_pipe_thread.start()
+    _run_request_pipe_thread(
+        request_iterator, request_consumer, servicer_context)
     return callback.draw_all_values()[0]
   return adaptation
 
@@ -221,10 +229,8 @@ def _adapt_stream_stream_event(stream_stream_event):
       raise abandonment.Abandoned()
     request_consumer = stream_stream_event(
         callback, _FaceServicerContext(servicer_context))
-    request_pipe_thread = threading.Thread(
-        target=_pipe_requests,
-        args=(request_iterator, request_consumer, servicer_context,))
-    request_pipe_thread.start()
+    _run_request_pipe_thread(
+        request_iterator, request_consumer, servicer_context)
     while True:
       response = callback.draw_one_value()
       if response is None:

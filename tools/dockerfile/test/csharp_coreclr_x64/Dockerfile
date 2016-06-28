@@ -27,7 +27,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-FROM microsoft/dotnet:1.0.0-preview1
+FROM microsoft/dotnet:1.0.0-preview2-sdk
 
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \

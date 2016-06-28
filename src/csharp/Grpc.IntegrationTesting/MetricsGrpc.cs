@@ -97,17 +97,22 @@ namespace Grpc.Testing {
     /// <summary>Client for MetricsService</summary>
     public class MetricsServiceClient : ClientBase<MetricsServiceClient>
     {
+      /// <summary>Creates a new client for MetricsService</summary>
+      /// <param name="channel">The channel to use to make remote calls.</param>
       public MetricsServiceClient(Channel channel) : base(channel)
       {
       }
+      /// <summary>Creates a new client for MetricsService that uses a custom <c>CallInvoker</c>.</summary>
+      /// <param name="callInvoker">The callInvoker to use to make remote calls.</param>
       public MetricsServiceClient(CallInvoker callInvoker) : base(callInvoker)
       {
       }
-      ///<summary>Protected parameterless constructor to allow creation of test doubles.</summary>
+      /// <summary>Protected parameterless constructor to allow creation of test doubles.</summary>
       protected MetricsServiceClient() : base()
       {
       }
-      ///<summary>Protected constructor to allow creation of configured clients.</summary>
+      /// <summary>Protected constructor to allow creation of configured clients.</summary>
+      /// <param name="configuration">The client configuration.</param>
       protected MetricsServiceClient(ClientBaseConfiguration configuration) : base(configuration)
       {
       }
@@ -160,12 +165,6 @@ namespace Grpc.Testing {
       {
         return new MetricsServiceClient(configuration);
       }
-    }
-
-    /// <summary>Creates a new client for MetricsService</summary>
-    public static MetricsServiceClient NewClient(Channel channel)
-    {
-      return new MetricsServiceClient(channel);
     }
 
     /// <summary>Creates service definition that can be registered with a server</summary>

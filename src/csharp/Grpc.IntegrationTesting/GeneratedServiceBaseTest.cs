@@ -61,7 +61,7 @@ namespace Grpc.IntegrationTesting
             };
             server.Start();
             channel = new Channel(Host, server.Ports.Single().BoundPort, ChannelCredentials.Insecure);
-            client = TestService.NewClient(channel);
+            client = new TestService.TestServiceClient(channel);
         }
 
         [TearDown]

@@ -243,13 +243,13 @@ static int prepare_socket(int fd, const struct sockaddr *addr,
 
   if (!grpc_set_socket_sndbuf(fd, buffer_size_bytes)) {
     gpr_log(GPR_ERROR, "Failed to set send buffer size to %d bytes",
-            buf_size_bytes);
+            buffer_size_bytes);
     goto error;
   }
 
   if (!grpc_set_socket_rcvbuf(fd, buffer_size_bytes)) {
     gpr_log(GPR_ERROR, "Failed to set receive buffer size to %d bytes",
-            buf_size_bytes);
+            buffer_size_bytes);
     goto error;
   }
 

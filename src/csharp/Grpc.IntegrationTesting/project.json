@@ -5,6 +5,10 @@
   "configurations": {
     "Debug": {
       "buildOptions": {
+        "define": [ "SIGNED" ],
+        "keyFile": "../keys/Grpc.snk",
+        "publicSign": true,
+        "xmlDoc": true,
         "copyToOutput": {
           "include": "data/*",
           "mappings": {
@@ -18,6 +22,10 @@
     },
     "Release": {
       "buildOptions": {
+        "define": [ "SIGNED" ],
+        "keyFile": "../keys/Grpc.snk",
+        "publicSign": true,
+        "xmlDoc": true,
         "copyToOutput": {
           "include": "data/*",
           "mappings": {

@@ -91,14 +91,16 @@ static void bubble_up_error(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                             grpc_status_code status, const char *error_msg) {
   call_data *calld = elem->call_data;
   gpr_log(GPR_ERROR, "Client side authentication failure: %s", error_msg);
-  grpc_transport_stream_op_add_cancellation(&calld->op, status);
+  gpr_slice error_slice = gpr_slice_from_copied_string(error_msg);
+  grpc_transport_stream_op_add_close(&calld->op, status, &error_slice);
   grpc_call_next_op(exec_ctx, elem, &calld->op);
 }
 
 static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
                                     grpc_credentials_md *md_elems,
                                     size_t num_md,
-                                    grpc_credentials_status status) {
+                                    grpc_credentials_status status,
+                                    const char *error_details) {
   grpc_call_element *elem = (grpc_call_element *)user_data;
   call_data *calld = elem->call_data;
   grpc_transport_stream_op *op = &calld->op;
@@ -107,7 +109,9 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
   reset_auth_metadata_context(&calld->auth_md_context);
   if (status != GRPC_CREDENTIALS_OK) {
     bubble_up_error(exec_ctx, elem, GRPC_STATUS_UNAUTHENTICATED,
-                    "Credentials failed to get metadata.");
+                    (error_details != NULL && strlen(error_details) > 0)
+                        ? error_details
+                        : "Credentials failed to get metadata.");
     return;
   }
   GPR_ASSERT(num_md <= MAX_CREDENTIALS_METADATA_COUNT);

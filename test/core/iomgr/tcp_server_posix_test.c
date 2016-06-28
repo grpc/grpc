@@ -129,7 +129,7 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp,
 static void test_no_op(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_tcp_server *s;
-  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, &s));
+  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, NULL, &s));
   grpc_tcp_server_unref(&exec_ctx, s);
   grpc_exec_ctx_finish(&exec_ctx);
 }
@@ -137,7 +137,7 @@ static void test_no_op(void) {
 static void test_no_op_with_start(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_tcp_server *s;
-  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, &s));
+  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, NULL, &s));
   LOG_TEST("test_no_op_with_start");
   grpc_tcp_server_start(&exec_ctx, s, NULL, 0, on_connect, NULL);
   grpc_tcp_server_unref(&exec_ctx, s);
@@ -148,7 +148,7 @@ static void test_no_op_with_port(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   struct sockaddr_in addr;
   grpc_tcp_server *s;
-  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, &s));
+  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, NULL, &s));
   LOG_TEST("test_no_op_with_port");
 
   memset(&addr, 0, sizeof(addr));
@@ -166,7 +166,7 @@ static void test_no_op_with_port_and_start(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   struct sockaddr_in addr;
   grpc_tcp_server *s;
-  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, &s));
+  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, NULL, &s));
   LOG_TEST("test_no_op_with_port_and_start");
   int port;
 
@@ -226,7 +226,7 @@ static void test_connect(unsigned n) {
   unsigned svr1_fd_count;
   int svr1_port;
   grpc_tcp_server *s;
-  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, &s));
+  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, NULL, &s));
   unsigned i;
   server_weak_ref weak_ref;
   server_weak_ref_init(&weak_ref);

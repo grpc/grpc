@@ -1,5 +1,5 @@
 {
-  "version": "0.15.0-dev",
+  "version": "0.16.0-dev",
   "title": "gRPC C# Core",
   "authors": [ "Google Inc." ],
   "copyright": "Copyright 2015, Google Inc.",
@@ -21,8 +21,13 @@
       "build/native/bin/macosx_x64/": "../nativelibs/macosx_x64/libgrpc_csharp_ext.dylib"
     }
   },
+  "shared": "Version.cs",
   "buildOptions": {
-    "embed": [ "../../../etc/roots.pem" ]
+    "embed": [ "../../../etc/roots.pem" ],
+    "define": [ "SIGNED" ],
+    "keyFile": "../keys/Grpc.snk",
+    "publicSign": true,
+    "xmlDoc": true
   },
   "dependencies": {
     "Ix-Async": "1.2.5"
