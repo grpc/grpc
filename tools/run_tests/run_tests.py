@@ -396,14 +396,12 @@ class PythonLanguage(object):
     environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
     return [self.config.job_spec(
         ['tools/run_tests/run_python.sh', config.venv_python],
-        None,
+        timeout_seconds=5*60,
         environ=dict(environment.items() +
                      [('GRPC_PYTHON_TESTRUNNER_FILTER', suite_name)]),
-        shortname='%s.test.%s' % (config.venv, suite_name),
-        timeout_seconds=5*60)
+        shortname='%s.test.%s' % (config.venv, suite_name),)
         for suite_name in tests_json
         for config in self.pythons]
-
 
   def pre_build_steps(self):
     return []
