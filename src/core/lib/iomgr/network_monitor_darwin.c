@@ -33,7 +33,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_DARWIN
+#ifdef TARGET_OS_IPHONE
 
 #include "src/core/lib/iomgr/network_monitor.h"
 

@@ -34,7 +34,7 @@
 #include <grpc/support/port_platform.h>
 
 /* network monitor is not implemented in platforms other than Darwin */
-#ifndef GPR_DARWIN
+#ifndef TARGET_OS_IPHONE
 
 #include "src/core/lib/iomgr/network_monitor.h"
 
