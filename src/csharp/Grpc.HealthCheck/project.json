@@ -1,5 +1,5 @@
 {
-  "version": "0.15.0-dev",
+  "version": "0.16.0-dev",
   "title": "gRPC C# Healthchecking",
   "authors": [ "Google Inc." ],
   "copyright": "Copyright 2015, Google Inc.",
@@ -12,8 +12,14 @@
     "requireLicenseAcceptance": false,
     "tags": [ "gRPC health check" ]
   },
+  "buildOptions": {
+    "define": [ "SIGNED" ],
+    "keyFile": "../keys/Grpc.snk",
+    "publicSign": true,
+    "xmlDoc": true
+  },
   "dependencies": {
-    "Grpc.Core": "0.15.0-dev",
+    "Grpc.Core": "0.16.0-dev",
     "Google.Protobuf": "3.0.0-beta3"
   },
   "frameworks": {
