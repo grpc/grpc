@@ -35,4 +35,18 @@
 #ifndef TEST_GRPC_C_BIDI_STREAMING_BLOCKING_CALL_PUBLIC_H
 #define TEST_GRPC_C_BIDI_STREAMING_BLOCKING_CALL_PUBLIC_H
 
+typedef struct grpc_client_reader_writer GRPC_client_reader_writer;
+
+GRPC_client_reader_writer *GRPC_bidi_streaming_blocking_call(GRPC_channel *channel,
+                                                             const GRPC_method rpc_method,
+                                                             GRPC_context *const context);
+
+bool GRPC_bidi_streaming_blocking_read(GRPC_client_reader_writer *reader, GRPC_message *response);
+
+bool GRPC_bidi_streaming_blocking_write(GRPC_client_reader_writer *reader_writer, const GRPC_message request);
+
+bool GRPC_bidi_streaming_blocking_close(GRPC_client_reader_writer *reader_writer);
+
+GRPC_status GRPC_client_reader_writer_terminate(GRPC_client_reader_writer *reader_writer);
+
 #endif //TEST_GRPC_C_BIDI_STREAMING_BLOCKING_CALL_PUBLIC_H
