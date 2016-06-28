@@ -57,7 +57,7 @@ typedef struct grpc_httpcli_context {
 typedef struct {
   const char *default_port;
   void (*handshake)(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *endpoint,
-                    const char *host,
+                    const char *host, gpr_timespec deadline,
                     void (*on_done)(grpc_exec_ctx *exec_ctx, void *arg,
                                     grpc_endpoint *endpoint));
 } grpc_httpcli_handshaker;
@@ -82,11 +82,6 @@ typedef struct grpc_httpcli_request {
 /* Expose the parser response type as a httpcli response too */
 typedef struct grpc_http_response grpc_httpcli_response;
 
-/* Callback for grpc_httpcli_get and grpc_httpcli_post. */
-typedef void (*grpc_httpcli_response_cb)(grpc_exec_ctx *exec_ctx,
-                                         void *user_data,
-                                         const grpc_http_response *response);
-
 void grpc_httpcli_context_init(grpc_httpcli_context *context);
 void grpc_httpcli_context_destroy(grpc_httpcli_context *context);
 
@@ -103,8 +98,8 @@ void grpc_httpcli_context_destroy(grpc_httpcli_context *context);
 void grpc_httpcli_get(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
                       grpc_polling_entity *pollent,
                       const grpc_httpcli_request *request,
-                      gpr_timespec deadline,
-                      grpc_httpcli_response_cb on_response, void *user_data);
+                      gpr_timespec deadline, grpc_closure *on_complete,
+                      grpc_httpcli_response *response);
 
 /* Asynchronously perform a HTTP POST.
    'context' specifies the http context under which to do the post
@@ -125,19 +120,19 @@ void grpc_httpcli_post(grpc_exec_ctx *exec_ctx, grpc_httpcli_context *context,
                        grpc_polling_entity *pollent,
                        const grpc_httpcli_request *request,
                        const char *body_bytes, size_t body_size,
-                       gpr_timespec deadline,
-                       grpc_httpcli_response_cb on_response, void *user_data);
+                       gpr_timespec deadline, grpc_closure *on_complete,
+                       grpc_httpcli_response *response);
 
 /* override functions return 1 if they handled the request, 0 otherwise */
 typedef int (*grpc_httpcli_get_override)(grpc_exec_ctx *exec_ctx,
                                          const grpc_httpcli_request *request,
                                          gpr_timespec deadline,
-                                         grpc_httpcli_response_cb on_response,
-                                         void *user_data);
+                                         grpc_closure *on_complete,
+                                         grpc_httpcli_response *response);
 typedef int (*grpc_httpcli_post_override)(
     grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
     const char *body_bytes, size_t body_size, gpr_timespec deadline,
-    grpc_httpcli_response_cb on_response, void *user_data);
+    grpc_closure *on_complete, grpc_httpcli_response *response);
 
 void grpc_httpcli_set_override(grpc_httpcli_get_override get,
                                grpc_httpcli_post_override post);

@@ -58,6 +58,7 @@ grpc_credentials_metadata_request *grpc_credentials_metadata_request_create(
     void *user_data) {
   grpc_credentials_metadata_request *r =
       gpr_malloc(sizeof(grpc_credentials_metadata_request));
+  memset(&r->response, 0, sizeof(r->response));
   r->creds = grpc_call_credentials_ref(creds);
   r->cb = cb;
   r->user_data = user_data;
@@ -67,6 +68,7 @@ grpc_credentials_metadata_request *grpc_credentials_metadata_request_create(
 void grpc_credentials_metadata_request_destroy(
     grpc_credentials_metadata_request *r) {
   grpc_call_credentials_unref(r->creds);
+  grpc_http_response_destroy(&r->response);
   gpr_free(r);
 }
 
@@ -115,7 +117,7 @@ void grpc_call_credentials_get_request_metadata(
     grpc_credentials_metadata_cb cb, void *user_data) {
   if (creds == NULL || creds->vtable->get_request_metadata == NULL) {
     if (cb != NULL) {
-      cb(exec_ctx, user_data, NULL, 0, GRPC_CREDENTIALS_OK);
+      cb(exec_ctx, user_data, NULL, 0, GRPC_CREDENTIALS_OK, NULL);
     }
     return;
   }

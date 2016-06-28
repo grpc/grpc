@@ -1,0 +1,56 @@
+{
+  "buildOptions": {
+    "emitEntryPoint": true
+  },
+  "configurations": {
+    "Debug": {
+      "buildOptions": {
+        "copyToOutput": {
+          "mappings": {
+            "nativelibs/windows_x64/grpc_csharp_ext.dll": "../../../vsprojects/x64/Debug/grpc_csharp_ext.dll",
+            "nativelibs/windows_x86/grpc_csharp_ext.dll": "../../../vsprojects/Debug/grpc_csharp_ext.dll",
+            "nativelibs/linux_x64/libgrpc_csharp_ext.so": "../../../libs/dbg/libgrpc_csharp_ext.so",
+            "nativelibs/macosx_x64/libgrpc_csharp_ext.dylib": "../../../libs/dbg/libgrpc_csharp_ext.dylib"
+          }
+        }
+      }
+    },
+    "Release": {
+      "buildOptions": {
+        "copyToOutput": {
+          "mappings": {
+            "nativelibs/windows_x64/grpc_csharp_ext.dll": "../../../vsprojects/x64/Release/grpc_csharp_ext.dll",
+            "nativelibs/windows_x86/grpc_csharp_ext.dll": "../../../vsprojects/Release/grpc_csharp_ext.dll",
+            "nativelibs/linux_x64/libgrpc_csharp_ext.so": "../../../libs/opt/libgrpc_csharp_ext.so",
+            "nativelibs/macosx_x64/libgrpc_csharp_ext.dylib": "../../../libs/opt/libgrpc_csharp_ext.dylib"
+          }
+        }
+      }
+    }
+  },
+  "runtimes": {
+    "win7-x64": { },
+    "debian.8-x64": { },
+    "osx.10.11-x64": { }
+  },
+
+  "dependencies": {
+    "Grpc.Core": {
+      "target": "project"
+    },
+    "Newtonsoft.Json": "8.0.3",
+    "NUnit": "3.2.0",
+    "NUnitLite": "3.2.0-*"
+  },
+  "frameworks": {
+    "net45": { },
+    "netstandard1.5": {
+      "imports": [
+        "portable-net45"
+      ],
+      "dependencies": {
+        "NETStandard.Library": "1.5.0-rc2-24027"
+      }
+    }
+  },
+}

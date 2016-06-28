@@ -337,7 +337,7 @@ class DeserializeFuncType GRPC_FINAL : public DeserializeFunc {
     return SerializationTraits<R>::Deserialize(buf, message_, max_message_size);
   }
 
-  ~DeserializeFuncType() override {}
+  ~DeserializeFuncType() GRPC_OVERRIDE {}
 
  private:
   R* message_;  // Not a managed pointer because management is external to this

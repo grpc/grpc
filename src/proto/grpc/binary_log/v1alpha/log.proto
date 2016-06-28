@@ -29,20 +29,20 @@
 
 syntax = "proto3";
 
-import "google/protobuf/timestamp.proto"
+import "google/protobuf/timestamp.proto";
 
 package grpc.binary_log.v1alpha;
 
 enum Direction {
-  SERVER_SEND;
-  SERVER_RECV;
-  CLIENT_SEND;
-  CLIENT_RECV;
+  SERVER_SEND = 0;
+  SERVER_RECV = 1;
+  CLIENT_SEND = 2;
+  CLIENT_RECV = 3;
 }
 
 message KeyValuePair {
-  string key;
-  string value;
+  string key = 1;
+  string value = 2;
 }
 
 // Any sort of metadata that may be sent in either direction during a call

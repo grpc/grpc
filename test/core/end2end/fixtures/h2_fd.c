@@ -54,8 +54,8 @@ static void create_sockets(int sv[2]) {
   GPR_ASSERT(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK) == 0);
   flags = fcntl(sv[1], F_GETFL, 0);
   GPR_ASSERT(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK) == 0);
-  GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[0]));
-  GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[1]));
+  GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[0]) == GRPC_ERROR_NONE);
+  GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[1]) == GRPC_ERROR_NONE);
 }
 
 static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(

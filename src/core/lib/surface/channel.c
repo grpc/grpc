@@ -83,7 +83,8 @@ struct grpc_channel {
 /* the protobuf library will (by default) start warning at 100megs */
 #define DEFAULT_MAX_MESSAGE_LENGTH (100 * 1024 * 1024)
 
-static void destroy_channel(grpc_exec_ctx *exec_ctx, void *arg, bool success);
+static void destroy_channel(grpc_exec_ctx *exec_ctx, void *arg,
+                            grpc_error *error);
 
 grpc_channel *grpc_channel_create(grpc_exec_ctx *exec_ctx, const char *target,
                                   const grpc_channel_args *input_args,
@@ -222,11 +223,12 @@ grpc_call *grpc_channel_create_call(grpc_channel *channel,
       "grpc_channel_create_call("
       "channel=%p, parent_call=%p, propagation_mask=%x, cq=%p, method=%s, "
       "host=%s, "
-      "deadline=gpr_timespec { tv_sec: %lld, tv_nsec: %d, clock_type: %d }, "
+      "deadline=gpr_timespec { tv_sec: %" PRId64
+      ", tv_nsec: %d, clock_type: %d }, "
       "reserved=%p)",
-      10, (channel, parent_call, (unsigned)propagation_mask, cq, method, host,
-           (long long)deadline.tv_sec, (int)deadline.tv_nsec,
-           (int)deadline.clock_type, reserved));
+      10,
+      (channel, parent_call, (unsigned)propagation_mask, cq, method, host,
+       deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type, reserved));
   GPR_ASSERT(!reserved);
   return grpc_channel_create_call_internal(
       channel, parent_call, propagation_mask, cq, NULL,
@@ -281,11 +283,12 @@ grpc_call *grpc_channel_create_registered_call(
       "grpc_channel_create_registered_call("
       "channel=%p, parent_call=%p, propagation_mask=%x, completion_queue=%p, "
       "registered_call_handle=%p, "
-      "deadline=gpr_timespec { tv_sec: %lld, tv_nsec: %d, clock_type: %d }, "
+      "deadline=gpr_timespec { tv_sec: %" PRId64
+      ", tv_nsec: %d, clock_type: %d }, "
       "reserved=%p)",
       9, (channel, parent_call, (unsigned)propagation_mask, completion_queue,
-          registered_call_handle, (long long)deadline.tv_sec,
-          (int)deadline.tv_nsec, (int)deadline.clock_type, reserved));
+          registered_call_handle, deadline.tv_sec, deadline.tv_nsec,
+          (int)deadline.clock_type, reserved));
   GPR_ASSERT(!reserved);
   return grpc_channel_create_call_internal(
       channel, parent_call, propagation_mask, completion_queue, NULL,
@@ -310,7 +313,7 @@ void grpc_channel_internal_unref(grpc_exec_ctx *exec_ctx,
 }
 
 static void destroy_channel(grpc_exec_ctx *exec_ctx, void *arg,
-                            bool iomgr_success) {
+                            grpc_error *error) {
   grpc_channel *channel = arg;
   grpc_channel_stack_destroy(exec_ctx, CHANNEL_STACK_FROM_CHANNEL(channel));
   while (channel->registered_calls) {
@@ -336,7 +339,7 @@ void grpc_channel_destroy(grpc_channel *channel) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   GRPC_API_TRACE("grpc_channel_destroy(channel=%p)", 1, (channel));
   memset(&op, 0, sizeof(op));
-  op.disconnect = 1;
+  op.disconnect_with_error = GRPC_ERROR_CREATE("Channel Destroyed");
   elem = grpc_channel_stack_element(CHANNEL_STACK_FROM_CHANNEL(channel), 0);
   elem->filter->start_transport_op(&exec_ctx, elem, &op);
 

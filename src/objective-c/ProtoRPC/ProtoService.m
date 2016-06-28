@@ -69,9 +69,9 @@
            requestsWriter:(GRXWriter *)requestsWriter
             responseClass:(Class)responseClass
        responsesWriteable:(id<GRXWriteable>)responsesWriteable {
-  ProtoMethod *methodName = [[ProtoMethod alloc] initWithPackage:_packageName
-                                                         service:_serviceName
-                                                          method:method];
+  GRPCProtoMethod *methodName = [[GRPCProtoMethod alloc] initWithPackage:_packageName
+                                                                 service:_serviceName
+                                                                  method:method];
   return [[ProtoRPC alloc] initWithHost:_host
                                  method:methodName
                          requestsWriter:requestsWriter

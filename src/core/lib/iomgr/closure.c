@@ -39,25 +39,32 @@ void grpc_closure_init(grpc_closure *closure, grpc_iomgr_cb_func cb,
                        void *cb_arg) {
   closure->cb = cb;
   closure->cb_arg = cb_arg;
-  closure->final_data = 0;
 }
 
-void grpc_closure_list_add(grpc_closure_list *closure_list,
-                           grpc_closure *closure, bool success) {
-  if (closure == NULL) return;
-  closure->final_data = (success != 0);
+void grpc_closure_list_append(grpc_closure_list *closure_list,
+                              grpc_closure *closure, grpc_error *error) {
+  if (closure == NULL) {
+    GRPC_ERROR_UNREF(error);
+    return;
+  }
+  closure->error = error;
+  closure->next_data.next = NULL;
   if (closure_list->head == NULL) {
     closure_list->head = closure;
   } else {
-    closure_list->tail->final_data |= (uintptr_t)closure;
+    closure_list->tail->next_data.next = closure;
   }
   closure_list->tail = closure;
 }
 
-void grpc_closure_list_fail_all(grpc_closure_list *list) {
-  for (grpc_closure *c = list->head; c != NULL; c = grpc_closure_next(c)) {
-    c->final_data &= ~(uintptr_t)1;
+void grpc_closure_list_fail_all(grpc_closure_list *list,
+                                grpc_error *forced_failure) {
+  for (grpc_closure *c = list->head; c != NULL; c = c->next_data.next) {
+    if (c->error == GRPC_ERROR_NONE) {
+      c->error = GRPC_ERROR_REF(forced_failure);
+    }
   }
+  GRPC_ERROR_UNREF(forced_failure);
 }
 
 bool grpc_closure_list_empty(grpc_closure_list closure_list) {
@@ -71,7 +78,7 @@ void grpc_closure_list_move(grpc_closure_list *src, grpc_closure_list *dst) {
   if (dst->head == NULL) {
     *dst = *src;
   } else {
-    dst->tail->final_data |= (uintptr_t)src->head;
+    dst->tail->next_data.next = src->head;
     dst->tail = src->tail;
   }
   src->head = src->tail = NULL;
@@ -83,12 +90,13 @@ typedef struct {
   grpc_closure wrapper;
 } wrapped_closure;
 
-static void closure_wrapper(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+static void closure_wrapper(grpc_exec_ctx *exec_ctx, void *arg,
+                            grpc_error *error) {
   wrapped_closure *wc = arg;
   grpc_iomgr_cb_func cb = wc->cb;
   void *cb_arg = wc->cb_arg;
   gpr_free(wc);
-  cb(exec_ctx, cb_arg, success);
+  cb(exec_ctx, cb_arg, error);
 }
 
 grpc_closure *grpc_closure_create(grpc_iomgr_cb_func cb, void *cb_arg) {
@@ -97,8 +105,4 @@ grpc_closure *grpc_closure_create(grpc_iomgr_cb_func cb, void *cb_arg) {
   wc->cb_arg = cb_arg;
   grpc_closure_init(&wc->wrapper, closure_wrapper, wc);
   return &wc->wrapper;
-}
-
-grpc_closure *grpc_closure_next(grpc_closure *closure) {
-  return (grpc_closure *)(closure->final_data & ~(uintptr_t)1);
 }

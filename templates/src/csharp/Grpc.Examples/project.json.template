@@ -1,0 +1,27 @@
+%YAML 1.2
+--- |
+  {
+    <%include file="../build_options.include" args="executable=False"/>
+    "dependencies": {
+      "Grpc.Core": {
+        "target": "project"
+      },
+      "Google.Protobuf": "3.0.0-beta3"
+    },
+    "frameworks": {
+      "net45": {
+        "frameworkAssemblies": {
+          "System.Runtime": "",
+          "System.IO": ""
+        }
+      },
+      "netstandard1.5": {
+        "imports": [
+          "portable-net45"
+        ],
+        "dependencies": {
+          "NETStandard.Library": "1.5.0-rc2-24027"
+        }
+      }
+    }
+  }

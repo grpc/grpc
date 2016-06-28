@@ -1,0 +1,44 @@
+%YAML 1.2
+--- |
+  {
+    "version": "${settings.csharp_version}",
+    "title": "gRPC C# Core",
+    "authors": [ "Google Inc." ],
+    "copyright": "Copyright 2015, Google Inc.",
+    "packOptions": {
+      "summary": "Core C# implementation of gRPC - an RPC library and framework",
+      "description": "Core C# implementation of gRPC - an RPC library and framework. See project site for more info.",
+      "owners": [ "grpc-packages" ],
+      "licenseUrl": "https://github.com/grpc/grpc/blob/master/LICENSE",
+      "projectUrl": "https://github.com/grpc/grpc",
+      "requireLicenseAcceptance": false,
+      "tags": [ "gRPC RPC Protocol HTTP/2" ],
+      "files": {
+        "build/net45/": "Grpc.Core.targets",
+        "build/native/bin/windows_x86/": "../nativelibs/windows_x86/grpc_csharp_ext.dll",
+        "build/native/bin/windows_x64/": "../nativelibs/windows_x64/grpc_csharp_ext.dll",
+        "build/native/bin/linux_x86/": "../nativelibs/linux_x86/libgrpc_csharp_ext.so",
+        "build/native/bin/linux_x64/": "../nativelibs/linux_x64/libgrpc_csharp_ext.so",
+        "build/native/bin/macosx_x86/": "../nativelibs/macosx_x86/libgrpc_csharp_ext.dylib",
+        "build/native/bin/macosx_x64/": "../nativelibs/macosx_x64/libgrpc_csharp_ext.dylib"
+      }
+    },
+    "buildOptions": {
+      "embed": [ "../../../etc/roots.pem" ]
+    },
+    "dependencies": {
+      "Ix-Async": "1.2.5"
+    },
+    "frameworks": {
+      "net45": { },
+      "netstandard1.5": {
+        "imports": [
+          "portable-net45"
+        ],
+        "dependencies": {
+          "NETStandard.Library": "1.5.0-rc2-24027",
+          "System.Threading.Thread": "4.0.0-rc2-24027"
+        }
+      }
+    }
+  }

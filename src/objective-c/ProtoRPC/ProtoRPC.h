@@ -56,6 +56,9 @@ __attribute__((deprecated("Please use GRPCProtoCall.")))
  * This subclass is empty now. Eventually we'll remove ProtoRPC class
  * to avoid potential naming conflict
  */
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 @interface GRPCProtoCall : ProtoRPC
+#pragma clang diagnostic pop
 
 @end

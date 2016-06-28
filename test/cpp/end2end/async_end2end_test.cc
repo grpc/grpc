@@ -31,6 +31,7 @@
  *
  */
 
+#include <cinttypes>
 #include <memory>
 #include <thread>
 
@@ -207,12 +208,11 @@ class ServerBuilderSyncPluginDisabler : public ::grpc::ServerBuilderOption {
  public:
   void UpdateArguments(ChannelArguments* arg) GRPC_OVERRIDE {}
 
-  void UpdatePlugins(
-      std::map<grpc::string, std::unique_ptr<ServerBuilderPlugin>>* plugins)
+  void UpdatePlugins(std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins)
       GRPC_OVERRIDE {
     auto plugin = plugins->begin();
     while (plugin != plugins->end()) {
-      if ((*plugin).second->has_sync_methods()) {
+      if ((*plugin)->has_sync_methods()) {
         plugins->erase(plugin++);
       } else {
         plugin++;
@@ -235,8 +235,11 @@ class TestScenario {
         disable_blocking, credentials_type.c_str(), message_content.size());
   }
   bool disable_blocking;
-  const grpc::string credentials_type;
-  const grpc::string message_content;
+  // Although the below grpc::string's are logically const, we can't declare
+  // them const because of a limitation in the way old compilers (e.g., gcc-4.4)
+  // manage vector insertion using a copy constructor
+  grpc::string credentials_type;
+  grpc::string message_content;
 };
 
 class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
@@ -940,7 +943,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
 
     // Client sends 3 messages (tags 3, 4 and 5)
     for (int tag_idx = 3; tag_idx <= 5; tag_idx++) {
-      send_request.set_message("Ping " + std::to_string(tag_idx));
+      send_request.set_message("Ping " + grpc::to_string(tag_idx));
       cli_stream->Write(send_request, tag(tag_idx));
       Verifier(GetParam().disable_blocking)
           .Expect(tag_idx, true)
@@ -1106,7 +1109,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     // Server sends three messages (tags 3, 4 and 5)
     // But if want_done tag is true, we might also see tag 11
     for (int tag_idx = 3; tag_idx <= 5; tag_idx++) {
-      send_response.set_message("Pong " + std::to_string(tag_idx));
+      send_response.set_message("Pong " + grpc::to_string(tag_idx));
       srv_stream.Write(send_response, tag(tag_idx));
       // Note that we'll add something to the verifier and verify that
       // something was seen, but it might be tag 11 and not what we
@@ -1397,9 +1400,9 @@ std::vector<TestScenario> CreateTestScenarios(bool test_disable_blocking,
   for (auto cred = credentials_types.begin(); cred != credentials_types.end();
        ++cred) {
     for (auto msg = messages.begin(); msg != messages.end(); msg++) {
-      scenarios.push_back(TestScenario(false, *cred, *msg));
+      scenarios.emplace_back(false, *cred, *msg);
       if (test_disable_blocking) {
-        scenarios.push_back(TestScenario(true, *cred, *msg));
+        scenarios.emplace_back(true, *cred, *msg);
       }
     }
   }

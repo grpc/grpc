@@ -156,6 +156,8 @@ typedef struct {
 #define GRPC_SSL_TARGET_NAME_OVERRIDE_ARG "grpc.ssl_target_name_override"
 /* Maximum metadata size */
 #define GRPC_ARG_MAX_METADATA_SIZE "grpc.max_metadata_size"
+/** If non-zero, allow the use of SO_REUSEPORT if it's available (default 1) */
+#define GRPC_ARG_ALLOW_REUSEPORT "grpc.so_reuseport"
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
     particular operation, the grpc_call_error returned will be GRPC_CALL_OK.

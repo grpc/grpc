@@ -193,7 +193,7 @@ class ClientContext {
   ///
   /// \return A multimap of initial metadata key-value pairs from the server.
   const std::multimap<grpc::string_ref, grpc::string_ref>&
-  GetServerInitialMetadata() {
+  GetServerInitialMetadata() const {
     GPR_CODEGEN_ASSERT(initial_metadata_received_);
     return recv_initial_metadata_;
   }
@@ -205,7 +205,7 @@ class ClientContext {
   ///
   /// \return A multimap of metadata trailing key-value pairs from the server.
   const std::multimap<grpc::string_ref, grpc::string_ref>&
-  GetServerTrailingMetadata() {
+  GetServerTrailingMetadata() const {
     // TODO(yangg) check finished
     return trailing_metadata_;
   }
@@ -230,13 +230,13 @@ class ClientContext {
 
 #ifndef GRPC_CXX0X_NO_CHRONO
   /// Return the deadline for the client call.
-  std::chrono::system_clock::time_point deadline() {
+  std::chrono::system_clock::time_point deadline() const {
     return Timespec2Timepoint(deadline_);
   }
 #endif  // !GRPC_CXX0X_NO_CHRONO
 
   /// Return a \a gpr_timespec representation of the client call's deadline.
-  gpr_timespec raw_deadline() { return deadline_; }
+  gpr_timespec raw_deadline() const { return deadline_; }
 
   /// Set the per call authority header (see
   /// https://tools.ietf.org/html/rfc7540#section-8.1.2.3).
@@ -337,7 +337,7 @@ class ClientContext {
                                   const InputMessage& request,
                                   OutputMessage* result);
 
-  grpc_call* call() { return call_; }
+  grpc_call* call() const { return call_; }
   void set_call(grpc_call* call, const std::shared_ptr<Channel>& channel);
 
   uint32_t initial_metadata_flags() const {

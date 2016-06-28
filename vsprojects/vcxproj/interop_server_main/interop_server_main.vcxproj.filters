@@ -10,7 +10,7 @@
     <ClCompile Include="$(SolutionDir)\..\src\proto\grpc\testing\test.proto">
       <Filter>src\proto\grpc\testing</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\test\cpp\interop\server_main.cc">
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\interop\interop_server.cc">
       <Filter>test\cpp\interop</Filter>
     </ClCompile>
   </ItemGroup>
