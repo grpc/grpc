@@ -58,10 +58,10 @@ before_script:
 script:
   - if [ "${BUILD_ONLY}" = "true" ]; then
       xctool -workspace "$TEST_PATH/$WORKSPACE" -scheme "$SCHEME"
-      -sdk iphonesimulator9.3 clean build;
+      -sdk iphonesimulator9.3 build;
     else
       xctool -workspace "$TEST_PATH/$WORKSPACE" -scheme "$SCHEME"
-      -sdk iphonesimulator9.3 build test;
+      -sdk iphonesimulator9.3 test;
     fi
 notifications:
   email: false
