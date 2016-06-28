@@ -83,10 +83,10 @@ def render_interop_html_report(
   try:
     mytemplate = Template(filename=template_file, format_exceptions=True)
   except NameError:
-    print 'Mako template is not installed. Skipping HTML report generation.'
+    print('Mako template is not installed. Skipping HTML report generation.')
     return
   except IOError as e:
-    print 'Failed to find the template %s: %s' % (template_file, e)
+    print('Failed to find the template %s: %s' % (template_file, e))
     return
 
   sorted_test_cases = sorted(test_cases)
