@@ -169,7 +169,6 @@ Pod::Spec.new do |s|
       #include "pkcs7.h"
       #include "pkcs8.h"
       #include "poly1305.h"
-      #include "pqueue.h"
       #include "rand.h"
       #include "rc4.h"
       #include "ripemd.h"
