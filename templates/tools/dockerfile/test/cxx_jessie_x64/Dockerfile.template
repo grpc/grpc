@@ -35,5 +35,6 @@
   <%include file="../../cxx_deps.include"/>
   <%include file="../../clang_update.include"/>
   <%include file="../../run_tests_addons.include"/>
+  <%include file="../../python_deps.include"/>
   # Define the default command.
   CMD ["bash"]

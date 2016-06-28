@@ -45,5 +45,6 @@
   ENV POST_GIT_STEP tools/dockerfile/test/cxx_wheezy_x64/post-git-setup.sh
 
   <%include file="../../run_tests_addons.include"/>
+  <%include file="../../python_deps.include"/>
   # Define the default command.
   CMD ["bash"]

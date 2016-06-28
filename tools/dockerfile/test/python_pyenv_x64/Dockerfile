@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -63,42 +63,39 @@ RUN apt-get update && apt-get install -y \
 # Build profiling
 RUN apt-get update && apt-get install -y time && apt-get clean
 
-#=================
-# C++ dependencies
-RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
+#====================
+# Python dependencies
 
-#=================
-# Update clang to a version with improved tsan and fuzzing capabilities
+# Install dependencies
 
-RUN apt-get update && apt-get -y install python cmake && apt-get clean
+RUN apt-get update && apt-get install -y \
+    python-all-dev \
+    python3-all-dev \
+    python-pip
 
-RUN git clone -n -b release_38 http://llvm.org/git/llvm.git && \
-  cd llvm && git checkout ad57503 && cd ..
-RUN git clone -n -b release_38 http://llvm.org/git/clang.git && \
-  cd clang && git checkout ad2c56e && cd ..
-RUN git clone -n -b release_38 http://llvm.org/git/compiler-rt.git && \
-  cd compiler-rt && git checkout 3176922 && cd ..
-RUN git clone -n -b release_38 \
-  http://llvm.org/git/clang-tools-extra.git && cd clang-tools-extra && \
-  git checkout c288525 && cd ..
-RUN git clone -n -b release_38 http://llvm.org/git/libcxx.git && \
-  cd libcxx && git checkout fda3549  && cd ..
-RUN git clone -n -b release_38 http://llvm.org/git/libcxxabi.git && \
-  cd libcxxabi && git checkout 8d4e51d && cd ..
+# Install Python packages from PyPI
+RUN pip install pip --upgrade
+RUN pip install virtualenv
+RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.0.0a2 tox six==1.10.0
 
-RUN mv clang llvm/tools
-RUN mv compiler-rt llvm/projects
-RUN mv clang-tools-extra llvm/tools/clang/tools
-RUN mv libcxx llvm/projects
-RUN mv libcxxabi llvm/projects
+# Install dependencies for pyenv
+RUN apt-get update && apt-get install -y \
+  libbz2-dev \
+  libncurses5-dev \
+  libncursesw5-dev \
+  libreadline-dev \
+  libsqlite3-dev \
+  libssl-dev \
+  llvm \
+  mercurial \
+  zlib1g-dev && apt-get clean
 
-RUN mkdir llvm-build
-RUN cd llvm-build && cmake \
-  -DCMAKE_BUILD_TYPE:STRING=Release \
-  -DCMAKE_INSTALL_PREFIX:STRING=/usr \
-  -DLLVM_TARGETS_TO_BUILD:STRING=X86 \
-  ../llvm
-RUN make -C llvm-build -j 12 && make -C llvm-build install && rm -rf llvm-build
+# Install Pyenv and associated Python versions
+RUN curl -L https://raw.githubusercontent.com/yyuu/pyenv-installer/master/bin/pyenv-installer | bash
+RUN pyenv update
+RUN pyenv install 3.5-dev
+RUN pyenv install 3.6-dev
+RUN pyenv local 3.5-dev 3.6-dev
 
 # Prepare ccache
 RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
@@ -114,21 +111,6 @@ RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
 RUN apt-get install -y libzookeeper-mt-dev
 
 RUN mkdir /var/local/jenkins
-
-#====================
-# Python dependencies
-
-# Install dependencies
-
-RUN apt-get update && apt-get install -y \
-    python-all-dev \
-    python3-all-dev \
-    python-pip
-
-# Install Python packages from PyPI
-RUN pip install pip --upgrade
-RUN pip install virtualenv
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.0.0a2 tox six==1.10.0
 
 # Define the default command.
 CMD ["bash"]
