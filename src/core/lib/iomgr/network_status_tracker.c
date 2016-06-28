@@ -52,7 +52,7 @@ void grpc_initialize_network_status_monitor() {
   gpr_mu_init(&g_endpoint_mutex);
   // TODO(makarandd): Install callback with OS to monitor network status.
   grpc_start_connectivity_monitor("0.0.0.0",
-                                  &grpc_network_status_shutdown_all_endpoints);
+                                  grpc_network_status_shutdown_all_endpoints);
 }
 
 void grpc_destroy_network_status_monitor() {
