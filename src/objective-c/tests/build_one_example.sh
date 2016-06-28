@@ -45,9 +45,9 @@ cd `dirname $0`/../../..
 cd $EXAMPLE_PATH
 
 # clean the directory
-git checkout .
-git clean -df .
 rm -rf Pods
+rm -rf $SCHEME.xcworkspace
+rm -f Podfile.lock
 
 pod install
 
