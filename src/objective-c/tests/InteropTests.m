@@ -58,7 +58,7 @@
                  requestedResponseSize:(NSNumber *)responseSize {
   RMTStreamingOutputCallRequest *request = [self message];
   RMTResponseParameters *parameters = [RMTResponseParameters message];
-  parameters.size = (int)responseSize.integerValue;
+  parameters.size = responseSize.intValue;
   [request.responseParametersArray addObject:parameters];
   request.payload.body = [NSMutableData dataWithLength:payloadSize.unsignedIntegerValue];
   return request;
@@ -188,7 +188,7 @@ static cronet_engine *cronetEngine = NULL;
   RMTStreamingOutputCallRequest *request = [RMTStreamingOutputCallRequest message];
   for (NSNumber *size in expectedSizes) {
     RMTResponseParameters *parameters = [RMTResponseParameters message];
-    parameters.size = (int)[size integerValue];
+    parameters.size = [size intValue];
     [request.responseParametersArray addObject:parameters];
   }
 
@@ -284,9 +284,10 @@ static cronet_engine *cronetEngine = NULL;
   // A buffered pipe to which we never write any value acts as a writer that just hangs.
   GRXBufferedPipe *requestsBuffer = [[GRXBufferedPipe alloc] init];
 
-  GRPCProtoCall *call = [_service RPCToStreamingInputCallWithRequestsWriter:requestsBuffer
-                                                                    handler:^(RMTStreamingInputCallResponse *response,
-                                                                              NSError *error) {
+  GRPCProtoCall *call =
+      [_service RPCToStreamingInputCallWithRequestsWriter:requestsBuffer
+                                                  handler:^(RMTStreamingInputCallResponse *response,
+                                                            NSError *error) {
     XCTAssertEqual(error.code, GRPC_STATUS_CANCELLED);
     [expectation fulfill];
   }];
