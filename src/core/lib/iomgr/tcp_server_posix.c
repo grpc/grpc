@@ -512,8 +512,9 @@ static grpc_error *clone_port(grpc_tcp_listener *listener, unsigned count) {
     sp->port = port;
     sp->port_index = listener->port_index;
     sp->fd_index = listener->fd_index + count - i;
+    listener->sibling = sp;
     sp->is_sibling = 1;
-    sp->sibling = listener->is_sibling ? listener->sibling : listener;
+    sp->sibling = listener->sibling;
     GPR_ASSERT(sp->emfd);
     while (listener->server->tail->next != NULL) {
       listener->server->tail = listener->server->tail->next;
