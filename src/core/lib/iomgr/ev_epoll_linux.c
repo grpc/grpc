@@ -1434,12 +1434,10 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                          This is the mask used at all times *except during
                          epoll_wait()*"
          g_orig_sigmask: The thread mask which allows 'grpc_wakeup_signal' and
-         this is
-                    the mask to use *during epoll_wait()*
+                         this is the mask to use *during epoll_wait()*
 
          The new_mask is set on the worker before it is added to the pollset
-         (i.e
-         before it can be kicked) */
+         (i.e before it can be kicked) */
     }
 
     push_front_worker(pollset, &worker); /* Add worker to pollset */
