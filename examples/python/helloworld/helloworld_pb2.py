@@ -107,10 +107,53 @@ _sym_db.RegisterMessage(HelloReply)
 
 DESCRIPTOR.has_options = True
 DESCRIPTOR._options = _descriptor._ParseOptions(descriptor_pb2.FileOptions(), _b('\n\033io.grpc.examples.helloworldB\017HelloWorldProtoP\001\242\002\003HLW'))
+import grpc
 from grpc.beta import implementations as beta_implementations
 from grpc.beta import interfaces as beta_interfaces
 from grpc.framework.common import cardinality
 from grpc.framework.interfaces.face import utilities as face_utilities
+
+
+class GreeterStub(object):
+  """The greeting service definition.
+  """
+
+  def __init__(self, channel):
+    """Constructor.
+
+    Args:
+      channel: A grpc.Channel.
+    """
+    self.SayHello = channel.unary_unary(
+        '/helloworld.Greeter/SayHello',
+        request_serializer=HelloRequest.SerializeToString,
+        response_deserializer=HelloReply.FromString,
+        )
+
+
+class GreeterServicer(object):
+  """The greeting service definition.
+  """
+
+  def SayHello(self, request, context):
+    """Sends a greeting
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+
+def add_GreeterServicer_to_server(servicer, server):
+  rpc_method_handlers = {
+      'SayHello': grpc.unary_unary_rpc_method_handler(
+          servicer.SayHello,
+          request_deserializer=HelloRequest.FromString,
+          response_serializer=HelloReply.SerializeToString,
+      ),
+  }
+  generic_handler = grpc.method_handlers_generic_handler(
+      'helloworld.Greeter', rpc_method_handlers)
+  server.add_generic_rpc_handlers((generic_handler,))
 
 
 class BetaGreeterServicer(object):
