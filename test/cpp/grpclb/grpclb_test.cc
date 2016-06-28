@@ -124,7 +124,11 @@ static gpr_slice build_response_payload_slice(
     auto *server = serverlist->add_servers();
     server->set_ip_address(host);
     server->set_port(ports[i]);
-    server->set_load_balance_token("token" + std::to_string(ports[i]));
+    // The following long long int cast is meant to work around the
+    // disfunctional implementation of std::to_string in gcc 4.4, which doesn't
+    // have a version for int but does have one for long long int.
+    server->set_load_balance_token("token" +
+                                   std::to_string((long long int)ports[i]));
   }
 
   gpr_log(GPR_INFO, "generating response: %s",
