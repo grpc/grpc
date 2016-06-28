@@ -31,7 +31,7 @@
 """Manage TCP ports for unit tests; started by run_tests.py"""
 
 import argparse
-import BaseHTTPServer
+from six.moves import BaseHTTPServer
 import hashlib
 import os
 import socket
@@ -46,7 +46,7 @@ _MY_VERSION = 7
 
 
 if len(sys.argv) == 2 and sys.argv[1] == 'dump_version':
-  print _MY_VERSION
+  print(_MY_VERSION)
   sys.exit(0)
 
 
@@ -62,7 +62,7 @@ if args.logfile is not None:
   sys.stderr = open(args.logfile, 'w')
   sys.stdout = sys.stderr
 
-print 'port server running on port %d' % args.port
+print('port server running on port %d' % args.port)
 
 pool = []
 in_use = {}
@@ -159,4 +159,4 @@ while keep_running:
   httpd.handle_request()
   sys.stderr.flush()
 
-print 'done'
+print('done')
