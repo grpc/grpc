@@ -71,9 +71,25 @@ Pod::Spec.new do |s|
                :tag => 'version_for_cocoapods_3.0' }
 
   name = 'openssl'
+
+  # When creating a dynamic framework, name it openssl.framework instead of BoringSSL.framework.
   s.module_name = name
+
+  # When creating a dynamic framework, copy the headers under `include/openssl/` into the root of
+  # the `Headers/` directory of the framework (i.e., not under `Headers/include/openssl`).
+  #
+  # TODO(jcanizales): Debug why this doesn't work on macOS.
+  s.header_mappings_dir = 'include/openssl'
+
+  # The above has an undesired effect when creating a static library: It forces users to write
+  # includes like `#include <BoringSSL/ssl.h>`. `s.header_dir` adds a path prefix to that, and
+  # because Cocoapods lets omit the pod name when including headers of static libraries, the
+  # following lets users write `#include <openssl/ssl.h>`.
   s.header_dir = name
 
+  # The module map and umbrella header created automatically by Cocoapods don't work for C libraries
+  # like this one. The following file, and a correct umbrella header, are created on the fly by the
+  # `prepare_command` of this pod.
   s.module_map = 'include/openssl/module.modulemap'
 
   # We don't need to inhibit all warnings; only -Wno-shorten-64-to-32. But Cocoapods' linter doesn't
@@ -81,14 +97,19 @@ Pod::Spec.new do |s|
   s.compiler_flags = '-DOPENSSL_NO_ASM', '-GCC_WARN_INHIBIT_ALL_WARNINGS', '-w'
   s.requires_arc = false
 
-  s.header_mappings_dir = 'include/openssl'
-
+  # Like many other C libraries, BoringSSL has its public headers under `include/<libname>/` and its
+  # sources and private headers in other directories outside `include/`. Cocoapods' linter doesn't
+  # allow any header to be listed outside the `header_mappings_dir` (even though doing so works in
+  # practice). Because we need our `header_mappings_dir` to be `include/openssl/` for the reason
+  # mentioned above, we work around the linter limitation by dividing the pod into two subspecs, one
+  # for public headers and the other for implementation. Each gets its own `header_mappings_dir`,
+  # making the linter happy.
   s.subspec 'Interface' do |ss|
     ss.header_mappings_dir = 'include/openssl'
     ss.source_files = 'include/openssl/*.h'
+    # Doesn't compile correctly; but doesn't seem to be needed:
     ss.exclude_files = 'include/openssl/arm_arch.h'
   end
-
   s.subspec 'Implementation' do |ss|
     ss.header_mappings_dir = '.'
     ss.source_files = 'ssl/*.{h,c}',
