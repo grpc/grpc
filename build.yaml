@@ -795,7 +795,6 @@ libs:
   language: c
   src:
   - src/core/lib/surface/init.c
-  LDFLAGS: $(if $(subst Darwin,,$(SYSTEM)),,-framework CoreFoundation -framework SystemConfiguration)
   baselib: true
   deps_linkage: static
   dll: true
@@ -824,7 +823,6 @@ libs:
   language: c
   src:
   - src/core/lib/surface/init.c
-  LDFLAGS: $(if $(subst Darwin,,$(SYSTEM)),,-framework CoreFoundation -framework SystemConfiguration)
   baselib: true
   deps_linkage: static
   dll: true
@@ -893,7 +891,6 @@ libs:
   src:
   - src/core/lib/surface/init.c
   - src/core/lib/surface/init_unsecure.c
-  LDFLAGS: $(if $(subst Darwin,,$(SYSTEM)),,-framework CoreFoundation -framework SystemConfiguration)
   baselib: true
   deps_linkage: static
   dll: true
