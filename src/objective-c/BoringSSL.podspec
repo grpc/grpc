@@ -85,7 +85,7 @@ Pod::Spec.new do |s|
 
   s.subspec 'Interface' do |ss|
     ss.header_mappings_dir = 'include/openssl'
-    ss.source_files = 'include/openssl/*.h', 'include/openssl/empty.c'
+    ss.source_files = 'include/openssl/*.h'
     ss.exclude_files = 'include/openssl/arm_arch.h'
   end
 
@@ -118,8 +118,6 @@ Pod::Spec.new do |s|
     # former assumes crypto/ is in the headers search path, which is hard to enforce when using
     # dynamic frameworks. The latters always works, being relative to the current file.
     sed -E -i '.back' 's/crypto\\///g' crypto/cipher/e_tls.c
-
-    touch include/openssl/empty.c
 
     # Add a module map and an umbrella header
     cat > include/openssl/umbrella.h <<EOF
