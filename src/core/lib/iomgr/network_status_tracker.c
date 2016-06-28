@@ -31,6 +31,8 @@
  *
  */
 
+#include "src/core/lib/iomgr/network_status_tracker.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include "src/core/lib/iomgr/endpoint.h"
@@ -44,8 +46,6 @@ typedef struct endpoint_ll_node {
 static endpoint_ll_node *head = NULL;
 static gpr_mu g_endpoint_mutex;
 static bool g_init_done = false;
-
-void grpc_network_status_shutdown_all_endpoints();
 
 void grpc_initialize_network_status_monitor() {
   g_init_done = true;
