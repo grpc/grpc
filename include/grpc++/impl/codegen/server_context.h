@@ -97,6 +97,10 @@ class ServerContext {
   std::chrono::system_clock::time_point deadline() const {
     return Timespec2Timepoint(deadline_);
   }
+
+  std::chrono::steady_clock::time_point steady_deadline() {
+    return Timespec2TimepointSteady(deadline_);
+  }
 #endif  // !GRPC_CXX0X_NO_CHRONO
 
   gpr_timespec raw_deadline() const { return deadline_; }

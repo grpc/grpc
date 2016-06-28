@@ -86,17 +86,33 @@ namespace grpc {
 // from and to should be absolute time.
 void Timepoint2Timespec(const std::chrono::system_clock::time_point& from,
                         gpr_timespec* to);
+void TimepointSteady2Timespec(
+    const std::chrono::steady_clock::time_point& from,
+    gpr_timespec* to);
 void TimepointHR2Timespec(
     const std::chrono::high_resolution_clock::time_point& from,
     gpr_timespec* to);
 
 std::chrono::system_clock::time_point Timespec2Timepoint(gpr_timespec t);
+std::chrono::steady_clock::time_point Timespec2TimepointSteady(gpr_timespec t);
 
 template <>
 class TimePoint<std::chrono::system_clock::time_point> {
  public:
   TimePoint(const std::chrono::system_clock::time_point& time) {
     Timepoint2Timespec(time, &time_);
+  }
+  gpr_timespec raw_time() const { return time_; }
+
+ private:
+  gpr_timespec time_;
+};
+
+template <>
+class TimePoint<std::chrono::steady_clock::time_point> {
+ public:
+  TimePoint(const std::chrono::steady_clock::time_point& time) {
+    TimepointSteady2Timespec(time, &time_);
   }
   gpr_timespec raw_time() const { return time_; }
 

@@ -233,6 +233,12 @@ class ClientContext {
   std::chrono::system_clock::time_point deadline() const {
     return Timespec2Timepoint(deadline_);
   }
+
+  /// Return the deadline for the client call.
+  std::chrono::steady_clock::time_point steady_deadline() {
+    return Timespec2TimepointSteady(deadline_);
+  }
+
 #endif  // !GRPC_CXX0X_NO_CHRONO
 
   /// Return a \a gpr_timespec representation of the client call's deadline.
