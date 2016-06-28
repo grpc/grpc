@@ -46,7 +46,7 @@ struct grpc_connectivity_monitor {
   dispatch_queue_t dispatch_queue;
   SCNetworkReachabilityRef reachability_ref;
   void (*loss_connection_handler)(void);
-};
+}
 
 static struct grpc_connectivity_monitor g_monitor;
 static gpr_once g_monitor_mu_once = GPR_ONCE_INIT;
