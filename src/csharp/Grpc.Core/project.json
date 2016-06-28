@@ -21,6 +21,7 @@
       "build/native/bin/macosx_x64/": "../nativelibs/macosx_x64/libgrpc_csharp_ext.dylib"
     }
   },
+  "shared": "Version.cs",
   "buildOptions": {
     "embed": [ "../../../etc/roots.pem" ]
   },
