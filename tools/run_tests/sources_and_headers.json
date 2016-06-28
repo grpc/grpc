@@ -1720,22 +1720,6 @@
     ], 
     "headers": [], 
     "language": "c", 
-    "name": "timers_test", 
-    "src": [
-      "test/core/profiling/timers_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
     "name": "transport_connectivity_state_test", 
     "src": [
       "test/core/transport/connectivity_state_test.c"
@@ -5701,19 +5685,6 @@
   }, 
   {
     "deps": [
-      "grpc++_codegen_base"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "grpc++_codegen_base_src", 
-    "src": [
-      "src/cpp/codegen/codegen_init.cc"
-    ], 
-    "third_party": false, 
-    "type": "filegroup"
-  }, 
-  {
-    "deps": [
       "gpr", 
       "grpc_codegen"
     ], 
@@ -5795,7 +5766,6 @@
       "src/core/lib/surface/init.h", 
       "src/core/lib/surface/lame_client.h", 
       "src/core/lib/surface/server.h", 
-      "src/core/lib/surface/surface_trace.h", 
       "src/core/lib/transport/byte_stream.h", 
       "src/core/lib/transport/connectivity_state.h", 
       "src/core/lib/transport/metadata.h", 
@@ -5962,7 +5932,6 @@
       "src/core/lib/surface/metadata_array.c", 
       "src/core/lib/surface/server.c", 
       "src/core/lib/surface/server.h", 
-      "src/core/lib/surface/surface_trace.h", 
       "src/core/lib/surface/validate_metadata.c", 
       "src/core/lib/surface/version.c", 
       "src/core/lib/transport/byte_stream.c", 
@@ -6742,6 +6711,19 @@
       "include/grpc++/impl/codegen/sync_no_cxx11.h", 
       "include/grpc++/impl/codegen/sync_stream.h", 
       "include/grpc++/impl/codegen/time.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "grpc++_codegen_base"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "grpc++_codegen_base_src", 
+    "src": [
+      "src/cpp/codegen/codegen_init.cc"
     ], 
     "third_party": false, 
     "type": "filegroup"

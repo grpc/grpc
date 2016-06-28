@@ -522,7 +522,7 @@ class CSharpLanguage(object):
       if self.platform == 'linux':
         assembly_subdir += '/netstandard1.5/debian.8-x64'
         assembly_extension = ''
-      if self.platform == 'mac':
+      elif self.platform == 'mac':
         assembly_subdir += '/netstandard1.5/osx.10.11-x64'
         assembly_extension = ''
       else:
