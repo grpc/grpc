@@ -32,39 +32,16 @@
  */
 
 
-#ifndef TEST_GRPC_C_CONTEXT_H
-#define TEST_GRPC_C_CONTEXT_H
+#ifndef TEST_GRPC_C_SERVER_STREAMING_BLOCKING_CALL_H
+#define TEST_GRPC_C_SERVER_STREAMING_BLOCKING_CALL_H
 
-#include "../grpc_c_public.h"
-#include "../serialization_public.h"
-#include <grpc/grpc.h>
-#include "status.h"
-#include "message.h"
 #include "call_ops.h"
-#include <stdbool.h>
+#include "../server_streaming_blocking_call_public.h"
 
-typedef struct grpc_call_op_set grpc_call_op_set;
-
-typedef struct grpc_context {
-  grpc_metadata *send_metadata_array;
-  grpc_metadata_array recv_metadata_array;
-  grpc_metadata_array trailing_metadata_array;
-  gpr_timespec deadline;
-
-  // serialization mechanism used in this call
-  GRPC_serializer serialize;
-  GRPC_deserializer deserialize;
-
-  // status of the call
-  grpc_status status;
-
-  // state tracking
-  bool initial_metadata_received;
-  GRPC_method rpc_method;
-  grpc_channel *channel;
+typedef struct grpc_client_reader {
+  grpc_context *context;
   grpc_call *call;
-} grpc_context;
+  grpc_completion_queue *cq;
+} grpc_client_reader;
 
-typedef grpc_context GRPC_context;
-
-#endif //TEST_GRPC_C_CONTEXT_H
+#endif //TEST_GRPC_C_SERVER_STREAMING_BLOCKING_CALL_H
