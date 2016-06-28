@@ -56,6 +56,9 @@ using grpc::testing::GaugeResponse;
 using grpc::testing::MetricsService;
 using grpc::testing::MetricsServiceImpl;
 
+// Do not log anything
+void BlackholeLogger(gpr_log_func_args* args) {}
+
 // Prints the values of all Gauges (unless total_only is set to 'true' in which
 // case this only prints the sum of all gauge values).
 bool PrintMetrics(std::unique_ptr<MetricsService::Stub> stub, bool total_only,
@@ -76,21 +79,21 @@ bool PrintMetrics(std::unique_ptr<MetricsService::Stub> stub, bool total_only,
   while (reader->Read(&gauge_response)) {
     if (gauge_response.value_case() == GaugeResponse::kLongValue) {
       if (!total_only) {
-        gpr_log(GPR_INFO, "%s: %lld", gauge_response.name().c_str(),
-                gauge_response.long_value());
+        std::cout << gauge_response.name() << ": "
+                  << gauge_response.long_value() << std::endl;
       }
       overall_qps += gauge_response.long_value();
     } else {
-      gpr_log(GPR_INFO, "Gauge %s is not a long value",
-              gauge_response.name().c_str());
+      std::cout << "Gauge %s is not a long value" << gauge_response.name()
+                << std::endl;
     }
   }
 
-  gpr_log(GPR_INFO, "%ld", overall_qps);
+  std::cout << overall_qps << std::endl;
 
   const grpc::Status status = reader->Finish();
   if (!status.ok()) {
-    gpr_log(GPR_ERROR, "Error in getting metrics from the client");
+    std::cout << "Error in getting metrics from the client" << std::endl;
   }
 
   return status.ok();
@@ -99,14 +102,10 @@ bool PrintMetrics(std::unique_ptr<MetricsService::Stub> stub, bool total_only,
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
 
-  // Make sure server_addresses flag is not empty
-  if (FLAGS_metrics_server_address.empty()) {
-    gpr_log(
-        GPR_ERROR,
-        "Cannot connect to the Metrics server. Please pass the address of the"
-        "metrics server to connect to via the 'metrics_server_address' flag");
-    return 1;
-  }
+  // The output of metrics client is in some cases programatically parsed (for
+  // example by the stress test framework). So, we do not want any of the log
+  // from the grpc library appearing on stdout.
+  gpr_set_log_function(BlackholeLogger);
 
   std::shared_ptr<grpc::Channel> channel(grpc::CreateChannel(
       FLAGS_metrics_server_address, grpc::InsecureChannelCredentials()));
