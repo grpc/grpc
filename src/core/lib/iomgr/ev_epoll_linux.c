@@ -1031,6 +1031,8 @@ static void fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
  */
 GPR_TLS_DECL(g_current_thread_pollset);
 GPR_TLS_DECL(g_current_thread_worker);
+static __thread bool g_initialized_sigmask;
+static __thread sigset_t g_orig_sigmask;
 
 static void sig_handler(int sig_num) {
 #ifdef GRPC_EPOLL_DEBUG
@@ -1388,7 +1390,6 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   int timeout_ms = poll_deadline_to_millis_timeout(deadline, now);
 
   sigset_t new_mask;
-  sigset_t orig_mask;
 
   grpc_pollset_worker worker;
   worker.next = worker.prev = NULL;
@@ -1423,21 +1424,28 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
        times *except* when it is in epoll_pwait(). This way, the worker never
        misses acting on a kick */
 
-    sigemptyset(&new_mask);
-    sigaddset(&new_mask, grpc_wakeup_signal);
-    pthread_sigmask(SIG_BLOCK, &new_mask, &orig_mask);
-    sigdelset(&orig_mask, grpc_wakeup_signal);
-    /* new_mask:  The new thread mask which blocks 'grpc_wakeup_signal'. This is
-                  the mask used at all times *except during epoll_wait()*"
-       orig_mask: The thread mask which allows 'grpc_wakeup_signal' and this is
-                  the mask to use *during epoll_wait()*
+    if (!g_initialized_sigmask) {
+      sigemptyset(&new_mask);
+      sigaddset(&new_mask, grpc_wakeup_signal);
+      pthread_sigmask(SIG_BLOCK, &new_mask, &g_orig_sigmask);
+      sigdelset(&g_orig_sigmask, grpc_wakeup_signal);
+      g_initialized_sigmask = true;
+      /* new_mask:       The new thread mask which blocks 'grpc_wakeup_signal'.
+                         This is the mask used at all times *except during
+                         epoll_wait()*"
+         g_orig_sigmask: The thread mask which allows 'grpc_wakeup_signal' and
+         this is
+                    the mask to use *during epoll_wait()*
 
-       The new_mask is set on the worker before it is added to the pollset (i.e
-       before it can be kicked) */
+         The new_mask is set on the worker before it is added to the pollset
+         (i.e
+         before it can be kicked) */
+    }
 
     push_front_worker(pollset, &worker); /* Add worker to pollset */
 
-    pollset_work_and_unlock(exec_ctx, pollset, timeout_ms, &orig_mask, &error);
+    pollset_work_and_unlock(exec_ctx, pollset, timeout_ms, &g_orig_sigmask,
+                            &error);
     grpc_exec_ctx_flush(exec_ctx);
 
     gpr_mu_lock(&pollset->mu);
