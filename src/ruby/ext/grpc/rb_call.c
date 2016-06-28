@@ -94,8 +94,13 @@ typedef struct grpc_rb_call {
 } grpc_rb_call;
 
 static void destroy_call(grpc_rb_call *call) {
-  grpc_call_destroy(call->wrapped);
-  grpc_rb_completion_queue_destroy(call->queue);
+  /* Ensure that we only try to destroy the call once */
+  if (call->wrapped != NULL) {
+    grpc_call_destroy(call->wrapped);
+    call->wrapped = NULL;
+    grpc_rb_completion_queue_destroy(call->queue);
+    call->queue = NULL;
+  }
 }
 
 /* Destroys a Call. */
