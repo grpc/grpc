@@ -33,7 +33,7 @@ class ConnectivityState:
   connecting = GRPC_CHANNEL_CONNECTING
   ready = GRPC_CHANNEL_READY
   transient_failure = GRPC_CHANNEL_TRANSIENT_FAILURE
-  fatal_failure = GRPC_CHANNEL_FATAL_FAILURE
+  shutdown = GRPC_CHANNEL_SHUTDOWN
 
 
 class ChannelArgKey:
@@ -235,18 +235,13 @@ cdef class ByteBuffer:
     if data is None:
       self.c_byte_buffer = NULL
       return
-    if isinstance(data, bytes):
-      pass
-    elif isinstance(data, basestring):
-      data = data.encode()
-    elif isinstance(data, ByteBuffer):
+    if isinstance(data, ByteBuffer):
       data = (<ByteBuffer>data).bytes()
       if data is None:
         self.c_byte_buffer = NULL
         return
     else:
-      raise TypeError("expected value to be of type str, bytes, or "
-                      "ByteBuffer, not {}".format(type(data)))
+      data = str_to_bytes(data)
 
     cdef char *c_data = data
     cdef gpr_slice data_slice
@@ -274,6 +269,7 @@ cdef class ByteBuffer:
           data_slice_length = gpr_slice_length(data_slice)
           with gil:
             result += (<char *>data_slice_pointer)[:data_slice_length]
+          gpr_slice_unref(data_slice)
       with nogil:
         grpc_byte_buffer_reader_destroy(&reader)
       return bytes(result)
@@ -301,19 +297,8 @@ cdef class ByteBuffer:
 cdef class SslPemKeyCertPair:
 
   def __cinit__(self, private_key, certificate_chain):
-    if isinstance(private_key, bytes):
-      self.private_key = private_key
-    elif isinstance(private_key, basestring):
-      self.private_key = private_key.encode()
-    else:
-      raise TypeError("expected private_key to be of type str or bytes")
-    if isinstance(certificate_chain, bytes):
-      self.certificate_chain = certificate_chain
-    elif isinstance(certificate_chain, basestring):
-      self.certificate_chain = certificate_chain.encode()
-    else:
-      raise TypeError("expected certificate_chain to be of type str or bytes "
-                      "or int")
+    self.private_key = str_to_bytes(private_key)
+    self.certificate_chain = str_to_bytes(certificate_chain)
     self.c_pair.private_key = self.private_key
     self.c_pair.certificate_chain = self.certificate_chain
 
@@ -321,27 +306,16 @@ cdef class SslPemKeyCertPair:
 cdef class ChannelArg:
 
   def __cinit__(self, key, value):
-    if isinstance(key, bytes):
-      self.key = key
-    elif isinstance(key, basestring):
-      self.key = key.encode()
-    else:
-      raise TypeError("expected key to be of type str or bytes")
-    if isinstance(value, bytes):
-      self.value = value
-      self.c_arg.type = GRPC_ARG_STRING
-      self.c_arg.value.string = self.value
-    elif isinstance(value, basestring):
-      self.value = value.encode()
-      self.c_arg.type = GRPC_ARG_STRING
-      self.c_arg.value.string = self.value
-    elif isinstance(value, int):
+    self.key = str_to_bytes(key)
+    self.c_arg.key = self.key
+    if isinstance(value, int):
       self.value = int(value)
       self.c_arg.type = GRPC_ARG_INTEGER
       self.c_arg.value.integer = self.value
     else:
-      raise TypeError("expected value to be of type str or bytes or int")
-    self.c_arg.key = self.key
+      self.value = str_to_bytes(value)
+      self.c_arg.type = GRPC_ARG_STRING
+      self.c_arg.value.string = self.value
 
 
 cdef class ChannelArgs:
@@ -374,18 +348,8 @@ cdef class ChannelArgs:
 cdef class Metadatum:
 
   def __cinit__(self, key, value):
-    if isinstance(key, bytes):
-      self._key = key
-    elif isinstance(key, basestring):
-      self._key = key.encode()
-    else:
-      raise TypeError("expected key to be of type str or bytes")
-    if isinstance(value, bytes):
-      self._value = value
-    elif isinstance(value, basestring):
-      self._value = value.encode()
-    else:
-      raise TypeError("expected value to be of type str or bytes")
+    self._key = str_to_bytes(key)
+    self._value = str_to_bytes(value)
     self.c_metadata.key = self._key
     self.c_metadata.value = self._value
     self.c_metadata.value_length = len(self._value)
@@ -600,12 +564,7 @@ def operation_send_close_from_client(int flags):
 
 def operation_send_status_from_server(
     Metadata metadata, grpc_status_code code, details, int flags):
-  if isinstance(details, bytes):
-    pass
-  elif isinstance(details, basestring):
-    details = details.encode()
-  else:
-    raise TypeError("expected a str or bytes object for details")
+  details = str_to_bytes(details)
   cdef Operation op = Operation()
   op.c_op.type = GRPC_OP_SEND_STATUS_FROM_SERVER
   op.c_op.flags = flags

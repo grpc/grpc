@@ -60,8 +60,9 @@ static gpr_atm ref_mutate(grpc_lb_policy *c, gpr_atm delta,
                             : gpr_atm_no_barrier_fetch_add(&c->ref_pair, delta);
 #ifdef GRPC_LB_POLICY_REFCOUNT_DEBUG
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-          "LB_POLICY: %p % 12s 0x%08x -> 0x%08x [%s]", c, purpose, old_val,
-          old_val + delta, reason);
+          "LB_POLICY: 0x%" PRIxPTR " %12s 0x%" PRIxPTR " -> 0x%" PRIxPTR
+          " [%s]",
+          (intptr_t)c, purpose, old_val, old_val + delta, reason);
 #endif
   return old_val;
 }
@@ -99,12 +100,12 @@ void grpc_lb_policy_weak_unref(grpc_exec_ctx *exec_ctx,
 }
 
 int grpc_lb_policy_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-                        grpc_pollset *pollset,
+                        grpc_polling_entity *pollent,
                         grpc_metadata_batch *initial_metadata,
                         uint32_t initial_metadata_flags,
                         grpc_connected_subchannel **target,
                         grpc_closure *on_complete) {
-  return policy->vtable->pick(exec_ctx, policy, pollset, initial_metadata,
+  return policy->vtable->pick(exec_ctx, policy, pollent, initial_metadata,
                               initial_metadata_flags, target, on_complete);
 }
 

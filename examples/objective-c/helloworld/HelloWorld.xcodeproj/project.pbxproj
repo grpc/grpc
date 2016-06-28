@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		3EF35C14BDC2B65E21837F02 /* libPods.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 43AB08B32839A6700EA00DD4 /* libPods.a */; };
 		5E3690661B2A23800040F884 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E3690651B2A23800040F884 /* main.m */; };
 		5E3690691B2A23800040F884 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E3690681B2A23800040F884 /* AppDelegate.m */; };
 		5E36906C1B2A23800040F884 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E36906B1B2A23800040F884 /* ViewController.m */; };
@@ -18,7 +17,6 @@
 
 /* Begin PBXFileReference section */
 		0C432EF610DB15C0F47A66BB /* Pods-HelloWorld.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-HelloWorld.release.xcconfig"; path = "Pods/Target Support Files/Pods-HelloWorld/Pods-HelloWorld.release.xcconfig"; sourceTree = "<group>"; };
-		43AB08B32839A6700EA00DD4 /* libPods.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libPods.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		5E3690601B2A23800040F884 /* HelloWorld.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HelloWorld.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5E3690641B2A23800040F884 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		5E3690651B2A23800040F884 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
@@ -37,7 +35,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				EF61CF6AE2536A31D47F0E63 /* libPods-HelloWorld.a in Frameworks */,
-				3EF35C14BDC2B65E21837F02 /* libPods.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -88,7 +85,6 @@
 			isa = PBXGroup;
 			children = (
 				6B4E1F55F8A2EC95A0E7EE88 /* libPods-HelloWorld.a */,
-				43AB08B32839A6700EA00DD4 /* libPods.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -109,12 +105,12 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 5E3690831B2A23810040F884 /* Build configuration list for PBXNativeTarget "HelloWorld" */;
 			buildPhases = (
-				ACF9162361FB8F24C70657DE /* Check Pods Manifest.lock */,
+				ACF9162361FB8F24C70657DE /* [CP] Check Pods Manifest.lock */,
 				5E36905C1B2A23800040F884 /* Sources */,
 				5E36905D1B2A23800040F884 /* Frameworks */,
 				5E36905E1B2A23800040F884 /* Resources */,
-				4C7D815378D98AB3BFC1A7D5 /* Copy Pods Resources */,
-				BB76529986A8BFAF19A385B1 /* Embed Pods Frameworks */,
+				4C7D815378D98AB3BFC1A7D5 /* [CP] Copy Pods Resources */,
+				BB76529986A8BFAF19A385B1 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -170,14 +166,14 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		4C7D815378D98AB3BFC1A7D5 /* Copy Pods Resources */ = {
+		4C7D815378D98AB3BFC1A7D5 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputPaths = (
 			);
-			name = "Copy Pods Resources";
+			name = "[CP] Copy Pods Resources";
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -185,14 +181,14 @@
 			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-HelloWorld/Pods-HelloWorld-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		ACF9162361FB8F24C70657DE /* Check Pods Manifest.lock */ = {
+		ACF9162361FB8F24C70657DE /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputPaths = (
 			);
-			name = "Check Pods Manifest.lock";
+			name = "[CP] Check Pods Manifest.lock";
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -200,19 +196,19 @@
 			shellScript = "diff \"${PODS_ROOT}/../Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [[ $? != 0 ]] ; then\n    cat << EOM\nerror: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\nEOM\n    exit 1\nfi\n";
 			showEnvVarsInLog = 0;
 		};
-		BB76529986A8BFAF19A385B1 /* Embed Pods Frameworks */ = {
+		BB76529986A8BFAF19A385B1 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputPaths = (
 			);
-			name = "Embed Pods Frameworks";
+			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods/Pods-frameworks.sh\"\n";
+			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-HelloWorld/Pods-HelloWorld-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */

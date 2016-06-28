@@ -38,6 +38,9 @@
 
 #include "src/core/lib/http/parser.h"
 
+bool squelch = true;
+bool leak_check = true;
+
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   grpc_http_parser parser;
   grpc_http_response response;

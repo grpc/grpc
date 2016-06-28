@@ -253,7 +253,8 @@ inline void GetComment(const grpc::protobuf::FileDescriptor *desc,
 inline grpc::string GenerateCommentsWithPrefix(
     const std::vector<grpc::string> &in, const grpc::string &prefix) {
   std::ostringstream oss;
-  for (const grpc::string &elem : in) {
+  for (auto it = in.begin(); it != in.end(); it++) {
+    const grpc::string& elem = *it;
     if (elem.empty()) {
       oss << prefix << "\n";
     } else if (elem[0] == ' ') {
@@ -265,10 +266,10 @@ inline grpc::string GenerateCommentsWithPrefix(
   return oss.str();
 }
 
-// Get leading or trailing comments in a string. Comment lines start with "// ".
-// Leading detached comments are put in in front of leading comments.
 template <typename DescriptorType>
-inline grpc::string GetCppComments(const DescriptorType *desc, bool leading) {
+inline grpc::string GetPrefixedComments(const DescriptorType *desc,
+                                        bool leading,
+                                        const grpc::string &prefix) {
   std::vector<grpc::string> out;
   if (leading) {
     grpc_generator::GetComment(
@@ -281,7 +282,7 @@ inline grpc::string GetCppComments(const DescriptorType *desc, bool leading) {
     grpc_generator::GetComment(desc, grpc_generator::COMMENTTYPE_TRAILING,
                                &out);
   }
-  return GenerateCommentsWithPrefix(out, "//");
+  return GenerateCommentsWithPrefix(out, prefix);
 }
 
 }  // namespace grpc_generator

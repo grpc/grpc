@@ -37,6 +37,7 @@
 #include <string.h>
 
 #include "src/core/lib/http/httpcli.h"
+#include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/security/util/b64.h"
 #include "src/core/lib/tsi/ssl_types.h"
 
@@ -320,9 +321,15 @@ grpc_jwt_verifier_status grpc_jwt_claims_check(const grpc_jwt_claims *claims,
 
 /* --- verifier_cb_ctx object. --- */
 
+typedef enum {
+  HTTP_RESPONSE_OPENID = 0,
+  HTTP_RESPONSE_KEYS,
+  HTTP_RESPONSE_COUNT /* must be last */
+} http_response_index;
+
 typedef struct {
   grpc_jwt_verifier *verifier;
-  grpc_pollset *pollset;
+  grpc_polling_entity pollent;
   jose_header *header;
   grpc_jwt_claims *claims;
   char *audience;
@@ -330,7 +337,7 @@ typedef struct {
   gpr_slice signed_data;
   void *user_data;
   grpc_jwt_verification_done_cb user_cb;
-  grpc_http_response responses[2];
+  grpc_http_response responses[HTTP_RESPONSE_COUNT];
 } verifier_cb_ctx;
 
 /* Takes ownership of the header, claims and signature. */
@@ -339,10 +346,11 @@ static verifier_cb_ctx *verifier_cb_ctx_create(
     grpc_jwt_claims *claims, const char *audience, gpr_slice signature,
     const char *signed_jwt, size_t signed_jwt_len, void *user_data,
     grpc_jwt_verification_done_cb cb) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   verifier_cb_ctx *ctx = gpr_malloc(sizeof(verifier_cb_ctx));
   memset(ctx, 0, sizeof(verifier_cb_ctx));
   ctx->verifier = verifier;
-  ctx->pollset = pollset;
+  ctx->pollent = grpc_polling_entity_create_from_pollset(pollset);
   ctx->header = header;
   ctx->audience = gpr_strdup(audience);
   ctx->claims = claims;
@@ -350,6 +358,7 @@ static verifier_cb_ctx *verifier_cb_ctx_create(
   ctx->signed_data = gpr_slice_from_copied_buffer(signed_jwt, signed_jwt_len);
   ctx->user_data = user_data;
   ctx->user_cb = cb;
+  grpc_exec_ctx_finish(&exec_ctx);
   return ctx;
 }
 
@@ -359,7 +368,7 @@ void verifier_cb_ctx_destroy(verifier_cb_ctx *ctx) {
   gpr_slice_unref(ctx->signature);
   gpr_slice_unref(ctx->signed_data);
   jose_header_destroy(ctx->header);
-  for (size_t i = 0; i < GPR_ARRAY_SIZE(ctx->responses); i++) {
+  for (size_t i = 0; i < HTTP_RESPONSE_COUNT; i++) {
     grpc_http_response_destroy(&ctx->responses[i]);
   }
   /* TODO: see what to do with claims... */
@@ -578,7 +587,7 @@ end:
 static void on_keys_retrieved(grpc_exec_ctx *exec_ctx, void *user_data,
                               grpc_error *error) {
   verifier_cb_ctx *ctx = (verifier_cb_ctx *)user_data;
-  grpc_json *json = json_from_http(&ctx->responses[1]);
+  grpc_json *json = json_from_http(&ctx->responses[HTTP_RESPONSE_KEYS]);
   EVP_PKEY *verification_key = NULL;
   grpc_jwt_verifier_status status = GRPC_JWT_VERIFIER_GENERIC_ERROR;
   grpc_jwt_claims *claims = NULL;
@@ -620,7 +629,7 @@ static void on_openid_config_retrieved(grpc_exec_ctx *exec_ctx, void *user_data,
                                        grpc_error *error) {
   const grpc_json *cur;
   verifier_cb_ctx *ctx = (verifier_cb_ctx *)user_data;
-  const grpc_http_response *response = &ctx->responses[0];
+  const grpc_http_response *response = &ctx->responses[HTTP_RESPONSE_OPENID];
   grpc_json *json = json_from_http(response);
   grpc_httpcli_request req;
   const char *jwks_uri;
@@ -649,9 +658,10 @@ static void on_openid_config_retrieved(grpc_exec_ctx *exec_ctx, void *user_data,
   }
 
   grpc_httpcli_get(
-      exec_ctx, &ctx->verifier->http_ctx, ctx->pollset, &req,
+      exec_ctx, &ctx->verifier->http_ctx, &ctx->pollent, &req,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_max_delay),
-      grpc_closure_create(on_keys_retrieved, ctx), &ctx->responses[1]);
+      grpc_closure_create(on_keys_retrieved, ctx),
+      &ctx->responses[HTTP_RESPONSE_KEYS]);
   grpc_json_destroy(json);
   gpr_free(req.host);
   return;
@@ -699,7 +709,7 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
   grpc_httpcli_request req;
   memset(&req, 0, sizeof(grpc_httpcli_request));
   req.handshaker = &grpc_httpcli_ssl;
-  int rsp_idx;
+  http_response_index rsp_idx;
 
   GPR_ASSERT(ctx != NULL && ctx->header != NULL && ctx->claims != NULL);
   iss = ctx->claims->iss;
@@ -739,7 +749,7 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
       gpr_asprintf(&req.http.path, "/%s/%s", path_prefix, iss);
     }
     http_cb = grpc_closure_create(on_keys_retrieved, ctx);
-    rsp_idx = 1;
+    rsp_idx = HTTP_RESPONSE_KEYS;
   } else {
     req.host = gpr_strdup(strstr(iss, "https://") == iss ? iss + 8 : iss);
     path_prefix = strchr(req.host, '/');
@@ -751,11 +761,11 @@ static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
                    GRPC_OPENID_CONFIG_URL_SUFFIX);
     }
     http_cb = grpc_closure_create(on_openid_config_retrieved, ctx);
-    rsp_idx = 0;
+    rsp_idx = HTTP_RESPONSE_OPENID;
   }
 
   grpc_httpcli_get(
-      exec_ctx, &ctx->verifier->http_ctx, ctx->pollset, &req,
+      exec_ctx, &ctx->verifier->http_ctx, &ctx->pollent, &req,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_max_delay),
       http_cb, &ctx->responses[rsp_idx]);
   gpr_free(req.host);

@@ -37,6 +37,7 @@
 #include <grpc++/impl/server_builder_option.h>
 #include <grpc++/impl/server_builder_plugin.h>
 #include <grpc++/impl/server_initializer.h>
+#include <grpc++/impl/thd.h>
 #include <grpc++/security/credentials.h>
 #include <grpc++/security/server_credentials.h>
 #include <grpc++/server.h>
@@ -61,6 +62,7 @@ class TestServerBuilderPlugin : public ServerBuilderPlugin {
     init_server_is_called_ = false;
     finish_is_called_ = false;
     change_arguments_is_called_ = false;
+    register_service_ = false;
   }
 
   grpc::string name() GRPC_OVERRIDE { return PLUGIN_NAME; }
@@ -112,15 +114,14 @@ class InsertPluginServerBuilderOption : public ServerBuilderOption {
 
   void UpdateArguments(ChannelArguments* arg) GRPC_OVERRIDE {}
 
-  void UpdatePlugins(
-      std::map<grpc::string, std::unique_ptr<ServerBuilderPlugin>>* plugins)
+  void UpdatePlugins(std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins)
       GRPC_OVERRIDE {
     plugins->clear();
 
     std::unique_ptr<TestServerBuilderPlugin> plugin(
         new TestServerBuilderPlugin());
     if (register_service_) plugin->SetRegisterService();
-    (*plugins)[plugin->name()] = std::move(plugin);
+    plugins->emplace_back(std::move(plugin));
   }
 
   void SetRegisterService() { register_service_ = true; }
@@ -161,7 +162,7 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
   void InsertPlugin() {
     if (GetParam()) {
       // Add ServerBuilder plugin in static initialization
-      EXPECT_TRUE(builder_->plugins_[PLUGIN_NAME] != nullptr);
+      CheckPresent();
     } else {
       // Add ServerBuilder plugin using ServerBuilder::SetOption()
       builder_->SetOption(std::unique_ptr<ServerBuilderOption>(
@@ -172,10 +173,8 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
   void InsertPluginWithTestService() {
     if (GetParam()) {
       // Add ServerBuilder plugin in static initialization
-      EXPECT_TRUE(builder_->plugins_[PLUGIN_NAME] != nullptr);
-      auto plugin = static_cast<TestServerBuilderPlugin*>(
-          builder_->plugins_[PLUGIN_NAME].get());
-      EXPECT_TRUE(plugin != nullptr);
+      auto plugin = CheckPresent();
+      EXPECT_TRUE(plugin);
       plugin->SetRegisterService();
     } else {
       // Add ServerBuilder plugin using ServerBuilder::SetOption()
@@ -189,9 +188,12 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
   void StartServer() {
     grpc::string server_address = "localhost:" + to_string(port_);
     builder_->AddListeningPort(server_address, InsecureServerCredentials());
+    // we run some tests without a service, and for those we need to supply a
+    // frequently polled completion queue
     cq_ = builder_->AddCompletionQueue();
+    cq_thread_ = grpc::thread(std::bind(&ServerBuilderPluginTest::RunCQ, this));
     server_ = builder_->BuildAndStart();
-    EXPECT_TRUE(builder_->plugins_[PLUGIN_NAME] != nullptr);
+    EXPECT_TRUE(CheckPresent());
   }
 
   void ResetStub() {
@@ -201,18 +203,13 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
   }
 
   void TearDown() GRPC_OVERRIDE {
-    EXPECT_TRUE(builder_->plugins_[PLUGIN_NAME] != nullptr);
-    auto plugin = static_cast<TestServerBuilderPlugin*>(
-        builder_->plugins_[PLUGIN_NAME].get());
-    EXPECT_TRUE(plugin != nullptr);
+    auto plugin = CheckPresent();
+    EXPECT_TRUE(plugin);
     EXPECT_TRUE(plugin->init_server_is_called());
     EXPECT_TRUE(plugin->finish_is_called());
     server_->Shutdown();
-    void* tag;
-    bool ok;
     cq_->Shutdown();
-    while (cq_->Next(&tag, &ok))
-      ;
+    cq_thread_.join();
   }
 
   string to_string(const int number) {
@@ -227,8 +224,29 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<ServerCompletionQueue> cq_;
   std::unique_ptr<Server> server_;
+  grpc::thread cq_thread_;
   TestServiceImpl service_;
   int port_;
+
+ private:
+  TestServerBuilderPlugin* CheckPresent() {
+    auto it = builder_->plugins_.begin();
+    for (; it != builder_->plugins_.end(); it++) {
+      if ((*it)->name() == PLUGIN_NAME) break;
+    }
+    if (it != builder_->plugins_.end()) {
+      return static_cast<TestServerBuilderPlugin*>(it->get());
+    } else {
+      return nullptr;
+    }
+  }
+
+  void RunCQ() {
+    void* tag;
+    bool ok;
+    while (cq_->Next(&tag, &ok))
+      ;
+  }
 };
 
 TEST_P(ServerBuilderPluginTest, PluginWithoutServiceTest) {

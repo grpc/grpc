@@ -73,8 +73,8 @@ typedef struct call_data {
 typedef struct channel_data {
   /** The default, channel-level, compression algorithm */
   grpc_compression_algorithm default_compression_algorithm;
-  /** Compression options for the channel */
-  grpc_compression_options compression_options;
+  /** Bitset of enabled algorithms */
+  uint32_t enabled_algorithms_bitset;
   /** Supported compression algorithms */
   uint32_t supported_compression_algorithms;
 } channel_data;
@@ -96,9 +96,8 @@ static grpc_mdelem *compression_md_filter(void *user_data, grpc_mdelem *md) {
               md_c_str);
       calld->compression_algorithm = GRPC_COMPRESS_NONE;
     }
-    if (grpc_compression_options_is_algorithm_enabled(
-            &channeld->compression_options, calld->compression_algorithm) ==
-        0) {
+    if (!GPR_BITGET(channeld->enabled_algorithms_bitset,
+                    calld->compression_algorithm)) {
       gpr_log(GPR_ERROR,
               "Invalid compression algorithm: '%s' (previously disabled). "
               "Ignoring.",
@@ -178,8 +177,8 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
       const float savings_ratio = 1.0f - (float)after_size / (float)before_size;
       GPR_ASSERT(grpc_compression_algorithm_name(calld->compression_algorithm,
                                                  &algo_name));
-      gpr_log(GPR_DEBUG,
-              "Compressed[%s] %d bytes vs. %d bytes (%.2f%% savings)",
+      gpr_log(GPR_DEBUG, "Compressed[%s] %" PRIuPTR " bytes vs. %" PRIuPTR
+                         " bytes (%.2f%% savings)",
               algo_name, before_size, after_size, 100 * savings_ratio);
     }
     gpr_slice_buffer_swap(&calld->slices, &tmp);
@@ -189,10 +188,10 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
       char *algo_name;
       GPR_ASSERT(grpc_compression_algorithm_name(calld->compression_algorithm,
                                                  &algo_name));
-      gpr_log(
-          GPR_DEBUG,
-          "Algorithm '%s' enabled but decided not to compress. Input size: %d",
-          algo_name, calld->slices.length);
+      gpr_log(GPR_DEBUG,
+              "Algorithm '%s' enabled but decided not to compress. Input size: "
+              "%" PRIuPTR,
+              algo_name, calld->slices.length);
     }
   }
 
@@ -271,7 +270,7 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                              void *ignored) {
+                              const grpc_call_stats *stats, void *ignored) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   gpr_slice_buffer_destroy(&calld->slices);
@@ -282,32 +281,26 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
                               grpc_channel_element *elem,
                               grpc_channel_element_args *args) {
   channel_data *channeld = elem->channel_data;
-  grpc_compression_algorithm algo_idx;
 
-  grpc_compression_options_init(&channeld->compression_options);
-  channeld->compression_options.enabled_algorithms_bitset =
-      (uint32_t)grpc_channel_args_compression_algorithm_get_states(
-          args->channel_args);
+  channeld->enabled_algorithms_bitset =
+      grpc_channel_args_compression_algorithm_get_states(args->channel_args);
 
   channeld->default_compression_algorithm =
       grpc_channel_args_get_compression_algorithm(args->channel_args);
   /* Make sure the default isn't disabled. */
-  if (!grpc_compression_options_is_algorithm_enabled(
-          &channeld->compression_options,
-          channeld->default_compression_algorithm)) {
+  if (!GPR_BITGET(channeld->enabled_algorithms_bitset,
+                  channeld->default_compression_algorithm)) {
     gpr_log(GPR_DEBUG,
             "compression algorithm %d not enabled: switching to none",
             channeld->default_compression_algorithm);
     channeld->default_compression_algorithm = GRPC_COMPRESS_NONE;
   }
-  channeld->compression_options.default_compression_algorithm =
-      channeld->default_compression_algorithm;
 
-  channeld->supported_compression_algorithms = 0;
-  for (algo_idx = 0; algo_idx < GRPC_COMPRESS_ALGORITHMS_COUNT; ++algo_idx) {
+  channeld->supported_compression_algorithms = 1; /* always support identity */
+  for (grpc_compression_algorithm algo_idx = 1;
+       algo_idx < GRPC_COMPRESS_ALGORITHMS_COUNT; ++algo_idx) {
     /* skip disabled algorithms */
-    if (grpc_compression_options_is_algorithm_enabled(
-            &channeld->compression_options, algo_idx) == 0) {
+    if (!GPR_BITGET(channeld->enabled_algorithms_bitset, algo_idx)) {
       continue;
     }
     channeld->supported_compression_algorithms |= 1u << algo_idx;
@@ -325,7 +318,7 @@ const grpc_channel_filter grpc_compress_filter = {
     grpc_channel_next_op,
     sizeof(call_data),
     init_call_elem,
-    grpc_call_stack_ignore_set_pollset,
+    grpc_call_stack_ignore_set_pollset_or_pollset_set,
     destroy_call_elem,
     sizeof(channel_data),
     init_channel_elem,

@@ -31,12 +31,16 @@
  *
  */
 
+#include <list>
+
 #include <node.h>
 #include <nan.h>
 #include <v8.h>
 #include "grpc/grpc.h"
 #include "grpc/grpc_security.h"
 #include "grpc/support/alloc.h"
+#include "grpc/support/log.h"
+#include "grpc/support/time.h"
 
 #include "call.h"
 #include "call_credentials.h"
@@ -45,13 +49,31 @@
 #include "server.h"
 #include "completion_queue_async_worker.h"
 #include "server_credentials.h"
+#include "timeval.h"
 
 using v8::FunctionTemplate;
 using v8::Local;
 using v8::Value;
+using v8::Number;
 using v8::Object;
 using v8::Uint32;
 using v8::String;
+
+typedef struct log_args {
+  gpr_log_func_args core_args;
+  gpr_timespec timestamp;
+} log_args;
+
+typedef struct logger_state {
+  Nan::Callback *callback;
+  std::list<log_args *> *pending_args;
+  uv_mutex_t mutex;
+  uv_async_t async;
+  // Indicates that a logger has been set
+  bool logger_set;
+} logger_state;
+
+logger_state grpc_logger_state;
 
 static char *pem_root_certs = NULL;
 
@@ -220,7 +242,7 @@ void InitConnectivityStateConstants(Local<Object> exports) {
   Nan::Set(channel_state, Nan::New("TRANSIENT_FAILURE").ToLocalChecked(),
            TRANSIENT_FAILURE);
   Local<Value> FATAL_FAILURE(
-      Nan::New<Uint32, uint32_t>(GRPC_CHANNEL_FATAL_FAILURE));
+      Nan::New<Uint32, uint32_t>(GRPC_CHANNEL_SHUTDOWN));
   Nan::Set(channel_state, Nan::New("FATAL_FAILURE").ToLocalChecked(),
            FATAL_FAILURE);
 }
@@ -233,6 +255,18 @@ void InitWriteFlags(Local<Object> exports) {
   Nan::Set(write_flags, Nan::New("BUFFER_HINT").ToLocalChecked(), BUFFER_HINT);
   Local<Value> NO_COMPRESS(Nan::New<Uint32, uint32_t>(GRPC_WRITE_NO_COMPRESS));
   Nan::Set(write_flags, Nan::New("NO_COMPRESS").ToLocalChecked(), NO_COMPRESS);
+}
+
+void InitLogConstants(Local<Object> exports) {
+  Nan::HandleScope scope;
+  Local<Object> log_verbosity = Nan::New<Object>();
+  Nan::Set(exports, Nan::New("logVerbosity").ToLocalChecked(), log_verbosity);
+  Local<Value> DEBUG(Nan::New<Uint32, uint32_t>(GPR_LOG_SEVERITY_DEBUG));
+  Nan::Set(log_verbosity, Nan::New("DEBUG").ToLocalChecked(), DEBUG);
+  Local<Value> INFO(Nan::New<Uint32, uint32_t>(GPR_LOG_SEVERITY_INFO));
+  Nan::Set(log_verbosity, Nan::New("INFO").ToLocalChecked(), INFO);
+  Local<Value> LOG_ERROR(Nan::New<Uint32, uint32_t>(GPR_LOG_SEVERITY_ERROR));
+  Nan::Set(log_verbosity, Nan::New("ERROR").ToLocalChecked(), LOG_ERROR);
 }
 
 NAN_METHOD(MetadataKeyIsLegal) {
@@ -298,16 +332,101 @@ NAN_METHOD(SetDefaultRootsPem) {
   }
 }
 
+NAUV_WORK_CB(LogMessagesCallback) {
+  Nan::HandleScope scope;
+  std::list<log_args *> args;
+  uv_mutex_lock(&grpc_logger_state.mutex);
+  args.splice(args.begin(), *grpc_logger_state.pending_args);
+  uv_mutex_unlock(&grpc_logger_state.mutex);
+  /* Call the callback with each log message */
+  while (!args.empty()) {
+    log_args *arg = args.front();
+    args.pop_front();
+    Local<Value> file = Nan::New(arg->core_args.file).ToLocalChecked();
+    Local<Value> line = Nan::New<Uint32, uint32_t>(arg->core_args.line);
+    Local<Value> severity = Nan::New(
+        gpr_log_severity_string(arg->core_args.severity)).ToLocalChecked();
+    Local<Value> message = Nan::New(arg->core_args.message).ToLocalChecked();
+    Local<Value> timestamp = Nan::New<v8::Date>(
+        grpc::node::TimespecToMilliseconds(arg->timestamp)).ToLocalChecked();
+    const int argc = 5;
+    Local<Value> argv[argc] = {file, line, severity, message, timestamp};
+    grpc_logger_state.callback->Call(argc, argv);
+    delete[] arg->core_args.message;
+    delete arg;
+  }
+}
+
+void node_log_func(gpr_log_func_args *args) {
+  // TODO(mlumish): Use the core's log formatter when it becomes available
+  log_args *args_copy = new log_args;
+  size_t message_len = strlen(args->message) + 1;
+  char *message = new char[message_len];
+  memcpy(message, args->message, message_len);
+  memcpy(&args_copy->core_args, args, sizeof(gpr_log_func_args));
+  args_copy->core_args.message = message;
+  args_copy->timestamp = gpr_now(GPR_CLOCK_REALTIME);
+
+  uv_mutex_lock(&grpc_logger_state.mutex);
+  grpc_logger_state.pending_args->push_back(args_copy);
+  uv_mutex_unlock(&grpc_logger_state.mutex);
+
+  uv_async_send(&grpc_logger_state.async);
+}
+
+void init_logger() {
+  memset(&grpc_logger_state, 0, sizeof(logger_state));
+  grpc_logger_state.pending_args = new std::list<log_args *>();
+  uv_mutex_init(&grpc_logger_state.mutex);
+  uv_async_init(uv_default_loop(),
+                &grpc_logger_state.async,
+                LogMessagesCallback);
+  uv_unref((uv_handle_t*)&grpc_logger_state.async);
+  grpc_logger_state.logger_set = false;
+
+  gpr_log_verbosity_init();
+}
+
+/* This registers a JavaScript logger for messages from the gRPC core. Because
+   that handler has to be run in the context of the JavaScript event loop, it
+   will be run asynchronously. To minimize the problems that could cause for
+   debugging, we leave core to do its default synchronous logging until a
+   JavaScript logger is set */
+NAN_METHOD(SetDefaultLoggerCallback) {
+  if (!info[0]->IsFunction()) {
+    return Nan::ThrowTypeError(
+        "setDefaultLoggerCallback's argument must be a function");
+  }
+  if (!grpc_logger_state.logger_set) {
+    gpr_set_log_function(node_log_func);
+    grpc_logger_state.logger_set = true;
+  }
+  grpc_logger_state.callback = new Nan::Callback(info[0].As<v8::Function>());
+}
+
+NAN_METHOD(SetLogVerbosity) {
+  if (!info[0]->IsUint32()) {
+    return Nan::ThrowTypeError(
+        "setLogVerbosity's argument must be a number");
+  }
+  gpr_log_severity severity = static_cast<gpr_log_severity>(
+      Nan::To<uint32_t>(info[0]).FromJust());
+  gpr_set_log_verbosity(severity);
+}
+
 void init(Local<Object> exports) {
   Nan::HandleScope scope;
   grpc_init();
   grpc_set_ssl_roots_override_callback(get_ssl_roots_override);
+  init_logger();
+
   InitStatusConstants(exports);
   InitCallErrorConstants(exports);
   InitOpTypeConstants(exports);
   InitPropagateConstants(exports);
   InitConnectivityStateConstants(exports);
   InitWriteFlags(exports);
+  InitLogConstants(exports);
 
   grpc::node::Call::Init(exports);
   grpc::node::CallCredentials::Init(exports);
@@ -332,6 +451,14 @@ void init(Local<Object> exports) {
   Nan::Set(exports, Nan::New("setDefaultRootsPem").ToLocalChecked(),
            Nan::GetFunction(
                Nan::New<FunctionTemplate>(SetDefaultRootsPem)
+                            ).ToLocalChecked());
+  Nan::Set(exports, Nan::New("setDefaultLoggerCallback").ToLocalChecked(),
+           Nan::GetFunction(
+               Nan::New<FunctionTemplate>(SetDefaultLoggerCallback)
+                            ).ToLocalChecked());
+  Nan::Set(exports, Nan::New("setLogVerbosity").ToLocalChecked(),
+           Nan::GetFunction(
+               Nan::New<FunctionTemplate>(SetLogVerbosity)
                             ).ToLocalChecked());
 }
 

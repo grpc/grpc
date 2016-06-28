@@ -35,6 +35,7 @@
 #define GRPC_CORE_EXT_CLIENT_CONFIG_SUBCHANNEL_CALL_HOLDER_H
 
 #include "src/core/ext/client_config/subchannel.h"
+#include "src/core/lib/iomgr/polling_entity.h"
 
 /** Pick a subchannel for grpc_subchannel_call_holder;
     Return 1 if subchannel is available immediately (in which case on_ready
@@ -71,7 +72,7 @@ typedef struct grpc_subchannel_call_holder {
 
   grpc_subchannel_call_holder_creation_phase creation_phase;
   grpc_connected_subchannel *connected_subchannel;
-  grpc_pollset *pollset;
+  grpc_polling_entity *pollent;
 
   grpc_transport_stream_op *waiting_ops;
   size_t waiting_ops_count;

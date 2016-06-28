@@ -54,7 +54,7 @@ void test_add_same_port_twice() {
   a.key = GRPC_ARG_ALLOW_REUSEPORT;
   a.value.integer = 0;
   grpc_channel_args args = {1, &a};
-  
+
   int port = grpc_pick_unused_port_or_die();
   char *addr = NULL;
   grpc_completion_queue *cq = grpc_completion_queue_create(NULL);

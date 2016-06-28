@@ -64,7 +64,7 @@ static void jwt_destruct(grpc_call_credentials *creds) {
 
 static void jwt_get_request_metadata(grpc_exec_ctx *exec_ctx,
                                      grpc_call_credentials *creds,
-                                     grpc_pollset *pollset,
+                                     grpc_polling_entity *pollent,
                                      grpc_auth_metadata_context context,
                                      grpc_credentials_metadata_cb cb,
                                      void *user_data) {
@@ -113,10 +113,11 @@ static void jwt_get_request_metadata(grpc_exec_ctx *exec_ctx,
 
   if (jwt_md != NULL) {
     cb(exec_ctx, user_data, jwt_md->entries, jwt_md->num_entries,
-       GRPC_CREDENTIALS_OK);
+       GRPC_CREDENTIALS_OK, NULL);
     grpc_credentials_md_store_unref(jwt_md);
   } else {
-    cb(exec_ctx, user_data, NULL, 0, GRPC_CREDENTIALS_ERROR);
+    cb(exec_ctx, user_data, NULL, 0, GRPC_CREDENTIALS_ERROR,
+       "Could not generate JWT.");
   }
 }
 
@@ -149,11 +150,11 @@ grpc_call_credentials *grpc_service_account_jwt_access_credentials_create(
       "grpc_service_account_jwt_access_credentials_create("
       "json_key=%s, "
       "token_lifetime="
-      "gpr_timespec { tv_sec: %lld, tv_nsec: %d, clock_type: %d }, "
+      "gpr_timespec { tv_sec: %" PRId64
+      ", tv_nsec: %d, clock_type: %d }, "
       "reserved=%p)",
-      5,
-      (json_key, (long long)token_lifetime.tv_sec, (int)token_lifetime.tv_nsec,
-       (int)token_lifetime.clock_type, reserved));
+      5, (json_key, token_lifetime.tv_sec, token_lifetime.tv_nsec,
+          (int)token_lifetime.clock_type, reserved));
   GPR_ASSERT(reserved == NULL);
   return grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
       grpc_auth_json_key_create_from_string(json_key), token_lifetime);

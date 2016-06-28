@@ -33,15 +33,16 @@
 
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core.Logging;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
     /// <summary>
-    /// Pool of threads polling on the same completion queue.
+    /// Pool of threads polling on a set of completions queues.
     /// </summary>
     internal class GrpcThreadPool
     {
@@ -51,25 +52,33 @@ namespace Grpc.Core.Internal
         readonly object myLock = new object();
         readonly List<Thread> threads = new List<Thread>();
         readonly int poolSize;
+        readonly int completionQueueCount;
 
-        CompletionQueueSafeHandle cq;
+        bool stopRequested;
 
-        public GrpcThreadPool(GrpcEnvironment environment, int poolSize)
+        IReadOnlyCollection<CompletionQueueSafeHandle> completionQueues;
+
+        /// <summary>
+        /// Creates a thread pool threads polling on a set of completions queues.
+        /// </summary>
+        /// <param name="environment">Environment.</param>
+        /// <param name="poolSize">Pool size.</param>
+        /// <param name="completionQueueCount">Completion queue count.</param>
+        public GrpcThreadPool(GrpcEnvironment environment, int poolSize, int completionQueueCount)
         {
             this.environment = environment;
             this.poolSize = poolSize;
+            this.completionQueueCount = completionQueueCount;
+            GrpcPreconditions.CheckArgument(poolSize >= completionQueueCount,
+                "Thread pool size cannot be smaller than the number of completion queues used.");
         }
 
         public void Start()
         {
             lock (myLock)
             {
-                if (cq != null)
-                {
-                    throw new InvalidOperationException("Already started.");
-                }
-
-                cq = CompletionQueueSafeHandle.Create();
+                GrpcPreconditions.CheckState(completionQueues == null, "Already started.");
+                completionQueues = CreateCompletionQueueList(environment, completionQueueCount);
 
                 for (int i = 0; i < poolSize; i++)
                 {
@@ -78,41 +87,73 @@ namespace Grpc.Core.Internal
             }
         }
 
-        public void Stop()
+        public Task StopAsync()
         {
             lock (myLock)
             {
-                cq.Shutdown();
+                GrpcPreconditions.CheckState(!stopRequested, "Stop already requested.");
+                stopRequested = true;
+
+                foreach (var cq in completionQueues)
+                {
+                    cq.Shutdown();
+                }
+            }
+
+            return Task.Run(() =>
+            {
                 foreach (var thread in threads)
                 {
                     thread.Join();
                 }
 
-                cq.Dispose();
-            }
+                foreach (var cq in completionQueues)
+                {
+                    cq.Dispose();
+                }
+            });
         }
 
-        internal CompletionQueueSafeHandle CompletionQueue
+        /// <summary>
+        /// Returns true if there is at least one thread pool thread that hasn't
+        /// already stopped.
+        /// Threads can either stop because all completion queues shut down or
+        /// because all foreground threads have already shutdown and process is
+        /// going to exit.
+        /// </summary>
+        internal bool IsAlive
         {
             get
             {
-                return cq;
+                return threads.Any(t => t.ThreadState != ThreadState.Stopped);
             }
         }
 
-        private Thread CreateAndStartThread(int i)
+        internal IReadOnlyCollection<CompletionQueueSafeHandle> CompletionQueues
         {
-            var thread = new Thread(new ThreadStart(RunHandlerLoop));
-            thread.IsBackground = false;
+            get
+            {
+                return completionQueues;
+            }
+        }
+
+        private Thread CreateAndStartThread(int threadIndex)
+        {
+            var cqIndex = threadIndex % completionQueues.Count;
+            var cq = completionQueues.ElementAt(cqIndex);
+
+            var thread = new Thread(new ThreadStart(() => RunHandlerLoop(cq)));
+            thread.IsBackground = true;
+            thread.Name = string.Format("grpc {0} (cq {1})", threadIndex, cqIndex);
             thread.Start();
-            thread.Name = "grpc " + i;
+
             return thread;
         }
 
         /// <summary>
         /// Body of the polling thread.
         /// </summary>
-        private void RunHandlerLoop()
+        private void RunHandlerLoop(CompletionQueueSafeHandle cq)
         {
             CompletionQueueEvent ev;
             do
@@ -124,7 +165,7 @@ namespace Grpc.Core.Internal
                     IntPtr tag = ev.tag;
                     try
                     {
-                        var callback = environment.CompletionRegistry.Extract(tag);
+                        var callback = cq.CompletionRegistry.Extract(tag);
                         callback(success);
                     }
                     catch (Exception e)
@@ -134,6 +175,17 @@ namespace Grpc.Core.Internal
                 }
             }
             while (ev.type != CompletionQueueEvent.CompletionType.Shutdown);
+        }
+
+        private static IReadOnlyCollection<CompletionQueueSafeHandle> CreateCompletionQueueList(GrpcEnvironment environment, int completionQueueCount)
+        {
+            var list = new List<CompletionQueueSafeHandle>();
+            for (int i = 0; i < completionQueueCount; i++)
+            {
+                var completionRegistry = new CompletionRegistry(environment);
+                list.Add(CompletionQueueSafeHandle.Create(completionRegistry));
+            }
+            return list.AsReadOnly();
         }
     }
 }

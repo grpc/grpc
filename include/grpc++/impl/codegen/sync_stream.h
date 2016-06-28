@@ -71,6 +71,9 @@ class ReaderInterface {
   virtual ~ReaderInterface() {}
 
   /// Blocking read a message and parse to \a msg. Returns \a true on success.
+  /// This is thread-safe with respect to \a Write or \WritesDone methods on
+  /// the same stream. It should not be called concurrently with another \a
+  /// Read on the same stream as the order of delivery will not be defined.
   ///
   /// \param[out] msg The read message.
   ///
@@ -87,6 +90,7 @@ class WriterInterface {
   virtual ~WriterInterface() {}
 
   /// Blocking write \a msg to the stream with options.
+  /// This is thread-safe with respect to \a Read
   ///
   /// \param msg The message to be written to the stream.
   /// \param options Options affecting the write operation.
@@ -95,6 +99,7 @@ class WriterInterface {
   virtual bool Write(const W& msg, const WriteOptions& options) = 0;
 
   /// Blocking write \a msg to the stream with default options.
+  /// This is thread-safe with respect to \a Read
   ///
   /// \param msg The message to be written to the stream.
   ///
@@ -174,7 +179,8 @@ class ClientWriterInterface : public ClientStreamingInterface,
                               public WriterInterface<W> {
  public:
   /// Half close writing from the client.
-  /// Block until writes are completed.
+  /// Block until currently-pending writes are completed.
+  /// Thread safe with respect to \a Read operations only
   ///
   /// \return Whether the writes were successful.
   virtual bool WritesDone() = 0;
@@ -189,6 +195,7 @@ class ClientWriter : public ClientWriterInterface<W> {
                ClientContext* context, R* response)
       : context_(context), call_(channel->CreateCall(method, context, &cq_)) {
     finish_ops_.RecvMessage(response);
+    finish_ops_.AllowNoMessage();
 
     CallOpSet<CallOpSendInitialMetadata> ops;
     ops.SendInitialMetadata(context->send_initial_metadata_,
@@ -256,7 +263,8 @@ class ClientReaderWriterInterface : public ClientStreamingInterface,
   /// the metadata will be available in ClientContext after the first read.
   virtual void WaitForInitialMetadata() = 0;
 
-  /// Block until writes are completed.
+  /// Block until currently-pending writes are completed.
+  /// Thread-safe with respect to \a Read
   ///
   /// \return Whether the writes were successful.
   virtual bool WritesDone() = 0;

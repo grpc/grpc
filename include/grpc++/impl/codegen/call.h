@@ -47,7 +47,9 @@
 #include <grpc++/impl/codegen/serialization_traits.h>
 #include <grpc++/impl/codegen/status.h>
 #include <grpc++/impl/codegen/string_ref.h>
+
 #include <grpc/impl/codegen/alloc.h>
+#include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
 
 struct grpc_byte_buffer;
@@ -187,6 +189,8 @@ class CallOpSendInitialMetadata {
     flags_ = flags;
     initial_metadata_count_ = metadata.size();
     initial_metadata_ = FillMetadataArray(metadata);
+    // TODO(dgq): expose compression level in API so it can be properly set.
+    maybe_compression_level_.is_set = false;
   }
 
  protected:
@@ -198,6 +202,10 @@ class CallOpSendInitialMetadata {
     op->reserved = NULL;
     op->data.send_initial_metadata.count = initial_metadata_count_;
     op->data.send_initial_metadata.metadata = initial_metadata_;
+    op->data.send_initial_metadata.maybe_compression_level.is_set =
+        maybe_compression_level_.is_set;
+    op->data.send_initial_metadata.maybe_compression_level.level =
+        maybe_compression_level_.level;
   }
   void FinishOp(bool* status, int max_message_size) {
     if (!send_) return;
@@ -209,6 +217,10 @@ class CallOpSendInitialMetadata {
   uint32_t flags_;
   size_t initial_metadata_count_;
   grpc_metadata* initial_metadata_;
+  struct {
+    bool is_set;
+    grpc_compression_level level;
+  } maybe_compression_level_;
 };
 
 class CallOpSendMessage {
@@ -261,9 +273,15 @@ Status CallOpSendMessage::SendMessage(const M& message) {
 template <class R>
 class CallOpRecvMessage {
  public:
-  CallOpRecvMessage() : got_message(false), message_(nullptr) {}
+  CallOpRecvMessage()
+      : got_message(false),
+        message_(nullptr),
+        allow_not_getting_message_(false) {}
 
   void RecvMessage(R* message) { message_ = message; }
+
+  // Do not change status if no message is received.
+  void AllowNoMessage() { allow_not_getting_message_ = true; }
 
   bool got_message;
 
@@ -290,7 +308,9 @@ class CallOpRecvMessage {
       }
     } else {
       got_message = false;
-      *status = false;
+      if (!allow_not_getting_message_) {
+        *status = false;
+      }
     }
     message_ = nullptr;
   }
@@ -298,6 +318,7 @@ class CallOpRecvMessage {
  private:
   R* message_;
   grpc_byte_buffer* recv_buf_;
+  bool allow_not_getting_message_;
 };
 
 namespace CallOpGenericRecvMessageHelper {
@@ -316,7 +337,7 @@ class DeserializeFuncType GRPC_FINAL : public DeserializeFunc {
     return SerializationTraits<R>::Deserialize(buf, message_, max_message_size);
   }
 
-  ~DeserializeFuncType() override {}
+  ~DeserializeFuncType() GRPC_OVERRIDE {}
 
  private:
   R* message_;  // Not a managed pointer because management is external to this
@@ -325,7 +346,8 @@ class DeserializeFuncType GRPC_FINAL : public DeserializeFunc {
 
 class CallOpGenericRecvMessage {
  public:
-  CallOpGenericRecvMessage() : got_message(false) {}
+  CallOpGenericRecvMessage()
+      : got_message(false), allow_not_getting_message_(false) {}
 
   template <class R>
   void RecvMessage(R* message) {
@@ -335,6 +357,9 @@ class CallOpGenericRecvMessage {
         new CallOpGenericRecvMessageHelper::DeserializeFuncType<R>(message);
     deserialize_.reset(func);
   }
+
+  // Do not change status if no message is received.
+  void AllowNoMessage() { allow_not_getting_message_ = true; }
 
   bool got_message;
 
@@ -360,7 +385,9 @@ class CallOpGenericRecvMessage {
       }
     } else {
       got_message = false;
-      *status = false;
+      if (!allow_not_getting_message_) {
+        *status = false;
+      }
     }
     deserialize_.reset();
   }
@@ -368,6 +395,7 @@ class CallOpGenericRecvMessage {
  private:
   std::unique_ptr<CallOpGenericRecvMessageHelper::DeserializeFunc> deserialize_;
   grpc_byte_buffer* recv_buf_;
+  bool allow_not_getting_message_;
 };
 
 class CallOpClientSendClose {

@@ -38,13 +38,11 @@
 #include "src/core/lib/security/transport/security_connector.h"
 
 /* Calls the callback upon completion. Takes owership of handshaker. */
-void grpc_do_security_handshake(grpc_exec_ctx *exec_ctx,
-                                tsi_handshaker *handshaker,
-                                grpc_security_connector *connector,
-                                bool is_client_side,
-                                grpc_endpoint *nonsecure_endpoint,
-                                grpc_security_handshake_done_cb cb,
-                                void *user_data);
+void grpc_do_security_handshake(
+    grpc_exec_ctx *exec_ctx, tsi_handshaker *handshaker,
+    grpc_security_connector *connector, bool is_client_side,
+    grpc_endpoint *nonsecure_endpoint, gpr_timespec deadline,
+    grpc_security_handshake_done_cb cb, void *user_data);
 
 void grpc_security_handshake_shutdown(grpc_exec_ctx *exec_ctx, void *handshake);
 

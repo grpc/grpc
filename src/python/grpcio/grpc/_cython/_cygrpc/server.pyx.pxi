@@ -81,25 +81,29 @@ cdef class Server:
           self.c_server, queue.c_completion_queue, NULL)
     self.registered_completion_queues.append(queue)
 
+  def register_non_listening_completion_queue(
+      self, CompletionQueue queue not None):
+    if self.is_started:
+      raise ValueError("cannot register completion queues after start")
+    with nogil:
+      grpc_server_register_non_listening_completion_queue(
+          self.c_server, queue.c_completion_queue, NULL)
+    self.registered_completion_queues.append(queue)
+
   def start(self):
     if self.is_started:
       raise ValueError("the server has already started")
     self.backup_shutdown_queue = CompletionQueue()
-    self.register_completion_queue(self.backup_shutdown_queue)
+    self.register_non_listening_completion_queue(self.backup_shutdown_queue)
     self.is_started = True
     with nogil:
       grpc_server_start(self.c_server)
     # Ensure the core has gotten a chance to do the start-up work
-    self.backup_shutdown_queue.pluck(None, Timespec(None))
+    self.backup_shutdown_queue.poll(Timespec(None))
 
   def add_http2_port(self, address,
                      ServerCredentials server_credentials=None):
-    if isinstance(address, bytes):
-      pass
-    elif isinstance(address, basestring):
-      address = address.encode()
-    else:
-      raise TypeError("expected address to be a str or bytes")
+    address = str_to_bytes(address)
     self.references.append(address)
     cdef int result
     cdef char *address_c_string = address
@@ -169,4 +173,3 @@ cdef class Server:
           time.sleep(0)
       with nogil:
         grpc_server_destroy(self.c_server)
-

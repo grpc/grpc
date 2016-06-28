@@ -39,7 +39,7 @@ namespace Grpc.Core.Internal
     /// <summary>
     /// Safe handle to wrap native objects.
     /// </summary>
-    internal abstract class SafeHandleZeroIsInvalid : SafeHandle
+    internal abstract class SafeHandleZeroIsInvalid : System.Runtime.InteropServices.SafeHandle
     {
         public SafeHandleZeroIsInvalid() : base(IntPtr.Zero, true)
         {
