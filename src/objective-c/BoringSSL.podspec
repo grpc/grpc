@@ -31,7 +31,8 @@
 
 Pod::Spec.new do |s|
   s.name     = 'BoringSSL'
-  s.version  = '3.0'
+  version = '3.0'
+  s.version  = version
   s.summary  = 'BoringSSL is a fork of OpenSSL that is designed to meet Google’s needs.'
   # Adapted from the homepage:
   s.description = <<-DESC
@@ -73,22 +74,39 @@ Pod::Spec.new do |s|
   s.module_name = name
   s.header_dir = name
 
-  s.source_files = 'ssl/*.{h,c}',
-                   'ssl/**/*.{h,c}',
-                   '*.{h,c}',
-                   'crypto/*.{h,c}',
-                   'crypto/**/*.{h,c}',
-                   'include/openssl/*.h'
-  s.public_header_files = 'include/openssl/*.h'
-  s.header_mappings_dir = 'include/openssl'
   s.module_map = 'include/openssl/module.modulemap'
-
-  s.exclude_files = "**/*_test.*"
 
   # We don't need to inhibit all warnings; only -Wno-shorten-64-to-32. But Cocoapods' linter doesn't
   # want that for some reason.
   s.compiler_flags = '-DOPENSSL_NO_ASM', '-GCC_WARN_INHIBIT_ALL_WARNINGS', '-w'
   s.requires_arc = false
+
+  s.header_mappings_dir = 'include/openssl'
+
+  s.subspec 'Interface' do |ss|
+    ss.header_mappings_dir = 'include/openssl'
+    ss.source_files = 'include/openssl/*.h', 'include/openssl/empty.c'
+    ss.exclude_files = 'include/openssl/arm_arch.h'
+  end
+
+  s.subspec 'Implementation' do |ss|
+    ss.header_mappings_dir = '.'
+    ss.source_files = 'ssl/*.{h,c}',
+                      'ssl/**/*.{h,c}',
+                      '*.{h,c}',
+                      'crypto/*.{h,c}',
+                      'crypto/**/*.{h,c}'
+    ss.private_header_files = 'ssl/*.h',
+                              'ssl/**/*.h',
+                              '*.h',
+                              'crypto/*.h',
+                              'crypto/**/*.h'
+    ss.exclude_files = '**/*_test.*',
+                       '**/test_*.*',
+                       '**/test/*.*'
+
+    ss.dependency "#{s.name}/Interface", version
+  end
 
   s.prepare_command = <<-END_OF_COMMAND
     # Replace "const BIGNUM *I" in rsa.h with a lowercase i, as the former fails when including
@@ -100,6 +118,8 @@ Pod::Spec.new do |s|
     # former assumes crypto/ is in the headers search path, which is hard to enforce when using
     # dynamic frameworks. The latters always works, being relative to the current file.
     sed -E -i '.back' 's/crypto\\///g' crypto/cipher/e_tls.c
+
+    touch include/openssl/empty.c
 
     # Add a module map and an umbrella header
     cat > include/openssl/umbrella.h <<EOF
