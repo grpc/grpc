@@ -252,7 +252,7 @@ class CLanguage(object):
             'CXX=%s/g++' % toolchain_path,
             'LD=%s/gcc' % toolchain_path,
             'LDXX=%s/g++' % toolchain_path,
-            'EMBED_OPENSSL=true']
+            'EMBED_OPENSSL=false']
 
   def _clang_make_options(self):
     return ['CC=clang', 'CXX=clang++', 'LD=clang', 'LDXX=clang++']
