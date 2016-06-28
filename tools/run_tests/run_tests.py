@@ -418,7 +418,10 @@ class PythonLanguage(object):
     return 'Makefile'
 
   def dockerfile_dir(self):
-    return 'tools/dockerfile/test/python_jessie_%s' % _docker_arch_suffix(self.args.arch)
+    return 'tools/dockerfile/test/python_%s_%s' % (self.python_manager_name(), _docker_arch_suffix(self.args.arch))
+
+  def python_manager_name(self):
+    return 'pyenv' if self.args.compiler in ['python3.5', 'python3.6'] else 'jessie'
 
   def _get_pythons(self, args):
     if args.arch == 'x86':
@@ -453,6 +456,8 @@ class PythonLanguage(object):
         shell + runner + [os.path.join(name, venv_relative_python[0])])
     python27_config = python_config_generator(name='py27', major='2', minor='7', bits=bits)
     python34_config = python_config_generator(name='py34', major='3', minor='4', bits=bits)
+    python35_config = python_config_generator(name='py35', major='3', minor='5', bits=bits)
+    python36_config = python_config_generator(name='py36', major='3', minor='6', bits=bits)
     if args.compiler == 'default':
       if os.name == 'nt':
         return (python27_config,)
@@ -462,6 +467,10 @@ class PythonLanguage(object):
       return (python27_config,)
     elif args.compiler == 'python3.4':
       return (python34_config,)
+    elif args.compiler == 'python3.5':
+      return (python35_config,)
+    elif args.compiler == 'python3.6':
+      return (python36_config,)
     else:
       raise Exception('Compiler %s not supported.' % args.compiler)
 
@@ -893,7 +902,7 @@ argp.add_argument('--compiler',
                            'gcc4.4', 'gcc4.6', 'gcc4.9', 'gcc5.3',
                            'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
                            'vs2010', 'vs2013', 'vs2015',
-                           'python2.7', 'python3.4',
+                           'python2.7', 'python3.4', 'python3.5', 'python3.6',
                            'node0.12', 'node4', 'node5',
                            'coreclr'],
                   default='default',
