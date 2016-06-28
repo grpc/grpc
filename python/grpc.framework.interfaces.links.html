@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework.interfaces.links package &mdash; grpcio 0.13.1rc1 documentation</title>
+  <title>grpc.framework.interfaces.links package &mdash; grpcio 0.15.0 documentation</title>
   
 
   
@@ -30,7 +30,7 @@
   
 
   
-    <link rel="top" title="grpcio 0.13.1rc1 documentation" href="index.html"/>
+    <link rel="top" title="grpcio 0.15.0 documentation" href="index.html"/>
         <link rel="up" title="grpc.framework.interfaces package" href="grpc.framework.interfaces.html"/>
         <link rel="prev" title="grpc.framework.interfaces.face package" href="grpc.framework.interfaces.face.html"/> 
 
@@ -41,6 +41,7 @@
 
 <body class="wy-body-for-nav" role="document">
 
+   
   <div class="wy-grid-for-nav">
 
     
@@ -60,7 +61,7 @@
             
             
               <div class="version">
-                0.13.1rc1
+                0.15.0
               </div>
             
           
@@ -85,7 +86,6 @@
 <li class="toctree-l1 current"><a class="reference internal" href="grpc.html">grpc package</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="grpc.html#subpackages">Subpackages</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="grpc.beta.html">grpc.beta package</a></li>
-<li class="toctree-l3"><a class="reference internal" href="grpc.early_adopter.html">grpc.early_adopter package</a></li>
 <li class="toctree-l3 current"><a class="reference internal" href="grpc.framework.html">grpc.framework package</a><ul class="current">
 <li class="toctree-l4 current"><a class="reference internal" href="grpc.framework.html#subpackages">Subpackages</a></li>
 <li class="toctree-l4"><a class="reference internal" href="grpc.framework.html#module-grpc.framework">Module contents</a></li>
@@ -122,24 +122,28 @@
 
 
 
+
+
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
-          <li><a href="grpc.html">grpc package</a> &raquo;</li>
+        <li><a href="grpc.html">grpc package</a> &raquo;</li>
       
-          <li><a href="grpc.framework.html">grpc.framework package</a> &raquo;</li>
+        <li><a href="grpc.framework.html">grpc.framework package</a> &raquo;</li>
       
-          <li><a href="grpc.framework.interfaces.html">grpc.framework.interfaces package</a> &raquo;</li>
+        <li><a href="grpc.framework.interfaces.html">grpc.framework.interfaces package</a> &raquo;</li>
       
     <li>grpc.framework.interfaces.links package</li>
-      <li class="wy-breadcrumbs-aside">
-        
+    <li class="wy-breadcrumbs-aside">
+      
           
-            <a href="_sources/grpc.framework.interfaces.links.txt" rel="nofollow"> View page source</a>
-          
+          <a href="_sources/grpc.framework.interfaces.links.txt" rel="nofollow"> View page source</a>
         
-      </li>
+      
+    </li>
   </ul>
   <hr/>
 </div>
@@ -157,7 +161,7 @@
 <dl class="class">
 <dt id="grpc.framework.interfaces.links.links.Link">
 <em class="property">class </em><code class="descclassname">grpc.framework.interfaces.links.links.</code><code class="descname">Link</code><a class="reference internal" href="_modules/grpc/framework/interfaces/links/links.html#Link"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.links.links.Link" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
 <p>Accepts and emits tickets.</p>
 <dl class="method">
 <dt id="grpc.framework.interfaces.links.links.Link.accept_ticket">
@@ -457,7 +461,7 @@ between high-level application and underlying ticket transport.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.13.1rc1',
+            VERSION:'0.15.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

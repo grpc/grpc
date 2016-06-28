@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework.foundation.logging_pool &mdash; grpcio 0.13.1rc1 documentation</title>
+  <title>grpc.framework.foundation.logging_pool &mdash; grpcio 0.15.0 documentation</title>
   
 
   
@@ -30,8 +30,8 @@
   
 
   
-    <link rel="top" title="grpcio 0.13.1rc1 documentation" href="../../../../index.html"/>
-        <link rel="up" title="Module code" href="../../../index.html"/> 
+    <link rel="top" title="grpcio 0.15.0 documentation" href="../../../../index.html"/>
+        <link rel="up" title="grpc" href="../../../grpc.html"/> 
 
   
   <script src="../../../../_static/js/modernizr.min.js"></script>
@@ -40,6 +40,7 @@
 
 <body class="wy-body-for-nav" role="document">
 
+   
   <div class="wy-grid-for-nav">
 
     
@@ -59,7 +60,7 @@
             
             
               <div class="version">
-                0.13.1rc1
+                0.15.0
               </div>
             
           
@@ -108,18 +109,24 @@
 
 
 
+
+
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../../../../index.html">Docs</a> &raquo;</li>
       
-          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        <li><a href="../../../index.html">Module code</a> &raquo;</li>
+      
+        <li><a href="../../../grpc.html">grpc</a> &raquo;</li>
       
     <li>grpc.framework.foundation.logging_pool</li>
-      <li class="wy-breadcrumbs-aside">
-        
+    <li class="wy-breadcrumbs-aside">
+      
           
-        
-      </li>
+      
+    </li>
   </ul>
   <hr/>
 </div>
@@ -127,7 +134,7 @@
            <div itemprop="articleBody">
             
   <h1>Source code for grpc.framework.foundation.logging_pool</h1><div class="highlight"><pre>
-<span></span><span class="c1"># Copyright 2015-2016, Google Inc.</span>
+<span></span><span class="c1"># Copyright 2015, Google Inc.</span>
 <span class="c1"># All rights reserved.</span>
 <span class="c1">#</span>
 <span class="c1"># Redistribution and use in source and binary forms, with or without</span>
@@ -160,7 +167,7 @@
 
 <span class="kn">import</span> <span class="nn">logging</span>
 
-<span class="kn">from</span> <span class="nn">concurrent</span> <span class="k">import</span> <span class="n">futures</span>
+<span class="kn">from</span> <span class="nn">concurrent</span> <span class="kn">import</span> <span class="n">futures</span>
 
 
 <span class="k">def</span> <span class="nf">_wrap</span><span class="p">(</span><span class="n">behavior</span><span class="p">):</span>
@@ -185,16 +192,16 @@
     <span class="k">return</span> <span class="bp">self</span>
 
   <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_backing_pool</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_backing_pool</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 
   <span class="k">def</span> <span class="nf">submit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fn</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backing_pool</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">_wrap</span><span class="p">(</span><span class="n">fn</span><span class="p">),</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
   <span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="o">*</span><span class="n">iterables</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backing_pool</span><span class="o">.</span><span class="n">map</span><span class="p">(</span>
-        <span class="n">_wrap</span><span class="p">(</span><span class="n">func</span><span class="p">),</span> <span class="o">*</span><span class="n">iterables</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;timeout&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+        <span class="n">_wrap</span><span class="p">(</span><span class="n">func</span><span class="p">),</span> <span class="o">*</span><span class="n">iterables</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;timeout&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">))</span>
 
-  <span class="k">def</span> <span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wait</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+  <span class="k">def</span> <span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wait</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_backing_pool</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="n">wait</span><span class="p">)</span>
 
 
@@ -242,7 +249,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../../',
-            VERSION:'0.13.1rc1',
+            VERSION:'0.15.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework.foundation.callable_util &mdash; grpcio 0.13.1rc1 documentation</title>
+  <title>grpc.framework.foundation.callable_util &mdash; grpcio 0.15.0 documentation</title>
   
 
   
@@ -30,8 +30,8 @@
   
 
   
-    <link rel="top" title="grpcio 0.13.1rc1 documentation" href="../../../../index.html"/>
-        <link rel="up" title="Module code" href="../../../index.html"/> 
+    <link rel="top" title="grpcio 0.15.0 documentation" href="../../../../index.html"/>
+        <link rel="up" title="grpc" href="../../../grpc.html"/> 
 
   
   <script src="../../../../_static/js/modernizr.min.js"></script>
@@ -40,6 +40,7 @@
 
 <body class="wy-body-for-nav" role="document">
 
+   
   <div class="wy-grid-for-nav">
 
     
@@ -59,7 +60,7 @@
             
             
               <div class="version">
-                0.13.1rc1
+                0.15.0
               </div>
             
           
@@ -108,18 +109,24 @@
 
 
 
+
+
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../../../../index.html">Docs</a> &raquo;</li>
       
-          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        <li><a href="../../../index.html">Module code</a> &raquo;</li>
+      
+        <li><a href="../../../grpc.html">grpc</a> &raquo;</li>
       
     <li>grpc.framework.foundation.callable_util</li>
-      <li class="wy-breadcrumbs-aside">
-        
+    <li class="wy-breadcrumbs-aside">
+      
           
-        
-      </li>
+      
+    </li>
   </ul>
   <hr/>
 </div>
@@ -164,8 +171,10 @@
 <span class="kn">import</span> <span class="nn">functools</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 
+<span class="kn">import</span> <span class="nn">six</span>
 
-<div class="viewcode-block" id="Outcome"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.callable_util.Outcome">[docs]</a><span class="k">class</span> <span class="nc">Outcome</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Outcome"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.callable_util.Outcome">[docs]</a><span class="k">class</span> <span class="nc">Outcome</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
   <span class="sd">&quot;&quot;&quot;A sum type describing the outcome of some call.</span>
 
 <span class="sd">  Attributes:</span>
@@ -176,9 +185,8 @@
 <span class="sd">    exception: The exception raised by the call. Must be present if kind is</span>
 <span class="sd">      Kind.RAISED.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
 
-  <span class="nd">@enum</span><span class="o">.</span><span class="n">unique</span>
+  <span class="nd">@enum.unique</span>
 <div class="viewcode-block" id="Outcome.Kind"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.callable_util.Outcome.Kind">[docs]</a>  <span class="k">class</span> <span class="nc">Kind</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Identifies the general kind of the outcome of some call.&quot;&quot;&quot;</span>
 
@@ -195,10 +203,10 @@
 
 <span class="k">def</span> <span class="nf">_call_logging_exceptions</span><span class="p">(</span><span class="n">behavior</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
   <span class="k">try</span><span class="p">:</span>
-    <span class="k">return</span> <span class="n">_EasyOutcome</span><span class="p">(</span><span class="n">Outcome</span><span class="o">.</span><span class="n">Kind</span><span class="o">.</span><span class="n">RETURNED</span><span class="p">,</span> <span class="n">behavior</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_EasyOutcome</span><span class="p">(</span><span class="n">Outcome</span><span class="o">.</span><span class="n">Kind</span><span class="o">.</span><span class="n">RETURNED</span><span class="p">,</span> <span class="n">behavior</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">),</span> <span class="bp">None</span><span class="p">)</span>
   <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># pylint: disable=broad-except</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">_EasyOutcome</span><span class="p">(</span><span class="n">Outcome</span><span class="o">.</span><span class="n">Kind</span><span class="o">.</span><span class="n">RAISED</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_EasyOutcome</span><span class="p">(</span><span class="n">Outcome</span><span class="o">.</span><span class="n">Kind</span><span class="o">.</span><span class="n">RAISED</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="with_exceptions_logged"><a class="viewcode-back" href="../../../../grpc.framework.foundation.html#grpc.framework.foundation.callable_util.with_exceptions_logged">[docs]</a><span class="k">def</span> <span class="nf">with_exceptions_logged</span><span class="p">(</span><span class="n">behavior</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
@@ -214,7 +222,7 @@
 <span class="sd">      future.Outcome describing whether the given behavior returned a value or</span>
 <span class="sd">      raised an exception.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">behavior</span><span class="p">)</span>
+  <span class="nd">@functools.wraps</span><span class="p">(</span><span class="n">behavior</span><span class="p">)</span>
   <span class="k">def</span> <span class="nf">wrapped_behavior</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">_call_logging_exceptions</span><span class="p">(</span><span class="n">behavior</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
   <span class="k">return</span> <span class="n">wrapped_behavior</span></div>
@@ -267,7 +275,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../../',
-            VERSION:'0.13.1rc1',
+            VERSION:'0.15.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true
