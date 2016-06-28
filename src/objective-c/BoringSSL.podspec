@@ -73,6 +73,8 @@ Pod::Spec.new do |s|
   name = 'openssl'
 
   # When creating a dynamic framework, name it openssl.framework instead of BoringSSL.framework.
+  # This lets users write their includes like `#include <openssl/ssl.h>` as opposed to `#include
+  # <BoringSSL/ssl.h>`.
   s.module_name = name
 
   # When creating a dynamic framework, copy the headers under `include/openssl/` into the root of
