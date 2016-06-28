@@ -67,7 +67,7 @@ Pod::Spec.new do |s|
   s.authors  = 'Adam Langley', 'David Benjamin', 'Matt Braithwaite'
 
   s.source = { :git => 'https://boringssl.googlesource.com/boringssl',
-               :tag => 'version_for_cocoapods_2.0' }
+               :tag => 'version_for_cocoapods_3.0' }
 
   name = 'openssl'
   s.module_name = name
