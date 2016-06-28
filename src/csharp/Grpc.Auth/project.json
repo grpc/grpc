@@ -12,6 +12,12 @@
     "requireLicenseAcceptance": false,
     "tags": [ "gRPC RPC Protocol HTTP/2 Auth OAuth2" ],
   },
+  "buildOptions": {
+    "define": [ "SIGNED" ],
+    "keyFile": "../keys/Grpc.snk",
+    "publicSign": true,
+    "xmlDoc": true
+  },
   "dependencies": {
     "Grpc.Core": "0.16.0-dev",
     "Google.Apis.Auth": "1.11.1"

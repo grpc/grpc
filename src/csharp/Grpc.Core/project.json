@@ -23,7 +23,11 @@
   },
   "shared": "Version.cs",
   "buildOptions": {
-    "embed": [ "../../../etc/roots.pem" ]
+    "embed": [ "../../../etc/roots.pem" ],
+    "define": [ "SIGNED" ],
+    "keyFile": "../keys/Grpc.snk",
+    "publicSign": true,
+    "xmlDoc": true
   },
   "dependencies": {
     "Ix-Async": "1.2.5"
