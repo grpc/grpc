@@ -33,6 +33,7 @@
 #include "call_ops.h"
 #include "context.h"
 #include "../message_public.h"
+#include "tag.h"
 #include <grpc/support/log.h>
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 
@@ -174,7 +175,7 @@ const grpc_op_manager grpc_op_recv_status = {
 };
 
 void grpc_fill_op_from_call_set(grpc_call_op_set *set, const grpc_method *rpc_method, grpc_context *context,
-                                const grpc_message message, void *response, grpc_op ops[], size_t *nops) {
+                                const grpc_message message, grpc_message *response, grpc_op ops[], size_t *nops) {
   size_t manager = 0;
   size_t filled = 0;
   while (manager < GRPC_MAX_OP_COUNT) {
@@ -198,4 +199,12 @@ void grpc_finish_op_from_call_set(grpc_call_op_set *set, grpc_context *context) 
     set->op_managers[count].finish(context, set, &status, size);
     count++;
   }
+}
+
+void grpc_start_batch_from_op_set(grpc_call *call, grpc_call_op_set *set, grpc_context *context,
+                                             const grpc_message request, grpc_message *response) {
+  size_t nops;
+  grpc_op ops[GRPC_MAX_OP_COUNT];
+  grpc_fill_op_from_call_set(set, &context->rpc_method, context, request, response, ops, &nops);
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops, nops, TAG(set), NULL));
 }

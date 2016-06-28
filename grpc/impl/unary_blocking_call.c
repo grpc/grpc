@@ -65,11 +65,7 @@ GRPC_status GRPC_unary_blocking_call(GRPC_channel *channel, const GRPC_method *c
     .user_tag = TAG(&set)
   };
 
-  size_t nops;
-  grpc_op ops[GRPC_MAX_OP_COUNT];
-  grpc_fill_op_from_call_set(&set, rpc_method, context, message, response, ops, &nops);
-
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops, nops, TAG(&set), NULL));
+  grpc_start_batch_from_op_set(call, &set, context, message, response);
   for (;;) {
     void *tag;
     bool ok;

@@ -74,9 +74,12 @@ typedef struct grpc_call_op_set {
 } grpc_call_op_set;
 
 void grpc_fill_op_from_call_set(grpc_call_op_set *set, const grpc_method *rpc_method, grpc_context *context,
-                                const grpc_message message, void *response, grpc_op ops[], size_t *nops);
+                                const grpc_message message, grpc_message *response, grpc_op ops[], size_t *nops);
 
 void grpc_finish_op_from_call_set(grpc_call_op_set *set, grpc_context *context);
+
+void grpc_start_batch_from_op_set(grpc_call *call, grpc_call_op_set *set, grpc_context *context,
+                                  const grpc_message message, grpc_message *response);
 
 /* list of operations */
 

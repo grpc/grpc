@@ -71,10 +71,7 @@ GRPC_client_reader *GRPC_server_streaming_blocking_call(GRPC_channel *channel,
     .cq = cq,
   });
 
-  size_t nops;
-  grpc_op ops[GRPC_MAX_OP_COUNT];
-  grpc_fill_op_from_call_set(&set, &rpc_method, context, request, NULL, ops, &nops);
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops, nops, TAG(&set), NULL));
+  grpc_start_batch_from_op_set(reader->call, &set, reader->context, request, NULL);
   GRPC_completion_queue_pluck_internal(cq, TAG(&set));
   return reader;
 }
@@ -90,24 +87,20 @@ bool GRPC_server_streaming_blocking_read(GRPC_client_reader *reader, GRPC_messag
   };
   grpc_call_op_set set_no_meta = {
     {
-      grpc_op_recv_metadata,
       grpc_op_recv_object
     },
     .context = reader->context,
     .user_tag = &set_no_meta
   };
-  grpc_call_op_set *set = NULL;
+  grpc_call_op_set *pSet = NULL;
   if (reader->context->initial_metadata_received == false) {
-    set = &set_meta;
+    pSet = &set_meta;
   } else {
-    set = &set_no_meta;
+    pSet = &set_no_meta;
   }
 
-  size_t nops;
-  grpc_op ops[GRPC_MAX_OP_COUNT];
-  grpc_fill_op_from_call_set(set, &reader->context->rpc_method, reader->context, (GRPC_message) {}, response, ops, &nops);
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(reader->call, ops, nops, TAG(set), NULL));
-  return GRPC_completion_queue_pluck_internal(reader->cq, TAG(set)) && set->message_received;
+  grpc_start_batch_from_op_set(reader->call, pSet, reader->context, (GRPC_message) {}, response);
+  return GRPC_completion_queue_pluck_internal(reader->cq, TAG(pSet)) && pSet->message_received;
 }
 
 GRPC_status GRPC_client_reader_terminate(GRPC_client_reader *reader) {
@@ -118,10 +111,7 @@ GRPC_status GRPC_client_reader_terminate(GRPC_client_reader *reader) {
     .context = reader->context,
     .user_tag = &set
   };
-  size_t nops;
-  grpc_op ops[GRPC_MAX_OP_COUNT];
-  grpc_fill_op_from_call_set(&set, &reader->context->rpc_method, reader->context, (GRPC_message) {}, NULL, ops, &nops);
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(reader->call, ops, nops, TAG(&set), NULL));
+  grpc_start_batch_from_op_set(reader->call, &set, reader->context, (GRPC_message) {}, NULL);
   GRPC_completion_queue_pluck_internal(reader->cq, TAG(&set));
   GRPC_completion_queue_shutdown_and_destroy(reader->cq);
   grpc_call_destroy(reader->call);
