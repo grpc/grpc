@@ -99,7 +99,7 @@ const grpc_op_manager grpc_op_recv_metadata = {
 };
 
 static bool op_recv_object_fill(grpc_op *op, const grpc_method *method, grpc_context *context, grpc_call_op_set *set, const grpc_message message, grpc_message *response) {
-  context->message_received = false;
+  set->message_received = false;
   set->response = response;
   op->op = GRPC_OP_RECV_MESSAGE;
   set->recv_buffer = NULL;
@@ -111,9 +111,9 @@ static bool op_recv_object_fill(grpc_op *op, const grpc_method *method, grpc_con
 
 static void op_recv_object_finish(grpc_context *context, grpc_call_op_set *set, bool *status, int max_message_size) {
   if (set->recv_buffer) {
-    GPR_ASSERT(context->message_received == false);
+    GPR_ASSERT(set->message_received == false);
     // deserialize
-    context->message_received = true;
+    set->message_received = true;
 
     grpc_byte_buffer_reader reader;
     grpc_byte_buffer_reader_init(&reader, set->recv_buffer);
