@@ -54,7 +54,8 @@ typedef struct {
 
 static void on_metadata_response(grpc_exec_ctx *exec_ctx, void *user_data,
                                  grpc_credentials_md *md_elems, size_t num_md,
-                                 grpc_credentials_status status) {
+                                 grpc_credentials_status status,
+                                 const char *error_details) {
   synchronizer *sync = user_data;
   if (status == GRPC_CREDENTIALS_ERROR) {
     fprintf(stderr, "Fetching token failed.\n");
