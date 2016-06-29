@@ -968,8 +968,8 @@ request payload bodies received.
 [StreamingOutputCall]: #streamingoutputcall
 
 Server implements StreamingOutputCall by replying, in order, with one
-StreamingOutputCallResponses for each ResponseParameters in
-StreamingOutputCallRequest. Each StreamingOutputCallResponses should have a
+StreamingOutputCallResponse for each ResponseParameters in
+StreamingOutputCallRequest. Each StreamingOutputCallResponse should have a
 payload body of size ResponseParameters.size bytes, as specified by its
 respective ResponseParameters. After sending all responses, it closes with OK.
 
@@ -977,8 +977,8 @@ respective ResponseParameters. After sending all responses, it closes with OK.
 [FullDuplexCall]: #fullduplexcall
 
 Server implements FullDuplexCall by replying, in order, with one
-StreamingOutputCallResponses for each ResponseParameters in each
-StreamingOutputCallRequest. Each StreamingOutputCallResponses should have a
+StreamingOutputCallResponse for each ResponseParameters in each
+StreamingOutputCallRequest. Each StreamingOutputCallResponse should have a
 payload body of size ResponseParameters.size bytes, as specified by its
 respective ResponseParameters. After receiving half close and sending all
 responses, it closes with OK.
