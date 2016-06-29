@@ -239,6 +239,7 @@ class BetaFeaturesTest(unittest.TestCase):
     self._servicer.block_until_serviced()
     self.assertIsNotNone(self._servicer.peer())
     self.assertEqual(_RESPONSE, response_future.result())
+    self.assertIsNone(response_future.exception())
     invocation_metadata = [(metadatum.key, metadatum.value) for metadatum in
                            self._servicer._invocation_metadata]
     self.assertIn(
