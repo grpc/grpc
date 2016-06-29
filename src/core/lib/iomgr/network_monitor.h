@@ -36,7 +36,8 @@
 
 #include <stdbool.h>
 
-bool grpc_start_connectivity_monitor(const char* addr, void (*handler)(void));
+bool grpc_start_connectivity_monitor(const char* addr, void (*handler)(void),
+                                     bool specific_interface, bool isWWAN);
 
 bool grpc_stop_connectivity_monitor();
 

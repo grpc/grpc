@@ -38,7 +38,8 @@
 
 #include "src/core/lib/iomgr/network_monitor.h"
 
-bool grpc_start_connectivity_monitor(const char* addr, void (*handler)(void)) {
+bool grpc_start_connectivity_monitor(const char* addr, void (*handler)(void),
+                                     bool specific_interface, bool isWWAN) {
   return true;
 }
 
