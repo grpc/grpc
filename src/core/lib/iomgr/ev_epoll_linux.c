@@ -60,9 +60,8 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/support/block_annotate.h"
 
-/* TODO: sreek - Move this to init.c and initialize this like other tracers.
- * Also, enable this trace by default for now. */
-static int grpc_polling_trace = 1;
+/* TODO: sreek - Move this to init.c and initialize this like other tracers. */
+static int grpc_polling_trace = 0; /* Disabled by default */
 #define GRPC_POLLING_TRACE(fmt, ...)       \
   if (grpc_polling_trace) {                \
     gpr_log(GPR_INFO, (fmt), __VA_ARGS__); \
@@ -203,7 +202,11 @@ typedef struct polling_island {
  * Pollset Declarations
  */
 struct grpc_pollset_worker {
-  pthread_t pt_id; /* Thread id of this worker */
+  /* Thread id of this worker */
+  pthread_t pt_id;
+
+  /* Used to prevent a worker from getting kicked multiple times */
+  gpr_atm is_kicked;
   struct grpc_pollset_worker *next;
   struct grpc_pollset_worker *prev;
 };
@@ -1066,11 +1069,16 @@ static void pollset_global_shutdown(void) {
 
 static grpc_error *pollset_worker_kick(grpc_pollset_worker *worker) {
   grpc_error *err = GRPC_ERROR_NONE;
-  GRPC_POLLING_TRACE("pollset_worker_kick: Kicking worker: %p (thread id: %ld)",
-                     (void *)worker, worker->pt_id);
-  int err_num = pthread_kill(worker->pt_id, grpc_wakeup_signal);
-  if (err_num != 0) {
-    err = GRPC_OS_ERROR(err_num, "pthread_kill");
+
+  /* Kick the worker only if it was not already kicked */
+  if (gpr_atm_no_barrier_cas(&worker->is_kicked, (gpr_atm)0, (gpr_atm)1)) {
+    GRPC_POLLING_TRACE(
+        "pollset_worker_kick: Kicking worker: %p (thread id: %ld)",
+        (void *)worker, worker->pt_id);
+    int err_num = pthread_kill(worker->pt_id, grpc_wakeup_signal);
+    if (err_num != 0) {
+      err = GRPC_OS_ERROR(err_num, "pthread_kill");
+    }
   }
   return err;
 }
@@ -1413,6 +1421,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   grpc_pollset_worker worker;
   worker.next = worker.prev = NULL;
   worker.pt_id = pthread_self();
+  gpr_atm_no_barrier_store(&worker.is_kicked, (gpr_atm)0);
 
   *worker_hdl = &worker;
 
@@ -1428,18 +1437,20 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     pollset->kicked_without_pollers = 0;
   } else if (!pollset->shutting_down) {
     /* We use the posix-signal with number 'grpc_wakeup_signal' for waking up
-       (i.e 'kicking') a worker in the pollset.
-       A 'kick' is a way to inform that worker that there is some pending work
-       that needs immediate attention (like an event on the completion queue,
-       or a polling island merge that results in a new epoll-fd to wait on) and
-       that the worker should not spend time waiting in epoll_pwait().
+       (i.e 'kicking') a worker in the pollset. A 'kick' is a way to inform the
+       worker that there is some pending work that needs immediate attention
+       (like an event on the completion queue, or a polling island merge that
+       results in a new epoll-fd to wait on) and that the worker should not
+       spend time waiting in epoll_pwait().
 
-       A kick can come at anytime (i.e before/during or after the worker calls
-       epoll_pwait()) but in all cases we have to make sure that when a worker
-       gets a kick, it does not spend time in epoll_pwait(). In other words, one
-       kick should result in skipping/exiting of one epoll_pwait();
+       A worker can be kicked anytime from the point it is added to the pollset
+       via push_front_worker() (or push_back_worker()) to the point it is
+       removed via remove_worker().
+       If the worker is kicked before/during it calls epoll_pwait(), it should
+       immediately exit from epoll_wait(). If the worker is kicked after it
+       returns from epoll_wait(), then nothing really needs to be done.
 
-       To accomplish this, we mask 'grpc_wakeup_signal' on this worker at all
+       To accomplish this, we mask 'grpc_wakeup_signal' on this thread at all
        times *except* when it is in epoll_pwait(). This way, the worker never
        misses acting on a kick */
 
@@ -1466,6 +1477,9 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     grpc_exec_ctx_flush(exec_ctx);
 
     gpr_mu_lock(&pollset->mu);
+
+    /* Note: There is no need to reset worker.is_kicked to 0 since we are no
+       longer going to use this worker */
     remove_worker(pollset, &worker);
   }
 
