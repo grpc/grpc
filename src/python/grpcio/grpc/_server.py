@@ -729,7 +729,7 @@ def _start(state):
 
 class Server(grpc.Server):
 
-  def __init__(self, generic_handlers, thread_pool):
+  def __init__(self, thread_pool, generic_handlers):
     completion_queue = cygrpc.CompletionQueue()
     server = cygrpc.Server()
     server.register_completion_queue(completion_queue)

@@ -184,7 +184,7 @@ class RPCTest(unittest.TestCase):
     self._handler = _Handler(self._control)
     self._server_pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
 
-    self._server = grpc.server((), self._server_pool)
+    self._server = grpc.server(self._server_pool)
     port = self._server.add_insecure_port(b'[::]:0')
     self._server.add_generic_rpc_handlers((_GenericHandler(self._handler),))
     self._server.start()
