@@ -17,6 +17,7 @@ GRPC_LOCAL_SRC = '../../..'
 ).each do |target_name|
   target target_name do
     pod 'Protobuf', :path => "#{GRPC_LOCAL_SRC}/third_party/protobuf", :inhibit_warnings => true
+    pod 'ProtoCompiler',  :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
     pod 'BoringSSL', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
     pod 'CronetFramework', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
     pod 'gRPC', :path => GRPC_LOCAL_SRC
