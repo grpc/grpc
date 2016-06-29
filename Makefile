@@ -393,6 +393,8 @@ endif
 ifneq ($(wildcard /usr/local/lib),)
 LDFLAGS += -L/usr/local/lib
 endif
+LDFLAGS += -framework CoreFoundation
+LDFLAGS += -framework SystemConfiguration
 endif
 
 ifeq ($(SYSTEM),Linux)
@@ -2576,6 +2578,8 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/iomgr_posix.c \
     src/core/lib/iomgr/iomgr_windows.c \
     src/core/lib/iomgr/load_file.c \
+    src/core/lib/iomgr/network_monitor.c \
+    src/core/lib/iomgr/network_monitor_darwin.c \
     src/core/lib/iomgr/network_status_tracker.c \
     src/core/lib/iomgr/polling_entity.c \
     src/core/lib/iomgr/pollset_set_windows.c \
@@ -2848,6 +2852,8 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/iomgr_posix.c \
     src/core/lib/iomgr/iomgr_windows.c \
     src/core/lib/iomgr/load_file.c \
+    src/core/lib/iomgr/network_monitor.c \
+    src/core/lib/iomgr/network_monitor_darwin.c \
     src/core/lib/iomgr/network_status_tracker.c \
     src/core/lib/iomgr/polling_entity.c \
     src/core/lib/iomgr/pollset_set_windows.c \
@@ -3189,6 +3195,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/iomgr_posix.c \
     src/core/lib/iomgr/iomgr_windows.c \
     src/core/lib/iomgr/load_file.c \
+    src/core/lib/iomgr/network_monitor.c \
+    src/core/lib/iomgr/network_monitor_darwin.c \
     src/core/lib/iomgr/network_status_tracker.c \
     src/core/lib/iomgr/polling_entity.c \
     src/core/lib/iomgr/pollset_set_windows.c \

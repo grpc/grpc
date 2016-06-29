@@ -93,6 +93,7 @@ end
 
 $LDFLAGS << ' -Wl,-wrap,memcpy' if RUBY_PLATFORM =~ /linux/
 $LDFLAGS << ' -static' if windows
+$LDFLAGS << ' -framework CoreFoundation -framework SystemConfiguration' if RUBY_PLATFORM =~ /darwin/
 
 $CFLAGS << ' -std=c99 '
 $CFLAGS << ' -Wall '

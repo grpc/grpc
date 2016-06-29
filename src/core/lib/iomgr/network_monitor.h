@@ -31,11 +31,13 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_NETWORK_STATUS_TRACKER_H
-#define GRPC_CORE_LIB_IOMGR_NETWORK_STATUS_TRACKER_H
-#include "src/core/lib/iomgr/endpoint.h"
+#ifndef GRPC_CORE_LIB_IOMGR_NETWORK_MONITOR_H
+#define GRPC_CORE_LIB_IOMGR_NETWORK_MONITOR_H
 
-void grpc_network_status_register_endpoint(grpc_endpoint *ep);
-void grpc_network_status_unregister_endpoint(grpc_endpoint *ep);
-void grpc_network_status_shutdown_all_endpoints(void);
-#endif /* GRPC_CORE_LIB_IOMGR_NETWORK_STATUS_TRACKER_H */
+#include <stdbool.h>
+
+bool grpc_start_connectivity_monitor(const char* addr, void (*handler)(void));
+
+bool grpc_stop_connectivity_monitor();
+
+#endif /* GRPC_CORE_LIB_IOMGR_NETWORK_MONITOR_H */
