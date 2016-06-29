@@ -31,9 +31,11 @@ from distutils import extension
 import errno
 import os
 import os.path
+import pkg_resources
 import shlex
 import shutil
 import sys
+import sysconfig
 
 import setuptools
 from setuptools.command import build_ext
@@ -42,6 +44,8 @@ from setuptools.command import build_ext
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.abspath('.'))
+
+PY3 = sys.version_info.major == 3
 
 # There are some situations (like on Windows) where CC, CFLAGS, and LDFLAGS are
 # entirely ignored/dropped/forgotten by distutils and its Cygwin/MinGW support.
@@ -58,6 +62,15 @@ GRPC_PYTHON_PROTO_RESOURCES_NAME = '_proto'
 
 import protoc_lib_deps
 import grpc_version
+
+# By default, Python3 distutils enforces compatibility of
+# c plugins (.so files) with the OSX version Python3 was built with.
+# For Python3.4, this is OSX 10.6, but we need Thread Local Support (__thread)
+if 'darwin' in sys.platform and PY3:
+  mac_target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
+  if mac_target and (pkg_resources.parse_version(mac_target) <
+		     pkg_resources.parse_version('10.9.0')):
+    os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.9'
 
 def package_data():
   tools_path = GRPC_PYTHON_TOOLS_PACKAGE.replace('.', os.path.sep)
