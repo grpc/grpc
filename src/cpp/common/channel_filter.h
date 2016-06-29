@@ -37,6 +37,7 @@
 #include <grpc++/impl/codegen/config.h>
 #include <grpc/census.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/alloc.h>
 
 #include <functional>
 #include <vector>
@@ -46,18 +47,20 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
-//
-// An interface to define filters.
-//
-// To define a filter, implement a subclass of each of CallData and
-// ChannelData.  Then register the filter using something like this:
-//   RegisterChannelFilter<MyChannelDataSubclass, MyCallDataSubclass>(
-//       "name-of-filter", GRPC_SERVER_CHANNEL, INT_MAX, nullptr);
-//
+///
+/// An interface to define filters.
+///
+/// To define a filter, implement a subclass of each of \c CallData and
+/// \c ChannelData. Then register the filter using something like this:
+/// \code{.cpp}
+///   RegisterChannelFilter<MyChannelDataSubclass, MyCallDataSubclass>(
+///       "name-of-filter", GRPC_SERVER_CHANNEL, INT_MAX, nullptr);
+/// \endcode
+///
 
 namespace grpc {
 
-// A C++ wrapper for the grpc_metadata_batch struct.
+/// A C++ wrapper for the \c grpc_metadata_batch struct.
 class MetadataBatch {
  public:
   explicit MetadataBatch(grpc_metadata_batch *batch) : batch_(batch) {}
@@ -112,10 +115,10 @@ class MetadataBatch {
   const_iterator end() const { return const_iterator(nullptr); }
 
  private:
-  grpc_metadata_batch *batch_;
+  grpc_metadata_batch *batch_;  // Not owned.
 };
 
-// A C++ wrapper for the grpc_transport_op struct.
+/// A C++ wrapper for the \c grpc_transport_op struct.
 class TransportOp {
  public:
   explicit TransportOp(grpc_transport_op *op) : op_(op) {}
@@ -131,10 +134,10 @@ class TransportOp {
   // TODO(roth): Add methods for additional fields as needed.
 
  private:
-  grpc_transport_op *op_;  // Do not own.
+  grpc_transport_op *op_;  // Not owned.
 };
 
-// A C++ wrapper for the grpc_transport_stream_op struct.
+/// A C++ wrapper for the \c grpc_transport_stream_op struct.
 class TransportStreamOp {
  public:
   explicit TransportStreamOp(grpc_transport_stream_op *op)
@@ -197,18 +200,21 @@ class TransportStreamOp {
   }
 
  private:
-  grpc_transport_stream_op *op_;  // Do not own.
+  grpc_transport_stream_op *op_;  // Not owned.
   MetadataBatch send_initial_metadata_;
   MetadataBatch send_trailing_metadata_;
   MetadataBatch recv_initial_metadata_;
   MetadataBatch recv_trailing_metadata_;
 };
 
-// Represents channel data.
+/// Represents channel data.
 class ChannelData {
  public:
-  virtual ~ChannelData() {}
+  virtual ~ChannelData() {
+    if (peer_) gpr_free((void *)peer_);
+  }
 
+  // Caller does NOT take ownership of result.
   const char *peer() const { return peer_; }
 
   // TODO(roth): Find a way to avoid passing elem into these methods.
@@ -216,13 +222,14 @@ class ChannelData {
                                 grpc_channel_element *elem, TransportOp *op);
 
  protected:
+  /// Takes ownership of \a peer.
   ChannelData(const grpc_channel_args &args, const char *peer) : peer_(peer) {}
 
  private:
-  const char *peer_;  // Do not own.
+  const char *peer_;
 };
 
-// Represents call data.
+/// Represents call data.
 class CallData {
  public:
   virtual ~CallData() {}
@@ -330,11 +337,11 @@ void ChannelFilterPluginShutdown();
 
 }  // namespace internal
 
-// Registers a new filter.
-// Must be called by only one thread at a time.
-// The include_filter argument specifies a function that will be called
-// to determine at run-time whether or not to add the filter.  If the
-// value is nullptr, the filter will be added unconditionally.
+/// Registers a new filter.
+/// Must be called by only one thread at a time.
+/// The \a include_filter argument specifies a function that will be called
+/// to determine at run-time whether or not to add the filter. If the
+/// value is nullptr, the filter will be added unconditionally.
 template <typename ChannelDataType, typename CallDataType>
 void RegisterChannelFilter(
     const char *name, grpc_channel_stack_type stack_type, int priority,
@@ -346,7 +353,7 @@ void RegisterChannelFilter(
                          internal::ChannelFilterPluginShutdown);
     internal::channel_filters = new std::vector<internal::FilterRecord>();
   }
-  // Add an entry to channel_filters.  The filter will be added when the
+  // Add an entry to channel_filters. The filter will be added when the
   // C-core initialization code calls ChannelFilterPluginInit().
   typedef internal::ChannelFilter<ChannelDataType, CallDataType> FilterType;
   internal::FilterRecord filter_record = {
