@@ -231,6 +231,8 @@ class CallData {
  public:
   virtual ~CallData() {}
 
+  virtual grpc_error* Init() { return GRPC_ERROR_NONE; }
+
   virtual void StartTransportStreamOp(grpc_exec_ctx *exec_ctx,
                                       grpc_call_element *elem,
                                       TransportStreamOp *op);
@@ -242,8 +244,6 @@ class CallData {
   virtual char *GetPeer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem);
 
  protected:
-// FIXME: once PR #7024 has been merged, update this API to provide a
-// way to return an error from call initialization
   explicit CallData(const ChannelData &) {}
 };
 
@@ -281,12 +281,14 @@ class ChannelFilter GRPC_FINAL {
 
   static const size_t call_data_size = sizeof(CallDataType);
 
-  static void InitCallElement(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                              grpc_call_element_args *args) {
+  static grpc_error* InitCallElement(grpc_exec_ctx *exec_ctx,
+                                     grpc_call_element *elem,
+                                     grpc_call_element_args *args) {
     const ChannelDataType &channel_data =
         *(ChannelDataType *)elem->channel_data;
     // Construct the object in the already-allocated memory.
-    new (elem->call_data) CallDataType(channel_data);
+    CallDataType* call_data = new (elem->call_data) CallDataType(channel_data);
+    return call_data->Init();
   }
 
   static void DestroyCallElement(grpc_exec_ctx *exec_ctx,
