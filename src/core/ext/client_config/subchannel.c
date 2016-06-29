@@ -706,8 +706,7 @@ grpc_error *grpc_connected_subchannel_create_call(
   grpc_channel_stack *chanstk = CHANNEL_STACK_FROM_CONNECTION(con);
   *call = gpr_malloc(sizeof(grpc_subchannel_call) + chanstk->call_stack_size);
   grpc_call_stack *callstk = SUBCHANNEL_CALL_TO_CALL_STACK(*call);
-  (*call)->connection = con;
-  GRPC_CONNECTED_SUBCHANNEL_REF(con, "subchannel_call");
+  (*call)->connection = con;  // Ref is added below.
   grpc_error *error =
       grpc_call_stack_init(exec_ctx, chanstk, 1, subchannel_call_destroy, *call,
                            NULL, NULL, callstk);
@@ -715,8 +714,10 @@ grpc_error *grpc_connected_subchannel_create_call(
     const char *error_string = grpc_error_string(error);
     gpr_log(GPR_ERROR, "error: %s", error_string);
     grpc_error_free_string(error_string);
+    gpr_free(*call);
     return error;
   }
+  GRPC_CONNECTED_SUBCHANNEL_REF(con, "subchannel_call");
   grpc_call_stack_set_pollset_or_pollset_set(exec_ctx, callstk, pollent);
   return GRPC_ERROR_NONE;
 }
