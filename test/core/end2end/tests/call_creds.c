@@ -53,7 +53,6 @@ static const char overridden_iam_selector[] = "overridden_selector";
 
 typedef enum { NONE, OVERRIDE, DESTROY } override_mode;
 
-enum { TIMEOUT = 200000 };
 
 static void *tag(intptr_t t) { return (void *)t; }
 

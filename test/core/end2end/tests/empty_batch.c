@@ -45,7 +45,6 @@
 #include "src/core/lib/support/string.h"
 #include "test/core/end2end/cq_verifier.h"
 
-enum { TIMEOUT = 200000 };
 
 static void *tag(intptr_t t) { return (void *)t; }
 
