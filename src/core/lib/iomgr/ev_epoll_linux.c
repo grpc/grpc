@@ -1527,7 +1527,7 @@ static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
       pi_new = polling_island_create(fd, &error);
 
       GRPC_POLLING_TRACE(
-          "pollset_add_fd: Created new polling island. pi_new:%p (fd: %d, "
+          "pollset_add_fd: Created new polling island. pi_new: %p (fd: %d, "
           "pollset: %p)",
           (void *)pi_new, fd->fd, (void *)pollset);
     }
