@@ -71,7 +71,7 @@ static grpc_byte_buffer *CopyCharArrayToNewByteBuffer(const char *array,
   }
   char *array;
   NSUInteger length;
-  MallocAndCopyByteBufferToCharArray(buffer, &length, &array);
+  MallocAndCopyByteBufferToCharArray(buffer, (size_t *)&length, &array);
   if (!array) {
     // TODO(jcanizales): grpc_byte_buffer is reference-counted, so we can
     // prevent this memory problem by implementing a subclass of NSData
