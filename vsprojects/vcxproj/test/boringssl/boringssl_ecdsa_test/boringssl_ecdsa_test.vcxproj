@@ -53,7 +53,6 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="$(SolutionDir)\..\vsprojects\cpptest.props" />
     <Import Project="$(SolutionDir)\..\vsprojects\global.props" />
     <Import Project="$(SolutionDir)\..\vsprojects\openssl.props" />
     <Import Project="$(SolutionDir)\..\vsprojects\protobuf.props" />

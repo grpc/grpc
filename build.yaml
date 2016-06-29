@@ -1015,6 +1015,9 @@ libs:
   - grpc++_codegen_base_src
   - grpc++_codegen_proto
   - grpc++_config_proto
+  vs_packages:
+  - gtest
+  - gflags
 - name: grpc++_unsecure
   build: all
   language: c++
