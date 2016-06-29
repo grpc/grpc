@@ -3153,7 +3153,7 @@ vspackages:
 - name: gtest
   props: false
   redist: false
-  version: 1.7.0.1
+  version: 1.7.0
 configs:
   asan:
     CC: clang
