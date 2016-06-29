@@ -40,7 +40,6 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include <SystemConfiguration/SystemConfiguration.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/log.h>
 
 struct grpc_connectivity_monitor {
   gpr_mu mu;
