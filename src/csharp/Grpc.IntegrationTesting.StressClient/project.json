@@ -9,6 +9,9 @@
         "keyFile": "../keys/Grpc.snk",
         "publicSign": true,
         "xmlDoc": true,
+        "compile": {
+          "includeFiles": [ "../Grpc.Core/Version.cs" ]
+        },
         "copyToOutput": {
           "include": "data/*",
           "mappings": {
@@ -26,6 +29,9 @@
         "keyFile": "../keys/Grpc.snk",
         "publicSign": true,
         "xmlDoc": true,
+        "compile": {
+          "includeFiles": [ "../Grpc.Core/Version.cs" ]
+        },
         "copyToOutput": {
           "include": "data/*",
           "mappings": {

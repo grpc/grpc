@@ -23,7 +23,6 @@
       }
     }
   },
-  "shared": "Version.cs",
   "buildOptions": {
     "embed": [ "../../../etc/roots.pem" ],
     "define": [ "SIGNED" ],
