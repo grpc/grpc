@@ -762,7 +762,6 @@ WARN_LOGFILE           =
 
 INPUT                  = include/grpc++/alarm.h \
 include/grpc++/channel.h \
-include/grpc++/channel_filter.h \
 include/grpc++/client_context.h \
 include/grpc++/completion_queue.h \
 include/grpc++/create_channel.h \

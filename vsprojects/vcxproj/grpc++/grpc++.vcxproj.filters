@@ -111,9 +111,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\channel.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\channel_filter.h">
-      <Filter>include\grpc++</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\client_context.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
@@ -418,6 +415,9 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\cpp\client\create_channel_internal.h">
       <Filter>src\cpp\client</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\cpp\common\channel_filter.h">
+      <Filter>src\cpp\common</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\dynamic_thread_pool.h">
       <Filter>src\cpp\server</Filter>

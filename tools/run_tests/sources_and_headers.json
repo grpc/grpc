@@ -6537,7 +6537,6 @@
     "headers": [
       "include/grpc++/alarm.h", 
       "include/grpc++/channel.h", 
-      "include/grpc++/channel_filter.h", 
       "include/grpc++/client_context.h", 
       "include/grpc++/completion_queue.h", 
       "include/grpc++/create_channel.h", 
@@ -6584,6 +6583,7 @@
       "include/grpc++/support/sync_stream.h", 
       "include/grpc++/support/time.h", 
       "src/cpp/client/create_channel_internal.h", 
+      "src/cpp/common/channel_filter.h", 
       "src/cpp/server/dynamic_thread_pool.h", 
       "src/cpp/server/thread_pool_interface.h"
     ], 
@@ -6592,7 +6592,6 @@
     "src": [
       "include/grpc++/alarm.h", 
       "include/grpc++/channel.h", 
-      "include/grpc++/channel_filter.h", 
       "include/grpc++/client_context.h", 
       "include/grpc++/completion_queue.h", 
       "include/grpc++/create_channel.h", 
@@ -6649,6 +6648,7 @@
       "src/cpp/client/insecure_credentials.cc", 
       "src/cpp/common/channel_arguments.cc", 
       "src/cpp/common/channel_filter.cc", 
+      "src/cpp/common/channel_filter.h", 
       "src/cpp/common/completion_queue.cc", 
       "src/cpp/common/core_codegen.cc", 
       "src/cpp/common/rpc_method.cc", 

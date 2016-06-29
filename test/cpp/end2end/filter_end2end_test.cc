@@ -35,7 +35,6 @@
 #include <mutex>
 
 #include <grpc++/channel.h>
-#include <grpc++/channel_filter.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/generic/async_generic_service.h>
@@ -50,6 +49,7 @@
 #include <grpc/support/time.h>
 #include <gtest/gtest.h>
 
+#include "src/cpp/common/channel_filter.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"

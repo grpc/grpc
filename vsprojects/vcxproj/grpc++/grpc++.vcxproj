@@ -260,7 +260,6 @@
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\alarm.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\channel.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\channel_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\client_context.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\completion_queue.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\create_channel.h" />
@@ -364,6 +363,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\cpp\common\secure_auth_context.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\secure_server_credentials.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\client\create_channel_internal.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\cpp\common\channel_filter.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\dynamic_thread_pool.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\thread_pool_interface.h" />
   </ItemGroup>

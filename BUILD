@@ -1224,6 +1224,7 @@ cc_library(
     "src/cpp/common/secure_auth_context.h",
     "src/cpp/server/secure_server_credentials.h",
     "src/cpp/client/create_channel_internal.h",
+    "src/cpp/common/channel_filter.h",
     "src/cpp/server/dynamic_thread_pool.h",
     "src/cpp/server/thread_pool_interface.h",
     "src/cpp/client/secure_credentials.cc",
@@ -1264,7 +1265,6 @@ cc_library(
   hdrs = [
     "include/grpc++/alarm.h",
     "include/grpc++/channel.h",
-    "include/grpc++/channel_filter.h",
     "include/grpc++/client_context.h",
     "include/grpc++/completion_queue.h",
     "include/grpc++/create_channel.h",
@@ -1457,6 +1457,7 @@ cc_library(
   name = "grpc++_unsecure",
   srcs = [
     "src/cpp/client/create_channel_internal.h",
+    "src/cpp/common/channel_filter.h",
     "src/cpp/server/dynamic_thread_pool.h",
     "src/cpp/server/thread_pool_interface.h",
     "src/cpp/common/insecure_create_auth_context.cc",
@@ -1492,7 +1493,6 @@ cc_library(
   hdrs = [
     "include/grpc++/alarm.h",
     "include/grpc++/channel.h",
-    "include/grpc++/channel_filter.h",
     "include/grpc++/client_context.h",
     "include/grpc++/completion_queue.h",
     "include/grpc++/create_channel.h",

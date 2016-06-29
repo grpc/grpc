@@ -122,7 +122,7 @@ class TransportOp {
 
   grpc_transport_op *op() const { return op_; }
 
-  // FIXME: add a C++ wrapper for grpc_error?
+  // TODO(roth): Add a C++ wrapper for grpc_error?
   grpc_error *disconnect_with_error() const {
     return op_->disconnect_with_error;
   }
@@ -211,8 +211,7 @@ class ChannelData {
 
   const char *peer() const { return peer_; }
 
-  // FIXME: find a way to avoid passing elem into these methods
-  // (same for CallData below)
+  // TODO(roth): Find a way to avoid passing elem into these methods.
   virtual void StartTransportOp(grpc_exec_ctx *exec_ctx,
                                 grpc_channel_element *elem, TransportOp *op);
 
@@ -229,6 +228,8 @@ class CallData {
   virtual ~CallData() {}
 
   virtual grpc_error *Init() { return GRPC_ERROR_NONE; }
+
+  // TODO(roth): Find a way to avoid passing elem into these methods.
 
   virtual void StartTransportStreamOp(grpc_exec_ctx *exec_ctx,
                                       grpc_call_element *elem,

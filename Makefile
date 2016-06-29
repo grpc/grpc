@@ -1489,6 +1489,7 @@ buildtests_cxx: buildtests_zookeeper privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/cxx_string_ref_test \
   $(BINDIR)/$(CONFIG)/cxx_time_test \
   $(BINDIR)/$(CONFIG)/end2end_test \
+  $(BINDIR)/$(CONFIG)/filter_end2end_test \
   $(BINDIR)/$(CONFIG)/generic_end2end_test \
   $(BINDIR)/$(CONFIG)/golden_file_test \
   $(BINDIR)/$(CONFIG)/grpc_cli \
@@ -3497,7 +3498,6 @@ LIBGRPC++_SRC = \
 PUBLIC_HEADERS_CXX += \
     include/grpc++/alarm.h \
     include/grpc++/channel.h \
-    include/grpc++/channel_filter.h \
     include/grpc++/client_context.h \
     include/grpc++/completion_queue.h \
     include/grpc++/create_channel.h \
@@ -3986,7 +3986,6 @@ LIBGRPC++_UNSECURE_SRC = \
 PUBLIC_HEADERS_CXX += \
     include/grpc++/alarm.h \
     include/grpc++/channel.h \
-    include/grpc++/channel_filter.h \
     include/grpc++/client_context.h \
     include/grpc++/completion_queue.h \
     include/grpc++/create_channel.h \
