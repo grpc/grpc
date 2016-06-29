@@ -42,8 +42,6 @@ bool grpc_start_connectivity_monitor(const char* addr, void (*handler)(void)) {
   return true;
 }
 
-bool grpc_stop_connectivity_monitor() {
-  return true;
-}
+bool grpc_stop_connectivity_monitor() { return true; }
 
 #endif /* GPR_DARWIN */

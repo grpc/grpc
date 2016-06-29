@@ -52,7 +52,7 @@ void grpc_initialize_network_status_monitor() {
   gpr_mu_init(&g_endpoint_mutex);
   // TODO(makarandd): Install callback with OS to monitor network status.
   grpc_start_connectivity_monitor("0.0.0.0",
-                                  &grpc_network_status_shutdown_all_endpoints);
+                                  grpc_network_status_shutdown_all_endpoints);
 }
 
 void grpc_destroy_network_status_monitor() {
@@ -111,7 +111,7 @@ void grpc_network_status_unregister_endpoint(grpc_endpoint *ep) {
 // Walk the linked-list from head and execute shutdown. It is possible that
 // other threads might be in the process of shutdown as well, but that has
 // no side effect since endpoint shutdown is idempotent.
-void grpc_network_status_shutdown_all_endpoints() {
+void grpc_network_status_shutdown_all_endpoints(void) {
   gpr_mu_lock(&g_endpoint_mutex);
   if (head == NULL) {
     gpr_mu_unlock(&g_endpoint_mutex);

@@ -782,6 +782,10 @@
             'OTHER_CFLAGS': [
               '-stdlib=libc++',
               '-std=c++11'
+            ],
+            'OTHER_LDFLAGS': [
+              '-framework CoreFoundation',
+              '-framework SystemConfiguration'
             ]
           }
         }],
