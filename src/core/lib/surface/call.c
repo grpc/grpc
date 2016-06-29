@@ -271,7 +271,7 @@ grpc_call *grpc_call_create(
       status = GRPC_STATUS_UNKNOWN;
     const char *error_str =
         grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION);
-    close_with_status(&exec_ctx, call, status,
+    close_with_status(&exec_ctx, call, (grpc_status_code)status,
                       error_str == NULL ? "unknown error" : error_str);
     grpc_error_unref(error);
   }
