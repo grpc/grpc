@@ -16,7 +16,7 @@
   % for package in vspackages:
   %  if packages == 'all' or package.name in packages:
   %   if package.props:
-  <Import Project="${repo_root}\vsprojects\packages\${package.name}.${package.version}\build\native\${package.name}.props" Condition="Exists('${repo_root}\vsprojects\packages\${package.name}.${package.version}\build\native\${package.version}.props')" />
+  <Import Project="${repo_root}\vsprojects\packages\${package.name}.${package.version}\build\native\${package.name}.props" Condition="Exists('${repo_root}\vsprojects\packages\${package.name}.${package.version}\build\native\${package.name}.props')" />
   %   endif
   %  endif
   % endfor
