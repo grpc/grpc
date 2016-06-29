@@ -34,9 +34,9 @@
 #ifndef GRPCXX_CHANNEL_FILTER_H
 #define GRPCXX_CHANNEL_FILTER_H
 
-#include <grpc/grpc.h>
-#include <grpc/census.h>
 #include <grpc++/impl/codegen/config.h>
+#include <grpc/census.h>
+#include <grpc/grpc.h>
 
 #include <functional>
 #include <vector>
@@ -60,22 +60,22 @@ namespace grpc {
 // A C++ wrapper for the grpc_metadata_batch struct.
 class MetadataBatch {
  public:
-  explicit MetadataBatch(grpc_metadata_batch* batch) : batch_(batch) {}
+  explicit MetadataBatch(grpc_metadata_batch *batch) : batch_(batch) {}
 
-  grpc_metadata_batch* batch() const { return batch_; }
+  grpc_metadata_batch *batch() const { return batch_; }
 
   // Adds metadata and returns the newly allocated storage.
   // The caller takes ownership of the result, which must exist for the
   // lifetime of the gRPC call.
-  grpc_linked_mdelem* AddMetadata(const string& key, const string& value);
+  grpc_linked_mdelem *AddMetadata(const string &key, const string &value);
 
   class const_iterator : public std::iterator<std::bidirectional_iterator_tag,
                                               const grpc_mdelem> {
    public:
-    const grpc_mdelem& operator*() const { return *elem_->md; }
-    const grpc_mdelem* operator->() const { return elem_->md; }
+    const grpc_mdelem &operator*() const { return *elem_->md; }
+    const grpc_mdelem *operator->() const { return elem_->md; }
 
-    const_iterator& operator++() {
+    const_iterator &operator++() {
       elem_ = elem_->next;
       return *this;
     }
@@ -84,7 +84,7 @@ class MetadataBatch {
       operator++();
       return tmp;
     }
-    const_iterator& operator--() {
+    const_iterator &operator--() {
       elem_ = elem_->prev;
       return *this;
     }
@@ -94,36 +94,36 @@ class MetadataBatch {
       return tmp;
     }
 
-    bool operator==(const const_iterator& other) const {
+    bool operator==(const const_iterator &other) const {
       return elem_ == other.elem_;
     }
-    bool operator!=(const const_iterator& other) const {
+    bool operator!=(const const_iterator &other) const {
       return elem_ != other.elem_;
     }
 
    private:
     friend class MetadataBatch;
-    explicit const_iterator(grpc_linked_mdelem* elem) : elem_(elem) {}
+    explicit const_iterator(grpc_linked_mdelem *elem) : elem_(elem) {}
 
-    grpc_linked_mdelem* elem_;
+    grpc_linked_mdelem *elem_;
   };
 
   const_iterator begin() const { return const_iterator(batch_->list.head); }
   const_iterator end() const { return const_iterator(nullptr); }
 
  private:
-  grpc_metadata_batch* batch_;
+  grpc_metadata_batch *batch_;
 };
 
 // A C++ wrapper for the grpc_transport_op struct.
 class TransportOp {
  public:
-  explicit TransportOp(grpc_transport_op* op) : op_(op) {}
+  explicit TransportOp(grpc_transport_op *op) : op_(op) {}
 
-  grpc_transport_op* op() const { return op_; }
+  grpc_transport_op *op() const { return op_; }
 
-// FIXME: add a C++ wrapper for grpc_error?
-  grpc_error* disconnect_with_error() const {
+  // FIXME: add a C++ wrapper for grpc_error?
+  grpc_error *disconnect_with_error() const {
     return op_->disconnect_with_error;
   }
   bool send_goaway() const { return op_->send_goaway; }
@@ -131,75 +131,73 @@ class TransportOp {
   // TODO(roth): Add methods for additional fields as needed.
 
  private:
-  grpc_transport_op* op_;  // Do not own.
+  grpc_transport_op *op_;  // Do not own.
 };
 
 // A C++ wrapper for the grpc_transport_stream_op struct.
 class TransportStreamOp {
  public:
-  explicit TransportStreamOp(grpc_transport_stream_op* op)
+  explicit TransportStreamOp(grpc_transport_stream_op *op)
       : op_(op),
         send_initial_metadata_(op->send_initial_metadata),
         send_trailing_metadata_(op->send_trailing_metadata),
         recv_initial_metadata_(op->recv_initial_metadata),
         recv_trailing_metadata_(op->recv_trailing_metadata) {}
 
-  grpc_transport_stream_op* op() const { return op_; }
+  grpc_transport_stream_op *op() const { return op_; }
 
-  grpc_closure* on_complete() const { return op_->on_complete; }
-  void set_on_complete(grpc_closure* closure) {
-    op_->on_complete = closure;
-  }
+  grpc_closure *on_complete() const { return op_->on_complete; }
+  void set_on_complete(grpc_closure *closure) { op_->on_complete = closure; }
 
-  MetadataBatch* send_initial_metadata() {
-    return op_->send_initial_metadata == nullptr
-           ? nullptr : &send_initial_metadata_;
+  MetadataBatch *send_initial_metadata() {
+    return op_->send_initial_metadata == nullptr ? nullptr
+                                                 : &send_initial_metadata_;
   }
-  MetadataBatch* send_trailing_metadata() {
-    return op_->send_trailing_metadata == nullptr
-           ? nullptr : &send_trailing_metadata_;
+  MetadataBatch *send_trailing_metadata() {
+    return op_->send_trailing_metadata == nullptr ? nullptr
+                                                  : &send_trailing_metadata_;
   }
-  MetadataBatch* recv_initial_metadata() {
-    return op_->recv_initial_metadata == nullptr
-           ? nullptr : &recv_initial_metadata_;
+  MetadataBatch *recv_initial_metadata() {
+    return op_->recv_initial_metadata == nullptr ? nullptr
+                                                 : &recv_initial_metadata_;
   }
-  MetadataBatch* recv_trailing_metadata() {
-    return op_->recv_trailing_metadata == nullptr
-           ? nullptr : &recv_trailing_metadata_;
+  MetadataBatch *recv_trailing_metadata() {
+    return op_->recv_trailing_metadata == nullptr ? nullptr
+                                                  : &recv_trailing_metadata_;
   }
 
-  uint32_t* send_initial_metadata_flags() const {
+  uint32_t *send_initial_metadata_flags() const {
     return &op_->send_initial_metadata_flags;
   }
 
-  grpc_closure* recv_initial_metadata_ready() const {
+  grpc_closure *recv_initial_metadata_ready() const {
     return op_->recv_initial_metadata_ready;
   }
-  void set_recv_initial_metadata_ready(grpc_closure* closure) {
+  void set_recv_initial_metadata_ready(grpc_closure *closure) {
     op_->recv_initial_metadata_ready = closure;
   }
 
-  grpc_byte_stream* send_message() const { return op_->send_message; }
-  void set_send_message(grpc_byte_stream* send_message) {
+  grpc_byte_stream *send_message() const { return op_->send_message; }
+  void set_send_message(grpc_byte_stream *send_message) {
     op_->send_message = send_message;
   }
 
   // To be called only on clients and servers, respectively.
-  grpc_client_security_context* client_security_context() const {
-    return (grpc_client_security_context*)op_->context[
-        GRPC_CONTEXT_SECURITY].value;
+  grpc_client_security_context *client_security_context() const {
+    return (grpc_client_security_context *)op_->context[GRPC_CONTEXT_SECURITY]
+        .value;
   }
-  grpc_server_security_context* server_security_context() const {
-    return (grpc_server_security_context*)op_->context[
-        GRPC_CONTEXT_SECURITY].value;
+  grpc_server_security_context *server_security_context() const {
+    return (grpc_server_security_context *)op_->context[GRPC_CONTEXT_SECURITY]
+        .value;
   }
 
-  census_context* get_census_context() const {
-    return (census_context*)op_->context[GRPC_CONTEXT_TRACING].value;
+  census_context *get_census_context() const {
+    return (census_context *)op_->context[GRPC_CONTEXT_TRACING].value;
   }
 
  private:
-  grpc_transport_stream_op* op_;  // Do not own.
+  grpc_transport_stream_op *op_;  // Do not own.
   MetadataBatch send_initial_metadata_;
   MetadataBatch send_trailing_metadata_;
   MetadataBatch recv_initial_metadata_;
@@ -211,13 +209,12 @@ class ChannelData {
  public:
   virtual ~ChannelData() {}
 
-  const char* peer() const { return peer_; }
+  const char *peer() const { return peer_; }
 
-// FIXME: find a way to avoid passing elem into these methods
-// (same for CallData below)
+  // FIXME: find a way to avoid passing elem into these methods
+  // (same for CallData below)
   virtual void StartTransportOp(grpc_exec_ctx *exec_ctx,
-                                grpc_channel_element *elem,
-                                TransportOp *op);
+                                grpc_channel_element *elem, TransportOp *op);
 
  protected:
   ChannelData(const grpc_channel_args &args, const char *peer) : peer_(peer) {}
@@ -231,7 +228,7 @@ class CallData {
  public:
   virtual ~CallData() {}
 
-  virtual grpc_error* Init() { return GRPC_ERROR_NONE; }
+  virtual grpc_error *Init() { return GRPC_ERROR_NONE; }
 
   virtual void StartTransportStreamOp(grpc_exec_ctx *exec_ctx,
                                       grpc_call_element *elem,
@@ -258,10 +255,10 @@ class ChannelFilter GRPC_FINAL {
   static void InitChannelElement(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem,
                                  grpc_channel_element_args *args) {
-    const char* peer = args->optional_transport
-                       ? grpc_transport_get_peer(exec_ctx,
-                                                 args->optional_transport)
-                       : nullptr;
+    const char *peer =
+        args->optional_transport
+            ? grpc_transport_get_peer(exec_ctx, args->optional_transport)
+            : nullptr;
     // Construct the object in the already-allocated memory.
     new (elem->channel_data) ChannelDataType(*args->channel_args, peer);
   }
@@ -281,13 +278,13 @@ class ChannelFilter GRPC_FINAL {
 
   static const size_t call_data_size = sizeof(CallDataType);
 
-  static grpc_error* InitCallElement(grpc_exec_ctx *exec_ctx,
+  static grpc_error *InitCallElement(grpc_exec_ctx *exec_ctx,
                                      grpc_call_element *elem,
                                      grpc_call_element_args *args) {
     const ChannelDataType &channel_data =
         *(ChannelDataType *)elem->channel_data;
     // Construct the object in the already-allocated memory.
-    CallDataType* call_data = new (elem->call_data) CallDataType(channel_data);
+    CallDataType *call_data = new (elem->call_data) CallDataType(channel_data);
     return call_data->Init();
   }
 

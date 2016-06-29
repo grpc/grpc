@@ -43,8 +43,8 @@ namespace grpc {
 // MetadataBatch
 //
 
-grpc_linked_mdelem* MetadataBatch::AddMetadata(
-    const string& key, const string& value) {
+grpc_linked_mdelem *MetadataBatch::AddMetadata(const string &key,
+                                               const string &value) {
   grpc_linked_mdelem *storage = new grpc_linked_mdelem;
   memset(storage, 0, sizeof(grpc_linked_mdelem));
   storage->md = grpc_mdelem_from_strings(key.c_str(), value.c_str());
