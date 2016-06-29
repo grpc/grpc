@@ -53,7 +53,7 @@
   configuration_type = project.vs_config_type
   project_guid = project.vs_project_guid
   if project.get('gtest', False):
-    packages.extend(['gtest'])
+    packages.extend(['gtest', 'gflags'])
   if configuration_type == 'Application':
     if target.build == 'protoc':
       props.extend(['protoc', 'protobuf'])
