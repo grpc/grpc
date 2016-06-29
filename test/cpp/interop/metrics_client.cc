@@ -84,7 +84,7 @@ bool PrintMetrics(std::unique_ptr<MetricsService::Stub> stub, bool total_only,
       }
       overall_qps += gauge_response.long_value();
     } else {
-      std::cout << "Gauge %s is not a long value" << gauge_response.name()
+      std::cout << "Gauge '" << gauge_response.name() << "' is not long valued"
                 << std::endl;
     }
   }
