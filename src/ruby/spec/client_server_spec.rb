@@ -142,8 +142,7 @@ shared_examples 'basic GRPC message delivery is OK' do
       CallOps::SEND_INITIAL_METADATA => md,
       CallOps::SEND_MESSAGE => long_request_str
     }
-    batch_result = call.run_batch(@client_queue, @client_tag, deadline,
-                                  client_ops)
+    batch_result = call.run_batch(client_ops)
     expect(batch_result.send_metadata).to be true
     expect(batch_result.send_message).to be true
 
@@ -153,8 +152,7 @@ shared_examples 'basic GRPC message delivery is OK' do
       CallOps::RECV_MESSAGE => nil,
       CallOps::SEND_MESSAGE => long_response_str
     }
-    svr_batch = server_call.run_batch(@server_queue, @server_tag, deadline,
-                                      server_ops)
+    svr_batch = server_call.run_batch(server_ops)
     expect(svr_batch.message).to eq(long_request_str)
     expect(svr_batch.send_message).to be true
 
@@ -163,8 +161,7 @@ shared_examples 'basic GRPC message delivery is OK' do
       CallOps::RECV_INITIAL_METADATA => nil,
       CallOps::RECV_MESSAGE => nil
     }
-    batch_result = call.run_batch(@client_queue, @client_tag, deadline,
-                                  client_ops)
+    batch_result = call.run_batch(client_ops)
     expect(batch_result.send_close).to be true
     expect(batch_result.message).to eq long_response_str
   end
