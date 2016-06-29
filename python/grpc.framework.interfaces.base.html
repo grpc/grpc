@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework.interfaces.base package &mdash; grpcio 0.13.1rc1 documentation</title>
+  <title>grpc.framework.interfaces.base package &mdash; grpcio 0.15.0 documentation</title>
   
 
   
@@ -30,7 +30,7 @@
   
 
   
-    <link rel="top" title="grpcio 0.13.1rc1 documentation" href="index.html"/>
+    <link rel="top" title="grpcio 0.15.0 documentation" href="index.html"/>
         <link rel="up" title="grpc.framework.interfaces package" href="grpc.framework.interfaces.html"/>
         <link rel="next" title="grpc.framework.interfaces.face package" href="grpc.framework.interfaces.face.html"/>
         <link rel="prev" title="grpc.framework.interfaces package" href="grpc.framework.interfaces.html"/> 
@@ -42,6 +42,7 @@
 
 <body class="wy-body-for-nav" role="document">
 
+   
   <div class="wy-grid-for-nav">
 
     
@@ -61,7 +62,7 @@
             
             
               <div class="version">
-                0.13.1rc1
+                0.15.0
               </div>
             
           
@@ -86,7 +87,6 @@
 <li class="toctree-l1 current"><a class="reference internal" href="grpc.html">grpc package</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="grpc.html#subpackages">Subpackages</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="grpc.beta.html">grpc.beta package</a></li>
-<li class="toctree-l3"><a class="reference internal" href="grpc.early_adopter.html">grpc.early_adopter package</a></li>
 <li class="toctree-l3 current"><a class="reference internal" href="grpc.framework.html">grpc.framework package</a><ul class="current">
 <li class="toctree-l4 current"><a class="reference internal" href="grpc.framework.html#subpackages">Subpackages</a></li>
 <li class="toctree-l4"><a class="reference internal" href="grpc.framework.html#module-grpc.framework">Module contents</a></li>
@@ -123,24 +123,28 @@
 
 
 
+
+
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
-          <li><a href="grpc.html">grpc package</a> &raquo;</li>
+        <li><a href="grpc.html">grpc package</a> &raquo;</li>
       
-          <li><a href="grpc.framework.html">grpc.framework package</a> &raquo;</li>
+        <li><a href="grpc.framework.html">grpc.framework package</a> &raquo;</li>
       
-          <li><a href="grpc.framework.interfaces.html">grpc.framework.interfaces package</a> &raquo;</li>
+        <li><a href="grpc.framework.interfaces.html">grpc.framework.interfaces package</a> &raquo;</li>
       
     <li>grpc.framework.interfaces.base package</li>
-      <li class="wy-breadcrumbs-aside">
-        
+    <li class="wy-breadcrumbs-aside">
+      
           
-            <a href="_sources/grpc.framework.interfaces.base.txt" rel="nofollow"> View page source</a>
-          
+          <a href="_sources/grpc.framework.interfaces.base.txt" rel="nofollow"> View page source</a>
         
-      </li>
+      
+    </li>
   </ul>
   <hr/>
 </div>
@@ -164,7 +168,7 @@ applications choose.</p>
 <dl class="class">
 <dt id="grpc.framework.interfaces.base.base.Completion">
 <em class="property">class </em><code class="descclassname">grpc.framework.interfaces.base.base.</code><code class="descname">Completion</code><a class="reference internal" href="_modules/grpc/framework/interfaces/base/base.html#Completion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.base.base.Completion" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
 <p>An aggregate of the values exchanged upon operation completion.</p>
 <dl class="attribute">
 <dt id="grpc.framework.interfaces.base.base.Completion.terminal_metadata">
@@ -189,7 +193,7 @@ applications choose.</p>
 <dl class="class">
 <dt id="grpc.framework.interfaces.base.base.End">
 <em class="property">class </em><code class="descclassname">grpc.framework.interfaces.base.base.</code><code class="descname">End</code><a class="reference internal" href="_modules/grpc/framework/interfaces/base/base.html#End"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.base.base.End" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
 <p>Common type for entry-point objects on both sides of an operation.</p>
 <dl class="method">
 <dt id="grpc.framework.interfaces.base.base.End.add_idle_action">
@@ -326,7 +330,7 @@ along with indication of operation termination. May be None.</p>
 <dl class="class">
 <dt id="grpc.framework.interfaces.base.base.OperationContext">
 <em class="property">class </em><code class="descclassname">grpc.framework.interfaces.base.base.</code><code class="descname">OperationContext</code><a class="reference internal" href="_modules/grpc/framework/interfaces/base/base.html#OperationContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.base.base.OperationContext" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
 <p>Provides operation-related information and action.</p>
 <dl class="method">
 <dt id="grpc.framework.interfaces.base.base.OperationContext.add_termination_callback">
@@ -410,7 +414,7 @@ timed out. Zero is returned if the operation has terminated.</td>
 <dl class="class">
 <dt id="grpc.framework.interfaces.base.base.Operator">
 <em class="property">class </em><code class="descclassname">grpc.framework.interfaces.base.base.</code><code class="descname">Operator</code><a class="reference internal" href="_modules/grpc/framework/interfaces/base/base.html#Operator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.base.base.Operator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
 <p>An interface through which to participate in an operation.</p>
 <dl class="method">
 <dt id="grpc.framework.interfaces.base.base.Operator.advance">
@@ -520,7 +524,7 @@ provided.</p>
 <dl class="class">
 <dt id="grpc.framework.interfaces.base.base.ProtocolReceiver">
 <em class="property">class </em><code class="descclassname">grpc.framework.interfaces.base.base.</code><code class="descname">ProtocolReceiver</code><a class="reference internal" href="_modules/grpc/framework/interfaces/base/base.html#ProtocolReceiver"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.base.base.ProtocolReceiver" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
 <p>A means of receiving protocol values during an operation.</p>
 <dl class="method">
 <dt id="grpc.framework.interfaces.base.base.ProtocolReceiver.context">
@@ -541,7 +545,7 @@ provided.</p>
 <dl class="class">
 <dt id="grpc.framework.interfaces.base.base.Servicer">
 <em class="property">class </em><code class="descclassname">grpc.framework.interfaces.base.base.</code><code class="descname">Servicer</code><a class="reference internal" href="_modules/grpc/framework/interfaces/base/base.html#Servicer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.base.base.Servicer" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
 <p>Interface for service implementations.</p>
 <dl class="method">
 <dt id="grpc.framework.interfaces.base.base.Servicer.service">
@@ -586,7 +590,7 @@ longer is any reason to service the operation.</li>
 <dl class="class">
 <dt id="grpc.framework.interfaces.base.base.Subscription">
 <em class="property">class </em><code class="descclassname">grpc.framework.interfaces.base.base.</code><code class="descname">Subscription</code><a class="reference internal" href="_modules/grpc/framework/interfaces/base/base.html#Subscription"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.base.base.Subscription" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
 <p>Describes customer code&#8217;s interest in values from the other side.</p>
 <dl class="attribute">
 <dt id="grpc.framework.interfaces.base.base.Subscription.kind">
@@ -748,7 +752,7 @@ Kind.FULL.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.13.1rc1',
+            VERSION:'0.15.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

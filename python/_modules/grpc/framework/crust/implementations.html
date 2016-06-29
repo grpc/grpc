@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework.crust.implementations &mdash; grpcio 0.13.1rc1 documentation</title>
+  <title>grpc.framework.crust.implementations &mdash; grpcio 0.15.0 documentation</title>
   
 
   
@@ -30,8 +30,8 @@
   
 
   
-    <link rel="top" title="grpcio 0.13.1rc1 documentation" href="../../../../index.html"/>
-        <link rel="up" title="Module code" href="../../../index.html"/> 
+    <link rel="top" title="grpcio 0.15.0 documentation" href="../../../../index.html"/>
+        <link rel="up" title="grpc" href="../../../grpc.html"/> 
 
   
   <script src="../../../../_static/js/modernizr.min.js"></script>
@@ -40,6 +40,7 @@
 
 <body class="wy-body-for-nav" role="document">
 
+   
   <div class="wy-grid-for-nav">
 
     
@@ -59,7 +60,7 @@
             
             
               <div class="version">
-                0.13.1rc1
+                0.15.0
               </div>
             
           
@@ -108,18 +109,24 @@
 
 
 
+
+
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../../../../index.html">Docs</a> &raquo;</li>
       
-          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        <li><a href="../../../index.html">Module code</a> &raquo;</li>
+      
+        <li><a href="../../../grpc.html">grpc</a> &raquo;</li>
       
     <li>grpc.framework.crust.implementations</li>
-      <li class="wy-breadcrumbs-aside">
-        
+    <li class="wy-breadcrumbs-aside">
+      
           
-        
-      </li>
+      
+    </li>
   </ul>
   <hr/>
 </div>
@@ -158,12 +165,14 @@
 
 <span class="sd">&quot;&quot;&quot;Entry points into the Crust layer of RPC Framework.&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">grpc.framework.common</span> <span class="k">import</span> <span class="n">cardinality</span>
-<span class="kn">from</span> <span class="nn">grpc.framework.common</span> <span class="k">import</span> <span class="n">style</span>
-<span class="kn">from</span> <span class="nn">grpc.framework.crust</span> <span class="k">import</span> <span class="n">_calls</span>
-<span class="kn">from</span> <span class="nn">grpc.framework.crust</span> <span class="k">import</span> <span class="n">_service</span>
-<span class="kn">from</span> <span class="nn">grpc.framework.interfaces.base</span> <span class="k">import</span> <span class="n">base</span>
-<span class="kn">from</span> <span class="nn">grpc.framework.interfaces.face</span> <span class="k">import</span> <span class="n">face</span>
+<span class="kn">import</span> <span class="nn">six</span>
+
+<span class="kn">from</span> <span class="nn">grpc.framework.common</span> <span class="kn">import</span> <span class="n">cardinality</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.common</span> <span class="kn">import</span> <span class="n">style</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.crust</span> <span class="kn">import</span> <span class="n">_calls</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.crust</span> <span class="kn">import</span> <span class="n">_service</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.interfaces.base</span> <span class="kn">import</span> <span class="n">base</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.interfaces.face</span> <span class="kn">import</span> <span class="n">face</span>
 
 
 <span class="k">class</span> <span class="nc">_BaseServicer</span><span class="p">(</span><span class="n">base</span><span class="o">.</span><span class="n">Servicer</span><span class="p">):</span>
@@ -173,17 +182,17 @@
     <span class="bp">self</span><span class="o">.</span><span class="n">_adapted_multi_method</span> <span class="o">=</span> <span class="n">adapted_multi_method</span>
 
   <span class="k">def</span> <span class="nf">service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">output_operator</span><span class="p">):</span>
-    <span class="n">adapted_method</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adapted_methods</span><span class="o">.</span><span class="n">get</span><span class="p">((</span><span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">adapted_method</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">adapted_method</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adapted_methods</span><span class="o">.</span><span class="n">get</span><span class="p">((</span><span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">),</span> <span class="bp">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">adapted_method</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
       <span class="k">return</span> <span class="n">adapted_method</span><span class="p">(</span><span class="n">output_operator</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adapted_multi_method</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adapted_multi_method</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
       <span class="k">try</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adapted_multi_method</span><span class="p">(</span>
             <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">output_operator</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
       <span class="k">except</span> <span class="n">face</span><span class="o">.</span><span class="n">NoSuchMethodError</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="n">base</span><span class="o">.</span><span class="n">NoSuchMethodError</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">base</span><span class="o">.</span><span class="n">NoSuchMethodError</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-      <span class="k">raise</span> <span class="n">base</span><span class="o">.</span><span class="n">NoSuchMethodError</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+      <span class="k">raise</span> <span class="n">base</span><span class="o">.</span><span class="n">NoSuchMethodError</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">_UnaryUnaryMultiCallable</span><span class="p">(</span><span class="n">face</span><span class="o">.</span><span class="n">UnaryUnaryMultiCallable</span><span class="p">):</span>
@@ -195,20 +204,20 @@
     <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="n">pool</span>
 
   <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span>
-      <span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">with_call</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-      <span class="n">protocol_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+      <span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">with_call</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+      <span class="n">protocol_options</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">_calls</span><span class="o">.</span><span class="n">blocking_unary_unary</span><span class="p">(</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_end</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_group</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">with_call</span><span class="p">,</span>
         <span class="n">protocol_options</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">request</span><span class="p">)</span>
 
-  <span class="k">def</span> <span class="nf">future</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">protocol_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+  <span class="k">def</span> <span class="nf">future</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">protocol_options</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">_calls</span><span class="o">.</span><span class="n">future_unary_unary</span><span class="p">(</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_end</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_group</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">protocol_options</span><span class="p">,</span>
         <span class="n">metadata</span><span class="p">,</span> <span class="n">request</span><span class="p">)</span>
 
   <span class="k">def</span> <span class="nf">event</span><span class="p">(</span>
       <span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">abortion_callback</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span>
-      <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">protocol_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+      <span class="n">metadata</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">protocol_options</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">_calls</span><span class="o">.</span><span class="n">event_unary_unary</span><span class="p">(</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_end</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_group</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">protocol_options</span><span class="p">,</span>
         <span class="n">metadata</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">abortion_callback</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">)</span>
@@ -222,14 +231,14 @@
     <span class="bp">self</span><span class="o">.</span><span class="n">_method</span> <span class="o">=</span> <span class="n">method</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="n">pool</span>
 
-  <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">protocol_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+  <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">protocol_options</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">_calls</span><span class="o">.</span><span class="n">inline_unary_stream</span><span class="p">(</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_end</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_group</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">protocol_options</span><span class="p">,</span>
         <span class="n">metadata</span><span class="p">,</span> <span class="n">request</span><span class="p">)</span>
 
   <span class="k">def</span> <span class="nf">event</span><span class="p">(</span>
       <span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">abortion_callback</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span>
-      <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">protocol_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+      <span class="n">metadata</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">protocol_options</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">_calls</span><span class="o">.</span><span class="n">event_unary_stream</span><span class="p">(</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_end</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_group</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">protocol_options</span><span class="p">,</span>
         <span class="n">metadata</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">abortion_callback</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">)</span>
@@ -244,21 +253,21 @@
     <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="n">pool</span>
 
   <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span>
-      <span class="bp">self</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-      <span class="n">with_call</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">protocol_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+      <span class="bp">self</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+      <span class="n">with_call</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">protocol_options</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">_calls</span><span class="o">.</span><span class="n">blocking_stream_unary</span><span class="p">(</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_end</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_group</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">with_call</span><span class="p">,</span>
         <span class="n">protocol_options</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">)</span>
 
   <span class="k">def</span> <span class="nf">future</span><span class="p">(</span>
-      <span class="bp">self</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">protocol_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+      <span class="bp">self</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">protocol_options</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">_calls</span><span class="o">.</span><span class="n">future_stream_unary</span><span class="p">(</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_end</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_group</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">protocol_options</span><span class="p">,</span>
         <span class="n">metadata</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">)</span>
 
   <span class="k">def</span> <span class="nf">event</span><span class="p">(</span>
-      <span class="bp">self</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">abortion_callback</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-      <span class="n">protocol_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+      <span class="bp">self</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">abortion_callback</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+      <span class="n">protocol_options</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">_calls</span><span class="o">.</span><span class="n">event_stream_unary</span><span class="p">(</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_end</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_group</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">protocol_options</span><span class="p">,</span>
         <span class="n">metadata</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">abortion_callback</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">)</span>
@@ -273,14 +282,14 @@
     <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="n">pool</span>
 
   <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span>
-      <span class="bp">self</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">protocol_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+      <span class="bp">self</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">protocol_options</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">_calls</span><span class="o">.</span><span class="n">inline_stream_stream</span><span class="p">(</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_end</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_group</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">protocol_options</span><span class="p">,</span>
         <span class="n">metadata</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">)</span>
 
   <span class="k">def</span> <span class="nf">event</span><span class="p">(</span>
-      <span class="bp">self</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">abortion_callback</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-      <span class="n">protocol_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+      <span class="bp">self</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">abortion_callback</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+      <span class="n">protocol_options</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">_calls</span><span class="o">.</span><span class="n">event_stream_stream</span><span class="p">(</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_end</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_group</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">protocol_options</span><span class="p">,</span>
         <span class="n">metadata</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">abortion_callback</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">)</span>
@@ -294,69 +303,69 @@
     <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="n">pool</span>
 
   <span class="k">def</span> <span class="nf">blocking_unary_unary</span><span class="p">(</span>
-      <span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-      <span class="n">with_call</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">protocol_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+      <span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+      <span class="n">with_call</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">protocol_options</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">_calls</span><span class="o">.</span><span class="n">blocking_unary_unary</span><span class="p">(</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_end</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">with_call</span><span class="p">,</span> <span class="n">protocol_options</span><span class="p">,</span>
         <span class="n">metadata</span><span class="p">,</span> <span class="n">request</span><span class="p">)</span>
 
   <span class="k">def</span> <span class="nf">future_unary_unary</span><span class="p">(</span>
-      <span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-      <span class="n">protocol_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+      <span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+      <span class="n">protocol_options</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">_calls</span><span class="o">.</span><span class="n">future_unary_unary</span><span class="p">(</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_end</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">protocol_options</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">request</span><span class="p">)</span>
 
   <span class="k">def</span> <span class="nf">inline_unary_stream</span><span class="p">(</span>
-      <span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-      <span class="n">protocol_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+      <span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+      <span class="n">protocol_options</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">_calls</span><span class="o">.</span><span class="n">inline_unary_stream</span><span class="p">(</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_end</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">protocol_options</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">request</span><span class="p">)</span>
 
   <span class="k">def</span> <span class="nf">blocking_stream_unary</span><span class="p">(</span>
-      <span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-      <span class="n">with_call</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">protocol_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+      <span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+      <span class="n">with_call</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">protocol_options</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">_calls</span><span class="o">.</span><span class="n">blocking_stream_unary</span><span class="p">(</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_end</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">with_call</span><span class="p">,</span> <span class="n">protocol_options</span><span class="p">,</span>
         <span class="n">metadata</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">)</span>
 
   <span class="k">def</span> <span class="nf">future_stream_unary</span><span class="p">(</span>
-      <span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-      <span class="n">protocol_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+      <span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+      <span class="n">protocol_options</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">_calls</span><span class="o">.</span><span class="n">future_stream_unary</span><span class="p">(</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_end</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">protocol_options</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span>
         <span class="n">request_iterator</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">)</span>
 
   <span class="k">def</span> <span class="nf">inline_stream_stream</span><span class="p">(</span>
-      <span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-      <span class="n">protocol_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+      <span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+      <span class="n">protocol_options</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">_calls</span><span class="o">.</span><span class="n">inline_stream_stream</span><span class="p">(</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_end</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">protocol_options</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span>
         <span class="n">request_iterator</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">)</span>
 
   <span class="k">def</span> <span class="nf">event_unary_unary</span><span class="p">(</span>
       <span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">abortion_callback</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span>
-      <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">protocol_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+      <span class="n">metadata</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">protocol_options</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">_calls</span><span class="o">.</span><span class="n">event_unary_unary</span><span class="p">(</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_end</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">protocol_options</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span>
         <span class="n">receiver</span><span class="p">,</span> <span class="n">abortion_callback</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">)</span>
 
   <span class="k">def</span> <span class="nf">event_unary_stream</span><span class="p">(</span>
       <span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">abortion_callback</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span>
-      <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">protocol_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+      <span class="n">metadata</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">protocol_options</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">_calls</span><span class="o">.</span><span class="n">event_unary_stream</span><span class="p">(</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_end</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">protocol_options</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span>
         <span class="n">receiver</span><span class="p">,</span> <span class="n">abortion_callback</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">)</span>
 
   <span class="k">def</span> <span class="nf">event_stream_unary</span><span class="p">(</span>
       <span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">abortion_callback</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span>
-      <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">protocol_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+      <span class="n">metadata</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">protocol_options</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">_calls</span><span class="o">.</span><span class="n">event_stream_unary</span><span class="p">(</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_end</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">protocol_options</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span>
         <span class="n">abortion_callback</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">)</span>
 
   <span class="k">def</span> <span class="nf">event_stream_stream</span><span class="p">(</span>
       <span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">abortion_callback</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span>
-      <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">protocol_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+      <span class="n">metadata</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">protocol_options</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">_calls</span><span class="o">.</span><span class="n">event_stream_stream</span><span class="p">(</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_end</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">protocol_options</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span>
         <span class="n">abortion_callback</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">)</span>
@@ -400,7 +409,7 @@
 
 <span class="k">def</span> <span class="nf">_adapt_method_implementations</span><span class="p">(</span><span class="n">method_implementations</span><span class="p">,</span> <span class="n">pool</span><span class="p">):</span>
   <span class="n">adapted_implementations</span> <span class="o">=</span> <span class="p">{}</span>
-  <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">method_implementation</span> <span class="ow">in</span> <span class="n">method_implementations</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+  <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">method_implementation</span> <span class="ow">in</span> <span class="n">six</span><span class="o">.</span><span class="n">iteritems</span><span class="p">(</span><span class="n">method_implementations</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">method_implementation</span><span class="o">.</span><span class="n">style</span> <span class="ow">is</span> <span class="n">style</span><span class="o">.</span><span class="n">Service</span><span class="o">.</span><span class="n">INLINE</span><span class="p">:</span>
       <span class="k">if</span> <span class="n">method_implementation</span><span class="o">.</span><span class="n">cardinality</span> <span class="ow">is</span> <span class="n">cardinality</span><span class="o">.</span><span class="n">Cardinality</span><span class="o">.</span><span class="n">UNARY_UNARY</span><span class="p">:</span>
         <span class="n">adapted_implementations</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">_service</span><span class="o">.</span><span class="n">adapt_inline_unary_unary</span><span class="p">(</span>
@@ -453,8 +462,8 @@
 <span class="sd">  &quot;&quot;&quot;</span>
   <span class="n">adapted_implementations</span> <span class="o">=</span> <span class="n">_adapt_method_implementations</span><span class="p">(</span>
       <span class="n">method_implementations</span><span class="p">,</span> <span class="n">pool</span><span class="p">)</span>
-  <span class="k">if</span> <span class="n">multi_method_implementation</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="n">adapted_multi_method_implementation</span> <span class="o">=</span> <span class="kc">None</span>
+  <span class="k">if</span> <span class="n">multi_method_implementation</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+    <span class="n">adapted_multi_method_implementation</span> <span class="o">=</span> <span class="bp">None</span>
   <span class="k">else</span><span class="p">:</span>
     <span class="n">adapted_multi_method_implementation</span> <span class="o">=</span> <span class="n">_service</span><span class="o">.</span><span class="n">adapt_multi_method</span><span class="p">(</span>
         <span class="n">multi_method_implementation</span><span class="p">,</span> <span class="n">pool</span><span class="p">)</span>
@@ -524,7 +533,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../../',
-            VERSION:'0.13.1rc1',
+            VERSION:'0.15.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

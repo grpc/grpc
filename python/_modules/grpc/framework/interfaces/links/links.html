@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework.interfaces.links.links &mdash; grpcio 0.13.1rc1 documentation</title>
+  <title>grpc.framework.interfaces.links.links &mdash; grpcio 0.15.0 documentation</title>
   
 
   
@@ -30,8 +30,8 @@
   
 
   
-    <link rel="top" title="grpcio 0.13.1rc1 documentation" href="../../../../../index.html"/>
-        <link rel="up" title="Module code" href="../../../../index.html"/> 
+    <link rel="top" title="grpcio 0.15.0 documentation" href="../../../../../index.html"/>
+        <link rel="up" title="grpc" href="../../../../grpc.html"/> 
 
   
   <script src="../../../../../_static/js/modernizr.min.js"></script>
@@ -40,6 +40,7 @@
 
 <body class="wy-body-for-nav" role="document">
 
+   
   <div class="wy-grid-for-nav">
 
     
@@ -59,7 +60,7 @@
             
             
               <div class="version">
-                0.13.1rc1
+                0.15.0
               </div>
             
           
@@ -108,18 +109,24 @@
 
 
 
+
+
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../../../../../index.html">Docs</a> &raquo;</li>
       
-          <li><a href="../../../../index.html">Module code</a> &raquo;</li>
+        <li><a href="../../../../index.html">Module code</a> &raquo;</li>
+      
+        <li><a href="../../../../grpc.html">grpc</a> &raquo;</li>
       
     <li>grpc.framework.interfaces.links.links</li>
-      <li class="wy-breadcrumbs-aside">
-        
+    <li class="wy-breadcrumbs-aside">
+      
           
-        
-      </li>
+      
+    </li>
   </ul>
   <hr/>
 </div>
@@ -162,6 +169,8 @@
 <span class="kn">import</span> <span class="nn">collections</span>
 <span class="kn">import</span> <span class="nn">enum</span>
 
+<span class="kn">import</span> <span class="nn">six</span>
+
 
 <div class="viewcode-block" id="Protocol"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.links.Protocol">[docs]</a><span class="k">class</span> <span class="nc">Protocol</span><span class="p">(</span><span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;Protocol&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;kind&#39;</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">,))):</span>
   <span class="sd">&quot;&quot;&quot;A sum type for handles to a system that transmits tickets.</span>
@@ -172,7 +181,7 @@
 <span class="sd">      system affording ticket transport.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
 
-  <span class="nd">@enum</span><span class="o">.</span><span class="n">unique</span>
+  <span class="nd">@enum.unique</span>
 <div class="viewcode-block" id="Protocol.Kind"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.links.Protocol.Kind">[docs]</a>  <span class="k">class</span> <span class="nc">Kind</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
     <span class="n">CALL_OPTION</span> <span class="o">=</span> <span class="s1">&#39;call option&#39;</span>
     <span class="n">SERVICER_CONTEXT</span> <span class="o">=</span> <span class="s1">&#39;servicer context&#39;</span>
@@ -230,7 +239,7 @@
 <span class="sd">      between high-level application and underlying ticket transport.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
 
-  <span class="nd">@enum</span><span class="o">.</span><span class="n">unique</span>
+  <span class="nd">@enum.unique</span>
 <div class="viewcode-block" id="Ticket.Subscription"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.links.Ticket.Subscription">[docs]</a>  <span class="k">class</span> <span class="nc">Subscription</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Identifies the level of subscription of a side of an operation.&quot;&quot;&quot;</span>
 
@@ -238,7 +247,7 @@
     <span class="n">TERMINATION</span> <span class="o">=</span> <span class="s1">&#39;termination&#39;</span>
     <span class="n">FULL</span> <span class="o">=</span> <span class="s1">&#39;full&#39;</span></div>
 
-  <span class="nd">@enum</span><span class="o">.</span><span class="n">unique</span>
+  <span class="nd">@enum.unique</span>
 <div class="viewcode-block" id="Ticket.Termination"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.links.Ticket.Termination">[docs]</a>  <span class="k">class</span> <span class="nc">Termination</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Identifies the termination of an operation.&quot;&quot;&quot;</span>
 
@@ -252,11 +261,10 @@
     <span class="n">REMOTE_FAILURE</span> <span class="o">=</span> <span class="s1">&#39;remote failure&#39;</span></div></div>
 
 
-<div class="viewcode-block" id="Link"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.links.Link">[docs]</a><span class="k">class</span> <span class="nc">Link</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="Link"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.links.Link">[docs]</a><span class="k">class</span> <span class="nc">Link</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
   <span class="sd">&quot;&quot;&quot;Accepts and emits tickets.&quot;&quot;&quot;</span>
-  <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+  <span class="nd">@abc.abstractmethod</span>
 <div class="viewcode-block" id="Link.accept_ticket"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.links.Link.accept_ticket">[docs]</a>  <span class="k">def</span> <span class="nf">accept_ticket</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ticket</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Accept a Ticket.</span>
 
@@ -265,7 +273,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
-  <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+  <span class="nd">@abc.abstractmethod</span>
 <div class="viewcode-block" id="Link.join_link"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.links.Link.join_link">[docs]</a>  <span class="k">def</span> <span class="nf">join_link</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">link</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Mates this object with a peer with which it will exchange tickets.&quot;&quot;&quot;</span>
     <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
@@ -302,7 +310,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../../../',
-            VERSION:'0.13.1rc1',
+            VERSION:'0.15.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

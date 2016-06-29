@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework.foundation package &mdash; grpcio 0.13.1rc1 documentation</title>
+  <title>grpc.framework.foundation package &mdash; grpcio 0.15.0 documentation</title>
   
 
   
@@ -30,10 +30,10 @@
   
 
   
-    <link rel="top" title="grpcio 0.13.1rc1 documentation" href="index.html"/>
+    <link rel="top" title="grpcio 0.15.0 documentation" href="index.html"/>
         <link rel="up" title="grpc.framework package" href="grpc.framework.html"/>
         <link rel="next" title="grpc.framework.interfaces package" href="grpc.framework.interfaces.html"/>
-        <link rel="prev" title="grpc.framework.face package" href="grpc.framework.face.html"/> 
+        <link rel="prev" title="grpc.framework.crust package" href="grpc.framework.crust.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -42,6 +42,7 @@
 
 <body class="wy-body-for-nav" role="document">
 
+   
   <div class="wy-grid-for-nav">
 
     
@@ -61,7 +62,7 @@
             
             
               <div class="version">
-                0.13.1rc1
+                0.15.0
               </div>
             
           
@@ -86,7 +87,6 @@
 <li class="toctree-l1 current"><a class="reference internal" href="grpc.html">grpc package</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="grpc.html#subpackages">Subpackages</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="grpc.beta.html">grpc.beta package</a></li>
-<li class="toctree-l3"><a class="reference internal" href="grpc.early_adopter.html">grpc.early_adopter package</a></li>
 <li class="toctree-l3 current"><a class="reference internal" href="grpc.framework.html">grpc.framework package</a><ul class="current">
 <li class="toctree-l4 current"><a class="reference internal" href="grpc.framework.html#subpackages">Subpackages</a></li>
 <li class="toctree-l4"><a class="reference internal" href="grpc.framework.html#module-grpc.framework">Module contents</a></li>
@@ -123,22 +123,26 @@
 
 
 
+
+
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
-          <li><a href="grpc.html">grpc package</a> &raquo;</li>
+        <li><a href="grpc.html">grpc package</a> &raquo;</li>
       
-          <li><a href="grpc.framework.html">grpc.framework package</a> &raquo;</li>
+        <li><a href="grpc.framework.html">grpc.framework package</a> &raquo;</li>
       
     <li>grpc.framework.foundation package</li>
-      <li class="wy-breadcrumbs-aside">
-        
+    <li class="wy-breadcrumbs-aside">
+      
           
-            <a href="_sources/grpc.framework.foundation.txt" rel="nofollow"> View page source</a>
-          
+          <a href="_sources/grpc.framework.foundation.txt" rel="nofollow"> View page source</a>
         
-      </li>
+      
+    </li>
   </ul>
   <hr/>
 </div>
@@ -169,7 +173,7 @@ an exception indicating some operational or programming defect.</p>
 <dl class="class">
 <dt id="grpc.framework.foundation.activated.Activated">
 <em class="property">class </em><code class="descclassname">grpc.framework.foundation.activated.</code><code class="descname">Activated</code><a class="reference internal" href="_modules/grpc/framework/foundation/activated.html#Activated"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.activated.Activated" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
 <p>Interface for objects that may be started and stopped.</p>
 <p>Values implementing this type must also implement the context manager
 protocol.</p>
@@ -202,7 +206,7 @@ protocol.</p>
 <dl class="class">
 <dt id="grpc.framework.foundation.callable_util.Outcome">
 <em class="property">class </em><code class="descclassname">grpc.framework.foundation.callable_util.</code><code class="descname">Outcome</code><a class="reference internal" href="_modules/grpc/framework/foundation/callable_util.html#Outcome"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.callable_util.Outcome" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
 <p>A sum type describing the outcome of some call.</p>
 <dl class="attribute">
 <dt id="grpc.framework.foundation.callable_util.Outcome.kind">
@@ -232,12 +236,12 @@ Kind.RAISED.</p>
 <p>Identifies the general kind of the outcome of some call.</p>
 <dl class="attribute">
 <dt id="grpc.framework.foundation.callable_util.Outcome.Kind.RAISED">
-<code class="descname">RAISED</code><em class="property"> = &lt;Kind.RAISED: &lt;object object at 0x7f788b900e40&gt;&gt;</em><a class="headerlink" href="#grpc.framework.foundation.callable_util.Outcome.Kind.RAISED" title="Permalink to this definition">¶</a></dt>
+<code class="descname">RAISED</code><em class="property"> = &lt;Kind.RAISED: &lt;object object&gt;&gt;</em><a class="headerlink" href="#grpc.framework.foundation.callable_util.Outcome.Kind.RAISED" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="grpc.framework.foundation.callable_util.Outcome.Kind.RETURNED">
-<code class="descname">RETURNED</code><em class="property"> = &lt;Kind.RETURNED: &lt;object object at 0x7f788b900e30&gt;&gt;</em><a class="headerlink" href="#grpc.framework.foundation.callable_util.Outcome.Kind.RETURNED" title="Permalink to this definition">¶</a></dt>
+<code class="descname">RETURNED</code><em class="property"> = &lt;Kind.RETURNED: &lt;object object&gt;&gt;</em><a class="headerlink" href="#grpc.framework.foundation.callable_util.Outcome.Kind.RETURNED" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -328,7 +332,7 @@ built-in-but-only-in-3.3-and-later TimeoutError.</p>
 <dl class="class">
 <dt id="grpc.framework.foundation.future.Future">
 <em class="property">class </em><code class="descclassname">grpc.framework.foundation.future.</code><code class="descname">Future</code><a class="reference internal" href="_modules/grpc/framework/foundation/future.html#Future"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.future.Future" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
 <p>A representation of a computation in another control flow.</p>
 <p>Computations represented by a Future may be yet to be begun, may be ongoing,
 or may have already completed.</p>
@@ -344,7 +348,7 @@ immediately.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fn</strong> &#8211; A callable taking a this Future object as its single parameter.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fn</strong> &#8211; A callable taking this Future object as its single parameter.</td>
 </tr>
 </tbody>
 </table>
@@ -695,7 +699,7 @@ Relay later.</td>
 <dl class="class">
 <dt id="grpc.framework.foundation.stream.Consumer">
 <em class="property">class </em><code class="descclassname">grpc.framework.foundation.stream.</code><code class="descname">Consumer</code><a class="reference internal" href="_modules/grpc/framework/foundation/stream.html#Consumer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.stream.Consumer" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
 <p>Interface for consumers of finite streams of values or objects.</p>
 <dl class="method">
 <dt id="grpc.framework.foundation.stream.Consumer.consume">
@@ -824,7 +828,7 @@ Relay later.</td>
         <a href="grpc.framework.interfaces.html" class="btn btn-neutral float-right" title="grpc.framework.interfaces package" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="grpc.framework.face.html" class="btn btn-neutral" title="grpc.framework.face package" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="grpc.framework.crust.html" class="btn btn-neutral" title="grpc.framework.crust package" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -855,7 +859,7 @@ Relay later.</td>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.13.1rc1',
+            VERSION:'0.15.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

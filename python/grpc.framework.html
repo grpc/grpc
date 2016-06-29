@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework package &mdash; grpcio 0.13.1rc1 documentation</title>
+  <title>grpc.framework package &mdash; grpcio 0.15.0 documentation</title>
   
 
   
@@ -30,10 +30,10 @@
   
 
   
-    <link rel="top" title="grpcio 0.13.1rc1 documentation" href="index.html"/>
+    <link rel="top" title="grpcio 0.15.0 documentation" href="index.html"/>
         <link rel="up" title="grpc package" href="grpc.html"/>
-        <link rel="next" title="grpc.framework.alpha package" href="grpc.framework.alpha.html"/>
-        <link rel="prev" title="grpc.early_adopter package" href="grpc.early_adopter.html"/> 
+        <link rel="next" title="grpc.framework.common package" href="grpc.framework.common.html"/>
+        <link rel="prev" title="grpc.beta package" href="grpc.beta.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -42,6 +42,7 @@
 
 <body class="wy-body-for-nav" role="document">
 
+   
   <div class="wy-grid-for-nav">
 
     
@@ -61,7 +62,7 @@
             
             
               <div class="version">
-                0.13.1rc1
+                0.15.0
               </div>
             
           
@@ -86,8 +87,7 @@
 <li class="toctree-l1 current"><a class="reference internal" href="grpc.html">grpc package</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="grpc.html#subpackages">Subpackages</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="grpc.beta.html">grpc.beta package</a></li>
-<li class="toctree-l3"><a class="reference internal" href="grpc.early_adopter.html">grpc.early_adopter package</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="">grpc.framework package</a><ul>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">grpc.framework package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#subpackages">Subpackages</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-grpc.framework">Module contents</a></li>
 </ul>
@@ -123,20 +123,24 @@
 
 
 
+
+
+
+
 <div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
-          <li><a href="grpc.html">grpc package</a> &raquo;</li>
+        <li><a href="grpc.html">grpc package</a> &raquo;</li>
       
     <li>grpc.framework package</li>
-      <li class="wy-breadcrumbs-aside">
-        
+    <li class="wy-breadcrumbs-aside">
+      
           
-            <a href="_sources/grpc.framework.txt" rel="nofollow"> View page source</a>
-          
+          <a href="_sources/grpc.framework.txt" rel="nofollow"> View page source</a>
         
-      </li>
+      
+    </li>
   </ul>
   <hr/>
 </div>
@@ -149,25 +153,6 @@
 <h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="grpc.framework.alpha.html">grpc.framework.alpha package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.alpha.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.alpha.html#module-grpc.framework.alpha.exceptions">grpc.framework.alpha.exceptions module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.alpha.html#module-grpc.framework.alpha.interfaces">grpc.framework.alpha.interfaces module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.alpha.html#module-grpc.framework.alpha.utilities">grpc.framework.alpha.utilities module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.alpha.html#module-grpc.framework.alpha">Module contents</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="grpc.framework.base.html">grpc.framework.base package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.base.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.base.html#module-grpc.framework.base.exceptions">grpc.framework.base.exceptions module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.base.html#module-grpc.framework.base.implementations">grpc.framework.base.implementations module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.base.html#module-grpc.framework.base.in_memory">grpc.framework.base.in_memory module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.base.html#module-grpc.framework.base.interfaces">grpc.framework.base.interfaces module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.base.html#module-grpc.framework.base.null">grpc.framework.base.null module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.base.html#module-grpc.framework.base.util">grpc.framework.base.util module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.base.html#module-grpc.framework.base">Module contents</a></li>
-</ul>
-</li>
 <li class="toctree-l1"><a class="reference internal" href="grpc.framework.common.html">grpc.framework.common package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="grpc.framework.common.html#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="grpc.framework.common.html#module-grpc.framework.common.cardinality">grpc.framework.common.cardinality module</a></li>
@@ -185,16 +170,6 @@
 <li class="toctree-l2"><a class="reference internal" href="grpc.framework.crust.html#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="grpc.framework.crust.html#module-grpc.framework.crust.implementations">grpc.framework.crust.implementations module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="grpc.framework.crust.html#module-grpc.framework.crust">Module contents</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="grpc.framework.face.html">grpc.framework.face package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.html#module-grpc.framework.face.demonstration">grpc.framework.face.demonstration module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.html#module-grpc.framework.face.exceptions">grpc.framework.face.exceptions module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.html#module-grpc.framework.face.implementations">grpc.framework.face.implementations module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.html#module-grpc.framework.face.interfaces">grpc.framework.face.interfaces module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.html#module-grpc.framework.face.utilities">grpc.framework.face.utilities module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.html#module-grpc.framework.face">Module contents</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="grpc.framework.foundation.html">grpc.framework.foundation package</a><ul>
@@ -254,10 +229,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="grpc.framework.alpha.html" class="btn btn-neutral float-right" title="grpc.framework.alpha package" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="grpc.framework.common.html" class="btn btn-neutral float-right" title="grpc.framework.common package" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="grpc.early_adopter.html" class="btn btn-neutral" title="grpc.early_adopter package" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="grpc.beta.html" class="btn btn-neutral" title="grpc.beta package" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -288,7 +263,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.13.1rc1',
+            VERSION:'0.15.0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true
