@@ -80,7 +80,7 @@ Pod::Spec.new do |s|
   s.pod_target_xcconfig = private_build_settings
 
   s.libraries = 'z'
-  s.dependency 'BoringSSL', '~> 3.0'
+  s.dependency 'BoringSSL', '~> 4.0'
 
   # A module map is necessary for a dynamic framework to be correctly created by Cocoapods.
   s.module_map = 'include/grpc/module.modulemap'
