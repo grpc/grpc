@@ -101,7 +101,8 @@ static grpc_mdelem *client_recv_filter(void *user_data, grpc_mdelem *md) {
   return md;
 }
 
-static void hc_on_recv(grpc_exec_ctx *exec_ctx, void *user_data, bool success) {
+static void hc_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
+                       grpc_error *error) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
   client_recv_filter_args a;
@@ -109,7 +110,7 @@ static void hc_on_recv(grpc_exec_ctx *exec_ctx, void *user_data, bool success) {
   a.exec_ctx = exec_ctx;
   grpc_metadata_batch_filter(calld->recv_initial_metadata, client_recv_filter,
                              &a);
-  calld->on_done_recv->cb(exec_ctx, calld->on_done_recv->cb_arg, success);
+  calld->on_done_recv->cb(exec_ctx, calld->on_done_recv->cb_arg, error);
 }
 
 static grpc_mdelem *client_strip_filter(void *user_data, grpc_mdelem *md) {
@@ -168,11 +169,13 @@ static void hc_start_transport_op(grpc_exec_ctx *exec_ctx,
 }
 
 /* Constructor for call_data */
-static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                           grpc_call_element_args *args) {
+static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
+                                  grpc_call_element *elem,
+                                  grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
   calld->on_done_recv = NULL;
   grpc_closure_init(&calld->hc_on_recv, hc_on_recv, elem);
+  return GRPC_ERROR_NONE;
 }
 
 /* Destructor for call_data */

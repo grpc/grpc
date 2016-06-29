@@ -71,6 +71,8 @@ extern void disappearing_server(grpc_end2end_test_config config);
 extern void disappearing_server_pre_init(void);
 extern void empty_batch(grpc_end2end_test_config config);
 extern void empty_batch_pre_init(void);
+extern void filter_call_init_fails(grpc_end2end_test_config config);
+extern void filter_call_init_fails_pre_init(void);
 extern void filter_causes_close(grpc_end2end_test_config config);
 extern void filter_causes_close_pre_init(void);
 extern void graceful_server_shutdown(grpc_end2end_test_config config);
@@ -117,6 +119,8 @@ extern void simple_metadata(grpc_end2end_test_config config);
 extern void simple_metadata_pre_init(void);
 extern void simple_request(grpc_end2end_test_config config);
 extern void simple_request_pre_init(void);
+extern void streaming_error_response(grpc_end2end_test_config config);
+extern void streaming_error_response_pre_init(void);
 extern void trailing_metadata(grpc_end2end_test_config config);
 extern void trailing_metadata_pre_init(void);
 
@@ -137,6 +141,7 @@ void grpc_end2end_tests_pre_init(void) {
   default_host_pre_init();
   disappearing_server_pre_init();
   empty_batch_pre_init();
+  filter_call_init_fails_pre_init();
   filter_causes_close_pre_init();
   graceful_server_shutdown_pre_init();
   high_initial_seqno_pre_init();
@@ -160,6 +165,7 @@ void grpc_end2end_tests_pre_init(void) {
   simple_delayed_request_pre_init();
   simple_metadata_pre_init();
   simple_request_pre_init();
+  streaming_error_response_pre_init();
   trailing_metadata_pre_init();
 }
 
@@ -184,6 +190,7 @@ void grpc_end2end_tests(int argc, char **argv,
     default_host(config);
     disappearing_server(config);
     empty_batch(config);
+    filter_call_init_fails(config);
     filter_causes_close(config);
     graceful_server_shutdown(config);
     high_initial_seqno(config);
@@ -207,6 +214,7 @@ void grpc_end2end_tests(int argc, char **argv,
     simple_delayed_request(config);
     simple_metadata(config);
     simple_request(config);
+    streaming_error_response(config);
     trailing_metadata(config);
     return;
   }
@@ -266,6 +274,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("empty_batch", argv[i])) {
       empty_batch(config);
+      continue;
+    }
+    if (0 == strcmp("filter_call_init_fails", argv[i])) {
+      filter_call_init_fails(config);
       continue;
     }
     if (0 == strcmp("filter_causes_close", argv[i])) {
@@ -358,6 +370,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("simple_request", argv[i])) {
       simple_request(config);
+      continue;
+    }
+    if (0 == strcmp("streaming_error_response", argv[i])) {
+      streaming_error_response(config);
       continue;
     }
     if (0 == strcmp("trailing_metadata", argv[i])) {

@@ -124,6 +124,15 @@ void *gpr_avl_get(gpr_avl avl, void *key) {
   return node ? node->value : NULL;
 }
 
+int gpr_avl_maybe_get(gpr_avl avl, void *key, void **value) {
+  gpr_avl_node *node = get(avl.vtable, avl.root, key);
+  if (node != NULL) {
+    *value = node->value;
+    return 1;
+  }
+  return 0;
+}
+
 static gpr_avl_node *rotate_left(const gpr_avl_vtable *vtable, void *key,
                                  void *value, gpr_avl_node *left,
                                  gpr_avl_node *right) {
@@ -286,3 +295,5 @@ gpr_avl gpr_avl_ref(gpr_avl avl) {
 }
 
 void gpr_avl_unref(gpr_avl avl) { unref_node(avl.vtable, avl.root); }
+
+int gpr_avl_is_empty(gpr_avl avl) { return avl.root == NULL; }

@@ -154,11 +154,11 @@ static void process_send_initial_metadata(
 static void continue_send_message(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem);
 
-static void send_done(grpc_exec_ctx *exec_ctx, void *elemp, bool success) {
+static void send_done(grpc_exec_ctx *exec_ctx, void *elemp, grpc_error *error) {
   grpc_call_element *elem = elemp;
   call_data *calld = elem->call_data;
   gpr_slice_buffer_reset_and_unref(&calld->slices);
-  calld->post_send->cb(exec_ctx, calld->post_send->cb_arg, success);
+  calld->post_send->cb(exec_ctx, calld->post_send->cb_arg, error);
 }
 
 static void finish_send_message(grpc_exec_ctx *exec_ctx,
@@ -206,7 +206,7 @@ static void finish_send_message(grpc_exec_ctx *exec_ctx,
   grpc_call_next_op(exec_ctx, elem, &calld->send_op);
 }
 
-static void got_slice(grpc_exec_ctx *exec_ctx, void *elemp, bool success) {
+static void got_slice(grpc_exec_ctx *exec_ctx, void *elemp, grpc_error *error) {
   grpc_call_element *elem = elemp;
   call_data *calld = elem->call_data;
   gpr_slice_buffer_add(&calld->slices, calld->incoming_slice);
@@ -256,8 +256,9 @@ static void compress_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
 }
 
 /* Constructor for call_data */
-static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                           grpc_call_element_args *args) {
+static grpc_error *init_call_elem(grpc_exec_ctx *exec_ctx,
+                                  grpc_call_element *elem,
+                                  grpc_call_element_args *args) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
 
@@ -266,6 +267,8 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   calld->has_compression_algorithm = 0;
   grpc_closure_init(&calld->got_slice, got_slice, elem);
   grpc_closure_init(&calld->send_done, send_done, elem);
+
+  return GRPC_ERROR_NONE;
 }
 
 /* Destructor for call_data */

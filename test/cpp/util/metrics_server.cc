@@ -99,7 +99,7 @@ std::shared_ptr<QpsGauge> MetricsServiceImpl::CreateQpsGauge(
   std::lock_guard<std::mutex> lock(mu_);
 
   std::shared_ptr<QpsGauge> qps_gauge(new QpsGauge());
-  const auto p = qps_gauges_.emplace(name, qps_gauge);
+  const auto p = qps_gauges_.insert(std::make_pair(name, qps_gauge));
 
   // p.first is an iterator pointing to <name, shared_ptr<QpsGauge>> pair.
   // p.second is a boolean which is set to 'true' if the QpsGauge is
@@ -114,7 +114,7 @@ std::shared_ptr<QpsGauge> MetricsServiceImpl::CreateQpsGauge(
 std::unique_ptr<grpc::Server> MetricsServiceImpl::StartServer(int port) {
   gpr_log(GPR_INFO, "Building metrics server..");
 
-  const grpc::string address = "0.0.0.0:" + std::to_string(port);
+  const grpc::string address = "0.0.0.0:" + grpc::to_string(port);
 
   ServerBuilder builder;
   builder.AddListeningPort(address, grpc::InsecureServerCredentials());

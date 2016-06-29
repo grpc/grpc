@@ -122,7 +122,10 @@ class TransportOp {
 
   grpc_transport_op* op() const { return op_; }
 
-  bool disconnect() const { return op_->disconnect; }
+// FIXME: add a C++ wrapper for grpc_error?
+  grpc_error* disconnect_with_error() const {
+    return op_->disconnect_with_error;
+  }
   bool send_goaway() const { return op_->send_goaway; }
 
   // TODO(roth): Add methods for additional fields as needed.

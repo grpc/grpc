@@ -42,17 +42,20 @@
 static gpr_mu *g_mu;
 static grpc_pollset *g_pollset;
 
-static void must_succeed(grpc_exec_ctx *exec_ctx, void *p, bool success) {
-  GPR_ASSERT(success == 1);
+static void must_succeed(grpc_exec_ctx *exec_ctx, void *p, grpc_error *error) {
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
   gpr_mu_lock(g_mu);
   *(int *)p = 1;
-  grpc_pollset_kick(g_pollset, NULL);
+  GPR_ASSERT(
+      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
   gpr_mu_unlock(g_mu);
 }
 
 static void test_ref_unref(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_workqueue *wq = grpc_workqueue_create(&exec_ctx);
+  grpc_workqueue *wq;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("grpc_workqueue_create",
+                               grpc_workqueue_create(&exec_ctx, &wq)));
   GRPC_WORKQUEUE_REF(wq, "test");
   GRPC_WORKQUEUE_UNREF(&exec_ctx, wq, "test");
   GRPC_WORKQUEUE_UNREF(&exec_ctx, wq, "destroy");
@@ -63,19 +66,23 @@ static void test_add_closure(void) {
   grpc_closure c;
   int done = 0;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_workqueue *wq = grpc_workqueue_create(&exec_ctx);
+  grpc_workqueue *wq;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("grpc_workqueue_create",
+                               grpc_workqueue_create(&exec_ctx, &wq)));
   gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5);
   grpc_pollset_worker *worker = NULL;
   grpc_closure_init(&c, must_succeed, &done);
 
-  grpc_workqueue_push(wq, &c, 1);
+  grpc_workqueue_enqueue(&exec_ctx, wq, &c, GRPC_ERROR_NONE);
   grpc_workqueue_add_to_pollset(&exec_ctx, wq, g_pollset);
 
   gpr_mu_lock(g_mu);
   GPR_ASSERT(!done);
   while (!done) {
-    grpc_pollset_work(&exec_ctx, g_pollset, &worker,
-                      gpr_now(deadline.clock_type), deadline);
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "pollset_work",
+        grpc_pollset_work(&exec_ctx, g_pollset, &worker,
+                          gpr_now(deadline.clock_type), deadline)));
   }
   gpr_mu_unlock(g_mu);
   grpc_exec_ctx_finish(&exec_ctx);
@@ -89,19 +96,24 @@ static void test_flush(void) {
   grpc_closure c;
   int done = 0;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_workqueue *wq = grpc_workqueue_create(&exec_ctx);
+  grpc_workqueue *wq;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("grpc_workqueue_create",
+                               grpc_workqueue_create(&exec_ctx, &wq)));
   gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5);
   grpc_pollset_worker *worker = NULL;
   grpc_closure_init(&c, must_succeed, &done);
 
-  grpc_exec_ctx_enqueue(&exec_ctx, &c, true, NULL);
+  grpc_exec_ctx_sched(&exec_ctx, &c, GRPC_ERROR_NONE, NULL);
   grpc_workqueue_flush(&exec_ctx, wq);
   grpc_workqueue_add_to_pollset(&exec_ctx, wq, g_pollset);
 
   gpr_mu_lock(g_mu);
+  GPR_ASSERT(!done);
   while (!done) {
-    grpc_pollset_work(&exec_ctx, g_pollset, &worker,
-                      gpr_now(deadline.clock_type), deadline);
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "pollset_work",
+        grpc_pollset_work(&exec_ctx, g_pollset, &worker,
+                          gpr_now(deadline.clock_type), deadline)));
   }
   gpr_mu_unlock(g_mu);
   grpc_exec_ctx_finish(&exec_ctx);
@@ -111,7 +123,8 @@ static void test_flush(void) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, bool success) {
+static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p,
+                            grpc_error *error) {
   grpc_pollset_destroy(p);
 }
 

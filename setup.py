@@ -246,7 +246,6 @@ setuptools.setup(
   ext_modules=CYTHON_EXTENSION_MODULES,
   packages=list(PACKAGES),
   package_dir=PACKAGE_DIRECTORIES,
-  namespace_packages=['grpc'],
   package_data=PACKAGE_DATA,
   install_requires=INSTALL_REQUIRES,
   setup_requires=SETUP_REQUIRES,
