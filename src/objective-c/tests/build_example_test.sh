@@ -37,7 +37,12 @@ cd `dirname $0`
 
 BINDIR=`pwd`/../../../bins/$CONFIG
 TMP_PATH=$PATH
+
+# If `protoc` is not found, add bins/$CONFIG/protobuf/protoc to the search path
 hash protoc 2>/dev/null || TMP_PATH=$BINDIR/protobuf:$TMP_PATH
+
+# If `protoc-gen-objcgrpc` is not found, make a symlink from
+# bins/$CONGIF/grpc_objective_c_plugin and add it to the search path
 PATH=$TMP_PATH hash protoc-gen-objcgrpc 2>/dev/null || {
   ln -sf $BINDIR/grpc_objective_c_plugin $BINDIR/protoc-gen-objcgrpc
   TMP_PATH=$BINDIR:$TMP_PATH
