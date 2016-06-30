@@ -85,132 +85,6 @@ namespace Routeguide {
       get { return global::Routeguide.RouteGuideReflection.Descriptor.Services[0]; }
     }
 
-    /// <summary>Client for RouteGuide</summary>
-    [System.Obsolete("Client side interfaced will be removed in the next release. Use client class directly.")]
-    public interface IRouteGuideClient
-    {
-      /// <summary>
-      ///  A simple RPC.
-      ///
-      ///  Obtains the feature at a given position.
-      ///
-      ///  A feature with an empty name is returned if there's no feature at the given
-      ///  position.
-      /// </summary>
-      global::Routeguide.Feature GetFeature(global::Routeguide.Point request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      /// <summary>
-      ///  A simple RPC.
-      ///
-      ///  Obtains the feature at a given position.
-      ///
-      ///  A feature with an empty name is returned if there's no feature at the given
-      ///  position.
-      /// </summary>
-      global::Routeguide.Feature GetFeature(global::Routeguide.Point request, CallOptions options);
-      /// <summary>
-      ///  A simple RPC.
-      ///
-      ///  Obtains the feature at a given position.
-      ///
-      ///  A feature with an empty name is returned if there's no feature at the given
-      ///  position.
-      /// </summary>
-      AsyncUnaryCall<global::Routeguide.Feature> GetFeatureAsync(global::Routeguide.Point request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      /// <summary>
-      ///  A simple RPC.
-      ///
-      ///  Obtains the feature at a given position.
-      ///
-      ///  A feature with an empty name is returned if there's no feature at the given
-      ///  position.
-      /// </summary>
-      AsyncUnaryCall<global::Routeguide.Feature> GetFeatureAsync(global::Routeguide.Point request, CallOptions options);
-      /// <summary>
-      ///  A server-to-client streaming RPC.
-      ///
-      ///  Obtains the Features available within the given Rectangle.  Results are
-      ///  streamed rather than returned at once (e.g. in a response message with a
-      ///  repeated field), as the rectangle may cover a large area and contain a
-      ///  huge number of features.
-      /// </summary>
-      AsyncServerStreamingCall<global::Routeguide.Feature> ListFeatures(global::Routeguide.Rectangle request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      /// <summary>
-      ///  A server-to-client streaming RPC.
-      ///
-      ///  Obtains the Features available within the given Rectangle.  Results are
-      ///  streamed rather than returned at once (e.g. in a response message with a
-      ///  repeated field), as the rectangle may cover a large area and contain a
-      ///  huge number of features.
-      /// </summary>
-      AsyncServerStreamingCall<global::Routeguide.Feature> ListFeatures(global::Routeguide.Rectangle request, CallOptions options);
-      /// <summary>
-      ///  A client-to-server streaming RPC.
-      ///
-      ///  Accepts a stream of Points on a route being traversed, returning a
-      ///  RouteSummary when traversal is completed.
-      /// </summary>
-      AsyncClientStreamingCall<global::Routeguide.Point, global::Routeguide.RouteSummary> RecordRoute(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      /// <summary>
-      ///  A client-to-server streaming RPC.
-      ///
-      ///  Accepts a stream of Points on a route being traversed, returning a
-      ///  RouteSummary when traversal is completed.
-      /// </summary>
-      AsyncClientStreamingCall<global::Routeguide.Point, global::Routeguide.RouteSummary> RecordRoute(CallOptions options);
-      /// <summary>
-      ///  A Bidirectional streaming RPC.
-      ///
-      ///  Accepts a stream of RouteNotes sent while a route is being traversed,
-      ///  while receiving other RouteNotes (e.g. from other users).
-      /// </summary>
-      AsyncDuplexStreamingCall<global::Routeguide.RouteNote, global::Routeguide.RouteNote> RouteChat(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      /// <summary>
-      ///  A Bidirectional streaming RPC.
-      ///
-      ///  Accepts a stream of RouteNotes sent while a route is being traversed,
-      ///  while receiving other RouteNotes (e.g. from other users).
-      /// </summary>
-      AsyncDuplexStreamingCall<global::Routeguide.RouteNote, global::Routeguide.RouteNote> RouteChat(CallOptions options);
-    }
-
-    /// <summary>Interface of server-side implementations of RouteGuide</summary>
-    [System.Obsolete("Service implementations should inherit from the generated abstract base class instead.")]
-    public interface IRouteGuide
-    {
-      /// <summary>
-      ///  A simple RPC.
-      ///
-      ///  Obtains the feature at a given position.
-      ///
-      ///  A feature with an empty name is returned if there's no feature at the given
-      ///  position.
-      /// </summary>
-      global::System.Threading.Tasks.Task<global::Routeguide.Feature> GetFeature(global::Routeguide.Point request, ServerCallContext context);
-      /// <summary>
-      ///  A server-to-client streaming RPC.
-      ///
-      ///  Obtains the Features available within the given Rectangle.  Results are
-      ///  streamed rather than returned at once (e.g. in a response message with a
-      ///  repeated field), as the rectangle may cover a large area and contain a
-      ///  huge number of features.
-      /// </summary>
-      global::System.Threading.Tasks.Task ListFeatures(global::Routeguide.Rectangle request, IServerStreamWriter<global::Routeguide.Feature> responseStream, ServerCallContext context);
-      /// <summary>
-      ///  A client-to-server streaming RPC.
-      ///
-      ///  Accepts a stream of Points on a route being traversed, returning a
-      ///  RouteSummary when traversal is completed.
-      /// </summary>
-      global::System.Threading.Tasks.Task<global::Routeguide.RouteSummary> RecordRoute(IAsyncStreamReader<global::Routeguide.Point> requestStream, ServerCallContext context);
-      /// <summary>
-      ///  A Bidirectional streaming RPC.
-      ///
-      ///  Accepts a stream of RouteNotes sent while a route is being traversed,
-      ///  while receiving other RouteNotes (e.g. from other users).
-      /// </summary>
-      global::System.Threading.Tasks.Task RouteChat(IAsyncStreamReader<global::Routeguide.RouteNote> requestStream, IServerStreamWriter<global::Routeguide.RouteNote> responseStream, ServerCallContext context);
-    }
-
     /// <summary>Base class for server-side implementations of RouteGuide</summary>
     public abstract class RouteGuideBase
     {
@@ -265,21 +139,24 @@ namespace Routeguide {
     }
 
     /// <summary>Client for RouteGuide</summary>
-    #pragma warning disable 0618
-    public class RouteGuideClient : ClientBase<RouteGuideClient>, IRouteGuideClient
-    #pragma warning restore 0618
+    public class RouteGuideClient : ClientBase<RouteGuideClient>
     {
+      /// <summary>Creates a new client for RouteGuide</summary>
+      /// <param name="channel">The channel to use to make remote calls.</param>
       public RouteGuideClient(Channel channel) : base(channel)
       {
       }
+      /// <summary>Creates a new client for RouteGuide that uses a custom <c>CallInvoker</c>.</summary>
+      /// <param name="callInvoker">The callInvoker to use to make remote calls.</param>
       public RouteGuideClient(CallInvoker callInvoker) : base(callInvoker)
       {
       }
-      ///<summary>Protected parameterless constructor to allow creation of test doubles.</summary>
+      /// <summary>Protected parameterless constructor to allow creation of test doubles.</summary>
       protected RouteGuideClient() : base()
       {
       }
-      ///<summary>Protected constructor to allow creation of configured clients.</summary>
+      /// <summary>Protected constructor to allow creation of configured clients.</summary>
+      /// <param name="configuration">The client configuration.</param>
       protected RouteGuideClient(ClientBaseConfiguration configuration) : base(configuration)
       {
       }
@@ -402,30 +279,10 @@ namespace Routeguide {
       }
     }
 
-    /// <summary>Creates a new client for RouteGuide</summary>
-    public static RouteGuideClient NewClient(Channel channel)
-    {
-      return new RouteGuideClient(channel);
-    }
-
     /// <summary>Creates service definition that can be registered with a server</summary>
-    #pragma warning disable 0618
-    public static ServerServiceDefinition BindService(IRouteGuide serviceImpl)
-    #pragma warning restore 0618
-    {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
-          .AddMethod(__Method_GetFeature, serviceImpl.GetFeature)
-          .AddMethod(__Method_ListFeatures, serviceImpl.ListFeatures)
-          .AddMethod(__Method_RecordRoute, serviceImpl.RecordRoute)
-          .AddMethod(__Method_RouteChat, serviceImpl.RouteChat).Build();
-    }
-
-    /// <summary>Creates service definition that can be registered with a server</summary>
-    #pragma warning disable 0618
     public static ServerServiceDefinition BindService(RouteGuideBase serviceImpl)
-    #pragma warning restore 0618
     {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+      return ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_GetFeature, serviceImpl.GetFeature)
           .AddMethod(__Method_ListFeatures, serviceImpl.ListFeatures)
           .AddMethod(__Method_RecordRoute, serviceImpl.RecordRoute)

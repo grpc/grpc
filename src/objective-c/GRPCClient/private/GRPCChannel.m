@@ -34,13 +34,17 @@
 #import "GRPCChannel.h"
 
 #include <grpc/grpc_security.h>
+#ifdef GRPC_COMPILE_WITH_CRONET
 #include <grpc/grpc_cronet.h>
+#endif
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#ifdef GRPC_COMPILE_WITH_CRONET
 #import <Cronet/Cronet.h>
 #import <GRPCClient/GRPCCall+Cronet.h>
+#endif
 #import "GRPCCompletionQueue.h"
 
 void freeChannelArgs(grpc_channel_args *channel_args) {
@@ -102,6 +106,7 @@ grpc_channel_args * buildChannelArgs(NSDictionary *dictionary) {
   grpc_channel_args *_channelArgs;
 }
 
+#ifdef GRPC_COMPILE_WITH_CRONET
 - (instancetype)initWithHost:(NSString *)host
                 cronetEngine:(cronet_engine *)cronetEngine
                  channelArgs:(NSDictionary *)channelArgs {
@@ -118,6 +123,7 @@ grpc_channel_args * buildChannelArgs(NSDictionary *dictionary) {
 
   return self;
 }
+#endif
 
 - (instancetype)initWithHost:(NSString *)host
                       secure:(BOOL)secure
@@ -152,6 +158,7 @@ grpc_channel_args * buildChannelArgs(NSDictionary *dictionary) {
   freeChannelArgs(_channelArgs);
 }
 
+#ifdef GRPC_COMPILE_WITH_CRONET
 + (GRPCChannel *)secureCronetChannelWithHost:(NSString *)host
                                  channelArgs:(NSDictionary *)channelArgs {
   cronet_engine *engine = [GRPCCall cronetEngine];
@@ -162,6 +169,7 @@ grpc_channel_args * buildChannelArgs(NSDictionary *dictionary) {
   }
   return [[GRPCChannel alloc] initWithHost:host cronetEngine:engine channelArgs:channelArgs];
 }
+#endif
 
 + (GRPCChannel *)secureChannelWithHost:(NSString *)host {
   return [[GRPCChannel alloc] initWithHost:host secure:YES credentials:NULL channelArgs:NULL];
@@ -191,9 +199,7 @@ grpc_channel_args * buildChannelArgs(NSDictionary *dictionary) {
                                   NULL, GRPC_PROPAGATE_DEFAULTS,
                                   queue.unmanagedQueue,
                                   path.UTF8String,
-                                  // Get "host" from "host:port"
-                                  // TODO(jcanizales): Use NSURLs throughout, to clarify these.
-                                  [_host componentsSeparatedByString:@":"][0].UTF8String,
+                                  NULL, // Passing NULL for host
                                   gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
 }
 

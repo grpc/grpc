@@ -189,12 +189,17 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
     gpr_timespec next_try = gpr_backoff_step(&r->backoff_state, now);
     gpr_timespec timeout = gpr_time_sub(next_try, now);
     const char *msg = grpc_error_string(error);
-    gpr_log(GPR_DEBUG, "dns resolution failed: retrying in %d.%09d seconds: %s",
-            timeout.tv_sec, timeout.tv_nsec, msg);
+    gpr_log(GPR_DEBUG, "dns resolution failed: %s", msg);
     grpc_error_free_string(msg);
     GPR_ASSERT(!r->have_retry_timer);
     r->have_retry_timer = true;
     GRPC_RESOLVER_REF(&r->base, "retry-timer");
+    if (gpr_time_cmp(timeout, gpr_time_0(timeout.clock_type)) <= 0) {
+      gpr_log(GPR_DEBUG, "retrying in %" PRId64 ".%09d seconds", timeout.tv_sec,
+              timeout.tv_nsec);
+    } else {
+      gpr_log(GPR_DEBUG, "retrying immediately");
+    }
     grpc_timer_init(exec_ctx, &r->retry_timer, next_try, dns_on_retry_timer, r,
                     now);
   }

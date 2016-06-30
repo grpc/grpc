@@ -471,6 +471,17 @@ grpc_error *grpc_chttp2_perform_read(
 
 static grpc_error *init_frame_parser(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_parsing *transport_parsing) {
+  if (transport_parsing->is_first_frame &&
+      transport_parsing->incoming_frame_type != GRPC_CHTTP2_FRAME_SETTINGS) {
+    char *msg;
+    gpr_asprintf(
+        &msg, "Expected SETTINGS frame as the first frame, got frame type %d",
+        transport_parsing->incoming_frame_type);
+    grpc_error *err = GRPC_ERROR_CREATE(msg);
+    gpr_free(msg);
+    return err;
+  }
+  transport_parsing->is_first_frame = false;
   if (transport_parsing->expect_continuation_stream_id != 0) {
     if (transport_parsing->incoming_frame_type !=
         GRPC_CHTTP2_FRAME_CONTINUATION) {
@@ -562,7 +573,7 @@ static grpc_error *update_incoming_window(
   uint32_t incoming_frame_size = transport_parsing->incoming_frame_size;
   if (incoming_frame_size > transport_parsing->incoming_window) {
     char *msg;
-    gpr_asprintf(&msg, "frame of size %d overflows incoming window of %d",
+    gpr_asprintf(&msg, "frame of size %d overflows incoming window of %" PRId64,
                  transport_parsing->incoming_frame_size,
                  transport_parsing->incoming_window);
     grpc_error *err = GRPC_ERROR_CREATE(msg);
@@ -572,7 +583,7 @@ static grpc_error *update_incoming_window(
 
   if (incoming_frame_size > stream_parsing->incoming_window) {
     char *msg;
-    gpr_asprintf(&msg, "frame of size %d overflows incoming window of %d",
+    gpr_asprintf(&msg, "frame of size %d overflows incoming window of %" PRId64,
                  transport_parsing->incoming_frame_size,
                  stream_parsing->incoming_window);
     grpc_error *err = GRPC_ERROR_CREATE(msg);
@@ -681,7 +692,8 @@ static void on_initial_header(void *tp, grpc_mdelem *md) {
     if (new_size > metadata_size_limit) {
       if (!stream_parsing->exceeded_metadata_size) {
         gpr_log(GPR_DEBUG,
-                "received initial metadata size exceeds limit (%lu vs. %lu)",
+                "received initial metadata size exceeds limit (%" PRIuPTR
+                " vs. %" PRIuPTR ")",
                 new_size, metadata_size_limit);
         stream_parsing->seen_error = true;
         stream_parsing->exceeded_metadata_size = true;
@@ -727,7 +739,8 @@ static void on_trailing_header(void *tp, grpc_mdelem *md) {
   if (new_size > metadata_size_limit) {
     if (!stream_parsing->exceeded_metadata_size) {
       gpr_log(GPR_DEBUG,
-              "received trailing metadata size exceeds limit (%lu vs. %lu)",
+              "received trailing metadata size exceeds limit (%" PRIuPTR
+              " vs. %" PRIuPTR ")",
               new_size, metadata_size_limit);
       stream_parsing->seen_error = true;
       stream_parsing->exceeded_metadata_size = true;

@@ -1,5 +1,5 @@
 
-// Copyright 2015, Google Inc.
+// Copyright 2015-2016, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -68,4 +68,11 @@ service TestService {
   // first request.
   rpc HalfDuplexCall(stream StreamingOutputCallRequest)
       returns (stream StreamingOutputCallResponse);
+}
+
+// A simple service NOT implemented at servers so clients can test for
+// that case.
+service UnimplementedService {
+  // A call that no server should implement
+  rpc UnimplementedCall(grpc.testing.EmptyMessage) returns (grpc.testing.EmptyMessage);
 }

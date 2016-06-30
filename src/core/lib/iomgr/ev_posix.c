@@ -44,6 +44,8 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/iomgr/ev_epoll_linux.h"
+#include "src/core/lib/iomgr/ev_poll_and_epoll_posix.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/support/env.h"
 
@@ -52,6 +54,7 @@
 grpc_poll_function_type grpc_poll_function = poll;
 
 static const grpc_event_engine_vtable *g_event_engine;
+static const char *g_poll_strategy_name = NULL;
 
 typedef const grpc_event_engine_vtable *(*event_engine_factory_fn)(void);
 
@@ -61,7 +64,9 @@ typedef struct {
 } event_engine_factory;
 
 static const event_engine_factory g_factories[] = {
+    {"epoll", grpc_init_epoll_linux},
     {"poll", grpc_init_poll_posix},
+    {"legacy", grpc_init_poll_and_epoll_posix},
 };
 
 static void add(const char *beg, const char *end, char ***ss, size_t *ns) {
@@ -97,12 +102,16 @@ static void try_engine(const char *engine) {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(g_factories); i++) {
     if (is(engine, g_factories[i].name)) {
       if ((g_event_engine = g_factories[i].factory())) {
+        g_poll_strategy_name = g_factories[i].name;
         gpr_log(GPR_DEBUG, "Using polling engine: %s", g_factories[i].name);
         return;
       }
     }
   }
 }
+
+/* Call this only after calling grpc_event_engine_init() */
+const char *grpc_get_poll_strategy_name() { return g_poll_strategy_name; }
 
 void grpc_event_engine_init(void) {
   char *s = gpr_getenv("GRPC_POLL_STRATEGY");
@@ -152,6 +161,10 @@ void grpc_fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
   g_event_engine->fd_shutdown(exec_ctx, fd);
 }
 
+bool grpc_fd_is_shutdown(grpc_fd *fd) {
+  return g_event_engine->fd_is_shutdown(fd);
+}
+
 void grpc_fd_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                             grpc_closure *closure) {
   g_event_engine->fd_notify_on_read(exec_ctx, fd, closure);
@@ -160,11 +173,6 @@ void grpc_fd_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 void grpc_fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                              grpc_closure *closure) {
   g_event_engine->fd_notify_on_write(exec_ctx, fd, closure);
-}
-
-grpc_pollset *grpc_fd_get_read_notifier_pollset(grpc_exec_ctx *exec_ctx,
-                                                grpc_fd *fd) {
-  return g_event_engine->fd_get_read_notifier_pollset(exec_ctx, fd);
 }
 
 size_t grpc_pollset_size(void) { return g_event_engine->pollset_size; }

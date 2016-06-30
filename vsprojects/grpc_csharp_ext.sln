@@ -16,14 +16,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "grpc", "vcxproj\.\grpc\grpc
 		{B23D3D1A-9438-4EDA-BEB6-9A0A03D17792} = {B23D3D1A-9438-4EDA-BEB6-9A0A03D17792}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "grpc_unsecure", "vcxproj\.\grpc_unsecure\grpc_unsecure.vcxproj", "{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}"
-	ProjectSection(myProperties) = preProject
-        	lib = "True"
-	EndProjectSection
-	ProjectSection(ProjectDependencies) = postProject
-		{B23D3D1A-9438-4EDA-BEB6-9A0A03D17792} = {B23D3D1A-9438-4EDA-BEB6-9A0A03D17792}
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "grpc_csharp_ext", "vcxproj\.\grpc_csharp_ext\grpc_csharp_ext.vcxproj", "{D64C6D63-4458-4A88-AB38-35678384A7E4}"
 	ProjectSection(myProperties) = preProject
         	lib = "True"
@@ -57,14 +49,6 @@ Global
 		{29D16885-7228-4C31-81ED-5F9187C7F2A9}.Release|Win32.Build.0 = Release-DLL|Win32
 		{29D16885-7228-4C31-81ED-5F9187C7F2A9}.Release|x64.ActiveCfg = Release-DLL|x64
 		{29D16885-7228-4C31-81ED-5F9187C7F2A9}.Release|x64.Build.0 = Release-DLL|x64
-		{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}.Debug|Win32.ActiveCfg = Debug-DLL|Win32
-		{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}.Debug|Win32.Build.0 = Debug-DLL|Win32
-		{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}.Debug|x64.ActiveCfg = Debug-DLL|x64
-		{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}.Debug|x64.Build.0 = Debug-DLL|x64
-		{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}.Release|Win32.ActiveCfg = Release-DLL|Win32
-		{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}.Release|Win32.Build.0 = Release-DLL|Win32
-		{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}.Release|x64.ActiveCfg = Release-DLL|x64
-		{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}.Release|x64.Build.0 = Release-DLL|x64
 		{D64C6D63-4458-4A88-AB38-35678384A7E4}.Debug|Win32.ActiveCfg = Debug|Win32
 		{D64C6D63-4458-4A88-AB38-35678384A7E4}.Debug|Win32.Build.0 = Debug|Win32
 		{D64C6D63-4458-4A88-AB38-35678384A7E4}.Debug|x64.ActiveCfg = Debug|x64

@@ -65,7 +65,7 @@ namespace Grpc.Core.Tests
                     cq.Dispose();
                 });
 
-            GrpcEnvironment.Release();
+            GrpcEnvironment.ReleaseAsync().Wait();
         }
 
         /// <summary>

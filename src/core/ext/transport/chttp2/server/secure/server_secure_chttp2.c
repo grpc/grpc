@@ -129,9 +129,11 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *statep, grpc_endpoint *tcp,
   state->state = statep;
   state_ref(state->state);
   state->accepting_pollset = accepting_pollset;
-  grpc_server_security_connector_do_handshake(exec_ctx, state->state->sc,
-                                              acceptor, tcp,
-                                              on_secure_handshake_done, state);
+  grpc_server_security_connector_do_handshake(
+      exec_ctx, state->state->sc, acceptor, tcp,
+      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                   gpr_time_from_seconds(120, GPR_TIMESPAN)),
+      on_secure_handshake_done, state);
 }
 
 /* Server callback: start listening on our ports */
@@ -173,7 +175,7 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   grpc_tcp_server *tcp = NULL;
   server_secure_state *state = NULL;
   size_t i;
-  unsigned count = 0;
+  size_t count = 0;
   int port_num = -1;
   int port_temp;
   grpc_security_status status = GRPC_SECURITY_ERROR;
@@ -188,7 +190,11 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
       3, (server, addr, creds));
 
   /* create security context */
-  if (creds == NULL) goto error;
+  if (creds == NULL) {
+    err = GRPC_ERROR_CREATE(
+        "No credentials specified for secure server port (creds==NULL)");
+    goto error;
+  }
   status = grpc_server_credentials_create_security_connector(creds, &sc);
   if (status != GRPC_SECURITY_OK) {
     char *msg;
@@ -240,14 +246,15 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   }
   if (count == 0) {
     char *msg;
-    gpr_asprintf(&msg, "No address added out of total %d resolved",
+    gpr_asprintf(&msg, "No address added out of total %" PRIuPTR " resolved",
                  resolved->naddrs);
     err = GRPC_ERROR_CREATE_REFERENCING(msg, errors, resolved->naddrs);
     gpr_free(msg);
     goto error;
   } else if (count != resolved->naddrs) {
     char *msg;
-    gpr_asprintf(&msg, "Only %d addresses added out of total %d resolved",
+    gpr_asprintf(&msg, "Only %" PRIuPTR
+                       " addresses added out of total %" PRIuPTR " resolved",
                  count, resolved->naddrs);
     err = GRPC_ERROR_CREATE_REFERENCING(msg, errors, resolved->naddrs);
     gpr_free(msg);

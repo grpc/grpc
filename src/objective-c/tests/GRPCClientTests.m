@@ -48,9 +48,9 @@ static NSString * const kPackage = @"grpc.testing";
 static NSString * const kService = @"TestService";
 static NSString * const kRemoteSSLHost = @"grpc-test.sandbox.googleapis.com";
 
-static ProtoMethod *kInexistentMethod;
-static ProtoMethod *kEmptyCallMethod;
-static ProtoMethod *kUnaryCallMethod;
+static GRPCProtoMethod *kInexistentMethod;
+static GRPCProtoMethod *kEmptyCallMethod;
+static GRPCProtoMethod *kUnaryCallMethod;
 
 /** Observer class for testing that responseMetadata is KVO-compliant */
 @interface PassthroughObserver : NSObject
@@ -109,15 +109,15 @@ static ProtoMethod *kUnaryCallMethod;
   [GRPCCall useInsecureConnectionsForHost:kHostAddress];
 
   // This method isn't implemented by the remote server.
-  kInexistentMethod = [[ProtoMethod alloc] initWithPackage:kPackage
-                                                   service:kService
-                                                    method:@"Inexistent"];
-  kEmptyCallMethod = [[ProtoMethod alloc] initWithPackage:kPackage
-                                                  service:kService
-                                                   method:@"EmptyCall"];
-  kUnaryCallMethod = [[ProtoMethod alloc] initWithPackage:kPackage
-                                                  service:kService
-                                                   method:@"UnaryCall"];
+  kInexistentMethod = [[GRPCProtoMethod alloc] initWithPackage:kPackage
+                                                       service:kService
+                                                        method:@"Inexistent"];
+  kEmptyCallMethod = [[GRPCProtoMethod alloc] initWithPackage:kPackage
+                                                      service:kService
+                                                       method:@"EmptyCall"];
+  kUnaryCallMethod = [[GRPCProtoMethod alloc] initWithPackage:kPackage
+                                                      service:kService
+                                                       method:@"UnaryCall"];
 }
 
 - (void)testConnectionToRemoteServer {
@@ -303,9 +303,9 @@ static ProtoMethod *kUnaryCallMethod;
 
   // Try to set parameters to nil for GRPCCall. This should cause an exception
   @try {
-    GRPCCall *call = [[GRPCCall alloc] initWithHost:nil
-                                               path:nil
-                                     requestsWriter:nil];
+    (void)[[GRPCCall alloc] initWithHost:nil
+                                    path:nil
+                          requestsWriter:nil];
     XCTFail(@"Did not receive an exception when parameters are nil");
   } @catch(NSException *theException) {
     NSLog(@"Received exception as expected: %@", theException.name);
@@ -316,9 +316,9 @@ static ProtoMethod *kUnaryCallMethod;
   GRXWriter *requestsWriter = [GRXWriter emptyWriter];
   [requestsWriter finishWithError:nil];
   @try {
-    GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
-                                               path:kUnaryCallMethod.HTTPPath
-                                     requestsWriter:requestsWriter];
+    (void)[[GRPCCall alloc] initWithHost:kHostAddress
+                                    path:kUnaryCallMethod.HTTPPath
+                          requestsWriter:requestsWriter];
     XCTFail(@"Did not receive an exception when GRXWriter has incorrect state.");
   } @catch(NSException *theException) {
     NSLog(@"Received exception as expected: %@", theException.name);

@@ -54,7 +54,7 @@ cdef class ServerCredentials:
 cdef class CredentialsMetadataPlugin:
 
   cdef object plugin_callback
-  cdef str plugin_name
+  cdef bytes plugin_name
 
   cdef grpc_metadata_credentials_plugin make_c_plugin(self)
 
@@ -68,4 +68,4 @@ cdef void plugin_get_metadata(
     void *state, grpc_auth_metadata_context context,
     grpc_credentials_plugin_metadata_cb cb, void *user_data) with gil
 
-cdef void plugin_destroy_c_plugin_state(void *state)
+cdef void plugin_destroy_c_plugin_state(void *state) with gil

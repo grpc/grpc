@@ -31,6 +31,7 @@
  *
  */
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -39,6 +40,9 @@
 
 #include "src/core/lib/json/json.h"
 #include "test/core/util/memory_counters.h"
+
+bool squelch = true;
+bool leak_check = true;
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   char *s;

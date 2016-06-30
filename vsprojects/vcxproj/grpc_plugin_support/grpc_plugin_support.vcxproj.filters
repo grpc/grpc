@@ -21,15 +21,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\config.h">
-      <Filter>include\grpc++\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\config_protobuf.h">
-      <Filter>include\grpc++\support</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config.h">
-      <Filter>include\grpc++\impl\codegen</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config_protobuf.h">
       <Filter>include\grpc++\impl\codegen</Filter>
     </ClInclude>
@@ -94,9 +85,6 @@
     </Filter>
     <Filter Include="include\grpc++\impl\codegen">
       <UniqueIdentifier>{ec2a6e26-915b-ba1b-4f59-f361dc01105c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="include\grpc++\support">
-      <UniqueIdentifier>{1c34d005-1ffb-8a31-881a-c6bb431cda69}</UniqueIdentifier>
     </Filter>
     <Filter Include="src">
       <UniqueIdentifier>{94c9769a-a6cd-49fd-2b30-e52d2d02ed91}</UniqueIdentifier>

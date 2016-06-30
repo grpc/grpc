@@ -166,7 +166,7 @@ static void test_no_op_with_port_and_start(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   struct sockaddr_in addr;
   grpc_tcp_server *s;
-  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, NULL,  &s));
+  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, NULL, &s));
   LOG_TEST("test_no_op_with_port_and_start");
   int port;
 
