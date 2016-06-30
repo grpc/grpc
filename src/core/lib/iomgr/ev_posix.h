@@ -56,6 +56,7 @@ typedef struct grpc_event_engine_vtable {
   void (*fd_notify_on_write)(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                              grpc_closure *closure);
   bool (*fd_is_shutdown)(grpc_fd *fd);
+  grpc_workqueue *(*fd_get_workqueue)(grpc_fd *fd);
   grpc_pollset *(*fd_get_read_notifier_pollset)(grpc_exec_ctx *exec_ctx,
                                                 grpc_fd *fd);
 
@@ -106,6 +107,9 @@ const char *grpc_get_poll_strategy_name();
    Requires fd is a non-blocking file descriptor.
    This takes ownership of closing fd. */
 grpc_fd *grpc_fd_create(int fd, const char *name);
+
+/* Get a workqueue that's associated with this fd */
+grpc_workqueue *grpc_fd_get_workqueue(grpc_fd *fd);
 
 /* Return the wrapped fd, or -1 if it has been released or closed. */
 int grpc_fd_wrapped_fd(grpc_fd *fd);

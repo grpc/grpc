@@ -59,7 +59,7 @@ void grpc_workqueue_flush(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue);
 /*#define GRPC_WORKQUEUE_REFCOUNT_DEBUG*/
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
 #define GRPC_WORKQUEUE_REF(p, r) \
-  grpc_workqueue_ref((p), __FILE__, __LINE__, (r))
+  (grpc_workqueue_ref((p), __FILE__, __LINE__, (r)), (p))
 #define GRPC_WORKQUEUE_UNREF(cl, p, r) \
   grpc_workqueue_unref((cl), (p), __FILE__, __LINE__, (r))
 void grpc_workqueue_ref(grpc_workqueue *workqueue, const char *file, int line,
@@ -67,7 +67,7 @@ void grpc_workqueue_ref(grpc_workqueue *workqueue, const char *file, int line,
 void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
                           const char *file, int line, const char *reason);
 #else
-#define GRPC_WORKQUEUE_REF(p, r) grpc_workqueue_ref((p))
+#define GRPC_WORKQUEUE_REF(p, r) (grpc_workqueue_ref((p)), (p))
 #define GRPC_WORKQUEUE_UNREF(cl, p, r) grpc_workqueue_unref((cl), (p))
 void grpc_workqueue_ref(grpc_workqueue *workqueue);
 void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue);

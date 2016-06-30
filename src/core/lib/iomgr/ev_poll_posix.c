@@ -617,6 +617,8 @@ static void fd_end_poll(grpc_exec_ctx *exec_ctx, grpc_fd_watcher *watcher,
   GRPC_FD_UNREF(fd, "poll");
 }
 
+static grpc_workqueue *fd_get_workqueue(grpc_fd *fd) { return NULL; }
+
 /*******************************************************************************
  * pollset_posix.c
  */
@@ -1234,6 +1236,7 @@ static const grpc_event_engine_vtable vtable = {
     .fd_notify_on_read = fd_notify_on_read,
     .fd_notify_on_write = fd_notify_on_write,
     .fd_get_read_notifier_pollset = fd_get_read_notifier_pollset,
+    .fd_get_workqueue = fd_get_workqueue,
 
     .pollset_init = pollset_init,
     .pollset_shutdown = pollset_shutdown,
