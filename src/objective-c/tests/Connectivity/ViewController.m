@@ -33,11 +33,50 @@
 
 #import <UIKit/UIKit.h>
 
+#import <GRPCClient/GRPCCall.h>
+#import <ProtoRPC/ProtoMethod.h>
+#import <RxLibrary/GRXWriter+Immediate.h>
+#import <RxLibrary/GRXWriter+Transformations.h>
+
 @interface ViewController : UIViewController
 @end
 
 @implementation ViewController
 - (void)viewDidLoad {
   [super viewDidLoad];
+
+  NSString *host = @"grpc-test.sandbox.googleapis.com";
+
+  GRPCProtoMethod *method = [[GRPCProtoMethod alloc] initWithPackage:@"grpc.testing"
+                                                             service:@"TestService"
+                                                              method:@"StreamingOutputCall"];
+
+  __block void (^startCall)() = ^{
+    GRXWriter *loggingRequestWriter = [[GRXWriter writerWithValue:[NSData data]] map:^id(id value) {
+      NSLog(@"Sending request.");
+      return value;
+    }];
+
+    GRPCCall *call = [[GRPCCall alloc] initWithHost:host
+                                               path:method.HTTPPath
+                                     requestsWriter:loggingRequestWriter];
+
+    [call startWithWriteable:[GRXWriteable writeableWithEventHandler:^(BOOL done, id value,
+                                                                       NSError *error) {
+      if (!done) {
+        return;
+      }
+      if (error) {
+        NSLog(@"Finished with error %@", error);
+      } else {
+        NSLog(@"Finished successfully.");
+      }
+
+      dispatch_time_t oneSecond = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC));
+      dispatch_after(oneSecond, dispatch_get_main_queue(), startCall);
+    }]];
+  };
+
+  startCall();
 }
 @end
