@@ -378,7 +378,8 @@ int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr,
     /* Try listening on IPv6 first. */
     addr = (struct sockaddr *)&wild6;
     addr_len = sizeof(wild6);
-    fd = grpc_create_dualstack_socket(addr, SOCK_DGRAM, IPPROTO_UDP, &dsmode);
+    // TODO(rjshade): Test and propagate the returned grpc_error*:
+    grpc_create_dualstack_socket(addr, SOCK_DGRAM, IPPROTO_UDP, &dsmode, &fd);
     allocated_port1 =
         add_socket_to_server(s, fd, addr, addr_len, read_cb, orphan_cb);
     if (fd >= 0 && dsmode == GRPC_DSMODE_DUALSTACK) {
@@ -393,7 +394,8 @@ int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr,
     addr_len = sizeof(wild4);
   }
 
-  fd = grpc_create_dualstack_socket(addr, SOCK_DGRAM, IPPROTO_UDP, &dsmode);
+  // TODO(rjshade): Test and propagate the returned grpc_error*:
+  grpc_create_dualstack_socket(addr, SOCK_DGRAM, IPPROTO_UDP, &dsmode, &fd);
   if (fd < 0) {
     gpr_log(GPR_ERROR, "Unable to create socket: %s", strerror(errno));
   }
