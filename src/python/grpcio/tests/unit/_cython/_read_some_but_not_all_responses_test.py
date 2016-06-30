@@ -126,9 +126,9 @@ class ReadSomeButNotAllResponsesTest(unittest.TestCase):
     server_completion_queue = cygrpc.CompletionQueue()
     server = cygrpc.Server()
     server.register_completion_queue(server_completion_queue)
-    port = server.add_http2_port('[::]:0')
+    port = server.add_http2_port(b'[::]:0')
     server.start()
-    channel = cygrpc.Channel('localhost:{}'.format(port))
+    channel = cygrpc.Channel('localhost:{}'.format(port).encode())
 
     server_shutdown_tag = 'server_shutdown_tag'
     server_driver = _ServerDriver(server_completion_queue, server_shutdown_tag)

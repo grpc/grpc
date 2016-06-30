@@ -31,6 +31,7 @@ import collections
 import threading
 
 import grpc
+from grpc import _common
 from grpc._cython import cygrpc
 
 
@@ -62,17 +63,16 @@ class _WrappedCygrpcCallback(object):
     # TODO(atash) translate different Exception superclasses into different
     # status codes.
     self.cygrpc_callback(
-        cygrpc.Metadata([]), cygrpc.StatusCode.internal, error.message)
+        _common.EMPTY_METADATA, cygrpc.StatusCode.internal,
+        _common.encode(str(error)))
 
   def _invoke_success(self, metadata):
     try:
-      cygrpc_metadata = cygrpc.Metadata(
-          cygrpc.Metadatum(key, value)
-          for key, value in metadata)
+      cygrpc_metadata = _common.cygrpc_metadata(metadata)
     except Exception as error:
       self._invoke_failure(error)
       return
-    self.cygrpc_callback(cygrpc_metadata, cygrpc.StatusCode.ok, '')
+    self.cygrpc_callback(cygrpc_metadata, cygrpc.StatusCode.ok, b'')
 
   def __call__(self, metadata, error):
     with self.is_called_lock:
@@ -101,7 +101,7 @@ class _WrappedPlugin(object):
   def __call__(self, context, cygrpc_callback):
     wrapped_cygrpc_callback = _WrappedCygrpcCallback(cygrpc_callback)
     wrapped_context = AuthMetadataContext(
-        context.service_url, context.method_name)
+        _common.decode(context.service_url), _common.decode(context.method_name))
     try:
       self.plugin(
           wrapped_context, AuthMetadataPluginCallback(wrapped_cygrpc_callback))
@@ -120,4 +120,4 @@ def call_credentials_metadata_plugin(plugin, name):
       plugin's invocation must be non-blocking.
   """
   return cygrpc.call_credentials_metadata_plugin(
-      cygrpc.CredentialsMetadataPlugin(_WrappedPlugin(plugin), name))
+      cygrpc.CredentialsMetadataPlugin(_WrappedPlugin(plugin), _common.encode(name)))

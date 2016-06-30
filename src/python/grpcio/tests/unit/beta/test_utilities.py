@@ -51,5 +51,5 @@ def not_really_secure_channel(
   target = '%s:%d' % (host, port)
   channel = grpc.secure_channel(
       target, channel_credentials,
-      ((b'grpc.ssl_target_name_override', server_host_override,),))
+      (('grpc.ssl_target_name_override', server_host_override,),))
   return implementations.Channel(channel)
