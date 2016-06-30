@@ -38,6 +38,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/support/log.h>
 #include "rb_call.h"
 #include "rb_channel_args.h"
 #include "rb_completion_queue.h"

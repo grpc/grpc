@@ -39,6 +39,7 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include "rb_grpc.h"
 #include "rb_call.h"
 #include "rb_channel_args.h"
