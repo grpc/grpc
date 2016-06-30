@@ -1206,7 +1206,7 @@ static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
     } else if (grpc_compression_options_is_algorithm_enabled(
                    &compression_options, algo) == 0) {
       /* check if algorithm is supported by current channel config */
-      char *algo_name;
+      char *algo_name = NULL;
       grpc_compression_algorithm_name(algo, &algo_name);
       gpr_asprintf(&error_msg, "Compression algorithm '%s' is disabled.",
                    algo_name);
@@ -1225,7 +1225,7 @@ static void validate_filtered_metadata(grpc_exec_ctx *exec_ctx,
                   call->incoming_compression_algorithm)) {
     extern int grpc_compression_trace;
     if (grpc_compression_trace) {
-      char *algo_name;
+      char *algo_name = NULL;
       grpc_compression_algorithm_name(call->incoming_compression_algorithm,
                                       &algo_name);
       gpr_log(GPR_ERROR,
@@ -1426,7 +1426,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
           const grpc_compression_algorithm calgo =
               compression_algorithm_for_level_locked(
                   call, effective_compression_level);
-          char *calgo_name;
+          char *calgo_name = NULL;
           grpc_compression_algorithm_name(calgo, &calgo_name);
           // the following will be picked up by the compress filter and used as
           // the call's compression algorithm.
