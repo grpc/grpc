@@ -272,10 +272,10 @@ error:
 }
 
 /* event manager callback when reads are ready */
-static void on_read(grpc_exec_ctx *exec_ctx, void *arg, bool success) {
+static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error* error) {
   server_port *sp = arg;
 
-  if (!success) {
+  if (error != GRPC_ERROR_NONE) {
     gpr_mu_lock(&sp->server->mu);
     if (0 == --sp->server->active_ports) {
       gpr_mu_unlock(&sp->server->mu);
