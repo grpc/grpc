@@ -39,17 +39,21 @@
 
 // TODO(jcanizales): Move these two incantations to the C library.
 
-static void CopyByteBufferToCharArray(grpc_byte_buffer *buffer, char *array) {
-  size_t offset = 0;
+static void MallocAndCopyByteBufferToCharArray(grpc_byte_buffer *buffer,
+                                               size_t *length, char **array) {
   grpc_byte_buffer_reader reader;
   grpc_byte_buffer_reader_init(&reader, buffer);
-  gpr_slice next;
-  while (grpc_byte_buffer_reader_next(&reader, &next) != 0){
-    memcpy(array + offset, GPR_SLICE_START_PTR(next),
-           (size_t)GPR_SLICE_LENGTH(next));
-    offset += GPR_SLICE_LENGTH(next);
-    gpr_slice_unref(next);
+  // The slice contains uncompressed data even if compressed data was received
+  // because the reader takes care of automatically decompressing it
+  gpr_slice slice = grpc_byte_buffer_reader_readall(&reader);
+  size_t uncompressed_length = GPR_SLICE_LENGTH(slice);
+  char *result = malloc(uncompressed_length);
+  if (result) {
+    memcpy(result, GPR_SLICE_START_PTR(slice), uncompressed_length);
   }
+  gpr_slice_unref(slice);
+  *array = result;
+  *length = uncompressed_length;
 }
 
 static grpc_byte_buffer *CopyCharArrayToNewByteBuffer(const char *array,
@@ -65,8 +69,9 @@ static grpc_byte_buffer *CopyCharArrayToNewByteBuffer(const char *array,
   if (buffer == NULL) {
     return nil;
   }
-  NSUInteger length = grpc_byte_buffer_length(buffer);
-  char *array = malloc(length * sizeof(*array));
+  char *array;
+  size_t length;
+  MallocAndCopyByteBufferToCharArray(buffer, &length, &array);
   if (!array) {
     // TODO(jcanizales): grpc_byte_buffer is reference-counted, so we can
     // prevent this memory problem by implementing a subclass of NSData
@@ -74,8 +79,9 @@ static grpc_byte_buffer *CopyCharArrayToNewByteBuffer(const char *array,
     // can be implemented using a grpc_byte_buffer_reader.
     return nil;
   }
-  CopyByteBufferToCharArray(buffer, array);
-  return [self dataWithBytesNoCopy:array length:length freeWhenDone:YES];
+  // Not depending upon size assumption of NSUInteger
+  NSUInteger length_max = MIN(length, UINT_MAX);
+  return [self dataWithBytesNoCopy:array length:length_max freeWhenDone:YES];
 }
 
 - (grpc_byte_buffer *)grpc_byteBuffer {
@@ -85,8 +91,10 @@ static grpc_byte_buffer *CopyCharArrayToNewByteBuffer(const char *array,
   // The following implementation is thus not optimal, sometimes requiring two
   // copies (one by self.bytes and another by gpr_slice_from_copied_buffer).
   // If it turns out to be an issue, we can use enumerateByteRangesUsingblock:
-  // to create an array of gpr_slice objects to pass to grpc_raw_byte_buffer_create.
+  // to create an array of gpr_slice objects to pass to
+  // grpc_raw_byte_buffer_create.
   // That would make it do exactly one copy, always.
-  return CopyCharArrayToNewByteBuffer((const char *)self.bytes, (size_t)self.length);
+  return CopyCharArrayToNewByteBuffer((const char *)self.bytes,
+                                      (size_t)self.length);
 }
 @end
