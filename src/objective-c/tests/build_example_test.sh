@@ -35,22 +35,35 @@ set -eo pipefail
 
 cd `dirname $0`
 
-EXAMPLE_PATH=examples/objective-c/helloworld \
-SCHEME=HelloWorld                            \
-./build_one_example.sh
+BINDIR=`pwd`/../../../bins/$CONFIG
+TMP_PATH=$PATH
+hash protoc 2>/dev/null || TMP_PATH=$BINDIR/protobuf:$TMP_PATH
+PATH=$TMP_PATH hash protoc-gen-objcgrpc 2>/dev/null || {
+  ln -sf $BINDIR/grpc_objective_c_plugin $BINDIR/protoc-gen-objcgrpc
+  TMP_PATH=$BINDIR:$TMP_PATH
+}
 
-EXAMPLE_PATH=examples/objective-c/route_guide \
-SCHEME=RouteGuideClient                       \
-./build_one_example.sh
+SCHEME=HelloWorld                              \
+  EXAMPLE_PATH=examples/objective-c/helloworld \
+  PATH=$TMP_PATH                               \
+  ./build_one_example.sh
 
-EXAMPLE_PATH=examples/objective-c/auth_sample \
-SCHEME=AuthSample                             \
-./build_one_example.sh
+SCHEME=RouteGuideClient                         \
+  EXAMPLE_PATH=examples/objective-c/route_guide \
+  PATH=$TMP_PATH                                \
+  ./build_one_example.sh
 
-EXAMPLE_PATH=src/objective-c/examples/Sample \
-SCHEME=Sample                                \
-./build_one_example.sh
+SCHEME=AuthSample                               \
+  EXAMPLE_PATH=examples/objective-c/auth_sample \
+  PATH=$TMP_PATH                                \
+  ./build_one_example.sh
 
-EXAMPLE_PATH=src/objective-c/examples/SwiftSample \
-SCHEME=SwiftSample                                \
-./build_one_example.sh
+SCHEME=Sample                                  \
+  EXAMPLE_PATH=src/objective-c/examples/Sample \
+  PATH=$TMP_PATH                               \
+  ./build_one_example.sh
+
+SCHEME=SwiftSample                                  \
+  EXAMPLE_PATH=src/objective-c/examples/SwiftSample \
+  PATH=$TMP_PATH                                    \
+  ./build_one_example.sh
