@@ -10,7 +10,7 @@
   <email>grpc-packages@google.com</email>
   <active>yes</active>
  </lead>
- <date>2016-05-19</date>
+ <date>2016-06-30</date>
  <time>16:06:07</time>
  <version>
   <release>0.16.0</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>BSD</license>
  <notes>
-- TBD
+- Fix shutdown hang problem #4017
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -249,7 +249,6 @@
     <file baseinstalldir="/" name="src/core/lib/surface/init.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/lame_client.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/server.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/surface_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/byte_stream.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata.h" role="src" />
@@ -1035,6 +1034,7 @@ Update to wrap gRPC C Core version 0.10.0
    <license>BSD</license>
    <notes>
 - Simplify gRPC PHP installation #4517
+- Wrap gRPC core library version 0.13
    </notes>
   </release>
   <release>
@@ -1064,13 +1064,14 @@ Update to wrap gRPC C Core version 0.10.0
    <date>2016-04-19</date>
    <license>BSD</license>
    <notes>
+- wrap grpc C core version 0.14.0
 - destroy grpc_byte_buffer after startBatch #6096
    </notes>
   </release>
   <release>
    <version>
-    <release>0.14.2</release>
-    <api>0.14.2</api>
+    <release>0.15.0</release>
+    <api>0.15.0</api>
    </version>
    <stability>
     <release>beta</release>
@@ -1080,6 +1081,22 @@ Update to wrap gRPC C Core version 0.10.0
    <license>BSD</license>
    <notes>
 - Updated functions with TSRM macros for ZTS support #6607
+- Load default roots.pem via grpc_set_ssl_roots_override_callback #6848
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>0.15.1</release>
+    <api>0.15.1</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <date>2016-06-30</date>
+   <license>BSD</license>
+   <notes>
+- Fix shutdown hang problem #4017
    </notes>
   </release>
  </changelog>

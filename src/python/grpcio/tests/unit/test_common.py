@@ -33,10 +33,10 @@ import collections
 
 import six
 
-INVOCATION_INITIAL_METADATA = ((b'0', b'abc'), (b'1', b'def'), (b'2', b'ghi'),)
-SERVICE_INITIAL_METADATA = ((b'3', b'jkl'), (b'4', b'mno'), (b'5', b'pqr'),)
-SERVICE_TERMINAL_METADATA = ((b'6', b'stu'), (b'7', b'vwx'), (b'8', b'yza'),)
-DETAILS = b'test details'
+INVOCATION_INITIAL_METADATA = (('0', 'abc'), ('1', 'def'), ('2', 'ghi'),)
+SERVICE_INITIAL_METADATA = (('3', 'jkl'), ('4', 'mno'), ('5', 'pqr'),)
+SERVICE_TERMINAL_METADATA = (('6', 'stu'), ('7', 'vwx'), ('8', 'yza'),)
+DETAILS = 'test details'
 
 
 def metadata_transmitted(original_metadata, transmitted_metadata):
@@ -59,16 +59,10 @@ def metadata_transmitted(original_metadata, transmitted_metadata):
       original_metadata after having been transmitted via gRPC.
   """
   original = collections.defaultdict(list)
-  for key_value_pair in original_metadata:
-    key, value = tuple(key_value_pair)
-    if not isinstance(key, bytes):
-      key = key.encode()
-    if not isinstance(value, bytes):
-      value = value.encode()
+  for key, value in original_metadata:
     original[key].append(value)
   transmitted = collections.defaultdict(list)
-  for key_value_pair in transmitted_metadata:
-    key, value = tuple(key_value_pair)
+  for key, value in transmitted_metadata:
     transmitted[key].append(value)
 
   for key, values in six.iteritems(original):

@@ -43,11 +43,11 @@ shared_context 'setup: tags' do
     Time.now + 5
   end
 
-  def server_allows_client_to_proceed
+  def server_allows_client_to_proceed(metadata = {})
     recvd_rpc = @server.request_call(@server_queue, @server_tag, deadline)
     expect(recvd_rpc).to_not eq nil
     server_call = recvd_rpc.call
-    ops = { CallOps::SEND_INITIAL_METADATA => {} }
+    ops = { CallOps::SEND_INITIAL_METADATA => metadata }
     svr_batch = server_call.run_batch(@server_queue, @server_tag, deadline, ops)
     expect(svr_batch.send_metadata).to be true
     server_call
@@ -133,6 +133,48 @@ shared_examples 'basic GRPC message delivery is OK' do
                                       server_ops)
     expect(svr_batch.message).to eq(sent_message)
     expect(svr_batch.send_message).to be true
+  end
+
+  it 'compressed messages can be sent and received' do
+    call = new_client_call
+    server_call = nil
+    long_request_str = '0' * 2000
+    long_response_str = '1' * 2000
+    md = { 'grpc-internal-encoding-request' => 'gzip' }
+
+    server_thread = Thread.new do
+      server_call = server_allows_client_to_proceed(md)
+    end
+
+    client_ops = {
+      CallOps::SEND_INITIAL_METADATA => md,
+      CallOps::SEND_MESSAGE => long_request_str
+    }
+    batch_result = call.run_batch(@client_queue, @client_tag, deadline,
+                                  client_ops)
+    expect(batch_result.send_metadata).to be true
+    expect(batch_result.send_message).to be true
+
+    # confirm the server can read the inbound message
+    server_thread.join
+    server_ops = {
+      CallOps::RECV_MESSAGE => nil,
+      CallOps::SEND_MESSAGE => long_response_str
+    }
+    svr_batch = server_call.run_batch(@server_queue, @server_tag, deadline,
+                                      server_ops)
+    expect(svr_batch.message).to eq(long_request_str)
+    expect(svr_batch.send_message).to be true
+
+    client_ops = {
+      CallOps::SEND_CLOSE_FROM_CLIENT => nil,
+      CallOps::RECV_INITIAL_METADATA => nil,
+      CallOps::RECV_MESSAGE => nil
+    }
+    batch_result = call.run_batch(@client_queue, @client_tag, deadline,
+                                  client_ops)
+    expect(batch_result.send_close).to be true
+    expect(batch_result.message).to eq long_response_str
   end
 
   it 'servers can ignore a client write and send a status' do

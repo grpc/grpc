@@ -8,6 +8,13 @@
   "configurations": {
     "Debug": {
       "buildOptions": {
+        "define": [ "SIGNED" ],
+        "keyFile": "../keys/Grpc.snk",
+        "publicSign": true,
+        "xmlDoc": true,
+        "compile": {
+          "includeFiles": [ "../Grpc.Core/Version.cs" ]
+        },
         "copyToOutput": {
           % if includeData:
           "include": "data/*",
@@ -23,6 +30,13 @@
     },
     "Release": {
       "buildOptions": {
+        "define": [ "SIGNED" ],
+        "keyFile": "../keys/Grpc.snk",
+        "publicSign": true,
+        "xmlDoc": true,
+        "compile": {
+          "includeFiles": [ "../Grpc.Core/Version.cs" ]
+        },
         "copyToOutput": {
           % if includeData:
           "include": "data/*",

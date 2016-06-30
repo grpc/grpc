@@ -36,6 +36,7 @@
 #include <grpc/status.h>
 
 #import <Cronet/Cronet.h>
+#import <GRPCClient/GRPCCall+ChannelArg.h>
 #import <GRPCClient/GRPCCall+Tests.h>
 #import <GRPCClient/GRPCCall+Cronet.h>
 #import <ProtoRPC/ProtoRPC.h>
@@ -58,7 +59,7 @@
                  requestedResponseSize:(NSNumber *)responseSize {
   RMTStreamingOutputCallRequest *request = [self message];
   RMTResponseParameters *parameters = [RMTResponseParameters message];
-  parameters.size = (int)responseSize.integerValue;
+  parameters.size = responseSize.intValue;
   [request.responseParametersArray addObject:parameters];
   request.payload.body = [NSMutableData dataWithLength:payloadSize.unsignedIntegerValue];
   return request;
@@ -188,7 +189,7 @@ static cronet_engine *cronetEngine = NULL;
   RMTStreamingOutputCallRequest *request = [RMTStreamingOutputCallRequest message];
   for (NSNumber *size in expectedSizes) {
     RMTResponseParameters *parameters = [RMTResponseParameters message];
-    parameters.size = (int)[size integerValue];
+    parameters.size = [size intValue];
     [request.responseParametersArray addObject:parameters];
   }
 
@@ -284,9 +285,10 @@ static cronet_engine *cronetEngine = NULL;
   // A buffered pipe to which we never write any value acts as a writer that just hangs.
   GRXBufferedPipe *requestsBuffer = [[GRXBufferedPipe alloc] init];
 
-  GRPCProtoCall *call = [_service RPCToStreamingInputCallWithRequestsWriter:requestsBuffer
-                                                                    handler:^(RMTStreamingInputCallResponse *response,
-                                                                              NSError *error) {
+  GRPCProtoCall *call =
+      [_service RPCToStreamingInputCallWithRequestsWriter:requestsBuffer
+                                                  handler:^(RMTStreamingInputCallResponse *response,
+                                                            NSError *error) {
     XCTAssertEqual(error.code, GRPC_STATUS_CANCELLED);
     [expectation fulfill];
   }];
@@ -334,6 +336,30 @@ static cronet_engine *cronetEngine = NULL;
   }];
   [call start];
   [self waitForExpectationsWithTimeout:8 handler:nil];
+}
+
+- (void)testRPCAfterClosingOpenConnections {
+  XCTAssertNotNil(self.class.host);
+  __weak XCTestExpectation *expectation =
+      [self expectationWithDescription:@"RPC after closing connection"];
+
+  RMTEmpty *request = [RMTEmpty message];
+
+  [_service emptyCallWithRequest:request handler:^(RMTEmpty *response, NSError *error) {
+    XCTAssertNil(error, @"First RPC finished with unexpected error: %@", error);
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    [GRPCCall closeOpenConnections];
+#pragma clang diagnostic pop
+
+    [_service emptyCallWithRequest:request handler:^(RMTEmpty *response, NSError *error) {
+      XCTAssertNil(error, @"Second RPC finished with unexpected error: %@", error);
+      [expectation fulfill];
+    }];
+  }];
+
+  [self waitForExpectationsWithTimeout:4 handler:nil];
 }
 
 @end

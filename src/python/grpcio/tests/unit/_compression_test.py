@@ -37,8 +37,8 @@ from grpc.framework.foundation import logging_pool
 from tests.unit import test_common
 from tests.unit.framework.common import test_constants
 
-_UNARY_UNARY = b'/test/UnaryUnary'
-_STREAM_STREAM = b'/test/StreamStream'
+_UNARY_UNARY = '/test/UnaryUnary'
+_STREAM_STREAM = '/test/StreamStream'
 
 
 def handle_unary(request, servicer_context):

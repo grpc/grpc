@@ -47,29 +47,29 @@ _REQUEST_DESERIALIZER = lambda unused_serialized_request: object()
 _RESPONSE_SERIALIZER = lambda unused_response: _SERIALIZED_RESPONSE
 _RESPONSE_DESERIALIZER = lambda unused_serialized_resopnse: object()
 
-_SERVICE = b'test.TestService'
-_UNARY_UNARY = b'UnaryUnary'
-_UNARY_STREAM = b'UnaryStream'
-_STREAM_UNARY = b'StreamUnary'
-_STREAM_STREAM = b'StreamStream'
+_SERVICE = 'test.TestService'
+_UNARY_UNARY = 'UnaryUnary'
+_UNARY_STREAM = 'UnaryStream'
+_STREAM_UNARY = 'StreamUnary'
+_STREAM_STREAM = 'StreamStream'
 
 _CLIENT_METADATA = (
-    (b'client-md-key', b'client-md-key'),
-    (b'client-md-key-bin', b'\x00\x01')
+    ('client-md-key', 'client-md-key'),
+    ('client-md-key-bin', b'\x00\x01')
 )
 
 _SERVER_INITIAL_METADATA = (
-    (b'server-initial-md-key', b'server-initial-md-value'),
-    (b'server-initial-md-key-bin', b'\x00\x02')
+    ('server-initial-md-key', 'server-initial-md-value'),
+    ('server-initial-md-key-bin', b'\x00\x02')
 )
 
 _SERVER_TRAILING_METADATA = (
-    (b'server-trailing-md-key', b'server-trailing-md-value'),
-    (b'server-trailing-md-key-bin', b'\x00\x03')
+    ('server-trailing-md-key', 'server-trailing-md-value'),
+    ('server-trailing-md-key-bin', b'\x00\x03')
 )
 
 _NON_OK_CODE = grpc.StatusCode.NOT_FOUND
-_DETAILS = b'Test details!'
+_DETAILS = 'Test details!'
 
 
 class _Servicer(object):
@@ -195,15 +195,15 @@ class MetadataCodeDetailsTest(unittest.TestCase):
 
     channel = grpc.insecure_channel('localhost:{}'.format(port))
     self._unary_unary = channel.unary_unary(
-        b'/'.join((b'', _SERVICE, _UNARY_UNARY,)),
+        '/'.join(('', _SERVICE, _UNARY_UNARY,)),
         request_serializer=_REQUEST_SERIALIZER,
         response_deserializer=_RESPONSE_DESERIALIZER,)
     self._unary_stream = channel.unary_stream(
-        b'/'.join((b'', _SERVICE, _UNARY_STREAM,)),)
+        '/'.join(('', _SERVICE, _UNARY_STREAM,)),)
     self._stream_unary = channel.stream_unary(
-        b'/'.join((b'', _SERVICE, _STREAM_UNARY,)),)
+        '/'.join(('', _SERVICE, _STREAM_UNARY,)),)
     self._stream_stream = channel.stream_stream(
-        b'/'.join((b'', _SERVICE, _STREAM_STREAM,)),
+        '/'.join(('', _SERVICE, _STREAM_STREAM,)),
         request_serializer=_REQUEST_SERIALIZER,
         response_deserializer=_RESPONSE_DESERIALIZER,)
 

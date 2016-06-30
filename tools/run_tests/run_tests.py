@@ -522,7 +522,7 @@ class CSharpLanguage(object):
       if self.platform == 'linux':
         assembly_subdir += '/netstandard1.5/debian.8-x64'
         assembly_extension = ''
-      if self.platform == 'mac':
+      elif self.platform == 'mac':
         assembly_subdir += '/netstandard1.5/osx.10.11-x64'
         assembly_extension = ''
       else:
@@ -1055,7 +1055,7 @@ def _start_port_server(port_server_port):
   try:
     version = int(urllib2.urlopen(
         'http://localhost:%d/version_number' % port_server_port,
-        timeout=1).read())
+        timeout=10).read())
     print 'detected port server running version %d' % version
     running = True
   except Exception as e:

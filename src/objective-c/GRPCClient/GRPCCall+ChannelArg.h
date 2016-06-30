@@ -32,6 +32,8 @@
  */
 #import "GRPCCall.h"
 
+#include <AvailabilityMacros.h>
+
 /**
  * Methods to configure GRPC channel options.
  */
@@ -43,4 +45,7 @@
  */
 + (void)setUserAgentPrefix:(NSString *)userAgentPrefix forHost:(NSString *)host;
 
++ (void)closeOpenConnections DEPRECATED_MSG_ATTRIBUTE("The API for this feature is experimental, "
+                                                      "and might be removed or modified at any "
+                                                      "time.");
 @end
