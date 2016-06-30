@@ -81,7 +81,7 @@ grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
  *
  * The i-th bit of the returned bitset corresponds to the i-th entry in the
  * grpc_compression_algorithm enum. */
-int grpc_channel_args_compression_algorithm_get_states(
+uint32_t grpc_channel_args_compression_algorithm_get_states(
     const grpc_channel_args *a);
 
 int grpc_channel_args_compare(const grpc_channel_args *a,

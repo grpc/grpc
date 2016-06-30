@@ -62,6 +62,10 @@ class ServerInterface : public CallHook {
   /// Shutdown the server, blocking until all rpc processing finishes.
   /// Forcefully terminate pending calls after \a deadline expires.
   ///
+  /// All completion queue associated with the server (for example, for async
+  /// serving) must be shutdown *after* this method has returned:
+  /// See \a ServerBuilder::AddCompletionQueue for details.
+  ///
   /// \param deadline How long to wait until pending rpcs are forcefully
   /// terminated.
   template <class T>
@@ -70,6 +74,10 @@ class ServerInterface : public CallHook {
   }
 
   /// Shutdown the server, waiting for all rpc processing to finish.
+  ///
+  /// All completion queue associated with the server (for example, for async
+  /// serving) must be shutdown *after* this method has returned:
+  /// See \a ServerBuilder::AddCompletionQueue for details.
   void Shutdown() { ShutdownInternal(gpr_inf_future(GPR_CLOCK_MONOTONIC)); }
 
   /// Block waiting for all work to complete.

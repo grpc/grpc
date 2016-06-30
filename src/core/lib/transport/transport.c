@@ -36,6 +36,7 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+#include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/transport_impl.h"
 
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
@@ -60,7 +61,7 @@ void grpc_stream_unref(grpc_exec_ctx *exec_ctx,
                        grpc_stream_refcount *refcount) {
 #endif
   if (gpr_unref(&refcount->refs)) {
-    grpc_exec_ctx_enqueue(exec_ctx, &refcount->destroy, true, NULL);
+    grpc_exec_ctx_sched(exec_ctx, &refcount->destroy, GRPC_ERROR_NONE, NULL);
   }
 }
 
@@ -125,10 +126,19 @@ void grpc_transport_perform_op(grpc_exec_ctx *exec_ctx,
   transport->vtable->perform_op(exec_ctx, transport, op);
 }
 
-void grpc_transport_set_pollset(grpc_exec_ctx *exec_ctx,
-                                grpc_transport *transport, grpc_stream *stream,
-                                grpc_pollset *pollset) {
-  transport->vtable->set_pollset(exec_ctx, transport, stream, pollset);
+void grpc_transport_set_pops(grpc_exec_ctx *exec_ctx, grpc_transport *transport,
+                             grpc_stream *stream,
+                             grpc_polling_entity *pollent) {
+  grpc_pollset *pollset;
+  grpc_pollset_set *pollset_set;
+  if ((pollset = grpc_polling_entity_pollset(pollent)) != NULL) {
+    transport->vtable->set_pollset(exec_ctx, transport, stream, pollset);
+  } else if ((pollset_set = grpc_polling_entity_pollset_set(pollent)) != NULL) {
+    transport->vtable->set_pollset_set(exec_ctx, transport, stream,
+                                       pollset_set);
+  } else {
+    abort();
+  }
 }
 
 void grpc_transport_destroy_stream(grpc_exec_ctx *exec_ctx,
@@ -143,62 +153,73 @@ char *grpc_transport_get_peer(grpc_exec_ctx *exec_ctx,
   return transport->vtable->get_peer(exec_ctx, transport);
 }
 
-void grpc_transport_stream_op_finish_with_failure(
-    grpc_exec_ctx *exec_ctx, grpc_transport_stream_op *op) {
-  grpc_exec_ctx_enqueue(exec_ctx, op->recv_message_ready, false, NULL);
-  grpc_exec_ctx_enqueue(exec_ctx, op->recv_initial_metadata_ready, false, NULL);
-  grpc_exec_ctx_enqueue(exec_ctx, op->on_complete, false, NULL);
+void grpc_transport_stream_op_finish_with_failure(grpc_exec_ctx *exec_ctx,
+                                                  grpc_transport_stream_op *op,
+                                                  grpc_error *error) {
+  grpc_exec_ctx_sched(exec_ctx, op->recv_message_ready, GRPC_ERROR_REF(error),
+                      NULL);
+  grpc_exec_ctx_sched(exec_ctx, op->recv_initial_metadata_ready,
+                      GRPC_ERROR_REF(error), NULL);
+  grpc_exec_ctx_sched(exec_ctx, op->on_complete, error, NULL);
+}
+
+typedef struct {
+  grpc_error *error;
+  grpc_closure *then_call;
+  grpc_closure closure;
+} close_message_data;
+
+static void free_message(grpc_exec_ctx *exec_ctx, void *p, grpc_error *error) {
+  close_message_data *cmd = p;
+  GRPC_ERROR_UNREF(cmd->error);
+  if (cmd->then_call != NULL) {
+    cmd->then_call->cb(exec_ctx, cmd->then_call->cb_arg, GRPC_ERROR_REF(error));
+  }
+  gpr_free(cmd);
+}
+
+static void add_error(grpc_transport_stream_op *op, grpc_error **which,
+                      grpc_error *error) {
+  close_message_data *cmd;
+  cmd = gpr_malloc(sizeof(*cmd));
+  cmd->error = error;
+  cmd->then_call = op->on_complete;
+  grpc_closure_init(&cmd->closure, free_message, cmd);
+  op->on_complete = &cmd->closure;
+  *which = error;
 }
 
 void grpc_transport_stream_op_add_cancellation(grpc_transport_stream_op *op,
                                                grpc_status_code status) {
   GPR_ASSERT(status != GRPC_STATUS_OK);
-  if (op->cancel_with_status == GRPC_STATUS_OK) {
-    op->cancel_with_status = status;
+  if (op->cancel_error == GRPC_ERROR_NONE) {
+    op->cancel_error = grpc_error_set_int(GRPC_ERROR_CANCELLED,
+                                          GRPC_ERROR_INT_GRPC_STATUS, status);
+    op->close_error = GRPC_ERROR_NONE;
   }
-  if (op->close_with_status != GRPC_STATUS_OK) {
-    op->close_with_status = GRPC_STATUS_OK;
-    if (op->optional_close_message != NULL) {
-      gpr_slice_unref(*op->optional_close_message);
-      op->optional_close_message = NULL;
-    }
-  }
-}
-
-typedef struct {
-  gpr_slice message;
-  grpc_closure *then_call;
-  grpc_closure closure;
-} close_message_data;
-
-static void free_message(grpc_exec_ctx *exec_ctx, void *p, bool iomgr_success) {
-  close_message_data *cmd = p;
-  gpr_slice_unref(cmd->message);
-  if (cmd->then_call != NULL) {
-    cmd->then_call->cb(exec_ctx, cmd->then_call->cb_arg, iomgr_success);
-  }
-  gpr_free(cmd);
 }
 
 void grpc_transport_stream_op_add_close(grpc_transport_stream_op *op,
                                         grpc_status_code status,
                                         gpr_slice *optional_message) {
-  close_message_data *cmd;
   GPR_ASSERT(status != GRPC_STATUS_OK);
-  if (op->cancel_with_status != GRPC_STATUS_OK ||
-      op->close_with_status != GRPC_STATUS_OK) {
+  if (op->cancel_error != GRPC_ERROR_NONE ||
+      op->close_error != GRPC_ERROR_NONE) {
     if (optional_message) {
       gpr_slice_unref(*optional_message);
     }
     return;
   }
-  if (optional_message) {
-    cmd = gpr_malloc(sizeof(*cmd));
-    cmd->message = *optional_message;
-    cmd->then_call = op->on_complete;
-    grpc_closure_init(&cmd->closure, free_message, cmd);
-    op->on_complete = &cmd->closure;
-    op->optional_close_message = &cmd->message;
+  grpc_error *error;
+  if (optional_message != NULL) {
+    char *msg = gpr_dump_slice(*optional_message, GPR_DUMP_ASCII);
+    error = grpc_error_set_str(GRPC_ERROR_CREATE(msg),
+                               GRPC_ERROR_STR_GRPC_MESSAGE, msg);
+    gpr_free(msg);
+    gpr_slice_unref(*optional_message);
+  } else {
+    error = GRPC_ERROR_CREATE("Call force closed");
   }
-  op->close_with_status = status;
+  error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS, status);
+  add_error(op, &op->close_error, error);
 }

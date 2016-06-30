@@ -34,19 +34,7 @@
 #ifndef SRC_COMPILER_CONFIG_H
 #define SRC_COMPILER_CONFIG_H
 
-#include <grpc++/support/config.h>
-#include <grpc++/support/config_protobuf.h>
-
-#ifndef GRPC_CUSTOM_DESCRIPTOR
-#include <google/protobuf/descriptor.h>
-#include <google/protobuf/descriptor.pb.h>
-#define GRPC_CUSTOM_DESCRIPTOR ::google::protobuf::Descriptor
-#define GRPC_CUSTOM_FILEDESCRIPTOR ::google::protobuf::FileDescriptor
-#define GRPC_CUSTOM_FILEDESCRIPTORPROTO ::google::protobuf::FileDescriptorProto
-#define GRPC_CUSTOM_METHODDESCRIPTOR ::google::protobuf::MethodDescriptor
-#define GRPC_CUSTOM_SERVICEDESCRIPTOR ::google::protobuf::ServiceDescriptor
-#define GRPC_CUSTOM_SOURCELOCATION ::google::protobuf::SourceLocation
-#endif
+#include <grpc++/impl/codegen/config_protobuf.h>
 
 #ifndef GRPC_CUSTOM_CODEGENERATOR
 #include <google/protobuf/compiler/code_generator.h>
@@ -75,14 +63,17 @@
 #define GRPC_CUSTOM_PARSEGENERATORPARAMETER ::google::protobuf::compiler::ParseGeneratorParameter
 #endif
 
+#ifndef GRPC_CUSTOM_STRING
+#include <string>
+#define GRPC_CUSTOM_STRING std::string
+#endif
+
 namespace grpc {
+
+typedef GRPC_CUSTOM_STRING string;
+
 namespace protobuf {
-typedef GRPC_CUSTOM_DESCRIPTOR Descriptor;
-typedef GRPC_CUSTOM_FILEDESCRIPTOR FileDescriptor;
-typedef GRPC_CUSTOM_FILEDESCRIPTORPROTO FileDescriptorProto;
-typedef GRPC_CUSTOM_METHODDESCRIPTOR MethodDescriptor;
-typedef GRPC_CUSTOM_SERVICEDESCRIPTOR ServiceDescriptor;
-typedef GRPC_CUSTOM_SOURCELOCATION SourceLocation;
+
 namespace compiler {
 typedef GRPC_CUSTOM_CODEGENERATOR CodeGenerator;
 typedef GRPC_CUSTOM_GENERATORCONTEXT GeneratorContext;

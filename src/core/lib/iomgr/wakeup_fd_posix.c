@@ -53,16 +53,16 @@ void grpc_wakeup_fd_global_init(void) {
 
 void grpc_wakeup_fd_global_destroy(void) { wakeup_fd_vtable = NULL; }
 
-void grpc_wakeup_fd_init(grpc_wakeup_fd *fd_info) {
-  wakeup_fd_vtable->init(fd_info);
+grpc_error *grpc_wakeup_fd_init(grpc_wakeup_fd *fd_info) {
+  return wakeup_fd_vtable->init(fd_info);
 }
 
-void grpc_wakeup_fd_consume_wakeup(grpc_wakeup_fd *fd_info) {
-  wakeup_fd_vtable->consume(fd_info);
+grpc_error *grpc_wakeup_fd_consume_wakeup(grpc_wakeup_fd *fd_info) {
+  return wakeup_fd_vtable->consume(fd_info);
 }
 
-void grpc_wakeup_fd_wakeup(grpc_wakeup_fd *fd_info) {
-  wakeup_fd_vtable->wakeup(fd_info);
+grpc_error *grpc_wakeup_fd_wakeup(grpc_wakeup_fd *fd_info) {
+  return wakeup_fd_vtable->wakeup(fd_info);
 }
 
 void grpc_wakeup_fd_destroy(grpc_wakeup_fd *fd_info) {

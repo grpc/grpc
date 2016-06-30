@@ -159,9 +159,10 @@ describe GRPC::ActiveCall do
   end
 
   describe '#client_invoke' do
-    it 'sends keywords as metadata to the server when the are present' do
+    it 'sends metadata to the server when present' do
       call = make_test_call
-      ActiveCall.client_invoke(call, @client_queue, k1: 'v1', k2: 'v2')
+      metadata = { k1: 'v1', k2: 'v2' }
+      ActiveCall.client_invoke(call, @client_queue, metadata)
       recvd_rpc =  @server.request_call(@server_queue, @server_tag, deadline)
       recvd_call = recvd_rpc.call
       expect(recvd_call).to_not be_nil

@@ -35,16 +35,25 @@
 #define GRPC_IMPL_CODEGEN_COMPRESSION_TYPES_H
 
 #include <grpc/impl/codegen/port_platform.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** To be used in channel arguments */
-#define GRPC_COMPRESSION_ALGORITHM_ARG "grpc.compression_algorithm"
-#define GRPC_COMPRESSION_ALGORITHM_STATE_ARG "grpc.compression_algorithm_state"
+/** To be used as initial metadata key for the request of a concrete compression
+ * algorithm */
+#define GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY \
+  "grpc-internal-encoding-request"
 
-/* The various compression algorithms supported by GRPC */
+/** To be used in channel arguments */
+#define GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM \
+  "grpc.default_compression_algorithm"
+#define GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL "grpc.default_compression_level"
+#define GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET \
+  "grpc.compression_enabled_algorithms_bitset"
+
+/* The various compression algorithms supported by gRPC */
 typedef enum {
   GRPC_COMPRESS_NONE = 0,
   GRPC_COMPRESS_DEFLATE,
@@ -53,6 +62,10 @@ typedef enum {
   GRPC_COMPRESS_ALGORITHMS_COUNT
 } grpc_compression_algorithm;
 
+/** Compression levels allow a party with knowledge of its peer's accepted
+ * encodings to request compression in an abstract way. The level-algorithm
+ * mapping is performed internally and depends on the peer's supported
+ * compression algorithms. */
 typedef enum {
   GRPC_COMPRESS_LEVEL_NONE = 0,
   GRPC_COMPRESS_LEVEL_LOW,
@@ -62,8 +75,29 @@ typedef enum {
 } grpc_compression_level;
 
 typedef struct grpc_compression_options {
-  uint32_t enabled_algorithms_bitset; /**< All algs are enabled by default */
-  grpc_compression_algorithm default_compression_algorithm; /**< for channel */
+  /** All algs are enabled by default. This option corresponds to the channel
+   * argument key behind \a GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET
+   */
+  uint32_t enabled_algorithms_bitset;
+
+  /** The default channel compression level. It'll be used in the absence of
+   * call specific settings. This option corresponds to the channel argument key
+   * behind \a GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL. If present, takes
+   * precedence over \a default_algorithm.
+   * TODO(dgq): currently only available for server channels. */
+  struct {
+    bool is_set;
+    grpc_compression_level level;
+  } default_level;
+
+  /** The default channel compression algorithm. It'll be used in the absence of
+   * call specific settings. This option corresponds to the channel argument key
+   * behind \a GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM. */
+  struct {
+    bool is_set;
+    grpc_compression_algorithm algorithm;
+  } default_algorithm;
+
 } grpc_compression_options;
 
 #ifdef __cplusplus

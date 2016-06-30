@@ -96,6 +96,7 @@ zval *grpc_php_wrap_call(grpc_call *wrapped, bool owned TSRMLS_DC) {
   wrapped_grpc_call *call =
       (wrapped_grpc_call *)zend_object_store_get_object(call_object TSRMLS_CC);
   call->wrapped = wrapped;
+  call->owned = owned;
   return call_object;
 }
 
@@ -247,6 +248,7 @@ PHP_METHOD(Call, __construct) {
   call->wrapped = grpc_channel_create_call(
       channel->wrapped, NULL, GRPC_PROPAGATE_DEFAULTS, completion_queue, method,
       host_override, deadline->wrapped, NULL);
+  call->owned = true;
 }
 
 /**
@@ -291,6 +293,7 @@ PHP_METHOD(Call, startBatch) {
   grpc_metadata_array_init(&recv_trailing_metadata);
   MAKE_STD_ZVAL(result);
   object_init(result);
+  memset(ops, 0, sizeof(ops));
   /* "a" == 1 array */
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &array) ==
       FAILURE) {

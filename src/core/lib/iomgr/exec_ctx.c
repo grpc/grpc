@@ -39,6 +39,22 @@
 
 #include "src/core/lib/profiling/timers.h"
 
+bool grpc_exec_ctx_ready_to_finish(grpc_exec_ctx *exec_ctx) {
+  if (!exec_ctx->cached_ready_to_finish) {
+    exec_ctx->cached_ready_to_finish = exec_ctx->check_ready_to_finish(
+        exec_ctx, exec_ctx->check_ready_to_finish_arg);
+  }
+  return exec_ctx->cached_ready_to_finish;
+}
+
+bool grpc_never_ready_to_finish(grpc_exec_ctx *exec_ctx, void *arg_ignored) {
+  return false;
+}
+
+bool grpc_always_ready_to_finish(grpc_exec_ctx *exec_ctx, void *arg_ignored) {
+  return true;
+}
+
 #ifndef GRPC_EXECUTION_CONTEXT_SANITIZER
 bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
   bool did_something = 0;
@@ -47,11 +63,12 @@ bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
     grpc_closure *c = exec_ctx->closure_list.head;
     exec_ctx->closure_list.head = exec_ctx->closure_list.tail = NULL;
     while (c != NULL) {
-      bool success = (bool)(c->final_data & 1);
-      grpc_closure *next = (grpc_closure *)(c->final_data & ~(uintptr_t)1);
+      grpc_closure *next = c->next_data.next;
+      grpc_error *error = c->error;
       did_something = true;
       GPR_TIMER_BEGIN("grpc_exec_ctx_flush.cb", 0);
-      c->cb(exec_ctx, c->cb_arg, success);
+      c->cb(exec_ctx, c->cb_arg, error);
+      GRPC_ERROR_UNREF(error);
       GPR_TIMER_END("grpc_exec_ctx_flush.cb", 0);
       c = next;
     }
@@ -61,14 +78,15 @@ bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
 }
 
 void grpc_exec_ctx_finish(grpc_exec_ctx *exec_ctx) {
+  exec_ctx->cached_ready_to_finish = true;
   grpc_exec_ctx_flush(exec_ctx);
 }
 
-void grpc_exec_ctx_enqueue(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
-                           bool success,
-                           grpc_workqueue *offload_target_or_null) {
+void grpc_exec_ctx_sched(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
+                         grpc_error *error,
+                         grpc_workqueue *offload_target_or_null) {
   GPR_ASSERT(offload_target_or_null == NULL);
-  grpc_closure_list_add(&exec_ctx->closure_list, closure, success);
+  grpc_closure_list_append(&exec_ctx->closure_list, closure, error);
 }
 
 void grpc_exec_ctx_enqueue_list(grpc_exec_ctx *exec_ctx,

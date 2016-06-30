@@ -46,8 +46,9 @@ package named :code:`python-dev`).
 ::
 
   $ export REPO_ROOT=grpc  # REPO_ROOT can be any directory of your choice
-  $ git clone https://github.com/grpc/grpc.git $REPO_ROOT
+  $ git clone -b $(curl -L http://grpc.io/release) https://github.com/grpc/grpc $REPO_ROOT
   $ cd $REPO_ROOT
+  $ git submodule update --init
 
   # For the next two commands do `sudo pip install` if you get permission-denied errors
   $ pip install -rrequirements.txt

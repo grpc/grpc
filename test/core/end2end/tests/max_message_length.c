@@ -53,7 +53,10 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
-  f = config.create_fixture(client_args, server_args);
+  // We intentionally do not pass the client and server args to
+  // create_fixture(), since we don't want the limit enforced on the
+  // proxy, only on the backend server.
+  f = config.create_fixture(NULL, NULL);
   config.init_server(&f, server_args);
   config.init_client(&f, client_args);
   return f;
@@ -140,6 +143,7 @@ static void test_max_message_length(grpc_end2end_test_config config) {
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
@@ -178,6 +182,7 @@ static void test_max_message_length(grpc_end2end_test_config config) {
   cq_expect_completion(cqv, tag(101), 1);
   cq_verify(cqv);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;

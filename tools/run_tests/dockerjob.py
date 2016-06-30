@@ -104,7 +104,7 @@ class DockerJob:
 
   def __init__(self, spec):
     self._spec = spec
-    self._job = jobset.Job(spec, bin_hash=None, newline_on_success=True, travis=True, add_env={})
+    self._job = jobset.Job(spec, newline_on_success=True, travis=True, add_env={})
     self._container_name = spec.container_name
 
   def mapped_port(self, port):
@@ -118,4 +118,4 @@ class DockerJob:
 
   def is_running(self):
     """Polls a job and returns True if given job is still running."""
-    return self._job.state(jobset.NoCache()) == jobset._RUNNING
+    return self._job.state() == jobset._RUNNING

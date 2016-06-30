@@ -33,7 +33,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 using Grpc.Core.Internal;
@@ -82,7 +81,7 @@ namespace Grpc.Core.Internal.Tests
             Assert.ThrowsAsync(typeof(InvalidOperationException),
                 async () => await asyncCall.ReadMessageAsync());
             Assert.Throws(typeof(InvalidOperationException),
-                () => asyncCall.StartSendMessage("abc", new WriteFlags(), (x,y) => {}));
+                () => asyncCall.SendMessageAsync("abc", new WriteFlags()));
         }
 
         [Test]
@@ -103,7 +102,7 @@ namespace Grpc.Core.Internal.Tests
             var resultTask = asyncCall.UnaryCallAsync("request1");
             fakeCall.UnaryResponseClientHandler(true,
                 CreateClientSideStatus(StatusCode.InvalidArgument),
-                CreateResponsePayload(),
+                null,
                 new Metadata());
 
             AssertUnaryResponseError(asyncCall, fakeCall, resultTask, StatusCode.InvalidArgument);
@@ -148,7 +147,7 @@ namespace Grpc.Core.Internal.Tests
             var resultTask = asyncCall.ClientStreamingCallAsync();
             fakeCall.UnaryResponseClientHandler(true,
                 CreateClientSideStatus(StatusCode.InvalidArgument),
-                CreateResponsePayload(),
+                null,
                 new Metadata());
 
             AssertUnaryResponseError(asyncCall, fakeCall, resultTask, StatusCode.InvalidArgument);
@@ -193,7 +192,7 @@ namespace Grpc.Core.Internal.Tests
 
             fakeCall.UnaryResponseClientHandler(true,
                 CreateClientSideStatus(StatusCode.Internal),
-                CreateResponsePayload(),
+                null,
                 new Metadata());
 
             AssertUnaryResponseError(asyncCall, fakeCall, resultTask, StatusCode.Internal);
@@ -211,7 +210,9 @@ namespace Grpc.Core.Internal.Tests
                 new Metadata());
 
             AssertUnaryResponseSuccess(asyncCall, fakeCall, resultTask);
-            var ex = Assert.Throws<RpcException>(() => requestStream.WriteAsync("request1"));
+
+            var writeTask = requestStream.WriteAsync("request1");
+            var ex = Assert.ThrowsAsync<RpcException>(async () => await writeTask);
             Assert.AreEqual(Status.DefaultSuccess, ex.Status);
         }
 
@@ -227,7 +228,9 @@ namespace Grpc.Core.Internal.Tests
                 new Metadata());
 
             AssertUnaryResponseError(asyncCall, fakeCall, resultTask, StatusCode.OutOfRange);
-            var ex = Assert.Throws<RpcException>(() => requestStream.WriteAsync("request1"));
+
+            var writeTask = requestStream.WriteAsync("request1");
+            var ex = Assert.ThrowsAsync<RpcException>(async () => await writeTask);
             Assert.AreEqual(StatusCode.OutOfRange, ex.Status.StatusCode);
         }
 
@@ -267,7 +270,7 @@ namespace Grpc.Core.Internal.Tests
         }
 
         [Test]
-        public void ClientStreaming_WriteAfterCancellationRequestThrowsOperationCancelledException()
+        public void ClientStreaming_WriteAfterCancellationRequestThrowsTaskCanceledException()
         {
             var resultTask = asyncCall.ClientStreamingCallAsync();
             var requestStream = new ClientRequestStream<string, string>(asyncCall);
@@ -275,11 +278,12 @@ namespace Grpc.Core.Internal.Tests
             asyncCall.Cancel();
             Assert.IsTrue(fakeCall.IsCancelled);
 
-            Assert.Throws(typeof(OperationCanceledException), () => requestStream.WriteAsync("request1"));
+            var writeTask = requestStream.WriteAsync("request1");
+            Assert.ThrowsAsync(typeof(TaskCanceledException), async () => await writeTask);
 
             fakeCall.UnaryResponseClientHandler(true,
                 CreateClientSideStatus(StatusCode.Cancelled),
-                CreateResponsePayload(),
+                null,
                 new Metadata());
 
             AssertUnaryResponseError(asyncCall, fakeCall, resultTask, StatusCode.Cancelled);
@@ -290,7 +294,7 @@ namespace Grpc.Core.Internal.Tests
         {
             asyncCall.StartServerStreamingCall("request1");
             Assert.Throws(typeof(InvalidOperationException),
-                () => asyncCall.StartSendMessage("abc", new WriteFlags(), (x,y) => {}));
+                () => asyncCall.SendMessageAsync("abc", new WriteFlags()));
         }
 
         [Test]
@@ -390,12 +394,13 @@ namespace Grpc.Core.Internal.Tests
 
             AssertStreamingResponseSuccess(asyncCall, fakeCall, readTask);
 
-            var ex = Assert.ThrowsAsync<RpcException>(async () => await requestStream.WriteAsync("request1"));
+            var writeTask = requestStream.WriteAsync("request1");
+            var ex = Assert.ThrowsAsync<RpcException>(async () => await writeTask);
             Assert.AreEqual(Status.DefaultSuccess, ex.Status);
         }
 
         [Test]
-        public void DuplexStreaming_CompleteAfterReceivingStatusFails()
+        public void DuplexStreaming_CompleteAfterReceivingStatusSuceeds()
         {
             asyncCall.StartDuplexStreamingCall();
             var requestStream = new ClientRequestStream<string, string>(asyncCall);
@@ -411,7 +416,7 @@ namespace Grpc.Core.Internal.Tests
         }
 
         [Test]
-        public void DuplexStreaming_WriteAfterCancellationRequestThrowsOperationCancelledException()
+        public void DuplexStreaming_WriteAfterCancellationRequestThrowsTaskCanceledException()
         {
             asyncCall.StartDuplexStreamingCall();
             var requestStream = new ClientRequestStream<string, string>(asyncCall);
@@ -419,7 +424,9 @@ namespace Grpc.Core.Internal.Tests
 
             asyncCall.Cancel();
             Assert.IsTrue(fakeCall.IsCancelled);
-            Assert.Throws(typeof(OperationCanceledException), () => requestStream.WriteAsync("request1"));
+
+            var writeTask = requestStream.WriteAsync("request1");
+            Assert.ThrowsAsync(typeof(TaskCanceledException), async () => await writeTask);
 
             var readTask = responseStream.MoveNext();
             fakeCall.ReceivedMessageHandler(true, null);

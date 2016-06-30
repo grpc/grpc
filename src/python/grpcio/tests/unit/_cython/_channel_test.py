@@ -33,12 +33,11 @@ import unittest
 
 from grpc._cython import cygrpc
 
-# TODO(nathaniel): This should be at least one hundred. Why not one thousand?
-_PARALLELISM = 4
+from tests.unit.framework.common import test_constants
 
 
 def _channel_and_completion_queue():
-  channel = cygrpc.Channel('localhost:54321', cygrpc.ChannelArgs(()))
+  channel = cygrpc.Channel(b'localhost:54321', cygrpc.ChannelArgs(()))
   completion_queue = cygrpc.CompletionQueue()
   return channel, completion_queue
 
@@ -61,7 +60,7 @@ def _create_loop_destroy():
 def _in_parallel(behavior, arguments):
   threads = tuple(
       threading.Thread(target=behavior, args=arguments)
-      for _ in range(_PARALLELISM))
+      for _ in range(test_constants.THREAD_CONCURRENCY))
   for thread in threads:
     thread.start()
   for thread in threads:

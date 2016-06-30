@@ -32,6 +32,7 @@
 #endregion
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -41,7 +42,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Grpc.Core;
+using Grpc.Core.Internal;
 using Grpc.Core.Logging;
+using Grpc.Core.Profiling;
 using Grpc.Core.Utils;
 using NUnit.Framework;
 using Grpc.Testing;
@@ -54,6 +57,15 @@ namespace Grpc.IntegrationTesting
     public class ClientRunners
     {
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<ClientRunners>();
+
+        // Profilers to use for clients.
+        static readonly BlockingCollection<BasicProfiler> profilers = new BlockingCollection<BasicProfiler>();
+
+        internal static void AddProfiler(BasicProfiler profiler)
+        {
+            GrpcPreconditions.CheckNotNull(profiler);
+            profilers.Add(profiler);
+        }
 
         /// <summary>
         /// Creates a started client runner.
@@ -83,7 +95,8 @@ namespace Grpc.IntegrationTesting
                 config.OutstandingRpcsPerChannel,
                 config.LoadParams,
                 config.PayloadConfig,
-                config.HistogramParams);
+                config.HistogramParams,
+                () => GetNextProfiler());
         }
 
         private static List<Channel> CreateChannels(int clientChannels, IEnumerable<string> serverTargets, SecurityParams securityParams)
@@ -110,9 +123,16 @@ namespace Grpc.IntegrationTesting
             }
             return result;
         }
+
+        private static BasicProfiler GetNextProfiler()
+        {
+            BasicProfiler result = null;
+            profilers.TryTake(out result);
+            return result;
+        }
     }
 
-    public class ClientRunnerImpl : IClientRunner
+    internal class ClientRunnerImpl : IClientRunner
     {
         const double SecondsToNanos = 1e9;
 
@@ -125,8 +145,9 @@ namespace Grpc.IntegrationTesting
         readonly List<Task> runnerTasks;
         readonly CancellationTokenSource stoppedCts = new CancellationTokenSource();
         readonly WallClockStopwatch wallClockStopwatch = new WallClockStopwatch();
+        readonly AtomicCounter statsResetCount = new AtomicCounter();
         
-        public ClientRunnerImpl(List<Channel> channels, ClientType clientType, RpcType rpcType, int outstandingRpcsPerChannel, LoadParams loadParams, PayloadConfig payloadConfig, HistogramParams histogramParams)
+        public ClientRunnerImpl(List<Channel> channels, ClientType clientType, RpcType rpcType, int outstandingRpcsPerChannel, LoadParams loadParams, PayloadConfig payloadConfig, HistogramParams histogramParams, Func<BasicProfiler> profilerFactory)
         {
             GrpcPreconditions.CheckArgument(outstandingRpcsPerChannel > 0, "outstandingRpcsPerChannel");
             GrpcPreconditions.CheckNotNull(histogramParams, "histogramParams");
@@ -142,8 +163,8 @@ namespace Grpc.IntegrationTesting
                 for (int i = 0; i < outstandingRpcsPerChannel; i++)
                 {
                     var timer = CreateTimer(loadParams, 1.0 / this.channels.Count / outstandingRpcsPerChannel);
-                    var threadBody = GetThreadBody(channel, timer);
-                    this.runnerTasks.Add(Task.Factory.StartNew(threadBody, TaskCreationOptions.LongRunning));
+                    var optionalProfiler = profilerFactory();
+                    this.runnerTasks.Add(RunClientAsync(channel, timer, optionalProfiler));
                 }
             }
         }
@@ -152,6 +173,11 @@ namespace Grpc.IntegrationTesting
         {
             var histogramData = histogram.GetSnapshot(reset);
             var secondsElapsed = wallClockStopwatch.GetElapsedSnapshot(reset).TotalSeconds;
+
+            if (reset)
+            {
+                statsResetCount.Increment();
+            }
 
             // TODO: populate user time and system time
             return new ClientStats
@@ -176,14 +202,28 @@ namespace Grpc.IntegrationTesting
             }
         }
 
-        private void RunUnary(Channel channel, IInterarrivalTimer timer)
+        private void RunUnary(Channel channel, IInterarrivalTimer timer, BasicProfiler optionalProfiler)
         {
-            var client = BenchmarkService.NewClient(channel);
+            if (optionalProfiler != null)
+            {
+                Profilers.SetForCurrentThread(optionalProfiler);
+            }
+
+            bool profilerReset = false;
+
+            var client = new BenchmarkService.BenchmarkServiceClient(channel);
             var request = CreateSimpleRequest();
             var stopwatch = new Stopwatch();
 
             while (!stoppedCts.Token.IsCancellationRequested)
             {
+                // after the first stats reset, also reset the profiler.
+                if (optionalProfiler != null && !profilerReset && statsResetCount.Count > 0)
+                {
+                    optionalProfiler.Reset();
+                    profilerReset = true;
+                }
+
                 stopwatch.Restart();
                 client.UnaryCall(request);
                 stopwatch.Stop();
@@ -197,7 +237,7 @@ namespace Grpc.IntegrationTesting
 
         private async Task RunUnaryAsync(Channel channel, IInterarrivalTimer timer)
         {
-            var client = BenchmarkService.NewClient(channel);
+            var client = new BenchmarkService.BenchmarkServiceClient(channel);
             var request = CreateSimpleRequest();
             var stopwatch = new Stopwatch();
 
@@ -216,7 +256,7 @@ namespace Grpc.IntegrationTesting
 
         private async Task RunStreamingPingPongAsync(Channel channel, IInterarrivalTimer timer)
         {
-            var client = BenchmarkService.NewClient(channel);
+            var client = new BenchmarkService.BenchmarkServiceClient(channel);
             var request = CreateSimpleRequest();
             var stopwatch = new Stopwatch();
 
@@ -269,38 +309,30 @@ namespace Grpc.IntegrationTesting
             }
         }
 
-        private Action GetThreadBody(Channel channel, IInterarrivalTimer timer)
+        private Task RunClientAsync(Channel channel, IInterarrivalTimer timer, BasicProfiler optionalProfiler)
         {
             if (payloadConfig.PayloadCase == PayloadConfig.PayloadOneofCase.BytebufParams)
             {
                 GrpcPreconditions.CheckArgument(clientType == ClientType.AsyncClient, "Generic client only supports async API");
                 GrpcPreconditions.CheckArgument(rpcType == RpcType.Streaming, "Generic client only supports streaming calls");
-                return () =>
-                {
-                    RunGenericStreamingAsync(channel, timer).Wait();
-                };
+                return RunGenericStreamingAsync(channel, timer);
             }
 
             GrpcPreconditions.CheckNotNull(payloadConfig.SimpleParams);
             if (clientType == ClientType.SyncClient)
             {
                 GrpcPreconditions.CheckArgument(rpcType == RpcType.Unary, "Sync client can only be used for Unary calls in C#");
-                return () => RunUnary(channel, timer);
+                // create a dedicated thread for the synchronous client
+                return Task.Factory.StartNew(() => RunUnary(channel, timer, optionalProfiler), TaskCreationOptions.LongRunning);
             }
             else if (clientType == ClientType.AsyncClient)
             {
                 switch (rpcType)
                 {
                     case RpcType.Unary:
-                        return () =>
-                        {
-                            RunUnaryAsync(channel, timer).Wait();
-                        };
+                        return RunUnaryAsync(channel, timer);
                     case RpcType.Streaming:
-                        return () =>
-                        {
-                            RunStreamingPingPongAsync(channel, timer).Wait();
-                        };
+                        return RunStreamingPingPongAsync(channel, timer);
                 }
             }
             throw new ArgumentException("Unsupported configuration.");

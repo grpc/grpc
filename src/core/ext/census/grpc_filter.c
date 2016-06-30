@@ -45,6 +45,7 @@
 #include "src/core/ext/census/census_interface.h"
 #include "src/core/ext/census/census_rpc_stats.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 typedef struct call_data {
@@ -91,14 +92,16 @@ static void client_start_transport_op(grpc_exec_ctx *exec_ctx,
 }
 
 static void server_on_done_recv(grpc_exec_ctx *exec_ctx, void *ptr,
-                                bool success) {
+                                grpc_error *error) {
+  GPR_TIMER_BEGIN("census-server:server_on_done_recv", 0);
   grpc_call_element *elem = ptr;
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
-  if (success) {
+  if (error == GRPC_ERROR_NONE) {
     extract_and_annotate_method_tag(calld->recv_initial_metadata, calld, chand);
   }
-  calld->on_done_recv->cb(exec_ctx, calld->on_done_recv->cb_arg, success);
+  calld->on_done_recv->cb(exec_ctx, calld->on_done_recv->cb_arg, error);
+  GPR_TIMER_END("census-server:server_on_done_recv", 0);
 }
 
 static void server_mutate_op(grpc_call_element *elem,
@@ -134,7 +137,9 @@ static void client_init_call_elem(grpc_exec_ctx *exec_ctx,
 }
 
 static void client_destroy_call_elem(grpc_exec_ctx *exec_ctx,
-                                     grpc_call_element *elem, void *ignored) {
+                                     grpc_call_element *elem,
+                                     const grpc_call_stats *stats,
+                                     void *ignored) {
   call_data *d = elem->call_data;
   GPR_ASSERT(d != NULL);
   /* TODO(hongyu): record rpc client stats and census_rpc_end_op here */
@@ -152,7 +157,9 @@ static void server_init_call_elem(grpc_exec_ctx *exec_ctx,
 }
 
 static void server_destroy_call_elem(grpc_exec_ctx *exec_ctx,
-                                     grpc_call_element *elem, void *ignored) {
+                                     grpc_call_element *elem,
+                                     const grpc_call_stats *stats,
+                                     void *ignored) {
   call_data *d = elem->call_data;
   GPR_ASSERT(d != NULL);
   /* TODO(hongyu): record rpc server stats and census_tracing_end_op here */
@@ -176,7 +183,7 @@ const grpc_channel_filter grpc_client_census_filter = {
     grpc_channel_next_op,
     sizeof(call_data),
     client_init_call_elem,
-    grpc_call_stack_ignore_set_pollset,
+    grpc_call_stack_ignore_set_pollset_or_pollset_set,
     client_destroy_call_elem,
     sizeof(channel_data),
     init_channel_elem,
@@ -189,7 +196,7 @@ const grpc_channel_filter grpc_server_census_filter = {
     grpc_channel_next_op,
     sizeof(call_data),
     server_init_call_elem,
-    grpc_call_stack_ignore_set_pollset,
+    grpc_call_stack_ignore_set_pollset_or_pollset_set,
     server_destroy_call_elem,
     sizeof(channel_data),
     init_channel_elem,

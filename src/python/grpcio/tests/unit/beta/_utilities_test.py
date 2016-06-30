@@ -33,19 +33,10 @@ import threading
 import time
 import unittest
 
-from grpc._adapter import _low
-from grpc._adapter import _types
 from grpc.beta import implementations
 from grpc.beta import utilities
 from grpc.framework.foundation import future
 from tests.unit.framework.common import test_constants
-
-
-def _drive_completion_queue(completion_queue):
-  while True:
-    event = completion_queue.next(time.time() + 24 * 60 * 60)
-    if event.type == _types.EventType.QUEUE_SHUTDOWN:
-      break
 
 
 class _Callback(object):
@@ -87,13 +78,9 @@ class ChannelConnectivityTest(unittest.TestCase):
     self.assertFalse(ready_future.running())
 
   def test_immediately_connectable_channel_connectivity(self):
-    server_completion_queue = _low.CompletionQueue()
-    server = _low.Server(server_completion_queue, [])
-    port = server.add_http2_port('[::]:0')
+    server = implementations.server({})
+    port = server.add_insecure_port('[::]:0')
     server.start()
-    server_completion_queue_thread = threading.Thread(
-        target=_drive_completion_queue, args=(server_completion_queue,))
-    server_completion_queue_thread.start()
     channel = implementations.insecure_channel('localhost', port)
     callback = _Callback()
 
@@ -114,9 +101,7 @@ class ChannelConnectivityTest(unittest.TestCase):
       self.assertFalse(ready_future.running())
     finally:
       ready_future.cancel()
-      server.shutdown()
-      server_completion_queue.shutdown()
-      server_completion_queue_thread.join()
+      server.stop(0)
 
 
 if __name__ == '__main__':

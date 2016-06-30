@@ -76,7 +76,6 @@ NSString * const kGRPCTrailersKey = @"io.grpc.TrailersKey";
   NSString *_host;
   NSString *_path;
   GRPCWrappedCall *_wrappedCall;
-  dispatch_once_t _callAlreadyInvoked;
   GRPCConnectivityMonitor *_connectivityMonitor;
 
   // The C gRPC library has less guarantees on the ordering of events than we
