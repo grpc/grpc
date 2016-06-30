@@ -16,7 +16,10 @@
     "define": [ "SIGNED" ],
     "keyFile": "../keys/Grpc.snk",
     "publicSign": true,
-    "xmlDoc": true
+    "xmlDoc": true,
+    "compile": {
+      "includeFiles": [ "../Grpc.Core/Version.cs" ]
+    }
   },
   "dependencies": {
     "Grpc.Core": "0.16.0-dev",
