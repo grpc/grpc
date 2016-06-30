@@ -204,8 +204,6 @@ static void destruct_transport(grpc_exec_ctx *exec_ctx,
     gpr_free(ping);
   }
 
-  GRPC_WORKQUEUE_UNREF(exec_ctx, t->executor.workqueue, "transport");
-
   gpr_free(t->peer_string);
   gpr_free(t);
 }
@@ -257,9 +255,6 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   /* ref is dropped at transport close() */
   gpr_ref_init(&t->shutdown_ep_refs, 1);
   gpr_mu_init(&t->executor.mu);
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "workqueue_create",
-      grpc_workqueue_create(exec_ctx, &t->executor.workqueue)));
   t->peer_string = grpc_endpoint_get_peer(ep);
   t->endpoint_reading = 1;
   t->global.next_stream_id = is_client ? 1 : 2;
@@ -715,8 +710,8 @@ static void finish_global_actions(grpc_exec_ctx *exec_ctx,
           set_write_state(t, GRPC_CHTTP2_WRITE_SCHEDULED, "unlocking");
           REF_TRANSPORT(t, "initiate_writing");
           gpr_mu_unlock(&t->executor.mu);
-          grpc_workqueue_enqueue(exec_ctx, t->executor.workqueue,
-                                 &t->initiate_writing, GRPC_ERROR_NONE);
+          grpc_exec_ctx_sched(exec_ctx, &t->initiate_writing, GRPC_ERROR_NONE,
+                              grpc_endpoint_get_workqueue(t->ep));
           break;
         case GRPC_CHTTP2_WRITE_REQUESTED_NO_POLLER:
           start_writing(exec_ctx, t);
@@ -2082,7 +2077,6 @@ static void add_to_pollset_locked(grpc_exec_ctx *exec_ctx,
                                   grpc_chttp2_stream *s_unused, void *pollset) {
   if (t->ep) {
     grpc_endpoint_add_to_pollset(exec_ctx, t->ep, pollset);
-    grpc_workqueue_add_to_pollset(exec_ctx, t->executor.workqueue, pollset);
   }
 }
 
@@ -2092,8 +2086,6 @@ static void add_to_pollset_set_locked(grpc_exec_ctx *exec_ctx,
                                       void *pollset_set) {
   if (t->ep) {
     grpc_endpoint_add_to_pollset_set(exec_ctx, t->ep, pollset_set);
-    grpc_workqueue_add_to_pollset_set(exec_ctx, t->executor.workqueue,
-                                      pollset_set);
   }
 }
 

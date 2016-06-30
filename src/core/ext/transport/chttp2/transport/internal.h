@@ -332,7 +332,6 @@ struct grpc_chttp2_transport {
 
   struct {
     gpr_mu mu;
-    grpc_workqueue *workqueue;
 
     /** is a thread currently in the global lock */
     bool global_active;
