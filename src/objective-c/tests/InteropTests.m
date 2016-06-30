@@ -36,6 +36,7 @@
 #include <grpc/status.h>
 
 #import <Cronet/Cronet.h>
+#import <GRPCClient/GRPCCall+ChannelArg.h>
 #import <GRPCClient/GRPCCall+Tests.h>
 #import <GRPCClient/GRPCCall+Cronet.h>
 #import <ProtoRPC/ProtoRPC.h>
@@ -335,6 +336,30 @@ static cronet_engine *cronetEngine = NULL;
   }];
   [call start];
   [self waitForExpectationsWithTimeout:8 handler:nil];
+}
+
+- (void)testRPCAfterClosingOpenConnections {
+  XCTAssertNotNil(self.class.host);
+  __weak XCTestExpectation *expectation =
+      [self expectationWithDescription:@"RPC after closing connection"];
+
+  RMTEmpty *request = [RMTEmpty message];
+
+  [_service emptyCallWithRequest:request handler:^(RMTEmpty *response, NSError *error) {
+    XCTAssertNil(error, @"First RPC finished with unexpected error: %@", error);
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    [GRPCCall closeOpenConnections];
+#pragma clang diagnostic pop
+
+    [_service emptyCallWithRequest:request handler:^(RMTEmpty *response, NSError *error) {
+      XCTAssertNil(error, @"Second RPC finished with unexpected error: %@", error);
+      [expectation fulfill];
+    }];
+  }];
+
+  [self waitForExpectationsWithTimeout:4 handler:nil];
 }
 
 @end
