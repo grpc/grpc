@@ -217,14 +217,23 @@ static int prepare_socket(int fd, const struct sockaddr *addr,
     goto error;
   }
 
-  if (!grpc_set_socket_nonblocking(fd, 1) || !grpc_set_socket_cloexec(fd, 1)) {
-    gpr_log(GPR_ERROR, "Unable to configure socket %d: %s", fd,
-            strerror(errno));
+  if (grpc_set_socket_nonblocking(fd, 1) != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "Unable to set nonblocking %d: %s", fd, strerror(errno));
+    goto error;
+  }
+  if (grpc_set_socket_cloexec(fd, 1) != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "Unable to set cloexec %d: %s", fd, strerror(errno));
+    goto error;
   }
 
-  if (grpc_set_socket_ip_pktinfo_if_possible(fd) &&
-      addr->sa_family == AF_INET6) {
-    grpc_set_socket_ipv6_recvpktinfo_if_possible(fd);
+  if (grpc_set_socket_ip_pktinfo_if_possible(fd) != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "Unable to set ip_pktinfo.");
+    goto error;
+  } else if (addr->sa_family == AF_INET6) {
+    if (grpc_set_socket_ipv6_recvpktinfo_if_possible(fd) != GRPC_ERROR_NONE) {
+      gpr_log(GPR_ERROR, "Unable to set ipv6_recvpktinfo.");
+      goto error;
+    }
   }
 
   GPR_ASSERT(addr_len < ~(socklen_t)0);
@@ -241,13 +250,13 @@ static int prepare_socket(int fd, const struct sockaddr *addr,
     goto error;
   }
 
-  if (!grpc_set_socket_sndbuf(fd, buffer_size_bytes)) {
+  if (grpc_set_socket_sndbuf(fd, buffer_size_bytes) != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "Failed to set send buffer size to %d bytes",
             buffer_size_bytes);
     goto error;
   }
 
-  if (!grpc_set_socket_rcvbuf(fd, buffer_size_bytes)) {
+  if (grpc_set_socket_rcvbuf(fd, buffer_size_bytes) != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "Failed to set receive buffer size to %d bytes",
             buffer_size_bytes);
     goto error;
