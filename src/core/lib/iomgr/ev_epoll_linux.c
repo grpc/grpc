@@ -1024,7 +1024,16 @@ static void fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
   gpr_mu_unlock(&fd->mu);
 }
 
-static grpc_workqueue *fd_get_workqueue(grpc_fd *fd) { return NULL; }
+static grpc_workqueue *fd_get_workqueue(grpc_fd *fd) {
+  gpr_mu_lock(&fd->pi_mu);
+  grpc_workqueue *workqueue = NULL;
+  if (fd->polling_island != NULL) {
+    workqueue =
+        GRPC_WORKQUEUE_REF(fd->polling_island->workqueue, "get_workqueue");
+  }
+  gpr_mu_unlock(&fd->pi_mu);
+  return workqueue;
+}
 
 /*******************************************************************************
  * Pollset Definitions
