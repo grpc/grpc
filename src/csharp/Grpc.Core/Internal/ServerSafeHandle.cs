@@ -54,7 +54,10 @@ namespace Grpc.Core.Internal
 
         public void RegisterCompletionQueue(CompletionQueueSafeHandle cq)
         {
-            Native.grpcsharp_server_register_completion_queue(this, cq);
+            using (cq.NewScope())
+            {
+                Native.grpcsharp_server_register_completion_queue(this, cq);
+            }
         }
 
         public int AddInsecurePort(string addr)
@@ -74,16 +77,22 @@ namespace Grpc.Core.Internal
     
         public void ShutdownAndNotify(BatchCompletionDelegate callback, CompletionQueueSafeHandle completionQueue)
         {
-            var ctx = BatchContextSafeHandle.Create();
-            completionQueue.CompletionRegistry.RegisterBatchCompletion(ctx, callback);
-            Native.grpcsharp_server_shutdown_and_notify_callback(this, completionQueue, ctx);
+            using (completionQueue.NewScope())
+            {
+                var ctx = BatchContextSafeHandle.Create();
+                completionQueue.CompletionRegistry.RegisterBatchCompletion(ctx, callback);
+                Native.grpcsharp_server_shutdown_and_notify_callback(this, completionQueue, ctx);
+            }
         }
 
         public void RequestCall(BatchCompletionDelegate callback, CompletionQueueSafeHandle completionQueue)
         {
-            var ctx = BatchContextSafeHandle.Create();
-            completionQueue.CompletionRegistry.RegisterBatchCompletion(ctx, callback);
-            Native.grpcsharp_server_request_call(this, completionQueue, ctx).CheckOk();
+            using (completionQueue.NewScope())
+            {
+                var ctx = BatchContextSafeHandle.Create();
+                completionQueue.CompletionRegistry.RegisterBatchCompletion(ctx, callback);
+                Native.grpcsharp_server_request_call(this, completionQueue, ctx).CheckOk();
+            }
         }
 
         protected override bool ReleaseHandle()

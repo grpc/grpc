@@ -31,6 +31,7 @@
 
 import os
 import os.path
+import shlex
 import shutil
 import sys
 import sysconfig
@@ -99,8 +100,9 @@ if not "win32" in sys.platform:
 
 DEFINE_MACROS = (('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600), ('GPR_BACKWARDS_COMPATIBILITY_MODE', 1),)
 
-LDFLAGS = ()
-CFLAGS = ()
+LDFLAGS = shlex.split(os.environ.get('GRPC_PYTHON_LDFLAGS', ''))
+CFLAGS = shlex.split(os.environ.get('GRPC_PYTHON_CFLAGS', ''))
+
 if "linux" in sys.platform:
   LDFLAGS += ('-Wl,-wrap,memcpy',)
 if "linux" in sys.platform or "darwin" in sys.platform:
@@ -165,7 +167,7 @@ PACKAGE_DIRECTORIES = {
 }
 
 INSTALL_REQUIRES = (
-    'six>=1.10',
+    'six>=1.5.2',
     'enum34>=1.0.4',
     'futures>=2.2.0',
     # TODO(atash): eventually split the grpcio package into a metapackage
@@ -173,10 +175,11 @@ INSTALL_REQUIRES = (
     'protobuf>=3.0.0a3',
 )
 
-SETUP_REQUIRES = (
+SETUP_REQUIRES = INSTALL_REQUIRES + (
     'sphinx>=1.3',
-    'sphinx_rtd_theme>=0.1.8'
-) + INSTALL_REQUIRES
+    'sphinx_rtd_theme>=0.1.8',
+    'six>=1.10',
+)
 
 COMMAND_CLASS = {
     'doc': commands.SphinxDocumentation,

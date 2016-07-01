@@ -117,7 +117,7 @@ void grpc_call_credentials_get_request_metadata(
     grpc_credentials_metadata_cb cb, void *user_data) {
   if (creds == NULL || creds->vtable->get_request_metadata == NULL) {
     if (cb != NULL) {
-      cb(exec_ctx, user_data, NULL, 0, GRPC_CREDENTIALS_OK);
+      cb(exec_ctx, user_data, NULL, 0, GRPC_CREDENTIALS_OK, NULL);
     }
     return;
   }

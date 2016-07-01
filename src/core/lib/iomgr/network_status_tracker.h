@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,53 +31,11 @@
  *
  */
 
-#include "src/core/lib/profiling/timers.h"
-#include <stdlib.h>
-#include "test/core/util/test_config.h"
+#ifndef GRPC_CORE_LIB_IOMGR_NETWORK_STATUS_TRACKER_H
+#define GRPC_CORE_LIB_IOMGR_NETWORK_STATUS_TRACKER_H
+#include "src/core/lib/iomgr/endpoint.h"
 
-void test_log_events(size_t num_seqs) {
-  size_t start = 0;
-  size_t *state;
-  state = calloc(num_seqs, sizeof(state[0]));
-  while (start < num_seqs) {
-    size_t i;
-    size_t row;
-    if (state[start] == 3) { /* Already done with this posn */
-      start++;
-      continue;
-    }
-
-    row = (size_t)rand() % 10; /* how many in a row */
-    for (i = start; (i < start + row) && (i < num_seqs); i++) {
-      size_t j;
-      size_t advance = 1 + (size_t)rand() % 3; /* how many to advance by */
-      for (j = 0; j < advance; j++) {
-        switch (state[i]) {
-          case 0:
-            GPR_TIMER_MARK(STATE_0, i);
-            state[i]++;
-            break;
-          case 1:
-            GPR_TIMER_MARK(STATE_1, i);
-            state[i]++;
-            break;
-          case 2:
-            GPR_TIMER_MARK(STATE_2, i);
-            state[i]++;
-            break;
-          case 3:
-            break;
-        }
-      }
-    }
-  }
-  free(state);
-}
-
-int main(int argc, char **argv) {
-  grpc_test_init(argc, argv);
-  gpr_timers_global_init();
-  test_log_events(1000000);
-  gpr_timers_global_destroy();
-  return 0;
-}
+void grpc_network_status_register_endpoint(grpc_endpoint *ep);
+void grpc_network_status_unregister_endpoint(grpc_endpoint *ep);
+void grpc_network_status_shutdown_all_endpoints();
+#endif /* GRPC_CORE_LIB_IOMGR_NETWORK_STATUS_TRACKER_H */

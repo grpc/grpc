@@ -135,14 +135,12 @@ typedef struct grpc_transport_stream_op {
   /** Collect any stats into provided buffer, zero internal stat counters */
   grpc_transport_stream_stats *collect_stats;
 
-  /** If != GRPC_STATUS_OK, cancel this stream */
-  grpc_status_code cancel_with_status;
-  gpr_slice *optional_cancel_message;
+  /** If != GRPC_ERROR_NONE, cancel this stream */
+  grpc_error *cancel_error;
 
-  /** If != GRPC_STATUS_OK, send grpc-status, grpc-message, and close this
+  /** If != GRPC_ERROR, send grpc-status, grpc-message, and close this
       stream for both reading and writing */
-  grpc_status_code close_with_status;
-  gpr_slice *optional_close_message;
+  grpc_error *close_error;
 
   /* Indexes correspond to grpc_context_index enum values */
   grpc_call_context_element *context;

@@ -37,6 +37,7 @@
 #include <grpc++/impl/server_builder_option.h>
 #include <grpc++/impl/server_builder_plugin.h>
 #include <grpc++/impl/server_initializer.h>
+#include <grpc++/impl/thd.h>
 #include <grpc++/security/credentials.h>
 #include <grpc++/security/server_credentials.h>
 #include <grpc++/server.h>
@@ -187,7 +188,10 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
   void StartServer() {
     grpc::string server_address = "localhost:" + to_string(port_);
     builder_->AddListeningPort(server_address, InsecureServerCredentials());
+    // we run some tests without a service, and for those we need to supply a
+    // frequently polled completion queue
     cq_ = builder_->AddCompletionQueue();
+    cq_thread_ = grpc::thread(std::bind(&ServerBuilderPluginTest::RunCQ, this));
     server_ = builder_->BuildAndStart();
     EXPECT_TRUE(CheckPresent());
   }
@@ -204,11 +208,8 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
     EXPECT_TRUE(plugin->init_server_is_called());
     EXPECT_TRUE(plugin->finish_is_called());
     server_->Shutdown();
-    void* tag;
-    bool ok;
     cq_->Shutdown();
-    while (cq_->Next(&tag, &ok))
-      ;
+    cq_thread_.join();
   }
 
   string to_string(const int number) {
@@ -223,6 +224,7 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<ServerCompletionQueue> cq_;
   std::unique_ptr<Server> server_;
+  grpc::thread cq_thread_;
   TestServiceImpl service_;
   int port_;
 
@@ -237,6 +239,13 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
     } else {
       return nullptr;
     }
+  }
+
+  void RunCQ() {
+    void* tag;
+    bool ok;
+    while (cq_->Next(&tag, &ok))
+      ;
   }
 };
 

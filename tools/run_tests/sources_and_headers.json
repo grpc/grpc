@@ -341,6 +341,22 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "ev_epoll_linux_test", 
+    "src": [
+      "test/core/iomgr/ev_epoll_linux_test.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "fd_conservation_posix_test", 
     "src": [
       "test/core/iomgr/fd_conservation_posix_test.c"
@@ -1708,22 +1724,6 @@
     "name": "timer_list_test", 
     "src": [
       "test/core/iomgr/timer_list_test.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "timers_test", 
-    "src": [
-      "test/core/profiling/timers_test.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -5404,6 +5404,7 @@
       "test/core/end2end/tests/max_concurrent_streams.c", 
       "test/core/end2end/tests/max_message_length.c", 
       "test/core/end2end/tests/negative_deadline.c", 
+      "test/core/end2end/tests/network_status_change.c", 
       "test/core/end2end/tests/no_op.c", 
       "test/core/end2end/tests/payload.c", 
       "test/core/end2end/tests/ping.c", 
@@ -5463,6 +5464,7 @@
       "test/core/end2end/tests/max_concurrent_streams.c", 
       "test/core/end2end/tests/max_message_length.c", 
       "test/core/end2end/tests/negative_deadline.c", 
+      "test/core/end2end/tests/network_status_change.c", 
       "test/core/end2end/tests/no_op.c", 
       "test/core/end2end/tests/payload.c", 
       "test/core/end2end/tests/ping.c", 
@@ -5700,19 +5702,6 @@
   }, 
   {
     "deps": [
-      "grpc++_codegen_base"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "grpc++_codegen_base_src", 
-    "src": [
-      "src/cpp/codegen/codegen_init.cc"
-    ], 
-    "third_party": false, 
-    "type": "filegroup"
-  }, 
-  {
-    "deps": [
       "gpr", 
       "grpc_codegen"
     ], 
@@ -5741,6 +5730,7 @@
       "src/core/lib/iomgr/endpoint.h", 
       "src/core/lib/iomgr/endpoint_pair.h", 
       "src/core/lib/iomgr/error.h", 
+      "src/core/lib/iomgr/ev_epoll_linux.h", 
       "src/core/lib/iomgr/ev_poll_and_epoll_posix.h", 
       "src/core/lib/iomgr/ev_poll_posix.h", 
       "src/core/lib/iomgr/ev_posix.h", 
@@ -5751,6 +5741,7 @@
       "src/core/lib/iomgr/iomgr_internal.h", 
       "src/core/lib/iomgr/iomgr_posix.h", 
       "src/core/lib/iomgr/load_file.h", 
+      "src/core/lib/iomgr/network_status_tracker.h", 
       "src/core/lib/iomgr/polling_entity.h", 
       "src/core/lib/iomgr/pollset.h", 
       "src/core/lib/iomgr/pollset_set.h", 
@@ -5792,7 +5783,6 @@
       "src/core/lib/surface/init.h", 
       "src/core/lib/surface/lame_client.h", 
       "src/core/lib/surface/server.h", 
-      "src/core/lib/surface/surface_trace.h", 
       "src/core/lib/transport/byte_stream.h", 
       "src/core/lib/transport/connectivity_state.h", 
       "src/core/lib/transport/metadata.h", 
@@ -5846,6 +5836,8 @@
       "src/core/lib/iomgr/endpoint_pair_windows.c", 
       "src/core/lib/iomgr/error.c", 
       "src/core/lib/iomgr/error.h", 
+      "src/core/lib/iomgr/ev_epoll_linux.c", 
+      "src/core/lib/iomgr/ev_epoll_linux.h", 
       "src/core/lib/iomgr/ev_poll_and_epoll_posix.c", 
       "src/core/lib/iomgr/ev_poll_and_epoll_posix.h", 
       "src/core/lib/iomgr/ev_poll_posix.c", 
@@ -5866,6 +5858,8 @@
       "src/core/lib/iomgr/iomgr_windows.c", 
       "src/core/lib/iomgr/load_file.c", 
       "src/core/lib/iomgr/load_file.h", 
+      "src/core/lib/iomgr/network_status_tracker.c", 
+      "src/core/lib/iomgr/network_status_tracker.h", 
       "src/core/lib/iomgr/polling_entity.c", 
       "src/core/lib/iomgr/polling_entity.h", 
       "src/core/lib/iomgr/pollset.h", 
@@ -5955,7 +5949,6 @@
       "src/core/lib/surface/metadata_array.c", 
       "src/core/lib/surface/server.c", 
       "src/core/lib/surface/server.h", 
-      "src/core/lib/surface/surface_trace.h", 
       "src/core/lib/surface/validate_metadata.c", 
       "src/core/lib/surface/version.c", 
       "src/core/lib/transport/byte_stream.c", 
@@ -6735,6 +6728,19 @@
       "include/grpc++/impl/codegen/sync_no_cxx11.h", 
       "include/grpc++/impl/codegen/sync_stream.h", 
       "include/grpc++/impl/codegen/time.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "grpc++_codegen_base"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "grpc++_codegen_base_src", 
+    "src": [
+      "src/cpp/codegen/codegen_init.cc"
     ], 
     "third_party": false, 
     "type": "filegroup"

@@ -44,33 +44,33 @@ _CHANNEL_ARGS = (('grpc.primary_user_agent', 'primary-agent'),
 _REQUEST = b'\x00\x00\x00'
 _RESPONSE = b'\x00\x00\x00'
 
-_UNARY_UNARY = b'/test/UnaryUnary'
-_UNARY_STREAM = b'/test/UnaryStream'
-_STREAM_UNARY = b'/test/StreamUnary'
-_STREAM_STREAM = b'/test/StreamStream'
+_UNARY_UNARY = '/test/UnaryUnary'
+_UNARY_STREAM = '/test/UnaryStream'
+_STREAM_UNARY = '/test/StreamUnary'
+_STREAM_STREAM = '/test/StreamStream'
 
 _USER_AGENT = 'Python-gRPC-{}'.format(_grpcio_metadata.__version__)
 
 _CLIENT_METADATA = (
-    (b'client-md-key', b'client-md-key'),
-    (b'client-md-key-bin', b'\x00\x01')
+    ('client-md-key', 'client-md-key'),
+    ('client-md-key-bin', b'\x00\x01')
 )
 
 _SERVER_INITIAL_METADATA = (
-    (b'server-initial-md-key', b'server-initial-md-value'),
-    (b'server-initial-md-key-bin', b'\x00\x02')
+    ('server-initial-md-key', 'server-initial-md-value'),
+    ('server-initial-md-key-bin', b'\x00\x02')
 )
 
 _SERVER_TRAILING_METADATA = (
-    (b'server-trailing-md-key', b'server-trailing-md-value'),
-    (b'server-trailing-md-key-bin', b'\x00\x03')
+    ('server-trailing-md-key', 'server-trailing-md-value'),
+    ('server-trailing-md-key-bin', b'\x00\x03')
 )
 
 
 def user_agent(metadata):
   for key, val in metadata:
-    if key == b'user-agent':
-      return val.decode('ascii')
+    if key == 'user-agent':
+      return val
   raise KeyError('No user agent!')
 
 

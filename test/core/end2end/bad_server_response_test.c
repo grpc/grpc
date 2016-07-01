@@ -66,13 +66,10 @@
 
 #define UNPARSEABLE_RESP "Bad Request\n"
 
-#define HTTP1_DETAIL_MSG "Connection dropped: received http1.x response"
-
 #define HTTP2_DETAIL_MSG(STATUS_CODE) \
   "Received http2 header with status: " #STATUS_CODE
 
-#define UNPARSEABLE_DETAIL_MSG \
-  "Connection dropped: received unparseable response"
+#define UNPARSEABLE_DETAIL_MSG "Failed parsing HTTP/2"
 
 /* TODO(zyc) Check the content of incomming data instead of using this length */
 #define EXPECTED_INCOMING_DATA_LENGTH (size_t)310
@@ -212,7 +209,7 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
 
   gpr_log(GPR_DEBUG, "Rpc status: %d, details: %s", status, details);
   GPR_ASSERT(status == expected_status);
-  GPR_ASSERT(0 == strcmp(details, expected_detail));
+  GPR_ASSERT(NULL != strstr(details, expected_detail));
 
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
@@ -337,7 +334,7 @@ int main(int argc, char **argv) {
 
   /* http1 response */
   run_test(HTTP1_RESP, sizeof(HTTP1_RESP) - 1, GRPC_STATUS_UNAVAILABLE,
-           HTTP1_DETAIL_MSG);
+           UNPARSEABLE_DETAIL_MSG);
 
   return 0;
 }

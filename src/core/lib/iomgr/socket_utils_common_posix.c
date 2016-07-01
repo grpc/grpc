@@ -169,6 +169,28 @@ grpc_error *grpc_set_socket_reuse_addr(int fd, int reuse) {
   return GRPC_ERROR_NONE;
 }
 
+/* set a socket to reuse old addresses */
+grpc_error *grpc_set_socket_reuse_port(int fd, int reuse) {
+#ifndef SO_REUSEPORT
+  return GRPC_ERROR_CREATE("SO_REUSEPORT unavailable on compiling system");
+#else
+  int val = (reuse != 0);
+  int newval;
+  socklen_t intlen = sizeof(newval);
+  if (0 != setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &val, sizeof(val))) {
+    return GRPC_OS_ERROR(errno, "setsockopt(SO_REUSEPORT)");
+  }
+  if (0 != getsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &newval, &intlen)) {
+    return GRPC_OS_ERROR(errno, "getsockopt(SO_REUSEPORT)");
+  }
+  if ((newval != 0) != val) {
+    return GRPC_ERROR_CREATE("Failed to set SO_REUSEPORT");
+  }
+
+  return GRPC_ERROR_NONE;
+#endif
+}
+
 /* disable nagle */
 grpc_error *grpc_set_socket_low_latency(int fd, int low_latency) {
   int val = (low_latency != 0);
