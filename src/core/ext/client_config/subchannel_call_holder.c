@@ -125,17 +125,14 @@ retry:
     return;
   }
   /* if this is a cancellation, then we can raise our cancelled flag */
-  if (op->cancel_with_status != GRPC_STATUS_OK) {
+  if (op->cancel_error != GRPC_ERROR_NONE) {
     if (!gpr_atm_rel_cas(&holder->subchannel_call, 0,
                          (gpr_atm)(uintptr_t)CANCELLED_CALL)) {
       goto retry;
     } else {
       switch (holder->creation_phase) {
         case GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING:
-          fail_locked(exec_ctx, holder,
-                      grpc_error_set_int(GRPC_ERROR_CREATE("Cancelled"),
-                                         GRPC_ERROR_INT_GRPC_STATUS,
-                                         op->cancel_with_status));
+          fail_locked(exec_ctx, holder, GRPC_ERROR_REF(op->cancel_error));
           break;
         case GRPC_SUBCHANNEL_CALL_HOLDER_PICKING_SUBCHANNEL:
           holder->pick_subchannel(exec_ctx, holder->pick_subchannel_arg, NULL,
@@ -210,7 +207,7 @@ static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *arg,
         exec_ctx, holder->connected_subchannel, holder->pollent,
         &subchannel_call);
     if (new_error != GRPC_ERROR_NONE) {
-      grpc_error_add_child(new_error, error);
+      new_error = grpc_error_add_child(new_error, error);
       subchannel_call = CANCELLED_CALL;
       fail_locked(exec_ctx, holder, new_error);
     }

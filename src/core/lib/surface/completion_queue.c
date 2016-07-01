@@ -48,7 +48,6 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/event_string.h"
-#include "src/core/lib/surface/surface_trace.h"
 
 int grpc_trace_operation_failures;
 
@@ -92,6 +91,17 @@ struct grpc_completion_queue {
 
 static gpr_mu g_freelist_mu;
 static grpc_completion_queue *g_freelist;
+
+int grpc_cq_pluck_trace;
+int grpc_cq_event_timeout_trace;
+
+#define GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, event)                  \
+  if (grpc_api_trace &&                                               \
+      (grpc_cq_pluck_trace || (event)->type != GRPC_QUEUE_TIMEOUT)) { \
+    char *_ev = grpc_event_string(event);                             \
+    gpr_log(GPR_INFO, "RETURN_EVENT[%p]: %s", cq, _ev);               \
+    gpr_free(_ev);                                                    \
+  }
 
 static void on_pollset_shutdown_done(grpc_exec_ctx *exec_ctx, void *cc,
                                      grpc_error *error);
@@ -240,7 +250,7 @@ void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
         "grpc_cq_end_op(exec_ctx=%p, cc=%p, tag=%p, error=%s, done=%p, "
         "done_arg=%p, storage=%p)",
         7, (exec_ctx, cc, tag, errmsg, done, done_arg, storage));
-    if (grpc_trace_operation_failures) {
+    if (grpc_trace_operation_failures && error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR, "Operation failed: tag=%p, error=%s", tag, errmsg);
     }
     grpc_error_free_string(errmsg);
@@ -316,10 +326,11 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
   GRPC_API_TRACE(
       "grpc_completion_queue_next("
       "cc=%p, "
-      "deadline=gpr_timespec { tv_sec: %lld, tv_nsec: %d, clock_type: %d }, "
+      "deadline=gpr_timespec { tv_sec: %" PRId64
+      ", tv_nsec: %d, clock_type: %d }, "
       "reserved=%p)",
-      5, (cc, (long long)deadline.tv_sec, (int)deadline.tv_nsec,
-          (int)deadline.clock_type, reserved));
+      5, (cc, deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type,
+          reserved));
   GPR_ASSERT(!reserved);
 
   deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);
@@ -425,13 +436,16 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
 
   GPR_TIMER_BEGIN("grpc_completion_queue_pluck", 0);
 
-  GRPC_API_TRACE(
-      "grpc_completion_queue_pluck("
-      "cc=%p, tag=%p, "
-      "deadline=gpr_timespec { tv_sec: %lld, tv_nsec: %d, clock_type: %d }, "
-      "reserved=%p)",
-      6, (cc, tag, (long long)deadline.tv_sec, (int)deadline.tv_nsec,
-          (int)deadline.clock_type, reserved));
+  if (grpc_cq_pluck_trace) {
+    GRPC_API_TRACE(
+        "grpc_completion_queue_pluck("
+        "cc=%p, tag=%p, "
+        "deadline=gpr_timespec { tv_sec: %" PRId64
+        ", tv_nsec: %d, clock_type: %d }, "
+        "reserved=%p)",
+        6, (cc, tag, deadline.tv_sec, deadline.tv_nsec,
+            (int)deadline.clock_type, reserved));
+  }
   GPR_ASSERT(!reserved);
 
   deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);

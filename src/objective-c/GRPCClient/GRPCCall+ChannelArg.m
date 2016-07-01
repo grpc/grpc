@@ -46,4 +46,8 @@
   hostConfig.userAgentPrefix = userAgentPrefix;
 }
 
++ (void)closeOpenConnections {
+  [GRPCHost flushChannelCache];
+}
+
 @end

@@ -54,6 +54,9 @@ __attribute__((deprecated("Please use GRPCProtoMethod.")))
  * This subclass is empty now. Eventually we'll remove ProtoMethod class
  * to avoid potential naming conflict
  */
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 @interface GRPCProtoMethod : ProtoMethod
+#pragma clang diagnostic pop
 
 @end
