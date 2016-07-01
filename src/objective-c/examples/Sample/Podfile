@@ -7,6 +7,11 @@ install! 'cocoapods', :deterministic_uuids => false
 GRPC_LOCAL_SRC = '../../../..'
 
 target 'Sample' do
+  # Depend on the generated RemoteTestClient library
+  pod 'RemoteTest', :path => "../RemoteTestClient"
+
+  # Use the local versions of Protobuf, BoringSSL, and gRPC. You don't need any of the following
+  # lines in your application.
   pod 'Protobuf', :path => "#{GRPC_LOCAL_SRC}/third_party/protobuf"
 
   pod 'BoringSSL', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
@@ -15,6 +20,4 @@ target 'Sample' do
   pod 'gRPC-Core', :path => GRPC_LOCAL_SRC
   pod 'gRPC-RxLibrary', :path => GRPC_LOCAL_SRC
   pod 'gRPC-ProtoRPC',  :path => GRPC_LOCAL_SRC
-
-  pod 'RemoteTest', :path => "../RemoteTestClient"
 end
