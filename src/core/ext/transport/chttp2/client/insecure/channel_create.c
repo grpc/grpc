@@ -103,13 +103,13 @@ static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     grpc_chttp2_transport_start_reading(exec_ctx, c->result->transport, NULL,
                                         0);
     GPR_ASSERT(c->result->transport);
-    c->result->channel_args = c->args.channel_args;
+    c->result->channel_args = grpc_channel_args_copy(c->args.channel_args);
   } else {
     memset(c->result, 0, sizeof(*c->result));
   }
   notify = c->notify;
   c->notify = NULL;
-  notify->cb(exec_ctx, notify->cb_arg, error);
+  grpc_exec_ctx_sched(exec_ctx, notify, GRPC_ERROR_REF(error), NULL);
 }
 
 static void connector_shutdown(grpc_exec_ctx *exec_ctx, grpc_connector *con) {}

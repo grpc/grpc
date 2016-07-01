@@ -71,7 +71,8 @@ class ViewController: UIViewController {
       NSLog("2. Response trailers: \(RPC.responseTrailers)")
     }
 
-    RPC.requestHeaders["My-Header"] = "My value"
+    // TODO(jcanizales): Revert to using subscript syntax once XCode 8 is released.
+    RPC.requestHeaders.setObject("My value", forKey: "My-Header")
 
     RPC.start()
 
@@ -84,7 +85,7 @@ class ViewController: UIViewController {
 
     let call = GRPCCall(host: RemoteHost, path: method.HTTPPath, requestsWriter: requestsWriter)
 
-    call.requestHeaders["My-Header"] = "My value"
+    call.requestHeaders.setObject("My value", forKey: "My-Header")
 
     call.startWithWriteable(GRXWriteable { response, error in
       if let response = response as? NSData {

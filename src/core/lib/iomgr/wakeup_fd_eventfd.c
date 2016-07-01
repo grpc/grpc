@@ -84,8 +84,10 @@ static void eventfd_destroy(grpc_wakeup_fd* fd_info) {
 }
 
 static int eventfd_check_availability(void) {
-  /* TODO(klempner): Actually check if eventfd is available */
-  return 1;
+  const int efd = eventfd(0, 0);
+  const int is_available = efd >= 0;
+  if (is_available) close(efd);
+  return is_available;
 }
 
 const grpc_wakeup_fd_vtable grpc_specialized_wakeup_fd_vtable = {

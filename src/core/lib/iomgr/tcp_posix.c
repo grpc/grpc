@@ -35,6 +35,7 @@
 
 #ifdef GPR_POSIX_SOCKET
 
+#include "src/core/lib/iomgr/network_status_tracker.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 
 #include <errno.h>
@@ -152,6 +153,7 @@ static void tcp_ref(grpc_tcp *tcp) { gpr_ref(&tcp->refcount); }
 #endif
 
 static void tcp_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
+  grpc_network_status_unregister_endpoint(ep);
   grpc_tcp *tcp = (grpc_tcp *)ep;
   TCP_UNREF(exec_ctx, tcp, "destroy");
 }
@@ -410,7 +412,10 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 
   if (buf->length == 0) {
     GPR_TIMER_END("tcp_write", 0);
-    grpc_exec_ctx_sched(exec_ctx, cb, GRPC_ERROR_NONE, NULL);
+    grpc_exec_ctx_sched(exec_ctx, cb, grpc_fd_is_shutdown(tcp->em_fd)
+                                          ? GRPC_ERROR_CREATE("EOF")
+                                          : GRPC_ERROR_NONE,
+                        NULL);
     return;
   }
   tcp->outgoing_buffer = buf;
@@ -445,9 +450,19 @@ static char *tcp_get_peer(grpc_endpoint *ep) {
   return gpr_strdup(tcp->peer_string);
 }
 
-static const grpc_endpoint_vtable vtable = {
-    tcp_read,     tcp_write,   tcp_add_to_pollset, tcp_add_to_pollset_set,
-    tcp_shutdown, tcp_destroy, tcp_get_peer};
+static grpc_workqueue *tcp_get_workqueue(grpc_endpoint *ep) {
+  grpc_tcp *tcp = (grpc_tcp *)ep;
+  return grpc_fd_get_workqueue(tcp->em_fd);
+}
+
+static const grpc_endpoint_vtable vtable = {tcp_read,
+                                            tcp_write,
+                                            tcp_get_workqueue,
+                                            tcp_add_to_pollset,
+                                            tcp_add_to_pollset_set,
+                                            tcp_shutdown,
+                                            tcp_destroy,
+                                            tcp_get_peer};
 
 grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd, size_t slice_size,
                                const char *peer_string) {
@@ -471,6 +486,8 @@ grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd, size_t slice_size,
   tcp->write_closure.cb = tcp_handle_write;
   tcp->write_closure.cb_arg = tcp;
   gpr_slice_buffer_init(&tcp->last_read_buffer);
+  /* Tell network status tracker about new endpoint */
+  grpc_network_status_register_endpoint(&tcp->base);
 
   return &tcp->base;
 }

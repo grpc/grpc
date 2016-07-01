@@ -81,6 +81,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Grpc.Auth.nuspec" />
+    <None Include="Grpc.Auth.project.json" />
     <None Include="packages.config" />
   </ItemGroup>
 </Project>

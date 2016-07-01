@@ -42,7 +42,6 @@
 #include <thread>
 #include <vector>
 
-#include <gflags/gflags.h>
 #include <grpc++/alarm.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
@@ -181,14 +180,14 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
 
     using namespace std::placeholders;
     int t = 0;
-    for (int i = 0; i < config.outstanding_rpcs_per_channel(); i++) {
-      for (int ch = 0; ch < config.client_channels(); ch++) {
+    for (int ch = 0; ch < config.client_channels(); ch++) {
+      for (int i = 0; i < config.outstanding_rpcs_per_channel(); i++) {
         auto* cq = cli_cqs_[t].get();
         auto ctx =
             setup_ctx(channels_[ch].get_stub(), next_issuers_[t], request_);
         ctx->Start(cq);
-        t = (t + 1) % cli_cqs_.size();
       }
+      t = (t + 1) % cli_cqs_.size();
     }
   }
   virtual ~AsyncClient() {
@@ -250,7 +249,8 @@ class AsyncUnaryClient GRPC_FINAL
     : public AsyncClient<BenchmarkService::Stub, SimpleRequest> {
  public:
   explicit AsyncUnaryClient(const ClientConfig& config)
-      : AsyncClient(config, SetupCtx, BenchmarkStubCreator) {
+      : AsyncClient<BenchmarkService::Stub, SimpleRequest>(
+            config, SetupCtx, BenchmarkStubCreator) {
     StartThreads(num_async_threads_);
   }
   ~AsyncUnaryClient() GRPC_OVERRIDE { EndThreads(); }
@@ -377,7 +377,8 @@ class AsyncStreamingClient GRPC_FINAL
     : public AsyncClient<BenchmarkService::Stub, SimpleRequest> {
  public:
   explicit AsyncStreamingClient(const ClientConfig& config)
-      : AsyncClient(config, SetupCtx, BenchmarkStubCreator) {
+      : AsyncClient<BenchmarkService::Stub, SimpleRequest>(
+            config, SetupCtx, BenchmarkStubCreator) {
     StartThreads(num_async_threads_);
   }
 
@@ -512,7 +513,8 @@ class GenericAsyncStreamingClient GRPC_FINAL
     : public AsyncClient<grpc::GenericStub, ByteBuffer> {
  public:
   explicit GenericAsyncStreamingClient(const ClientConfig& config)
-      : AsyncClient(config, SetupCtx, GenericStubCreator) {
+      : AsyncClient<grpc::GenericStub, ByteBuffer>(config, SetupCtx,
+                                                   GenericStubCreator) {
     StartThreads(num_async_threads_);
   }
 

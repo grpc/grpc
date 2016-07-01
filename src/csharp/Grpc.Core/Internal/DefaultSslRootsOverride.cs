@@ -46,7 +46,7 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal static class DefaultSslRootsOverride
     {
-        const string RootsPemResourceName = "Grpc.Core.Resources.roots.pem";
+        const string RootsPemResourceName = "Grpc.Core.roots.pem";
         static object staticLock = new object();
 
         /// <summary>

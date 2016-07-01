@@ -37,11 +37,12 @@
 
 #include <limits.h>
 
-#include "src/core/lib/iomgr/sockaddr_win32.h"
+#include "src/core/lib/iomgr/network_status_tracker.h"
+#include "src/core/lib/iomgr/sockaddr_windows.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/log_win32.h>
+#include <grpc/support/log_windows.h>
 #include <grpc/support/slice_buffer.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
@@ -378,6 +379,7 @@ static void win_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
 }
 
 static void win_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
+  grpc_network_status_unregister_endpoint(ep);
   grpc_tcp *tcp = (grpc_tcp *)ep;
   TCP_UNREF(tcp, "destroy");
 }
@@ -387,9 +389,16 @@ static char *win_get_peer(grpc_endpoint *ep) {
   return gpr_strdup(tcp->peer_string);
 }
 
-static grpc_endpoint_vtable vtable = {
-    win_read,     win_write,   win_add_to_pollset, win_add_to_pollset_set,
-    win_shutdown, win_destroy, win_get_peer};
+static grpc_workqueue *win_get_workqueue(grpc_endpoint *ep) { return NULL; }
+
+static grpc_endpoint_vtable vtable = {win_read,
+                                      win_write,
+                                      win_get_workqueue,
+                                      win_add_to_pollset,
+                                      win_add_to_pollset_set,
+                                      win_shutdown,
+                                      win_destroy,
+                                      win_get_peer};
 
 grpc_endpoint *grpc_tcp_create(grpc_winsocket *socket, char *peer_string) {
   grpc_tcp *tcp = (grpc_tcp *)gpr_malloc(sizeof(grpc_tcp));
@@ -401,6 +410,9 @@ grpc_endpoint *grpc_tcp_create(grpc_winsocket *socket, char *peer_string) {
   grpc_closure_init(&tcp->on_read, on_read, tcp);
   grpc_closure_init(&tcp->on_write, on_write, tcp);
   tcp->peer_string = gpr_strdup(peer_string);
+  /* Tell network status tracking code about the new endpoint */
+  grpc_network_status_register_endpoint(&tcp->base);
+
   return &tcp->base;
 }
 

@@ -388,6 +388,103 @@ function timeoutOnSleepingServer($stub)
              'Call status was not DEADLINE_EXCEEDED');
 }
 
+function customMetadata($stub)
+{
+    $ECHO_INITIAL_KEY = 'x-grpc-test-echo-initial';
+    $ECHO_INITIAL_VALUE = 'test_initial_metadata_value';
+    $ECHO_TRAILING_KEY = 'x-grpc-test-echo-trailing-bin';
+    $ECHO_TRAILING_VALUE = 'ababab';
+    $request_len = 271828;
+    $response_len = 314159;
+
+    $request = new grpc\testing\SimpleRequest();
+    $request->setResponseType(grpc\testing\PayloadType::COMPRESSABLE);
+    $request->setResponseSize($response_len);
+    $payload = new grpc\testing\Payload();
+    $payload->setType(grpc\testing\PayloadType::COMPRESSABLE);
+    $payload->setBody(str_repeat("\0", $request_len));
+    $request->setPayload($payload);
+
+    $metadata = [
+        $ECHO_INITIAL_KEY => [$ECHO_INITIAL_VALUE],
+        $ECHO_TRAILING_KEY => [$ECHO_TRAILING_VALUE],
+    ];
+    $call = $stub->UnaryCall($request, $metadata);
+
+    $initial_metadata = $call->getMetadata();
+    hardAssert(array_key_exists($ECHO_INITIAL_KEY, $initial_metadata),
+               'Initial metadata does not contain expected key');
+    hardAssert($initial_metadata[$ECHO_INITIAL_KEY][0] ==
+               $ECHO_INITIAL_VALUE,
+               'Incorrect initial metadata value');
+
+    list($result, $status) = $call->wait();
+    hardAssert($status->code === Grpc\STATUS_OK,
+               'Call did not complete successfully');
+
+    $trailing_metadata = $call->getTrailingMetadata();
+    hardAssert(array_key_exists($ECHO_TRAILING_KEY, $trailing_metadata),
+               'Trailing metadata does not contain expected key');
+    hardAssert($trailing_metadata[$ECHO_TRAILING_KEY][0] ==
+               $ECHO_TRAILING_VALUE, 'Incorrect trailing metadata value');
+
+    $streaming_call = $stub->FullDuplexCall($metadata);
+
+    $streaming_request = new grpc\testing\StreamingOutputCallRequest();
+    $streaming_request->setPayload($payload);
+    $streaming_call->write($streaming_request);
+    $streaming_call->writesDone();
+
+    hardAssert($streaming_call->getStatus()->code === Grpc\STATUS_OK,
+               'Call did not complete successfully');
+
+    $streaming_trailing_metadata = $streaming_call->getTrailingMetadata();
+    hardAssert(array_key_exists($ECHO_TRAILING_KEY,
+                                $streaming_trailing_metadata),
+               'Trailing metadata does not contain expected key');
+    hardAssert($streaming_trailing_metadata[$ECHO_TRAILING_KEY][0] ==
+               $ECHO_TRAILING_VALUE, 'Incorrect trailing metadata value');
+}
+
+function statusCodeAndMessage($stub)
+{
+    $echo_status = new grpc\testing\EchoStatus();
+    $echo_status->setCode(2);
+    $echo_status->setMessage("test status message");
+
+    $request = new grpc\testing\SimpleRequest();
+    $request->setResponseStatus($echo_status);
+
+    $call = $stub->UnaryCall($request);
+    list($result, $status) = $call->wait();
+
+    hardAssert($status->code === 2,
+               'Received unexpected status code');
+    hardAssert($status->details === "test status message",
+               'Received unexpected status details');
+
+    $streaming_call = $stub->FullDuplexCall();
+
+    $streaming_request = new grpc\testing\StreamingOutputCallRequest();
+    $streaming_request->setResponseStatus($echo_status);
+    $streaming_call->write($streaming_request);
+    $streaming_call->writesDone();
+
+    $status = $streaming_call->getStatus();
+    hardAssert($status->code === 2,
+               'Received unexpected status code');
+    hardAssert($status->details === "test status message",
+               'Received unexpected status details');
+}
+
+function unimplementedMethod($stub)
+{
+    $call = $stub->UnimplementedCall(new grpc\testing\EmptyMessage());
+    list($result, $status) = $call->wait();
+    hardAssert($status->code === Grpc\STATUS_UNIMPLEMENTED,
+               'Received unexpected status code');
+}
+
 function _makeStub($args)
 {
     if (!array_key_exists('server_host', $args)) {
@@ -472,12 +569,17 @@ function _makeStub($args)
         $opts['update_metadata'] = $update_metadata;
     }
 
-    $stub = new grpc\testing\TestServiceClient($server_address, $opts);
+    if ($test_case == 'unimplemented_method') {
+      $stub = new grpc\testing\UnimplementedServiceClient($server_address, $opts);
+    } else {
+      $stub = new grpc\testing\TestServiceClient($server_address, $opts);
+    }
 
     return $stub;
 }
 
-function interop_main($args, $stub = false) {
+function interop_main($args, $stub = false)
+{
     if (!$stub) {
         $stub = _makeStub($args);
     }
@@ -512,6 +614,15 @@ function interop_main($args, $stub = false) {
             break;
         case 'timeout_on_sleeping_server':
             timeoutOnSleepingServer($stub);
+            break;
+        case 'custom_metadata':
+            customMetadata($stub);
+            break;
+        case 'status_code_and_message':
+            statusCodeAndMessage($stub);
+            break;
+        case 'unimplemented_method':
+            unimplementedMethod($stub);
             break;
         case 'service_account_creds':
             serviceAccountCreds($stub, $args);

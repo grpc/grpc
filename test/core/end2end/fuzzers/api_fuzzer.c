@@ -50,7 +50,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 // logging
 
-static const bool squelch = !true;
+bool squelch = true;
+bool leak_check = true;
 
 static void dont_log(gpr_log_func_args *args) {}
 
@@ -679,7 +680,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         if (g_channel != NULL) {
           grpc_connectivity_state st =
               grpc_channel_check_connectivity_state(g_channel, 0);
-          if (st != GRPC_CHANNEL_FATAL_FAILURE) {
+          if (st != GRPC_CHANNEL_SHUTDOWN) {
             gpr_timespec deadline = gpr_time_add(
                 gpr_now(GPR_CLOCK_REALTIME),
                 gpr_time_from_micros(read_uint32(&inp), GPR_TIMESPAN));
@@ -744,6 +745,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
           break;
         }
         grpc_op *ops = gpr_malloc(sizeof(grpc_op) * num_ops);
+        memset(ops, 0, sizeof(grpc_op) * num_ops);
         bool ok = true;
         size_t i;
         grpc_op *op;

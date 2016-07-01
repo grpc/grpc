@@ -65,6 +65,13 @@ inline grpc::string ClassName(const grpc::protobuf::Descriptor *descriptor,
   }
 }
 
+// Get leading or trailing comments in a string. Comment lines start with "// ".
+// Leading detached comments are put in in front of leading comments.
+template <typename DescriptorType>
+inline grpc::string GetCppComments(const DescriptorType *desc, bool leading) {
+  return grpc_generator::GetPrefixedComments(desc, leading, "//");
+}
+
 }  // namespace grpc_cpp_generator
 
 #endif  // GRPC_INTERNAL_COMPILER_CPP_GENERATOR_HELPERS_H

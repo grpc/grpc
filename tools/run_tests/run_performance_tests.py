@@ -61,11 +61,11 @@ class QpsWorkerJob:
     self._spec = spec
     self.language = language
     self.host_and_port = host_and_port
-    self._job = jobset.Job(spec, bin_hash=None, newline_on_success=True, travis=True, add_env={})
+    self._job = jobset.Job(spec, newline_on_success=True, travis=True, add_env={})
 
   def is_running(self):
     """Polls a job and returns True if given job is still running."""
-    return self._job.state(jobset.NoCache()) == jobset._RUNNING
+    return self._job.state() == jobset._RUNNING
 
   def kill(self):
     return self._job.kill()

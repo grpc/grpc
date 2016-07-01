@@ -49,6 +49,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
@@ -114,6 +115,20 @@ grpc_error *grpc_set_socket_ipv6_recvpktinfo_if_possible(int fd) {
   }
 #endif
   return GRPC_ERROR_NONE;
+}
+
+grpc_error *grpc_set_socket_sndbuf(int fd, int buffer_size_bytes) {
+  return 0 == setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &buffer_size_bytes,
+                         sizeof(buffer_size_bytes))
+             ? GRPC_ERROR_NONE
+             : GRPC_OS_ERROR(errno, "setsockopt(SO_SNDBUF)");
+}
+
+grpc_error *grpc_set_socket_rcvbuf(int fd, int buffer_size_bytes) {
+  return 0 == setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &buffer_size_bytes,
+                         sizeof(buffer_size_bytes))
+             ? GRPC_ERROR_NONE
+             : GRPC_OS_ERROR(errno, "setsockopt(SO_RCVBUF)");
 }
 
 /* set a socket to close on exec */
@@ -238,6 +253,16 @@ static int set_socket_dualstack(int fd) {
   }
 }
 
+static grpc_error *error_for_fd(int fd, const struct sockaddr *addr) {
+  if (fd >= 0) return GRPC_ERROR_NONE;
+  char *addr_str;
+  grpc_sockaddr_to_string(&addr_str, addr, 0);
+  grpc_error *err = grpc_error_set_str(GRPC_OS_ERROR(errno, "socket"),
+                                       GRPC_ERROR_STR_TARGET_ADDRESS, addr_str);
+  gpr_free(addr_str);
+  return err;
+}
+
 grpc_error *grpc_create_dualstack_socket(const struct sockaddr *addr, int type,
                                          int protocol,
                                          grpc_dualstack_mode *dsmode,
@@ -258,7 +283,7 @@ grpc_error *grpc_create_dualstack_socket(const struct sockaddr *addr, int type,
     /* If this isn't an IPv4 address, then return whatever we've got. */
     if (!grpc_sockaddr_is_v4mapped(addr, NULL)) {
       *dsmode = GRPC_DSMODE_IPV6;
-      return GRPC_ERROR_NONE;
+      return error_for_fd(*newfd, addr);
     }
     /* Fall back to AF_INET. */
     if (*newfd >= 0) {
@@ -268,10 +293,7 @@ grpc_error *grpc_create_dualstack_socket(const struct sockaddr *addr, int type,
   }
   *dsmode = family == AF_INET ? GRPC_DSMODE_IPV4 : GRPC_DSMODE_NONE;
   *newfd = socket(family, type, protocol);
-  if (*newfd == -1) {
-    return GRPC_OS_ERROR(errno, "socket");
-  }
-  return GRPC_ERROR_NONE;
+  return error_for_fd(*newfd, addr);
 }
 
 #endif

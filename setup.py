@@ -31,11 +31,14 @@
 
 import os
 import os.path
+import shlex
 import shutil
 import sys
+import sysconfig
 
 from distutils import core as _core
 from distutils import extension as _extension
+import pkg_resources
 import setuptools
 from setuptools.command import egg_info
 
@@ -97,8 +100,9 @@ if not "win32" in sys.platform:
 
 DEFINE_MACROS = (('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600), ('GPR_BACKWARDS_COMPATIBILITY_MODE', 1),)
 
-LDFLAGS = ()
-CFLAGS = ()
+LDFLAGS = shlex.split(os.environ.get('GRPC_PYTHON_LDFLAGS', ''))
+CFLAGS = shlex.split(os.environ.get('GRPC_PYTHON_CFLAGS', ''))
+
 if "linux" in sys.platform:
   LDFLAGS += ('-Wl,-wrap,memcpy',)
 if "linux" in sys.platform or "darwin" in sys.platform:
@@ -108,6 +112,16 @@ if "linux" in sys.platform or "darwin" in sys.platform:
 
   pymodinit = '__attribute__((visibility ("default"))) {}'.format(pymodinit_type)
   DEFINE_MACROS += (('PyMODINIT_FUNC', pymodinit),)
+
+
+# By default, Python3 distutils enforces compatibility of
+# c plugins (.so files) with the OSX version Python3 was built with.
+# For Python3.4, this is OSX 10.6, but we need Thread Local Support (__thread)
+if 'darwin' in sys.platform and PY3:
+  mac_target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
+  if mac_target and (pkg_resources.parse_version(mac_target) <
+                     pkg_resources.parse_version('10.7.0')):
+    os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
 
 
 def cython_extensions(module_names, extra_sources, include_dirs,
@@ -153,7 +167,7 @@ PACKAGE_DIRECTORIES = {
 }
 
 INSTALL_REQUIRES = (
-    'six>=1.10',
+    'six>=1.5.2',
     'enum34>=1.0.4',
     'futures>=2.2.0',
     # TODO(atash): eventually split the grpcio package into a metapackage
@@ -161,10 +175,11 @@ INSTALL_REQUIRES = (
     'protobuf>=3.0.0a3',
 )
 
-SETUP_REQUIRES = (
+SETUP_REQUIRES = INSTALL_REQUIRES + (
     'sphinx>=1.3',
-    'sphinx_rtd_theme>=0.1.8'
-) + INSTALL_REQUIRES
+    'sphinx_rtd_theme>=0.1.8',
+    'six>=1.10',
+)
 
 COMMAND_CLASS = {
     'doc': commands.SphinxDocumentation,
@@ -202,7 +217,7 @@ TEST_PACKAGE_DATA = {
 }
 
 TESTS_REQUIRE = (
-    'oauth2client>=1.4.7',
+    'oauth2client>=2.1.0',
     'protobuf>=3.0.0a3',
     'coverage>=4.0',
 ) + INSTALL_REQUIRES
@@ -234,8 +249,6 @@ setuptools.setup(
   ext_modules=CYTHON_EXTENSION_MODULES,
   packages=list(PACKAGES),
   package_dir=PACKAGE_DIRECTORIES,
-  # TODO(atash): Figure out why auditwheel doesn't like namespace packages.
-  #namespace_packages=['grpc'],
   package_data=PACKAGE_DATA,
   install_requires=INSTALL_REQUIRES,
   setup_requires=SETUP_REQUIRES,

@@ -595,9 +595,9 @@ grpc_error *grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
       if (port == 0 && sp != NULL) {
         grpc_sockaddr_set_port((struct sockaddr *)&wild4, sp->port);
       }
-      addr = (struct sockaddr *)&wild4;
-      addr_len = sizeof(wild4);
     }
+    addr = (struct sockaddr *)&wild4;
+    addr_len = sizeof(wild4);
   }
 
   errs[1] = grpc_create_dualstack_socket(addr, SOCK_STREAM, 0, &dsmode, &fd);

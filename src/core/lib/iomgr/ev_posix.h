@@ -55,6 +55,8 @@ typedef struct grpc_event_engine_vtable {
                             grpc_closure *closure);
   void (*fd_notify_on_write)(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                              grpc_closure *closure);
+  bool (*fd_is_shutdown)(grpc_fd *fd);
+  grpc_workqueue *(*fd_get_workqueue)(grpc_fd *fd);
   grpc_pollset *(*fd_get_read_notifier_pollset)(grpc_exec_ctx *exec_ctx,
                                                 grpc_fd *fd);
 
@@ -98,10 +100,16 @@ typedef struct grpc_event_engine_vtable {
 void grpc_event_engine_init(void);
 void grpc_event_engine_shutdown(void);
 
+/* Return the name of the poll strategy */
+const char *grpc_get_poll_strategy_name();
+
 /* Create a wrapped file descriptor.
    Requires fd is a non-blocking file descriptor.
    This takes ownership of closing fd. */
 grpc_fd *grpc_fd_create(int fd, const char *name);
+
+/* Get a workqueue that's associated with this fd */
+grpc_workqueue *grpc_fd_get_workqueue(grpc_fd *fd);
 
 /* Return the wrapped fd, or -1 if it has been released or closed. */
 int grpc_fd_wrapped_fd(grpc_fd *fd);
@@ -116,7 +124,10 @@ int grpc_fd_wrapped_fd(grpc_fd *fd);
 void grpc_fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure *on_done,
                     int *release_fd, const char *reason);
 
-/* Cause any current callbacks to error out with GRPC_CALLBACK_CANCELLED. */
+/* Has grpc_fd_shutdown been called on an fd? */
+bool grpc_fd_is_shutdown(grpc_fd *fd);
+
+/* Cause any current and future callbacks to fail. */
 void grpc_fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd);
 
 /* Register read interest, causing read_cb to be called once when fd becomes

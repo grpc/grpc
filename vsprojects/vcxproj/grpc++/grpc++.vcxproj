@@ -263,14 +263,15 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\client_context.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\completion_queue.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\create_channel.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\create_channel_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\generic\async_generic_service.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\generic\generic_stub.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\grpc++.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\call.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\client_unary_call.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\core_codegen.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\grpc_library.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\method_handler_impl.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\proto_utils.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\rpc_method.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\rpc_service_method.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\serialization_traits.h" />
@@ -291,10 +292,12 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\server.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\server_builder.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\server_context.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\server_posix.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\async_stream.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\async_unary_call.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\byte_buffer.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\channel_arguments.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\config.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\slice.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\status.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\status_code_enum.h" />
@@ -311,11 +314,11 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\client_unary_call.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\completion_queue.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\completion_queue_tag.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\core_codegen_interface.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\create_auth_context.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\grpc_library.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\method_handler_impl.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\proto_utils.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\rpc_method.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\rpc_service_method.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\security\auth_context.h" />
@@ -343,7 +346,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_atomic.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_gcc_sync.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_win32.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\log.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\port_platform.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\slice.h" />
@@ -351,16 +354,12 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_generic.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_posix.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_win32.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\sync_windows.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\time.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\config_protobuf.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\config.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc++\support\config_protobuf.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\core_codegen.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\client\secure_credentials.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\cpp\common\core_codegen.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\common\secure_auth_context.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\server\secure_server_credentials.h" />
     <ClInclude Include="$(SolutionDir)\..\src\cpp\client\create_channel_internal.h" />
@@ -387,6 +386,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\create_channel.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\create_channel_internal.cc">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\client\create_channel_posix.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\client\credentials.cc">
     </ClCompile>
@@ -417,6 +418,8 @@
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\server_context.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\server\server_credentials.cc">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\cpp\server\server_posix.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\cpp\util\byte_buffer.cc">
     </ClCompile>

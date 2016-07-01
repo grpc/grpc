@@ -44,6 +44,19 @@
 #define GRPC_CUSTOM_MESSAGE ::google::protobuf::Message
 #endif
 
+#ifndef GRPC_CUSTOM_DESCRIPTOR
+#include <google/protobuf/descriptor.h>
+#include <google/protobuf/descriptor.pb.h>
+#define GRPC_CUSTOM_DESCRIPTOR ::google::protobuf::Descriptor
+#define GRPC_CUSTOM_DESCRIPTORPOOL ::google::protobuf::DescriptorPool
+#define GPRC_CUSTOM_FIELDDESCRIPTOR ::google::protobuf::FieldDescriptor
+#define GRPC_CUSTOM_FILEDESCRIPTOR ::google::protobuf::FileDescriptor
+#define GRPC_CUSTOM_FILEDESCRIPTORPROTO ::google::protobuf::FileDescriptorProto
+#define GRPC_CUSTOM_METHODDESCRIPTOR ::google::protobuf::MethodDescriptor
+#define GRPC_CUSTOM_SERVICEDESCRIPTOR ::google::protobuf::ServiceDescriptor
+#define GRPC_CUSTOM_SOURCELOCATION ::google::protobuf::SourceLocation
+#endif
+
 #ifndef GRPC_CUSTOM_ZEROCOPYOUTPUTSTREAM
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream.h>
@@ -59,6 +72,15 @@ namespace protobuf {
 
 typedef GRPC_CUSTOM_MESSAGE Message;
 typedef GRPC_CUSTOM_PROTOBUF_INT64 int64;
+
+typedef GRPC_CUSTOM_DESCRIPTOR Descriptor;
+typedef GRPC_CUSTOM_DESCRIPTORPOOL DescriptorPool;
+typedef GPRC_CUSTOM_FIELDDESCRIPTOR FieldDescriptor;
+typedef GRPC_CUSTOM_FILEDESCRIPTOR FileDescriptor;
+typedef GRPC_CUSTOM_FILEDESCRIPTORPROTO FileDescriptorProto;
+typedef GRPC_CUSTOM_METHODDESCRIPTOR MethodDescriptor;
+typedef GRPC_CUSTOM_SERVICEDESCRIPTOR ServiceDescriptor;
+typedef GRPC_CUSTOM_SOURCELOCATION SourceLocation;
 
 namespace io {
 typedef GRPC_CUSTOM_ZEROCOPYOUTPUTSTREAM ZeroCopyOutputStream;

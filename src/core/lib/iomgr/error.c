@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,18 +33,22 @@
 
 #include "src/core/lib/iomgr/error.h"
 
+#include <inttypes.h>
 #include <stdbool.h>
 #include <string.h>
 
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/avl.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
-#ifdef GPR_WIN32
-#include <grpc/support/log_win32.h>
+#ifdef GPR_WINDOWS
+#include <grpc/support/log_windows.h>
 #endif
+
+#include "src/core/lib/profiling/timers.h"
 
 static void destroy_integer(void *key) {}
 
@@ -88,14 +92,10 @@ static const gpr_avl_vtable avl_vtable_errs = {
 
 static const char *error_int_name(grpc_error_ints key) {
   switch (key) {
-    case GRPC_ERROR_INT_STATUS_CODE:
-      return "status_code";
     case GRPC_ERROR_INT_ERRNO:
       return "errno";
     case GRPC_ERROR_INT_FILE_LINE:
       return "file_line";
-    case GRPC_ERROR_INT_WARNING:
-      return "warning";
     case GRPC_ERROR_INT_STREAM_ID:
       return "stream_id";
     case GRPC_ERROR_INT_GRPC_STATUS:
@@ -116,6 +116,10 @@ static const char *error_int_name(grpc_error_ints key) {
       return "fd";
     case GRPC_ERROR_INT_WSA_ERROR:
       return "wsa_error";
+    case GRPC_ERROR_INT_HTTP_STATUS:
+      return "http_status";
+    case GRPC_ERROR_INT_LIMIT:
+      return "limit";
   }
   GPR_UNREACHABLE_CODE(return "unknown");
 }
@@ -214,6 +218,7 @@ void grpc_error_unref(grpc_error *err) {
 grpc_error *grpc_error_create(const char *file, int line, const char *desc,
                               grpc_error **referencing,
                               size_t num_referencing) {
+  GPR_TIMER_BEGIN("grpc_error_create", 0);
   grpc_error *err = gpr_malloc(sizeof(*err));
   if (err == NULL) {  // TODO(ctiller): make gpr_malloc return NULL
     return GRPC_ERROR_OOM;
@@ -239,57 +244,91 @@ grpc_error *grpc_error_create(const char *file, int line, const char *desc,
                            (void *)(uintptr_t)GRPC_ERROR_TIME_CREATED,
                            box_time(gpr_now(GPR_CLOCK_REALTIME)));
   gpr_ref_init(&err->refs, 1);
+  GPR_TIMER_END("grpc_error_create", 0);
   return err;
 }
 
 static grpc_error *copy_error_and_unref(grpc_error *in) {
+  GPR_TIMER_BEGIN("copy_error_and_unref", 0);
+  grpc_error *out;
   if (is_special(in)) {
-    if (in == GRPC_ERROR_NONE) return GRPC_ERROR_CREATE("no error");
-    if (in == GRPC_ERROR_OOM) return GRPC_ERROR_CREATE("oom");
-    if (in == GRPC_ERROR_CANCELLED) return GRPC_ERROR_CREATE("cancelled");
-    return GRPC_ERROR_CREATE("unknown");
-  }
-  grpc_error *out = gpr_malloc(sizeof(*out));
+    if (in == GRPC_ERROR_NONE)
+      out = GRPC_ERROR_CREATE("no error");
+    else if (in == GRPC_ERROR_OOM)
+      out = GRPC_ERROR_CREATE("oom");
+    else if (in == GRPC_ERROR_CANCELLED)
+      out =
+          grpc_error_set_int(GRPC_ERROR_CREATE("cancelled"),
+                             GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_CANCELLED);
+    else
+      out = GRPC_ERROR_CREATE("unknown");
+  } else {
+    out = gpr_malloc(sizeof(*out));
 #ifdef GRPC_ERROR_REFCOUNT_DEBUG
-  gpr_log(GPR_DEBUG, "%p create copying", out);
+    gpr_log(GPR_DEBUG, "%p create copying", out);
 #endif
-  out->ints = gpr_avl_ref(in->ints);
-  out->strs = gpr_avl_ref(in->strs);
-  out->errs = gpr_avl_ref(in->errs);
-  out->times = gpr_avl_ref(in->times);
-  out->next_err = in->next_err;
-  gpr_ref_init(&out->refs, 1);
-  GRPC_ERROR_UNREF(in);
+    out->ints = gpr_avl_ref(in->ints);
+    out->strs = gpr_avl_ref(in->strs);
+    out->errs = gpr_avl_ref(in->errs);
+    out->times = gpr_avl_ref(in->times);
+    out->next_err = in->next_err;
+    gpr_ref_init(&out->refs, 1);
+    GRPC_ERROR_UNREF(in);
+  }
+  GPR_TIMER_END("copy_error_and_unref", 0);
   return out;
 }
 
 grpc_error *grpc_error_set_int(grpc_error *src, grpc_error_ints which,
                                intptr_t value) {
+  GPR_TIMER_BEGIN("grpc_error_set_int", 0);
   grpc_error *new = copy_error_and_unref(src);
   new->ints = gpr_avl_add(new->ints, (void *)(uintptr_t)which, (void *)value);
+  GPR_TIMER_END("grpc_error_set_int", 0);
   return new;
 }
 
 bool grpc_error_get_int(grpc_error *err, grpc_error_ints which, intptr_t *p) {
+  GPR_TIMER_BEGIN("grpc_error_get_int", 0);
   void *pp;
+  if (is_special(err)) {
+    if (err == GRPC_ERROR_CANCELLED && which == GRPC_ERROR_INT_GRPC_STATUS) {
+      *p = GRPC_STATUS_CANCELLED;
+      GPR_TIMER_END("grpc_error_get_int", 0);
+      return true;
+    }
+    GPR_TIMER_END("grpc_error_get_int", 0);
+    return false;
+  }
   if (gpr_avl_maybe_get(err->ints, (void *)(uintptr_t)which, &pp)) {
     if (p != NULL) *p = (intptr_t)pp;
+    GPR_TIMER_END("grpc_error_get_int", 0);
     return true;
   }
+  GPR_TIMER_END("grpc_error_get_int", 0);
   return false;
 }
 
 grpc_error *grpc_error_set_str(grpc_error *src, grpc_error_strs which,
                                const char *value) {
+  GPR_TIMER_BEGIN("grpc_error_set_str", 0);
   grpc_error *new = copy_error_and_unref(src);
   new->strs =
       gpr_avl_add(new->strs, (void *)(uintptr_t)which, gpr_strdup(value));
+  GPR_TIMER_END("grpc_error_set_str", 0);
   return new;
 }
 
+const char *grpc_error_get_str(grpc_error *err, grpc_error_strs which) {
+  if (is_special(err)) return NULL;
+  return gpr_avl_get(err->strs, (void *)(uintptr_t)which);
+}
+
 grpc_error *grpc_error_add_child(grpc_error *src, grpc_error *child) {
+  GPR_TIMER_BEGIN("grpc_error_add_child", 0);
   grpc_error *new = copy_error_and_unref(src);
   new->errs = gpr_avl_add(new->errs, (void *)(new->next_err++), child);
+  GPR_TIMER_END("grpc_error_add_child", 0);
   return new;
 }
 
@@ -340,7 +379,7 @@ static char *key_time(void *p) {
 
 static char *fmt_int(void *p) {
   char *s;
-  gpr_asprintf(&s, "%lld", (intptr_t)p);
+  gpr_asprintf(&s, "%" PRIdPTR, (intptr_t)p);
   return s;
 }
 
@@ -422,7 +461,7 @@ static char *fmt_time(void *p) {
       pfx = "";
       break;
   }
-  gpr_asprintf(&out, "\"%s%d.%09d\"", pfx, tm.tv_sec, tm.tv_nsec);
+  gpr_asprintf(&out, "\"%s%" PRId64 ".%09d\"", pfx, tm.tv_sec, tm.tv_nsec);
   return out;
 }
 
@@ -481,6 +520,7 @@ void grpc_error_free_string(const char *str) {
 }
 
 const char *grpc_error_string(grpc_error *err) {
+  GPR_TIMER_BEGIN("grpc_error_string", 0);
   if (err == GRPC_ERROR_NONE) return no_error_string;
   if (err == GRPC_ERROR_OOM) return oom_error_string;
   if (err == GRPC_ERROR_CANCELLED) return cancelled_error_string;
@@ -497,7 +537,9 @@ const char *grpc_error_string(grpc_error *err) {
 
   qsort(kvs.kvs, kvs.num_kvs, sizeof(kv_pair), cmp_kvs);
 
-  return finish_kvs(&kvs);
+  const char *out = finish_kvs(&kvs);
+  GPR_TIMER_END("grpc_error_string", 0);
+  return out;
 }
 
 grpc_error *grpc_os_error(const char *file, int line, int err,
@@ -510,7 +552,7 @@ grpc_error *grpc_os_error(const char *file, int line, int err,
       GRPC_ERROR_STR_SYSCALL, call_name);
 }
 
-#ifdef GPR_WIN32
+#ifdef GPR_WINDOWS
 grpc_error *grpc_wsa_error(const char *file, int line, int err,
                            const char *call_name) {
   char *utf8_message = gpr_format_message(err);

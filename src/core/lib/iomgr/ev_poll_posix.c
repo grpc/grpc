@@ -59,8 +59,6 @@
  * FD declarations
  */
 
-grpc_wakeup_fd grpc_global_wakeup_fd;
-
 typedef struct grpc_fd_watcher {
   struct grpc_fd_watcher *next;
   struct grpc_fd_watcher *prev;
@@ -432,7 +430,10 @@ static grpc_error *fd_shutdown_error(bool shutdown) {
 
 static void notify_on_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                              grpc_closure **st, grpc_closure *closure) {
-  if (*st == CLOSURE_NOT_READY) {
+  if (fd->shutdown) {
+    grpc_exec_ctx_sched(exec_ctx, closure, GRPC_ERROR_CREATE("FD shutdown"),
+                        NULL);
+  } else if (*st == CLOSURE_NOT_READY) {
     /* not ready ==> switch to a waiting state by setting the closure */
     *st = closure;
   } else if (*st == CLOSURE_READY) {
@@ -475,11 +476,22 @@ static void set_read_notifier_pollset_locked(
 
 static void fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
   gpr_mu_lock(&fd->mu);
-  GPR_ASSERT(!fd->shutdown);
-  fd->shutdown = 1;
-  set_ready_locked(exec_ctx, fd, &fd->read_closure);
-  set_ready_locked(exec_ctx, fd, &fd->write_closure);
+  /* only shutdown once */
+  if (!fd->shutdown) {
+    fd->shutdown = 1;
+    /* signal read/write closed to OS so that future operations fail */
+    shutdown(fd->fd, SHUT_RDWR);
+    set_ready_locked(exec_ctx, fd, &fd->read_closure);
+    set_ready_locked(exec_ctx, fd, &fd->write_closure);
+  }
   gpr_mu_unlock(&fd->mu);
+}
+
+static bool fd_is_shutdown(grpc_fd *fd) {
+  gpr_mu_lock(&fd->mu);
+  bool r = fd->shutdown;
+  gpr_mu_unlock(&fd->mu);
+  return r;
 }
 
 static void fd_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
@@ -605,6 +617,8 @@ static void fd_end_poll(grpc_exec_ctx *exec_ctx, grpc_fd_watcher *watcher,
   GRPC_FD_UNREF(fd, "poll");
 }
 
+static grpc_workqueue *fd_get_workqueue(grpc_fd *fd) { return NULL; }
+
 /*******************************************************************************
  * pollset_posix.c
  */
@@ -717,6 +731,7 @@ static grpc_error *pollset_kick_ext(grpc_pollset *p,
   }
 
   GPR_TIMER_END("pollset_kick_ext", 0);
+  GRPC_LOG_IF_ERROR("pollset_kick_ext", GRPC_ERROR_REF(error));
   return error;
 }
 
@@ -845,6 +860,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     worker.wakeup_fd = gpr_malloc(sizeof(*worker.wakeup_fd));
     error = grpc_wakeup_fd_init(&worker.wakeup_fd->fd);
     if (error != GRPC_ERROR_NONE) {
+      GRPC_LOG_IF_ERROR("pollset_work", GRPC_ERROR_REF(error));
       return error;
     }
   }
@@ -1024,6 +1040,7 @@ static grpc_error *pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   }
   *worker_hdl = NULL;
   GPR_TIMER_END("pollset_work", 0);
+  GRPC_LOG_IF_ERROR("pollset_work", GRPC_ERROR_REF(error));
   return error;
 }
 
@@ -1215,9 +1232,11 @@ static const grpc_event_engine_vtable vtable = {
     .fd_wrapped_fd = fd_wrapped_fd,
     .fd_orphan = fd_orphan,
     .fd_shutdown = fd_shutdown,
+    .fd_is_shutdown = fd_is_shutdown,
     .fd_notify_on_read = fd_notify_on_read,
     .fd_notify_on_write = fd_notify_on_write,
     .fd_get_read_notifier_pollset = fd_get_read_notifier_pollset,
+    .fd_get_workqueue = fd_get_workqueue,
 
     .pollset_init = pollset_init,
     .pollset_shutdown = pollset_shutdown,
@@ -1242,7 +1261,9 @@ static const grpc_event_engine_vtable vtable = {
 };
 
 const grpc_event_engine_vtable *grpc_init_poll_posix(void) {
-  pollset_global_init();
+  if (!GRPC_LOG_IF_ERROR("pollset_global_init", pollset_global_init())) {
+    return NULL;
+  }
   return &vtable;
 }
 

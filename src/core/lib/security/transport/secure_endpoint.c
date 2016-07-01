@@ -128,7 +128,7 @@ static void flush_read_staging_buffer(secure_endpoint *ep, uint8_t **cur,
 
 static void call_read_cb(grpc_exec_ctx *exec_ctx, secure_endpoint *ep,
                          grpc_error *error) {
-  if (grpc_trace_secure_endpoint) {
+  if (false && grpc_trace_secure_endpoint) {
     size_t i;
     for (i = 0; i < ep->read_buffer->count; i++) {
       char *data = gpr_dump_slice(ep->read_buffer->slices[i],
@@ -211,7 +211,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *user_data,
 
   if (result != TSI_OK) {
     gpr_slice_buffer_reset_and_unref(ep->read_buffer);
-    call_read_cb(exec_ctx, ep, grpc_set_tsi_error_bits(
+    call_read_cb(exec_ctx, ep, grpc_set_tsi_error_result(
                                    GRPC_ERROR_CREATE("Unwrap failed"), result));
     return;
   }
@@ -256,7 +256,7 @@ static void endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
 
   gpr_slice_buffer_reset_and_unref(&ep->output_buffer);
 
-  if (grpc_trace_secure_endpoint) {
+  if (false && grpc_trace_secure_endpoint) {
     for (i = 0; i < slices->count; i++) {
       char *data =
           gpr_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -321,7 +321,7 @@ static void endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *secure_ep,
     gpr_slice_buffer_reset_and_unref(&ep->output_buffer);
     grpc_exec_ctx_sched(
         exec_ctx, cb,
-        grpc_set_tsi_error_bits(GRPC_ERROR_CREATE("Wrap failed"), result),
+        grpc_set_tsi_error_result(GRPC_ERROR_CREATE("Wrap failed"), result),
         NULL);
     return;
   }
@@ -360,11 +360,19 @@ static char *endpoint_get_peer(grpc_endpoint *secure_ep) {
   return grpc_endpoint_get_peer(ep->wrapped_ep);
 }
 
-static const grpc_endpoint_vtable vtable = {
-    endpoint_read,           endpoint_write,
-    endpoint_add_to_pollset, endpoint_add_to_pollset_set,
-    endpoint_shutdown,       endpoint_destroy,
-    endpoint_get_peer};
+static grpc_workqueue *endpoint_get_workqueue(grpc_endpoint *secure_ep) {
+  secure_endpoint *ep = (secure_endpoint *)secure_ep;
+  return grpc_endpoint_get_workqueue(ep->wrapped_ep);
+}
+
+static const grpc_endpoint_vtable vtable = {endpoint_read,
+                                            endpoint_write,
+                                            endpoint_get_workqueue,
+                                            endpoint_add_to_pollset,
+                                            endpoint_add_to_pollset_set,
+                                            endpoint_shutdown,
+                                            endpoint_destroy,
+                                            endpoint_get_peer};
 
 grpc_endpoint *grpc_secure_endpoint_create(
     struct tsi_frame_protector *protector, grpc_endpoint *transport,

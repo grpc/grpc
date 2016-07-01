@@ -31,13 +31,14 @@
  *
  */
 
+#include <Python.h>
 #include "loader.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif  /* __cpluslus  */
 
-#if GPR_WIN32
+#if GPR_WINDOWS
 
 int pygrpc_load_core(char *path) {
   HMODULE grpc_c;
@@ -60,7 +61,13 @@ int pygrpc_load_core(char *path) {
 
 int pygrpc_load_core(char *path) { return 1; }
 
-#endif  /* !GPR_WIN32 */
+#endif  /* !GPR_WINDOWS */
+
+// Cython doesn't have Py_AtExit bindings, so we call the C_API directly
+int pygrpc_initialize_core(void) {
+  grpc_init();
+  return Py_AtExit(grpc_shutdown) < 0 ? 0 : 1;
+}
 
 #ifdef __cplusplus
 }
