@@ -40,32 +40,22 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include <SystemConfiguration/SystemConfiguration.h>
 #include <grpc/support/sync.h>
+#include <grpc/support/log.h>
 
 struct grpc_connectivity_monitor {
   gpr_mu mu;
   dispatch_queue_t dispatch_queue;
   SCNetworkReachabilityRef reachability_ref;
   void (*loss_connection_handler)(void);
-  bool specific_interface;
-  bool isWWAN;
 };
 
 static struct grpc_connectivity_monitor g_monitor;
 static gpr_once g_monitor_mu_once = GPR_ONCE_INIT;
 
-static bool is_host_reachable(SCNetworkReachabilityFlags flags,
-                              bool specific_interface, bool isWWAN) {
-#if TARGET_OS_IPHONE
-  if (specific_interface) {
-    if (isWWAN != !!(flags & kSCNetworkReachabilityFlagsIsWWAN)) {
-      return true;
-    }
-  }
-#else
+static bool is_host_reachable(SCNetworkReachabilityFlags flags) {
   return !!(flags & kSCNetworkReachabilityFlagsReachable) &&
          !(flags & kSCNetworkReachabilityFlagsInterventionRequired) &&
          !(flags & kSCNetworkReachabilityFlagsConnectionOnDemand);
-#endif
 }
 
 static void reachability_callback(SCNetworkReachabilityRef target,
@@ -73,9 +63,18 @@ static void reachability_callback(SCNetworkReachabilityRef target,
                                   void* info) {
   struct grpc_connectivity_monitor* monitor =
       (struct grpc_connectivity_monitor*)info;
-  if (!is_host_reachable(flags, monitor->specific_interface, monitor->isWWAN)) {
+
+  if (!is_host_reachable(flags)) {
+    monitor->loss_connection_handler();
+    return;
+  }
+
+#if TARGET_OS_IPHONE
+  /* WIFI connectivity lost */
+  if (!!(flags & kSCNetworkReachabilityFlagsIsWWAN)) {
     monitor->loss_connection_handler();
   }
+#endif
 }
 
 static bool is_monitor_initialized(struct grpc_connectivity_monitor* monitor) {
@@ -103,8 +102,7 @@ static bool stop_monitor(struct grpc_connectivity_monitor* monitor) {
 }
 
 static bool init_connectivity_monitor(struct grpc_connectivity_monitor* monitor,
-                                      const char* addr, void (*handler)(void),
-                                      bool specific_interface, bool isWWAN) {
+                                      const char* addr, void (*handler)(void)) {
   // Check if monitor has already been initialized.
   if (monitor->reachability_ref != NULL) {
     return false;
@@ -118,8 +116,6 @@ static bool init_connectivity_monitor(struct grpc_connectivity_monitor* monitor,
     return false;
   }
   monitor->loss_connection_handler = handler;
-  monitor->isWWAN = isWWAN;
-  monitor->specific_interface = specific_interface;
   return true;
 }
 
@@ -138,12 +134,10 @@ static void connectivity_monitor_mu_init(void) {
   clear_connectivity_monitor(&g_monitor);
 }
 
-bool grpc_start_connectivity_monitor(const char* addr, void (*handler)(void),
-                                     bool specific_interface, bool isWWAN) {
+bool grpc_start_connectivity_monitor(const char* addr, void (*handler)(void)) {
   gpr_once_init(&g_monitor_mu_once, &connectivity_monitor_mu_init);
   gpr_mu_lock(&g_monitor.mu);
-  init_connectivity_monitor(&g_monitor, addr, handler, specific_interface,
-                            isWWAN);
+  init_connectivity_monitor(&g_monitor, addr, handler);
   // TODO(zyc): Should we check connectivity at the beginning
   // SCNetworkReachabilityFlags flags;
   // if (SCNetworkReachabilityGetFlags(g_monitor.reachability_ref, &flags)) {
