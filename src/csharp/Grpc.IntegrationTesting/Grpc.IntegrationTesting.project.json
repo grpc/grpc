@@ -1,8 +1,19 @@
-{
+﻿{
   "frameworks": {
-    "net45": { }
+    "net45": {}
   },
   "runtimes": {
-    "win": { }
+    "win": {}
+  },
+  "dependencies": {
+    "BouncyCastle.Crypto.dll": "1.8.1",
+    "CommandLineParser": "1.9.71",
+    "Google.Apis.Core": "1.13.1",
+    "Google.Protobuf": "3.0.0-beta3",
+    "Ix-Async": "1.2.5",
+    "Moq": "4.2.1510.2205",
+    "Newtonsoft.Json": "7.0.1",
+    "NUnit": "3.2.0",
+    "NUnitLite": "3.2.0"
   }
 }

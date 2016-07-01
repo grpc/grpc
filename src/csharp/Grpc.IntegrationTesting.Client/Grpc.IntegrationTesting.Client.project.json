@@ -1,8 +1,13 @@
-{
+﻿{
   "frameworks": {
-    "net45": { }
+    "net45": {}
   },
   "runtimes": {
-    "win": { }
+    "win": {}
+  },
+  "dependencies": {
+    "BouncyCastle.Crypto.dll": "1.8.1",
+    "Google.Apis.Core": "1.13.1",
+    "Newtonsoft.Json": "7.0.1"
   }
 }

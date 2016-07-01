@@ -4,5 +4,8 @@
   },
   "runtimes": {
     "win": { }
+  },
+  "dependencies": {
+    "Ix-Async": "1.2.5"
   }
 }
