@@ -93,9 +93,10 @@ GRPCAPI void grpc_byte_buffer_destroy(grpc_byte_buffer *byte_buffer);
 struct grpc_byte_buffer_reader;
 typedef struct grpc_byte_buffer_reader grpc_byte_buffer_reader;
 
-/** Initialize \a reader to read over \a buffer */
-GRPCAPI void grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
-                                          grpc_byte_buffer *buffer);
+/** Initialize \a reader to read over \a buffer.
+ * Returns 1 upon success, 0 otherwise. */
+GRPCAPI int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
+                                         grpc_byte_buffer *buffer);
 
 /** Cleanup and destroy \a reader */
 GRPCAPI void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader);

@@ -42,7 +42,11 @@
 static void MallocAndCopyByteBufferToCharArray(grpc_byte_buffer *buffer,
                                                size_t *length, char **array) {
   grpc_byte_buffer_reader reader;
-  grpc_byte_buffer_reader_init(&reader, buffer);
+  if (!grpc_byte_buffer_reader_init(&reader, buffer)) {
+    *array = NULL;
+    *lenght = 0;
+    return;
+  }
   // The slice contains uncompressed data even if compressed data was received
   // because the reader takes care of automatically decompressing it
   gpr_slice slice = grpc_byte_buffer_reader_readall(&reader);
