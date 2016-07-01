@@ -59,8 +59,9 @@ _SKIP_COMPRESSION = ['client_compressed_unary',
                      'server_compressed_unary',
                      'server_compressed_streaming']
 
-_SKIP_ADVANCED = ['custom_metadata', 'status_code_and_message',
-                  'unimplemented_method']
+_SKIP_ADVANCED_GO = ['custom_metadata', 'unimplemented_method']
+
+_SKIP_ADVANCED = _SKIP_ADVANCED_GO + ['status_code_and_message']
 
 _TEST_TIMEOUT = 3*60
 
@@ -172,10 +173,10 @@ class GoLanguage:
     return {}
 
   def unimplemented_test_cases(self):
-    return _SKIP_ADVANCED + _SKIP_COMPRESSION
+    return _SKIP_ADVANCED_GO + _SKIP_COMPRESSION
 
   def unimplemented_test_cases_server(self):
-    return _SKIP_ADVANCED + _SKIP_COMPRESSION
+    return _SKIP_ADVANCED_GO + _SKIP_COMPRESSION
 
   def __str__(self):
     return 'go'
