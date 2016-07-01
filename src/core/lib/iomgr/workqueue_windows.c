@@ -42,12 +42,6 @@
 // context, which is at least correct, if not performant or in the spirit of
 // workqueues.
 
-grpc_error *grpc_workqueue_create(grpc_exec_ctx *exec_ctx,
-                                  grpc_workqueue **workqueue) {
-  *workqueue = (grpc_workqueue *)1;
-  return GRPC_ERROR_NONE;
-}
-
 void grpc_workqueue_flush(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {}
 
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
@@ -59,10 +53,6 @@ void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
 void grpc_workqueue_ref(grpc_workqueue *workqueue) {}
 void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {}
 #endif
-
-void grpc_workqueue_add_to_pollset(grpc_exec_ctx *exec_ctx,
-                                   grpc_workqueue *workqueue,
-                                   grpc_pollset *pollset) {}
 
 void grpc_workqueue_enqueue(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
                             grpc_closure *closure, grpc_error *error) {
