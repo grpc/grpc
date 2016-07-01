@@ -2433,10 +2433,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-  platforms:
-  - mac
-  - linux
-  - posix
 - name: alarm_cpp_test
   gtest: true
   build: test
