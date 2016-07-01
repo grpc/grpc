@@ -160,6 +160,7 @@ $VENV_PYTHON -m pip install --upgrade pip
 # TODO(https://github.com/pypa/setuptools/issues/709) get the latest setuptools
 $VENV_PYTHON -m pip install setuptools==25.1.1
 $VENV_PYTHON -m pip install cython
+$VENV_PYTHON -m pip install -rrequirements.txt
 pip_install_dir $ROOT
 $VENV_PYTHON $ROOT/tools/distrib/python/make_grpcio_tools.py
 pip_install_dir $ROOT/tools/distrib/python/grpcio_tools

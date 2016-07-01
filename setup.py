@@ -211,15 +211,23 @@ SETUP_REQUIRES = INSTALL_REQUIRES + (
     'sphinx_rtd_theme>=0.1.8',
     'six>=1.10',
 )
-if BUILD_WITH_CYTHON:
-  sys.stderr.write(
-    "You requested a Cython build via GRPC_PYTHON_BUILD_WITH_CYTHON, "
-    "but do not have Cython installed. We won't stop you from using "
-    "other commands, but the extension files will fail to build.\n")
-elif need_cython:
-  sys.stderr.write(
-      'We could not find Cython. Setup may take 10-20 minutes.\n')
-  SETUP_REQUIRES += ('cython>=0.23',)
+
+try:
+  import Cython
+  has_cython = True
+except ImportError:
+  has_cython = False
+
+if not has_cython:
+  if BUILD_WITH_CYTHON:
+    sys.stderr.write(
+      "You requested a Cython build via GRPC_PYTHON_BUILD_WITH_CYTHON, "
+      "but do not have Cython installed. We won't stop you from using "
+      "other commands, but the extension files will fail to build.\n")
+  elif need_cython:
+    sys.stderr.write(
+        'We could not find Cython. Setup may take 10-20 minutes.\n')
+    SETUP_REQUIRES += ('cython>=0.23',)
 
 COMMAND_CLASS = {
     'doc': commands.SphinxDocumentation,
