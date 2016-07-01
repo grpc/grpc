@@ -1050,7 +1050,23 @@ runs_per_test = args.runs_per_test
 forever = args.forever
 
 
+def _shut_down_legacy_server(legacy_server_port):
+  try:
+    version = int(urllib2.urlopen(
+        'http://localhost:%d/version_number' % legacy_server_port,
+        timeout=10).read())
+  except:
+    pass
+  else:
+    urllib2.urlopen(
+        'http://localhost:%d/quitquitquit' % legacy_server_port).read()
+
+
 def _start_port_server(port_server_port):
+  # Temporary patch to switch the port_server port
+  # see https://github.com/grpc/grpc/issues/7145
+  _shut_down_legacy_server(32767)
+
   # check if a compatible port server is running
   # if incompatible (version mismatch) ==> start a new one
   # if not running ==> start a new one
@@ -1186,7 +1202,7 @@ def _build_and_run(
   # start antagonists
   antagonists = [subprocess.Popen(['tools/run_tests/antagonist.py'])
                  for _ in range(0, args.antagonists)]
-  port_server_port = 32767
+  port_server_port = 32766
   _start_port_server(port_server_port)
   resultset = None
   num_test_failures = 0
