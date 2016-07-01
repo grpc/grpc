@@ -276,7 +276,7 @@ static void append_error(grpc_error **composite, grpc_error *error,
 static grpc_wakeup_fd polling_island_wakeup_fd;
 
 /* Forward declaration */
-static void polling_island_delete(grpc_exec_ctx *exec_ctx);
+static void polling_island_delete(grpc_exec_ctx *exec_ctx, polling_island *pi);
 
 #ifdef GRPC_TSAN
 /* Currently TSAN may incorrectly flag data races between epoll_ctl and
@@ -325,7 +325,7 @@ static void pi_unref(grpc_exec_ctx *exec_ctx, polling_island *pi) {
     polling_island *next = (polling_island *)gpr_atm_acq_load(&pi->merged_to);
     polling_island_delete(exec_ctx, pi);
     if (next != NULL) {
-      PI_UNREF(next, "pi_delete"); /* Recursive call */
+      PI_UNREF(exec_ctx, next, "pi_delete"); /* Recursive call */
     }
   }
 }
@@ -465,7 +465,6 @@ static polling_island *polling_island_create(grpc_exec_ctx *exec_ctx,
                                              grpc_fd *initial_fd,
                                              grpc_error **error) {
   polling_island *pi = NULL;
-  char *err_msg;
   const char *err_desc = "polling_island_create";
 
   *error = GRPC_ERROR_NONE;
@@ -1273,7 +1272,7 @@ static void pollset_destroy(grpc_pollset *pollset) {
   gpr_mu_destroy(&pollset->mu);
 }
 
-static void pollset_reset(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
+static void pollset_reset(grpc_pollset *pollset) {
   GPR_ASSERT(pollset->shutting_down);
   GPR_ASSERT(!pollset_has_workers(pollset));
   pollset->shutting_down = false;
