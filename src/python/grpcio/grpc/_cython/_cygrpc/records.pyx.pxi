@@ -254,7 +254,8 @@ cdef class ByteBuffer:
     cdef void *data_slice_pointer
     if self.c_byte_buffer != NULL:
       with nogil:
-        # TODO(dgq): check the return value of grpc_byte_buffer_reader_init.
+        # TODO(issue:#7205): check the return value of
+        # grpc_byte_buffer_reader_init.
         grpc_byte_buffer_reader_init(&reader, self.c_byte_buffer)
       result = bytearray()
       with nogil:
