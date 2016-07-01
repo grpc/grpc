@@ -43,6 +43,10 @@ static void MallocAndCopyByteBufferToCharArray(grpc_byte_buffer *buffer,
                                                size_t *length, char **array) {
   grpc_byte_buffer_reader reader;
   if (!grpc_byte_buffer_reader_init(&reader, buffer)) {
+    // grpc_byte_buffer_reader_init can fail if the data sent by the server
+    // could not be decompressed for any reason. This is an issue with the data
+    // coming from the server and thus we want the RPC to fail with error code
+    // INTERNAL.
     *array = NULL;
     *length = 0;
     return;
