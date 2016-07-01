@@ -63,7 +63,7 @@ post_install do |installer|
     target.build_configurations.each do |config|
       config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'YES'
     end
-    if target.name == 'gRPC'
+    if target.name == 'gRPC-Core'
       target.build_configurations.each do |config|
         # TODO(zyc) Remove this setting after the issue is resolved
         # GPR_UNREACHABLE_CODE causes "Control may reach end of non-void
