@@ -34,6 +34,8 @@
 #ifndef GRPC_CORE_LIB_IOMGR_TCP_SERVER_H
 #define GRPC_CORE_LIB_IOMGR_TCP_SERVER_H
 
+#include <grpc/grpc.h>
+
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 
@@ -59,6 +61,7 @@ typedef void (*grpc_tcp_server_cb)(grpc_exec_ctx *exec_ctx, void *arg,
    If shutdown_complete is not NULL, it will be used by
    grpc_tcp_server_unref() when the ref count reaches zero. */
 grpc_error *grpc_tcp_server_create(grpc_closure *shutdown_complete,
+                                   const grpc_channel_args *args,
                                    grpc_tcp_server **server);
 
 /* Start listening to bound ports */

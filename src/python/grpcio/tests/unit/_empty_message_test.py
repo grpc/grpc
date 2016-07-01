@@ -37,10 +37,10 @@ from tests.unit.framework.common import test_constants
 _REQUEST = b''
 _RESPONSE = b''
 
-_UNARY_UNARY = b'/test/UnaryUnary'
-_UNARY_STREAM = b'/test/UnaryStream'
-_STREAM_UNARY = b'/test/StreamUnary'
-_STREAM_STREAM = b'/test/StreamStream'
+_UNARY_UNARY = '/test/UnaryUnary'
+_UNARY_STREAM = '/test/UnaryStream'
+_STREAM_UNARY = '/test/StreamUnary'
+_STREAM_STREAM = '/test/StreamStream'
 
 
 def handle_unary_unary(request, servicer_context):

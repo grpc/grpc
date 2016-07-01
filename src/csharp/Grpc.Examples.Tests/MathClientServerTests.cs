@@ -62,7 +62,7 @@ namespace Math.Tests
             };
             server.Start();
             channel = new Channel(Host, server.Ports.Single().BoundPort, ChannelCredentials.Insecure);
-            client = Math.NewClient(channel);
+            client = new Math.MathClient(channel);
         }
 
         [TestFixtureTearDown]

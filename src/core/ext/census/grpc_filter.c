@@ -45,6 +45,7 @@
 #include "src/core/ext/census/census_interface.h"
 #include "src/core/ext/census/census_rpc_stats.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 typedef struct call_data {
@@ -92,6 +93,7 @@ static void client_start_transport_op(grpc_exec_ctx *exec_ctx,
 
 static void server_on_done_recv(grpc_exec_ctx *exec_ctx, void *ptr,
                                 grpc_error *error) {
+  GPR_TIMER_BEGIN("census-server:server_on_done_recv", 0);
   grpc_call_element *elem = ptr;
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
@@ -99,6 +101,7 @@ static void server_on_done_recv(grpc_exec_ctx *exec_ctx, void *ptr,
     extract_and_annotate_method_tag(calld->recv_initial_metadata, calld, chand);
   }
   calld->on_done_recv->cb(exec_ctx, calld->on_done_recv->cb_arg, error);
+  GPR_TIMER_END("census-server:server_on_done_recv", 0);
 }
 
 static void server_mutate_op(grpc_call_element *elem,

@@ -80,20 +80,30 @@ static NSString * const kHostAddress = @"localhost:50051";
  * Run the getFeature demo. Calls getFeature with a point known to have a feature and a point known
  * not to have a feature.
  */
-@interface GetFeatureViewController : UIViewController {
-  RTGRouteGuide *service;
-}
+@interface GetFeatureViewController : UIViewController
+
+@property (weak, nonatomic) IBOutlet UILabel *outputLabel;
+
 @end
 
-@implementation GetFeatureViewController
+@implementation GetFeatureViewController {
+  RTGRouteGuide *_service;
+}
 
 - (void)execRequest {
   void (^handler)(RTGFeature *response, NSError *error) = ^(RTGFeature *response, NSError *error) {
+    // TODO(makdharma): Remove boilerplate by consolidating into one log function.
     if (response.name.length) {
+      NSString *str =[NSString stringWithFormat:@"%@\nFound feature called %@ at %@.", self.outputLabel.text, response.location, response.name];
+      self.outputLabel.text = str;
       NSLog(@"Found feature called %@ at %@.", response.name, response.location);
     } else if (response) {
+      NSString *str =[NSString stringWithFormat:@"%@\nFound no features at %@",  self.outputLabel.text,response.location];
+      self.outputLabel.text = str;
       NSLog(@"Found no features at %@", response.location);
     } else {
+      NSString *str =[NSString stringWithFormat:@"%@\nRPC error: %@", self.outputLabel.text, error];
+      self.outputLabel.text = str;
       NSLog(@"RPC error: %@", error);
     }
   };
@@ -102,8 +112,8 @@ static NSString * const kHostAddress = @"localhost:50051";
   point.latitude = 409146138;
   point.longitude = -746188906;
 
-  [service getFeatureWithRequest:point handler:handler];
-  [service getFeatureWithRequest:[RTGPoint message] handler:handler];
+  [_service getFeatureWithRequest:point handler:handler];
+  [_service getFeatureWithRequest:[RTGPoint message] handler:handler];
 }
 
 - (void)viewDidLoad {
@@ -112,10 +122,13 @@ static NSString * const kHostAddress = @"localhost:50051";
   // This only needs to be done once per host, before creating service objects for that host.
   [GRPCCall useInsecureConnectionsForHost:kHostAddress];
 
-  service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
+  _service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
+  self.outputLabel.text = @"RPC log:";
+  self.outputLabel.numberOfLines = 0;
+  self.outputLabel.font = [UIFont fontWithName:@"Helvetica Neue" size:8.0];
   [self execRequest];
 }
 
@@ -128,13 +141,15 @@ static NSString * const kHostAddress = @"localhost:50051";
  * Run the listFeatures demo. Calls listFeatures with a rectangle containing all of the features in
  * the pre-generated database. Prints each response as it comes in.
  */
-@interface ListFeaturesViewController : UIViewController {
-  RTGRouteGuide *service;
-}
+@interface ListFeaturesViewController : UIViewController
+
+@property (weak, nonatomic) IBOutlet UILabel *outputLabel;
 
 @end
 
-@implementation ListFeaturesViewController
+@implementation ListFeaturesViewController {
+  RTGRouteGuide *_service;
+}
 
 - (void)execRequest {
   RTGRectangle *rectangle = [RTGRectangle message];
@@ -144,11 +159,15 @@ static NSString * const kHostAddress = @"localhost:50051";
   rectangle.hi.longitude = -745E6;
 
   NSLog(@"Looking for features between %@ and %@", rectangle.lo, rectangle.hi);
-  [service listFeaturesWithRequest:rectangle
+  [_service listFeaturesWithRequest:rectangle
                       eventHandler:^(BOOL done, RTGFeature *response, NSError *error) {
     if (response) {
+      NSString *str =[NSString stringWithFormat:@"%@\nFound feature at %@ called %@.", self.outputLabel.text, response.location, response.name];
+      self.outputLabel.text = str;
       NSLog(@"Found feature at %@ called %@.", response.location, response.name);
     } else if (error) {
+      NSString *str =[NSString stringWithFormat:@"%@\nRPC error: %@", self.outputLabel.text, error];
+      self.outputLabel.text = str;
       NSLog(@"RPC error: %@", error);
     }
   }];
@@ -157,10 +176,13 @@ static NSString * const kHostAddress = @"localhost:50051";
 - (void)viewDidLoad {
   [super viewDidLoad];
 
-  service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
+  _service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
+  self.outputLabel.text = @"RPC log:";
+  self.outputLabel.numberOfLines = 0;
+  self.outputLabel.font = [UIFont fontWithName:@"Helvetica Neue" size:8.0];
   [self execRequest];
 }
 
@@ -174,13 +196,15 @@ static NSString * const kHostAddress = @"localhost:50051";
  * database with a variable delay in between. Prints the statistics when they are sent from the
  * server.
  */
-@interface RecordRouteViewController : UIViewController {
-  RTGRouteGuide *service;
-}
+@interface RecordRouteViewController : UIViewController
+
+@property (weak, nonatomic) IBOutlet UILabel *outputLabel;
 
 @end
 
-@implementation RecordRouteViewController
+@implementation RecordRouteViewController {
+  RTGRouteGuide *_service;
+}
 
 - (void)execRequest {
   NSString *dataBasePath = [NSBundle.mainBundle pathForResource:@"route_guide_db"
@@ -192,18 +216,28 @@ static NSString * const kHostAddress = @"localhost:50051";
     RTGPoint *location = [RTGPoint message];
     location.longitude = [((NSNumber *) feature[@"location"][@"longitude"]) intValue];
     location.latitude = [((NSNumber *) feature[@"location"][@"latitude"]) intValue];
+    NSString *str =[NSString stringWithFormat:@"%@\nVisiting point %@", self.outputLabel.text, location];
+    self.outputLabel.text = str;
     NSLog(@"Visiting point %@", location);
     return location;
   }];
 
-  [service recordRouteWithRequestsWriter:locations
+  [_service recordRouteWithRequestsWriter:locations
                                  handler:^(RTGRouteSummary *response, NSError *error) {
     if (response) {
+      NSString *str =[NSString stringWithFormat:
+                      @"%@\nFinished trip with %i points\nPassed %i features\n"
+                      "Travelled %i meters\nIt took %i seconds",
+                      self.outputLabel.text, response.pointCount, response.featureCount,
+                      response.distance, response.elapsedTime];
+      self.outputLabel.text = str;
       NSLog(@"Finished trip with %i points", response.pointCount);
       NSLog(@"Passed %i features", response.featureCount);
       NSLog(@"Travelled %i meters", response.distance);
       NSLog(@"It took %i seconds", response.elapsedTime);
     } else {
+      NSString *str =[NSString stringWithFormat:@"%@\nRPC error: %@", self.outputLabel.text, error];
+      self.outputLabel.text = str;
       NSLog(@"RPC error: %@", error);
     }
   }];
@@ -212,10 +246,13 @@ static NSString * const kHostAddress = @"localhost:50051";
 - (void)viewDidLoad {
   [super viewDidLoad];
 
-  service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
+  _service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
+  self.outputLabel.text = @"RPC log:";
+  self.outputLabel.numberOfLines = 0;
+  self.outputLabel.font = [UIFont fontWithName:@"Helvetica Neue" size:8.0];
   [self execRequest];
 }
 
@@ -228,13 +265,15 @@ static NSString * const kHostAddress = @"localhost:50051";
  * Run the routeChat demo. Send some chat messages, and print any chat messages that are sent from
  * the server.
  */
-@interface RouteChatViewController : UIViewController {
-  RTGRouteGuide *service;
-}
+@interface RouteChatViewController : UIViewController
+
+@property (weak, nonatomic) IBOutlet UILabel *outputLabel;
 
 @end
 
-@implementation RouteChatViewController
+@implementation RouteChatViewController {
+  RTGRouteGuide *_service;
+}
 
 - (void)execRequest {
   NSArray *notes = @[[RTGRouteNote noteWithMessage:@"First message" latitude:0 longitude:0],
@@ -246,11 +285,16 @@ static NSString * const kHostAddress = @"localhost:50051";
     return note;
   }];
 
-  [service routeChatWithRequestsWriter:notesWriter
+  [_service routeChatWithRequestsWriter:notesWriter
                           eventHandler:^(BOOL done, RTGRouteNote *note, NSError *error) {
     if (note) {
+      NSString *str =[NSString stringWithFormat:@"%@\nGot message %@ at %@",
+                      self.outputLabel.text, note.message, note.location];
+      self.outputLabel.text = str;
       NSLog(@"Got message %@ at %@", note.message, note.location);
     } else if (error) {
+      NSString *str =[NSString stringWithFormat:@"%@\nRPC error: %@", self.outputLabel.text, error];
+      self.outputLabel.text = str;
       NSLog(@"RPC error: %@", error);
     }
     if (done) {
@@ -262,10 +306,14 @@ static NSString * const kHostAddress = @"localhost:50051";
 - (void)viewDidLoad {
   [super viewDidLoad];
 
-  service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
+  _service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
+  // TODO(makarandd): Set these properties through UI builder
+  self.outputLabel.text = @"RPC log:";
+  self.outputLabel.numberOfLines = 0;
+  self.outputLabel.font = [UIFont fontWithName:@"Helvetica Neue" size:8.0];
   [self execRequest];
 }
 

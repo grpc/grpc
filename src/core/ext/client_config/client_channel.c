@@ -367,6 +367,8 @@ static int cc_pick_subchannel(grpc_exec_ctx *exec_ctx, void *elemp,
                               uint32_t initial_metadata_flags,
                               grpc_connected_subchannel **connected_subchannel,
                               grpc_closure *on_ready) {
+  GPR_TIMER_BEGIN("cc_pick_subchannel", 0);
+
   grpc_call_element *elem = elemp;
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
@@ -391,6 +393,7 @@ static int cc_pick_subchannel(grpc_exec_ctx *exec_ctx, void *elemp,
       }
     }
     gpr_mu_unlock(&chand->mu_config);
+    GPR_TIMER_END("cc_pick_subchannel", 0);
     return 1;
   }
   if (chand->lb_policy != NULL) {
@@ -402,6 +405,7 @@ static int cc_pick_subchannel(grpc_exec_ctx *exec_ctx, void *elemp,
                             initial_metadata, initial_metadata_flags,
                             connected_subchannel, on_ready);
     GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "cc_pick_subchannel");
+    GPR_TIMER_END("cc_pick_subchannel", 0);
     return r;
   }
   if (chand->resolver != NULL && !chand->started_resolving) {
@@ -426,6 +430,8 @@ static int cc_pick_subchannel(grpc_exec_ctx *exec_ctx, void *elemp,
                         NULL);
   }
   gpr_mu_unlock(&chand->mu_config);
+
+  GPR_TIMER_END("cc_pick_subchannel", 0);
   return 0;
 }
 

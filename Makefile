@@ -200,6 +200,7 @@ LD_tsan = clang
 LDXX_tsan = clang++
 CPPFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_tsan = -fsanitize=thread
+DEFINES_tsan = GRPC_TSAN
 DEFINES_tsan += GRPC_TEST_SLOWDOWN_BUILD_FACTOR=5
 
 VALID_CONFIG_stapprof = 1
@@ -414,7 +415,7 @@ E = @echo
 Q = @
 endif
 
-VERSION = 0.15.0-dev
+VERSION = 0.16.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -904,6 +905,7 @@ dns_resolver_connectivity_test: $(BINDIR)/$(CONFIG)/dns_resolver_connectivity_te
 dns_resolver_test: $(BINDIR)/$(CONFIG)/dns_resolver_test
 dualstack_socket_test: $(BINDIR)/$(CONFIG)/dualstack_socket_test
 endpoint_pair_test: $(BINDIR)/$(CONFIG)/endpoint_pair_test
+ev_epoll_linux_test: $(BINDIR)/$(CONFIG)/ev_epoll_linux_test
 fd_conservation_posix_test: $(BINDIR)/$(CONFIG)/fd_conservation_posix_test
 fd_posix_test: $(BINDIR)/$(CONFIG)/fd_posix_test
 fling_client: $(BINDIR)/$(CONFIG)/fling_client
@@ -993,7 +995,6 @@ time_averaged_stats_test: $(BINDIR)/$(CONFIG)/time_averaged_stats_test
 timeout_encoding_test: $(BINDIR)/$(CONFIG)/timeout_encoding_test
 timer_heap_test: $(BINDIR)/$(CONFIG)/timer_heap_test
 timer_list_test: $(BINDIR)/$(CONFIG)/timer_list_test
-timers_test: $(BINDIR)/$(CONFIG)/timers_test
 transport_connectivity_state_test: $(BINDIR)/$(CONFIG)/transport_connectivity_state_test
 transport_metadata_test: $(BINDIR)/$(CONFIG)/transport_metadata_test
 transport_security_test: $(BINDIR)/$(CONFIG)/transport_security_test
@@ -1249,6 +1250,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/dns_resolver_test \
   $(BINDIR)/$(CONFIG)/dualstack_socket_test \
   $(BINDIR)/$(CONFIG)/endpoint_pair_test \
+  $(BINDIR)/$(CONFIG)/ev_epoll_linux_test \
   $(BINDIR)/$(CONFIG)/fd_conservation_posix_test \
   $(BINDIR)/$(CONFIG)/fd_posix_test \
   $(BINDIR)/$(CONFIG)/fling_client \
@@ -1324,7 +1326,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/timeout_encoding_test \
   $(BINDIR)/$(CONFIG)/timer_heap_test \
   $(BINDIR)/$(CONFIG)/timer_list_test \
-  $(BINDIR)/$(CONFIG)/timers_test \
   $(BINDIR)/$(CONFIG)/transport_connectivity_state_test \
   $(BINDIR)/$(CONFIG)/transport_metadata_test \
   $(BINDIR)/$(CONFIG)/transport_security_test \
@@ -1571,6 +1572,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/dualstack_socket_test || ( echo test dualstack_socket_test failed ; exit 1 )
 	$(E) "[RUN]     Testing endpoint_pair_test"
 	$(Q) $(BINDIR)/$(CONFIG)/endpoint_pair_test || ( echo test endpoint_pair_test failed ; exit 1 )
+	$(E) "[RUN]     Testing ev_epoll_linux_test"
+	$(Q) $(BINDIR)/$(CONFIG)/ev_epoll_linux_test || ( echo test ev_epoll_linux_test failed ; exit 1 )
 	$(E) "[RUN]     Testing fd_conservation_posix_test"
 	$(Q) $(BINDIR)/$(CONFIG)/fd_conservation_posix_test || ( echo test fd_conservation_posix_test failed ; exit 1 )
 	$(E) "[RUN]     Testing fd_posix_test"
@@ -1705,8 +1708,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/timer_heap_test || ( echo test timer_heap_test failed ; exit 1 )
 	$(E) "[RUN]     Testing timer_list_test"
 	$(Q) $(BINDIR)/$(CONFIG)/timer_list_test || ( echo test timer_list_test failed ; exit 1 )
-	$(E) "[RUN]     Testing timers_test"
-	$(Q) $(BINDIR)/$(CONFIG)/timers_test || ( echo test timers_test failed ; exit 1 )
 	$(E) "[RUN]     Testing transport_connectivity_state_test"
 	$(Q) $(BINDIR)/$(CONFIG)/transport_connectivity_state_test || ( echo test transport_connectivity_state_test failed ; exit 1 )
 	$(E) "[RUN]     Testing transport_metadata_test"
@@ -2569,6 +2570,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/endpoint_pair_posix.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
+    src/core/lib/iomgr/ev_epoll_linux.c \
     src/core/lib/iomgr/ev_poll_and_epoll_posix.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
@@ -2579,6 +2581,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/iomgr_posix.c \
     src/core/lib/iomgr/iomgr_windows.c \
     src/core/lib/iomgr/load_file.c \
+    src/core/lib/iomgr/network_status_tracker.c \
     src/core/lib/iomgr/polling_entity.c \
     src/core/lib/iomgr/pollset_set_windows.c \
     src/core/lib/iomgr/pollset_windows.c \
@@ -2839,6 +2842,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/endpoint_pair_posix.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
+    src/core/lib/iomgr/ev_epoll_linux.c \
     src/core/lib/iomgr/ev_poll_and_epoll_posix.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
@@ -2849,6 +2853,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/iomgr_posix.c \
     src/core/lib/iomgr/iomgr_windows.c \
     src/core/lib/iomgr/load_file.c \
+    src/core/lib/iomgr/network_status_tracker.c \
     src/core/lib/iomgr/polling_entity.c \
     src/core/lib/iomgr/pollset_set_windows.c \
     src/core/lib/iomgr/pollset_windows.c \
@@ -3178,6 +3183,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/endpoint_pair_posix.c \
     src/core/lib/iomgr/endpoint_pair_windows.c \
     src/core/lib/iomgr/error.c \
+    src/core/lib/iomgr/ev_epoll_linux.c \
     src/core/lib/iomgr/ev_poll_and_epoll_posix.c \
     src/core/lib/iomgr/ev_poll_posix.c \
     src/core/lib/iomgr/ev_posix.c \
@@ -3188,6 +3194,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/iomgr_posix.c \
     src/core/lib/iomgr/iomgr_windows.c \
     src/core/lib/iomgr/load_file.c \
+    src/core/lib/iomgr/network_status_tracker.c \
     src/core/lib/iomgr/polling_entity.c \
     src/core/lib/iomgr/pollset_set_windows.c \
     src/core/lib/iomgr/pollset_windows.c \
@@ -6384,6 +6391,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/max_concurrent_streams.c \
     test/core/end2end/tests/max_message_length.c \
     test/core/end2end/tests/negative_deadline.c \
+    test/core/end2end/tests/network_status_change.c \
     test/core/end2end/tests/no_op.c \
     test/core/end2end/tests/payload.c \
     test/core/end2end/tests/ping.c \
@@ -6462,6 +6470,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/max_concurrent_streams.c \
     test/core/end2end/tests/max_message_length.c \
     test/core/end2end/tests/negative_deadline.c \
+    test/core/end2end/tests/network_status_change.c \
     test/core/end2end/tests/no_op.c \
     test/core/end2end/tests/payload.c \
     test/core/end2end/tests/ping.c \
@@ -7140,6 +7149,38 @@ deps_endpoint_pair_test: $(ENDPOINT_PAIR_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(ENDPOINT_PAIR_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+EV_EPOLL_LINUX_TEST_SRC = \
+    test/core/iomgr/ev_epoll_linux_test.c \
+
+EV_EPOLL_LINUX_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(EV_EPOLL_LINUX_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/ev_epoll_linux_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/ev_epoll_linux_test: $(EV_EPOLL_LINUX_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(EV_EPOLL_LINUX_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/ev_epoll_linux_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/iomgr/ev_epoll_linux_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_ev_epoll_linux_test: $(EV_EPOLL_LINUX_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(EV_EPOLL_LINUX_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -9988,38 +10029,6 @@ deps_timer_list_test: $(TIMER_LIST_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(TIMER_LIST_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-TIMERS_TEST_SRC = \
-    test/core/profiling/timers_test.c \
-
-TIMERS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(TIMERS_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/timers_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/timers_test: $(TIMERS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(TIMERS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/timers_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/profiling/timers_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_timers_test: $(TIMERS_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(TIMERS_TEST_OBJS:.o=.dep)
 endif
 endif
 

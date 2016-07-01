@@ -384,9 +384,6 @@ struct grpc_chttp2_transport {
 
   /** Transport op to be applied post-parsing */
   grpc_transport_op *post_parsing_op;
-
-  /** Message explaining the reason of dropping connection */
-  gpr_slice optional_drop_message;
 };
 
 typedef struct {
@@ -438,6 +435,9 @@ typedef struct {
       If true, then pending incoming frames can be thrown away. */
   bool seen_error;
   bool exceeded_metadata_size;
+
+  /** the error that resulted in this stream being removed */
+  grpc_error *removal_error;
 
   bool published_initial_metadata;
   bool published_trailing_metadata;

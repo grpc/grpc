@@ -46,38 +46,38 @@ def _metadata_plugin_callback(context, callback):
   callback(cygrpc.Metadata(
       [cygrpc.Metadatum(_CALL_CREDENTIALS_METADATA_KEY,
                         _CALL_CREDENTIALS_METADATA_VALUE)]),
-      cygrpc.StatusCode.ok, '')
+      cygrpc.StatusCode.ok, b'')
 
 
 class TypeSmokeTest(unittest.TestCase):
 
   def testStringsInUtilitiesUpDown(self):
     self.assertEqual(0, cygrpc.StatusCode.ok)
-    metadatum = cygrpc.Metadatum('a', 'b')
-    self.assertEqual('a'.encode(), metadatum.key)
-    self.assertEqual('b'.encode(), metadatum.value)
+    metadatum = cygrpc.Metadatum(b'a', b'b')
+    self.assertEqual(b'a', metadatum.key)
+    self.assertEqual(b'b', metadatum.value)
     metadata = cygrpc.Metadata([metadatum])
     self.assertEqual(1, len(metadata))
     self.assertEqual(metadatum.key, metadata[0].key)
 
   def testMetadataIteration(self):
     metadata = cygrpc.Metadata([
-        cygrpc.Metadatum('a', 'b'), cygrpc.Metadatum('c', 'd')])
+        cygrpc.Metadatum(b'a', b'b'), cygrpc.Metadatum(b'c', b'd')])
     iterator = iter(metadata)
     metadatum = next(iterator)
     self.assertIsInstance(metadatum, cygrpc.Metadatum)
-    self.assertEqual(metadatum.key, 'a'.encode())
-    self.assertEqual(metadatum.value, 'b'.encode())
+    self.assertEqual(metadatum.key, b'a')
+    self.assertEqual(metadatum.value, b'b')
     metadatum = next(iterator)
     self.assertIsInstance(metadatum, cygrpc.Metadatum)
-    self.assertEqual(metadatum.key, 'c'.encode())
-    self.assertEqual(metadatum.value, 'd'.encode())
+    self.assertEqual(metadatum.key, b'c')
+    self.assertEqual(metadatum.value, b'd')
     with self.assertRaises(StopIteration):
       next(iterator)
 
   def testOperationsIteration(self):
     operations = cygrpc.Operations([
-        cygrpc.operation_send_message('asdf', _EMPTY_FLAGS)])
+        cygrpc.operation_send_message(b'asdf', _EMPTY_FLAGS)])
     iterator = iter(operations)
     operation = next(iterator)
     self.assertIsInstance(operation, cygrpc.Operation)
@@ -87,7 +87,7 @@ class TypeSmokeTest(unittest.TestCase):
       next(iterator)
 
   def testOperationFlags(self):
-    operation = cygrpc.operation_send_message('asdf',
+    operation = cygrpc.operation_send_message(b'asdf',
                                               cygrpc.WriteFlag.no_compress)
     self.assertEqual(cygrpc.WriteFlag.no_compress, operation.flags)
 
@@ -105,16 +105,16 @@ class TypeSmokeTest(unittest.TestCase):
     del server
 
   def testChannelUpDown(self):
-    channel = cygrpc.Channel('[::]:0', cygrpc.ChannelArgs([]))
+    channel = cygrpc.Channel(b'[::]:0', cygrpc.ChannelArgs([]))
     del channel
 
   def testCredentialsMetadataPluginUpDown(self):
     plugin = cygrpc.CredentialsMetadataPlugin(
-        lambda ignored_a, ignored_b: None, '')
+        lambda ignored_a, ignored_b: None, b'')
     del plugin
 
   def testCallCredentialsFromPluginUpDown(self):
-    plugin = cygrpc.CredentialsMetadataPlugin(_metadata_plugin_callback, '')
+    plugin = cygrpc.CredentialsMetadataPlugin(_metadata_plugin_callback, b'')
     call_credentials = cygrpc.call_credentials_metadata_plugin(plugin)
     del plugin
     del call_credentials
@@ -123,7 +123,7 @@ class TypeSmokeTest(unittest.TestCase):
     server = cygrpc.Server()
     completion_queue = cygrpc.CompletionQueue()
     server.register_completion_queue(completion_queue)
-    port = server.add_http2_port('[::]:0')
+    port = server.add_http2_port(b'[::]:0')
     self.assertIsInstance(port, int)
     server.start()
     del server
@@ -131,7 +131,7 @@ class TypeSmokeTest(unittest.TestCase):
   def testServerStartShutdown(self):
     completion_queue = cygrpc.CompletionQueue()
     server = cygrpc.Server()
-    server.add_http2_port('[::]:0')
+    server.add_http2_port(b'[::]:0')
     server.register_completion_queue(completion_queue)
     server.start()
     shutdown_tag = object()
@@ -150,9 +150,9 @@ class ServerClientMixin(object):
     self.server = cygrpc.Server()
     self.server.register_completion_queue(self.server_completion_queue)
     if server_credentials:
-      self.port = self.server.add_http2_port('[::]:0', server_credentials)
+      self.port = self.server.add_http2_port(b'[::]:0', server_credentials)
     else:
-      self.port = self.server.add_http2_port('[::]:0')
+      self.port = self.server.add_http2_port(b'[::]:0')
     self.server.start()
     self.client_completion_queue = cygrpc.CompletionQueue()
     if client_credentials:
@@ -160,10 +160,10 @@ class ServerClientMixin(object):
           cygrpc.ChannelArg(cygrpc.ChannelArgKey.ssl_target_name_override,
                             host_override)])
       self.client_channel = cygrpc.Channel(
-          'localhost:{}'.format(self.port), client_channel_arguments,
+          'localhost:{}'.format(self.port).encode(), client_channel_arguments,
           client_credentials)
     else:
-      self.client_channel = cygrpc.Channel('localhost:{}'.format(self.port))
+      self.client_channel = cygrpc.Channel('localhost:{}'.format(self.port).encode())
     if host_override:
       self.host_argument = None  # default host
       self.expected_host = host_override

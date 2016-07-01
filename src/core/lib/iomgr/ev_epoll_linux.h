@@ -31,18 +31,17 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SURFACE_SURFACE_TRACE_H
-#define GRPC_CORE_LIB_SURFACE_SURFACE_TRACE_H
+#ifndef GRPC_CORE_LIB_IOMGR_EV_EPOLL_LINUX_H
+#define GRPC_CORE_LIB_IOMGR_EV_EPOLL_LINUX_H
 
-#include <grpc/support/log.h>
-#include "src/core/lib/debug/trace.h"
-#include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/iomgr/ev_posix.h"
 
-#define GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, event)    \
-  if (grpc_api_trace) {                                 \
-    char *_ev = grpc_event_string(event);               \
-    gpr_log(GPR_INFO, "RETURN_EVENT[%p]: %s", cq, _ev); \
-    gpr_free(_ev);                                      \
-  }
+const grpc_event_engine_vtable *grpc_init_epoll_linux(void);
 
-#endif /* GRPC_CORE_LIB_SURFACE_SURFACE_TRACE_H */
+#ifdef GPR_LINUX_EPOLL
+void *grpc_fd_get_polling_island(grpc_fd *fd);
+void *grpc_pollset_get_polling_island(grpc_pollset *ps);
+bool grpc_are_polling_islands_equal(void *p, void *q);
+#endif /* defined(GPR_LINUX_EPOLL) */
+
+#endif /* GRPC_CORE_LIB_IOMGR_EV_EPOLL_LINUX_H */

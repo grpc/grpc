@@ -92,6 +92,8 @@ typedef enum {
   GRPC_ERROR_INT_FD,
   /// HTTP status (i.e. 404)
   GRPC_ERROR_INT_HTTP_STATUS,
+  /// context sensitive limit associated with the error
+  GRPC_ERROR_INT_LIMIT,
 } grpc_error_ints;
 
 typedef enum {
@@ -163,26 +165,27 @@ void grpc_error_unref(grpc_error *err);
 #endif
 
 grpc_error *grpc_error_set_int(grpc_error *src, grpc_error_ints which,
-                               intptr_t value);
+                               intptr_t value) GRPC_MUST_USE_RESULT;
 bool grpc_error_get_int(grpc_error *error, grpc_error_ints which, intptr_t *p);
 grpc_error *grpc_error_set_time(grpc_error *src, grpc_error_times which,
-                                gpr_timespec value);
+                                gpr_timespec value) GRPC_MUST_USE_RESULT;
 grpc_error *grpc_error_set_str(grpc_error *src, grpc_error_strs which,
-                               const char *value);
+                               const char *value) GRPC_MUST_USE_RESULT;
 /// Returns NULL if the specified string is not set.
 /// Caller does NOT own return value.
 const char *grpc_error_get_str(grpc_error *error, grpc_error_strs which);
 /// Add a child error: an error that is believed to have contributed to this
 /// error occurring. Allows root causing high level errors from lower level
 /// errors that contributed to them.
-grpc_error *grpc_error_add_child(grpc_error *src, grpc_error *child);
+grpc_error *grpc_error_add_child(grpc_error *src,
+                                 grpc_error *child) GRPC_MUST_USE_RESULT;
 grpc_error *grpc_os_error(const char *file, int line, int err,
-                          const char *call_name);
+                          const char *call_name) GRPC_MUST_USE_RESULT;
 /// create an error associated with errno!=0 (an 'operating system' error)
 #define GRPC_OS_ERROR(err, call_name) \
   grpc_os_error(__FILE__, __LINE__, err, call_name)
 grpc_error *grpc_wsa_error(const char *file, int line, int err,
-                           const char *call_name);
+                           const char *call_name) GRPC_MUST_USE_RESULT;
 /// windows only: create an error associated with WSAGetLastError()!=0
 #define GRPC_WSA_ERROR(err, call_name) \
   grpc_wsa_error(__FILE__, __LINE__, err, call_name)

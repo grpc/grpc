@@ -97,7 +97,8 @@ int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
     goto error;
   }
 
-  err = grpc_tcp_server_create(NULL, &tcp);
+  err =
+      grpc_tcp_server_create(NULL, grpc_server_get_channel_args(server), &tcp);
   if (err != GRPC_ERROR_NONE) {
     goto error;
   }
