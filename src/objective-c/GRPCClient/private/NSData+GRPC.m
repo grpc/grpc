@@ -44,7 +44,7 @@ static void MallocAndCopyByteBufferToCharArray(grpc_byte_buffer *buffer,
   grpc_byte_buffer_reader reader;
   if (!grpc_byte_buffer_reader_init(&reader, buffer)) {
     *array = NULL;
-    *lenght = 0;
+    *length = 0;
     return;
   }
   // The slice contains uncompressed data even if compressed data was received

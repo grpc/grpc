@@ -60,6 +60,7 @@ void byte_buffer_to_string(grpc_byte_buffer *buffer, char **out_string,
                            size_t *out_length) {
   grpc_byte_buffer_reader reader;
   if (buffer == NULL || !grpc_byte_buffer_reader_init(&reader, buffer)) {
+    /* TODO(dgq): distinguish between the error cases. */
     *out_string = NULL;
     *out_length = 0;
     return;
