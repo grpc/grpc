@@ -50,4 +50,8 @@ struct grpc_workqueue {
   grpc_closure read_closure;
 };
 
+/** Create a work queue */
+grpc_error *grpc_workqueue_create(grpc_exec_ctx *exec_ctx,
+                                  grpc_workqueue **workqueue);
+
 #endif /* GRPC_CORE_LIB_IOMGR_WORKQUEUE_POSIX_H */

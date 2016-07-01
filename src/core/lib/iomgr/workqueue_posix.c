@@ -100,12 +100,6 @@ void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {
   }
 }
 
-void grpc_workqueue_add_to_pollset(grpc_exec_ctx *exec_ctx,
-                                   grpc_workqueue *workqueue,
-                                   grpc_pollset *pollset) {
-  grpc_pollset_add_fd(exec_ctx, pollset, workqueue->wakeup_read_fd);
-}
-
 void grpc_workqueue_flush(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {
   gpr_mu_lock(&workqueue->mu);
   grpc_exec_ctx_enqueue_list(exec_ctx, &workqueue->closure_list, NULL);

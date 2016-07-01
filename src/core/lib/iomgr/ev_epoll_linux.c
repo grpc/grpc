@@ -253,13 +253,14 @@ struct grpc_pollset_set {
  * Common helpers
  */
 
-static void append_error(grpc_error **composite, grpc_error *error,
+static bool append_error(grpc_error **composite, grpc_error *error,
                          const char *desc) {
-  if (error == GRPC_ERROR_NONE) return;
+  if (error == GRPC_ERROR_NONE) return true;
   if (*composite == GRPC_ERROR_NONE) {
     *composite = GRPC_ERROR_CREATE(desc);
   }
   *composite = grpc_error_add_child(*composite, error);
+  return false;
 }
 
 /*******************************************************************************
@@ -490,16 +491,18 @@ static polling_island *polling_island_create(grpc_exec_ctx *exec_ctx,
   polling_island_add_wakeup_fd_locked(pi, &grpc_global_wakeup_fd, error);
 
   if (initial_fd != NULL) {
-    /* Lock the polling island here just in case we got this structure from
-       the freelist and the polling island lock was not released yet (by the
-       code that adds the polling island to the freelist) */
-    gpr_mu_lock(&pi->mu);
     polling_island_add_fds_locked(pi, &initial_fd, 1, true, error);
-    gpr_mu_unlock(&pi->mu);
   }
 
-  append_error(error, grpc_workqueue_create(exec_ctx, &pi->workqueue),
-               err_desc);
+  if (append_error(error, grpc_workqueue_create(exec_ctx, &pi->workqueue),
+                   err_desc) &&
+      *error == GRPC_ERROR_NONE) {
+    polling_island_add_fds_locked(pi, &pi->workqueue->wakeup_read_fd, 1, true,
+                                  error);
+    GPR_ASSERT(pi->workqueue->wakeup_read_fd->polling_island == NULL);
+    pi->workqueue->wakeup_read_fd->polling_island = pi;
+    PI_ADD_REF(pi, 1);
+  }
 
 done:
   if (*error != GRPC_ERROR_NONE) {
