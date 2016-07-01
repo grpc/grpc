@@ -4,7 +4,10 @@
 # Please look at the templates directory instead.
 # This file can be regenerated from the template by running
 # tools/buildgen/generate_projects.sh
-
+#
+# Additionally, this is currently very experimental, and unsupported.
+# Further work will happen on that file.
+#
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -39,7 +42,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(PACKAGE_NAME      "grpc")
-set(PACKAGE_VERSION   "0.15.0-dev")
+set(PACKAGE_VERSION   "0.16.0-dev")
 set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
@@ -142,6 +145,7 @@ add_library(grpc
   src/core/lib/iomgr/endpoint_pair_posix.c
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
+  src/core/lib/iomgr/ev_epoll_linux.c
   src/core/lib/iomgr/ev_poll_and_epoll_posix.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
@@ -152,6 +156,7 @@ add_library(grpc
   src/core/lib/iomgr/iomgr_posix.c
   src/core/lib/iomgr/iomgr_windows.c
   src/core/lib/iomgr/load_file.c
+  src/core/lib/iomgr/network_status_tracker.c
   src/core/lib/iomgr/polling_entity.c
   src/core/lib/iomgr/pollset_set_windows.c
   src/core/lib/iomgr/pollset_windows.c
@@ -345,6 +350,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/endpoint_pair_posix.c
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
+  src/core/lib/iomgr/ev_epoll_linux.c
   src/core/lib/iomgr/ev_poll_and_epoll_posix.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
@@ -355,6 +361,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/iomgr_posix.c
   src/core/lib/iomgr/iomgr_windows.c
   src/core/lib/iomgr/load_file.c
+  src/core/lib/iomgr/network_status_tracker.c
   src/core/lib/iomgr/polling_entity.c
   src/core/lib/iomgr/pollset_set_windows.c
   src/core/lib/iomgr/pollset_windows.c
@@ -525,6 +532,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/endpoint_pair_posix.c
   src/core/lib/iomgr/endpoint_pair_windows.c
   src/core/lib/iomgr/error.c
+  src/core/lib/iomgr/ev_epoll_linux.c
   src/core/lib/iomgr/ev_poll_and_epoll_posix.c
   src/core/lib/iomgr/ev_poll_posix.c
   src/core/lib/iomgr/ev_posix.c
@@ -535,6 +543,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/iomgr_posix.c
   src/core/lib/iomgr/iomgr_windows.c
   src/core/lib/iomgr/load_file.c
+  src/core/lib/iomgr/network_status_tracker.c
   src/core/lib/iomgr/polling_entity.c
   src/core/lib/iomgr/pollset_set_windows.c
   src/core/lib/iomgr/pollset_windows.c

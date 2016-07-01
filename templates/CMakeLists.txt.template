@@ -6,7 +6,10 @@
   # Please look at the templates directory instead.
   # This file can be regenerated from the template by running
   # tools/buildgen/generate_projects.sh
-
+  #
+  # Additionally, this is currently very experimental, and unsupported.
+  # Further work will happen on that file.
+  #
   # Copyright 2015, Google Inc.
   # All rights reserved.
   #
