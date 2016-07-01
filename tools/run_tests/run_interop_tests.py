@@ -54,8 +54,13 @@ os.chdir(ROOT)
 
 _DEFAULT_SERVER_PORT=8080
 
-_SKIP_COMPRESSION = ['large_compressed_unary',
-                     'server_compressed_streaming']
+_SKIP_CLIENT_COMPRESSION = ['client_compressed_unary',
+                            'client_compressed_streaming']
+
+_SKIP_SERVER_COMPRESSION = ['server_compressed_unary',
+                            'server_compressed_streaming']
+
+_SKIP_COMPRESSION = _SKIP_CLIENT_COMPRESSION + _SKIP_SERVER_COMPRESSION
 
 _SKIP_ADVANCED = ['custom_metadata', 'status_code_and_message',
                   'unimplemented_method']
@@ -111,7 +116,7 @@ class CSharpLanguage:
     return {}
 
   def unimplemented_test_cases(self):
-    return _SKIP_COMPRESSION
+    return _SKIP_SERVER_COMPRESSION
 
   def unimplemented_test_cases_server(self):
     return _SKIP_COMPRESSION
@@ -345,7 +350,8 @@ _TEST_CASES = ['large_unary', 'empty_unary', 'ping_pong',
                'cancel_after_begin', 'cancel_after_first_response',
                'timeout_on_sleeping_server', 'custom_metadata',
                'status_code_and_message', 'unimplemented_method',
-               'large_compressed_unary', 'server_compressed_streaming']
+               'client_compressed_unary', 'server_compressed_unary',
+               'client_compressed_streaming', 'server_compressed_streaming']
 
 _AUTH_TEST_CASES = ['compute_engine_creds', 'jwt_token_creds',
                     'oauth2_auth_token', 'per_rpc_creds']
@@ -464,7 +470,8 @@ def cloud_to_prod_jobspec(language, test_case, server_host_name,
           flake_retries=5 if args.allow_flakes else 0,
           timeout_retries=2 if args.allow_flakes else 0,
           kill_handler=_job_kill_handler)
-  test_job.container_name = container_name
+  if docker_image:
+    test_job.container_name = container_name
   return test_job
 
 
@@ -500,7 +507,8 @@ def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
           flake_retries=5 if args.allow_flakes else 0,
           timeout_retries=2 if args.allow_flakes else 0,
           kill_handler=_job_kill_handler)
-  test_job.container_name = container_name
+  if docker_image:
+    test_job.container_name = container_name
   return test_job
 
 

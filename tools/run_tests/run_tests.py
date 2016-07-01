@@ -33,7 +33,6 @@
 import argparse
 import ast
 import glob
-import hashlib
 import itertools
 import json
 import multiprocessing
@@ -63,7 +62,7 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {}
 
 
 _POLLING_STRATEGIES = {
-  'linux': ['poll', 'legacy']
+  'linux': ['epoll', 'poll', 'legacy']
 }
 
 
@@ -78,24 +77,18 @@ class Config(object):
     if environ is None:
       environ = {}
     self.build_config = config
-    self.allow_hashing = (config != 'gcov')
     self.environ = environ
     self.environ['CONFIG'] = config
     self.tool_prefix = tool_prefix
     self.timeout_multiplier = timeout_multiplier
 
-  def job_spec(self, cmdline, hash_targets, timeout_seconds=5*60,
+  def job_spec(self, cmdline, timeout_seconds=5*60,
                shortname=None, environ={}, cpu_cost=1.0, flaky=False):
     """Construct a jobset.JobSpec for a test under this config
 
        Args:
          cmdline:      a list of strings specifying the command line the test
                        would like to run
-         hash_targets: either None (don't do caching of test results), or
-                       a list of strings specifying files to include in a
-                       binary hash to check if a test has changed
-                       -- if used, all artifacts needed to run the test must
-                          be listed
     """
     actual_environ = self.environ.copy()
     for k, v in environ.iteritems():
@@ -105,8 +98,6 @@ class Config(object):
                           environ=actual_environ,
                           cpu_cost=cpu_cost,
                           timeout_seconds=(self.timeout_multiplier * timeout_seconds if timeout_seconds else None),
-                          hash_targets=hash_targets
-                              if self.allow_hashing else None,
                           flake_retries=5 if flaky or args.allow_flakes else 0,
                           timeout_retries=3 if args.allow_flakes else 0)
 
@@ -399,7 +390,6 @@ class PythonLanguage(object):
     if self.config.build_config != 'gcov':
       return [self.config.job_spec(
           ['tools/run_tests/run_python.sh', tox_env],
-          None,
           environ=dict(environment.items() +
                        [('GRPC_PYTHON_TESTRUNNER_FILTER', suite_name)]),
           shortname='%s.test.%s' % (tox_env, suite_name),
@@ -408,7 +398,6 @@ class PythonLanguage(object):
           for tox_env in self._tox_envs]
     else:
       return [self.config.job_spec(['tools/run_tests/run_python.sh', tox_env],
-                                   None,
                                    environ=environment,
                                    shortname='%s.test.coverage' % tox_env,
                                    timeout_seconds=15*60)
@@ -425,7 +414,7 @@ class PythonLanguage(object):
     return []
 
   def build_steps(self):
-    return [['tools/run_tests/build_python.sh', tox_env] 
+    return [['tools/run_tests/build_python.sh', tox_env]
             for tox_env in self._tox_envs]
 
   def post_tests_steps(self):
@@ -460,7 +449,7 @@ class RubyLanguage(object):
     _check_compiler(self.args.compiler, ['default'])
 
   def test_specs(self):
-    return [self.config.job_spec(['tools/run_tests/run_ruby.sh'], None,
+    return [self.config.job_spec(['tools/run_tests/run_ruby.sh'],
                                  timeout_seconds=10*60,
                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
@@ -500,15 +489,23 @@ class CSharpLanguage(object):
     if self.platform == 'windows':
       # Explicitly choosing between x86 and x64 arch doesn't work yet
       _check_arch(self.args.arch, ['default'])
+      # CoreCLR use 64bit runtime by default.
+      arch_option = 'x64' if self.args.compiler == 'coreclr' else self.args.arch
       self._make_options = [_windows_toolset_option(self.args.compiler),
-                            _windows_arch_option(self.args.arch)]
+                            _windows_arch_option(arch_option)]
     else:
-      _check_compiler(self.args.compiler, ['default'])
+      _check_compiler(self.args.compiler, ['default', 'coreclr'])
+      if self.platform == 'linux' and self.args.compiler == 'coreclr':
+        self._docker_distro = 'coreclr'
+      else:
+        self._docker_distro = 'jessie'
+
       if self.platform == 'mac':
-        # On Mac, official distribution of mono is 32bit.
         # TODO(jtattermusch): EMBED_ZLIB=true currently breaks the mac build
-        self._make_options = ['EMBED_OPENSSL=true',
-                              'CFLAGS=-m32', 'LDFLAGS=-m32']
+        self._make_options = ['EMBED_OPENSSL=true']
+        if self.args.compiler != 'coreclr':
+          # On Mac, official distribution of mono is 32bit.
+          self._make_options += ['CFLAGS=-m32', 'LDFLAGS=-m32']
       else:
         self._make_options = ['EMBED_OPENSSL=true', 'EMBED_ZLIB=true']
 
@@ -517,17 +514,33 @@ class CSharpLanguage(object):
       tests_by_assembly = json.load(f)
 
     msbuild_config = _MSBUILD_CONFIG[self.config.build_config]
-    nunit_args = ['--labels=All',
-                  '--noresult',
-                  '--workers=1']
-    if self.platform == 'windows':
+    nunit_args = ['--labels=All']
+    assembly_subdir = 'bin/%s' % msbuild_config
+    assembly_extension = '.exe'
+
+    if self.args.compiler == 'coreclr':
+      if self.platform == 'linux':
+        assembly_subdir += '/netstandard1.5/debian.8-x64'
+        assembly_extension = ''
+      elif self.platform == 'mac':
+        assembly_subdir += '/netstandard1.5/osx.10.11-x64'
+        assembly_extension = ''
+      else:
+        assembly_subdir += '/netstandard1.5/win7-x64'
       runtime_cmd = []
     else:
-      runtime_cmd = ['mono']
+      nunit_args += ['--noresult', '--workers=1']
+      if self.platform == 'windows':
+        runtime_cmd = []
+      else:
+        runtime_cmd = ['mono']
 
     specs = []
     for assembly in tests_by_assembly.iterkeys():
-      assembly_file = 'src/csharp/%s/bin/%s/%s.exe' % (assembly, msbuild_config, assembly)
+      assembly_file = 'src/csharp/%s/%s/%s%s' % (assembly,
+                                                 assembly_subdir,
+                                                 assembly,
+                                                 assembly_extension)
       if self.config.build_config != 'gcov' or self.platform != 'windows':
         # normally, run each test as a separate process
         for test in tests_by_assembly[assembly]:
@@ -570,12 +583,18 @@ class CSharpLanguage(object):
     return self._make_options;
 
   def build_steps(self):
-    if self.platform == 'windows':
-      return [[_windows_build_bat(self.args.compiler),
-               'src/csharp/Grpc.sln',
-               '/p:Configuration=%s' % _MSBUILD_CONFIG[self.config.build_config]]]
+    if self.args.compiler == 'coreclr':
+      if self.platform == 'windows':
+        return [['tools\\run_tests\\build_csharp_coreclr.bat']]
+      else:
+        return [['tools/run_tests/build_csharp_coreclr.sh']]
     else:
-      return [['tools/run_tests/build_csharp.sh']]
+      if self.platform == 'windows':
+        return [[_windows_build_bat(self.args.compiler),
+                 'src/csharp/Grpc.sln',
+                 '/p:Configuration=%s' % _MSBUILD_CONFIG[self.config.build_config]]]
+      else:
+        return [['tools/run_tests/build_csharp.sh']]
 
   def post_tests_steps(self):
     if self.platform == 'windows':
@@ -587,7 +606,8 @@ class CSharpLanguage(object):
     return 'Makefile'
 
   def dockerfile_dir(self):
-    return 'tools/dockerfile/test/csharp_jessie_%s' % _docker_arch_suffix(self.args.arch)
+    return 'tools/dockerfile/test/csharp_%s_%s' % (self._docker_distro,
+                                                   _docker_arch_suffix(self.args.arch))
 
   def __str__(self):
     return 'csharp'
@@ -602,7 +622,10 @@ class ObjCLanguage(object):
 
   def test_specs(self):
     return [self.config.job_spec(['src/objective-c/tests/run_tests.sh'], None,
-                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
+                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS),
+            self.config.job_spec(['src/objective-c/tests/build_example_test.sh'],
+                                 None, timeout_seconds=15*60,
+                                 environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
     return []
@@ -639,7 +662,7 @@ class Sanity(object):
   def test_specs(self):
     import yaml
     with open('tools/run_tests/sanity/sanity_tests.yaml', 'r') as f:
-      return [self.config.job_spec(cmd['script'].split(), None,
+      return [self.config.job_spec(cmd['script'].split(),
                                    timeout_seconds=None, environ={'TEST': 'true'},
                                    cpu_cost=cmd.get('cpu_cost', 1))
               for cmd in yaml.load(f)]
@@ -729,7 +752,8 @@ def _check_arch_option(arch):
 
 def _windows_build_bat(compiler):
   """Returns name of build.bat for selected compiler."""
-  if compiler == 'default' or compiler == 'vs2013':
+  # For CoreCLR, fall back to the default compiler for C core
+  if compiler == 'default' or compiler == 'vs2013' or compiler == 'coreclr':
     return 'vsprojects\\build_vs2013.bat'
   elif compiler == 'vs2015':
     return 'vsprojects\\build_vs2015.bat'
@@ -742,7 +766,8 @@ def _windows_build_bat(compiler):
 
 def _windows_toolset_option(compiler):
   """Returns msbuild PlatformToolset for selected compiler."""
-  if compiler == 'default' or compiler == 'vs2013':
+  # For CoreCLR, fall back to the default compiler for C core
+  if compiler == 'default' or compiler == 'vs2013' or compiler == 'coreclr':
     return '/p:PlatformToolset=v120'
   elif compiler == 'vs2015':
     return '/p:PlatformToolset=v140'
@@ -838,7 +863,8 @@ argp.add_argument('--compiler',
                            'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
                            'vs2010', 'vs2013', 'vs2015',
                            'python2.7', 'python3.4',
-                           'node0.12', 'node4', 'node5'],
+                           'node0.12', 'node4', 'node5',
+                           'coreclr'],
                   default='default',
                   help='Selects compiler to use. Allowed values depend on the platform and language.')
 argp.add_argument('--build_only',
@@ -1024,46 +1050,6 @@ runs_per_test = args.runs_per_test
 forever = args.forever
 
 
-class TestCache(object):
-  """Cache for running tests."""
-
-  def __init__(self, use_cache_results):
-    self._last_successful_run = {}
-    self._use_cache_results = use_cache_results
-    self._last_save = time.time()
-
-  def should_run(self, cmdline, bin_hash):
-    if cmdline not in self._last_successful_run:
-      return True
-    if self._last_successful_run[cmdline] != bin_hash:
-      return True
-    if not self._use_cache_results:
-      return True
-    return False
-
-  def finished(self, cmdline, bin_hash):
-    self._last_successful_run[cmdline] = bin_hash
-    if time.time() - self._last_save > 1:
-      self.save()
-
-  def dump(self):
-    return [{'cmdline': k, 'hash': v}
-            for k, v in self._last_successful_run.iteritems()]
-
-  def parse(self, exdump):
-    self._last_successful_run = dict((o['cmdline'], o['hash']) for o in exdump)
-
-  def save(self):
-    with open('.run_tests_cache', 'w') as f:
-      f.write(json.dumps(self.dump()))
-    self._last_save = time.time()
-
-  def maybe_load(self):
-    if os.path.exists('.run_tests_cache'):
-      with open('.run_tests_cache') as f:
-        self.parse(json.loads(f.read()))
-
-
 def _start_port_server(port_server_port):
   # check if a compatible port server is running
   # if incompatible (version mismatch) ==> start a new one
@@ -1072,7 +1058,7 @@ def _start_port_server(port_server_port):
   try:
     version = int(urllib2.urlopen(
         'http://localhost:%d/version_number' % port_server_port,
-        timeout=1).read())
+        timeout=10).read())
     print 'detected port server running version %d' % version
     running = True
   except Exception as e:
@@ -1183,7 +1169,7 @@ class BuildAndRunError(object):
 
 # returns a list of things that failed (or an empty list on success)
 def _build_and_run(
-    check_cancelled, newline_on_success, cache, xml_report=None, build_only=False):
+    check_cancelled, newline_on_success, xml_report=None, build_only=False):
   """Do one pass of building & running tests."""
   # build latest sequentially
   num_failures, resultset = jobset.run(
@@ -1232,7 +1218,6 @@ def _build_and_run(
         all_runs, check_cancelled, newline_on_success=newline_on_success,
         travis=args.travis, infinite_runs=infinite_runs, maxjobs=args.jobs,
         stop_on_failure=args.stop_on_failure,
-        cache=cache if not xml_report else None,
         add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
     if resultset:
       for k, v in sorted(resultset.items()):
@@ -1261,13 +1246,8 @@ def _build_and_run(
   if num_test_failures:
     out.append(BuildAndRunError.TEST)
 
-  if cache: cache.save()
-
   return out
 
-
-test_cache = TestCache(runs_per_test == 1)
-test_cache.maybe_load()
 
 if forever:
   success = True
@@ -1278,7 +1258,6 @@ if forever:
     previous_success = success
     errors = _build_and_run(check_cancelled=have_files_changed,
                             newline_on_success=False,
-                            cache=test_cache,
                             build_only=args.build_only) == 0
     if not previous_success and not errors:
       jobset.message('SUCCESS',
@@ -1290,7 +1269,6 @@ if forever:
 else:
   errors = _build_and_run(check_cancelled=lambda: False,
                           newline_on_success=args.newline_on_success,
-                          cache=test_cache,
                           xml_report=args.xml_report,
                           build_only=args.build_only)
   if not errors:

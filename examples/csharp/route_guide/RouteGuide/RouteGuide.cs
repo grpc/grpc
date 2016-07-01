@@ -41,12 +41,12 @@ namespace Routeguide {
             "ZUIPUm91dGVHdWlkZVByb3RvUAGiAgNSVEdiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
-          new pbr::GeneratedCodeInfo(null, new pbr::GeneratedCodeInfo[] {
-            new pbr::GeneratedCodeInfo(typeof(global::Routeguide.Point), global::Routeguide.Point.Parser, new[]{ "Latitude", "Longitude" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Routeguide.Rectangle), global::Routeguide.Rectangle.Parser, new[]{ "Lo", "Hi" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Routeguide.Feature), global::Routeguide.Feature.Parser, new[]{ "Name", "Location" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Routeguide.RouteNote), global::Routeguide.RouteNote.Parser, new[]{ "Location", "Message" }, null, null, null),
-            new pbr::GeneratedCodeInfo(typeof(global::Routeguide.RouteSummary), global::Routeguide.RouteSummary.Parser, new[]{ "PointCount", "FeatureCount", "Distance", "ElapsedTime" }, null, null, null)
+          new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::Routeguide.Point), global::Routeguide.Point.Parser, new[]{ "Latitude", "Longitude" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Routeguide.Rectangle), global::Routeguide.Rectangle.Parser, new[]{ "Lo", "Hi" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Routeguide.Feature), global::Routeguide.Feature.Parser, new[]{ "Name", "Location" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Routeguide.RouteNote), global::Routeguide.RouteNote.Parser, new[]{ "Location", "Message" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Routeguide.RouteSummary), global::Routeguide.RouteSummary.Parser, new[]{ "PointCount", "FeatureCount", "Distance", "ElapsedTime" }, null, null, null)
           }));
     }
     #endregion
@@ -383,7 +383,7 @@ namespace Routeguide {
     public string Name {
       get { return name_; }
       set {
-        name_ = pb::Preconditions.CheckNotNull(value, "value");
+        name_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
@@ -541,7 +541,7 @@ namespace Routeguide {
     public string Message {
       get { return message_; }
       set {
-        message_ = pb::Preconditions.CheckNotNull(value, "value");
+        message_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 

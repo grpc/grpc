@@ -263,6 +263,6 @@ void grpc_call_element_send_cancel(grpc_exec_ctx *exec_ctx,
                                    grpc_call_element *cur_elem) {
   grpc_transport_stream_op op;
   memset(&op, 0, sizeof(op));
-  op.cancel_with_status = GRPC_STATUS_CANCELLED;
+  op.cancel_error = GRPC_ERROR_CANCELLED;
   grpc_call_next_op(exec_ctx, cur_elem, &op);
 }

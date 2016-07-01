@@ -79,10 +79,11 @@ class TestService(test_pb2.BetaTestServiceServicer):
 
   def FullDuplexCall(self, request_iterator, context):
     for request in request_iterator:
-      yield messages_pb2.StreamingOutputCallResponse(
-          payload=messages_pb2.Payload(
-              type=request.payload.type,
-              body=b'\x00' * request.response_parameters[0].size))
+      for response_parameters in request.response_parameters:
+        yield messages_pb2.StreamingOutputCallResponse(
+            payload=messages_pb2.Payload(
+                type=request.payload.type,
+                body=b'\x00' * response_parameters.size))
 
   # NOTE(nathaniel): Apparently this is the same as the full-duplex call?
   # NOTE(atash): It isn't even called in the interop spec (Oct 22 2015)...

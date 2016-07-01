@@ -17,7 +17,7 @@ INSTALL
  - Clone this repository
 
    ```sh
-   $ git clone https://github.com/grpc/grpc.git
+   $ git clone -b $(curl -L http://grpc.io/release) https://github.com/grpc/grpc
    ```
 
  - Install composer

@@ -112,6 +112,7 @@ END2END_TESTS = {
     'max_concurrent_streams': default_test_options._replace(proxyable=False),
     'max_message_length': default_test_options,
     'negative_deadline': default_test_options,
+    'network_status_change': default_test_options,
     'no_op': default_test_options,
     'payload': default_test_options,
     'ping_pong_streaming': default_test_options,
@@ -126,6 +127,7 @@ END2END_TESTS = {
     'simple_delayed_request': connectivity_test_options,
     'simple_metadata': default_test_options,
     'simple_request': default_test_options,
+    'streaming_error_response': default_test_options,
     'trailing_metadata': default_test_options,
 }
 

@@ -87,7 +87,7 @@ def _abortion_code(state, code):
 
 
 def _details(state):
-  return '' if state.details is None else state.details
+  return b'' if state.details is None else state.details
 
 
 class _HandlerCallDetails(
@@ -146,14 +146,14 @@ def _abort(state, call, code, details):
           cygrpc.operation_send_initial_metadata(
               _EMPTY_METADATA, _EMPTY_FLAGS),
           cygrpc.operation_send_status_from_server(
-              _common.metadata(state.trailing_metadata), effective_code,
+              _common.cygrpc_metadata(state.trailing_metadata), effective_code,
               effective_details, _EMPTY_FLAGS),
       )
       token = _SEND_INITIAL_METADATA_AND_SEND_STATUS_FROM_SERVER_TOKEN
     else:
       operations = (
           cygrpc.operation_send_status_from_server(
-              _common.metadata(state.trailing_metadata), effective_code,
+              _common.cygrpc_metadata(state.trailing_metadata), effective_code,
               effective_details, _EMPTY_FLAGS),
       )
       token = _SEND_STATUS_FROM_SERVER_TOKEN
@@ -191,7 +191,7 @@ def _receive_message(state, call, request_deserializer):
         if request is None:
           _abort(
               state, call, cygrpc.StatusCode.internal,
-              'Exception deserializing request!')
+              b'Exception deserializing request!')
         else:
           state.request = request
         state.condition.notify_all()
@@ -244,10 +244,10 @@ class _Context(grpc.ServicerContext):
       self._state.disable_next_compression = True
 
   def invocation_metadata(self):
-    return self._rpc_event.request_metadata
+    return _common.application_metadata(self._rpc_event.request_metadata)
 
   def peer(self):
-    return self._rpc_event.operation_call.peer()
+    return _common.decode(self._rpc_event.operation_call.peer())
 
   def send_initial_metadata(self, initial_metadata):
     with self._state.condition:
@@ -256,7 +256,7 @@ class _Context(grpc.ServicerContext):
       else:
         if self._state.initial_metadata_allowed:
           operation = cygrpc.operation_send_initial_metadata(
-              _common.metadata(initial_metadata), _EMPTY_FLAGS)
+              _common.cygrpc_metadata(initial_metadata), _EMPTY_FLAGS)
           self._rpc_event.operation_call.start_batch(
               cygrpc.Operations((operation,)),
               _send_initial_metadata(self._state))
@@ -267,7 +267,8 @@ class _Context(grpc.ServicerContext):
 
   def set_trailing_metadata(self, trailing_metadata):
     with self._state.condition:
-      self._state.trailing_metadata = trailing_metadata
+      self._state.trailing_metadata = _common.cygrpc_metadata(
+          trailing_metadata)
 
   def set_code(self, code):
     with self._state.condition:
@@ -275,7 +276,7 @@ class _Context(grpc.ServicerContext):
 
   def set_details(self, details):
     with self._state.condition:
-      self._state.details = details
+      self._state.details = _common.encode(details)
 
 
 class _RequestIterator(object):
@@ -346,7 +347,7 @@ def _unary_request(rpc_event, state, request_deserializer):
                   rpc_event.request_call_details.method)
               _abort(
                   state, rpc_event.operation_call,
-                  cygrpc.StatusCode.unimplemented, details)
+                  cygrpc.StatusCode.unimplemented, _common.encode(details))
               return None
             elif state.client is _CANCELLED:
               return None
@@ -366,8 +367,8 @@ def _call_behavior(rpc_event, state, behavior, argument, request_deserializer):
       if e not in state.rpc_errors:
         details = 'Exception calling application: {}'.format(e)
         logging.exception(details)
-        _abort(
-            state, rpc_event.operation_call, cygrpc.StatusCode.unknown, details)
+        _abort(state, rpc_event.operation_call,
+               cygrpc.StatusCode.unknown, _common.encode(details))
     return None, False
 
 
@@ -381,8 +382,8 @@ def _take_response_from_response_iterator(rpc_event, state, response_iterator):
       if e not in state.rpc_errors:
         details = 'Exception iterating responses: {}'.format(e)
         logging.exception(details)
-        _abort(
-            state, rpc_event.operation_call, cygrpc.StatusCode.unknown, details)
+        _abort(state, rpc_event.operation_call,
+               cygrpc.StatusCode.unknown, _common.encode(details))
     return None, False
 
 
@@ -392,7 +393,7 @@ def _serialize_response(rpc_event, state, response, response_serializer):
     with state.condition:
       _abort(
           state, rpc_event.operation_call, cygrpc.StatusCode.internal,
-          'Failed to serialize response!')
+          b'Failed to serialize response!')
     return None
   else:
     return serialized_response
@@ -428,7 +429,7 @@ def _send_response(rpc_event, state, serialized_response):
 def _status(rpc_event, state, serialized_response):
   with state.condition:
     if state.client is not _CANCELLED:
-      trailing_metadata = _common.metadata(state.trailing_metadata)
+      trailing_metadata = _common.cygrpc_metadata(state.trailing_metadata)
       code = _completion_code(state)
       details = _details(state)
       operations = [
@@ -532,7 +533,8 @@ def _find_method_handler(rpc_event, generic_handlers):
   for generic_handler in generic_handlers:
     method_handler = generic_handler.service(
         _HandlerCallDetails(
-            rpc_event.request_call_details.method, rpc_event.request_metadata))
+            _common.decode(rpc_event.request_call_details.method),
+            rpc_event.request_metadata))
     if method_handler is not None:
       return method_handler
   else:
@@ -545,7 +547,7 @@ def _handle_unrecognized_method(rpc_event):
       cygrpc.operation_receive_close_on_server(_EMPTY_FLAGS),
       cygrpc.operation_send_status_from_server(
           _EMPTY_METADATA, cygrpc.StatusCode.unimplemented,
-          'Method not found!', _EMPTY_FLAGS),
+          b'Method not found!', _EMPTY_FLAGS),
   )
   rpc_state = _RPCState()
   rpc_event.operation_call.start_batch(
@@ -740,10 +742,10 @@ class Server(grpc.Server):
     _add_generic_handlers(self._state, generic_rpc_handlers)
 
   def add_insecure_port(self, address):
-    return _add_insecure_port(self._state, address)
+    return _add_insecure_port(self._state, _common.encode(address))
 
   def add_secure_port(self, address, server_credentials):
-    return _add_secure_port(self._state, address, server_credentials)
+    return _add_secure_port(self._state, _common.encode(address), server_credentials)
 
   def start(self):
     _start(self._state)
