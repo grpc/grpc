@@ -37,8 +37,14 @@
 
 #include "src/core/lib/iomgr/workqueue.h"
 
+// Minimal implementation of grpc_workqueue for Windows
+// Works by directly enqueuing workqueue items onto the current execution
+// context, which is at least correct, if not performant or in the spirit of
+// workqueues.
+
 grpc_error *grpc_workqueue_create(grpc_exec_ctx *exec_ctx,
                                   grpc_workqueue **workqueue) {
+  *workqueue = (grpc_workqueue *)1;
   return GRPC_ERROR_NONE;
 }
 
