@@ -173,7 +173,7 @@ static void free_message(grpc_exec_ctx *exec_ctx, void *p, grpc_error *error) {
   close_message_data *cmd = p;
   GRPC_ERROR_UNREF(cmd->error);
   if (cmd->then_call != NULL) {
-    cmd->then_call->cb(exec_ctx, cmd->then_call->cb_arg, GRPC_ERROR_REF(error));
+    cmd->then_call->cb(exec_ctx, cmd->then_call->cb_arg, error);
   }
   gpr_free(cmd);
 }
