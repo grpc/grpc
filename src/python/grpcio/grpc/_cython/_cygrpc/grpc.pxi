@@ -132,8 +132,8 @@ cdef extern from "grpc/_cython/loader.h":
   size_t grpc_byte_buffer_length(grpc_byte_buffer *bb) nogil
   void grpc_byte_buffer_destroy(grpc_byte_buffer *byte_buffer) nogil
 
-  void grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
-                                    grpc_byte_buffer *buffer) nogil
+  int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
+                                   grpc_byte_buffer *buffer) nogil
   int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader *reader,
                                    gpr_slice *slice) nogil
   void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader) nogil
