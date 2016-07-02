@@ -31,9 +31,12 @@
  *
  */
 
+#include "src/core/lib/iomgr/network_status_tracker.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/network_monitor.h"
 
 typedef struct endpoint_ll_node {
   grpc_endpoint *ep;
@@ -48,9 +51,12 @@ void grpc_initialize_network_status_monitor() {
   g_init_done = true;
   gpr_mu_init(&g_endpoint_mutex);
   // TODO(makarandd): Install callback with OS to monitor network status.
+  grpc_start_connectivity_monitor(
+      "0.0.0.0", grpc_network_status_shutdown_all_endpoints);
 }
 
 void grpc_destroy_network_status_monitor() {
+  grpc_stop_connectivity_monitor();
   for (endpoint_ll_node *curr = head; curr != NULL;) {
     endpoint_ll_node *next = curr->next;
     gpr_free(curr);
@@ -105,7 +111,8 @@ void grpc_network_status_unregister_endpoint(grpc_endpoint *ep) {
 // Walk the linked-list from head and execute shutdown. It is possible that
 // other threads might be in the process of shutdown as well, but that has
 // no side effect since endpoint shutdown is idempotent.
-void grpc_network_status_shutdown_all_endpoints() {
+void grpc_network_status_shutdown_all_endpoints(void) {
+  gpr_log(GPR_DEBUG, "Shuting down all endpoints!!!");
   gpr_mu_lock(&g_endpoint_mutex);
   if (head == NULL) {
     gpr_mu_unlock(&g_endpoint_mutex);

@@ -31,11 +31,17 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_NETWORK_STATUS_TRACKER_H
-#define GRPC_CORE_LIB_IOMGR_NETWORK_STATUS_TRACKER_H
-#include "src/core/lib/iomgr/endpoint.h"
+#include <grpc/support/port_platform.h>
 
-void grpc_network_status_register_endpoint(grpc_endpoint *ep);
-void grpc_network_status_unregister_endpoint(grpc_endpoint *ep);
-void grpc_network_status_shutdown_all_endpoints(void);
-#endif /* GRPC_CORE_LIB_IOMGR_NETWORK_STATUS_TRACKER_H */
+/* network monitor is not implemented in platforms other than Darwin */
+#ifndef GPR_DARWIN
+
+#include "src/core/lib/iomgr/network_monitor.h"
+
+bool grpc_start_connectivity_monitor(const char* addr, void (*handler)(void)) {
+  return true;
+}
+
+bool grpc_stop_connectivity_monitor() { return true; }
+
+#endif /* GPR_DARWIN */

@@ -270,6 +270,8 @@
   ifneq ($(wildcard /usr/local/lib),)
   LDFLAGS += -L/usr/local/lib
   endif
+  LDFLAGS += -framework CoreFoundation
+  LDFLAGS += -framework SystemConfiguration
   endif
 
   ifeq ($(SYSTEM),Linux)
