@@ -104,7 +104,7 @@ class ChannelConnectivityTest(unittest.TestCase):
         grpc.ChannelConnectivity.READY, fifth_connectivities)
 
   def test_immediately_connectable_channel_connectivity(self):
-    server = _server.Server((), futures.ThreadPoolExecutor(max_workers=0))
+    server = _server.Server(futures.ThreadPoolExecutor(max_workers=0), ())
     port = server.add_insecure_port('[::]:0')
     server.start()
     first_callback = _Callback()
@@ -143,7 +143,7 @@ class ChannelConnectivityTest(unittest.TestCase):
         grpc.ChannelConnectivity.SHUTDOWN, fourth_connectivities)
 
   def test_reachable_then_unreachable_channel_connectivity(self):
-    server = _server.Server((), futures.ThreadPoolExecutor(max_workers=0))
+    server = _server.Server(futures.ThreadPoolExecutor(max_workers=0), ())
     port = server.add_insecure_port('[::]:0')
     server.start()
     callback = _Callback()
