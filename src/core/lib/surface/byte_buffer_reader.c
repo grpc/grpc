@@ -67,7 +67,7 @@ int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
                                 &decompressed_slices_buffer) == 0) {
           gpr_log(GPR_ERROR,
                   "Unexpected error decompressing data for algorithm with enum "
-                  "value '%d'. Reading data as if it were uncompressed.",
+                  "value '%d'.",
                   reader->buffer_in->data.raw.compression);
           memset(reader, 0, sizeof(*reader));
           return 0;
