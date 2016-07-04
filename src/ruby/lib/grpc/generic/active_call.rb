@@ -58,7 +58,7 @@ module GRPC
     include Core::TimeConsts
     include Core::CallOps
     extend Forwardable
-    attr_reader(:deadline)
+    attr_reader :deadline, :metadata_sent, :metadata_to_send
     def_delegators :@call, :cancel, :metadata, :write_flag, :write_flag=,
                    :peer, :peer_cert, :trailing_metadata
 
@@ -101,7 +101,7 @@ module GRPC
     # @param metadata_received [true|false] indicates if metadata has already
     #     been received. Should always be true for server calls
     def initialize(call, marshal, unmarshal, deadline, started: true,
-                   metadata_received: false)
+                   metadata_received: false, metadata_to_send: nil)
       fail(TypeError, '!Core::Call') unless call.is_a? Core::Call
       @call = call
       @deadline = deadline
@@ -110,6 +110,14 @@ module GRPC
       @metadata_received = metadata_received
       @metadata_sent = started
       @op_notifier = nil
+
+      fail(ArgumentError, 'Already sent md') if started && metadata_to_send
+      @metadata_to_send = metadata_to_send || {} unless started
+    end
+
+    def send_initial_metadata
+      fail 'Already sent metadata' if @metadata_sent
+      start_call(@metadata_to_send)
     end
 
     # output_metadata are provides access to hash that can be used to
@@ -187,7 +195,7 @@ module GRPC
     # @param marshalled [false, true] indicates if the object is already
     # marshalled.
     def remote_send(req, marshalled = false)
-      # TODO(murgatroid99): ensure metadata was sent
+      start_call(@metadata_to_send) unless @metadata_sent
       GRPC.logger.debug("sending #{req}, marshalled? #{marshalled}")
       payload = marshalled ? req : @marshal.call(req)
       @call.run_batch(SEND_MESSAGE => payload)
@@ -203,6 +211,7 @@ module GRPC
     # list, mulitple metadata for its key are sent
     def send_status(code = OK, details = '', assert_finished = false,
                     metadata: {})
+      start_call unless @metadata_sent
       ops = {
         SEND_STATUS_FROM_SERVER => Struct::Status.new(code, details, metadata)
       }
@@ -392,9 +401,12 @@ module GRPC
     # a list, multiple metadata for its key are sent
     # @return [Enumerator, nil] a response Enumerator
     def bidi_streamer(requests, metadata: {}, &blk)
-      start_call(metadata)
-      bd = BidiCall.new(@call, @marshal, @unmarshal,
+      start_call(metadata) unless @metadata_sent
+      bd = BidiCall.new(@call,
+                        @marshal,
+                        @unmarshal,
                         metadata_received: @metadata_received)
+
       bd.run_on_client(requests, @op_notifier, &blk)
     end
 
@@ -410,8 +422,12 @@ module GRPC
     #
     # @param gen_each_reply [Proc] generates the BiDi stream replies
     def run_server_bidi(gen_each_reply)
-      bd = BidiCall.new(@call, @marshal, @unmarshal,
-                        metadata_received: @metadata_received)
+      bd = BidiCall.new(@call,
+                        @marshal,
+                        @unmarshal,
+                        metadata_received: @metadata_received,
+                        req_view: MultiReqView.new(self))
+
       bd.run_on_server(gen_each_reply)
     end
 
@@ -426,6 +442,11 @@ module GRPC
     def op_is_done
       return if @op_notifier.nil?
       @op_notifier.notify(self)
+    end
+
+    def merge_metadata_to_send(new_metadata = {})
+      fail('cant change metadata after already sent') if @metadata_sent
+      @metadata_to_send.merge!(new_metadata)
     end
 
     private
@@ -454,12 +475,20 @@ module GRPC
     # SingleReqView limits access to an ActiveCall's methods for use in server
     # handlers that receive just one request.
     SingleReqView = view_class(:cancelled?, :deadline, :metadata,
-                               :output_metadata, :peer, :peer_cert)
+                               :output_metadata, :peer, :peer_cert,
+                               :send_initial_metadata,
+                               :metadata_to_send,
+                               :merge_metadata_to_send,
+                               :metadata_sent)
 
     # MultiReqView limits access to an ActiveCall's methods for use in
     # server client_streamer handlers.
     MultiReqView = view_class(:cancelled?, :deadline, :each_queued_msg,
-                              :each_remote_read, :metadata, :output_metadata)
+                              :each_remote_read, :metadata, :output_metadata,
+                              :send_initial_metadata,
+                              :metadata_to_send,
+                              :merge_metadata_to_send,
+                              :metadata_sent)
 
     # Operation limits access to an ActiveCall's methods for use as
     # a Operation on the client.
