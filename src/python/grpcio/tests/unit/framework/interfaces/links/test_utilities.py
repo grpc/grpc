@@ -51,7 +51,7 @@ def _safe_for_log_ticket(ticket):
       possibly features values like the string "<payload of length 972321>" in
       place of the actual values of the given ticket.
   """
-  if isinstance(ticket.payload, (basestring,)):
+  if isinstance(ticket.payload, (str,)):
     payload_length = len(ticket.payload)
   else:
     payload_length = -1
