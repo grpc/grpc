@@ -16,7 +16,7 @@ download nuget.exe from the web and manually restore the NuGet packages.
 ```
 
 After that, you can build the solution using one of these options:
-1. open `grpc.sln` with Visual Studio and hit "Build".
+1. open `grpc.sln` with Visual Studio. Right click the "grpc" project and hit "Build" (do not build the entire solution).
 2. build from commandline using `msbuild grpc.sln /p:Configuration=Debug`
 
 #C/C++ Test Dependencies
