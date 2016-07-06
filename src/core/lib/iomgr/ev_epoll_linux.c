@@ -114,9 +114,7 @@ struct grpc_fd {
   grpc_closure *read_closure;
   grpc_closure *write_closure;
 
-  /* The polling island to which this fd belongs to and the mutex protecting the
-     the field */
-  gpr_mu pi_mu;
+  /* The polling island to which this fd belongs to (protected by mu) */
   struct polling_island *polling_island;
 
   struct grpc_fd *freelist_next;
@@ -846,7 +844,6 @@ static grpc_fd *fd_create(int fd, const char *name) {
   if (new_fd == NULL) {
     new_fd = gpr_malloc(sizeof(grpc_fd));
     gpr_mu_init(&new_fd->mu);
-    gpr_mu_init(&new_fd->pi_mu);
   }
 
   /* Note: It is not really needed to get the new_fd->mu lock here. If this is a
@@ -925,7 +922,6 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
      - Unlock the latest polling island
      - Set fd->polling_island to NULL (but remove the ref on the polling island
        before doing this.) */
-  gpr_mu_lock(&fd->pi_mu);
   if (fd->polling_island != NULL) {
     polling_island *pi_latest = polling_island_lock(fd->polling_island);
     polling_island_remove_fd_locked(pi_latest, fd, is_fd_closed, &error);
@@ -934,7 +930,6 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
     unref_pi = fd->polling_island;
     fd->polling_island = NULL;
   }
-  gpr_mu_unlock(&fd->pi_mu);
 
   grpc_exec_ctx_sched(exec_ctx, fd->on_done_closure, error, NULL);
 
@@ -1043,13 +1038,13 @@ static void fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 }
 
 static grpc_workqueue *fd_get_workqueue(grpc_fd *fd) {
-  gpr_mu_lock(&fd->pi_mu);
+  gpr_mu_lock(&fd->mu);
   grpc_workqueue *workqueue = NULL;
   if (fd->polling_island != NULL) {
     workqueue =
         GRPC_WORKQUEUE_REF(fd->polling_island->workqueue, "get_workqueue");
   }
-  gpr_mu_unlock(&fd->pi_mu);
+  gpr_mu_unlock(&fd->mu);
   return workqueue;
 }
 
@@ -1534,7 +1529,7 @@ static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   grpc_error *error = GRPC_ERROR_NONE;
 
   gpr_mu_lock(&pollset->mu);
-  gpr_mu_lock(&fd->pi_mu);
+  gpr_mu_lock(&fd->mu);
 
   polling_island *pi_new = NULL;
 
@@ -1609,7 +1604,7 @@ static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     pollset->polling_island = pi_new;
   }
 
-  gpr_mu_unlock(&fd->pi_mu);
+  gpr_mu_unlock(&fd->mu);
   gpr_mu_unlock(&pollset->mu);
 
   GRPC_LOG_IF_ERROR("pollset_add_fd", error);
@@ -1763,9 +1758,9 @@ static void pollset_set_del_pollset_set(grpc_exec_ctx *exec_ctx,
 void *grpc_fd_get_polling_island(grpc_fd *fd) {
   polling_island *pi;
 
-  gpr_mu_lock(&fd->pi_mu);
+  gpr_mu_lock(&fd->mu);
   pi = fd->polling_island;
-  gpr_mu_unlock(&fd->pi_mu);
+  gpr_mu_unlock(&fd->mu);
 
   return pi;
 }
