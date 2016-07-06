@@ -1533,6 +1533,7 @@ static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 
   polling_island *pi_new = NULL;
 
+retry:
   /* 1) If fd->polling_island and pollset->polling_island are both non-NULL and
    *    equal, do nothing.
    * 2) If fd->polling_island and pollset->polling_island are both NULL, create
@@ -1550,7 +1551,12 @@ static void pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   if (fd->polling_island == pollset->polling_island) {
     pi_new = fd->polling_island;
     if (pi_new == NULL) {
+      gpr_mu_unlock(&fd->mu);
       pi_new = polling_island_create(exec_ctx, fd, &error);
+      gpr_mu_lock(&fd->mu);
+      if (fd->polling_island != NULL) {
+        goto retry;
+      }
 
       GRPC_POLLING_TRACE(
           "pollset_add_fd: Created new polling island. pi_new: %p (fd: %d, "
