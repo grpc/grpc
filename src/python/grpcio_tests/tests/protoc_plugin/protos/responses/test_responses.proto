@@ -29,7 +29,7 @@
 
 syntax = "proto3";
 
-import "protos/payload/test_payload.proto";
+import "tests/protoc_plugin/protos/payload/test_payload.proto";
 
 package grpc_protoc_plugin;
 

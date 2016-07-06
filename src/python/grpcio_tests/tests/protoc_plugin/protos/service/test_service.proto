@@ -29,49 +29,36 @@
 
 syntax = "proto3";
 
-import "protos/payload/test_payload.proto";
+import "tests/protoc_plugin/protos/requests/r/test_requests.proto";
+import "tests/protoc_plugin/protos/responses/test_responses.proto";
 
 package grpc_protoc_plugin;
 
-message SimpleRequest {
-  // Desired payload type in the response from the server.
-  // If response_type is RANDOM, server randomly chooses one from other formats.
-  PayloadType response_type = 1;
+service TestService {
+  // One request followed by one response.
+  // The server returns the client payload as-is.
+  rpc UnaryCall(SimpleRequest) returns (SimpleResponse);
 
-  // Desired payload size in the response from the server.
-  // If response_type is COMPRESSABLE, this denotes the size before compression.
-  int32 response_size = 2;
+  // One request followed by a sequence of responses (streamed download).
+  // The server returns the payload with client desired type and sizes.
+  rpc StreamingOutputCall(StreamingOutputCallRequest)
+      returns (stream StreamingOutputCallResponse);
 
-  // input payload sent along with the request.
-  Payload payload = 3;
-}
+  // A sequence of requests followed by one response (streamed upload).
+  // The server returns the aggregated size of client payload as the result.
+  rpc StreamingInputCall(stream StreamingInputCallRequest)
+      returns (StreamingInputCallResponse);
 
-message StreamingInputCallRequest {
-  // input payload sent along with the request.
-  Payload payload = 1;
+  // A sequence of requests with each request served by the server immediately.
+  // As one request could lead to multiple responses, this interface
+  // demonstrates the idea of full duplexing.
+  rpc FullDuplexCall(stream StreamingOutputCallRequest)
+      returns (stream StreamingOutputCallResponse);
 
-  // Not expecting any payload from the response.
-}
-
-message ResponseParameters {
-  // Desired payload sizes in responses from the server.
-  // If response_type is COMPRESSABLE, this denotes the size before compression.
-  int32 size = 1;
-
-  // Desired interval between consecutive responses in the response stream in
-  // microseconds.
-  int32 interval_us = 2;
-}
-
-message StreamingOutputCallRequest {
-  // Desired payload type in the response from the server.
-  // If response_type is RANDOM, the payload from each response in the stream
-  // might be of different types. This is to simulate a mixed type of payload
-  // stream.
-  PayloadType response_type = 1;
-
-  repeated ResponseParameters response_parameters = 2;
-
-  // input payload sent along with the request.
-  Payload payload = 3;
+  // A sequence of requests followed by a sequence of responses.
+  // The server buffers all the client requests and then serves them in order. A
+  // stream of responses are returned to the client when the server starts with
+  // first request.
+  rpc HalfDuplexCall(stream StreamingOutputCallRequest)
+      returns (stream StreamingOutputCallResponse);
 }

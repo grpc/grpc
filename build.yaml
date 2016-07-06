@@ -712,8 +712,6 @@ filegroups:
   - src/cpp/util/status.cc
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time.cc
-  deps:
-  - grpc
   uses:
   - grpc++_codegen_base
 - name: grpc++_codegen_base
@@ -1242,6 +1240,17 @@ targets:
   - test/core/end2end/fuzzers/api_fuzzer_corpus
   dict: test/core/end2end/fuzzers/api_fuzzer.dictionary
   maxlen: 2048
+- name: bad_server_response_test
+  build: test
+  language: c
+  src:
+  - test/core/end2end/bad_server_response_test.c
+  deps:
+  - test_tcp_server
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: bin_decoder_test
   build: test
   language: c
@@ -1724,10 +1733,9 @@ targets:
   src:
   - test/core/security/create_jwt.c
   deps:
-  - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
+  secure: true
 - name: grpc_credentials_test
   build: test
   language: c
@@ -1739,7 +1747,8 @@ targets:
   - gpr_test_util
   - gpr
 - name: grpc_fetch_oauth2
-  build: tool
+  build: test
+  run: false
   language: c
   src:
   - test/core/security/fetch_oauth2.c
@@ -1788,9 +1797,7 @@ targets:
   src:
   - test/core/security/print_google_default_creds_token.c
   deps:
-  - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: grpc_security_connector_test
   build: test
@@ -1808,9 +1815,7 @@ targets:
   src:
   - test/core/security/verify_jwt.c
   deps:
-  - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: hpack_parser_fuzzer_test
   build: fuzzer
