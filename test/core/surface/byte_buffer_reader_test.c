@@ -120,7 +120,7 @@ static void test_read_corrupted_slice(void) {
   grpc_byte_buffer *buffer;
   grpc_byte_buffer_reader reader;
 
-  LOG_TEST(__func__);
+  LOG_TEST("test_read_corrupted_slice");
   slice = gpr_slice_from_copied_string("test");
   buffer = grpc_raw_byte_buffer_create(&slice, 1);
   buffer->data.raw.compression = GRPC_COMPRESS_GZIP; /* lies! */
