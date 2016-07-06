@@ -42,7 +42,7 @@
 grpc_call* grpc_rb_get_wrapped_call(VALUE v);
 
 /* Gets the VALUE corresponding to given grpc_call. */
-VALUE grpc_rb_wrap_call(grpc_call* c);
+VALUE grpc_rb_wrap_call(grpc_call *c, grpc_completion_queue *q);
 
 /* Provides the details of an call error */
 const char* grpc_call_error_detail_of(grpc_call_error err);
