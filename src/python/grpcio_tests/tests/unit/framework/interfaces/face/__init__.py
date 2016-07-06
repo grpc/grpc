@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,18 +27,4 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
-
-# change to grpc repo root
-cd $(dirname $0)/../..
-
-PYTHON=`realpath -s "${1:-py27/bin/python}"`
-
-ROOT=`pwd`
-
-$PYTHON $ROOT/src/python/grpcio_tests/setup.py test_lite
-
-mkdir -p $ROOT/reports
-rm -rf $ROOT/reports/python-coverage
-(mv -T $ROOT/htmlcov $ROOT/reports/python-coverage) || true
 

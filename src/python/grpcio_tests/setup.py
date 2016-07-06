@@ -27,53 +27,98 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Setup module for the GRPC Python package's optional health checking."""
+"""A setup module for the gRPC Python package."""
 
 import os
 import os.path
+import shutil
 import sys
 
 from distutils import core as _core
+from distutils import extension as _extension
 import setuptools
+from setuptools.command import egg_info
 
 import grpc.tools.command
+
+PY3 = sys.version_info.major == 3
 
 # Ensure we're in the proper directory whether or not we're being used by pip.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-# Break import-style to ensure we can actually find our commands module.
-import health_commands
+# Break import-style to ensure we can actually find our in-repo dependencies.
+import commands
+import grpc_version
 
-PACKAGES = (
-    setuptools.find_packages('.')
-)
+LICENSE = '3-clause BSD'
 
 PACKAGE_DIRECTORIES = {
     '': '.',
 }
 
+INSTALL_REQUIRES = (
+    'coverage>=4.0',
+    'enum34>=1.0.4',
+    'futures>=2.2.0',
+    'grpcio>=0.14.0',
+    'grpcio-health-checking>=0.14.0',
+    'oauth2client>=1.4.7',
+    'protobuf>=3.0.0a3',
+    'six>=1.10',
+)
+
 SETUP_REQUIRES = (
     'grpcio-tools>=0.14.0',
 )
 
-INSTALL_REQUIRES = (
-    'grpcio>=0.13.1',
-)
-
 COMMAND_CLASS = {
-    # Run preprocess from the repository *before* doing any packaging!
-    'preprocess': health_commands.CopyProtoModules,
+    # Run `preprocess` *before* doing any packaging!
+    'preprocess': commands.GatherProto,
 
     'build_proto_modules': grpc.tools.command.BuildProtoModules,
-    'build_py': health_commands.BuildPy,
+    'build_py': commands.BuildPy,
+    'run_interop': commands.RunInterop,
+    'test_lite': commands.TestLite
 }
 
+PACKAGE_DATA = {
+    'tests.interop': [
+        'credentials/ca.pem',
+        'credentials/server1.key',
+        'credentials/server1.pem',
+    ],
+    'tests.protoc_plugin': [
+        'protoc_plugin_test.proto',
+    ],
+    'tests.unit': [
+        'credentials/ca.pem',
+        'credentials/server1.key',
+        'credentials/server1.pem',
+    ],
+    'tests': [
+        'tests.json'
+    ],
+}
+
+TEST_SUITE = 'tests'
+TEST_LOADER = 'tests:Loader'
+TEST_RUNNER = 'tests:Runner'
+TESTS_REQUIRE = INSTALL_REQUIRES
+
+PACKAGES = setuptools.find_packages('.')
+
 setuptools.setup(
-    name='grpcio-health-checking',
-    version='0.14.0',
-    packages=list(PACKAGES),
-    package_dir=PACKAGE_DIRECTORIES,
-    install_requires=INSTALL_REQUIRES,
-    setup_requires=SETUP_REQUIRES,
-    cmdclass=COMMAND_CLASS
+  name='grpcio-tests',
+  version=grpc_version.VERSION,
+  license=LICENSE,
+  packages=list(PACKAGES),
+  package_dir=PACKAGE_DIRECTORIES,
+  package_data=PACKAGE_DATA,
+  install_requires=INSTALL_REQUIRES,
+  setup_requires=SETUP_REQUIRES,
+  cmdclass=COMMAND_CLASS,
+  tests_require=TESTS_REQUIRE,
+  test_suite=TEST_SUITE,
+  test_loader=TEST_LOADER,
+  test_runner=TEST_RUNNER,
 )

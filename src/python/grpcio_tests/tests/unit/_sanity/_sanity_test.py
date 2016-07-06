@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,18 +27,32 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+import json
+import unittest
 
-# change to grpc repo root
-cd $(dirname $0)/../..
+import pkg_resources
+import six
 
-PYTHON=`realpath -s "${1:-py27/bin/python}"`
+import tests
 
-ROOT=`pwd`
 
-$PYTHON $ROOT/src/python/grpcio_tests/setup.py test_lite
+class Sanity(unittest.TestCase):
 
-mkdir -p $ROOT/reports
-rm -rf $ROOT/reports/python-coverage
-(mv -T $ROOT/htmlcov $ROOT/reports/python-coverage) || true
+  def testTestsJsonUpToDate(self):
+    """Autodiscovers all test suites and checks that tests.json is up to date"""
+    loader = tests.Loader()
+    loader.loadTestsFromNames(['tests'])
+    test_suite_names = [
+        test_case_class.id().rsplit('.', 1)[0]
+        for test_case_class in tests._loader.iterate_suite_cases(loader.suite)]
+    test_suite_names = sorted(set(test_suite_names))
 
+    tests_json_string = pkg_resources.resource_string('tests', 'tests.json')
+    if six.PY3:
+      tests_json_string = tests_json_string.decode()
+    tests_json = json.loads(tests_json_string)
+    self.assertListEqual(test_suite_names, tests_json)
+
+
+if __name__ == '__main__':
+  unittest.main(verbosity=2)

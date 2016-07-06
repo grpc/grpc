@@ -32,11 +32,13 @@
 
 import argparse
 import ast
+import collections
 import glob
 import itertools
 import json
 import multiprocessing
 import os
+import os.path
 import platform
 import random
 import re
@@ -372,50 +374,53 @@ class PhpLanguage(object):
     return 'php'
 
 
+class PythonConfig(collections.namedtuple('PythonConfig', [
+    'python', 'venv', 'venv_relative_python', 'toolchain',])):
+
+  @property
+  def venv_python(self):
+    return os.path.abspath('{}/{}'.format(self.venv, self.venv_relative_python))
+
+
 class PythonLanguage(object):
 
   def configure(self, config, args):
     self.config = config
     self.args = args
-    self._tox_envs = self._get_tox_envs(self.args.compiler)
+    self.pythons = self._get_pythons(self.args.compiler)
 
   def test_specs(self):
     # load list of known test suites
-    with open('src/python/grpcio/tests/tests.json') as tests_json_file:
+    with open('src/python/grpcio_tests/tests/tests.json') as tests_json_file:
       tests_json = json.load(tests_json_file)
     environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
-    environment['PYTHONPATH'] = '{}:{}'.format(
-      os.path.abspath('src/python/gens'),
-      os.path.abspath('src/python/grpcio_health_checking'))
-    if self.config.build_config != 'gcov':
-      return [self.config.job_spec(
-          ['tools/run_tests/run_python.sh', tox_env],
-          environ=dict(environment.items() +
-                       [('GRPC_PYTHON_TESTRUNNER_FILTER', suite_name)]),
-          shortname='%s.test.%s' % (tox_env, suite_name),
-          timeout_seconds=5*60)
-          for suite_name in tests_json
-          for tox_env in self._tox_envs]
-    else:
-      return [self.config.job_spec(['tools/run_tests/run_python.sh', tox_env],
-                                   environ=environment,
-                                   shortname='%s.test.coverage' % tox_env,
-                                   timeout_seconds=15*60)
-                                   for tox_env in self._tox_envs]
-
+    return [self.config.job_spec(
+        ['tools/run_tests/run_python.sh', config.venv_python],
+        timeout_seconds=5*60,
+        environ=dict(environment.items() +
+                     [('GRPC_PYTHON_TESTRUNNER_FILTER', suite_name)]),
+        shortname='%s.test.%s' % (config.venv, suite_name),)
+        for suite_name in tests_json
+        for config in self.pythons]
 
   def pre_build_steps(self):
     return []
 
   def make_targets(self):
-    return ['static_c', 'grpc_python_plugin', 'shared_c']
+    return []
 
   def make_options(self):
     return []
 
   def build_steps(self):
-    return [['tools/run_tests/build_python.sh', tox_env]
-            for tox_env in self._tox_envs]
+    return [
+        [
+            'tools/run_tests/build_python.sh',
+            config.python, config.venv,
+            config.venv_relative_python, config.toolchain
+        ]
+        for config in self.pythons
+    ]
 
   def post_tests_steps(self):
     return []
@@ -426,14 +431,21 @@ class PythonLanguage(object):
   def dockerfile_dir(self):
     return 'tools/dockerfile/test/python_jessie_%s' % _docker_arch_suffix(self.args.arch)
 
-  def _get_tox_envs(self, compiler):
-    """Returns name of tox environment based on selected compiler."""
+  def _get_pythons(self, compiler):
+    if os.name == 'nt':
+      venv_relative_python = 'Scripts/python.exe'
+      toolchain = 'mingw32'
+    else:
+      venv_relative_python = 'bin/python'
+      toolchain = 'unix'
+    python27_config = PythonConfig('python2.7', 'py27', venv_relative_python, toolchain)
+    python34_config = PythonConfig('python3.4', 'py34', venv_relative_python, toolchain)
     if compiler == 'default':
-      return ('py27', 'py34')
+      return (python27_config, python34_config,)
     elif compiler == 'python2.7':
-      return ('py27',)
+      return (python27_config,)
     elif compiler == 'python3.4':
-      return ('py34',)
+      return (python34_config,)
     else:
       raise Exception('Compiler %s not supported.' % compiler)
 

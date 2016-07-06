@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,18 +27,44 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+import os
+import sys
 
-# change to grpc repo root
-cd $(dirname $0)/../..
+import setuptools
 
-PYTHON=`realpath -s "${1:-py27/bin/python}"`
+from grpc.tools import protoc
 
-ROOT=`pwd`
 
-$PYTHON $ROOT/src/python/grpcio_tests/setup.py test_lite
+class BuildProtoModules(setuptools.Command):
+  """Command to generate project *_pb2.py modules from proto files."""
 
-mkdir -p $ROOT/reports
-rm -rf $ROOT/reports/python-coverage
-(mv -T $ROOT/htmlcov $ROOT/reports/python-coverage) || true
+  description = 'build grpc protobuf modules'
+  user_options = []
 
+  def initialize_options(self):
+    pass
+
+  def finalize_options(self):
+    pass
+
+  def run(self):
+    # due to limitations of the proto generator, we require that only *one*
+    # directory is provided as an 'include' directory. We assume it's the '' key
+    # to `self.distribution.package_dir` (and get a key error if it's not
+    # there).
+    proto_files = []
+    inclusion_root = os.path.abspath(self.distribution.package_dir[''])
+    for root, _, files in os.walk(inclusion_root):
+      for filename in files:
+        if filename.endswith('.proto'):
+          proto_files.append(os.path.abspath(os.path.join(root, filename)))
+
+    for proto_file in proto_files:
+      command = [
+          'grpc.tools.protoc',
+          '--proto_path={}'.format(inclusion_root),
+          '--python_out={}'.format(inclusion_root),
+          '--grpc_python_out={}'.format(inclusion_root),
+      ] + [proto_file]
+      if protoc.main(command) != 0:
+        sys.stderr.write('warning: {} failed'.format(command))
