@@ -1555,13 +1555,19 @@ retry:
       pi_new = polling_island_create(exec_ctx, fd, &error);
       gpr_mu_lock(&fd->mu);
       if (fd->polling_island != NULL) {
+        GRPC_POLLING_TRACE(
+            "pollset_add_fd: Raced creating new polling island. pi_new: %p "
+            "(fd: %d, pollset: %p)",
+            (void *)pi_new, fd->fd, (void *)pollset);
+        PI_ADD_REF(pi_new, "dance_of_destruction");
+        PI_UNREF(exec_ctx, pi_new, "dance_of_destruction");
         goto retry;
+      } else {
+        GRPC_POLLING_TRACE(
+            "pollset_add_fd: Created new polling island. pi_new: %p (fd: %d, "
+            "pollset: %p)",
+            (void *)pi_new, fd->fd, (void *)pollset);
       }
-
-      GRPC_POLLING_TRACE(
-          "pollset_add_fd: Created new polling island. pi_new: %p (fd: %d, "
-          "pollset: %p)",
-          (void *)pi_new, fd->fd, (void *)pollset);
     }
   } else if (fd->polling_island == NULL) {
     pi_new = polling_island_lock(pollset->polling_island);
