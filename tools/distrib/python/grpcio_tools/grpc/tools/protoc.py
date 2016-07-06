@@ -37,5 +37,7 @@ from grpc.tools import protoc_compiler
 
 if __name__ == '__main__':
   proto_include = pkg_resources.resource_filename('grpc.tools', '_proto')
-  protoc_compiler.run_main(
-      sys.argv + ['-I{}'.format(proto_include)])
+  args = sys.argv + ['-I{}'.format(proto_include)]
+  bytes_args = [
+      arg if isinstance(arg, bytes) else arg.encode() for arg in args]
+  protoc_compiler.run_main(bytes_args)
