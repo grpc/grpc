@@ -1178,6 +1178,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
                                       true);
         }
       } else {
+        stream_global->send_initial_metadata = NULL;
         grpc_chttp2_complete_closure_step(
             exec_ctx, transport_global, stream_global,
             &stream_global->send_initial_metadata_finished,
@@ -1233,6 +1234,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
         grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
       }
       if (stream_global->write_closed) {
+        stream_global->send_trailing_metadata = NULL;
         grpc_chttp2_complete_closure_step(
             exec_ctx, transport_global, stream_global,
             &stream_global->send_trailing_metadata_finished,
