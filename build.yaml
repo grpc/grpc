@@ -2661,6 +2661,16 @@ targets:
   - grpc++
   - grpc
   - gpr
+- name: grpc_c_plugin
+  build: protoc
+  language: c++
+  src:
+  - src/compiler/c_plugin.cc
+  deps:
+  - grpc_plugin_support
+  secure: false
+  vs_config_type: Application
+  vs_project_guid: '{06F2EB11-35DA-483D-AB0A-BC420D97B18C}'
 - name: grpc_cli
   build: test
   run: false
