@@ -9,16 +9,17 @@ Here we document style rules for C usage in the gRPC Core library.
 General
 -------
 
-- Layout rules are defined by clang-format, and all code should be passed through
-  clang-format. A (docker-based) script to do so is included in 
-  [tools/distrib/clang\_format\_code.sh] (../tools/distrib/clang_format_code.sh).
+- Layout rules are defined by clang-format, and all code should be passed
+  through clang-format. A (docker-based) script to do so is included in
+  [tools/distrib/clang\_format\_code.sh](../tools/distrib/clang_format_code.sh).
 
 Header Files
 ------------
 
-- Public header files (those in the include/grpc tree) should compile as pedantic C89
-- Public header files should be includable from C++ programs. That is, they should 
-  include the following:
+- Public header files (those in the include/grpc tree) should compile as
+  pedantic C89
+- Public header files should be includable from C++ programs. That is, they
+  should include the following:
   ```c
   #ifdef __cplusplus
   extern "C" {
@@ -34,24 +35,34 @@ Header Files
 - All header files should have a #define guard to prevent multiple inclusion.
   To guarantee uniqueness they should be based on the file's path.
 
-  For public headers: include/grpc/grpc.h --> GRPC_GRPC_H
+  For public headers: `include/grpc/grpc.h` → `GRPC_GRPC_H`
 
-  For private headers: 
-  src/core/channel/channel_stack.h --> GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_STACK_H
+  For private headers:
+  `src/core/channel/channel_stack.h` →
+  `GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_STACK_H`
+
+Variable Initialization
+-----------------------
+
+When declaring a (non-static) pointer variable, always initialize it to `NULL`.
+Even in the case of static pointer variables, it's recommended to explicitly
+initialize them to `NULL`.
+
 
 C99 Features
 ------------
 
 - Variable sized arrays are not allowed
 - Do not use the 'inline' keyword
-- Flexible array members are allowed (https://en.wikipedia.org/wiki/Flexible_array_member)
+- Flexible array members are allowed
+  (https://en.wikipedia.org/wiki/Flexible_array_member)
 
 Comments
 --------
 
 Within public header files, only `/* */` comments are allowed.
 
-Within implementation files and private headers, either single line `//` 
+Within implementation files and private headers, either single line `//`
 or multi line `/* */` comments are allowed. Only one comment style per file is
 allowed however (i.e. if single line comments are used anywhere within a file,
 ALL comments within that file must be single line comments).
