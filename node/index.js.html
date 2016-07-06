@@ -74,6 +74,8 @@ var client = require('./src/client.js');
 
 var server = require('./src/server.js');
 
+var common = require('./src/common.js');
+
 var Metadata = require('./src/metadata.js');
 
 var grpc = require('./src/grpc_extension');
@@ -150,6 +152,42 @@ exports.load = function load(filename, format, options) {
   return loadObject(builder.ns, options);
 };
 
+var log_template = _.template(
+    '{severity} {timestamp}\t{file}:{line}]\t{message}',
+    {interpolate: /{([\s\S]+?)}/g});
+
+/**
+ * Sets the logger function for the gRPC module. For debugging purposes, the C
+ * core will log synchronously directly to stdout unless this function is
+ * called. Note: the output format here is intended to be informational, and
+ * is not guaranteed to stay the same in the future.
+ * Logs will be directed to logger.error.
+ * @param {Console} logger A Console-like object.
+ */
+exports.setLogger = function setLogger(logger) {
+  common.logger = logger;
+  grpc.setDefaultLoggerCallback(function(file, line, severity,
+                                         message, timestamp) {
+    logger.error(log_template({
+      file: path.basename(file),
+      line: line,
+      severity: severity,
+      message: message,
+      timestamp: timestamp.toISOString()
+    }));
+  });
+};
+
+/**
+ * Sets the logger verbosity for gRPC module logging. The options are members
+ * of the grpc.logVerbosity map.
+ * @param {Number} verbosity The minimum severity to log
+ */
+exports.setLogVerbosity = function setLogVerbosity(verbosity) {
+  common.logVerbosity = verbosity;
+  grpc.setLogVerbosity(verbosity);
+};
+
 /**
  * @see module:src/server.Server
  */
@@ -179,6 +217,11 @@ exports.callError = grpc.callError;
  * Write flag name to code number mapping
  */
 exports.writeFlags = grpc.writeFlags;
+
+/**
+ * Log verbosity setting name to code number mapping
+ */
+exports.logVerbosity = grpc.logVerbosity;
 
 /**
  * Credentials factories
@@ -214,13 +257,13 @@ exports.waitForClientReady = client.waitForClientReady;
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-src_client.html">src/client</a></li><li><a href="module-src_common.html">src/common</a></li><li><a href="module-src_credentials.html">src/credentials</a></li><li><a href="module-src_metadata.html">src/metadata</a></li><li><a href="module-src_server.html">src/server</a></li></ul><h3>Classes</h3><ul><li><a href="module-src_client.makeClientConstructor-Client.html">Client</a></li><li><a href="module-src_client-ClientDuplexStream.html">ClientDuplexStream</a></li><li><a href="module-src_client-ClientReadableStream.html">ClientReadableStream</a></li><li><a href="module-src_client-ClientWritableStream.html">ClientWritableStream</a></li><li><a href="module-src_metadata-Metadata.html">Metadata</a></li><li><a href="module-src_server-Server.html">Server</a></li><li><a href="module-src_server-ServerDuplexStream.html">ServerDuplexStream</a></li><li><a href="module-src_server-ServerReadableStream.html">ServerReadableStream</a></li><li><a href="module-src_server-ServerWritableStream.html">ServerWritableStream</a></li></ul><h3>Global</h3><ul><li><a href="global.html#callError">callError</a></li><li><a href="global.html#credentials">credentials</a></li><li><a href="global.html#getClientChannel">getClientChannel</a></li><li><a href="global.html#load">load</a></li><li><a href="global.html#loadObject">loadObject</a></li><li><a href="global.html#makeGenericClientConstructor">makeGenericClientConstructor</a></li><li><a href="global.html#Metadata">Metadata</a></li><li><a href="global.html#propagate">propagate</a></li><li><a href="global.html#Server">Server</a></li><li><a href="global.html#ServerCredentials">ServerCredentials</a></li><li><a href="global.html#status">status</a></li><li><a href="global.html#waitForClientReady">waitForClientReady</a></li><li><a href="global.html#writeFlags">writeFlags</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-src_client.html">src/client</a></li><li><a href="module-src_common.html">src/common</a></li><li><a href="module-src_credentials.html">src/credentials</a></li><li><a href="module-src_metadata.html">src/metadata</a></li><li><a href="module-src_server.html">src/server</a></li></ul><h3>Classes</h3><ul><li><a href="module-src_client.makeClientConstructor-Client.html">Client</a></li><li><a href="module-src_client-ClientDuplexStream.html">ClientDuplexStream</a></li><li><a href="module-src_client-ClientReadableStream.html">ClientReadableStream</a></li><li><a href="module-src_client-ClientWritableStream.html">ClientWritableStream</a></li><li><a href="module-src_metadata-Metadata.html">Metadata</a></li><li><a href="module-src_server-Server.html">Server</a></li><li><a href="module-src_server-ServerDuplexStream.html">ServerDuplexStream</a></li><li><a href="module-src_server-ServerReadableStream.html">ServerReadableStream</a></li><li><a href="module-src_server-ServerWritableStream.html">ServerWritableStream</a></li></ul><h3>Global</h3><ul><li><a href="global.html#callError">callError</a></li><li><a href="global.html#credentials">credentials</a></li><li><a href="global.html#getClientChannel">getClientChannel</a></li><li><a href="global.html#load">load</a></li><li><a href="global.html#loadObject">loadObject</a></li><li><a href="global.html#logVerbosity">logVerbosity</a></li><li><a href="global.html#makeGenericClientConstructor">makeGenericClientConstructor</a></li><li><a href="global.html#Metadata">Metadata</a></li><li><a href="global.html#propagate">propagate</a></li><li><a href="global.html#Server">Server</a></li><li><a href="global.html#ServerCredentials">ServerCredentials</a></li><li><a href="global.html#setLogger">setLogger</a></li><li><a href="global.html#setLogVerbosity">setLogVerbosity</a></li><li><a href="global.html#status">status</a></li><li><a href="global.html#waitForClientReady">waitForClientReady</a></li><li><a href="global.html#writeFlags">writeFlags</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Wed May 11 2016 18:17:25 GMT-0700 (PDT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Fri Jul 01 2016 11:19:49 GMT-0700 (PDT)
 </footer>
 
 <script> prettyPrint(); </script>
