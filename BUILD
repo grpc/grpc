@@ -2621,6 +2621,18 @@ objc_library(
 
 
 cc_binary(
+  name = "grpc_c_plugin",
+  srcs = [
+    "src/compiler/c_plugin.cc",
+  ],
+  deps = [
+    "//external:protobuf_compiler",
+    ":grpc_plugin_support",
+  ],
+)
+
+
+cc_binary(
   name = "grpc_cpp_plugin",
   srcs = [
     "src/compiler/cpp_plugin.cc",
