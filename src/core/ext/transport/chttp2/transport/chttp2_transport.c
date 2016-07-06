@@ -603,7 +603,8 @@ static void destroy_stream_locked(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_incoming_metadata_buffer_destroy(
       &s->global.received_trailing_metadata);
   gpr_slice_buffer_destroy(&s->writing.flow_controlled_buffer);
-  GRPC_ERROR_UNREF(s->global.removal_error);
+  GRPC_ERROR_UNREF(s->global.read_closed_error);
+  GRPC_ERROR_UNREF(s->global.write_closed_error);
 
   UNREF_TRANSPORT(exec_ctx, t, "stream");
 
@@ -1178,7 +1179,7 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx,
                                       true);
         }
       } else {
-        stream_global->send_initial_metadata = NULL;
+        stream_global->send_trailing_metadata = NULL;
         grpc_chttp2_complete_closure_step(
             exec_ctx, transport_global, stream_global,
             &stream_global->send_initial_metadata_finished,
@@ -1637,10 +1638,38 @@ void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx,
   }
 }
 
+static void add_error(grpc_error *error, grpc_error **refs, size_t *nrefs) {
+  if (error == GRPC_ERROR_NONE) return;
+  for (size_t i = 0; i < *nrefs; i++) {
+    if (error == refs[i]) {
+      return;
+    }
+  }
+  refs[*nrefs] = error;
+  ++*nrefs;
+}
+
+static grpc_error *removal_error(grpc_error *extra_error,
+                                 grpc_chttp2_stream_global *stream_global) {
+  grpc_error *refs[3];
+  size_t nrefs = 0;
+  add_error(stream_global->read_closed_error, refs, &nrefs);
+  add_error(stream_global->write_closed_error, refs, &nrefs);
+  add_error(extra_error, refs, &nrefs);
+  grpc_error *error = GRPC_ERROR_NONE;
+  if (nrefs > 0) {
+    error = GRPC_ERROR_CREATE_REFERENCING("Failed due to stream removal", refs,
+                                          nrefs);
+  }
+  GRPC_ERROR_UNREF(extra_error);
+  return error;
+}
+
 static void fail_pending_writes(grpc_exec_ctx *exec_ctx,
                                 grpc_chttp2_transport_global *transport_global,
                                 grpc_chttp2_stream_global *stream_global,
                                 grpc_error *error) {
+  error = removal_error(error, stream_global);
   grpc_chttp2_complete_closure_step(
       exec_ctx, transport_global, stream_global,
       &stream_global->send_initial_metadata_finished, GRPC_ERROR_REF(error));
@@ -1663,12 +1692,14 @@ void grpc_chttp2_mark_stream_closed(
   }
   grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
   if (close_reads && !stream_global->read_closed) {
+    stream_global->read_closed_error = GRPC_ERROR_REF(error);
     stream_global->read_closed = true;
     stream_global->published_initial_metadata = true;
     stream_global->published_trailing_metadata = true;
     decrement_active_streams_locked(exec_ctx, transport_global, stream_global);
   }
   if (close_writes && !stream_global->write_closed) {
+    stream_global->write_closed_error = GRPC_ERROR_REF(error);
     stream_global->write_closed = true;
     if (TRANSPORT_FROM_GLOBAL(transport_global)->executor.write_state !=
         GRPC_CHTTP2_WRITING_INACTIVE) {
@@ -1681,7 +1712,6 @@ void grpc_chttp2_mark_stream_closed(
     }
   }
   if (stream_global->read_closed && stream_global->write_closed) {
-    stream_global->removal_error = GRPC_ERROR_REF(error);
     if (stream_global->id != 0 &&
         TRANSPORT_FROM_GLOBAL(transport_global)->executor.parsing_active) {
       grpc_chttp2_list_add_closed_waiting_for_parsing(transport_global,
@@ -1689,7 +1719,8 @@ void grpc_chttp2_mark_stream_closed(
     } else {
       if (stream_global->id != 0) {
         remove_stream(exec_ctx, TRANSPORT_FROM_GLOBAL(transport_global),
-                      stream_global->id, GRPC_ERROR_REF(error));
+                      stream_global->id,
+                      removal_error(GRPC_ERROR_REF(error), stream_global));
       }
       GRPC_CHTTP2_STREAM_UNREF(exec_ctx, stream_global, "chttp2");
     }
@@ -2008,7 +2039,7 @@ static void post_parse_locked(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     GPR_ASSERT(stream_global->write_closed);
     GPR_ASSERT(stream_global->read_closed);
     remove_stream(exec_ctx, t, stream_global->id,
-                  GRPC_ERROR_REF(stream_global->removal_error));
+                  removal_error(GRPC_ERROR_NONE, stream_global));
     GRPC_CHTTP2_STREAM_UNREF(exec_ctx, stream_global, "chttp2");
   }
 

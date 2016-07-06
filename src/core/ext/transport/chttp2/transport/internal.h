@@ -454,8 +454,10 @@ typedef struct {
   bool seen_error;
   bool exceeded_metadata_size;
 
-  /** the error that resulted in this stream being removed */
-  grpc_error *removal_error;
+  /** the error that resulted in this stream being read-closed */
+  grpc_error *read_closed_error;
+  /** the error that resulted in this stream being write-closed */
+  grpc_error *write_closed_error;
 
   bool published_initial_metadata;
   bool published_trailing_metadata;
