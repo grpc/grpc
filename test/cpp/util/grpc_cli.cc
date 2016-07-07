@@ -35,7 +35,7 @@
   A command line tool to talk to a grpc server.
   Example of talking to grpc interop server:
   grpc_cli call localhost:50051 UnaryCall "response_size:10" \
-      --proto_file=src/proto/grpc/testing/test.prot --enable_ssl=false
+      --proto_file=src/proto/grpc/testing/test.proto --enable_ssl=false
 
   Options:
     1. --proto_file, use this flag to provide a proto file if the server does
