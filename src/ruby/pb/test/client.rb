@@ -197,6 +197,25 @@ class PingPongPlayer
   end
 end
 
+class BlockingEnumerator
+  include Grpc::Testing
+  include Grpc::Testing::PayloadType
+
+  def initialize(req_size, sleep_time)
+    @req_size = req_size
+    @sleep_time = sleep_time
+  end
+
+  def each_item
+    return enum_for(:each_item) unless block_given?
+    req_cls = StreamingOutputCallRequest
+    req = req_cls.new(payload: Payload.new(body: nulls(@req_size)))
+    yield req
+    # Sleep until after the deadline should have passed
+    sleep(@sleep_time)
+  end
+end
+
 # defines methods corresponding to each interop test case.
 class NamedTests
   include Grpc::Testing
@@ -315,11 +334,10 @@ class NamedTests
   end
 
   def timeout_on_sleeping_server
-    msg_sizes = [[27_182, 31_415]]
-    ppp = PingPongPlayer.new(msg_sizes)
-    deadline = GRPC::Core::TimeConsts::from_relative_time(0.001)
-    resps = @stub.full_duplex_call(ppp.each_item, deadline: deadline)
-    resps.each { |r| ppp.queue.push(r) }
+    enum = BlockingEnumerator.new(27_182, 2)
+    deadline = GRPC::Core::TimeConsts::from_relative_time(1)
+    resps = @stub.full_duplex_call(enum.each_item, deadline: deadline)
+    resps.each { } # wait to receive each request (or timeout)
     fail 'Should have raised GRPC::BadStatus(DEADLINE_EXCEEDED)'
   rescue GRPC::BadStatus => e
     assert("#{__callee__}: status was wrong") do

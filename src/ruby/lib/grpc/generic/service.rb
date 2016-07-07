@@ -168,7 +168,7 @@ module GRPC
           # @param kw [KeywordArgs] the channel arguments, plus any optional
           #                         args for configuring the client's channel
           def initialize(host, creds, **kw)
-            super(host, Core::CompletionQueue.new, creds, **kw)
+            super(host, creds, **kw)
           end
 
           # Used define_method to add a method for each rpc_desc.  Each method
