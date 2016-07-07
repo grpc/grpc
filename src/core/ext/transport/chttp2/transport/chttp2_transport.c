@@ -814,8 +814,7 @@ void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
     case GRPC_CHTTP2_WRITE_REQUESTED_NO_POLLER:
       if (covered_by_poller) {
         /* upgrade to note poller is available to cover the write */
-        set_write_state(t, GRPC_CHTTP2_WRITE_REQUESTED_WITH_POLLER,
-                        reason);
+        set_write_state(t, GRPC_CHTTP2_WRITE_REQUESTED_WITH_POLLER, reason);
       }
       break;
     case GRPC_CHTTP2_WRITE_SCHEDULED:
@@ -833,8 +832,7 @@ void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
     case GRPC_CHTTP2_WRITING_STALE_NO_POLLER:
       if (covered_by_poller) {
         /* upgrade to note poller is available to cover the write */
-        set_write_state(t, GRPC_CHTTP2_WRITING_STALE_WITH_POLLER,
-                        reason);
+        set_write_state(t, GRPC_CHTTP2_WRITING_STALE_WITH_POLLER, reason);
       }
       break;
   }
@@ -885,7 +883,8 @@ void grpc_chttp2_become_writable(grpc_exec_ctx *exec_ctx,
   if (!TRANSPORT_FROM_GLOBAL(transport_global)->closed &&
       grpc_chttp2_list_add_writable_stream(transport_global, stream_global)) {
     GRPC_CHTTP2_STREAM_REF(stream_global, "chttp2_writing");
-    grpc_chttp2_initiate_write(exec_ctx, transport_global, covered_by_poller, reason);
+    grpc_chttp2_initiate_write(exec_ctx, transport_global, covered_by_poller,
+                               reason);
   }
 }
 
@@ -1039,8 +1038,8 @@ static void maybe_start_some_streams(
         stream_global->id, STREAM_FROM_GLOBAL(stream_global));
     stream_global->in_stream_map = true;
     transport_global->concurrent_stream_count++;
-    grpc_chttp2_become_writable(exec_ctx, transport_global, stream_global,
-                                true, "new_stream");
+    grpc_chttp2_become_writable(exec_ctx, transport_global, stream_global, true,
+                                "new_stream");
   }
   /* cancel out streams that will never be started */
   while (transport_global->next_stream_id >= MAX_CLIENT_STREAM_ID &&
@@ -1578,7 +1577,8 @@ static void cancel_from_api(grpc_exec_ctx *exec_ctx,
           &transport_global->qbuf,
           grpc_chttp2_rst_stream_create(stream_global->id, (uint32_t)http_error,
                                         &stream_global->stats.outgoing));
-      grpc_chttp2_initiate_write(exec_ctx, transport_global, false, "rst_stream");
+      grpc_chttp2_initiate_write(exec_ctx, transport_global, false,
+                                 "rst_stream");
     }
 
     const char *msg =
@@ -1844,7 +1844,8 @@ static void close_from_api(grpc_exec_ctx *exec_ctx,
 
   grpc_chttp2_mark_stream_closed(exec_ctx, transport_global, stream_global, 1,
                                  1, error);
-  grpc_chttp2_initiate_write(exec_ctx, transport_global, false, "close_from_api");
+  grpc_chttp2_initiate_write(exec_ctx, transport_global, false,
+                             "close_from_api");
 }
 
 typedef struct {
@@ -2007,7 +2008,8 @@ static void post_parse_locked(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   /* copy parsing qbuf to global qbuf */
   if (t->parsing.qbuf.count > 0) {
     gpr_slice_buffer_move_into(&t->parsing.qbuf, &t->global.qbuf);
-    grpc_chttp2_initiate_write(exec_ctx, transport_global, false, "parsing_qbuf");
+    grpc_chttp2_initiate_write(exec_ctx, transport_global, false,
+                               "parsing_qbuf");
   }
   /* merge stream lists */
   grpc_chttp2_stream_map_move_into(&t->new_stream_map, &t->parsing_stream_map);
@@ -2176,7 +2178,6 @@ static void incoming_byte_stream_update_flow_control(
   if (stream_global->max_recv_bytes < max_recv_bytes) {
     uint32_t add_max_recv_bytes =
         max_recv_bytes - stream_global->max_recv_bytes;
-    gpr_log(GPR_DEBUG, "add_max_recv_bytes:%d", add_max_recv_bytes);
     GRPC_CHTTP2_FLOW_CREDIT_STREAM("op", transport_global, stream_global,
                                    max_recv_bytes, add_max_recv_bytes);
     GRPC_CHTTP2_FLOW_CREDIT_STREAM("op", transport_global, stream_global,
