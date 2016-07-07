@@ -135,8 +135,6 @@ describe GRPC::RpcServer do
     @pass = 0
     @fail = 1
     @noop = proc { |x| x }
-
-    @server_queue = GRPC::Core::CompletionQueue.new
   end
 
   describe '#new' do
@@ -146,28 +144,6 @@ describe GRPC::RpcServer do
         RpcServer.new(**opts)
       end
       expect(&blk).not_to raise_error
-    end
-
-    it 'can be created with a completion queue override' do
-      opts = {
-        server_args: { a_channel_arg: 'an_arg' },
-        completion_queue_override: @server_queue
-      }
-      blk = proc do
-        RpcServer.new(**opts)
-      end
-      expect(&blk).not_to raise_error
-    end
-
-    it 'cannot be created with a bad completion queue override' do
-      blk = proc do
-        opts = {
-          server_args: { a_channel_arg: 'an_arg' },
-          completion_queue_override: Object.new
-        }
-        RpcServer.new(**opts)
-      end
-      expect(&blk).to raise_error
     end
 
     it 'cannot be created with invalid ServerCredentials' do
@@ -294,7 +270,6 @@ describe GRPC::RpcServer do
     context 'with no connect_metadata' do
       before(:each) do
         server_opts = {
-          completion_queue_override: @server_queue,
           poll_period: 1
         }
         @srv = RpcServer.new(**server_opts)
@@ -309,8 +284,7 @@ describe GRPC::RpcServer do
         @srv.wait_till_running
         req = EchoMsg.new
         blk = proc do
-          cq = GRPC::Core::CompletionQueue.new
-          stub = GRPC::ClientStub.new(@host, cq, :this_channel_is_insecure,
+          stub = GRPC::ClientStub.new(@host, :this_channel_is_insecure,
                                       **client_opts)
           stub.request_response('/unknown', req, marshal, unmarshal)
         end
@@ -325,8 +299,7 @@ describe GRPC::RpcServer do
         @srv.wait_till_running
         req = EchoMsg.new
         blk = proc do
-          cq = GRPC::Core::CompletionQueue.new
-          stub = GRPC::ClientStub.new(@host, cq, :this_channel_is_insecure,
+          stub = GRPC::ClientStub.new(@host, :this_channel_is_insecure,
                                       **client_opts)
           stub.request_response('/an_rpc', req, marshal, unmarshal)
         end
@@ -422,7 +395,6 @@ describe GRPC::RpcServer do
       it 'should return RESOURCE_EXHAUSTED on too many jobs', server: true do
         opts = {
           server_args: { a_channel_arg: 'an_arg' },
-          completion_queue_override: @server_queue,
           pool_size: 1,
           poll_period: 1,
           max_waiting_requests: 0
@@ -466,7 +438,6 @@ describe GRPC::RpcServer do
       end
       before(:each) do
         server_opts = {
-          completion_queue_override: @server_queue,
           poll_period: 1,
           connect_md_proc: test_md_proc
         }
@@ -502,7 +473,6 @@ describe GRPC::RpcServer do
     context 'with trailing metadata' do
       before(:each) do
         server_opts = {
-          completion_queue_override: @server_queue,
           poll_period: 1
         }
         @srv = RpcServer.new(**server_opts)

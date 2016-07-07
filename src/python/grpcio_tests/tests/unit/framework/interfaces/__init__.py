@@ -27,16 +27,4 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-require 'grpc'
 
-describe GRPC::Core::CompletionQueue do
-  before(:example) do
-    @cq = GRPC::Core::CompletionQueue.new
-  end
-
-  describe '#new' do
-    it 'is constructed successufully' do
-      expect { GRPC::Core::CompletionQueue.new }.not_to raise_error
-    end
-  end
-end
