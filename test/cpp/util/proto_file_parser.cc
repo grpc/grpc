@@ -109,7 +109,10 @@ ProtoFileParser::ProtoFileParser(std::shared_ptr<grpc::Channel> channel,
       desc_pool_(new google::protobuf::DescriptorPool(desc_db_.get())) {
   std::vector<std::string> service_list;
   if (!desc_db_->GetServices(&service_list)) {
-    LogError("Failed to get services");
+    LogError(
+        "Failed to get services from the server, "
+        "it may not have the reflection service.\n"
+        "Please try to use the --proto_file option to provide a proto file.");
   }
   if (has_error_) {
     return;
@@ -177,7 +180,7 @@ grpc::string ProtoFileParser::GetSerializedProto(
     LogError("Failed to parse text format to proto.");
     return "";
   }
-  ok = request_prototype_->SerializeToString(&serialized);
+  ok = msg->SerializeToString(&serialized);
   if (!ok) {
     LogError("Failed to serialize proto.");
     return "";
