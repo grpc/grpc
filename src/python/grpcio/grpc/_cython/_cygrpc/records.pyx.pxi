@@ -252,9 +252,13 @@ cdef class ByteBuffer:
     cdef gpr_slice data_slice
     cdef size_t data_slice_length
     cdef void *data_slice_pointer
+    cdef bint reader_status
     if self.c_byte_buffer != NULL:
       with nogil:
-        grpc_byte_buffer_reader_init(&reader, self.c_byte_buffer)
+        reader_status = grpc_byte_buffer_reader_init(
+            &reader, self.c_byte_buffer)
+      if not reader_status:
+        return None
       result = bytearray()
       with nogil:
         while grpc_byte_buffer_reader_next(&reader, &data_slice):

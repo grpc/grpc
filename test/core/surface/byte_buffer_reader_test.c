@@ -59,7 +59,8 @@ static void test_read_one_slice(void) {
   slice = gpr_slice_from_copied_string("test");
   buffer = grpc_raw_byte_buffer_create(&slice, 1);
   gpr_slice_unref(slice);
-  grpc_byte_buffer_reader_init(&reader, buffer);
+  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, buffer) &&
+             "Couldn't init byte buffer reader");
   first_code = grpc_byte_buffer_reader_next(&reader, &first_slice);
   GPR_ASSERT(first_code != 0);
   GPR_ASSERT(memcmp(GPR_SLICE_START_PTR(first_slice), "test", 4) == 0);
@@ -81,7 +82,8 @@ static void test_read_one_slice_malloc(void) {
   memcpy(GPR_SLICE_START_PTR(slice), "test", 4);
   buffer = grpc_raw_byte_buffer_create(&slice, 1);
   gpr_slice_unref(slice);
-  grpc_byte_buffer_reader_init(&reader, buffer);
+  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, buffer) &&
+             "Couldn't init byte buffer reader");
   first_code = grpc_byte_buffer_reader_next(&reader, &first_slice);
   GPR_ASSERT(first_code != 0);
   GPR_ASSERT(memcmp(GPR_SLICE_START_PTR(first_slice), "test", 4) == 0);
@@ -102,13 +104,28 @@ static void test_read_none_compressed_slice(void) {
   slice = gpr_slice_from_copied_string("test");
   buffer = grpc_raw_byte_buffer_create(&slice, 1);
   gpr_slice_unref(slice);
-  grpc_byte_buffer_reader_init(&reader, buffer);
+  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, buffer) &&
+             "Couldn't init byte buffer reader");
   first_code = grpc_byte_buffer_reader_next(&reader, &first_slice);
   GPR_ASSERT(first_code != 0);
   GPR_ASSERT(memcmp(GPR_SLICE_START_PTR(first_slice), "test", 4) == 0);
   gpr_slice_unref(first_slice);
   second_code = grpc_byte_buffer_reader_next(&reader, &second_slice);
   GPR_ASSERT(second_code == 0);
+  grpc_byte_buffer_destroy(buffer);
+}
+
+static void test_read_corrupted_slice(void) {
+  gpr_slice slice;
+  grpc_byte_buffer *buffer;
+  grpc_byte_buffer_reader reader;
+
+  LOG_TEST("test_read_corrupted_slice");
+  slice = gpr_slice_from_copied_string("test");
+  buffer = grpc_raw_byte_buffer_create(&slice, 1);
+  buffer->data.raw.compression = GRPC_COMPRESS_GZIP; /* lies! */
+  gpr_slice_unref(slice);
+  GPR_ASSERT(!grpc_byte_buffer_reader_init(&reader, buffer));
   grpc_byte_buffer_destroy(buffer);
 }
 
@@ -132,7 +149,8 @@ static void read_compressed_slice(grpc_compression_algorithm algorithm,
 
   buffer = grpc_raw_compressed_byte_buffer_create(sliceb_out.slices,
                                                   sliceb_out.count, algorithm);
-  grpc_byte_buffer_reader_init(&reader, buffer);
+  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, buffer) &&
+             "Couldn't init byte buffer reader");
 
   while (grpc_byte_buffer_reader_next(&reader, &read_slice)) {
     GPR_ASSERT(memcmp(GPR_SLICE_START_PTR(read_slice),
@@ -170,7 +188,8 @@ static void test_byte_buffer_from_reader(void) {
   memcpy(GPR_SLICE_START_PTR(slice), "test", 4);
   buffer = grpc_raw_byte_buffer_create(&slice, 1);
   gpr_slice_unref(slice);
-  grpc_byte_buffer_reader_init(&reader, buffer);
+  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, buffer) &&
+             "Couldn't init byte buffer reader");
 
   buffer_from_reader = grpc_raw_byte_buffer_from_reader(&reader);
   GPR_ASSERT(buffer->type == buffer_from_reader->type);
@@ -206,7 +225,8 @@ static void test_readall(void) {
   gpr_slice_unref(slices[0]);
   gpr_slice_unref(slices[1]);
 
-  grpc_byte_buffer_reader_init(&reader, buffer);
+  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, buffer) &&
+             "Couldn't init byte buffer reader");
   slice_out = grpc_byte_buffer_reader_readall(&reader);
 
   GPR_ASSERT(GPR_SLICE_LENGTH(slice_out) == 512 + 1024);
@@ -241,7 +261,8 @@ static void test_byte_buffer_copy(void) {
   gpr_slice_unref(slices[1]);
   copied_buffer = grpc_byte_buffer_copy(buffer);
 
-  grpc_byte_buffer_reader_init(&reader, copied_buffer);
+  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, buffer) &&
+             "Couldn't init byte buffer reader");
   slice_out = grpc_byte_buffer_reader_readall(&reader);
 
   GPR_ASSERT(GPR_SLICE_LENGTH(slice_out) == 512 + 1024);
@@ -260,6 +281,7 @@ int main(int argc, char **argv) {
   test_read_none_compressed_slice();
   test_read_gzip_compressed_slice();
   test_read_deflate_compressed_slice();
+  test_read_corrupted_slice();
   test_byte_buffer_from_reader();
   test_byte_buffer_copy();
   test_readall();
