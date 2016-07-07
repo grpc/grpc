@@ -24,6 +24,10 @@ EXPORTS
     census_get_trace_record
     census_trace_scan_end
     census_record_values
+    census_agg_sum
+    census_agg_distribution
+    census_agg_histogram
+    census_agg_window
     census_view_create
     census_view_delete
     census_view_metric
