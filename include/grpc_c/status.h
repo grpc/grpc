@@ -32,21 +32,15 @@
  */
 
 
-#ifndef TEST_GRPC_C_CLIENT_STREAMING_BLOCKING_CALL_PUBLIC_H
-#define TEST_GRPC_C_CLIENT_STREAMING_BLOCKING_CALL_PUBLIC_H
+#ifndef GRPC_C_STATUS_PUBLIC_H
+#define GRPC_C_STATUS_PUBLIC_H
 
-#include <stdbool.h>
-#include "grpc_c_public.h"
+typedef struct grpc_status {
+  grpc_status_code code;
+  char *details;
+  size_t details_length;
+} grpc_status;
 
-typedef struct grpc_client_writer GRPC_client_writer;
+typedef grpc_status GRPC_status;
 
-GRPC_client_writer *GRPC_client_streaming_blocking_call(GRPC_channel *channel,
-                                                                 const GRPC_method rpc_method,
-                                                                 GRPC_context *const context,
-                                                                 GRPC_message *response);
-
-bool GRPC_client_streaming_blocking_write(GRPC_client_writer *writer, const GRPC_message request);
-
-GRPC_status GRPC_client_writer_terminate(GRPC_client_writer *writer);
-
-#endif //TEST_GRPC_C_CLIENT_STREAMING_BLOCKING_CALL_PUBLIC_H
+#endif // GRPC_C_STATUS_CODE_PUBLIC_H

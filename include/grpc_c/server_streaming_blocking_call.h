@@ -32,12 +32,18 @@
  */
 
 
-#ifndef TEST_GRPC_C_CONTEXT_PUBLIC_H
-#define TEST_GRPC_C_CONTEXT_PUBLIC_H
+#ifndef GRPC_C_SERVER_STREAMING_BLOCKING_CALL_PUBLIC_H
+#define GRPC_C_SERVER_STREAMING_BLOCKING_CALL_PUBLIC_H
 
-#include "grpc_c_public.h"
+typedef struct grpc_client_reader GRPC_client_reader;
 
-GRPC_context *GRPC_context_create(GRPC_channel *chan);
-void GRPC_context_destroy(GRPC_context **context);
+GRPC_client_reader *GRPC_server_streaming_blocking_call(GRPC_channel *channel,
+                                                        const GRPC_method rpc_method,
+                                                        GRPC_context *const context,
+                                                        const GRPC_message request);
 
-#endif //TEST_GRPC_C_CONTEXT_PUBLIC_H
+bool GRPC_server_streaming_blocking_read(GRPC_client_reader *reader, GRPC_message *response);
+
+GRPC_status GRPC_client_reader_terminate(GRPC_client_reader *reader);
+
+#endif // GRPC_C_SERVER_STREAMING_BLOCKING_CALL_PUBLIC_H
