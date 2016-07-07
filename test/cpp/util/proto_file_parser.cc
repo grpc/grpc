@@ -95,9 +95,45 @@ ProtoFileParser::ProtoFileParser(const grpc::string& proto_path,
   dynamic_factory_.reset(
       new google::protobuf::DynamicMessageFactory(importer_->pool()));
 
+  std::vector<const google::protobuf::ServiceDescriptor*> service_desc_list;
+  for (int i = 0; i < file_desc->service_count(); i++) {
+    service_desc_list.push_back(file_desc->service(i));
+  }
+  InitProtoFileParser(method, service_desc_list);
+}
+
+ProtoFileParser::ProtoFileParser(std::shared_ptr<grpc::Channel> channel,
+                                 const grpc::string& method)
+    : has_error_(false),
+      desc_db_(new grpc::ProtoReflectionDescriptorDatabase(channel)),
+      desc_pool_(new google::protobuf::DescriptorPool(desc_db_.get())) {
+  std::vector<std::string> service_list;
+  if (!desc_db_->GetServices(&service_list)) {
+    LogError("Failed to get services");
+  }
+  if (has_error_) {
+    return;
+  }
+  dynamic_factory_.reset(
+      new google::protobuf::DynamicMessageFactory(desc_pool_.get()));
+
+  std::vector<const google::protobuf::ServiceDescriptor*> service_desc_list;
+  for (auto it = service_list.begin(); it != service_list.end(); it++) {
+    service_desc_list.push_back(desc_pool_->FindServiceByName(*it));
+  }
+  InitProtoFileParser(method, service_desc_list);
+}
+
+ProtoFileParser::~ProtoFileParser() {}
+
+void ProtoFileParser::InitProtoFileParser(
+    const grpc::string& method,
+    const std::vector<const google::protobuf::ServiceDescriptor*>
+        service_desc_list) {
   const google::protobuf::MethodDescriptor* method_descriptor = nullptr;
-  for (int i = 0; !method_descriptor && i < file_desc->service_count(); i++) {
-    const auto* service_desc = file_desc->service(i);
+  for (auto it = service_desc_list.begin(); it != service_desc_list.end();
+       it++) {
+    const auto* service_desc = *it;
     for (int j = 0; j < service_desc->method_count(); j++) {
       const auto* method_desc = service_desc->method(j);
       if (MethodNameMatch(method_desc->full_name(), method)) {
@@ -129,8 +165,6 @@ ProtoFileParser::ProtoFileParser(const grpc::string& proto_path,
   response_prototype_.reset(
       dynamic_factory_->GetPrototype(method_descriptor->output_type())->New());
 }
-
-ProtoFileParser::~ProtoFileParser() {}
 
 grpc::string ProtoFileParser::GetSerializedProto(
     const grpc::string& text_format_proto, bool is_request) {

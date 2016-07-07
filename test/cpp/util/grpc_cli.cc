@@ -86,6 +86,7 @@ DEFINE_string(output_binary_file, "",
 DEFINE_string(metadata, "",
               "Metadata to send to server, in the form of key1:val1:key2:val2");
 DEFINE_string(proto_path, ".", "Path to look for the proto file.");
+DEFINE_string(proto_file, "", "Name of the proto file.");
 
 void ParseMetadataFlag(
     std::multimap<grpc::string, grpc::string>* client_metadata) {
@@ -129,31 +130,47 @@ void PrintMetadata(const T& m, const grpc::string& message) {
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
 
-  if (argc < 4 || argc == 5 || grpc::string(argv[1]) != "call") {
+  if (argc < 4 || grpc::string(argv[1]) != "call") {
     std::cout << "Usage: grpc_cli call server_host:port method_name "
               << "[proto file] [text format request] [<options>]" << std::endl;
+    return 1;
   }
 
-  grpc::string file_name;
   grpc::string request_text;
   grpc::string server_address(argv[2]);
   grpc::string method_name(argv[3]);
   std::unique_ptr<grpc::testing::ProtoFileParser> parser;
   grpc::string serialized_request_proto;
 
-  if (argc == 6) {
-    file_name = argv[4];
+  if (argc == 5) {
     // TODO(yangg) read from stdin as well?
-    request_text = argv[5];
+    request_text = argv[4];
   }
+
+  std::shared_ptr<grpc::ChannelCredentials> creds;
+  if (!FLAGS_enable_ssl) {
+    creds = grpc::InsecureChannelCredentials();
+  } else {
+    if (FLAGS_use_auth) {
+      creds = grpc::GoogleDefaultCredentials();
+    } else {
+      creds = grpc::SslCredentials(grpc::SslCredentialsOptions());
+    }
+  }
+  std::shared_ptr<grpc::Channel> channel =
+      grpc::CreateChannel(server_address, creds);
 
   if (request_text.empty() && FLAGS_input_binary_file.empty()) {
     std::cout << "Missing input. Use text format input or "
               << "--input_binary_file for serialized request" << std::endl;
     return 1;
   } else if (!request_text.empty()) {
-    parser.reset(new grpc::testing::ProtoFileParser(FLAGS_proto_path, file_name,
-                                                    method_name));
+    if (!FLAGS_proto_file.empty()) {
+      parser.reset(new grpc::testing::ProtoFileParser(
+          FLAGS_proto_path, FLAGS_proto_file, method_name));
+    } else {
+      parser.reset(new grpc::testing::ProtoFileParser(channel, method_name));
+    }
     method_name = parser->GetFullMethodName();
     if (parser->HasError()) {
       return 1;
@@ -174,19 +191,6 @@ int main(int argc, char** argv) {
     serialized_request_proto = input_stream.str();
   }
   std::cout << "connecting to " << server_address << std::endl;
-
-  std::shared_ptr<grpc::ChannelCredentials> creds;
-  if (!FLAGS_enable_ssl) {
-    creds = grpc::InsecureChannelCredentials();
-  } else {
-    if (FLAGS_use_auth) {
-      creds = grpc::GoogleDefaultCredentials();
-    } else {
-      creds = grpc::SslCredentials(grpc::SslCredentialsOptions());
-    }
-  }
-  std::shared_ptr<grpc::Channel> channel =
-      grpc::CreateChannel(server_address, creds);
 
   grpc::string serialized_response_proto;
   std::multimap<grpc::string, grpc::string> client_metadata;

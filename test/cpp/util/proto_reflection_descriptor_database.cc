@@ -53,7 +53,17 @@ ProtoReflectionDescriptorDatabase::ProtoReflectionDescriptorDatabase(
     std::shared_ptr<grpc::Channel> channel)
     : stub_(ServerReflection::NewStub(channel)) {}
 
-ProtoReflectionDescriptorDatabase::~ProtoReflectionDescriptorDatabase() {}
+ProtoReflectionDescriptorDatabase::~ProtoReflectionDescriptorDatabase() {
+  if (!stream_) {
+    GetStream()->WritesDone();
+    Status status = stream_->Finish();
+    if (!status.ok()) {
+      gpr_log(GPR_ERROR,
+              "ServerReflectionInfo rpc failed. Error code: %d, details: %s",
+              (int)status.error_code(), status.error_message().c_str());
+    }
+  }
+}
 
 bool ProtoReflectionDescriptorDatabase::FindFileByName(
     const string& filename, google::protobuf::FileDescriptorProto* output) {

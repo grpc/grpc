@@ -149,11 +149,14 @@
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\cli_call.h" />
     <ClInclude Include="$(SolutionDir)\..\test\cpp\util\proto_file_parser.h" />
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\util\proto_reflection_descriptor_database.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\util\cli_call.cc">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\test\cpp\util\proto_file_parser.cc">
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\util\proto_reflection_descriptor_database.cc">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
