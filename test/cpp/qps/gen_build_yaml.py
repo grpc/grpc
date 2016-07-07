@@ -46,7 +46,7 @@ import performance.scenario_config as scenario_config
 def _scenario_json_string(scenario_json):
   # tweak parameters to get fast test times
   scenario_json['warmup_seconds'] = 1
-  scenario_json['benchmark_seconds'] = 1
+  scenario_json['benchmark_seconds'] = 10
   return json.dumps(scenario_config.remove_nonproto_fields(scenario_json))
 
 def threads_of_type(scenario_json, path):
