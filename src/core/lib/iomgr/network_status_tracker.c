@@ -44,7 +44,7 @@ static endpoint_ll_node *head = NULL;
 static gpr_mu g_endpoint_mutex;
 static gpr_once g_once_init = GPR_ONCE_INIT;
 
-static void destroy_network_status_monitor() {
+static void destroy_network_status_monitor(void) {
   if (head != NULL) {
     gpr_log(GPR_ERROR,
             "Memory leaked as all network endpoints were not shut down");
@@ -52,7 +52,7 @@ static void destroy_network_status_monitor() {
   gpr_mu_destroy(&g_endpoint_mutex);
 }
 
-static void initialize_network_status_monitor() {
+static void initialize_network_status_monitor(void) {
   gpr_mu_init(&g_endpoint_mutex);
   atexit(destroy_network_status_monitor);
   // TODO(makarandd): Install callback with OS to monitor network status.
