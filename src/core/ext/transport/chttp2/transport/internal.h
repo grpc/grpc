@@ -542,7 +542,7 @@ struct grpc_chttp2_stream {
     should be performed. */
 void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
                                 grpc_chttp2_transport_global *transport_global,
-                                bool covered_by_poller);
+                                bool covered_by_poller, const char *reason);
 
 /** Someone is unlocking the transport mutex: check to see if writes
     are required, and schedule them if so */
@@ -631,8 +631,7 @@ void grpc_chttp2_list_add_writing_stalled_by_transport(
     grpc_chttp2_transport_writing *transport_writing,
     grpc_chttp2_stream_writing *stream_writing);
 void grpc_chttp2_list_flush_writing_stalled_by_transport(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_writing *transport_writing,
-    bool is_window_available);
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_writing *transport_writing);
 
 void grpc_chttp2_list_add_stalled_by_transport(
     grpc_chttp2_transport_writing *transport_writing,
@@ -845,6 +844,6 @@ void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx,
 void grpc_chttp2_become_writable(grpc_exec_ctx *exec_ctx,
                                  grpc_chttp2_transport_global *transport_global,
                                  grpc_chttp2_stream_global *stream_global,
-                                 bool covered_by_poller);
+                                 bool covered_by_poller, const char *reason);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H */

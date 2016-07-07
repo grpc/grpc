@@ -75,9 +75,6 @@ int grpc_chttp2_unlocking_check_writes(
 
   GRPC_CHTTP2_FLOW_MOVE_TRANSPORT("write", transport_writing, outgoing_window,
                                   transport_global, outgoing_window);
-  bool is_window_available = transport_writing->outgoing_window > 0;
-  grpc_chttp2_list_flush_writing_stalled_by_transport(
-      exec_ctx, transport_writing, is_window_available);
 
   /* for each grpc_chttp2_stream that's become writable, frame it's data
      (according to available window sizes) and add to the output buffer */
@@ -330,6 +327,9 @@ void grpc_chttp2_cleanup_writing(
     grpc_chttp2_transport_writing *transport_writing) {
   grpc_chttp2_stream_writing *stream_writing;
   grpc_chttp2_stream_global *stream_global;
+
+  grpc_chttp2_list_flush_writing_stalled_by_transport(exec_ctx,
+                                                      transport_writing);
 
   while (grpc_chttp2_list_pop_written_stream(
       transport_global, transport_writing, &stream_global, &stream_writing)) {

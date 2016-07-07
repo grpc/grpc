@@ -337,19 +337,13 @@ void grpc_chttp2_list_add_writing_stalled_by_transport(
 }
 
 void grpc_chttp2_list_flush_writing_stalled_by_transport(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_writing *transport_writing,
-    bool is_window_available) {
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_writing *transport_writing) {
   grpc_chttp2_stream *stream;
   grpc_chttp2_transport *transport = TRANSPORT_FROM_WRITING(transport_writing);
   while (stream_list_pop(transport, &stream,
                          GRPC_CHTTP2_LIST_WRITING_STALLED_BY_TRANSPORT)) {
-    if (is_window_available) {
-      grpc_chttp2_become_writable(exec_ctx, &transport->global, &stream->global,
-                                  true);
-    } else {
-      grpc_chttp2_list_add_stalled_by_transport(transport_writing,
-                                                &stream->writing);
-    }
+    grpc_chttp2_list_add_stalled_by_transport(transport_writing,
+                                              &stream->writing);
     GRPC_CHTTP2_STREAM_UNREF(exec_ctx, &stream->global,
                              "chttp2_writing_stalled");
   }
