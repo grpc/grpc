@@ -42,7 +42,7 @@ import time
 # increment this number whenever making a change to ensure that
 # the changes are picked up by running CI servers
 # note that all changes must be backwards compatible
-_MY_VERSION = 7
+_MY_VERSION = 8
 
 
 if len(sys.argv) == 2 and sys.argv[1] == 'dump_version':
@@ -70,7 +70,7 @@ in_use = {}
 
 def refill_pool(max_timeout, req):
   """Scan for ports not marked for being in use"""
-  for i in range(1025, 32767):
+  for i in range(1025, 32766):
     if len(pool) > 100: break
     if i in in_use:
       age = time.time() - in_use[i]

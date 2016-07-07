@@ -304,8 +304,11 @@ class PythonLanguage:
 
   def client_cmd(self, args):
     return [
-        'tox -einterop_client --',
-        ' '.join(args)
+        'py27/bin/python',
+        'src/python/grpcio_tests/setup.py',
+        'run_interop',
+        '--client',
+        '--args="{}"'.format(' '.join(args))
     ]
 
   def cloud_to_prod_env(self):
@@ -313,8 +316,11 @@ class PythonLanguage:
 
   def server_cmd(self, args):
     return [
-        'tox -einterop_server --',
-        ' '.join(args) + ' --use_tls=true'
+        'py27/bin/python',
+        'src/python/grpcio_tests/setup.py',
+        'run_interop',
+        '--server',
+        '--args="{}"'.format(' '.join(args) + ' --use_tls=true')
     ]
 
   def global_env(self):
@@ -470,7 +476,8 @@ def cloud_to_prod_jobspec(language, test_case, server_host_name,
           flake_retries=5 if args.allow_flakes else 0,
           timeout_retries=2 if args.allow_flakes else 0,
           kill_handler=_job_kill_handler)
-  test_job.container_name = container_name
+  if docker_image:
+    test_job.container_name = container_name
   return test_job
 
 
@@ -506,7 +513,8 @@ def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
           flake_retries=5 if args.allow_flakes else 0,
           timeout_retries=2 if args.allow_flakes else 0,
           kill_handler=_job_kill_handler)
-  test_job.container_name = container_name
+  if docker_image:
+    test_job.container_name = container_name
   return test_job
 
 

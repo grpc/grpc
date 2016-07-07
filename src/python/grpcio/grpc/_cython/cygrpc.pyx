@@ -45,30 +45,22 @@ include "grpc/_cython/_cygrpc/security.pyx.pxi"
 include "grpc/_cython/_cygrpc/server.pyx.pxi"
 
 #
-# Global state
+# initialize gRPC
 #
 
-cdef class _ModuleState:
 
-  cdef bint is_loaded
+def _initialize():
+  if 'win32' in sys.platform:
+    filename = pkg_resources.resource_filename(
+        'grpc._cython', '_windows/grpc_c.64.python')
+    if not isinstance(filename, bytes):
+      filename = filename.encode()
+    if not pygrpc_load_core(filename):
+      raise ImportError('failed to load core gRPC library')
+  if not pygrpc_initialize_core():
+    raise ImportError('failed to initialize core gRPC library')
 
-  def __cinit__(self):
-    if 'win32' in sys.platform:
-      filename = pkg_resources.resource_filename(
-          'grpc._cython', '_windows/grpc_c.64.python')
-      if not pygrpc_load_core(filename):
-        raise ImportError('failed to load core gRPC library')
-    with nogil:
-      grpc_init()
-    self.is_loaded = True
-    with nogil:
-      grpc_set_ssl_roots_override_callback(
+  grpc_set_ssl_roots_override_callback(
           <grpc_ssl_roots_override_callback>ssl_roots_override_callback)
 
-  def __dealloc__(self):
-    if self.is_loaded:
-      with nogil:
-        grpc_shutdown()
-
-_module_state = _ModuleState()
-
+_initialize()

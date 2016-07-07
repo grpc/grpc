@@ -71,18 +71,29 @@ def create_jobspec(name, cmdline, environ=None, cwd=None, shell=False,
 class CSharpPackage:
   """Builds C# nuget packages."""
 
-  def __init__(self):
-    self.name = 'csharp_package'
-    self.labels = ['package', 'csharp', 'windows']
+  def __init__(self, use_coreclr=False):
+    self.use_coreclr = use_coreclr
+    self.name = 'csharp_package_coreclr' if use_coreclr else 'csharp_package'
+    self.labels = ['package', 'csharp']
+    if use_coreclr:
+      self.labels += ['linux']
+    else:
+      self.labels += ['windows']
 
   def pre_build_jobspecs(self):
     return []
 
   def build_jobspec(self):
-    return create_jobspec(self.name,
-                          ['build_packages.bat'],
-                          cwd='src\\csharp',
-                          shell=True)
+    if self.use_coreclr:
+      return create_docker_jobspec(
+          self.name,
+          'tools/dockerfile/test/csharp_coreclr_x64',
+          'tools/run_tests/build_package_csharp_coreclr.sh')
+    else:
+      return create_jobspec(self.name,
+                            ['build_packages.bat'],
+                            cwd='src\\csharp',
+                            shell=True)
 
   def __str__(self):
     return self.name
@@ -159,6 +170,7 @@ class PHPPackage:
 def targets():
   """Gets list of supported targets"""
   return [CSharpPackage(),
+          CSharpPackage(use_coreclr=True),
           NodePackage(),
           RubyPackage(),
           PythonPackage(),

@@ -100,7 +100,7 @@ static void on_simulated_token_fetch_done(grpc_exec_ctx *exec_ctx,
       (grpc_credentials_metadata_request *)user_data;
   grpc_md_only_test_credentials *c = (grpc_md_only_test_credentials *)r->creds;
   r->cb(exec_ctx, r->user_data, c->md_store->entries, c->md_store->num_entries,
-        GRPC_CREDENTIALS_OK);
+        GRPC_CREDENTIALS_OK, NULL);
   grpc_credentials_metadata_request_destroy(r);
 }
 
@@ -117,7 +117,7 @@ static void md_only_test_get_request_metadata(
         grpc_closure_create(on_simulated_token_fetch_done, cb_arg),
         GRPC_ERROR_NONE);
   } else {
-    cb(exec_ctx, user_data, c->md_store->entries, 1, GRPC_CREDENTIALS_OK);
+    cb(exec_ctx, user_data, c->md_store->entries, 1, GRPC_CREDENTIALS_OK, NULL);
   }
 }
 

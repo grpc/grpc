@@ -273,6 +273,11 @@ void grpc_call_log_op(char *file, int line, gpr_log_severity severity,
 void grpc_call_element_send_cancel(grpc_exec_ctx *exec_ctx,
                                    grpc_call_element *cur_elem);
 
+void grpc_call_element_send_cancel_with_message(grpc_exec_ctx *exec_ctx,
+                                                grpc_call_element *cur_elem,
+                                                grpc_status_code status,
+                                                gpr_slice *optional_message);
+
 extern int grpc_trace_channel;
 
 #define GRPC_CALL_LOG_OP(sev, elem, op) \

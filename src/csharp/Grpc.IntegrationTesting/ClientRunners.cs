@@ -211,7 +211,7 @@ namespace Grpc.IntegrationTesting
 
             bool profilerReset = false;
 
-            var client = BenchmarkService.NewClient(channel);
+            var client = new BenchmarkService.BenchmarkServiceClient(channel);
             var request = CreateSimpleRequest();
             var stopwatch = new Stopwatch();
 
@@ -237,7 +237,7 @@ namespace Grpc.IntegrationTesting
 
         private async Task RunUnaryAsync(Channel channel, IInterarrivalTimer timer)
         {
-            var client = BenchmarkService.NewClient(channel);
+            var client = new BenchmarkService.BenchmarkServiceClient(channel);
             var request = CreateSimpleRequest();
             var stopwatch = new Stopwatch();
 
@@ -256,7 +256,7 @@ namespace Grpc.IntegrationTesting
 
         private async Task RunStreamingPingPongAsync(Channel channel, IInterarrivalTimer timer)
         {
-            var client = BenchmarkService.NewClient(channel);
+            var client = new BenchmarkService.BenchmarkServiceClient(channel);
             var request = CreateSimpleRequest();
             var stopwatch = new Stopwatch();
 

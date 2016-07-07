@@ -39,50 +39,16 @@ import sys
 
 import setuptools
 from setuptools.command import build_py
-from setuptools.command import sdist
 
 ROOT_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 HEALTH_PROTO = os.path.join(ROOT_DIR, '../../proto/grpc/health/v1/health.proto')
 
 
-class BuildProtoModules(setuptools.Command):
-  """Command to generate project *_pb2.py modules from proto files."""
+class CopyProtoModules(setuptools.Command):
+  """Command to copy proto modules from grpc/src/proto."""
 
   description = ''
   user_options = []
-
-  def initialize_options(self):
-    pass
-
-  def finalize_options(self):
-    self.protoc_command = distutils.spawn.find_executable('protoc')
-    self.grpc_python_plugin_command = distutils.spawn.find_executable(
-        'grpc_python_plugin')
-
-  def run(self):
-    paths = []
-    root_directory = os.getcwd()
-    for walk_root, directories, filenames in os.walk(root_directory):
-      for filename in filenames:
-        if filename.endswith('.proto'):
-          paths.append(os.path.join(walk_root, filename))
-    command = [
-        self.protoc_command,
-        '--plugin=protoc-gen-python-grpc={}'.format(
-            self.grpc_python_plugin_command),
-        '-I {}'.format(root_directory),
-        '--python_out={}'.format(root_directory),
-        '--python-grpc_out={}'.format(root_directory),
-    ] + paths
-    try:
-      subprocess.check_output(' '.join(command), cwd=root_directory, shell=True,
-                              stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as e:
-      raise Exception('{}\nOutput:\n{}'.format(e.message, e.output))
-
-
-class CopyProtoModules(setuptools.Command):
-  """Command to copy proto modules from grpc/src/proto."""
 
   def initialize_options(self):
     pass
@@ -101,14 +67,5 @@ class BuildPy(build_py.build_py):
   """Custom project build command."""
 
   def run(self):
-    self.run_command('copy_proto_modules')
     self.run_command('build_proto_modules')
     build_py.build_py.run(self)
-
-
-class SDist(sdist.sdist):
-  """Custom project build command."""
-
-  def run(self):
-    self.run_command('copy_proto_modules')
-    sdist.sdist.run(self)
