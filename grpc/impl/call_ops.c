@@ -189,16 +189,19 @@ void grpc_fill_op_from_call_set(grpc_call_op_set *set, const grpc_method *rpc_me
   *nops = filled;
 }
 
-void grpc_finish_op_from_call_set(grpc_call_op_set *set, grpc_context *context) {
+bool grpc_finish_op_from_call_set(grpc_call_op_set *set, grpc_context *context) {
   size_t count = 0;
+  bool allStatus = true;
   while (count < GRPC_MAX_OP_COUNT) {
     if (set->op_managers[count].fill == NULL && set->op_managers[count].finish == NULL) break;   // end of call set
     if (set->op_managers[count].finish == NULL) continue;
     size_t size = 100;  // todo(yifeit): hook up this value
     bool status;
     set->op_managers[count].finish(context, set, &status, size);
+    allStatus &= status;
     count++;
   }
+  return allStatus;
 }
 
 void grpc_start_batch_from_op_set(grpc_call *call, grpc_call_op_set *set, grpc_context *context,
