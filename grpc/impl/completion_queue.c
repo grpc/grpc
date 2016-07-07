@@ -75,7 +75,7 @@ GRPC_completion_queue_operation_status GRPC_commit_ops_and_wait_deadline(GRPC_co
         GPR_ASSERT(set != NULL);
         GPR_ASSERT(set->context != NULL);
         // run post-processing for async operations
-        grpc_finish_op_from_call_set(set, set->context);
+        bool status = grpc_finish_op_from_call_set(set, set->context);
 
         if (set->hide_from_user) {
           // don't touch user supplied pointers
@@ -83,7 +83,7 @@ GRPC_completion_queue_operation_status GRPC_commit_ops_and_wait_deadline(GRPC_co
         }
 
         *tag = set->user_tag;
-        *ok = ev.success != 0;
+        *ok = (ev.success != 0) && status;
         return GRPC_COMPLETION_QUEUE_GOT_EVENT;
     }
   }
