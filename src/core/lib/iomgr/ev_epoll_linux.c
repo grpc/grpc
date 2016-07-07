@@ -1548,7 +1548,7 @@ retry:
    *    polling_island fields in both fd and pollset to point to the merged
    *    polling island.
    */
-  
+
   if (fd->orphaned) {
     gpr_mu_unlock(&fd->mu);
     gpr_mu_unlock(&pollset->mu);
