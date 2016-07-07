@@ -436,6 +436,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   for (size_t i = 0; i < num_clients; i++) {
     auto client = &clients[i];
     Status s = client->stream->Finish();
+    result->add_client_success(s.ok());
     if (!s.ok()) {
       gpr_log(GPR_ERROR, "Client %zu had an error %s", i,
 	      s.error_message().c_str());
@@ -471,6 +472,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   for (size_t i = 0; i < num_servers; i++) {
     auto server = &servers[i];
     Status s = server->stream->Finish();
+    result->add_server_success(s.ok());
     if (!s.ok()) {
       gpr_log(GPR_ERROR, "Server %zu had an error %s", i,
 	      s.error_message().c_str());
@@ -483,8 +485,9 @@ std::unique_ptr<ScenarioResult> RunScenario(
   return result;
 }
 
-void RunQuit() {
+bool RunQuit() {
   // Get client, server lists
+  bool result = true;
   auto workers = get_workers("QPS_WORKERS");
   for (size_t i = 0; i < workers.size(); i++) {
     auto stub = WorkerService::NewStub(
@@ -496,9 +499,10 @@ void RunQuit() {
     if (!s.ok()) {
       gpr_log(GPR_ERROR, "Worker %zu could not be properly quit because %s",
 	      i, s.error_message().c_str());
-      GPR_ASSERT(false);
+      result = false;
     }
   }
+  return result;
 }
 
 }  // namespace testing
