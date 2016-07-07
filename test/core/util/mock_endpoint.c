@@ -95,9 +95,17 @@ static char *me_get_peer(grpc_endpoint *ep) {
   return gpr_strdup("fake:mock_endpoint");
 }
 
+static grpc_workqueue *me_get_workqueue(grpc_endpoint *ep) { return NULL; }
+
 static const grpc_endpoint_vtable vtable = {
-    me_read,     me_write,   me_add_to_pollset, me_add_to_pollset_set,
-    me_shutdown, me_destroy, me_get_peer,
+    me_read,
+    me_write,
+    me_get_workqueue,
+    me_add_to_pollset,
+    me_add_to_pollset_set,
+    me_shutdown,
+    me_destroy,
+    me_get_peer,
 };
 
 grpc_endpoint *grpc_mock_endpoint_create(void (*on_write)(gpr_slice slice)) {
