@@ -214,7 +214,7 @@ NSString * const kGRPCTrailersKey = @"io.grpc.TrailersKey";
         // appropriately-documented code.
         [weakSelf finishWithError:[NSError errorWithDomain:kGRPCErrorDomain
                                                       code:GRPCErrorCodeResourceExhausted
-                                                  userInfo:@{NSLocalizedDescriptionKey: @"Client out of memory."}]];
+                                                  userInfo:@{NSLocalizedDescriptionKey: @"Client does not have enough memory to hold the server response."}]];
         [weakSelf cancelCall];
         return;
       }
