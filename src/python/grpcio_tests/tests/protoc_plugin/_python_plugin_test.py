@@ -171,7 +171,7 @@ def _CreateService():
       return servicer_methods.HalfDuplexCall(request_iter, context)
 
   server = grpc.server(
-      (), futures.ThreadPoolExecutor(max_workers=test_constants.POOL_SIZE))
+      futures.ThreadPoolExecutor(max_workers=test_constants.POOL_SIZE))
   getattr(service_pb2, ADD_SERVICER_TO_SERVER_IDENTIFIER)(Servicer(), server)
   port = server.add_insecure_port('[::]:0')
   server.start()
@@ -192,7 +192,7 @@ def _CreateIncompleteService():
     pass
 
   server = grpc.server(
-      (), futures.ThreadPoolExecutor(max_workers=test_constants.POOL_SIZE))
+      futures.ThreadPoolExecutor(max_workers=test_constants.POOL_SIZE))
   getattr(service_pb2, ADD_SERVICER_TO_SERVER_IDENTIFIER)(Servicer(), server)
   port = server.add_insecure_port('[::]:0')
   server.start()
