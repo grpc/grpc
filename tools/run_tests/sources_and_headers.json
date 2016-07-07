@@ -4511,6 +4511,8 @@
       "grpc++_config_proto"
     ], 
     "headers": [
+      "src/compiler/c_generator.h", 
+      "src/compiler/c_generator_helpers.h", 
       "src/compiler/config.h", 
       "src/compiler/cpp_generator.h", 
       "src/compiler/cpp_generator_helpers.h", 
@@ -4530,6 +4532,9 @@
     "language": "c++", 
     "name": "grpc_plugin_support", 
     "src": [
+      "src/compiler/c_generator.cc", 
+      "src/compiler/c_generator.h", 
+      "src/compiler/c_generator_helpers.h", 
       "src/compiler/config.h", 
       "src/compiler/cpp_generator.cc", 
       "src/compiler/cpp_generator.h", 
