@@ -32,12 +32,12 @@
  */
 
 
-#ifndef TEST_GRPC_C_CHANNEL_PUBLIC_H
-#define TEST_GRPC_C_CHANNEL_PUBLIC_H
+#ifndef GRPC_C_UNARY_BLOCKING_CALL_PUBLIC_H
+#define GRPC_C_UNARY_BLOCKING_CALL_PUBLIC_H
 
-typedef struct grpc_channel grpc_channel;
+#include <grpc_c/grpc_c.h>
 
-grpc_channel *GRPC_channel_create(const char * const target);
-void GRPC_channel_destroy(grpc_channel ** channel);
+GRPC_status GRPC_unary_blocking_call(GRPC_channel *channel, const GRPC_method *const rpc_method,
+                                     GRPC_context *const context, const GRPC_message message, GRPC_message *response);
 
-#endif //TEST_GRPC_C_CHANNEL_PUBLIC_H
+#endif // GRPC_C_UNARY_BLOCKING_CALL_PUBLIC_H

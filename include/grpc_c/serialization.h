@@ -32,12 +32,12 @@
  */
 
 
-#ifndef TEST_GRPC_C_SERIALIZATION_PUBLIC_H
-#define TEST_GRPC_C_SERIALIZATION_PUBLIC_H
+#ifndef GRPC_C_SERIALIZATION_PUBLIC_H
+#define GRPC_C_SERIALIZATION_PUBLIC_H
 
-#include "grpc_c_public.h"
+#include <grpc_c/grpc_c.h>
 
 typedef void (*GRPC_serializer)(const GRPC_message input, GRPC_message *output);
 typedef void (*GRPC_deserializer)(const GRPC_message input, GRPC_message *output);
 
-#endif //TEST_GRPC_C_SERIALIZATION_PUBLIC_H
+#endif // GRPC_C_SERIALIZATION_PUBLIC_H
