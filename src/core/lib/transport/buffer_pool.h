@@ -34,11 +34,14 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_BUFFER_POOL_H
 #define GRPC_CORE_LIB_TRANSPORT_BUFFER_POOL_H
 
+#include "src/core/lib/iomgr/exec_ctx.h"
+
 #define GRPC_MEMORY_MIN 0
 #define GRPC_MEMORY_MAX 10000
 #define GRPC_MEMORY_DONT_CARE -1
 
 typedef struct grpc_buffer_pool_user grpc_buffer_pool_user;
+typedef struct grpc_buffer_pool grpc_buffer_pool;
 
 grpc_buffer_pool_user *grpc_buffer_pool_register_user(grpc_buffer_pool *pool);
 void grpc_buffer_pool_unregister_user(grpc_buffer_pool *pool,
