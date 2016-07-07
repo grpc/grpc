@@ -120,7 +120,7 @@ module GRPC
     end
 
     # cancelled indicates if the call was cancelled
-    def cancelled
+    def cancelled?
       !@call.status.nil? && @call.status.code == Core::StatusCodes::CANCELLED
     end
 
@@ -455,17 +455,17 @@ module GRPC
 
     # SingleReqView limits access to an ActiveCall's methods for use in server
     # handlers that receive just one request.
-    SingleReqView = view_class(:cancelled, :deadline, :metadata,
+    SingleReqView = view_class(:cancelled?, :deadline, :metadata,
                                :output_metadata, :peer, :peer_cert)
 
     # MultiReqView limits access to an ActiveCall's methods for use in
     # server client_streamer handlers.
-    MultiReqView = view_class(:cancelled, :deadline, :each_queued_msg,
+    MultiReqView = view_class(:cancelled?, :deadline, :each_queued_msg,
                               :each_remote_read, :metadata, :output_metadata)
 
     # Operation limits access to an ActiveCall's methods for use as
     # a Operation on the client.
-    Operation = view_class(:cancel, :cancelled, :deadline, :execute,
+    Operation = view_class(:cancel, :cancelled?, :deadline, :execute,
                            :metadata, :status, :start_call, :wait, :write_flag,
                            :write_flag=)
   end
