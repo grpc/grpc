@@ -82,9 +82,40 @@ ENABLE_CYTHON_TRACING = os.environ.get(
 # entirely ignored/dropped/forgotten by distutils and its Cygwin/MinGW support.
 # We use these environment variables to thus get around that without locking
 # ourselves in w.r.t. the multitude of operating systems this ought to build on.
-# By default we assume a GCC-like compiler.
-EXTRA_COMPILE_ARGS = shlex.split(os.environ.get('GRPC_PYTHON_CFLAGS', ''))
-EXTRA_LINK_ARGS = shlex.split(os.environ.get('GRPC_PYTHON_LDFLAGS', ''))
+# We can also use these variables as a way to inject environment-specific
+# compiler/linker flags. We assume GCC-like compilers and/or MinGW as a
+# reasonable default.
+EXTRA_ENV_COMPILE_ARGS = os.environ.get('GRPC_PYTHON_CFLAGS', None)
+EXTRA_ENV_LINK_ARGS = os.environ.get('GRPC_PYTHON_LDFLAGS', None)
+if EXTRA_ENV_COMPILE_ARGS is None:
+  EXTRA_ENV_COMPILE_ARGS = '-fno-wrapv'
+  if 'win32' in sys.platform:
+    # We use define flags here and don't directly add to DEFINE_MACROS below to
+    # ensure that the expert user/builder has a way of turning it off (via the
+    # envvars) without adding yet more GRPC-specific envvars.
+    # See https://sourceforge.net/p/mingw-w64/bugs/363/
+    if '32' in platform.architecture()[0]:
+      EXTRA_ENV_COMPILE_ARGS += ' -D_ftime=_ftime32 -D_timeb=__timeb32 -D_ftime_s=_ftime32_s'
+    else:
+      EXTRA_ENV_COMPILE_ARGS += ' -D_ftime=_ftime64 -D_timeb=__timeb64'
+  elif "linux" in sys.platform or "darwin" in sys.platform:
+    EXTRA_ENV_COMPILE_ARGS += ' -fvisibility=hidden'
+if EXTRA_ENV_LINK_ARGS is None:
+  EXTRA_ENV_LINK_ARGS = '-lpthread'
+  if 'win32' in sys.platform:
+    # TODO(atash) check if this is actually safe to just import and call on
+    # non-Windows (to avoid breaking import style)
+    from distutils.cygwinccompiler import get_msvcr
+    msvcr = get_msvcr()[0]
+    # TODO(atash) sift through the GCC specs to see if libstdc++ can have any
+    # influence on the linkage outcome on MinGW for non-C++ programs.
+    EXTRA_ENV_LINK_ARGS += (
+        ' -static-libgcc -static-libstdc++ -mcrtdll={msvcr} '
+        '-static'.format(msvcr=msvcr))
+  elif "linux" in sys.platform:
+    EXTRA_ENV_LINK_ARGS += ' -Wl,-wrap,memcpy'
+EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
+EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
 
 CYTHON_EXTENSION_PACKAGE_NAMES = ()
 
@@ -116,13 +147,8 @@ if "win32" in sys.platform:
 
 LDFLAGS = tuple(EXTRA_LINK_ARGS)
 CFLAGS = tuple(EXTRA_COMPILE_ARGS)
-if "linux" in sys.platform:
-  LDFLAGS += ('-Wl,-wrap,memcpy',)
 if "linux" in sys.platform or "darwin" in sys.platform:
-  CFLAGS += ('-fvisibility=hidden',)
-
   pymodinit_type = 'PyObject*' if PY3 else 'void'
-
   pymodinit = '__attribute__((visibility ("default"))) {}'.format(pymodinit_type)
   DEFINE_MACROS += (('PyMODINIT_FUNC', pymodinit),)
 
@@ -137,8 +163,13 @@ if 'darwin' in sys.platform and PY3:
     os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
 
 
-def cython_extensions(module_names, extra_sources, include_dirs,
-                      libraries, define_macros, build_with_cython=False):
+def cython_extensions():
+  module_names = list(CYTHON_EXTENSION_MODULE_NAMES)
+  extra_sources = list(CYTHON_HELPER_C_FILES) + list(CORE_C_FILES)
+  include_dirs = list(EXTENSION_INCLUDE_DIRECTORIES)
+  libraries = list(EXTENSION_LIBRARIES)
+  define_macros = list(DEFINE_MACROS)
+  build_with_cython = bool(BUILD_WITH_CYTHON)
   # Set compiler directives linetrace argument only if we care about tracing;
   # this is due to Cython having different behavior between linetrace being
   # False and linetrace being unset. See issue #5689.
@@ -169,11 +200,7 @@ def cython_extensions(module_names, extra_sources, include_dirs,
   else:
     return extensions
 
-CYTHON_EXTENSION_MODULES = cython_extensions(
-    list(CYTHON_EXTENSION_MODULE_NAMES),
-    list(CYTHON_HELPER_C_FILES) + list(CORE_C_FILES),
-    list(EXTENSION_INCLUDE_DIRECTORIES), list(EXTENSION_LIBRARIES),
-    list(DEFINE_MACROS), bool(BUILD_WITH_CYTHON))
+CYTHON_EXTENSION_MODULES = cython_extensions()
 
 PACKAGE_DIRECTORIES = {
     '': PYTHON_STEM,
