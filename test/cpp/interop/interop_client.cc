@@ -829,9 +829,9 @@ bool InteropClient::DoStatusWithMessage() {
 
   const grpc::StatusCode test_code = grpc::StatusCode::UNKNOWN;
   const grpc::string test_msg = "This is a test message";
-  ClientContext context;
 
   // Test UnaryCall.
+  ClientContext context;
   SimpleRequest request;
   SimpleResponse response;
   EchoStatus* requested_status = request.mutable_response_status();
@@ -844,9 +844,10 @@ bool InteropClient::DoStatusWithMessage() {
   GPR_ASSERT(s.error_message() == test_msg);
 
   // Test FullDuplexCall.
+  ClientContext stream_context;
   std::shared_ptr<ClientReaderWriter<StreamingOutputCallRequest,
                                      StreamingOutputCallResponse>>
-      stream(serviceStub_.Get()->FullDuplexCall(&context));
+      stream(serviceStub_.Get()->FullDuplexCall(&stream_context));
   StreamingOutputCallRequest streaming_request;
   requested_status = streaming_request.mutable_response_status();
   requested_status->set_code(test_code);
