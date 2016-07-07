@@ -470,7 +470,7 @@ extern grpc_byte_buffer_length_type grpc_byte_buffer_length_import;
 typedef void(*grpc_byte_buffer_destroy_type)(grpc_byte_buffer *byte_buffer);
 extern grpc_byte_buffer_destroy_type grpc_byte_buffer_destroy_import;
 #define grpc_byte_buffer_destroy grpc_byte_buffer_destroy_import
-typedef void(*grpc_byte_buffer_reader_init_type)(grpc_byte_buffer_reader *reader, grpc_byte_buffer *buffer);
+typedef int(*grpc_byte_buffer_reader_init_type)(grpc_byte_buffer_reader *reader, grpc_byte_buffer *buffer);
 extern grpc_byte_buffer_reader_init_type grpc_byte_buffer_reader_init_import;
 #define grpc_byte_buffer_reader_init grpc_byte_buffer_reader_init_import
 typedef void(*grpc_byte_buffer_reader_destroy_type)(grpc_byte_buffer_reader *reader);

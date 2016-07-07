@@ -111,14 +111,21 @@ class GrpcBufferReader GRPC_FINAL
     : public ::grpc::protobuf::io::ZeroCopyInputStream {
  public:
   explicit GrpcBufferReader(grpc_byte_buffer* buffer)
-      : byte_count_(0), backup_count_(0) {
-    g_core_codegen_interface->grpc_byte_buffer_reader_init(&reader_, buffer);
+      : byte_count_(0), backup_count_(0), status_() {
+    if (!g_core_codegen_interface->grpc_byte_buffer_reader_init(&reader_,
+                                                                buffer)) {
+      status_ = Status(StatusCode::INTERNAL,
+                       "Couldn't initialize byte buffer reader");
+    }
   }
   ~GrpcBufferReader() GRPC_OVERRIDE {
     g_core_codegen_interface->grpc_byte_buffer_reader_destroy(&reader_);
   }
 
   bool Next(const void** data, int* size) GRPC_OVERRIDE {
+    if (!status_.ok()) {
+      return false;
+    }
     if (backup_count_ > 0) {
       *data = GPR_SLICE_START_PTR(slice_) + GPR_SLICE_LENGTH(slice_) -
               backup_count_;
@@ -138,6 +145,8 @@ class GrpcBufferReader GRPC_FINAL
     byte_count_ += * size = (int)GPR_SLICE_LENGTH(slice_);
     return true;
   }
+
+  Status status() const { return status_; }
 
   void BackUp(int count) GRPC_OVERRIDE { backup_count_ = count; }
 
@@ -165,6 +174,7 @@ class GrpcBufferReader GRPC_FINAL
   int64_t backup_count_;
   grpc_byte_buffer_reader reader_;
   gpr_slice slice_;
+  Status status_;
 };
 }  // namespace internal
 
@@ -202,6 +212,9 @@ class SerializationTraits<T, typename std::enable_if<std::is_base_of<
     Status result = g_core_codegen_interface->ok();
     {
       internal::GrpcBufferReader reader(buffer);
+      if (!reader.status().ok()) {
+        return reader.status();
+      }
       ::grpc::protobuf::io::CodedInputStream decoder(&reader);
       if (max_message_size > 0) {
         decoder.SetTotalBytesLimit(max_message_size, max_message_size);

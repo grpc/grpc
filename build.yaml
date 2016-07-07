@@ -714,6 +714,8 @@ filegroups:
   - src/cpp/util/time.cc
   uses:
   - grpc++_codegen_base
+  - grpc_base
+  - grpc_secure
 - name: grpc++_codegen_base
   language: c++
   public_headers:
