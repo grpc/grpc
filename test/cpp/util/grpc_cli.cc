@@ -64,6 +64,7 @@
        < output.bin > output.txt
 */
 
+#include <unistd.h>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -146,7 +147,6 @@ int main(int argc, char** argv) {
   grpc::string serialized_request_proto;
 
   if (argc == 5) {
-    // TODO(yangg) read from stdin as well?
     request_text = argv[4];
   }
 
@@ -164,10 +164,15 @@ int main(int argc, char** argv) {
       grpc::CreateChannel(server_address, creds);
 
   if (request_text.empty() && FLAGS_input_binary_file.empty()) {
-    std::cout << "Missing input. Use text format input or "
-              << "--input_binary_file for serialized request" << std::endl;
-    return 1;
-  } else if (!request_text.empty()) {
+    if (isatty(STDIN_FILENO)) {
+      std::cout << "reading request message from stdin..." << std::endl;
+    }
+    std::stringstream input_stream;
+    input_stream << std::cin.rdbuf();
+    request_text = input_stream.str();
+  }
+
+  if (!request_text.empty()) {
     if (!FLAGS_proto_file.empty()) {
       parser.reset(new grpc::testing::ProtoFileParser(
           FLAGS_proto_path, FLAGS_proto_file, method_name));
@@ -177,6 +182,12 @@ int main(int argc, char** argv) {
     method_name = parser->GetFullMethodName();
     if (parser->HasError()) {
       return 1;
+    }
+
+    if (!FLAGS_input_binary_file.empty()) {
+      std::cout
+          << "warning: request given in argv, ignoring --input_binary_file"
+          << std::endl;
     }
   }
 
@@ -226,7 +237,7 @@ int main(int argc, char** argv) {
     }
   } else {
     std::cout << "Rpc failed with status code " << s.error_code()
-              << " error message " << s.error_message() << std::endl;
+              << ", error message: " << s.error_message() << std::endl;
   }
 
   return 0;
