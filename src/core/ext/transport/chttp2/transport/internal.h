@@ -630,7 +630,7 @@ int grpc_chttp2_list_pop_check_read_ops(
 void grpc_chttp2_list_add_writing_stalled_by_transport(
     grpc_chttp2_transport_writing *transport_writing,
     grpc_chttp2_stream_writing *stream_writing);
-void grpc_chttp2_list_flush_writing_stalled_by_transport(
+bool grpc_chttp2_list_flush_writing_stalled_by_transport(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_writing *transport_writing);
 
 void grpc_chttp2_list_add_stalled_by_transport(

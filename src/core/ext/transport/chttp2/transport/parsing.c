@@ -87,8 +87,8 @@ void grpc_chttp2_prepare_to_read(
          transport_global->settings[GRPC_SENT_SETTINGS],
          sizeof(transport_parsing->last_sent_settings));
   transport_parsing->max_frame_size =
-      transport_global->settings[GRPC_ACKED_SETTINGS]
-                                [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE];
+      transport_global
+          ->settings[GRPC_ACKED_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE];
 
   /* update the parsing view of incoming window */
   while (grpc_chttp2_list_pop_unannounced_incoming_window_available(
@@ -154,11 +154,8 @@ void grpc_chttp2_publish_reads(
                                   transport_parsing, outgoing_window);
   is_zero = transport_global->outgoing_window <= 0;
   if (was_zero && !is_zero) {
-    while (grpc_chttp2_list_pop_stalled_by_transport(transport_global,
-                                                     &stream_global)) {
-      grpc_chttp2_become_writable(exec_ctx, transport_global, stream_global,
-                                  false, "transport.read_flow_control");
-    }
+    grpc_chttp2_initiate_write(exec_ctx, transport_global, false,
+                               "new_global_flow_control");
   }
 
   if (transport_parsing->incoming_window <
@@ -169,7 +166,8 @@ void grpc_chttp2_publish_reads(
                                       announce_incoming_window, announce_bytes);
     GRPC_CHTTP2_FLOW_CREDIT_TRANSPORT("parsed", transport_parsing,
                                       incoming_window, announce_bytes);
-    grpc_chttp2_initiate_write(exec_ctx, transport_global, false, "global incoming window");
+    grpc_chttp2_initiate_write(exec_ctx, transport_global, false,
+                               "global incoming window");
   }
 
   /* for each stream that saw an update, fixup global state */
