@@ -32,25 +32,29 @@
  */
 
 
-#ifndef TEST_GRPC_C_GRPC_C_PUBLIC_H
-#define TEST_GRPC_C_GRPC_C_PUBLIC_H
+#ifndef GRPC_C_COMPLETION_QUEUE_PUBLIC_H
+#define GRPC_C_COMPLETION_QUEUE_PUBLIC_H
 
-#include <stdlib.h>
-#include "message_public.h"
+#include <stdbool.h>
 
-typedef struct grpc_channel GRPC_channel;
-typedef struct grpc_status GRPC_status;
-typedef struct grpc_context GRPC_context;
+typedef struct grpc_completion_queue GRPC_completion_queue;
+typedef struct gpr_timespec gpr_timespec;
 
-typedef struct GRPC_method {
-  enum RpcType {
-    NORMAL_RPC = 0,
-    CLIENT_STREAMING,  // request streaming
-    SERVER_STREAMING,  // response streaming
-    BIDI_STREAMING
-  } type;
-  const char* name;
-} GRPC_method;
+/// Tri-state return for GRPC_commit_ops_and_wait
+typedef enum GRPC_completion_queue_next_status {
+  GRPC_COMPLETION_QUEUE_SHUTDOWN,   ///< The completion queue has been shutdown.
+  GRPC_COMPLETION_QUEUE_GOT_EVENT,  ///< Got a new event; \a tag will be filled in with its
+                                    ///< associated value; \a ok indicating its success.
+  GRPC_COMPLETION_QUEUE_TIMEOUT     ///< deadline was reached.
+} GRPC_completion_queue_operation_status;
 
+GRPC_completion_queue *GRPC_completion_queue_create();
+void GRPC_completion_queue_shutdown(GRPC_completion_queue *cq);
+void GRPC_completion_queue_destroy(GRPC_completion_queue *cq);
+void GRPC_completion_queue_shutdown_and_destroy(GRPC_completion_queue *cq);
+GRPC_completion_queue_operation_status GRPC_commit_ops_and_wait(GRPC_completion_queue *cq, void **tag, bool *ok);
+GRPC_completion_queue_operation_status GRPC_commit_ops_and_wait_deadline(GRPC_completion_queue *cq,
+                                                                         gpr_timespec deadline,
+                                                                         void **tag, bool *ok);
 
-#endif //TEST_GRPC_C_GRPC_C_PUBLIC_H
+#endif // GRPC_C_COMPLETION_QUEUE_PUBLIC_H

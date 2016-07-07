@@ -32,20 +32,16 @@
  */
 
 
-#ifndef TEST_GRPC_C_CLIENT_ASYNC_READER_PUBLIC_H
-#define TEST_GRPC_C_CLIENT_ASYNC_READER_PUBLIC_H
+#ifndef GRPC_C_MESSAGE_PUBLIC_H
+#define GRPC_C_MESSAGE_PUBLIC_H
 
-#include "completion_queue_public.h"
-#include "grpc_c_public.h"
+#include <stdlib.h>
 
-typedef struct grpc_client_async_response_reader GRPC_client_async_response_reader;
+typedef struct GRPC_message {
+  void * data;
+  size_t length;
+} GRPC_message;
 
-GRPC_client_async_response_reader *GRPC_unary_async_call(GRPC_channel *channel, GRPC_completion_queue *cq,
-                                                         const GRPC_method rpc_method,
-                                                         const GRPC_message request, GRPC_context *const context);
+void GRPC_message_destroy(GRPC_message *message);
 
-void GRPC_client_async_finish(GRPC_client_async_response_reader *reader, GRPC_message *response, void *tag);
-
-void GRPC_client_async_read_metadata(GRPC_client_async_response_reader *reader, void *tag);
-
-#endif //TEST_GRPC_C_CLIENT_ASYNC_READER_PUBLIC_H
+#endif // GRPC_C_MESSAGE_PUBLIC_H

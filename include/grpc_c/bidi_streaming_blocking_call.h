@@ -32,16 +32,21 @@
  */
 
 
-#ifndef TEST_GRPC_C_MESSAGE_PUBLIC_H
-#define TEST_GRPC_C_MESSAGE_PUBLIC_H
+#ifndef GRPC_C_BIDI_STREAMING_BLOCKING_CALL_PUBLIC_H
+#define GRPC_C_BIDI_STREAMING_BLOCKING_CALL_PUBLIC_H
 
-#include <stdlib.h>
+typedef struct grpc_client_reader_writer GRPC_client_reader_writer;
 
-typedef struct GRPC_message {
-  void * data;
-  size_t length;
-} GRPC_message;
+GRPC_client_reader_writer *GRPC_bidi_streaming_blocking_call(GRPC_channel *channel,
+                                                             const GRPC_method rpc_method,
+                                                             GRPC_context *const context);
 
-void GRPC_message_destroy(GRPC_message *message);
+bool GRPC_bidi_streaming_blocking_read(GRPC_client_reader_writer *reader, GRPC_message *response);
 
-#endif //TEST_GRPC_C_MESSAGE_PUBLIC_H
+bool GRPC_bidi_streaming_blocking_write(GRPC_client_reader_writer *reader_writer, const GRPC_message request);
+
+bool GRPC_bidi_streaming_blocking_close(GRPC_client_reader_writer *reader_writer);
+
+GRPC_status GRPC_client_reader_writer_terminate(GRPC_client_reader_writer *reader_writer);
+
+#endif // GRPC_C_BIDI_STREAMING_BLOCKING_CALL_PUBLIC_H

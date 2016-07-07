@@ -32,29 +32,20 @@
  */
 
 
-#ifndef TEST_GRPC_C_COMPLETION_QUEUE_PUBLIC_H
-#define TEST_GRPC_C_COMPLETION_QUEUE_PUBLIC_H
+#ifndef GRPC_C_CLIENT_ASYNC_READER_PUBLIC_H
+#define GRPC_C_CLIENT_ASYNC_READER_PUBLIC_H
 
-#include <stdbool.h>
+#include <grpc_c/completion_queue.h>
+#include <grpc_c/grpc_c.h>
 
-typedef struct grpc_completion_queue GRPC_completion_queue;
-typedef struct gpr_timespec gpr_timespec;
+typedef struct grpc_client_async_response_reader GRPC_client_async_response_reader;
 
-/// Tri-state return for GRPC_commit_ops_and_wait
-typedef enum GRPC_completion_queue_next_status {
-  GRPC_COMPLETION_QUEUE_SHUTDOWN,   ///< The completion queue has been shutdown.
-  GRPC_COMPLETION_QUEUE_GOT_EVENT,  ///< Got a new event; \a tag will be filled in with its
-                                    ///< associated value; \a ok indicating its success.
-  GRPC_COMPLETION_QUEUE_TIMEOUT     ///< deadline was reached.
-} GRPC_completion_queue_operation_status;
+GRPC_client_async_response_reader *GRPC_unary_async_call(GRPC_channel *channel, GRPC_completion_queue *cq,
+                                                         const GRPC_method rpc_method,
+                                                         const GRPC_message request, GRPC_context *const context);
 
-GRPC_completion_queue *GRPC_completion_queue_create();
-void GRPC_completion_queue_shutdown(GRPC_completion_queue *cq);
-void GRPC_completion_queue_destroy(GRPC_completion_queue *cq);
-void GRPC_completion_queue_shutdown_and_destroy(GRPC_completion_queue *cq);
-GRPC_completion_queue_operation_status GRPC_commit_ops_and_wait(GRPC_completion_queue *cq, void **tag, bool *ok);
-GRPC_completion_queue_operation_status GRPC_commit_ops_and_wait_deadline(GRPC_completion_queue *cq,
-                                                                         gpr_timespec deadline,
-                                                                         void **tag, bool *ok);
+void GRPC_client_async_finish(GRPC_client_async_response_reader *reader, GRPC_message *response, void *tag);
 
-#endif //TEST_GRPC_C_COMPLETION_QUEUE_PUBLIC_H
+void GRPC_client_async_read_metadata(GRPC_client_async_response_reader *reader, void *tag);
+
+#endif // GRPC_C_CLIENT_ASYNC_READER_PUBLIC_H

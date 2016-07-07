@@ -32,15 +32,12 @@
  */
 
 
-#ifndef TEST_GRPC_C_STATUS_PUBLIC_H
-#define TEST_GRPC_C_STATUS_PUBLIC_H
+#ifndef GRPC_C_CONTEXT_PUBLIC_H
+#define GRPC_C_CONTEXT_PUBLIC_H
 
-typedef struct grpc_status {
-  grpc_status_code code;
-  char *details;
-  size_t details_length;
-} grpc_status;
+#include <grpc_c/grpc_c.h>
 
-typedef grpc_status GRPC_status;
+GRPC_context *GRPC_context_create(GRPC_channel *chan);
+void GRPC_context_destroy(GRPC_context **context);
 
-#endif //TEST_GRPC_C_STATUS_CODE_PUBLIC_H
+#endif // GRPC_C_CONTEXT_PUBLIC_H
