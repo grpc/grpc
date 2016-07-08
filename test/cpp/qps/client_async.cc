@@ -48,7 +48,6 @@
 #include <grpc++/generic/generic_stub.h>
 #include <grpc/grpc.h>
 #include <grpc/support/cpu.h>
-#include <grpc/support/histogram.h>
 #include <grpc/support/log.h>
 
 #include "src/proto/grpc/testing/services.grpc.pb.h"
@@ -64,7 +63,7 @@ class ClientRpcContext {
   ClientRpcContext() {}
   virtual ~ClientRpcContext() {}
   // next state, return false if done. Collect stats when appropriate
-  virtual bool RunNextState(bool, Histogram* hist) = 0;
+  virtual bool RunNextState(bool, HistogramEntry* entry) = 0;
   virtual ClientRpcContext* StartNewClone() = 0;
   static void* tag(ClientRpcContext* c) { return reinterpret_cast<void*>(c); }
   static ClientRpcContext* detag(void* t) {
@@ -104,7 +103,7 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
       alarm_.reset(new Alarm(cq_, next_issue_(), ClientRpcContext::tag(this)));
     }
   }
-  bool RunNextState(bool ok, Histogram* hist) GRPC_OVERRIDE {
+  bool RunNextState(bool ok, HistogramEntry* entry) GRPC_OVERRIDE {
     switch (next_state_) {
       case State::READY:
         start_ = UsageTimer::Now();
@@ -114,7 +113,7 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
         next_state_ = State::RESP_DONE;
         return true;
       case State::RESP_DONE:
-        hist->Add((UsageTimer::Now() - start_) * 1e9);
+        entry->set_value((UsageTimer::Now() - start_) * 1e9);
         callback_(status_, &response_);
         next_state_ = State::INVALID;
         return false;
@@ -201,7 +200,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
     }
   }
 
-  bool ThreadFunc(Histogram* histogram,
+  bool ThreadFunc(HistogramEntry* entry,
                   size_t thread_idx) GRPC_OVERRIDE GRPC_FINAL {
     void* got_tag;
     bool ok;
@@ -209,7 +208,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
     if (cli_cqs_[thread_idx]->Next(&got_tag, &ok)) {
       // Got a regular event, so process it
       ClientRpcContext* ctx = ClientRpcContext::detag(got_tag);
-      if (!ctx->RunNextState(ok, histogram)) {
+      if (!ctx->RunNextState(ok, entry)) {
         // The RPC and callback are done, so clone the ctx
         // and kickstart the new one
         auto clone = ctx->StartNewClone();
@@ -298,7 +297,7 @@ class ClientRpcContextStreamingImpl : public ClientRpcContext {
     stream_ = start_req_(stub_, &context_, cq, ClientRpcContext::tag(this));
     next_state_ = State::STREAM_IDLE;
   }
-  bool RunNextState(bool ok, Histogram* hist) GRPC_OVERRIDE {
+  bool RunNextState(bool ok, HistogramEntry* entry) GRPC_OVERRIDE {
     while (true) {
       switch (next_state_) {
         case State::STREAM_IDLE:
@@ -330,7 +329,7 @@ class ClientRpcContextStreamingImpl : public ClientRpcContext {
           return true;
           break;
         case State::READ_DONE:
-          hist->Add((UsageTimer::Now() - start_) * 1e9);
+          entry->set_value((UsageTimer::Now() - start_) * 1e9);
           callback_(status_, &response_);
           next_state_ = State::STREAM_IDLE;
           break;  // loop around
@@ -430,7 +429,7 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
                          ClientRpcContext::tag(this));
     next_state_ = State::STREAM_IDLE;
   }
-  bool RunNextState(bool ok, Histogram* hist) GRPC_OVERRIDE {
+  bool RunNextState(bool ok, HistogramEntry* entry) GRPC_OVERRIDE {
     while (true) {
       switch (next_state_) {
         case State::STREAM_IDLE:
@@ -462,7 +461,7 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
           return true;
           break;
         case State::READ_DONE:
-          hist->Add((UsageTimer::Now() - start_) * 1e9);
+          entry->set_value((UsageTimer::Now() - start_) * 1e9);
           callback_(status_, &response_);
           next_state_ = State::STREAM_IDLE;
           break;  // loop around

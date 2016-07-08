@@ -112,6 +112,17 @@ class ClientRequestCreator<ByteBuffer> {
   }
 };
 
+class HistogramEntry GRPC_FINAL {
+ public:
+  HistogramEntry(): used_(false) {}
+  bool used() const {return used_;}
+  double value() const {return value_;}
+  void set_value(double v) {used_ = true; value_ = v;}
+ private:
+  bool used_;
+  double value_;
+};
+
 class Client {
  public:
   Client() : timer_(new UsageTimer), interarrival_timer_() {}
@@ -162,7 +173,7 @@ class Client {
 
   void EndThreads() { threads_.clear(); }
 
-  virtual bool ThreadFunc(Histogram* histogram, size_t thread_idx) = 0;
+  virtual bool ThreadFunc(HistogramEntry* histogram, size_t thread_idx) = 0;
 
   void SetupLoadTest(const ClientConfig& config, size_t num_threads) {
     // Set up the load distribution based on the number of threads
@@ -215,7 +226,6 @@ class Client {
    public:
     Thread(Client* client, size_t idx)
         : done_(false),
-          new_stats_(nullptr),
           client_(client),
           idx_(idx),
           impl_(&Thread::ThreadFunc, this) {}
@@ -230,14 +240,10 @@ class Client {
 
     void BeginSwap(Histogram* n) {
       std::lock_guard<std::mutex> g(mu_);
-      new_stats_ = n;
+      n->Swap(&histogram_);
     }
 
     void EndSwap() {
-      std::unique_lock<std::mutex> g(mu_);
-      while (new_stats_ != nullptr) {
-        cv_.wait(g);
-      };
     }
 
     void MergeStatsInto(Histogram* hist) {
@@ -252,9 +258,13 @@ class Client {
     void ThreadFunc() {
       for (;;) {
         // run the loop body
-        const bool thread_still_ok = client_->ThreadFunc(&histogram_, idx_);
-        // lock, see if we're done
+        HistogramEntry entry;
+        const bool thread_still_ok = client_->ThreadFunc(&entry, idx_);
+        // lock, update histogram if needed and see if we're done
         std::lock_guard<std::mutex> g(mu_);
+        if (entry.used()) {
+          histogram_.Add(entry.value());
+        }
         if (!thread_still_ok) {
           gpr_log(GPR_ERROR, "Finishing client thread due to RPC error");
           done_ = true;
@@ -262,17 +272,10 @@ class Client {
         if (done_) {
           return;
         }
-        // check if we're resetting stats, swap out the histogram if so
-        if (new_stats_) {
-          new_stats_->Swap(&histogram_);
-          new_stats_ = nullptr;
-          cv_.notify_one();
-        }
       }
     }
 
     std::mutex mu_;
-    std::condition_variable cv_;
     bool done_;
     Histogram* new_stats_;
     Histogram histogram_;
