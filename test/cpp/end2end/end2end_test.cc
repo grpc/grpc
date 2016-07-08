@@ -1166,6 +1166,9 @@ TEST_P(ProxyEnd2endTest, HugeResponse) {
   request.mutable_param()->set_response_message_length(kResponseSize);
 
   ClientContext context;
+  std::chrono::system_clock::time_point deadline =
+      std::chrono::system_clock::now() + std::chrono::seconds(20);
+  context.set_deadline(deadline);
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(kResponseSize, response.message().size());
   EXPECT_TRUE(s.ok());

@@ -1256,8 +1256,6 @@ def _build_and_run(
           jobset.message(
               'FLAKE', '%s [%d/%d runs flaked]' % (k, num_failures, num_runs),
               do_newline=True)
-        else:
-          jobset.message('PASSED', k, do_newline=True)
   finally:
     for antagonist in antagonists:
       antagonist.kill()

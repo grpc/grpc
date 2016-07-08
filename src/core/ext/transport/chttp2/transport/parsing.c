@@ -154,10 +154,8 @@ void grpc_chttp2_publish_reads(
                                   transport_parsing, outgoing_window);
   is_zero = transport_global->outgoing_window <= 0;
   if (was_zero && !is_zero) {
-    while (grpc_chttp2_list_pop_stalled_by_transport(transport_global,
-                                                     &stream_global)) {
-      grpc_chttp2_become_writable(transport_global, stream_global);
-    }
+    grpc_chttp2_initiate_write(exec_ctx, transport_global, false,
+                               "new_global_flow_control");
   }
 
   if (transport_parsing->incoming_window <
@@ -168,6 +166,8 @@ void grpc_chttp2_publish_reads(
                                       announce_incoming_window, announce_bytes);
     GRPC_CHTTP2_FLOW_CREDIT_TRANSPORT("parsed", transport_parsing,
                                       incoming_window, announce_bytes);
+    grpc_chttp2_initiate_write(exec_ctx, transport_global, false,
+                               "global incoming window");
   }
 
   /* for each stream that saw an update, fixup global state */
@@ -190,7 +190,8 @@ void grpc_chttp2_publish_reads(
                                  outgoing_window);
     is_zero = stream_global->outgoing_window <= 0;
     if (was_zero && !is_zero) {
-      grpc_chttp2_become_writable(transport_global, stream_global);
+      grpc_chttp2_become_writable(exec_ctx, transport_global, stream_global,
+                                  false, "stream.read_flow_control");
     }
 
     stream_global->max_recv_bytes -= (uint32_t)GPR_MIN(
