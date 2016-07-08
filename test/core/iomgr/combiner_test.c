@@ -34,6 +34,7 @@
 #include "src/core/lib/iomgr/combiner.h"
 
 #include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/useful.h>
@@ -79,6 +80,7 @@ static void check_one(grpc_exec_ctx *exec_ctx, void *a, grpc_error *error) {
   // gpr_log(GPR_DEBUG, "*%p=%d; step %d", args->ctr, *args->ctr, args->value);
   GPR_ASSERT(*args->ctr == args->value - 1);
   *args->ctr = args->value;
+  gpr_free(a);
 }
 
 static void execute_many_loop(void *a) {
@@ -87,10 +89,11 @@ static void execute_many_loop(void *a) {
   size_t n = 1;
   for (size_t i = 0; i < 10; i++) {
     for (size_t j = 0; j < 10000; j++) {
-      ex_args c = {&args->ctr, n++};
+      ex_args *c = gpr_malloc(sizeof(*a));
+      c->ctr = &args->ctr;
+      c->value = n++;
       grpc_combiner_execute(&exec_ctx, args->lock,
-                            grpc_closure_create(check_one, &c),
-                            GRPC_ERROR_NONE);
+                            grpc_closure_create(check_one, c), GRPC_ERROR_NONE);
       grpc_exec_ctx_flush(&exec_ctx);
     }
     gpr_sleep_until(GRPC_TIMEOUT_MILLIS_TO_DEADLINE(100));
