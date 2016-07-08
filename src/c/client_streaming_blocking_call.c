@@ -80,7 +80,7 @@ grpc_client_writer *GRPC_client_streaming_blocking_call(GRPC_channel *channel,
   });
   writer->finish_ops.user_tag = &writer->finish_ops;
 
-  grpc_start_batch_from_op_set(writer->call, &set, writer->context, (GRPC_message) {}, NULL);
+  grpc_start_batch_from_op_set(writer->call, &set, writer->context, (GRPC_message) {0}, NULL);
   GRPC_completion_queue_pluck_internal(cq, TAG(&set));
   return writer;
 }
@@ -99,7 +99,7 @@ bool GRPC_client_streaming_blocking_write(grpc_client_writer *writer, const GRPC
 }
 
 GRPC_status GRPC_client_writer_terminate(grpc_client_writer *writer) {
-  grpc_start_batch_from_op_set(writer->call, &writer->finish_ops, writer->context, (GRPC_message) {}, writer->response);
+  grpc_start_batch_from_op_set(writer->call, &writer->finish_ops, writer->context, (GRPC_message) {0}, writer->response);
   GRPC_completion_queue_pluck_internal(writer->cq, TAG(&writer->finish_ops));
   GRPC_completion_queue_shutdown_and_destroy(writer->cq);
   grpc_call_destroy(writer->call);

@@ -35,7 +35,7 @@
 #ifndef TEST_GRPC_C_COMPLETION_QUEUE_H
 #define TEST_GRPC_C_COMPLETION_QUEUE_H
 
-#include "../completion_queue_public.h"
+#include <grpc_c/completion_queue.h>
 
 bool GRPC_completion_queue_pluck_internal(GRPC_completion_queue *cq, void *tag);
 
