@@ -30,7 +30,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
- 
+
+#include <grpc_c/grpc_c.h>
 #include <grpc_c/channel.h>
 #include "init_shutdown.h"
 #include <grpc/grpc.h>
