@@ -32,6 +32,7 @@
  */
 
 
+#include <grpc_c/grpc_c.h>
 #include <grpc/support/log.h>
 #include "client_streaming_blocking_call.h"
 #include "tag.h"
