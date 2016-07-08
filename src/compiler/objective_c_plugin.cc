@@ -41,6 +41,9 @@
 
 #include <google/protobuf/compiler/objectivec/objectivec_helpers.h>
 
+using ::google::protobuf::compiler::objectivec::ProtobufLibraryFrameworkName;
+using ::google::protobuf::compiler::objectivec::IsProtobufLibraryBundledProtoFile;
+
 class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
  public:
   ObjectiveCGrpcGenerator() {}
@@ -75,17 +78,16 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
         ::grpc::string header = grpc_objective_c_generator::MessageHeaderName(
             file->dependency(i));
         const grpc::protobuf::FileDescriptor *dependency = file->dependency(i);
-        if (::google::protobuf::compiler::objectivec::IsProtobufLibraryBundledProtoFile(dependency)) {
+        if (IsProtobufLibraryBundledProtoFile(dependency)) {
           ::grpc::string base_name = header;
           grpc_generator::StripPrefix(&base_name, "google/protobuf/");
           proto_imports +=
-            ::grpc::string("#if GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS\n") +
-            ::grpc::string("  #import <") +
-            ::google::protobuf::compiler::objectivec::ProtobufLibraryFrameworkName +
-                          ("/") + base_name + ">\n" +
-            ::grpc::string("#else\n") +
-            ::grpc::string("  #import \"") + header + "\"\n" +
-            ::grpc::string("#endif\n");
+            "#if GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS\n"
+            "  #import <" + ::grpc::string(ProtobufLibraryFrameworkName) +
+            "/" + base_name + ">\n"
+            "#else\n"
+            "  #import \"" + header + "\"\n"
+            "#endif\n";
        } else {
           proto_imports += ::grpc::string("#import \"") + header + "\"\n";
        }
