@@ -189,14 +189,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
     }
   }
   virtual ~AsyncClient() {
-    for (auto cq = cli_cqs_.begin(); cq != cli_cqs_.end(); cq++) {
-      (*cq)->Shutdown();
-      void* got_tag;
-      bool ok;
-      while ((*cq)->Next(&got_tag, &ok)) {
-        delete ClientRpcContext::detag(got_tag);
-      }
-    }
+    FinalShutdownCQs();
   }
 
   bool ThreadFunc(HistogramEntry* entry,
@@ -216,13 +209,28 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
         delete ctx;
       }
       return true;
-    } else {  // queue is shutting down
-      return false;
+    } else {  // queue is shutting down, so we must be done
+      return true;
     }
   }
 
  protected:
   const int num_async_threads_;
+
+  void ShutdownCQs() {
+    for (auto cq = cli_cqs_.begin(); cq != cli_cqs_.end(); cq++) {
+      (*cq)->Shutdown();
+    }
+  }
+  void FinalShutdownCQs() {
+    for (auto cq = cli_cqs_.begin(); cq != cli_cqs_.end(); cq++) {
+      void* got_tag;
+      bool ok;
+      while ((*cq)->Next(&got_tag, &ok)) {
+        delete ClientRpcContext::detag(got_tag);
+      }
+    }
+  }
 
  private:
   int NumThreads(const ClientConfig& config) {
@@ -251,7 +259,10 @@ class AsyncUnaryClient GRPC_FINAL
             config, SetupCtx, BenchmarkStubCreator) {
     StartThreads(num_async_threads_);
   }
-  ~AsyncUnaryClient() GRPC_OVERRIDE { EndThreads(); }
+  ~AsyncUnaryClient() GRPC_OVERRIDE {
+    ShutdownCQs();
+    EndThreads();
+  }
 
  private:
   static void CheckDone(grpc::Status s, SimpleResponse* response) {}
@@ -380,7 +391,10 @@ class AsyncStreamingClient GRPC_FINAL
     StartThreads(num_async_threads_);
   }
 
-  ~AsyncStreamingClient() GRPC_OVERRIDE { EndThreads(); }
+  ~AsyncStreamingClient() GRPC_OVERRIDE {
+    ShutdownCQs();
+    EndThreads();
+  }
 
  private:
   static void CheckDone(grpc::Status s, SimpleResponse* response) {}
@@ -516,7 +530,10 @@ class GenericAsyncStreamingClient GRPC_FINAL
     StartThreads(num_async_threads_);
   }
 
-  ~GenericAsyncStreamingClient() GRPC_OVERRIDE { EndThreads(); }
+  ~GenericAsyncStreamingClient() GRPC_OVERRIDE {
+    ShutdownCQs();
+    EndThreads();
+  }
 
  private:
   static void CheckDone(grpc::Status s, ByteBuffer* response) {}

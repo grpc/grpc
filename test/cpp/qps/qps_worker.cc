@@ -128,6 +128,7 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
 
     ScopedProfile profile("qps_client.prof", false);
     Status ret = RunClientBody(ctx, stream);
+    gpr_log(GPR_INFO, "RunClient: Returning");
     return ret;
   }
 
@@ -141,6 +142,7 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
 
     ScopedProfile profile("qps_server.prof", false);
     Status ret = RunServerBody(ctx, stream);
+    gpr_log(GPR_INFO, "RunServer: Returning");
     return ret;
   }
 
