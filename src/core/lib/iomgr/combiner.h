@@ -55,5 +55,13 @@ void grpc_combiner_destroy(grpc_combiner *lock);
 // Execute \a action within the lock.
 void grpc_combiner_execute(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
                            grpc_closure *closure, grpc_error *error);
+// Execute \a action within the lock just prior to unlocking.
+// if \a force_async_break is additionally set, the combiner is forced to trip
+// through the workqueue between finishing the primary queue of combined
+// closures and executing the finally list.
+// Can only be called from within a closure scheduled by grpc_combiner_execute
+void grpc_combiner_execute_finally(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
+                                   grpc_closure *closure, grpc_error *error,
+                                   bool force_async_break);
 
 #endif /* GRPC_CORE_LIB_IOMGR_COMBINER_H */

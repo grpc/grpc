@@ -120,12 +120,26 @@ static void test_execute_many(void) {
   grpc_combiner_destroy(lock);
 }
 
+static void test_execute_finally(void) {
+  gpr_log(GPR_DEBUG, "test_execute_finally");
+
+  grpc_combiner *lock = grpc_combiner_create(NULL);
+  bool done = false;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_combiner_execute(&exec_ctx, lock, grpc_closure_create(add_finally, lock),
+                        GRPC_ERROR_NONE);
+  grpc_exec_ctx_finish(&exec_ctx);
+  GPR_ASSERT(done);
+  grpc_combiner_destroy(lock);
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   test_no_op();
   test_execute_one();
   test_execute_many();
+  test_execute_finally();
   grpc_shutdown();
 
   return 0;

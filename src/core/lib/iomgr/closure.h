@@ -89,6 +89,8 @@ grpc_closure *grpc_closure_create(grpc_iomgr_cb_func cb, void *cb_arg);
 #define GRPC_CLOSURE_LIST_INIT \
   { NULL, NULL }
 
+void grpc_closure_list_init(grpc_closure_list *list);
+
 /** add \a closure to the end of \a list
     and set \a closure's result to \a error */
 void grpc_closure_list_append(grpc_closure_list *list, grpc_closure *closure,
