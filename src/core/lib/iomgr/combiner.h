@@ -40,24 +40,21 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/support/mpscq.h"
 
-typedef struct grpc_aelock grpc_aelock;
+typedef struct grpc_combiner grpc_combiner;
 
 // Provides serialized access to some resource.
 // Each action queued on an aelock is executed serially in a borrowed thread.
 // The actual thread executing actions may change over time (but there will only
 // every be one at a time).
 
-typedef void (*grpc_aelock_action)(grpc_exec_ctx *exec_ctx, void *arg);
-
 // Initialize the lock, with an optional workqueue to shift load to when
 // necessary
-grpc_aelock *grpc_aelock_create(grpc_workqueue *optional_workqueue);
+grpc_combiner *grpc_combiner_create(grpc_workqueue *optional_workqueue);
 // Destroy the lock
-void grpc_aelock_destroy(grpc_aelock *lock);
+void grpc_combiner_destroy(grpc_combiner *lock);
 // Execute \a action within the lock. \a arg is the argument to pass to \a
 // action and sizeof_arg is the sizeof(*arg), or 0 if arg is non-copyable.
-void grpc_aelock_execute(grpc_exec_ctx *exec_ctx, grpc_aelock *lock,
-                         grpc_aelock_action action, void *arg,
-                         size_t sizeof_arg);
+void grpc_combiner_execute(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
+                           grpc_closure *closure, grpc_error *error);
 
 #endif /* GRPC_CORE_LIB_IOMGR_ASYNC_EXECUTION_LOCK_H */

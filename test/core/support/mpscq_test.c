@@ -109,7 +109,7 @@ static void test_mt(void) {
     if (tn->i == THREAD_ITERATIONS) num_done++;
     gpr_free(tn);
   }
-  gpr_log(GPR_DEBUG, "spins: %d", spins);
+  gpr_log(GPR_DEBUG, "spins: %" PRIdPTR, spins);
   for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
     gpr_thd_join(thds[i]);
   }
