@@ -30,8 +30,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+#include <grpc_c/grpc_c.h>
 #include "call_ops.h"
-#include <grpc_c/message.h>
 #include "tag.h"
 #include <grpc/support/log.h>
 #include <grpc/impl/codegen/byte_buffer_reader.h>

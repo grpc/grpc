@@ -41,6 +41,7 @@
 typedef struct grpc_channel GRPC_channel;
 typedef struct grpc_status GRPC_status;
 typedef struct grpc_context GRPC_context;
+typedef struct grpc_completion_queue GRPC_completion_queue;
 
 typedef struct GRPC_method {
   enum RpcType {

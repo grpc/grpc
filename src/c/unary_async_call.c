@@ -32,6 +32,7 @@
  */
 
 
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include "unary_async_call.h"
 #include "alloc.h"

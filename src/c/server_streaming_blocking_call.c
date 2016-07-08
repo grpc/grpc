@@ -32,6 +32,8 @@
  */
 
 
+#include <grpc_c/grpc_c.h>
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include "server_streaming_blocking_call.h"
 #include <grpc_c/completion_queue.h>
