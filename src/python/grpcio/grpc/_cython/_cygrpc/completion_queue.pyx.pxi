@@ -35,11 +35,16 @@ import time
 cdef int _INTERRUPT_CHECK_PERIOD_MS = 200
 
 
+class PollInterruptedException(Exception):
+  pass
+
+
 cdef class CompletionQueue:
 
   def __cinit__(self):
     with nogil:
       self.c_completion_queue = grpc_completion_queue_create(NULL)
+    self.is_interrupted = False
     self.is_shutting_down = False
     self.is_shutdown = False
 
@@ -103,7 +108,13 @@ cdef class CompletionQueue:
         # Handle any signals
         with gil:
           cpython.PyErr_CheckSignals()
+          if self.is_interrupted:
+            self.is_interrupted = False
+            raise PollInterruptedException()
     return self._interpret_event(event)
+
+  def interrupt(self):
+    self.is_interrupted = True
 
   def shutdown(self):
     with nogil:

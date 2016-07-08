@@ -164,7 +164,7 @@ def _handle_event(event, state, response_deserializer):
   return callbacks
 
 
-def _event_handler(state, call, response_deserializer):
+def _event_handler(state, response_deserializer):
   def handle_event(event):
     with state.condition:
       callbacks = _handle_event(event, state, response_deserializer)
@@ -172,13 +172,12 @@ def _event_handler(state, call, response_deserializer):
       done = not state.due
     for callback in callbacks:
       callback()
-    return call if done else None
   return handle_event
 
 
 def _consume_request_iterator(
     request_iterator, state, call, request_serializer):
-  event_handler = _event_handler(state, call, None)
+  event_handler = _event_handler(state, None)
 
   def consume_request_iterator():
     for request in request_iterator:
@@ -195,7 +194,8 @@ def _consume_request_iterator(
                 cygrpc.operation_send_message(
                     serialized_request, _EMPTY_FLAGS),
             )
-            call.start_batch(cygrpc.Operations(operations), event_handler)
+            call.start_batch(cygrpc.Operations(operations), event_handler,
+                             client_side=True)
             state.due.add(cygrpc.OperationType.send_message)
             while True:
               state.condition.wait()
@@ -211,7 +211,8 @@ def _consume_request_iterator(
         operations = (
             cygrpc.operation_send_close_from_client(_EMPTY_FLAGS),
         )
-        call.start_batch(cygrpc.Operations(operations), event_handler)
+        call.start_batch(cygrpc.Operations(operations), event_handler,
+                         client_side=True)
         state.due.add(cygrpc.OperationType.send_close_from_client)
 
   def stop_consumption_thread(timeout):
@@ -311,11 +312,11 @@ class _Rendezvous(grpc.RpcError, grpc.Future, grpc.Call):
     with self._state.condition:
       if self._state.code is None:
         event_handler = _event_handler(
-            self._state, self._call, self._response_deserializer)
+            self._state, self._response_deserializer)
         self._call.start_batch(
             cygrpc.Operations(
                 (cygrpc.operation_receive_message(_EMPTY_FLAGS),)),
-            event_handler)
+            event_handler, client_side=True)
         self._state.due.add(cygrpc.OperationType.receive_message)
       elif self._state.code is grpc.StatusCode.OK:
         raise StopIteration()
@@ -471,7 +472,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
           None, 0, completion_queue, self._method, None, deadline_timespec)
       if credentials is not None:
         call.set_credentials(credentials._credentials)
-      call.start_batch(cygrpc.Operations(operations), None)
+      call.start_batch(cygrpc.Operations(operations), None, client_side=True)
       _handle_event(completion_queue.poll(), state, self._response_deserializer)
       return state, deadline
 
@@ -493,9 +494,10 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
           None, 0, self._method, None, deadline_timespec)
       if credentials is not None:
         call.set_credentials(credentials._credentials)
-      event_handler = _event_handler(state, call, self._response_deserializer)
+      event_handler = _event_handler(state, self._response_deserializer)
       with state.condition:
-        call.start_batch(cygrpc.Operations(operations), event_handler)
+        call.start_batch(cygrpc.Operations(operations), event_handler,
+                         client_side=True)
       return _Rendezvous(state, call, self._response_deserializer, deadline)
 
 
@@ -521,12 +523,12 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
           None, 0, self._method, None, deadline_timespec)
       if credentials is not None:
         call.set_credentials(credentials._credentials)
-      event_handler = _event_handler(state, call, self._response_deserializer)
+      event_handler = _event_handler(state, self._response_deserializer)
       with state.condition:
         call.start_batch(
             cygrpc.Operations(
                 (cygrpc.operation_receive_initial_metadata(_EMPTY_FLAGS),)),
-            event_handler)
+            event_handler, client_side=True)
         operations = (
             cygrpc.operation_send_initial_metadata(
                 _common.cygrpc_metadata(metadata), _EMPTY_FLAGS),
@@ -534,7 +536,8 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
             cygrpc.operation_send_close_from_client(_EMPTY_FLAGS),
             cygrpc.operation_receive_status_on_client(_EMPTY_FLAGS),
         )
-        call.start_batch(cygrpc.Operations(operations), event_handler)
+        call.start_batch(cygrpc.Operations(operations), event_handler,
+                         client_side=True)
       return _Rendezvous(state, call, self._response_deserializer, deadline)
 
 
@@ -561,14 +564,14 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
       call.start_batch(
           cygrpc.Operations(
               (cygrpc.operation_receive_initial_metadata(_EMPTY_FLAGS),)),
-          None)
+          None, client_side=True)
       operations = (
           cygrpc.operation_send_initial_metadata(
               _common.cygrpc_metadata(metadata), _EMPTY_FLAGS),
           cygrpc.operation_receive_message(_EMPTY_FLAGS),
           cygrpc.operation_receive_status_on_client(_EMPTY_FLAGS),
       )
-      call.start_batch(cygrpc.Operations(operations), None)
+      call.start_batch(cygrpc.Operations(operations), None, client_side=True)
       _consume_request_iterator(
           request_iterator, state, call, self._request_serializer)
     while True:
@@ -600,19 +603,20 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
         None, 0, self._method, None, deadline_timespec)
     if credentials is not None:
       call.set_credentials(credentials._credentials)
-    event_handler = _event_handler(state, call, self._response_deserializer)
+    event_handler = _event_handler(state, self._response_deserializer)
     with state.condition:
       call.start_batch(
           cygrpc.Operations(
               (cygrpc.operation_receive_initial_metadata(_EMPTY_FLAGS),)),
-          event_handler)
+          event_handler, client_side=True)
       operations = (
           cygrpc.operation_send_initial_metadata(
               _common.cygrpc_metadata(metadata), _EMPTY_FLAGS),
           cygrpc.operation_receive_message(_EMPTY_FLAGS),
           cygrpc.operation_receive_status_on_client(_EMPTY_FLAGS),
       )
-      call.start_batch(cygrpc.Operations(operations), event_handler)
+      call.start_batch(cygrpc.Operations(operations), event_handler,
+                       client_side=True)
       _consume_request_iterator(
           request_iterator, state, call, self._request_serializer)
     return _Rendezvous(state, call, self._response_deserializer, deadline)
@@ -637,18 +641,19 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
         None, 0, self._method, None, deadline_timespec)
     if credentials is not None:
       call.set_credentials(credentials._credentials)
-    event_handler = _event_handler(state, call, self._response_deserializer)
+    event_handler = _event_handler(state, self._response_deserializer)
     with state.condition:
       call.start_batch(
           cygrpc.Operations(
               (cygrpc.operation_receive_initial_metadata(_EMPTY_FLAGS),)),
-          event_handler)
+          event_handler, client_side=True)
       operations = (
           cygrpc.operation_send_initial_metadata(
               _common.cygrpc_metadata(metadata), _EMPTY_FLAGS),
           cygrpc.operation_receive_status_on_client(_EMPTY_FLAGS),
       )
-      call.start_batch(cygrpc.Operations(operations), event_handler)
+      call.start_batch(cygrpc.Operations(operations), event_handler,
+                       client_side=True)
       _consume_request_iterator(
           request_iterator, state, call, self._request_serializer)
     return _Rendezvous(state, call, self._response_deserializer, deadline)
@@ -660,30 +665,27 @@ class _ChannelCallState(object):
     self.lock = threading.Lock()
     self.channel = channel
     self.completion_queue = cygrpc.CompletionQueue()
-    self.managed_calls = None
+    self.managed_calls = False
 
 
 def _run_channel_spin_thread(state):
   def channel_spin():
     while True:
-      event = state.completion_queue.poll()
-      completed_call = event.tag(event)
-      if completed_call is not None:
-        with state.lock:
-          state.managed_calls.remove(completed_call)
-          if not state.managed_calls:
-            state.managed_calls = None
-            return
+      try:
+        event = state.completion_queue.poll()
+        if event is not None:
+          event.tag(event)
+      except cygrpc.PollInterruptedException:
+        return
+        
 
   def stop_channel_spin(timeout):
-    with state.lock:
-      if state.managed_calls is not None:
-        for call in state.managed_calls:
-          call.cancel()
+    state.completion_queue.interrupt()
 
   channel_spin_thread = _common.CleanupThread(
       stop_channel_spin, target=channel_spin)
   channel_spin_thread.start()
+  state.managed_calls = True
 
 
 def _create_channel_managed_call(state):
@@ -710,12 +712,10 @@ def _create_channel_managed_call(state):
     with state.lock:
       call = state.channel.create_call(
           parent, flags, state.completion_queue, method, host, deadline)
-      if state.managed_calls is None:
-        state.managed_calls = set((call,))
+      if not state.managed_calls:
         _run_channel_spin_thread(state)
-      else:
-        state.managed_calls.add(call)
       return call
+
   return create_channel_managed_call
 
 
