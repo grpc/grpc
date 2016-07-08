@@ -40,34 +40,25 @@
 
 #include "test/core/util/test_config.h"
 
-static void do_nothing_action(grpc_exec_ctx *exec_ctx, void *ignored) {}
-
 static void test_no_op(void) {
   gpr_log(GPR_DEBUG, "test_no_op");
-  grpc_aelock_destroy(grpc_aelock_create(NULL, do_nothing_action, NULL));
+  grpc_aelock_destroy(grpc_aelock_create(NULL));
 }
 
 static void set_bool_to_true(grpc_exec_ctx *exec_ctx, void *value) {
   *(bool *)value = true;
 }
 
-static void increment_atomic(grpc_exec_ctx *exec_ctx, void *value) {
-  gpr_atm_full_fetch_add((gpr_atm *)value, 1);
-}
-
 static void test_execute_one(void) {
   gpr_log(GPR_DEBUG, "test_execute_one");
 
-  gpr_atm idles;
-  gpr_atm_no_barrier_store(&idles, 0);
-  grpc_aelock *lock = grpc_aelock_create(NULL, increment_atomic, &idles);
+  grpc_aelock *lock = grpc_aelock_create(NULL);
   bool done = false;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_aelock_execute(&exec_ctx, lock, set_bool_to_true, &done, 0);
   grpc_exec_ctx_finish(&exec_ctx);
   GPR_ASSERT(done);
   grpc_aelock_destroy(lock);
-  GPR_ASSERT(gpr_atm_no_barrier_load(&idles) == 1);
 }
 
 typedef struct {
@@ -92,7 +83,7 @@ static void execute_many_loop(void *a) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   size_t n = 1;
   for (size_t i = 0; i < 10; i++) {
-    for (size_t j = 0; j < 100; j++) {
+    for (size_t j = 0; j < 10000; j++) {
       ex_args c = {&args->ctr, n++};
       grpc_aelock_execute(&exec_ctx, args->lock, check_one, &c, sizeof(c));
       grpc_exec_ctx_flush(&exec_ctx);
@@ -105,10 +96,7 @@ static void execute_many_loop(void *a) {
 static void test_execute_many(void) {
   gpr_log(GPR_DEBUG, "test_execute_many");
 
-  gpr_atm idles;
-  gpr_atm_no_barrier_store(&idles, 0);
-
-  grpc_aelock *lock = grpc_aelock_create(NULL, increment_atomic, &idles);
+  grpc_aelock *lock = grpc_aelock_create(NULL);
   gpr_thd_id thds[100];
   thd_args ta[GPR_ARRAY_SIZE(thds)];
   for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
@@ -122,8 +110,6 @@ static void test_execute_many(void) {
     gpr_thd_join(thds[i]);
   }
   grpc_aelock_destroy(lock);
-
-  gpr_log(GPR_DEBUG, "idles: %d", gpr_atm_no_barrier_load(&idles));
 }
 
 int main(int argc, char **argv) {

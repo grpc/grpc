@@ -51,9 +51,7 @@ typedef void (*grpc_aelock_action)(grpc_exec_ctx *exec_ctx, void *arg);
 
 // Initialize the lock, with an optional workqueue to shift load to when
 // necessary
-grpc_aelock *grpc_aelock_create(grpc_workqueue *optional_workqueue,
-                                grpc_aelock_action before_idle_action,
-                                void *before_idle_action_arg);
+grpc_aelock *grpc_aelock_create(grpc_workqueue *optional_workqueue);
 // Destroy the lock
 void grpc_aelock_destroy(grpc_aelock *lock);
 // Execute \a action within the lock. \a arg is the argument to pass to \a
