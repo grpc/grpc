@@ -35,7 +35,7 @@
 #ifndef TEST_GRPC_C_MESSAGE_H
 #define TEST_GRPC_C_MESSAGE_H
 
-#include "../message_public.h"
+#include <grpc_c/message.h>
 
 typedef GRPC_message grpc_message;
 

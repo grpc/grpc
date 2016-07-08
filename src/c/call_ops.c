@@ -31,8 +31,7 @@
  *
  */
 #include "call_ops.h"
-#include "context.h"
-#include "../message_public.h"
+#include <grpc_c/message.h>
 #include "tag.h"
 #include <grpc/support/log.h>
 #include <grpc/impl/codegen/byte_buffer_reader.h>
@@ -195,7 +194,7 @@ bool grpc_finish_op_from_call_set(grpc_call_op_set *set, grpc_context *context) 
   while (count < GRPC_MAX_OP_COUNT) {
     if (set->op_managers[count].fill == NULL && set->op_managers[count].finish == NULL) break;   // end of call set
     if (set->op_managers[count].finish == NULL) continue;
-    size_t size = 100;  // todo(yifeit): hook up this value
+    int size = 100;  // todo(yifeit): hook up this value
     bool status;
     set->op_managers[count].finish(context, set, &status, size);
     allStatus &= status;

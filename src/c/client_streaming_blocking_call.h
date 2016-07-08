@@ -35,7 +35,7 @@
 #ifndef TEST_GRPC_C_CLIENT_STREAMING_BLOCKING_CALL_H
 #define TEST_GRPC_C_CLIENT_STREAMING_BLOCKING_CALL_H
 
-#include "../client_streaming_blocking_call_public.h"
+#include <grpc_c/client_streaming_blocking_call.h>
 #include "call_ops.h"
 
 typedef struct grpc_client_writer {

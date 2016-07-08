@@ -34,7 +34,7 @@
 
 #include <grpc/support/log.h>
 #include "bidi_streaming_blocking_call.h"
-#include "../completion_queue_public.h"
+#include <grpc_c/completion_queue.h>
 #include "alloc.h"
 #include "tag.h"
 #include "completion_queue.h"
@@ -68,7 +68,7 @@ GRPC_client_reader_writer *GRPC_bidi_streaming_blocking_call(GRPC_channel *chann
     .cq = cq,
   });
 
-  grpc_start_batch_from_op_set(reader_writer->call, &set, reader_writer->context, (GRPC_message) {}, NULL);
+  grpc_start_batch_from_op_set(reader_writer->call, &set, reader_writer->context, (GRPC_message) {0}, NULL);
   GRPC_completion_queue_pluck_internal(cq, TAG(&set));
   return reader_writer;
 }
@@ -96,7 +96,7 @@ bool GRPC_bidi_streaming_blocking_read(GRPC_client_reader_writer *reader_writer,
     pSet = &set_no_meta;
   }
 
-  grpc_start_batch_from_op_set(reader_writer->call, pSet, reader_writer->context, (GRPC_message) {}, response);
+  grpc_start_batch_from_op_set(reader_writer->call, pSet, reader_writer->context, (GRPC_message) {0}, response);
   return GRPC_completion_queue_pluck_internal(reader_writer->cq, TAG(pSet)) && pSet->message_received;
 }
 
@@ -122,7 +122,7 @@ bool GRPC_bidi_streaming_blocking_close(GRPC_client_reader_writer *reader_writer
     .user_tag = &set
   };
 
-  grpc_start_batch_from_op_set(reader_writer->call, &set, reader_writer->context, (GRPC_message) {}, NULL);
+  grpc_start_batch_from_op_set(reader_writer->call, &set, reader_writer->context, (GRPC_message) {0}, NULL);
   return GRPC_completion_queue_pluck_internal(reader_writer->cq, TAG(&set));
 }
 
@@ -134,7 +134,7 @@ GRPC_status GRPC_client_reader_writer_terminate(GRPC_client_reader_writer *reade
     .context = reader_writer->context,
     .user_tag = &set
   };
-  grpc_start_batch_from_op_set(reader_writer->call, &set, reader_writer->context, (GRPC_message) {}, NULL);
+  grpc_start_batch_from_op_set(reader_writer->call, &set, reader_writer->context, (GRPC_message) {0}, NULL);
   GRPC_completion_queue_pluck_internal(reader_writer->cq, TAG(&set));
   GRPC_completion_queue_shutdown_and_destroy(reader_writer->cq);
   grpc_call_destroy(reader_writer->call);

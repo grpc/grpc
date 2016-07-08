@@ -32,11 +32,11 @@
  */
 
 
-#ifndef TEST_GRPC_C_BIDI_STREAMING_BLOCKING_CALL_H
-#define TEST_GRPC_C_BIDI_STREAMING_BLOCKING_CALL_H
+#ifndef GRPC_C_BIDI_STREAMING_BLOCKING_CALL_H
+#define GRPC_C_BIDI_STREAMING_BLOCKING_CALL_H
 
 #include "call_ops.h"
-#include "../bidi_streaming_blocking_call_public.h"
+#include <grpc_c/bidi_streaming_blocking_call.h>
 
 typedef struct grpc_client_reader_writer {
   grpc_context *context;
@@ -44,4 +44,4 @@ typedef struct grpc_client_reader_writer {
   grpc_completion_queue *cq;
 } grpc_client_reader_writer;
 
-#endif //TEST_GRPC_C_BIDI_STREAMING_BLOCKING_CALL_H
+#endif // GRPC_C_BIDI_STREAMING_BLOCKING_CALL_H
