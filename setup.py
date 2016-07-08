@@ -31,6 +31,7 @@
 
 import os
 import os.path
+import shlex
 import shutil
 import sys
 import sysconfig
@@ -71,10 +72,6 @@ BUILD_WITH_CYTHON = os.environ.get('GRPC_PYTHON_BUILD_WITH_CYTHON', False)
 ENABLE_CYTHON_TRACING = os.environ.get(
     'GRPC_PYTHON_ENABLE_CYTHON_TRACING', False)
 
-# Environment variable to determine whether or not to include the test files in
-# the installation.
-INSTALL_TESTS = os.environ.get('GRPC_PYTHON_INSTALL_TESTS', False)
-
 CYTHON_EXTENSION_PACKAGE_NAMES = ()
 
 CYTHON_EXTENSION_MODULE_NAMES = ('grpc._cython.cygrpc',)
@@ -99,8 +96,9 @@ if not "win32" in sys.platform:
 
 DEFINE_MACROS = (('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600), ('GPR_BACKWARDS_COMPATIBILITY_MODE', 1),)
 
-LDFLAGS = ()
-CFLAGS = ()
+LDFLAGS = shlex.split(os.environ.get('GRPC_PYTHON_LDFLAGS', ''))
+CFLAGS = shlex.split(os.environ.get('GRPC_PYTHON_CFLAGS', ''))
+
 if "linux" in sys.platform:
   LDFLAGS += ('-Wl,-wrap,memcpy',)
 if "linux" in sys.platform or "darwin" in sys.platform:
@@ -165,7 +163,7 @@ PACKAGE_DIRECTORIES = {
 }
 
 INSTALL_REQUIRES = (
-    'six>=1.10',
+    'six>=1.5.2',
     'enum34>=1.0.4',
     'futures>=2.2.0',
     # TODO(atash): eventually split the grpcio package into a metapackage
@@ -173,20 +171,18 @@ INSTALL_REQUIRES = (
     'protobuf>=3.0.0a3',
 )
 
-SETUP_REQUIRES = (
+SETUP_REQUIRES = INSTALL_REQUIRES + (
     'sphinx>=1.3',
-    'sphinx_rtd_theme>=0.1.8'
-) + INSTALL_REQUIRES
+    'sphinx_rtd_theme>=0.1.8',
+    'six>=1.10',
+)
 
 COMMAND_CLASS = {
     'doc': commands.SphinxDocumentation,
-    'build_proto_modules': commands.BuildProtoModules,
     'build_project_metadata': commands.BuildProjectMetadata,
     'build_py': commands.BuildPy,
     'build_ext': commands.BuildExt,
     'gather': commands.Gather,
-    'run_interop': commands.RunInterop,
-    'test_lite': commands.TestLite
 }
 
 # Ensure that package data is copied over before any commands have been run:
@@ -197,32 +193,6 @@ except OSError:
   pass
 shutil.copyfile('etc/roots.pem', os.path.join(credentials_dir, 'roots.pem'))
 
-TEST_PACKAGE_DATA = {
-    'tests.interop': [
-        'credentials/ca.pem',
-        'credentials/server1.key',
-        'credentials/server1.pem',
-    ],
-    'tests.protoc_plugin': [
-        'protoc_plugin_test.proto',
-    ],
-    'tests.unit': [
-        'credentials/ca.pem',
-        'credentials/server1.key',
-        'credentials/server1.pem',
-    ],
-}
-
-TESTS_REQUIRE = (
-    'oauth2client>=2.1.0',
-    'protobuf>=3.0.0a3',
-    'coverage>=4.0',
-) + INSTALL_REQUIRES
-
-TEST_SUITE = 'tests'
-TEST_LOADER = 'tests:Loader'
-TEST_RUNNER = 'tests:Runner'
-
 PACKAGE_DATA = {
     # Binaries that may or may not be present in the final installation, but are
     # mentioned here for completeness.
@@ -232,12 +202,7 @@ PACKAGE_DATA = {
         '_windows/grpc_c.64.python',
     ],
 }
-if INSTALL_TESTS:
-  PACKAGE_DATA = dict(PACKAGE_DATA, **TEST_PACKAGE_DATA)
-  PACKAGES = setuptools.find_packages(PYTHON_STEM)
-else:
-  PACKAGES = setuptools.find_packages(
-      PYTHON_STEM, exclude=['tests', 'tests.*'])
+PACKAGES = setuptools.find_packages(PYTHON_STEM)
 
 setuptools.setup(
   name='grpcio',
@@ -246,13 +211,8 @@ setuptools.setup(
   ext_modules=CYTHON_EXTENSION_MODULES,
   packages=list(PACKAGES),
   package_dir=PACKAGE_DIRECTORIES,
-  namespace_packages=['grpc'],
   package_data=PACKAGE_DATA,
   install_requires=INSTALL_REQUIRES,
   setup_requires=SETUP_REQUIRES,
   cmdclass=COMMAND_CLASS,
-  tests_require=TESTS_REQUIRE,
-  test_suite=TEST_SUITE,
-  test_loader=TEST_LOADER,
-  test_runner=TEST_RUNNER,
 )

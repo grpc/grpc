@@ -49,7 +49,7 @@ For developers who are interested to contribute, here is how to compile the
 gRPC C Core library.
 
 ```sh
- $ git clone https://github.com/grpc/grpc.git
+ $ git clone -b $(curl -L http://grpc.io/release) https://github.com/grpc/grpc
  $ cd grpc
  $ git submodule update --init
  $ make
