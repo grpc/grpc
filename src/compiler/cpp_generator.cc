@@ -73,9 +73,10 @@ void PrintIncludes(Printer *printer, const std::vector<grpc::string>& headers, c
   vars["l"] = params.use_system_headers ? '<' : '"';
   vars["r"] = params.use_system_headers ? '>' : '"';
 
-  if (!params.grpc_search_path.empty()) {
-    vars["l"] += params.grpc_search_path;
-    if (params.grpc_search_path.back() != '/') {
+  auto& s = params.grpc_search_path;
+  if (!s.empty()) {
+    vars["l"] += s;
+    if (s[s.size()-1] != '/') {
       vars["l"] += '/';
     }
   }

@@ -134,73 +134,6 @@ class SphinxDocumentation(setuptools.Command):
     sphinx.main(['', os.path.join('doc', 'src'), os.path.join('doc', 'build')])
 
 
-class BuildProtoModules(setuptools.Command):
-  """Command to generate project *_pb2.py modules from proto files."""
-
-  description = 'build protobuf modules'
-  user_options = [
-    ('include=', None, 'path patterns to include in protobuf generation'),
-    ('exclude=', None, 'path patterns to exclude from protobuf generation')
-  ]
-
-  def initialize_options(self):
-    self.exclude = None
-    self.include = r'.*\.proto$'
-    self.protoc_command = None
-    self.grpc_python_plugin_command = None
-
-  def finalize_options(self):
-    self.protoc_command = distutils.spawn.find_executable('protoc')
-    self.grpc_python_plugin_command = distutils.spawn.find_executable(
-        'grpc_python_plugin')
-
-  def run(self):
-    if not self.protoc_command:
-      raise CommandError('could not find protoc')
-    if not self.grpc_python_plugin_command:
-      raise CommandError('could not find grpc_python_plugin '
-                         '(protoc plugin for GRPC Python)')
-
-    if not os.path.exists(PROTO_GEN_STEM):
-      os.makedirs(PROTO_GEN_STEM)
-
-    include_regex = re.compile(self.include)
-    exclude_regex = re.compile(self.exclude) if self.exclude else None
-    paths = []
-    for walk_root, directories, filenames in os.walk(PROTO_STEM):
-      for filename in filenames:
-        path = os.path.join(walk_root, filename)
-        if include_regex.match(path) and not (
-            exclude_regex and exclude_regex.match(path)):
-          paths.append(path)
-
-    # TODO(kpayson): It would be nice to do this in a batch command,
-    # but we currently have name conflicts in src/proto
-    for path in paths:
-      command = [
-          self.protoc_command,
-          '--plugin=protoc-gen-python-grpc={}'.format(
-              self.grpc_python_plugin_command),
-          '-I {}'.format(GRPC_STEM),
-          '--python_out={}'.format(PROTO_GEN_STEM),
-          '--python-grpc_out={}'.format(PROTO_GEN_STEM),
-      ] + [path]
-      try:
-        subprocess.check_output(' '.join(command), cwd=PYTHON_STEM, shell=True,
-                                stderr=subprocess.STDOUT)
-      except subprocess.CalledProcessError as e:
-        sys.stderr.write(
-            'warning: Command:\n{}\nMessage:\n{}\nOutput:\n{}'.format(
-                command, str(e), e.output))
-
-    # Generated proto directories dont include __init__.py, but
-    # these are needed for python package resolution
-    for walk_root, _, _ in os.walk(PROTO_GEN_STEM):
-      if walk_root != PROTO_GEN_STEM:
-        path = os.path.join(walk_root, '__init__.py')
-        open(path, 'a').close()
-
-
 class BuildProjectMetadata(setuptools.Command):
   """Command to generate project metadata in a module."""
 
@@ -223,10 +156,6 @@ class BuildPy(build_py.build_py):
   """Custom project build command."""
 
   def run(self):
-    try:
-      self.run_command('build_proto_modules')
-    except CommandError as error:
-      sys.stderr.write('warning: %s\n' % error.message)
     self.run_command('build_project_metadata')
     build_py.build_py.run(self)
 
@@ -279,76 +208,3 @@ class Gather(setuptools.Command):
       self.distribution.fetch_build_eggs(self.distribution.install_requires)
     if self.test and self.distribution.tests_require:
       self.distribution.fetch_build_eggs(self.distribution.tests_require)
-
-
-class TestLite(setuptools.Command):
-  """Command to run tests without fetching or building anything."""
-
-  description = 'run tests without fetching or building anything.'
-  user_options = []
-
-  def initialize_options(self):
-    pass
-
-  def finalize_options(self):
-    # distutils requires this override.
-    pass
-
-  def run(self):
-    self._add_eggs_to_path()
-
-    import tests
-    loader = tests.Loader()
-    loader.loadTestsFromNames(['tests'])
-    runner = tests.Runner()
-    result = runner.run(loader.suite)
-    if not result.wasSuccessful():
-      sys.exit('Test failure')
-
-  def _add_eggs_to_path(self):
-    """Fetch install and test requirements"""
-    self.distribution.fetch_build_eggs(self.distribution.install_requires)
-    self.distribution.fetch_build_eggs(self.distribution.tests_require)
-
-
-class RunInterop(test.test):
-
-  description = 'run interop test client/server'
-  user_options = [
-    ('args=', 'a', 'pass-thru arguments for the client/server'),
-    ('client', 'c', 'flag indicating to run the client'),
-    ('server', 's', 'flag indicating to run the server')
-  ]
-
-  def initialize_options(self):
-    self.args = ''
-    self.client = False
-    self.server = False
-
-  def finalize_options(self):
-    if self.client and self.server:
-      raise DistutilsOptionError('you may only specify one of client or server')
-
-  def run(self):
-    if self.distribution.install_requires:
-      self.distribution.fetch_build_eggs(self.distribution.install_requires)
-    if self.distribution.tests_require:
-      self.distribution.fetch_build_eggs(self.distribution.tests_require)
-    if self.client:
-      self.run_client()
-    elif self.server:
-      self.run_server()
-
-  def run_server(self):
-    # We import here to ensure that our setuptools parent has had a chance to
-    # edit the Python system path.
-    from tests.interop import server
-    sys.argv[1:] = self.args.split()
-    server.serve()
-
-  def run_client(self):
-    # We import here to ensure that our setuptools parent has had a chance to
-    # edit the Python system path.
-    from tests.interop import client
-    sys.argv[1:] = self.args.split()
-    client.test_interoperability()

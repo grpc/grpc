@@ -70,7 +70,9 @@ RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev c
 
 RUN apt-get update && apt-get install -y \
   gcc-4.4 \
-  gcc-4.4-multilib
+  gcc-4.4-multilib \
+  g++-4.4 \
+  g++-4.4-multilib
 
 RUN wget https://openssl.org/source/old/1.0.2/openssl-1.0.2f.tar.gz
 
@@ -84,10 +86,6 @@ RUN ln -s /usr/bin/ccache /usr/local/bin/c++
 RUN ln -s /usr/bin/ccache /usr/local/bin/clang
 RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
 
-#======================
-# Zookeeper dependencies
-# TODO(jtattermusch): is zookeeper still needed?
-RUN apt-get install -y libzookeeper-mt-dev
 
 RUN mkdir /var/local/jenkins
 

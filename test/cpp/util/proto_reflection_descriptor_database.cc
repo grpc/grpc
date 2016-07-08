@@ -298,7 +298,7 @@ void ProtoReflectionDescriptorDatabase::AddFileFromResponse(
 
 const std::shared_ptr<ProtoReflectionDescriptorDatabase::ClientStream>
 ProtoReflectionDescriptorDatabase::GetStream() {
-  if (stream_ == nullptr) {
+  if (!stream_) {
     stream_ = stub_->ServerReflectionInfo(&ctx_);
   }
   return stream_;
