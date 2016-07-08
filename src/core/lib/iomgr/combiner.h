@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_ASYNC_EXECUTION_LOCK_H
-#define GRPC_CORE_LIB_IOMGR_ASYNC_EXECUTION_LOCK_H
+#ifndef GRPC_CORE_LIB_IOMGR_COMBINER_H
+#define GRPC_CORE_LIB_IOMGR_COMBINER_H
 
 #include <stddef.h>
 
@@ -56,4 +56,4 @@ void grpc_combiner_destroy(grpc_combiner *lock);
 void grpc_combiner_execute(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
                            grpc_closure *closure, grpc_error *error);
 
-#endif /* GRPC_CORE_LIB_IOMGR_ASYNC_EXECUTION_LOCK_H */
+#endif /* GRPC_CORE_LIB_IOMGR_COMBINER_H */
