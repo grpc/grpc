@@ -81,6 +81,7 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
         if (IsProtobufLibraryBundledProtoFile(dependency)) {
           ::grpc::string base_name = header;
           grpc_generator::StripPrefix(&base_name, "google/protobuf/");
+          // create the import code snippet
           proto_imports +=
             "#if GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS\n"
             "  #import <" + ::grpc::string(ProtobufLibraryFrameworkName) +
