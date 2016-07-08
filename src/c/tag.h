@@ -32,9 +32,9 @@
  */
 
 
-#ifndef TEST_GRPC_C_TAG_H
-#define TEST_GRPC_C_TAG_H
+#ifndef GRPC_C_TAG_H
+#define GRPC_C_TAG_H
 
 #define TAG(x) ((void *)x)
 
-#endif //TEST_GRPC_C_TAG_H
+#endif // GRPC_C_TAG_H

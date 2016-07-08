@@ -35,7 +35,7 @@
 #ifndef TEST_GRPC_C_CALL_OPS_H
 #define TEST_GRPC_C_CALL_OPS_H
 
-#include "../grpc_c_public.h"
+#include <grpc_c/grpc_c.h>
 #include "message.h"
 #include "context.h"
 #include <grpc/grpc.h>

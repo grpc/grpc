@@ -32,7 +32,7 @@
  */
 
 #include "unary_blocking_call.h"
-#include "../grpc_c_public.h"
+#include <grpc_c/grpc_c.h>
 #include "context.h"
 #include "call_ops.h"
 #include "tag.h"
