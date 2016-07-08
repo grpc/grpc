@@ -1,5 +1,10 @@
-#!/bin/bash
-# Copyright 2016, Google Inc.
+# GRPC CocoaPods podspec
+# This file has been automatically generated from a template file.
+# Please look at the templates directory instead.
+# This file can be regenerated from the template by running
+# tools/buildgen/generate_projects.sh
+
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,8 +33,37 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
 
-cd $(dirname $0)/../../..
+Pod::Spec.new do |s|
+  s.name     = 'gRPC-ProtoRPC'
+  version = '0.14.0'
+  s.version  = version
+  s.summary  = 'RPC library for Protocol Buffers, based on gRPC'
+  s.homepage = 'http://www.grpc.io'
+  s.license  = 'New BSD'
+  s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
-PYTHONPATH=src/python/grpcio_tests:src/python/gens py27/bin/python src/python/grpcio_tests/tests/qps/qps_worker.py $@
+  s.source = {
+    :git => 'https://github.com/grpc/grpc.git',
+    :tag => "release-#{version.gsub(/\./, '_')}-objectivec-#{version}",
+  }
+
+  s.ios.deployment_target = '7.1'
+  s.osx.deployment_target = '10.9'
+
+  name = 'ProtoRPC'
+  s.module_name = name
+  s.header_dir = name
+
+  src_dir = 'src/objective-c/ProtoRPC'
+  s.source_files = "#{src_dir}/*.{h,m}"
+  s.header_mappings_dir = "#{src_dir}"
+
+  s.dependency 'gRPC', version
+  s.dependency 'gRPC-RxLibrary', version
+  s.dependency 'Protobuf', '~> 3.0.0-beta-3.1'
+  # This is needed by all pods that depend on Protobuf:
+  s.pod_target_xcconfig = {
+    'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=1',
+  }
+end

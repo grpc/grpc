@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2016, Google Inc.
 # All rights reserved.
 #
@@ -28,8 +27,22 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+from grpc._cython import cygrpc
 
-cd $(dirname $0)/../../..
 
-PYTHONPATH=src/python/grpcio_tests:src/python/gens py27/bin/python src/python/grpcio_tests/tests/qps/qps_worker.py $@
+def _call(call_credentialses):
+  call_credentials_iterator = iter(call_credentialses)
+  composition = next(call_credentials_iterator)
+  for additional_call_credentials in call_credentials_iterator:
+    composition = cygrpc.call_credentials_composite(
+        composition, additional_call_credentials)
+  return composition
+
+
+def call(call_credentialses):
+  return _call(call_credentialses)
+
+
+def channel(channel_credentials, call_credentialses):
+  return cygrpc.channel_credentials_composite(
+      channel_credentials, _call(call_credentialses))

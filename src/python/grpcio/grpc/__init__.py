@@ -1091,37 +1091,41 @@ def access_token_call_credentials(access_token):
       _auth.AccessTokenCallCredentials(access_token))
 
 
-def composite_call_credentials(call_credentials, additional_call_credentials):
-  """Compose two CallCredentials to make a new one.
+def composite_call_credentials(*call_credentials):
+  """Compose multiple CallCredentials to make a new CallCredentials.
 
   Args:
-    call_credentials: A CallCredentials object.
-    additional_call_credentials: Another CallCredentials object to compose on
-      top of call_credentials.
+    *call_credentials: At least two CallCredentials objects.
 
   Returns:
-    A new CallCredentials composed of the two given CallCredentials.
+    A CallCredentials object composed of the given CallCredentials objects.
   """
+  from grpc import _credential_composition
+  cygrpc_call_credentials = tuple(
+      single_call_credentials._credentials
+      for single_call_credentials in call_credentials)
   return CallCredentials(
-      _cygrpc.call_credentials_composite(
-          call_credentials._credentials,
-          additional_call_credentials._credentials))
+      _credential_composition.call(cygrpc_call_credentials))
 
 
-def composite_channel_credentials(channel_credentials, call_credentials):
-  """Compose a ChannelCredentials and a CallCredentials.
+def composite_channel_credentials(channel_credentials, *call_credentials):
+  """Compose a ChannelCredentials and one or more CallCredentials objects.
 
   Args:
     channel_credentials: A ChannelCredentials.
-    call_credentials: A CallCredentials.
+    *call_credentials: One or more CallCredentials objects.
 
   Returns:
     A ChannelCredentials composed of the given ChannelCredentials and
-      CallCredentials.
+      CallCredentials objects.
   """
+  from grpc import _credential_composition
+  cygrpc_call_credentials = tuple(
+      single_call_credentials._credentials
+      for single_call_credentials in call_credentials)
   return ChannelCredentials(
-      _cygrpc.channel_credentials_composite(
-          channel_credentials._credentials, call_credentials._credentials))
+      _credential_composition.channel(
+          channel_credentials._credentials, cygrpc_call_credentials))
 
 
 def ssl_server_credentials(

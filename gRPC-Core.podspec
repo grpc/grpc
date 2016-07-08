@@ -1,8 +1,7 @@
 # GRPC CocoaPods podspec
-# This file has been automatically generated from a template file.
-# Please look at the templates directory instead.
-# This file can be regenerated from the template by running
-# tools/buildgen/generate_projects.sh
+# This file has been automatically generated from a template file. Please make modifications to
+# `templates/gRPC-Core.podspec.template` instead. This file can be regenerated from the template by
+# running `tools/buildgen/generate_projects.sh`.
 
 # Copyright 2015, Google Inc.
 # All rights reserved.
@@ -35,10 +34,10 @@
 
 
 Pod::Spec.new do |s|
-  s.name     = 'gRPC'
+  s.name     = 'gRPC-Core'
   version = '0.14.0'
   s.version  = version
-  s.summary  = 'gRPC client library for iOS/OSX'
+  s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'http://www.grpc.io'
   s.license  = 'New BSD'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
@@ -46,38 +45,76 @@ Pod::Spec.new do |s|
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
     :tag => "release-#{version.gsub(/\./, '_')}-objectivec-#{version}",
+    # TODO(jcanizales): Depend explicitly on the nanopb pod, and disable submodules.
+    :submodules => true,
   }
 
   s.ios.deployment_target = '7.1'
   s.osx.deployment_target = '10.9'
-<<<<<<< HEAD
-  s.requires_arc = true
+  s.requires_arc = false
 
-  objc_dir = 'src/objective-c'
+  name = 'grpc'
 
-  # Reactive Extensions library for iOS.
-  s.subspec 'RxLibrary' do |ss|
-    src_dir = "#{objc_dir}/RxLibrary"
-    ss.source_files = "#{src_dir}/*.{h,m}", "#{src_dir}/**/*.{h,m}"
-    ss.private_header_files = "#{src_dir}/private/*.h"
-    ss.header_mappings_dir = "#{objc_dir}"
-  end
+  # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
+  # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
+  # <gRPC-Core/grpc.h>`.
+  s.module_name = name
 
-  # Core cross-platform gRPC library, written in C.
-  s.subspec 'C-Core' do |ss|
-    ss.source_files = 'src/core/lib/profiling/timers.h',
-                      'src/core/lib/support/backoff.h',
-                      'src/core/lib/support/block_annotate.h',
-                      'src/core/lib/support/env.h',
-                      'src/core/lib/support/mpscq.h',
-                      'src/core/lib/support/murmur_hash.h',
-                      'src/core/lib/support/stack_lockfree.h',
-                      'src/core/lib/support/string.h',
-                      'src/core/lib/support/string_windows.h',
-                      'src/core/lib/support/thd_internal.h',
-                      'src/core/lib/support/time_precise.h',
-                      'src/core/lib/support/tmpfile.h',
-                      'include/grpc/support/alloc.h',
+  # When creating a dynamic framework, copy the headers under `include/grpc/` into the root of
+  # the `Headers/` directory of the framework (i.e., not under `Headers/include/grpc`).
+  #
+  # TODO(jcanizales): Debug why this doesn't work on macOS.
+  s.header_mappings_dir = 'include/grpc'
+
+  # The above has an undesired effect when creating a static library: It forces users to write
+  # includes like `#include <gRPC-Core/grpc.h>`. `s.header_dir` adds a path prefix to that, and
+  # because Cocoapods lets omit the pod name when including headers of static libraries, the
+  # following lets users write `#include <grpc/grpc.h>`.
+  s.header_dir = name
+
+  # The module map created automatically by Cocoapods doesn't work for C libraries like gRPC-Core.
+  s.module_map = 'include/grpc/module.modulemap'
+
+  # To compile the library, we need the user headers search path (quoted includes) to point to the
+  # root of the repo, and the system headers search path (angled includes) to point to `include/`.
+  # Cocoapods effectively clones the repo under `<Podfile dir>/Pods/gRPC-Core/`, and sets a build
+  # variable called `$(PODS_ROOT)` to `<Podfile dir>/Pods/`, so we use that.
+  #
+  # Relying on the file structure under $(PODS_ROOT) isn't officially supported in Cocoapods, as it
+  # is taken as an implementation detail. We've asked for an alternative, and have been told that
+  # what we're doing should keep working: https://github.com/CocoaPods/CocoaPods/issues/4386
+  #
+  # The `src_root` value of `$(PODS_ROOT)/gRPC-Core` assumes Cocoapods is installing this pod from
+  # its remote repo. For local development of this library, enabled by using `:path` in the Podfile,
+  # that assumption is wrong. In such case, the following settings need to be reset with the
+  # appropriate value of `src_root`. This can be accomplished in the `pre_install` hook of the
+  # Podfile; see `src/objective-c/tests/Podfile` for an example.
+  src_root = '$(PODS_ROOT)/gRPC-Core'
+  s.pod_target_xcconfig = {
+    'GRPC_SRC_ROOT' => src_root,
+    'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(GRPC_SRC_ROOT)/include"',
+    'USER_HEADER_SEARCH_PATHS' => '"$(GRPC_SRC_ROOT)"',
+    # If we don't set these two settings, `include/grpc/support/time.h` and
+    # `src/core/lib/support/string.h` shadow the system `<time.h>` and `<string.h>`, breaking the
+    # build.
+    'USE_HEADERMAP' => 'NO',
+    'ALWAYS_SEARCH_USER_PATHS' => 'NO',
+  }
+
+  # Like many other C libraries, gRPC-Core has its public headers under `include/<libname>/` and its
+  # sources and private headers in other directories outside `include/`. Cocoapods' linter doesn't
+  # allow any header to be listed outside the `header_mappings_dir` (even though doing so works in
+  # practice). Because we need our `header_mappings_dir` to be `include/grpc/` for the reason
+  # mentioned above, we work around the linter limitation by dividing the pod into two subspecs, one
+  # for public headers and the other for implementation. Each gets its own `header_mappings_dir`,
+  # making the linter happy.
+  #
+  # The list of source files is generated by a template: `templates/gRPC-Core.podspec.template`. It
+  # can be regenerated from the template by running `tools/buildgen/generate_projects.sh`.
+  s.subspec 'Interface' do |ss|
+    ss.header_mappings_dir = 'include/grpc'
+
+    ss.source_files = 'include/grpc/support/alloc.h',
                       'include/grpc/support/atm.h',
                       'include/grpc/support/atm_gcc_atomic.h',
                       'include/grpc/support/atm_gcc_sync.h',
@@ -119,6 +156,56 @@ Pod::Spec.new do |s|
                       'include/grpc/impl/codegen/sync_posix.h',
                       'include/grpc/impl/codegen/sync_windows.h',
                       'include/grpc/impl/codegen/time.h',
+                      'include/grpc/byte_buffer.h',
+                      'include/grpc/byte_buffer_reader.h',
+                      'include/grpc/compression.h',
+                      'include/grpc/grpc.h',
+                      'include/grpc/grpc_posix.h',
+                      'include/grpc/status.h',
+                      'include/grpc/impl/codegen/byte_buffer.h',
+                      'include/grpc/impl/codegen/byte_buffer_reader.h',
+                      'include/grpc/impl/codegen/compression_types.h',
+                      'include/grpc/impl/codegen/connectivity_state.h',
+                      'include/grpc/impl/codegen/grpc_types.h',
+                      'include/grpc/impl/codegen/propagation_bits.h',
+                      'include/grpc/impl/codegen/status.h',
+                      'include/grpc/impl/codegen/alloc.h',
+                      'include/grpc/impl/codegen/atm.h',
+                      'include/grpc/impl/codegen/atm_gcc_atomic.h',
+                      'include/grpc/impl/codegen/atm_gcc_sync.h',
+                      'include/grpc/impl/codegen/atm_windows.h',
+                      'include/grpc/impl/codegen/log.h',
+                      'include/grpc/impl/codegen/port_platform.h',
+                      'include/grpc/impl/codegen/slice.h',
+                      'include/grpc/impl/codegen/slice_buffer.h',
+                      'include/grpc/impl/codegen/sync.h',
+                      'include/grpc/impl/codegen/sync_generic.h',
+                      'include/grpc/impl/codegen/sync_posix.h',
+                      'include/grpc/impl/codegen/sync_windows.h',
+                      'include/grpc/impl/codegen/time.h',
+                      'include/grpc/grpc_security.h',
+                      'include/grpc/grpc_security_constants.h',
+                      'include/grpc/census.h'
+  end
+  s.subspec 'Implementation' do |ss|
+    ss.header_mappings_dir = '.'
+    ss.libraries = 'z'
+    ss.dependency "#{s.name}/Interface", version
+    ss.dependency 'BoringSSL', '~> 4.0'
+
+    # To save you from scrolling, this is the last part of the podspec.
+    ss.source_files = 'src/core/lib/profiling/timers.h',
+                      'src/core/lib/support/backoff.h',
+                      'src/core/lib/support/block_annotate.h',
+                      'src/core/lib/support/env.h',
+                      'src/core/lib/support/mpscq.h',
+                      'src/core/lib/support/murmur_hash.h',
+                      'src/core/lib/support/stack_lockfree.h',
+                      'src/core/lib/support/string.h',
+                      'src/core/lib/support/string_windows.h',
+                      'src/core/lib/support/thd_internal.h',
+                      'src/core/lib/support/time_precise.h',
+                      'src/core/lib/support/tmpfile.h',
                       'src/core/lib/profiling/basic_timers.c',
                       'src/core/lib/profiling/stap_timers.c',
                       'src/core/lib/support/alloc.c',
@@ -321,36 +408,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/census/grpc_filter.h',
                       'src/core/ext/census/mlog.h',
                       'src/core/ext/census/rpc_metric_id.h',
-                      'include/grpc/byte_buffer.h',
-                      'include/grpc/byte_buffer_reader.h',
-                      'include/grpc/compression.h',
-                      'include/grpc/grpc.h',
-                      'include/grpc/grpc_posix.h',
-                      'include/grpc/status.h',
-                      'include/grpc/impl/codegen/byte_buffer.h',
-                      'include/grpc/impl/codegen/byte_buffer_reader.h',
-                      'include/grpc/impl/codegen/compression_types.h',
-                      'include/grpc/impl/codegen/connectivity_state.h',
-                      'include/grpc/impl/codegen/grpc_types.h',
-                      'include/grpc/impl/codegen/propagation_bits.h',
-                      'include/grpc/impl/codegen/status.h',
-                      'include/grpc/impl/codegen/alloc.h',
-                      'include/grpc/impl/codegen/atm.h',
-                      'include/grpc/impl/codegen/atm_gcc_atomic.h',
-                      'include/grpc/impl/codegen/atm_gcc_sync.h',
-                      'include/grpc/impl/codegen/atm_windows.h',
-                      'include/grpc/impl/codegen/log.h',
-                      'include/grpc/impl/codegen/port_platform.h',
-                      'include/grpc/impl/codegen/slice.h',
-                      'include/grpc/impl/codegen/slice_buffer.h',
-                      'include/grpc/impl/codegen/sync.h',
-                      'include/grpc/impl/codegen/sync_generic.h',
-                      'include/grpc/impl/codegen/sync_posix.h',
-                      'include/grpc/impl/codegen/sync_windows.h',
-                      'include/grpc/impl/codegen/time.h',
-                      'include/grpc/grpc_security.h',
-                      'include/grpc/grpc_security_constants.h',
-                      'include/grpc/census.h',
                       'src/core/lib/surface/init.c',
                       'src/core/lib/channel/channel_args.c',
                       'src/core/lib/channel/channel_stack.c',
@@ -707,45 +764,5 @@ Pod::Spec.new do |s|
                               'src/core/ext/census/grpc_filter.h',
                               'src/core/ext/census/mlog.h',
                               'src/core/ext/census/rpc_metric_id.h'
-
-    ss.header_mappings_dir = '.'
-    # This isn't officially supported in Cocoapods. We've asked for an alternative:
-    # https://github.com/CocoaPods/CocoaPods/issues/4386
-    ss.xcconfig = {
-      'USE_HEADERMAP' => 'NO',
-      'ALWAYS_SEARCH_USER_PATHS' => 'NO',
-      'USER_HEADER_SEARCH_PATHS' => '"$(PODS_ROOT)/Headers/Private/gRPC"',
-      'HEADER_SEARCH_PATHS' => '"$(PODS_ROOT)/Headers/Private/gRPC/include"'
-    }
-
-    ss.requires_arc = false
-    ss.libraries = 'z'
-    ss.dependency 'BoringSSL', '~> 3.0'
-
-    # ss.compiler_flags = '-GCC_WARN_INHIBIT_ALL_WARNINGS', '-w'
   end
-
-  # Objective-C wrapper around the core gRPC library.
-  s.subspec 'GRPCClient' do |ss|
-    src_dir = "#{objc_dir}/GRPCClient"
-    ss.source_files = "#{src_dir}/*.{h,m}", "#{src_dir}/**/*.{h,m}"
-    ss.private_header_files = "#{src_dir}/private/*.h"
-    ss.header_mappings_dir = "#{objc_dir}"
-=======
->>>>>>> 32d3fbe284ddd7e90b49cdf72349d661869969ca
-
-  name = 'GRPCClient'
-  s.module_name = name
-  s.header_dir = name
-
-  src_dir = 'src/objective-c/GRPCClient'
-  s.source_files = "#{src_dir}/*.{h,m}", "#{src_dir}/**/*.{h,m}"
-  s.private_header_files = "#{src_dir}/private/*.h"
-  s.header_mappings_dir = "#{src_dir}"
-
-  s.dependency 'gRPC-Core', version
-  s.dependency 'gRPC-RxLibrary', version
-
-  # Certificates, to be able to establish TLS connections:
-  s.resource_bundles = { 'gRPCCertificates' => ['etc/roots.pem'] }
 end

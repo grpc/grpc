@@ -1,5 +1,10 @@
-#!/bin/bash
-# Copyright 2016, Google Inc.
+# GRPC CocoaPods podspec
+# This file has been automatically generated from a template file.
+# Please look at the templates directory instead.
+# This file can be regenerated from the template by running
+# tools/buildgen/generate_projects.sh
+
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,8 +33,30 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
 
-cd $(dirname $0)/../../..
+Pod::Spec.new do |s|
+  s.name     = 'gRPC-RxLibrary'
+  version = '0.14.0'
+  s.version  = version
+  s.summary  = 'Reactive Extensions library for iOS/OSX.'
+  s.homepage = 'http://www.grpc.io'
+  s.license  = 'New BSD'
+  s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
-PYTHONPATH=src/python/grpcio_tests:src/python/gens py27/bin/python src/python/grpcio_tests/tests/qps/qps_worker.py $@
+  s.source = {
+    :git => 'https://github.com/grpc/grpc.git',
+    :tag => "release-#{version.gsub(/\./, '_')}-objectivec-#{version}",
+  }
+
+  s.ios.deployment_target = '7.1'
+  s.osx.deployment_target = '10.9'
+
+  name = 'RxLibrary'
+  s.module_name = name
+  s.header_dir = name
+
+  src_dir = 'src/objective-c/RxLibrary'
+  s.source_files = "#{src_dir}/*.{h,m}", "#{src_dir}/**/*.{h,m}"
+  s.private_header_files = "#{src_dir}/private/*.h"
+  s.header_mappings_dir = "#{src_dir}"
+end
