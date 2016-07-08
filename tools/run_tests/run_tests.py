@@ -633,10 +633,10 @@ class ObjCLanguage(object):
     _check_compiler(self.args.compiler, ['default'])
 
   def test_specs(self):
-    return [self.config.job_spec(['src/objective-c/tests/run_tests.sh'], None,
+    return [self.config.job_spec(['src/objective-c/tests/run_tests.sh'],
                                   environ=_FORCE_ENVIRON_FOR_WRAPPERS),
             self.config.job_spec(['src/objective-c/tests/build_example_test.sh'],
-                                 None, timeout_seconds=15*60,
+                                 timeout_seconds=15*60,
                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
