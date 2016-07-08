@@ -32,7 +32,7 @@
  */
 
 #include <grpc/support/alloc.h>
-#include "../context_public.h"
+#include <grpc_c/context.h>
 #include "context.h"
 #include "alloc.h"
 #include "id_serialization.h"

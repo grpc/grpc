@@ -35,8 +35,8 @@
 #ifndef TEST_GRPC_C_CONTEXT_H
 #define TEST_GRPC_C_CONTEXT_H
 
-#include "../grpc_c_public.h"
-#include "../serialization_public.h"
+#include <grpc_c/grpc_c.h>
+#include <grpc_c/serialization.h>
 #include <grpc/grpc.h>
 #include "status.h"
 #include "message.h"

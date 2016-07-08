@@ -33,7 +33,6 @@
 
 #include "init_shutdown.h"
 #include <stdlib.h>
-#include <stdio.h>
 #include <stdbool.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>

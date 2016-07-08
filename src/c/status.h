@@ -32,10 +32,10 @@
  */
 
 
-#ifndef TEST_GRPC_C_STATUS_H
-#define TEST_GRPC_C_STATUS_H
+#ifndef GRPC_C_STATUS_H
+#define GRPC_C_STATUS_H
 
 #include <grpc/grpc.h>
-#include "../status_public.h"
+#include <grpc_c/status.h>
 
-#endif //TEST_GRPC_C_STATUS_H
+#endif // GRPC_C_STATUS_H
