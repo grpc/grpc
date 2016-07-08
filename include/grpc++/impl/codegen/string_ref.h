@@ -152,8 +152,8 @@ inline bool operator<=(string_ref x, string_ref y) { return x.compare(y) <= 0; }
 inline bool operator>(string_ref x, string_ref y) { return x.compare(y) > 0; }
 inline bool operator>=(string_ref x, string_ref y) { return x.compare(y) >= 0; }
 
-inline std::ostream& operator<<(std::ostream& out, const string_ref& string) {
-  return out << grpc::string(string.begin(), string.end());
+inline std::ostream& operator<<(std::ostream& out, const string_ref& my_string) {
+  return out << grpc::string(my_string.begin(), my_string.end());
 }
 
 }  // namespace grpc
