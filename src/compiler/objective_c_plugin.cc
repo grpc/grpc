@@ -39,6 +39,8 @@
 #include "src/compiler/objective_c_generator.h"
 #include "src/compiler/objective_c_generator_helpers.h"
 
+#include <google/protobuf/compiler/objectivec/objectivec_helpers.h>
+
 class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
  public:
   ObjectiveCGrpcGenerator() {}
@@ -72,7 +74,21 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       for (int i = 0; i < file->dependency_count(); i++) {
         ::grpc::string header = grpc_objective_c_generator::MessageHeaderName(
             file->dependency(i));
-        proto_imports += ::grpc::string("#import \"") + header + "\"\n";
+        const grpc::protobuf::FileDescriptor *dependency = file->dependency(i);
+        if (::google::protobuf::compiler::objectivec::IsProtobufLibraryBundledProtoFile(dependency)) {
+          ::grpc::string base_name = header;
+          grpc_generator::StripPrefix(&base_name, "google/protobuf/");
+          proto_imports +=
+            ::grpc::string("#if GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS\n") +
+            ::grpc::string("  #import <") +
+            ::google::protobuf::compiler::objectivec::ProtobufLibraryFrameworkName +
+                          ("/") + base_name + ">\n" +
+            ::grpc::string("#else\n") +
+            ::grpc::string("  #import \"") + header + "\"\n" +
+            ::grpc::string("#endif\n");
+       } else {
+          proto_imports += ::grpc::string("#import \"") + header + "\"\n";
+       }
       }
 
       ::grpc::string declarations;
@@ -85,7 +101,7 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       static const ::grpc::string kNonNullEnd = "\nNS_ASSUME_NONNULL_END\n";
 
       Write(context, file_name + ".pbrpc.h",
-          imports + '\n' + proto_imports + '\n' + kNonNullBegin + 
+          imports + '\n' + proto_imports + '\n' + kNonNullBegin +
           declarations + kNonNullEnd);
     }
 
