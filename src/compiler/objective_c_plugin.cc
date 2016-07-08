@@ -88,9 +88,9 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
             "#else\n"
             "  #import \"" + header + "\"\n"
             "#endif\n";
-       } else {
+        } else {
           proto_imports += ::grpc::string("#import \"") + header + "\"\n";
-       }
+        }
       }
 
       ::grpc::string declarations;
