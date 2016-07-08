@@ -31,7 +31,6 @@
  *
  */
 
-#include <cassert>
 #include <forward_list>
 #include <functional>
 #include <list>

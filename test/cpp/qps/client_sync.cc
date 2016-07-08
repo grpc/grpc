@@ -31,7 +31,6 @@
  *
  */
 
-#include <cassert>
 #include <chrono>
 #include <memory>
 #include <mutex>
@@ -128,11 +127,16 @@ class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
   }
   ~SynchronousStreamingClient() {
     EndThreads();
-    for (auto stream = &stream_[0]; stream != &stream_[num_threads_];
-         stream++) {
+    for (size_t i = 0; i < num_threads_; i++) {
+      auto stream = &stream_[i];
       if (*stream) {
         (*stream)->WritesDone();
-        EXPECT_TRUE((*stream)->Finish().ok());
+	Status s = (*stream)->Finish();
+	EXPECT_TRUE(s.ok());
+	if (!s.ok()) {
+	  gpr_log(GPR_ERROR, "Stream %zu received an error %s", i,
+		  s.error_message().c_str());
+	}
       }
     }
     delete[] stream_;
