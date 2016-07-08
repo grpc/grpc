@@ -1041,7 +1041,8 @@ status_test: $(BINDIR)/$(CONFIG)/status_test
 streaming_throughput_test: $(BINDIR)/$(CONFIG)/streaming_throughput_test
 stress_test: $(BINDIR)/$(CONFIG)/stress_test
 thread_stress_test: $(BINDIR)/$(CONFIG)/thread_stress_test
-public_headers_must_be_c89: $(BINDIR)/$(CONFIG)/public_headers_must_be_c89
+public_headers_must_be_c89_grpc: $(BINDIR)/$(CONFIG)/public_headers_must_be_c89_grpc
+public_headers_must_be_c89_grpc_cronet: $(BINDIR)/$(CONFIG)/public_headers_must_be_c89_grpc_cronet
 boringssl_aes_test: $(BINDIR)/$(CONFIG)/boringssl_aes_test
 boringssl_asn1_test: $(BINDIR)/$(CONFIG)/boringssl_asn1_test
 boringssl_base64_test: $(BINDIR)/$(CONFIG)/boringssl_base64_test
@@ -1296,7 +1297,8 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/udp_server_test \
   $(BINDIR)/$(CONFIG)/uri_parser_test \
   $(BINDIR)/$(CONFIG)/workqueue_test \
-  $(BINDIR)/$(CONFIG)/public_headers_must_be_c89 \
+  $(BINDIR)/$(CONFIG)/public_headers_must_be_c89_grpc \
+  $(BINDIR)/$(CONFIG)/public_headers_must_be_c89_grpc_cronet \
   $(BINDIR)/$(CONFIG)/badreq_bad_client_test \
   $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test \
   $(BINDIR)/$(CONFIG)/head_of_line_blocking_bad_client_test \
@@ -1676,8 +1678,10 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/uri_parser_test || ( echo test uri_parser_test failed ; exit 1 )
 	$(E) "[RUN]     Testing workqueue_test"
 	$(Q) $(BINDIR)/$(CONFIG)/workqueue_test || ( echo test workqueue_test failed ; exit 1 )
-	$(E) "[RUN]     Testing public_headers_must_be_c89"
-	$(Q) $(BINDIR)/$(CONFIG)/public_headers_must_be_c89 || ( echo test public_headers_must_be_c89 failed ; exit 1 )
+	$(E) "[RUN]     Testing public_headers_must_be_c89_grpc"
+	$(Q) $(BINDIR)/$(CONFIG)/public_headers_must_be_c89_grpc || ( echo test public_headers_must_be_c89_grpc failed ; exit 1 )
+	$(E) "[RUN]     Testing public_headers_must_be_c89_grpc_cronet"
+	$(Q) $(BINDIR)/$(CONFIG)/public_headers_must_be_c89_grpc_cronet || ( echo test public_headers_must_be_c89_grpc_cronet failed ; exit 1 )
 	$(E) "[RUN]     Testing badreq_bad_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/badreq_bad_client_test || ( echo test badreq_bad_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing connection_prefix_bad_client_test"
@@ -2836,7 +2840,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/transport/cronet/client/secure/cronet_channel_create.c \
     src/core/ext/transport/cronet/transport/cronet_api_dummy.c \
     src/core/ext/transport/cronet/transport/cronet_transport.c \
-    src/core/ext/transport/chttp2/client/secure/secure_channel_create.c \
     src/core/ext/transport/chttp2/transport/bin_decoder.c \
     src/core/ext/transport/chttp2/transport/bin_encoder.c \
     src/core/ext/transport/chttp2/transport/chttp2_plugin.c \
@@ -2860,53 +2863,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/transport/chttp2/transport/varint.c \
     src/core/ext/transport/chttp2/transport/writing.c \
     src/core/ext/transport/chttp2/alpn/alpn.c \
-    src/core/ext/client_config/channel_connectivity.c \
-    src/core/ext/client_config/client_channel.c \
-    src/core/ext/client_config/client_channel_factory.c \
-    src/core/ext/client_config/client_config.c \
-    src/core/ext/client_config/client_config_plugin.c \
-    src/core/ext/client_config/connector.c \
-    src/core/ext/client_config/default_initial_connect_string.c \
-    src/core/ext/client_config/initial_connect_string.c \
-    src/core/ext/client_config/lb_policy.c \
-    src/core/ext/client_config/lb_policy_factory.c \
-    src/core/ext/client_config/lb_policy_registry.c \
-    src/core/ext/client_config/parse_address.c \
-    src/core/ext/client_config/resolver.c \
-    src/core/ext/client_config/resolver_factory.c \
-    src/core/ext/client_config/resolver_registry.c \
-    src/core/ext/client_config/subchannel.c \
-    src/core/ext/client_config/subchannel_call_holder.c \
-    src/core/ext/client_config/subchannel_index.c \
-    src/core/ext/client_config/uri_parser.c \
-    src/core/lib/http/httpcli_security_connector.c \
-    src/core/lib/security/context/security_context.c \
-    src/core/lib/security/credentials/composite/composite_credentials.c \
-    src/core/lib/security/credentials/credentials.c \
-    src/core/lib/security/credentials/credentials_metadata.c \
-    src/core/lib/security/credentials/fake/fake_credentials.c \
-    src/core/lib/security/credentials/google_default/credentials_posix.c \
-    src/core/lib/security/credentials/google_default/credentials_windows.c \
-    src/core/lib/security/credentials/google_default/google_default_credentials.c \
-    src/core/lib/security/credentials/iam/iam_credentials.c \
-    src/core/lib/security/credentials/jwt/json_token.c \
-    src/core/lib/security/credentials/jwt/jwt_credentials.c \
-    src/core/lib/security/credentials/jwt/jwt_verifier.c \
-    src/core/lib/security/credentials/oauth2/oauth2_credentials.c \
-    src/core/lib/security/credentials/plugin/plugin_credentials.c \
-    src/core/lib/security/credentials/ssl/ssl_credentials.c \
-    src/core/lib/security/transport/client_auth_filter.c \
-    src/core/lib/security/transport/handshake.c \
-    src/core/lib/security/transport/secure_endpoint.c \
-    src/core/lib/security/transport/security_connector.c \
-    src/core/lib/security/transport/server_auth_filter.c \
-    src/core/lib/security/transport/tsi_error.c \
-    src/core/lib/security/util/b64.c \
-    src/core/lib/security/util/json_util.c \
-    src/core/lib/surface/init_secure.c \
-    src/core/lib/tsi/fake_transport_security.c \
-    src/core/lib/tsi/ssl_transport_security.c \
-    src/core/lib/tsi/transport_security.c \
     src/core/plugin_registry/grpc_cronet_plugin_registry.c \
 
 PUBLIC_HEADERS_C += \
@@ -2938,8 +2894,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/sync_windows.h \
     include/grpc/impl/codegen/time.h \
     include/grpc/grpc_cronet.h \
-    include/grpc/grpc_security.h \
-    include/grpc/grpc_security_constants.h \
 
 LIBGRPC_CRONET_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_CRONET_SRC))))
 
@@ -12562,38 +12516,74 @@ endif
 endif
 
 
-PUBLIC_HEADERS_MUST_BE_C89_SRC = \
-    test/core/surface/public_headers_must_be_c89.c \
+PUBLIC_HEADERS_MUST_BE_C89_GRPC_SRC = \
+    test/core/surface/public_headers_must_be_c89/grpc.c \
 
-PUBLIC_HEADERS_MUST_BE_C89_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PUBLIC_HEADERS_MUST_BE_C89_SRC))))
+PUBLIC_HEADERS_MUST_BE_C89_GRPC_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PUBLIC_HEADERS_MUST_BE_C89_GRPC_SRC))))
 ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/public_headers_must_be_c89: openssl_dep_error
+$(BINDIR)/$(CONFIG)/public_headers_must_be_c89_grpc: openssl_dep_error
 
 else
 
 
 
-$(BINDIR)/$(CONFIG)/public_headers_must_be_c89: $(PUBLIC_HEADERS_MUST_BE_C89_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/public_headers_must_be_c89_grpc: $(PUBLIC_HEADERS_MUST_BE_C89_GRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(PUBLIC_HEADERS_MUST_BE_C89_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/public_headers_must_be_c89
+	$(Q) $(LD) $(LDFLAGS) $(PUBLIC_HEADERS_MUST_BE_C89_GRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/public_headers_must_be_c89_grpc
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/surface/public_headers_must_be_c89.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
-$(OBJDIR)/$(CONFIG)/test/core/surface/public_headers_must_be_c89.o : test/core/surface/public_headers_must_be_c89.c
+$(OBJDIR)/$(CONFIG)/test/core/surface/public_headers_must_be_c89/grpc.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a
+$(OBJDIR)/$(CONFIG)/test/core/surface/public_headers_must_be_c89/grpc.o : test/core/surface/public_headers_must_be_c89/grpc.c
 	$(E) "[C]       Compiling $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(CC) $(CPPFLAGS) $(CFLAGS) -std=c89 -pedantic -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
-deps_public_headers_must_be_c89: $(PUBLIC_HEADERS_MUST_BE_C89_OBJS:.o=.dep)
+deps_public_headers_must_be_c89_grpc: $(PUBLIC_HEADERS_MUST_BE_C89_GRPC_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(PUBLIC_HEADERS_MUST_BE_C89_OBJS:.o=.dep)
+-include $(PUBLIC_HEADERS_MUST_BE_C89_GRPC_OBJS:.o=.dep)
+endif
+endif
+
+
+PUBLIC_HEADERS_MUST_BE_C89_GRPC_CRONET_SRC = \
+    test/core/surface/public_headers_must_be_c89/grpc_cronet.c \
+
+PUBLIC_HEADERS_MUST_BE_C89_GRPC_CRONET_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PUBLIC_HEADERS_MUST_BE_C89_GRPC_CRONET_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/public_headers_must_be_c89_grpc_cronet: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/public_headers_must_be_c89_grpc_cronet: $(PUBLIC_HEADERS_MUST_BE_C89_GRPC_CRONET_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_cronet.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(PUBLIC_HEADERS_MUST_BE_C89_GRPC_CRONET_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_cronet.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/public_headers_must_be_c89_grpc_cronet
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/surface/public_headers_must_be_c89/grpc_cronet.o:  $(LIBDIR)/$(CONFIG)/libgrpc_cronet.a
+$(OBJDIR)/$(CONFIG)/test/core/surface/public_headers_must_be_c89/grpc_cronet.o : test/core/surface/public_headers_must_be_c89/grpc_cronet.c
+	$(E) "[C]       Compiling $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(CC) $(CPPFLAGS) $(CFLAGS) -std=c89 -pedantic -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
+
+deps_public_headers_must_be_c89_grpc_cronet: $(PUBLIC_HEADERS_MUST_BE_C89_GRPC_CRONET_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(PUBLIC_HEADERS_MUST_BE_C89_GRPC_CRONET_OBJS:.o=.dep)
 endif
 endif
 

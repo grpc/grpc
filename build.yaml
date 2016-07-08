@@ -596,15 +596,11 @@ filegroups:
 - name: grpc_transport_cronet_client_secure
   public_headers:
   - include/grpc/grpc_cronet.h
-  - include/grpc/grpc_security.h
-  - include/grpc/grpc_security_constants.h
-  headers:
-  - third_party/objective_c/Cronet/cronet_c_for_grpc.h
   src:
   - src/core/ext/transport/cronet/client/secure/cronet_channel_create.c
   - src/core/ext/transport/cronet/transport/cronet_api_dummy.c
   - src/core/ext/transport/cronet/transport/cronet_transport.c
-  filegroups:
+  uses:
   - grpc_base
   - grpc_transport_chttp2
 - name: nanopb
@@ -826,7 +822,6 @@ libs:
   filegroups:
   - grpc_base
   - grpc_transport_cronet_client_secure
-  - grpc_transport_chttp2_client_secure
   generate_plugin_registry: true
   platforms:
   - linux
@@ -3132,14 +3127,24 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: public_headers_must_be_c89
+- name: public_headers_must_be_c89_grpc
   build: test
   language: c89
   src:
-  - test/core/surface/public_headers_must_be_c89.c
+  - test/core/surface/public_headers_must_be_c89/grpc.c
   deps:
   - grpc
-  - gpr
+  platforms:
+  - linux
+- name: public_headers_must_be_c89_grpc_cronet
+  build: test
+  language: c89
+  src:
+  - test/core/surface/public_headers_must_be_c89/grpc_cronet.c
+  deps:
+  - grpc_cronet
+  platforms:
+  - linux
 vspackages:
 - linkage: static
   name: grpc.dependencies.zlib

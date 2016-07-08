@@ -1,5 +1,9 @@
 %YAML 1.2
---- |
+---
+foreach: libs
+output_name: ${selected.name}.c
+cond: (selected.build == 'all') and (selected.language == 'c') and ('zookeeper' not in selected.name)
+template: |
   /*
    *
    * Copyright 2016, Google Inc.
@@ -42,13 +46,10 @@
     return False
   hdrs = set()
   pfx = 'include/'
-  for lib in libs:
-    if lib.language != 'c': continue
-    for hdr in lib.get('public_headers', []):
-      if is_platform_header(hdr): continue
-      if 'grpc_cronet.h' in hdr: continue
-      assert(hdr[0:len(pfx)] == pfx)
-      hdrs.add(hdr[len(pfx):])
+  for hdr in selected.get('public_headers', []):
+    if is_platform_header(hdr): continue
+    assert(hdr[0:len(pfx)] == pfx)
+    hdrs.add(hdr[len(pfx):])
   hdrs = sorted(list(hdrs))
   %>\
   % for hdr in hdrs:

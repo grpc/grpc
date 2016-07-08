@@ -31,12 +31,27 @@
  *
  */
 
+#include <grpc/byte_buffer.h>
+#include <grpc/byte_buffer_reader.h>
+#include <grpc/census.h>
+#include <grpc/compression.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/alloc.h>
+#include <grpc/impl/codegen/atm.h>
+#include <grpc/impl/codegen/byte_buffer.h>
+#include <grpc/impl/codegen/byte_buffer_reader.h>
+#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/codegen/log.h>
+#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/codegen/slice.h>
+#include <grpc/impl/codegen/slice_buffer.h>
+#include <grpc/impl/codegen/status.h>
+#include <grpc/impl/codegen/sync.h>
+#include <grpc/impl/codegen/sync_generic.h>
+#include <grpc/impl/codegen/time.h>
+#include <grpc/status.h>
 
-extern void grpc_chttp2_plugin_init(void);
-extern void grpc_chttp2_plugin_shutdown(void);
-
-void grpc_register_built_in_plugins(void) {
-  grpc_register_plugin(grpc_chttp2_plugin_init,
-                       grpc_chttp2_plugin_shutdown);
-}
+int main(int argc, char **argv) { return 0; }

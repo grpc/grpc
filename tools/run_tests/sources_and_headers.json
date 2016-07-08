@@ -2754,14 +2754,26 @@
   }, 
   {
     "deps": [
-      "gpr", 
       "grpc"
     ], 
     "headers": [], 
     "language": "c89", 
-    "name": "public_headers_must_be_c89", 
+    "name": "public_headers_must_be_c89_grpc", 
     "src": [
-      "test/core/surface/public_headers_must_be_c89.c"
+      "test/core/surface/public_headers_must_be_c89/grpc.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "grpc_cronet"
+    ], 
+    "headers": [], 
+    "language": "c89", 
+    "name": "public_headers_must_be_c89_grpc_cronet", 
+    "src": [
+      "test/core/surface/public_headers_must_be_c89/grpc_cronet.c"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4216,7 +4228,6 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_transport_chttp2_client_secure", 
       "grpc_transport_cronet_client_secure"
     ], 
     "headers": [], 
@@ -6451,21 +6462,17 @@
   }, 
   {
     "deps": [
+      "gpr", 
       "grpc_base", 
       "grpc_transport_chttp2"
     ], 
     "headers": [
-      "include/grpc/grpc_cronet.h", 
-      "include/grpc/grpc_security.h", 
-      "include/grpc/grpc_security_constants.h", 
-      "third_party/objective_c/Cronet/cronet_c_for_grpc.h"
+      "include/grpc/grpc_cronet.h"
     ], 
     "language": "c", 
     "name": "grpc_transport_cronet_client_secure", 
     "src": [
       "include/grpc/grpc_cronet.h", 
-      "include/grpc/grpc_security.h", 
-      "include/grpc/grpc_security_constants.h", 
       "src/core/ext/transport/cronet/client/secure/cronet_channel_create.c", 
       "src/core/ext/transport/cronet/transport/cronet_api_dummy.c", 
       "src/core/ext/transport/cronet/transport/cronet_transport.c"

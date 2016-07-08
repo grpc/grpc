@@ -31,12 +31,33 @@
  *
  */
 
-#include <grpc/grpc.h>
+#include <grpc/impl/codegen/alloc.h>
+#include <grpc/impl/codegen/atm.h>
+#include <grpc/impl/codegen/log.h>
+#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/impl/codegen/slice.h>
+#include <grpc/impl/codegen/slice_buffer.h>
+#include <grpc/impl/codegen/sync.h>
+#include <grpc/impl/codegen/sync_generic.h>
+#include <grpc/impl/codegen/time.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
+#include <grpc/support/avl.h>
+#include <grpc/support/cmdline.h>
+#include <grpc/support/cpu.h>
+#include <grpc/support/histogram.h>
+#include <grpc/support/host_port.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/slice.h>
+#include <grpc/support/slice_buffer.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/subprocess.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/sync_generic.h>
+#include <grpc/support/thd.h>
+#include <grpc/support/time.h>
+#include <grpc/support/tls.h>
+#include <grpc/support/useful.h>
 
-extern void grpc_chttp2_plugin_init(void);
-extern void grpc_chttp2_plugin_shutdown(void);
-
-void grpc_register_built_in_plugins(void) {
-  grpc_register_plugin(grpc_chttp2_plugin_init,
-                       grpc_chttp2_plugin_shutdown);
-}
+int main(int argc, char **argv) { return 0; }

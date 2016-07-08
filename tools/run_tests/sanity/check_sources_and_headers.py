@@ -57,6 +57,8 @@ def target_has_header(target, name):
       return True
   if name == 'src/core/lib/profiling/stap_probes.h':
     return True
+  if name == 'third_party/objective_c/Cronet/cronet_c_for_grpc.h':
+    return True
   return False
 
 def produces_object(name):
