@@ -96,7 +96,6 @@ describe GRPC::Core::CallOps do
 end
 
 describe GRPC::Core::Call do
-  let(:client_queue) { GRPC::Core::CompletionQueue.new }
   let(:test_tag)  { Object.new }
   let(:fake_host) { 'localhost:10101' }
 
@@ -154,7 +153,7 @@ describe GRPC::Core::Call do
   end
 
   def make_test_call
-    @ch.create_call(client_queue, nil, nil, 'dummy_method', nil, deadline)
+    @ch.create_call(nil, nil, 'dummy_method', nil, deadline)
   end
 
   def deadline

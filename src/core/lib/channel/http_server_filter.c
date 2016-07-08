@@ -108,7 +108,7 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
     } else {
       /* TODO(klempner): We're currently allowing this, but we shouldn't
          see it without a proxy so log for now. */
-      gpr_log(GPR_INFO, "Unexpected content-type %s", value_str);
+      gpr_log(GPR_INFO, "Unexpected content-type '%s'", value_str);
     }
     return NULL;
   } else if (md->key == GRPC_MDSTR_TE || md->key == GRPC_MDSTR_METHOD ||
@@ -142,10 +142,11 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
   }
 }
 
-static void hs_on_recv(grpc_exec_ctx *exec_ctx, void *user_data, bool success) {
+static void hs_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
+                       grpc_error *err) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
-  if (success) {
+  if (err == GRPC_ERROR_NONE) {
     server_filter_args a;
     a.elem = elem;
     a.exec_ctx = exec_ctx;
@@ -157,27 +158,35 @@ static void hs_on_recv(grpc_exec_ctx *exec_ctx, void *user_data, bool success) {
         calld->seen_path && calld->seen_authority) {
       /* do nothing */
     } else {
+      err = GRPC_ERROR_CREATE("Bad incoming HTTP headers");
       if (!calld->seen_path) {
-        gpr_log(GPR_ERROR, "Missing :path header");
+        err = grpc_error_add_child(err,
+                                   GRPC_ERROR_CREATE("Missing :path header"));
       }
       if (!calld->seen_authority) {
-        gpr_log(GPR_ERROR, "Missing :authority header");
+        err = grpc_error_add_child(
+            err, GRPC_ERROR_CREATE("Missing :authority header"));
       }
       if (!calld->seen_method) {
-        gpr_log(GPR_ERROR, "Missing :method header");
+        err = grpc_error_add_child(err,
+                                   GRPC_ERROR_CREATE("Missing :method header"));
       }
       if (!calld->seen_scheme) {
-        gpr_log(GPR_ERROR, "Missing :scheme header");
+        err = grpc_error_add_child(err,
+                                   GRPC_ERROR_CREATE("Missing :scheme header"));
       }
       if (!calld->seen_te_trailers) {
-        gpr_log(GPR_ERROR, "Missing te trailers header");
+        err = grpc_error_add_child(
+            err, GRPC_ERROR_CREATE("Missing te: trailers header"));
       }
       /* Error this call out */
-      success = 0;
       grpc_call_element_send_cancel(exec_ctx, elem);
     }
+  } else {
+    GRPC_ERROR_REF(err);
   }
-  calld->on_done_recv->cb(exec_ctx, calld->on_done_recv->cb_arg, success);
+  calld->on_done_recv->cb(exec_ctx, calld->on_done_recv->cb_arg, err);
+  GRPC_ERROR_UNREF(err);
 }
 
 static void hs_mutate_op(grpc_call_element *elem,
@@ -226,7 +235,7 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                              void *ignored) {}
+                              const grpc_call_stats *stats, void *ignored) {}
 
 /* Constructor for channel_data */
 static void init_channel_elem(grpc_exec_ctx *exec_ctx,
@@ -244,7 +253,7 @@ const grpc_channel_filter grpc_http_server_filter = {
     grpc_channel_next_op,
     sizeof(call_data),
     init_call_elem,
-    grpc_call_stack_ignore_set_pollset,
+    grpc_call_stack_ignore_set_pollset_or_pollset_set,
     destroy_call_elem,
     sizeof(channel_data),
     init_channel_elem,

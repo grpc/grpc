@@ -31,12 +31,6 @@
 
 #endregion
 
-using System;
-using System.Collections.Concurrent;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
-using Grpc.Core.Utils;
-
 namespace Grpc.Core.Internal
 {
     /// <summary>
@@ -50,12 +44,20 @@ namespace Grpc.Core.Internal
         {
         }
 
-        public static ServerSafeHandle NewServer(CompletionQueueSafeHandle cq, ChannelArgsSafeHandle args)
+        public static ServerSafeHandle NewServer(ChannelArgsSafeHandle args)
         {
             // Increment reference count for the native gRPC environment to make sure we don't do grpc_shutdown() before destroying the server handle.
             // Doing so would make object finalizer crash if we end up abandoning the handle.
             GrpcEnvironment.GrpcNativeInit();
-            return Native.grpcsharp_server_create(cq, args);
+            return Native.grpcsharp_server_create(args);
+        }
+
+        public void RegisterCompletionQueue(CompletionQueueSafeHandle cq)
+        {
+            using (cq.NewScope())
+            {
+                Native.grpcsharp_server_register_completion_queue(this, cq);
+            }
         }
 
         public int AddInsecurePort(string addr)
@@ -73,18 +75,24 @@ namespace Grpc.Core.Internal
             Native.grpcsharp_server_start(this);
         }
     
-        public void ShutdownAndNotify(BatchCompletionDelegate callback, GrpcEnvironment environment)
+        public void ShutdownAndNotify(BatchCompletionDelegate callback, CompletionQueueSafeHandle completionQueue)
         {
-            var ctx = BatchContextSafeHandle.Create();
-            environment.CompletionRegistry.RegisterBatchCompletion(ctx, callback);
-            Native.grpcsharp_server_shutdown_and_notify_callback(this, environment.CompletionQueue, ctx);
+            using (completionQueue.NewScope())
+            {
+                var ctx = BatchContextSafeHandle.Create();
+                completionQueue.CompletionRegistry.RegisterBatchCompletion(ctx, callback);
+                Native.grpcsharp_server_shutdown_and_notify_callback(this, completionQueue, ctx);
+            }
         }
 
-        public void RequestCall(BatchCompletionDelegate callback, GrpcEnvironment environment)
+        public void RequestCall(BatchCompletionDelegate callback, CompletionQueueSafeHandle completionQueue)
         {
-            var ctx = BatchContextSafeHandle.Create();
-            environment.CompletionRegistry.RegisterBatchCompletion(ctx, callback);
-            Native.grpcsharp_server_request_call(this, environment.CompletionQueue, ctx).CheckOk();
+            using (completionQueue.NewScope())
+            {
+                var ctx = BatchContextSafeHandle.Create();
+                completionQueue.CompletionRegistry.RegisterBatchCompletion(ctx, callback);
+                Native.grpcsharp_server_request_call(this, completionQueue, ctx).CheckOk();
+            }
         }
 
         protected override bool ReleaseHandle()

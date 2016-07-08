@@ -44,9 +44,8 @@
 
 typedef struct grpc_chttp2_hpack_parser grpc_chttp2_hpack_parser;
 
-typedef int (*grpc_chttp2_hpack_parser_state)(grpc_chttp2_hpack_parser *p,
-                                              const uint8_t *beg,
-                                              const uint8_t *end);
+typedef grpc_error *(*grpc_chttp2_hpack_parser_state)(
+    grpc_chttp2_hpack_parser *p, const uint8_t *beg, const uint8_t *end);
 
 typedef struct {
   char *str;
@@ -58,6 +57,8 @@ struct grpc_chttp2_hpack_parser {
   /* user specified callback for each header output */
   void (*on_header)(void *user_data, grpc_mdelem *md);
   void *on_header_user_data;
+
+  grpc_error *last_error;
 
   /* current parse state - or a function that implements it */
   grpc_chttp2_hpack_parser_state state;
@@ -103,12 +104,13 @@ void grpc_chttp2_hpack_parser_destroy(grpc_chttp2_hpack_parser *p);
 void grpc_chttp2_hpack_parser_set_has_priority(grpc_chttp2_hpack_parser *p);
 
 /* returns 1 on success, 0 on error */
-int grpc_chttp2_hpack_parser_parse(grpc_chttp2_hpack_parser *p,
-                                   const uint8_t *beg, const uint8_t *end);
+grpc_error *grpc_chttp2_hpack_parser_parse(grpc_chttp2_hpack_parser *p,
+                                           const uint8_t *beg,
+                                           const uint8_t *end);
 
 /* wraps grpc_chttp2_hpack_parser_parse to provide a frame level parser for
    the transport */
-grpc_chttp2_parse_error grpc_chttp2_header_parser_parse(
+grpc_error *grpc_chttp2_header_parser_parse(
     grpc_exec_ctx *exec_ctx, void *hpack_parser,
     grpc_chttp2_transport_parsing *transport_parsing,
     grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last);

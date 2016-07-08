@@ -58,7 +58,7 @@ To run tests with generated stub code from `.proto` files, you will also need th
 Clone this repository
 
 ```sh
-$ git clone https://github.com/grpc/grpc.git
+$ git clone -b $(curl -L http://grpc.io/release) https://github.com/grpc/grpc
 ```
 
 Build and install the gRPC C core library
@@ -101,7 +101,7 @@ extension=grpc.so
 You will need the source code to run tests
 
 ```sh
-$ git clone https://github.com/grpc/grpc.git
+$ git clone -b $(curl -L http://grpc.io/release) https://github.com/grpc/grpc
 $ cd grpc
 $ git pull --recurse-submodules && git submodule update --init --recursive
 ```

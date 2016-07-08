@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2015-2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,7 @@
 
 #include <string.h>
 
+#include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/surface/api_trace.h"
 
 #include <grpc/support/alloc.h>
@@ -49,7 +50,7 @@ typedef struct {
   grpc_credentials_md_store *md_elems;
   grpc_auth_metadata_context auth_md_context;
   void *user_data;
-  grpc_pollset *pollset;
+  grpc_polling_entity *pollent;
   grpc_credentials_metadata_cb cb;
 } grpc_composite_call_credentials_metadata_context;
 
@@ -71,11 +72,12 @@ static void composite_call_md_context_destroy(
 static void composite_call_metadata_cb(grpc_exec_ctx *exec_ctx, void *user_data,
                                        grpc_credentials_md *md_elems,
                                        size_t num_md,
-                                       grpc_credentials_status status) {
+                                       grpc_credentials_status status,
+                                       const char *error_details) {
   grpc_composite_call_credentials_metadata_context *ctx =
       (grpc_composite_call_credentials_metadata_context *)user_data;
   if (status != GRPC_CREDENTIALS_OK) {
-    ctx->cb(exec_ctx, ctx->user_data, NULL, 0, status);
+    ctx->cb(exec_ctx, ctx->user_data, NULL, 0, status, error_details);
     return;
   }
 
@@ -93,20 +95,20 @@ static void composite_call_metadata_cb(grpc_exec_ctx *exec_ctx, void *user_data,
     grpc_call_credentials *inner_creds =
         ctx->composite_creds->inner.creds_array[ctx->creds_index++];
     grpc_call_credentials_get_request_metadata(
-        exec_ctx, inner_creds, ctx->pollset, ctx->auth_md_context,
+        exec_ctx, inner_creds, ctx->pollent, ctx->auth_md_context,
         composite_call_metadata_cb, ctx);
     return;
   }
 
   /* We're done!. */
   ctx->cb(exec_ctx, ctx->user_data, ctx->md_elems->entries,
-          ctx->md_elems->num_entries, GRPC_CREDENTIALS_OK);
+          ctx->md_elems->num_entries, GRPC_CREDENTIALS_OK, NULL);
   composite_call_md_context_destroy(ctx);
 }
 
 static void composite_call_get_request_metadata(
     grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds,
-    grpc_pollset *pollset, grpc_auth_metadata_context auth_md_context,
+    grpc_polling_entity *pollent, grpc_auth_metadata_context auth_md_context,
     grpc_credentials_metadata_cb cb, void *user_data) {
   grpc_composite_call_credentials *c = (grpc_composite_call_credentials *)creds;
   grpc_composite_call_credentials_metadata_context *ctx;
@@ -117,10 +119,10 @@ static void composite_call_get_request_metadata(
   ctx->user_data = user_data;
   ctx->cb = cb;
   ctx->composite_creds = c;
-  ctx->pollset = pollset;
+  ctx->pollent = pollent;
   ctx->md_elems = grpc_credentials_md_store_create(c->inner.num_creds);
   grpc_call_credentials_get_request_metadata(
-      exec_ctx, c->inner.creds_array[ctx->creds_index++], pollset,
+      exec_ctx, c->inner.creds_array[ctx->creds_index++], ctx->pollent,
       auth_md_context, composite_call_metadata_cb, ctx);
 }
 

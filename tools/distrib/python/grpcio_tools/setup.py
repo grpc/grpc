@@ -28,10 +28,14 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from distutils import extension
+import errno
 import os
 import os.path
+import pkg_resources
 import shlex
+import shutil
 import sys
+import sysconfig
 
 import setuptools
 from setuptools.command import build_ext
@@ -41,33 +45,67 @@ from setuptools.command import build_ext
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.abspath('.'))
 
+PY3 = sys.version_info.major == 3
+
 # There are some situations (like on Windows) where CC, CFLAGS, and LDFLAGS are
 # entirely ignored/dropped/forgotten by distutils and its Cygwin/MinGW support.
 # We use these environment variables to thus get around that without locking
 # ourselves in w.r.t. the multitude of operating systems this ought to build on.
 # By default we assume a GCC-like compiler.
 EXTRA_COMPILE_ARGS = shlex.split(os.environ.get('GRPC_PYTHON_CFLAGS',
-                                                '-frtti -std=c++11'))
+                                                '-fno-wrapv -frtti -std=c++11'))
 EXTRA_LINK_ARGS = shlex.split(os.environ.get('GRPC_PYTHON_LDFLAGS',
                                              '-lpthread'))
 
+GRPC_PYTHON_TOOLS_PACKAGE = 'grpc.tools'
+GRPC_PYTHON_PROTO_RESOURCES_NAME = '_proto'
+
 import protoc_lib_deps
 import grpc_version
+
+# By default, Python3 distutils enforces compatibility of
+# c plugins (.so files) with the OSX version Python3 was built with.
+# For Python3.4, this is OSX 10.6, but we need Thread Local Support (__thread)
+if 'darwin' in sys.platform and PY3:
+  mac_target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
+  if mac_target and (pkg_resources.parse_version(mac_target) <
+		     pkg_resources.parse_version('10.9.0')):
+    os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.9'
+
+def package_data():
+  tools_path = GRPC_PYTHON_TOOLS_PACKAGE.replace('.', os.path.sep)
+  proto_resources_path = os.path.join(tools_path,
+                                      GRPC_PYTHON_PROTO_RESOURCES_NAME)
+  proto_files = []
+  for proto_file in protoc_lib_deps.PROTO_FILES:
+    source = os.path.join(protoc_lib_deps.PROTO_INCLUDE, proto_file)
+    target = os.path.join(proto_resources_path, proto_file)
+    relative_target = os.path.join(GRPC_PYTHON_PROTO_RESOURCES_NAME, proto_file)
+    try:
+      os.makedirs(os.path.dirname(target))
+    except OSError as error:
+      if error.errno == errno.EEXIST:
+        pass
+      else:
+        raise
+    shutil.copy(source, target)
+    proto_files.append(relative_target)
+  return {GRPC_PYTHON_TOOLS_PACKAGE: proto_files}
 
 def protoc_ext_module():
   plugin_sources = [
       'grpc/tools/main.cc',
       'grpc_root/src/compiler/python_generator.cc'] + [
-      os.path.join('third_party/protobuf/src', cc_file)
+      os.path.join(protoc_lib_deps.CC_INCLUDE, cc_file)
       for cc_file in protoc_lib_deps.CC_FILES]
   plugin_ext = extension.Extension(
-      name='grpc.tools.protoc_compiler',
-      sources=['grpc/tools/protoc_compiler.pyx'] + plugin_sources,
+      name='grpc.tools._protoc_compiler',
+      sources=['grpc/tools/_protoc_compiler.pyx'] + plugin_sources,
       include_dirs=[
           '.',
           'grpc_root',
           'grpc_root/include',
-          'third_party/protobuf/src',
+          protoc_lib_deps.CC_INCLUDE,
       ],
       language='c++',
       define_macros=[('HAVE_PTHREAD', 1)],
@@ -88,9 +126,10 @@ setuptools.setup(
       protoc_ext_module(),
   ]),
   packages=setuptools.find_packages('.'),
-  # TODO(atash): Figure out why auditwheel doesn't like namespace packages.
-  #namespace_packages=['grpc'],
+  namespace_packages=['grpc'],
   install_requires=[
     'protobuf>=3.0.0a3',
+    'grpcio>=0.14.0',
   ],
+  package_data=package_data(),
 )

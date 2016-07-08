@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/cpp/common/core_codegen.h"
+#include <grpc++/impl/codegen/core_codegen.h>
 
 #include <stdlib.h>
 
@@ -74,9 +74,9 @@ void CoreCodegen::grpc_byte_buffer_destroy(grpc_byte_buffer* bb) {
   ::grpc_byte_buffer_destroy(bb);
 }
 
-void CoreCodegen::grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,
-                                               grpc_byte_buffer* buffer) {
-  ::grpc_byte_buffer_reader_init(reader, buffer);
+int CoreCodegen::grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,
+                                              grpc_byte_buffer* buffer) {
+  return ::grpc_byte_buffer_reader_init(reader, buffer);
 }
 
 void CoreCodegen::grpc_byte_buffer_reader_destroy(

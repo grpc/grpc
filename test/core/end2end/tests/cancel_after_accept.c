@@ -136,6 +136,7 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
@@ -174,6 +175,7 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
   cq_expect_completion(cqv, tag(2), 1);
   cq_verify(cqv);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message = &request_payload_recv;

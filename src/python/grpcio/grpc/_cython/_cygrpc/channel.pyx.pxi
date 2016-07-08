@@ -32,7 +32,7 @@ cimport cpython
 
 cdef class Channel:
 
-  def __cinit__(self, target, ChannelArgs arguments=None,
+  def __cinit__(self, bytes target, ChannelArgs arguments=None,
                 ChannelCredentials channel_credentials=None):
     cdef grpc_channel_args *c_arguments = NULL
     cdef char *c_target = NULL
@@ -40,12 +40,6 @@ cdef class Channel:
     self.references = []
     if arguments is not None:
       c_arguments = &arguments.c_args
-    if isinstance(target, bytes):
-      pass
-    elif isinstance(target, basestring):
-      target = target.encode()
-    else:
-      raise TypeError("expected target to be str or bytes")
     c_target = target
     if channel_credentials is None:
       with nogil:
@@ -64,23 +58,10 @@ cdef class Channel:
                   method, host, Timespec deadline not None):
     if queue.is_shutting_down:
       raise ValueError("queue must not be shutting down or shutdown")
-    if isinstance(method, bytes):
-      pass
-    elif isinstance(method, basestring):
-      method = method.encode()
-    else:
-      raise TypeError("expected method to be str or bytes")
     cdef char *method_c_string = method
     cdef char *host_c_string = NULL
-    if host is None:
-      pass
-    elif isinstance(host, bytes):
+    if host is not None:
       host_c_string = host
-    elif isinstance(host, basestring):
-      host = host.encode()
-      host_c_string = host
-    else:
-      raise TypeError("expected host to be str, bytes, or None")
     cdef Call operation_call = Call()
     operation_call.references = [self, method, host, queue]
     cdef grpc_call *parent_call = NULL

@@ -40,7 +40,6 @@ using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Utils;
 using Grpc.Testing;
-using Moq;
 using NUnit.Framework;
 
 namespace Grpc.IntegrationTesting
@@ -62,7 +61,7 @@ namespace Grpc.IntegrationTesting
             };
             server.Start();
             channel = new Channel(Host, server.Ports.Single().BoundPort, ChannelCredentials.Insecure);
-            client = TestService.NewClient(channel);
+            client = new TestService.TestServiceClient(channel);
         }
 
         [TearDown]
