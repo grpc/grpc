@@ -50,8 +50,6 @@
 
 /* grpc_workqueue is forward declared in exec_ctx.h */
 
-void grpc_workqueue_flush(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue);
-
 //#define GRPC_WORKQUEUE_REFCOUNT_DEBUG
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
 #define GRPC_WORKQUEUE_REF(p, r) \

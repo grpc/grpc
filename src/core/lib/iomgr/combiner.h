@@ -52,8 +52,7 @@ typedef struct grpc_combiner grpc_combiner;
 grpc_combiner *grpc_combiner_create(grpc_workqueue *optional_workqueue);
 // Destroy the lock
 void grpc_combiner_destroy(grpc_combiner *lock);
-// Execute \a action within the lock. \a arg is the argument to pass to \a
-// action and sizeof_arg is the sizeof(*arg), or 0 if arg is non-copyable.
+// Execute \a action within the lock.
 void grpc_combiner_execute(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
                            grpc_closure *closure, grpc_error *error);
 
