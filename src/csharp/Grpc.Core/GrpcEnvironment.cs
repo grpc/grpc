@@ -58,6 +58,7 @@ namespace Grpc.Core
         static readonly HashSet<Channel> registeredChannels = new HashSet<Channel>();
         static readonly HashSet<Server> registeredServers = new HashSet<Server>();
 
+        static string nativeLibrary;
         static ILogger logger = new LogLevelFilterLogger(new ConsoleLogger(), DefaultLogLevel);
 
         readonly object myLock = new object();
@@ -177,6 +178,46 @@ namespace Grpc.Core
                 snapshot = new HashSet<Server>(registeredServers);
             }
             return Task.WhenAll(snapshot.Select((server) => server.KillAsync()));
+        }
+
+        /// <summary>
+        /// Gets or sets the location of the native library file to override auto-detection.
+        /// Note: this method is part of an experimental API that can change or be removed without any prior notice.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// In most cases, gRPC can auto-detect the location of the native library used for low-level
+        /// network operations. This property provides an escape hatch for unusual deployment situations.
+        /// </para>
+        /// <para>
+        /// This property is only consulted immediately before the first native operation, when the library
+        /// is first loaded. If the value of the property is <c>null</c>, the location is auto-detected as normal.
+        /// Otherwise, the value is expected to be the path to the native library file, including the file name itself.
+        /// It is highly recommended that the value is an absolute file name rather than a relative one.
+        /// If the file does not exist or is not a valid native library, no further attempt is made to auto-detect
+        /// the correct file; the operation will simply fail.
+        /// </para>
+        /// <para>
+        /// Changes made to this property after the native library is loaded have no effect. This property is
+        /// thread-safe, so may be set from one thread even if the native library ends up being initialized on another.
+        /// </para>
+        /// </remarks>
+        public static string NativeLibrary
+        {
+            get
+            {
+                lock (staticLock)
+                {
+                    return nativeLibrary;
+                }
+            }
+            set
+            {
+                lock (staticLock)
+                {
+                    nativeLibrary = value;
+                }
+            }
         }
 
         /// <summary>
