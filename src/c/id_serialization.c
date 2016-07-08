@@ -32,6 +32,7 @@
  */
 
 #include <string.h>
+#include <grpc_c/grpc_c.h>
 #include "id_serialization.h"
 
 void GRPC_id_serialize(const grpc_message input, grpc_message *output) {

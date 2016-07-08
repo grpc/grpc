@@ -32,6 +32,7 @@
  */
 
 #include <grpc/support/alloc.h>
+#include <grpc_c/grpc_c.h>
 #include <grpc_c/context.h>
 #include "context.h"
 #include "alloc.h"

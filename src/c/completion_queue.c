@@ -34,6 +34,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <grpc_c/grpc_c.h>
 #include "completion_queue.h"
 #include "call_ops.h"
 
