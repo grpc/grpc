@@ -75,8 +75,12 @@ typedef struct {
 typedef struct {
   grpc_transport_stream_stats transport_stream_stats;
   gpr_timespec latency; /* From call creating to enqueing of received status */
-  grpc_status_code final_status;
 } grpc_call_stats;
+
+typedef struct {
+  grpc_call_stats stats;
+  grpc_status_code final_status;
+} grpc_call_final_info;
 
 /* Channel filters specify:
    1. the amount of memory needed in the channel & call (via the sizeof_XXX
@@ -119,16 +123,17 @@ typedef struct {
      The filter does not need to do any chaining.
      The bottom filter of a stack will be passed a non-NULL pointer to
      \a and_free_memory that should be passed to gpr_free when destruction
-     is complete. */
+     is complete. \a final_info contains data about the completed code, mainly
+     for reporting purposes. */
   void (*destroy_call_elem)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                            const grpc_call_stats *stats,
+                            const grpc_call_final_info* final_info,
                             void *and_free_memory);
 
   /* sizeof(per channel data) */
   size_t sizeof_channel_data;
   /* Initialize per-channel data.
-     elem is initialized at the start of the call, and elem->channel_data is
-     what needs initializing.
+     elem is initialized at the creating of the channel, and elem->channel_data
+     is what needs initializing.
      is_first, is_last designate this elements position in the stack, and are
      useful for asserting correct configuration by upper layer code.
      The filter does not need to do any chaining */
@@ -243,7 +248,7 @@ void grpc_call_stack_set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
 
 /* Destroy a call stack */
 void grpc_call_stack_destroy(grpc_exec_ctx *exec_ctx, grpc_call_stack *stack,
-                             const grpc_call_stats *call_stats,
+                             const grpc_call_final_info *final_info,
                              void *and_free_memory);
 
 /* Ignore set pollset{_set} - used by filters if they don't care about pollsets

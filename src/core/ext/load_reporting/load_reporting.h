@@ -34,16 +34,27 @@
 #ifndef GRPC_CORE_EXT_LOAD_REPORTING_LOAD_REPORTING_H
 #define GRPC_CORE_EXT_LOAD_REPORTING_LOAD_REPORTING_H
 
-#include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/surface/call.h"
+#include <grpc/impl/codegen/grpc_types.h>
+#include "src/core/lib/channel/channel_stack.h"
 
 typedef struct grpc_load_reporting_config grpc_load_reporting_config;
+
+typedef enum grpc_load_reporting_source {
+  GRPC_LR_POINT_UNKNOWN = 0,
+  GRPC_LR_POINT_CHANNEL_CREATION,
+  GRPC_LR_POINT_CHANNEL_DESTRUCTION,
+  GRPC_LR_POINT_CALL_CREATION,
+  GRPC_LR_POINT_CALL_DESTRUCTION
+} grpc_load_reporting_source;
 
 /** Call information to be passed to the provided load reporting function upon
  * completion of the call */
 typedef struct grpc_load_reporting_call_data {
-  const grpc_call_stats *stats;   /**< Stats for the call */
-  const char *trailing_md_string; /**< LR trailing metadata info */
+  const grpc_load_reporting_source source;
+  const grpc_call_final_info *final_info;
+  const char *initial_md_string;  /**< value string for LR's initial md key */
+  const char *trailing_md_string; /**< value string for LR's trailing md key */
+  const char *method;             /**< Corresponds to :path header */
 } grpc_load_reporting_call_data;
 
 /** Custom function to be called by the load reporting filter. */
