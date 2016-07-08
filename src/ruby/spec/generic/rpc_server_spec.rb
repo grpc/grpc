@@ -95,7 +95,7 @@ class FailingService
   def initialize(_default_var = 'ignored')
     @details = 'app error'
     @code = 101
-    @md = { failed_method: 'an_rpc' }
+    @md = { 'failed_method' => 'an_rpc' }
   end
 
   def an_rpc(_req, _call)
@@ -515,7 +515,7 @@ describe GRPC::RpcServer do
         op = stub.an_rpc(req, return_op: true, metadata: { k1: 'v1', k2: 'v2' })
         expect(op.metadata).to be nil
         expect(op.execute).to be_a(EchoMsg)
-        expect(op.metadata).to eq(wanted_trailers)
+        expect(op.trailing_metadata).to eq(wanted_trailers)
         @srv.stop
         t.join
       end

@@ -43,8 +43,7 @@ class Struct
         GRPC.logger.debug("Failing with status #{status}")
         # raise BadStatus, propagating the metadata if present.
         md = status.metadata
-        with_sym_keys = Hash[md.each_pair.collect { |x, y| [x.to_sym, y] }]
-        fail GRPC::BadStatus.new(status.code, status.details, with_sym_keys)
+        fail GRPC::BadStatus.new(status.code, status.details, md)
       end
       status
     end
@@ -61,7 +60,7 @@ module GRPC
     extend Forwardable
     attr_reader(:deadline)
     def_delegators :@call, :cancel, :metadata, :write_flag, :write_flag=,
-                   :peer, :peer_cert
+                   :peer, :peer_cert, :trailing_metadata
 
     # client_invoke begins a client invocation.
     #
@@ -158,6 +157,9 @@ module GRPC
       ops[RECV_STATUS_ON_CLIENT] = nil if assert_finished
       batch_result = @call.run_batch(ops)
       return unless assert_finished
+      unless batch_result.status.nil?
+        @call.trailing_metadata = batch_result.status.metadata
+      end
       @call.status = batch_result.status
       op_is_done
       batch_result.check_status
@@ -169,11 +171,7 @@ module GRPC
     def finished
       batch_result = @call.run_batch(RECV_STATUS_ON_CLIENT => nil)
       unless batch_result.status.nil?
-        if @call.metadata.nil?
-          @call.metadata = batch_result.status.metadata
-        else
-          @call.metadata.merge!(batch_result.status.metadata)
-        end
+        @call.trailing_metadata = batch_result.status.metadata
       end
       @call.status = batch_result.status
       op_is_done
@@ -467,6 +465,6 @@ module GRPC
     # a Operation on the client.
     Operation = view_class(:cancel, :cancelled?, :deadline, :execute,
                            :metadata, :status, :start_call, :wait, :write_flag,
-                           :write_flag=)
+                           :write_flag=, :trailing_metadata)
   end
 end
