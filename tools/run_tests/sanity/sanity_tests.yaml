@@ -1,5 +1,6 @@
 # a set of tests that are run in parallel for sanity tests
 - script: tools/run_tests/sanity/check_cache_mk.sh
+- script: tools/run_tests/sanity/check_orig_mk.sh
 - script: tools/run_tests/sanity/check_sources_and_headers.py
 - script: tools/run_tests/sanity/check_submodules.sh
 - script: tools/buildgen/generate_projects.sh -j 3
