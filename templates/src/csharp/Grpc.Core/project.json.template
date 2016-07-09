@@ -39,7 +39,8 @@
       "xmlDoc": true
     },
     "dependencies": {
-      "Ix-Async": "1.2.5"
+      "Ix-Async": "1.2.5",
+      "Microsoft.NETCore.Platforms": "1.0.1"
     },
     "frameworks": {
       "net45": { },
@@ -48,7 +49,6 @@
           "portable-net45"
         ],
         "dependencies": {
-          "Microsoft.NETCore.Platforms": "1.0.1",
           "NETStandard.Library": "1.5.0-rc2-24027",
           "System.Threading.Thread": "4.0.0-rc2-24027"
         }
