@@ -139,21 +139,23 @@ void PrintHeaderClientMethod(Printer *printer,
 
     printer->Print(
       *vars,
-R"(GRPC_status $CPrefix$$Service$_$Method$(
+R"(
+GRPC_status $CPrefix$$Service$_$Method$(
         GRPC_client_context *const context,
         const $CPrefix$$Request$ request,
         $CPrefix$$Response$ *response);
 )");
     printer->Print(
       *vars,
-R"(GRPC_status $CPrefix$$Service$_$Method$_Async(
+R"(
+GRPC_status $CPrefix$$Service$_$Method$_Async(
         GRPC_client_context *const context,
         GRPC_completion_queue *cq,
         const $CPrefix$$Request$ request);
 
-void HLW_Greeter_SayHello_Finish(
+void $CPrefix$$Service$_$Method$_Finish(
         GRPC_client_async_response_reader *reader,
-        HLW_HelloResponse *response,        /* pointer to store RPC response */
+        $CPrefix$$Response$ *response,        /* pointer to store RPC response */
         void *tag);
 /* call GRPC_completion_queue_next on the cq to wait for result */
 )");
