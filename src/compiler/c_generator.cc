@@ -148,7 +148,7 @@ GRPC_status $CPrefix$$Service$_$Method$(
     printer->Print(
       *vars,
 R"(
-GRPC_status $CPrefix$$Service$_$Method$_Async(
+GRPC_client_async_response_reader *$CPrefix$$Service$_$Method$_Async(
         GRPC_client_context *const context,
         GRPC_completion_queue *cq,
         const $CPrefix$$Request$ request);
