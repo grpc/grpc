@@ -56,7 +56,6 @@ namespace grpc_cpp_generator {
 
 // Contains all the parameters that are parsed from the command line.
 struct Parameters {
-  // Puts the service into a namespace
   grpc::string services_namespace;
   // Use system includes (<>) or local includes ("")
   bool use_system_headers;
