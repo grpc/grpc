@@ -109,9 +109,15 @@ namespace Grpc.Core.Internal
 
             // DNX-style project.json projects will use Grpc.Core assembly directly in the location where it got restored
             // by nuget. We locate the native libraries based on known structure of Grpc.Core nuget package.
+            // This style is also used for dotnet CLI projects that target netstandard1.X frameworks.
             var dnxStylePath = Path.Combine(assemblyDirectory, DnxStyleNativeLibrariesDir, libraryFlavor, GetNativeLibraryFilename());
 
-            return new UnmanagedLibrary(new string[] {classicPath, dnxStylePath});
+            // Newer versions of nuget can copy native libraries from /runtimes directory of the nuget package 
+            // automatically (with help of Microsoft.NETCore.Platforms package).
+            // This is needed for dotnet CLI projects targeting net45, because the .targets rules are ignored for such projects.
+            var runtimesStylePath = Path.Combine(assemblyDirectory, GetNativeLibraryFilename());
+
+            return new UnmanagedLibrary(new string[] {classicPath, dnxStylePath, runtimesStylePath});
         }
 
         private static string GetAssemblyPath()
