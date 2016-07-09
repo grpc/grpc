@@ -120,16 +120,27 @@ static void test_execute_many(void) {
   grpc_combiner_destroy(lock);
 }
 
+static bool got_in_finally = false;
+
+static void in_finally(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+  got_in_finally = true;
+}
+
+static void add_finally(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+  grpc_combiner_execute_finally(exec_ctx, arg,
+                                grpc_closure_create(in_finally, NULL),
+                                GRPC_ERROR_NONE, false);
+}
+
 static void test_execute_finally(void) {
   gpr_log(GPR_DEBUG, "test_execute_finally");
 
   grpc_combiner *lock = grpc_combiner_create(NULL);
-  bool done = false;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_combiner_execute(&exec_ctx, lock, grpc_closure_create(add_finally, lock),
                         GRPC_ERROR_NONE);
   grpc_exec_ctx_finish(&exec_ctx);
-  GPR_ASSERT(done);
+  GPR_ASSERT(got_in_finally);
   grpc_combiner_destroy(lock);
 }
 
@@ -138,8 +149,8 @@ int main(int argc, char **argv) {
   grpc_init();
   test_no_op();
   test_execute_one();
-  test_execute_many();
   test_execute_finally();
+  test_execute_many();
   grpc_shutdown();
 
   return 0;
