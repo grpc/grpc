@@ -92,8 +92,9 @@ static gpr_timespec to_seconds_from_sub_second_time(int64_t time_in_units,
     if (time_in_units >= 0) {
       out.tv_sec = time_in_units / units_per_sec;
     } else {
-      out.tv_sec = (-((units_per_sec - 1) -
-                      (time_in_units + units_per_sec)) / units_per_sec) - 1;
+      out.tv_sec = (-((units_per_sec - 1) - (time_in_units + units_per_sec)) /
+                    units_per_sec) -
+                   1;
     }
     out.tv_nsec = (int32_t)((time_in_units - out.tv_sec * units_per_sec) *
                             GPR_NS_PER_SEC / units_per_sec);
