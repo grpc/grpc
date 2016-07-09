@@ -80,34 +80,38 @@ gpr_timespec gpr_inf_past(gpr_clock_type type) {
   return out;
 }
 
-static gpr_timespec get_timespec_by_different_second_unit(int64_t t, int64_t n,
-                                                          gpr_clock_type type) {
+static gpr_timespec to_seconds_from_sub_second_time(int64_t time_in_units,
+                                                    int64_t units_per_sec,
+                                                    gpr_clock_type type) {
   gpr_timespec out;
-  if (t == INT64_MAX) {
+  if (time_in_units == INT64_MAX) {
     out = gpr_inf_future(type);
-  } else if (t == INT64_MIN) {
+  } else if (time_in_units == INT64_MIN) {
     out = gpr_inf_past(type);
   } else {
-    if (t >= 0) {
-      out.tv_sec = t / n;
+    if (time_in_units >= 0) {
+      out.tv_sec = time_in_units / units_per_sec;
     } else {
-      out.tv_sec = (-((n - 1) - (t + n)) / n) - 1;
+      out.tv_sec = (-((units_per_sec - 1) -
+                      (time_in_units + units_per_sec)) / units_per_sec) - 1;
     }
-    out.tv_nsec = (int32_t)((t - out.tv_sec * n) * GPR_NS_PER_SEC / n);
+    out.tv_nsec = (int32_t)((time_in_units - out.tv_sec * units_per_sec) *
+                            GPR_NS_PER_SEC / units_per_sec);
     out.clock_type = type;
   }
   return out;
 }
 
-static gpr_timespec get_timespec_by_hour_or_minute_unit(int64_t t, int64_t n,
-                                                        gpr_clock_type type) {
+static gpr_timespec to_seconds_from_above_second_time(int64_t time_in_units,
+                                                      int64_t secs_per_unit,
+                                                      gpr_clock_type type) {
   gpr_timespec out;
-  if (t >= INT64_MAX / n) {
+  if (time_in_units >= INT64_MAX / secs_per_unit) {
     out = gpr_inf_future(type);
-  } else if (t <= INT64_MIN / n) {
+  } else if (time_in_units <= INT64_MIN / secs_per_unit) {
     out = gpr_inf_past(type);
   } else {
-    out.tv_sec = t * n;
+    out.tv_sec = time_in_units * secs_per_unit;
     out.tv_nsec = 0;
     out.clock_type = type;
   }
@@ -115,27 +119,27 @@ static gpr_timespec get_timespec_by_hour_or_minute_unit(int64_t t, int64_t n,
 }
 
 gpr_timespec gpr_time_from_nanos(int64_t ns, gpr_clock_type type) {
-  return get_timespec_by_different_second_unit(ns, GPR_NS_PER_SEC, type);
+  return to_seconds_from_sub_second_time(ns, GPR_NS_PER_SEC, type);
 }
 
 gpr_timespec gpr_time_from_micros(int64_t us, gpr_clock_type type) {
-  return get_timespec_by_different_second_unit(us, GPR_US_PER_SEC, type);
+  return to_seconds_from_sub_second_time(us, GPR_US_PER_SEC, type);
 }
 
 gpr_timespec gpr_time_from_millis(int64_t ms, gpr_clock_type type) {
-  return get_timespec_by_different_second_unit(ms, GPR_MS_PER_SEC, type);
+  return to_seconds_from_sub_second_time(ms, GPR_MS_PER_SEC, type);
 }
 
 gpr_timespec gpr_time_from_seconds(int64_t s, gpr_clock_type type) {
-  return get_timespec_by_different_second_unit(s, 1, type);
+  return to_seconds_from_sub_second_time(s, 1, type);
 }
 
 gpr_timespec gpr_time_from_minutes(int64_t m, gpr_clock_type type) {
-  return get_timespec_by_hour_or_minute_unit(m, 60, type);
+  return to_seconds_from_above_second_time(m, 60, type);
 }
 
 gpr_timespec gpr_time_from_hours(int64_t h, gpr_clock_type type) {
-  return get_timespec_by_hour_or_minute_unit(h, 3600, type);
+  return to_seconds_from_above_second_time(h, 3600, type);
 }
 
 gpr_timespec gpr_time_add(gpr_timespec a, gpr_timespec b) {
