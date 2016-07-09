@@ -34,27 +34,23 @@ include GRPC::Core
 shared_context 'setup: tags' do
   let(:sent_message) { 'sent message' }
   let(:reply_text) { 'the reply' }
-  before(:example) do
-    @client_tag = Object.new
-    @server_tag = Object.new
-  end
 
   def deadline
     Time.now + 5
   end
 
   def server_allows_client_to_proceed(metadata = {})
-    recvd_rpc = @server.request_call(@server_queue, @server_tag, deadline)
+    recvd_rpc = @server.request_call
     expect(recvd_rpc).to_not eq nil
     server_call = recvd_rpc.call
     ops = { CallOps::SEND_INITIAL_METADATA => metadata }
-    svr_batch = server_call.run_batch(@server_queue, @server_tag, deadline, ops)
+    svr_batch = server_call.run_batch(ops)
     expect(svr_batch.send_metadata).to be true
     server_call
   end
 
   def new_client_call
-    @ch.create_call(@client_queue, nil, nil, '/method', nil, deadline)
+    @ch.create_call(nil, nil, '/method', nil, deadline)
   end
 end
 
@@ -91,8 +87,7 @@ shared_examples 'basic GRPC message delivery is OK' do
       CallOps::SEND_INITIAL_METADATA => {},
       CallOps::SEND_MESSAGE => sent_message
     }
-    batch_result = call.run_batch(@client_queue, @client_tag, deadline,
-                                  client_ops)
+    batch_result = call.run_batch(client_ops)
     expect(batch_result.send_metadata).to be true
     expect(batch_result.send_message).to be true
 
@@ -101,8 +96,7 @@ shared_examples 'basic GRPC message delivery is OK' do
     server_ops = {
       CallOps::RECV_MESSAGE => nil
     }
-    svr_batch = server_call.run_batch(@server_queue, @server_tag, deadline,
-                                      server_ops)
+    svr_batch = server_call.run_batch(server_ops)
     expect(svr_batch.message).to eq(sent_message)
   end
 
@@ -118,8 +112,7 @@ shared_examples 'basic GRPC message delivery is OK' do
       CallOps::SEND_INITIAL_METADATA => {},
       CallOps::SEND_MESSAGE => sent_message
     }
-    batch_result = call.run_batch(@client_queue, @client_tag, deadline,
-                                  client_ops)
+    batch_result = call.run_batch(client_ops)
     expect(batch_result.send_metadata).to be true
     expect(batch_result.send_message).to be true
 
@@ -129,8 +122,7 @@ shared_examples 'basic GRPC message delivery is OK' do
       CallOps::RECV_MESSAGE => nil,
       CallOps::SEND_MESSAGE => reply_text
     }
-    svr_batch = server_call.run_batch(@server_queue, @server_tag, deadline,
-                                      server_ops)
+    svr_batch = server_call.run_batch(server_ops)
     expect(svr_batch.message).to eq(sent_message)
     expect(svr_batch.send_message).to be true
   end
@@ -150,8 +142,7 @@ shared_examples 'basic GRPC message delivery is OK' do
       CallOps::SEND_INITIAL_METADATA => md,
       CallOps::SEND_MESSAGE => long_request_str
     }
-    batch_result = call.run_batch(@client_queue, @client_tag, deadline,
-                                  client_ops)
+    batch_result = call.run_batch(client_ops)
     expect(batch_result.send_metadata).to be true
     expect(batch_result.send_message).to be true
 
@@ -161,8 +152,7 @@ shared_examples 'basic GRPC message delivery is OK' do
       CallOps::RECV_MESSAGE => nil,
       CallOps::SEND_MESSAGE => long_response_str
     }
-    svr_batch = server_call.run_batch(@server_queue, @server_tag, deadline,
-                                      server_ops)
+    svr_batch = server_call.run_batch(server_ops)
     expect(svr_batch.message).to eq(long_request_str)
     expect(svr_batch.send_message).to be true
 
@@ -171,8 +161,7 @@ shared_examples 'basic GRPC message delivery is OK' do
       CallOps::RECV_INITIAL_METADATA => nil,
       CallOps::RECV_MESSAGE => nil
     }
-    batch_result = call.run_batch(@client_queue, @client_tag, deadline,
-                                  client_ops)
+    batch_result = call.run_batch(client_ops)
     expect(batch_result.send_close).to be true
     expect(batch_result.message).to eq long_response_str
   end
@@ -189,8 +178,7 @@ shared_examples 'basic GRPC message delivery is OK' do
       CallOps::SEND_INITIAL_METADATA => {},
       CallOps::SEND_MESSAGE => sent_message
     }
-    batch_result = call.run_batch(@client_queue, @client_tag, deadline,
-                                  client_ops)
+    batch_result = call.run_batch(client_ops)
     expect(batch_result.send_metadata).to be true
     expect(batch_result.send_message).to be true
 
@@ -200,8 +188,7 @@ shared_examples 'basic GRPC message delivery is OK' do
     server_ops = {
       CallOps::SEND_STATUS_FROM_SERVER => the_status
     }
-    svr_batch = server_call.run_batch(@server_queue, @server_tag, deadline,
-                                      server_ops)
+    svr_batch = server_call.run_batch(server_ops)
     expect(svr_batch.message).to eq nil
     expect(svr_batch.send_status).to be true
   end
@@ -218,8 +205,7 @@ shared_examples 'basic GRPC message delivery is OK' do
       CallOps::SEND_INITIAL_METADATA => {},
       CallOps::SEND_MESSAGE => sent_message
     }
-    batch_result = call.run_batch(@client_queue, @client_tag, deadline,
-                                  client_ops)
+    batch_result = call.run_batch(client_ops)
     expect(batch_result.send_metadata).to be true
     expect(batch_result.send_message).to be true
 
@@ -231,8 +217,7 @@ shared_examples 'basic GRPC message delivery is OK' do
       CallOps::SEND_MESSAGE => reply_text,
       CallOps::SEND_STATUS_FROM_SERVER => the_status
     }
-    svr_batch = server_call.run_batch(@server_queue, @server_tag, deadline,
-                                      server_ops)
+    svr_batch = server_call.run_batch(server_ops)
     expect(svr_batch.message).to eq sent_message
     expect(svr_batch.send_status).to be true
     expect(svr_batch.send_message).to be true
@@ -244,8 +229,7 @@ shared_examples 'basic GRPC message delivery is OK' do
       CallOps::RECV_MESSAGE => nil,
       CallOps::RECV_STATUS_ON_CLIENT => nil
     }
-    batch_result = call.run_batch(@client_queue, @client_tag, deadline,
-                                  client_ops)
+    batch_result = call.run_batch(client_ops)
     expect(batch_result.send_close).to be true
     expect(batch_result.message).to eq reply_text
     expect(batch_result.status).to eq the_status
@@ -254,8 +238,7 @@ shared_examples 'basic GRPC message delivery is OK' do
     server_ops = {
       CallOps::RECV_CLOSE_ON_SERVER => nil
     }
-    svr_batch = server_call.run_batch(@server_queue, @server_tag, deadline,
-                                      server_ops)
+    svr_batch = server_call.run_batch(server_ops)
     expect(svr_batch.send_close).to be true
   end
 end
@@ -286,8 +269,7 @@ shared_examples 'GRPC metadata delivery works OK' do
           CallOps::SEND_INITIAL_METADATA => md
         }
         blk = proc do
-          call.run_batch(@client_queue, @client_tag, deadline,
-                         client_ops)
+          call.run_batch(client_ops)
         end
         expect(&blk).to raise_error
       end
@@ -297,15 +279,14 @@ shared_examples 'GRPC metadata delivery works OK' do
       @valid_metadata.each do |md|
         recvd_rpc = nil
         rcv_thread = Thread.new do
-          recvd_rpc = @server.request_call(@server_queue, @server_tag, deadline)
+          recvd_rpc = @server.request_call
         end
 
         call = new_client_call
         client_ops = {
           CallOps::SEND_INITIAL_METADATA => md
         }
-        batch_result = call.run_batch(@client_queue, @client_tag, deadline,
-                                      client_ops)
+        batch_result = call.run_batch(client_ops)
         expect(batch_result.send_metadata).to be true
 
         # confirm the server can receive the client metadata
@@ -338,7 +319,7 @@ shared_examples 'GRPC metadata delivery works OK' do
       @bad_keys.each do |md|
         recvd_rpc = nil
         rcv_thread = Thread.new do
-          recvd_rpc = @server.request_call(@server_queue, @server_tag, deadline)
+          recvd_rpc = @server.request_call
         end
 
         call = new_client_call
@@ -347,7 +328,7 @@ shared_examples 'GRPC metadata delivery works OK' do
         client_ops = {
           CallOps::SEND_INITIAL_METADATA => nil
         }
-        call.run_batch(@client_queue, @client_tag, deadline, client_ops)
+        call.run_batch(client_ops)
 
         # server gets the invocation
         rcv_thread.join
@@ -356,8 +337,7 @@ shared_examples 'GRPC metadata delivery works OK' do
           CallOps::SEND_INITIAL_METADATA => md
         }
         blk = proc do
-          recvd_rpc.call.run_batch(@server_queue, @server_tag, deadline,
-                                   server_ops)
+          recvd_rpc.call.run_batch(server_ops)
         end
         expect(&blk).to raise_error
       end
@@ -366,7 +346,7 @@ shared_examples 'GRPC metadata delivery works OK' do
     it 'sends an empty hash if no metadata is added' do
       recvd_rpc = nil
       rcv_thread = Thread.new do
-        recvd_rpc = @server.request_call(@server_queue, @server_tag, deadline)
+        recvd_rpc = @server.request_call
       end
 
       call = new_client_call
@@ -375,7 +355,7 @@ shared_examples 'GRPC metadata delivery works OK' do
       client_ops = {
         CallOps::SEND_INITIAL_METADATA => nil
       }
-      call.run_batch(@client_queue, @client_tag, deadline, client_ops)
+      call.run_batch(client_ops)
 
       # server gets the invocation but sends no metadata back
       rcv_thread.join
@@ -384,14 +364,13 @@ shared_examples 'GRPC metadata delivery works OK' do
       server_ops = {
         CallOps::SEND_INITIAL_METADATA => nil
       }
-      server_call.run_batch(@server_queue, @server_tag, deadline, server_ops)
+      server_call.run_batch(server_ops)
 
       # client receives nothing as expected
       client_ops = {
         CallOps::RECV_INITIAL_METADATA => nil
       }
-      batch_result = call.run_batch(@client_queue, @client_tag, deadline,
-                                    client_ops)
+      batch_result = call.run_batch(client_ops)
       expect(batch_result.metadata).to eq({})
     end
 
@@ -399,7 +378,7 @@ shared_examples 'GRPC metadata delivery works OK' do
       @valid_metadata.each do |md|
         recvd_rpc = nil
         rcv_thread = Thread.new do
-          recvd_rpc = @server.request_call(@server_queue, @server_tag, deadline)
+          recvd_rpc = @server.request_call
         end
 
         call = new_client_call
@@ -408,7 +387,7 @@ shared_examples 'GRPC metadata delivery works OK' do
         client_ops = {
           CallOps::SEND_INITIAL_METADATA => nil
         }
-        call.run_batch(@client_queue, @client_tag, deadline, client_ops)
+        call.run_batch(client_ops)
 
         # server gets the invocation but sends no metadata back
         rcv_thread.join
@@ -417,14 +396,13 @@ shared_examples 'GRPC metadata delivery works OK' do
         server_ops = {
           CallOps::SEND_INITIAL_METADATA => md
         }
-        server_call.run_batch(@server_queue, @server_tag, deadline, server_ops)
+        server_call.run_batch(server_ops)
 
         # client receives nothing as expected
         client_ops = {
           CallOps::RECV_INITIAL_METADATA => nil
         }
-        batch_result = call.run_batch(@client_queue, @client_tag, deadline,
-                                      client_ops)
+        batch_result = call.run_batch(client_ops)
         replace_symbols = Hash[md.each_pair.collect { |x, y| [x.to_s, y] }]
         expect(batch_result.metadata).to eq(replace_symbols)
       end
@@ -435,9 +413,7 @@ end
 describe 'the http client/server' do
   before(:example) do
     server_host = '0.0.0.0:0'
-    @client_queue = GRPC::Core::CompletionQueue.new
-    @server_queue = GRPC::Core::CompletionQueue.new
-    @server = GRPC::Core::Server.new(@server_queue, nil)
+    @server = GRPC::Core::Server.new(nil)
     server_port = @server.add_http2_port(server_host, :this_port_is_insecure)
     @server.start
     @ch = Channel.new("0.0.0.0:#{server_port}", nil, :this_channel_is_insecure)
@@ -445,7 +421,7 @@ describe 'the http client/server' do
 
   after(:example) do
     @ch.close
-    @server.close(@server_queue, deadline)
+    @server.close(deadline)
   end
 
   it_behaves_like 'basic GRPC message delivery is OK' do
@@ -467,11 +443,9 @@ describe 'the secure http client/server' do
   before(:example) do
     certs = load_test_certs
     server_host = '0.0.0.0:0'
-    @client_queue = GRPC::Core::CompletionQueue.new
-    @server_queue = GRPC::Core::CompletionQueue.new
     server_creds = GRPC::Core::ServerCredentials.new(
       nil, [{ private_key: certs[1], cert_chain: certs[2] }], false)
-    @server = GRPC::Core::Server.new(@server_queue, nil)
+    @server = GRPC::Core::Server.new(nil)
     server_port = @server.add_http2_port(server_host, server_creds)
     @server.start
     args = { Channel::SSL_TARGET => 'foo.test.google.fr' }
@@ -480,7 +454,7 @@ describe 'the secure http client/server' do
   end
 
   after(:example) do
-    @server.close(@server_queue, deadline)
+    @server.close(deadline)
   end
 
   it_behaves_like 'basic GRPC message delivery is OK' do
@@ -496,7 +470,7 @@ describe 'the secure http client/server' do
     expected_md = { 'k1' => 'updated-v1', 'k2' => 'v2' }
     recvd_rpc = nil
     rcv_thread = Thread.new do
-      recvd_rpc = @server.request_call(@server_queue, @server_tag, deadline)
+      recvd_rpc = @server.request_call
     end
 
     call = new_client_call
@@ -504,8 +478,7 @@ describe 'the secure http client/server' do
     client_ops = {
       CallOps::SEND_INITIAL_METADATA => md
     }
-    batch_result = call.run_batch(@client_queue, @client_tag, deadline,
-                                  client_ops)
+    batch_result = call.run_batch(client_ops)
     expect(batch_result.send_metadata).to be true
 
     # confirm the server can receive the client metadata

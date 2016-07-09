@@ -47,6 +47,10 @@ Pod::Spec.new do |s|
   s.name     = '<Podspec file name>'
   s.version  = '0.0.1'
   s.license  = '...'
+  s.authors  = { '<your name>' => '<your email>' }
+  s.homepage = '...'
+  s.summary = '...'
+  s.source = { :git => 'https://github.com/...' }
 
   s.ios.deployment_target = '7.1'
   s.osx.deployment_target = '10.9'
@@ -60,7 +64,11 @@ Pod::Spec.new do |s|
     ms.source_files = "*.pbobjc.{h,m}"
     ms.header_mappings_dir = "."
     ms.requires_arc = false
-    ms.dependency "Protobuf", "~> 3.0.0-alpha-4"
+    ms.dependency "Protobuf", "~> 3.0.0-beta-2"
+    # This is needed by all pods that depend on Protobuf:
+    ms.pod_target_xcconfig = {
+      'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=1',
+    }
   end
 
   # The --objcgrpc_out plugin generates a pair of .pbrpc.h/.pbrpc.m files for each .proto file with
@@ -69,7 +77,7 @@ Pod::Spec.new do |s|
     ss.source_files = "*.pbrpc.{h,m}"
     ss.header_mappings_dir = "."
     ss.requires_arc = true
-    ss.dependency "gRPC", "~> 0.12"
+    ss.dependency "gRPC-ProtoRPC", "~> 0.14"
     ss.dependency "#{s.name}/Messages"
   end
 end

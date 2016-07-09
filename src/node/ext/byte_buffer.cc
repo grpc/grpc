@@ -73,7 +73,10 @@ Local<Value> ByteBufferToBuffer(grpc_byte_buffer *buffer) {
     return scope.Escape(Nan::Null());
   }
   grpc_byte_buffer_reader reader;
-  grpc_byte_buffer_reader_init(&reader, buffer);
+  if (!grpc_byte_buffer_reader_init(&reader, buffer)) {
+    Nan::ThrowError("Error initializing byte buffer reader.");
+    return scope.Escape(Nan::Undefined());
+  }
   gpr_slice slice = grpc_byte_buffer_reader_readall(&reader);
   size_t length = GPR_SLICE_LENGTH(slice);
   char *result = new char[length];

@@ -47,6 +47,12 @@ measure_cpu_costs = False
 _DEFAULT_MAX_JOBS = 16 * multiprocessing.cpu_count()
 _MAX_RESULT_SIZE = 8192
 
+def sanitized_environment(env):
+  sanitized = {}
+  for key, value in env.items():
+    sanitized[str(key).encode()] = str(value).encode()
+  return sanitized
+
 def platform_string():
   if platform.system() == 'Windows':
     return 'windows'
@@ -219,6 +225,7 @@ class Job(object):
     env = dict(os.environ)
     env.update(self._spec.environ)
     env.update(self._add_env)
+    env = sanitized_environment(env)
     self._start = time.time()
     cmdline = self._spec.cmdline
     if measure_cpu_costs:

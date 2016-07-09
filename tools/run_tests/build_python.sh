@@ -33,25 +33,91 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../..
 
-# Arguments
+##########################
+# Portability operations #
+##########################
+
+PLATFORM=`uname -s`
+
+function is_mingw() {
+  if [ "${PLATFORM/MINGW}" != "$PLATFORM" ]; then
+    echo true
+  else
+    exit 1
+  fi
+}
+
+function is_darwin() {
+  if [ "${PLATFORM/Darwin}" != "$PLATFORM" ]; then
+    echo true
+  else
+    exit 1
+  fi
+}
+
+function is_linux() {
+  if [ "${PLATFORM/Linux}" != "$PLATFORM" ]; then
+    echo true
+  else
+    exit 1
+  fi
+}
+
+# Associated virtual environment name for the given python command.
+function venv() {
+  $1 -c "import sys; print('py{}{}'.format(*sys.version_info[:2]))"
+}
+
+# Path to python executable within a virtual environment depending on the
+# system.
+function venv_relative_python() {
+  if [ $(is_mingw) ]; then
+    echo 'Scripts/python.exe'
+  else
+    echo 'bin/python'
+  fi
+}
+
+# Distutils toolchain to use depending on the system.
+function toolchain() {
+  if [ $(is_mingw) ]; then
+    echo 'mingw32'
+  else
+    echo 'unix'
+  fi
+}
+
+# Command to invoke the linux command `realpath` or equivalent.
+function script_realpath() {
+  # Find `realpath`
+  if [ -x "$(command -v realpath)" ]; then
+    realpath "$@"
+  elif [ -x "$(command -v grealpath)" ]; then
+    grealpath "$@"
+  else
+    exit 1
+  fi
+}
+
+####################
+# Script Arguments #
+####################
+
 PYTHON=${1:-python2.7}
-VENV=${2:-py27}
-VENV_RELATIVE_PYTHON=${3:-bin/python}
-TOOLCHAIN=${4:-unix}
+VENV=${2:-$(venv $PYTHON)}
+VENV_RELATIVE_PYTHON=${3:-$(venv_relative_python)}
+TOOLCHAIN=${4:-$(toolchain)}
 
 ROOT=`pwd`
-export CFLAGS="-I$ROOT/include -std=gnu99 -fno-wrapv"
+export CFLAGS="-I$ROOT/include -std=gnu99 -fno-wrapv $CFLAGS"
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1
 
 # Default python on the host to fall back to when instantiating e.g. the
 # virtualenv.
 HOST_PYTHON=${HOST_PYTHON:-python}
 
-# If ccache is available, use it... unless we're on Mac, then all hell breaks
-# loose because Python does hacky things to support other hacky things done to
-# hacky things on Mac OS X
-PLATFORM=`uname -s`
-if [ "${PLATFORM/Darwin}" = "$PLATFORM" ]; then
+# If ccache is available on Linux, use it.
+if [ $(is_linux) ]; then
   # We're not on Darwin (Mac OS X)
   if [ -x "$(command -v ccache)" ]; then
     if [ -x "$(command -v gcc)" ]; then
@@ -61,16 +127,23 @@ if [ "${PLATFORM/Darwin}" = "$PLATFORM" ]; then
     fi
   fi
 fi
-
-# Find `realpath`
-if [ -x "$(command -v realpath)" ]; then
-  export REALPATH=realpath
-elif [ -x "$(command -v grealpath)" ]; then
-  export REALPATH=grealpath
-else
-  echo 'Couldn'"'"'t find `realpath` or `grealpath`'
-  exit 1
+# TODO(atash) consider conceptualizing MinGW as a first-class platform and move
+# these flags into our `setup.py`s
+if [ $(is_mingw) ]; then
+  # We're on MinGW, and our CFLAGS and LDFLAGS will be eaten by the void. Use
+  # our work-around environment variables instead.
+  PYTHON_MSVCR=`$PYTHON -c "from distutils.cygwinccompiler import get_msvcr; print(get_msvcr()[0])"`
+  export GRPC_PYTHON_LDFLAGS="-static-libgcc -static-libstdc++ -mcrtdll=$PYTHON_MSVCR -static -lpthread"
+  # See https://sourceforge.net/p/mingw-w64/bugs/363/
+  export GRPC_PYTHON_CFLAGS="-D_ftime=_ftime64 -D_timeb=__timeb64"
+  # TODO(atash) set these flags for only grpcio-tools (they don't do any harm to
+  # grpcio, but they result in noisy warnings).
+  export GRPC_PYTHON_CFLAGS="-frtti -std=c++11 $GRPC_PYTHON_CFLAGS"
 fi
+
+############################
+# Perform build operations #
+############################
 
 # Instnatiate the virtualenv, preferring to do so from the relevant python
 # version. Even if these commands fail (e.g. on Windows due to name conflicts)
@@ -80,7 +153,7 @@ fi
 ($PYTHON -m virtualenv $VENV ||
  $HOST_PYTHON -m virtualenv -p $PYTHON $VENV ||
  true)
-VENV_PYTHON=`$REALPATH -s "$VENV/$VENV_RELATIVE_PYTHON"`
+VENV_PYTHON=`script_realpath -s "$VENV/$VENV_RELATIVE_PYTHON"`
 
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
 # Python gets confused when parsing paths.
