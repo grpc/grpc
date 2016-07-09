@@ -4345,6 +4345,7 @@
   }, 
   {
     "deps": [
+      "gpr", 
       "grpc", 
       "grpc++_base", 
       "grpc++_codegen_base", 
@@ -6514,7 +6515,10 @@
   }, 
   {
     "deps": [
-      "grpc++_codegen_base"
+      "gpr", 
+      "grpc++_codegen_base", 
+      "grpc_base", 
+      "grpc_secure"
     ], 
     "headers": [
       "include/grpc++/alarm.h", 

@@ -48,7 +48,7 @@ class InsecureInteropTest(
     port = self.server.add_insecure_port('[::]:0')
     self.server.start()
     self.stub = test_pb2.beta_create_TestService_stub(
-        implementations.insecure_channel('[::]', port))
+        implementations.insecure_channel('localhost', port))
 
   def tearDown(self):
     self.server.stop(0)

@@ -54,8 +54,8 @@ class CoreCodegen : public CoreCodegenInterface {
 
   void grpc_byte_buffer_destroy(grpc_byte_buffer* bb) GRPC_OVERRIDE;
 
-  void grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,
-                                    grpc_byte_buffer* buffer) GRPC_OVERRIDE;
+  int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,
+                                   grpc_byte_buffer* buffer) GRPC_OVERRIDE;
   void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader* reader)
       GRPC_OVERRIDE;
   int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader* reader,

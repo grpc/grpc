@@ -31,7 +31,7 @@ from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import services_pb2
 
 
-class BenchmarkServer(services_pb2.BetaBenchmarkServiceServicer):
+class BenchmarkServer(services_pb2.BenchmarkServiceServicer):
   """Synchronous Server implementation for the Benchmark service."""
 
   def UnaryCall(self, request, context):
@@ -44,7 +44,7 @@ class BenchmarkServer(services_pb2.BetaBenchmarkServiceServicer):
       yield messages_pb2.SimpleResponse(payload=payload)
 
 
-class GenericBenchmarkServer(services_pb2.BetaBenchmarkServiceServicer):
+class GenericBenchmarkServer(services_pb2.BenchmarkServiceServicer):
   """Generic Server implementation for the Benchmark service."""
 
   def __init__(self, resp_size):

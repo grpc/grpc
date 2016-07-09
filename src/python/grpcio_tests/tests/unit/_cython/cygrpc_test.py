@@ -186,7 +186,8 @@ class ServerClientMixin(object):
     def performer():
       tag = object()
       try:
-        call_result = call.start_batch(cygrpc.Operations(operations), tag)
+        call_result = call.start_client_batch(
+            cygrpc.Operations(operations), tag)
         self.assertEqual(cygrpc.CallError.ok, call_result)
         event = queue.poll(deadline)
         self.assertEqual(cygrpc.CompletionType.operation_complete, event.type)
@@ -231,7 +232,7 @@ class ServerClientMixin(object):
         cygrpc.Metadatum(CLIENT_METADATA_ASCII_KEY,
                          CLIENT_METADATA_ASCII_VALUE),
         cygrpc.Metadatum(CLIENT_METADATA_BIN_KEY, CLIENT_METADATA_BIN_VALUE)])
-    client_start_batch_result = client_call.start_batch(cygrpc.Operations([
+    client_start_batch_result = client_call.start_client_batch([
         cygrpc.operation_send_initial_metadata(client_initial_metadata,
                                                _EMPTY_FLAGS),
         cygrpc.operation_send_message(REQUEST, _EMPTY_FLAGS),
@@ -239,7 +240,7 @@ class ServerClientMixin(object):
         cygrpc.operation_receive_initial_metadata(_EMPTY_FLAGS),
         cygrpc.operation_receive_message(_EMPTY_FLAGS),
         cygrpc.operation_receive_status_on_client(_EMPTY_FLAGS)
-    ]), client_call_tag)
+    ], client_call_tag)
     self.assertEqual(cygrpc.CallError.ok, client_start_batch_result)
     client_event_future = test_utilities.CompletionQueuePollFuture(
         self.client_completion_queue, cygrpc_deadline)
@@ -268,7 +269,7 @@ class ServerClientMixin(object):
     server_trailing_metadata = cygrpc.Metadata([
         cygrpc.Metadatum(SERVER_TRAILING_METADATA_KEY,
                          SERVER_TRAILING_METADATA_VALUE)])
-    server_start_batch_result = server_call.start_batch([
+    server_start_batch_result = server_call.start_server_batch([
         cygrpc.operation_send_initial_metadata(server_initial_metadata,
                                                _EMPTY_FLAGS),
         cygrpc.operation_receive_message(_EMPTY_FLAGS),

@@ -32,18 +32,21 @@
 import argparse
 import time
 
+from concurrent import futures
+import grpc
 from src.proto.grpc.testing import services_pb2
 
 from tests.qps import worker_server
 
 
 def run_worker_server(port):
+  server = grpc.server((), futures.ThreadPoolExecutor(max_workers=5))
   servicer = worker_server.WorkerServer()
-  server = services_pb2.beta_create_WorkerService_server(servicer)
+  services_pb2.add_WorkerServiceServicer_to_server(servicer, server)
   server.add_insecure_port('[::]:{}'.format(port))
   server.start()
   servicer.wait_for_quit()
-  server.stop(2)
+  server.stop(0)
 
 
 if __name__ == '__main__':
