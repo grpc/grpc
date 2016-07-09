@@ -43,7 +43,6 @@
 
 namespace grpc_c_generator {
 
-using grpc_cpp_generator::GetCppComments;
 using std::map;
 
 class ProtoBufCMethod : public grpc_cpp_generator::Method {
@@ -54,11 +53,11 @@ public:
   grpc::string name() const { return method_->name(); }
 
   grpc::string input_type_name() const {
-    return grpc_cpp_generator::ClassName(method_->input_type(), true);
+    return method_->input_type()->name();
   }
 
   grpc::string output_type_name() const {
-    return grpc_cpp_generator::ClassName(method_->output_type(), true);
+    return method_->output_type()->name();
   }
 
   bool NoStreaming() const {
@@ -78,11 +77,11 @@ public:
   }
 
   grpc::string GetLeadingComments() const {
-    return GetCppComments(method_, true);
+    return GetCComments(method_, true);
   }
 
   grpc::string GetTrailingComments() const {
-    return GetCppComments(method_, false);
+    return GetCComments(method_, false);
   }
 
 private:
@@ -103,11 +102,11 @@ public:
   };
 
   grpc::string GetLeadingComments() const {
-    return GetCppComments(service_, true);
+    return GetCComments(service_, true);
   }
 
   grpc::string GetTrailingComments() const {
-    return GetCppComments(service_, false);
+    return GetCComments(service_, false);
   }
 
 private:
@@ -168,11 +167,11 @@ public:
   }
 
   grpc::string GetLeadingComments() const {
-    return GetCppComments(file_, true);
+    return GetCComments(file_, true);
   }
 
   grpc::string GetTrailingComments() const {
-    return GetCppComments(file_, false);
+    return GetCComments(file_, false);
   }
 
 private:
@@ -242,7 +241,6 @@ public:
         }
       }
     }
-
 
     grpc::string header_code =
       grpc_c_generator::GetHeaderPrologue(&pbfile, generator_parameters) +

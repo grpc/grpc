@@ -40,18 +40,12 @@
 
 namespace grpc_c_generator {
 
-using ::grpc::protobuf::FileDescriptor;
-using ::grpc::protobuf::ServiceDescriptor;
-using ::grpc::string;
 
-inline string MessageHeaderName(const FileDescriptor *file) {
-  return grpc_generator::FileNameInUpperCamel(file) + ".pbc.h";
-}
-
-inline string ServiceClassName(const ServiceDescriptor *service) {
-  const FileDescriptor *file = service->file();
-  string prefix = file->options().objc_class_prefix();
-  return prefix + service->name();
+// Get leading or trailing comments in a string. Comment lines start with "// ".
+// Leading detached comments are put in in front of leading comments.
+template <typename DescriptorType>
+inline grpc::string GetCComments(const DescriptorType *desc, bool leading) {
+  return grpc_generator::GetPrefixedComments(desc, leading, "//");
 }
 
 } // namespace grpc_c_generator
