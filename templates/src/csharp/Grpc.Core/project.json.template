@@ -21,7 +21,13 @@
           "build/native/bin/linux_x86/": "../nativelibs/linux_x86/libgrpc_csharp_ext.so",
           "build/native/bin/linux_x64/": "../nativelibs/linux_x64/libgrpc_csharp_ext.so",
           "build/native/bin/macosx_x86/": "../nativelibs/macosx_x86/libgrpc_csharp_ext.dylib",
-          "build/native/bin/macosx_x64/": "../nativelibs/macosx_x64/libgrpc_csharp_ext.dylib"
+          "build/native/bin/macosx_x64/": "../nativelibs/macosx_x64/libgrpc_csharp_ext.dylib",
+          "runtimes/win-x86/native/": "../nativelibs/windows_x86/grpc_csharp_ext.dll",
+          "runtimes/win-x64/native/": "../nativelibs/windows_x64/grpc_csharp_ext.dll",
+          "runtimes/linux-x86/native/": "../nativelibs/linux_x86/libgrpc_csharp_ext.so",
+          "runtimes/linux-x64/native/": "../nativelibs/linux_x64/libgrpc_csharp_ext.so",
+          "runtimes/osx-x86/native/": "../nativelibs/macosx_x86/libgrpc_csharp_ext.dylib",
+          "runtimes/osx-x64/native/": "../nativelibs/macosx_x64/libgrpc_csharp_ext.dylib"
         }
       }
     },
@@ -42,6 +48,7 @@
           "portable-net45"
         ],
         "dependencies": {
+          "Microsoft.NETCore.Platforms": "1.0.1",
           "NETStandard.Library": "1.5.0-rc2-24027",
           "System.Threading.Thread": "4.0.0-rc2-24027"
         }
