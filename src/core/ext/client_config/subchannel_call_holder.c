@@ -200,7 +200,7 @@ static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 typedef struct {
-  grpc_transport_stream_op *ops;
+  grpc_transport_stream_op **ops;
   size_t nops;
   grpc_subchannel_call *call;
 } retry_ops_args;
@@ -228,7 +228,7 @@ static void retry_ops(grpc_exec_ctx *exec_ctx, void *args, grpc_error *error) {
   retry_ops_args *a = args;
   size_t i;
   for (i = 0; i < a->nops; i++) {
-    grpc_subchannel_call_process_op(exec_ctx, a->call, &a->ops[i]);
+    grpc_subchannel_call_process_op(exec_ctx, a->call, a->ops[i]);
   }
   GRPC_SUBCHANNEL_CALL_UNREF(exec_ctx, a->call, "retry_ops");
   gpr_free(a->ops);
@@ -244,7 +244,7 @@ static void add_waiting_locked(grpc_subchannel_call_holder *holder,
         gpr_realloc(holder->waiting_ops, holder->waiting_ops_capacity *
                                              sizeof(*holder->waiting_ops));
   }
-  holder->waiting_ops[holder->waiting_ops_count++] = *op;
+  holder->waiting_ops[holder->waiting_ops_count++] = op;
   GPR_TIMER_END("add_waiting_locked", 0);
 }
 
@@ -254,7 +254,7 @@ static void fail_locked(grpc_exec_ctx *exec_ctx,
   size_t i;
   for (i = 0; i < holder->waiting_ops_count; i++) {
     grpc_transport_stream_op_finish_with_failure(
-        exec_ctx, &holder->waiting_ops[i], GRPC_ERROR_REF(error));
+        exec_ctx, holder->waiting_ops[i], GRPC_ERROR_REF(error));
   }
   holder->waiting_ops_count = 0;
   GRPC_ERROR_UNREF(error);

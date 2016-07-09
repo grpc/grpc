@@ -74,7 +74,7 @@ typedef struct grpc_subchannel_call_holder {
   grpc_connected_subchannel *connected_subchannel;
   grpc_polling_entity *pollent;
 
-  grpc_transport_stream_op *waiting_ops;
+  grpc_transport_stream_op **waiting_ops;
   size_t waiting_ops_count;
   size_t waiting_ops_capacity;
 
