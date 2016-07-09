@@ -1094,10 +1094,6 @@ def _shut_down_legacy_server(legacy_server_port):
 
 
 def _start_port_server(port_server_port):
-  # Temporary patch to switch the port_server port
-  # see https://github.com/grpc/grpc/issues/7145
-  _shut_down_legacy_server(32767)
-
   # check if a compatible port server is running
   # if incompatible (version mismatch) ==> start a new one
   # if not running ==> start a new one
