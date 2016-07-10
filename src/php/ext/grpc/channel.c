@@ -137,7 +137,7 @@ PHP_METHOD(Channel, __construct) {
       (wrapped_grpc_channel *)zend_object_store_get_object(
           getThis() TSRMLS_CC);
   char *target;
-  int target_length;
+  size_t target_length;
   zval *args_array = NULL;
   grpc_channel_args args;
   HashTable *array_hash;

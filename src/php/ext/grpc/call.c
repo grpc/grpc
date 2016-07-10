@@ -215,10 +215,10 @@ PHP_METHOD(Call, __construct) {
       (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
   zval *channel_obj;
   char *method;
-  int method_len;
+  size_t method_len;
   zval *deadline_obj;
   char *host_override = NULL;
-  int host_override_len = 0;
+  size_t host_override_len = 0;
   /* "OsO|s" == 1 Object, 1 string, 1 Object, 1 optional string */
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "OsO|s",
                             &channel_obj, grpc_ce_channel,

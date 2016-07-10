@@ -103,7 +103,7 @@ PHP_METHOD(ServerCredentials, createSsl) {
   char *pem_root_certs = 0;
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
 
-  int root_certs_length = 0, private_key_length, cert_chain_length;
+  size_t root_certs_length = 0, private_key_length, cert_chain_length;
 
   /* "s!ss" == 1 nullable string, 2 strings */
   /* TODO: support multiple key cert pairs. */
