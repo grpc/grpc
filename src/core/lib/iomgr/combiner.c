@@ -83,6 +83,7 @@ static void continue_finishing_mainline(grpc_exec_ctx *exec_ctx, void *arg,
 static void execute_final(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
   grpc_closure *c = lock->final_list.head;
   grpc_closure_list_init(&lock->final_list);
+  lock->take_async_break_before_final_list = false;
   while (c != NULL) {
     grpc_closure *next = c->next_data.next;
     grpc_error *error = c->error;
@@ -94,8 +95,15 @@ static void execute_final(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
 
 static void continue_executing_final(grpc_exec_ctx *exec_ctx, void *arg,
                                      grpc_error *error) {
-  execute_final(exec_ctx, arg);
-  finish(exec_ctx, arg);
+  grpc_combiner *lock = arg;
+  // quick peek to see if new things have turned up on the queue: if so, go back
+  // to executing them before the final list
+  if ((gpr_atm_acq_load(&lock->state) >> 1) > 1) {
+    if (maybe_finish_one(exec_ctx, lock)) finish(exec_ctx, lock);
+  } else {
+    execute_final(exec_ctx, lock);
+    finish(exec_ctx, lock);
+  }
 }
 
 static bool start_execute_final(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
