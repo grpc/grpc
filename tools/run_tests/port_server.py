@@ -42,7 +42,7 @@ import time
 # increment this number whenever making a change to ensure that
 # the changes are picked up by running CI servers
 # note that all changes must be backwards compatible
-_MY_VERSION = 8
+_MY_VERSION = 9
 
 
 if len(sys.argv) == 2 and sys.argv[1] == 'dump_version':
@@ -110,6 +110,11 @@ keep_running = True
 
 
 class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
+  
+  def setup(self):
+    # If the client is unreachable for 5 seconds, close the connection
+    self.timeout = 5
+    BaseHTTPServer.BaseHTTPRequestHandler.setup(self)
 
   def do_GET(self):
     global keep_running
