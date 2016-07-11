@@ -506,7 +506,6 @@ static void connected_subchannel_state_op(grpc_exec_ctx *exec_ctx,
                                           grpc_closure *closure) {
   grpc_transport_op *op = grpc_make_transport_op(NULL);
   grpc_channel_element *elem;
-  memset(&op, 0, sizeof(op));
   op->connectivity_state = state;
   op->on_connectivity_state_change = closure;
   op->bind_pollset_set = interested_parties;

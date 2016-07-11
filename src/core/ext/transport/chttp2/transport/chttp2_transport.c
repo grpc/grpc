@@ -490,10 +490,10 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
                        const void *server_data) {
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)gt;
   grpc_chttp2_stream *s = (grpc_chttp2_stream *)gs;
-  s->t = t;
 
   memset(s, 0, sizeof(*s));
 
+  s->t = t;
   s->refcount = refcount;
   /* We reserve one 'active stream' that's dropped when the stream is
      read-closed. The others are for incoming_byte_streams that are actively

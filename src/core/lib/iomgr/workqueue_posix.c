@@ -86,11 +86,13 @@ void grpc_workqueue_ref(grpc_workqueue *workqueue, const char *file, int line,
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "WORKQUEUE:%p   ref %d -> %d %s",
           workqueue, (int)workqueue->refs.count, (int)workqueue->refs.count + 1,
           reason);
-#else
-void grpc_workqueue_ref(grpc_workqueue *workqueue) {
-#endif
   gpr_ref(&workqueue->refs);
 }
+#else
+void grpc_workqueue_ref(grpc_workqueue *workqueue) {
+  gpr_ref(&workqueue->refs);
+}
+#endif
 
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
 void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
@@ -98,13 +100,17 @@ void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "WORKQUEUE:%p unref %d -> %d %s",
           workqueue, (int)workqueue->refs.count, (int)workqueue->refs.count - 1,
           reason);
-#else
-void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {
-#endif
   if (gpr_unref(&workqueue->refs)) {
     workqueue_orphan(exec_ctx, workqueue);
   }
 }
+#else
+void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {
+  if (gpr_unref(&workqueue->refs)) {
+    workqueue_orphan(exec_ctx, workqueue);
+  }
+}
+#endif
 
 static void drain(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {
   abort();
@@ -168,6 +174,7 @@ void grpc_workqueue_enqueue(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
                             grpc_closure *closure, grpc_error *error) {
   gpr_atm last = gpr_atm_full_fetch_add(&workqueue->state, 2);
   GPR_ASSERT(last & 1);
+  closure->error = error;
   gpr_mpscq_push(&workqueue->queue, &closure->next_data.atm_next);
   if (last == 1) {
     wakeup(exec_ctx, workqueue);
