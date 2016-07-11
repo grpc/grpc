@@ -33,7 +33,7 @@
 
 #include "unary_blocking_call.h"
 #include <grpc_c/grpc_c.h>
-#include "context.h"
+#include "client_context.h"
 #include "call_ops.h"
 #include "tag.h"
 #include "completion_queue.h"
@@ -41,7 +41,7 @@
 #include <grpc/support/log.h>
 
 GRPC_status GRPC_unary_blocking_call(GRPC_channel *channel, const GRPC_method *const rpc_method,
-                                     GRPC_context *const context, const GRPC_message message, GRPC_message *response) {
+                                     GRPC_client_context *const context, const GRPC_message message, GRPC_message *response) {
   grpc_completion_queue *cq = GRPC_completion_queue_create();
   grpc_call *call = grpc_channel_create_call(channel,
                                              NULL,

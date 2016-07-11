@@ -40,9 +40,9 @@
 #include "alloc.h"
 
 grpc_client_writer *GRPC_client_streaming_blocking_call(GRPC_channel *channel,
-                                                                 const GRPC_method rpc_method,
-                                                                 GRPC_context *const context,
-                                                                 GRPC_message *response) {
+                                                        const GRPC_method rpc_method,
+                                                        GRPC_client_context *const context,
+                                                        GRPC_message *response) {
 
   grpc_completion_queue *cq = GRPC_completion_queue_create();
   grpc_call *call = grpc_channel_create_call(channel,
@@ -105,7 +105,7 @@ GRPC_status GRPC_client_writer_terminate(grpc_client_writer *writer) {
   GRPC_completion_queue_shutdown_and_destroy(writer->cq);
   grpc_call_destroy(writer->call);
   writer->context->call = NULL;
-  grpc_context *context = writer->context;
+  grpc_client_context *context = writer->context;
   free(writer);
   return context->status;
 }

@@ -41,12 +41,14 @@
 typedef struct grpc_client_writer GRPC_client_writer;
 
 GRPC_client_writer *GRPC_client_streaming_blocking_call(GRPC_channel *channel,
-                                                                 const GRPC_method rpc_method,
-                                                                 GRPC_context *const context,
-                                                                 GRPC_message *response);
+                                                        const GRPC_method rpc_method,
+                                                        GRPC_client_context *const context,
+                                                        GRPC_message *response);
 
 bool GRPC_client_streaming_blocking_write(GRPC_client_writer *writer, const GRPC_message request);
 
+/* Terminating the writer takes care of ending the call, freeing the writer. */
+/* Returns call status in the context object. */
 GRPC_status GRPC_client_writer_terminate(GRPC_client_writer *writer);
 
 #endif // GRPC_C_CLIENT_STREAMING_BLOCKING_CALL_PUBLIC_H

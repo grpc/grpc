@@ -43,7 +43,7 @@
 
 GRPC_client_reader *GRPC_server_streaming_blocking_call(GRPC_channel *channel,
                                                         const GRPC_method rpc_method,
-                                                        GRPC_context *const context,
+                                                        GRPC_client_context *const context,
                                                         const GRPC_message request) {
   grpc_completion_queue *cq = GRPC_completion_queue_create();
   grpc_call *call = grpc_channel_create_call(channel,
@@ -118,7 +118,7 @@ GRPC_status GRPC_client_reader_terminate(GRPC_client_reader *reader) {
   GRPC_completion_queue_shutdown_and_destroy(reader->cq);
   grpc_call_destroy(reader->call);
   reader->context->call = NULL;
-  grpc_context *context = reader->context;
+  grpc_client_context *context = reader->context;
   free(reader);
   return context->status;
 }
