@@ -336,6 +336,11 @@ TEST_F(FilterEnd2endTest, SimpleBidiStreaming) {
   EXPECT_EQ(1, GetConnectionCounterValue());
 }
 
+void RegisterFilter() {
+  grpc::RegisterChannelFilter<ChannelDataImpl, CallDataImpl>(
+      "test-filter", GRPC_SERVER_CHANNEL, INT_MAX, nullptr);
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
@@ -343,8 +348,6 @@ TEST_F(FilterEnd2endTest, SimpleBidiStreaming) {
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::RegisterChannelFilter<grpc::testing::ChannelDataImpl,
-                              grpc::testing::CallDataImpl>(
-      "test-filter", GRPC_SERVER_CHANNEL, INT_MAX, nullptr);
+  grpc::testing::RegisterFilter();
   return RUN_ALL_TESTS();
 }
