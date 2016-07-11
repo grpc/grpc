@@ -39,11 +39,12 @@ typedef struct grpc_client_reader GRPC_client_reader;
 
 GRPC_client_reader *GRPC_server_streaming_blocking_call(GRPC_channel *channel,
                                                         const GRPC_method rpc_method,
-                                                        GRPC_context *const context,
+                                                        GRPC_client_context *const context,
                                                         const GRPC_message request);
 
 bool GRPC_server_streaming_blocking_read(GRPC_client_reader *reader, GRPC_message *response);
 
+/* Terminating the writer takes care of ending the call, freeing the writer. */
 GRPC_status GRPC_client_reader_terminate(GRPC_client_reader *reader);
 
 #endif // GRPC_C_SERVER_STREAMING_BLOCKING_CALL_PUBLIC_H
