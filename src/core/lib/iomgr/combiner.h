@@ -63,5 +63,6 @@ void grpc_combiner_execute(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
 void grpc_combiner_execute_finally(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
                                    grpc_closure *closure, grpc_error *error,
                                    bool force_async_break);
+void grpc_combiner_force_async_finally(grpc_combiner *lock);
 
 #endif /* GRPC_CORE_LIB_IOMGR_COMBINER_H */

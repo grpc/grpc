@@ -187,3 +187,7 @@ void grpc_combiner_execute_finally(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
   }
   grpc_closure_list_append(&lock->final_list, closure, error);
 }
+
+void grpc_combiner_force_async_finally(grpc_combiner *lock) {
+  lock->take_async_break_before_final_list = true;
+}
