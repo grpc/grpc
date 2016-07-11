@@ -31,6 +31,7 @@
 
 import os
 import os.path
+import platform
 import shlex
 import shutil
 import sys
@@ -56,9 +57,14 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.abspath(PYTHON_STEM))
 
 # Break import-style to ensure we can actually find our in-repo dependencies.
+import _unixccompiler_patch
 import commands
 import grpc_core_dependencies
 import grpc_version
+
+# TODO(atash) make this conditional on being on a mingw32 build
+_unixccompiler_patch.monkeypatch_unix_compiler()
+
 
 LICENSE = '3-clause BSD'
 
@@ -72,6 +78,14 @@ BUILD_WITH_CYTHON = os.environ.get('GRPC_PYTHON_BUILD_WITH_CYTHON', False)
 ENABLE_CYTHON_TRACING = os.environ.get(
     'GRPC_PYTHON_ENABLE_CYTHON_TRACING', False)
 
+# There are some situations (like on Windows) where CC, CFLAGS, and LDFLAGS are
+# entirely ignored/dropped/forgotten by distutils and its Cygwin/MinGW support.
+# We use these environment variables to thus get around that without locking
+# ourselves in w.r.t. the multitude of operating systems this ought to build on.
+# By default we assume a GCC-like compiler.
+EXTRA_COMPILE_ARGS = shlex.split(os.environ.get('GRPC_PYTHON_CFLAGS', ''))
+EXTRA_LINK_ARGS = shlex.split(os.environ.get('GRPC_PYTHON_LDFLAGS', ''))
+
 CYTHON_EXTENSION_PACKAGE_NAMES = ()
 
 CYTHON_EXTENSION_MODULE_NAMES = ('grpc._cython.cygrpc',)
@@ -81,9 +95,7 @@ CYTHON_HELPER_C_FILES = (
     os.path.join(PYTHON_STEM, 'grpc/_cython/imports.generated.c'),
 )
 
-CORE_C_FILES = ()
-if not "win32" in sys.platform:
-  CORE_C_FILES += tuple(grpc_core_dependencies.CORE_SOURCE_FILES)
+CORE_C_FILES = tuple(grpc_core_dependencies.CORE_SOURCE_FILES)
 
 EXTENSION_INCLUDE_DIRECTORIES = (
     (PYTHON_STEM,) + CORE_INCLUDE + BORINGSSL_INCLUDE + ZLIB_INCLUDE)
@@ -93,12 +105,17 @@ if "linux" in sys.platform:
   EXTENSION_LIBRARIES += ('rt',)
 if not "win32" in sys.platform:
   EXTENSION_LIBRARIES += ('m',)
+if "win32" in sys.platform:
+  EXTENSION_LIBRARIES += ('ws2_32',)
 
 DEFINE_MACROS = (('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600), ('GPR_BACKWARDS_COMPATIBILITY_MODE', 1),)
+if "win32" in sys.platform:
+  DEFINE_MACROS += (('OPENSSL_WINDOWS', 1), ('WIN32_LEAN_AND_MEAN', 1),)
+  if '64bit' in platform.architecture()[0]:
+    DEFINE_MACROS += (('MS_WIN64', 1),)
 
-LDFLAGS = shlex.split(os.environ.get('GRPC_PYTHON_LDFLAGS', ''))
-CFLAGS = shlex.split(os.environ.get('GRPC_PYTHON_CFLAGS', ''))
-
+LDFLAGS = tuple(EXTRA_LINK_ARGS)
+CFLAGS = tuple(EXTRA_COMPILE_ARGS)
 if "linux" in sys.platform:
   LDFLAGS += ('-Wl,-wrap,memcpy',)
 if "linux" in sys.platform or "darwin" in sys.platform:

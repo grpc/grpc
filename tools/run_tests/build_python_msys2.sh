@@ -1,4 +1,5 @@
-# Copyright 2015, Google Inc.
+#!/bin/bash
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,32 +28,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Insecure client-server interoperability as a unit test."""
+set -ex
 
-import unittest
-
-from grpc.beta import implementations
-from src.proto.grpc.testing import test_pb2
-
-from tests.interop import _interop_test_case
-from tests.interop import methods
-from tests.interop import server
-
-
-class InsecureInteropTest(
-    _interop_test_case.InteropTestCase,
-    unittest.TestCase):
-
-  def setUp(self):
-    self.server = test_pb2.beta_create_TestService_server(methods.TestService())
-    port = self.server.add_insecure_port('[::]:0')
-    self.server.start()
-    self.stub = test_pb2.beta_create_TestService_stub(
-        implementations.insecure_channel('localhost', port))
-
-  def tearDown(self):
-    self.server.stop(0)
-
-
-if __name__ == '__main__':
-  unittest.main(verbosity=2)
+BUILD_PYTHON=`realpath "$(dirname $0)/build_python.sh"`
+export MSYSTEM=$1
+shift 1
+bash --login $BUILD_PYTHON "$@"

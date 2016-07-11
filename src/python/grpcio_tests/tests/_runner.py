@@ -30,7 +30,6 @@
 from __future__ import absolute_import
 
 import collections
-import fcntl
 import multiprocessing
 import os
 import select
@@ -178,15 +177,20 @@ class Runner(object):
         stderr_pipe.write_bypass(
             '\ninterrupted stderr:\n{}\n'.format(stderr_pipe.output().decode()))
         os._exit(1)
-    signal.signal(signal.SIGINT, sigint_handler)
-    signal.signal(signal.SIGSEGV, fault_handler)
-    signal.signal(signal.SIGBUS, fault_handler)
-    signal.signal(signal.SIGABRT, fault_handler)
-    signal.signal(signal.SIGFPE, fault_handler)
-    signal.signal(signal.SIGILL, fault_handler)
+    def try_set_handler(name, handler):
+      try:
+        signal.signal(getattr(signal, name), handler)
+      except AttributeError:
+        pass
+    try_set_handler('SIGINT', sigint_handler)
+    try_set_handler('SIGSEGV', fault_handler)
+    try_set_handler('SIGBUS', fault_handler)
+    try_set_handler('SIGABRT', fault_handler)
+    try_set_handler('SIGFPE', fault_handler)
+    try_set_handler('SIGILL', fault_handler)
     # Sometimes output will lag after a test has successfully finished; we
     # ignore such writes to our pipes.
-    signal.signal(signal.SIGPIPE, signal.SIG_IGN)
+    try_set_handler('SIGPIPE', signal.SIG_IGN)
 
     # Run the tests
     result.startTestRun()
