@@ -183,6 +183,8 @@ class Server GRPC_FINAL : public ServerInterface, private GrpcLibraryCodegen {
   int num_running_cb_;
   grpc::condition_variable callback_cv_;
 
+  grpc::condition_variable shutdown_cv_;
+
   std::shared_ptr<GlobalCallbacks> global_callbacks_;
 
   std::list<SyncRequest>* sync_methods_;
