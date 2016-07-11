@@ -30,6 +30,8 @@
 require 'grpc'
 
 describe GRPC::Core::CompressionOptions do
+  # Note these constants should be updated according to what the core lib does.
+
   # Names of supported compression algorithms and their internal enum values
   ALGORITHMS = {
     identity: 0,
@@ -44,12 +46,6 @@ describe GRPC::Core::CompressionOptions do
     deflate: 0x2,
     gzip: 0x4
   }
-
-  # "enabled algorithms bitset" when all compression algorithms are enabled
-  ALL_ENABLED_BITSET = 0x7
-
-  # "enabled algorithms bitset" when all compression algorithms are disabled
-  ALL_DISABLED_BITSET = 0x0
 
   # Names of valid supported compression levels and their internal enum values
   COMPRESS_LEVELS = {
@@ -77,20 +73,20 @@ describe GRPC::Core::CompressionOptions do
         eql('grpc.compression_enabled_algorithms_bitset' => 0x7))
     end
 
-    it 'gives the correct channel args after everything has been disabled' do
+    it 'gives the correct channel args after disabling multiple algorithms' do
       options = GRPC::Core::CompressionOptions.new(
         default_algorithm: :identity,
         default_level: :none,
-        disabled_algorithms: ALGORITHMS.keys
+        disabled_algorithms: [:gzip, :deflate]
       )
 
       channel_arg_hash = options.to_hash
       expect(channel_arg_hash['grpc.default_compression_algorithm']).to eq(0)
       expect(channel_arg_hash['grpc.default_compression_level']).to eq(0)
 
-      # Don't care if the "identity" algorithm bit is set or unset
       bitset = channel_arg_hash['grpc.compression_enabled_algorithms_bitset']
-      expect(bitset & ~ALGORITHM_BITS[:identity]).to eq(0)
+      expect(bitset & ALGORITHM_BITS[:gzip]).to eq(0)
+      expect(bitset & ALGORITHM_BITS[:deflate]).to eq(0)
     end
 
     it 'gives correct channel args with all args set' do
@@ -100,13 +96,16 @@ describe GRPC::Core::CompressionOptions do
         disabled_algorithms: [:deflate]
       )
 
-      expected_bitset = ALL_ENABLED_BITSET & ~ALGORITHM_BITS[:deflate]
+      channel_arg_hash = options.to_hash
 
-      expect(options.to_hash).to(
-        eql('grpc.default_compression_algorithm' => ALGORITHMS[:gzip],
-            'grpc.default_compression_level' => COMPRESS_LEVELS[:low],
-            'grpc.compression_enabled_algorithms_bitset' => expected_bitset)
-      )
+      actual_bitset = channel_arg_hash[
+        'grpc.compression_enabled_algorithms_bitset']
+      default_algorithm = channel_arg_hash['grpc.default_compression_algorithm']
+      default_level = channel_arg_hash['grpc.default_compression_level']
+
+      expect(actual_bitset & ALGORITHM_BITS[:deflate]).to eq(0)
+      expect(default_algorithm).to eq(ALGORITHMS[:gzip])
+      expect(default_level).to eq(COMPRESS_LEVELS[:low])
     end
 
     it 'gives correct channel args when no algorithms are disabled' do
@@ -115,11 +114,17 @@ describe GRPC::Core::CompressionOptions do
         default_level: :high
       )
 
-      expect(options.to_hash).to(
-        eql('grpc.default_compression_algorithm' => ALGORITHMS[:identity],
-            'grpc.default_compression_level' => COMPRESS_LEVELS[:high],
-            'grpc.compression_enabled_algorithms_bitset' => ALL_ENABLED_BITSET)
-      )
+      channel_arg_hash = options.to_hash
+
+      actual_bitset = channel_arg_hash[
+        'grpc.compression_enabled_algorithms_bitset']
+      default_algorithm = channel_arg_hash['grpc.default_compression_algorithm']
+      default_level = channel_arg_hash['grpc.default_compression_level']
+
+      expect(actual_bitset & ALGORITHM_BITS[:deflate]).to_not eq(0)
+      expect(actual_bitset & ALGORITHM_BITS[:gzip]).to_not eq(0)
+      expect(default_algorithm).to eq(ALGORITHMS[:identity])
+      expect(default_level).to eq(COMPRESS_LEVELS[:high])
     end
   end
 
@@ -290,7 +295,9 @@ describe GRPC::Core::CompressionOptions do
   describe '#enabled_algoritms_bitset' do
     it 'should respond to not disabling any algorithms' do
       options = GRPC::Core::CompressionOptions.new
-      expect(options.enabled_algorithms_bitset).to eq(ALL_ENABLED_BITSET)
+      actual_bitset = options.enabled_algorithms_bitset
+      expect(actual_bitset & ALGORITHM_BITS[:gzip]).to_not eq(0)
+      expect(actual_bitset & ALGORITHM_BITS[:deflate]).to_not eq(0)
     end
 
     it 'should respond to disabling one algorithm' do
@@ -301,8 +308,11 @@ describe GRPC::Core::CompressionOptions do
 
     it 'should respond to disabling multiple algorithms' do
       options = GRPC::Core::CompressionOptions.new(
-        disabled_algorithms: ALGORITHMS.keys)
-      expect(options.enabled_algorithms_bitset).to eql(ALL_DISABLED_BITSET)
+        disabled_algorithms: [:gzip, :deflate])
+
+      actual_bitset = options.enabled_algorithms_bitset
+      expect(actual_bitset & ALGORITHM_BITS[:gzip]).to eq(0)
+      expect(actual_bitset & ALGORITHM_BITS[:deflate]).to eq(0)
     end
   end
 end
