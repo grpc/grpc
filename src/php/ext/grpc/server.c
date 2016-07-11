@@ -48,7 +48,6 @@
 #include <stdbool.h>
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpc/grpc_security.h>
 
 #include "completion_queue.h"
