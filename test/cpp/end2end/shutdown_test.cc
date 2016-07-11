@@ -123,7 +123,6 @@ class ShutdownTest : public ::testing::Test {
   TestServiceImpl service_;
 };
 
-// Tests zookeeper state change between two RPCs
 // TODO(ctiller): leaked objects in this test
 TEST_F(ShutdownTest, ShutdownTest) {
   ResetStub();

@@ -39,6 +39,8 @@
 /* Additional inclusions not covered by "imports.generated.h" */
 #include <grpc/byte_buffer_reader.h>
 
+/* TODO(atash) remove cruft */
+
 #ifdef __cplusplus
 extern "C" {
 #endif  /* __cpluslus */

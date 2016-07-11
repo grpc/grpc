@@ -74,6 +74,13 @@
     set(ZLIB_ROOT_DIR <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/zlib)
   endif()
 
+  # Building the protobuf tests require gmock what is not part of a standard protobuf checkout.
+  # Disable them unless they are explicitly requested from the cmake command line (when we assume
+  # gmock is downloaded to the right location inside protobuf).
+  if(NOT protobuf_BUILD_TESTS)
+    set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests")
+  endif()
+
   add_subdirectory(<%text>${BORINGSSL_ROOT_DIR}</%text> third_party/boringssl)
   add_subdirectory(<%text>${PROTOBUF_ROOT_DIR}</%text>/cmake third_party/protobuf)
   add_subdirectory(<%text>${ZLIB_ROOT_DIR}</%text> third_party/zlib)
