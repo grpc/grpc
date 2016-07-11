@@ -3,13 +3,7 @@ platform :ios, '8.0'
 
 install! 'cocoapods', :deterministic_uuids => false
 
-# Location of gRPC's repo root relative to this file.
-GRPC_LOCAL_SRC = '../../..'
-
 target 'HelloWorld' do
   # Depend on the generated HelloWorld library.
   pod 'HelloWorld', :path => '.'
-
-  pod '!ProtoCompiler',  :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
-  pod '!ProtoCompiler-gRPCPlugin', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
 end

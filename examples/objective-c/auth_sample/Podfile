@@ -3,16 +3,10 @@ platform :ios, '8.0'
 
 install! 'cocoapods', :deterministic_uuids => false
 
-# Location of gRPC's repo root relative to this file.
-GRPC_LOCAL_SRC = '../../..'
-
 target 'AuthSample' do
   # Depend on the generated AuthTestService library.
   pod 'AuthTestService', :path => '.'
 
   # Depend on Google's OAuth2 library
   pod 'Google/SignIn'
-
-  pod '!ProtoCompiler',  :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
-  pod '!ProtoCompiler-gRPCPlugin', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
 end
