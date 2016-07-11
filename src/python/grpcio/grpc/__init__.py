@@ -312,7 +312,7 @@ class Call(six.with_metaclass(abc.ABCMeta, RpcContext)):
     This method blocks until the value is available.
 
     Returns:
-      The initial metadata as a sequence of pairs of bytes.
+      The initial :term:`metadata`.
     """
     raise NotImplementedError()
 
@@ -323,7 +323,7 @@ class Call(six.with_metaclass(abc.ABCMeta, RpcContext)):
     This method blocks until the value is available.
 
     Returns:
-      The trailing metadata as a sequence of pairs of bytes.
+      The trailing :term:`metadata`.
     """
     raise NotImplementedError()
 
@@ -394,8 +394,7 @@ class AuthMetadataPluginCallback(six.with_metaclass(abc.ABCMeta)):
     """Inform the gRPC runtime of the metadata to construct a CallCredentials.
 
     Args:
-      metadata: An iterable of 2-sequences (e.g. tuples) of metadata key/value
-        pairs.
+      metadata: The :term:`metadata` used to construct the CallCredentials.
       error: An Exception to indicate error or None to indicate success.
     """
     raise NotImplementedError()
@@ -442,7 +441,7 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
     Args:
       request: The request value for the RPC.
       timeout: An optional duration of time in seconds to allow for the RPC.
-      metadata: An optional sequence of pairs of bytes to be transmitted to the
+      metadata: Optional :term:`metadata` to be transmitted to the
         service-side of the RPC.
       credentials: An optional CallCredentials for the RPC.
 
@@ -463,7 +462,7 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
     Args:
       request: The request value for the RPC.
       timeout: An optional durating of time in seconds to allow for the RPC.
-      metadata: An optional sequence of pairs of bytes to be transmitted to the
+      metadata: Optional :term:`metadata` to be transmitted to the
         service-side of the RPC.
       credentials: An optional CallCredentials for the RPC.
 
@@ -484,7 +483,7 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
     Args:
       request: The request value for the RPC.
       timeout: An optional duration of time in seconds to allow for the RPC.
-      metadata: An optional sequence of pairs of bytes to be transmitted to the
+      metadata: Optional :term:`metadata` to be transmitted to the
         service-side of the RPC.
       credentials: An optional CallCredentials for the RPC.
 
@@ -507,7 +506,7 @@ class UnaryStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
     Args:
       request: The request value for the RPC.
       timeout: An optional duration of time in seconds to allow for the RPC.
-      metadata: An optional sequence of pairs of bytes to be transmitted to the
+      metadata: An optional :term:`metadata` to be transmitted to the
         service-side of the RPC.
       credentials: An optional CallCredentials for the RPC.
 
@@ -530,7 +529,7 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
     Args:
       request_iterator: An iterator that yields request values for the RPC.
       timeout: An optional duration of time in seconds to allow for the RPC.
-      metadata: An optional sequence of pairs of bytes to be transmitted to the
+      metadata: Optional :term:`metadata` to be transmitted to the
         service-side of the RPC.
       credentials: An optional CallCredentials for the RPC.
 
@@ -553,7 +552,7 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
     Args:
       request_iterator: An iterator that yields request values for the RPC.
       timeout: An optional duration of time in seconds to allow for the RPC.
-      metadata: An optional sequence of pairs of bytes to be transmitted to the
+      metadata: Optional :term:`metadata` to be transmitted to the
         service-side of the RPC.
       credentials: An optional CallCredentials for the RPC.
 
@@ -575,7 +574,7 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
     Args:
       request_iterator: An iterator that yields request values for the RPC.
       timeout: An optional duration of time in seconds to allow for the RPC.
-      metadata: An optional sequence of pairs of bytes to be transmitted to the
+      metadata: Optional :term:`metadata` to be transmitted to the
         service-side of the RPC.
       credentials: An optional CallCredentials for the RPC.
 
@@ -599,7 +598,7 @@ class StreamStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
     Args:
       request_iterator: An iterator that yields request values for the RPC.
       timeout: An optional duration of time in seconds to allow for the RPC.
-      metadata: An optional sequence of pairs of bytes to be transmitted to the
+      metadata: Optional :term:`metadata` to be transmitted to the
         service-side of the RPC.
       credentials: An optional CallCredentials for the RPC.
 
@@ -707,7 +706,7 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
     """Accesses the metadata from the invocation-side of the RPC.
 
     Returns:
-      The invocation metadata object as a sequence of pairs of bytes.
+      The invocation :term:`metadata`.
     """
     raise NotImplementedError()
 
@@ -728,8 +727,7 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
     service-side initial metadata to transmit.
 
     Args:
-      initial_metadata: The initial metadata of the RPC as a sequence of pairs
-        of bytes.
+      initial_metadata: The initial :term:`metadata`.
     """
     raise NotImplementedError()
 
@@ -741,8 +739,7 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
     service-side trailing metadata to transmit.
 
     Args:
-      trailing_metadata: The trailing metadata of the RPC as a sequence of pairs
-        of bytes.
+      trailing_metadata: The trailing :term:`metadata`.
     """
     raise NotImplementedError()
 
@@ -815,7 +812,7 @@ class HandlerCallDetails(six.with_metaclass(abc.ABCMeta)):
   """Describes an RPC that has just arrived for service.
   Attributes:
     method: The method name of the RPC.
-    invocation_metadata: The metadata from the invocation side of the RPC.
+    invocation_metadata: The :term:`metadata` from the invocation side of the RPC.
   """
 
 
