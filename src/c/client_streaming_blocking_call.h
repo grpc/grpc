@@ -41,7 +41,7 @@
 typedef struct grpc_client_writer {
   grpc_call_op_set finish_ops;
 
-  grpc_context *context;
+  grpc_client_context *context;
   grpc_call *call;
   grpc_completion_queue *cq;
   grpc_message *response;

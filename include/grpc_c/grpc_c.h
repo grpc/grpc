@@ -40,8 +40,16 @@
 
 typedef struct grpc_channel GRPC_channel;
 typedef struct grpc_status GRPC_status;
-typedef struct grpc_context GRPC_context;
+typedef struct grpc_client_context GRPC_client_context;
 typedef struct grpc_completion_queue GRPC_completion_queue;
+
+typedef struct grpc_client_reader_writer GRPC_client_reader_writer;
+typedef struct grpc_client_reader GRPC_client_reader;
+typedef struct grpc_client_writer GRPC_client_writer;
+typedef struct grpc_client_async_reader_writer GRPC_client_async_reader_writer;
+typedef struct grpc_client_async_reader GRPC_client_async_reader;
+typedef struct grpc_client_async_writer GRPC_client_async_writer;
+typedef struct grpc_client_async_response_reader GRPC_client_async_response_reader;
 
 typedef struct GRPC_method {
   enum RpcType {

@@ -42,7 +42,8 @@ typedef struct grpc_client_async_response_reader GRPC_client_async_response_read
 
 GRPC_client_async_response_reader *GRPC_unary_async_call(GRPC_channel *channel, GRPC_completion_queue *cq,
                                                          const GRPC_method rpc_method,
-                                                         const GRPC_message request, GRPC_context *const context);
+                                                         const GRPC_message request,
+                                                         GRPC_client_context *const context);
 
 void GRPC_client_async_finish(GRPC_client_async_response_reader *reader, GRPC_message *response, void *tag);
 
