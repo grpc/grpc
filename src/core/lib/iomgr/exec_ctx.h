@@ -40,8 +40,8 @@
 
 /** A workqueue represents a list of work to be executed asynchronously.
     Forward declared here to avoid a circular dependency with workqueue.h. */
-struct grpc_workqueue;
 typedef struct grpc_workqueue grpc_workqueue;
+typedef struct grpc_combiner grpc_combiner;
 
 #ifndef GRPC_EXECUTION_CONTEXT_SANITIZER
 /** Execution context.
@@ -66,13 +66,15 @@ typedef struct grpc_workqueue grpc_workqueue;
  */
 struct grpc_exec_ctx {
   grpc_closure_list closure_list;
+  /** currently active combiner: updated only via combiner.c */
+  grpc_combiner *active_combiner;
   bool cached_ready_to_finish;
   void *check_ready_to_finish_arg;
   bool (*check_ready_to_finish)(grpc_exec_ctx *exec_ctx, void *arg);
 };
 
 #define GRPC_EXEC_CTX_INIT_WITH_FINISH_CHECK(finish_check, finish_check_arg) \
-  { GRPC_CLOSURE_LIST_INIT, false, finish_check_arg, finish_check }
+  { GRPC_CLOSURE_LIST_INIT, NULL, false, finish_check_arg, finish_check }
 #else
 struct grpc_exec_ctx {
   bool cached_ready_to_finish;

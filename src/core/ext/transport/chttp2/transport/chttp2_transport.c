@@ -181,7 +181,7 @@ static void destruct_transport(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_stream_map_destroy(&t->new_stream_map);
   grpc_connectivity_state_destroy(exec_ctx, &t->channel_callback.state_tracker);
 
-  grpc_combiner_destroy(t->executor.combiner);
+  grpc_combiner_destroy(exec_ctx, t->executor.combiner);
 
   /* callback remaining pings: they're not allowed to call into the transpot,
      and maybe they hold resources that need to be freed */

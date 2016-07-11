@@ -285,4 +285,8 @@ void grpc_transport_destroy(grpc_exec_ctx *exec_ctx, grpc_transport *transport);
 char *grpc_transport_get_peer(grpc_exec_ctx *exec_ctx,
                               grpc_transport *transport);
 
+/* Allocate a grpc_transport_op, and preconfigure the on_consumed closure to
+   \a on_consumed and then delete the returned transport op */
+grpc_transport_op *grpc_make_transport_op(grpc_closure *on_consumed);
+
 #endif /* GRPC_CORE_LIB_TRANSPORT_TRANSPORT_H */

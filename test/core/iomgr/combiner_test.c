@@ -43,7 +43,9 @@
 
 static void test_no_op(void) {
   gpr_log(GPR_DEBUG, "test_no_op");
-  grpc_combiner_destroy(grpc_combiner_create(NULL));
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_combiner_destroy(&exec_ctx, grpc_combiner_create(NULL));
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void set_bool_to_true(grpc_exec_ctx *exec_ctx, void *value,
@@ -60,9 +62,10 @@ static void test_execute_one(void) {
   grpc_combiner_execute(&exec_ctx, lock,
                         grpc_closure_create(set_bool_to_true, &done),
                         GRPC_ERROR_NONE);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_exec_ctx_flush(&exec_ctx);
   GPR_ASSERT(done);
-  grpc_combiner_destroy(lock);
+  grpc_combiner_destroy(&exec_ctx, lock);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 typedef struct {
@@ -89,7 +92,7 @@ static void execute_many_loop(void *a) {
   size_t n = 1;
   for (size_t i = 0; i < 10; i++) {
     for (size_t j = 0; j < 10000; j++) {
-      ex_args *c = gpr_malloc(sizeof(*a));
+      ex_args *c = gpr_malloc(sizeof(*c));
       c->ctr = &args->ctr;
       c->value = n++;
       grpc_combiner_execute(&exec_ctx, args->lock,
@@ -117,7 +120,9 @@ static void test_execute_many(void) {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
     gpr_thd_join(thds[i]);
   }
-  grpc_combiner_destroy(lock);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_combiner_destroy(&exec_ctx, lock);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static bool got_in_finally = false;
@@ -139,9 +144,10 @@ static void test_execute_finally(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_combiner_execute(&exec_ctx, lock, grpc_closure_create(add_finally, lock),
                         GRPC_ERROR_NONE);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_exec_ctx_flush(&exec_ctx);
   GPR_ASSERT(got_in_finally);
-  grpc_combiner_destroy(lock);
+  grpc_combiner_destroy(&exec_ctx, lock);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 int main(int argc, char **argv) {
