@@ -15,7 +15,9 @@ Pod::Spec.new do |s|
     BINDIR=../../../../bins/$CONFIG
     PROTOC=$BINDIR/protobuf/protoc
     PLUGIN=$BINDIR/grpc_objective_c_plugin
-    $PROTOC --plugin=protoc-gen-grpc=$PLUGIN --objc_out=. --grpc_out=. *.proto
+    # we use this path to locate well-known proto files
+    PROTO_SRC=../../../../third_party/protobuf/src
+    $PROTOC --plugin=protoc-gen-grpc=$PLUGIN --objc_out=. --grpc_out=. *.proto -I $PROTO_SRC -I .
   CMD
 
   s.subspec "Messages" do |ms|
