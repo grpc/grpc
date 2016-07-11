@@ -71,6 +71,10 @@ static ID id_credentials;
  * received by the call and subsequently saved on it. */
 static ID id_metadata;
 
+/* id_trailing_metadata is the name of the attribute used to access the trailing
+ * metadata hash received by the call and subsequently saved on it. */
+static ID id_trailing_metadata;
+
 /* id_status is name of the attribute used to access the status object
  * received by the call and subsequently saved on it. */
 static ID id_status;
@@ -294,6 +298,30 @@ static VALUE grpc_rb_call_set_metadata(VALUE self, VALUE metadata) {
   }
 
   return rb_ivar_set(self, id_metadata, metadata);
+}
+
+/*
+  call-seq:
+  trailing_metadata = call.trailing_metadata
+
+  Gets the trailing metadata object saved on the call */
+static VALUE grpc_rb_call_get_trailing_metadata(VALUE self) {
+  return rb_ivar_get(self, id_trailing_metadata);
+}
+
+/*
+  call-seq:
+  call.trailing_metadata = trailing_metadata
+
+  Saves the trailing metadata hash on the call. */
+static VALUE grpc_rb_call_set_trailing_metadata(VALUE self, VALUE metadata) {
+  if (!NIL_P(metadata) && TYPE(metadata) != T_HASH) {
+    rb_raise(rb_eTypeError, "bad metadata: got:<%s> want: <Hash>",
+             rb_obj_classname(metadata));
+    return Qnil;
+  }
+
+  return rb_ivar_set(self, id_trailing_metadata, metadata);
 }
 
 /*
@@ -908,6 +936,10 @@ void Init_grpc_call() {
   rb_define_method(grpc_rb_cCall, "status=", grpc_rb_call_set_status, 1);
   rb_define_method(grpc_rb_cCall, "metadata", grpc_rb_call_get_metadata, 0);
   rb_define_method(grpc_rb_cCall, "metadata=", grpc_rb_call_set_metadata, 1);
+  rb_define_method(grpc_rb_cCall, "trailing_metadata",
+                   grpc_rb_call_get_trailing_metadata, 0);
+  rb_define_method(grpc_rb_cCall, "trailing_metadata=",
+                   grpc_rb_call_set_trailing_metadata, 1);
   rb_define_method(grpc_rb_cCall, "write_flag", grpc_rb_call_get_write_flag, 0);
   rb_define_method(grpc_rb_cCall, "write_flag=", grpc_rb_call_set_write_flag,
                    1);
@@ -916,6 +948,7 @@ void Init_grpc_call() {
 
   /* Ids used to support call attributes */
   id_metadata = rb_intern("metadata");
+  id_trailing_metadata = rb_intern("trailing_metadata");
   id_status = rb_intern("status");
   id_write_flag = rb_intern("write_flag");
 

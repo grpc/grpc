@@ -41,6 +41,7 @@ from concurrent import futures
 import six
 
 # test_interfaces is referenced from specification in this module.
+from grpc.framework.foundation import future
 from grpc.framework.foundation import logging_pool
 from grpc.framework.interfaces.face import face
 from tests.unit.framework.common import test_constants
@@ -159,6 +160,8 @@ class TestCase(six.with_metaclass(abc.ABCMeta, test_coverage.Coverage, unittest.
 
         test_messages.verify(request, response, self)
         self.assertIs(callback.future(), response_future)
+        self.assertIsNone(response_future.exception())
+        self.assertIsNone(response_future.traceback())
 
   def testSuccessfulUnaryRequestStreamResponse(self):
     for (group, method), test_messages_sequence in (
@@ -191,6 +194,8 @@ class TestCase(six.with_metaclass(abc.ABCMeta, test_coverage.Coverage, unittest.
 
         test_messages.verify(requests, response, self)
         self.assertIs(future_passed_to_callback, response_future)
+        self.assertIsNone(response_future.exception())
+        self.assertIsNone(response_future.traceback())
 
   def testSuccessfulStreamRequestStreamResponse(self):
     for (group, method), test_messages_sequence in (
@@ -301,6 +306,12 @@ class TestCase(six.with_metaclass(abc.ABCMeta, test_coverage.Coverage, unittest.
         self.assertIs(callback.future(), response_future)
         self.assertFalse(cancel_method_return_value)
         self.assertTrue(response_future.cancelled())
+        with self.assertRaises(future.CancelledError):
+          response_future.result()
+        with self.assertRaises(future.CancelledError):
+          response_future.exception()
+        with self.assertRaises(future.CancelledError):
+          response_future.traceback()
 
   def testCancelledUnaryRequestStreamResponse(self):
     for (group, method), test_messages_sequence in (
@@ -332,6 +343,12 @@ class TestCase(six.with_metaclass(abc.ABCMeta, test_coverage.Coverage, unittest.
         self.assertIs(callback.future(), response_future)
         self.assertFalse(cancel_method_return_value)
         self.assertTrue(response_future.cancelled())
+        with self.assertRaises(future.CancelledError):
+          response_future.result()
+        with self.assertRaises(future.CancelledError):
+          response_future.exception()
+        with self.assertRaises(future.CancelledError):
+          response_future.traceback()
 
   def testCancelledStreamRequestStreamResponse(self):
     for (group, method), test_messages_sequence in (
@@ -363,6 +380,9 @@ class TestCase(six.with_metaclass(abc.ABCMeta, test_coverage.Coverage, unittest.
               response_future.exception(), face.ExpirationError)
           with self.assertRaises(face.ExpirationError):
             response_future.result()
+          self.assertIsInstance(
+              response_future.exception(), face.AbortionError)
+          self.assertIsNotNone(response_future.traceback())
 
   def testExpiredUnaryRequestStreamResponse(self):
     for (group, method), test_messages_sequence in (
@@ -392,6 +412,9 @@ class TestCase(six.with_metaclass(abc.ABCMeta, test_coverage.Coverage, unittest.
               response_future.exception(), face.ExpirationError)
           with self.assertRaises(face.ExpirationError):
             response_future.result()
+          self.assertIsInstance(
+              response_future.exception(), face.AbortionError)
+          self.assertIsNotNone(response_future.traceback())
 
   def testExpiredStreamRequestStreamResponse(self):
     for (group, method), test_messages_sequence in (
@@ -426,6 +449,7 @@ class TestCase(six.with_metaclass(abc.ABCMeta, test_coverage.Coverage, unittest.
               response_future.exception(), face.ExpirationError)
           with self.assertRaises(face.ExpirationError):
             response_future.result()
+          self.assertIsNotNone(response_future.traceback())
 
   def testFailedUnaryRequestStreamResponse(self):
     for (group, method), test_messages_sequence in (
@@ -463,6 +487,7 @@ class TestCase(six.with_metaclass(abc.ABCMeta, test_coverage.Coverage, unittest.
               response_future.exception(), face.ExpirationError)
           with self.assertRaises(face.ExpirationError):
             response_future.result()
+          self.assertIsNotNone(response_future.traceback())
 
   def testFailedStreamRequestStreamResponse(self):
     for (group, method), test_messages_sequence in (

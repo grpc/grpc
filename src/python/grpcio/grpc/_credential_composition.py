@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,32 +27,22 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Insecure client-server interoperability as a unit test."""
-
-import unittest
-
-from grpc.beta import implementations
-from src.proto.grpc.testing import test_pb2
-
-from tests.interop import _interop_test_case
-from tests.interop import methods
-from tests.interop import server
+from grpc._cython import cygrpc
 
 
-class InsecureInteropTest(
-    _interop_test_case.InteropTestCase,
-    unittest.TestCase):
-
-  def setUp(self):
-    self.server = test_pb2.beta_create_TestService_server(methods.TestService())
-    port = self.server.add_insecure_port('[::]:0')
-    self.server.start()
-    self.stub = test_pb2.beta_create_TestService_stub(
-        implementations.insecure_channel('localhost', port))
-
-  def tearDown(self):
-    self.server.stop(0)
+def _call(call_credentialses):
+  call_credentials_iterator = iter(call_credentialses)
+  composition = next(call_credentials_iterator)
+  for additional_call_credentials in call_credentials_iterator:
+    composition = cygrpc.call_credentials_composite(
+        composition, additional_call_credentials)
+  return composition
 
 
-if __name__ == '__main__':
-  unittest.main(verbosity=2)
+def call(call_credentialses):
+  return _call(call_credentialses)
+
+
+def channel(channel_credentials, call_credentialses):
+  return cygrpc.channel_credentials_composite(
+      channel_credentials, _call(call_credentialses))

@@ -40,7 +40,6 @@
 #import <GRPCClient/GRPCCall+Tests.h>
 #import <GRPCClient/GRPCCall+Cronet.h>
 #import <ProtoRPC/ProtoRPC.h>
-#import <RemoteTest/Empty.pbobjc.h>
 #import <RemoteTest/Messages.pbobjc.h>
 #import <RemoteTest/Test.pbobjc.h>
 #import <RemoteTest/Test.pbrpc.h>
@@ -110,12 +109,12 @@ static cronet_engine *cronetEngine = NULL;
   XCTAssertNotNil(self.class.host);
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"EmptyUnary"];
 
-  RMTEmpty *request = [RMTEmpty message];
+  GPBEmpty *request = [GPBEmpty message];
 
-  [_service emptyCallWithRequest:request handler:^(RMTEmpty *response, NSError *error) {
+  [_service emptyCallWithRequest:request handler:^(GPBEmpty *response, NSError *error) {
     XCTAssertNil(error, @"Finished with unexpected error: %@", error);
 
-    id expectedResponse = [RMTEmpty message];
+    id expectedResponse = [GPBEmpty message];
     XCTAssertEqualObjects(response, expectedResponse);
 
     [expectation fulfill];
@@ -343,9 +342,9 @@ static cronet_engine *cronetEngine = NULL;
   __weak XCTestExpectation *expectation =
       [self expectationWithDescription:@"RPC after closing connection"];
 
-  RMTEmpty *request = [RMTEmpty message];
+  GPBEmpty *request = [GPBEmpty message];
 
-  [_service emptyCallWithRequest:request handler:^(RMTEmpty *response, NSError *error) {
+  [_service emptyCallWithRequest:request handler:^(GPBEmpty *response, NSError *error) {
     XCTAssertNil(error, @"First RPC finished with unexpected error: %@", error);
 
 #pragma clang diagnostic push
@@ -353,7 +352,7 @@ static cronet_engine *cronetEngine = NULL;
     [GRPCCall closeOpenConnections];
 #pragma clang diagnostic pop
 
-    [_service emptyCallWithRequest:request handler:^(RMTEmpty *response, NSError *error) {
+    [_service emptyCallWithRequest:request handler:^(GPBEmpty *response, NSError *error) {
       XCTAssertNil(error, @"Second RPC finished with unexpected error: %@", error);
       [expectation fulfill];
     }];
