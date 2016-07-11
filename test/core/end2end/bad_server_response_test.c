@@ -71,6 +71,8 @@
 
 #define UNPARSEABLE_DETAIL_MSG "Failed parsing HTTP/2"
 
+#define HTTP1_DETAIL_MSG "Trying to connect an http1.x server"
+
 /* TODO(zyc) Check the content of incomming data instead of using this length */
 #define EXPECTED_INCOMING_DATA_LENGTH (size_t)310
 
@@ -334,7 +336,7 @@ int main(int argc, char **argv) {
 
   /* http1 response */
   run_test(HTTP1_RESP, sizeof(HTTP1_RESP) - 1, GRPC_STATUS_UNAVAILABLE,
-           UNPARSEABLE_DETAIL_MSG);
+           HTTP1_DETAIL_MSG);
 
   return 0;
 }

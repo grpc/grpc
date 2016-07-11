@@ -1764,6 +1764,7 @@ static grpc_error *try_http_parsing(grpc_exec_ctx *exec_ctx,
 static void parsing_action(grpc_exec_ctx *exec_ctx, void *arg,
                            grpc_error *error) {
   grpc_chttp2_transport *t = arg;
+  grpc_error *err = GRPC_ERROR_NONE;
   GPR_TIMER_BEGIN("reading_action.parse", 0);
   size_t i = 0;
   grpc_error *errors[3] = {GRPC_ERROR_REF(error), GRPC_ERROR_NONE,
@@ -1772,15 +1773,13 @@ static void parsing_action(grpc_exec_ctx *exec_ctx, void *arg,
     errors[1] = grpc_chttp2_perform_read(exec_ctx, &t->parsing,
                                          t->read_buffer.slices[i]);
   };
-  if (i != t->read_buffer.count) {
+  if (errors[1] == GRPC_ERROR_NONE) {
+    err = GRPC_ERROR_REF(error);
+  } else {
     errors[2] = try_http_parsing(exec_ctx, t);
+    err = GRPC_ERROR_CREATE_REFERENCING("Failed parsing HTTP/2", errors,
+                                        GPR_ARRAY_SIZE(errors));
   }
-  grpc_error *err =
-      errors[0] == GRPC_ERROR_NONE && errors[1] == GRPC_ERROR_NONE &&
-              errors[2] == GRPC_ERROR_NONE
-          ? GRPC_ERROR_NONE
-          : GRPC_ERROR_CREATE_REFERENCING("Failed parsing HTTP/2", errors,
-                                          GPR_ARRAY_SIZE(errors));
   for (i = 0; i < GPR_ARRAY_SIZE(errors); i++) {
     GRPC_ERROR_UNREF(errors[i]);
   }
