@@ -31,40 +31,33 @@
  *
  */
 
-
-#ifndef TEST_GRPC_C_CONTEXT_H
-#define TEST_GRPC_C_CONTEXT_H
-
+#include <grpc/support/alloc.h>
 #include <grpc_c/grpc_c.h>
-#include <grpc_c/serialization.h>
-#include <grpc/grpc.h>
-#include "status.h"
-#include "message.h"
-#include "call_ops.h"
-#include <stdbool.h>
+#include <grpc_c/client_context.h>
+#include "client_context.h"
+#include "alloc.h"
+#include "id_serialization.h"
 
-typedef struct grpc_call_op_set grpc_call_op_set;
+grpc_client_context *GRPC_client_context_create(grpc_channel *chan) {
+  grpc_client_context *context = GRPC_ALLOC_STRUCT(
+    grpc_client_context, {
+      .deadline = gpr_inf_future(GPR_CLOCK_REALTIME),
+      .channel = chan,
+      .serialize = GRPC_id_serialize,
+      .deserialize = GRPC_id_deserialize
+    }
+  );
+  return context;
+}
 
-typedef struct grpc_context {
-  grpc_metadata *send_metadata_array;
-  grpc_metadata_array recv_metadata_array;
-  grpc_metadata_array trailing_metadata_array;
-  gpr_timespec deadline;
-
-  // serialization mechanism used in this call
-  GRPC_serializer serialize;
-  GRPC_deserializer deserialize;
-
-  // status of the call
-  grpc_status status;
-
-  // state tracking
-  bool initial_metadata_received;
-  GRPC_method rpc_method;
-  grpc_channel *channel;
-  grpc_call *call;
-} grpc_context;
-
-typedef grpc_context GRPC_context;
-
-#endif //TEST_GRPC_C_CONTEXT_H
+void GRPC_client_context_destroy(GRPC_client_context **context) {
+  if ((*context)->status.details) {
+    gpr_free((*context)->status.details);
+  }
+  if ((*context)->call) {
+    grpc_call_destroy((*context)->call);
+    (*context)->call = NULL;
+  }
+  free(*context);
+  *context = NULL;
+}

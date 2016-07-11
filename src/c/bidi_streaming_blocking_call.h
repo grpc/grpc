@@ -39,7 +39,7 @@
 #include <grpc_c/bidi_streaming_blocking_call.h>
 
 typedef struct grpc_client_reader_writer {
-  grpc_context *context;
+  grpc_client_context *context;
   grpc_call *call;
   grpc_completion_queue *cq;
 } grpc_client_reader_writer;

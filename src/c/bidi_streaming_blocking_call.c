@@ -42,7 +42,7 @@
 
 GRPC_client_reader_writer *GRPC_bidi_streaming_blocking_call(GRPC_channel *channel,
                                                         const GRPC_method rpc_method,
-                                                        GRPC_context *const context) {
+                                                        GRPC_client_context *const context) {
   grpc_completion_queue *cq = GRPC_completion_queue_create();
   grpc_call *call = grpc_channel_create_call(channel,
                                              NULL,
@@ -114,7 +114,7 @@ bool GRPC_bidi_streaming_blocking_write(GRPC_client_reader_writer *reader_writer
   return GRPC_completion_queue_pluck_internal(reader_writer->cq, TAG(&set));
 }
 
-bool GRPC_bidi_streaming_blocking_close(GRPC_client_reader_writer *reader_writer) {
+bool GRPC_bidi_streaming_blocking_writes_done(GRPC_client_reader_writer *reader_writer) {
   grpc_call_op_set set = {
     {
       grpc_op_send_close
@@ -140,7 +140,7 @@ GRPC_status GRPC_client_reader_writer_terminate(GRPC_client_reader_writer *reade
   GRPC_completion_queue_shutdown_and_destroy(reader_writer->cq);
   grpc_call_destroy(reader_writer->call);
   reader_writer->context->call = NULL;
-  grpc_context *context = reader_writer->context;
+  grpc_client_context *context = reader_writer->context;
   free(reader_writer);
   return context->status;
 }

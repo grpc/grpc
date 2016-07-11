@@ -31,33 +31,13 @@
  *
  */
 
-#include <grpc/support/alloc.h>
+
+#ifndef GRPC_C_CONTEXT_PUBLIC_H
+#define GRPC_C_CONTEXT_PUBLIC_H
+
 #include <grpc_c/grpc_c.h>
-#include <grpc_c/context.h>
-#include "context.h"
-#include "alloc.h"
-#include "id_serialization.h"
 
-grpc_context *GRPC_context_create(grpc_channel *chan) {
-  grpc_context *context = GRPC_ALLOC_STRUCT(
-    grpc_context, {
-      .deadline = gpr_inf_future(GPR_CLOCK_REALTIME),
-      .channel = chan,
-      .serialize = GRPC_id_serialize,
-      .deserialize = GRPC_id_deserialize
-    }
-  );
-  return context;
-}
+GRPC_client_context *GRPC_client_context_create(GRPC_channel *chan);
+void GRPC_client_context_destroy(GRPC_client_context **context);
 
-void GRPC_context_destroy(grpc_context **context) {
-  if ((*context)->status.details) {
-    gpr_free((*context)->status.details);
-  }
-  if ((*context)->call) {
-    grpc_call_destroy((*context)->call);
-    (*context)->call = NULL;
-  }
-  free(*context);
-  *context = NULL;
-}
+#endif // GRPC_C_CONTEXT_PUBLIC_H
