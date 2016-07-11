@@ -369,7 +369,7 @@ class NamedTests
     op.execute
     fail 'Should have raised GRPC:Cancelled'
   rescue GRPC::Cancelled
-    assert("#{__callee__}: call operation should be CANCELLED") { op.cancelled }
+    assert("#{__callee__}: call operation should be CANCELLED") { op.cancelled? }
   end
 
   def cancel_after_first_response
@@ -380,7 +380,7 @@ class NamedTests
     op.execute.each { |r| ppp.queue.push(r) }
     fail 'Should have raised GRPC:Cancelled'
   rescue GRPC::Cancelled
-    assert("#{__callee__}: call operation should be CANCELLED") { op.cancelled }
+    assert("#{__callee__}: call operation should be CANCELLED") { op.cancelled? }
     op.wait
   end
 

@@ -1,3 +1,6 @@
+// GENERATED CODE -- DO NOT EDIT!
+
+// Original file comments:
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -26,19 +29,46 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-syntax = "proto3";
-
-package grpc.testing;
-
-option objc_class_prefix = "RMT";
-
-// An empty message that you can re-use to avoid defining duplicated empty
-// messages in your project. A typical example is to use it as argument or the
-// return value of a service API. For instance:
 //
-//   service Foo {
-//     rpc Bar (grpc.testing.Empty) returns (grpc.testing.Empty) { };
-//   };
-//
-message Empty {}
+'use strict';
+var grpc = require('grpc');
+var v1_health_pb = require('../v1/health_pb.js');
+
+function serialize_HealthCheckRequest(arg) {
+  if (!(arg instanceof v1_health_pb.HealthCheckRequest)) {
+    throw new Error('Expected argument of type HealthCheckRequest');
+  }
+  return new Buffer(arg.serializeBinary());
+}
+
+function deserialize_HealthCheckRequest(buffer_arg) {
+  return v1_health_pb.HealthCheckRequest.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_HealthCheckResponse(arg) {
+  if (!(arg instanceof v1_health_pb.HealthCheckResponse)) {
+    throw new Error('Expected argument of type HealthCheckResponse');
+  }
+  return new Buffer(arg.serializeBinary());
+}
+
+function deserialize_HealthCheckResponse(buffer_arg) {
+  return v1_health_pb.HealthCheckResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+
+var HealthService = exports.HealthService = {
+  check: {
+    path: '/grpc.health.v1.Health/Check',
+    requestStream: false,
+    responseStream: false,
+    requestType: v1_health_pb.HealthCheckRequest,
+    responseType: v1_health_pb.HealthCheckResponse,
+    requestSerialize: serialize_HealthCheckRequest,
+    requestDeserialize: deserialize_HealthCheckRequest,
+    responseSerialize: serialize_HealthCheckResponse,
+    responseDeserialize: deserialize_HealthCheckResponse,
+  },
+};
+
+exports.HealthClient = grpc.makeGenericClientConstructor(HealthService);

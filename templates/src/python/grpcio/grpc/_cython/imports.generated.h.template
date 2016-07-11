@@ -33,36 +33,11 @@
    *
    */
 
+  /* TODO(atash) remove cruft */
   #ifndef PYGRPC_CYTHON_WINDOWS_IMPORTS_H_
   #define PYGRPC_CYTHON_WINDOWS_IMPORTS_H_
 
   #include <grpc/support/port_platform.h>
-
-  #ifdef GPR_WINDOWS
-
-  #include <windows.h>
-
-  %for header in sorted(set(api.header for api in c_apis)):
-  #include <${'/'.join(header.split('/')[1:])}>
-  %endfor
-
-  %for api in c_apis:
-  typedef ${api.return_type}(*${api.name}_type)(${api.arguments});
-  extern ${api.name}_type ${api.name}_import;
-  #define ${api.name} ${api.name}_import
-  %endfor
-
-  #ifdef __cplusplus
-  extern "C" {
-  #endif  /* __cpluslus */
-
-  void pygrpc_load_imports(HMODULE library);
-
-  #ifdef __cplusplus
-  }
-  #endif  /* __cpluslus */
-
-  #else /* !GPR_WINDOWS */
 
   #include <grpc/byte_buffer.h>
   #include <grpc/byte_buffer_reader.h>
@@ -73,7 +48,5 @@
   #include <grpc/support/slice.h>
   #include <grpc/support/time.h>
   #include <grpc/status.h>
-
-  #endif /* !GPR_WINDOWS */
 
   #endif

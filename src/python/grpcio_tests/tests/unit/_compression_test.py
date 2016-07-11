@@ -88,7 +88,8 @@ class CompressionTest(unittest.TestCase):
 
   def setUp(self):
     self._server_pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
-    self._server = grpc.server((_GenericHandler(),), self._server_pool)
+    self._server = grpc.server(
+        self._server_pool, handlers=(_GenericHandler(),))
     self._port = self._server.add_insecure_port('[::]:0')
     self._server.start()
 

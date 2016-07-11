@@ -32,6 +32,7 @@ import errno
 import os
 import os.path
 import pkg_resources
+import platform
 import shlex
 import shutil
 import sys
@@ -44,6 +45,9 @@ from setuptools.command import build_ext
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.abspath('.'))
+
+import protoc_lib_deps
+import grpc_version
 
 PY3 = sys.version_info.major == 3
 
@@ -60,8 +64,9 @@ EXTRA_LINK_ARGS = shlex.split(os.environ.get('GRPC_PYTHON_LDFLAGS',
 GRPC_PYTHON_TOOLS_PACKAGE = 'grpc.tools'
 GRPC_PYTHON_PROTO_RESOURCES_NAME = '_proto'
 
-import protoc_lib_deps
-import grpc_version
+DEFINE_MACROS = (('HAVE_PTHREAD', 1),)
+if "win32" in sys.platform and '64bit' in platform.architecture()[0]:
+  DEFINE_MACROS += (('MS_WIN64', 1),)
 
 # By default, Python3 distutils enforces compatibility of
 # c plugins (.so files) with the OSX version Python3 was built with.
@@ -108,9 +113,9 @@ def protoc_ext_module():
           protoc_lib_deps.CC_INCLUDE,
       ],
       language='c++',
-      define_macros=[('HAVE_PTHREAD', 1)],
-      extra_compile_args=EXTRA_COMPILE_ARGS,
-      extra_link_args=EXTRA_LINK_ARGS,
+      define_macros=list(DEFINE_MACROS),
+      extra_compile_args=list(EXTRA_COMPILE_ARGS),
+      extra_link_args=list(EXTRA_LINK_ARGS),
   )
   return plugin_ext
 

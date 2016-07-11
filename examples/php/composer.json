@@ -9,6 +9,6 @@
     }
   ],
   "require": {
-    "grpc/grpc": "dev-release-0_13"
+    "grpc/grpc": "v0.15.0"
   }
 }
