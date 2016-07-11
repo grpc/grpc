@@ -47,6 +47,12 @@
 
 static VALUE grpc_rb_cCompressionOptions = Qnil;
 
+/* Ruby Ids for the names of valid compression levels. */
+static VALUE id_compress_level_none = Qnil;
+static VALUE id_compress_level_low = Qnil;
+static VALUE id_compress_level_medium = Qnil;
+static VALUE id_compress_level_high = Qnil;
+
 /* grpc_rb_compression_options wraps a grpc_compression_options.
  * It can be used to get the channel argument key-values for specific
  * compression settings. */
@@ -121,47 +127,27 @@ VALUE grpc_rb_compression_options_disable_compression_algorithm_internal(
   return Qnil;
 }
 
-/* Provides a bitset as a ruby number that is suitable to pass to
- * the GRPC core as a channel argument to enable compression algorithms. */
 /* Gets the compression internal enum value of a compression level given its
  * name. */
 grpc_compression_level grpc_rb_compression_options_level_name_to_value_internal(
     VALUE level_name) {
-  VALUE none_symbol = Qnil;
-  VALUE low_symbol = Qnil;
-  VALUE medium_symbol = Qnil;
-  VALUE high_symbol = Qnil;
-
   Check_Type(level_name, T_SYMBOL);
-
-  /* Ruby symbols that correspond to names of valid compression levels */
-  none_symbol =
-      rb_const_get(grpc_rb_cCompressionOptions, rb_intern("COMPRESS_NONE_SYM"));
-  low_symbol =
-      rb_const_get(grpc_rb_cCompressionOptions, rb_intern("COMPRESS_LOW_SYM"));
-  medium_symbol = rb_const_get(grpc_rb_cCompressionOptions,
-                               rb_intern("COMPRESS_MEDIUM_SYM"));
-  high_symbol =
-      rb_const_get(grpc_rb_cCompressionOptions, rb_intern("COMPRESS_HIGH_SYM"));
 
   /* Check the compression level of the name passed in, and see which macro
    * from the GRPC core header files match. */
-  if (RTEST(rb_funcall(level_name, rb_intern("=="), 1, none_symbol)) != 0) {
+  if (id_compress_level_none == SYM2ID(level_name)) {
     return GRPC_COMPRESS_LEVEL_NONE;
-  } else if (RTEST(rb_funcall(level_name, rb_intern("=="), 1, low_symbol)) !=
-             0) {
+  } else if (id_compress_level_low == SYM2ID(level_name)) {
     return GRPC_COMPRESS_LEVEL_LOW;
-  } else if (RTEST(rb_funcall(level_name, rb_intern("=="), 1, medium_symbol)) !=
-             0) {
+  } else if (id_compress_level_medium == SYM2ID(level_name)) {
     return GRPC_COMPRESS_LEVEL_MED;
-  } else if (RTEST(rb_funcall(level_name, rb_intern("=="), 1, high_symbol)) !=
-             0) {
+  } else if (id_compress_level_high == SYM2ID(level_name)) {
     return GRPC_COMPRESS_LEVEL_HIGH;
-  } else {
-    rb_raise(rb_eArgError,
-             "Unrecognized compression level name."
-             "Valid compression level names are none, low, medium, and high.");
   }
+
+  rb_raise(rb_eArgError,
+           "Unrecognized compression level name."
+           "Valid compression level names are none, low, medium, and high.");
 }
 
 /*  Wrapper over grpc_rb_compression_options_level_name_to_value available for
@@ -170,6 +156,8 @@ grpc_compression_level grpc_rb_compression_options_level_name_to_value_internal(
 VALUE grpc_rb_compression_options_level_name_to_value(VALUE self,
                                                       VALUE level_name) {
   (void)self;
+  Check_Type(level_name, T_SYMBOL);
+
   return INT2NUM((int)grpc_rb_compression_options_level_name_to_value_internal(
       level_name));
 }
@@ -304,17 +292,13 @@ VALUE grpc_rb_compression_options_level_value_to_name_internal(
     grpc_compression_level compression_value) {
   switch (compression_value) {
     case GRPC_COMPRESS_LEVEL_NONE:
-      return rb_const_get(grpc_rb_cCompressionOptions,
-                          rb_intern("COMPRESS_NONE_SYM"));
+      return ID2SYM(id_compress_level_none);
     case GRPC_COMPRESS_LEVEL_LOW:
-      return rb_const_get(grpc_rb_cCompressionOptions,
-                          rb_intern("COMPRESS_LOW_SYM"));
+      return ID2SYM(id_compress_level_low);
     case GRPC_COMPRESS_LEVEL_MED:
-      return rb_const_get(grpc_rb_cCompressionOptions,
-                          rb_intern("COMPRESS_MEDIUM_SYM"));
+      return ID2SYM(id_compress_level_medium);
     case GRPC_COMPRESS_LEVEL_HIGH:
-      return rb_const_get(grpc_rb_cCompressionOptions,
-                          rb_intern("COMPRESS_HIGH_SYM"));
+      return ID2SYM(id_compress_level_high);
     default:
       rb_raise(
           rb_eArgError,
@@ -580,13 +564,9 @@ void Init_grpc_compression_options() {
   rb_define_alias(grpc_rb_cCompressionOptions, "to_channel_arg_hash",
                   "to_hash");
 
-  /* Ruby symbols for the names of the different compression levels. */
-  rb_define_const(grpc_rb_cCompressionOptions, "COMPRESS_NONE_SYM",
-                  ID2SYM(rb_intern("none")));
-  rb_define_const(grpc_rb_cCompressionOptions, "COMPRESS_LOW_SYM",
-                  ID2SYM(rb_intern("low")));
-  rb_define_const(grpc_rb_cCompressionOptions, "COMPRESS_MEDIUM_SYM",
-                  ID2SYM(rb_intern("medium")));
-  rb_define_const(grpc_rb_cCompressionOptions, "COMPRESS_HIGH_SYM",
-                  ID2SYM(rb_intern("high")));
+  /* Ruby ids for the names of the different compression levels. */
+  id_compress_level_none = rb_intern("none");
+  id_compress_level_low = rb_intern("low");
+  id_compress_level_medium = rb_intern("medium");
+  id_compress_level_high = rb_intern("high");
 }

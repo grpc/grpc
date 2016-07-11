@@ -59,13 +59,6 @@ describe GRPC::Core::CompressionOptions do
     high: 3
   }
 
-  it 'compression level name constants should match expections' do
-    expect(GRPC::Core::CompressionOptions::COMPRESS_NONE_SYM).to eq(:none)
-    expect(GRPC::Core::CompressionOptions::COMPRESS_LOW_SYM).to eq(:low)
-    expect(GRPC::Core::CompressionOptions::COMPRESS_MEDIUM_SYM).to eq(:medium)
-    expect(GRPC::Core::CompressionOptions::COMPRESS_HIGH_SYM).to eq(:high)
-  end
-
   it 'implements to_s' do
     expect { GRPC::Core::CompressionOptions.new.to_s }.to_not raise_error
   end
@@ -143,10 +136,10 @@ describe GRPC::Core::CompressionOptions do
   end
 
   describe '#level_name_to_value' do
-    it 'should give the correct internal values from compression level names' do
-      cls = GRPC::Core::CompressionOptions
-      COMPRESS_LEVELS.each_pair do |name, internal_value|
-        expect(cls.level_name_to_value(name)).to eq(internal_value)
+    COMPRESS_LEVELS.each_pair do |name, internal_value|
+      it "should return value #{internal_value} for level #{name}" do
+        actual_value = GRPC::Core::CompressionOptions.level_name_to_value(name)
+        expect(actual_value).to eq(internal_value)
       end
     end
 
@@ -161,6 +154,13 @@ describe GRPC::Core::CompressionOptions do
   end
 
   describe '#level_value_to_name' do
+    COMPRESS_LEVELS.each_pair do |name, internal_value|
+      it "should return level name #{name} for value #{internal_value}" do
+        actual_name = GRPC::Core::CompressionOptions.level_value_to_name(
+          internal_value)
+        expect(actual_name).to eq(name)
+      end
+    end
     it 'should give the correct internal values from compression level names' do
       cls = GRPC::Core::CompressionOptions
       COMPRESS_LEVELS.each_pair do |name, internal_value|
