@@ -391,7 +391,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/crypto/ecdsa/ecdsa_asn1.c \
     third_party/boringssl/crypto/engine/engine.c \
     third_party/boringssl/crypto/err/err.c \
-    third_party/boringssl/crypto/err/err_data.c \
     third_party/boringssl/crypto/evp/algorithm.c \
     third_party/boringssl/crypto/evp/digestsign.c \
     third_party/boringssl/crypto/evp/evp.c \
