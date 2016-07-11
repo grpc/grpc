@@ -43,6 +43,7 @@
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
+#include <grpc++/support/config.h>
 #include <grpc++/support/slice.h>
 #include <grpc/grpc.h>
 #include <grpc/support/thd.h>
