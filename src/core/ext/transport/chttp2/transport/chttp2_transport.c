@@ -98,6 +98,8 @@ static void post_parse_locked(grpc_exec_ctx *exec_ctx, void *arg,
                               grpc_error *error);
 static void initiate_writing_locked(grpc_exec_ctx *exec_ctx, void *t,
                                     grpc_error *error);
+static void initiate_read_flush_locked(grpc_exec_ctx *exec_ctx, void *t,
+                                       grpc_error *error);
 static void terminate_writing_with_lock(grpc_exec_ctx *exec_ctx, void *t,
                                         grpc_error *error);
 
@@ -273,6 +275,8 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   grpc_closure_init(&t->post_parse_locked, post_parse_locked, t);
   grpc_closure_init(&t->initiate_writing, initiate_writing_locked, t);
   grpc_closure_init(&t->terminate_writing, terminate_writing_with_lock, t);
+  grpc_closure_init(&t->initiate_read_flush_locked, initiate_read_flush_locked,
+                    t);
   grpc_closure_init(&t->writing.done_cb, grpc_chttp2_terminate_writing,
                     &t->writing);
 
@@ -666,6 +670,7 @@ static void initiate_writing_locked(grpc_exec_ctx *exec_ctx, void *tp,
 static void initiate_read_flush_locked(grpc_exec_ctx *exec_ctx, void *tp,
                                        grpc_error *error) {
   grpc_chttp2_transport *t = tp;
+  t->executor.check_read_ops_scheduled = false;
   check_read_ops(exec_ctx, &t->global);
 }
 
@@ -1012,7 +1017,8 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
     } else {
       if (contains_non_ok_status(transport_global, op->send_initial_metadata)) {
         stream_global->seen_error = true;
-        grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
+        grpc_chttp2_list_add_check_read_ops(exec_ctx, transport_global,
+                                            stream_global);
       }
       if (!stream_global->write_closed) {
         if (transport_global->is_client) {
@@ -1079,7 +1085,8 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
       if (contains_non_ok_status(transport_global,
                                  op->send_trailing_metadata)) {
         stream_global->seen_error = true;
-        grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
+        grpc_chttp2_list_add_check_read_ops(exec_ctx, transport_global,
+                                            stream_global);
       }
       if (stream_global->write_closed) {
         stream_global->send_trailing_metadata = NULL;
@@ -1104,7 +1111,8 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
     stream_global->recv_initial_metadata_ready =
         op->recv_initial_metadata_ready;
     stream_global->recv_initial_metadata = op->recv_initial_metadata;
-    grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
+    grpc_chttp2_list_add_check_read_ops(exec_ctx, transport_global,
+                                        stream_global);
   }
 
   if (op->recv_message != NULL) {
@@ -1118,7 +1126,8 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
           exec_ctx, transport_global, stream_global,
           transport_global->stream_lookahead, 0);
     }
-    grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
+    grpc_chttp2_list_add_check_read_ops(exec_ctx, transport_global,
+                                        stream_global);
   }
 
   if (op->recv_trailing_metadata != NULL) {
@@ -1127,7 +1136,8 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
         add_closure_barrier(on_complete);
     stream_global->recv_trailing_metadata = op->recv_trailing_metadata;
     stream_global->final_metadata_requested = true;
-    grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
+    grpc_chttp2_list_add_check_read_ops(exec_ctx, transport_global,
+                                        stream_global);
   }
 
   grpc_chttp2_complete_closure_step(exec_ctx, transport_global, stream_global,
@@ -1357,7 +1367,8 @@ static void decrement_active_streams_locked(
     grpc_chttp2_stream_global *stream_global) {
   if ((stream_global->all_incoming_byte_streams_finished =
            gpr_unref(&stream_global->active_streams))) {
-    grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
+    grpc_chttp2_list_add_check_read_ops(exec_ctx, transport_global,
+                                        stream_global);
   }
 }
 
@@ -1460,7 +1471,8 @@ static void cancel_from_api(grpc_exec_ctx *exec_ctx,
   }
   if (due_to_error != GRPC_ERROR_NONE && !stream_global->seen_error) {
     stream_global->seen_error = true;
-    grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
+    grpc_chttp2_list_add_check_read_ops(exec_ctx, transport_global,
+                                        stream_global);
   }
   grpc_chttp2_mark_stream_closed(exec_ctx, transport_global, stream_global, 1,
                                  1, due_to_error);
@@ -1472,7 +1484,8 @@ void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx,
                              grpc_status_code status, gpr_slice *slice) {
   if (status != GRPC_STATUS_OK) {
     stream_global->seen_error = true;
-    grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
+    grpc_chttp2_list_add_check_read_ops(exec_ctx, transport_global,
+                                        stream_global);
   }
   /* stream_global->recv_trailing_metadata_finished gives us a
      last chance replacement: we've received trailing metadata,
@@ -1496,7 +1509,8 @@ void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx,
               grpc_mdstr_from_slice(gpr_slice_ref(*slice))));
     }
     stream_global->published_trailing_metadata = true;
-    grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
+    grpc_chttp2_list_add_check_read_ops(exec_ctx, transport_global,
+                                        stream_global);
   }
   if (slice) {
     gpr_slice_unref(*slice);
@@ -1555,7 +1569,8 @@ void grpc_chttp2_mark_stream_closed(
     GRPC_ERROR_UNREF(error);
     return;
   }
-  grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
+  grpc_chttp2_list_add_check_read_ops(exec_ctx, transport_global,
+                                      stream_global);
   if (close_reads && !stream_global->read_closed) {
     stream_global->read_closed_error = GRPC_ERROR_REF(error);
     stream_global->read_closed = true;

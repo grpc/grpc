@@ -87,8 +87,8 @@ void grpc_chttp2_prepare_to_read(
          transport_global->settings[GRPC_SENT_SETTINGS],
          sizeof(transport_parsing->last_sent_settings));
   transport_parsing->max_frame_size =
-      transport_global->settings[GRPC_ACKED_SETTINGS]
-                                [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE];
+      transport_global
+          ->settings[GRPC_ACKED_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE];
 
   /* update the parsing view of incoming window */
   while (grpc_chttp2_list_pop_unannounced_incoming_window_available(
@@ -177,7 +177,8 @@ void grpc_chttp2_publish_reads(
       stream_global->seen_error = true;
       stream_global->exceeded_metadata_size =
           stream_parsing->exceeded_metadata_size;
-      grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
+      grpc_chttp2_list_add_check_read_ops(exec_ctx, transport_global,
+                                          stream_global);
     }
 
     /* flush stats to global stream state */
@@ -203,7 +204,8 @@ void grpc_chttp2_publish_reads(
       stream_global->incoming_frames.tail->is_tail = 0;
     }
     if (stream_parsing->data_parser.incoming_frames.head != NULL) {
-      grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
+      grpc_chttp2_list_add_check_read_ops(exec_ctx, transport_global,
+                                          stream_global);
     }
     grpc_chttp2_incoming_frame_queue_merge(
         &stream_global->incoming_frames,
@@ -219,7 +221,8 @@ void grpc_chttp2_publish_reads(
       GPR_SWAP(grpc_chttp2_incoming_metadata_buffer,
                stream_parsing->metadata_buffer[0],
                stream_global->received_initial_metadata);
-      grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
+      grpc_chttp2_list_add_check_read_ops(exec_ctx, transport_global,
+                                          stream_global);
     }
     if (!stream_global->published_trailing_metadata &&
         stream_parsing->got_metadata_on_parse[1]) {
@@ -228,7 +231,8 @@ void grpc_chttp2_publish_reads(
       GPR_SWAP(grpc_chttp2_incoming_metadata_buffer,
                stream_parsing->metadata_buffer[1],
                stream_global->received_trailing_metadata);
-      grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
+      grpc_chttp2_list_add_check_read_ops(exec_ctx, transport_global,
+                                          stream_global);
     }
 
     if (stream_parsing->forced_close_error != GRPC_ERROR_NONE) {

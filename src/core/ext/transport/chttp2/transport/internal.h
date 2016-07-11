@@ -337,6 +337,8 @@ struct grpc_chttp2_transport {
     bool parsing_active;
     /** write execution state of the transport */
     grpc_chttp2_write_state write_state;
+    /** has a check_read_ops been scheduled */
+    bool check_read_ops_scheduled;
   } executor;
 
   /** is the transport destroying itself? */
@@ -380,6 +382,8 @@ struct grpc_chttp2_transport {
   grpc_closure initiate_writing;
   /** closure to finish writing */
   grpc_closure terminate_writing;
+  /** closure to flush read state up the stack */
+  grpc_closure initiate_read_flush_locked;
 
   /** incoming read bytes */
   gpr_slice_buffer read_buffer;
@@ -622,7 +626,7 @@ int grpc_chttp2_list_pop_waiting_for_concurrency(
     grpc_chttp2_stream_global **stream_global);
 
 void grpc_chttp2_list_add_check_read_ops(
-    grpc_chttp2_transport_global *transport_global,
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global);
 bool grpc_chttp2_list_remove_check_read_ops(
     grpc_chttp2_transport_global *transport_global,
