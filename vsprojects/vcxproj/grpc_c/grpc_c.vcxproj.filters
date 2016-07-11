@@ -13,13 +13,13 @@
     <ClCompile Include="$(SolutionDir)\..\src\c\channel.c">
       <Filter>src\c</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\c\client_context.c">
+      <Filter>src\c</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\c\client_streaming_blocking_call.c">
       <Filter>src\c</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\c\completion_queue.c">
-      <Filter>src\c</Filter>
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\c\context.c">
       <Filter>src\c</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\c\id_serialization.c">
@@ -48,13 +48,13 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\channel.h">
       <Filter>include\grpc_c</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc_c\client_context.h">
+      <Filter>include\grpc_c</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\client_streaming_blocking_call.h">
       <Filter>include\grpc_c</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\completion_queue.h">
-      <Filter>include\grpc_c</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc_c\context.h">
       <Filter>include\grpc_c</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\grpc_c.h">
@@ -92,13 +92,13 @@
     <ClInclude Include="$(SolutionDir)\..\src\c\call_ops.h">
       <Filter>src\c</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\c\client_context.h">
+      <Filter>src\c</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\c\client_streaming_blocking_call.h">
       <Filter>src\c</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\c\completion_queue.h">
-      <Filter>src\c</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\c\context.h">
       <Filter>src\c</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\c\id_serialization.h">

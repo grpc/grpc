@@ -260,9 +260,9 @@
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\bidi_streaming_blocking_call.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\channel.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc_c\client_context.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\client_streaming_blocking_call.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\completion_queue.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc_c\context.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\grpc_c.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\message.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\serialization.h" />
@@ -276,9 +276,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\c\alloc.h" />
     <ClInclude Include="$(SolutionDir)\..\src\c\bidi_streaming_blocking_call.h" />
     <ClInclude Include="$(SolutionDir)\..\src\c\call_ops.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\c\client_context.h" />
     <ClInclude Include="$(SolutionDir)\..\src\c\client_streaming_blocking_call.h" />
     <ClInclude Include="$(SolutionDir)\..\src\c\completion_queue.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\c\context.h" />
     <ClInclude Include="$(SolutionDir)\..\src\c\id_serialization.h" />
     <ClInclude Include="$(SolutionDir)\..\src\c\init_shutdown.h" />
     <ClInclude Include="$(SolutionDir)\..\src\c\message.h" />
@@ -297,11 +297,11 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\c\channel.c">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\c\client_context.c">
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\c\client_streaming_blocking_call.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\c\completion_queue.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\c\context.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\c\id_serialization.c">
     </ClCompile>

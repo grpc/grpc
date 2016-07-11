@@ -335,9 +335,9 @@ add_library(grpc_c
   src/c/bidi_streaming_blocking_call.c
   src/c/call_ops.c
   src/c/channel.c
+  src/c/client_context.c
   src/c/client_streaming_blocking_call.c
   src/c/completion_queue.c
-  src/c/context.c
   src/c/id_serialization.c
   src/c/init_shutdown.c
   src/c/message.c

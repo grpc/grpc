@@ -76,9 +76,9 @@
 #include <grpc/support/useful.h>
 #include <grpc_c/bidi_streaming_blocking_call.h>
 #include <grpc_c/channel.h>
+#include <grpc_c/client_context.h>
 #include <grpc_c/client_streaming_blocking_call.h>
 #include <grpc_c/completion_queue.h>
-#include <grpc_c/context.h>
 #include <grpc_c/grpc_c.h>
 #include <grpc_c/message.h>
 #include <grpc_c/serialization.h>
