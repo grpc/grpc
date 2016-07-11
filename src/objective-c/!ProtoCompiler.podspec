@@ -1,6 +1,6 @@
-# BoringSSL CocoaPods podspec
+# Proto Compiler CocoaPods podspec
 
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,7 +30,12 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Pod::Spec.new do |s|
-  s.name     = 'ProtoCompiler'
+  # This pod is only a utility that will be used by other pods _at install time_ (not at compile
+  # time). Other pods can access it in their `prepare_command` script, under <pods_root>/<pod name>.
+  # Because CocoaPods installs pods in alphabetical order, beginning this pod's name with an
+  # exclamation mark ensures that other "regular" pods will be able to find it as it'll be installed
+  # before them.
+  s.name     = '!ProtoCompiler'
   v = '3.0.0-beta-3.1'
   s.version  = v
   s.summary  = 'The Protobuf Compiler (protoc) generates Objective-C files from .proto files'
@@ -45,12 +50,38 @@ Pod::Spec.new do |s|
   # "The name and email addresses of the library maintainers, not the Podspec maintainer."
   s.authors  = { 'The Protocol Buffers contributors' => 'protobuf@googlegroups.com' }
 
+  repo = 'google/protobuf'
+  release = "v#{v}"
+  file = "protoc-#{v}-osx-x86_64.zip"
   s.source = {
-    :http => "https://github.com/google/protobuf/releases/download/v#{v}/protoc-#{v}-osx-fat.zip",
+    :http => "https://github.com/#{repo}/releases/download/#{release}/#{file}",
     # TODO(jcanizales): Add sha1 or sha256
     # :sha1 => '??',
   }
 
   s.preserve_paths = 'protoc',
                      'google/**/*.proto' # Well-known protobuf types
+
+  # Restrict the protobuf runtime version to the one supported by this version of protoc.
+  s.dependency 'Protobuf', v
+
+  # This is only for local development of protoc: If the Podfile brings this pod from a local
+  # directory using `:path`, CocoaPods won't download the zip file and so the compiler won't be
+  # present in this pod's directory. We use that knowledge to check for the existence of the file
+  # and, if absent, build it from the local sources.
+  repo_root = '../..'
+  plugin = 'grpc_objective_c_plugin'
+  s.prepare_command = <<-CMD
+    if [ ! -f protoc ]; then
+      cd #{repo_root}
+      # This will build protoc from the Protobuf submodule of gRPC, and put it in
+      # #{repo_root}/bins/opt/protobuf.
+      #
+      # TODO(jcanizales): Make won't build protoc from sources if one's locally installed, which
+      # _we do not want_. Find a way for this to always build from source.
+      make #{plugin}
+      cd -
+    fi
+  CMD
+
 end
