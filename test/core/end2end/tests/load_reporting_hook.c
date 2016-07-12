@@ -45,50 +45,69 @@
 
 #include "src/core/ext/load_reporting/load_reporting.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/transport/static_metadata.h"
 
 enum { TIMEOUT = 200000 };
 
 static void *tag(intptr_t t) { return (void *)t; }
 
 typedef struct {
+  gpr_mu mu;
+  intptr_t channel_id;
+  intptr_t call_id;
+
   uint32_t call_creation_token;       /* expected 0xCAFED00D */
   uint32_t call_destruction_token;    /* expected 0xDEADD00D */
   uint32_t channel_creation_token;    /* expected 0xCAFEFACE */
   uint32_t channel_destruction_token; /* expected 0xDEADFACE */
 
+  char *initial_md_str;
+  char *trailing_md_str;
   char *method_name;
 
-  uint64_t total_bytes;
+  uint64_t incoming_bytes;
+  uint64_t outgoing_bytes;
   bool fully_processed;
 } aggregated_bw_stats;
 
 static void sample_fn(const grpc_load_reporting_call_data *call_data,
                       void *user_data) {
   GPR_ASSERT(user_data != NULL);
+
   aggregated_bw_stats *custom_stats = (aggregated_bw_stats *)user_data;
+  gpr_mu_lock(&custom_stats->mu);
+
   switch (call_data->source) {
     case GRPC_LR_POINT_CHANNEL_CREATION:
       custom_stats->channel_creation_token = 0xCAFEFACE;
+      custom_stats->channel_id = call_data->channel_id;
       break;
     case GRPC_LR_POINT_CHANNEL_DESTRUCTION:
       custom_stats->channel_destruction_token = 0xDEADFACE;
       break;
     case GRPC_LR_POINT_CALL_CREATION:
       custom_stats->call_creation_token = 0xCAFED00D;
+      custom_stats->call_id = call_data->call_id;
       break;
     case GRPC_LR_POINT_CALL_DESTRUCTION:
-      custom_stats->method_name = gpr_strdup(call_data->method);
+      custom_stats->initial_md_str = gpr_strdup(call_data->initial_md_string);
+      custom_stats->trailing_md_str = gpr_strdup(call_data->trailing_md_string);
+
+      custom_stats->method_name = gpr_strdup(call_data->method_name);
+
       custom_stats->call_destruction_token = 0xDEADD00D;
-      custom_stats->total_bytes =
-          call_data->final_info->stats.transport_stream_stats.outgoing
-              .data_bytes +
+      custom_stats->incoming_bytes =
           call_data->final_info->stats.transport_stream_stats.incoming
+              .data_bytes;
+      custom_stats->outgoing_bytes =
+          call_data->final_info->stats.transport_stream_stats.outgoing
               .data_bytes;
       custom_stats->fully_processed = true;
       break;
     default:
       abort();
   }
+  gpr_mu_unlock(&custom_stats->mu);
 }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
@@ -146,7 +165,9 @@ static void end_test(grpc_end2end_test_fixture *f) {
 static void request_response_with_payload(grpc_end2end_test_fixture f,
                                           const char *method_name,
                                           const char *request_msg,
-                                          const char *response_msg) {
+                                          const char *response_msg,
+                                          grpc_metadata *initial_lr_metadata,
+                                          grpc_metadata *trailing_lr_metadata) {
   gpr_slice request_payload_slice = gpr_slice_from_copied_string(request_msg);
   gpr_slice response_payload_slice = gpr_slice_from_copied_string(response_msg);
   grpc_call *c;
@@ -184,7 +205,9 @@ static void request_response_with_payload(grpc_end2end_test_fixture f,
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
+  GPR_ASSERT(initial_lr_metadata != NULL);
+  op->data.send_initial_metadata.count = 1;
+  op->data.send_initial_metadata.metadata = initial_lr_metadata;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -256,7 +279,9 @@ static void request_response_with_payload(grpc_end2end_test_fixture f,
   op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
-  op->data.send_status_from_server.trailing_metadata_count = 0;
+  GPR_ASSERT(trailing_lr_metadata != NULL);
+  op->data.send_status_from_server.trailing_metadata_count = 1;
+  op->data.send_status_from_server.trailing_metadata = trailing_lr_metadata;
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
   op->data.send_status_from_server.status_details = "xyz";
   op->flags = 0;
@@ -292,6 +317,7 @@ static void test_load_reporting_hook(grpc_end2end_test_config config) {
   aggregated_bw_stats *aggr_stats_server =
       gpr_malloc(sizeof(aggregated_bw_stats));
   memset(aggr_stats_server, 0, sizeof(aggregated_bw_stats));
+  gpr_mu_init(&aggr_stats_server->mu);
 
   grpc_load_reporting_config *server_lrc =
       grpc_load_reporting_config_create(sample_fn, aggr_stats_server);
@@ -305,27 +331,55 @@ static void test_load_reporting_hook(grpc_end2end_test_config config) {
       begin_test(config, "test_load_reporting_hook", NULL, lr_server_args);
 
   const char *method_name = "/gRPCFTW";
-  const char *request_msg = "so long!";
-  const char *response_msg = "I'm back!";
-  request_response_with_payload(f, method_name, request_msg, response_msg);
+  const char *request_msg = "the msg from the client";
+  const char *response_msg = "... and the response from the server";
+
+  grpc_metadata initial_lr_metadata;
+  grpc_metadata trailing_lr_metadata;
+
+  initial_lr_metadata.key = GRPC_LOAD_REPORTING_INITIAL_MD_KEY;
+  initial_lr_metadata.value = "client-token";
+  initial_lr_metadata.value_length = strlen(initial_lr_metadata.value);
+  memset(&initial_lr_metadata.internal_data, 0,
+         sizeof(initial_lr_metadata.internal_data));
+
+  trailing_lr_metadata.key = GRPC_LOAD_REPORTING_TRAILING_MD_KEY;
+  trailing_lr_metadata.value = "server-token";
+  trailing_lr_metadata.value_length = strlen(trailing_lr_metadata.value);
+  memset(&trailing_lr_metadata.internal_data, 0,
+         sizeof(trailing_lr_metadata.internal_data));
+
+  request_response_with_payload(f, method_name, request_msg, response_msg,
+                                &initial_lr_metadata, &trailing_lr_metadata);
   end_test(&f);
   grpc_channel_args_destroy(lr_server_args);
   config.tear_down_data(&f);
 
-  if (aggr_stats_server->fully_processed) {
-    GPR_ASSERT(aggr_stats_server->total_bytes ==
-               5 + strlen(request_msg) + strlen(response_msg));
+  GPR_ASSERT(aggr_stats_server->fully_processed);
+  GPR_ASSERT(aggr_stats_server->incoming_bytes ==
+             /* 5 FIXME */ /* compression bit(1) + msg length(4) */ +strlen(
+                 request_msg));
+  GPR_ASSERT(aggr_stats_server->outgoing_bytes ==
+             5 /* compression bit(1) + msg length(4) */ + strlen(response_msg));
 
-    GPR_ASSERT(aggr_stats_server->channel_creation_token == 0xCAFEFACE);
-    GPR_ASSERT(aggr_stats_server->channel_destruction_token == 0xDEADFACE);
+  GPR_ASSERT(aggr_stats_server->call_id > 0);
+  GPR_ASSERT(aggr_stats_server->channel_id > 0);
 
-    GPR_ASSERT(aggr_stats_server->call_creation_token == 0xCAFED00D);
-    GPR_ASSERT(aggr_stats_server->call_destruction_token == 0xDEADD00D);
+  GPR_ASSERT(aggr_stats_server->channel_creation_token == 0xCAFEFACE);
+  GPR_ASSERT(aggr_stats_server->channel_destruction_token == 0xDEADFACE);
 
-    GPR_ASSERT(strcmp(aggr_stats_server->method_name, "/gRPCFTW") == 0);
-  }
+  GPR_ASSERT(aggr_stats_server->call_creation_token == 0xCAFED00D);
+  GPR_ASSERT(aggr_stats_server->call_destruction_token == 0xDEADD00D);
+
+  GPR_ASSERT(strcmp(aggr_stats_server->method_name, "/gRPCFTW") == 0);
+
+  GPR_ASSERT(aggr_stats_server->initial_md_str != NULL);
+  GPR_ASSERT(aggr_stats_server->trailing_md_str != NULL);
+  GPR_ASSERT(strcmp(aggr_stats_server->initial_md_str, "client-token") == 0);
+  GPR_ASSERT(strcmp(aggr_stats_server->trailing_md_str, "server-token") == 0);
 
   gpr_free(aggr_stats_server->method_name);
+  gpr_mu_destroy(&aggr_stats_server->mu);
   gpr_free(aggr_stats_server);
   grpc_load_reporting_config_destroy(server_lrc);
 }

@@ -77,6 +77,7 @@ typedef struct {
   gpr_timespec latency; /* From call creating to enqueing of received status */
 } grpc_call_stats;
 
+/** Information about the call upon completion. */
 typedef struct {
   grpc_call_stats stats;
   grpc_status_code final_status;
@@ -123,7 +124,7 @@ typedef struct {
      The filter does not need to do any chaining.
      The bottom filter of a stack will be passed a non-NULL pointer to
      \a and_free_memory that should be passed to gpr_free when destruction
-     is complete. \a final_info contains data about the completed code, mainly
+     is complete. \a final_info contains data about the completed call, mainly
      for reporting purposes. */
   void (*destroy_call_elem)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                             const grpc_call_final_info* final_info,
