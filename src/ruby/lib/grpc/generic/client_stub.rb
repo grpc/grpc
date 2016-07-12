@@ -34,7 +34,8 @@ require_relative '../version'
 module GRPC
   # rubocop:disable Metrics/ParameterLists
 
-  # ClientStub represents an endpoint used to send requests to GRPC servers.
+  # ClientStub represents a client connection to a gRPC server, and can be used
+  # to send requests.
   class ClientStub
     include Core::StatusCodes
     include Core::TimeConsts
@@ -75,8 +76,9 @@ module GRPC
     # my_stub = ClientStub.new(example.host.com:50505,
     #                          :this_channel_is_insecure)
     #
-    # Any arbitrary keyword arguments are treated as channel arguments used to
-    # configure the RPC connection to the host.
+    # If a channel_override argument is passed, it will be used as the
+    # underlying channel. Otherwise, the channel_args argument will be used
+    # to construct a new underlying channel.
     #
     # There are some specific keyword args that are not used to configure the
     # channel:
@@ -91,10 +93,17 @@ module GRPC
     #
     # @param host [String] the host the stub connects to
     # @param creds [Core::ChannelCredentials|Symbol] the channel credentials, or
-    #     :this_channel_is_insecure
+    #     :this_channel_is_insecure, which explicitly indicates that the client
+    #     should be created with an insecure connection. Note: this argument is
+    #     ignored if the channel_override argument is provided.
     # @param channel_override [Core::Channel] a pre-created channel
     # @param timeout [Number] the default timeout to use in requests
-    # @param channel_args [Hash] the channel arguments
+    # @param propagate_mask [Number] A bitwise combination of flags in
+    #     GRPC::Core::PropagateMasks. Indicates how data should be propagated
+    #     from parent server calls to child client calls if this client is being
+    #     used within a gRPC server.
+    # @param channel_args [Hash] the channel arguments. Note: this argument is
+    #     ignored if the channel_override argument is provided.
     def initialize(host, creds,
                    channel_override: nil,
                    timeout: nil,
@@ -389,11 +398,11 @@ module GRPC
     # @param marshal [Function] f(obj)->string that marshals requests
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
     # @param deadline [Time] (optional) the time the request should complete
+    # @param return_op [true|false] return an Operation if true
     # @param parent [Core::Call] a prior call whose reserved metadata
     #   will be propagated by this one.
     # @param credentials [Core::CallCredentials] credentials to use when making
     #   the call
-    # @param return_op [true|false] return an Operation if true
     # @param metadata [Hash] metadata to be sent to the server
     # @param blk [Block] when provided, is executed for each response
     # @return [Enumerator|nil|Operation] as discussed above
@@ -430,7 +439,8 @@ module GRPC
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
     # @param parent [Grpc::Call] a parent call, available when calls are
     #   made from server
-    # @param timeout [TimeConst]
+    # @param credentials [Core::CallCredentials] credentials to use when making
+    #   the call
     def new_active_call(method, marshal, unmarshal,
                         deadline: nil,
                         parent: nil,
