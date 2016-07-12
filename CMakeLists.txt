@@ -330,6 +330,39 @@ target_link_libraries(grpc
 )
 
   
+add_library(grpc_c
+  src/c/alloc.c
+  src/c/bidi_streaming_blocking_call.c
+  src/c/call_ops.c
+  src/c/channel.c
+  src/c/client_streaming_blocking_call.c
+  src/c/completion_queue.c
+  src/c/context.c
+  src/c/id_serialization.c
+  src/c/init_shutdown.c
+  src/c/message.c
+  src/c/server_streaming_blocking_call.c
+  src/c/unary_async_call.c
+  src/c/unary_blocking_call.c
+)
+
+target_include_directories(grpc_c
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+)
+
+target_link_libraries(grpc_c
+  ssl
+  libprotobuf
+  grpc
+  gpr
+)
+
+  
 add_library(grpc_cronet
   src/core/lib/surface/init.c
   src/core/lib/channel/channel_args.c

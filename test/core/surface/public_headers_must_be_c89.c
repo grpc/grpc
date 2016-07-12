@@ -74,5 +74,18 @@
 #include <grpc/support/time.h>
 #include <grpc/support/tls.h>
 #include <grpc/support/useful.h>
+#include <grpc_c/bidi_streaming_blocking_call.h>
+#include <grpc_c/channel.h>
+#include <grpc_c/client_streaming_blocking_call.h>
+#include <grpc_c/completion_queue.h>
+#include <grpc_c/context.h>
+#include <grpc_c/grpc_c.h>
+#include <grpc_c/message.h>
+#include <grpc_c/serialization.h>
+#include <grpc_c/server_streaming_blocking_call.h>
+#include <grpc_c/status.h>
+#include <grpc_c/status_code.h>
+#include <grpc_c/unary_async_call.h>
+#include <grpc_c/unary_blocking_call.h>
 
 int main(int argc, char **argv) { return 0; }
