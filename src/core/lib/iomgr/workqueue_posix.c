@@ -90,6 +90,7 @@ void grpc_workqueue_ref(grpc_workqueue *workqueue, const char *file, int line,
 }
 #else
 void grpc_workqueue_ref(grpc_workqueue *workqueue) {
+  if (workqueue == NULL) return;
   gpr_ref(&workqueue->refs);
 }
 #endif
@@ -106,6 +107,7 @@ void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
 }
 #else
 void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {
+  if (workqueue == NULL) return;
   if (gpr_unref(&workqueue->refs)) {
     workqueue_orphan(exec_ctx, workqueue);
   }

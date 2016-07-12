@@ -31,9 +31,6 @@
  *
  */
 
-// TODO(ctiller): schedule check_read_ops whenever something is added to that
-// list
-
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 
 #include <math.h>
@@ -1816,7 +1813,8 @@ static void reading_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
     grpc_chttp2_stream_map_move_into(&t->new_stream_map,
                                      &t->parsing_stream_map);
     grpc_chttp2_prepare_to_read(transport_global, transport_parsing);
-    grpc_exec_ctx_sched(exec_ctx, &t->parsing_action, error, NULL);
+    grpc_exec_ctx_sched(exec_ctx, &t->parsing_action, GRPC_ERROR_REF(error),
+                        NULL);
   } else {
     post_reading_action_locked(exec_ctx, t, GRPC_ERROR_REF(error));
   }
