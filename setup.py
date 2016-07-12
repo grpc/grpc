@@ -62,8 +62,8 @@ import commands
 import grpc_core_dependencies
 import grpc_version
 
-# TODO(atash) make this conditional on being on a mingw32 build
-_unixccompiler_patch.monkeypatch_unix_compiler()
+if 'win32' in sys.platform:
+  _unixccompiler_patch.monkeypatch_unix_compiler()
 
 
 LICENSE = '3-clause BSD'
