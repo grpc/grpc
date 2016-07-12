@@ -4361,6 +4361,7 @@ endif
 
 
 LIBGRPC_PLUGIN_SUPPORT_SRC = \
+    src/compiler/c_generator.cc \
     src/compiler/cpp_generator.cc \
     src/compiler/csharp_generator.cc \
     src/compiler/node_generator.cc \

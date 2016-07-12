@@ -806,6 +806,7 @@ target_link_libraries(grpc++_unsecure
 
   
 add_library(grpc_plugin_support
+  src/compiler/c_generator.cc
   src/compiler/cpp_generator.cc
   src/compiler/csharp_generator.cc
   src/compiler/node_generator.cc

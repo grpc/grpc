@@ -2066,6 +2066,8 @@ cc_library(
 cc_library(
   name = "grpc_plugin_support",
   srcs = [
+    "src/compiler/c_generator.h",
+    "src/compiler/c_generator_helpers.h",
     "src/compiler/config.h",
     "src/compiler/cpp_generator.h",
     "src/compiler/cpp_generator_helpers.h",
@@ -2081,6 +2083,7 @@ cc_library(
     "src/compiler/ruby_generator_helpers-inl.h",
     "src/compiler/ruby_generator_map-inl.h",
     "src/compiler/ruby_generator_string-inl.h",
+    "src/compiler/c_generator.cc",
     "src/compiler/cpp_generator.cc",
     "src/compiler/csharp_generator.cc",
     "src/compiler/node_generator.cc",
