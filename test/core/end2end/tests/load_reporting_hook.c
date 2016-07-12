@@ -90,10 +90,16 @@ static void sample_fn(const grpc_load_reporting_call_data *call_data,
       custom_stats->call_id = call_data->call_id;
       break;
     case GRPC_LR_POINT_CALL_DESTRUCTION:
-      custom_stats->initial_md_str = gpr_strdup(call_data->initial_md_string);
-      custom_stats->trailing_md_str = gpr_strdup(call_data->trailing_md_string);
-
-      custom_stats->method_name = gpr_strdup(call_data->method_name);
+      if (custom_stats->initial_md_str == NULL) {
+        custom_stats->initial_md_str = gpr_strdup(call_data->initial_md_string);
+      }
+      if (custom_stats->trailing_md_str == NULL) {
+        custom_stats->trailing_md_str =
+            gpr_strdup(call_data->trailing_md_string);
+      }
+      if (custom_stats->method_name == NULL) {
+        custom_stats->method_name = gpr_strdup(call_data->method_name);
+      }
 
       custom_stats->call_destruction_token = 0xDEADD00D;
       custom_stats->incoming_bytes =
@@ -168,8 +174,8 @@ static void request_response_with_payload(grpc_end2end_test_fixture f,
                                           const char *response_msg,
                                           grpc_metadata *initial_lr_metadata,
                                           grpc_metadata *trailing_lr_metadata) {
-  gpr_slice request_payload_slice = gpr_slice_from_copied_string(request_msg);
-  gpr_slice response_payload_slice = gpr_slice_from_copied_string(response_msg);
+  gpr_slice request_payload_slice = gpr_slice_from_static_string(request_msg);
+  gpr_slice response_payload_slice = gpr_slice_from_static_string(response_msg);
   grpc_call *c;
   grpc_call *s;
   grpc_byte_buffer *request_payload =
@@ -375,6 +381,8 @@ static void test_load_reporting_hook(grpc_end2end_test_config config) {
   GPR_ASSERT(strcmp(aggr_stats_server->initial_md_str, "client-token") == 0);
   GPR_ASSERT(strcmp(aggr_stats_server->trailing_md_str, "server-token") == 0);
 
+  gpr_free(aggr_stats_server->initial_md_str);
+  gpr_free(aggr_stats_server->trailing_md_str);
   gpr_free(aggr_stats_server->method_name);
   gpr_mu_destroy(&aggr_stats_server->mu);
   gpr_free(aggr_stats_server);
