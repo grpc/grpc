@@ -112,7 +112,7 @@ zval *grpc_php_wrap_channel_credentials(grpc_channel_credentials *wrapped TSRMLS
  */
 PHP_METHOD(ChannelCredentials, setDefaultRootsPem) {
   char *pem_roots;
-  int pem_roots_length;
+  size_t pem_roots_length;
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &pem_roots,
                             &pem_roots_length) == FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
@@ -146,7 +146,7 @@ PHP_METHOD(ChannelCredentials, createSsl) {
   char *pem_root_certs = NULL;
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
 
-  int root_certs_length = 0, private_key_length = 0, cert_chain_length = 0;
+  size_t root_certs_length = 0, private_key_length = 0, cert_chain_length = 0;
 
   pem_key_cert_pair.private_key = pem_key_cert_pair.cert_chain = NULL;
 

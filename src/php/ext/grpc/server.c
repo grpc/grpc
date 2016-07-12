@@ -174,7 +174,7 @@ PHP_METHOD(Server, addHttp2Port) {
   wrapped_grpc_server *server =
       (wrapped_grpc_server *)zend_object_store_get_object(getThis() TSRMLS_CC);
   const char *addr;
-  int addr_len;
+  size_t addr_len;
   /* "s" == 1 string */
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &addr, &addr_len) ==
       FAILURE) {
@@ -189,7 +189,7 @@ PHP_METHOD(Server, addSecureHttp2Port) {
   wrapped_grpc_server *server =
       (wrapped_grpc_server *)zend_object_store_get_object(getThis() TSRMLS_CC);
   const char *addr;
-  int addr_len;
+  size_t addr_len;
   zval *creds_obj;
   /* "sO" == 1 string, 1 object */
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sO", &addr, &addr_len,
