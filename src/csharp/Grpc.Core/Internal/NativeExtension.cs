@@ -109,6 +109,7 @@ namespace Grpc.Core.Internal
             string relativeDirectory = string.Format("../../runtimes/{0}-{1}/native", platform, architecture);
             var dnxStylePath = Path.Combine(assemblyDirectory, relativeDirectory, GetNativeLibraryFilename());
             string[] paths = new[] { classicPath, dnxStylePath };
+            return new UnmanagedLibrary(paths);
         }
 
         private static string GetAssemblyPath()
