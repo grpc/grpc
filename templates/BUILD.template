@@ -51,6 +51,7 @@
       deps.append("//external:protobuf_compiler")
     if (target_dict['name'] == 'grpc++_unsecure' or
         target_dict['name'] == 'grpc++' or
+        target_dict['name'] == 'grpc_c' or
         target_dict['name'] == 'grpc++_codegen_lib'):
       deps.append("//external:protobuf_clib")
     elif target_dict['name'] == 'grpc':
