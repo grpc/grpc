@@ -41,8 +41,8 @@
 #include <grpc++/create_channel.h>
 #include <grpc++/grpc++.h>
 #include <grpc++/impl/thd.h>
-#include <grpc/support/time.h>
 #include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 
 #include "src/proto/grpc/testing/metrics.grpc.pb.h"
 #include "src/proto/grpc/testing/metrics.pb.h"
@@ -277,7 +277,7 @@ int main(int argc, char** argv) {
   // parallel on the same channel.
   int thread_idx = 0;
   int server_idx = -1;
-  char *buffer;
+  char* buffer;
   for (auto it = server_addresses.begin(); it != server_addresses.end(); it++) {
     ++server_idx;
     // Create channel(s) for each server
@@ -296,9 +296,8 @@ int main(int argc, char** argv) {
 
         bool is_already_created = false;
         // QpsGauge name
-        gpr_asprintf(&buffer, 
-                      "/stress_test/server_%d/channel_%d/stub_%d/qps",
-                      server_idx, channel_idx, stub_idx);
+        gpr_asprintf(&buffer, "/stress_test/server_%d/channel_%d/stub_%d/qps",
+                     server_idx, channel_idx, stub_idx);
 
         test_threads.emplace_back(grpc::thread(
             &StressTestInteropClient::MainLoop, client,

@@ -269,8 +269,8 @@ bool InteropClient::DoPerRpcCreds(const grpc::string& json_key) {
 
   ClientContext context;
   std::chrono::seconds token_lifetime = std::chrono::hours(1);
-  std::shared_ptr<CallCredentials> creds =
-      ServiceAccountJWTAccessCredentials(json_key, (long) token_lifetime.count());
+  std::shared_ptr<CallCredentials> creds = ServiceAccountJWTAccessCredentials(
+      json_key, (long)token_lifetime.count());
 
   context.set_credentials(creds);
 
@@ -610,7 +610,9 @@ bool InteropClient::DoResponseStreamingWithSlowConsumer() {
     GPR_ASSERT(response.payload().body() ==
                grpc::string(kResponseMessageSize, '\0'));
     gpr_log(GPR_DEBUG, "received message %d", i);
-    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(kReceiveDelayMilliSeconds, GPR_TIMESPAN)));
+    gpr_sleep_until(gpr_time_add(
+        gpr_now(GPR_CLOCK_REALTIME),
+        gpr_time_from_millis(kReceiveDelayMilliSeconds, GPR_TIMESPAN)));
     ++i;
   }
 

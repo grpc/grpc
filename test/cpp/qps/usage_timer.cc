@@ -52,9 +52,7 @@ UsageTimer::Result UsageTimer::Mark() const {
 }
 
 #ifdef GPR_WINDOWS
-UsageTimer::Result UsageTimer::Sample() {
-  return Result{ 0, 0, 0 };
-}
+UsageTimer::Result UsageTimer::Sample() { return Result{0, 0, 0}; }
 #else
 #include <sys/resource.h>
 #include <sys/time.h>
