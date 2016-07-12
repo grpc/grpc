@@ -127,8 +127,8 @@ grpc::string GetHeaderPrologue(File *file, const Parameters & /*params*/) {
       printer->Print(vars, "// Original file comments:\n");
       printer->Print(leading_comments.c_str());
     }
-    printer->Print(vars, "#ifndef GRPC_$filename_identifier$__INCLUDED\n");
-    printer->Print(vars, "#define GRPC_$filename_identifier$__INCLUDED\n");
+    printer->Print(vars, "#ifndef GRPC_C_$filename_identifier$__INCLUDED\n");
+    printer->Print(vars, "#define GRPC_C_$filename_identifier$__INCLUDED\n");
     printer->Print(vars, "\n");
     printer->Print(vars, "#include \"$filename_base$$message_header_ext$\"\n");
     printer->Print(vars, "\n");
@@ -145,35 +145,13 @@ grpc::string GetHeaderIncludes(File *file,
     std::map<grpc::string, grpc::string> vars;
 
     static const char *headers_strs[] = {
-      "grpc++/impl/codegen/async_stream.h",
-      "grpc++/impl/codegen/async_unary_call.h",
-      "grpc++/impl/codegen/proto_utils.h",
-      "grpc++/impl/codegen/rpc_method.h",
-      "grpc++/impl/codegen/service_type.h",
-      "grpc++/impl/codegen/status.h",
-      "grpc++/impl/codegen/stub_options.h",
-      "grpc++/impl/codegen/sync_stream.h"
+      "grpc_c/status_code.h",
+      "grpc_c/grpc_c.h",
+      "grpc_c/context.h"
     };
     std::vector<grpc::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params);
     printer->Print(vars, "\n");
-    printer->Print(vars, "namespace grpc {\n");
-    printer->Print(vars, "class CompletionQueue;\n");
-    printer->Print(vars, "class Channel;\n");
-    printer->Print(vars, "class RpcService;\n");
-    printer->Print(vars, "class ServerCompletionQueue;\n");
-    printer->Print(vars, "class ServerContext;\n");
-    printer->Print(vars, "}  // namespace grpc\n\n");
-
-    if (!file->package().empty()) {
-      std::vector<grpc::string> parts = file->package_parts();
-
-      for (auto part = parts.begin(); part != parts.end(); part++) {
-        vars["part"] = *part;
-        printer->Print(vars, "namespace $part$ {\n");
-      }
-      printer->Print(vars, "\n");
-    }
   }
   return output;
 }
@@ -847,7 +825,7 @@ grpc::string GetHeaderEpilogue(File *file, const Parameters & /*params*/) {
     }
 
     printer->Print(vars, "\n");
-    printer->Print(vars, "#endif  // GRPC_$filename_identifier$__INCLUDED\n");
+    printer->Print(vars, "#endif  // GRPC_C_$filename_identifier$__INCLUDED\n");
 
     printer->Print(file->GetTrailingComments().c_str());
   }
@@ -888,26 +866,18 @@ grpc::string GetSourceIncludes(File *file,
     std::map<grpc::string, grpc::string> vars;
 
     static const char *headers_strs[] = {
-      "grpc++/impl/codegen/async_stream.h",
-      "grpc++/impl/codegen/async_unary_call.h",
-      "grpc++/impl/codegen/channel_interface.h",
-      "grpc++/impl/codegen/client_unary_call.h",
-      "grpc++/impl/codegen/method_handler_impl.h",
-      "grpc++/impl/codegen/rpc_service_method.h",
-      "grpc++/impl/codegen/service_type.h",
-      "grpc++/impl/codegen/sync_stream.h"
+      "grpc_c/status_code.h",
+      "grpc_c/grpc_c.h",
+      "grpc_c/channel.h",
+      "grpc_c/unary_blocking_call.h",
+      "grpc_c/unary_async_call.h",
+      "grpc_c/client_streaming_blocking_call.h",
+      "grpc_c/server_streaming_blocking_call.h",
+      "grpc_c/bidi_streaming_blocking_call.h",
+      "grpc_c/context.h"
     };
     std::vector<grpc::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params);
-
-    if (!file->package().empty()) {
-      std::vector<grpc::string> parts = file->package_parts();
-
-      for (auto part = parts.begin(); part != parts.end(); part++) {
-        vars["part"] = *part;
-        printer->Print(vars, "namespace $part$ {\n");
-      }
-    }
 
     printer->Print(vars, "\n");
   }
@@ -1219,16 +1189,7 @@ grpc::string GetSourceServices(File *file,
 grpc::string GetSourceEpilogue(File *file, const Parameters & /*params*/) {
   grpc::string temp;
 
-  if (!file->package().empty()) {
-    std::vector<grpc::string> parts = file->package_parts();
-
-    for (auto part = parts.begin(); part != parts.end(); part++) {
-      temp.append("}  // namespace ");
-      temp.append(*part);
-      temp.append("\n");
-    }
-    temp.append("\n");
-  }
+  temp.append("// END\n");
 
   return temp;
 }
