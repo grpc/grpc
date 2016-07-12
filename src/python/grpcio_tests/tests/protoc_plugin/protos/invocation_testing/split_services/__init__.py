@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,36 +27,4 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-cimport cpython
 
-import pkg_resources
-import os.path
-import sys
-
-# TODO(atash): figure out why the coverage tool gets confused about the Cython
-# coverage plugin when the following files don't have a '.pxi' suffix.
-include "grpc/_cython/_cygrpc/grpc_string.pyx.pxi"
-include "grpc/_cython/_cygrpc/call.pyx.pxi"
-include "grpc/_cython/_cygrpc/channel.pyx.pxi"
-include "grpc/_cython/_cygrpc/credentials.pyx.pxi"
-include "grpc/_cython/_cygrpc/completion_queue.pyx.pxi"
-include "grpc/_cython/_cygrpc/records.pyx.pxi"
-include "grpc/_cython/_cygrpc/security.pyx.pxi"
-include "grpc/_cython/_cygrpc/server.pyx.pxi"
-
-#
-# initialize gRPC
-#
-
-
-cdef extern from "Python.h":
-
-  int Py_AtExit(void(*func)())
-
-
-def _initialize():
-  grpc_set_ssl_roots_override_callback(
-          <grpc_ssl_roots_override_callback>ssl_roots_override_callback)
-
-
-_initialize()

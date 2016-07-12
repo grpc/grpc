@@ -57,13 +57,10 @@ class PythonGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
                 const grpc::string& parameter,
                 grpc::protobuf::compiler::GeneratorContext* context,
                 grpc::string* error) const;
+
  private:
   GeneratorConfiguration config_;
 };
-
-std::pair<bool, grpc::string> GetServices(
-    const grpc::protobuf::FileDescriptor* file,
-    const GeneratorConfiguration& config);
 
 }  // namespace grpc_python_generator
 
