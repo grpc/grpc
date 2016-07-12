@@ -66,6 +66,9 @@ using std::vector;
 
 namespace grpc_python_generator {
 
+GeneratorConfiguration::GeneratorConfiguration()
+    : grpc_package_root("grpc"), beta_package_root("grpc.beta") {}
+
 PythonGrpcGenerator::PythonGrpcGenerator(const GeneratorConfiguration& config)
     : config_(config) {}
 

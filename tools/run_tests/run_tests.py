@@ -32,12 +32,13 @@
 
 import argparse
 import ast
+import collections
 import glob
-import hashlib
 import itertools
 import json
 import multiprocessing
 import os
+import os.path
 import platform
 import random
 import re
@@ -63,7 +64,7 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {}
 
 
 _POLLING_STRATEGIES = {
-  'linux': ['poll', 'legacy']
+  'linux': ['epoll', 'poll', 'legacy']
 }
 
 
@@ -78,24 +79,18 @@ class Config(object):
     if environ is None:
       environ = {}
     self.build_config = config
-    self.allow_hashing = (config != 'gcov')
     self.environ = environ
     self.environ['CONFIG'] = config
     self.tool_prefix = tool_prefix
     self.timeout_multiplier = timeout_multiplier
 
-  def job_spec(self, cmdline, hash_targets, timeout_seconds=5*60,
+  def job_spec(self, cmdline, timeout_seconds=5*60,
                shortname=None, environ={}, cpu_cost=1.0, flaky=False):
     """Construct a jobset.JobSpec for a test under this config
 
        Args:
          cmdline:      a list of strings specifying the command line the test
                        would like to run
-         hash_targets: either None (don't do caching of test results), or
-                       a list of strings specifying files to include in a
-                       binary hash to check if a test has changed
-                       -- if used, all artifacts needed to run the test must
-                          be listed
     """
     actual_environ = self.environ.copy()
     for k, v in environ.iteritems():
@@ -105,8 +100,6 @@ class Config(object):
                           environ=actual_environ,
                           cpu_cost=cpu_cost,
                           timeout_seconds=(self.timeout_multiplier * timeout_seconds if timeout_seconds else None),
-                          hash_targets=hash_targets
-                              if self.allow_hashing else None,
                           flake_retries=5 if flaky or args.allow_flakes else 0,
                           timeout_retries=3 if args.allow_flakes else 0)
 
@@ -381,52 +374,42 @@ class PhpLanguage(object):
     return 'php'
 
 
+class PythonConfig(collections.namedtuple('PythonConfig', [
+    'name', 'build', 'run'])):
+  """Tuple of commands (named s.t. 'what it says on the tin' applies)"""
+
 class PythonLanguage(object):
 
   def configure(self, config, args):
     self.config = config
     self.args = args
-    self._tox_envs = self._get_tox_envs(self.args.compiler)
+    self.pythons = self._get_pythons(self.args)
 
   def test_specs(self):
     # load list of known test suites
-    with open('src/python/grpcio/tests/tests.json') as tests_json_file:
+    with open('src/python/grpcio_tests/tests/tests.json') as tests_json_file:
       tests_json = json.load(tests_json_file)
     environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
-    environment['PYTHONPATH'] = '{}:{}'.format(
-      os.path.abspath('src/python/gens'),
-      os.path.abspath('src/python/grpcio_health_checking'))
-    if self.config.build_config != 'gcov':
-      return [self.config.job_spec(
-          ['tools/run_tests/run_python.sh', tox_env],
-          None,
-          environ=dict(environment.items() +
-                       [('GRPC_PYTHON_TESTRUNNER_FILTER', suite_name)]),
-          shortname='%s.test.%s' % (tox_env, suite_name),
-          timeout_seconds=5*60)
-          for suite_name in tests_json
-          for tox_env in self._tox_envs]
-    else:
-      return [self.config.job_spec(['tools/run_tests/run_python.sh', tox_env],
-                                   None,
-                                   environ=environment,
-                                   shortname='%s.test.coverage' % tox_env,
-                                   timeout_seconds=15*60)
-                                   for tox_env in self._tox_envs]
-
+    return [self.config.job_spec(
+        config.run,
+        timeout_seconds=5*60,
+        environ=dict(environment.items() +
+                     [('GRPC_PYTHON_TESTRUNNER_FILTER', suite_name)]),
+        shortname='%s.test.%s' % (config.name, suite_name),)
+        for suite_name in tests_json
+        for config in self.pythons]
 
   def pre_build_steps(self):
     return []
 
   def make_targets(self):
-    return ['static_c', 'grpc_python_plugin', 'shared_c']
+    return []
 
   def make_options(self):
     return []
 
   def build_steps(self):
-    return [['tools/run_tests/build_python.sh', tox_env] 
-            for tox_env in self._tox_envs]
+    return [config.build for config in self.pythons]
 
   def post_tests_steps(self):
     return []
@@ -437,16 +420,50 @@ class PythonLanguage(object):
   def dockerfile_dir(self):
     return 'tools/dockerfile/test/python_jessie_%s' % _docker_arch_suffix(self.args.arch)
 
-  def _get_tox_envs(self, compiler):
-    """Returns name of tox environment based on selected compiler."""
-    if compiler == 'default':
-      return ('py27', 'py34')
-    elif compiler == 'python2.7':
-      return ('py27',)
-    elif compiler == 'python3.4':
-      return ('py34',)
+  def _get_pythons(self, args):
+    if args.arch == 'x86':
+      bits = '32'
     else:
-      raise Exception('Compiler %s not supported.' % compiler)
+      bits = '64'
+    if os.name == 'nt':
+      shell = ['bash']
+      builder = [os.path.abspath('tools/run_tests/build_python_msys2.sh')]
+      builder_prefix_arguments = ['MINGW{}'.format(bits)]
+      venv_relative_python = ['Scripts/python.exe']
+      toolchain = ['mingw32']
+      python_pattern_function = lambda major, minor, bits: (
+          '/c/Python{major}{minor}/python.exe'.format(major=major, minor=minor, bits=bits)
+	  if bits == '64' else
+	  '/c/Python{major}{minor}_{bits}bits/python.exe'.format(
+              major=major, minor=minor, bits=bits))
+    else:
+      shell = []
+      builder = [os.path.abspath('tools/run_tests/build_python.sh')]
+      builder_prefix_arguments = []
+      venv_relative_python = ['bin/python']
+      toolchain = ['unix']
+      # Bit-ness is handled by the test machine's environment
+      python_pattern_function = lambda major, minor, bits: 'python{major}.{minor}'.format(major=major, minor=minor)
+    runner = [os.path.abspath('tools/run_tests/run_python.sh')]
+    python_config_generator = lambda name, major, minor, bits: PythonConfig(
+        name,
+        shell + builder + builder_prefix_arguments
+	    + [python_pattern_function(major=major, minor=minor, bits=bits)]
+	    + [name] + venv_relative_python + toolchain,
+        shell + runner + [os.path.join(name, venv_relative_python[0])])
+    python27_config = python_config_generator(name='py27', major='2', minor='7', bits=bits)
+    python34_config = python_config_generator(name='py34', major='3', minor='4', bits=bits)
+    if args.compiler == 'default':
+      if os.name == 'nt':
+        return (python27_config,)
+      else:
+        return (python27_config, python34_config,)
+    elif args.compiler == 'python2.7':
+      return (python27_config,)
+    elif args.compiler == 'python3.4':
+      return (python34_config,)
+    else:
+      raise Exception('Compiler %s not supported.' % args.compiler)
 
   def __str__(self):
     return 'python'
@@ -460,7 +477,7 @@ class RubyLanguage(object):
     _check_compiler(self.args.compiler, ['default'])
 
   def test_specs(self):
-    return [self.config.job_spec(['tools/run_tests/run_ruby.sh'], None,
+    return [self.config.job_spec(['tools/run_tests/run_ruby.sh'],
                                  timeout_seconds=10*60,
                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
@@ -533,7 +550,7 @@ class CSharpLanguage(object):
       if self.platform == 'linux':
         assembly_subdir += '/netstandard1.5/debian.8-x64'
         assembly_extension = ''
-      if self.platform == 'mac':
+      elif self.platform == 'mac':
         assembly_subdir += '/netstandard1.5/osx.10.11-x64'
         assembly_extension = ''
       else:
@@ -632,8 +649,14 @@ class ObjCLanguage(object):
     _check_compiler(self.args.compiler, ['default'])
 
   def test_specs(self):
-    return [self.config.job_spec(['src/objective-c/tests/run_tests.sh'], None,
-                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
+    return [self.config.job_spec(['src/objective-c/tests/run_tests.sh'],
+                                 timeout_seconds=None,
+                                 shortname='objc-tests',
+                                 environ=_FORCE_ENVIRON_FOR_WRAPPERS),
+            self.config.job_spec(['src/objective-c/tests/build_example_test.sh'],
+                                 timeout_seconds=15*60,
+                                 shortname='objc-examples-build',
+                                 environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
     return []
@@ -670,7 +693,7 @@ class Sanity(object):
   def test_specs(self):
     import yaml
     with open('tools/run_tests/sanity/sanity_tests.yaml', 'r') as f:
-      return [self.config.job_spec(cmd['script'].split(), None,
+      return [self.config.job_spec(cmd['script'].split(),
                                    timeout_seconds=None, environ={'TEST': 'true'},
                                    cpu_cost=cmd.get('cpu_cost', 1))
               for cmd in yaml.load(f)]
@@ -1058,44 +1081,28 @@ runs_per_test = args.runs_per_test
 forever = args.forever
 
 
-class TestCache(object):
-  """Cache for running tests."""
+def _shut_down_legacy_server(legacy_server_port):
+  try:
+    version = int(urllib2.urlopen(
+        'http://localhost:%d/version_number' % legacy_server_port,
+        timeout=10).read())
+  except:
+    pass
+  else:
+    urllib2.urlopen(
+        'http://localhost:%d/quitquitquit' % legacy_server_port).read()
 
-  def __init__(self, use_cache_results):
-    self._last_successful_run = {}
-    self._use_cache_results = use_cache_results
-    self._last_save = time.time()
 
-  def should_run(self, cmdline, bin_hash):
-    if cmdline not in self._last_successful_run:
-      return True
-    if self._last_successful_run[cmdline] != bin_hash:
-      return True
-    if not self._use_cache_results:
-      return True
-    return False
-
-  def finished(self, cmdline, bin_hash):
-    self._last_successful_run[cmdline] = bin_hash
-    if time.time() - self._last_save > 1:
-      self.save()
-
-  def dump(self):
-    return [{'cmdline': k, 'hash': v}
-            for k, v in self._last_successful_run.iteritems()]
-
-  def parse(self, exdump):
-    self._last_successful_run = dict((o['cmdline'], o['hash']) for o in exdump)
-
-  def save(self):
-    with open('.run_tests_cache', 'w') as f:
-      f.write(json.dumps(self.dump()))
-    self._last_save = time.time()
-
-  def maybe_load(self):
-    if os.path.exists('.run_tests_cache'):
-      with open('.run_tests_cache') as f:
-        self.parse(json.loads(f.read()))
+def _shut_down_legacy_server(legacy_server_port):
+  try:
+    version = int(urllib2.urlopen(
+        'http://localhost:%d/version_number' % legacy_server_port,
+        timeout=10).read())
+  except:
+    pass
+  else:
+    urllib2.urlopen(
+        'http://localhost:%d/quitquitquit' % legacy_server_port).read()
 
 
 def _start_port_server(port_server_port):
@@ -1106,7 +1113,7 @@ def _start_port_server(port_server_port):
   try:
     version = int(urllib2.urlopen(
         'http://localhost:%d/version_number' % port_server_port,
-        timeout=1).read())
+        timeout=10).read())
     print 'detected port server running version %d' % version
     running = True
   except Exception as e:
@@ -1217,7 +1224,7 @@ class BuildAndRunError(object):
 
 # returns a list of things that failed (or an empty list on success)
 def _build_and_run(
-    check_cancelled, newline_on_success, cache, xml_report=None, build_only=False):
+    check_cancelled, newline_on_success, xml_report=None, build_only=False):
   """Do one pass of building & running tests."""
   # build latest sequentially
   num_failures, resultset = jobset.run(
@@ -1234,7 +1241,7 @@ def _build_and_run(
   # start antagonists
   antagonists = [subprocess.Popen(['tools/run_tests/antagonist.py'])
                  for _ in range(0, args.antagonists)]
-  port_server_port = 32767
+  port_server_port = 32766
   _start_port_server(port_server_port)
   resultset = None
   num_test_failures = 0
@@ -1266,7 +1273,6 @@ def _build_and_run(
         all_runs, check_cancelled, newline_on_success=newline_on_success,
         travis=args.travis, infinite_runs=infinite_runs, maxjobs=args.jobs,
         stop_on_failure=args.stop_on_failure,
-        cache=cache if not xml_report else None,
         add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
     if resultset:
       for k, v in sorted(resultset.items()):
@@ -1295,13 +1301,8 @@ def _build_and_run(
   if num_test_failures:
     out.append(BuildAndRunError.TEST)
 
-  if cache: cache.save()
-
   return out
 
-
-test_cache = TestCache(runs_per_test == 1)
-test_cache.maybe_load()
 
 if forever:
   success = True
@@ -1312,7 +1313,6 @@ if forever:
     previous_success = success
     errors = _build_and_run(check_cancelled=have_files_changed,
                             newline_on_success=False,
-                            cache=test_cache,
                             build_only=args.build_only) == 0
     if not previous_success and not errors:
       jobset.message('SUCCESS',
@@ -1324,7 +1324,6 @@ if forever:
 else:
   errors = _build_and_run(check_cancelled=lambda: False,
                           newline_on_success=args.newline_on_success,
-                          cache=test_cache,
                           xml_report=args.xml_report,
                           build_only=args.build_only)
   if not errors:

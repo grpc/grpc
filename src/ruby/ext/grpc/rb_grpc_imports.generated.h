@@ -335,6 +335,9 @@ extern grpc_insecure_channel_create_from_fd_type grpc_insecure_channel_create_fr
 typedef void(*grpc_server_add_insecure_channel_from_fd_type)(grpc_server *server, grpc_completion_queue *cq, int fd);
 extern grpc_server_add_insecure_channel_from_fd_type grpc_server_add_insecure_channel_from_fd_import;
 #define grpc_server_add_insecure_channel_from_fd grpc_server_add_insecure_channel_from_fd_import
+typedef void(*grpc_use_signal_type)(int signum);
+extern grpc_use_signal_type grpc_use_signal_import;
+#define grpc_use_signal grpc_use_signal_import
 typedef const grpc_auth_property *(*grpc_auth_property_iterator_next_type)(grpc_auth_property_iterator *it);
 extern grpc_auth_property_iterator_next_type grpc_auth_property_iterator_next_import;
 #define grpc_auth_property_iterator_next grpc_auth_property_iterator_next_import
@@ -467,7 +470,7 @@ extern grpc_byte_buffer_length_type grpc_byte_buffer_length_import;
 typedef void(*grpc_byte_buffer_destroy_type)(grpc_byte_buffer *byte_buffer);
 extern grpc_byte_buffer_destroy_type grpc_byte_buffer_destroy_import;
 #define grpc_byte_buffer_destroy grpc_byte_buffer_destroy_import
-typedef void(*grpc_byte_buffer_reader_init_type)(grpc_byte_buffer_reader *reader, grpc_byte_buffer *buffer);
+typedef int(*grpc_byte_buffer_reader_init_type)(grpc_byte_buffer_reader *reader, grpc_byte_buffer *buffer);
 extern grpc_byte_buffer_reader_init_type grpc_byte_buffer_reader_init_import;
 #define grpc_byte_buffer_reader_init grpc_byte_buffer_reader_init_import
 typedef void(*grpc_byte_buffer_reader_destroy_type)(grpc_byte_buffer_reader *reader);

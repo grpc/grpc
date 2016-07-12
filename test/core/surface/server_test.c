@@ -82,9 +82,15 @@ void test_request_call_on_no_server_cq(void) {
 }
 
 void test_bind_server_twice(void) {
+  grpc_arg a;
+  a.type = GRPC_ARG_INTEGER;
+  a.key = GRPC_ARG_ALLOW_REUSEPORT;
+  a.value.integer = 0;
+  grpc_channel_args args = {1, &a};
+
   char *addr;
-  grpc_server *server1 = grpc_server_create(NULL, NULL);
-  grpc_server *server2 = grpc_server_create(NULL, NULL);
+  grpc_server *server1 = grpc_server_create(&args, NULL);
+  grpc_server *server2 = grpc_server_create(&args, NULL);
   grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
   int port = grpc_pick_unused_port_or_die();
   gpr_asprintf(&addr, "[::]:%d", port);
@@ -133,7 +139,7 @@ void test_bind_server_to_addr(const char *host, bool secure) {
 }
 
 static int external_dns_works(const char *host) {
-  grpc_resolved_addresses *res;
+  grpc_resolved_addresses *res = NULL;
   grpc_error *error = grpc_blocking_resolve_address(host, "80", &res);
   GRPC_ERROR_UNREF(error);
   if (res != NULL) {

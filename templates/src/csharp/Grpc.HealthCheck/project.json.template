@@ -14,6 +14,15 @@
       "requireLicenseAcceptance": false,
       "tags": [ "gRPC health check" ]
     },
+    "buildOptions": {
+      "define": [ "SIGNED" ],
+      "keyFile": "../keys/Grpc.snk",
+      "publicSign": true,
+      "xmlDoc": true,
+      "compile": {
+        "includeFiles": [ "../Grpc.Core/Version.cs" ]
+      }
+    },
     "dependencies": {
       "Grpc.Core": "${settings.csharp_version}",
       "Google.Protobuf": "3.0.0-beta3"

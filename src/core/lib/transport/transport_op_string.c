@@ -63,8 +63,8 @@ static void put_metadata_list(gpr_strvec *b, grpc_metadata_batch md) {
   }
   if (gpr_time_cmp(md.deadline, gpr_inf_future(md.deadline.clock_type)) != 0) {
     char *tmp;
-    gpr_asprintf(&tmp, " deadline=%lld.%09d", (long long)md.deadline.tv_sec,
-                 (int)md.deadline.tv_nsec);
+    gpr_asprintf(&tmp, " deadline=%" PRId64 ".%09d", md.deadline.tv_sec,
+                 md.deadline.tv_nsec);
     gpr_strvec_add(b, tmp);
   }
 }
@@ -119,10 +119,21 @@ char *grpc_transport_stream_op_string(grpc_transport_stream_op *op) {
     gpr_strvec_add(&b, gpr_strdup("RECV_TRAILING_METADATA"));
   }
 
-  if (op->cancel_with_status != GRPC_STATUS_OK) {
+  if (op->cancel_error != GRPC_ERROR_NONE) {
     if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
     first = 0;
-    gpr_asprintf(&tmp, "CANCEL:%d", op->cancel_with_status);
+    const char *msg = grpc_error_string(op->cancel_error);
+    gpr_asprintf(&tmp, "CANCEL:%s", msg);
+    grpc_error_free_string(msg);
+    gpr_strvec_add(&b, tmp);
+  }
+
+  if (op->close_error != GRPC_ERROR_NONE) {
+    if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
+    first = 0;
+    const char *msg = grpc_error_string(op->close_error);
+    gpr_asprintf(&tmp, "CLOSE:%s", msg);
+    grpc_error_free_string(msg);
     gpr_strvec_add(&b, tmp);
   }
 
