@@ -244,8 +244,7 @@ class WriteFlagSettingStreamingInputEnumerable
 
   def each
     @requests_and_write_flags.each do |request_and_flag|
-      @call_op.write_flag = request_and_flag[:write_flag] if
-        request_and_flag[:write_flag]
+      @call_op.write_flag = request_and_flag[:write_flag]
       yield request_and_flag[:request]
     end
   end
@@ -411,7 +410,8 @@ class NamedTests
     # Create the requests messages and the corresponding write flags
     # for each message
     requests = WriteFlagSettingStreamingInputEnumerable.new([
-      { request: first_request },
+      { request: first_request,
+        write_flag: 0 },
       { request: second_request,
         write_flag: GRPC::Core::WriteFlags::NO_COMPRESS }
     ])
