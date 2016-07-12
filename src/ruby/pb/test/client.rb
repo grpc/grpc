@@ -233,8 +233,7 @@ class BlockingEnumerator
   end
 end
 
-# Wraps a Queue to yield items to it.
-# Intended to be used to wrap a call_op as well, and to adjust
+# Intended to be used to wrap a call_op, and to adjust
 # the write flag of the call_op in between messages yielded to it.
 class WriteFlagSettingStreamingInputEnumerable
   attr_accessor :call_op
