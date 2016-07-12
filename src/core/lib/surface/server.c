@@ -1321,7 +1321,9 @@ static grpc_call_error queue_call_request(grpc_exec_ctx *exec_ctx,
   if (request_id == -1) {
     /* out of request ids: just fail this one */
     fail_call(exec_ctx, server, cq_idx, rc,
-              GRPC_ERROR_CREATE("Server Shutdown"));
+              grpc_error_set_int(GRPC_ERROR_CREATE("Out of request ids"),
+                                 GRPC_ERROR_INT_LIMIT,
+                                 server->max_requested_calls_per_cq));
     return GRPC_CALL_OK;
   }
   switch (rc->type) {
