@@ -1,6 +1,6 @@
 {
   "name": "grpc",
-  "version": "0.16.0-dev",
+  "version": "1.1.0-dev",
   "author": "Google Inc.",
   "description": "gRPC Library for Node",
   "homepage": "http://www.grpc.io/",
@@ -59,7 +59,6 @@
   "files": [
     "LICENSE",
     "src/node/README.md",
-    "src/node/health_check",
     "src/proto",
     "etc",
     "src/node/index.js",

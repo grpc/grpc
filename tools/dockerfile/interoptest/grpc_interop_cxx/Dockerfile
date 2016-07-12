@@ -75,10 +75,6 @@ RUN ln -s /usr/bin/ccache /usr/local/bin/c++
 RUN ln -s /usr/bin/ccache /usr/local/bin/clang
 RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
 
-#======================
-# Zookeeper dependencies
-# TODO(jtattermusch): is zookeeper still needed?
-RUN apt-get install -y libzookeeper-mt-dev
 
 RUN mkdir /var/local/jenkins
 

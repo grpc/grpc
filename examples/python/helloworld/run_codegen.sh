@@ -29,4 +29,4 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # Runs the protoc with gRPC plugin to generate protocol messages and gRPC stubs.
-protoc -I ../../protos --python_out=. --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_python_plugin` ../../protos/helloworld.proto
+python -m grpc.tools.protoc -I../../protos --python_out=. --grpc_python_out=. ../../protos/helloworld.proto
