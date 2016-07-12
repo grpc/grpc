@@ -184,11 +184,11 @@ if __name__ == '__main__':
   args = parser.parse_args()
 
   if args.scenario == UNSTARTED_SERVER:
-    server = grpc.server((), DaemonPool())
+    server = grpc.server(DaemonPool())
     if args.wait_for_interrupt:
       time.sleep(WAIT_TIME)
   elif args.scenario == RUNNING_SERVER:
-    server = grpc.server((), DaemonPool())
+    server = grpc.server(DaemonPool())
     port = server.add_insecure_port('[::]:0')
     server.start()
     if args.wait_for_interrupt:
@@ -203,7 +203,7 @@ if __name__ == '__main__':
     if args.wait_for_interrupt:
       time.sleep(WAIT_TIME)
   elif args.scenario == POLL_CONNECTIVITY:
-    server = grpc.server((), DaemonPool())
+    server = grpc.server(DaemonPool())
     port = server.add_insecure_port('[::]:0')
     server.start()
     channel = grpc.insecure_channel('localhost:%d' % port)
@@ -217,7 +217,7 @@ if __name__ == '__main__':
 
   else:
     handler = GenericHandler()
-    server = grpc.server((), DaemonPool())
+    server = grpc.server(DaemonPool())
     port = server.add_insecure_port('[::]:0')
     server.add_generic_rpc_handlers((handler,))
     server.start()
