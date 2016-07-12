@@ -467,6 +467,8 @@ typedef struct {
   grpc_chttp2_incoming_metadata_buffer received_trailing_metadata;
 
   grpc_chttp2_incoming_frame_queue incoming_frames;
+
+  gpr_timespec deadline;
 } grpc_chttp2_stream_global;
 
 typedef struct {

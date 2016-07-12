@@ -40,7 +40,7 @@ from tests.qps import worker_server
 
 
 def run_worker_server(port):
-  server = grpc.server((), futures.ThreadPoolExecutor(max_workers=5))
+  server = grpc.server(futures.ThreadPoolExecutor(max_workers=5))
   servicer = worker_server.WorkerServer()
   services_pb2.add_WorkerServiceServicer_to_server(servicer, server)
   server.add_insecure_port('[::]:{}'.format(port))

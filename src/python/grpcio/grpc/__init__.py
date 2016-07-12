@@ -1219,9 +1219,9 @@ def server(thread_pool, handlers=None):
       to service RPCs.
     handlers: An optional sequence of GenericRpcHandlers to be used to service
       RPCs after the returned Server is started. These handlers need not be the
-      only handlers the returned Server will use to service RPCs; other
-      handlers may later be added to the returned Server by calling its
-      add_generic_rpc_handlers method any time before it is started.
+      only handlers the server will use to service RPCs; other handlers may
+      later be added by calling add_generic_rpc_handlers any time before the
+      returned Server is started.
 
   Returns:
     A Server with which RPCs can be serviced.
