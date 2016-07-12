@@ -1816,7 +1816,7 @@ static void reading_action_locked(grpc_exec_ctx *exec_ctx, void *tp,
     grpc_exec_ctx_sched(exec_ctx, &t->parsing_action, GRPC_ERROR_REF(error),
                         NULL);
   } else {
-    post_reading_action_locked(exec_ctx, t, GRPC_ERROR_REF(error));
+    post_reading_action_locked(exec_ctx, t, error);
   }
 }
 

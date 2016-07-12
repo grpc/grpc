@@ -282,7 +282,6 @@ static void send_shutdown(grpc_exec_ctx *exec_ctx, grpc_channel *channel,
   op->goaway_message = &sc->slice;
   op->goaway_status = GRPC_STATUS_OK;
   op->disconnect_with_error = send_disconnect;
-  op->on_consumed = &sc->closure;
 
   elem = grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
   elem->filter->start_transport_op(exec_ctx, elem, op);

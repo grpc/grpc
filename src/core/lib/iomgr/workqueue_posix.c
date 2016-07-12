@@ -133,7 +133,7 @@ static void on_readable(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     workqueue->wakeup_fd.read_fd = 0;
     grpc_wakeup_fd_destroy(&workqueue->wakeup_fd);
     grpc_fd_orphan(exec_ctx, workqueue->wakeup_read_fd, NULL, NULL, "destroy");
-    drain(exec_ctx, workqueue);
+    GPR_ASSERT(gpr_atm_no_barrier_load(&workqueue->state) == 0);
     gpr_free(workqueue);
   } else {
     error = grpc_wakeup_fd_consume_wakeup(&workqueue->wakeup_fd);
