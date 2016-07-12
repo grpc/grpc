@@ -42,7 +42,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(PACKAGE_NAME      "grpc")
-set(PACKAGE_VERSION   "0.16.0-dev")
+set(PACKAGE_VERSION   "1.1.0-dev")
 set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
@@ -56,6 +56,13 @@ if(NOT PROTOBUF_ROOT_DIR)
 endif()
 if(NOT ZLIB_ROOT_DIR)
   set(ZLIB_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/zlib)
+endif()
+
+# Building the protobuf tests require gmock what is not part of a standard protobuf checkout.
+# Disable them unless they are explicitly requested from the cmake command line (when we assume
+# gmock is downloaded to the right location inside protobuf).
+if(NOT protobuf_BUILD_TESTS)
+  set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests")
 endif()
 
 add_subdirectory(${BORINGSSL_ROOT_DIR} third_party/boringssl)
@@ -802,6 +809,7 @@ target_link_libraries(grpc++_unsecure
   libprotobuf
   gpr
   grpc_unsecure
+  grpc
 )
 
   

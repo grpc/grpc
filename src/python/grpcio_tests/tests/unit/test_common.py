@@ -31,6 +31,7 @@
 
 import collections
 
+import grpc
 import six
 
 INVOCATION_INITIAL_METADATA = (('0', 'abc'), ('1', 'def'), ('2', 'ghi'),)
@@ -78,3 +79,24 @@ def metadata_transmitted(original_metadata, transmitted_metadata):
       return False
   else:
     return True
+
+
+def test_secure_channel(
+    target, channel_credentials, server_host_override):
+  """Creates an insecure Channel to a remote host.
+
+  Args:
+    host: The name of the remote host to which to connect.
+    port: The port of the remote host to which to connect.
+    channel_credentials: The implementations.ChannelCredentials with which to
+      connect.
+    server_host_override: The target name used for SSL host name checking.
+
+  Returns:
+    An implementations.Channel to the remote host through which RPCs may be
+      conducted.
+  """
+  channel = grpc.secure_channel(
+      target, channel_credentials,
+      (('grpc.ssl_target_name_override', server_host_override,),))
+  return channel

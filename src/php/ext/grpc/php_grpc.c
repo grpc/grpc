@@ -248,6 +248,8 @@ PHP_MSHUTDOWN_FUNCTION(grpc) {
   /* uncomment this line if you have INI entries
   UNREGISTER_INI_ENTRIES();
   */
+  // WARNING: This function IS being called by PHP when the extension
+  // is unloaded but the logs were somehow suppressed.
   grpc_shutdown_timeval(TSRMLS_C);
   grpc_php_shutdown_completion_queue(TSRMLS_C);
   grpc_shutdown();

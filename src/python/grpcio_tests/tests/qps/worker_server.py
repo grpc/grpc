@@ -32,8 +32,8 @@ import random
 import threading
 import time
 
-from grpc.beta import implementations
-from grpc.framework.interfaces.face import utilities
+from concurrent import futures
+import grpc
 from src.proto.grpc.testing import control_pb2
 from src.proto.grpc.testing import services_pb2
 from src.proto.grpc.testing import stats_pb2
@@ -45,7 +45,7 @@ from tests.qps import histogram
 from tests.unit import resources
 
 
-class WorkerServer(services_pb2.BetaWorkerServiceServicer):
+class WorkerServer(services_pb2.WorkerServiceServicer):
   """Python Worker Server implementation."""
 
   def __init__(self):
@@ -65,7 +65,7 @@ class WorkerServer(services_pb2.BetaWorkerServiceServicer):
       if request.mark.reset:
         start_time = end_time
       yield status
-    server.stop(0)
+    server.stop(None)
 
   def _get_server_status(self, start_time, end_time, port, cores):
     end_time = time.time()
@@ -76,25 +76,35 @@ class WorkerServer(services_pb2.BetaWorkerServiceServicer):
     return control_pb2.ServerStatus(stats=stats, port=port, cores=cores)
 
   def _create_server(self, config):
-    if config.server_type == control_pb2.SYNC_SERVER:
+    if config.async_server_threads == 0:
+      # This is the default concurrent.futures thread pool size, but
+      # None doesn't seem to work
+      server_threads = multiprocessing.cpu_count() * 5
+    else:
+      server_threads = config.async_server_threads
+    server = grpc.server(futures.ThreadPoolExecutor(
+        max_workers=server_threads))
+    if config.server_type == control_pb2.ASYNC_SERVER:
       servicer = benchmark_server.BenchmarkServer()
-      server = services_pb2.beta_create_BenchmarkService_server(servicer)
+      services_pb2.add_BenchmarkServiceServicer_to_server(servicer, server)
     elif config.server_type == control_pb2.ASYNC_GENERIC_SERVER:
       resp_size = config.payload_config.bytebuf_params.resp_size
       servicer = benchmark_server.GenericBenchmarkServer(resp_size)
       method_implementations = {
-          ('grpc.testing.BenchmarkService', 'StreamingCall'):
-          utilities.stream_stream_inline(servicer.StreamingCall),
-          ('grpc.testing.BenchmarkService', 'UnaryCall'):
-          utilities.unary_unary_inline(servicer.UnaryCall),
+          'StreamingCall':
+          grpc.stream_stream_rpc_method_handler(servicer.StreamingCall),
+          'UnaryCall':
+          grpc.unary_unary_rpc_method_handler(servicer.UnaryCall),
       }
-      server = implementations.server(method_implementations)
+      handler = grpc.method_handlers_generic_handler(
+          'grpc.testing.BenchmarkService', method_implementations)
+      server.add_generic_rpc_handlers((handler,))
     else:
       raise Exception('Unsupported server type {}'.format(config.server_type))
 
     if config.HasField('security_params'):  # Use SSL
-      server_creds = implementations.ssl_server_credentials([(
-          resources.private_key(), resources.certificate_chain())])
+      server_creds = grpc.ssl_server_credentials(
+          ((resources.private_key(), resources.certificate_chain()),))
       port = server.add_secure_port('[::]:{}'.format(config.port), server_creds)
     else:
       port = server.add_insecure_port('[::]:{}'.format(config.port))

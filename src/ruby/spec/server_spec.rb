@@ -43,19 +43,15 @@ describe Server do
     GRPC::Core::ServerCredentials.new(*load_test_certs)
   end
 
-  before(:each) do
-    @cq = GRPC::Core::CompletionQueue.new
-  end
-
   describe '#start' do
     it 'runs without failing' do
-      blk = proc { Server.new(@cq, nil).start }
+      blk = proc { Server.new(nil).start }
       expect(&blk).to_not raise_error
     end
 
     it 'fails if the server is closed' do
-      s = Server.new(@cq, nil)
-      s.close(@cq)
+      s = Server.new(nil)
+      s.close
       expect { s.start }.to raise_error(RuntimeError)
     end
   end
@@ -63,19 +59,19 @@ describe Server do
   describe '#destroy' do
     it 'destroys a server ok' do
       s = start_a_server
-      blk = proc { s.destroy(@cq) }
+      blk = proc { s.destroy }
       expect(&blk).to_not raise_error
     end
 
     it 'can be called more than once without error' do
       s = start_a_server
       begin
-        blk = proc { s.destroy(@cq) }
+        blk = proc { s.destroy }
         expect(&blk).to_not raise_error
         blk.call
         expect(&blk).to_not raise_error
       ensure
-        s.close(@cq)
+        s.close
       end
     end
   end
@@ -84,7 +80,7 @@ describe Server do
     it 'closes a server ok' do
       s = start_a_server
       begin
-        blk = proc { s.close(@cq) }
+        blk = proc { s.close }
         expect(&blk).to_not raise_error
       ensure
         s.close(@cq)
@@ -93,7 +89,7 @@ describe Server do
 
     it 'can be called more than once without error' do
       s = start_a_server
-      blk = proc { s.close(@cq) }
+      blk = proc { s.close }
       expect(&blk).to_not raise_error
       blk.call
       expect(&blk).to_not raise_error
@@ -104,16 +100,16 @@ describe Server do
     describe 'for insecure servers' do
       it 'runs without failing' do
         blk = proc do
-          s = Server.new(@cq, nil)
+          s = Server.new(nil)
           s.add_http2_port('localhost:0', :this_port_is_insecure)
-          s.close(@cq)
+          s.close
         end
         expect(&blk).to_not raise_error
       end
 
       it 'fails if the server is closed' do
-        s = Server.new(@cq, nil)
-        s.close(@cq)
+        s = Server.new(nil)
+        s.close
         blk = proc do
           s.add_http2_port('localhost:0', :this_port_is_insecure)
         end
@@ -125,16 +121,16 @@ describe Server do
       let(:cert) { create_test_cert }
       it 'runs without failing' do
         blk = proc do
-          s = Server.new(@cq, nil)
+          s = Server.new(nil)
           s.add_http2_port('localhost:0', cert)
-          s.close(@cq)
+          s.close
         end
         expect(&blk).to_not raise_error
       end
 
       it 'fails if the server is closed' do
-        s = Server.new(@cq, nil)
-        s.close(@cq)
+        s = Server.new(nil)
+        s.close
         blk = proc { s.add_http2_port('localhost:0', cert) }
         expect(&blk).to raise_error(RuntimeError)
       end
@@ -142,8 +138,8 @@ describe Server do
   end
 
   shared_examples '#new' do
-    it 'takes a completion queue with nil channel args' do
-      expect { Server.new(@cq, nil) }.to_not raise_error
+    it 'takes nil channel args' do
+      expect { Server.new(nil) }.to_not raise_error
     end
 
     it 'does not take a hash with bad keys as channel args' do
@@ -194,14 +190,14 @@ describe Server do
 
   describe '#new with an insecure channel' do
     def construct_with_args(a)
-      proc { Server.new(@cq, a) }
+      proc { Server.new(a) }
     end
 
     it_behaves_like '#new'
   end
 
   def start_a_server
-    s = Server.new(@cq, nil)
+    s = Server.new(nil)
     s.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
     s.start
     s

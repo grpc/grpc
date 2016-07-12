@@ -1091,37 +1091,41 @@ def access_token_call_credentials(access_token):
       _auth.AccessTokenCallCredentials(access_token))
 
 
-def composite_call_credentials(call_credentials, additional_call_credentials):
-  """Compose two CallCredentials to make a new one.
+def composite_call_credentials(*call_credentials):
+  """Compose multiple CallCredentials to make a new CallCredentials.
 
   Args:
-    call_credentials: A CallCredentials object.
-    additional_call_credentials: Another CallCredentials object to compose on
-      top of call_credentials.
+    *call_credentials: At least two CallCredentials objects.
 
   Returns:
-    A new CallCredentials composed of the two given CallCredentials.
+    A CallCredentials object composed of the given CallCredentials objects.
   """
+  from grpc import _credential_composition
+  cygrpc_call_credentials = tuple(
+      single_call_credentials._credentials
+      for single_call_credentials in call_credentials)
   return CallCredentials(
-      _cygrpc.call_credentials_composite(
-          call_credentials._credentials,
-          additional_call_credentials._credentials))
+      _credential_composition.call(cygrpc_call_credentials))
 
 
-def composite_channel_credentials(channel_credentials, call_credentials):
-  """Compose a ChannelCredentials and a CallCredentials.
+def composite_channel_credentials(channel_credentials, *call_credentials):
+  """Compose a ChannelCredentials and one or more CallCredentials objects.
 
   Args:
     channel_credentials: A ChannelCredentials.
-    call_credentials: A CallCredentials.
+    *call_credentials: One or more CallCredentials objects.
 
   Returns:
     A ChannelCredentials composed of the given ChannelCredentials and
-      CallCredentials.
+      CallCredentials objects.
   """
+  from grpc import _credential_composition
+  cygrpc_call_credentials = tuple(
+      single_call_credentials._credentials
+      for single_call_credentials in call_credentials)
   return ChannelCredentials(
-      _cygrpc.channel_credentials_composite(
-          channel_credentials._credentials, call_credentials._credentials))
+      _credential_composition.channel(
+          channel_credentials._credentials, cygrpc_call_credentials))
 
 
 def ssl_server_credentials(
@@ -1207,25 +1211,23 @@ def secure_channel(target, credentials, options=None):
   return _channel.Channel(target, options, credentials._credentials)
 
 
-def server(generic_rpc_handlers, thread_pool, options=None):
+def server(thread_pool, handlers=None):
   """Creates a Server with which RPCs can be serviced.
 
-  The GenericRpcHandlers passed to this function needn't be the only
-  GenericRpcHandlers that will be used to serve RPCs; others may be added later
-  by calling add_generic_rpc_handlers any time before the returned server is
-  started.
-
   Args:
-    generic_rpc_handlers: Some number of GenericRpcHandlers that will be used
-      to service RPCs after the returned Server is started.
     thread_pool: A futures.ThreadPoolExecutor to be used by the returned Server
       to service RPCs.
+    handlers: An optional sequence of GenericRpcHandlers to be used to service
+      RPCs after the returned Server is started. These handlers need not be the
+      only handlers the server will use to service RPCs; other handlers may
+      later be added by calling add_generic_rpc_handlers any time before the
+      returned Server is started.
 
   Returns:
     A Server with which RPCs can be serviced.
   """
   from grpc import _server
-  return _server.Server(generic_rpc_handlers, thread_pool)
+  return _server.Server(thread_pool, () if handlers is None else handlers)
 
 
 ###################################  __all__  #################################
