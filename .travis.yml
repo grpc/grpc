@@ -11,9 +11,6 @@ before_install:
   - gem install cocoapods -v '1.0.0'
   - pod --version
   - brew install gflags
-  - pushd third_party/protobuf
-  - git checkout v3.0.0-beta-3
-  - popd
 install:
   - make grpc_objective_c_plugin
   - pushd src/objective-c/tests

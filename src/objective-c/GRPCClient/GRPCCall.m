@@ -377,6 +377,7 @@ NSString * const kGRPCTrailersKey = @"io.grpc.TrailersKey";
       [strongSelf finishWithError:[NSError errorWithDomain:kGRPCErrorDomain
                                                       code:GRPCErrorCodeUnavailable
                                                   userInfo:@{NSLocalizedDescriptionKey: @"Connectivity lost."}]];
+      [[GRPCHost hostWithAddress:strongSelf->_host] disconnect];
     }
   }];
 }
