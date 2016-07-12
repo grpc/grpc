@@ -34,8 +34,6 @@
 #include "test/cpp/qps/usage_timer.h"
 
 #include <grpc/support/time.h>
-#include <sys/resource.h>
-#include <sys/time.h>
 
 UsageTimer::UsageTimer() : start_(Sample()) {}
 
@@ -43,6 +41,21 @@ double UsageTimer::Now() {
   auto ts = gpr_now(GPR_CLOCK_REALTIME);
   return ts.tv_sec + 1e-9 * ts.tv_nsec;
 }
+
+UsageTimer::Result UsageTimer::Mark() const {
+  Result s = Sample();
+  Result r;
+  r.wall = s.wall - start_.wall;
+  r.user = s.user - start_.user;
+  r.system = s.system - start_.system;
+  return r;
+}
+
+#ifdef GPR_WINDOWS
+UsageTimer::Result UsageTimer::Sample() { return Result{0, 0, 0}; }
+#else
+#include <sys/resource.h>
+#include <sys/time.h>
 
 static double time_double(struct timeval* tv) {
   return tv->tv_sec + 1e-6 * tv->tv_usec;
@@ -60,12 +73,4 @@ UsageTimer::Result UsageTimer::Sample() {
   r.system = time_double(&usage.ru_stime);
   return r;
 }
-
-UsageTimer::Result UsageTimer::Mark() const {
-  Result s = Sample();
-  Result r;
-  r.wall = s.wall - start_.wall;
-  r.user = s.user - start_.user;
-  r.system = s.system - start_.system;
-  return r;
-}
+#endif

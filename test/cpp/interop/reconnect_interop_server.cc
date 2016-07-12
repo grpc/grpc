@@ -34,7 +34,6 @@
 // Test description at doc/connection-backoff-interop-test-description.md
 
 #include <signal.h>
-#include <unistd.h>
 
 #include <condition_variable>
 #include <memory>

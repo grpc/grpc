@@ -948,6 +948,31 @@ target_link_libraries(grpc_verify_jwt
 )
 
 
+add_executable(grpc_cli
+  test/cpp/util/grpc_cli.cc
+)
+
+target_include_directories(grpc_cli
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${BORINGSSL_ROOT_DIR}/include
+  PRIVATE ${PROTOBUF_ROOT_DIR}/src
+  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
+)
+
+target_link_libraries(grpc_cli
+  grpc_cli_libs
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  grpc++_test_config
+)
+
+
 add_executable(grpc_cpp_plugin
   src/compiler/cpp_plugin.cc
 )

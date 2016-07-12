@@ -41,6 +41,7 @@
 #include <grpc++/create_channel.h>
 #include <grpc++/grpc++.h>
 #include <grpc++/impl/thd.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
 #include "src/proto/grpc/testing/metrics.grpc.pb.h"
@@ -238,7 +239,7 @@ int main(int argc, char** argv) {
   log_level = FLAGS_log_level;
   gpr_set_log_function(TestLogFunction);
 
-  srand(time(NULL));
+  srand((unsigned)time(NULL));
 
   // Parse the server addresses
   std::vector<grpc::string> server_addresses;
@@ -276,7 +277,7 @@ int main(int argc, char** argv) {
   // parallel on the same channel.
   int thread_idx = 0;
   int server_idx = -1;
-  char buffer[256];
+  char* buffer;
   for (auto it = server_addresses.begin(); it != server_addresses.end(); it++) {
     ++server_idx;
     // Create channel(s) for each server
@@ -295,13 +296,14 @@ int main(int argc, char** argv) {
 
         bool is_already_created = false;
         // QpsGauge name
-        std::snprintf(buffer, sizeof(buffer),
-                      "/stress_test/server_%d/channel_%d/stub_%d/qps",
-                      server_idx, channel_idx, stub_idx);
+        gpr_asprintf(&buffer, "/stress_test/server_%d/channel_%d/stub_%d/qps",
+                     server_idx, channel_idx, stub_idx);
 
         test_threads.emplace_back(grpc::thread(
             &StressTestInteropClient::MainLoop, client,
             metrics_service.CreateQpsGauge(buffer, &is_already_created)));
+
+        gpr_free(buffer);
 
         // The QpsGauge should not have been already created
         GPR_ASSERT(!is_already_created);

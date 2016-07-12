@@ -14,10 +14,13 @@ MinimumVisualStudioVersion = 10.0.40219.1
 cpp_proj_type = "{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}"
 
 all_projects = set()
-for project in solution_top_level_projects:
-  for dep in project.deps:
-    all_projects.add(dep)
-  all_projects.add(project.name)
+todo = list(p.name for p in solution_top_level_projects)
+while todo:
+  dep = todo[0]
+  todo = todo[1:]
+  if dep in all_projects: continue
+  all_projects.add(dep)
+  todo.extend(vsproject_dict[dep].deps)
 
 solution_projects = [vsproject_dict[project] for project in sorted(list(all_projects))]
 %>\

@@ -1066,6 +1066,7 @@ void PrintSourceService(Printer *printer,
     (*vars)["Method"] = service->method(i).get()->name();
     printer->Print(*vars, "  \"/$Package$$Service$/$Method$\",\n");
   }
+  printer->Print(*vars, "  NULL,\n");
   printer->Print(*vars, "};\n\n");
 
   printer->Print(*vars,

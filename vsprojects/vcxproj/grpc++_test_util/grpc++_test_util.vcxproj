@@ -58,9 +58,11 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
     <TargetName>grpc++_test_util</TargetName>
+    <Configuration-gtest>Debug</Configuration-gtest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <TargetName>grpc++_test_util</TargetName>
+    <Configuration-gtest>Release</Configuration-gtest>
   </PropertyGroup>
     <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -257,13 +259,18 @@
       <Project>{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}</Project>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+  <Import Project="$(SolutionDir)\..\vsprojects\packages\gtest.1.7.0\build\native\gtest.targets" Condition="Exists('$(SolutionDir)\..\vsprojects\packages\gtest.1.7.0\build\native\gtest.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
+    <Error Condition="!Exists('$(SolutionDir)\..\vsprojects\packages\gtest.1.7.0\build\native\gtest.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\..\vsprojects\packages\gtest.1.7.0\build\native\gtest.targets')" />
   </Target>
 </Project>
 
