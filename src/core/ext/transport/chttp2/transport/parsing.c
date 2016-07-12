@@ -236,9 +236,10 @@ void grpc_chttp2_publish_reads(
                                            GRPC_ERROR_INT_HTTP2_ERROR, &reason);
       if (has_reason && reason != GRPC_CHTTP2_NO_ERROR) {
         grpc_status_code status_code =
-            has_reason ? grpc_chttp2_http2_error_to_grpc_status(
-                             (grpc_chttp2_error_code)reason)
-                       : GRPC_STATUS_INTERNAL;
+            has_reason
+                ? grpc_chttp2_http2_error_to_grpc_status(
+                      (grpc_chttp2_error_code)reason, stream_global->deadline)
+                : GRPC_STATUS_INTERNAL;
         const char *status_details =
             grpc_error_string(stream_parsing->forced_close_error);
         gpr_slice slice_details = gpr_slice_from_copied_string(status_details);

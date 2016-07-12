@@ -1093,11 +1093,19 @@ def _shut_down_legacy_server(legacy_server_port):
         'http://localhost:%d/quitquitquit' % legacy_server_port).read()
 
 
-def _start_port_server(port_server_port):
-  # Temporary patch to switch the port_server port
-  # see https://github.com/grpc/grpc/issues/7145
-  _shut_down_legacy_server(32767)
+def _shut_down_legacy_server(legacy_server_port):
+  try:
+    version = int(urllib2.urlopen(
+        'http://localhost:%d/version_number' % legacy_server_port,
+        timeout=10).read())
+  except:
+    pass
+  else:
+    urllib2.urlopen(
+        'http://localhost:%d/quitquitquit' % legacy_server_port).read()
 
+
+def _start_port_server(port_server_port):
   # check if a compatible port server is running
   # if incompatible (version mismatch) ==> start a new one
   # if not running ==> start a new one
