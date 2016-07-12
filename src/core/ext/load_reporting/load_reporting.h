@@ -58,8 +58,11 @@ typedef enum grpc_load_reporting_source {
 typedef struct grpc_load_reporting_call_data {
   const grpc_load_reporting_source source; /**< point of last data update. */
 
-  // XXX
+  /** Unique identifier for the channel associated with the data */
   intptr_t channel_id;
+
+  /** Unique identifier for the call associated with the data. If the call
+   * hasn't been created yet, it'll have a value of zero. */
   intptr_t call_id;
 
   /** Only valid when \a source is \a GRPC_LR_POINT_CALL_DESTRUCTION, that is,

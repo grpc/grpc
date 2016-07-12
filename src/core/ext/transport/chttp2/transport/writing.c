@@ -264,6 +264,7 @@ static void finalize_outbuf(grpc_exec_ctx *exec_ctx,
             send_bytes, is_last_frame, &stream_writing->stats,
             &transport_writing->outbuf);
         if (is_first_data_frame) {
+          /* TODO(dgq): this is a hack. It'll be fix in a future refactoring */
           stream_writing->stats.data_bytes -= 5; /* discount grpc framing */
           is_first_data_frame = false;
         }
