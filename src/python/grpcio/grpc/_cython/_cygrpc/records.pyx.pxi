@@ -287,8 +287,7 @@ cdef class ByteBuffer:
 
   def __dealloc__(self):
     if self.c_byte_buffer != NULL:
-      with nogil:
-        grpc_byte_buffer_destroy(self.c_byte_buffer)
+      grpc_byte_buffer_destroy(self.c_byte_buffer)
 
 
 cdef class SslPemKeyCertPair:
@@ -420,8 +419,7 @@ cdef class Metadata:
     # this frees the allocated memory for the grpc_metadata_array (although
     # it'd be nice if that were documented somewhere...)
     # TODO(atash): document this in the C core
-    with nogil:
-      grpc_metadata_array_destroy(&self.c_metadata_array)
+    grpc_metadata_array_destroy(&self.c_metadata_array)
 
   def __len__(self):
     return self.c_metadata_array.count
@@ -530,8 +528,7 @@ cdef class Operation:
     # Python. The remaining one(s) are primitive fields filled in by GRPC core.
     # This means that we need to clean up after receive_status_on_client.
     if self.c_op.type == GRPC_OP_RECV_STATUS_ON_CLIENT:
-      with nogil:
-        gpr_free(self._received_status_details)
+      gpr_free(self._received_status_details)
 
 def operation_send_initial_metadata(Metadata metadata, int flags):
   cdef Operation op = Operation()

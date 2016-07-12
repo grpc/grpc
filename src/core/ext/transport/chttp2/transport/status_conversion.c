@@ -39,6 +39,8 @@ int grpc_chttp2_grpc_status_to_http2_error(grpc_status_code status) {
       return GRPC_CHTTP2_NO_ERROR;
     case GRPC_STATUS_CANCELLED:
       return GRPC_CHTTP2_CANCEL;
+    case GRPC_STATUS_DEADLINE_EXCEEDED:
+      return GRPC_CHTTP2_CANCEL;
     case GRPC_STATUS_RESOURCE_EXHAUSTED:
       return GRPC_CHTTP2_ENHANCE_YOUR_CALM;
     case GRPC_STATUS_PERMISSION_DENIED:
@@ -51,13 +53,17 @@ int grpc_chttp2_grpc_status_to_http2_error(grpc_status_code status) {
 }
 
 grpc_status_code grpc_chttp2_http2_error_to_grpc_status(
-    grpc_chttp2_error_code error) {
+    grpc_chttp2_error_code error, gpr_timespec deadline) {
   switch (error) {
     case GRPC_CHTTP2_NO_ERROR:
       /* should never be received */
       return GRPC_STATUS_INTERNAL;
     case GRPC_CHTTP2_CANCEL:
-      return GRPC_STATUS_CANCELLED;
+      /* http2 cancel translates to STATUS_CANCELLED iff deadline hasn't been
+       * exceeded */
+      return gpr_time_cmp(gpr_now(deadline.clock_type), deadline) >= 0
+                 ? GRPC_STATUS_DEADLINE_EXCEEDED
+                 : GRPC_STATUS_CANCELLED;
     case GRPC_CHTTP2_ENHANCE_YOUR_CALM:
       return GRPC_STATUS_RESOURCE_EXHAUSTED;
     case GRPC_CHTTP2_INADEQUATE_SECURITY:

@@ -46,8 +46,7 @@ cdef class ChannelCredentials:
 
   def __dealloc__(self):
     if self.c_credentials != NULL:
-      with nogil:
-        grpc_channel_credentials_release(self.c_credentials)
+      grpc_channel_credentials_release(self.c_credentials)
 
 
 cdef class CallCredentials:
@@ -64,8 +63,7 @@ cdef class CallCredentials:
 
   def __dealloc__(self):
     if self.c_credentials != NULL:
-      with nogil:
-        grpc_call_credentials_release(self.c_credentials)
+      grpc_call_credentials_release(self.c_credentials)
 
 
 cdef class ServerCredentials:
@@ -76,8 +74,7 @@ cdef class ServerCredentials:
 
   def __dealloc__(self):
     if self.c_credentials != NULL:
-      with nogil:
-        grpc_server_credentials_release(self.c_credentials)
+      grpc_server_credentials_release(self.c_credentials)
 
 
 cdef class CredentialsMetadataPlugin:

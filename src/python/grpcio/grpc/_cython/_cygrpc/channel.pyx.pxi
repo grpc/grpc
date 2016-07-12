@@ -102,5 +102,4 @@ cdef class Channel:
 
   def __dealloc__(self):
     if self.c_channel != NULL:
-      with nogil:
-        grpc_channel_destroy(self.c_channel)
+      grpc_channel_destroy(self.c_channel)

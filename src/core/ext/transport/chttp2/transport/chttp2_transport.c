@@ -506,6 +506,7 @@ static int init_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
       &s->global.received_trailing_metadata);
   grpc_chttp2_data_parser_init(&s->parsing.data_parser);
   gpr_slice_buffer_init(&s->writing.flow_controlled_buffer);
+  s->global.deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
 
   REF_TRANSPORT(t, "stream");
 
@@ -1000,6 +1001,11 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
     const size_t metadata_peer_limit =
         transport_global->settings[GRPC_PEER_SETTINGS]
                                   [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE];
+    if (transport_global->is_client) {
+      stream_global->deadline =
+          gpr_time_min(stream_global->deadline,
+                       stream_global->send_initial_metadata->deadline);
+    }
     if (metadata_size > metadata_peer_limit) {
       cancel_from_api(
           exec_ctx, transport_global, stream_global,
@@ -1409,7 +1415,7 @@ static void remove_stream(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   GRPC_ERROR_UNREF(error);
 }
 
-static void status_codes_from_error(grpc_error *error,
+static void status_codes_from_error(grpc_error *error, gpr_timespec deadline,
                                     grpc_chttp2_error_code *http2_error,
                                     grpc_status_code *grpc_status) {
   intptr_t ip_http;
@@ -1429,8 +1435,8 @@ static void status_codes_from_error(grpc_error *error,
   if (have_grpc) {
     *grpc_status = (grpc_status_code)ip_grpc;
   } else if (have_http) {
-    *grpc_status =
-        grpc_chttp2_http2_error_to_grpc_status((grpc_chttp2_error_code)ip_http);
+    *grpc_status = grpc_chttp2_http2_error_to_grpc_status(
+        (grpc_chttp2_error_code)ip_http, deadline);
   } else {
     *grpc_status = GRPC_STATUS_INTERNAL;
   }
@@ -1443,7 +1449,8 @@ static void cancel_from_api(grpc_exec_ctx *exec_ctx,
   if (!stream_global->read_closed || !stream_global->write_closed) {
     grpc_status_code grpc_status;
     grpc_chttp2_error_code http_error;
-    status_codes_from_error(due_to_error, &http_error, &grpc_status);
+    status_codes_from_error(due_to_error, stream_global->deadline, &http_error,
+                            &grpc_status);
 
     if (stream_global->id != 0) {
       gpr_slice_buffer_add(
@@ -1617,7 +1624,8 @@ static void close_from_api(grpc_exec_ctx *exec_ctx,
   uint32_t len = 0;
   grpc_status_code grpc_status;
   grpc_chttp2_error_code http_error;
-  status_codes_from_error(error, &http_error, &grpc_status);
+  status_codes_from_error(error, stream_global->deadline, &http_error,
+                          &grpc_status);
 
   GPR_ASSERT(grpc_status >= 0 && (int)grpc_status < 100);
 
