@@ -1546,6 +1546,7 @@ static void fail_pending_writes(grpc_exec_ctx *exec_ctx,
                                 grpc_chttp2_stream_global *stream_global,
                                 grpc_error *error) {
   error = removal_error(error, stream_global);
+  stream_global->send_message = NULL;
   grpc_chttp2_complete_closure_step(
       exec_ctx, transport_global, stream_global,
       &stream_global->send_initial_metadata_finished, GRPC_ERROR_REF(error));
