@@ -544,6 +544,66 @@ cc_library(
 
 
 cc_library(
+  name = "grpc_c",
+  srcs = [
+    "src/c/alloc.h",
+    "src/c/bidi_streaming_blocking_call.h",
+    "src/c/call_ops.h",
+    "src/c/client_context.h",
+    "src/c/client_streaming_blocking_call.h",
+    "src/c/completion_queue.h",
+    "src/c/id_serialization.h",
+    "src/c/init_shutdown.h",
+    "src/c/message.h",
+    "src/c/server_streaming_blocking_call.h",
+    "src/c/status.h",
+    "src/c/tag.h",
+    "src/c/unary_async_call.h",
+    "src/c/unary_blocking_call.h",
+    "src/c/alloc.c",
+    "src/c/bidi_streaming_blocking_call.c",
+    "src/c/call_ops.c",
+    "src/c/channel.c",
+    "src/c/client_context.c",
+    "src/c/client_streaming_blocking_call.c",
+    "src/c/completion_queue.c",
+    "src/c/id_serialization.c",
+    "src/c/init_shutdown.c",
+    "src/c/message.c",
+    "src/c/server_streaming_blocking_call.c",
+    "src/c/unary_async_call.c",
+    "src/c/unary_blocking_call.c",
+  ],
+  hdrs = [
+    "include/grpc_c/bidi_streaming_blocking_call.h",
+    "include/grpc_c/channel.h",
+    "include/grpc_c/client_context.h",
+    "include/grpc_c/client_streaming_blocking_call.h",
+    "include/grpc_c/completion_queue.h",
+    "include/grpc_c/grpc_c.h",
+    "include/grpc_c/message.h",
+    "include/grpc_c/serialization.h",
+    "include/grpc_c/server_streaming_blocking_call.h",
+    "include/grpc_c/status.h",
+    "include/grpc_c/status_code.h",
+    "include/grpc_c/unary_async_call.h",
+    "include/grpc_c/unary_blocking_call.h",
+  ],
+  includes = [
+    "include",
+    ".",
+  ],
+  deps = [
+    "//external:libssl",
+    "//external:protobuf_clib",
+    ":grpc",
+    ":gpr",
+  ],
+)
+
+
+
+cc_library(
   name = "grpc_cronet",
   srcs = [
     "src/core/lib/channel/channel_args.h",
@@ -2066,6 +2126,8 @@ cc_library(
 cc_library(
   name = "grpc_plugin_support",
   srcs = [
+    "src/compiler/c_generator.h",
+    "src/compiler/c_generator_helpers.h",
     "src/compiler/config.h",
     "src/compiler/cpp_generator.h",
     "src/compiler/cpp_generator_helpers.h",
@@ -2081,6 +2143,7 @@ cc_library(
     "src/compiler/ruby_generator_helpers-inl.h",
     "src/compiler/ruby_generator_map-inl.h",
     "src/compiler/ruby_generator_string-inl.h",
+    "src/compiler/c_generator.cc",
     "src/compiler/cpp_generator.cc",
     "src/compiler/csharp_generator.cc",
     "src/compiler/node_generator.cc",
@@ -2618,6 +2681,18 @@ objc_library(
   sdk_dylibs = ["libz"],
 )
 
+
+
+cc_binary(
+  name = "grpc_c_plugin",
+  srcs = [
+    "src/compiler/c_plugin.cc",
+  ],
+  deps = [
+    "//external:protobuf_compiler",
+    ":grpc_plugin_support",
+  ],
+)
 
 
 cc_binary(
