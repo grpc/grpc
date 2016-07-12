@@ -1293,7 +1293,3 @@ target_link_libraries(grpc_ruby_plugin
   grpc_plugin_support
 )
 
-
-
-
-
