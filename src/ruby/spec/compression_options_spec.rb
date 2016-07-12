@@ -30,30 +30,14 @@
 require 'grpc'
 
 describe GRPC::Core::CompressionOptions do
-  # Note these constants should be updated according to what the core lib does.
+  # Note these constants should be updated
+  # according to what the core lib provides.
 
-  # Names of supported compression algorithms and their internal enum values
-  ALGORITHMS = {
-    identity: 0,
-    deflate: 1,
-    gzip: 2
-  }
+  # Names of supported compression algorithms
+  ALGORITHMS = [:identity, :deflate, :gzip]
 
-  # Compression algorithms and their corresponding bits in the internal
-  # enabled algorithms bitset for GRPC core channel args.
-  ALGORITHM_BITS = {
-    identity: 0x1,
-    deflate: 0x2,
-    gzip: 0x4
-  }
-
-  # Names of valid supported compression levels and their internal enum values
-  COMPRESS_LEVELS = {
-    none: 0,
-    low: 1,
-    medium: 2,
-    high: 3
-  }
+  # Names of valid supported compression levels
+  COMPRESS_LEVELS = [:none, :low, :medium, :high]
 
   it 'implements to_s' do
     expect { GRPC::Core::CompressionOptions.new.to_s }.to_not raise_error
@@ -61,70 +45,73 @@ describe GRPC::Core::CompressionOptions do
 
   it '#to_channel_arg_hash gives the same result as #to_hash' do
     options = GRPC::Core::CompressionOptions.new
-    expect(options.to_channel_arg_hash).to eql(options.to_hash)
+    expect(options.to_channel_arg_hash).to eq(options.to_hash)
   end
 
   # Test the normal call sequence of creating an instance
   # and then obtaining the resulting channel-arg hash that
   # corresponds to the compression settings of the instance
-  describe 'creating and converting to channel args hash' do
-    it 'gives the correct channel args when nothing has been adjusted yet' do
-      expect(GRPC::Core::CompressionOptions.new.to_hash).to(
-        eql('grpc.compression_enabled_algorithms_bitset' => 0x7))
+  describe 'creating, reading, and converting to channel args hash' do
+    it 'works when no optional args were provided' do
+      options = GRPC::Core::CompressionOptions.new
+
+      ALGORITHMS.each do |algorithm|
+        expect(options.algorithm_enabled?(algorithm)).to be true
+      end
+
+      expect(options.disabled_algorithms).to be_empty
+      expect(options.default_algorithm).to be nil
+      expect(options.default_level).to be nil
+      expect(options.to_hash).to be_instance_of(Hash)
     end
 
-    it 'gives the correct channel args after disabling multiple algorithms' do
+    it 'works when disabling multiple algorithms' do
       options = GRPC::Core::CompressionOptions.new(
         default_algorithm: :identity,
         default_level: :none,
         disabled_algorithms: [:gzip, :deflate]
       )
 
-      channel_arg_hash = options.to_hash
-      expect(channel_arg_hash['grpc.default_compression_algorithm']).to eq(0)
-      expect(channel_arg_hash['grpc.default_compression_level']).to eq(0)
+      [:gzip, :deflate].each do |algorithm|
+        expect(options.algorithm_enabled?(algorithm)).to be false
+        expect(options.disabled_algorithms.include?(algorithm)).to be true
+      end
 
-      bitset = channel_arg_hash['grpc.compression_enabled_algorithms_bitset']
-      expect(bitset & ALGORITHM_BITS[:gzip]).to eq(0)
-      expect(bitset & ALGORITHM_BITS[:deflate]).to eq(0)
+      expect(options.default_algorithm).to be(:identity)
+      expect(options.default_level).to be(:none)
+      expect(options.to_hash).to be_instance_of(Hash)
     end
 
-    it 'gives correct channel args with all args set' do
+    it 'works when all optional args have been set' do
       options = GRPC::Core::CompressionOptions.new(
         default_algorithm: :gzip,
         default_level: :low,
         disabled_algorithms: [:deflate]
       )
 
-      channel_arg_hash = options.to_hash
+      expect(options.algorithm_enabled?(:deflate)).to be false
+      expect(options.algorithm_enabled?(:gzip)).to be true
+      expect(options.disabled_algorithms).to eq([:deflate])
 
-      actual_bitset = channel_arg_hash[
-        'grpc.compression_enabled_algorithms_bitset']
-      default_algorithm = channel_arg_hash['grpc.default_compression_algorithm']
-      default_level = channel_arg_hash['grpc.default_compression_level']
-
-      expect(actual_bitset & ALGORITHM_BITS[:deflate]).to eq(0)
-      expect(default_algorithm).to eq(ALGORITHMS[:gzip])
-      expect(default_level).to eq(COMPRESS_LEVELS[:low])
+      expect(options.default_algorithm).to be(:gzip)
+      expect(options.default_level).to be(:low)
+      expect(options.to_hash).to be_instance_of(Hash)
     end
 
-    it 'gives correct channel args when no algorithms are disabled' do
+    it 'doesnt fail when no algorithms are disabled' do
       options = GRPC::Core::CompressionOptions.new(
         default_algorithm: :identity,
         default_level: :high
       )
 
-      channel_arg_hash = options.to_hash
+      ALGORITHMS.each do |algorithm|
+        expect(options.algorithm_enabled?(algorithm)).to be(true)
+      end
 
-      actual_bitset = channel_arg_hash[
-        'grpc.compression_enabled_algorithms_bitset']
-      default_algorithm = channel_arg_hash['grpc.default_compression_algorithm']
-      default_level = channel_arg_hash['grpc.default_compression_level']
-
-      expect(actual_bitset & ALGORITHM_BITS[:deflate]).to_not eq(0)
-      expect(actual_bitset & ALGORITHM_BITS[:gzip]).to_not eq(0)
-      expect(default_algorithm).to eq(ALGORITHMS[:identity])
-      expect(default_level).to eq(COMPRESS_LEVELS[:high])
+      expect(options.disabled_algorithms).to be_empty
+      expect(options.default_algorithm).to be(:identity)
+      expect(options.default_level).to be(:high)
+      expect(options.to_hash).to be_instance_of(Hash)
     end
   end
 
@@ -140,179 +127,38 @@ describe GRPC::Core::CompressionOptions do
     end
   end
 
-  describe '#level_name_to_value' do
-    COMPRESS_LEVELS.each_pair do |name, internal_value|
-      it "should return value #{internal_value} for level #{name}" do
-        actual_value = GRPC::Core::CompressionOptions.level_name_to_value(name)
-        expect(actual_value).to eq(internal_value)
-      end
-    end
-
-    [:gzip, :deflate, :any, Object.new, 'none', 'low', 1].each do |name|
-      it "should fail for parameter #{name} of class #{name.class}" do
-        blk = proc do
-          GRPC::Core::CompressionOptions.level_name_to_value(name)
-        end
-        expect { blk.call }.to raise_error
-      end
-    end
-  end
-
-  describe '#level_value_to_name' do
-    COMPRESS_LEVELS.each_pair do |name, internal_value|
-      it "should return level name #{name} for value #{internal_value}" do
-        actual_name = GRPC::Core::CompressionOptions.level_value_to_name(
-          internal_value)
-        expect(actual_name).to eq(name)
-      end
-    end
-    it 'should give the correct internal values from compression level names' do
-      cls = GRPC::Core::CompressionOptions
-      COMPRESS_LEVELS.each_pair do |name, internal_value|
-        expect(cls.level_value_to_name(internal_value)).to eq(name)
-      end
-    end
-
-    [:gzip, :any, Object.new, '1', :low].each do |name|
-      it "should fail for parameter #{name} of class #{name.class}" do
-        blk = proc do
-          GRPC::Core::CompressionOptions.level_value_to_name(name)
-        end
-        expect { blk.call }.to raise_error
-      end
-    end
-  end
-
-  describe '#algorithm_name_to_value' do
-    it 'should give the correct internal values from algorithm names' do
-      cls = GRPC::Core::CompressionOptions
-      ALGORITHMS.each_pair do |name, internal_value|
-        expect(cls.algorithm_name_to_value(name)).to eq(internal_value)
-      end
-    end
-
-    ['gzip', 'deflate', :any, Object.new, :none, :low, 1].each do |name|
-      it "should fail for parameter #{name} of class #{name.class}" do
-        blk = proc do
-          GRPC::Core::CompressionOptions.algorithm_name_to_value(name)
-        end
-        expect { blk.call }.to raise_error
-      end
-    end
-  end
-
-  describe '#algorithm_value_to_name' do
-    it 'should give the correct internal values from algorithm names' do
-      cls = GRPC::Core::CompressionOptions
-      ALGORITHMS.each_pair do |name, internal_value|
-        expect(cls.algorithm_value_to_name(internal_value)).to eq(name)
-      end
-    end
-
-    ['gzip', :deflate, :any, Object.new, :low, '1'].each do |value|
-      it "should fail for parameter #{value} of class #{value.class}" do
-        blk = proc do
-          GRPC::Core::CompressionOptions.algorithm_value_to_name(value)
-        end
-        expect { blk.call }.to raise_error
-      end
-    end
-  end
-
-  describe '#default_algorithm and #default_algorithm_internal_value' do
-    it 'can set the default algorithm and then read it back out' do
-      ALGORITHMS.each_pair do |name, internal_value|
-        options = GRPC::Core::CompressionOptions.new(default_algorithm: name)
-        expect(options.default_algorithm).to eq(name)
-        expect(options.default_algorithm_internal_value).to eq(internal_value)
-      end
-    end
-
+  describe '#default_algorithm' do
     it 'returns nil if unset' do
       options = GRPC::Core::CompressionOptions.new
-      expect(options.default_algorithm).to be_nil
-      expect(options.default_algorithm_internal_value).to be_nil
+      expect(options.default_algorithm).to be(nil)
     end
   end
 
-  describe '#default_level and #default_level_internal_value' do
-    it 'can set the default level and read it back out' do
-      COMPRESS_LEVELS.each_pair do |name, internal_value|
-        options = GRPC::Core::CompressionOptions.new(default_level: name)
-        expect(options.default_level).to eq(name)
-        expect(options.default_level_internal_value).to eq(internal_value)
-      end
-    end
-
+  describe '#default_level' do
     it 'returns nil if unset' do
       options = GRPC::Core::CompressionOptions.new
-      expect(options.default_level).to be_nil
-      expect(options.default_level_internal_value).to be_nil
+      expect(options.default_level).to be(nil)
     end
   end
 
   describe '#disabled_algorithms' do
-    it 'can set the disabled algorithms and read them back out' do
-      options = GRPC::Core::CompressionOptions.new(
-        disabled_algorithms: [:gzip, :deflate])
-
-      [:gzip, :deflate].each do |name|
-        expect(options.disabled_algorithms.include?(name)).to eq(true)
-      end
-      expect(options.disabled_algorithms.size).to eq(2)
-    end
-
     it 'returns an empty list if no algorithms were disabled' do
       options = GRPC::Core::CompressionOptions.new
-      expect(options.disabled_algorithms).to eq([])
+      expect(options.disabled_algorithms).to be_empty
     end
   end
 
-  describe '#is_algorithm_enabled' do
-    it 'returns true if the algorithm is valid and not disabled' do
-      options = GRPC::Core::CompressionOptions.new(disabled_algorithms: [:gzip])
-      expect(options.is_algorithm_enabled(:deflate)).to eq(true)
-    end
-
-    it 'returns false if the algorithm is valid and disabled' do
-      options = GRPC::Core::CompressionOptions.new(disabled_algorithms: [:gzip])
-      expect(options.is_algorithm_enabled(:gzip)).to eq(false)
-    end
-
+  describe '#algorithm_enabled?' do
     [:none, :any, 'gzip', Object.new, 1].each do |name|
       it "should fail for parameter ${name} of class #{name.class}" do
         options = GRPC::Core::CompressionOptions.new(
           disabled_algorithms: [:gzip])
 
         blk = proc do
-          options.is_algorithm_enabled(name)
+          options.algorithm_enabled?(name)
         end
         expect { blk.call }.to raise_error
       end
-    end
-  end
-
-  describe '#enabled_algoritms_bitset' do
-    it 'should respond to not disabling any algorithms' do
-      options = GRPC::Core::CompressionOptions.new
-      actual_bitset = options.enabled_algorithms_bitset
-      expect(actual_bitset & ALGORITHM_BITS[:gzip]).to_not eq(0)
-      expect(actual_bitset & ALGORITHM_BITS[:deflate]).to_not eq(0)
-    end
-
-    it 'should respond to disabling one algorithm' do
-      options = GRPC::Core::CompressionOptions.new(
-        disabled_algorithms: [:gzip])
-      expect(options.enabled_algorithms_bitset & ALGORITHM_BITS[:gzip]).to eq(0)
-    end
-
-    it 'should respond to disabling multiple algorithms' do
-      options = GRPC::Core::CompressionOptions.new(
-        disabled_algorithms: [:gzip, :deflate])
-
-      actual_bitset = options.enabled_algorithms_bitset
-      expect(actual_bitset & ALGORITHM_BITS[:gzip]).to eq(0)
-      expect(actual_bitset & ALGORITHM_BITS[:deflate]).to eq(0)
     end
   end
 end

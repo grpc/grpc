@@ -148,18 +148,9 @@ grpc_compression_level grpc_rb_compression_options_level_name_to_value_internal(
   rb_raise(rb_eArgError,
            "Unrecognized compression level name."
            "Valid compression level names are none, low, medium, and high.");
-}
 
-/*  Wrapper over grpc_rb_compression_options_level_name_to_value available for
- * use or testing.
- * Raises an exception for unrecognized level names. */
-VALUE grpc_rb_compression_options_level_name_to_value(VALUE self,
-                                                      VALUE level_name) {
-  (void)self;
-  Check_Type(level_name, T_SYMBOL);
-
-  return INT2NUM((int)grpc_rb_compression_options_level_name_to_value_internal(
-      level_name));
+  /* Dummy return statement. */
+  return GRPC_COMPRESS_LEVEL_NONE;
 }
 
 /* Sets the default compression level, given the name of a compression level.
@@ -197,18 +188,6 @@ void grpc_rb_compression_options_algorithm_name_to_value_internal(
     rb_raise(rb_eNameError, "Invalid compression algorithm name: %s",
              StringValueCStr(algorithm_name_as_string));
   }
-}
-
-/* Wrapper around algorithm_name_to_value_internal function available for use or
- * testing. */
-VALUE grpc_rb_compression_options_algorithm_name_to_value(
-    VALUE self, VALUE algorithm_name) {
-  grpc_compression_algorithm algorithm_value;
-  (void)self;
-  grpc_rb_compression_options_algorithm_name_to_value_internal(&algorithm_value,
-                                                               algorithm_name);
-
-  return INT2NUM((int)algorithm_value);
 }
 
 /* Indicates whether a given algorithm is enabled on this instance, given the
@@ -307,15 +286,6 @@ VALUE grpc_rb_compression_options_level_value_to_name_internal(
   }
 }
 
-/* Wrapper of internal method that makes it available for use and testing. */
-VALUE grpc_rb_compression_options_level_value_to_name(VALUE self,
-                                                      VALUE compression_value) {
-  (void)self;
-  Check_Type(compression_value, T_FIXNUM);
-  return grpc_rb_compression_options_level_value_to_name_internal(
-      (grpc_compression_level)NUM2INT(compression_value));
-}
-
 /* Converts an algorithm internal enum value to a readable name.
  * Fails if the enum value is invalid. */
 VALUE grpc_rb_compression_options_algorithm_value_to_name_internal(
@@ -329,59 +299,21 @@ VALUE grpc_rb_compression_options_algorithm_value_to_name_internal(
   return ID2SYM(rb_intern(algorithm_name));
 }
 
-/* Wrapper of algorithm_to_name internal function available for ues and testing.
- */
-VALUE grpc_rb_compression_options_algorithm_value_to_name(
-    VALUE self, VALUE algorithm_value) {
-  grpc_compression_algorithm algorithm_internal_value =
-      (grpc_compression_algorithm)NUM2INT(algorithm_value);
-  (void)self;
-
-  return grpc_rb_compression_options_algorithm_value_to_name_internal(
-      algorithm_internal_value);
-}
-
-/* Gets the internal value of the default compression level that is to be passed
- * to the GRPC core as a channel argument value.
- * A nil return value means that it hasn't been set. */
-VALUE grpc_rb_compression_options_get_default_algorithm_internal_value(
-    VALUE self) {
+/* Gets the readable name of the default algorithm if one has been set.
+ * Returns nil if no algorithm has been set. */
+VALUE grpc_rb_compression_options_get_default_algorithm(VALUE self) {
+  grpc_compression_algorithm internal_value;
   grpc_rb_compression_options *wrapper = NULL;
 
   TypedData_Get_Struct(self, grpc_rb_compression_options,
                        &grpc_rb_compression_options_data_type, wrapper);
 
   if (wrapper->wrapped->default_algorithm.is_set) {
-    return INT2NUM(wrapper->wrapped->default_algorithm.algorithm);
-  }
-  return Qnil;
-}
-
-/* Gets the readable name of the default algorithm if one has been set.
- * Returns nil if no algorithm has been set. */
-VALUE grpc_rb_compression_options_get_default_algorithm(VALUE self) {
-  VALUE algorithm_value =
-      grpc_rb_compression_options_get_default_algorithm_internal_value(self);
-
-  if (RTEST(algorithm_value)) {
-    return grpc_rb_compression_options_algorithm_value_to_name(self,
-                                                               algorithm_value);
+    internal_value = wrapper->wrapped->default_algorithm.algorithm;
+    return grpc_rb_compression_options_algorithm_value_to_name_internal(
+        internal_value);
   }
 
-  return Qnil;
-}
-
-/* Gets the internal enum value of the default algorithm if one has been set.
- * Returns nil if no default algorithm has been set. */
-VALUE grpc_rb_compression_options_get_default_level_internal_value(VALUE self) {
-  grpc_rb_compression_options *wrapper = NULL;
-
-  TypedData_Get_Struct(self, grpc_rb_compression_options,
-                       &grpc_rb_compression_options_data_type, wrapper);
-
-  if (wrapper->wrapped->default_level.is_set) {
-    return INT2NUM((int)wrapper->wrapped->default_level.level);
-  }
   return Qnil;
 }
 
@@ -390,11 +322,13 @@ VALUE grpc_rb_compression_options_get_default_level_internal_value(VALUE self) {
  * A nil return value means that it hasn't been set. */
 VALUE grpc_rb_compression_options_get_default_level(VALUE self) {
   grpc_compression_level internal_value;
-  VALUE ruby_value =
-      grpc_rb_compression_options_get_default_level_internal_value(self);
+  grpc_rb_compression_options *wrapper = NULL;
 
-  if (RTEST(ruby_value)) {
-    internal_value = (grpc_compression_level)NUM2INT(ruby_value);
+  TypedData_Get_Struct(self, grpc_rb_compression_options,
+                       &grpc_rb_compression_options_data_type, wrapper);
+
+  if (wrapper->wrapped->default_level.is_set) {
+    internal_value = wrapper->wrapped->default_level.level;
     return grpc_rb_compression_options_level_value_to_name_internal(
         internal_value);
   }
@@ -403,7 +337,7 @@ VALUE grpc_rb_compression_options_get_default_level(VALUE self) {
 }
 
 /* Gets a list of the disabled algorithms as readable names.
- * Returns an empty list of no algorithms have been disabled. */
+ * Returns an empty list if no algorithms have been disabled. */
 VALUE grpc_rb_compression_options_get_disabled_algorithms(VALUE self) {
   VALUE disabled_algorithms = rb_ary_new();
   grpc_compression_algorithm internal_value;
@@ -422,16 +356,6 @@ VALUE grpc_rb_compression_options_get_disabled_algorithms(VALUE self) {
     }
   }
   return disabled_algorithms;
-}
-
-/* Provides a bitset as a ruby number that is suitable to pass to
- * the GRPC core as a channel argument to enable compression algorithms. */
-VALUE grpc_rb_compression_options_get_enabled_algorithms_bitset(VALUE self) {
-  grpc_rb_compression_options *wrapper = NULL;
-
-  TypedData_Get_Struct(self, grpc_rb_compression_options,
-                       &grpc_rb_compression_options_data_type, wrapper);
-  return INT2NUM((int)wrapper->wrapped->enabled_algorithms_bitset);
 }
 
 /* Initializes the compression options wrapper.
@@ -511,11 +435,6 @@ void Init_grpc_compression_options() {
   rb_define_method(grpc_rb_cCompressionOptions, "initialize",
                    grpc_rb_compression_options_init, -1);
 
-  /* Gets the bitset of enabled algorithms. */
-  rb_define_method(grpc_rb_cCompressionOptions, "enabled_algorithms_bitset",
-                   grpc_rb_compression_options_get_enabled_algorithms_bitset,
-                   0);
-
   /* Methods for getting the default algorithm, default level, and disabled
    * algorithms as readable names. */
   rb_define_method(grpc_rb_cCompressionOptions, "default_algorithm",
@@ -525,37 +444,10 @@ void Init_grpc_compression_options() {
   rb_define_method(grpc_rb_cCompressionOptions, "disabled_algorithms",
                    grpc_rb_compression_options_get_disabled_algorithms, 0);
 
-  /* Methods for getting the internal enum default algorithm and level enum
-   * values of an instance. */
-  rb_define_method(
-      grpc_rb_cCompressionOptions, "default_algorithm_internal_value",
-      grpc_rb_compression_options_get_default_algorithm_internal_value, 0);
-  rb_define_method(grpc_rb_cCompressionOptions, "default_level_internal_value",
-                   grpc_rb_compression_options_get_default_level_internal_value,
-                   0);
-
   /* Determines whether or not an algorithm is enabled, given a readable
    * algorithm name.*/
-  rb_define_method(grpc_rb_cCompressionOptions, "is_algorithm_enabled",
+  rb_define_method(grpc_rb_cCompressionOptions, "algorithm_enabled?",
                    grpc_rb_compression_options_is_algorithm_enabled, 1);
-
-  /* Methods for converting to and from algorithm enum values and their readable
-   * names. */
-  rb_define_singleton_method(
-      grpc_rb_cCompressionOptions, "algorithm_name_to_value",
-      grpc_rb_compression_options_algorithm_name_to_value, 1);
-  rb_define_singleton_method(
-      grpc_rb_cCompressionOptions, "algorithm_value_to_name",
-      grpc_rb_compression_options_algorithm_value_to_name, 1);
-
-  /* Methods for converting to and from compression level enum values and their
-   * readable names. */
-  rb_define_singleton_method(grpc_rb_cCompressionOptions, "level_name_to_value",
-                             grpc_rb_compression_options_level_name_to_value,
-                             1);
-  rb_define_singleton_method(grpc_rb_cCompressionOptions, "level_value_to_name",
-                             grpc_rb_compression_options_level_value_to_name,
-                             1);
 
   /* Provides a hash of the compression settings suitable
    * for passing to server or channel args. */
