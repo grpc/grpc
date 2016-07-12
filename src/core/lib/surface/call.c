@@ -260,7 +260,8 @@ grpc_call *grpc_call_create(
       call->metadata_batch[i][j].deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
     }
   }
-  call->send_deadline = send_deadline;
+  call->send_deadline =
+      gpr_convert_clock_type(send_deadline, GPR_CLOCK_MONOTONIC);
   GRPC_CHANNEL_INTERNAL_REF(channel, "call");
   /* initial refcount dropped by grpc_call_destroy */
   grpc_call_stack_init(&exec_ctx, channel_stack, 1, destroy_call, call,

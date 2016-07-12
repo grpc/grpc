@@ -50,13 +50,6 @@ include "grpc/_cython/_cygrpc/server.pyx.pxi"
 
 
 def _initialize():
-  if 'win32' in sys.platform:
-    filename = pkg_resources.resource_filename(
-        'grpc._cython', '_windows/grpc_c.64.python')
-    if not isinstance(filename, bytes):
-      filename = filename.encode()
-    if not pygrpc_load_core(filename):
-      raise ImportError('failed to load core gRPC library')
   if not pygrpc_initialize_core():
     raise ImportError('failed to initialize core gRPC library')
 

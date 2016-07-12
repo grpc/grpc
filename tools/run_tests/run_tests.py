@@ -375,19 +375,15 @@ class PhpLanguage(object):
 
 
 class PythonConfig(collections.namedtuple('PythonConfig', [
-    'python', 'venv', 'venv_relative_python', 'toolchain',])):
-
-  @property
-  def venv_python(self):
-    return os.path.abspath('{}/{}'.format(self.venv, self.venv_relative_python))
-
+    'name', 'build', 'run'])):
+  """Tuple of commands (named s.t. 'what it says on the tin' applies)"""
 
 class PythonLanguage(object):
 
   def configure(self, config, args):
     self.config = config
     self.args = args
-    self.pythons = self._get_pythons(self.args.compiler)
+    self.pythons = self._get_pythons(self.args)
 
   def test_specs(self):
     # load list of known test suites
@@ -395,11 +391,11 @@ class PythonLanguage(object):
       tests_json = json.load(tests_json_file)
     environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
     return [self.config.job_spec(
-        ['tools/run_tests/run_python.sh', config.venv_python],
+        config.run,
         timeout_seconds=5*60,
         environ=dict(environment.items() +
                      [('GRPC_PYTHON_TESTRUNNER_FILTER', suite_name)]),
-        shortname='%s.test.%s' % (config.venv, suite_name),)
+        shortname='%s.test.%s' % (config.name, suite_name),)
         for suite_name in tests_json
         for config in self.pythons]
 
@@ -413,14 +409,7 @@ class PythonLanguage(object):
     return []
 
   def build_steps(self):
-    return [
-        [
-            'tools/run_tests/build_python.sh',
-            config.python, config.venv,
-            config.venv_relative_python, config.toolchain
-        ]
-        for config in self.pythons
-    ]
+    return [config.build for config in self.pythons]
 
   def post_tests_steps(self):
     return []
@@ -431,23 +420,50 @@ class PythonLanguage(object):
   def dockerfile_dir(self):
     return 'tools/dockerfile/test/python_jessie_%s' % _docker_arch_suffix(self.args.arch)
 
-  def _get_pythons(self, compiler):
-    if os.name == 'nt':
-      venv_relative_python = 'Scripts/python.exe'
-      toolchain = 'mingw32'
+  def _get_pythons(self, args):
+    if args.arch == 'x86':
+      bits = '32'
     else:
-      venv_relative_python = 'bin/python'
-      toolchain = 'unix'
-    python27_config = PythonConfig('python2.7', 'py27', venv_relative_python, toolchain)
-    python34_config = PythonConfig('python3.4', 'py34', venv_relative_python, toolchain)
-    if compiler == 'default':
-      return (python27_config, python34_config,)
-    elif compiler == 'python2.7':
+      bits = '64'
+    if os.name == 'nt':
+      shell = ['bash']
+      builder = [os.path.abspath('tools/run_tests/build_python_msys2.sh')]
+      builder_prefix_arguments = ['MINGW{}'.format(bits)]
+      venv_relative_python = ['Scripts/python.exe']
+      toolchain = ['mingw32']
+      python_pattern_function = lambda major, minor, bits: (
+          '/c/Python{major}{minor}/python.exe'.format(major=major, minor=minor, bits=bits)
+	  if bits == '64' else
+	  '/c/Python{major}{minor}_{bits}bits/python.exe'.format(
+              major=major, minor=minor, bits=bits))
+    else:
+      shell = []
+      builder = [os.path.abspath('tools/run_tests/build_python.sh')]
+      builder_prefix_arguments = []
+      venv_relative_python = ['bin/python']
+      toolchain = ['unix']
+      # Bit-ness is handled by the test machine's environment
+      python_pattern_function = lambda major, minor, bits: 'python{major}.{minor}'.format(major=major, minor=minor)
+    runner = [os.path.abspath('tools/run_tests/run_python.sh')]
+    python_config_generator = lambda name, major, minor, bits: PythonConfig(
+        name,
+        shell + builder + builder_prefix_arguments
+	    + [python_pattern_function(major=major, minor=minor, bits=bits)]
+	    + [name] + venv_relative_python + toolchain,
+        shell + runner + [os.path.join(name, venv_relative_python[0])])
+    python27_config = python_config_generator(name='py27', major='2', minor='7', bits=bits)
+    python34_config = python_config_generator(name='py34', major='3', minor='4', bits=bits)
+    if args.compiler == 'default':
+      if os.name == 'nt':
+        return (python27_config,)
+      else:
+        return (python27_config, python34_config,)
+    elif args.compiler == 'python2.7':
       return (python27_config,)
-    elif compiler == 'python3.4':
+    elif args.compiler == 'python3.4':
       return (python34_config,)
     else:
-      raise Exception('Compiler %s not supported.' % compiler)
+      raise Exception('Compiler %s not supported.' % args.compiler)
 
   def __str__(self):
     return 'python'
@@ -633,10 +649,13 @@ class ObjCLanguage(object):
     _check_compiler(self.args.compiler, ['default'])
 
   def test_specs(self):
-    return [self.config.job_spec(['src/objective-c/tests/run_tests.sh'], None,
-                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS),
+    return [self.config.job_spec(['src/objective-c/tests/run_tests.sh'],
+                                 timeout_seconds=None,
+                                 shortname='objc-tests',
+                                 environ=_FORCE_ENVIRON_FOR_WRAPPERS),
             self.config.job_spec(['src/objective-c/tests/build_example_test.sh'],
-                                 None, timeout_seconds=15*60,
+                                 timeout_seconds=15*60,
+                                 shortname='objc-examples-build',
                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
@@ -1075,10 +1094,6 @@ def _shut_down_legacy_server(legacy_server_port):
 
 
 def _start_port_server(port_server_port):
-  # Temporary patch to switch the port_server port
-  # see https://github.com/grpc/grpc/issues/7145
-  _shut_down_legacy_server(32767)
-
   # check if a compatible port server is running
   # if incompatible (version mismatch) ==> start a new one
   # if not running ==> start a new one

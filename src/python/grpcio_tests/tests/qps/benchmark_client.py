@@ -37,14 +37,21 @@ from concurrent import futures
 from six.moves import queue
 
 import grpc
-from grpc.beta import implementations
-from grpc.framework.interfaces.face import face
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import services_pb2
 from tests.unit import resources
-from tests.unit.beta import test_utilities
+from tests.unit import test_common
 
 _TIMEOUT = 60 * 60 * 24
+
+
+class GenericStub(object):
+
+  def __init__(self, channel):
+    self.UnaryCall = channel.unary_unary(
+        '/grpc.testing.BenchmarkService/UnaryCall')
+    self.StreamingCall = channel.stream_stream(
+        '/grpc.testing.BenchmarkService/StreamingCall')
 
 
 class BenchmarkClient:
@@ -54,15 +61,12 @@ class BenchmarkClient:
 
   def __init__(self, server, config, hist):
     # Create the stub
-    host, port = server.split(':')
-    port = int(port)
     if config.HasField('security_params'):
-      creds = implementations.ssl_channel_credentials(
-          resources.test_root_certificates())
-      channel = test_utilities.not_really_secure_channel(
-          host, port, creds, config.security_params.server_host_override)
+      creds = grpc.ssl_channel_credentials(resources.test_root_certificates())
+      channel = test_common.test_secure_channel(
+        server, creds, config.security_params.server_host_override)
     else:
-      channel = implementations.insecure_channel(host, port)
+      channel = grpc.insecure_channel(server)
 
     connected_event = threading.Event()
     def wait_for_ready(connectivity):
@@ -73,7 +77,7 @@ class BenchmarkClient:
 
     if config.payload_config.WhichOneof('payload') == 'simple_params':
       self._generic = False
-      self._stub = services_pb2.beta_create_BenchmarkService_stub(channel)
+      self._stub = services_pb2.BenchmarkServiceStub(channel)
       payload = messages_pb2.Payload(
           body='\0' * config.payload_config.simple_params.req_size)
       self._request = messages_pb2.SimpleRequest(
@@ -81,7 +85,7 @@ class BenchmarkClient:
           response_size=config.payload_config.simple_params.resp_size)
     else:
       self._generic = True
-      self._stub = implementations.generic_stub(channel)
+      self._stub = GenericStub(channel)
       self._request = '\0' * config.payload_config.bytebuf_params.req_size
 
     self._hist = hist
@@ -166,13 +170,8 @@ class _SyncStream(object):
 
   def start(self):
     self._is_streaming = True
-    if self._generic:
-      stream_callable = self._stub.stream_stream(
-          'grpc.testing.BenchmarkService', 'StreamingCall')
-    else:
-      stream_callable = self._stub.StreamingCall
-
-    response_stream = stream_callable(self._request_generator(), _TIMEOUT)
+    response_stream = self._stub.StreamingCall(
+        self._request_generator(), _TIMEOUT)
     for _ in response_stream:
       self._handle_response(
           self, time.time() - self._send_time_queue.get_nowait())

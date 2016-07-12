@@ -55,7 +55,7 @@ class SecureInteropTest(
     self.server.start()
     self.stub = test_pb2.beta_create_TestService_stub(
         test_utilities.not_really_secure_channel(
-            '[::]', port, implementations.ssl_channel_credentials(
+            'localhost', port, implementations.ssl_channel_credentials(
                 resources.test_root_certificates()),
                 _SERVER_HOST_OVERRIDE))
 

@@ -65,15 +65,13 @@ void byte_buffer_to_string(grpc_byte_buffer *buffer, char **out_string,
     *out_length = 0;
     return;
   }
-  size_t length = grpc_byte_buffer_length(buffer);
+
+  gpr_slice slice = grpc_byte_buffer_reader_readall(&reader);
+  size_t length = GPR_SLICE_LENGTH(slice);
   char *string = ecalloc(length + 1, sizeof(char));
-  size_t offset = 0;
-  gpr_slice next;
-  while (grpc_byte_buffer_reader_next(&reader, &next) != 0) {
-    memcpy(string + offset, GPR_SLICE_START_PTR(next), GPR_SLICE_LENGTH(next));
-    offset += GPR_SLICE_LENGTH(next);
-    gpr_slice_unref(next);
-  }
+  memcpy(string, GPR_SLICE_START_PTR(slice), length);
+  gpr_slice_unref(slice);
+
   *out_string = string;
   *out_length = length;
 }
