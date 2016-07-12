@@ -356,11 +356,8 @@ static void test_load_reporting_hook(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 
   GPR_ASSERT(aggr_stats_server->fully_processed);
-  GPR_ASSERT(aggr_stats_server->incoming_bytes ==
-             /* 5 FIXME */ /* compression bit(1) + msg length(4) */ +strlen(
-                 request_msg));
-  GPR_ASSERT(aggr_stats_server->outgoing_bytes ==
-             5 /* compression bit(1) + msg length(4) */ + strlen(response_msg));
+  GPR_ASSERT(aggr_stats_server->incoming_bytes == strlen(request_msg));
+  GPR_ASSERT(aggr_stats_server->outgoing_bytes == strlen(response_msg));
 
   GPR_ASSERT(aggr_stats_server->call_id > 0);
   GPR_ASSERT(aggr_stats_server->channel_id > 0);
