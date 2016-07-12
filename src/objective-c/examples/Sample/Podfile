@@ -1,10 +1,20 @@
 source 'https://github.com/CocoaPods/Specs.git'
 platform :ios, '8.0'
 
-pod 'Protobuf', :path => "../../../../third_party/protobuf"
-pod 'BoringSSL', :podspec => "../.."
-pod 'gRPC', :path => "../../../.."
-pod 'RemoteTest', :path => "../RemoteTestClient"
+install! 'cocoapods', :deterministic_uuids => false
+
+# Location of gRPC's repo root relative to this file.
+GRPC_LOCAL_SRC = '../../../..'
 
 target 'Sample' do
+  pod 'Protobuf', :path => "#{GRPC_LOCAL_SRC}/third_party/protobuf"
+
+  pod 'BoringSSL', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
+
+  pod 'gRPC', :path => GRPC_LOCAL_SRC
+  pod 'gRPC-Core', :path => GRPC_LOCAL_SRC
+  pod 'gRPC-RxLibrary', :path => GRPC_LOCAL_SRC
+  pod 'gRPC-ProtoRPC',  :path => GRPC_LOCAL_SRC
+
+  pod 'RemoteTest', :path => "../RemoteTestClient"
 end
