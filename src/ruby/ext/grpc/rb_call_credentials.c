@@ -211,35 +211,6 @@ VALUE grpc_rb_wrap_call_credentials(grpc_call_credentials *c, VALUE mark) {
   return rb_wrapper;
 }
 
-/* Clones CallCredentials instances.
-   Gives CallCredentials a consistent implementation of Ruby's object copy/dup
-   protocol. */
-static VALUE grpc_rb_call_credentials_init_copy(VALUE copy, VALUE orig) {
-  grpc_rb_call_credentials *orig_cred = NULL;
-  grpc_rb_call_credentials *copy_cred = NULL;
-
-  if (copy == orig) {
-    return copy;
-  }
-
-  /* Raise an error if orig is not a credentials object or a subclass. */
-  if (TYPE(orig) != T_DATA ||
-      RDATA(orig)->dfree != (RUBY_DATA_FUNC)grpc_rb_call_credentials_free) {
-    rb_raise(rb_eTypeError, "not a %s",
-             rb_obj_classname(grpc_rb_cCallCredentials));
-  }
-
-  TypedData_Get_Struct(orig, grpc_rb_call_credentials,
-                       &grpc_rb_call_credentials_data_type, orig_cred);
-  TypedData_Get_Struct(copy, grpc_rb_call_credentials,
-                       &grpc_rb_call_credentials_data_type, copy_cred);
-
-  /* use ruby's MEMCPY to make a byte-for-byte copy of the credentials
-   * wrapper object. */
-  MEMCPY(copy_cred, orig_cred, grpc_rb_call_credentials, 1);
-  return copy;
-}
-
 /* The attribute used on the mark object to hold the callback */
 static ID id_callback;
 
@@ -308,7 +279,7 @@ void Init_grpc_call_credentials() {
   rb_define_method(grpc_rb_cCallCredentials, "initialize",
                    grpc_rb_call_credentials_init, 1);
   rb_define_method(grpc_rb_cCallCredentials, "initialize_copy",
-                   grpc_rb_call_credentials_init_copy, 1);
+                   grpc_rb_cannot_init_copy, 1);
   rb_define_method(grpc_rb_cCallCredentials, "compose",
                    grpc_rb_call_credentials_compose, -1);
 

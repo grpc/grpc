@@ -117,7 +117,10 @@ class _Rendezvous(future.Future, face.Call):
   def exception(self, timeout=None):
     try:
       rpc_error_call = self._future.exception(timeout=timeout)
-      return _abortion_error(rpc_error_call)
+      if rpc_error_call is None:
+        return None
+      else:
+        return _abortion_error(rpc_error_call)
     except grpc.FutureTimeoutError:
       raise future.TimeoutError()
     except grpc.FutureCancelledError:

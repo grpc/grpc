@@ -56,7 +56,10 @@ VALUE grpc_rb_byte_buffer_to_s(grpc_byte_buffer *buffer) {
     return Qnil;
   }
   rb_string = rb_str_buf_new(grpc_byte_buffer_length(buffer));
-  grpc_byte_buffer_reader_init(&reader, buffer);
+  if (!grpc_byte_buffer_reader_init(&reader, buffer)) {
+    rb_raise(rb_eRuntimeError, "Error initializing byte buffer reader.");
+    return Qnil;
+  }
   while (grpc_byte_buffer_reader_next(&reader, &next) != 0) {
     rb_str_cat(rb_string, (const char *) GPR_SLICE_START_PTR(next),
                GPR_SLICE_LENGTH(next));

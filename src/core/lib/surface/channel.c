@@ -81,7 +81,7 @@ struct grpc_channel {
   CHANNEL_FROM_CHANNEL_STACK(grpc_channel_stack_from_top_element(top_elem))
 
 /* the protobuf library will (by default) start warning at 100megs */
-#define DEFAULT_MAX_MESSAGE_LENGTH (100 * 1024 * 1024)
+#define DEFAULT_MAX_MESSAGE_LENGTH (4 * 1024 * 1024)
 
 static void destroy_channel(grpc_exec_ctx *exec_ctx, void *arg,
                             grpc_error *error);
