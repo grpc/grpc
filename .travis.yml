@@ -34,10 +34,13 @@ env:
       TEST_PATH="src/objective-c/examples/SwiftSample" BUILD_ONLY="true"
       INTEROP_SERVER="false"
 before_install:
+  # Until Travis upgrades from Cocoapods 0.39, we need to do it here.
   - pod --version
   - gem uninstall cocoapods -a
   - gem install cocoapods -v '1.0.1'
   - pod --version
+  # Recent pods aren't found if we don't explicitly update Cocoapods' repo.
+  - pod repo update
   - brew install gflags
 install:
   - pushd $TEST_PATH
