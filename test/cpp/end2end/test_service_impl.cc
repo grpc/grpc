@@ -201,6 +201,7 @@ Status TestServiceImpl::RequestStream(ServerContext* context,
 
   int num_msgs_read = 0;
   while (reader->Read(&request)) {
+    num_msgs_read++;
     if (cancel_after_reads == 1) {
       gpr_log(GPR_INFO, "return cancel status");
       return Status::CANCELLED;
