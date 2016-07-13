@@ -102,7 +102,7 @@ class AsyncQpsServerTest : public Server {
     auto process_rpc_bound =
         std::bind(process_rpc, config.payload_config(), _1, _2);
 
-    for (int i = 0; i < 20000; i++) {
+    for (int i = 0; i < 15000; i++) {
       for (int j = 0; j < num_threads; j++) {
         if (request_unary_function) {
           auto request_unary =
