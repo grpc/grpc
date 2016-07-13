@@ -113,12 +113,12 @@ class PythonArtifact:
       # special places...
       environ['PYTHON'] = '/opt/python/{}/bin/python'.format(self.manylinux_build)
       environ['PIP'] = '/opt/python/{}/bin/pip'.format(self.manylinux_build)
-      environ['SKIP_PIP_INSTALL'] = '1'
       # Platform autodetection for the manylinux1 image breaks so we set the
       # defines ourselves.
       # TODO(atash) get better platform-detection support in core so we don't
       # need to do this manually...
       environ['CFLAGS'] = '-DGPR_MANYLINUX1=1'
+      environ['BUILD_HEALTH_CHECKING'] = 'TRUE'
       return create_docker_jobspec(self.name,
           'tools/dockerfile/grpc_artifact_python_manylinux_%s' % self.arch,
           'tools/run_tests/build_artifact_python.sh',
@@ -132,7 +132,6 @@ class PythonArtifact:
                             ],
                             shell=True)
     else:
-      environ['SKIP_PIP_INSTALL'] = 'TRUE'
       environ['PYTHON'] = 'python{}'.format(self.python_version)
       return create_jobspec(self.name,
                             ['tools/run_tests/build_artifact_python.sh'],

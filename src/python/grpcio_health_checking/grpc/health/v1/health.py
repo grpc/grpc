@@ -31,10 +31,12 @@
 
 import threading
 
-from grpc_health.health.v1 import health_pb2
+import grpc
+
+from grpc.health.v1 import health_pb2
 
 
-class HealthServicer(health_pb2.BetaHealthServicer):
+class HealthServicer(health_pb2.HealthServicer):
   """Servicer handling RPCs for service statuses."""
 
   def __init__(self):
@@ -43,14 +45,12 @@ class HealthServicer(health_pb2.BetaHealthServicer):
 
   def Check(self, request, context):
     with self._server_status_lock:
-      if request.service not in self._server_status:
-        # TODO(atash): once the Python API has a way of setting the server
-        # status, bring us into conformance with the health check spec by
-        # returning the NOT_FOUND status here.
-        raise NotImplementedError()
+      status = self._server_status.get(request.service)
+      if status is None:
+        context.set_code(grpc.StatusCode.NOT_FOUND)
+        return health_pb2.HealthCheckResponse()
       else:
-        return health_pb2.HealthCheckResponse(
-            status=self._server_status[request.service])
+        return health_pb2.HealthCheckResponse(status=status)
 
   def set(self, service, status):
     """Sets the status of a service.
@@ -63,4 +63,3 @@ class HealthServicer(health_pb2.BetaHealthServicer):
     """
     with self._server_status_lock:
       self._server_status[service] = status
-
