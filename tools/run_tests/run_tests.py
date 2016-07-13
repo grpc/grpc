@@ -662,7 +662,7 @@ class ObjCLanguage(object):
     return []
 
   def make_targets(self):
-    return ['grpc_objective_c_plugin', 'interop_server']
+    return ['interop_server']
 
   def make_options(self):
     return []
