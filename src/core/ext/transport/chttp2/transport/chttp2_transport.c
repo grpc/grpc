@@ -712,8 +712,9 @@ static void finish_global_actions(grpc_exec_ctx *exec_ctx,
           set_write_state(t, GRPC_CHTTP2_WRITE_SCHEDULED, "unlocking");
           REF_TRANSPORT(t, "initiate_writing");
           gpr_mu_unlock(&t->executor.mu);
-          grpc_exec_ctx_sched(exec_ctx, &t->initiate_writing, GRPC_ERROR_NONE,
-                              grpc_endpoint_get_workqueue(t->ep));
+          grpc_exec_ctx_sched(
+              exec_ctx, &t->initiate_writing, GRPC_ERROR_NONE,
+              t->ep != NULL ? grpc_endpoint_get_workqueue(t->ep) : NULL);
           break;
         case GRPC_CHTTP2_WRITE_REQUESTED_NO_POLLER:
           start_writing(exec_ctx, t);
