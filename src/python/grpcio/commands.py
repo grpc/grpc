@@ -58,6 +58,7 @@ CONF_PY_ADDENDUM = """
 extensions.append('sphinx.ext.napoleon')
 napoleon_google_docstring = True
 napoleon_numpy_docstring = True
+napoleon_include_special_with_doc = True
 
 html_theme = 'sphinx_rtd_theme'
 """
