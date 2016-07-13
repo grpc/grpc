@@ -283,12 +283,6 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 
   gpr_slice_buffer_init(&t->read_buffer);
 
-  if (is_client) {
-    gpr_slice_buffer_add(
-        &t->global.qbuf,
-        gpr_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING));
-    grpc_chttp2_initiate_write(exec_ctx, &t->global, false, "initial_write");
-  }
   /* 8 is a random stab in the dark as to a good initial size: it's small enough
      that it shouldn't waste memory for infrequently used connections, yet
      large enough that the exponential growth should happen nicely when it's
@@ -310,6 +304,13 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
      window -- this should by rights be 0 */
   t->global.force_send_settings = 1 << GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE;
   t->global.sent_local_settings = 0;
+
+  if (is_client) {
+    gpr_slice_buffer_add(
+        &t->global.qbuf,
+        gpr_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING));
+    grpc_chttp2_initiate_write(exec_ctx, &t->global, false, "initial_write");
+  }
 
   /* configure http2 the way we like it */
   if (is_client) {
