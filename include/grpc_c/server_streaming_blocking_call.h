@@ -35,7 +35,7 @@
 #ifndef GRPC_C_SERVER_STREAMING_BLOCKING_CALL_PUBLIC_H
 #define GRPC_C_SERVER_STREAMING_BLOCKING_CALL_PUBLIC_H
 
-typedef struct grpc_client_reader GRPC_client_reader;
+#include <grpc_c/grpc_c.h>
 
 GRPC_client_reader *GRPC_server_streaming_blocking_call(GRPC_channel *channel,
                                                         const GRPC_method rpc_method,
@@ -47,4 +47,4 @@ bool GRPC_server_streaming_blocking_read(GRPC_client_reader *reader, GRPC_messag
 /* Terminating the writer takes care of ending the call, freeing the writer. */
 GRPC_status GRPC_client_reader_terminate(GRPC_client_reader *reader);
 
-#endif // GRPC_C_SERVER_STREAMING_BLOCKING_CALL_PUBLIC_H
+#endif /* GRPC_C_SERVER_STREAMING_BLOCKING_CALL_PUBLIC_H */

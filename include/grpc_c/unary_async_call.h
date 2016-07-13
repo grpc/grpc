@@ -35,10 +35,8 @@
 #ifndef GRPC_C_CLIENT_ASYNC_READER_PUBLIC_H
 #define GRPC_C_CLIENT_ASYNC_READER_PUBLIC_H
 
-#include <grpc_c/completion_queue.h>
 #include <grpc_c/grpc_c.h>
-
-typedef struct grpc_client_async_response_reader GRPC_client_async_response_reader;
+#include <grpc_c/completion_queue.h>
 
 GRPC_client_async_response_reader *GRPC_unary_async_call(GRPC_channel *channel, GRPC_completion_queue *cq,
                                                          const GRPC_method rpc_method,
@@ -49,4 +47,4 @@ void GRPC_client_async_finish(GRPC_client_async_response_reader *reader, GRPC_me
 
 void GRPC_client_async_read_metadata(GRPC_client_async_response_reader *reader, void *tag);
 
-#endif // GRPC_C_CLIENT_ASYNC_READER_PUBLIC_H
+#endif /* GRPC_C_CLIENT_ASYNC_READER_PUBLIC_H */

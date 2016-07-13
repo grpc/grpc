@@ -43,4 +43,4 @@ GRPC_status GRPC_unary_blocking_call(GRPC_channel *channel,
                                      const GRPC_message message,
                                      GRPC_message *response);
 
-#endif // GRPC_C_UNARY_BLOCKING_CALL_PUBLIC_H
+#endif /* GRPC_C_UNARY_BLOCKING_CALL_PUBLIC_H */

@@ -40,4 +40,4 @@
 typedef void (*GRPC_serializer)(const GRPC_message input, GRPC_message *output);
 typedef void (*GRPC_deserializer)(const GRPC_message input, GRPC_message *output);
 
-#endif // GRPC_C_SERIALIZATION_PUBLIC_H
+#endif /* GRPC_C_SERIALIZATION_PUBLIC_H */

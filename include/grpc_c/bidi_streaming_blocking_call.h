@@ -35,7 +35,7 @@
 #ifndef GRPC_C_BIDI_STREAMING_BLOCKING_CALL_PUBLIC_H
 #define GRPC_C_BIDI_STREAMING_BLOCKING_CALL_PUBLIC_H
 
-typedef struct grpc_client_reader_writer GRPC_client_reader_writer;
+#include <grpc_c/grpc_c.h>
 
 GRPC_client_reader_writer *GRPC_bidi_streaming_blocking_call(GRPC_channel *channel,
                                                              const GRPC_method rpc_method,
@@ -51,4 +51,4 @@ bool GRPC_bidi_streaming_blocking_writes_done(GRPC_client_reader_writer *reader_
 
 GRPC_status GRPC_client_reader_writer_terminate(GRPC_client_reader_writer *reader_writer);
 
-#endif // GRPC_C_BIDI_STREAMING_BLOCKING_CALL_PUBLIC_H
+#endif /* GRPC_C_BIDI_STREAMING_BLOCKING_CALL_PUBLIC_H */
