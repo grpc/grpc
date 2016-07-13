@@ -776,7 +776,7 @@ endif
 
 .SECONDARY = %.pb.h %.pb.cc
 
-PROTOC_PLUGINS = $(BINDIR)/$(CONFIG)/grpc_c_plugin $(BINDIR)/$(CONFIG)/grpc_cpp_plugin $(BINDIR)/$(CONFIG)/grpc_csharp_plugin $(BINDIR)/$(CONFIG)/grpc_node_plugin $(BINDIR)/$(CONFIG)/grpc_objective_c_plugin $(BINDIR)/$(CONFIG)/grpc_python_plugin $(BINDIR)/$(CONFIG)/grpc_ruby_plugin
+PROTOC_PLUGINS = $(BINDIR)/$(CONFIG)/grpc_cpp_plugin $(BINDIR)/$(CONFIG)/grpc_csharp_plugin $(BINDIR)/$(CONFIG)/grpc_node_plugin $(BINDIR)/$(CONFIG)/grpc_objective_c_plugin $(BINDIR)/$(CONFIG)/grpc_python_plugin $(BINDIR)/$(CONFIG)/grpc_ruby_plugin
 ifeq ($(DEP_MISSING),)
 all: static shared plugins
 dep_error:
@@ -925,7 +925,6 @@ gpr_useful_test: $(BINDIR)/$(CONFIG)/gpr_useful_test
 grpc_auth_context_test: $(BINDIR)/$(CONFIG)/grpc_auth_context_test
 grpc_b64_test: $(BINDIR)/$(CONFIG)/grpc_b64_test
 grpc_byte_buffer_reader_test: $(BINDIR)/$(CONFIG)/grpc_byte_buffer_reader_test
-grpc_c_end2end: $(BINDIR)/$(CONFIG)/grpc_c_end2end
 grpc_channel_args_test: $(BINDIR)/$(CONFIG)/grpc_channel_args_test
 grpc_channel_stack_test: $(BINDIR)/$(CONFIG)/grpc_channel_stack_test
 grpc_completion_queue_test: $(BINDIR)/$(CONFIG)/grpc_completion_queue_test
@@ -1010,7 +1009,7 @@ cxx_time_test: $(BINDIR)/$(CONFIG)/cxx_time_test
 end2end_test: $(BINDIR)/$(CONFIG)/end2end_test
 generic_end2end_test: $(BINDIR)/$(CONFIG)/generic_end2end_test
 golden_file_test: $(BINDIR)/$(CONFIG)/golden_file_test
-grpc_c_plugin: $(BINDIR)/$(CONFIG)/grpc_c_plugin
+grpc_c_end2end_test: $(BINDIR)/$(CONFIG)/grpc_c_end2end_test
 grpc_cli: $(BINDIR)/$(CONFIG)/grpc_cli
 grpc_cpp_plugin: $(BINDIR)/$(CONFIG)/grpc_cpp_plugin
 grpc_csharp_plugin: $(BINDIR)/$(CONFIG)/grpc_csharp_plugin
@@ -1243,7 +1242,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/grpc_auth_context_test \
   $(BINDIR)/$(CONFIG)/grpc_b64_test \
   $(BINDIR)/$(CONFIG)/grpc_byte_buffer_reader_test \
-  $(BINDIR)/$(CONFIG)/grpc_c_end2end \
   $(BINDIR)/$(CONFIG)/grpc_channel_args_test \
   $(BINDIR)/$(CONFIG)/grpc_channel_stack_test \
   $(BINDIR)/$(CONFIG)/grpc_completion_queue_test \
@@ -1374,6 +1372,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/end2end_test \
   $(BINDIR)/$(CONFIG)/generic_end2end_test \
   $(BINDIR)/$(CONFIG)/golden_file_test \
+  $(BINDIR)/$(CONFIG)/grpc_c_end2end_test \
   $(BINDIR)/$(CONFIG)/grpc_cli \
   $(BINDIR)/$(CONFIG)/grpclb_api_test \
   $(BINDIR)/$(CONFIG)/hybrid_end2end_test \
@@ -1458,6 +1457,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/end2end_test \
   $(BINDIR)/$(CONFIG)/generic_end2end_test \
   $(BINDIR)/$(CONFIG)/golden_file_test \
+  $(BINDIR)/$(CONFIG)/grpc_c_end2end_test \
   $(BINDIR)/$(CONFIG)/grpc_cli \
   $(BINDIR)/$(CONFIG)/grpclb_api_test \
   $(BINDIR)/$(CONFIG)/hybrid_end2end_test \
@@ -1583,8 +1583,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_b64_test || ( echo test grpc_b64_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_byte_buffer_reader_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_byte_buffer_reader_test || ( echo test grpc_byte_buffer_reader_test failed ; exit 1 )
-	$(E) "[RUN]     Testing grpc_c_end2end"
-	$(Q) $(BINDIR)/$(CONFIG)/grpc_c_end2end || ( echo test grpc_c_end2end failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_channel_args_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_channel_args_test || ( echo test grpc_channel_args_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_channel_stack_test"
@@ -1749,6 +1747,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/generic_end2end_test || ( echo test generic_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing golden_file_test"
 	$(Q) $(BINDIR)/$(CONFIG)/golden_file_test || ( echo test golden_file_test failed ; exit 1 )
+	$(E) "[RUN]     Testing grpc_c_end2end_test"
+	$(Q) $(BINDIR)/$(CONFIG)/grpc_c_end2end_test || ( echo test grpc_c_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpclb_api_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpclb_api_test || ( echo test grpclb_api_test failed ; exit 1 )
 	$(E) "[RUN]     Testing hybrid_end2end_test"
@@ -2194,7 +2194,7 @@ endif
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_c-imp.a $(prefix)/lib/libgrpc_c-imp.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_c$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc_c.so.0
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_c$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc_c.so.1
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_c$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc_c.so
 endif
 	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION).$(SHARED_EXT)"
@@ -2279,8 +2279,6 @@ ifeq ($(SYSTEM),MINGW32)
 	$(Q) false
 else
 	$(E) "[INSTALL] Installing grpc protoc plugins"
-	$(Q) $(INSTALL) -d $(prefix)/bin
-	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_c_plugin $(prefix)/bin/grpc_c_plugin
 	$(Q) $(INSTALL) -d $(prefix)/bin
 	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_cpp_plugin $(prefix)/bin/grpc_cpp_plugin
 	$(Q) $(INSTALL) -d $(prefix)/bin
@@ -2834,8 +2832,8 @@ $(LIBDIR)/$(CONFIG)/libgrpc_c$(SHARED_VERSION).$(SHARED_EXT): $(LIBGRPC_C_OBJS) 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_c$(SHARED_VERSION).$(SHARED_EXT) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_c$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC_C_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) -lgrpc -lgpr
 else
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_c.so.0 -o $(LIBDIR)/$(CONFIG)/libgrpc_c$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC_C_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) -lgrpc -lgpr
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_c$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_c$(SHARED_VERSION).so.0
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_c.so.1 -o $(LIBDIR)/$(CONFIG)/libgrpc_c$(SHARED_VERSION).$(SHARED_EXT) $(LIBGRPC_C_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) -lgrpc -lgpr
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_c$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_c$(SHARED_VERSION).so.1
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_c$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_c$(SHARED_VERSION).so
 endif
 endif
@@ -4215,7 +4213,6 @@ endif
 
 
 LIBGRPC_PLUGIN_SUPPORT_SRC = \
-    src/compiler/c_generator.cc \
     src/compiler/cpp_generator.cc \
     src/compiler/csharp_generator.cc \
     src/compiler/node_generator.cc \
@@ -8169,38 +8166,6 @@ endif
 endif
 
 
-GRPC_C_END2END_SRC = \
-    test/c/end2end/unary_end2end_test.cc \
-
-GRPC_C_END2END_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_C_END2END_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/grpc_c_end2end: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/grpc_c_end2end: $(GRPC_C_END2END_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GRPC_C_END2END_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/grpc_c_end2end
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/c/end2end/unary_end2end_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a
-
-deps_grpc_c_end2end: $(GRPC_C_END2END_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(GRPC_C_END2END_OBJS:.o=.dep)
-endif
-endif
-
-
 GRPC_CHANNEL_ARGS_TEST_SRC = \
     test/core/channel/channel_args_test.c \
 
@@ -11116,10 +11081,18 @@ endif
 $(OBJDIR)/$(CONFIG)/test/cpp/codegen/golden_file_test.o: $(GENDIR)/src/proto/grpc/testing/compiler_test.pb.cc $(GENDIR)/src/proto/grpc/testing/compiler_test.grpc.pb.cc
 
 
-GRPC_C_PLUGIN_SRC = \
-    src/compiler/c_plugin.cc \
+GRPC_C_END2END_TEST_SRC = \
+    test/c/end2end/unary_end2end_test.cc \
 
-GRPC_C_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_C_PLUGIN_SRC))))
+GRPC_C_END2END_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_C_END2END_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/grpc_c_end2end_test: openssl_dep_error
+
+else
+
 
 
 
@@ -11127,23 +11100,27 @@ ifeq ($(NO_PROTOBUF),true)
 
 # You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
 
-$(BINDIR)/$(CONFIG)/grpc_c_plugin: protobuf_dep_error
+$(BINDIR)/$(CONFIG)/grpc_c_end2end_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/grpc_c_plugin: $(PROTOBUF_DEP) $(GRPC_C_PLUGIN_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a
-	$(E) "[HOSTLD]  Linking $@"
+$(BINDIR)/$(CONFIG)/grpc_c_end2end_test: $(PROTOBUF_DEP) $(GRPC_C_END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_c.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(HOST_LDXX) $(HOST_LDFLAGS) $(GRPC_C_PLUGIN_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a $(HOST_LDLIBSXX) $(HOST_LDLIBS_PROTOC) $(HOST_LDLIBS) $(HOST_LDLIBS_PROTOC) -o $(BINDIR)/$(CONFIG)/grpc_c_plugin
+	$(Q) $(LDXX) $(LDFLAGS) $(GRPC_C_END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_c.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/grpc_c_end2end_test
 
 endif
 
-$(OBJDIR)/$(CONFIG)/src/compiler/c_plugin.o:  $(LIBDIR)/$(CONFIG)/libgrpc_plugin_support.a
+endif
 
-deps_grpc_c_plugin: $(GRPC_C_PLUGIN_OBJS:.o=.dep)
+$(OBJDIR)/$(CONFIG)/test/c/end2end/unary_end2end_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_c.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
+deps_grpc_c_end2end_test: $(GRPC_C_END2END_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(GRPC_C_PLUGIN_OBJS:.o=.dep)
+-include $(GRPC_C_END2END_TEST_OBJS:.o=.dep)
+endif
 endif
 
 
