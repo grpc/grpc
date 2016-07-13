@@ -49,11 +49,20 @@ include "grpc/_cython/_cygrpc/server.pyx.pxi"
 #
 
 
+cdef extern from "Python.h":
+
+  int Py_AtExit(void(*func)())
+
+
 def _initialize():
   if not pygrpc_initialize_core():
     raise ImportError('failed to initialize core gRPC library')
 
   grpc_set_ssl_roots_override_callback(
           <grpc_ssl_roots_override_callback>ssl_roots_override_callback)
+
+  if Py_AtExit(grpc_shutdown) != 0:
+    raise ImportError('failed to register gRPC library shutdown callbacks')
+
 
 _initialize()
