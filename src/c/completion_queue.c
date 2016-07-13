@@ -102,6 +102,6 @@ bool GRPC_completion_queue_pluck_internal(GRPC_completion_queue *cq, void *tag) 
   GPR_ASSERT(set->context != NULL);
   GPR_ASSERT(set->user_tag == ev.tag);
   // run post-processing
-  grpc_finish_op_from_call_set(set, set->context);
-  return ev.success != 0;
+  bool status = grpc_finish_op_from_call_set(set, set->context);
+  return (ev.success != 0) && status;
 }
