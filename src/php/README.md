@@ -5,7 +5,7 @@ This directory contains source code for PHP implementation of gRPC layered on sh
 
 #Status
 
-Beta
+GA
 
 ## Environment
 
@@ -43,7 +43,7 @@ $ sudo mv phpunit-old.phar /usr/bin/phpunit
 Install the gRPC PHP extension
 
 ```sh
-sudo pecl install grpc-beta
+sudo pecl install grpc
 ```
 
 This will compile and install the gRPC PHP extension into the standard PHP extension directory. You should be able to run the [unit tests](#unit-tests), with the PHP extension installed.
@@ -75,7 +75,7 @@ $ sudo make install
 Install the gRPC PHP extension from PECL
 
 ```sh
-$ sudo pecl install grpc-beta
+$ sudo pecl install grpc
 ```
 
 Or, compile from source
