@@ -46,7 +46,7 @@ import performance.scenario_config as scenario_config
 def _scenario_json_string(scenario_json):
   # tweak parameters to get fast test times
   scenario_json['warmup_seconds'] = 1
-  scenario_json['benchmark_seconds'] = 10
+  scenario_json['benchmark_seconds'] = 1
   scenarios_json = {'scenarios': [scenario_config.remove_nonproto_fields(scenario_json)]}
   return json.dumps(scenarios_json)
 
@@ -73,8 +73,7 @@ print yaml.dump({
     {
       'name': 'json_run_localhost',
       'shortname': 'json_run_localhost:%s' % scenario_json['name'],
-      'args': ['--scenarios_json',
-               pipes.quote(_scenario_json_string(scenario_json))],
+      'args': ['--scenarios_json', _scenario_json_string(scenario_json)],
       'ci_platforms': ['linux', 'mac', 'posix', 'windows'],
       'platforms': ['linux', 'mac', 'posix', 'windows'],
       'flaky': False,
