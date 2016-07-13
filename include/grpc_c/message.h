@@ -44,4 +44,4 @@ typedef struct GRPC_message {
 
 void GRPC_message_destroy(GRPC_message *message);
 
-#endif // GRPC_C_MESSAGE_PUBLIC_H
+#endif /* GRPC_C_MESSAGE_PUBLIC_H */

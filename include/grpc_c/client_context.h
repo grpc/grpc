@@ -40,4 +40,4 @@
 GRPC_client_context *GRPC_client_context_create(GRPC_channel *chan);
 void GRPC_client_context_destroy(GRPC_client_context **context);
 
-#endif // GRPC_C_CONTEXT_PUBLIC_H
+#endif /* GRPC_C_CONTEXT_PUBLIC_H */

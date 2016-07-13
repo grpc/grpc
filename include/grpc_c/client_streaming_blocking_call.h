@@ -35,10 +35,7 @@
 #ifndef GRPC_C_CLIENT_STREAMING_BLOCKING_CALL_PUBLIC_H
 #define GRPC_C_CLIENT_STREAMING_BLOCKING_CALL_PUBLIC_H
 
-#include <stdbool.h>
 #include <grpc_c/grpc_c.h>
-
-typedef struct grpc_client_writer GRPC_client_writer;
 
 GRPC_client_writer *GRPC_client_streaming_blocking_call(GRPC_channel *channel,
                                                         const GRPC_method rpc_method,
@@ -51,4 +48,4 @@ bool GRPC_client_streaming_blocking_write(GRPC_client_writer *writer, const GRPC
 /* Returns call status in the context object. */
 GRPC_status GRPC_client_writer_terminate(GRPC_client_writer *writer);
 
-#endif // GRPC_C_CLIENT_STREAMING_BLOCKING_CALL_PUBLIC_H
+#endif /* GRPC_C_CLIENT_STREAMING_BLOCKING_CALL_PUBLIC_H */

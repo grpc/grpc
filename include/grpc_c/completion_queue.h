@@ -35,16 +35,14 @@
 #ifndef GRPC_C_COMPLETION_QUEUE_PUBLIC_H
 #define GRPC_C_COMPLETION_QUEUE_PUBLIC_H
 
-#include <stdbool.h>
+#include <grpc_c/grpc_c.h>
 
-typedef struct gpr_timespec gpr_timespec;
-
-/// Tri-state return for GRPC_commit_ops_and_wait
+/* Tri-state return for GRPC_commit_ops_and_wait */
 typedef enum GRPC_completion_queue_next_status {
-  GRPC_COMPLETION_QUEUE_SHUTDOWN,   ///< The completion queue has been shutdown.
-  GRPC_COMPLETION_QUEUE_GOT_EVENT,  ///< Got a new event; \a tag will be filled in with its
-                                    ///< associated value; \a ok indicating its success.
-  GRPC_COMPLETION_QUEUE_TIMEOUT     ///< deadline was reached.
+  GRPC_COMPLETION_QUEUE_SHUTDOWN,   /* The completion queue has been shutdown. */
+  GRPC_COMPLETION_QUEUE_GOT_EVENT,  /* Got a new event; \a tag will be filled in with its */
+                                    /* associated value; \a ok indicating its success. */
+  GRPC_COMPLETION_QUEUE_TIMEOUT     /* deadline was reached. */
 } GRPC_completion_queue_operation_status;
 
 GRPC_completion_queue *GRPC_completion_queue_create();
@@ -56,4 +54,4 @@ GRPC_completion_queue_operation_status GRPC_commit_ops_and_wait_deadline(GRPC_co
                                                                          gpr_timespec deadline,
                                                                          void **tag, bool *ok);
 
-#endif // GRPC_C_COMPLETION_QUEUE_PUBLIC_H
+#endif /* GRPC_C_COMPLETION_QUEUE_PUBLIC_H */
