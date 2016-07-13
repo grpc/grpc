@@ -32,6 +32,7 @@
   FROM golang:1.5
   
   <%include file="../../go_path.include"/>
+  <%include file="../../python_deps.include"/>
   # Define the default command.
   CMD ["bash"]
   

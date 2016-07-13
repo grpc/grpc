@@ -30,6 +30,8 @@
 
 """Run performance tests locally or remotely."""
 
+from __future__ import print_function
+
 import argparse
 import itertools
 import jobset
@@ -310,7 +312,7 @@ def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*',
                             'in the same scenario')
           if custom_server_lang:
             if not workers_by_lang.get(custom_server_lang, []):
-              print 'Warning: Skipping scenario %s as' % scenario_json['name']
+              print('Warning: Skipping scenario %s as' % scenario_json['name'])
               print('SERVER_LANGUAGE is set to %s yet the language has '
                     'not been selected with -l' % custom_server_lang)
               continue
@@ -319,7 +321,7 @@ def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*',
               workers[idx] = workers_by_lang[custom_server_lang][idx]
           if custom_client_lang:
             if not workers_by_lang.get(custom_client_lang, []):
-              print 'Warning: Skipping scenario %s as' % scenario_json['name']
+              print('Warning: Skipping scenario %s as' % scenario_json['name'])
               print('CLIENT_LANGUAGE is set to %s yet the language has '
                     'not been selected with -l' % custom_client_lang)
               continue
@@ -344,14 +346,14 @@ def finish_qps_workers(jobs):
   while any(job.is_running() for job in jobs):
     for job in qpsworker_jobs:
       if job.is_running():
-        print 'QPS worker "%s" is still running.' % job.host_and_port
+        print('QPS worker "%s" is still running.' % job.host_and_port)
     if retries > 10:
-      print 'Killing all QPS workers.'
+      print('Killing all QPS workers.')
       for job in jobs:
         job.kill()
     retries += 1
     time.sleep(3)
-  print 'All QPS workers finished.'
+  print('All QPS workers finished.')
 
 
 argp = argparse.ArgumentParser(description='Run performance tests.')

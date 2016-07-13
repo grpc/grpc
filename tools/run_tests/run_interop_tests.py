@@ -30,6 +30,8 @@
 
 """Run interop (cross-language) tests in parallel."""
 
+from __future__ import print_function
+
 import argparse
 import atexit
 import dockerjob
@@ -372,7 +374,7 @@ def docker_run_cmdline(cmdline, image, docker_args=[], cwd=None, environ=None):
 
   # turn environ into -e docker args
   if environ:
-    for k,v in environ.iteritems():
+    for k,v in environ.items():
       docker_cmdline += ['-e', '%s=%s' % (k,v)]
 
   # set working directory
@@ -674,15 +676,15 @@ servers = set(s for s in itertools.chain.from_iterable(_SERVERS
 
 if args.use_docker:
   if not args.travis:
-    print 'Seen --use_docker flag, will run interop tests under docker.'
-    print
-    print 'IMPORTANT: The changes you are testing need to be locally committed'
-    print 'because only the committed changes in the current branch will be'
-    print 'copied to the docker environment.'
+    print('Seen --use_docker flag, will run interop tests under docker.')
+    print('')
+    print('IMPORTANT: The changes you are testing need to be locally committed')
+    print('because only the committed changes in the current branch will be')
+    print('copied to the docker environment.')
     time.sleep(5)
 
 if not args.use_docker and servers:
-  print 'Running interop servers is only supported with --use_docker option enabled.'
+  print('Running interop servers is only supported with --use_docker option enabled.')
   sys.exit(1)
 
 languages = set(_LANGUAGES[l]
@@ -768,7 +770,7 @@ try:
     (server_host, server_port) = server[1].split(':')
     server_addresses[server_name] = (server_host, server_port)
 
-  for server_name, server_address in server_addresses.iteritems():
+  for server_name, server_address in server_addresses.items():
     (server_host, server_port) = server_address
     server_language = _LANGUAGES.get(server_name, None)
     skip_server = []  # test cases unimplemented by server
@@ -800,7 +802,7 @@ try:
         jobs.append(test_job)
 
   if not jobs:
-    print 'No jobs to run.'
+    print('No jobs to run.')
     for image in docker_images.itervalues():
       dockerjob.remove_image(image, skip_nonexistent=True)
     sys.exit(1)
@@ -814,7 +816,7 @@ try:
 
   report_utils.render_junit_xml_report(resultset, 'report.xml')
 
-  for name, job in resultset.iteritems():
+  for name, job in resultset.items():
     if "http2" in name:
       job[0].http2results = aggregate_http2_results(job[0].message)
 
@@ -826,12 +828,12 @@ try:
 
 finally:
   # Check if servers are still running.
-  for server, job in server_jobs.iteritems():
+  for server, job in server_jobs.items():
     if not job.is_running():
-      print 'Server "%s" has exited prematurely.' % server
+      print('Server "%s" has exited prematurely.' % server)
 
   dockerjob.finish_jobs([j for j in server_jobs.itervalues()])
 
   for image in docker_images.itervalues():
-    print 'Removing docker image %s' % image
+    print('Removing docker image %s' % image)
     dockerjob.remove_image(image)
