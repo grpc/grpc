@@ -70,8 +70,13 @@ GRPC_client_reader_writer *GRPC_bidi_streaming_blocking_call(GRPC_channel *chann
   });
 
   grpc_start_batch_from_op_set(reader_writer->call, &set, reader_writer->context, (GRPC_message) {0}, NULL);
-  GRPC_completion_queue_pluck_internal(cq, TAG(&set));
-  return reader_writer;
+  bool ok = GRPC_completion_queue_pluck_internal(cq, TAG(&set));
+  if (!ok) {
+    GRPC_client_reader_writer_terminate(reader_writer);
+    return NULL;
+  } else {
+    return reader_writer;
+  }
 }
 
 bool GRPC_bidi_streaming_blocking_read(GRPC_client_reader_writer *reader_writer, GRPC_message *response) {
@@ -98,7 +103,9 @@ bool GRPC_bidi_streaming_blocking_read(GRPC_client_reader_writer *reader_writer,
   }
 
   grpc_start_batch_from_op_set(reader_writer->call, pSet, reader_writer->context, (GRPC_message) {0}, response);
-  return GRPC_completion_queue_pluck_internal(reader_writer->cq, TAG(pSet)) && pSet->message_received;
+  bool ok = GRPC_completion_queue_pluck_internal(reader_writer->cq, TAG(pSet)) && pSet->message_received;
+  reader_writer->context->status.ok &= ok;
+  return ok;
 }
 
 bool GRPC_bidi_streaming_blocking_write(GRPC_client_reader_writer *reader_writer, const GRPC_message request) {
@@ -111,7 +118,9 @@ bool GRPC_bidi_streaming_blocking_write(GRPC_client_reader_writer *reader_writer
   };
 
   grpc_start_batch_from_op_set(reader_writer->call, &set, reader_writer->context, request, NULL);
-  return GRPC_completion_queue_pluck_internal(reader_writer->cq, TAG(&set));
+  bool ok = GRPC_completion_queue_pluck_internal(reader_writer->cq, TAG(&set));
+  reader_writer->context->status.ok &= ok;
+  return ok;
 }
 
 bool GRPC_bidi_streaming_blocking_writes_done(GRPC_client_reader_writer *reader_writer) {
@@ -124,7 +133,9 @@ bool GRPC_bidi_streaming_blocking_writes_done(GRPC_client_reader_writer *reader_
   };
 
   grpc_start_batch_from_op_set(reader_writer->call, &set, reader_writer->context, (GRPC_message) {0}, NULL);
-  return GRPC_completion_queue_pluck_internal(reader_writer->cq, TAG(&set));
+  bool ok = GRPC_completion_queue_pluck_internal(reader_writer->cq, TAG(&set));
+  reader_writer->context->status.ok &= ok;
+  return ok;
 }
 
 GRPC_status GRPC_client_reader_writer_terminate(GRPC_client_reader_writer *reader_writer) {
@@ -136,11 +147,12 @@ GRPC_status GRPC_client_reader_writer_terminate(GRPC_client_reader_writer *reade
     .user_tag = &set
   };
   grpc_start_batch_from_op_set(reader_writer->call, &set, reader_writer->context, (GRPC_message) {0}, NULL);
-  GRPC_completion_queue_pluck_internal(reader_writer->cq, TAG(&set));
+  bool ok = GRPC_completion_queue_pluck_internal(reader_writer->cq, TAG(&set));
   GRPC_completion_queue_shutdown_and_destroy(reader_writer->cq);
   grpc_call_destroy(reader_writer->call);
   reader_writer->context->call = NULL;
   grpc_client_context *context = reader_writer->context;
   free(reader_writer);
+  context->status.ok &= ok;
   return context->status;
 }

@@ -195,7 +195,7 @@ bool grpc_finish_op_from_call_set(grpc_call_op_set *set, grpc_client_context *co
     if (set->op_managers[count].fill == NULL && set->op_managers[count].finish == NULL) break;   // end of call set
     if (set->op_managers[count].finish == NULL) continue;
     int size = 100;  // todo(yifeit): hook up this value
-    bool status;
+    bool status = true;
     set->op_managers[count].finish(context, set, &status, size);
     allStatus &= status;
     count++;

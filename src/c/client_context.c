@@ -44,7 +44,10 @@ grpc_client_context *GRPC_client_context_create(grpc_channel *chan) {
       .deadline = gpr_inf_future(GPR_CLOCK_REALTIME),
       .channel = chan,
       .serialize = GRPC_id_serialize,
-      .deserialize = GRPC_id_deserialize
+      .deserialize = GRPC_id_deserialize,
+      .status = {
+        .ok = true
+      }
     }
   );
   return context;

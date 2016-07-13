@@ -71,13 +71,13 @@ GRPC_status GRPC_unary_blocking_call(GRPC_channel *channel, const GRPC_method *c
     bool ok;
     GRPC_completion_queue_operation_status status = GRPC_commit_ops_and_wait_deadline(cq, context->deadline, &tag, &ok);
     GPR_ASSERT(status == GRPC_COMPLETION_QUEUE_GOT_EVENT);
-    GPR_ASSERT(ok);
     if (tag == TAG(&set)) {
+      context->status.ok &= ok;
       break;
     }
   }
 
-  GPR_ASSERT(context->status.code == GRPC_STATUS_OK);
+  context->status.ok &= (context->status.code == GRPC_STATUS_OK);
 
   GRPC_completion_queue_shutdown_and_destroy(cq);
   grpc_call_destroy(call);
