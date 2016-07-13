@@ -174,6 +174,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
     for (int i = 0; i < num_async_threads_; i++) {
       cli_cqs_.emplace_back(new CompletionQueue);
       next_issuers_.emplace_back(NextIssuer(i));
+      shutdown_state_.emplace_back(new PerThreadShutdownState());
     }
 
     using namespace std::placeholders;
@@ -189,7 +190,21 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
     }
   }
   virtual ~AsyncClient() {
-    FinalShutdownCQs();
+    for (auto ss = shutdown_state_.begin(); ss != shutdown_state_.end(); ++ss) {
+      std::lock_guard<std::mutex> lock((*ss)->mutex);
+      (*ss)->shutdown = true;
+    }
+    for (auto cq = cli_cqs_.begin(); cq != cli_cqs_.end(); cq++) {
+      (*cq)->Shutdown();
+    }
+    this->EndThreads(); // Need "this->" for resolution
+    for (auto cq = cli_cqs_.begin(); cq != cli_cqs_.end(); cq++) {
+      void* got_tag;
+      bool ok;
+      while ((*cq)->Next(&got_tag, &ok)) {
+        delete ClientRpcContext::detag(got_tag);
+      }
+    }
   }
 
   bool ThreadFunc(HistogramEntry* entry,
@@ -200,7 +215,12 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
     if (cli_cqs_[thread_idx]->Next(&got_tag, &ok)) {
       // Got a regular event, so process it
       ClientRpcContext* ctx = ClientRpcContext::detag(got_tag);
-      if (!ctx->RunNextState(ok, entry)) {
+      // Proceed while holding a lock to make sure that
+      // this thread isn't supposed to shut down
+      std::lock_guard<std::mutex> l(shutdown_state_[thread_idx]->mutex);
+      if (shutdown_state_[thread_idx]->shutdown) {
+        return true;
+      } else if (!ctx->RunNextState(ok, entry)) {
         // The RPC and callback are done, so clone the ctx
         // and kickstart the new one
         auto clone = ctx->StartNewClone();
@@ -217,22 +237,13 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
  protected:
   const int num_async_threads_;
 
-  void ShutdownCQs() {
-    for (auto cq = cli_cqs_.begin(); cq != cli_cqs_.end(); cq++) {
-      (*cq)->Shutdown();
-    }
-  }
-  void FinalShutdownCQs() {
-    for (auto cq = cli_cqs_.begin(); cq != cli_cqs_.end(); cq++) {
-      void* got_tag;
-      bool ok;
-      while ((*cq)->Next(&got_tag, &ok)) {
-        delete ClientRpcContext::detag(got_tag);
-      }
-    }
-  }
-
  private:
+  struct PerThreadShutdownState {
+    mutable std::mutex mutex;
+    bool shutdown;
+    PerThreadShutdownState() : shutdown(false) {}
+  };
+
   int NumThreads(const ClientConfig& config) {
     int num_threads = config.async_client_threads();
     if (num_threads <= 0) {  // Use dynamic sizing
@@ -241,9 +252,9 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
     }
     return num_threads;
   }
-
   std::vector<std::unique_ptr<CompletionQueue>> cli_cqs_;
   std::vector<std::function<gpr_timespec()>> next_issuers_;
+  std::vector<std::unique_ptr<PerThreadShutdownState>> shutdown_state_;
 };
 
 static std::unique_ptr<BenchmarkService::Stub> BenchmarkStubCreator(
@@ -259,10 +270,7 @@ class AsyncUnaryClient GRPC_FINAL
             config, SetupCtx, BenchmarkStubCreator) {
     StartThreads(num_async_threads_);
   }
-  ~AsyncUnaryClient() GRPC_OVERRIDE {
-    ShutdownCQs();
-    EndThreads();
-  }
+  ~AsyncUnaryClient() GRPC_OVERRIDE {}
 
  private:
   static void CheckDone(grpc::Status s, SimpleResponse* response) {}
@@ -391,10 +399,7 @@ class AsyncStreamingClient GRPC_FINAL
     StartThreads(num_async_threads_);
   }
 
-  ~AsyncStreamingClient() GRPC_OVERRIDE {
-    ShutdownCQs();
-    EndThreads();
-  }
+  ~AsyncStreamingClient() GRPC_OVERRIDE {}
 
  private:
   static void CheckDone(grpc::Status s, SimpleResponse* response) {}
@@ -530,10 +535,7 @@ class GenericAsyncStreamingClient GRPC_FINAL
     StartThreads(num_async_threads_);
   }
 
-  ~GenericAsyncStreamingClient() GRPC_OVERRIDE {
-    ShutdownCQs();
-    EndThreads();
-  }
+  ~GenericAsyncStreamingClient() GRPC_OVERRIDE {}
 
  private:
   static void CheckDone(grpc::Status s, ByteBuffer* response) {}
