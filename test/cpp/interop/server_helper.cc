@@ -38,7 +38,6 @@
 #include <gflags/gflags.h>
 #include <grpc++/security/server_credentials.h>
 
-#include "src/core/lib/surface/call_test_only.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 
 DECLARE_bool(use_tls);
@@ -57,32 +56,6 @@ std::shared_ptr<ServerCredentials> CreateInteropServerCredentials() {
   } else {
     return InsecureServerCredentials();
   }
-}
-
-InteropServerContextInspector::InteropServerContextInspector(
-    const ::grpc::ServerContext& context)
-    : context_(context) {}
-
-grpc_compression_algorithm
-InteropServerContextInspector::GetCallCompressionAlgorithm() const {
-  return grpc_call_test_only_get_compression_algorithm(context_.call_);
-}
-
-uint32_t InteropServerContextInspector::GetEncodingsAcceptedByClient() const {
-  return grpc_call_test_only_get_encodings_accepted_by_peer(context_.call_);
-}
-
-uint32_t InteropServerContextInspector::GetMessageFlags() const {
-  return grpc_call_test_only_get_message_flags(context_.call_);
-}
-
-std::shared_ptr<const AuthContext>
-InteropServerContextInspector::GetAuthContext() const {
-  return context_.auth_context();
-}
-
-bool InteropServerContextInspector::IsCancelled() const {
-  return context_.IsCancelled();
 }
 
 }  // namespace testing
