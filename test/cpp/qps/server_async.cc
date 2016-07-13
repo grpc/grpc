@@ -132,7 +132,8 @@ class AsyncQpsServerTest : public Server {
     for (auto ss = shutdown_state_.begin(); ss != shutdown_state_.end(); ++ss) {
       (*ss)->set_shutdown();
     }
-    server_->Shutdown();
+    server_->Shutdown(std::chrono::system_clock::now() +
+                      std::chrono::seconds(3));
     for (auto thr = threads_.begin(); thr != threads_.end(); thr++) {
       thr->join();
     }
