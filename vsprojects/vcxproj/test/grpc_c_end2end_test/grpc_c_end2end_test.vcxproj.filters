@@ -8,13 +8,13 @@
 
   <ItemGroup>
     <Filter Include="test">
-      <UniqueIdentifier>{573596d1-36aa-7ea1-ac6a-61c36426cbb1}</UniqueIdentifier>
+      <UniqueIdentifier>{17223a1e-3ecb-a3d6-c40d-bde3969d9275}</UniqueIdentifier>
     </Filter>
     <Filter Include="test\c">
-      <UniqueIdentifier>{d6108617-6a13-dd20-9eb1-d8dda8888f8f}</UniqueIdentifier>
+      <UniqueIdentifier>{b16fb263-5348-4d59-4d1f-80b56e910635}</UniqueIdentifier>
     </Filter>
     <Filter Include="test\c\end2end">
-      <UniqueIdentifier>{46224486-dbea-397d-6d30-f2c0ca20fd2e}</UniqueIdentifier>
+      <UniqueIdentifier>{459aafe4-24cf-ac2c-1a7f-f58ae6b692f5}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
