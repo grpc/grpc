@@ -43,13 +43,14 @@ Pod::Spec.new do |s|
   s.license  = 'New BSD'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
-  s.source = { :git => 'https://github.com/grpc/grpc.git',
-               :tag => "release-#{version.gsub(/\./, '_')}-objectivec-#{version}",
-               :submodules => true }
-
+  s.source = {
+    :git => 'https://github.com/grpc/grpc.git',
+    :tag => "release-#{version.gsub(/\./, '_')}-objectivec-#{version}",
+  }
 
   s.ios.deployment_target = '7.1'
   s.osx.deployment_target = '10.9'
+<<<<<<< HEAD
   s.requires_arc = true
 
   objc_dir = 'src/objective-c'
@@ -730,22 +731,21 @@ Pod::Spec.new do |s|
     ss.source_files = "#{src_dir}/*.{h,m}", "#{src_dir}/**/*.{h,m}"
     ss.private_header_files = "#{src_dir}/private/*.h"
     ss.header_mappings_dir = "#{objc_dir}"
+=======
+>>>>>>> 8da7b1f779b36394008aad5ef40f49b03ce79c7b
 
-    ss.dependency 'gRPC/C-Core'
-    ss.dependency 'gRPC/RxLibrary'
+  name = 'GRPCClient'
+  s.module_name = name
+  s.header_dir = name
 
-    # Certificates, to be able to establish TLS connections:
-    ss.resource_bundles = { 'gRPCCertificates' => ['etc/roots.pem'] }
-  end
+  src_dir = 'src/objective-c/GRPCClient'
+  s.source_files = "#{src_dir}/*.{h,m}", "#{src_dir}/**/*.{h,m}"
+  s.private_header_files = "#{src_dir}/private/*.h"
+  s.header_mappings_dir = "#{src_dir}"
 
-  # RPC library for ProtocolBuffers, based on gRPC
-  s.subspec 'ProtoRPC' do |ss|
-    src_dir = "#{objc_dir}/ProtoRPC"
-    ss.source_files = "#{src_dir}/*.{h,m}"
-    ss.header_mappings_dir = "#{objc_dir}"
+  s.dependency 'gRPC-Core', version
+  s.dependency 'gRPC-RxLibrary', version
 
-    ss.dependency 'gRPC/GRPCClient'
-    ss.dependency 'gRPC/RxLibrary'
-    ss.dependency 'Protobuf', '~> 3.0.0-alpha-4'
-  end
+  # Certificates, to be able to establish TLS connections:
+  s.resource_bundles = { 'gRPCCertificates' => ['etc/roots.pem'] }
 end

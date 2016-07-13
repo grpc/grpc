@@ -82,7 +82,7 @@ print yaml.dump({
       'defaults': 'boringssl',
       'cpu_cost': guess_cpu(scenario_json),
       'exclude_configs': [],
-      'timeout_seconds': 15
+      'timeout_seconds': 3*60
     }
     for scenario_json in scenario_config.CXXLanguage().scenarios()
   ]
