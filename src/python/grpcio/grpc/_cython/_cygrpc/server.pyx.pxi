@@ -171,5 +171,4 @@ cdef class Server:
         # much but repeatedly release the GIL and wait
         while not self.is_shutdown:
           time.sleep(0)
-      with nogil:
-        grpc_server_destroy(self.c_server)
+      grpc_server_destroy(self.c_server)

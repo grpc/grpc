@@ -102,7 +102,7 @@ class AsyncQpsServerTest : public Server {
     auto process_rpc_bound =
         std::bind(process_rpc, config.payload_config(), _1, _2);
 
-    for (int i = 0; i < 10000 / num_threads; i++) {
+    for (int i = 0; i < 15000; i++) {
       for (int j = 0; j < num_threads; j++) {
         if (request_unary_function) {
           auto request_unary =
@@ -132,7 +132,8 @@ class AsyncQpsServerTest : public Server {
     for (auto ss = shutdown_state_.begin(); ss != shutdown_state_.end(); ++ss) {
       (*ss)->set_shutdown();
     }
-    server_->Shutdown();
+    server_->Shutdown(std::chrono::system_clock::now() +
+                      std::chrono::seconds(3));
     for (auto thr = threads_.begin(); thr != threads_.end(); thr++) {
       thr->join();
     }
