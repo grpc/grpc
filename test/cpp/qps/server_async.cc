@@ -131,7 +131,10 @@ class AsyncQpsServerTest : public Server {
       std::lock_guard<std::mutex> lock((*ss)->mutex);
       (*ss)->shutdown = true;
     }
-    server_->Shutdown();
+    // TODO (vpai): Remove this deadline and allow Shutdown to finish properly
+    auto deadline =
+        std::chrono::system_clock::now() + std::chrono::seconds(3);
+    server_->Shutdown(deadline);
     for (auto cq = srv_cqs_.begin(); cq != srv_cqs_.end(); ++cq) {
       (*cq)->Shutdown();
     }
