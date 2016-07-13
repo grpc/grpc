@@ -103,9 +103,9 @@ bool GRPC_bidi_streaming_blocking_read(GRPC_client_reader_writer *reader_writer,
   }
 
   grpc_start_batch_from_op_set(reader_writer->call, pSet, reader_writer->context, (GRPC_message) {0}, response);
-  bool ok = GRPC_completion_queue_pluck_internal(reader_writer->cq, TAG(pSet)) && pSet->message_received;
+  bool ok = GRPC_completion_queue_pluck_internal(reader_writer->cq, TAG(pSet));
   reader_writer->context->status.ok &= ok;
-  return ok;
+  return ok && pSet->message_received;
 }
 
 bool GRPC_bidi_streaming_blocking_write(GRPC_client_reader_writer *reader_writer, const GRPC_message request) {
