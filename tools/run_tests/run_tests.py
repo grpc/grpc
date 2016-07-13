@@ -394,7 +394,7 @@ class PythonLanguage(object):
     environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
     return [self.config.job_spec(
         config.run,
-        timeout_seconds=5*60,
+        timeout_seconds=10*60,
         environ=dict(list(environment.items()) +
                      [('GRPC_PYTHON_TESTRUNNER_FILTER', suite_name)]),
         shortname='%s.test.%s' % (config.name, suite_name),)
