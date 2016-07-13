@@ -35,6 +35,8 @@
 #ifndef GRPC_C_STATUS_CODE_PUBLIC_H
 #define GRPC_C_STATUS_CODE_PUBLIC_H
 
+#ifndef GRPC_IMPL_CODEGEN_STATUS_H
+
 typedef enum {
   /* Not an error; returned on success */
     GRPC_STATUS_OK = 0,
@@ -153,4 +155,6 @@ typedef enum {
     GRPC_STATUS__DO_NOT_USE = -1
 } grpc_status_code;
 
-#endif // GRPC_C_STATUS_CODE_PUBLIC_H
+#endif  /* #ifdef GRPC_IMPL_CODEGEN_STATUS_H */
+
+#endif /* GRPC_C_STATUS_CODE_PUBLIC_H */

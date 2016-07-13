@@ -54,12 +54,23 @@ typedef struct grpc_client_async_response_reader GRPC_client_async_response_read
 typedef struct GRPC_method {
   enum RpcType {
     NORMAL_RPC = 0,
-    CLIENT_STREAMING,  // request streaming
-    SERVER_STREAMING,  // response streaming
+    CLIENT_STREAMING,  /* request streaming */
+    SERVER_STREAMING,  /* response streaming */
     BIDI_STREAMING
   } type;
   const char* name;
 } GRPC_method;
 
+/* For C compilers without bool support */
+#ifndef __cplusplus
+#if defined(__STDC__) && __STDC_VERSION__ >= 199901L
+#include <stdbool.h>
+#else
+#ifndef bool
+typedef enum _bool { false, true };
+typedef enum _bool bool;
+#endif
+#endif
+#endif
 
-#endif // GRPC_C_PUBLIC_H
+#endif /* GRPC_C_PUBLIC_H */

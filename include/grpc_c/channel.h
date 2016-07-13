@@ -35,9 +35,9 @@
 #ifndef GRPC_C_CHANNEL_PUBLIC_H
 #define GRPC_C_CHANNEL_PUBLIC_H
 
-typedef struct grpc_channel grpc_channel;
+#include <grpc_c/grpc_c.h>
 
-grpc_channel *GRPC_channel_create(const char * const target);
-void GRPC_channel_destroy(grpc_channel ** channel);
+GRPC_channel *GRPC_channel_create(const char * const target);
+void GRPC_channel_destroy(GRPC_channel ** channel);
 
-#endif // GRPC_C_CHANNEL_PUBLIC_H
+#endif /* GRPC_C_CHANNEL_PUBLIC_H */
