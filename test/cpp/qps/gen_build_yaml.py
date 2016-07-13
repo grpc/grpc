@@ -45,7 +45,7 @@ import performance.scenario_config as scenario_config
 
 def _scenario_json_string(scenario_json):
   # tweak parameters to get fast test times
-  scenario_json['warmup_seconds'] = 1
+  scenario_json['warmup_seconds'] = 0
   scenario_json['benchmark_seconds'] = 1
   scenarios_json = {'scenarios': [scenario_config.remove_nonproto_fields(scenario_json)]}
   return json.dumps(scenarios_json)
@@ -81,7 +81,8 @@ print yaml.dump({
       'boringssl': True,
       'defaults': 'boringssl',
       'cpu_cost': guess_cpu(scenario_json),
-      'exclude_configs': []
+      'exclude_configs': [],
+      'timeout_seconds': 15
     }
     for scenario_json in scenario_config.CXXLanguage().scenarios()
   ]
