@@ -53,6 +53,10 @@ extern "C" {
 #include <grpc_c/client_context.h>
 #include <grpc_c/channel.h>
 #include <grpc_c/unary_blocking_call.h>
+#include <grpc_c/client_streaming_blocking_call.h>
+#include <grpc_c/server_streaming_blocking_call.h>
+#include <grpc_c/bidi_streaming_blocking_call.h>
+#include <grpc_c/unary_async_call.h>
 #include <grpc_c/status.h>
 }
 
@@ -129,9 +133,8 @@ public:
   GRPC_channel *c_channel_;
 };
 
-static void SendRpc(GRPC_channel *channel,
-                    int num_rpcs,
-                    bool with_binary_metadata) {
+static void SendUnaryRpc(GRPC_channel *channel,
+                    int num_rpcs) {
   for (int i = 0; i < num_rpcs; ++i) {
     GRPC_method method = { GRPC_method::RpcType::NORMAL_RPC, "/grpc.testing.EchoTestService/Echo" };
     GRPC_client_context *context = GRPC_client_context_create(channel);
@@ -149,9 +152,115 @@ static void SendRpc(GRPC_channel *channel,
     memcpy(response_string, ((char *) resp.data) + 2, resp.length - 2);
     response_string[resp.length - 2] = '\0';
 
-    EXPECT_EQ(grpc::string(response_string), grpc::string("gRPC-C"));
+    EXPECT_EQ(grpc::string("gRPC-C"), grpc::string(response_string));
 
+    free(response_string);
     GRPC_message_destroy(&resp);
+    GRPC_client_context_destroy(&context);
+  }
+}
+
+static void SendClientStreamingRpc(GRPC_channel *channel,
+                         int num_rpcs) {
+  for (int i = 0; i < num_rpcs; ++i) {
+    GRPC_method method = { GRPC_method::RpcType::NORMAL_RPC, "/grpc.testing.EchoTestService/RequestStream" };
+    GRPC_client_context *context = GRPC_client_context_create(channel);
+    // hardcoded string for "gRPC-C"
+    char str[] = {0x0A, 0x06, 0x67, 0x52, 0x50, 0x43, 0x2D, 0x43};
+    GRPC_message msg = {str, sizeof(str)};
+    // using char array to hold RPC result while protobuf is not there yet
+    GRPC_message resp;
+
+    GRPC_client_writer *writer = GRPC_client_streaming_blocking_call(channel, method, context, &resp);
+    for (int i = 0; i < 3; i++) {
+      bool result = GRPC_client_streaming_blocking_write(writer, msg);
+      EXPECT_TRUE(result);
+    }
+    GRPC_status status = GRPC_client_writer_terminate(writer);
+
+    EXPECT_TRUE(status.ok) << status.details;
+    EXPECT_TRUE(status.code == GRPC_STATUS_OK) << status.details;
+
+    char *response_string = (char *) malloc(resp.length - 2 + 1);
+    memcpy(response_string, ((char *) resp.data) + 2, resp.length - 2);
+    response_string[resp.length - 2] = '\0';
+
+    EXPECT_EQ(grpc::string("gRPC-CgRPC-CgRPC-C"), grpc::string(response_string));
+
+    free(response_string);
+    GRPC_message_destroy(&resp);
+    GRPC_client_context_destroy(&context);
+  }
+}
+
+static void SendServerStreamingRpc(GRPC_channel *channel,
+                                   int num_rpcs) {
+  for (int i = 0; i < num_rpcs; ++i) {
+    GRPC_method method = { GRPC_method::RpcType::NORMAL_RPC, "/grpc.testing.EchoTestService/ResponseStream" };
+    GRPC_client_context *context = GRPC_client_context_create(channel);
+    // hardcoded string for "gRPC-C"
+    char str[] = {0x0A, 0x06, 0x67, 0x52, 0x50, 0x43, 0x2D, 0x43};
+    GRPC_message msg = {str, sizeof(str)};
+
+    GRPC_client_reader *reader = GRPC_server_streaming_blocking_call(channel, method, context, msg);
+
+    // using char array to hold RPC result while protobuf is not there yet
+    GRPC_message resp;
+
+    int count = 0;
+    while (GRPC_server_streaming_blocking_read(reader, &resp)) {
+      char *response_string = (char *) malloc(resp.length - 2 + 1);
+      memcpy(response_string, ((char *) resp.data) + 2, resp.length - 2);
+      response_string[resp.length - 2] = '\0';
+      EXPECT_EQ(grpc::string("gRPC-C") + grpc::to_string(count++), grpc::string(response_string));
+      free(response_string);
+      GRPC_message_destroy(&resp);
+    }
+
+    GRPC_status status = GRPC_client_reader_terminate(reader);
+    EXPECT_TRUE(status.ok) << status.details;
+    EXPECT_TRUE(status.code == GRPC_STATUS_OK) << status.details;
+
+    GRPC_client_context_destroy(&context);
+  }
+}
+
+static void SendBidiStreamingRpc(GRPC_channel *channel,
+                                   int num_rpcs) {
+  for (int i = 0; i < num_rpcs; ++i) {
+    GRPC_method method = { GRPC_method::RpcType::NORMAL_RPC, "/grpc.testing.EchoTestService/BidiStream" };
+    GRPC_client_context *context = GRPC_client_context_create(channel);
+    // hardcoded string for "gRPC-C"
+    char str[] = {0x0A, 0x06, 0x67, 0x52, 0x50, 0x43, 0x2D, 0x43};
+    GRPC_message msg = {str, sizeof(str)};
+
+    GRPC_client_reader_writer *reader_writer = GRPC_bidi_streaming_blocking_call(channel, method, context);
+
+    // using char array to hold RPC result while protobuf is not there yet
+    GRPC_message resp;
+
+    const int kNumMsgToSend = 3;
+    for (int i = 0; i < kNumMsgToSend; i++) {
+      EXPECT_TRUE(GRPC_bidi_streaming_blocking_write(reader_writer, msg));
+    }
+    EXPECT_TRUE(GRPC_bidi_streaming_blocking_writes_done(reader_writer));
+
+    int received_num = 0;
+    while (GRPC_bidi_streaming_blocking_read(reader_writer, &resp)) {
+      received_num++;
+      char *response_string = (char *) malloc(resp.length - 2 + 1);
+      memcpy(response_string, ((char *) resp.data) + 2, resp.length - 2);
+      response_string[resp.length - 2] = '\0';
+      EXPECT_EQ(grpc::string("gRPC-C"), grpc::string(response_string));
+      free(response_string);
+      GRPC_message_destroy(&resp);
+    }
+    EXPECT_EQ(kNumMsgToSend, received_num);
+
+    GRPC_status status = GRPC_client_reader_writer_terminate(reader_writer);
+    EXPECT_TRUE(status.ok) << status.details;
+    EXPECT_TRUE(status.code == GRPC_STATUS_OK) << status.details;
+
     GRPC_client_context_destroy(&context);
   }
 }
@@ -160,10 +269,43 @@ class UnaryEnd2endTest : public End2endTest {
 protected:
 };
 
-TEST(UnaryEnd2endTest, SimpleRpc) {
+class ClientStreamingEnd2endTest : public End2endTest {
+protected:
+};
+
+class ServerStreamingEnd2endTest : public End2endTest {
+protected:
+};
+
+class BidiStreamingEnd2endTest : public End2endTest {
+protected:
+};
+
+TEST(End2endTest, UnaryRpc) {
   UnaryEnd2endTest test;
   test.ResetStub();
-  SendRpc(test.c_channel_, 1, false);
+  SendUnaryRpc(test.c_channel_, 3);
+  test.TearDown();
+}
+
+TEST(End2endTest, ClientStreamingRpc) {
+  ClientStreamingEnd2endTest test;
+  test.ResetStub();
+  SendClientStreamingRpc(test.c_channel_, 3);
+  test.TearDown();
+}
+
+TEST(End2endTest, ServerStreamingRpc) {
+  ServerStreamingEnd2endTest test;
+  test.ResetStub();
+  SendServerStreamingRpc(test.c_channel_, 3);
+  test.TearDown();
+}
+
+TEST(End2endTest, BidiStreamingRpc) {
+  BidiStreamingEnd2endTest test;
+  test.ResetStub();
+  SendBidiStreamingRpc(test.c_channel_, 3);
   test.TearDown();
 }
 
