@@ -53,7 +53,7 @@ struct grpc_combiner {
 
 grpc_combiner *grpc_combiner_create(grpc_workqueue *optional_workqueue) {
   grpc_combiner *lock = gpr_malloc(sizeof(*lock));
-  lock->optional_workqueue = GRPC_WORKQUEUE_REF(optional_workqueue, "combiner");
+  lock->optional_workqueue = optional_workqueue;
   gpr_atm_no_barrier_store(&lock->state, 1);
   gpr_mpscq_init(&lock->queue);
   lock->take_async_break_before_final_list = false;

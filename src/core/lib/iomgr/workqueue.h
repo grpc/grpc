@@ -50,7 +50,7 @@
 
 /* grpc_workqueue is forward declared in exec_ctx.h */
 
-//#define GRPC_WORKQUEUE_REFCOUNT_DEBUG
+#define GRPC_WORKQUEUE_REFCOUNT_DEBUG
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
 #define GRPC_WORKQUEUE_REF(p, r) \
   (grpc_workqueue_ref((p), __FILE__, __LINE__, (r)), (p))
