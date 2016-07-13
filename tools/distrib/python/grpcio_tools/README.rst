@@ -122,6 +122,7 @@ Help, I ...
     third_party/protobuf/src/google/protobuf/stubs/mathlimits.h:173:31: note: in expansion of macro 'SIGNED_INT_MAX'
     static const Type kPosMax = SIGNED_INT_MAX(Type); \\
                                ^
+
   And your toolchain is GCC (at the time of this writing, up through at least
   GCC 6.0), this is probably a bug where GCC chokes on constant expressions
   when the :code:`-fwrapv` flag is specified. You should consider setting your
