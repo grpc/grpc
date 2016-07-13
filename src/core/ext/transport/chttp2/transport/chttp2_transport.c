@@ -146,6 +146,9 @@ static void fail_pending_writes(grpc_exec_ctx *exec_ctx,
                                 grpc_chttp2_stream_global *stream_global,
                                 grpc_error *error);
 
+static void set_write_state(grpc_chttp2_transport *t,
+                            grpc_chttp2_write_state state, const char *reason);
+
 /*******************************************************************************
  * CONSTRUCTION/DESTRUCTION/REFCOUNTING
  */
@@ -236,6 +239,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   memset(t, 0, sizeof(*t));
 
   t->base.vtable = &vtable;
+  t->executor.write_state = GRPC_CHTTP2_WRITES_CORKED;
   t->ep = ep;
   /* one ref is for destroy */
   gpr_ref_init(&t->refs, 1);
@@ -403,6 +407,9 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
       }
     }
   }
+
+  set_write_state(t, GRPC_CHTTP2_WRITING_INACTIVE, "uncork");
+  grpc_chttp2_initiate_write(exec_ctx, &t->global, false, "init");
 }
 
 static void destroy_transport_locked(grpc_exec_ctx *exec_ctx, void *tp,
@@ -637,6 +644,8 @@ grpc_chttp2_stream_parsing *grpc_chttp2_parsing_accept_stream(
 
 static const char *write_state_name(grpc_chttp2_write_state state) {
   switch (state) {
+    case GRPC_CHTTP2_WRITES_CORKED:
+      return "CORKED";
     case GRPC_CHTTP2_WRITING_INACTIVE:
       return "INACTIVE";
     case GRPC_CHTTP2_WRITE_SCHEDULED:
@@ -684,6 +693,8 @@ void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
                                 bool covered_by_poller, const char *reason) {
   grpc_chttp2_transport *t = TRANSPORT_FROM_GLOBAL(transport_global);
   switch (t->executor.write_state) {
+    case GRPC_CHTTP2_WRITES_CORKED:
+      break;
     case GRPC_CHTTP2_WRITING_INACTIVE:
       set_write_state(t, GRPC_CHTTP2_WRITE_SCHEDULED, reason);
       REF_TRANSPORT(t, "writing");
@@ -789,6 +800,7 @@ static void terminate_writing_with_lock(grpc_exec_ctx *exec_ctx, void *tp,
   end_waiting_for_write(exec_ctx, t, GRPC_ERROR_REF(error));
 
   switch (t->executor.write_state) {
+    case GRPC_CHTTP2_WRITES_CORKED:
     case GRPC_CHTTP2_WRITING_INACTIVE:
     case GRPC_CHTTP2_WRITE_SCHEDULED:
       GPR_UNREACHABLE_CODE(break);

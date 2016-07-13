@@ -307,6 +307,8 @@ struct grpc_chttp2_transport_parsing {
 };
 
 typedef enum {
+  /** no writing activity allowed */
+  GRPC_CHTTP2_WRITES_CORKED,
   /** no writing activity */
   GRPC_CHTTP2_WRITING_INACTIVE,
   /** write has been requested and scheduled against the workqueue */
