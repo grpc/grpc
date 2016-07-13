@@ -31,6 +31,13 @@
  *
  */
 
+/* 
+ * This fixture creates a server full stack using chttp2 and a client
+ * full stack using Cronet. End-to-end tests are run against this fixture
+ * setting.
+ *
+ */
+
 #include "test/core/end2end/end2end_tests.h"
 
 #include <stdio.h>
@@ -83,7 +90,7 @@ static void process_auth_failure(void *state, grpc_auth_context *ctx,
   cb(user_data, NULL, 0, NULL, 0, GRPC_STATUS_UNAUTHENTICATED, NULL);
 }
 
-static void chttp2_init_client_secure_fullstack(
+static void cronet_init_client_secure_fullstack(
     grpc_end2end_test_fixture *f, grpc_channel_args *client_args,
     cronet_engine *cronetEngine) {
   fullstack_secure_fixture_data *ffd = f->fixture_data;
@@ -113,7 +120,7 @@ void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture *f) {
   gpr_free(ffd);
 }
 
-static void chttp2_init_client_simple_ssl_secure_fullstack(
+static void cronet_init_client_simple_ssl_secure_fullstack(
     grpc_end2end_test_fixture *f, grpc_channel_args *client_args) {
   grpc_arg ssl_name_override = {GRPC_ARG_STRING,
                                 GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
@@ -125,7 +132,7 @@ static void chttp2_init_client_simple_ssl_secure_fullstack(
   [Cronet start];
   cronet_engine *cronetEngine = [Cronet getGlobalEngine];
   
-  chttp2_init_client_secure_fullstack(f, new_client_args, cronetEngine);
+  cronet_init_client_secure_fullstack(f, new_client_args, cronetEngine);
   grpc_channel_args_destroy(new_client_args);
 }
 
@@ -161,7 +168,7 @@ static grpc_end2end_test_config configs[] = {
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS,
      chttp2_create_fixture_secure_fullstack,
-     chttp2_init_client_simple_ssl_secure_fullstack,
+     cronet_init_client_simple_ssl_secure_fullstack,
      chttp2_init_server_simple_ssl_secure_fullstack,
      chttp2_tear_down_secure_fullstack},
 };

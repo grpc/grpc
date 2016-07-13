@@ -52,12 +52,34 @@ Pod::Spec.new do |s|
   s.osx.deployment_target = '10.9'
   s.requires_arc = false
 
-  name = 'grpc'
+  name = 'GRPCCronet'
 
   s.module_name = name
 
-  s.header_mappings_dir = '.'
+  # When creating a dynamic framework, copy the headers under `include/grpc/` into the root of
+  # the `Headers/` directory of the framework (i.e., not under `Headers/include/grpc`).
+  s.header_mappings_dir = 'include/grpc'
 
+  # The above has an undesired effect when creating a static library: It forces users to write
+  # includes like `#include <gRPC-Cronet/grpc.h>`. `s.header_dir` adds a path prefix to that, and
+  # because Cocoapods lets omit the pod name when including headers of static libraries, the
+  # following lets users write `#include <grpc/grpc.h>`.
+  s.header_dir = 'grpc'
+
+  # To compile the library, we need the user headers search path (quoted includes) to point to the
+  # root of the repo, and the system headers search path (angled includes) to point to `include/`.
+  # Cocoapods effectively clones the repo under `<Podfile dir>/Pods/gRPC-Cronet/`, and sets a build
+  # variable called `$(PODS_ROOT)` to `<Podfile dir>/Pods/`, so we use that.
+  #
+  # Relying on the file structure under $(PODS_ROOT) isn't officially supported in Cocoapods, as it
+  # is taken as an implementation detail. We've asked for an alternative, and have been told that
+  # what we're doing should keep working: https://github.com/CocoaPods/CocoaPods/issues/4386
+  #
+  # The `src_root` value of `$(PODS_ROOT)/gRPC-Cronet` assumes Cocoapods is installing this pod from
+  # its remote repo. For local development of this library, enabled by using `:path` in the Podfile,
+  # that assumption is wrong. In such case, the following settings need to be reset with the
+  # appropriate value of `src_root`. This can be accomplished in the `pre_install` hook of the
+  # Podfile; see `src/objective-c/tests/Podfile` for an example.
   src_root = '$(PODS_ROOT)/gRPC-Cronet'
   s.pod_target_xcconfig = {
     'GRPC_SRC_ROOT' => src_root,
@@ -80,9 +102,16 @@ Pod::Spec.new do |s|
 
     ss.source_files = 'src/core/ext/transport/cronet/client/secure/cronet_channel_create.c',
                       'src/core/ext/transport/cronet/transport/cronet_transport.c',
-                      'test/core/end2end/**/*.{c,h}',
-                      'test/core/util'
+                      'test/core/end2end/cq_verifier.{c,h}',
+                      'test/core/end2end/end2end_tests.{c,h}',
+                      'test/core/end2end/tests/*.{c,h}',
+                      'test/core/end2end/data/*.{c,h}',
+                      'test/core/util/test_config.{c,h}',
+                      'test/core/util/port.h',
+                      'test/core/util/port_posix.c',
+                      'test/core/util/port_server_client.{c,h}'
 
     ss.dependency 'gRPC-Core', version
+    ss.dependency 'CronetFramework'
   end
 end
