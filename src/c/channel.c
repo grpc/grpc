@@ -36,12 +36,12 @@
 #include "init_shutdown.h"
 #include <grpc/grpc.h>
 
-grpc_channel *GRPC_channel_create(const char * const target) {
+GRPC_channel *GRPC_channel_create(const char * const target) {
   grpc_ensure_grpc_init();
   return grpc_insecure_channel_create(target, NULL, NULL);
 }
 
-void GRPC_channel_destroy(grpc_channel ** channel) {
+void GRPC_channel_destroy(GRPC_channel ** channel) {
   grpc_channel_destroy(*channel);
   *channel = NULL;
 }
