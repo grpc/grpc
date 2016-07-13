@@ -1109,8 +1109,6 @@ libs:
   build: protoc
   language: c++
   headers:
-  - src/compiler/c_generator.h
-  - src/compiler/c_generator_helpers.h
   - src/compiler/config.h
   - src/compiler/cpp_generator.h
   - src/compiler/cpp_generator_helpers.h
@@ -1127,7 +1125,6 @@ libs:
   - src/compiler/ruby_generator_map-inl.h
   - src/compiler/ruby_generator_string-inl.h
   src:
-  - src/compiler/c_generator.cc
   - src/compiler/cpp_generator.cc
   - src/compiler/csharp_generator.cc
   - src/compiler/node_generator.cc
@@ -1771,18 +1768,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: grpc_c_end2end
-  build: test
-  language: c
-  src:
-  - test/c/end2end/unary_end2end_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  - grpc++_test_util
-  - grpc++
 - name: grpc_channel_args_test
   build: test
   language: c
@@ -2731,16 +2716,19 @@ targets:
   - grpc++
   - grpc
   - gpr
-- name: grpc_c_plugin
-  build: protoc
+- name: grpc_c_end2end_test
+  build: test
   language: c++
   src:
-  - src/compiler/c_plugin.cc
+  - test/c/end2end/unary_end2end_test.cc
   deps:
-  - grpc_plugin_support
-  secure: false
-  vs_config_type: Application
-  vs_project_guid: '{06F2EB11-35DA-483D-AB0A-BC420D97B18C}'
+  - grpc_c
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: grpc_cli
   build: test
   run: false
