@@ -866,6 +866,7 @@ src/core/lib/transport/connectivity_state.h \
 src/core/lib/transport/metadata.h \
 src/core/lib/transport/metadata_batch.h \
 src/core/lib/transport/static_metadata.h \
+src/core/lib/transport/timeout_encoding.h \
 src/core/lib/transport/transport.h \
 src/core/lib/transport/transport_impl.h \
 src/core/ext/transport/chttp2/transport/bin_decoder.h \
@@ -887,7 +888,6 @@ src/core/ext/transport/chttp2/transport/incoming_metadata.h \
 src/core/ext/transport/chttp2/transport/internal.h \
 src/core/ext/transport/chttp2/transport/status_conversion.h \
 src/core/ext/transport/chttp2/transport/stream_map.h \
-src/core/ext/transport/chttp2/transport/timeout_encoding.h \
 src/core/ext/transport/chttp2/transport/varint.h \
 src/core/ext/transport/chttp2/alpn/alpn.h \
 src/core/lib/security/context/security_context.h \
@@ -1031,6 +1031,7 @@ src/core/lib/transport/connectivity_state.c \
 src/core/lib/transport/metadata.c \
 src/core/lib/transport/metadata_batch.c \
 src/core/lib/transport/static_metadata.c \
+src/core/lib/transport/timeout_encoding.c \
 src/core/lib/transport/transport.c \
 src/core/lib/transport/transport_op_string.c \
 src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c \
@@ -1053,7 +1054,6 @@ src/core/ext/transport/chttp2/transport/parsing.c \
 src/core/ext/transport/chttp2/transport/status_conversion.c \
 src/core/ext/transport/chttp2/transport/stream_lists.c \
 src/core/ext/transport/chttp2/transport/stream_map.c \
-src/core/ext/transport/chttp2/transport/timeout_encoding.c \
 src/core/ext/transport/chttp2/transport/varint.c \
 src/core/ext/transport/chttp2/transport/writing.c \
 src/core/ext/transport/chttp2/alpn/alpn.c \

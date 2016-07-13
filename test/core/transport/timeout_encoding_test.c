@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/ext/transport/chttp2/transport/timeout_encoding.h"
+#include "src/core/lib/transport/timeout_encoding.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -46,8 +46,8 @@
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
 
 static void assert_encodes_as(gpr_timespec ts, const char *s) {
-  char buffer[GRPC_CHTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE];
-  grpc_chttp2_encode_timeout(ts, buffer);
+  char buffer[GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE];
+  grpc_http2_encode_timeout(ts, buffer);
   gpr_log(GPR_INFO, "check '%s' == '%s'", buffer, s);
   GPR_ASSERT(0 == strcmp(buffer, s));
 }
@@ -88,7 +88,7 @@ void test_encoding(void) {
 static void assert_decodes_as(const char *buffer, gpr_timespec expected) {
   gpr_timespec got;
   gpr_log(GPR_INFO, "check decoding '%s'", buffer);
-  GPR_ASSERT(1 == grpc_chttp2_decode_timeout(buffer, &got));
+  GPR_ASSERT(1 == grpc_http2_decode_timeout(buffer, &got));
   GPR_ASSERT(0 == gpr_time_cmp(got, expected));
 }
 
@@ -137,15 +137,15 @@ void test_decoding(void) {
 void test_decoding_fails(void) {
   gpr_timespec x;
   LOG_TEST("test_decoding_fails");
-  GPR_ASSERT(0 == grpc_chttp2_decode_timeout("", &x));
-  GPR_ASSERT(0 == grpc_chttp2_decode_timeout(" ", &x));
-  GPR_ASSERT(0 == grpc_chttp2_decode_timeout("x", &x));
-  GPR_ASSERT(0 == grpc_chttp2_decode_timeout("1", &x));
-  GPR_ASSERT(0 == grpc_chttp2_decode_timeout("1x", &x));
-  GPR_ASSERT(0 == grpc_chttp2_decode_timeout("1ux", &x));
-  GPR_ASSERT(0 == grpc_chttp2_decode_timeout("!", &x));
-  GPR_ASSERT(0 == grpc_chttp2_decode_timeout("n1", &x));
-  GPR_ASSERT(0 == grpc_chttp2_decode_timeout("-1u", &x));
+  GPR_ASSERT(0 == grpc_http2_decode_timeout("", &x));
+  GPR_ASSERT(0 == grpc_http2_decode_timeout(" ", &x));
+  GPR_ASSERT(0 == grpc_http2_decode_timeout("x", &x));
+  GPR_ASSERT(0 == grpc_http2_decode_timeout("1", &x));
+  GPR_ASSERT(0 == grpc_http2_decode_timeout("1x", &x));
+  GPR_ASSERT(0 == grpc_http2_decode_timeout("1ux", &x));
+  GPR_ASSERT(0 == grpc_http2_decode_timeout("!", &x));
+  GPR_ASSERT(0 == grpc_http2_decode_timeout("n1", &x));
+  GPR_ASSERT(0 == grpc_http2_decode_timeout("-1u", &x));
 }
 
 int main(int argc, char **argv) {
