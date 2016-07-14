@@ -321,6 +321,24 @@ void PrintSourceClientMethod(Printer *printer,
   (*vars)["Method"] = method->name();
   (*vars)["Request"] = method->input_type_name();
   (*vars)["Response"] = method->output_type_name();
+
+  if (method->NoStreaming()) {
+    (*vars)["MethodEnum"] = "NORMAL_RPC";
+  } else if (method->ClientOnlyStreaming()) {
+    (*vars)["MethodEnum"] = "CLIENT_STREAMING";
+  } else if (method->ServerOnlyStreaming()) {
+    (*vars)["MethodEnum"] = "SERVER_STREAMING";
+  } else if (method->BidiStreaming()) {
+    (*vars)["MethodEnum"] = "BIDI_STREAMING";
+  }
+
+  printer->Print(*vars, R"(
+GRPC_method GRPC_method_$CPrefix$$Service$_$Method$ = {
+  $MethodEnum$,
+  "/$Package$$Service$/$Method$"
+};
+)");
+
   if (method->NoStreaming()) {
     // Unary
     printer->Print(
@@ -499,7 +517,8 @@ grpc::string GetSourceIncludes(File *file,
       "grpc_c/codegen/client_context_priv.h",
       // Relying on Nanopb for Protobuf serialization for now
       "pb_encode.h",
-      "pb_decode.h"
+      "pb_decode.h",
+      "grpc_c/pb_compat.h"
     };
     std::vector<grpc::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params);
@@ -566,6 +585,7 @@ grpc::string GetHeaderIncludes(File *file,
 
     static const char *headers_strs[] = {
       "grpc_c/status_code.h",
+      "grpc_c/status.h",
       "grpc_c/grpc_c.h",
       "grpc_c/client_context.h"
     };
@@ -591,6 +611,26 @@ grpc::string GetSourceServices(File *file,
     }
     // TODO(yifeit): hook this up to C prefix
     vars["CPrefix"] = grpc_cpp_generator::DotsToUnderscores(file->package()) + "_";
+
+    for (auto& msg : dynamic_cast<CFile*>(file)->messages()) {
+      std::map<grpc::string, grpc::string> vars_msg(vars);
+      vars_msg["msgType"] = msg->name();
+      printer->Print(vars_msg, R"(
+GRPC_message $CPrefix$$msgType$_serializer(const GRPC_message input) {
+  pb_ostream_t ostream;
+  ostream.callback = GRPC_pb_compat_dynamic_array_callback;
+  ostream.state = GRPC_pb_compat_dynamic_array_alloc();
+  pb_encode(&ostream, $CPrefix$$msgType$_fields, input.data);
+  return (GRPC_message) { ostream.state, ostream.bytes_written };
+}
+)");
+      printer->Print(vars_msg, R"(
+void $CPrefix$$msgType$_deserializer(const GRPC_message input, void *output) {
+  pb_istream_t istream = pb_istream_from_buffer((void *) input.data, input.length);
+  pb_decode(&istream, $CPrefix$$msgType$_fields, output);
+}
+)");
+    }
 
     for (int i = 0; i < file->service_count(); ++i) {
       PrintSourceService(printer.get(), file->service(i).get(), &vars);

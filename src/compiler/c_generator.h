@@ -44,6 +44,11 @@ using ::grpc_cpp_generator::Parameters;
 using ::grpc_cpp_generator::File;
 using ::grpc::string;
 
+class CFile : public grpc_cpp_generator::File {
+public:
+  virtual std::vector<const google::protobuf::Descriptor *> messages() const = 0;
+};
+
 // Return the prologue of the generated header file.
 grpc::string GetHeaderPrologue(File *file, const Parameters &params);
 
