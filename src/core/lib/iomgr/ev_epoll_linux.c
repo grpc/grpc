@@ -517,7 +517,7 @@ static polling_island *polling_island_create(grpc_exec_ctx *exec_ctx,
 
 done:
   if (*error != GRPC_ERROR_NONE) {
-    if (pi->epoll_fd < 0) {
+    if (pi->epoll_fd >= 0) {
       close(pi->epoll_fd);
     }
     if (pi->workqueue != NULL) {
