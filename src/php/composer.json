@@ -5,6 +5,7 @@
   "keywords": ["rpc"],
   "homepage": "http://grpc.io",
   "license": "BSD-3-Clause",
+  "version": "1.0.0",
   "repositories": [
     {
       "type": "vcs",
