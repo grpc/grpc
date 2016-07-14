@@ -134,7 +134,8 @@ private:
   grpc::protobuf::io::Printer printer_;
 };
 
-class ProtoBufCFile : public grpc_cpp_generator::File {
+
+class ProtoBufCFile : public CFile {
 public:
   ProtoBufCFile(const grpc::protobuf::FileDescriptor *file) : file_(file) { }
 
@@ -174,6 +175,14 @@ public:
 
   grpc::string GetTrailingComments() const {
     return GetCComments(file_, false);
+  }
+
+  virtual std::vector<const google::protobuf::Descriptor *> messages() const {
+    std::vector<const google::protobuf::Descriptor *> msgs;
+    for (int i = 0; i < file_->message_type_count(); i++) {
+      msgs.push_back(file_->message_type(i));
+    }
+    return msgs;
   }
 
 private:
