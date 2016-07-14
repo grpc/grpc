@@ -11,7 +11,7 @@ INSTALL
  - Install the gRPC PHP extension
 
    ```sh
-   $ [sudo] pecl install grpc-beta
+   $ [sudo] pecl install grpc
    ```
 
  - Clone this repository

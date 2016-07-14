@@ -37,7 +37,6 @@ import threading  # pylint: disable=unused-import
 # cardinality and face are referenced from specification in this module.
 import grpc
 from grpc import _auth
-from grpc._adapter import _types
 from grpc.beta import _client_adaptations
 from grpc.beta import _server_adaptations
 from grpc.beta import interfaces

@@ -58,8 +58,29 @@ CONF_PY_ADDENDUM = """
 extensions.append('sphinx.ext.napoleon')
 napoleon_google_docstring = True
 napoleon_numpy_docstring = True
+napoleon_include_special_with_doc = True
 
 html_theme = 'sphinx_rtd_theme'
+"""
+
+API_GLOSSARY = """
+
+Glossary
+================
+
+.. glossary::
+
+  metadatum
+    A key-value pair included in the HTTP header.  It is a 
+    2-tuple where the first entry is the key and the
+    second is the value, i.e. (key, value).  The metadata key is an ASCII str,
+    and must be a valid HTTP header name.  The metadata value can be
+    either a valid HTTP ASCII str, or bytes.  If bytes are provided,
+    the key must end with '-bin', i.e.
+    ``('binary-metadata-bin', b'\\x00\\xFF')``
+
+  metadata
+    A sequence of metadatum.
 """
 
 
@@ -131,6 +152,9 @@ class SphinxDocumentation(setuptools.Command):
     conf_filepath = os.path.join('doc', 'src', 'conf.py')
     with open(conf_filepath, 'a') as conf_file:
       conf_file.write(CONF_PY_ADDENDUM)
+    glossary_filepath = os.path.join('doc', 'src', 'grpc.rst')
+    with open(glossary_filepath, 'a') as glossary_filepath:
+      glossary_filepath.write(API_GLOSSARY)
     sphinx.main(['', os.path.join('doc', 'src'), os.path.join('doc', 'build')])
 
 
