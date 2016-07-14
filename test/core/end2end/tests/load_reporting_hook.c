@@ -44,6 +44,7 @@
 #include "test/core/end2end/cq_verifier.h"
 
 #include "src/core/ext/load_reporting/load_reporting.h"
+#include "src/core/ext/load_reporting/load_reporting_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/transport/static_metadata.h"
 
@@ -56,64 +57,54 @@ typedef struct {
   intptr_t channel_id;
   intptr_t call_id;
 
-  uint32_t call_creation_token;       /* expected 0xCAFED00D */
-  uint32_t call_destruction_token;    /* expected 0xDEADD00D */
-  uint32_t channel_creation_token;    /* expected 0xCAFEFACE */
-  uint32_t channel_destruction_token; /* expected 0xDEADFACE */
-
   char *initial_md_str;
   char *trailing_md_str;
   char *method_name;
 
   uint64_t incoming_bytes;
   uint64_t outgoing_bytes;
+
+  grpc_status_code call_final_status;
+
   bool fully_processed;
-} aggregated_bw_stats;
+} load_reporting_data;
 
-static void sample_fn(const grpc_load_reporting_call_data *call_data,
-                      void *user_data) {
-  GPR_ASSERT(user_data != NULL);
+static load_reporting_data lr_data;
 
-  aggregated_bw_stats *custom_stats = (aggregated_bw_stats *)user_data;
-  gpr_mu_lock(&custom_stats->mu);
-
+static void load_reporting_test_fn(
+    const grpc_load_reporting_call_data *call_data) {
+  gpr_mu_lock(&lr_data.mu);
   switch (call_data->source) {
     case GRPC_LR_POINT_CHANNEL_CREATION:
-      custom_stats->channel_creation_token = 0xCAFEFACE;
-      custom_stats->channel_id = call_data->channel_id;
+      lr_data.channel_id = call_data->channel_id;
       break;
     case GRPC_LR_POINT_CHANNEL_DESTRUCTION:
-      custom_stats->channel_destruction_token = 0xDEADFACE;
       break;
     case GRPC_LR_POINT_CALL_CREATION:
-      custom_stats->call_creation_token = 0xCAFED00D;
-      custom_stats->call_id = call_data->call_id;
+      lr_data.call_id = call_data->call_id;
       break;
     case GRPC_LR_POINT_CALL_DESTRUCTION:
-      if (custom_stats->initial_md_str == NULL) {
-        custom_stats->initial_md_str = gpr_strdup(call_data->initial_md_string);
+      if (lr_data.initial_md_str == NULL) {
+        lr_data.initial_md_str = gpr_strdup(call_data->initial_md_string);
       }
-      if (custom_stats->trailing_md_str == NULL) {
-        custom_stats->trailing_md_str =
-            gpr_strdup(call_data->trailing_md_string);
+      if (lr_data.trailing_md_str == NULL) {
+        lr_data.trailing_md_str = gpr_strdup(call_data->trailing_md_string);
       }
-      if (custom_stats->method_name == NULL) {
-        custom_stats->method_name = gpr_strdup(call_data->method_name);
+      if (lr_data.method_name == NULL) {
+        lr_data.method_name = gpr_strdup(call_data->method_name);
       }
 
-      custom_stats->call_destruction_token = 0xDEADD00D;
-      custom_stats->incoming_bytes =
-          call_data->final_info->stats.transport_stream_stats.incoming
-              .data_bytes;
-      custom_stats->outgoing_bytes =
-          call_data->final_info->stats.transport_stream_stats.outgoing
-              .data_bytes;
-      custom_stats->fully_processed = true;
+      lr_data.incoming_bytes = call_data->final_info->stats
+                                   .transport_stream_stats.incoming.data_bytes;
+      lr_data.outgoing_bytes = call_data->final_info->stats
+                                   .transport_stream_stats.outgoing.data_bytes;
+      lr_data.call_final_status = call_data->final_info->final_status;
+      lr_data.fully_processed = true;
       break;
     default:
       abort();
   }
-  gpr_mu_unlock(&custom_stats->mu);
+  gpr_mu_unlock(&lr_data.mu);
 }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
@@ -319,17 +310,16 @@ static void request_response_with_payload(grpc_end2end_test_fixture f,
   grpc_byte_buffer_destroy(response_payload_recv);
 }
 
-static void test_load_reporting_hook(grpc_end2end_test_config config) {
-  aggregated_bw_stats *aggr_stats_server =
-      gpr_malloc(sizeof(aggregated_bw_stats));
-  memset(aggr_stats_server, 0, sizeof(aggregated_bw_stats));
-  gpr_mu_init(&aggr_stats_server->mu);
+/* override the default for testing purposes */
+extern void (*g_load_reporting_fn)(
+    const grpc_load_reporting_call_data *call_data);
 
-  grpc_load_reporting_config *server_lrc =
-      grpc_load_reporting_config_create(sample_fn, aggr_stats_server);
+static void test_load_reporting_hook(grpc_end2end_test_config config) {
+  gpr_mu_init(&lr_data.mu);
+  g_load_reporting_fn = load_reporting_test_fn;
 
   /* Introduce load reporting for the server through its arguments */
-  grpc_arg arg = grpc_load_reporting_config_create_arg(server_lrc);
+  grpc_arg arg = grpc_load_reporting_enable_arg();
   grpc_channel_args *lr_server_args =
       grpc_channel_args_copy_and_add(NULL, &arg, 1);
 
@@ -361,32 +351,25 @@ static void test_load_reporting_hook(grpc_end2end_test_config config) {
   grpc_channel_args_destroy(lr_server_args);
   config.tear_down_data(&f);
 
-  GPR_ASSERT(aggr_stats_server->fully_processed);
-  GPR_ASSERT(aggr_stats_server->incoming_bytes == strlen(request_msg));
-  GPR_ASSERT(aggr_stats_server->outgoing_bytes == strlen(response_msg));
+  GPR_ASSERT(lr_data.fully_processed);
+  GPR_ASSERT(lr_data.incoming_bytes == strlen(request_msg));
+  GPR_ASSERT(lr_data.outgoing_bytes == strlen(response_msg));
 
-  GPR_ASSERT(aggr_stats_server->call_id > 0);
-  GPR_ASSERT(aggr_stats_server->channel_id > 0);
+  GPR_ASSERT(lr_data.call_id > 0);
+  GPR_ASSERT(lr_data.channel_id > 0);
 
-  GPR_ASSERT(aggr_stats_server->channel_creation_token == 0xCAFEFACE);
-  GPR_ASSERT(aggr_stats_server->channel_destruction_token == 0xDEADFACE);
+  GPR_ASSERT(strcmp(lr_data.method_name, "/gRPCFTW") == 0);
 
-  GPR_ASSERT(aggr_stats_server->call_creation_token == 0xCAFED00D);
-  GPR_ASSERT(aggr_stats_server->call_destruction_token == 0xDEADD00D);
+  GPR_ASSERT(lr_data.initial_md_str != NULL);
+  GPR_ASSERT(lr_data.trailing_md_str != NULL);
+  GPR_ASSERT(strcmp(lr_data.initial_md_str, "client-token") == 0);
+  GPR_ASSERT(strcmp(lr_data.trailing_md_str, "server-token") == 0);
 
-  GPR_ASSERT(strcmp(aggr_stats_server->method_name, "/gRPCFTW") == 0);
+  GPR_ASSERT(lr_data.call_final_status == GRPC_STATUS_OK);
 
-  GPR_ASSERT(aggr_stats_server->initial_md_str != NULL);
-  GPR_ASSERT(aggr_stats_server->trailing_md_str != NULL);
-  GPR_ASSERT(strcmp(aggr_stats_server->initial_md_str, "client-token") == 0);
-  GPR_ASSERT(strcmp(aggr_stats_server->trailing_md_str, "server-token") == 0);
-
-  gpr_free(aggr_stats_server->initial_md_str);
-  gpr_free(aggr_stats_server->trailing_md_str);
-  gpr_free(aggr_stats_server->method_name);
-  gpr_mu_destroy(&aggr_stats_server->mu);
-  gpr_free(aggr_stats_server);
-  grpc_load_reporting_config_destroy(server_lrc);
+  gpr_free(lr_data.initial_md_str);
+  gpr_free(lr_data.trailing_md_str);
+  gpr_free(lr_data.method_name);
 }
 
 void load_reporting_hook(grpc_end2end_test_config config) {

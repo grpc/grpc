@@ -1101,6 +1101,7 @@ h2_fd_test: $(BINDIR)/$(CONFIG)/h2_fd_test
 h2_full_test: $(BINDIR)/$(CONFIG)/h2_full_test
 h2_full+pipe_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_test
 h2_full+trace_test: $(BINDIR)/$(CONFIG)/h2_full+trace_test
+h2_load_reporting_test: $(BINDIR)/$(CONFIG)/h2_load_reporting_test
 h2_oauth2_test: $(BINDIR)/$(CONFIG)/h2_oauth2_test
 h2_proxy_test: $(BINDIR)/$(CONFIG)/h2_proxy_test
 h2_sockpair_test: $(BINDIR)/$(CONFIG)/h2_sockpair_test
@@ -1116,6 +1117,7 @@ h2_fd_nosec_test: $(BINDIR)/$(CONFIG)/h2_fd_nosec_test
 h2_full_nosec_test: $(BINDIR)/$(CONFIG)/h2_full_nosec_test
 h2_full+pipe_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+pipe_nosec_test
 h2_full+trace_nosec_test: $(BINDIR)/$(CONFIG)/h2_full+trace_nosec_test
+h2_load_reporting_nosec_test: $(BINDIR)/$(CONFIG)/h2_load_reporting_nosec_test
 h2_proxy_nosec_test: $(BINDIR)/$(CONFIG)/h2_proxy_nosec_test
 h2_sockpair_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair_nosec_test
 h2_sockpair+trace_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair+trace_nosec_test
@@ -1316,6 +1318,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/h2_full_test \
   $(BINDIR)/$(CONFIG)/h2_full+pipe_test \
   $(BINDIR)/$(CONFIG)/h2_full+trace_test \
+  $(BINDIR)/$(CONFIG)/h2_load_reporting_test \
   $(BINDIR)/$(CONFIG)/h2_oauth2_test \
   $(BINDIR)/$(CONFIG)/h2_proxy_test \
   $(BINDIR)/$(CONFIG)/h2_sockpair_test \
@@ -1331,6 +1334,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/h2_full_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_full+pipe_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_full+trace_nosec_test \
+  $(BINDIR)/$(CONFIG)/h2_load_reporting_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_proxy_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_sockpair_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_sockpair+trace_nosec_test \
@@ -13926,6 +13930,38 @@ endif
 endif
 
 
+H2_LOAD_REPORTING_TEST_SRC = \
+    test/core/end2end/fixtures/h2_load_reporting.c \
+
+H2_LOAD_REPORTING_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_LOAD_REPORTING_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_load_reporting_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/h2_load_reporting_test: $(H2_LOAD_REPORTING_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_LOAD_REPORTING_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_load_reporting_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_load_reporting.o:  $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_load_reporting_test: $(H2_LOAD_REPORTING_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(H2_LOAD_REPORTING_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 H2_OAUTH2_TEST_SRC = \
     test/core/end2end/fixtures/h2_oauth2.c \
 
@@ -14331,6 +14367,26 @@ deps_h2_full+trace_nosec_test: $(H2_FULL+TRACE_NOSEC_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_DEPS),true)
 -include $(H2_FULL+TRACE_NOSEC_TEST_OBJS:.o=.dep)
+endif
+
+
+H2_LOAD_REPORTING_NOSEC_TEST_SRC = \
+    test/core/end2end/fixtures/h2_load_reporting.c \
+
+H2_LOAD_REPORTING_NOSEC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_LOAD_REPORTING_NOSEC_TEST_SRC))))
+
+
+$(BINDIR)/$(CONFIG)/h2_load_reporting_nosec_test: $(H2_LOAD_REPORTING_NOSEC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_LOAD_REPORTING_NOSEC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_load_reporting_nosec_test
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_load_reporting.o:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_load_reporting_nosec_test: $(H2_LOAD_REPORTING_NOSEC_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(H2_LOAD_REPORTING_NOSEC_TEST_OBJS:.o=.dep)
 endif
 
 

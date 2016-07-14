@@ -53,6 +53,7 @@ fd_unsecure_fixture_options = default_unsecure_fixture_options._replace(
 END2END_FIXTURES = {
     'h2_compress': default_unsecure_fixture_options,
     'h2_census': default_unsecure_fixture_options,
+    'h2_load_reporting': default_unsecure_fixture_options,
     'h2_fakesec': default_secure_fixture_options._replace(ci_mac=False),
     'h2_fd': fd_unsecure_fixture_options,
     'h2_full': default_unsecure_fixture_options,

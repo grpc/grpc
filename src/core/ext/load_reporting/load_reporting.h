@@ -43,8 +43,6 @@
 /** Metadata key for trailing metadata from servers */
 #define GRPC_LOAD_REPORTING_TRAILING_MD_KEY "load-reporting-trailing"
 
-typedef struct grpc_load_reporting_config grpc_load_reporting_config;
-
 /** Identifiers for the invocation point of the users LR callback */
 typedef enum grpc_load_reporting_source {
   GRPC_LR_POINT_UNKNOWN = 0,
@@ -75,33 +73,6 @@ typedef struct grpc_load_reporting_call_data {
 } grpc_load_reporting_call_data;
 
 /** Return a \a grpc_arg enabling load reporting */
-grpc_arg grpc_load_reporting_config_create_arg(
-    grpc_load_reporting_config *lr_config);
-
-/** Custom function to be called by the load reporting filter.
- *
- * \a call_data is provided by the runtime. \a user_data is given by the user
- * as part of \a grpc_load_reporting_config_create */
-typedef void (*grpc_load_reporting_fn)(
-    const grpc_load_reporting_call_data *call_data, void *user_data);
-
-/** Register \a fn as the function to be invoked by the load reporting filter.
- * \a fn will be invoked at the beginning and at the end of the call.
- *
- * For the first invocation, \a fn's first argument
- * (grpc_load_reporting_call_data*) will be NULL. \a user_data is always passed
- * as-is. */
-grpc_load_reporting_config *grpc_load_reporting_config_create(
-    grpc_load_reporting_fn fn, void *user_data);
-
-grpc_load_reporting_config *grpc_load_reporting_config_copy(
-    grpc_load_reporting_config *src);
-
-void grpc_load_reporting_config_destroy(grpc_load_reporting_config *lr_config);
-
-/** Invoke the LR callback from \a lr_config with \a call_data */
-void grpc_load_reporting_config_call(
-    grpc_load_reporting_config *lr_config,
-    const grpc_load_reporting_call_data *call_data);
+grpc_arg grpc_load_reporting_enable_arg();
 
 #endif /* GRPC_CORE_EXT_LOAD_REPORTING_LOAD_REPORTING_H */
