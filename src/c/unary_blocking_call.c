@@ -40,7 +40,7 @@
 #include <stdio.h>
 #include <grpc/support/log.h>
 
-GRPC_status GRPC_unary_blocking_call(const GRPC_method *const rpc_method,
+GRPC_status GRPC_unary_blocking_call(const GRPC_method rpc_method,
                                      GRPC_client_context *const context,
                                      const GRPC_message message,
                                      void *response) {
@@ -49,7 +49,7 @@ GRPC_status GRPC_unary_blocking_call(const GRPC_method *const rpc_method,
                                              NULL,
                                              GRPC_PROPAGATE_DEFAULTS,
                                              cq,
-                                             rpc_method->name,
+                                             rpc_method.name,
                                              "",
                                              context->deadline,
                                              NULL);
