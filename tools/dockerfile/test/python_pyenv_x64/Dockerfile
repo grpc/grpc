@@ -76,23 +76,26 @@ RUN apt-get update && apt-get install -y \
 # Install Python packages from PyPI
 RUN pip install pip --upgrade
 RUN pip install virtualenv
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.0.0a2 six==1.10.0
+RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.0.0a2
 
-#==================
-# Node dependencies
+# Install dependencies for pyenv
+RUN apt-get update && apt-get install -y \
+  libbz2-dev \
+  libncurses5-dev \
+  libncursesw5-dev \
+  libreadline-dev \
+  libsqlite3-dev \
+  libssl-dev \
+  llvm \
+  mercurial \
+  zlib1g-dev && apt-get clean
 
-# Install nvm
-RUN touch .profile
-RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.25.4/install.sh | bash
-# Install all versions of node that we want to test
-RUN /bin/bash -l -c "nvm install 0.12 && npm config set cache /tmp/npm-cache"
-RUN /bin/bash -l -c "nvm install 4 && npm config set cache /tmp/npm-cache"
-RUN /bin/bash -l -c "nvm install 5 && npm config set cache /tmp/npm-cache"
-RUN /bin/bash -l -c "nvm alias default 4"
-# Google Cloud platform API libraries
-RUN apt-get update && apt-get install -y python-pip && apt-get clean
-RUN pip install --upgrade google-api-python-client
-
+# Install Pyenv and dev Python versions 3.5 and 3.6
+RUN curl -L https://raw.githubusercontent.com/yyuu/pyenv-installer/master/bin/pyenv-installer | bash
+RUN pyenv update
+RUN pyenv install 3.5-dev
+RUN pyenv install 3.6-dev
+RUN pyenv local 3.5-dev 3.6-dev
 
 # Prepare ccache
 RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
