@@ -79,7 +79,9 @@ GRPC_status GRPC_unary_blocking_call(GRPC_channel *channel, const GRPC_method *c
 
   context->status.ok &= (context->status.code == GRPC_STATUS_OK);
 
-  GRPC_completion_queue_shutdown_and_destroy(cq);
+  GRPC_completion_queue_shutdown(cq);
+  GRPC_completion_queue_shutdown_wait(cq);
+  GRPC_completion_queue_destroy(cq);
   grpc_call_destroy(call);
   context->call = NULL;
 
