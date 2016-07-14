@@ -52,8 +52,8 @@ void GRPC_completion_queue_destroy(GRPC_completion_queue *cq);
 /* Swallows events and blocks until it sees the shutdown event */
 void GRPC_completion_queue_shutdown_wait(GRPC_completion_queue *cq);
 
-GRPC_completion_queue_operation_status GRPC_commit_ops_and_wait(GRPC_completion_queue *cq, void **tag, bool *ok);
-GRPC_completion_queue_operation_status GRPC_commit_ops_and_wait_deadline(GRPC_completion_queue *cq,
+GRPC_completion_queue_operation_status GRPC_completion_queue_next(GRPC_completion_queue *cq, void **tag, bool *ok);
+GRPC_completion_queue_operation_status GRPC_completion_queue_next_deadline(GRPC_completion_queue *cq,
                                                                          gpr_timespec deadline,
                                                                          void **tag, bool *ok);
 
