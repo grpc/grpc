@@ -1094,6 +1094,8 @@ libs:
   language: c++
   headers:
   - src/compiler/config.h
+  - src/compiler/c_generator.h
+  - src/compiler/c_generator_helpers.h
   - src/compiler/cpp_generator.h
   - src/compiler/cpp_generator_helpers.h
   - src/compiler/csharp_generator.h
@@ -1109,6 +1111,7 @@ libs:
   - src/compiler/ruby_generator_map-inl.h
   - src/compiler/ruby_generator_string-inl.h
   src:
+  - src/compiler/c_generator.cc
   - src/compiler/cpp_generator.cc
   - src/compiler/csharp_generator.cc
   - src/compiler/node_generator.cc
@@ -2742,6 +2745,16 @@ targets:
   - gpr_test_util
   - gpr
   - grpc++_test_config
+- name: grpc_c_plugin
+  build: protoc
+  language: c++
+  src:
+  - src/compiler/c_plugin.cc
+  deps:
+  - grpc_plugin_support
+  secure: false
+  vs_config_type: Application
+  vs_project_guid: '{06F2EB11-35DA-483D-AB0A-BC420D97B18C}'
 - name: grpc_cpp_plugin
   build: protoc
   language: c++
