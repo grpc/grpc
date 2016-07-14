@@ -39,6 +39,7 @@ import time
 
 from oauth2client import client as oauth2client_client
 
+import grpc
 from grpc.beta import implementations
 from grpc.beta import interfaces
 from grpc.framework.common import cardinality
@@ -57,12 +58,18 @@ class TestService(test_pb2.BetaTestServiceServicer):
     return empty_pb2.Empty()
 
   def UnaryCall(self, request, context):
+    if request.HasField('response_status'):
+      context.code(request.response_status.code)
+      context.details(request.response_status.message)
     return messages_pb2.SimpleResponse(
         payload=messages_pb2.Payload(
             type=messages_pb2.COMPRESSABLE,
             body=b'\x00' * request.response_size))
 
   def StreamingOutputCall(self, request, context):
+    if request.HasField('response_status'):
+      context.code(request.response_status.code)
+      context.details(request.response_status.message)
     for response_parameters in request.response_parameters:
       yield messages_pb2.StreamingOutputCallResponse(
           payload=messages_pb2.Payload(
@@ -79,6 +86,9 @@ class TestService(test_pb2.BetaTestServiceServicer):
 
   def FullDuplexCall(self, request_iterator, context):
     for request in request_iterator:
+      if request.HasField('response_status'):
+        context.code(request.response_status.code)
+        context.details(request.response_status.message)
       for response_parameters in request.response_parameters:
         yield messages_pb2.StreamingOutputCallResponse(
             payload=messages_pb2.Payload(
@@ -289,6 +299,39 @@ def _empty_stream(stub):
       pass
 
 
+def _status_code_and_message(stub):
+  with stub:
+    message = 'test status message'
+    code = 2
+    status = grpc.StatusCode.UNKNOWN # code = 2
+    request = messages_pb2.SimpleRequest(
+        response_type=messages_pb2.COMPRESSABLE,
+        response_size=1,
+        payload=messages_pb2.Payload(body=b'\x00'),
+        response_status=messages_pb2.EchoStatus(code=code, message=message)
+        )
+    response_future = stub.UnaryCall.future(request, _TIMEOUT)
+    if response_future.code() != status:
+      raise ValueError(
+        'expected code %s, got %s' % (status, response_future.code()))
+    if response_future.details() != message:
+      raise ValueError(
+        'expected message %s, got %s' % (message, response_future.details()))
+
+    request = messages_pb2.StreamingOutputCallRequest(
+        response_type=messages_pb2.COMPRESSABLE,
+        response_parameters=(
+            messages_pb2.ResponseParameters(size=1),),
+        response_status=messages_pb2.EchoStatus(code=code, message=message))
+    response_iterator = stub.StreamingOutputCall(request, _TIMEOUT)
+    if response_future.code() != status:
+      raise ValueError(
+        'expected code %s, got %s' % (status, response_iterator.code()))
+    if response_future.details() != message:
+      raise ValueError(
+        'expected message %s, got %s' % (message, response_iterator.details()))
+
+
 def _compute_engine_creds(stub, args):
   response = _large_unary_common_behavior(stub, True, True)
   if args.default_service_account != response.username:
@@ -347,6 +390,7 @@ class TestCase(enum.Enum):
   CANCEL_AFTER_BEGIN = 'cancel_after_begin'
   CANCEL_AFTER_FIRST_RESPONSE = 'cancel_after_first_response'
   EMPTY_STREAM = 'empty_stream'
+  STATUS_CODE_AND_MESSAGE = 'status_code_and_message'
   COMPUTE_ENGINE_CREDS = 'compute_engine_creds'
   OAUTH2_AUTH_TOKEN = 'oauth2_auth_token'
   JWT_TOKEN_CREDS = 'jwt_token_creds'
@@ -372,6 +416,8 @@ class TestCase(enum.Enum):
       _timeout_on_sleeping_server(stub)
     elif self is TestCase.EMPTY_STREAM:
       _empty_stream(stub)
+    elif self is TestCase.STATUS_CODE_AND_MESSAGE:
+      _status_code_and_message(stub)
     elif self is TestCase.COMPUTE_ENGINE_CREDS:
       _compute_engine_creds(stub, args)
     elif self is TestCase.OAUTH2_AUTH_TOKEN:

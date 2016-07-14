@@ -1,3 +1,5 @@
+git:
+  depth: 1
 language: objective-c
 osx_image: xcode7.3
 env:
@@ -14,7 +16,7 @@ env:
     - SCHEME="InteropTestsLocalCleartext" WORKSPACE="Tests.xcworkspace"
       TEST_PATH="src/objective-c/tests"  BUILD_ONLY="false"
       INTEROP_SERVER="true"
-    # TODO(jcanizales): Investigate why they time out:
+    # TODO(jcanizales): Make tests an app project (instead of library), so the following will work.
     # - SCHEME="InteropTestsRemote" WORKSPACE="Tests.xcworkspace"
     #   TEST_PATH="src/objective-c/tests" BUILD_ONLY="false"
     #   INTEROP_SERVER="true"
@@ -34,15 +36,15 @@ env:
       TEST_PATH="src/objective-c/examples/SwiftSample" BUILD_ONLY="true"
       INTEROP_SERVER="false"
 before_install:
+  # Until Travis upgrades from Cocoapods 0.39, we need to do it here.
   - pod --version
   - gem uninstall cocoapods -a
-  - gem install cocoapods -v '1.0.0'
+  - gem install cocoapods -v '1.0.1'
   - pod --version
+  # Recent pods aren't found if we don't explicitly update Cocoapods' repo.
+  - pod repo update
   - brew install gflags
 install:
-  - make grpc_objective_c_plugin
-  - install bins/opt/grpc_objective_c_plugin /usr/local/bin/protoc-gen-objcgrpc
-  - install bins/opt/protobuf/protoc /usr/local/bin/protoc
   - pushd $TEST_PATH
   - pod install
   - popd

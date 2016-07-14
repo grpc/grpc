@@ -12,18 +12,19 @@
     <email>grpc-packages@google.com</email>
     <active>yes</active>
    </lead>
-   <date>2016-06-30</date>
+   <date>2016-07-13</date>
    <time>16:06:07</time>
    <version>
     <release>${settings.php_version.php()}</release>
     <api>${settings.php_version.php()}</api>
    </version>
    <stability>
-    <release>beta</release>
-    <api>beta</api>
+    <release>stable</release>
+    <api>stable</api>
    </stability>
    <license>BSD</license>
    <notes>
+  - GA release
   - Fix shutdown hang problem #4017
    </notes>
    <contents>
@@ -205,16 +206,17 @@
     </release>
     <release>
      <version>
-      <release>0.15.1</release>
-      <api>0.15.1</api>
+      <release>1.0.0</release>
+      <api>1.0.0</api>
      </version>
      <stability>
-      <release>beta</release>
-      <api>beta</api>
+      <release>stable</release>
+      <api>stable</api>
      </stability>
-     <date>2016-06-30</date>
+     <date>2016-07-13</date>
      <license>BSD</license>
      <notes>
+  - GA release
   - Fix shutdown hang problem #4017
      </notes>
     </release>
