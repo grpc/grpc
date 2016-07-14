@@ -41,8 +41,6 @@ void GRPC_id_serialize(const grpc_message input, grpc_message *output) {
   output->length = input.length;
 }
 
-void GRPC_id_deserialize(const grpc_message input, grpc_message *output) {
-  output->data = malloc(input.length);
-  memcpy(output->data, input.data, input.length);
-  output->length = input.length;
+void GRPC_id_deserialize(const grpc_message input, void *output) {
+  memcpy(output, input.data, input.length);
 }

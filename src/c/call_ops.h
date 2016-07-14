@@ -45,7 +45,7 @@ typedef GRPC_method grpc_method;
 typedef struct grpc_client_context grpc_client_context;
 typedef struct grpc_call_op_set grpc_call_op_set;
 
-typedef bool (*grpc_op_filler)(grpc_op *op, const grpc_method *, grpc_client_context *, grpc_call_op_set *, const grpc_message message, grpc_message *response);
+typedef bool (*grpc_op_filler)(grpc_op *op, const grpc_method *, grpc_client_context *, grpc_call_op_set *, const grpc_message message, void *response);
 typedef void (*grpc_op_finisher)(grpc_client_context *, grpc_call_op_set *, bool *status, int max_message_size);
 
 typedef struct grpc_op_manager {
@@ -60,7 +60,7 @@ typedef struct grpc_call_op_set {
   grpc_client_context * const context;
 
   /* these are used by individual operations */
-  grpc_message *response;
+  void *response;
   grpc_byte_buffer *recv_buffer;
   bool message_received;
 
@@ -74,13 +74,13 @@ typedef struct grpc_call_op_set {
 } grpc_call_op_set;
 
 void grpc_fill_op_from_call_set(grpc_call_op_set *set, const grpc_method *rpc_method, grpc_client_context *context,
-                                const grpc_message message, grpc_message *response, grpc_op ops[], size_t *nops);
+                                const grpc_message message, void *response, grpc_op ops[], size_t *nops);
 
 /* Runs post processing steps in the call op set. Returns false if something wrong happens e.g. serialization. */
 bool grpc_finish_op_from_call_set(grpc_call_op_set *set, grpc_client_context *context);
 
 void grpc_start_batch_from_op_set(grpc_call *call, grpc_call_op_set *set, grpc_client_context *context,
-                                  const grpc_message message, grpc_message *response);
+                                  const grpc_message message, void *response);
 
 /* list of operations */
 

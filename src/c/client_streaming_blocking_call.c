@@ -39,13 +39,12 @@
 #include "completion_queue.h"
 #include "alloc.h"
 
-grpc_client_writer *GRPC_client_streaming_blocking_call(GRPC_channel *channel,
-                                                        const GRPC_method rpc_method,
+grpc_client_writer *GRPC_client_streaming_blocking_call(const GRPC_method rpc_method,
                                                         GRPC_client_context *const context,
-                                                        GRPC_message *response) {
+                                                        void *response) {
 
   grpc_completion_queue *cq = GRPC_completion_queue_create();
-  grpc_call *call = grpc_channel_create_call(channel,
+  grpc_call *call = grpc_channel_create_call(context->channel,
                                              NULL,
                                              GRPC_PROPAGATE_DEFAULTS,
                                              cq,

@@ -52,8 +52,10 @@ typedef struct grpc_client_context {
   gpr_timespec deadline;
 
   // serialization mechanism used in this call
-  GRPC_serializer serialize;
-  GRPC_deserializer deserialize;
+  struct {
+    GRPC_serializer serialize;
+    GRPC_deserializer deserialize;
+  } serialization_impl;
 
   // status of the call
   grpc_status status;

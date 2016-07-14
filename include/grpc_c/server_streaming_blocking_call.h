@@ -37,12 +37,11 @@
 
 #include <grpc_c/grpc_c.h>
 
-GRPC_client_reader *GRPC_server_streaming_blocking_call(GRPC_channel *channel,
-                                                        const GRPC_method rpc_method,
+GRPC_client_reader *GRPC_server_streaming_blocking_call(const GRPC_method rpc_method,
                                                         GRPC_client_context *const context,
                                                         const GRPC_message request);
 
-bool GRPC_server_streaming_blocking_read(GRPC_client_reader *reader, GRPC_message *response);
+bool GRPC_server_streaming_blocking_read(GRPC_client_reader *reader, void *response);
 
 /* Terminating the writer takes care of ending the call, freeing the writer. */
 GRPC_status GRPC_client_reader_terminate(GRPC_client_reader *reader);
