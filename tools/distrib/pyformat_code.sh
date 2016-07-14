@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -27,14 +28,33 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Defines an enum for classifying RPC methods by control flow semantics."""
+set -ex
 
-import enum
+# change to root directory
+cd $(dirname $0)/../..
 
+DIRS=src/python
+EXCLUSIONS='src/python/grpcio/grpc_*.py src/python/grpcio_tests/grpc_*.py'
 
-@enum.unique
-class Service(enum.Enum):
-    """Describes the control flow style of RPC method implementation."""
+VIRTUALENV=python_format_venv
 
-    INLINE = 'inline'
-    EVENT = 'event'
+virtualenv $VIRTUALENV
+PYTHON=`realpath $VIRTUALENV/bin/python`
+$PYTHON -m pip install --upgrade pyformat
+
+exclusion_args=""
+for exclusion in $EXCLUSIONS; do
+  exclusion_args="$exclusion_args --exclude $exclusion"
+done
+
+script_result=0
+for dir in $DIRS; do
+  tempdir=`mktemp -d`
+  cp -RT $dir $tempdir
+  $PYTHON -m pyformat -i -r -j0 $exclusion_args $dir
+  if ! diff -rq $dir $tempdir; then
+    script_result=1
+  fi
+  rm -rf $tempdir
+done
+exit $script_result

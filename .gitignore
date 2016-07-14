@@ -7,6 +7,7 @@ objs
 # Python items
 cython_debug/
 python_build/
+python_format_venv/
 .coverage*
 .eggs
 htmlcov/

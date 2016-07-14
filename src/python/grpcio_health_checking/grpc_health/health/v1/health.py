@@ -35,32 +35,32 @@ from grpc_health.health.v1 import health_pb2
 
 
 class HealthServicer(health_pb2.BetaHealthServicer):
-  """Servicer handling RPCs for service statuses."""
+    """Servicer handling RPCs for service statuses."""
 
-  def __init__(self):
-    self._server_status_lock = threading.Lock()
-    self._server_status = {}
+    def __init__(self):
+        self._server_status_lock = threading.Lock()
+        self._server_status = {}
 
-  def Check(self, request, context):
-    with self._server_status_lock:
-      if request.service not in self._server_status:
-        # TODO(atash): once the Python API has a way of setting the server
-        # status, bring us into conformance with the health check spec by
-        # returning the NOT_FOUND status here.
-        raise NotImplementedError()
-      else:
-        return health_pb2.HealthCheckResponse(
-            status=self._server_status[request.service])
+    def Check(self, request, context):
+        with self._server_status_lock:
+            if request.service not in self._server_status:
+                # TODO(atash): once the Python API has a way of setting the server
+                # status, bring us into conformance with the health check spec by
+                # returning the NOT_FOUND status here.
+                raise NotImplementedError()
+            else:
+                return health_pb2.HealthCheckResponse(
+                    status=self._server_status[request.service])
 
-  def set(self, service, status):
-    """Sets the status of a service.
+    def set(self, service, status):
+        """Sets the status of a service.
 
-    Args:
-        service: string, the name of the service.
-            NOTE, '' must be set.
-        status: HealthCheckResponse.status enum value indicating
-            the status of the service
-    """
-    with self._server_status_lock:
-      self._server_status[service] = status
+        Args:
+            service: string, the name of the service.
+                NOTE, '' must be set.
+            status: HealthCheckResponse.status enum value indicating
+                the status of the service
 
+        """
+        with self._server_status_lock:
+            self._server_status[service] = status

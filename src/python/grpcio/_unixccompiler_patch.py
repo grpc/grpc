@@ -38,36 +38,39 @@ import shutil
 import sys
 import tempfile
 
+
 def _unix_commandfile_spawn(self, command):
-  """Wrapper around distutils.util.spawn that attempts to use command files.
+    """Wrapper around distutils.util.spawn that attempts to use command files.
 
-  Meant to replace the CCompiler method `spawn` on UnixCCompiler and its
-  derivatives (e.g. the MinGW32 compiler).
+    Meant to replace the CCompiler method `spawn` on UnixCCompiler and its
+    derivatives (e.g. the MinGW32 compiler).
 
-  Some commands like `gcc` (and friends like `clang`) support command files to
-  work around shell command length limits.
-  """
-  command_base = os.path.basename(command[0].strip())
-  if command_base == 'ccache':
-    command_base = command[:2]
-    command_args = command[2:]
-  elif command_base.startswith('ccache') or command_base in ['gcc', 'clang', 'clang++', 'g++']:
-    command_base = command[:1]
-    command_args = command[1:]
-  else:
-    return ccompiler.CCompiler.spawn(self, command)
-  temporary_directory = tempfile.mkdtemp()
-  command_filename = os.path.abspath(os.path.join(temporary_directory, 'command'))
-  with open(command_filename, 'w') as command_file:
-    escaped_args = [arg.replace('\\', '\\\\') for arg in command_args]
-    command_file.write(' '.join(escaped_args))
-  modified_command = command_base + ['@{}'.format(command_filename)]
-  result = ccompiler.CCompiler.spawn(self, modified_command)
-  shutil.rmtree(temporary_directory)
-  return result
+    Some commands like `gcc` (and friends like `clang`) support command files to
+    work around shell command length limits.
+
+    """
+    command_base = os.path.basename(command[0].strip())
+    if command_base == 'ccache':
+        command_base = command[:2]
+        command_args = command[2:]
+    elif command_base.startswith('ccache') or command_base in ['gcc', 'clang', 'clang++', 'g++']:
+        command_base = command[:1]
+        command_args = command[1:]
+    else:
+        return ccompiler.CCompiler.spawn(self, command)
+    temporary_directory = tempfile.mkdtemp()
+    command_filename = os.path.abspath(
+        os.path.join(temporary_directory, 'command'))
+    with open(command_filename, 'w') as command_file:
+        escaped_args = [arg.replace('\\', '\\\\') for arg in command_args]
+        command_file.write(' '.join(escaped_args))
+    modified_command = command_base + ['@{}'.format(command_filename)]
+    result = ccompiler.CCompiler.spawn(self, modified_command)
+    shutil.rmtree(temporary_directory)
+    return result
 
 
 def monkeypatch_unix_compiler():
-  """Monkeypatching is dumb, but it's either that or we become maintainers of
-     something much, much bigger."""
-  unixccompiler.UnixCCompiler.spawn = _unix_commandfile_spawn
+    """Monkeypatching is dumb, but it's either that or we become maintainers of
+    something much, much bigger."""
+    unixccompiler.UnixCCompiler.spawn = _unix_commandfile_spawn

@@ -40,22 +40,22 @@ from tests.qps import worker_server
 
 
 def run_worker_server(port):
-  server = grpc.server(futures.ThreadPoolExecutor(max_workers=5))
-  servicer = worker_server.WorkerServer()
-  services_pb2.add_WorkerServiceServicer_to_server(servicer, server)
-  server.add_insecure_port('[::]:{}'.format(port))
-  server.start()
-  servicer.wait_for_quit()
-  server.stop(0)
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=5))
+    servicer = worker_server.WorkerServer()
+    services_pb2.add_WorkerServiceServicer_to_server(servicer, server)
+    server.add_insecure_port('[::]:{}'.format(port))
+    server.start()
+    servicer.wait_for_quit()
+    server.stop(0)
 
 
 if __name__ == '__main__':
-  parser = argparse.ArgumentParser(
-      description='gRPC Python performance testing worker')
-  parser.add_argument('--driver_port',
-                      type=int,
-                      dest='port',
-                      help='The port the worker should listen on')
-  args = parser.parse_args()
+    parser = argparse.ArgumentParser(
+        description='gRPC Python performance testing worker')
+    parser.add_argument('--driver_port',
+                        type=int,
+                        dest='port',
+                        help='The port the worker should listen on')
+    args = parser.parse_args()
 
-  run_worker_server(args.port)
+    run_worker_server(args.port)

@@ -41,31 +41,32 @@ import setuptools
 from setuptools.command import build_py
 
 ROOT_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
-HEALTH_PROTO = os.path.join(ROOT_DIR, '../../proto/grpc/health/v1/health.proto')
+HEALTH_PROTO = os.path.join(
+    ROOT_DIR, '../../proto/grpc/health/v1/health.proto')
 
 
 class CopyProtoModules(setuptools.Command):
-  """Command to copy proto modules from grpc/src/proto."""
+    """Command to copy proto modules from grpc/src/proto."""
 
-  description = ''
-  user_options = []
+    description = ''
+    user_options = []
 
-  def initialize_options(self):
-    pass
+    def initialize_options(self):
+        pass
 
-  def finalize_options(self):
-    pass
+    def finalize_options(self):
+        pass
 
-  def run(self):
-    if os.path.isfile(HEALTH_PROTO):
-      shutil.copyfile(
-          HEALTH_PROTO,
-          os.path.join(ROOT_DIR, 'grpc_health/health/v1/health.proto'))
+    def run(self):
+        if os.path.isfile(HEALTH_PROTO):
+            shutil.copyfile(
+                HEALTH_PROTO,
+                os.path.join(ROOT_DIR, 'grpc_health/health/v1/health.proto'))
 
 
 class BuildPy(build_py.build_py):
-  """Custom project build command."""
+    """Custom project build command."""
 
-  def run(self):
-    self.run_command('build_proto_modules')
-    build_py.build_py.run(self)
+    def run(self):
+        self.run_command('build_proto_modules')
+        build_py.build_py.run(self)
