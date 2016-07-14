@@ -35,8 +35,10 @@
 #define GRPC_C_PB_COMPAT_H
 
 #include <grpc_c/grpc_c.h>
+#include <stdint.h>
 
 typedef struct GRPC_pb_dynamic_array_state GRPC_pb_dynamic_array_state;
+typedef struct pb_ostream_s pb_ostream_t;
 
 bool GRPC_pb_compat_dynamic_array_callback(pb_ostream_t *stream, const uint8_t *buf, size_t count);
 GRPC_pb_dynamic_array_state *GRPC_pb_compat_dynamic_array_alloc();
