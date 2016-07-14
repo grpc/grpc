@@ -533,8 +533,6 @@ done:
 static void polling_island_delete(grpc_exec_ctx *exec_ctx, polling_island *pi) {
   GPR_ASSERT(pi->fd_cnt == 0);
 
-  gpr_atm_rel_store(&pi->merged_to, (gpr_atm)NULL);
-
   close(pi->epoll_fd);
   gpr_mu_destroy(&pi->mu);
   gpr_free(pi->fds);
