@@ -207,7 +207,7 @@ struct grpc_server {
   registered_method *registered_methods;
   /** one request matcher for unregistered methods */
   request_matcher unregistered_request_matcher;
-  /** free list of available requested_calls indices */
+  /** free list of available requested_calls_per_cq indices */
   gpr_stack_lockfree **request_freelist_per_cq;
   /** requested call backing data */
   requested_call **requested_calls_per_cq;
