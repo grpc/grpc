@@ -7,18 +7,18 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1518576073757E501D232EDA /* Pods_End2EndTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4035DBC43CDC1A29CB0EB05D /* Pods_End2EndTest.framework */; };
 		5E201A771D3452D500A81F3A /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E201A761D3452D500A81F3A /* AppDelegate.m */; };
 		5E201A7A1D3452D500A81F3A /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E201A791D3452D500A81F3A /* ViewController.m */; };
 		5E201A7D1D3452D500A81F3A /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 5E201A7B1D3452D500A81F3A /* Main.storyboard */; };
 		5E201A7F1D3452D600A81F3A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5E201A7E1D3452D600A81F3A /* Assets.xcassets */; };
 		5E201A821D3452D600A81F3A /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 5E201A801D3452D600A81F3A /* LaunchScreen.storyboard */; };
 		5EC76B971D36B2EE00A74FED /* h2_ssl.m in Sources */ = {isa = PBXBuildFile; fileRef = 5EC76B961D36B2EE00A74FED /* h2_ssl.m */; };
-		809A4524D003F25B67A9E20C /* libPods-End2EndTest.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 45442114339F6871ABA5F464 /* libPods-End2EndTest.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		18957F402A222D334CEBE57B /* Pods-End2EndTest.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-End2EndTest.debug.xcconfig"; path = "Pods/Target Support Files/Pods-End2EndTest/Pods-End2EndTest.debug.xcconfig"; sourceTree = "<group>"; };
-		45442114339F6871ABA5F464 /* libPods-End2EndTest.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-End2EndTest.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4035DBC43CDC1A29CB0EB05D /* Pods_End2EndTest.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_End2EndTest.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		5E201A6F1D3452D500A81F3A /* End2EndTest.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = End2EndTest.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5E201A751D3452D500A81F3A /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		5E201A761D3452D500A81F3A /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -37,7 +37,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				809A4524D003F25B67A9E20C /* libPods-End2EndTest.a in Frameworks */,
+				1518576073757E501D232EDA /* Pods_End2EndTest.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -98,7 +98,7 @@
 		D564C37197511893E4E62D12 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				45442114339F6871ABA5F464 /* libPods-End2EndTest.a */,
+				4035DBC43CDC1A29CB0EB05D /* Pods_End2EndTest.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
