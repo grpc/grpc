@@ -1093,9 +1093,9 @@ libs:
   build: protoc
   language: c++
   headers:
-  - src/compiler/config.h
   - src/compiler/c_generator.h
   - src/compiler/c_generator_helpers.h
+  - src/compiler/config.h
   - src/compiler/cpp_generator.h
   - src/compiler/cpp_generator_helpers.h
   - src/compiler/csharp_generator.h
@@ -2718,6 +2718,7 @@ targets:
   - grpc
   - gpr
 - name: grpc_c_end2end_test
+  gtest: true
   build: test
   language: c++
   src:
@@ -2730,6 +2731,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: grpc_c_plugin
+  build: protoc
+  language: c++
+  src:
+  - src/compiler/c_plugin.cc
+  deps:
+  - grpc_plugin_support
+  secure: false
+  vs_config_type: Application
+  vs_project_guid: '{06F2EB11-35DA-483D-AB0A-BC420D97B18C}'
 - name: grpc_cli
   build: test
   run: false
@@ -2745,16 +2756,6 @@ targets:
   - gpr_test_util
   - gpr
   - grpc++_test_config
-- name: grpc_c_plugin
-  build: protoc
-  language: c++
-  src:
-  - src/compiler/c_plugin.cc
-  deps:
-  - grpc_plugin_support
-  secure: false
-  vs_config_type: Application
-  vs_project_guid: '{06F2EB11-35DA-483D-AB0A-BC420D97B18C}'
 - name: grpc_cpp_plugin
   build: protoc
   language: c++
