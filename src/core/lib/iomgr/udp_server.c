@@ -60,6 +60,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
@@ -128,7 +129,7 @@ grpc_udp_server *grpc_udp_server_create(void) {
 }
 
 static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_udp_server *s) {
-  grpc_exec_ctx_enqueue(exec_ctx, s->shutdown_complete, 1, NULL);
+  grpc_exec_ctx_sched(exec_ctx, s->shutdown_complete, GRPC_ERROR_NONE, NULL);
 
   gpr_mu_destroy(&s->mu);
   gpr_cv_destroy(&s->cv);
@@ -138,7 +139,7 @@ static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_udp_server *s) {
 }
 
 static void destroyed_port(grpc_exec_ctx *exec_ctx, void *server,
-                           bool success) {
+                           grpc_error *error) {
   grpc_udp_server *s = server;
   gpr_mu_lock(&s->mu);
   s->destroyed_ports++;
@@ -272,7 +273,7 @@ error:
 }
 
 /* event manager callback when reads are ready */
-static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error* error) {
+static void on_read(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   server_port *sp = arg;
 
   if (error != GRPC_ERROR_NONE) {
