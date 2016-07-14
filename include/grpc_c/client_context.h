@@ -39,5 +39,6 @@
 
 GRPC_client_context *GRPC_client_context_create(GRPC_channel *chan);
 void GRPC_client_context_destroy(GRPC_client_context **context);
+GRPC_status GRPC_get_call_status(GRPC_client_context *context);
 
 #endif /* GRPC_C_CONTEXT_PUBLIC_H */
