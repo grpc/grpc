@@ -70,23 +70,6 @@ grpc::string FilenameIdentifier(const grpc::string &filename) {
   return result;
 }
 
-}  // namespace
-
-using grpc::protobuf::FileDescriptor;
-using grpc::protobuf::ServiceDescriptor;
-using grpc::protobuf::MethodDescriptor;
-using grpc::protobuf::Descriptor;
-using grpc::protobuf::io::StringOutputStream;
-
-using grpc_cpp_generator::Parameters;
-using grpc_cpp_generator::File;
-using grpc_cpp_generator::Method;
-using grpc_cpp_generator::Service;
-using grpc_cpp_generator::Printer;
-
-template<class T, size_t N>
-T *array_end(T (&array)[N]) { return array + N; }
-
 grpc::string Join(std::vector<grpc::string> lines, grpc::string delim) {
   std::ostringstream imploded;
   std::copy(lines.begin(), lines.end(), std::ostream_iterator<grpc::string>(imploded, delim.c_str()));
@@ -105,6 +88,23 @@ grpc::string BlockifyComments(grpc::string input) {
   }
   return Join(lines, "\n");
 }
+
+template<class T, size_t N>
+T *array_end(T (&array)[N]) { return array + N; }
+
+}  // namespace
+
+using grpc::protobuf::FileDescriptor;
+using grpc::protobuf::ServiceDescriptor;
+using grpc::protobuf::MethodDescriptor;
+using grpc::protobuf::Descriptor;
+using grpc::protobuf::io::StringOutputStream;
+
+using grpc_cpp_generator::Parameters;
+using grpc_cpp_generator::File;
+using grpc_cpp_generator::Method;
+using grpc_cpp_generator::Service;
+using grpc_cpp_generator::Printer;
 
 // Prints a list of header paths as include directives
 void PrintIncludes(Printer *printer, const std::vector<grpc::string>& headers, const Parameters &params) {
@@ -333,8 +333,8 @@ GRPC_status $CPrefix$$Service$_$Method$(
   const GRPC_message request_msg = { &request, sizeof(request) };
   GRPC_message response_msg;
   GRPC_client_context_set_serialization_impl(context,
-        (grpc_serialization_impl) { HLW_HelloRequest_serializer, HLW_HelloResponse_deserializer });
-  GRPC_unary_blocking_call(GRPC_method_HLW_Greeter_SayHello, context, request_msg, response);
+        (grpc_serialization_impl) { $CPrefix$$Request$_serializer, $CPrefix$$Response$_deserializer });
+  GRPC_unary_blocking_call(GRPC_method_$CPrefix$$Service$_$Method$, context, request_msg, response);
 }
 )");
     printer->Print(
@@ -347,8 +347,8 @@ GRPC_client_async_response_reader *$CPrefix$$Service$_$Method$_Async(
         const $CPrefix$$Request$ request) {
   const GRPC_message request_msg = { &request, sizeof(request) };
   GRPC_client_context_set_serialization_impl(context,
-        (grpc_serialization_impl) { HLW_HelloRequest_serializer, HLW_HelloResponse_deserializer });
-  return GRPC_unary_async_call(cq, GRPC_method_HLW_Greeter_SayHello, request_msg, context);
+        (grpc_serialization_impl) { $CPrefix$$Request$_serializer, $CPrefix$$Response$_deserializer });
+  return GRPC_unary_async_call(cq, GRPC_method_$CPrefix$$Service$_$Method$, request_msg, context);
 }
 
 void $CPrefix$$Service$_$Method$_Finish(
@@ -401,10 +401,10 @@ grpc::string GetHeaderServices(File *file,
     // Package string is empty or ends with a dot. It is used to fully qualify
     // method names.
     vars["Package"] = file->package();
-    // TODO(yifeit): hook this up to C prefix
     if (!file->package().empty()) {
       vars["Package"].append(".");
     }
+    // TODO(yifeit): hook this up to C prefix
     vars["CPrefix"] = grpc_cpp_generator::DotsToUnderscores(file->package()) + "_";
 
     for (int i = 0; i < file->service_count(); ++i) {
