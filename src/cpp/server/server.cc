@@ -462,14 +462,13 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
     while (num_running_cb_ != 0) {
       callback_cv_.wait(lock);
     }
+    shutdown_cv_.notify_all();
   }
 }
 
 void Server::Wait() {
   grpc::unique_lock<grpc::mutex> lock(mu_);
-  while (num_running_cb_ != 0) {
-    callback_cv_.wait(lock);
-  }
+  shutdown_cv_.wait(lock);
 }
 
 void Server::PerformOpsOnCall(CallOpSetInterface* ops, Call* call) {
