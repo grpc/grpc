@@ -363,6 +363,13 @@ TEST_P(AsyncEnd2endTest, WaitAndShutdownTest) {
   delete wait_thread;
 }
 
+TEST_P(AsyncEnd2endTest, ShutdownThenWait) {
+  ResetStub();
+  SendRpc(1);
+  server_->Shutdown();
+  server_->Wait();
+}
+
 // Test a simple RPC using the async version of Next
 TEST_P(AsyncEnd2endTest, AsyncNextRpc) {
   ResetStub();
