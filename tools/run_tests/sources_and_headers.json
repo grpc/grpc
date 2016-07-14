@@ -4259,7 +4259,6 @@
       "src/c/id_serialization.h", 
       "src/c/init_shutdown.h", 
       "src/c/message.h", 
-      "src/c/pb_compat.c", 
       "src/c/server_streaming_blocking_call.h", 
       "src/c/status.h", 
       "src/c/tag.h", 

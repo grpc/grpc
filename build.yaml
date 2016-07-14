@@ -856,7 +856,6 @@ libs:
   - src/c/id_serialization.h
   - src/c/init_shutdown.h
   - src/c/message.h
-  - src/c/pb_compat.c
   - src/c/server_streaming_blocking_call.h
   - src/c/status.h
   - src/c/tag.h
@@ -873,6 +872,7 @@ libs:
   - src/c/id_serialization.c
   - src/c/init_shutdown.c
   - src/c/message.c
+  - src/c/pb_compat.c
   - src/c/server_streaming_blocking_call.c
   - src/c/unary_async_call.c
   - src/c/unary_blocking_call.c

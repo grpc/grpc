@@ -349,6 +349,7 @@ add_library(grpc_c
   src/c/id_serialization.c
   src/c/init_shutdown.c
   src/c/message.c
+  src/c/pb_compat.c
   src/c/server_streaming_blocking_call.c
   src/c/unary_async_call.c
   src/c/unary_blocking_call.c

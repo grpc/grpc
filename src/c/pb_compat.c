@@ -34,6 +34,9 @@
 #include <stddef.h>
 #include <grpc_c/grpc_c.h>
 #include <grpc_c/pb_compat.h>
+#include <third_party/nanopb/pb.h>
+#include <third_party/nanopb/pb_encode.h>
+#include "alloc.h"
 
 typedef struct GRPC_pb_dynamic_array_state {
   void *data;
@@ -54,11 +57,11 @@ static size_t upper_power_of_two(size_t v)
 }
 
 GRPC_pb_dynamic_array_state *GRPC_pb_compat_dynamic_array_alloc() {
-  return (GRPC_pb_dynamic_array_state) {
+  return GRPC_ALLOC_STRUCT(GRPC_pb_dynamic_array_state, {
     .data = NULL,
     .size = 0,
     .capacity = 0
-  };
+  });
 }
 
 bool GRPC_pb_compat_dynamic_array_callback(pb_ostream_t *stream, const uint8_t *buf, size_t count) {
@@ -67,6 +70,8 @@ bool GRPC_pb_compat_dynamic_array_callback(pb_ostream_t *stream, const uint8_t *
     state->capacity = upper_power_of_two(state->size + count);
     state->data = realloc(state->data, state->capacity);
   }
+  if (state->data == NULL) return false;
   if (buf) memcpy((char *) state->data + state->size, buf, count);
   state->size += count;
+  return true;
 }
