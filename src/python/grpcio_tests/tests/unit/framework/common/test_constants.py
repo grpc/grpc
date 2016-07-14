@@ -39,7 +39,8 @@ SHORT_TIMEOUT = 4
 # RPCs made during tests.
 LONG_TIMEOUT = 3000
 # Values to supply on construction of an object that will service RPCs; these
-# should not be used as the actual timeout values of any RPCs made during tests.
+# should not be used as the actual timeout values of any RPCs made during
+# tests.
 DEFAULT_TIMEOUT = 300
 MAXIMUM_TIMEOUT = 3600
 

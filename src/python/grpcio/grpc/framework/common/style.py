@@ -34,7 +34,7 @@ import enum
 
 @enum.unique
 class Service(enum.Enum):
-  """Describes the control flow style of RPC method implementation."""
+    """Describes the control flow style of RPC method implementation."""
 
-  INLINE = 'inline'
-  EVENT = 'event'
+    INLINE = 'inline'
+    EVENT = 'event'

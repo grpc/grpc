@@ -36,13 +36,13 @@ from grpc.beta import interfaces
 
 class ConnectivityStatesTest(unittest.TestCase):
 
-  def testBetaConnectivityStates(self):
-    self.assertIsNotNone(interfaces.ChannelConnectivity.IDLE)
-    self.assertIsNotNone(interfaces.ChannelConnectivity.CONNECTING)
-    self.assertIsNotNone(interfaces.ChannelConnectivity.READY)
-    self.assertIsNotNone(interfaces.ChannelConnectivity.TRANSIENT_FAILURE)
-    self.assertIsNotNone(interfaces.ChannelConnectivity.FATAL_FAILURE)
+    def testBetaConnectivityStates(self):
+        self.assertIsNotNone(interfaces.ChannelConnectivity.IDLE)
+        self.assertIsNotNone(interfaces.ChannelConnectivity.CONNECTING)
+        self.assertIsNotNone(interfaces.ChannelConnectivity.READY)
+        self.assertIsNotNone(interfaces.ChannelConnectivity.TRANSIENT_FAILURE)
+        self.assertIsNotNone(interfaces.ChannelConnectivity.FATAL_FAILURE)
 
 
 if __name__ == '__main__':
-  unittest.main(verbosity=2)
+    unittest.main(verbosity=2)

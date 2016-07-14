@@ -33,28 +33,31 @@ import abc
 
 import six
 
+
 class Consumer(six.with_metaclass(abc.ABCMeta)):
-  """Interface for consumers of finite streams of values or objects."""
+    """Interface for consumers of finite streams of values or objects."""
 
-  @abc.abstractmethod
-  def consume(self, value):
-    """Accepts a value.
+    @abc.abstractmethod
+    def consume(self, value):
+        """Accepts a value.
 
-    Args:
-      value: Any value accepted by this Consumer.
-    """
-    raise NotImplementedError()
+        Args:
+          value: Any value accepted by this Consumer.
 
-  @abc.abstractmethod
-  def terminate(self):
-    """Indicates to this Consumer that no more values will be supplied."""
-    raise NotImplementedError()
+        """
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def consume_and_terminate(self, value):
-    """Supplies a value and signals that no more values will be supplied.
+    @abc.abstractmethod
+    def terminate(self):
+        """Indicates to this Consumer that no more values will be supplied."""
+        raise NotImplementedError()
 
-    Args:
-      value: Any value accepted by this Consumer.
-    """
-    raise NotImplementedError()
+    @abc.abstractmethod
+    def consume_and_terminate(self, value):
+        """Supplies a value and signals that no more values will be supplied.
+
+        Args:
+          value: Any value accepted by this Consumer.
+
+        """
+        raise NotImplementedError()

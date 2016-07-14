@@ -45,23 +45,24 @@ _TEST_CASE_SUPERCLASSES = (
 
 
 def test_cases(implementation):
-  """Creates unittest.TestCase classes for a given Face layer implementation.
+    """Creates unittest.TestCase classes for a given Face layer implementation.
 
-  Args:
-    implementation: A test_interfaces.Implementation specifying creation and
-      destruction of a given Face layer implementation.
+    Args:
+      implementation: A test_interfaces.Implementation specifying creation and
+        destruction of a given Face layer implementation.
 
-  Returns:
-    A sequence of subclasses of unittest.TestCase defining tests of the
-      specified Face layer implementation.
-  """
-  test_case_classes = []
-  for invoker_constructor in _invocation.invoker_constructors():
-    for super_class in _TEST_CASE_SUPERCLASSES:
-      test_case_classes.append(
-          type(invoker_constructor.name() + super_class.NAME, (super_class,),
-               {'implementation': implementation,
-                'invoker_constructor': invoker_constructor,
-                '__module__': implementation.__module__,
-               }))
-  return test_case_classes
+    Returns:
+      A sequence of subclasses of unittest.TestCase defining tests of the
+        specified Face layer implementation.
+
+    """
+    test_case_classes = []
+    for invoker_constructor in _invocation.invoker_constructors():
+        for super_class in _TEST_CASE_SUPERCLASSES:
+            test_case_classes.append(
+                type(invoker_constructor.name() + super_class.NAME, (super_class,),
+                     {'implementation': implementation,
+                      'invoker_constructor': invoker_constructor,
+                      '__module__': implementation.__module__,
+                      }))
+    return test_case_classes

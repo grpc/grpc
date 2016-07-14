@@ -43,33 +43,33 @@ _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 
 def serve():
-  parser = argparse.ArgumentParser()
-  parser.add_argument(
-      '--port', help='the port on which to serve', type=int)
-  parser.add_argument(
-      '--use_tls', help='require a secure connection',
-      default=False, type=resources.parse_bool)
-  args = parser.parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--port', help='the port on which to serve', type=int)
+    parser.add_argument(
+        '--use_tls', help='require a secure connection',
+        default=False, type=resources.parse_bool)
+    args = parser.parse_args()
 
-  server = test_pb2.beta_create_TestService_server(methods.TestService())
-  if args.use_tls:
-    private_key = resources.private_key()
-    certificate_chain = resources.certificate_chain()
-    credentials = implementations.ssl_server_credentials(
-        [(private_key, certificate_chain)])
-    server.add_secure_port('[::]:{}'.format(args.port), credentials)
-  else:
-    server.add_insecure_port('[::]:{}'.format(args.port))
+    server = test_pb2.beta_create_TestService_server(methods.TestService())
+    if args.use_tls:
+        private_key = resources.private_key()
+        certificate_chain = resources.certificate_chain()
+        credentials = implementations.ssl_server_credentials(
+            [(private_key, certificate_chain)])
+        server.add_secure_port('[::]:{}'.format(args.port), credentials)
+    else:
+        server.add_insecure_port('[::]:{}'.format(args.port))
 
-  server.start()
-  logging.info('Server serving.')
-  try:
-    while True:
-      time.sleep(_ONE_DAY_IN_SECONDS)
-  except BaseException as e:
-    logging.info('Caught exception "%s"; stopping server...', e)
-    server.stop(0)
-    logging.info('Server stopped; exiting.')
+    server.start()
+    logging.info('Server serving.')
+    try:
+        while True:
+            time.sleep(_ONE_DAY_IN_SECONDS)
+    except BaseException as e:
+        logging.info('Caught exception "%s"; stopping server...', e)
+        server.stop(0)
+        logging.info('Server stopped; exiting.')
 
 if __name__ == '__main__':
-  serve()
+    serve()

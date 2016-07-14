@@ -36,37 +36,38 @@ import grpc
 
 class CredentialsTest(unittest.TestCase):
 
-  def test_call_credentials_composition(self):
-    first = grpc.access_token_call_credentials('abc')
-    second = grpc.access_token_call_credentials('def')
-    third = grpc.access_token_call_credentials('ghi')
+    def test_call_credentials_composition(self):
+        first = grpc.access_token_call_credentials('abc')
+        second = grpc.access_token_call_credentials('def')
+        third = grpc.access_token_call_credentials('ghi')
 
-    first_and_second = grpc.composite_call_credentials(first, second)
-    first_second_and_third = grpc.composite_call_credentials(
-        first, second, third)
-    
-    self.assertIsInstance(first_and_second, grpc.CallCredentials)
-    self.assertIsInstance(first_second_and_third, grpc.CallCredentials)
+        first_and_second = grpc.composite_call_credentials(first, second)
+        first_second_and_third = grpc.composite_call_credentials(
+            first, second, third)
 
-  def test_channel_credentials_composition(self):
-    first_call_credentials = grpc.access_token_call_credentials('abc')
-    second_call_credentials = grpc.access_token_call_credentials('def')
-    third_call_credentials = grpc.access_token_call_credentials('ghi')
-    channel_credentials = grpc.ssl_channel_credentials()
+        self.assertIsInstance(first_and_second, grpc.CallCredentials)
+        self.assertIsInstance(first_second_and_third, grpc.CallCredentials)
 
-    channel_and_first = grpc.composite_channel_credentials(
-        channel_credentials, first_call_credentials)
-    channel_first_and_second = grpc.composite_channel_credentials(
-        channel_credentials, first_call_credentials, second_call_credentials)
-    channel_first_second_and_third = grpc.composite_channel_credentials(
-        channel_credentials, first_call_credentials, second_call_credentials,
-        third_call_credentials)
+    def test_channel_credentials_composition(self):
+        first_call_credentials = grpc.access_token_call_credentials('abc')
+        second_call_credentials = grpc.access_token_call_credentials('def')
+        third_call_credentials = grpc.access_token_call_credentials('ghi')
+        channel_credentials = grpc.ssl_channel_credentials()
 
-    self.assertIsInstance(channel_and_first, grpc.ChannelCredentials)
-    self.assertIsInstance(channel_first_and_second, grpc.ChannelCredentials)
-    self.assertIsInstance(
-        channel_first_second_and_third, grpc.ChannelCredentials)
+        channel_and_first = grpc.composite_channel_credentials(
+            channel_credentials, first_call_credentials)
+        channel_first_and_second = grpc.composite_channel_credentials(
+            channel_credentials, first_call_credentials, second_call_credentials)
+        channel_first_second_and_third = grpc.composite_channel_credentials(
+            channel_credentials, first_call_credentials, second_call_credentials,
+            third_call_credentials)
+
+        self.assertIsInstance(channel_and_first, grpc.ChannelCredentials)
+        self.assertIsInstance(channel_first_and_second,
+                              grpc.ChannelCredentials)
+        self.assertIsInstance(
+            channel_first_second_and_third, grpc.ChannelCredentials)
 
 
 if __name__ == '__main__':
-  unittest.main(verbosity=2)
+    unittest.main(verbosity=2)

@@ -44,92 +44,93 @@ from tests.stress import test_runner
 
 
 def _args():
-  parser = argparse.ArgumentParser(description='gRPC Python stress test client')
-  parser.add_argument(
-      '--server_addresses',
-      help='comma seperated list of hostname:port to run servers on',
-      default='localhost:8080', type=str)
-  parser.add_argument(
-      '--test_cases',
-      help='comma seperated list of testcase:weighting of tests to run',
-      default='large_unary:100',
-      type=str)
-  parser.add_argument(
-      '--test_duration_secs',
-      help='number of seconds to run the stress test',
-      default=-1, type=int)
-  parser.add_argument(
-      '--num_channels_per_server',
-      help='number of channels per server',
-      default=1, type=int)
-  parser.add_argument(
-      '--num_stubs_per_channel',
-      help='number of stubs to create per channel',
-      default=1, type=int)
-  parser.add_argument(
-      '--metrics_port',
-      help='the port to listen for metrics requests on',
-      default=8081, type=int)
-  return parser.parse_args()
+    parser = argparse.ArgumentParser(
+        description='gRPC Python stress test client')
+    parser.add_argument(
+        '--server_addresses',
+        help='comma seperated list of hostname:port to run servers on',
+        default='localhost:8080', type=str)
+    parser.add_argument(
+        '--test_cases',
+        help='comma seperated list of testcase:weighting of tests to run',
+        default='large_unary:100',
+        type=str)
+    parser.add_argument(
+        '--test_duration_secs',
+        help='number of seconds to run the stress test',
+        default=-1, type=int)
+    parser.add_argument(
+        '--num_channels_per_server',
+        help='number of channels per server',
+        default=1, type=int)
+    parser.add_argument(
+        '--num_stubs_per_channel',
+        help='number of stubs to create per channel',
+        default=1, type=int)
+    parser.add_argument(
+        '--metrics_port',
+        help='the port to listen for metrics requests on',
+        default=8081, type=int)
+    return parser.parse_args()
 
 
 def _test_case_from_arg(test_case_arg):
-  for test_case in methods.TestCase:
-    if test_case_arg == test_case.value:
-      return test_case
-  else:
-    raise ValueError('No test case {}!'.format(test_case_arg))
+    for test_case in methods.TestCase:
+        if test_case_arg == test_case.value:
+            return test_case
+    else:
+        raise ValueError('No test case {}!'.format(test_case_arg))
 
 
 def _parse_weighted_test_cases(test_case_args):
-  weighted_test_cases = {}
-  for test_case_arg in test_case_args.split(','):
-    name, weight = test_case_arg.split(':', 1)
-    test_case = _test_case_from_arg(name)
-    weighted_test_cases[test_case] = int(weight)
-  return weighted_test_cases
+    weighted_test_cases = {}
+    for test_case_arg in test_case_args.split(','):
+        name, weight = test_case_arg.split(':', 1)
+        test_case = _test_case_from_arg(name)
+        weighted_test_cases[test_case] = int(weight)
+    return weighted_test_cases
 
 
 def run_test(args):
-  test_cases = _parse_weighted_test_cases(args.test_cases)
-  test_servers = args.server_addresses.split(',')
-  # Propagate any client exceptions with a queue
-  exception_queue = queue.Queue()
-  stop_event = threading.Event()
-  hist = histogram.Histogram(1, 1)
-  runners = []
+    test_cases = _parse_weighted_test_cases(args.test_cases)
+    test_servers = args.server_addresses.split(',')
+    # Propagate any client exceptions with a queue
+    exception_queue = queue.Queue()
+    stop_event = threading.Event()
+    hist = histogram.Histogram(1, 1)
+    runners = []
 
-  server = metrics_pb2.beta_create_MetricsService_server(
-      metrics_server.MetricsServer(hist))
-  server.add_insecure_port('[::]:{}'.format(args.metrics_port))
-  server.start()
+    server = metrics_pb2.beta_create_MetricsService_server(
+        metrics_server.MetricsServer(hist))
+    server.add_insecure_port('[::]:{}'.format(args.metrics_port))
+    server.start()
 
-  for test_server in test_servers:
-    host, port = test_server.split(':', 1)
-    for _ in xrange(args.num_channels_per_server):
-      channel = implementations.insecure_channel(host, int(port))
-      for _ in xrange(args.num_stubs_per_channel):
-        stub = test_pb2.beta_create_TestService_stub(channel)
-        runner = test_runner.TestRunner(stub, test_cases, hist,
-                                        exception_queue, stop_event)
-        runners.append(runner)
+    for test_server in test_servers:
+        host, port = test_server.split(':', 1)
+        for _ in xrange(args.num_channels_per_server):
+            channel = implementations.insecure_channel(host, int(port))
+            for _ in xrange(args.num_stubs_per_channel):
+                stub = test_pb2.beta_create_TestService_stub(channel)
+                runner = test_runner.TestRunner(stub, test_cases, hist,
+                                                exception_queue, stop_event)
+                runners.append(runner)
 
-  for runner in runners:
-    runner.start()
-  try:
-    timeout_secs = args.test_duration_secs
-    if timeout_secs < 0:
-      timeout_secs = None
-    raise exception_queue.get(block=True, timeout=timeout_secs)
-  except queue.Empty:
-    # No exceptions thrown, success
-    pass
-  finally:
-    stop_event.set()
     for runner in runners:
-      runner.join()
-      runner = None
-    server.stop(0)
+        runner.start()
+    try:
+        timeout_secs = args.test_duration_secs
+        if timeout_secs < 0:
+            timeout_secs = None
+        raise exception_queue.get(block=True, timeout=timeout_secs)
+    except queue.Empty:
+        # No exceptions thrown, success
+        pass
+    finally:
+        stop_event.set()
+        for runner in runners:
+            runner.join()
+            runner = None
+        server.stop(0)
 
 if __name__ == '__main__':
-  run_test(_args())
+    run_test(_args())

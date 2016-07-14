@@ -44,24 +44,25 @@ _SERVER_HOST_OVERRIDE = 'foo.test.google.fr'
 
 
 class SecureInteropTest(
-    _interop_test_case.InteropTestCase,
-    unittest.TestCase):
+        _interop_test_case.InteropTestCase,
+        unittest.TestCase):
 
-  def setUp(self):
-    self.server = test_pb2.beta_create_TestService_server(methods.TestService())
-    port = self.server.add_secure_port(
-        '[::]:0', implementations.ssl_server_credentials(
-            [(resources.private_key(), resources.certificate_chain())]))
-    self.server.start()
-    self.stub = test_pb2.beta_create_TestService_stub(
-        test_utilities.not_really_secure_channel(
-            'localhost', port, implementations.ssl_channel_credentials(
-                resources.test_root_certificates()),
+    def setUp(self):
+        self.server = test_pb2.beta_create_TestService_server(
+            methods.TestService())
+        port = self.server.add_secure_port(
+            '[::]:0', implementations.ssl_server_credentials(
+                [(resources.private_key(), resources.certificate_chain())]))
+        self.server.start()
+        self.stub = test_pb2.beta_create_TestService_stub(
+            test_utilities.not_really_secure_channel(
+                'localhost', port, implementations.ssl_channel_credentials(
+                    resources.test_root_certificates()),
                 _SERVER_HOST_OVERRIDE))
 
-  def tearDown(self):
-    self.server.stop(0)
+    def tearDown(self):
+        self.server.stop(0)
 
 
 if __name__ == '__main__':
-  unittest.main(verbosity=2)
+    unittest.main(verbosity=2)

@@ -39,14 +39,14 @@ _CERTIFICATE_CHAIN_RESOURCE_PATH = 'credentials/server1.pem'
 
 
 def test_root_certificates():
-  return pkg_resources.resource_string(
-      __name__, _ROOT_CERTIFICATES_RESOURCE_PATH)
+    return pkg_resources.resource_string(
+        __name__, _ROOT_CERTIFICATES_RESOURCE_PATH)
 
 
 def private_key():
-  return pkg_resources.resource_string(__name__, _PRIVATE_KEY_RESOURCE_PATH)
+    return pkg_resources.resource_string(__name__, _PRIVATE_KEY_RESOURCE_PATH)
 
 
 def certificate_chain():
-  return pkg_resources.resource_string(
-      __name__, _CERTIFICATE_CHAIN_RESOURCE_PATH)
+    return pkg_resources.resource_string(
+        __name__, _CERTIFICATE_CHAIN_RESOURCE_PATH)

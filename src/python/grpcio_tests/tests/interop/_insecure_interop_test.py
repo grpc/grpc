@@ -40,19 +40,20 @@ from tests.interop import server
 
 
 class InsecureInteropTest(
-    _interop_test_case.InteropTestCase,
-    unittest.TestCase):
+        _interop_test_case.InteropTestCase,
+        unittest.TestCase):
 
-  def setUp(self):
-    self.server = test_pb2.beta_create_TestService_server(methods.TestService())
-    port = self.server.add_insecure_port('[::]:0')
-    self.server.start()
-    self.stub = test_pb2.beta_create_TestService_stub(
-        implementations.insecure_channel('localhost', port))
+    def setUp(self):
+        self.server = test_pb2.beta_create_TestService_server(
+            methods.TestService())
+        port = self.server.add_insecure_port('[::]:0')
+        self.server.start()
+        self.stub = test_pb2.beta_create_TestService_stub(
+            implementations.insecure_channel('localhost', port))
 
-  def tearDown(self):
-    self.server.stop(0)
+    def tearDown(self):
+        self.server.stop(0)
 
 
 if __name__ == '__main__':
-  unittest.main(verbosity=2)
+    unittest.main(verbosity=2)

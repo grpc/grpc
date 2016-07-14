@@ -38,23 +38,23 @@ GAUGE_NAME = 'python_overall_qps'
 
 class MetricsServer(metrics_pb2.BetaMetricsServiceServicer):
 
-  def __init__(self, histogram):
-    self._start_time = time.time()
-    self._histogram = histogram
+    def __init__(self, histogram):
+        self._start_time = time.time()
+        self._histogram = histogram
 
-  def _get_qps(self):
-    count = self._histogram.get_data().count
-    delta = time.time() - self._start_time
-    self._histogram.reset()
-    self._start_time = time.time()
-    return int(count/delta)
+    def _get_qps(self):
+        count = self._histogram.get_data().count
+        delta = time.time() - self._start_time
+        self._histogram.reset()
+        self._start_time = time.time()
+        return int(count / delta)
 
-  def GetAllGauges(self, request, context):
-    qps = self._get_qps()
-    return [metrics_pb2.GaugeResponse(name=GAUGE_NAME, long_value=qps)]
+    def GetAllGauges(self, request, context):
+        qps = self._get_qps()
+        return [metrics_pb2.GaugeResponse(name=GAUGE_NAME, long_value=qps)]
 
-  def GetGauge(self, request, context):
-    if request.name != GAUGE_NAME:
-      raise Exception('Gauge {} does not exist'.format(request.name))
-    qps = self._get_qps()
-    return metrics_pb2.GaugeResponse(name=GAUGE_NAME, long_value=qps)
+    def GetGauge(self, request, context):
+        if request.name != GAUGE_NAME:
+            raise Exception('Gauge {} does not exist'.format(request.name))
+        qps = self._get_qps()
+        return metrics_pb2.GaugeResponse(name=GAUGE_NAME, long_value=qps)
