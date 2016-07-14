@@ -35,10 +35,10 @@
 #include <grpc_c/grpc_c.h>
 #include "id_serialization.h"
 
-void GRPC_id_serialize(const grpc_message input, grpc_message *output) {
-  output->data = malloc(input.length);
-  memcpy(output->data, input.data, input.length);
-  output->length = input.length;
+grpc_message GRPC_id_serialize(const grpc_message input) {
+  void *tmp = malloc(input.length);
+  memcpy(tmp, input.data, input.length);
+  return (grpc_message) { tmp, input.length };
 }
 
 void GRPC_id_deserialize(const grpc_message input, void *output) {

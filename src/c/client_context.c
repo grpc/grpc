@@ -70,3 +70,10 @@ void GRPC_client_context_destroy(GRPC_client_context **context) {
 GRPC_status GRPC_get_call_status(GRPC_client_context *context) {
   return context->status;
 }
+
+void GRPC_client_context_set_serialization_impl(
+  GRPC_client_context *context,
+  grpc_serialization_impl serialization_impl) {
+  context->serialization_impl = serialization_impl;
+}
+

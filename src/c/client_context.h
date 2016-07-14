@@ -36,6 +36,7 @@
 #define TEST_GRPC_C_CLIENT_CONTEXT_H
 
 #include <grpc_c/grpc_c.h>
+#include <grpc_c/codegen/client_context_priv.h>
 #include <grpc_c/serialization.h>
 #include <grpc/grpc.h>
 #include "status.h"
@@ -44,6 +45,7 @@
 #include <stdbool.h>
 
 typedef struct grpc_call_op_set grpc_call_op_set;
+typedef struct grpc_serialization_impl grpc_serialization_impl;
 
 typedef struct grpc_client_context {
   grpc_metadata *send_metadata_array;
@@ -52,17 +54,14 @@ typedef struct grpc_client_context {
   gpr_timespec deadline;
 
   // serialization mechanism used in this call
-  struct {
-    GRPC_serializer serialize;
-    GRPC_deserializer deserialize;
-  } serialization_impl;
+  grpc_serialization_impl serialization_impl;
 
   // status of the call
   grpc_status status;
 
   // state tracking
   bool initial_metadata_received;
-  GRPC_method rpc_method;
+  grpc_method rpc_method;
   grpc_channel *channel;
   grpc_call *call;
 } grpc_client_context;

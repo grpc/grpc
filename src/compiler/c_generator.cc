@@ -330,9 +330,10 @@ GRPC_status $CPrefix$$Service$_$Method$(
         GRPC_client_context *const context,
         const $CPrefix$$Request$ request,
         $CPrefix$$Response$ *response) {
-  GRPC_message request_msg = { &request, sizeof(request) };
+  const GRPC_message request_msg = { &request, sizeof(request) };
   GRPC_message response_msg;
-  context->serialization_impl = { HLW_HelloRequest_serializer, HLW_HelloResponse_deserializer };
+  GRPC_client_context_set_serialization_impl(context,
+        (grpc_serialization_impl) { HLW_HelloRequest_serializer, HLW_HelloResponse_deserializer });
   GRPC_unary_blocking_call(GRPC_method_HLW_Greeter_SayHello, context, request_msg, response);
 }
 )");
@@ -344,8 +345,9 @@ GRPC_client_async_response_reader *$CPrefix$$Service$_$Method$_Async(
         GRPC_client_context *const context,
         GRPC_completion_queue *cq,
         const $CPrefix$$Request$ request) {
-  GRPC_message request_msg = { &request, sizeof(request) };
-  context->serialization_impl = { HLW_HelloRequest_serializer, HLW_HelloResponse_deserializer };
+  const GRPC_message request_msg = { &request, sizeof(request) };
+  GRPC_client_context_set_serialization_impl(context,
+        (grpc_serialization_impl) { HLW_HelloRequest_serializer, HLW_HelloResponse_deserializer });
   return GRPC_unary_async_call(cq, GRPC_method_HLW_Greeter_SayHello, request_msg, context);
 }
 
@@ -399,9 +401,11 @@ grpc::string GetHeaderServices(File *file,
     // Package string is empty or ends with a dot. It is used to fully qualify
     // method names.
     vars["Package"] = file->package();
+    // TODO(yifeit): hook this up to C prefix
     if (!file->package().empty()) {
       vars["Package"].append(".");
     }
+    vars["CPrefix"] = grpc_cpp_generator::DotsToUnderscores(file->package()) + "_";
 
     for (int i = 0; i < file->service_count(); ++i) {
       PrintHeaderService(printer.get(), file->service(i).get(), &vars);
@@ -483,6 +487,7 @@ grpc::string GetSourceIncludes(File *file,
 
     static const char *headers_strs[] = {
       "grpc_c/status_code.h",
+      "grpc_c/status.h",
       "grpc_c/grpc_c.h",
       "grpc_c/channel.h",
       "grpc_c/unary_blocking_call.h",
@@ -490,7 +495,11 @@ grpc::string GetSourceIncludes(File *file,
       "grpc_c/client_streaming_blocking_call.h",
       "grpc_c/server_streaming_blocking_call.h",
       "grpc_c/bidi_streaming_blocking_call.h",
-      "grpc_c/client_context.h"
+      "grpc_c/client_context.h",
+      "grpc_c/codegen/client_context_priv.h",
+      // Relying on Nanopb for Protobuf serialization for now
+      "pb_encode.h",
+      "pb_decode.h"
     };
     std::vector<grpc::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params);
@@ -577,11 +586,11 @@ grpc::string GetSourceServices(File *file,
     // Package string is empty or ends with a dot. It is used to fully qualify
     // method names.
     vars["Package"] = file->package();
-    // TODO(yifeit): hook this up to C prefix
-    vars["CPrefix"] = "";
     if (!file->package().empty()) {
       vars["Package"].append(".");
     }
+    // TODO(yifeit): hook this up to C prefix
+    vars["CPrefix"] = grpc_cpp_generator::DotsToUnderscores(file->package()) + "_";
 
     for (int i = 0; i < file->service_count(); ++i) {
       PrintSourceService(printer.get(), file->service(i).get(), &vars);

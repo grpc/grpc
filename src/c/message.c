@@ -36,6 +36,6 @@
 #include <stdlib.h>
 
 void GRPC_message_destroy(grpc_message *message) {
-  free(message->data);
-  message->data = NULL;
+  free((void *)message->data);
 }
+

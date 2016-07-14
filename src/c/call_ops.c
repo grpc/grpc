@@ -56,8 +56,7 @@ const grpc_op_manager grpc_op_send_metadata = {
 static bool op_send_object_fill(grpc_op *op, const grpc_method *method, grpc_client_context *context, grpc_call_op_set *set, const grpc_message message, void *response) {
   op->op = GRPC_OP_SEND_MESSAGE;
 
-  grpc_message serialized;
-  context->serialization_impl.serialize(message, &serialized);
+  grpc_message serialized = context->serialization_impl.serialize(message);
 
   gpr_slice slice = gpr_slice_from_copied_buffer(serialized.data, serialized.length);
   op->data.send_message = grpc_raw_byte_buffer_create(&slice, 1);

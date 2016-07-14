@@ -2,3 +2,6 @@ helloworld.grpc.pbc.c
 helloworld.grpc.pbc.h
 helloworld.pbc.c
 helloworld.pbc.h
+helloworld.pb.c
+helloworld.pb.h
+*.o

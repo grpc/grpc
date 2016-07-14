@@ -38,8 +38,8 @@
 #include <stdlib.h>
 
 typedef struct GRPC_message {
-  void * data;
-  size_t length;
+  const void * data;
+  const size_t length;
 } GRPC_message;
 
 void GRPC_message_destroy(GRPC_message *message);

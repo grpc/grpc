@@ -37,6 +37,8 @@
 
 #include <grpc_c/grpc_c.h>
 
+typedef struct gpr_timespec GRPC_timespec;
+
 /* Tri-state return for GRPC_commit_ops_and_wait */
 typedef enum GRPC_completion_queue_next_status {
   GRPC_COMPLETION_QUEUE_SHUTDOWN,   /* The completion queue has been shutdown. */
@@ -54,7 +56,7 @@ void GRPC_completion_queue_shutdown_wait(GRPC_completion_queue *cq);
 
 GRPC_completion_queue_operation_status GRPC_completion_queue_next(GRPC_completion_queue *cq, void **tag, bool *ok);
 GRPC_completion_queue_operation_status GRPC_completion_queue_next_deadline(GRPC_completion_queue *cq,
-                                                                         gpr_timespec deadline,
+                                                                         GRPC_timespec deadline,
                                                                          void **tag, bool *ok);
 
 #endif /* GRPC_C_COMPLETION_QUEUE_PUBLIC_H */
