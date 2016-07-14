@@ -2718,7 +2718,7 @@ targets:
   build: test
   language: c++
   src:
-  - test/c/end2end/unary_end2end_test.cc
+  - test/c/end2end/end2end_test.cc
   deps:
   - grpc_c
   - grpc++_test_util
