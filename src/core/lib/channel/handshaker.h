@@ -40,17 +40,26 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
+//
+// grpc_handshaker -- API for initial handshaking for a new connection
+//
+
 // FIXME: document
 
 typedef struct grpc_handshaker grpc_handshaker;
 
+typedef void (*grpc_handshaker_done_cb)(
+    grpc_exec_ctx* exec_ctx, grpc_endpoint* endpoint, void* arg);
+
 struct grpc_handshaker_vtable {
   void (*destroy)(grpc_exec_ctx* exec_ctx, grpc_handshaker* handshaker);
 
+  void (*shutdown)(grpc_exec_ctx* exec_ctx, grpc_handshaker* handshaker);
+
   void (*do_handshake)(
       grpc_exec_ctx* exec_ctx, grpc_handshaker* handshaker,
-      grpc_endpoint* endpoint_in, gpr_timespec deadline,
-      grpc_closure *on_done);
+      grpc_endpoint* endpoint, gpr_timespec deadline,
+      grpc_handshaker_done_cb cb, void* arg);
 };
 
 struct grpc_handshaker {
@@ -64,8 +73,34 @@ void grpc_handshaker_init(const struct grpc_handshaker_vtable* vtable,
 // Convenient wrappers for invoking methods via the vtable.
 void grpc_handshaker_destroy(grpc_exec_ctx* exec_ctx,
                              grpc_handshaker* handshaker);
+void grpc_handshaker_shutdown(grpc_exec_ctx* exec_ctx,
+                              grpc_handshaker* handshaker);
 void grpc_handshaker_do_handshake(
     grpc_exec_ctx* exec_ctx, grpc_handshaker* handshaker,
-    grpc_endpoint* in, gpr_timespec deadline, grpc_closure *on_done);
+    grpc_endpoint* endpoint, gpr_timespec deadline,
+    grpc_handshaker_done_cb cb, void* arg);
+
+//
+// grpc_handshake_manager -- manages a set of handshakers
+//
+
+typedef struct grpc_handshake_manager grpc_handshake_manager;
+
+grpc_handshake_manager* grpc_handshake_manager_create();
+
+// Handshakers will be invoked in the order added.
+void grpc_handshake_manager_add(grpc_handshaker* handshaker,
+                                grpc_handshake_manager* mgr);
+
+void grpc_handshake_manager_destroy(
+    grpc_exec_ctx* exec_ctx, grpc_handshake_manager* mgr);
+
+void grpc_handshake_manager_shutdown(
+    grpc_exec_ctx* exec_ctx, grpc_handshake_manager* mgr);
+
+void grpc_handshake_manager_do_handshake(
+    grpc_exec_ctx* exec_ctx, grpc_handshake_manager* mgr,
+    grpc_endpoint* endpoint, gpr_timespec deadline,
+    grpc_handshaker_done_cb cb, void* arg);
 
 #endif /* GRPC_CORE_LIB_CHANNEL_HANDSHAKER_H */
