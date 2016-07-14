@@ -162,10 +162,20 @@ class Client {
     return stats;
   }
 
+  // Must call AwaitThreadsCompletion before destructor to avoid a race
+  // between destructor and invocation of virtual ThreadFunc
+  void AwaitThreadsCompletion() {
+    DestroyMultithreading();
+    std::unique_lock<std::mutex> g(thread_completion_mu_);
+    while (threads_remaining_ != 0) {
+      threads_complete_.wait(g);
+    }
+  }
  protected:
   bool closed_loop_;
 
   void StartThreads(size_t num_threads) {
+    threads_remaining_ = num_threads;
     for (size_t i = 0; i < num_threads; i++) {
       threads_.emplace_back(new Thread(this, i));
     }
@@ -173,6 +183,7 @@ class Client {
 
   void EndThreads() { threads_.clear(); }
 
+  virtual void DestroyMultithreading() = 0;
   virtual bool ThreadFunc(HistogramEntry* histogram, size_t thread_idx) = 0;
 
   void SetupLoadTest(const ClientConfig& config, size_t num_threads) {
@@ -270,6 +281,7 @@ class Client {
           done_ = true;
         }
         if (done_) {
+	  client_->CompleteThread();
           return;
         }
       }
@@ -277,7 +289,6 @@ class Client {
 
     std::mutex mu_;
     bool done_;
-    Histogram* new_stats_;
     Histogram histogram_;
     Client* client_;
     const size_t idx_;
@@ -289,6 +300,18 @@ class Client {
 
   InterarrivalTimer interarrival_timer_;
   std::vector<gpr_timespec> next_time_;
+
+  std::mutex thread_completion_mu_;
+  size_t threads_remaining_;
+  std::condition_variable threads_complete_;
+
+  void CompleteThread() {
+    std::lock_guard<std::mutex> g(thread_completion_mu_);
+    threads_remaining_--;
+    if (threads_remaining_ == 0) {
+      threads_complete_.notify_all();
+    }
+  }
 };
 
 template <class StubType, class RequestType>

@@ -190,14 +190,6 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
     }
   }
   virtual ~AsyncClient() {
-    for (auto ss = shutdown_state_.begin(); ss != shutdown_state_.end(); ++ss) {
-      std::lock_guard<std::mutex> lock((*ss)->mutex);
-      (*ss)->shutdown = true;
-    }
-    for (auto cq = cli_cqs_.begin(); cq != cli_cqs_.end(); cq++) {
-      (*cq)->Shutdown();
-    }
-    this->EndThreads(); // Need "this->" for resolution
     for (auto cq = cli_cqs_.begin(); cq != cli_cqs_.end(); cq++) {
       void* got_tag;
       bool ok;
@@ -205,6 +197,34 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
         delete ClientRpcContext::detag(got_tag);
       }
     }
+  }
+ protected:
+  const int num_async_threads_;
+
+ private:
+  struct PerThreadShutdownState {
+    mutable std::mutex mutex;
+    bool shutdown;
+    PerThreadShutdownState() : shutdown(false) {}
+  };
+
+  int NumThreads(const ClientConfig& config) {
+    int num_threads = config.async_client_threads();
+    if (num_threads <= 0) {  // Use dynamic sizing
+      num_threads = cores_;
+      gpr_log(GPR_INFO, "Sizing async client to %d threads", num_threads);
+    }
+    return num_threads;
+  }
+  void DestroyMultithreading() GRPC_OVERRIDE GRPC_FINAL {
+    for (auto ss = shutdown_state_.begin(); ss != shutdown_state_.end(); ++ss) {
+      std::lock_guard<std::mutex> lock((*ss)->mutex);
+      (*ss)->shutdown = true;
+    }
+    for (auto cq = cli_cqs_.begin(); cq != cli_cqs_.end(); cq++) {
+      (*cq)->Shutdown();
+    }
+    this->EndThreads(); // this needed for resolution
   }
 
   bool ThreadFunc(HistogramEntry* entry,
@@ -234,24 +254,6 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
     }
   }
 
- protected:
-  const int num_async_threads_;
-
- private:
-  struct PerThreadShutdownState {
-    mutable std::mutex mutex;
-    bool shutdown;
-    PerThreadShutdownState() : shutdown(false) {}
-  };
-
-  int NumThreads(const ClientConfig& config) {
-    int num_threads = config.async_client_threads();
-    if (num_threads <= 0) {  // Use dynamic sizing
-      num_threads = cores_;
-      gpr_log(GPR_INFO, "Sizing async client to %d threads", num_threads);
-    }
-    return num_threads;
-  }
   std::vector<std::unique_ptr<CompletionQueue>> cli_cqs_;
   std::vector<std::function<gpr_timespec()>> next_issuers_;
   std::vector<std::unique_ptr<PerThreadShutdownState>> shutdown_state_;

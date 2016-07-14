@@ -87,6 +87,8 @@ class SynchronousClient
 
   size_t num_threads_;
   std::vector<SimpleResponse> responses_;
+ private:
+  void DestroyMultithreading() GRPC_OVERRIDE GRPC_FINAL { EndThreads(); }
 };
 
 class SynchronousUnaryClient GRPC_FINAL : public SynchronousClient {
@@ -95,7 +97,7 @@ class SynchronousUnaryClient GRPC_FINAL : public SynchronousClient {
       : SynchronousClient(config) {
     StartThreads(num_threads_);
   }
-  ~SynchronousUnaryClient() { EndThreads(); }
+  ~SynchronousUnaryClient() {}
 
   bool ThreadFunc(HistogramEntry* entry, size_t thread_idx) GRPC_OVERRIDE {
     WaitToIssue(thread_idx);
@@ -124,17 +126,16 @@ class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
     StartThreads(num_threads_);
   }
   ~SynchronousStreamingClient() {
-    EndThreads();
     for (size_t i = 0; i < num_threads_; i++) {
       auto stream = &stream_[i];
       if (*stream) {
         (*stream)->WritesDone();
-	Status s = (*stream)->Finish();
-	EXPECT_TRUE(s.ok());
-	if (!s.ok()) {
-	  gpr_log(GPR_ERROR, "Stream %zu received an error %s", i,
-		  s.error_message().c_str());
-	}
+        Status s = (*stream)->Finish();
+        EXPECT_TRUE(s.ok());
+        if (!s.ok()) {
+          gpr_log(GPR_ERROR, "Stream %zu received an error %s", i,
+                  s.error_message().c_str());
+        }
       }
     }
     delete[] stream_;
