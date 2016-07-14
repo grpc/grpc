@@ -36,7 +36,6 @@
 #define GRPC_C_PUBLIC_H
 
 #include <stdlib.h>
-#include <grpc_c/message.h>
 
 typedef struct grpc_channel GRPC_channel;
 typedef struct grpc_status GRPC_status;
@@ -74,5 +73,7 @@ typedef enum _bool bool;
 #endif
 #endif
 #endif
+
+#include <grpc_c/message.h>
 
 #endif /* GRPC_C_PUBLIC_H */
