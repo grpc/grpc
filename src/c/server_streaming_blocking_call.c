@@ -115,7 +115,9 @@ GRPC_status GRPC_client_reader_terminate(GRPC_client_reader *reader) {
   };
   grpc_start_batch_from_op_set(reader->call, &set, reader->context, (GRPC_message) {0}, NULL);
   GRPC_completion_queue_pluck_internal(reader->cq, TAG(&set));
-  GRPC_completion_queue_shutdown_and_destroy(reader->cq);
+  GRPC_completion_queue_shutdown(reader->cq);
+  GRPC_completion_queue_shutdown_wait(reader->cq);
+  GRPC_completion_queue_destroy(reader->cq);
   grpc_call_destroy(reader->call);
   reader->context->call = NULL;
   grpc_client_context *context = reader->context;

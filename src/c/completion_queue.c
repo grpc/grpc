@@ -50,14 +50,12 @@ void GRPC_completion_queue_destroy(GRPC_completion_queue *cq) {
   grpc_completion_queue_destroy(cq);
 }
 
-void GRPC_completion_queue_shutdown_and_destroy(GRPC_completion_queue *cq) {
-  grpc_completion_queue_shutdown(cq);
+void GRPC_completion_queue_shutdown_wait(GRPC_completion_queue *cq) {
   for (;;) {
     void *tag;
     bool ok;
     if (GRPC_commit_ops_and_wait(cq, &tag, &ok) == GRPC_COMPLETION_QUEUE_SHUTDOWN) break;
   }
-  grpc_completion_queue_destroy(cq);
 }
 
 GRPC_completion_queue_operation_status GRPC_commit_ops_and_wait_deadline(GRPC_completion_queue *cq,

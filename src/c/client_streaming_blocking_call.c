@@ -102,7 +102,9 @@ bool GRPC_client_streaming_blocking_write(grpc_client_writer *writer, const GRPC
 GRPC_status GRPC_client_writer_terminate(grpc_client_writer *writer) {
   grpc_start_batch_from_op_set(writer->call, &writer->finish_ops, writer->context, (GRPC_message) {0}, writer->response);
   GRPC_completion_queue_pluck_internal(writer->cq, TAG(&writer->finish_ops));
-  GRPC_completion_queue_shutdown_and_destroy(writer->cq);
+  GRPC_completion_queue_shutdown(writer->cq);
+  GRPC_completion_queue_shutdown_wait(writer->cq);
+  GRPC_completion_queue_destroy(writer->cq);
   grpc_call_destroy(writer->call);
   writer->context->call = NULL;
   grpc_client_context *context = writer->context;
