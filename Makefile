@@ -11082,7 +11082,7 @@ $(OBJDIR)/$(CONFIG)/test/cpp/codegen/golden_file_test.o: $(GENDIR)/src/proto/grp
 
 
 GRPC_C_END2END_TEST_SRC = \
-    test/c/end2end/unary_end2end_test.cc \
+    test/c/end2end/end2end_test.cc \
 
 GRPC_C_END2END_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_C_END2END_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11113,7 +11113,7 @@ endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/c/end2end/unary_end2end_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_c.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/c/end2end/end2end_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_c.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_grpc_c_end2end_test: $(GRPC_C_END2END_TEST_OBJS:.o=.dep)
 

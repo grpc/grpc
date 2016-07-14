@@ -160,7 +160,7 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\test\c\end2end\unary_end2end_test.cc">
+    <ClCompile Include="$(SolutionDir)\..\test\c\end2end\end2end_test.cc">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
