@@ -517,14 +517,10 @@ static polling_island *polling_island_create(grpc_exec_ctx *exec_ctx,
 
 done:
   if (*error != GRPC_ERROR_NONE) {
-    if (pi->epoll_fd >= 0) {
-      close(pi->epoll_fd);
-    }
     if (pi->workqueue != NULL) {
       GRPC_WORKQUEUE_UNREF(exec_ctx, pi->workqueue, "polling_island");
     }
-    gpr_mu_destroy(&pi->mu);
-    gpr_free(pi);
+    polling_island_delete(exec_ctx, pi);
     pi = NULL;
   }
   return pi;
@@ -533,7 +529,9 @@ done:
 static void polling_island_delete(grpc_exec_ctx *exec_ctx, polling_island *pi) {
   GPR_ASSERT(pi->fd_cnt == 0);
 
-  close(pi->epoll_fd);
+  if (pi->epoll_fd >= 0) {
+    close(pi->epoll_fd);
+  }
   gpr_mu_destroy(&pi->mu);
   gpr_free(pi->fds);
   gpr_free(pi);
@@ -934,6 +932,10 @@ static void fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
   gpr_mu_unlock(&fd->mu);
   UNREF_BY(fd, 2, reason); /* Drop the reference */
   if (unref_pi != NULL) {
+    /* Unref stale polling island here, outside the fd lock above.
+       The polling island owns a workqueue which owns an fd, and unreffing
+       inside the lock can cause an eventual lock loop that makes TSAN very
+       unhappy. */
     PI_UNREF(exec_ctx, unref_pi, "fd_orphan");
   }
   GRPC_LOG_IF_ERROR("fd_orphan", GRPC_ERROR_REF(error));
@@ -1557,9 +1559,19 @@ retry:
   if (fd->polling_island == pollset->polling_island) {
     pi_new = fd->polling_island;
     if (pi_new == NULL) {
+      /* Unlock before creating a new polling island: the polling island will
+         create a workqueue which creates a file descriptor, and holding an fd
+         lock here can eventually cause a loop to appear to TSAN (making it
+         unhappy). We don't think it's a real loop (there's an epoch point where
+         that loop possibility disappears), but the advantages of keeping TSAN
+         happy outweigh any performance advantage we might have by keeping the
+         lock held. */
       gpr_mu_unlock(&fd->mu);
       pi_new = polling_island_create(exec_ctx, fd, &error);
       gpr_mu_lock(&fd->mu);
+      /* Need to reverify any assumptions made between the initial lock and
+         getting to this branch: if they've changed, we need to throw away our
+         work and figure things out again. */
       if (fd->polling_island != NULL) {
         GRPC_POLLING_TRACE(
             "pollset_add_fd: Raced creating new polling island. pi_new: %p "

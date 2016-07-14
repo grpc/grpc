@@ -225,6 +225,8 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
         return true;
       }
       case CompletionQueue::TIMEOUT:
+        // TODO(ctiller): do something here to track how frequently we pass
+        // through this codepath.
         return true;
     }
     GPR_UNREACHABLE_CODE(return false);
