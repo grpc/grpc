@@ -34,7 +34,7 @@ NANOPB_CORE = $(NANOPB_DIR)/pb_encode.c $(NANOPB_DIR)/pb_decode.c $(NANOPB_DIR)/
 
 CC = gcc
 CFLAGS += -I/usr/local/include -I$(NANOPB_DIR)/ -pthread
-LDFLAGS += -L/usr/local/lib `pkg-config --libs grpc` -lprotobuf -lpthread -ldl
+LDFLAGS += -L/usr/local/lib `pkg-config --libs grpc` -lgrpc_c -lprotobuf -lpthread -ldl
 PROTOC = protoc
 GRPC_C_PLUGIN = grpc_c_plugin
 GRPC_C_PLUGIN_PATH ?= `which $(GRPC_C_PLUGIN)`

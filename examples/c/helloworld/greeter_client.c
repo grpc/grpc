@@ -41,15 +41,19 @@ int main(int argc, char** argv) {
   // localhost at port 50051).
   // Local greetings server
   GRPC_channel *chan = GRPC_channel_create("0.0.0.0:50051");
-  GRPC_context *context = GRPC_context_create(chan);
+  GRPC_client_context *context = GRPC_client_context_create(chan);
   helloworld_HelloRequest request = { "world" };
-  helloworld_HelloResponse response;
-  GRPC_status status = helloworld_Greeter_SayHello(chan, context, request, &response);
+  helloworld_HelloReply reply;
+  GRPC_status status = helloworld_Greeter_SayHello(context, request, &reply);
   if (status.code == GRPC_STATUS_OK) {
-    printf("Server replied: %s\n", response.message);
+    printf("Server replied: %s\n", reply.message);
+    GRPC_client_context_destroy(&context);
+    GRPC_channel_destroy(chan);
     return 0;
   } else {
     printf("Error occurred: %s\n", status.details);
+    GRPC_client_context_destroy(&context);
+    GRPC_channel_destroy(chan);
     return -1;
   }
 }

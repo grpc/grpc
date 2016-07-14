@@ -35,8 +35,6 @@
 #ifndef GRPC_C_STATUS_PUBLIC_H
 #define GRPC_C_STATUS_PUBLIC_H
 
-#include <grpc_c/grpc_c.h>
-
 typedef struct grpc_status {
   bool ok;
   grpc_status_code code;
