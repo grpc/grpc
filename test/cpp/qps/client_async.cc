@@ -198,6 +198,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
       }
     }
   }
+
  protected:
   const int num_async_threads_;
 
@@ -224,7 +225,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
     for (auto cq = cli_cqs_.begin(); cq != cli_cqs_.end(); cq++) {
       (*cq)->Shutdown();
     }
-    this->EndThreads(); // this needed for resolution
+    this->EndThreads();  // this needed for resolution
   }
 
   bool ThreadFunc(HistogramEntry* entry,

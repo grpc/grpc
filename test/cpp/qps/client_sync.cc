@@ -87,6 +87,7 @@ class SynchronousClient
 
   size_t num_threads_;
   std::vector<SimpleResponse> responses_;
+
  private:
   void DestroyMultithreading() GRPC_OVERRIDE GRPC_FINAL { EndThreads(); }
 };

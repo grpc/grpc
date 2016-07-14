@@ -348,7 +348,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     ClientArgs args;
     *args.mutable_setup() = per_client_config;
     clients[i].stream =
-      clients[i].stub->RunClient(runsc::AllocContext(&contexts));
+        clients[i].stub->RunClient(runsc::AllocContext(&contexts));
     if (!clients[i].stream->Write(args)) {
       gpr_log(GPR_ERROR, "Could not write args to client %zu", i);
     }
@@ -439,7 +439,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     result->add_client_success(s.ok());
     if (!s.ok()) {
       gpr_log(GPR_ERROR, "Client %zu had an error %s", i,
-	      s.error_message().c_str());
+              s.error_message().c_str());
     }
   }
   delete[] clients;
@@ -475,7 +475,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     result->add_server_success(s.ok());
     if (!s.ok()) {
       gpr_log(GPR_ERROR, "Server %zu had an error %s", i,
-	      s.error_message().c_str());
+              s.error_message().c_str());
     }
   }
 
@@ -497,8 +497,8 @@ bool RunQuit() {
     ctx.set_fail_fast(false);
     Status s = stub->QuitWorker(&ctx, dummy, &dummy);
     if (!s.ok()) {
-      gpr_log(GPR_ERROR, "Worker %zu could not be properly quit because %s",
-	      i, s.error_message().c_str());
+      gpr_log(GPR_ERROR, "Worker %zu could not be properly quit because %s", i,
+              s.error_message().c_str());
       result = false;
     }
   }

@@ -114,10 +114,14 @@ class ClientRequestCreator<ByteBuffer> {
 
 class HistogramEntry GRPC_FINAL {
  public:
-  HistogramEntry(): used_(false) {}
-  bool used() const {return used_;}
-  double value() const {return value_;}
-  void set_value(double v) {used_ = true; value_ = v;}
+  HistogramEntry() : used_(false) {}
+  bool used() const { return used_; }
+  double value() const { return value_; }
+  void set_value(double v) {
+    used_ = true;
+    value_ = v;
+  }
+
  private:
   bool used_;
   double value_;
@@ -171,6 +175,7 @@ class Client {
       threads_complete_.wait(g);
     }
   }
+
  protected:
   bool closed_loop_;
 
@@ -254,8 +259,7 @@ class Client {
       n->Swap(&histogram_);
     }
 
-    void EndSwap() {
-    }
+    void EndSwap() {}
 
     void MergeStatsInto(Histogram* hist) {
       std::unique_lock<std::mutex> g(mu_);
@@ -281,7 +285,7 @@ class Client {
           done_ = true;
         }
         if (done_) {
-	  client_->CompleteThread();
+          client_->CompleteThread();
           return;
         }
       }

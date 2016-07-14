@@ -222,7 +222,7 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
       }
       *status.mutable_stats() = client->Mark(args.mark().reset());
       if (!stream->Write(status)) {
-	return Status(StatusCode::UNKNOWN, "Client couldn't respond to mark");
+        return Status(StatusCode::UNKNOWN, "Client couldn't respond to mark");
       }
       gpr_log(GPR_INFO, "RunClientBody: Mark response given");
     }
@@ -267,7 +267,7 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
       }
       *status.mutable_stats() = server->Mark(args.mark().reset());
       if (!stream->Write(status)) {
-	return Status(StatusCode::UNKNOWN, "Server couldn't respond to mark");
+        return Status(StatusCode::UNKNOWN, "Server couldn't respond to mark");
       }
       gpr_log(GPR_INFO, "RunServerBody: Mark response given");
     }

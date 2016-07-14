@@ -132,8 +132,7 @@ class AsyncQpsServerTest : public Server {
       (*ss)->shutdown = true;
     }
     // TODO (vpai): Remove this deadline and allow Shutdown to finish properly
-    auto deadline =
-        std::chrono::system_clock::now() + std::chrono::seconds(3);
+    auto deadline = std::chrono::system_clock::now() + std::chrono::seconds(3);
     server_->Shutdown(deadline);
     for (auto cq = srv_cqs_.begin(); cq != srv_cqs_.end(); ++cq) {
       (*cq)->Shutdown();
@@ -164,7 +163,9 @@ class AsyncQpsServerTest : public Server {
       // Proceed while holding a lock to make sure that
       // this thread isn't supposed to shut down
       std::lock_guard<std::mutex> l(shutdown_state_[thread_idx]->mutex);
-      if (shutdown_state_[thread_idx]->shutdown) { return; }
+      if (shutdown_state_[thread_idx]->shutdown) {
+        return;
+      }
       const bool still_going = ctx->RunNextState(ok);
       // if this RPC context is done, refresh it
       if (!still_going) {
