@@ -31,6 +31,11 @@
  *
  */
 
+#include <string.h>
+
+#include <grpc/impl/codegen/alloc.h>
+#include <grpc/impl/codegen/log.h>
+
 #include "src/core/lib/channel/handshaker.h"
 
 //
@@ -38,7 +43,7 @@
 //
 
 void grpc_handshaker_init(const struct grpc_handshaker_vtable* vtable,
-                          grpc_handshaker** handshaker) {
+                          grpc_handshaker* handshaker) {
   handshaker->vtable = vtable;
 }
 
@@ -79,9 +84,9 @@ struct grpc_handshaker_state {
 struct grpc_handshake_manager {
   // An array of handshakers added via grpc_handshake_manager_add().
   size_t count;
-  grpc_handshaker* handshakers;
+  grpc_handshaker** handshakers;
   // State used while chaining handshakers.
-  grpc_handshaker_state* state;
+  struct grpc_handshaker_state* state;
 };
 
 grpc_handshake_manager* grpc_handshake_manager_create() {
@@ -99,7 +104,7 @@ void grpc_handshake_manager_add(grpc_handshaker* handshaker,
 
 void grpc_handshake_manager_destroy(grpc_exec_ctx* exec_ctx,
                                     grpc_handshake_manager* mgr) {
-  for (int i = 0; i < mgr->count; ++i) {
+  for (size_t i = 0; i < mgr->count; ++i) {
     grpc_handshaker_destroy(exec_ctx, mgr->handshakers[i]);
   }
   gpr_free(mgr);
@@ -109,7 +114,7 @@ void grpc_handshake_manager_shutdown(grpc_exec_ctx* exec_ctx,
                                      grpc_handshake_manager* mgr) {
   // FIXME: maybe check which handshaker is currently in progress, and
   // only shut down that one?
-  for (int i = 0; i < mgr->count; ++i) {
+  for (size_t i = 0; i < mgr->count; ++i) {
     grpc_handshaker_shutdown(exec_ctx, mgr->handshakers[i]);
   }
   if (mgr->state != NULL) {
@@ -155,9 +160,11 @@ void grpc_handshake_manager_do_handshake(grpc_exec_ctx* exec_ctx,
     cb(exec_ctx, endpoint, arg);
   } else {
     GPR_ASSERT(mgr->state == NULL);
-    mgr->state = gpr_malloc(sizeof(grpc_handshaker_state));
-    memset(mgr->state, 0, sizeof(grpc_handshaker_state));
-    *mgr->state = {0, deadline, cb, arg};
+    mgr->state = gpr_malloc(sizeof(struct grpc_handshaker_state));
+    memset(mgr->state, 0, sizeof(*mgr->state));
+    mgr->state->deadline = deadline;
+    mgr->state->final_cb = cb;
+    mgr->state->final_arg = arg;
     call_next_handshaker(exec_ctx, endpoint, mgr);
   }
 }

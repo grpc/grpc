@@ -67,7 +67,7 @@ struct grpc_handshaker {
 
 // Called by concrete implementations to initialize the base struct.
 void grpc_handshaker_init(const struct grpc_handshaker_vtable* vtable,
-                          grpc_handshaker** handshaker);
+                          grpc_handshaker* handshaker);
 
 // Convenient wrappers for invoking methods via the vtable.
 void grpc_handshaker_destroy(grpc_exec_ctx* exec_ctx,
