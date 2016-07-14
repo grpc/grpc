@@ -52,12 +52,13 @@ void grpc_handshaker_shutdown(grpc_exec_ctx* exec_ctx,
   handshaker->vtable->shutdown(exec_ctx, handshaker);
 }
 
-void grpc_handshaker_do_handshake(
-    grpc_exec_ctx* exec_ctx, grpc_handshaker* handshaker,
-    grpc_endpoint* endpoint, gpr_timespec deadline,
-    grpc_handshaker_done_cb cb, void* arg) {
-  handshaker->vtable->do_handshake(exec_ctx, handshaker, endpoint,
-                                   deadline, cb, arg);
+void grpc_handshaker_do_handshake(grpc_exec_ctx* exec_ctx,
+                                  grpc_handshaker* handshaker,
+                                  grpc_endpoint* endpoint,
+                                  gpr_timespec deadline,
+                                  grpc_handshaker_done_cb cb, void* arg) {
+  handshaker->vtable->do_handshake(exec_ctx, handshaker, endpoint, deadline, cb,
+                                   arg);
 }
 
 //
@@ -96,16 +97,16 @@ void grpc_handshake_manager_add(grpc_handshaker* handshaker,
   mgr->handshakers[mgr->count++] = handshaker;
 }
 
-void grpc_handshake_manager_destroy(
-    grpc_exec_ctx* exec_ctx, grpc_handshake_manager* mgr) {
+void grpc_handshake_manager_destroy(grpc_exec_ctx* exec_ctx,
+                                    grpc_handshake_manager* mgr) {
   for (int i = 0; i < mgr->count; ++i) {
     grpc_handshaker_destroy(exec_ctx, mgr->handshakers[i]);
   }
   gpr_free(mgr);
 }
 
-void grpc_handshake_manager_shutdown(
-    grpc_exec_ctx* exec_ctx, grpc_handshake_manager* mgr) {
+void grpc_handshake_manager_shutdown(grpc_exec_ctx* exec_ctx,
+                                     grpc_handshake_manager* mgr) {
   // FIXME: maybe check which handshaker is currently in progress, and
   // only shut down that one?
   for (int i = 0; i < mgr->count; ++i) {
@@ -142,10 +143,12 @@ static void call_next_handshaker(grpc_exec_ctx* exec_ctx,
   }
 }
 
-void grpc_handshake_manager_do_handshake(
-    grpc_exec_ctx* exec_ctx, grpc_handshake_manager* mgr,
-    grpc_endpoint* endpoint, gpr_timespec deadline,
-    grpc_handshaker_done_cb cb, void* arg) {
+void grpc_handshake_manager_do_handshake(grpc_exec_ctx* exec_ctx,
+                                         grpc_handshake_manager* mgr,
+                                         grpc_endpoint* endpoint,
+                                         gpr_timespec deadline,
+                                         grpc_handshaker_done_cb cb,
+                                         void* arg) {
   if (mgr->count == 0) {
     // No handshakers registered, so we just immediately call the done
     // callback with the passed-in endpoint.
@@ -158,5 +161,3 @@ void grpc_handshake_manager_do_handshake(
     call_next_handshaker(exec_ctx, endpoint, mgr);
   }
 }
-
-#endif /* GRPC_CORE_LIB_CHANNEL_HANDSHAKER_H */
