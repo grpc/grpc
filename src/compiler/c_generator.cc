@@ -322,7 +322,40 @@ void PrintSourceClientMethod(Printer *printer,
   (*vars)["Request"] = method->input_type_name();
   (*vars)["Response"] = method->output_type_name();
   if (method->NoStreaming()) {
+    // Unary
+    printer->Print(
+      *vars,
+      R"(
+GRPC_status $CPrefix$$Service$_$Method$(
+        GRPC_client_context *const context,
+        const $CPrefix$$Request$ request,
+        $CPrefix$$Response$ *response) {
+  GRPC_message request_msg = { &request, sizeof(request) };
+  GRPC_message response_msg;
+  context->serialization_impl = { HLW_HelloRequest_serializer, HLW_HelloResponse_deserializer };
+  GRPC_unary_blocking_call(GRPC_method_HLW_Greeter_SayHello, context, request_msg, response);
+}
+)");
+    printer->Print(
+      *vars,
+      R"(
+/* Async */
+GRPC_client_async_response_reader *$CPrefix$$Service$_$Method$_Async(
+        GRPC_client_context *const context,
+        GRPC_completion_queue *cq,
+        const $CPrefix$$Request$ request) {
+  GRPC_message request_msg = { &request, sizeof(request) };
+  context->serialization_impl = { HLW_HelloRequest_serializer, HLW_HelloResponse_deserializer };
+  return GRPC_unary_async_call(cq, GRPC_method_HLW_Greeter_SayHello, request_msg, context);
+}
 
+void $CPrefix$$Service$_$Method$_Finish(
+        GRPC_client_async_response_reader *reader,
+        $CPrefix$$Response$ *response,
+        void *tag) {
+  GRPC_client_async_finish(reader, response, tag);
+}
+)");
   } else if (method->ClientOnlyStreaming()) {
 
   } else if (method->ServerOnlyStreaming()) {
