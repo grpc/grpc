@@ -92,7 +92,7 @@ servers.
       the client will attempt to open a stream to the load balancer service. The
       server may respond in only one of the following ways.
       1. `status::UNIMPLEMENTED`. There is no loadbalancing in use. The client
-         proceeds by sending all RPCs to this gRPC server.
+         call will fail.
       1. "I am a Load Balancer and here is the server list." (Goto Step 4.)
       1. "Please contact Load Balancer X" (See Step 3.) The client will close
          this connection and cancel the stream.
