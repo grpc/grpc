@@ -82,6 +82,7 @@
 #include <grpc_c/completion_queue.h>
 #include <grpc_c/grpc_c.h>
 #include <grpc_c/message.h>
+#include <grpc_c/pb_compat.h>
 #include <grpc_c/serialization.h>
 #include <grpc_c/server_streaming_blocking_call.h>
 #include <grpc_c/status.h>

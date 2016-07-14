@@ -148,7 +148,7 @@ static void SendUnaryRpc(GRPC_channel *channel,
     GRPC_message msg = {str, sizeof(str)};
     // using char array to hold RPC result while protobuf is not there yet
     char resp[100];
-    GRPC_status status = GRPC_unary_blocking_call(&method, context, msg, resp);
+    GRPC_status status = GRPC_unary_blocking_call(method, context, msg, resp);
 
     EXPECT_TRUE(status.ok) << status.details;
     EXPECT_TRUE(status.code == GRPC_STATUS_OK) << status.details;

@@ -266,6 +266,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\completion_queue.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\grpc_c.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\message.h" />
+    <ClInclude Include="$(SolutionDir)\..\include\grpc_c\pb_compat.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\serialization.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\server_streaming_blocking_call.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\status.h" />
@@ -283,6 +284,7 @@
     <ClInclude Include="$(SolutionDir)\..\src\c\id_serialization.h" />
     <ClInclude Include="$(SolutionDir)\..\src\c\init_shutdown.h" />
     <ClInclude Include="$(SolutionDir)\..\src\c\message.h" />
+    <ClInclude Include="$(SolutionDir)\..\src\c\pb_compat.c" />
     <ClInclude Include="$(SolutionDir)\..\src\c\server_streaming_blocking_call.h" />
     <ClInclude Include="$(SolutionDir)\..\src\c\status.h" />
     <ClInclude Include="$(SolutionDir)\..\src\c\tag.h" />
