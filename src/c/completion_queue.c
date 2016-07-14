@@ -54,11 +54,11 @@ void GRPC_completion_queue_shutdown_wait(GRPC_completion_queue *cq) {
   for (;;) {
     void *tag;
     bool ok;
-    if (GRPC_commit_ops_and_wait(cq, &tag, &ok) == GRPC_COMPLETION_QUEUE_SHUTDOWN) break;
+    if (GRPC_completion_queue_next(cq, &tag, &ok) == GRPC_COMPLETION_QUEUE_SHUTDOWN) break;
   }
 }
 
-GRPC_completion_queue_operation_status GRPC_commit_ops_and_wait_deadline(GRPC_completion_queue *cq,
+GRPC_completion_queue_operation_status GRPC_completion_queue_next_deadline(GRPC_completion_queue *cq,
                                                                          gpr_timespec deadline,
                                                                          void **tag, bool *ok) {
   for (;;) {
@@ -88,8 +88,8 @@ GRPC_completion_queue_operation_status GRPC_commit_ops_and_wait_deadline(GRPC_co
   }
 }
 
-GRPC_completion_queue_operation_status GRPC_commit_ops_and_wait(GRPC_completion_queue *cq, void **tag, bool *ok) {
-  return GRPC_commit_ops_and_wait_deadline(cq, gpr_inf_future(GPR_CLOCK_REALTIME), tag, ok);
+GRPC_completion_queue_operation_status GRPC_completion_queue_next(GRPC_completion_queue *cq, void **tag, bool *ok) {
+  return GRPC_completion_queue_next_deadline(cq, gpr_inf_future(GPR_CLOCK_REALTIME), tag, ok);
 }
 
 bool GRPC_completion_queue_pluck_internal(GRPC_completion_queue *cq, void *tag) {

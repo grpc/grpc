@@ -281,7 +281,7 @@ static void SendAsyncUnaryRpc(GRPC_channel *channel,
     bool ok;
     GRPC_client_async_response_reader *reader = GRPC_unary_async_call(channel, cq, method, msg, context);
     GRPC_client_async_finish(reader, &resp, (void*) 12345);
-    GRPC_commit_ops_and_wait(cq, &tag, &ok);
+    GRPC_completion_queue_next(cq, &tag, &ok);
     EXPECT_TRUE(ok);
     EXPECT_TRUE(tag == (void*) 12345);
 
