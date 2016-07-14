@@ -265,6 +265,45 @@ static void SendBidiStreamingRpc(GRPC_channel *channel,
   }
 }
 
+static void SendAsyncUnaryRpc(GRPC_channel *channel,
+                         int num_rpcs) {
+  for (int i = 0; i < num_rpcs; ++i) {
+    GRPC_method method = { GRPC_method::RpcType::NORMAL_RPC, "/grpc.testing.EchoTestService/Echo" };
+    GRPC_client_context *context = GRPC_client_context_create(channel);
+    GRPC_completion_queue *cq = GRPC_completion_queue_create();
+    // hardcoded string for "gRPC-C"
+    char str[] = {0x0A, 0x06, 0x67, 0x52, 0x50, 0x43, 0x2D, 0x43};
+    GRPC_message msg = {str, sizeof(str)};
+    // using char array to hold RPC result while protobuf is not there yet
+    GRPC_message resp;
+
+    void *tag;
+    bool ok;
+    GRPC_client_async_response_reader *reader = GRPC_unary_async_call(channel, cq, method, msg, context);
+    GRPC_client_async_finish(reader, &resp, (void*) 12345);
+    GRPC_commit_ops_and_wait(cq, &tag, &ok);
+    EXPECT_TRUE(ok);
+    EXPECT_TRUE(tag == (void*) 12345);
+
+    GRPC_status status = GRPC_get_call_status(context);
+    EXPECT_TRUE(status.ok) << status.details;
+    EXPECT_TRUE(status.code == GRPC_STATUS_OK) << status.details;
+
+    char *response_string = (char *) malloc(resp.length - 2 + 1);
+    memcpy(response_string, ((char *) resp.data) + 2, resp.length - 2);
+    response_string[resp.length - 2] = '\0';
+
+    EXPECT_EQ(grpc::string("gRPC-C"), grpc::string(response_string));
+
+    free(response_string);
+    GRPC_message_destroy(&resp);
+    GRPC_client_context_destroy(&context);
+    GRPC_completion_queue_shutdown(cq);
+    GRPC_completion_queue_shutdown_wait(cq);
+    GRPC_completion_queue_destroy(cq);
+  }
+}
+
 class UnaryEnd2endTest : public End2endTest {
 protected:
 };
@@ -278,6 +317,10 @@ protected:
 };
 
 class BidiStreamingEnd2endTest : public End2endTest {
+protected:
+};
+
+class AsyncUnaryEnd2endTest : public End2endTest {
 protected:
 };
 
@@ -306,6 +349,13 @@ TEST(End2endTest, BidiStreamingRpc) {
   BidiStreamingEnd2endTest test;
   test.ResetStub();
   SendBidiStreamingRpc(test.c_channel_, 3);
+  test.TearDown();
+}
+
+TEST(End2endTest, AsyncUnaryRpc) {
+  AsyncUnaryEnd2endTest test;
+  test.ResetStub();
+  SendAsyncUnaryRpc(test.c_channel_, 3);
   test.TearDown();
 }
 
