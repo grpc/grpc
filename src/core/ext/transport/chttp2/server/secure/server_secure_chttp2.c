@@ -42,6 +42,7 @@
 #include <grpc/support/useful.h>
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/channel/http_server_filter.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -68,6 +69,10 @@ typedef struct server_secure_state {
 typedef struct server_secure_connect {
   server_secure_state *state;
   grpc_pollset *accepting_pollset;
+  grpc_tcp_server_acceptor *acceptor;
+  gpr_timespec deadline;  // FIXME: remove when we eliminate
+                          // grpc_server_security_connector_do_handshake()
+  grpc_handshake_manager *handshake_mgr;
 } server_secure_connect;
 
 static void state_ref(server_secure_state *state) { gpr_ref(&state->refcount); }
@@ -122,6 +127,19 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *statep,
   gpr_free(state);
 }
 
+static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
+                              void *arg) {
+  server_secure_connect *state = arg;
+  grpc_handshake_manager_destroy(exec_ctx, state->handshake_mgr);
+  state->handshake_mgr = NULL;
+  // TODO(roth, jboeuf): Convert security connector handshaking to use new
+  // handshake API, and then move the code from on_secure_handshake_done()
+  // into this function.
+  grpc_server_security_connector_do_handshake(
+      exec_ctx, state->state->sc, state->acceptor, endpoint, state->deadline,
+      on_secure_handshake_done, state);
+}
+
 static void on_accept(grpc_exec_ctx *exec_ctx, void *statep, grpc_endpoint *tcp,
                       grpc_pollset *accepting_pollset,
                       grpc_tcp_server_acceptor *acceptor) {
@@ -129,11 +147,15 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *statep, grpc_endpoint *tcp,
   state->state = statep;
   state_ref(state->state);
   state->accepting_pollset = accepting_pollset;
-  grpc_server_security_connector_do_handshake(
-      exec_ctx, state->state->sc, acceptor, tcp,
-      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                   gpr_time_from_seconds(120, GPR_TIMESPAN)),
-      on_secure_handshake_done, state);
+  state->acceptor = acceptor;
+  // TODO(roth): We should really get this timeout value from channel
+  // args instead of hard-coding it.
+  state->deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                 gpr_time_from_seconds(120, GPR_TIMESPAN));
+  state->handshake_mgr = grpc_handshake_manager_create();
+  grpc_handshake_manager_do_handshake(exec_ctx, state->handshake_mgr, tcp,
+                                      state->deadline, on_handshake_done,
+                                      state);
 }
 
 /* Server callback: start listening on our ports */

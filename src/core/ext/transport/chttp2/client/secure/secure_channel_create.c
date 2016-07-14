@@ -44,6 +44,7 @@
 #include "src/core/ext/client_config/resolver_registry.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -69,6 +70,8 @@ typedef struct {
   grpc_endpoint *newly_connecting_endpoint;
 
   grpc_closure connected_closure;
+
+  grpc_handshake_manager *handshake_mgr;
 } connector;
 
 static void connector_ref(grpc_connector *con) {
@@ -80,6 +83,7 @@ static void connector_unref(grpc_exec_ctx *exec_ctx, grpc_connector *con) {
   connector *c = (connector *)con;
   if (gpr_unref(&c->refs)) {
     /* c->initial_string_buffer does not need to be destroyed */
+    grpc_handshake_manager_destroy(exec_ctx, c->handshake_mgr);
     gpr_free(c);
   }
 }
@@ -116,12 +120,23 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_exec_ctx_sched(exec_ctx, notify, GRPC_ERROR_NONE, NULL);
 }
 
+static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
+                              void *arg) {
+  connector *c = arg;
+  // TODO(roth, jboeuf): Convert security connector handshaking to use new
+  // handshake API, and then move the code from on_secure_handshake_done()
+  // into this function.
+  grpc_channel_security_connector_do_handshake(exec_ctx, c->security_connector,
+                                               endpoint, c->args.deadline,
+                                               on_secure_handshake_done, c);
+}
+
 static void on_initial_connect_string_sent(grpc_exec_ctx *exec_ctx, void *arg,
                                            grpc_error *error) {
   connector *c = arg;
-  grpc_channel_security_connector_do_handshake(
-      exec_ctx, c->security_connector, c->connecting_endpoint, c->args.deadline,
-      on_secure_handshake_done, c);
+  grpc_handshake_manager_do_handshake(exec_ctx, c->handshake_mgr,
+                                      c->connecting_endpoint, c->args.deadline,
+                                      on_handshake_done, c);
 }
 
 static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
@@ -142,9 +157,9 @@ static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
       grpc_endpoint_write(exec_ctx, tcp, &c->initial_string_buffer,
                           &c->initial_string_sent);
     } else {
-      grpc_channel_security_connector_do_handshake(
-          exec_ctx, c->security_connector, tcp, c->args.deadline,
-          on_secure_handshake_done, c);
+      grpc_handshake_manager_do_handshake(exec_ctx, c->handshake_mgr, tcp,
+                                          c->args.deadline, on_handshake_done,
+                                          c);
     }
   } else {
     memset(c->result, 0, sizeof(*c->result));
@@ -227,6 +242,7 @@ static grpc_subchannel *client_channel_factory_create_subchannel(
   memset(c, 0, sizeof(*c));
   c->base.vtable = &connector_vtable;
   c->security_connector = f->security_connector;
+  c->handshake_mgr = grpc_handshake_manager_create();
   gpr_mu_init(&c->mu);
   gpr_ref_init(&c->refs, 1);
   args->args = final_args;

@@ -40,6 +40,8 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
+// FIXME: high-level documentation
+
 //
 // grpc_handshaker -- API for initial handshaking for a new connection
 //
