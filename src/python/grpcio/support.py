@@ -50,7 +50,6 @@ Could not find <Python.h>. This could mean the following:
     (check your environment variables or try re-installing?)
   * You're on Windows and your Python installation was somehow corrupted
     (check your environment variables or try re-installing?)
-    * Note: Windows users should look into installing `vcpython27`.
 """
 
 C_CHECKS = {

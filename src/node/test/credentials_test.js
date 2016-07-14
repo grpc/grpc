@@ -318,7 +318,7 @@ describe('client credentials', function() {
       done();
     });
   });
-  it.skip('should propagate errors that the updater emits', function(done) {
+  it('should propagate errors that the updater emits', function(done) {
     var metadataUpdater = function(service_url, callback) {
       var error = new Error('Authentication error');
       error.code = grpc.status.UNAUTHENTICATED;
@@ -370,7 +370,7 @@ describe('client credentials', function() {
       done();
     });
   });
-  it.skip('should get an error from a Google credential', function(done) {
+  it('should get an error from a Google credential', function(done) {
     var creds = grpc.credentials.createFromGoogleCredential(
         fakeFailingGoogleCredentials);
     var combined_creds = grpc.credentials.combineChannelCredentials(

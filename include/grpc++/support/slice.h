@@ -77,6 +77,9 @@ class Slice GRPC_FINAL {
   /// Raw pointer to the end (one byte \em past the last element) of the slice.
   const uint8_t* end() const { return GPR_SLICE_END_PTR(slice_); }
 
+  /// Raw C slice. Caller needs to call gpr_slice_unref when done.
+  gpr_slice c_slice() const { return gpr_slice_ref(slice_); }
+
  private:
   friend class ByteBuffer;
 

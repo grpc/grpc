@@ -61,38 +61,6 @@ namespace Helloworld {
       get { return global::Helloworld.HelloworldReflection.Descriptor.Services[0]; }
     }
 
-    /// <summary>Client for Greeter</summary>
-    [System.Obsolete("Client side interfaced will be removed in the next release. Use client class directly.")]
-    public interface IGreeterClient
-    {
-      /// <summary>
-      ///  Sends a greeting
-      /// </summary>
-      global::Helloworld.HelloReply SayHello(global::Helloworld.HelloRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      /// <summary>
-      ///  Sends a greeting
-      /// </summary>
-      global::Helloworld.HelloReply SayHello(global::Helloworld.HelloRequest request, CallOptions options);
-      /// <summary>
-      ///  Sends a greeting
-      /// </summary>
-      AsyncUnaryCall<global::Helloworld.HelloReply> SayHelloAsync(global::Helloworld.HelloRequest request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
-      /// <summary>
-      ///  Sends a greeting
-      /// </summary>
-      AsyncUnaryCall<global::Helloworld.HelloReply> SayHelloAsync(global::Helloworld.HelloRequest request, CallOptions options);
-    }
-
-    /// <summary>Interface of server-side implementations of Greeter</summary>
-    [System.Obsolete("Service implementations should inherit from the generated abstract base class instead.")]
-    public interface IGreeter
-    {
-      /// <summary>
-      ///  Sends a greeting
-      /// </summary>
-      global::System.Threading.Tasks.Task<global::Helloworld.HelloReply> SayHello(global::Helloworld.HelloRequest request, ServerCallContext context);
-    }
-
     /// <summary>Base class for server-side implementations of Greeter</summary>
     public abstract class GreeterBase
     {
@@ -107,21 +75,24 @@ namespace Helloworld {
     }
 
     /// <summary>Client for Greeter</summary>
-    #pragma warning disable 0618
-    public class GreeterClient : ClientBase<GreeterClient>, IGreeterClient
-    #pragma warning restore 0618
+    public class GreeterClient : ClientBase<GreeterClient>
     {
+      /// <summary>Creates a new client for Greeter</summary>
+      /// <param name="channel">The channel to use to make remote calls.</param>
       public GreeterClient(Channel channel) : base(channel)
       {
       }
+      /// <summary>Creates a new client for Greeter that uses a custom <c>CallInvoker</c>.</summary>
+      /// <param name="callInvoker">The callInvoker to use to make remote calls.</param>
       public GreeterClient(CallInvoker callInvoker) : base(callInvoker)
       {
       }
-      ///<summary>Protected parameterless constructor to allow creation of test doubles.</summary>
+      /// <summary>Protected parameterless constructor to allow creation of test doubles.</summary>
       protected GreeterClient() : base()
       {
       }
-      ///<summary>Protected constructor to allow creation of configured clients.</summary>
+      /// <summary>Protected constructor to allow creation of configured clients.</summary>
+      /// <param name="configuration">The client configuration.</param>
       protected GreeterClient(ClientBaseConfiguration configuration) : base(configuration)
       {
       }
@@ -160,27 +131,10 @@ namespace Helloworld {
       }
     }
 
-    /// <summary>Creates a new client for Greeter</summary>
-    public static GreeterClient NewClient(Channel channel)
-    {
-      return new GreeterClient(channel);
-    }
-
     /// <summary>Creates service definition that can be registered with a server</summary>
-    #pragma warning disable 0618
-    public static ServerServiceDefinition BindService(IGreeter serviceImpl)
-    #pragma warning restore 0618
-    {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
-          .AddMethod(__Method_SayHello, serviceImpl.SayHello).Build();
-    }
-
-    /// <summary>Creates service definition that can be registered with a server</summary>
-    #pragma warning disable 0618
     public static ServerServiceDefinition BindService(GreeterBase serviceImpl)
-    #pragma warning restore 0618
     {
-      return ServerServiceDefinition.CreateBuilder(__ServiceName)
+      return ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_SayHello, serviceImpl.SayHello).Build();
     }
 

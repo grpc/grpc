@@ -67,11 +67,6 @@ RUN apt-get update && apt-get install -y time && apt-get clean
 # C++ dependencies
 RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
 
-#======================
-# Zookeeper dependencies
-# TODO(jtattermusch): is zookeeper still needed?
-RUN apt-get install -y libzookeeper-mt-dev
-
 RUN mkdir /var/local/jenkins
 
 # Define the default command.

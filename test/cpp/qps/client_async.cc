@@ -180,14 +180,14 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
 
     using namespace std::placeholders;
     int t = 0;
-    for (int i = 0; i < config.outstanding_rpcs_per_channel(); i++) {
-      for (int ch = 0; ch < config.client_channels(); ch++) {
+    for (int ch = 0; ch < config.client_channels(); ch++) {
+      for (int i = 0; i < config.outstanding_rpcs_per_channel(); i++) {
         auto* cq = cli_cqs_[t].get();
         auto ctx =
             setup_ctx(channels_[ch].get_stub(), next_issuers_[t], request_);
         ctx->Start(cq);
-        t = (t + 1) % cli_cqs_.size();
       }
+      t = (t + 1) % cli_cqs_.size();
     }
   }
   virtual ~AsyncClient() {

@@ -32,8 +32,8 @@
   FROM 32bit/debian:jessie
   
   <%include file="../../apt_get_basic.include"/>
+  <%include file="../../python_deps.include"/>
   <%include file="../../cxx_deps.include"/>
   <%include file="../../run_tests_addons.include"/>
   # Define the default command.
   CMD ["bash"]
-  

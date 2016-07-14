@@ -148,7 +148,7 @@ namespace Grpc.IntegrationTesting
                     channels.Add(channel);
                     for (int j = 0; j < options.NumStubsPerChannel; j++)
                     {
-                        var client = TestService.NewClient(channel);
+                        var client = new TestService.TestServiceClient(channel);
                         var task = Task.Factory.StartNew(() => RunBodyAsync(client).GetAwaiter().GetResult(),
                             TaskCreationOptions.LongRunning);
                         tasks.Add(task);  

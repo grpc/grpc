@@ -236,9 +236,10 @@ void grpc_chttp2_publish_reads(
                                            GRPC_ERROR_INT_HTTP2_ERROR, &reason);
       if (has_reason && reason != GRPC_CHTTP2_NO_ERROR) {
         grpc_status_code status_code =
-            has_reason ? grpc_chttp2_http2_error_to_grpc_status(
-                             (grpc_chttp2_error_code)reason)
-                       : GRPC_STATUS_INTERNAL;
+            has_reason
+                ? grpc_chttp2_http2_error_to_grpc_status(
+                      (grpc_chttp2_error_code)reason, stream_global->deadline)
+                : GRPC_STATUS_INTERNAL;
         const char *status_details =
             grpc_error_string(stream_parsing->forced_close_error);
         gpr_slice slice_details = gpr_slice_from_copied_string(status_details);
@@ -468,6 +469,17 @@ grpc_error *grpc_chttp2_perform_read(
 
 static grpc_error *init_frame_parser(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_parsing *transport_parsing) {
+  if (transport_parsing->is_first_frame &&
+      transport_parsing->incoming_frame_type != GRPC_CHTTP2_FRAME_SETTINGS) {
+    char *msg;
+    gpr_asprintf(
+        &msg, "Expected SETTINGS frame as the first frame, got frame type %d",
+        transport_parsing->incoming_frame_type);
+    grpc_error *err = GRPC_ERROR_CREATE(msg);
+    gpr_free(msg);
+    return err;
+  }
+  transport_parsing->is_first_frame = false;
   if (transport_parsing->expect_continuation_stream_id != 0) {
     if (transport_parsing->incoming_frame_type !=
         GRPC_CHTTP2_FRAME_CONTINUATION) {

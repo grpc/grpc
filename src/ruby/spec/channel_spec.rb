@@ -37,7 +37,6 @@ end
 
 describe GRPC::Core::Channel do
   let(:fake_host) { 'localhost:0' }
-  let(:cq) { GRPC::Core::CompletionQueue.new }
 
   def create_test_cert
     GRPC::Core::ChannelCredentials.new(load_test_certs[0])
@@ -122,7 +121,7 @@ describe GRPC::Core::Channel do
       deadline = Time.now + 5
 
       blk = proc do
-        ch.create_call(cq, nil, nil, 'dummy_method', nil, deadline)
+        ch.create_call(nil, nil, 'dummy_method', nil, deadline)
       end
       expect(&blk).to_not raise_error
     end
@@ -133,7 +132,7 @@ describe GRPC::Core::Channel do
 
       deadline = Time.now + 5
       blk = proc do
-        ch.create_call(cq, nil, nil, 'dummy_method', nil, deadline)
+        ch.create_call(nil, nil, 'dummy_method', nil, deadline)
       end
       expect(&blk).to raise_error(RuntimeError)
     end

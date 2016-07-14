@@ -81,7 +81,7 @@ struct grpc_channel {
   CHANNEL_FROM_CHANNEL_STACK(grpc_channel_stack_from_top_element(top_elem))
 
 /* the protobuf library will (by default) start warning at 100megs */
-#define DEFAULT_MAX_MESSAGE_LENGTH (100 * 1024 * 1024)
+#define DEFAULT_MAX_MESSAGE_LENGTH (4 * 1024 * 1024)
 
 static void destroy_channel(grpc_exec_ctx *exec_ctx, void *arg,
                             grpc_error *error);
@@ -223,11 +223,12 @@ grpc_call *grpc_channel_create_call(grpc_channel *channel,
       "grpc_channel_create_call("
       "channel=%p, parent_call=%p, propagation_mask=%x, cq=%p, method=%s, "
       "host=%s, "
-      "deadline=gpr_timespec { tv_sec: %lld, tv_nsec: %d, clock_type: %d }, "
+      "deadline=gpr_timespec { tv_sec: %" PRId64
+      ", tv_nsec: %d, clock_type: %d }, "
       "reserved=%p)",
-      10, (channel, parent_call, (unsigned)propagation_mask, cq, method, host,
-           (long long)deadline.tv_sec, (int)deadline.tv_nsec,
-           (int)deadline.clock_type, reserved));
+      10,
+      (channel, parent_call, (unsigned)propagation_mask, cq, method, host,
+       deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type, reserved));
   GPR_ASSERT(!reserved);
   return grpc_channel_create_call_internal(
       channel, parent_call, propagation_mask, cq, NULL,
@@ -282,11 +283,12 @@ grpc_call *grpc_channel_create_registered_call(
       "grpc_channel_create_registered_call("
       "channel=%p, parent_call=%p, propagation_mask=%x, completion_queue=%p, "
       "registered_call_handle=%p, "
-      "deadline=gpr_timespec { tv_sec: %lld, tv_nsec: %d, clock_type: %d }, "
+      "deadline=gpr_timespec { tv_sec: %" PRId64
+      ", tv_nsec: %d, clock_type: %d }, "
       "reserved=%p)",
       9, (channel, parent_call, (unsigned)propagation_mask, completion_queue,
-          registered_call_handle, (long long)deadline.tv_sec,
-          (int)deadline.tv_nsec, (int)deadline.clock_type, reserved));
+          registered_call_handle, deadline.tv_sec, deadline.tv_nsec,
+          (int)deadline.clock_type, reserved));
   GPR_ASSERT(!reserved);
   return grpc_channel_create_call_internal(
       channel, parent_call, propagation_mask, completion_queue, NULL,

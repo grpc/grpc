@@ -249,10 +249,13 @@ grpcsharp_batch_context_recv_initial_metadata(
 
 GPR_EXPORT intptr_t GPR_CALLTYPE grpcsharp_batch_context_recv_message_length(
     const grpcsharp_batch_context *ctx) {
+  grpc_byte_buffer_reader reader;
   if (!ctx->recv_message) {
     return -1;
   }
-  return (intptr_t)grpc_byte_buffer_length(ctx->recv_message);
+  /* TODO(issue:#7206): check return value of grpc_byte_buffer_reader_init. */
+  grpc_byte_buffer_reader_init(&reader, ctx->recv_message);
+  return (intptr_t)grpc_byte_buffer_length(reader.buffer_out);
 }
 
 /*
@@ -265,6 +268,7 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_batch_context_recv_message_to_buffer(
   gpr_slice slice;
   size_t offset = 0;
 
+  /* TODO(issue:#7206): check return value of grpc_byte_buffer_reader_init. */
   grpc_byte_buffer_reader_init(&reader, ctx->recv_message);
 
   while (grpc_byte_buffer_reader_next(&reader, &slice)) {

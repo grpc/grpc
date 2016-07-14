@@ -74,6 +74,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Grpc.HealthCheck.Tests.project.json" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
