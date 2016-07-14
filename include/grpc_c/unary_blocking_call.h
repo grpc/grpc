@@ -37,7 +37,7 @@
 
 #include <grpc_c/grpc_c.h>
 
-GRPC_status GRPC_unary_blocking_call(const GRPC_method *const rpc_method,
+GRPC_status GRPC_unary_blocking_call(const GRPC_method rpc_method,
                                      GRPC_client_context *const context,
                                      const GRPC_message message,
                                      void *response);
