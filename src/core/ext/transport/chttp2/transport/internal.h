@@ -358,7 +358,8 @@ struct grpc_chttp2_transport {
   /** global state for reading/writing */
   grpc_chttp2_transport_global global;
   /** state only accessible by the chain of execution that
-      set writing_active=1 */
+      set writing_state >= GRPC_WRITING, and only by the writing closure
+      chain. */
   grpc_chttp2_transport_writing writing;
   /** state only accessible by the chain of execution that
       set parsing_active=1 */
