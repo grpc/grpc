@@ -36,16 +36,15 @@
 #include "helloworld.grpc.pbc.h"
 
 int main(int argc, char** argv) {
-  // Instantiate the client. It requires a channel, out of which the actual RPCs
+  // Instantiate the channel, out of which the actual RPCs
   // are created. This channel models a connection to an endpoint (in this case,
-  // localhost at port 50051). We indicate that the channel isn't authenticated
-  // (use of InsecureChannelCredentials()).
+  // localhost at port 50051).
   // Local greetings server
   GRPC_channel *chan = GRPC_channel_create("0.0.0.0:50051");
   GRPC_context *context = GRPC_context_create(chan);
-  HelloRequest request = { "world" };
-  HelloResponse response;
-  GRPC_status status = Greeter_SayHello(chan, context, request, &response);
+  helloworld_HelloRequest request = { "world" };
+  helloworld_HelloResponse response;
+  GRPC_status status = helloworld_Greeter_SayHello(chan, context, request, &response);
   if (status.code == GRPC_STATUS_OK) {
     printf("Server replied: %s\n", response.message);
     return 0;

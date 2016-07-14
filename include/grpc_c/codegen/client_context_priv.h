@@ -31,48 +31,19 @@
  *
  */
 
+#ifndef GRPC_CLIENT_CONTEXT_PRIV_H
+#define GRPC_CLIENT_CONTEXT_PRIV_H
 
-#ifndef GRPC_C_PUBLIC_H
-#define GRPC_C_PUBLIC_H
+#include <grpc_c/serialization.h>
+#include <grpc_c/client_context.h>
 
-#include <stdlib.h>
-#include <grpc_c/message.h>
+typedef struct grpc_serialization_impl {
+  GRPC_serializer serialize;
+  GRPC_deserializer deserialize;
+} grpc_serialization_impl;
 
-typedef struct grpc_channel GRPC_channel;
-typedef struct grpc_status GRPC_status;
-typedef struct grpc_client_context GRPC_client_context;
-typedef struct grpc_completion_queue GRPC_completion_queue;
+void GRPC_client_context_set_serialization_impl(
+  GRPC_client_context *context,
+  grpc_serialization_impl serialization_impl);
 
-typedef struct grpc_client_reader_writer GRPC_client_reader_writer;
-typedef struct grpc_client_reader GRPC_client_reader;
-typedef struct grpc_client_writer GRPC_client_writer;
-typedef struct grpc_client_async_reader_writer GRPC_client_async_reader_writer;
-typedef struct grpc_client_async_reader GRPC_client_async_reader;
-typedef struct grpc_client_async_writer GRPC_client_async_writer;
-typedef struct grpc_client_async_response_reader GRPC_client_async_response_reader;
-
-typedef struct grpc_method {
-  enum RpcType {
-    NORMAL_RPC = 0,
-    CLIENT_STREAMING,  /* request streaming */
-    SERVER_STREAMING,  /* response streaming */
-    BIDI_STREAMING
-  } type;
-  const char* name;
-} grpc_method;
-
-typedef struct grpc_method GRPC_method;
-
-/* For C compilers without bool support */
-#ifndef __cplusplus
-#if defined(__STDC__) && __STDC_VERSION__ >= 199901L
-#include <stdbool.h>
-#else
-#ifndef bool
-typedef enum _bool { false, true };
-typedef enum _bool bool;
-#endif
-#endif
-#endif
-
-#endif /* GRPC_C_PUBLIC_H */
+#endif /* GRPC_CLIENT_CONTEXT_PRIV_H */

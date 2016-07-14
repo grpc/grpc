@@ -59,8 +59,9 @@ void GRPC_completion_queue_shutdown_wait(GRPC_completion_queue *cq) {
 }
 
 GRPC_completion_queue_operation_status GRPC_completion_queue_next_deadline(GRPC_completion_queue *cq,
-                                                                         gpr_timespec deadline,
-                                                                         void **tag, bool *ok) {
+                                                                           GRPC_timespec deadline,
+                                                                           void **tag,
+                                                                           bool *ok) {
   for (;;) {
     grpc_call_op_set *set = NULL;
     grpc_event ev = grpc_completion_queue_next(cq, deadline, NULL);

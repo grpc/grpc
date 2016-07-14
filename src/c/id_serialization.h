@@ -40,7 +40,7 @@
 
 /* Serialization functions that doesn't do anything except duplicating the buffer */
 
-void GRPC_id_serialize(grpc_message input, grpc_message *output);
-void GRPC_id_deserialize(grpc_message input, void *output);
+grpc_message GRPC_id_serialize(const grpc_message input);
+void GRPC_id_deserialize(const grpc_message input, void *output);
 
 #endif //TEST_GRPC_C_MOCK_SERIALIZATION_H

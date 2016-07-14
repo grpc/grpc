@@ -67,6 +67,11 @@ extern "C" {
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
+/**
+ * End-to-end tests for the gRPC C API.
+ * As of early July 2016, this C API does not support creating servers, so we pull in a server implementation for C++
+ * and put this test under the C++ build.
+ */
 
 using grpc::testing::kTlsCredentialsType;
 using std::chrono::system_clock;
