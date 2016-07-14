@@ -32,12 +32,14 @@
  */
 
 #include "src/core/lib/iomgr/combiner.h"
-#include "src/core/lib/iomgr/workqueue.h"
 
 #include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+
+#include "src/core/lib/iomgr/workqueue.h"
+#include "src/core/lib/profiling/timers.h"
 
 struct grpc_combiner {
   grpc_workqueue *optional_workqueue;
@@ -79,15 +81,18 @@ static void finish(grpc_exec_ctx *exec_ctx, grpc_combiner *lock);
 
 static void continue_finishing_mainline(grpc_exec_ctx *exec_ctx, void *arg,
                                         grpc_error *error) {
+  GPR_TIMER_BEGIN("combiner.continue_executing_mainline", 0);
   grpc_combiner *lock = arg;
   GPR_ASSERT(exec_ctx->active_combiner == NULL);
   exec_ctx->active_combiner = lock;
   if (maybe_finish_one(exec_ctx, lock)) finish(exec_ctx, lock);
   GPR_ASSERT(exec_ctx->active_combiner == lock);
   exec_ctx->active_combiner = NULL;
+  GPR_TIMER_END("combiner.continue_executing_mainline", 0);
 }
 
 static void execute_final(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
+  GPR_TIMER_BEGIN("combiner.execute_final", 0);
   grpc_closure *c = lock->final_list.head;
   grpc_closure_list_init(&lock->final_list);
   lock->take_async_break_before_final_list = false;
@@ -98,10 +103,12 @@ static void execute_final(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
     GRPC_ERROR_UNREF(error);
     c = next;
   }
+  GPR_TIMER_END("combiner.execute_final", 0);
 }
 
 static void continue_executing_final(grpc_exec_ctx *exec_ctx, void *arg,
                                      grpc_error *error) {
+  GPR_TIMER_BEGIN("combiner.continue_executing_final", 0);
   grpc_combiner *lock = arg;
   GPR_ASSERT(exec_ctx->active_combiner == NULL);
   exec_ctx->active_combiner = lock;
@@ -115,23 +122,28 @@ static void continue_executing_final(grpc_exec_ctx *exec_ctx, void *arg,
   }
   GPR_ASSERT(exec_ctx->active_combiner == lock);
   exec_ctx->active_combiner = NULL;
+  GPR_TIMER_END("combiner.continue_executing_final", 0);
 }
 
 static bool start_execute_final(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
+  GPR_TIMER_BEGIN("combiner.start_execute_final", 0);
   GPR_ASSERT(exec_ctx->active_combiner == lock);
   if (lock->take_async_break_before_final_list) {
     grpc_closure_init(&lock->continue_finishing, continue_executing_final,
                       lock);
     grpc_exec_ctx_sched(exec_ctx, &lock->continue_finishing, GRPC_ERROR_NONE,
                         GRPC_WORKQUEUE_REF(lock->optional_workqueue, "sched"));
+    GPR_TIMER_END("combiner.start_execute_final", 0);
     return false;
   } else {
     execute_final(exec_ctx, lock);
+    GPR_TIMER_END("combiner.start_execute_final", 0);
     return true;
   }
 }
 
 static bool maybe_finish_one(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
+  GPR_TIMER_BEGIN("combiner.maybe_finish_one", 0);
   gpr_mpscq_node *n = gpr_mpscq_pop(&lock->queue);
   GPR_ASSERT(exec_ctx->active_combiner == lock);
   if (n == NULL) {
@@ -141,18 +153,21 @@ static bool maybe_finish_one(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
                       lock);
     grpc_exec_ctx_sched(exec_ctx, &lock->continue_finishing, GRPC_ERROR_NONE,
                         GRPC_WORKQUEUE_REF(lock->optional_workqueue, "sched"));
+    GPR_TIMER_END("combiner.maybe_finish_one", 0);
     return false;
   }
   grpc_closure *cl = (grpc_closure *)n;
   grpc_error *error = cl->error;
   cl->cb(exec_ctx, cl->cb_arg, error);
   GRPC_ERROR_UNREF(error);
+    GPR_TIMER_END("combiner.maybe_finish_one", 0);
   return true;
 }
 
 static void finish(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
   bool (*executor)(grpc_exec_ctx * exec_ctx, grpc_combiner * lock) =
       maybe_finish_one;
+  GPR_TIMER_BEGIN("combiner.finish",0);
   do {
     switch (gpr_atm_full_fetch_add(&lock->state, -2)) {
       case 5:  // we're down to one queued item: if it's the final list we
@@ -162,9 +177,11 @@ static void finish(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
         }
         break;
       case 3:  // had one count, one unorphaned --> unlocked unorphaned
+        GPR_TIMER_END("combiner.finish", 0);
         return;
       case 2:  // and one count, one orphaned --> unlocked and orphaned
         really_destroy(exec_ctx, lock);
+        GPR_TIMER_END("combiner.finish", 0);
         return;
       case 1:
       case 0:
@@ -173,15 +190,19 @@ static void finish(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
         GPR_UNREACHABLE_CODE(return );
     }
   } while (executor(exec_ctx, lock));
+        GPR_TIMER_END("combiner.finish", 0);
 }
 
 void grpc_combiner_execute(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
                            grpc_closure *cl, grpc_error *error) {
+  GPR_TIMER_BEGIN("combiner.execute", 0);
   gpr_atm last = gpr_atm_full_fetch_add(&lock->state, 2);
   GPR_ASSERT(last & 1);  // ensure lock has not been destroyed
   if (last == 1) {
     exec_ctx->active_combiner = lock;
+    GPR_TIMER_BEGIN("combiner.execute_first_cb", 0);
     cl->cb(exec_ctx, cl->cb_arg, error);
+    GPR_TIMER_END("combiner.execute_first_cb", 0);
     GRPC_ERROR_UNREF(error);
     finish(exec_ctx, lock);
     GPR_ASSERT(exec_ctx->active_combiner == lock);
@@ -190,6 +211,7 @@ void grpc_combiner_execute(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
     cl->error = error;
     gpr_mpscq_push(&lock->queue, &cl->next_data.atm_next);
   }
+  GPR_TIMER_END("combiner.execute", 0);
 }
 
 static void enqueue_finally(grpc_exec_ctx *exec_ctx, void *closure,
@@ -201,9 +223,12 @@ static void enqueue_finally(grpc_exec_ctx *exec_ctx, void *closure,
 void grpc_combiner_execute_finally(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
                                    grpc_closure *closure, grpc_error *error,
                                    bool force_async_break) {
+  GPR_TIMER_BEGIN("combiner.execute_finally", 0);
   if (exec_ctx->active_combiner != lock) {
+    GPR_TIMER_MARK("slowpath", 0);
     grpc_combiner_execute(exec_ctx, lock,
                           grpc_closure_create(enqueue_finally, closure), error);
+    GPR_TIMER_END("combiner.execute_finally", 0);
     return;
   }
 
@@ -214,6 +239,7 @@ void grpc_combiner_execute_finally(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
     gpr_atm_full_fetch_add(&lock->state, 2);
   }
   grpc_closure_list_append(&lock->final_list, closure, error);
+    GPR_TIMER_END("combiner.execute_finally", 0);
 }
 
 void grpc_combiner_force_async_finally(grpc_combiner *lock) {

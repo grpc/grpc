@@ -43,6 +43,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 
 static void on_readable(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error);
@@ -121,6 +122,7 @@ static void drain(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {
 }
 
 static void wakeup(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {
+  GPR_TIMER_MARK("workqueue.wakeup", 0);
   grpc_error *err = grpc_wakeup_fd_wakeup(&workqueue->wakeup_fd);
   if (!GRPC_LOG_IF_ERROR("wakeupfd_wakeup", err)) {
     drain(exec_ctx, workqueue);
@@ -128,6 +130,8 @@ static void wakeup(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue) {
 }
 
 static void on_readable(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+  GPR_TIMER_BEGIN("workqueue.on_readable", 0);
+  
   grpc_workqueue *workqueue = arg;
 
   if (error != GRPC_ERROR_NONE) {
@@ -172,10 +176,13 @@ static void on_readable(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
       GRPC_ERROR_UNREF(clerr);
     }
   }
+  
+  GPR_TIMER_END("workqueue.on_readable", 0);
 }
 
 void grpc_workqueue_enqueue(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
                             grpc_closure *closure, grpc_error *error) {
+  GPR_TIMER_BEGIN("workqueue.enqueue", 0);
   gpr_atm last = gpr_atm_full_fetch_add(&workqueue->state, 2);
   GPR_ASSERT(last & 1);
   closure->error = error;
@@ -183,6 +190,7 @@ void grpc_workqueue_enqueue(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
   if (last == 1) {
     wakeup(exec_ctx, workqueue);
   }
+  GPR_TIMER_END("workqueue.enqueue", 0);
 }
 
 #endif /* GPR_POSIX_SOCKET */

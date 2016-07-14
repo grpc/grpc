@@ -332,6 +332,7 @@ static void finalize_outbuf(grpc_exec_ctx *exec_ctx,
 void grpc_chttp2_cleanup_writing(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_transport_writing *transport_writing) {
+  GPR_TIMER_BEGIN("grpc_chttp2_cleanup_writing", 0);
   grpc_chttp2_stream_writing *stream_writing;
   grpc_chttp2_stream_global *stream_global;
 
@@ -370,4 +371,5 @@ void grpc_chttp2_cleanup_writing(
     GRPC_CHTTP2_STREAM_UNREF(exec_ctx, stream_global, "chttp2_writing");
   }
   gpr_slice_buffer_reset_and_unref(&transport_writing->outbuf);
+  GPR_TIMER_END("grpc_chttp2_cleanup_writing", 0);
 }
