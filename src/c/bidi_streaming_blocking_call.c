@@ -40,11 +40,10 @@
 #include "tag.h"
 #include "completion_queue.h"
 
-GRPC_client_reader_writer *GRPC_bidi_streaming_blocking_call(GRPC_channel *channel,
-                                                        const GRPC_method rpc_method,
-                                                        GRPC_client_context *const context) {
+GRPC_client_reader_writer *GRPC_bidi_streaming_blocking_call(const GRPC_method rpc_method,
+                                                             GRPC_client_context *const context) {
   grpc_completion_queue *cq = GRPC_completion_queue_create();
-  grpc_call *call = grpc_channel_create_call(channel,
+  grpc_call *call = grpc_channel_create_call(context->channel,
                                              NULL,
                                              GRPC_PROPAGATE_DEFAULTS,
                                              cq,
@@ -79,7 +78,7 @@ GRPC_client_reader_writer *GRPC_bidi_streaming_blocking_call(GRPC_channel *chann
   }
 }
 
-bool GRPC_bidi_streaming_blocking_read(GRPC_client_reader_writer *reader_writer, GRPC_message *response) {
+bool GRPC_bidi_streaming_blocking_read(GRPC_client_reader_writer *reader_writer, void *response) {
   grpc_call_op_set set_meta = {
     {
       grpc_op_recv_metadata,

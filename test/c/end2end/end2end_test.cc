@@ -142,20 +142,21 @@ static void SendUnaryRpc(GRPC_channel *channel,
     char str[] = {0x0A, 0x06, 0x67, 0x52, 0x50, 0x43, 0x2D, 0x43};
     GRPC_message msg = {str, sizeof(str)};
     // using char array to hold RPC result while protobuf is not there yet
-    GRPC_message resp;
-    GRPC_status status = GRPC_unary_blocking_call(channel, &method, context, msg, &resp);
+    char resp[100];
+    GRPC_status status = GRPC_unary_blocking_call(&method, context, msg, resp);
 
     EXPECT_TRUE(status.ok) << status.details;
     EXPECT_TRUE(status.code == GRPC_STATUS_OK) << status.details;
 
-    char *response_string = (char *) malloc(resp.length - 2 + 1);
-    memcpy(response_string, ((char *) resp.data) + 2, resp.length - 2);
-    response_string[resp.length - 2] = '\0';
+    // manually deserializing
+    int resplength = (int) resp[1];
+    char *response_string = (char *) malloc(resplength);
+    memcpy(response_string, ((char *) resp) + 2, resplength);
+    response_string[resplength] = '\0';
 
     EXPECT_EQ(grpc::string("gRPC-C"), grpc::string(response_string));
 
     free(response_string);
-    GRPC_message_destroy(&resp);
     GRPC_client_context_destroy(&context);
   }
 }
@@ -169,9 +170,9 @@ static void SendClientStreamingRpc(GRPC_channel *channel,
     char str[] = {0x0A, 0x06, 0x67, 0x52, 0x50, 0x43, 0x2D, 0x43};
     GRPC_message msg = {str, sizeof(str)};
     // using char array to hold RPC result while protobuf is not there yet
-    GRPC_message resp;
+    char resp[100];
 
-    GRPC_client_writer *writer = GRPC_client_streaming_blocking_call(channel, method, context, &resp);
+    GRPC_client_writer *writer = GRPC_client_streaming_blocking_call(method, context, resp);
     for (int i = 0; i < 3; i++) {
       bool result = GRPC_client_streaming_blocking_write(writer, msg);
       EXPECT_TRUE(result);
@@ -181,14 +182,15 @@ static void SendClientStreamingRpc(GRPC_channel *channel,
     EXPECT_TRUE(status.ok) << status.details;
     EXPECT_TRUE(status.code == GRPC_STATUS_OK) << status.details;
 
-    char *response_string = (char *) malloc(resp.length - 2 + 1);
-    memcpy(response_string, ((char *) resp.data) + 2, resp.length - 2);
-    response_string[resp.length - 2] = '\0';
+    // manually deserializing
+    int resplength = (int) resp[1];
+    char *response_string = (char *) malloc(resplength);
+    memcpy(response_string, ((char *) resp) + 2, resplength);
+    response_string[resplength] = '\0';
 
     EXPECT_EQ(grpc::string("gRPC-CgRPC-CgRPC-C"), grpc::string(response_string));
 
     free(response_string);
-    GRPC_message_destroy(&resp);
     GRPC_client_context_destroy(&context);
   }
 }
@@ -202,19 +204,20 @@ static void SendServerStreamingRpc(GRPC_channel *channel,
     char str[] = {0x0A, 0x06, 0x67, 0x52, 0x50, 0x43, 0x2D, 0x43};
     GRPC_message msg = {str, sizeof(str)};
 
-    GRPC_client_reader *reader = GRPC_server_streaming_blocking_call(channel, method, context, msg);
+    GRPC_client_reader *reader = GRPC_server_streaming_blocking_call(method, context, msg);
 
     // using char array to hold RPC result while protobuf is not there yet
-    GRPC_message resp;
+    char resp[100];
 
     int count = 0;
-    while (GRPC_server_streaming_blocking_read(reader, &resp)) {
-      char *response_string = (char *) malloc(resp.length - 2 + 1);
-      memcpy(response_string, ((char *) resp.data) + 2, resp.length - 2);
-      response_string[resp.length - 2] = '\0';
+    while (GRPC_server_streaming_blocking_read(reader, resp)) {
+      // manually deserializing
+      int resplength = (int) resp[1];
+      char *response_string = (char *) malloc(resplength);
+      memcpy(response_string, ((char *) resp) + 2, resplength);
+      response_string[resplength] = '\0';
       EXPECT_EQ(grpc::string("gRPC-C") + grpc::to_string(count++), grpc::string(response_string));
       free(response_string);
-      GRPC_message_destroy(&resp);
     }
 
     GRPC_status status = GRPC_client_reader_terminate(reader);
@@ -234,10 +237,10 @@ static void SendBidiStreamingRpc(GRPC_channel *channel,
     char str[] = {0x0A, 0x06, 0x67, 0x52, 0x50, 0x43, 0x2D, 0x43};
     GRPC_message msg = {str, sizeof(str)};
 
-    GRPC_client_reader_writer *reader_writer = GRPC_bidi_streaming_blocking_call(channel, method, context);
+    GRPC_client_reader_writer *reader_writer = GRPC_bidi_streaming_blocking_call(method, context);
 
     // using char array to hold RPC result while protobuf is not there yet
-    GRPC_message resp;
+    char resp[100];
 
     const int kNumMsgToSend = 3;
     for (int i = 0; i < kNumMsgToSend; i++) {
@@ -246,14 +249,15 @@ static void SendBidiStreamingRpc(GRPC_channel *channel,
     EXPECT_TRUE(GRPC_bidi_streaming_blocking_writes_done(reader_writer));
 
     int received_num = 0;
-    while (GRPC_bidi_streaming_blocking_read(reader_writer, &resp)) {
+    while (GRPC_bidi_streaming_blocking_read(reader_writer, resp)) {
       received_num++;
-      char *response_string = (char *) malloc(resp.length - 2 + 1);
-      memcpy(response_string, ((char *) resp.data) + 2, resp.length - 2);
-      response_string[resp.length - 2] = '\0';
+      // manually deserializing
+      int resplength = (int) resp[1];
+      char *response_string = (char *) malloc(resplength);
+      memcpy(response_string, ((char *) resp) + 2, resplength);
+      response_string[resplength] = '\0';
       EXPECT_EQ(grpc::string("gRPC-C"), grpc::string(response_string));
       free(response_string);
-      GRPC_message_destroy(&resp);
     }
     EXPECT_EQ(kNumMsgToSend, received_num);
 
@@ -275,12 +279,12 @@ static void SendAsyncUnaryRpc(GRPC_channel *channel,
     char str[] = {0x0A, 0x06, 0x67, 0x52, 0x50, 0x43, 0x2D, 0x43};
     GRPC_message msg = {str, sizeof(str)};
     // using char array to hold RPC result while protobuf is not there yet
-    GRPC_message resp;
+    char resp[100];
 
     void *tag;
     bool ok;
-    GRPC_client_async_response_reader *reader = GRPC_unary_async_call(channel, cq, method, msg, context);
-    GRPC_client_async_finish(reader, &resp, (void*) 12345);
+    GRPC_client_async_response_reader *reader = GRPC_unary_async_call(cq, method, msg, context);
+    GRPC_client_async_finish(reader, resp, (void*) 12345);
     GRPC_completion_queue_next(cq, &tag, &ok);
     EXPECT_TRUE(ok);
     EXPECT_TRUE(tag == (void*) 12345);
@@ -289,14 +293,15 @@ static void SendAsyncUnaryRpc(GRPC_channel *channel,
     EXPECT_TRUE(status.ok) << status.details;
     EXPECT_TRUE(status.code == GRPC_STATUS_OK) << status.details;
 
-    char *response_string = (char *) malloc(resp.length - 2 + 1);
-    memcpy(response_string, ((char *) resp.data) + 2, resp.length - 2);
-    response_string[resp.length - 2] = '\0';
+    // manually deserializing
+    int resplength = (int) resp[1];
+    char *response_string = (char *) malloc(resplength);
+    memcpy(response_string, ((char *) resp) + 2, resplength);
+    response_string[resplength] = '\0';
 
     EXPECT_EQ(grpc::string("gRPC-C"), grpc::string(response_string));
 
     free(response_string);
-    GRPC_message_destroy(&resp);
     GRPC_client_context_destroy(&context);
     GRPC_completion_queue_shutdown(cq);
     GRPC_completion_queue_shutdown_wait(cq);

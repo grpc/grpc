@@ -38,6 +38,6 @@
 #include <grpc_c/grpc_c.h>
 
 typedef void (*GRPC_serializer)(const GRPC_message input, GRPC_message *output);
-typedef void (*GRPC_deserializer)(const GRPC_message input, GRPC_message *output);
+typedef void (*GRPC_deserializer)(const GRPC_message input, void *output);
 
 #endif /* GRPC_C_SERIALIZATION_PUBLIC_H */

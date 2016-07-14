@@ -37,11 +37,10 @@
 
 #include <grpc_c/grpc_c.h>
 
-GRPC_client_reader_writer *GRPC_bidi_streaming_blocking_call(GRPC_channel *channel,
-                                                             const GRPC_method rpc_method,
+GRPC_client_reader_writer *GRPC_bidi_streaming_blocking_call(const GRPC_method rpc_method,
                                                              GRPC_client_context *const context);
 
-bool GRPC_bidi_streaming_blocking_read(GRPC_client_reader_writer *reader, GRPC_message *response);
+bool GRPC_bidi_streaming_blocking_read(GRPC_client_reader_writer *reader, void *response);
 
 bool GRPC_bidi_streaming_blocking_write(GRPC_client_reader_writer *reader_writer, const GRPC_message request);
 
