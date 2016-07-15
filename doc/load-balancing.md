@@ -89,26 +89,28 @@ servers.
    client config.
 2. The gRPC client connects to a gRPC Server.
    1. If the name resolution has hinted that the endpoint is a load balancer,
-      the client will attempt to open a stream to the load balancer service. The
-      server may respond in only one of the following ways.
+      the client's gRPC LB policy will attempt to open a stream to the load
+      balancer service. The server may respond in only one of the following
+      ways.
       1. `status::UNIMPLEMENTED`. There is no loadbalancing in use. The client
          call will fail.
-      1. "I am a Load Balancer and here is the server list." (Goto Step 4.)
-      1. "Please contact Load Balancer X" (See Step 3.) The client will close
+      2. "I am a Load Balancer and here is the server list." (Goto Step 4.)
+      3. "Please contact Load Balancer X" (See Step 3.) The client will close
          this connection and cancel the stream.
-      1. If the server fails to respond, the client will wait for some timeout
+      4. If the server fails to respond, the client will wait for some timeout
          and then re-resolve the name (process to Step 1 above).
-   1. If the name resolution has not hinted that the endpoint is a load
+   2. If the name resolution has not hinted that the endpoint is a load
       balancer, the client connects directly to the service it wants to talk to.
-3. The gRPC client opens a separate connection to the Load Balancer. If this
-   fails, it will go back to step 1 and try another address.
+3. The gRPC client's gRPC LB policy opens a separate connection to the Load
+   Balancer. If this fails, it will go back to step 1 and try another address.
    1. During channel initialization to the Load Balancer, the client will
       attempt to open a stream to the Load Balancer service.
-   1. The load balancer will return a server list to the gRPC client.
-      Optional: The load balancer will also open channels to the gRPC servers if
-      load reporting is needed.
+   2. The Load Balancer will return a server list to the gRPC client. If the
+      server list is empty, the call will wait until a non-empty one is
+      received. Optional: The Load Balancer will also open channels to the gRPC
+      servers if load reporting is needed.
 4. The gRPC client will send RPCs to the gRPC servers contained in the server
-   list from the load balancer.
+   list from the Load Balancer.
 5. Optional: The gRPC servers may periodically report load to the Load Balancer.
 
 ## Client
