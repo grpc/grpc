@@ -128,7 +128,7 @@ static gpr_slice merge_slices(gpr_slice *slices, size_t nslices) {
   return out;
 }
 
-static int byte_buffer_eq_slice(grpc_byte_buffer *bb, gpr_slice b) {
+int byte_buffer_eq_slice(grpc_byte_buffer *bb, gpr_slice b) {
   gpr_slice a;
   int ok;
 

@@ -61,6 +61,7 @@ void cq_verify_empty(cq_verifier *v);
    the event. */
 void cq_expect_completion(cq_verifier *v, void *tag, bool success);
 
+int byte_buffer_eq_slice(grpc_byte_buffer *bb, gpr_slice b);
 int byte_buffer_eq_string(grpc_byte_buffer *byte_buffer, const char *string);
 int contains_metadata(grpc_metadata_array *array, const char *key,
                       const char *value);
