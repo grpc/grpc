@@ -3,7 +3,7 @@
   <ItemGroup>
     <Content Include="..\..\..\libs\$(NativeDependenciesConfigurationUnix)\libgrpc_csharp_ext.so">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>nativelibs\linux_x64\libgrpc_csharp_ext.so</Link>
+      <Link>libgrpc_csharp_ext.x64.so</Link>
     </Content>
   </ItemGroup>
 </Project>
