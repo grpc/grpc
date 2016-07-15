@@ -59,9 +59,6 @@
 #include <grpc/grpc_cronet.h>
 #import <Cronet/Cronet.h>
 
-#import <UIKit/UIKit.h>
-#import "AppDelegate.h"
-
 typedef struct fullstack_secure_fixture_data {
   char *localaddr;
 } fullstack_secure_fixture_data;
@@ -202,5 +199,5 @@ int main(int argc, char **argv) {
   remove(roots_filename);
   gpr_free(roots_filename);
 
-  return UIApplicationMain(argc, argv, nil, NSStringFromClass([AppDelegate class]));
+  return 0;
 }

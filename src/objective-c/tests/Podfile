@@ -27,8 +27,6 @@ GRPC_LOCAL_SRC = '../../..'
     pod 'gRPC-Core',      :path => GRPC_LOCAL_SRC
     pod 'gRPC-RxLibrary', :path => GRPC_LOCAL_SRC
     pod 'gRPC-ProtoRPC',  :path => GRPC_LOCAL_SRC
-
-    pod 'RemoteTest', :path => "RemoteTestClient"
   end
 end
 
