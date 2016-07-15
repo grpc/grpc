@@ -44,9 +44,6 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal sealed class NativeExtension
     {
-        const string NativeLibrariesDir = "nativelibs";
-        const string DnxStyleNativeLibrariesDir = "../../build/native/bin/";
-
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<NativeExtension>();
         static readonly object staticLock = new object();
         static volatile NativeExtension instance;
@@ -97,21 +94,22 @@ namespace Grpc.Core.Internal
         /// </summary>
         private static UnmanagedLibrary Load()
         {
-            // TODO: allow customizing path to native extension (possibly through exposing a GrpcEnvironment property).
-
-            var libraryFlavor = string.Format("{0}_{1}", GetPlatformString(), GetArchitectureString());
-
             var assemblyDirectory = Path.GetDirectoryName(GetAssemblyPath());
 
             // With old-style VS projects, the native libraries get copied using a .targets rule to the build output folder
             // alongside the compiled assembly.
-            var classicPath = Path.Combine(assemblyDirectory, NativeLibrariesDir, libraryFlavor, GetNativeLibraryFilename());
+            // With dotnet cli projects, the native libraries (just the required ones) are similarly copied to the built output folder,
+            // through the magic of Microsoft.NETCore.Platforms.
+            var classicPath = Path.Combine(assemblyDirectory, GetNativeLibraryFilename());
 
             // DNX-style project.json projects will use Grpc.Core assembly directly in the location where it got restored
             // by nuget. We locate the native libraries based on known structure of Grpc.Core nuget package.
-            var dnxStylePath = Path.Combine(assemblyDirectory, DnxStyleNativeLibrariesDir, libraryFlavor, GetNativeLibraryFilename());
-
-            return new UnmanagedLibrary(new string[] {classicPath, dnxStylePath});
+            string platform = GetPlatformString();
+            string architecture = GetArchitectureString();
+            string relativeDirectory = string.Format("../../runtimes/{0}-{1}/native", platform, architecture);
+            var dnxStylePath = Path.Combine(assemblyDirectory, relativeDirectory, GetNativeLibraryFilename());
+            string[] paths = new[] { classicPath, dnxStylePath };
+            return new UnmanagedLibrary(paths);
         }
 
         private static string GetAssemblyPath()
@@ -147,7 +145,7 @@ namespace Grpc.Core.Internal
         {
             if (PlatformApis.IsWindows)
             {
-                return "windows";
+                return "win";
             }
             if (PlatformApis.IsLinux)
             {
@@ -155,7 +153,7 @@ namespace Grpc.Core.Internal
             }
             if (PlatformApis.IsMacOSX)
             {
-                return "macosx";
+                return "osx";
             }
             throw new InvalidOperationException("Unsupported platform.");
         }
@@ -176,17 +174,18 @@ namespace Grpc.Core.Internal
         // platform specific file name of the extension library
         private static string GetNativeLibraryFilename()
         {
+            string architecture = GetArchitectureString();
             if (PlatformApis.IsWindows)
             {
-                return "grpc_csharp_ext.dll";
+                return string.Format("grpc_csharp_ext.{0}.dll", architecture);
             }
             if (PlatformApis.IsLinux)
             {
-                return "libgrpc_csharp_ext.so";
+                return string.Format("libgrpc_csharp_ext.{0}.so", architecture);
             }
             if (PlatformApis.IsMacOSX)
             {
-                return "libgrpc_csharp_ext.dylib";
+                return string.Format("libgrpc_csharp_ext.{0}.dylib", architecture);
             }
             throw new InvalidOperationException("Unsupported platform.");
         }
