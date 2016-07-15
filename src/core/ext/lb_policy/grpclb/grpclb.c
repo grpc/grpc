@@ -31,6 +31,14 @@
  *
  */
 
+/** Implementation of the gRPC LB policy.
+ *
+ * \see https://github.com/grpc/grpc/blob/master/doc/load-balancing.md */
+
+/* TODO(dgq):
+ * - Implement LB service forwarding (point 2c. in the doc's diagram).
+ */
+
 #include <string.h>
 
 #include <grpc/byte_buffer_reader.h>

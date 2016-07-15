@@ -68,6 +68,8 @@ extern "C" {
 // - Send identical serverlist update
 // - Test reception of invalid serverlist
 // - Test pinging
+// - Test against a non-LB server. That server should return UNIMPLEMENTED and
+// the call should fail.
 
 namespace grpc {
 namespace {
