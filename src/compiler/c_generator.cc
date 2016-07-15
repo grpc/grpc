@@ -587,7 +587,8 @@ grpc::string GetHeaderIncludes(File *file,
       "grpc_c/status_code.h",
       "grpc_c/status.h",
       "grpc_c/grpc_c.h",
-      "grpc_c/client_context.h"
+      "grpc_c/client_context.h",
+      "grpc_c/channel.h"
     };
     std::vector<grpc::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params);
@@ -617,11 +618,18 @@ grpc::string GetSourceServices(File *file,
       vars_msg["msgType"] = msg->name();
       printer->Print(vars_msg, R"(
 GRPC_message $CPrefix$$msgType$_serializer(const GRPC_message input) {
-  pb_ostream_t ostream;
-  ostream.callback = GRPC_pb_compat_dynamic_array_callback;
-  ostream.state = GRPC_pb_compat_dynamic_array_alloc();
+  pb_ostream_t ostream = {
+    .callback = GRPC_pb_compat_dynamic_array_callback,
+    .state = GRPC_pb_compat_dynamic_array_alloc(),
+    .max_size = SIZE_MAX
+  };
   pb_encode(&ostream, $CPrefix$$msgType$_fields, input.data);
-  return (GRPC_message) { ostream.state, ostream.bytes_written };
+  GRPC_message msg = (GRPC_message) {
+    GRPC_pb_compat_dynamic_array_get_content(ostream.state),
+    ostream.bytes_written
+  };
+  GRPC_pb_compat_dynamic_array_free(ostream.state);
+  return msg;
 }
 )");
       printer->Print(vars_msg, R"(
