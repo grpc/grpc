@@ -265,6 +265,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
                                        // done
         return true;
     }
+    GPR_UNREACHABLE_CODE(return true);
   }
 
   std::vector<std::unique_ptr<CompletionQueue>> cli_cqs_;
