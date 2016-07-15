@@ -31,8 +31,61 @@
  *
  */
 
+#include <stdio.h>
+#include <assert.h>
+
 #include "helloworld.grpc.pbc.h"
+#include <pb_decode.h>
+#include <grpc_c/completion_queue.h>
+
+bool write_string(pb_ostream_t *stream, const pb_field_t *field, void * const *arg)
+{
+  char *str = "world";
+  if (!pb_encode_tag_for_field(stream, field))
+    return false;
+
+  return pb_encode_string(stream, (uint8_t*)str, strlen(str));
+}
+
+bool read_string(pb_istream_t *stream, const pb_field_t *field, void **arg) {
+  size_t len = stream->bytes_left;
+  char *str = malloc(len + 1);
+  if(!pb_read(stream, str, len)) return false;
+  str[len] = '\0';
+  printf("Server replied %s\n", str);
+  free(str);
+  return true;
+}
 
 int main(int argc, char** argv) {
+  GRPC_channel *chan = GRPC_channel_create("0.0.0.0:50051");
+  GRPC_client_context *context = GRPC_client_context_create(chan);
+  GRPC_completion_queue *cq = GRPC_completion_queue_create();
+  helloworld_HelloRequest request = { .name.funcs.encode = write_string };
+  helloworld_HelloReply reply = { .message.funcs.decode = read_string };
+  GRPC_client_async_response_reader *reader = helloworld_Greeter_SayHello_Async(context, cq, request);
+
+  // set up finish notification via tag
+  bool ok;
+  void *tag;
+  helloworld_Greeter_SayHello_Finish(reader, &reply, /*TAG*/ (void*) 12345);
+
+  // wait for async RPC to finish
+  GRPC_completion_queue_operation_status queue_status = GRPC_completion_queue_next(cq, tag, &ok);
+  assert(queue_status == GRPC_COMPLETION_QUEUE_GOT_EVENT);
+  assert(ok);
+  assert(tag == (void*) 12345);
+
+  // get status from context
+  GRPC_status status = GRPC_get_call_status(context);
+  assert(status.ok);
+  assert(status.code == GRPC_STATUS_OK);
+
+  GRPC_completion_queue_shutdown(cq);
+  while (GRPC_completion_queue_next(cq, tag, &ok) != GRPC_COMPLETION_QUEUE_SHUTDOWN) { }
+  GRPC_completion_queue_destroy(cq);
+
+  GRPC_client_context_destroy(&context);
+  GRPC_channel_destroy(&chan);
   return 0;
 }

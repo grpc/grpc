@@ -59,7 +59,6 @@ int main(int argc, char** argv) {
   // Instantiate the channel, out of which the actual RPCs
   // are created. This channel models a connection to an endpoint (in this case,
   // localhost at port 50051).
-  // Local greetings server
   GRPC_channel *chan = GRPC_channel_create("0.0.0.0:50051");
   GRPC_client_context *context = GRPC_client_context_create(chan);
   helloworld_HelloRequest request = { .name.funcs.encode = write_string };
