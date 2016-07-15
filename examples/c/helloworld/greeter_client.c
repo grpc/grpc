@@ -34,6 +34,26 @@
 #include <stdio.h>
 
 #include "helloworld.grpc.pbc.h"
+#include <pb_decode.h>
+
+bool write_string(pb_ostream_t *stream, const pb_field_t *field, void * const *arg)
+{
+  char *str = "world";
+  if (!pb_encode_tag_for_field(stream, field))
+    return false;
+
+  return pb_encode_string(stream, (uint8_t*)str, strlen(str));
+}
+
+bool read_string(pb_istream_t *stream, const pb_field_t *field, void **arg) {
+  size_t len = stream->bytes_left;
+  char *str = malloc(len + 1);
+  if(!pb_read(stream, str, len)) return false;
+  str[len] = '\0';
+  printf("Server replied %s\n", str);
+  free(str);
+  return true;
+}
 
 int main(int argc, char** argv) {
   // Instantiate the channel, out of which the actual RPCs
@@ -42,18 +62,17 @@ int main(int argc, char** argv) {
   // Local greetings server
   GRPC_channel *chan = GRPC_channel_create("0.0.0.0:50051");
   GRPC_client_context *context = GRPC_client_context_create(chan);
-  helloworld_HelloRequest request = { "world" };
-  helloworld_HelloReply reply;
+  helloworld_HelloRequest request = { .name.funcs.encode = write_string };
+  helloworld_HelloReply reply = { .message.funcs.decode = read_string };
   GRPC_status status = helloworld_Greeter_SayHello(context, request, &reply);
   if (status.code == GRPC_STATUS_OK) {
-    printf("Server replied: %s\n", reply.message);
     GRPC_client_context_destroy(&context);
-    GRPC_channel_destroy(chan);
+    GRPC_channel_destroy(&chan);
     return 0;
   } else {
     printf("Error occurred: %s\n", status.details);
     GRPC_client_context_destroy(&context);
-    GRPC_channel_destroy(chan);
+    GRPC_channel_destroy(&chan);
     return -1;
   }
 }
