@@ -357,7 +357,8 @@ struct grpc_chttp2_transport {
   /** global state for reading/writing */
   grpc_chttp2_transport_global global;
   /** state only accessible by the chain of execution that
-      set writing_active=1 */
+      set writing_state >= GRPC_WRITING, and only by the writing closure
+      chain. */
   grpc_chttp2_transport_writing writing;
   /** state only accessible by the chain of execution that
       set parsing_active=1 */
@@ -551,7 +552,10 @@ struct grpc_chttp2_stream {
     to write.
     The global lock is dropped and we do the syscall to write.
     After writing, a follow-up check is made to see if another round of writing
-    should be performed. */
+    should be performed.
+
+    The actual call chain is documented in the implementation of this function.
+    */
 void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
                                 grpc_chttp2_transport_global *transport_global,
                                 bool covered_by_poller, const char *reason);

@@ -84,6 +84,7 @@ def wait(process):
   process.wait()
 
 
+@unittest.skip('https://github.com/grpc/grpc/issues/7311')
 class ExitTest(unittest.TestCase):
 
   def test_unstarted_server(self):

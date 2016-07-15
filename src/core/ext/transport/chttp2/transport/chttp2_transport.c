@@ -697,6 +697,25 @@ void grpc_chttp2_initiate_write(grpc_exec_ctx *exec_ctx,
                                 grpc_chttp2_transport_global *transport_global,
                                 bool covered_by_poller, const char *reason) {
   GPR_TIMER_BEGIN("grpc_chttp2_initiate_write", 0);
+
+  /* Perform state checks, and transition to a scheduled state if appropriate.
+     If we are inactive, schedule a write chain to begin once the transport
+     combiner finishes any executions in its current batch (which may be
+     scheduled AFTER this code executes). The write chain will:
+      - call start_writing, which verifies (under the global lock) that there
+        are things that need to be written by calling
+        grpc_chttp2_unlocking_check_writes, and if so schedules writing_action
+        against the current exec_ctx, to be executed OUTSIDE of the global lock
+      - eventually writing_action results in grpc_chttp2_terminate_writing being
+        called, which re-takes the global lock, updates state, checks if we need
+        to do *another* write immediately, and if so loops back to
+        start_writing.
+
+     Current problems:
+       - too much lock entry/exiting
+       - the writing thread can become stuck indefinitely (punt through the
+         workqueue periodically to fix) */
+
   grpc_chttp2_transport *t = TRANSPORT_FROM_GLOBAL(transport_global);
   switch (t->executor.write_state) {
     case GRPC_CHTTP2_WRITES_CORKED:

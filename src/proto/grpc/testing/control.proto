@@ -229,4 +229,7 @@ message ScenarioResult {
   repeated int32 server_cores = 5;
   // An after-the-fact computed summary
   ScenarioResultSummary summary = 6;
+  // Information on success or failure of each worker
+  repeated bool client_success = 7;
+  repeated bool server_success = 8;
 }
