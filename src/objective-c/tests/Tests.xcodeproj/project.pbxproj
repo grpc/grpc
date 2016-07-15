@@ -113,6 +113,7 @@
 		5E8A5DA41D3840B4000F8BC4 /* CoreCronetEnd2EndTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CoreCronetEnd2EndTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5E8A5DA61D3840B4000F8BC4 /* CoreCronetEnd2EndTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CoreCronetEnd2EndTests.m; sourceTree = "<group>"; };
 		5E8A5DAF1D3849F1000F8BC4 /* h2_ssl.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = h2_ssl.m; sourceTree = "<group>"; };
+		5ED3173E1D397C7500C613BD /* h2_ssl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = h2_ssl.h; sourceTree = "<group>"; };
 		6312AE4D1B1BF49B00341DEE /* GRPCClientTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GRPCClientTests.m; sourceTree = "<group>"; };
 		63423F441B150A5F006CF63C /* AllTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AllTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		63423F501B151B77006CF63C /* RxLibraryUnitTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RxLibraryUnitTests.m; sourceTree = "<group>"; };
@@ -252,6 +253,7 @@
 			isa = PBXGroup;
 			children = (
 				5E8A5DAF1D3849F1000F8BC4 /* h2_ssl.m */,
+				5ED3173E1D397C7500C613BD /* h2_ssl.h */,
 				5E8A5DA61D3840B4000F8BC4 /* CoreCronetEnd2EndTests.m */,
 			);
 			path = CoreCronetEnd2EndTests;

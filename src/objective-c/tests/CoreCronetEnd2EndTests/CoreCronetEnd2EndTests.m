@@ -32,28 +32,15 @@
  */
 
 #import <XCTest/XCTest.h>
+#include "./h2_ssl.h"
 
 @interface CoreCronetEnd2EndTests : XCTestCase
 
 @end
 
-int main(int argc, char **argv);
-
 @implementation CoreCronetEnd2EndTests
 
-- (void)setUp {
-    [super setUp];
-    // Put setup code here. This method is called before the invocation of each test method in the class.
-}
-
-- (void)tearDown {
-    // Put teardown code here. This method is called after the invocation of each test method in the class.
-    [super tearDown];
-}
-
 - (void)testCoreCronetEnd2End {
-    // This is an example of a functional test case.
-    // Use XCTAssert and related functions to verify your tests produce the correct results.
   char *argv[] = {"h2_ssl"};
   main(1, argv);
 }

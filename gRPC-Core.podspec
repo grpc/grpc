@@ -101,6 +101,8 @@ Pod::Spec.new do |s|
     'ALWAYS_SEARCH_USER_PATHS' => 'NO',
   }
 
+  s.default_subspecs = 'Interface', 'Implementation'
+
   # Like many other C libraries, gRPC-Core has its public headers under `include/<libname>/` and its
   # sources and private headers in other directories outside `include/`. Cocoapods' linter doesn't
   # allow any header to be listed outside the `header_mappings_dir` (even though doing so works in
