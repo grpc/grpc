@@ -37,7 +37,9 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
+
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/channel/http_server_filter.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -53,8 +55,8 @@ typedef struct server_connect_state {
 } server_connect_state;
 
 static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
-                              void *arg) {
-  server_connect_state *state = arg;
+                              grpc_channel_args* args, void *user_data) {
+  server_connect_state *state = user_data;
   /*
    * Beware that the call to grpc_create_chttp2_transport() has to happen before
    * grpc_tcp_server_destroy(). This is fine here, but similar code
@@ -63,12 +65,13 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
    * case.
    */
   grpc_transport *transport = grpc_create_chttp2_transport(
-      exec_ctx, grpc_server_get_channel_args(state->server), endpoint, 0);
+      exec_ctx, args, endpoint, 0);
   grpc_server_setup_transport(exec_ctx, state->server, transport,
                               state->accepting_pollset,
                               grpc_server_get_channel_args(state->server));
   grpc_chttp2_transport_start_reading(exec_ctx, transport, NULL, 0);
   // Clean up.
+  grpc_channel_args_destroy(args);
   grpc_handshake_manager_destroy(exec_ctx, state->handshake_mgr);
   gpr_free(state);
 }
@@ -86,6 +89,7 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *server, grpc_endpoint *tcp,
   const gpr_timespec deadline = gpr_time_add(
       gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_seconds(120, GPR_TIMESPAN));
   grpc_handshake_manager_do_handshake(exec_ctx, state->handshake_mgr, tcp,
+                                      grpc_server_get_channel_args(server),
                                       deadline, on_handshake_done, state);
 }
 

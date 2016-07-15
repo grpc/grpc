@@ -34,44 +34,62 @@
 #ifndef GRPC_CORE_LIB_CHANNEL_HANDSHAKER_H
 #define GRPC_CORE_LIB_CHANNEL_HANDSHAKER_H
 
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/codegen/time.h>
 
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-// FIXME: high-level documentation
+/// Handshakers are used to perform initial handshakes on a connection
+/// before the client sends the initial request.  Some examples of what
+/// a handshaker can be used for includes support for HTTP CONNECT on
+/// the client side and various types of security initialization.
+///
+/// In general, handshakers should be used via a handshake manager.
 
-//
-// grpc_handshaker -- API for initial handshaking for a new connection
-//
-
-// FIXME: document
+///
+/// grpc_handshaker
+///
 
 typedef struct grpc_handshaker grpc_handshaker;
 
+/// Callback type invoked when a handshaker is done.
+/// Takes ownership of \a args.
 typedef void (*grpc_handshaker_done_cb)(grpc_exec_ctx* exec_ctx,
-                                        grpc_endpoint* endpoint, void* arg);
+                                        grpc_endpoint* endpoint,
+                                        grpc_channel_args* args,
+                                        void* user_data);
 
 struct grpc_handshaker_vtable {
+  /// Destroys the handshaker.
   void (*destroy)(grpc_exec_ctx* exec_ctx, grpc_handshaker* handshaker);
 
+  /// Shuts down the handshaker (e.g., to clean up when the operation is
+  /// aborted in the middle).
   void (*shutdown)(grpc_exec_ctx* exec_ctx, grpc_handshaker* handshaker);
 
+  /// Performs handshaking.  When finished, calls \a cb with \a user_data.
+  /// Takes ownership of \a args.
   void (*do_handshake)(grpc_exec_ctx* exec_ctx, grpc_handshaker* handshaker,
-                       grpc_endpoint* endpoint, gpr_timespec deadline,
-                       grpc_handshaker_done_cb cb, void* arg);
+                       grpc_endpoint* endpoint, grpc_channel_args* args,
+                       gpr_timespec deadline, grpc_handshaker_done_cb cb,
+                       void* user_data);
 };
 
+/// Base struct.  To subclass, make this the first member of the
+/// implementation struct.
 struct grpc_handshaker {
   const struct grpc_handshaker_vtable* vtable;
 };
 
-// Called by concrete implementations to initialize the base struct.
+/// Called by concrete implementations to initialize the base struct.
 void grpc_handshaker_init(const struct grpc_handshaker_vtable* vtable,
                           grpc_handshaker* handshaker);
 
-// Convenient wrappers for invoking methods via the vtable.
+/// Convenient wrappers for invoking methods via the vtable.
+/// These probably do not need to be called from anywhere but
+/// grpc_handshake_manager.
 void grpc_handshaker_destroy(grpc_exec_ctx* exec_ctx,
                              grpc_handshaker* handshaker);
 void grpc_handshaker_shutdown(grpc_exec_ctx* exec_ctx,
@@ -79,31 +97,46 @@ void grpc_handshaker_shutdown(grpc_exec_ctx* exec_ctx,
 void grpc_handshaker_do_handshake(grpc_exec_ctx* exec_ctx,
                                   grpc_handshaker* handshaker,
                                   grpc_endpoint* endpoint,
+                                  grpc_channel_args* args,
                                   gpr_timespec deadline,
-                                  grpc_handshaker_done_cb cb, void* arg);
+                                  grpc_handshaker_done_cb cb, void* user_data);
 
-//
-// grpc_handshake_manager -- manages a set of handshakers
-//
+///
+/// grpc_handshake_manager
+///
 
 typedef struct grpc_handshake_manager grpc_handshake_manager;
 
+/// Creates a new handshake manager.  Caller takes ownership.
 grpc_handshake_manager* grpc_handshake_manager_create();
 
-// Handshakers will be invoked in the order added.
+/// Adds a handshaker to the handshake manager.
+/// Takes ownership of \a mgr.
 void grpc_handshake_manager_add(grpc_handshaker* handshaker,
                                 grpc_handshake_manager* mgr);
 
+/// Destroys the handshake manager.
 void grpc_handshake_manager_destroy(grpc_exec_ctx* exec_ctx,
                                     grpc_handshake_manager* mgr);
 
+/// Shuts down the handshake manager (e.g., to clean up when the operation is
+/// aborted in the middle).
+/// The caller must still call grpc_handshake_manager_destroy() after
+/// calling this function.
 void grpc_handshake_manager_shutdown(grpc_exec_ctx* exec_ctx,
                                      grpc_handshake_manager* mgr);
 
+/// Invokes handshakers in the order they were added.
+/// Does NOT take ownership of \a args.  Instead, makes a copy before
+/// invoking the first handshaker.
+/// If successful, invokes \a cb with \a user_data after all handshakers
+/// have completed.
 void grpc_handshake_manager_do_handshake(grpc_exec_ctx* exec_ctx,
                                          grpc_handshake_manager* mgr,
                                          grpc_endpoint* endpoint,
+                                         const grpc_channel_args* args,
                                          gpr_timespec deadline,
-                                         grpc_handshaker_done_cb cb, void* arg);
+                                         grpc_handshaker_done_cb cb,
+                                         void* user_data);
 
 #endif /* GRPC_CORE_LIB_CHANNEL_HANDSHAKER_H */

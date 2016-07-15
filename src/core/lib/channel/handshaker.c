@@ -36,6 +36,7 @@
 #include <grpc/impl/codegen/alloc.h>
 #include <grpc/impl/codegen/log.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
 
 //
@@ -60,10 +61,11 @@ void grpc_handshaker_shutdown(grpc_exec_ctx* exec_ctx,
 void grpc_handshaker_do_handshake(grpc_exec_ctx* exec_ctx,
                                   grpc_handshaker* handshaker,
                                   grpc_endpoint* endpoint,
+                                  grpc_channel_args* args,
                                   gpr_timespec deadline,
-                                  grpc_handshaker_done_cb cb, void* arg) {
-  handshaker->vtable->do_handshake(exec_ctx, handshaker, endpoint, deadline, cb,
-                                   arg);
+                                  grpc_handshaker_done_cb cb, void* user_data) {
+  handshaker->vtable->do_handshake(exec_ctx, handshaker, endpoint, args,
+                                   deadline, cb, user_data);
 }
 
 //
@@ -76,9 +78,9 @@ struct grpc_handshaker_state {
   size_t index;
   // The deadline for all handshakers.
   gpr_timespec deadline;
-  // The final callback and arg to invoke after the last handshaker.
+  // The final callback and user_data to invoke after the last handshaker.
   grpc_handshaker_done_cb final_cb;
-  void* final_arg;
+  void* final_user_data;
 };
 
 struct grpc_handshake_manager {
@@ -126,20 +128,23 @@ void grpc_handshake_manager_shutdown(grpc_exec_ctx* exec_ctx,
 // A function used as the handshaker-done callback when chaining
 // handshakers together.
 static void call_next_handshaker(grpc_exec_ctx* exec_ctx,
-                                 grpc_endpoint* endpoint, void* arg) {
-  grpc_handshake_manager* mgr = arg;
+                                 grpc_endpoint* endpoint,
+                                 grpc_channel_args* args,
+                                 void* user_data) {
+  grpc_handshake_manager* mgr = user_data;
   GPR_ASSERT(mgr->state != NULL);
   GPR_ASSERT(mgr->state->index < mgr->count);
   grpc_handshaker_done_cb cb = call_next_handshaker;
   // If this is the last handshaker, use the caller-supplied callback
-  // and arg instead of chaining back to this function again.
+  // and user_data instead of chaining back to this function again.
   if (mgr->state->index == mgr->count - 1) {
     cb = mgr->state->final_cb;
-    arg = mgr->state->final_arg;
+    user_data = mgr->state->final_user_data;
   }
   // Invoke handshaker.
   grpc_handshaker_do_handshake(exec_ctx, mgr->handshakers[mgr->state->index],
-                               endpoint, mgr->state->deadline, cb, arg);
+                               endpoint, args, mgr->state->deadline, cb,
+                               user_data);
   ++mgr->state->index;
   // If this is the last handshaker, clean up state.
   if (mgr->state->index == mgr->count) {
@@ -151,20 +156,22 @@ static void call_next_handshaker(grpc_exec_ctx* exec_ctx,
 void grpc_handshake_manager_do_handshake(grpc_exec_ctx* exec_ctx,
                                          grpc_handshake_manager* mgr,
                                          grpc_endpoint* endpoint,
+                                         const grpc_channel_args* args,
                                          gpr_timespec deadline,
                                          grpc_handshaker_done_cb cb,
-                                         void* arg) {
+                                         void* user_data) {
+  grpc_channel_args* args_copy = grpc_channel_args_copy(args);
   if (mgr->count == 0) {
     // No handshakers registered, so we just immediately call the done
     // callback with the passed-in endpoint.
-    cb(exec_ctx, endpoint, arg);
+    cb(exec_ctx, endpoint, args_copy, user_data);
   } else {
     GPR_ASSERT(mgr->state == NULL);
     mgr->state = gpr_malloc(sizeof(struct grpc_handshaker_state));
     memset(mgr->state, 0, sizeof(*mgr->state));
     mgr->state->deadline = deadline;
     mgr->state->final_cb = cb;
-    mgr->state->final_arg = arg;
-    call_next_handshaker(exec_ctx, endpoint, mgr);
+    mgr->state->final_user_data = user_data;
+    call_next_handshaker(exec_ctx, endpoint, args_copy, mgr);
   }
 }

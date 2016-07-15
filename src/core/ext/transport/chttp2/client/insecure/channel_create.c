@@ -88,13 +88,13 @@ static void on_initial_connect_string_sent(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
-                              void *arg) {
-  connector *c = arg;
+                              grpc_channel_args* args, void *user_data) {
+  connector *c = user_data;
   c->result->transport =
-      grpc_create_chttp2_transport(exec_ctx, c->args.channel_args, endpoint, 1);
+      grpc_create_chttp2_transport(exec_ctx, args, endpoint, 1);
   GPR_ASSERT(c->result->transport);
   grpc_chttp2_transport_start_reading(exec_ctx, c->result->transport, NULL, 0);
-  c->result->channel_args = grpc_channel_args_copy(c->args.channel_args);
+  c->result->channel_args = args;
   grpc_closure *notify = c->notify;
   c->notify = NULL;
   grpc_exec_ctx_sched(exec_ctx, notify, GRPC_ERROR_NONE, NULL);
@@ -102,7 +102,6 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
 
 static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   connector *c = arg;
-  grpc_closure *notify;
   grpc_endpoint *tcp = c->tcp;
   if (tcp != NULL) {
     if (!GPR_SLICE_IS_EMPTY(c->args.initial_connect_string)) {
@@ -116,12 +115,13 @@ static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
                           &c->initial_string_sent);
     } else {
       grpc_handshake_manager_do_handshake(exec_ctx, c->handshake_mgr, tcp,
+                                          c->args.channel_args,
                                           c->args.deadline, on_handshake_done,
                                           c);
     }
   } else {
     memset(c->result, 0, sizeof(*c->result));
-    notify = c->notify;
+    grpc_closure *notify = c->notify;
     c->notify = NULL;
     grpc_exec_ctx_sched(exec_ctx, notify, GRPC_ERROR_REF(error), NULL);
   }
