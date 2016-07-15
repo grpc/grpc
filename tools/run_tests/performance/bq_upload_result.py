@@ -118,6 +118,8 @@ def _flatten_result_inplace(scenario_result):
   for stats in scenario_result['clientStats']:
     stats['latencies'] = json.dumps(stats['latencies'])
   scenario_result['serverCores'] = json.dumps(scenario_result['serverCores'])
+  scenario_result['clientSuccess'] = json.dumps(scenario_result['clientSuccess'])
+  scenario_result['serverSuccess'] = json.dumps(scenario_result['serverSuccess'])
 
 
 def _populate_metadata_inplace(scenario_result):
