@@ -180,6 +180,7 @@ bool $CPrefix$$Service$_$Method$_Write(
         $CPrefix$$Request$ request);
 /* Call GRPC_client_writer_terminate to close the stream and end the call */
 /* The writer is automatically freed when the request ends */
+#define $CPrefix$$Service$_$Method$_Terminate GRPC_client_writer_terminate
 )");
 
     printer->Print(
@@ -257,6 +258,11 @@ bool $CPrefix$$Service$_$Method$_Read(
 bool $CPrefix$$Service$_$Method$_Write(
         GRPC_client_reader_writer *reader_writer,
         $CPrefix$$Request$ request);
+
+/* Call GRPC_client_reader_writer_writes_done to signal to the server that we are no longer sending request items */
+#define $CPrefix$$Service$_$Method$_Writes_Done GRPC_client_reader_writer_writes_done
+/* Call GRPC_client_reader_writer_terminate to end the call. The reader_writer object is automatically freed */
+#define $CPrefix$$Service$_$Method$_Terminate GRPC_client_reader_writer_terminate
 )");
 
     printer->Print(
@@ -369,6 +375,7 @@ void $CPrefix$$Service$_$Method$_Finish(
   GRPC_client_async_finish(reader, response, tag);
 }
 )");
+
   } else if (method->ClientOnlyStreaming()) {
     printer->Print(
       *vars,
@@ -378,7 +385,7 @@ GRPC_client_writer $CPrefix$$Service$_$Method$(
         $CPrefix$$Response$ *response) {
   GRPC_client_context_set_serialization_impl(context,
         (grpc_serialization_impl) { $CPrefix$$Request$_serializer, $CPrefix$$Response$_deserializer });
-  GRPC_client_streaming_blocking_call(GRPC_method_$CPrefix$$Service$_$Method$, context, response);
+  return GRPC_client_streaming_blocking_call(GRPC_method_$CPrefix$$Service$_$Method$, context, response);
 }
 
 bool $CPrefix$$Service$_$Method$_Write(
@@ -392,27 +399,63 @@ bool $CPrefix$$Service$_$Method$_Write(
     printer->Print(
       *vars,
       R"(
-GRPC_client_async_writer *$CPrefix$$Service$_$Method$_Async(
+/* Async TBD */
+)");
+
+  } else if (method->ServerOnlyStreaming()) {
+    printer->Print(
+      *vars,
+      R"(
+GRPC_client_reader $CPrefix$$Service$_$Method$(
         GRPC_client_context *const context,
-        GRPC_completion_queue *cq) {
+        $CPrefix$$Request$ request) {
+  const GRPC_message request_msg = { &request, sizeof(request) };
+  GRPC_client_context_set_serialization_impl(context,
+        (grpc_serialization_impl) { $CPrefix$$Request$_serializer, $CPrefix$$Response$_deserializer });
+  return GRPC_server_streaming_blocking_call(GRPC_method$CPrefix$$Service$_$Method$, context, request_msg);
 }
 
-void $CPrefix$$Service$_$Method$_Write_Async(
-        GRPC_client_async_writer *writer,
-        const $CPrefix$$Request$ request,
-        void *tag) {
-}
-
-void $CPrefix$$Service$_$Method$_Finish(
-        GRPC_client_async_writer *writer,
-        $CPrefix$$Response$ *response,
-        void *tag) {
+bool $CPrefix$$Service$_$Method$_Read(
+        GRPC_client_reader *reader,
+        $CPrefix$$Response$ *response) {
+  return GRPC_server_streaming_blocking_read(reader, response);
 }
 )");
-  } else if (method->ServerOnlyStreaming()) {
+    printer->Print(
+      *vars,
+      R"(
+/* Async TBD */
+)");
 
   } else if (method->BidiStreaming()) {
+    printer->Print(
+      *vars,
+      R"(
+GRPC_client_reader_writer *$CPrefix$$Service$_$Method$(
+        GRPC_client_context *const context) {
+  GRPC_client_context_set_serialization_impl(context,
+        (grpc_serialization_impl) { $CPrefix$$Request$_serializer, $CPrefix$$Response$_deserializer });
+  return GRPC_bidi_streaming_blocking_call(GRPC_method$CPrefix$$Service$_$Method$, context);
+}
 
+bool $CPrefix$$Service$_$Method$_Read(
+        GRPC_client_reader_writer *reader_writer,
+        $CPrefix$$Response$ *response) {
+  return GRPC_bidi_streaming_blocking_read(reader_writer, response);
+}
+
+bool $CPrefix$$Service$_$Method$_Write(
+        GRPC_client_reader_writer *reader_writer,
+        $CPrefix$$Request$ request) {
+  const GRPC_message request_msg = { &request, sizeof(request) };
+  return GRPC_bidi_streaming_blocking_write(reader_writer, request_msg);
+}
+)");
+    printer->Print(
+      *vars,
+      R"(
+/* Async TBD */
+)");
   }
 }
 
