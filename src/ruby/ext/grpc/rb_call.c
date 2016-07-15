@@ -38,6 +38,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include <grpc/impl/codegen/compression_types.h>
 
 #include "rb_byte_buffer.h"
 #include "rb_call_credentials.h"
@@ -910,6 +911,12 @@ static void Init_grpc_op_codes() {
                   UINT2NUM(GRPC_OP_RECV_CLOSE_ON_SERVER));
 }
 
+static void Init_grpc_metadata_keys() {
+  VALUE grpc_rb_mMetadataKeys = rb_define_module_under(grpc_rb_mGrpcCore, "MetadataKeys");
+  rb_define_const(grpc_rb_mMetadataKeys, "COMPRESSION_REQUEST_ALGORITHM",
+                  rb_str_new2(GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY));
+}
+
 void Init_grpc_call() {
   /* CallError inherits from Exception to signal that it is non-recoverable */
   grpc_rb_eCallError =
@@ -972,6 +979,7 @@ void Init_grpc_call() {
   Init_grpc_error_codes();
   Init_grpc_op_codes();
   Init_grpc_write_flags();
+  Init_grpc_metadata_keys();
 }
 
 /* Gets the call from the ruby object */
