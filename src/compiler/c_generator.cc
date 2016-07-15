@@ -178,10 +178,8 @@ GRPC_client_writer $CPrefix$$Service$_$Method$(
 bool $CPrefix$$Service$_$Method$_Write(
         GRPC_client_writer *writer,
         $CPrefix$$Request$ request);
-
-/* Terminating the writer takes care of ending the call, freeing the writer. */
-/* Returns call status in the context object. */
-void GRPC_client_writer_terminate(GRPC_client_writer *writer);
+/* Call GRPC_client_writer_terminate to close the stream and end the call */
+/* The writer is automatically freed when the request ends */
 )");
 
     printer->Print(
@@ -189,7 +187,6 @@ void GRPC_client_writer_terminate(GRPC_client_writer *writer);
       R"(
 /* Async */
 GRPC_client_async_writer *$CPrefix$$Service$_$Method$_Async(
-        GRPC_channel *channel,
         GRPC_client_context *const context,
         GRPC_completion_queue *cq);
 
@@ -202,8 +199,8 @@ void $CPrefix$$Service$_$Method$_Finish(
         GRPC_client_async_writer *writer,
         $CPrefix$$Response$ *response,
         void *tag);
-/* call GRPC_completion_queue_next on the cq to wait for result   */
-/* the writer object is automatically freed when the request ends */
+/* Call GRPC_completion_queue_next on the cq to wait for result.   */
+/* The writer object is automatically freed when the request ends. */
 )");
 
   } else if (method->ServerOnlyStreaming()) {
@@ -217,7 +214,7 @@ GRPC_client_reader $CPrefix$$Service$_$Method$(
         GRPC_client_context *const context,
         $CPrefix$$Request$ request);
 
-/* Return value of true means write succeeded */
+/* Return value of true means read succeeded */
 bool $CPrefix$$Service$_$Method$_Read(
         GRPC_client_reader *reader,
         $CPrefix$$Response$ *response);
@@ -227,7 +224,6 @@ bool $CPrefix$$Service$_$Method$_Read(
 R"(
 /* Async */
 GRPC_client_async_reader *$CPrefix$$Service$_$Method$_Async(
-        GRPC_channel *channel,
         GRPC_client_context *const context,
         GRPC_completion_queue *cq,
         const $CPrefix$$Request$ request);
@@ -241,7 +237,7 @@ void $CPrefix$$Service$_$Method$_Finish(
         GRPC_client_async_reader *reader,
         void *tag);
 /* call GRPC_completion_queue_next on the cq to wait for result */
-/* the writer object is automatically freed when the request ends */
+/* the reader object is automatically freed when the request ends */
 )");
 
   } else if (method->BidiStreaming()) {
@@ -252,7 +248,6 @@ void $CPrefix$$Service$_$Method$_Finish(
 R"(
 /* Sync */
 GRPC_client_reader_writer *$CPrefix$$Service$_$Method$(
-        GRPC_channel *channel,
         GRPC_client_context *const context);
 
 bool $CPrefix$$Service$_$Method$_Read(
@@ -269,7 +264,6 @@ bool $CPrefix$$Service$_$Method$_Write(
       R"(
 /* Async */
 GRPC_client_async_reader_writer *$CPrefix$$Service$_$Method$_Async(
-        GRPC_channel *channel,
         GRPC_client_context *const context);
 
 void $CPrefix$$Service$_$Method$_Read_Async(
@@ -349,7 +343,6 @@ GRPC_status $CPrefix$$Service$_$Method$(
         const $CPrefix$$Request$ request,
         $CPrefix$$Response$ *response) {
   const GRPC_message request_msg = { &request, sizeof(request) };
-  GRPC_message response_msg;
   GRPC_client_context_set_serialization_impl(context,
         (grpc_serialization_impl) { $CPrefix$$Request$_serializer, $CPrefix$$Response$_deserializer });
   GRPC_unary_blocking_call(GRPC_method_$CPrefix$$Service$_$Method$, context, request_msg, response);
@@ -377,7 +370,45 @@ void $CPrefix$$Service$_$Method$_Finish(
 }
 )");
   } else if (method->ClientOnlyStreaming()) {
+    printer->Print(
+      *vars,
+      R"(
+GRPC_client_writer $CPrefix$$Service$_$Method$(
+        GRPC_client_context *const context,
+        $CPrefix$$Response$ *response) {
+  GRPC_client_context_set_serialization_impl(context,
+        (grpc_serialization_impl) { $CPrefix$$Request$_serializer, $CPrefix$$Response$_deserializer });
+  GRPC_client_streaming_blocking_call(GRPC_method_$CPrefix$$Service$_$Method$, context, response);
+}
 
+bool $CPrefix$$Service$_$Method$_Write(
+        GRPC_client_writer *writer,
+        $CPrefix$$Request$ request) {
+  const GRPC_message request_msg = { &request, sizeof(request) };
+  GRPC_client_streaming_blocking_write(writer, request_msg);
+}
+)");
+
+    printer->Print(
+      *vars,
+      R"(
+GRPC_client_async_writer *$CPrefix$$Service$_$Method$_Async(
+        GRPC_client_context *const context,
+        GRPC_completion_queue *cq) {
+}
+
+void $CPrefix$$Service$_$Method$_Write_Async(
+        GRPC_client_async_writer *writer,
+        const $CPrefix$$Request$ request,
+        void *tag) {
+}
+
+void $CPrefix$$Service$_$Method$_Finish(
+        GRPC_client_async_writer *writer,
+        $CPrefix$$Response$ *response,
+        void *tag) {
+}
+)");
   } else if (method->ServerOnlyStreaming()) {
 
   } else if (method->BidiStreaming()) {
