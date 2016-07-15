@@ -84,6 +84,12 @@ GRPC_completion_queue_operation_status GRPC_completion_queue_next_deadline(GRPC_
 
         *tag = set->user_tag;
         *ok = (ev.success != 0) && status;
+
+        // run user-defined cleanup
+        if (set->async_cleanup.callback) {
+          set->async_cleanup.callback(set->async_cleanup.arg);
+        }
+
         return GRPC_COMPLETION_QUEUE_GOT_EVENT;
     }
   }
@@ -102,5 +108,9 @@ bool GRPC_completion_queue_pluck_internal(GRPC_completion_queue *cq, void *tag) 
   GPR_ASSERT(set->user_tag == ev.tag);
   // run post-processing
   bool status = grpc_finish_op_from_call_set(set, set->context);
+  // run user-defined cleanup
+  if (set->async_cleanup.callback) {
+    set->async_cleanup.callback(set->async_cleanup.arg);
+  }
   return (ev.success != 0) && status;
 }
