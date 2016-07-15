@@ -90,10 +90,7 @@ CYTHON_EXTENSION_PACKAGE_NAMES = ()
 
 CYTHON_EXTENSION_MODULE_NAMES = ('grpc._cython.cygrpc',)
 
-CYTHON_HELPER_C_FILES = (
-    os.path.join(PYTHON_STEM, 'grpc/_cython/loader.c'),
-    os.path.join(PYTHON_STEM, 'grpc/_cython/imports.generated.c'),
-)
+CYTHON_HELPER_C_FILES = ()
 
 CORE_C_FILES = tuple(grpc_core_dependencies.CORE_SOURCE_FILES)
 
