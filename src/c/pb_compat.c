@@ -64,6 +64,10 @@ GRPC_pb_dynamic_array_state *GRPC_pb_compat_dynamic_array_alloc() {
   });
 }
 
+void GRPC_pb_compat_dynamic_array_free(GRPC_pb_dynamic_array_state *state) {
+  free(state);
+}
+
 bool GRPC_pb_compat_dynamic_array_callback(pb_ostream_t *stream, const uint8_t *buf, size_t count) {
   GRPC_pb_dynamic_array_state *state = stream->state;
   if (state->size + count > state->capacity) {
@@ -74,4 +78,8 @@ bool GRPC_pb_compat_dynamic_array_callback(pb_ostream_t *stream, const uint8_t *
   if (buf) memcpy((char *) state->data + state->size, buf, count);
   state->size += count;
   return true;
+}
+
+void *GRPC_pb_compat_dynamic_array_get_content(GRPC_pb_dynamic_array_state *state) {
+  return state->data;
 }
