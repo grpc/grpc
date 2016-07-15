@@ -47,7 +47,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     const grpc::testing::ServerConfig& server_config, size_t num_servers,
     int warmup_seconds, int benchmark_seconds, int spawn_local_worker_count);
 
-void RunQuit();
+bool RunQuit();
 }  // namespace testing
 }  // namespace grpc
 
