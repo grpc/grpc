@@ -39,6 +39,12 @@
 #include <grpc_c/unary_async_call.h>
 #include "tag.h"
 
+static void free_reader_and_call(void *arg) {
+  GRPC_client_async_response_reader *reader = arg;
+  grpc_call_destroy(reader->call);
+  free(reader);
+}
+
 GRPC_client_async_response_reader *GRPC_unary_async_call(GRPC_completion_queue *cq,
                                                          const GRPC_method rpc_method,
                                                          const GRPC_message request,
@@ -80,9 +86,15 @@ GRPC_client_async_response_reader *GRPC_unary_async_call(GRPC_completion_queue *
         grpc_op_recv_status
       },
       context,
-      .response = NULL
+      .response = NULL,
     }
   });
+
+  // Different from blocking call, we need to inform completion queue to run cleanup for us
+  reader->finish_buf.async_cleanup = (grpc_closure) {
+    .arg = reader,
+    .callback = free_reader_and_call
+  };
 
   grpc_start_batch_from_op_set(reader->call, &reader->init_buf, reader->context, request, NULL);
   return reader;

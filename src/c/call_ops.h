@@ -55,6 +55,11 @@ typedef struct grpc_op_manager {
 
 enum { GRPC_MAX_OP_COUNT = 8 };
 
+typedef struct grpc_closure {
+  void *arg;
+  void (*callback)(void *arg);
+} grpc_closure;
+
 typedef struct grpc_call_op_set {
   const grpc_op_manager op_managers[GRPC_MAX_OP_COUNT];
   grpc_client_context * const context;
@@ -70,7 +75,8 @@ typedef struct grpc_call_op_set {
 
   // used in async calls
   void *user_tag;
-  bool *user_done;    // for clients reading a stream
+  bool *user_done;    /* for clients reading a stream */
+  grpc_closure async_cleanup;   /* will be called when RPC ends */
 } grpc_call_op_set;
 
 void grpc_fill_op_from_call_set(grpc_call_op_set *set, const grpc_method *rpc_method, grpc_client_context *context,
