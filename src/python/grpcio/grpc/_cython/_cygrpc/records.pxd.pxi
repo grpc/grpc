@@ -58,13 +58,13 @@ cdef class Event:
   cdef readonly bint success
   cdef readonly object tag
 
-  # For operations with calls
-  cdef readonly Call operation_call
-
   # For Server.request_call
   cdef readonly bint is_new_request
   cdef readonly CallDetails request_call_details
   cdef readonly Metadata request_metadata
+
+  # For server calls
+  cdef readonly Call operation_call
 
   # For Call.start_batch
   cdef readonly Operations batch_operations

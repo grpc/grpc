@@ -94,12 +94,12 @@ class ServerContext {
   ~ServerContext();
 
 #ifndef GRPC_CXX0X_NO_CHRONO
-  std::chrono::system_clock::time_point deadline() {
+  std::chrono::system_clock::time_point deadline() const {
     return Timespec2Timepoint(deadline_);
   }
 #endif  // !GRPC_CXX0X_NO_CHRONO
 
-  gpr_timespec raw_deadline() { return deadline_; }
+  gpr_timespec raw_deadline() const { return deadline_; }
 
   void AddInitialMetadata(const grpc::string& key, const grpc::string& value);
   void AddTrailingMetadata(const grpc::string& key, const grpc::string& value);
@@ -122,7 +122,8 @@ class ServerContext {
   // was called.
   void TryCancel() const;
 
-  const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata() {
+  const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata()
+      const {
     return client_metadata_;
   }
 

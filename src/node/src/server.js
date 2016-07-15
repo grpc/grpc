@@ -735,8 +735,8 @@ Server.prototype.addService = function(service, implementation) {
     }
     var impl;
     if (implementation[name] === undefined) {
-      console.warn('Method handler for %s expected but not provided',
-                   attrs.path);
+      common.log(grpc.logVerbosity.ERROR, 'Method handler for ' +
+          attrs.path + ' expected but not provided');
       impl = defaultHandler[method_type];
     } else {
       impl = _.bind(implementation[name], implementation);

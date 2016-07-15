@@ -1,0 +1,152 @@
+%YAML 1.2
+--- |
+  # GRPC global cmake file
+  # This currently builds C and C++ code.
+  # This file has been automatically generated from a template file.
+  # Please look at the templates directory instead.
+  # This file can be regenerated from the template by running
+  # tools/buildgen/generate_projects.sh
+  #
+  # Additionally, this is currently very experimental, and unsupported.
+  # Further work will happen on that file.
+  #
+  # Copyright 2015, Google Inc.
+  # All rights reserved.
+  #
+  # Redistribution and use in source and binary forms, with or without
+  # modification, are permitted provided that the following conditions are
+  # met:
+  #
+  #     * Redistributions of source code must retain the above copyright
+  # notice, this list of conditions and the following disclaimer.
+  #     * Redistributions in binary form must reproduce the above
+  # copyright notice, this list of conditions and the following disclaimer
+  # in the documentation and/or other materials provided with the
+  # distribution.
+  #     * Neither the name of Google Inc. nor the names of its
+  # contributors may be used to endorse or promote products derived from
+  # this software without specific prior written permission.
+  #
+  # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+  # A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+  # OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+  # SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+  # LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+  # DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+  # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+  # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+  <%!
+  def get_deps(target_dict):
+    deps = []
+    if target_dict.get('build', None) in ['protoc']:
+      deps.append("libprotoc")
+    if target_dict.get('secure', False):
+      deps = ["ssl"]
+    if target_dict['name'] in ['grpc++', 'grpc++_unsecure', 'grpc++_codegen_lib']:
+      deps.append("libprotobuf")
+    elif target_dict['name'] in ['grpc']:
+      deps.append("zlibstatic")
+    for d in target_dict.get('deps', []):
+      deps.append(d)
+    return deps
+  %>
+
+  cmake_minimum_required(VERSION 2.8)
+
+  set(PACKAGE_NAME      "grpc")
+  set(PACKAGE_VERSION   "${settings.core_version}")
+  set(PACKAGE_STRING    "<%text>${PACKAGE_NAME} ${PACKAGE_VERSION}</%text>")
+  set(PACKAGE_TARNAME   "<%text>${PACKAGE_NAME}-${PACKAGE_VERSION}</%text>")
+  set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
+  project(<%text>${PACKAGE_NAME}</%text> C CXX)
+
+  if(NOT BORINGSSL_ROOT_DIR)
+    set(BORINGSSL_ROOT_DIR <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/boringssl)
+  endif()
+  if(NOT PROTOBUF_ROOT_DIR)
+    set(PROTOBUF_ROOT_DIR <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/protobuf)
+  endif()
+  if(NOT ZLIB_ROOT_DIR)
+    set(ZLIB_ROOT_DIR <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/third_party/zlib)
+  endif()
+
+  # Building the protobuf tests require gmock what is not part of a standard protobuf checkout.
+  # Disable them unless they are explicitly requested from the cmake command line (when we assume
+  # gmock is downloaded to the right location inside protobuf).
+  if(NOT protobuf_BUILD_TESTS)
+    set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests")
+  endif()
+
+  add_subdirectory(<%text>${BORINGSSL_ROOT_DIR}</%text> third_party/boringssl)
+  add_subdirectory(<%text>${PROTOBUF_ROOT_DIR}</%text>/cmake third_party/protobuf)
+  add_subdirectory(<%text>${ZLIB_ROOT_DIR}</%text> third_party/zlib)
+
+  set(CMAKE_C_FLAGS   "<%text>${CMAKE_C_FLAGS}</%text>   -std=c11")
+  set(CMAKE_CXX_FLAGS "<%text>${CMAKE_CXX_FLAGS}</%text> -std=c++11")
+
+  % for lib in libs:
+  % if lib.build in ["all", "protoc", "tool"]:
+    ${cc_library(lib)}
+  % endif
+  % endfor
+
+  % for tgt in targets:
+  % if tgt.build in ["all", "protoc", "tool"]:
+  ${cc_binary(tgt)}
+  % endif
+  % endfor
+
+  <%def name="cc_library(lib)">
+  add_library(${lib.name}
+  % for src in lib.src:
+    ${src}
+  % endfor
+  )
+
+  target_include_directories(${lib.name}
+    PRIVATE <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
+    PRIVATE <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/include
+    PRIVATE <%text>${BORINGSSL_ROOT_DIR}</%text>/include
+    PRIVATE <%text>${PROTOBUF_ROOT_DIR}</%text>/src
+    PRIVATE <%text>${ZLIB_ROOT_DIR}</%text>
+    PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/zlib
+  )
+
+  % if len(get_deps(lib)) > 0:
+  target_link_libraries(${lib.name}
+  % for dep in get_deps(lib):
+    ${dep}
+  % endfor
+  )
+  % endif
+  </%def>
+
+  <%def name="cc_binary(tgt)">
+  add_executable(${tgt.name}
+  % for src in tgt.src:
+    ${src}
+  % endfor
+  )
+
+  target_include_directories(${tgt.name}
+    PRIVATE <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
+    PRIVATE <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/include
+    PRIVATE <%text>${BORINGSSL_ROOT_DIR}</%text>/include
+    PRIVATE <%text>${PROTOBUF_ROOT_DIR}</%text>/src
+    PRIVATE <%text>${ZLIB_ROOT_DIR}</%text>
+    PRIVATE <%text>${CMAKE_CURRENT_BINARY_DIR}</%text>/third_party/zlib
+  )
+
+  % if len(get_deps(tgt)) > 0:
+  target_link_libraries(${tgt.name}
+  % for dep in get_deps(tgt):
+    ${dep}
+  % endfor
+  )
+  % endif
+  </%def>
+

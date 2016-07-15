@@ -1,6 +1,2 @@
-#======================
-# Zookeeper dependencies
-# TODO(jtattermusch): is zookeeper still needed?
-RUN apt-get install -y libzookeeper-mt-dev
 
 RUN mkdir /var/local/jenkins

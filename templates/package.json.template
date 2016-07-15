@@ -61,7 +61,6 @@
     "files": [
       "LICENSE",
       "src/node/README.md",
-      "src/node/health_check",
       "src/proto",
       "etc",
       "src/node/index.js",

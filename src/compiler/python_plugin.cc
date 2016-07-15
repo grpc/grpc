@@ -38,8 +38,6 @@
 
 int main(int argc, char* argv[]) {
   grpc_python_generator::GeneratorConfiguration config;
-  config.grpc_package_root = "grpc";
-  config.beta_package_root = "grpc.beta";
   grpc_python_generator::PythonGrpcGenerator generator(config);
   return grpc::protobuf::compiler::PluginMain(argc, argv, &generator);
 }

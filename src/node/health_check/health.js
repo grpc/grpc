@@ -33,14 +33,12 @@
 
 'use strict';
 
-var grpc = require('../');
+var grpc = require('grpc');
 
 var _ = require('lodash');
 
-var health_proto = grpc.load(__dirname +
-    '/../../proto/grpc/health/v1/health.proto');
-
-var HealthClient = health_proto.grpc.health.v1.Health;
+var health_messages = require('./v1/health_pb');
+var health_service = require('./v1/health_grpc_pb');
 
 function HealthImplementation(statusMap) {
   this.statusMap = _.clone(statusMap);
@@ -51,17 +49,19 @@ HealthImplementation.prototype.setStatus = function(service, status) {
 };
 
 HealthImplementation.prototype.check = function(call, callback){
-  var service = call.request.service;
+  var service = call.request.getService();
   var status = _.get(this.statusMap, service, null);
   if (status === null) {
     callback({code:grpc.status.NOT_FOUND});
   } else {
-    callback(null, {status: status});
+    var response = new health_messages.HealthCheckResponse();
+    response.setStatus(status);
+    callback(null, response);
   }
 };
 
 module.exports = {
-  Client: HealthClient,
-  service: HealthClient.service,
+  Client: health_service.HealthClient,
+  service: health_service.HealthService,
   Implementation: HealthImplementation
 };

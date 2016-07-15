@@ -44,15 +44,15 @@ module Math
       self.unmarshal_class_method = :decode
       self.service_name = 'math.Math'
 
-      # Div divides args.dividend by args.divisor and returns the quotient and
-      # remainder.
+      # Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
+      # and remainder.
       rpc :Div, DivArgs, DivReply
       # DivMany accepts an arbitrary number of division args from the client stream
       # and sends back the results in the reply stream.  The stream continues until
       # the client closes its end; the server does the same after sending all the
       # replies.  The stream ends immediately if either end aborts.
       rpc :DivMany, stream(DivArgs), stream(DivReply)
-      # Fib generates numbers in the Fibonacci sequence.  If args.limit > 0, Fib
+      # Fib generates numbers in the Fibonacci sequence.  If FibArgs.limit > 0, Fib
       # generates up to limit numbers; otherwise it continues until the call is
       # canceled.  Unlike Fib above, Fib has no final FibReply.
       rpc :Fib, FibArgs, stream(Num)

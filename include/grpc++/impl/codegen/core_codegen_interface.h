@@ -65,8 +65,9 @@ class CoreCodegenInterface {
 
   virtual void grpc_byte_buffer_destroy(grpc_byte_buffer* bb) = 0;
 
-  virtual void grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,
-                                            grpc_byte_buffer* buffer) = 0;
+  virtual int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,
+                                           grpc_byte_buffer* buffer)
+      GRPC_MUST_USE_RESULT = 0;
   virtual void grpc_byte_buffer_reader_destroy(
       grpc_byte_buffer_reader* reader) = 0;
   virtual int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader* reader,
