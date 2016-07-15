@@ -99,13 +99,13 @@ static void end_test(grpc_end2end_test_fixture *f) {
 
 /* Creates and returns a gpr_slice of specified length, containing random
  * alphanumeric characters. */
-static gpr_slice generate_random_slice(int length_bytes) {
-  int i;
+static gpr_slice generate_random_slice(size_t length_bytes) {
+  size_t i;
   gpr_slice slice = gpr_slice_malloc(length_bytes);
-  static const char alphanum[] = "abcdefghijklmnopqrstuvwxyz01234567890";
+  static const uint8_t alphanum[] = "abcdefghijklmnopqrstuvwxyz01234567890";
   for (i = 0; i < length_bytes; ++i) {
     *(GPR_SLICE_START_PTR(slice) + i) =
-        alphanum[rand() % (sizeof(alphanum) - 1)];
+        alphanum[rand() % (int)(sizeof(alphanum) - 1)];
   }
   return slice;
 }
@@ -114,7 +114,7 @@ static void request_response_with_payload(grpc_end2end_test_fixture f) {
   /* Create large request and response bodies. These are big enough to require
    * multiple round trips to deliver to the peer, and their exact contents of
    * will be verified on completion. */
-  int payload_size_bytes = 1024 * 1024; /* 1 MB */
+  size_t payload_size_bytes = 1024 * 1024; /* 1 MB */
   gpr_slice request_payload_slice = generate_random_slice(payload_size_bytes);
   gpr_slice response_payload_slice = generate_random_slice(payload_size_bytes);
 
