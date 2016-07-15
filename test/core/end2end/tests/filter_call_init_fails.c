@@ -238,16 +238,16 @@ static const grpc_channel_filter test_filter = {
 
 static bool maybe_add_filter(grpc_channel_stack_builder *builder, void *arg) {
   if (g_enable_filter) {
-    return grpc_channel_stack_builder_prepend_filter(builder, &test_filter,
-                                                     NULL, NULL);
+    return grpc_channel_stack_builder_append_filter(builder, &test_filter,
+                                                    NULL, NULL);
   } else {
     return true;
   }
 }
 
 static void init_plugin(void) {
-  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, 0, maybe_add_filter,
-                                   NULL);
+  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, MAX_INT,
+                                   maybe_add_filter, NULL);
 }
 
 static void destroy_plugin(void) {}
