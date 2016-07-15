@@ -281,8 +281,8 @@ class ServerClientMixin(object):
     ], server_call_tag)
     self.assertEqual(cygrpc.CallError.ok, server_start_batch_result)
 
-    client_event = client_event_future.result()
     server_event = self.server_completion_queue.poll(cygrpc_deadline)
+    client_event = client_event_future.result()
 
     self.assertEqual(6, len(client_event.batch_operations))
     found_client_op_types = set()

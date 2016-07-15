@@ -30,8 +30,10 @@
 
 """Manage TCP ports for unit tests; started by run_tests.py"""
 
+from __future__ import print_function
+
 import argparse
-import BaseHTTPServer
+from six.moves import BaseHTTPServer
 import hashlib
 import os
 import socket
@@ -46,7 +48,7 @@ _MY_VERSION = 9
 
 
 if len(sys.argv) == 2 and sys.argv[1] == 'dump_version':
-  print _MY_VERSION
+  print(_MY_VERSION)
   sys.exit(0)
 
 
@@ -62,7 +64,7 @@ if args.logfile is not None:
   sys.stderr = open(args.logfile, 'w')
   sys.stdout = sys.stderr
 
-print 'port server running on port %d' % args.port
+print('port server running on port %d' % args.port)
 
 pool = []
 in_use = {}
@@ -152,7 +154,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
       self.send_header('Content-Type', 'text/plain')
       self.end_headers()
       now = time.time()
-      self.wfile.write(yaml.dump({'pool': pool, 'in_use': dict((k, now - v) for k, v in in_use.iteritems())}))
+      self.wfile.write(yaml.dump({'pool': pool, 'in_use': dict((k, now - v) for k, v in in_use.items())}))
     elif self.path == '/quitquitquit':
       self.send_response(200)
       self.end_headers()
@@ -164,4 +166,4 @@ while keep_running:
   httpd.handle_request()
   sys.stderr.flush()
 
-print 'done'
+print('done')

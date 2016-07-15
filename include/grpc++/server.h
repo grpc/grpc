@@ -179,9 +179,12 @@ class Server GRPC_FINAL : public ServerInterface, private GrpcLibraryCodegen {
   grpc::mutex mu_;
   bool started_;
   bool shutdown_;
+  bool shutdown_notified_;
   // The number of threads which are running callbacks.
   int num_running_cb_;
   grpc::condition_variable callback_cv_;
+
+  grpc::condition_variable shutdown_cv_;
 
   std::shared_ptr<GlobalCallbacks> global_callbacks_;
 
