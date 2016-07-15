@@ -97,26 +97,23 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->cq);
 }
 
-/* Creates and returns a gpr_slice of specified length, containing random
- * alphanumeric characters. */
-static gpr_slice generate_random_slice(size_t length_bytes) {
+/* Creates and returns a gpr_slice containing random alphanumeric characters. */
+static gpr_slice generate_random_slice() {
   size_t i;
-  gpr_slice slice = gpr_slice_malloc(length_bytes);
-  static const uint8_t alphanum[] = "abcdefghijklmnopqrstuvwxyz01234567890";
-  for (i = 0; i < length_bytes; ++i) {
-    *(GPR_SLICE_START_PTR(slice) + i) =
-        alphanum[rand() % (int)(sizeof(alphanum) - 1)];
+  static const char chars[] = "abcdefghijklmnopqrstuvwxyz1234567890";
+  char output[1024 * 1024]; /* 1 MB */
+  for (i = 0; i < 1024 * 1024; ++i) {
+    output[i] = chars[rand() % (int)(sizeof(chars) - 1)];
   }
-  return slice;
+  return gpr_slice_from_copied_string(output);
 }
 
 static void request_response_with_payload(grpc_end2end_test_fixture f) {
   /* Create large request and response bodies. These are big enough to require
    * multiple round trips to deliver to the peer, and their exact contents of
    * will be verified on completion. */
-  size_t payload_size_bytes = 1024 * 1024; /* 1 MB */
-  gpr_slice request_payload_slice = generate_random_slice(payload_size_bytes);
-  gpr_slice response_payload_slice = generate_random_slice(payload_size_bytes);
+  gpr_slice request_payload_slice = generate_random_slice();
+  gpr_slice response_payload_slice = generate_random_slice();
 
   grpc_call *c;
   grpc_call *s;
