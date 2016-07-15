@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
   helloworld_HelloRequest request = { .name.funcs.encode = write_string };
   helloworld_HelloReply reply = { .message.funcs.decode = read_string };
   GRPC_status status = helloworld_Greeter_SayHello(context, request, &reply);
-  if (status.code == GRPC_STATUS_OK) {
+  if (status.code == GRPC_STATUS_OK && status.ok) {
     GRPC_client_context_destroy(&context);
     GRPC_channel_destroy(&chan);
     return 0;
