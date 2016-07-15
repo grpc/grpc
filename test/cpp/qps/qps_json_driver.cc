@@ -53,7 +53,7 @@ DEFINE_bool(quit, false, "Quit the workers");
 namespace grpc {
 namespace testing {
 
-static void QpsDriver() {
+static bool QpsDriver() {
   grpc::string json;
 
   bool scfile = (FLAGS_scenarios_file != "");
@@ -81,13 +81,13 @@ static void QpsDriver() {
   } else if (scjson) {
     json = FLAGS_scenarios_json.c_str();
   } else if (FLAGS_quit) {
-    RunQuit();
-    return;
+    return RunQuit();
   }
 
   // Parse into an array of scenarios
   Scenarios scenarios;
   ParseJson(json.c_str(), "grpc.testing.Scenarios", &scenarios);
+  bool success = true;
 
   // Make sure that there is at least some valid scenario here
   GPR_ASSERT(scenarios.scenarios_size() > 0);
@@ -109,7 +109,15 @@ static void QpsDriver() {
     GetReporter()->ReportQPSPerCore(*result);
     GetReporter()->ReportLatency(*result);
     GetReporter()->ReportTimes(*result);
+
+    for (int i = 0; success && i < result->client_success_size(); i++) {
+      success = result->client_success(i);
+    }
+    for (int i = 0; success && i < result->server_success_size(); i++) {
+      success = result->server_success(i);
+    }
   }
+  return success;
 }
 
 }  // namespace testing
@@ -118,7 +126,7 @@ static void QpsDriver() {
 int main(int argc, char **argv) {
   grpc::testing::InitBenchmark(&argc, &argv, true);
 
-  grpc::testing::QpsDriver();
+  bool ok = grpc::testing::QpsDriver();
 
-  return 0;
+  return ok ? 0 : 1;
 }
