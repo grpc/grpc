@@ -17,7 +17,7 @@ Header Files
 ------------
 
 - Public header files (those in the include/grpc tree) should compile as
-  pedantic C89
+  pedantic C89.
 - Public header files should be includable from C++ programs. That is, they
   should include the following:
   ```c
@@ -52,10 +52,10 @@ initialize them to `NULL`.
 C99 Features
 ------------
 
-- Variable sized arrays are not allowed
-- Do not use the 'inline' keyword
+- Variable sized arrays are not allowed.
+- Do not use the 'inline' keyword.
 - Flexible array members are allowed
-  (https://en.wikipedia.org/wiki/Flexible_array_member)
+  (https://en.wikipedia.org/wiki/Flexible_array_member).
 
 Comments
 --------
@@ -70,7 +70,15 @@ ALL comments within that file must be single line comments).
 Symbol Names
 ------------
 
-- Non-static functions must be prefixed by grpc_
-- static functions must not be prefixed by grpc_
-- enumeration values and #define names are uppercased, all others are lowercased
-- Multiple word identifiers use underscore as a delimiter (NEVER camel casing)
+- Non-static functions must be prefixed by `grpc_`
+- Static functions must *not* be prefixed by `grpc_`
+- Enumeration values and `#define` names must be uppercase. All other values
+  must be lowercase.
+- Multiple word identifiers use underscore as a delimiter, *never* camel
+  case. E.g. `variable_name`.
+
+Functions
+----------
+
+- The use of [`atexit()`](http://man7.org/linux/man-pages/man3/atexit.3.html) is
+  in forbidden in libgrpc.
