@@ -63,6 +63,8 @@ extern "C" {
 #define NUM_BACKENDS 4
 
 // TODO(dgq): Other scenarios in need of testing:
+// - Send an empty serverlist update and verify that the client request blocks
+//   until a new serverlist with actual contents is available.
 // - Send identical serverlist update
 // - Test reception of invalid serverlist
 // - Test pinging
