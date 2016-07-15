@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
   helloworld_Greeter_SayHello_Finish(reader, &reply, /*TAG*/ (void*) 12345);
 
   // wait for async RPC to finish
-  GRPC_completion_queue_operation_status queue_status = GRPC_completion_queue_next(cq, tag, &ok);
+  GRPC_completion_queue_operation_status queue_status = GRPC_completion_queue_next(cq, &tag, &ok);
   assert(queue_status == GRPC_COMPLETION_QUEUE_GOT_EVENT);
   assert(ok);
   assert(tag == (void*) 12345);
