@@ -8,6 +8,7 @@ env:
     - TEST=objc
     - JOBS=1
   matrix:
+    fast_finish: true
     - SCHEME="RxLibraryUnitTests" WORKSPACE="Tests.xcworkspace"
       TEST_PATH="src/objective-c/tests" BUILD_ONLY="false"
       INTEROP_SERVER="false"
