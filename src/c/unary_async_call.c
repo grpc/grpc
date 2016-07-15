@@ -41,7 +41,6 @@
 
 static void free_reader_and_call(void *arg) {
   GRPC_client_async_response_reader *reader = arg;
-  grpc_call_destroy(reader->call);
   free(reader);
 }
 
