@@ -107,12 +107,54 @@ _sym_db.RegisterMessage(HelloReply)
 
 DESCRIPTOR.has_options = True
 DESCRIPTOR._options = _descriptor._ParseOptions(descriptor_pb2.FileOptions(), _b('\n\033io.grpc.examples.helloworldB\017HelloWorldProtoP\001\242\002\003HLW'))
-import abc
-import six
+import grpc
 from grpc.beta import implementations as beta_implementations
 from grpc.beta import interfaces as beta_interfaces
 from grpc.framework.common import cardinality
 from grpc.framework.interfaces.face import utilities as face_utilities
+
+
+class GreeterStub(object):
+  """The greeting service definition.
+  """
+
+  def __init__(self, channel):
+    """Constructor.
+
+    Args:
+      channel: A grpc.Channel.
+    """
+    self.SayHello = channel.unary_unary(
+        '/helloworld.Greeter/SayHello',
+        request_serializer=HelloRequest.SerializeToString,
+        response_deserializer=HelloReply.FromString,
+        )
+
+
+class GreeterServicer(object):
+  """The greeting service definition.
+  """
+
+  def SayHello(self, request, context):
+    """Sends a greeting
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+
+def add_GreeterServicer_to_server(servicer, server):
+  rpc_method_handlers = {
+      'SayHello': grpc.unary_unary_rpc_method_handler(
+          servicer.SayHello,
+          request_deserializer=HelloRequest.FromString,
+          response_serializer=HelloReply.SerializeToString,
+      ),
+  }
+  generic_handler = grpc.method_handlers_generic_handler(
+      'helloworld.Greeter', rpc_method_handlers)
+  server.add_generic_rpc_handlers((generic_handler,))
+
 
 class BetaGreeterServicer(object):
   """The greeting service definition.
@@ -122,23 +164,23 @@ class BetaGreeterServicer(object):
     """
     context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
 
+
 class BetaGreeterStub(object):
   """The greeting service definition.
   """
-  def SayHello(self, request, timeout):
+  def SayHello(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
     """Sends a greeting
     """
     raise NotImplementedError()
   SayHello.future = None
 
+
 def beta_create_Greeter_server(servicer, pool=None, pool_size=None, default_timeout=None, maximum_timeout=None):
-  import helloworld_pb2
-  import helloworld_pb2
   request_deserializers = {
-    ('helloworld.Greeter', 'SayHello'): helloworld_pb2.HelloRequest.FromString,
+    ('helloworld.Greeter', 'SayHello'): HelloRequest.FromString,
   }
   response_serializers = {
-    ('helloworld.Greeter', 'SayHello'): helloworld_pb2.HelloReply.SerializeToString,
+    ('helloworld.Greeter', 'SayHello'): HelloReply.SerializeToString,
   }
   method_implementations = {
     ('helloworld.Greeter', 'SayHello'): face_utilities.unary_unary_inline(servicer.SayHello),
@@ -146,14 +188,13 @@ def beta_create_Greeter_server(servicer, pool=None, pool_size=None, default_time
   server_options = beta_implementations.server_options(request_deserializers=request_deserializers, response_serializers=response_serializers, thread_pool=pool, thread_pool_size=pool_size, default_timeout=default_timeout, maximum_timeout=maximum_timeout)
   return beta_implementations.server(method_implementations, options=server_options)
 
+
 def beta_create_Greeter_stub(channel, host=None, metadata_transformer=None, pool=None, pool_size=None):
-  import helloworld_pb2
-  import helloworld_pb2
   request_serializers = {
-    ('helloworld.Greeter', 'SayHello'): helloworld_pb2.HelloRequest.SerializeToString,
+    ('helloworld.Greeter', 'SayHello'): HelloRequest.SerializeToString,
   }
   response_deserializers = {
-    ('helloworld.Greeter', 'SayHello'): helloworld_pb2.HelloReply.FromString,
+    ('helloworld.Greeter', 'SayHello'): HelloReply.FromString,
   }
   cardinalities = {
     'SayHello': cardinality.Cardinality.UNARY_UNARY,

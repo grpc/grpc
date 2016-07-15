@@ -277,12 +277,121 @@ _sym_db.RegisterMessage(RouteSummary)
 
 DESCRIPTOR.has_options = True
 DESCRIPTOR._options = _descriptor._ParseOptions(descriptor_pb2.FileOptions(), _b('\n\033io.grpc.examples.routeguideB\017RouteGuideProtoP\001\242\002\003RTG'))
-import abc
-import six
+import grpc
 from grpc.beta import implementations as beta_implementations
 from grpc.beta import interfaces as beta_interfaces
 from grpc.framework.common import cardinality
 from grpc.framework.interfaces.face import utilities as face_utilities
+
+
+class RouteGuideStub(object):
+  """Interface exported by the server.
+  """
+
+  def __init__(self, channel):
+    """Constructor.
+
+    Args:
+      channel: A grpc.Channel.
+    """
+    self.GetFeature = channel.unary_unary(
+        '/routeguide.RouteGuide/GetFeature',
+        request_serializer=Point.SerializeToString,
+        response_deserializer=Feature.FromString,
+        )
+    self.ListFeatures = channel.unary_stream(
+        '/routeguide.RouteGuide/ListFeatures',
+        request_serializer=Rectangle.SerializeToString,
+        response_deserializer=Feature.FromString,
+        )
+    self.RecordRoute = channel.stream_unary(
+        '/routeguide.RouteGuide/RecordRoute',
+        request_serializer=Point.SerializeToString,
+        response_deserializer=RouteSummary.FromString,
+        )
+    self.RouteChat = channel.stream_stream(
+        '/routeguide.RouteGuide/RouteChat',
+        request_serializer=RouteNote.SerializeToString,
+        response_deserializer=RouteNote.FromString,
+        )
+
+
+class RouteGuideServicer(object):
+  """Interface exported by the server.
+  """
+
+  def GetFeature(self, request, context):
+    """A simple RPC.
+
+    Obtains the feature at a given position.
+
+    A feature with an empty name is returned if there's no feature at the given
+    position.
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def ListFeatures(self, request, context):
+    """A server-to-client streaming RPC.
+
+    Obtains the Features available within the given Rectangle.  Results are
+    streamed rather than returned at once (e.g. in a response message with a
+    repeated field), as the rectangle may cover a large area and contain a
+    huge number of features.
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def RecordRoute(self, request_iterator, context):
+    """A client-to-server streaming RPC.
+
+    Accepts a stream of Points on a route being traversed, returning a
+    RouteSummary when traversal is completed.
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def RouteChat(self, request_iterator, context):
+    """A Bidirectional streaming RPC.
+
+    Accepts a stream of RouteNotes sent while a route is being traversed,
+    while receiving other RouteNotes (e.g. from other users).
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+
+def add_RouteGuideServicer_to_server(servicer, server):
+  rpc_method_handlers = {
+      'GetFeature': grpc.unary_unary_rpc_method_handler(
+          servicer.GetFeature,
+          request_deserializer=Point.FromString,
+          response_serializer=Feature.SerializeToString,
+      ),
+      'ListFeatures': grpc.unary_stream_rpc_method_handler(
+          servicer.ListFeatures,
+          request_deserializer=Rectangle.FromString,
+          response_serializer=Feature.SerializeToString,
+      ),
+      'RecordRoute': grpc.stream_unary_rpc_method_handler(
+          servicer.RecordRoute,
+          request_deserializer=Point.FromString,
+          response_serializer=RouteSummary.SerializeToString,
+      ),
+      'RouteChat': grpc.stream_stream_rpc_method_handler(
+          servicer.RouteChat,
+          request_deserializer=RouteNote.FromString,
+          response_serializer=RouteNote.SerializeToString,
+      ),
+  }
+  generic_handler = grpc.method_handlers_generic_handler(
+      'routeguide.RouteGuide', rpc_method_handlers)
+  server.add_generic_rpc_handlers((generic_handler,))
+
 
 class BetaRouteGuideServicer(object):
   """Interface exported by the server.
@@ -320,10 +429,11 @@ class BetaRouteGuideServicer(object):
     """
     context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
 
+
 class BetaRouteGuideStub(object):
   """Interface exported by the server.
   """
-  def GetFeature(self, request, timeout):
+  def GetFeature(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
     """A simple RPC.
 
     Obtains the feature at a given position.
@@ -333,7 +443,7 @@ class BetaRouteGuideStub(object):
     """
     raise NotImplementedError()
   GetFeature.future = None
-  def ListFeatures(self, request, timeout):
+  def ListFeatures(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
     """A server-to-client streaming RPC.
 
     Obtains the Features available within the given Rectangle.  Results are
@@ -342,7 +452,7 @@ class BetaRouteGuideStub(object):
     huge number of features.
     """
     raise NotImplementedError()
-  def RecordRoute(self, request_iterator, timeout):
+  def RecordRoute(self, request_iterator, timeout, metadata=None, with_call=False, protocol_options=None):
     """A client-to-server streaming RPC.
 
     Accepts a stream of Points on a route being traversed, returning a
@@ -350,7 +460,7 @@ class BetaRouteGuideStub(object):
     """
     raise NotImplementedError()
   RecordRoute.future = None
-  def RouteChat(self, request_iterator, timeout):
+  def RouteChat(self, request_iterator, timeout, metadata=None, with_call=False, protocol_options=None):
     """A Bidirectional streaming RPC.
 
     Accepts a stream of RouteNotes sent while a route is being traversed,
@@ -358,26 +468,19 @@ class BetaRouteGuideStub(object):
     """
     raise NotImplementedError()
 
+
 def beta_create_RouteGuide_server(servicer, pool=None, pool_size=None, default_timeout=None, maximum_timeout=None):
-  import route_guide_pb2
-  import route_guide_pb2
-  import route_guide_pb2
-  import route_guide_pb2
-  import route_guide_pb2
-  import route_guide_pb2
-  import route_guide_pb2
-  import route_guide_pb2
   request_deserializers = {
-    ('routeguide.RouteGuide', 'GetFeature'): route_guide_pb2.Point.FromString,
-    ('routeguide.RouteGuide', 'ListFeatures'): route_guide_pb2.Rectangle.FromString,
-    ('routeguide.RouteGuide', 'RecordRoute'): route_guide_pb2.Point.FromString,
-    ('routeguide.RouteGuide', 'RouteChat'): route_guide_pb2.RouteNote.FromString,
+    ('routeguide.RouteGuide', 'GetFeature'): Point.FromString,
+    ('routeguide.RouteGuide', 'ListFeatures'): Rectangle.FromString,
+    ('routeguide.RouteGuide', 'RecordRoute'): Point.FromString,
+    ('routeguide.RouteGuide', 'RouteChat'): RouteNote.FromString,
   }
   response_serializers = {
-    ('routeguide.RouteGuide', 'GetFeature'): route_guide_pb2.Feature.SerializeToString,
-    ('routeguide.RouteGuide', 'ListFeatures'): route_guide_pb2.Feature.SerializeToString,
-    ('routeguide.RouteGuide', 'RecordRoute'): route_guide_pb2.RouteSummary.SerializeToString,
-    ('routeguide.RouteGuide', 'RouteChat'): route_guide_pb2.RouteNote.SerializeToString,
+    ('routeguide.RouteGuide', 'GetFeature'): Feature.SerializeToString,
+    ('routeguide.RouteGuide', 'ListFeatures'): Feature.SerializeToString,
+    ('routeguide.RouteGuide', 'RecordRoute'): RouteSummary.SerializeToString,
+    ('routeguide.RouteGuide', 'RouteChat'): RouteNote.SerializeToString,
   }
   method_implementations = {
     ('routeguide.RouteGuide', 'GetFeature'): face_utilities.unary_unary_inline(servicer.GetFeature),
@@ -388,26 +491,19 @@ def beta_create_RouteGuide_server(servicer, pool=None, pool_size=None, default_t
   server_options = beta_implementations.server_options(request_deserializers=request_deserializers, response_serializers=response_serializers, thread_pool=pool, thread_pool_size=pool_size, default_timeout=default_timeout, maximum_timeout=maximum_timeout)
   return beta_implementations.server(method_implementations, options=server_options)
 
+
 def beta_create_RouteGuide_stub(channel, host=None, metadata_transformer=None, pool=None, pool_size=None):
-  import route_guide_pb2
-  import route_guide_pb2
-  import route_guide_pb2
-  import route_guide_pb2
-  import route_guide_pb2
-  import route_guide_pb2
-  import route_guide_pb2
-  import route_guide_pb2
   request_serializers = {
-    ('routeguide.RouteGuide', 'GetFeature'): route_guide_pb2.Point.SerializeToString,
-    ('routeguide.RouteGuide', 'ListFeatures'): route_guide_pb2.Rectangle.SerializeToString,
-    ('routeguide.RouteGuide', 'RecordRoute'): route_guide_pb2.Point.SerializeToString,
-    ('routeguide.RouteGuide', 'RouteChat'): route_guide_pb2.RouteNote.SerializeToString,
+    ('routeguide.RouteGuide', 'GetFeature'): Point.SerializeToString,
+    ('routeguide.RouteGuide', 'ListFeatures'): Rectangle.SerializeToString,
+    ('routeguide.RouteGuide', 'RecordRoute'): Point.SerializeToString,
+    ('routeguide.RouteGuide', 'RouteChat'): RouteNote.SerializeToString,
   }
   response_deserializers = {
-    ('routeguide.RouteGuide', 'GetFeature'): route_guide_pb2.Feature.FromString,
-    ('routeguide.RouteGuide', 'ListFeatures'): route_guide_pb2.Feature.FromString,
-    ('routeguide.RouteGuide', 'RecordRoute'): route_guide_pb2.RouteSummary.FromString,
-    ('routeguide.RouteGuide', 'RouteChat'): route_guide_pb2.RouteNote.FromString,
+    ('routeguide.RouteGuide', 'GetFeature'): Feature.FromString,
+    ('routeguide.RouteGuide', 'ListFeatures'): Feature.FromString,
+    ('routeguide.RouteGuide', 'RecordRoute'): RouteSummary.FromString,
+    ('routeguide.RouteGuide', 'RouteChat'): RouteNote.FromString,
   }
   cardinalities = {
     'GetFeature': cardinality.Cardinality.UNARY_UNARY,
