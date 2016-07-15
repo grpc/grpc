@@ -30,6 +30,9 @@
 
 """Definition of targets to build artifacts."""
 
+import os.path
+import sys
+
 import jobset
 
 
@@ -76,27 +79,30 @@ _ARCH_FLAG_MAP = {
   'x64': '-m64'
 }
 
-python_version_arch_map = {
-  'x86': 'Python27_32bits',
-  'x64': 'Python27'
+python_windows_version_arch_map = {
+  ('x86', '2.7'): 'Python27_32bits',
+  ('x64', '2.7'): 'Python27',
+  ('x86', '3.4'): 'Python34_32bits',
+  ('x64', '3.4'): 'Python34',
 }
 
 class PythonArtifact:
   """Builds Python artifacts."""
 
-  def __init__(self, platform, arch, manylinux_build=None):
+  def __init__(self, platform, arch, python_version, manylinux_build=None):
     if manylinux_build:
-      self.name = 'python_%s_%s_%s' % (platform, arch, manylinux_build)
+      self.name = 'python%s_%s_%s_%s' % (python_version, platform, arch, manylinux_build)
     else:
-      self.name = 'python_%s_%s' % (platform, arch)
+      self.name = 'python%s_%s_%s' % (python_version, platform, arch)
     self.platform = platform
     self.arch = arch
-    self.labels = ['artifact', 'python', platform, arch]
-    self.python_version = python_version_arch_map[arch]
+    self.labels = ['artifact', 'python', python_version, platform, arch]
+    self.python_version = python_version
+    self.python_windows_prefix = python_windows_version_arch_map[arch, python_version]
     self.manylinux_build = manylinux_build
 
   def pre_build_jobspecs(self):
-      return []
+    return []
 
   def build_jobspec(self):
     environ = {}
@@ -107,7 +113,6 @@ class PythonArtifact:
       # special places...
       environ['PYTHON'] = '/opt/python/{}/bin/python'.format(self.manylinux_build)
       environ['PIP'] = '/opt/python/{}/bin/pip'.format(self.manylinux_build)
-      # Our docker image has all the prerequisites pip-installed already.
       environ['SKIP_PIP_INSTALL'] = '1'
       # Platform autodetection for the manylinux1 image breaks so we set the
       # defines ourselves.
@@ -121,12 +126,13 @@ class PythonArtifact:
     elif self.platform == 'windows':
       return create_jobspec(self.name,
                             ['tools\\run_tests\\build_artifact_python.bat',
-                             self.python_version,
+                             self.python_windows_prefix,
                              '32' if self.arch == 'x86' else '64'
                             ],
                             shell=True)
     else:
       environ['SKIP_PIP_INSTALL'] = 'TRUE'
+      environ['PYTHON'] = 'python{}'.format(self.python_version)
       return create_jobspec(self.name,
                             ['tools/run_tests/build_artifact_python.sh'],
                             environ=environ)
@@ -323,13 +329,18 @@ def targets():
            for Cls in (CSharpExtArtifact, NodeExtArtifact, ProtocArtifact)
            for platform in ('linux', 'macos', 'windows')
            for arch in ('x86', 'x64')] +
-          [PythonArtifact('linux', 'x86', 'cp27-cp27m'),
-           PythonArtifact('linux', 'x86', 'cp27-cp27mu'),
-           PythonArtifact('linux', 'x64', 'cp27-cp27m'),
-           PythonArtifact('linux', 'x64', 'cp27-cp27mu'),
-           PythonArtifact('macos', 'x64'),
-           PythonArtifact('windows', 'x86'),
-           PythonArtifact('windows', 'x64'),
+          [PythonArtifact('linux', 'x86', '2.7', 'cp27-cp27m'),
+           PythonArtifact('linux', 'x86', '2.7', 'cp27-cp27mu'),
+           PythonArtifact('linux', 'x64', '2.7', 'cp27-cp27m'),
+           PythonArtifact('linux', 'x64', '2.7', 'cp27-cp27mu'),
+           PythonArtifact('macos', 'x64', '2.7'),
+           PythonArtifact('windows', 'x86', '2.7'),
+           PythonArtifact('windows', 'x64', '2.7'),
+           PythonArtifact('linux', 'x86', '3.4', 'cp34-cp34m'),
+           PythonArtifact('linux', 'x64', '3.4', 'cp34-cp34m'),
+           PythonArtifact('macos', 'x64', '3.4'),
+           PythonArtifact('windows', 'x86', '3.4'),
+           PythonArtifact('windows', 'x64', '3.4'),
            RubyArtifact('linux', 'x86'),
            RubyArtifact('linux', 'x64'),
            RubyArtifact('macos', 'x64'),
