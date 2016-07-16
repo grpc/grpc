@@ -31,7 +31,7 @@
 # Don't run this script standalone. Instead, run from the repository root:
 # ./tools/run_tests/run_tests.py -l objc
 
-set -eo pipefail
+set -evo pipefail
 
 cd `dirname $0`
 
@@ -46,6 +46,8 @@ SCHEME=RouteGuideClient                         \
 SCHEME=AuthSample                               \
   EXAMPLE_PATH=examples/objective-c/auth_sample \
   ./build_one_example.sh
+
+rm -f ../examples/RemoteTestClient/*.{h,m}
 
 SCHEME=Sample                                  \
   EXAMPLE_PATH=src/objective-c/examples/Sample \

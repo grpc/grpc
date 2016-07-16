@@ -44,5 +44,10 @@ hash xcodebuild 2>/dev/null || {
     exit 1
 }
 
+# clean the directory
+rm -rf Pods
+rm -rf Tests.xcworkspace
+rm -f Podfile.lock
+rm -f RemoteTestClient/*.{h,m}
 
 pod install

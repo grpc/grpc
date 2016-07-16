@@ -31,7 +31,7 @@
 # Don't run this script standalone. Instead, run from the repository root:
 # ./tools/run_tests/run_tests.py -l objc
 
-set -e
+set -ev
 
 cd $(dirname $0)
 
