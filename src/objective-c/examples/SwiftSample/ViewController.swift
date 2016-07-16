@@ -33,6 +33,8 @@
 
 import UIKit
 
+import RemoteTest
+
 class ViewController: UIViewController {
 
   override func viewDidLoad() {
