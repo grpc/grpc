@@ -33,6 +33,16 @@
 
 #include "helloworld.grpc.pbc.h"
 
+/**
+ * This example shows the async unary API where there are multiple worker threads processing RPCs.
+ */
+
 int main(int argc, char** argv) {
+  GRPC_channel *chan = GRPC_channel_create("0.0.0.0:50051");
+  GRPC_client_context *context = GRPC_client_context_create(chan);
+  GRPC_completion_queue *cq = GRPC_completion_queue_create();
+
+
+
   return 0;
 }

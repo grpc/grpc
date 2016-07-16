@@ -31,6 +31,10 @@
  *
  */
 
+/**
+ * This file demonstrates the basic usage of async unary API.
+ */
+
 #include <stdio.h>
 #include <assert.h>
 
@@ -63,6 +67,7 @@ int main(int argc, char** argv) {
   GRPC_completion_queue *cq = GRPC_completion_queue_create();
   helloworld_HelloRequest request = { .name.funcs.encode = write_string };
   helloworld_HelloReply reply = { .message.funcs.decode = read_string };
+  // this method returns immediately
   GRPC_client_async_response_reader *reader = helloworld_Greeter_SayHello_Async(context, cq, request);
 
   // set up finish notification via tag
