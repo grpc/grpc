@@ -96,3 +96,11 @@ Pods/
 
 # Artifacts directory
 artifacts/
+
+# Temporary file of PHP extension test
+src/php/ext/grpc/tests/*.diff
+src/php/ext/grpc/tests/*.exp
+src/php/ext/grpc/tests/*.log
+src/php/ext/grpc/tests/*.out
+src/php/ext/grpc/tests/*.php
+src/php/ext/grpc/tests/*.sh
