@@ -61,6 +61,13 @@ EXTRA_COMPILE_ARGS = shlex.split(os.environ.get('GRPC_PYTHON_CFLAGS',
 EXTRA_LINK_ARGS = shlex.split(os.environ.get('GRPC_PYTHON_LDFLAGS',
                                              '-lpthread'))
 
+CC_FILES = [
+  os.path.normpath(cc_file) for cc_file in protoc_lib_deps.CC_FILES]
+PROTO_FILES = [
+  os.path.normpath(proto_file) for proto_file in protoc_lib_deps.PROTO_FILES]
+CC_INCLUDE = os.path.normpath(protoc_lib_deps.CC_INCLUDE)
+PROTO_INCLUDE = os.path.normpath(protoc_lib_deps.PROTO_INCLUDE)
+
 GRPC_PYTHON_TOOLS_PACKAGE = 'grpc.tools'
 GRPC_PYTHON_PROTO_RESOURCES_NAME = '_proto'
 
@@ -82,8 +89,8 @@ def package_data():
   proto_resources_path = os.path.join(tools_path,
                                       GRPC_PYTHON_PROTO_RESOURCES_NAME)
   proto_files = []
-  for proto_file in protoc_lib_deps.PROTO_FILES:
-    source = os.path.join(protoc_lib_deps.PROTO_INCLUDE, proto_file)
+  for proto_file in PROTO_FILES:
+    source = os.path.join(PROTO_INCLUDE, proto_file)
     target = os.path.join(proto_resources_path, proto_file)
     relative_target = os.path.join(GRPC_PYTHON_PROTO_RESOURCES_NAME, proto_file)
     try:
@@ -99,18 +106,20 @@ def package_data():
 
 def protoc_ext_module():
   plugin_sources = [
-      'grpc/tools/main.cc',
-      'grpc_root/src/compiler/python_generator.cc'] + [
-      os.path.join(protoc_lib_deps.CC_INCLUDE, cc_file)
-      for cc_file in protoc_lib_deps.CC_FILES]
+      os.path.join('grpc', 'tools', 'main.cc'),
+      os.path.join('grpc_root', 'src', 'compiler', 'python_generator.cc')] + [
+      os.path.join(CC_INCLUDE, cc_file)
+      for cc_file in CC_FILES]
   plugin_ext = extension.Extension(
       name='grpc.tools._protoc_compiler',
-      sources=['grpc/tools/_protoc_compiler.pyx'] + plugin_sources,
+      sources=(
+          [os.path.join('grpc', 'tools', '_protoc_compiler.pyx')] +
+          plugin_sources),
       include_dirs=[
           '.',
           'grpc_root',
-          'grpc_root/include',
-          protoc_lib_deps.CC_INCLUDE,
+          os.path.join('grpc_root', 'include'),
+          CC_INCLUDE,
       ],
       language='c++',
       define_macros=list(DEFINE_MACROS),
