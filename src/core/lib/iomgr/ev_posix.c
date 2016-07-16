@@ -103,7 +103,6 @@ static void try_engine(const char *engine) {
     if (is(engine, g_factories[i].name)) {
       if ((g_event_engine = g_factories[i].factory())) {
         g_poll_strategy_name = g_factories[i].name;
-        gpr_log(GPR_DEBUG, "Using polling engine: %s", g_factories[i].name);
         return;
       }
     }
