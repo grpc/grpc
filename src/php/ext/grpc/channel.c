@@ -195,7 +195,7 @@ PHP_METHOD(Channel, getTarget) {
 PHP_METHOD(Channel, getConnectivityState) {
   wrapped_grpc_channel *channel =
       (wrapped_grpc_channel *)zend_object_store_get_object(getThis() TSRMLS_CC);
-  bool try_to_connect;
+  bool try_to_connect = false;
   /* "|b" == 1 optional bool */
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &try_to_connect) ==
       FAILURE) {
