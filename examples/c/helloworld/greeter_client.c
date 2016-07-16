@@ -40,7 +40,7 @@
  * Nanopb callbacks for string encoding/decoding.
  */
 
-bool write_string(pb_ostream_t *stream, const pb_field_t *field, void * const *arg)
+static bool write_string(pb_ostream_t *stream, const pb_field_t *field, void * const *arg)
 {
   char *str = "world";
   if (!pb_encode_tag_for_field(stream, field))
@@ -49,7 +49,7 @@ bool write_string(pb_ostream_t *stream, const pb_field_t *field, void * const *a
   return pb_encode_string(stream, (uint8_t*)str, strlen(str));
 }
 
-bool read_string(pb_istream_t *stream, const pb_field_t *field, void **arg) {
+static bool read_string(pb_istream_t *stream, const pb_field_t *field, void **arg) {
   size_t len = stream->bytes_left;
   char *str = malloc(len + 1);
   if(!pb_read(stream, str, len)) return false;
