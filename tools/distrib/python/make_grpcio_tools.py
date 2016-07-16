@@ -130,6 +130,11 @@ def get_deps():
       proto_include=repr(GRPC_PYTHON_PROTOBUF_RELATIVE_ROOT))
   return deps_file_content
 
+def long_path(path):
+  if os.name == 'nt':
+    return '\\\\?\\' + path
+  else:
+    return path
 
 def atomic_file_copy(src, dst):
   """Based on the lock-free-whack-a-mole algorithm, depending on filesystem
@@ -145,6 +150,12 @@ def atomic_file_copy(src, dst):
   this_id = str(uuid.uuid4()).replace('.', '-')
   temporary_file = os.path.join(dst_dir, '{}.{}.tmp'.format(dst_base, this_id))
   mole_file = os.path.join(dst_dir, '{}.{}.mole.tmp'.format(dst_base, this_id))
+  mole_pattern = os.path.join(dst_dir, '{}.*.mole.tmp'.format(dst_base))
+  src = long_path(src)
+  dst = long_path(dst)
+  temporary_file = long_path(temporary_file)
+  mole_file = long_path(mole_file)
+  mole_pattern = long_path(mole_pattern)
   shutil.copy2(src, temporary_file)
   try:
     os.rename(temporary_file, mole_file)
@@ -152,7 +163,7 @@ def atomic_file_copy(src, dst):
     print('Error moving temporary file {} to {}'.format(temporary_file, mole_file), file=sys.stderr)
     print('while trying to copy file {} to {}'.format(src, dst), file=sys.stderr)
     raise
-  for other_file in glob.glob('{}.*.mole.tmp'.format(dst)):
+  for other_file in glob.glob(mole_pattern):
     other_id = other_file.split('.')[-3]
     if this_id == other_id:
       pass
