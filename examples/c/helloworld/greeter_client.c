@@ -36,6 +36,10 @@
 #include "helloworld.grpc.pbc.h"
 #include <pb_decode.h>
 
+/**
+ * Nanopb callbacks for string encoding/decoding.
+ */
+
 bool write_string(pb_ostream_t *stream, const pb_field_t *field, void * const *arg)
 {
   char *str = "world";
@@ -54,6 +58,10 @@ bool read_string(pb_istream_t *stream, const pb_field_t *field, void **arg) {
   free(str);
   return true;
 }
+
+/**
+ * Fires a single unary RPC and checks the status.
+ */
 
 int main(int argc, char** argv) {
   // Instantiate the channel, out of which the actual RPCs
