@@ -53,6 +53,11 @@ SCHEME=Sample                                  \
   EXAMPLE_PATH=src/objective-c/examples/Sample \
   ./build_one_example.sh
 
+SCHEME=Sample                                  \
+  EXAMPLE_PATH=src/objective-c/examples/Sample \
+  FRAMEWORKS=YES                               \
+  ./build_one_example.sh
+
 SCHEME=SwiftSample                                  \
   EXAMPLE_PATH=src/objective-c/examples/SwiftSample \
   ./build_one_example.sh
