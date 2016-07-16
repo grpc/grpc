@@ -37,7 +37,7 @@ import jobset
 
 
 def create_docker_jobspec(name, dockerfile_dir, shell_command, environ={},
-                   flake_retries=0, timeout_retries=0):
+                   flake_retries=0, timeout_retries=0, timeout_seconds=30*60):
   """Creates jobspec for a task running under docker."""
   environ = environ.copy()
   environ['RUN_COMMAND'] = shell_command
@@ -52,20 +52,20 @@ def create_docker_jobspec(name, dockerfile_dir, shell_command, environ={},
           cmdline=['tools/run_tests/dockerize/build_and_run_docker.sh'] + docker_args,
           environ=docker_env,
           shortname='build_artifact.%s' % (name),
-          timeout_seconds=30*60,
+          timeout_seconds=timeout_seconds,
           flake_retries=flake_retries,
           timeout_retries=timeout_retries)
   return jobspec
 
 
 def create_jobspec(name, cmdline, environ=None, shell=False,
-                   flake_retries=0, timeout_retries=0):
+                   flake_retries=0, timeout_retries=0, timeout_seconds=30*60):
   """Creates jobspec."""
   jobspec = jobset.JobSpec(
           cmdline=cmdline,
           environ=environ,
           shortname='build_artifact.%s' % (name),
-          timeout_seconds=30*60,
+          timeout_seconds=timeout_seconds,
           flake_retries=flake_retries,
           timeout_retries=timeout_retries,
           shell=shell)
@@ -122,7 +122,8 @@ class PythonArtifact:
       return create_docker_jobspec(self.name,
           'tools/dockerfile/grpc_artifact_python_manylinux_%s' % self.arch,
           'tools/run_tests/build_artifact_python.sh',
-          environ=environ)
+          environ=environ,
+          timeout_seconds=60*60)
     elif self.platform == 'windows':
       return create_jobspec(self.name,
                             ['tools\\run_tests\\build_artifact_python.bat',
