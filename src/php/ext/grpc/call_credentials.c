@@ -141,7 +141,7 @@ PHP_METHOD(CallCredentials, createFromPlugin) {
   memset(fci_cache, 0, sizeof(zend_fcall_info_cache));
 
   /* "f" == 1 function */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "f", fci,
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "f*", fci,
                             fci_cache,
                             fci->params,
                             fci->param_count) == FAILURE) {
