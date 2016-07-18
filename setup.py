@@ -29,17 +29,16 @@
 
 """A setup module for the GRPC Python package."""
 
+from distutils import extension as _extension
 import os
 import os.path
+import pkg_resources
 import platform
 import shlex
 import shutil
 import sys
 import sysconfig
 
-from distutils import core as _core
-from distutils import extension as _extension
-import pkg_resources
 import setuptools
 from setuptools.command import egg_info
 
