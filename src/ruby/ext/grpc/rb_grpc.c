@@ -221,7 +221,7 @@ static VALUE grpc_rb_time_val_to_time(VALUE self) {
                        time_const);
   real_time = gpr_convert_clock_type(*time_const, GPR_CLOCK_REALTIME);
   return rb_funcall(rb_cTime, id_at, 2, INT2NUM(real_time.tv_sec),
-                    INT2NUM(real_time.tv_nsec));
+                    INT2NUM(real_time.tv_nsec / 1000));
 }
 
 /* Invokes inspect on the ctime version of the time val. */
