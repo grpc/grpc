@@ -3403,6 +3403,7 @@ LIBGRPC++_SRC = \
     src/cpp/common/completion_queue.cc \
     src/cpp/common/core_codegen.cc \
     src/cpp/common/rpc_method.cc \
+    src/cpp/rpcmanager/grpc_rpc_manager.cc \
     src/cpp/server/async_generic_service.cc \
     src/cpp/server/create_default_thread_pool.cc \
     src/cpp/server/dynamic_thread_pool.cc \
@@ -3890,6 +3891,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/common/completion_queue.cc \
     src/cpp/common/core_codegen.cc \
     src/cpp/common/rpc_method.cc \
+    src/cpp/rpcmanager/grpc_rpc_manager.cc \
     src/cpp/server/async_generic_service.cc \
     src/cpp/server/create_default_thread_pool.cc \
     src/cpp/server/dynamic_thread_pool.cc \
