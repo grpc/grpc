@@ -69,8 +69,8 @@ Pod::Spec.new do |s|
 
   s.source = {
     :git => 'https://boringssl.googlesource.com/boringssl',
-    # :tag => "version_for_cocoapods_#{version}",
-    :commit => '8d343b44bbab829d1a28fdef650ca95f7db4412e',
+    :tag => "version_for_cocoapods_#{version}",
+    # :commit => '8d343b44bbab829d1a28fdef650ca95f7db4412e',
   }
 
   name = 'openssl'
