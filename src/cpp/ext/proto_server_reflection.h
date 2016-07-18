@@ -36,7 +36,11 @@
 #include <unordered_set>
 #include <vector>
 
+#ifdef GRPC_NO_GENERATED_CODE
+#include "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h"
+#else
 #include <grpc++/ext/reflection.grpc.pb.h>
+#endif  // GRPC_NO_GENERATED_CODE
 #include <grpc++/grpc++.h>
 
 namespace grpc {

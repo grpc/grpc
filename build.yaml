@@ -768,6 +768,14 @@ filegroups:
   language: c++
   public_headers:
   - include/grpc++/impl/codegen/config_protobuf.h
+- name: grpc++_reflection_proto
+  language: c++
+  public_headers:
+  - include/grpc++/ext/reflection.grpc.pb.h
+  - include/grpc++/ext/reflection.pb.h
+  src:
+  - src/cpp/ext/reflection.grpc.pb.cc
+  - src/cpp/ext/reflection.pb.cc
 libs:
 - name: gpr
   build: all
@@ -960,19 +968,21 @@ libs:
   language: c++
   public_headers:
   - include/grpc++/ext/proto_server_reflection_plugin.h
-  - include/grpc++/ext/reflection.grpc.pb.h
-  - include/grpc++/ext/reflection.pb.h
   headers:
   - src/cpp/ext/proto_server_reflection.h
   src:
   - src/cpp/ext/proto_server_reflection.cc
   - src/cpp/ext/proto_server_reflection_plugin.cc
-  - src/cpp/ext/reflection.grpc.pb.cc
-  - src/cpp/ext/reflection.pb.cc
   deps:
   - grpc++
   filegroups:
+  - grpc++_reflection_proto
   - grpc++_codegen_proto
+- name: grpc++_reflection_codegen
+  build: private
+  language: c++
+  src:
+  - src/proto/grpc/reflection/v1alpha/reflection.proto
 - name: grpc++_test_config
   build: private
   language: c++
