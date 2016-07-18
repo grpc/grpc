@@ -69,7 +69,8 @@ extern "C" {
 // - Test reception of invalid serverlist
 // - Test pinging
 // - Test against a non-LB server. That server should return UNIMPLEMENTED and
-// the call should fail.
+//   the call should fail.
+// - Random LB server closing the stream unexpectedly.
 
 namespace grpc {
 namespace {
