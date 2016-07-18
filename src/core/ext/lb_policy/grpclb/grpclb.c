@@ -33,7 +33,64 @@
 
 /** Implementation of the gRPC LB policy.
  *
- * \see https://github.com/grpc/grpc/blob/master/doc/load-balancing.md */
+ * This policy takes as input a set of resolved addresses {a1..an} for which the
+ * LB set was set (it's the resolver's responsibility to ensure this). That is
+ * to say, {a1..an} represent a collection of LB servers.
+ *
+ * An internal channel (\a glb_lb_policy.lb_channel) is created over {a1..an}.
+ * This channel behaves just like a regular channel. In particular, the
+ * constructed URI over the addresses a1..an will use the default pick first
+ * policy to select from this list of LB server backends.
+ *
+ * The first time the policy is requested a pick, a ping or to exit the idle
+ * state, \a query_for_backends() is called. It creates an instance of \a
+ * lb_client_data, an internal struct meant to contain the data associated with
+ * the internal communication with the LB server. This instance is created via
+ * \a lb_client_data_create(). There, the call over lb_channel to pick-first
+ * from {a1..an} is created, the \a LoadBalancingRequest message is assembled
+ * and all necessary callbacks for the progress of the internal call configured.
+ *
+ * Back in \a query_for_backends(), the internal *streaming* call to the LB
+ * server (whichever address from {a1..an} pick-first chose) is kicked off.
+ * It'll progress over the callbacks configured in \a lb_client_data_create()
+ * (see the field docstrings of \a lb_client_data for more details).
+ *
+ * If the call fails with UNIMPLEMENTED, the original call will also fail.
+ * There's a misconfiguration somewhere: at least one of {a1..an} isn't a LB
+ * server, which contradicts the LB bit being set. If the internal call times
+ * out, the usual behavior of pick-first applies, continuing to pick from the
+ * list {a1..an}.
+ *
+ * Upon sucesss, a \a LoadBalancingResponse is expected in \a res_rcvd_cb. An
+ * invalid one results in the termination of the streaming call. A new streaming
+ * call should be created if possible, failing the original call otherwise.
+ * For a valid \a LoadBalancingResponse, the server list of actual backends is
+ * extracted. A Round Robin policy will be created from this list. There are two
+ * possible scenarios:
+ *
+ * 1. This is the first server list received. There was no previous instance of
+ *    the Round Robin policy. \a rr_handover() will instantiate the RR policy
+ *    and perform all the pending operations over it.
+ * 2. There's already a RR policy instance active. We need to introduce the new
+ *    one build from the new serverlist, but taking care not to disrupt the
+ *    operations in progress over the old RR instance. This is done by
+ *    decreasing the reference count on the old policy. The moment no more
+ *    references are held on the old RR policy, it'll be destroyed and \a
+ *    rr_connectivity_changed notified with a \a GRPC_CHANNEL_SHUTDOWN state.
+ *    At this point we can transition to a new RR instance safely, which is done
+ *    once again via \a rr_handover().
+ *
+ *
+ * Once a RR policy instance is in place (and getting updated as described),
+ * calls to for a pick, a ping or a cancellation will be serviced right away by
+ * forwarding them to the RR instance. Any time there's no RR policy available
+ * (ie, right after the creation of the gRRPCLB policy, if an empty serverlist
+ * is received, etc), pick/ping requests are added to a list of pending
+ * picks/pings to be flushed and serviced as part of \a rr_handover() the moment
+ * the RR policy instance becomes available.
+ *
+ * \see https://github.com/grpc/grpc/blob/master/doc/load-balancing.md for the
+ * high level design and details. */
 
 /* TODO(dgq):
  * - Implement LB service forwarding (point 2c. in the doc's diagram).
@@ -60,8 +117,16 @@
 int grpc_lb_glb_trace = 0;
 
 typedef struct wrapped_rr_closure_arg {
+  /* the original closure. Usually a on_complete/notify cb for pick() and ping()
+   * calls against the internal RR instance, respectively. */
   grpc_closure *wrapped_closure;
+
+  /* The RR instance related to the closure */
   grpc_lb_policy *rr_policy;
+
+  /* when not NULL, represents a pending_{pick,ping} node to be freed upon
+   * closure execution */
+  void *owning_pending_node; /* to be freed if not NULL */
 } wrapped_rr_closure_arg;
 
 /* The \a on_complete closure passed as part of the pick requires keeping a
@@ -69,20 +134,20 @@ typedef struct wrapped_rr_closure_arg {
  * order to unref the round robin instance upon its invocation */
 static void wrapped_rr_closure(grpc_exec_ctx *exec_ctx, void *arg,
                                grpc_error *error) {
-  wrapped_rr_closure_arg *wc = arg;
+  wrapped_rr_closure_arg *wc_arg = arg;
 
-  if (wc->rr_policy != NULL) {
+  if (wc_arg->rr_policy != NULL) {
     if (grpc_lb_glb_trace) {
       gpr_log(GPR_INFO, "Unreffing RR (0x%" PRIxPTR ")",
-              (intptr_t)wc->rr_policy);
+              (intptr_t)wc_arg->rr_policy);
     }
-    GRPC_LB_POLICY_UNREF(exec_ctx, wc->rr_policy, "wrapped_rr_closure");
+    GRPC_LB_POLICY_UNREF(exec_ctx, wc_arg->rr_policy, "wrapped_rr_closure");
   }
 
-  if (wc->wrapped_closure != NULL) {
-    grpc_exec_ctx_sched(exec_ctx, wc->wrapped_closure, error, NULL);
+  if (wc_arg->wrapped_closure != NULL) {
+    grpc_exec_ctx_sched(exec_ctx, wc_arg->wrapped_closure, error, NULL);
   }
-  gpr_free(wc);
+  gpr_free(wc_arg->owning_pending_node);
 }
 
 /* Linked list of pending pick requests. It stores all information needed to
@@ -95,19 +160,39 @@ static void wrapped_rr_closure(grpc_exec_ctx *exec_ctx, void *arg,
  * See \a wrapped_rr_closure for details. */
 typedef struct pending_pick {
   struct pending_pick *next;
+
+  /* polling entity for the pick()'s async notification */
   grpc_polling_entity *pollent;
+
+  /* the initial metadata for the pick. See grpc_lb_policy_pick() */
   grpc_metadata_batch *initial_metadata;
+
+  /* bitmask passed to pick() and used for selective cancelling. See
+   * grpc_lb_policy_cancel_picks() */
   uint32_t initial_metadata_flags;
+
+  /* output argument where to store the pick()ed connected subchannel, or NULL
+   * upon error. */
   grpc_connected_subchannel **target;
-  grpc_closure *wrapped_on_complete;
-  wrapped_rr_closure_arg *wrapped_on_complete_arg;
+
+  /* a closure wrapping the original on_complete one to be invoked once the
+   * pick() has completed (regardless of success) */
+  grpc_closure wrapped_on_complete;
+
+  /* args for wrapped_on_complete */
+  wrapped_rr_closure_arg wrapped_on_complete_arg;
 } pending_pick;
 
 /* Same as the \a pending_pick struct but for ping operations */
 typedef struct pending_ping {
   struct pending_ping *next;
-  grpc_closure *wrapped_notify;
-  wrapped_rr_closure_arg *wrapped_notify_arg;
+
+  /* a closure wrapping the original on_complete one to be invoked once the
+   * ping() has completed (regardless of success) */
+  grpc_closure wrapped_notify;
+
+  /* args for wrapped_notify */
+  wrapped_rr_closure_arg wrapped_notify_arg;
 } pending_ping;
 
 typedef struct glb_lb_policy glb_lb_policy;
@@ -115,26 +200,45 @@ typedef struct glb_lb_policy glb_lb_policy;
 /* Used internally for the client call to the LB */
 typedef struct lb_client_data {
   gpr_mu mu;
+
+  /* called once initial metadata's been sent */
   grpc_closure md_sent;
+
+  /* called once initial metadata's been received */
   grpc_closure md_rcvd;
+
+  /* called once the LoadBalanceRequest has been sent to the LB server. See
+   * src/proto/grpc/.../load_balancer.proto */
   grpc_closure req_sent;
+
+  /* A response from the LB server has been received (or error). Process it */
   grpc_closure res_rcvd;
+
+  /* After the client has sent a close to the LB server */
   grpc_closure close_sent;
+
+  /* ... and the status from the LB server has been received */
   grpc_closure srv_status_rcvd;
 
-  grpc_call *c;
-  gpr_timespec deadline;
+  grpc_call *lb_call;    /* streaming call to the LB server, */
+  gpr_timespec deadline; /* for the streaming call to the LB server */
 
-  grpc_metadata_array initial_metadata_recv;
-  grpc_metadata_array trailing_metadata_recv;
+  grpc_metadata_array initial_metadata_recv;  /* initial MD from LB server */
+  grpc_metadata_array trailing_metadata_recv; /* trailing MD from LB server */
 
+  /* what's being sent to the LB server. Note that its value may vary if the LB
+   * server indicates a redirect. */
   grpc_byte_buffer *request_payload;
+
+  /* response from the LB server, if any. Processed in res_rcvd_cb() */
   grpc_byte_buffer *response_payload;
 
+  /* the call's status and status detailset in srv_status_rcvd_cb() */
   grpc_status_code status;
   char *status_details;
   size_t status_details_capacity;
 
+  /* pointer back to the enclosing policy */
   glb_lb_policy *p;
 } lb_client_data;
 
@@ -180,6 +284,12 @@ struct glb_lb_policy {
 
   /** for tracking of the RR connectivity */
   rr_connectivity_data *rr_connectivity;
+
+  /* a wrapped (see ...) on-complete closure for readily available RR picks */
+  grpc_closure wrapped_on_complete;
+
+  /* arguments for the wrapped_on_complete closure */
+  wrapped_rr_closure_arg wc_arg;
 };
 
 static void rr_handover(grpc_exec_ctx *exec_ctx, glb_lb_policy *p,
@@ -219,28 +329,26 @@ static void add_pending_pick(pending_pick **root, grpc_polling_entity *pollent,
                              grpc_closure *on_complete) {
   pending_pick *pp = gpr_malloc(sizeof(*pp));
   memset(pp, 0, sizeof(pending_pick));
-  pp->wrapped_on_complete_arg = gpr_malloc(sizeof(wrapped_rr_closure_arg));
-  memset(pp->wrapped_on_complete_arg, 0, sizeof(wrapped_rr_closure_arg));
+  memset(&pp->wrapped_on_complete_arg, 0, sizeof(wrapped_rr_closure_arg));
   pp->next = *root;
   pp->pollent = pollent;
   pp->target = target;
   pp->initial_metadata = initial_metadata;
   pp->initial_metadata_flags = initial_metadata_flags;
-  pp->wrapped_on_complete =
-      grpc_closure_create(wrapped_rr_closure, pp->wrapped_on_complete_arg);
-  pp->wrapped_on_complete_arg->wrapped_closure = on_complete;
+  pp->wrapped_on_complete_arg.wrapped_closure = on_complete;
+  grpc_closure_init(&pp->wrapped_on_complete, wrapped_rr_closure,
+                    &pp->wrapped_on_complete_arg);
   *root = pp;
 }
 
 static void add_pending_ping(pending_ping **root, grpc_closure *notify) {
   pending_ping *pping = gpr_malloc(sizeof(*pping));
   memset(pping, 0, sizeof(pending_ping));
-  pping->wrapped_notify_arg = gpr_malloc(sizeof(wrapped_rr_closure_arg));
-  memset(pping->wrapped_notify_arg, 0, sizeof(wrapped_rr_closure_arg));
+  memset(&pping->wrapped_notify_arg, 0, sizeof(wrapped_rr_closure_arg));
   pping->next = *root;
-  pping->wrapped_notify =
-      grpc_closure_create(wrapped_rr_closure, pping->wrapped_notify_arg);
-  pping->wrapped_notify_arg->wrapped_closure = notify;
+  grpc_closure_init(&pping->wrapped_notify, wrapped_rr_closure,
+                    &pping->wrapped_notify_arg);
+  pping->wrapped_notify_arg.wrapped_closure = notify;
   *root = pping;
 }
 
@@ -248,7 +356,7 @@ static void lb_client_data_destroy(lb_client_data *lbcd);
 
 static void md_sent_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   lb_client_data *lbcd = arg;
-  GPR_ASSERT(lbcd->c);
+  GPR_ASSERT(lbcd->lb_call);
   grpc_call_error call_error;
   grpc_op ops[1];
   memset(ops, 0, sizeof(ops));
@@ -259,13 +367,13 @@ static void md_sent_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   op->reserved = NULL;
   op++;
   call_error = grpc_call_start_batch_and_execute(
-      exec_ctx, lbcd->c, ops, (size_t)(op - ops), &lbcd->md_rcvd);
+      exec_ctx, lbcd->lb_call, ops, (size_t)(op - ops), &lbcd->md_rcvd);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
 }
 
 static void md_recv_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   lb_client_data *lbcd = arg;
-  GPR_ASSERT(lbcd->c);
+  GPR_ASSERT(lbcd->lb_call);
   grpc_call_error call_error;
   grpc_op ops[1];
   memset(ops, 0, sizeof(ops));
@@ -277,7 +385,7 @@ static void md_recv_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   op->reserved = NULL;
   op++;
   call_error = grpc_call_start_batch_and_execute(
-      exec_ctx, lbcd->c, ops, (size_t)(op - ops), &lbcd->req_sent);
+      exec_ctx, lbcd->lb_call, ops, (size_t)(op - ops), &lbcd->req_sent);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
 }
 
@@ -295,7 +403,7 @@ static void req_sent_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
   op->reserved = NULL;
   op++;
   call_error = grpc_call_start_batch_and_execute(
-      exec_ctx, lbcd->c, ops, (size_t)(op - ops), &lbcd->res_rcvd);
+      exec_ctx, lbcd->lb_call, ops, (size_t)(op - ops), &lbcd->res_rcvd);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
 }
 
@@ -337,8 +445,7 @@ static void res_rcvd_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
         }
         if (lbcd->p->rr_policy == NULL) {
           /* initial "handover", in this case from a null RR policy, meaning
-           * it'll
-           * just create the first RR policy instance */
+           * it'll just create the first RR policy instance */
           rr_handover(exec_ctx, lbcd->p, error);
         } else {
           /* unref the RR policy, eventually leading to its substitution with a
@@ -362,7 +469,7 @@ static void res_rcvd_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
       op->reserved = NULL;
       op++;
       const grpc_call_error call_error = grpc_call_start_batch_and_execute(
-          exec_ctx, lbcd->c, ops, (size_t)(op - ops),
+          exec_ctx, lbcd->lb_call, ops, (size_t)(op - ops),
           &lbcd->res_rcvd); /* loop */
       GPR_ASSERT(GRPC_CALL_OK == call_error);
       return;
@@ -379,7 +486,7 @@ static void res_rcvd_cb(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     op->reserved = NULL;
     op++;
     grpc_call_error call_error = grpc_call_start_batch_and_execute(
-        exec_ctx, lbcd->c, ops, (size_t)(op - ops), &lbcd->close_sent);
+        exec_ctx, lbcd->lb_call, ops, (size_t)(op - ops), &lbcd->close_sent);
     GPR_ASSERT(GRPC_CALL_OK == call_error);
   }
   /* empty payload: call cancelled by server. Cleanups happening in
@@ -394,6 +501,7 @@ static void close_sent_cb(grpc_exec_ctx *exec_ctx, void *arg,
   }
 }
 
+static void query_for_backends(grpc_exec_ctx *exec_ctx, glb_lb_policy *p);
 static void srv_status_rcvd_cb(grpc_exec_ctx *exec_ctx, void *arg,
                                grpc_error *error) {
   lb_client_data *lbcd = arg;
@@ -406,11 +514,11 @@ static void srv_status_rcvd_cb(grpc_exec_ctx *exec_ctx, void *arg,
             lbcd->status, lbcd->status_details, lbcd->status_details_capacity);
   }
 
-  grpc_call_destroy(lbcd->c);
-  grpc_channel_destroy(lbcd->p->lb_channel);
-  lbcd->p->lb_channel = NULL;
+  grpc_call_destroy(lbcd->lb_call);
   lb_client_data_destroy(lbcd);
   p->lbcd = NULL;
+  /* TODO(dgq): deal with stream termination properly (fire up another one? fail
+   * the original call?) */
 }
 
 static lb_client_data *lb_client_data_create(glb_lb_policy *p) {
@@ -431,7 +539,7 @@ static lb_client_data *lb_client_data_create(glb_lb_policy *p) {
   lbcd->deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                 gpr_time_from_seconds(3, GPR_TIMESPAN));
 
-  lbcd->c = grpc_channel_create_pollset_set_call(
+  lbcd->lb_call = grpc_channel_create_pollset_set_call(
       p->lb_channel, NULL, GRPC_PROPAGATE_DEFAULTS, p->base.interested_parties,
       "/BalanceLoad", NULL, /* FIXME(dgq): which "host" value to use? */
       lbcd->deadline, NULL);
@@ -471,6 +579,8 @@ static void glb_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   glb_lb_policy *p = (glb_lb_policy *)pol;
   GPR_ASSERT(p->pending_picks == NULL);
   GPR_ASSERT(p->pending_pings == NULL);
+  grpc_channel_destroy(p->lb_channel);
+  p->lb_channel = NULL;
   grpc_connectivity_state_destroy(exec_ctx, &p->state_tracker);
   if (p->serverlist != NULL) {
     grpc_grpclb_destroy_serverlist(p->serverlist);
@@ -492,7 +602,7 @@ static void glb_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   while (pp != NULL) {
     pending_pick *next = pp->next;
     *pp->target = NULL;
-    grpc_exec_ctx_sched(exec_ctx, pp->wrapped_on_complete, GRPC_ERROR_NONE,
+    grpc_exec_ctx_sched(exec_ctx, &pp->wrapped_on_complete, GRPC_ERROR_NONE,
                         NULL);
     gpr_free(pp);
     pp = next;
@@ -500,7 +610,8 @@ static void glb_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
 
   while (pping != NULL) {
     pending_ping *next = pping->next;
-    grpc_exec_ctx_sched(exec_ctx, pping->wrapped_notify, GRPC_ERROR_NONE, NULL);
+    grpc_exec_ctx_sched(exec_ctx, &pping->wrapped_notify, GRPC_ERROR_NONE,
+                        NULL);
     pping = next;
   }
 
@@ -528,7 +639,7 @@ static void glb_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
       grpc_polling_entity_del_from_pollset_set(exec_ctx, pp->pollent,
                                                p->base.interested_parties);
       *target = NULL;
-      grpc_exec_ctx_sched(exec_ctx, pp->wrapped_on_complete,
+      grpc_exec_ctx_sched(exec_ctx, &pp->wrapped_on_complete,
                           GRPC_ERROR_CANCELLED, NULL);
       gpr_free(pp);
     } else {
@@ -547,7 +658,7 @@ static void glb_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   gpr_mu_lock(&p->mu);
   if (p->lbcd != NULL) {
     /* cancel the call to the load balancer service, if any */
-    grpc_call_cancel(p->lbcd->c, NULL);
+    grpc_call_cancel(p->lbcd->lb_call, NULL);
   }
   pending_pick *pp = p->pending_picks;
   p->pending_picks = NULL;
@@ -557,7 +668,7 @@ static void glb_cancel_picks(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
         initial_metadata_flags_eq) {
       grpc_polling_entity_del_from_pollset_set(exec_ctx, pp->pollent,
                                                p->base.interested_parties);
-      grpc_exec_ctx_sched(exec_ctx, pp->wrapped_on_complete,
+      grpc_exec_ctx_sched(exec_ctx, &pp->wrapped_on_complete,
                           GRPC_ERROR_CANCELLED, NULL);
       gpr_free(pp);
     } else {
@@ -583,7 +694,7 @@ static void query_for_backends(grpc_exec_ctx *exec_ctx, glb_lb_policy *p) {
   op->reserved = NULL;
   op++;
   call_error = grpc_call_start_batch_and_execute(
-      exec_ctx, p->lbcd->c, ops, (size_t)(op - ops), &p->lbcd->md_sent);
+      exec_ctx, p->lbcd->lb_call, ops, (size_t)(op - ops), &p->lbcd->md_sent);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
 
   op = ops;
@@ -597,8 +708,9 @@ static void query_for_backends(grpc_exec_ctx *exec_ctx, glb_lb_policy *p) {
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  call_error = grpc_call_start_batch_and_execute(
-      exec_ctx, p->lbcd->c, ops, (size_t)(op - ops), &p->lbcd->srv_status_rcvd);
+  call_error = grpc_call_start_batch_and_execute(exec_ctx, p->lbcd->lb_call,
+                                                 ops, (size_t)(op - ops),
+                                                 &p->lbcd->srv_status_rcvd);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
 }
 
@@ -680,28 +792,28 @@ static void rr_handover(grpc_exec_ctx *exec_ctx, glb_lb_policy *p,
   while ((pp = p->pending_picks)) {
     p->pending_picks = pp->next;
     GRPC_LB_POLICY_REF(p->rr_policy, "rr_handover_pending_pick");
-    pp->wrapped_on_complete_arg->rr_policy = p->rr_policy;
+    pp->wrapped_on_complete_arg.rr_policy = p->rr_policy;
     if (grpc_lb_glb_trace) {
       gpr_log(GPR_INFO, "Pending pick about to PICK from 0x%" PRIxPTR "",
               (intptr_t)p->rr_policy);
     }
     grpc_lb_policy_pick(exec_ctx, p->rr_policy, pp->pollent,
                         pp->initial_metadata, pp->initial_metadata_flags,
-                        pp->target, pp->wrapped_on_complete);
-    gpr_free(pp);
+                        pp->target, &pp->wrapped_on_complete);
+    pp->wrapped_on_complete_arg.owning_pending_node = pp;
   }
 
   pending_ping *pping;
   while ((pping = p->pending_pings)) {
     p->pending_pings = pping->next;
     GRPC_LB_POLICY_REF(p->rr_policy, "rr_handover_pending_ping");
-    pping->wrapped_notify_arg->rr_policy = p->rr_policy;
+    pping->wrapped_notify_arg.rr_policy = p->rr_policy;
     if (grpc_lb_glb_trace) {
       gpr_log(GPR_INFO, "Pending ping about to PING from 0x%" PRIxPTR "",
               (intptr_t)p->rr_policy);
     }
-    grpc_lb_policy_ping_one(exec_ctx, p->rr_policy, pping->wrapped_notify);
-    gpr_free(pping);
+    grpc_lb_policy_ping_one(exec_ctx, p->rr_policy, &pping->wrapped_notify);
+    pping->wrapped_notify_arg.owning_pending_node = pping;
   }
   GRPC_ERROR_UNREF(error);
 }
@@ -731,19 +843,19 @@ static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
               (intptr_t)p->rr_policy);
     }
     GRPC_LB_POLICY_REF(p->rr_policy, "rr_pick");
-    wrapped_rr_closure_arg *warg = gpr_malloc(sizeof(wrapped_rr_closure_arg));
-    warg->rr_policy = p->rr_policy;
-    warg->wrapped_closure = on_complete;
-    grpc_closure *wrapped_on_complete =
-        grpc_closure_create(wrapped_rr_closure, warg);
+    memset(&p->wc_arg, 0, sizeof(wrapped_rr_closure_arg));
+    p->wc_arg.rr_policy = p->rr_policy;
+    p->wc_arg.wrapped_closure = on_complete;
+    grpc_closure_init(&p->wrapped_on_complete, wrapped_rr_closure, &p->wc_arg);
     r = grpc_lb_policy_pick(exec_ctx, p->rr_policy, pollent, initial_metadata,
                             initial_metadata_flags, target,
-                            wrapped_on_complete);
+                            &p->wrapped_on_complete);
     if (r != 0) {
       /* the call to grpc_lb_policy_pick has been sychronous. Invoke a neutered
        * wrapped closure: it'll only take care of unreffing the RR policy */
-      warg->wrapped_closure = NULL;
-      grpc_exec_ctx_sched(exec_ctx, wrapped_on_complete, GRPC_ERROR_NONE, NULL);
+      p->wc_arg.wrapped_closure = NULL;
+      grpc_exec_ctx_sched(exec_ctx, &p->wrapped_on_complete, GRPC_ERROR_NONE,
+                          NULL);
     }
   } else {
     grpc_polling_entity_add_to_pollset_set(exec_ctx, pollent,
@@ -813,8 +925,9 @@ static grpc_lb_policy *glb_create(grpc_exec_ctx *exec_ctx,
   glb_lb_policy *p = gpr_malloc(sizeof(*p));
   memset(p, 0, sizeof(*p));
 
-  /* all input addresses in args->addresses come from a resolver that claims
-   * they are LB services.
+  /* All input addresses in args->addresses come from a resolver that claims
+   * they are LB services. It's the resolver's responsibility to make sure this
+   * policy is only instantiated and used in that case.
    *
    * Create a client channel over them to communicate with a LB service */
   p->cc_factory = args->client_channel_factory;
