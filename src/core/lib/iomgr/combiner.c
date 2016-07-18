@@ -43,10 +43,12 @@
 
 int grpc_combiner_trace = 0;
 
-#define COMBINER_TRACE(fn)   \
-  if (grpc_combiner_trace) { \
-    fn                       \
-  }
+#define GRPC_COMBINER_TRACE(fn) \
+  do {                          \
+    if (grpc_combiner_trace) {  \
+      fn;                       \
+    }                           \
+  } while (0)
 
 struct grpc_combiner {
   grpc_workqueue *optional_workqueue;
@@ -67,12 +69,12 @@ grpc_combiner *grpc_combiner_create(grpc_workqueue *optional_workqueue) {
   gpr_mpscq_init(&lock->queue);
   lock->take_async_break_before_final_list = false;
   grpc_closure_list_init(&lock->final_list);
-  gpr_log(GPR_DEBUG, "C:%p create", lock);
+  GRPC_COMBINER_TRACE(gpr_log(GPR_DEBUG, "C:%p create", lock));
   return lock;
 }
 
 static void really_destroy(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
-  gpr_log(GPR_DEBUG, "C:%p really_destroy", lock);
+  GRPC_COMBINER_TRACE(gpr_log(GPR_DEBUG, "C:%p really_destroy", lock));
   GPR_ASSERT(gpr_atm_no_barrier_load(&lock->state) == 0);
   gpr_mpscq_destroy(&lock->queue);
   GRPC_WORKQUEUE_UNREF(exec_ctx, lock->optional_workqueue, "combiner");
@@ -81,8 +83,8 @@ static void really_destroy(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
 
 void grpc_combiner_destroy(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
   gpr_atm old_state = gpr_atm_full_fetch_add(&lock->state, -1);
-  gpr_log(GPR_DEBUG, "C:%p really_destroy old_state=%" PRIdPTR, lock,
-          old_state);
+  GRPC_COMBINER_TRACE(gpr_log(
+      GPR_DEBUG, "C:%p really_destroy old_state=%" PRIdPTR, lock, old_state));
   if (old_state == 1) {
     really_destroy(exec_ctx, lock);
   }
@@ -95,7 +97,8 @@ static void continue_finishing_mainline(grpc_exec_ctx *exec_ctx, void *arg,
                                         grpc_error *error) {
   GPR_TIMER_BEGIN("combiner.continue_executing_mainline", 0);
   grpc_combiner *lock = arg;
-  gpr_log(GPR_DEBUG, "C:%p continue_finishing_mainline", lock);
+  GRPC_COMBINER_TRACE(
+      gpr_log(GPR_DEBUG, "C:%p continue_finishing_mainline", lock));
   GPR_ASSERT(exec_ctx->active_combiner == NULL);
   exec_ctx->active_combiner = lock;
   if (maybe_finish_one(exec_ctx, lock)) finish(exec_ctx, lock);
@@ -112,7 +115,8 @@ static void execute_final(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
   lock->take_async_break_before_final_list = false;
   int loops = 0;
   while (c != NULL) {
-    gpr_log(GPR_DEBUG, "C:%p execute_final[%d] c=%p", lock, loops, c);
+    GRPC_COMBINER_TRACE(
+        gpr_log(GPR_DEBUG, "C:%p execute_final[%d] c=%p", lock, loops, c));
     grpc_closure *next = c->next_data.next;
     grpc_error *error = c->error;
     c->cb(exec_ctx, c->cb_arg, error);
@@ -127,7 +131,8 @@ static void continue_executing_final(grpc_exec_ctx *exec_ctx, void *arg,
                                      grpc_error *error) {
   GPR_TIMER_BEGIN("combiner.continue_executing_final", 0);
   grpc_combiner *lock = arg;
-  gpr_log(GPR_DEBUG, "C:%p continue_executing_final", lock);
+  GRPC_COMBINER_TRACE(
+      gpr_log(GPR_DEBUG, "C:%p continue_executing_final", lock));
   GPR_ASSERT(exec_ctx->active_combiner == NULL);
   exec_ctx->active_combiner = lock;
   // quick peek to see if new things have turned up on the queue: if so, go back
@@ -146,9 +151,10 @@ static void continue_executing_final(grpc_exec_ctx *exec_ctx, void *arg,
 static bool start_execute_final(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
   GPR_TIMER_BEGIN("combiner.start_execute_final", 0);
   GPR_ASSERT(exec_ctx->active_combiner == lock);
-  gpr_log(GPR_DEBUG,
-          "C:%p start_execute_final take_async_break_before_final_list=%d",
-          lock, lock->take_async_break_before_final_list);
+  GRPC_COMBINER_TRACE(
+      gpr_log(GPR_DEBUG,
+              "C:%p start_execute_final take_async_break_before_final_list=%d",
+              lock, lock->take_async_break_before_final_list));
   if (lock->take_async_break_before_final_list) {
     grpc_closure_init(&lock->continue_finishing, continue_executing_final,
                       lock);
@@ -166,7 +172,8 @@ static bool start_execute_final(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
 static bool maybe_finish_one(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
   GPR_TIMER_BEGIN("combiner.maybe_finish_one", 0);
   gpr_mpscq_node *n = gpr_mpscq_pop(&lock->queue);
-  gpr_log(GPR_DEBUG, "C:%p maybe_finish_one n=%p", lock, n);
+  GRPC_COMBINER_TRACE(
+      gpr_log(GPR_DEBUG, "C:%p maybe_finish_one n=%p", lock, n));
   GPR_ASSERT(exec_ctx->active_combiner == lock);
   if (n == NULL) {
     // queue is in an inconsistant state: use this as a cue that we should
@@ -193,9 +200,9 @@ static void finish(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
   do {
     executor = maybe_finish_one;
     gpr_atm old_state = gpr_atm_full_fetch_add(&lock->state, -2);
-    gpr_log(GPR_DEBUG, "C:%p finish[%d] old_state=%" PRIdPTR " cl=[%p,%p]",
-            lock, loops, old_state, lock->final_list.head,
-            lock->final_list.tail);
+    GRPC_COMBINER_TRACE(gpr_log(
+        GPR_DEBUG, "C:%p finish[%d] old_state=%" PRIdPTR " cl=[%p,%p]", lock,
+        loops, old_state, lock->final_list.head, lock->final_list.tail));
     switch (old_state) {
       case 5:  // we're down to one queued item: if it's the final list we
       case 4:  // should do that
@@ -223,7 +230,8 @@ static void finish(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
 
 void grpc_combiner_execute(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
                            grpc_closure *cl, grpc_error *error) {
-  gpr_log(GPR_DEBUG, "C:%p grpc_combiner_execute c=%p", lock, cl);
+  GRPC_COMBINER_TRACE(
+      gpr_log(GPR_DEBUG, "C:%p grpc_combiner_execute c=%p", lock, cl));
   GPR_TIMER_BEGIN("combiner.execute", 0);
   gpr_atm last = gpr_atm_full_fetch_add(&lock->state, 2);
   GPR_ASSERT(last & 1);  // ensure lock has not been destroyed
@@ -252,9 +260,10 @@ static void enqueue_finally(grpc_exec_ctx *exec_ctx, void *closure,
 void grpc_combiner_execute_finally(grpc_exec_ctx *exec_ctx, grpc_combiner *lock,
                                    grpc_closure *closure, grpc_error *error,
                                    bool force_async_break) {
-  gpr_log(GPR_DEBUG,
-          "C:%p grpc_combiner_execute_finally c=%p force_async_break=%d; ac=%p",
-          lock, closure, force_async_break, exec_ctx->active_combiner);
+  GRPC_COMBINER_TRACE(gpr_log(
+      GPR_DEBUG,
+      "C:%p grpc_combiner_execute_finally c=%p force_async_break=%d; ac=%p",
+      lock, closure, force_async_break, exec_ctx->active_combiner));
   GPR_TIMER_BEGIN("combiner.execute_finally", 0);
   if (exec_ctx->active_combiner != lock) {
     GPR_TIMER_MARK("slowpath", 0);
