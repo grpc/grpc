@@ -5,3 +5,6 @@ helloworld.pbc.h
 helloworld.pb.c
 helloworld.pb.h
 *.o
+greeter_client
+greeter_async_client
+greeter_async_client2
