@@ -170,7 +170,7 @@ void $CPrefix$$Service$_$Method$_Finish(
       *vars,
       R"(
 /* Sync */
-GRPC_client_writer $CPrefix$$Service$_$Method$(
+GRPC_client_writer *$CPrefix$$Service$_$Method$(
         GRPC_client_context *const context,
         $CPrefix$$Response$ *response);
 
@@ -211,7 +211,7 @@ void $CPrefix$$Service$_$Method$_Finish(
       *vars,
 R"(
 /* Sync */
-GRPC_client_reader $CPrefix$$Service$_$Method$(
+GRPC_client_reader *$CPrefix$$Service$_$Method$(
         GRPC_client_context *const context,
         $CPrefix$$Request$ request);
 
@@ -380,7 +380,7 @@ void $CPrefix$$Service$_$Method$_Finish(
     printer->Print(
       *vars,
       R"(
-GRPC_client_writer $CPrefix$$Service$_$Method$(
+GRPC_client_writer *$CPrefix$$Service$_$Method$(
         GRPC_client_context *const context,
         $CPrefix$$Response$ *response) {
   GRPC_client_context_set_serialization_impl(context,
@@ -406,13 +406,13 @@ bool $CPrefix$$Service$_$Method$_Write(
     printer->Print(
       *vars,
       R"(
-GRPC_client_reader $CPrefix$$Service$_$Method$(
+GRPC_client_reader *$CPrefix$$Service$_$Method$(
         GRPC_client_context *const context,
         $CPrefix$$Request$ request) {
   const GRPC_message request_msg = { &request, sizeof(request) };
   GRPC_client_context_set_serialization_impl(context,
         (grpc_serialization_impl) { $CPrefix$$Request$_serializer, $CPrefix$$Response$_deserializer });
-  return GRPC_server_streaming_blocking_call(GRPC_method$CPrefix$$Service$_$Method$, context, request_msg);
+  return GRPC_server_streaming_blocking_call(GRPC_method_$CPrefix$$Service$_$Method$, context, request_msg);
 }
 
 bool $CPrefix$$Service$_$Method$_Read(
@@ -435,7 +435,7 @@ GRPC_client_reader_writer *$CPrefix$$Service$_$Method$(
         GRPC_client_context *const context) {
   GRPC_client_context_set_serialization_impl(context,
         (grpc_serialization_impl) { $CPrefix$$Request$_serializer, $CPrefix$$Response$_deserializer });
-  return GRPC_bidi_streaming_blocking_call(GRPC_method$CPrefix$$Service$_$Method$, context);
+  return GRPC_bidi_streaming_blocking_call(GRPC_method_$CPrefix$$Service$_$Method$, context);
 }
 
 bool $CPrefix$$Service$_$Method$_Read(
