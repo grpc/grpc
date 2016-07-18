@@ -31,9 +31,4 @@
  *
  */
 
-#ifndef GRPC_H2_SSL_H
-#define GRPC_H2_SSL_H
-
 int main(int argc, char **argv);
-
-#endif /* GRPC_H2_SSL_H */

@@ -32,7 +32,7 @@
  */
 
 #import <XCTest/XCTest.h>
-#include "./h2_ssl_cronet.h"
+#import "src/objective-c/tests/CoreCronetEnd2EndTests/fixture.h"
 
 @interface CoreCronetEnd2EndTests : XCTestCase
 
@@ -42,6 +42,15 @@
 
 - (void)testCoreCronetEnd2End {
   char *argv[] = {"h2_ssl"};
+
+  // This main() function is not the entry point of this test case; it
+  // refers to that in h2_ssl_cronet.m. We can use it because XCode
+  // builder does not use main() as the entry point for a test.
+  // Since h2_ssl_cronet.m is derived from h2_ssl.c in the core end2end
+  // test fixture, we preserves the fixture structure (in particular
+  // the main() function here) so that another fixture can easily
+  // replace the fixture h2_ssl_cronet, in case we need more tests in
+  // the future
   main(1, argv);
 }
 

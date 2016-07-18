@@ -110,8 +110,8 @@
 		51A275E86C141416ED63FF76 /* Pods-InteropTestsLocalCleartext.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-InteropTestsLocalCleartext.release.xcconfig"; path = "Pods/Target Support Files/Pods-InteropTestsLocalCleartext/Pods-InteropTestsLocalCleartext.release.xcconfig"; sourceTree = "<group>"; };
 		553BBBED24E4162D1F769D65 /* Pods-InteropTestsLocalSSL.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-InteropTestsLocalSSL.debug.xcconfig"; path = "Pods/Target Support Files/Pods-InteropTestsLocalSSL/Pods-InteropTestsLocalSSL.debug.xcconfig"; sourceTree = "<group>"; };
 		5761E98978DDDF136A58CB7E /* Pods-AllTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AllTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-AllTests/Pods-AllTests.release.xcconfig"; sourceTree = "<group>"; };
-		5E1BD3B01D3D583900A47325 /* h2_ssl_cronet.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = h2_ssl_cronet.h; sourceTree = "<group>"; };
 		5E1BD3B11D3D583900A47325 /* h2_ssl_cronet.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = h2_ssl_cronet.m; sourceTree = "<group>"; };
+		5E1BD3B31D3D736C00A47325 /* fixture.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fixture.h; sourceTree = "<group>"; };
 		5E8A5DA41D3840B4000F8BC4 /* CoreCronetEnd2EndTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CoreCronetEnd2EndTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5E8A5DA61D3840B4000F8BC4 /* CoreCronetEnd2EndTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CoreCronetEnd2EndTests.m; sourceTree = "<group>"; };
 		6312AE4D1B1BF49B00341DEE /* GRPCClientTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GRPCClientTests.m; sourceTree = "<group>"; };
@@ -252,7 +252,7 @@
 		5E8A5DA51D3840B4000F8BC4 /* CoreCronetEnd2EndTests */ = {
 			isa = PBXGroup;
 			children = (
-				5E1BD3B01D3D583900A47325 /* h2_ssl_cronet.h */,
+				5E1BD3B31D3D736C00A47325 /* fixture.h */,
 				5E1BD3B11D3D583900A47325 /* h2_ssl_cronet.m */,
 				5E8A5DA61D3840B4000F8BC4 /* CoreCronetEnd2EndTests.m */,
 			);

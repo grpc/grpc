@@ -32,6 +32,9 @@
  */
 
 /* 
+ * This fixture derives from h2_ssl.c fixture in core end2end test
+ * (test/core/end2end/fixture/h2_ssl.c)
+ *
  * This fixture creates a server full stack using chttp2 and a client
  * full stack using Cronet. End-to-end tests are run against this fixture
  * setting.
