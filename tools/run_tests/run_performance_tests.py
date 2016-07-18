@@ -30,6 +30,8 @@
 
 """Run performance tests locally or remotely."""
 
+from __future__ import print_function
+
 import argparse
 import itertools
 import jobset
@@ -38,6 +40,7 @@ import multiprocessing
 import os
 import pipes
 import re
+import report_utils
 import subprocess
 import sys
 import tempfile
@@ -52,6 +55,7 @@ os.chdir(_ROOT)
 
 
 _REMOTE_HOST_USERNAME = 'jenkins'
+_REPORT_DIR = 'perf_reports'
 
 
 class QpsWorkerJob:
@@ -101,7 +105,11 @@ def create_scenario_jobspec(scenario_json, workers, remote_host=None,
     cmd += 'BQ_RESULT_TABLE="%s" ' % bq_result_table
   cmd += 'tools/run_tests/performance/run_qps_driver.sh '
   cmd += '--scenarios_json=%s ' % pipes.quote(json.dumps({'scenarios': [scenario_json]}))
-  cmd += '--scenario_result_file=scenario_result.json'
+  if not os.path.isdir(_REPORT_DIR):
+    os.makedirs(_REPORT_DIR)
+  report_path = os.path.join(_REPORT_DIR,
+                             '%s-scenario_result.json' % scenario_json['name'])
+  cmd += '--scenario_result_file=%s' % report_path  
   if remote_host:
     user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, remote_host)
     cmd = 'ssh %s "cd ~/performance_workspace/grpc/ && "%s' % (user_at_host, pipes.quote(cmd))
@@ -310,7 +318,7 @@ def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*',
                             'in the same scenario')
           if custom_server_lang:
             if not workers_by_lang.get(custom_server_lang, []):
-              print 'Warning: Skipping scenario %s as' % scenario_json['name']
+              print('Warning: Skipping scenario %s as' % scenario_json['name'])
               print('SERVER_LANGUAGE is set to %s yet the language has '
                     'not been selected with -l' % custom_server_lang)
               continue
@@ -319,7 +327,7 @@ def create_scenarios(languages, workers_by_lang, remote_host=None, regex='.*',
               workers[idx] = workers_by_lang[custom_server_lang][idx]
           if custom_client_lang:
             if not workers_by_lang.get(custom_client_lang, []):
-              print 'Warning: Skipping scenario %s as' % scenario_json['name']
+              print('Warning: Skipping scenario %s as' % scenario_json['name'])
               print('CLIENT_LANGUAGE is set to %s yet the language has '
                     'not been selected with -l' % custom_client_lang)
               continue
@@ -344,14 +352,14 @@ def finish_qps_workers(jobs):
   while any(job.is_running() for job in jobs):
     for job in qpsworker_jobs:
       if job.is_running():
-        print 'QPS worker "%s" is still running.' % job.host_and_port
+        print('QPS worker "%s" is still running.' % job.host_and_port)
     if retries > 10:
-      print 'Killing all QPS workers.'
+      print('Killing all QPS workers.')
       for job in jobs:
         job.kill()
     retries += 1
     time.sleep(3)
-  print 'All QPS workers finished.'
+  print('All QPS workers finished.')
 
 
 argp = argparse.ArgumentParser(description='Run performance tests.')
@@ -434,6 +442,9 @@ try:
   jobset.message('START', 'Running scenarios.', do_newline=True)
   num_failures, _ = jobset.run(
       scenarios, newline_on_success=True, maxjobs=1)
+  
+  report_utils.render_perf_html_report(_REPORT_DIR)
+  
   if num_failures == 0:
     jobset.message('SUCCESS',
                    'All scenarios finished successfully.',

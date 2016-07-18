@@ -148,6 +148,10 @@ grpc_fd *grpc_fd_create(int fd, const char *name) {
   return g_event_engine->fd_create(fd, name);
 }
 
+grpc_workqueue *grpc_fd_get_workqueue(grpc_fd *fd) {
+  return g_event_engine->fd_get_workqueue(fd);
+}
+
 int grpc_fd_wrapped_fd(grpc_fd *fd) {
   return g_event_engine->fd_wrapped_fd(fd);
 }

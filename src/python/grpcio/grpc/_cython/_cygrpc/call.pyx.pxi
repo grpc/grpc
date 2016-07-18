@@ -105,8 +105,7 @@ cdef class Call:
 
   def __dealloc__(self):
     if self.c_call != NULL:
-      with nogil:
-        grpc_call_destroy(self.c_call)
+      grpc_call_destroy(self.c_call)
 
   # The object *should* always be valid from Python. Used for debugging.
   @property

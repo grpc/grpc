@@ -41,7 +41,7 @@ def create_docker_jobspec(name, dockerfile_dir, shell_command, environ={},
   environ['RELATIVE_COPY_PATH'] = 'test/distrib'
 
   docker_args=[]
-  for k,v in environ.iteritems():
+  for k,v in environ.items():
     docker_args += ['-e', '%s=%s' % (k, v)]
   docker_env = {'DOCKERFILE_DIR': dockerfile_dir,
                 'DOCKER_RUN_SCRIPT': 'tools/run_tests/dockerize/docker_run.sh'}

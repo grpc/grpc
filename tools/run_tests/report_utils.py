@@ -29,12 +29,16 @@
 
 """Generate XML and HTML test reports."""
 
+from __future__ import print_function
+
 try:
   from mako.runtime import Context
   from mako.template import Template
   from mako import exceptions
 except (ImportError):
   pass  # Mako not installed but it is ok. 
+import glob
+import json
 import os
 import string
 import xml.etree.cElementTree as ET
@@ -60,7 +64,7 @@ def render_junit_xml_report(resultset, xml_report):
   root = ET.Element('testsuites')
   testsuite = ET.SubElement(root, 'testsuite', id='1', package='grpc', 
                             name='tests')
-  for shortname, results in resultset.iteritems(): 
+  for shortname, results in resultset.items():
     for result in results:
       xml_test = ET.SubElement(testsuite, 'testcase', name=shortname) 
       if result.elapsed_time:
@@ -83,10 +87,10 @@ def render_interop_html_report(
   try:
     mytemplate = Template(filename=template_file, format_exceptions=True)
   except NameError:
-    print 'Mako template is not installed. Skipping HTML report generation.'
+    print('Mako template is not installed. Skipping HTML report generation.')
     return
   except IOError as e:
-    print 'Failed to find the template %s: %s' % (template_file, e)
+    print('Failed to find the template %s: %s' % (template_file, e))
     return
 
   sorted_test_cases = sorted(test_cases)
@@ -118,3 +122,38 @@ def render_interop_html_report(
     print(exceptions.text_error_template().render())
     raise
 
+
+def render_perf_html_report(report_dir):
+  """Generate a simple HTML report for the perf tests."""
+  template_file = 'tools/run_tests/perf_html_report.template'
+  try:
+    mytemplate = Template(filename=template_file, format_exceptions=True)
+  except NameError:
+    print('Mako template is not installed. Skipping HTML report generation.')
+    return
+  except IOError as e:
+    print('Failed to find the template %s: %s' % (template_file, e))
+    return
+
+  resultset = {}
+  for result_file in glob.glob(os.path.join(report_dir, '*.json')):
+    with open(result_file, 'r') as f:
+      scenario_result = json.loads(f.read())
+      test_case = scenario_result['scenario']['name']
+      if 'ping_pong' in test_case:
+        latency50 = round(scenario_result['summary']['latency50'], 2)
+        latency99 = round(scenario_result['summary']['latency99'], 2)
+        summary = {'latency50': latency50, 'latency99': latency99}
+      else:
+        summary = {'qps': round(scenario_result['summary']['qps'], 2)}
+      resultset[test_case] = summary
+
+  args = {'resultset': resultset}
+
+  html_file_path = os.path.join(report_dir, 'index.html')
+  try:
+    with open(html_file_path, 'w') as output_file:
+      mytemplate.render_context(Context(output_file, **args))
+  except:
+    print(exceptions.text_error_template().render())
+    raise
