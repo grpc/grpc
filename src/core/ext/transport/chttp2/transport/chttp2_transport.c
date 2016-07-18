@@ -311,7 +311,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 
   if (is_client) {
     gpr_slice_buffer_add(
-        &t->global.qbuf,
+        &t->writing.outbuf,
         gpr_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING));
     grpc_chttp2_initiate_write(exec_ctx, &t->global, false, "initial_write");
   }
@@ -768,7 +768,7 @@ static void start_writing(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t) {
       set_write_state(t, GRPC_CHTTP2_WRITING_INACTIVE,
                       "start_writing:nothing_to_write");
     }
-    end_waiting_for_write(exec_ctx, t, GRPC_ERROR_CREATE("Nothing to write"));
+    end_waiting_for_write(exec_ctx, t, GRPC_ERROR_NONE);
     UNREF_TRANSPORT(exec_ctx, t, "writing");
   }
   GPR_TIMER_END("start_writing", 0);

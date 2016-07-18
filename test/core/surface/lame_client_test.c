@@ -49,8 +49,8 @@ static void *tag(intptr_t x) { return (void *)x; }
 
 void verify_connectivity(grpc_exec_ctx *exec_ctx, void *arg,
                          grpc_error *error) {
-  grpc_transport_op *op = arg;
-  GPR_ASSERT(GRPC_CHANNEL_SHUTDOWN == *op->connectivity_state);
+  grpc_connectivity_state *state = arg;
+  GPR_ASSERT(GRPC_CHANNEL_SHUTDOWN == *state);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
 }
 
@@ -62,7 +62,7 @@ void test_transport_op(grpc_channel *channel) {
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
-  grpc_closure_init(&transport_op_cb, verify_connectivity, &op);
+  grpc_closure_init(&transport_op_cb, verify_connectivity, &state);
 
   op = grpc_make_transport_op(NULL);
   op->on_connectivity_state_change = &transport_op_cb;

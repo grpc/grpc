@@ -51,15 +51,6 @@ int grpc_chttp2_unlocking_check_writes(
 
   GPR_TIMER_BEGIN("grpc_chttp2_unlocking_check_writes", 0);
 
-  /* simple writes are queued to qbuf, and flushed here */
-  gpr_slice_buffer_swap(&transport_global->qbuf, &transport_writing->outbuf);
-  GPR_ASSERT(transport_global->qbuf.count == 0);
-
-  grpc_chttp2_hpack_compressor_set_max_table_size(
-      &transport_writing->hpack_compressor,
-      transport_global->settings[GRPC_PEER_SETTINGS]
-                                [GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE]);
-
   if (transport_global->dirtied_local_settings &&
       !transport_global->sent_local_settings) {
     gpr_slice_buffer_add(
@@ -72,6 +63,16 @@ int grpc_chttp2_unlocking_check_writes(
     transport_global->dirtied_local_settings = 0;
     transport_global->sent_local_settings = 1;
   }
+
+  /* simple writes are queued to qbuf, and flushed here */
+  gpr_slice_buffer_move_into(&transport_global->qbuf,
+                             &transport_writing->outbuf);
+  GPR_ASSERT(transport_global->qbuf.count == 0);
+
+  grpc_chttp2_hpack_compressor_set_max_table_size(
+      &transport_writing->hpack_compressor,
+      transport_global->settings[GRPC_PEER_SETTINGS]
+                                [GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE]);
 
   GRPC_CHTTP2_FLOW_MOVE_TRANSPORT("write", transport_writing, outgoing_window,
                                   transport_global, outgoing_window);

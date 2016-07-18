@@ -40,6 +40,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/transport/security_connector.h"
@@ -218,6 +219,8 @@ static void on_host_checked(grpc_exec_ctx *exec_ctx, void *user_data,
 static void auth_start_transport_op(grpc_exec_ctx *exec_ctx,
                                     grpc_call_element *elem,
                                     grpc_transport_stream_op *op) {
+  GPR_TIMER_BEGIN("auth_start_transport_op", 0);
+
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
@@ -258,12 +261,14 @@ static void auth_start_transport_op(grpc_exec_ctx *exec_ctx,
       grpc_channel_security_connector_check_call_host(
           exec_ctx, chand->security_connector, call_host, chand->auth_context,
           on_host_checked, elem);
+      GPR_TIMER_END("auth_start_transport_op", 0);
       return; /* early exit */
     }
   }
 
   /* pass control down the stack */
   grpc_call_next_op(exec_ctx, elem, op);
+  GPR_TIMER_END("auth_start_transport_op", 0);
 }
 
 /* Constructor for call_data */

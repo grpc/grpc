@@ -428,7 +428,8 @@ static void finish_destroy_channel(grpc_exec_ctx *exec_ctx, void *cd,
   server_unref(exec_ctx, server);
 }
 
-static void destroy_channel(grpc_exec_ctx *exec_ctx, channel_data *chand) {
+static void destroy_channel(grpc_exec_ctx *exec_ctx, channel_data *chand,
+                            grpc_error *error) {
   if (is_channel_orphaned(chand)) return;
   GPR_ASSERT(chand->server != NULL);
   orphan_channel(chand);
@@ -444,6 +445,8 @@ static void destroy_channel(grpc_exec_ctx *exec_ctx, channel_data *chand) {
                        grpc_channel_stack_element(
                            grpc_channel_get_channel_stack(chand->channel), 0),
                        op);
+
+  GRPC_LOG_IF_ERROR("disconnecting client", error);
 }
 
 static void cpstr(char **dest, size_t *capacity, grpc_mdstr *value) {
@@ -845,7 +848,7 @@ static void channel_connectivity_changed(grpc_exec_ctx *exec_ctx, void *cd,
                          op);
   } else {
     gpr_mu_lock(&server->mu_global);
-    destroy_channel(exec_ctx, chand);
+    destroy_channel(exec_ctx, chand, GRPC_ERROR_REF(error));
     gpr_mu_unlock(&server->mu_global);
     GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, chand->channel, "connectivity");
   }

@@ -207,6 +207,10 @@ typedef struct {
 
 static void retry_waiting_locked(grpc_exec_ctx *exec_ctx,
                                  grpc_subchannel_call_holder *holder) {
+  if (holder->waiting_ops_count == 0) {
+    return;
+  }
+
   retry_ops_args *a = gpr_malloc(sizeof(*a));
   a->ops = holder->waiting_ops;
   a->nops = holder->waiting_ops_count;

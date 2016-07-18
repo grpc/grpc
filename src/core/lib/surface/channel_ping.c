@@ -61,6 +61,8 @@ static void ping_done(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 
 void grpc_channel_ping(grpc_channel *channel, grpc_completion_queue *cq,
                        void *tag, void *reserved) {
+  GRPC_API_TRACE("grpc_channel_ping(channel=%p, cq=%p, tag=%p, reserved=%p)", 4,
+                 (channel, cq, tag, reserved));
   grpc_transport_op *op = grpc_make_transport_op(NULL);
   ping_result *pr = gpr_malloc(sizeof(*pr));
   grpc_channel_element *top_elem =
