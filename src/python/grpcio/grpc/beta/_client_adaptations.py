@@ -67,7 +67,7 @@ def _abortion(rpc_error_call):
   error_kind = face.Abortion.Kind.LOCAL_FAILURE if pair is None else pair[0]
   return face.Abortion(
       error_kind, rpc_error_call.initial_metadata(),
-      rpc_error_call.trailing_metadata(), code, rpc_error_code.details())
+      rpc_error_call.trailing_metadata(), code, rpc_error_call.details())
 
 
 def _abortion_error(rpc_error_call):
