@@ -32,7 +32,7 @@
  */
 
 #import <XCTest/XCTest.h>
-#include "./h2_ssl.h"
+#include "./h2_ssl_cronet.h"
 
 @interface CoreCronetEnd2EndTests : XCTestCase
 

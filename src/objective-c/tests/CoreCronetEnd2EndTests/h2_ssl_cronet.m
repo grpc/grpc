@@ -111,7 +111,7 @@ static void chttp2_init_server_secure_fullstack(
   grpc_server_start(f->server);
 }
 
-void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture *f) {
+static void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture *f) {
   fullstack_secure_fixture_data *ffd = f->fixture_data;
   gpr_free(ffd->localaddr);
   gpr_free(ffd);

@@ -12,9 +12,9 @@
 		20DFDF829DD993A4A00D5662 /* libPods-RxLibraryUnitTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A58BE6DF1C62D1739EBB2C78 /* libPods-RxLibraryUnitTests.a */; };
 		333E8FC01C8285B7C547D799 /* libPods-InteropTestsLocalCleartext.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FD346DB2C23F676C4842F3FF /* libPods-InteropTestsLocalCleartext.a */; };
 		3D7C85F6AA68C4A205E3BA16 /* libPods-Tests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 20DFF2F3C97EF098FE5A3171 /* libPods-Tests.a */; };
+		5E1BD3B21D3D583900A47325 /* h2_ssl_cronet.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E1BD3B11D3D583900A47325 /* h2_ssl_cronet.m */; };
 		5E8A5DA71D3840B4000F8BC4 /* CoreCronetEnd2EndTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E8A5DA61D3840B4000F8BC4 /* CoreCronetEnd2EndTests.m */; };
 		5E8A5DA91D3840B4000F8BC4 /* libTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 635697C71B14FC11007A7283 /* libTests.a */; };
-		5E8A5DB01D3849F1000F8BC4 /* h2_ssl.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E8A5DAF1D3849F1000F8BC4 /* h2_ssl.m */; };
 		60D2A57ED559F34428C2EEC5 /* libPods-CoreCronetEnd2EndTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FBD98AC417B9882D32B19F28 /* libPods-CoreCronetEnd2EndTests.a */; };
 		6312AE4E1B1BF49B00341DEE /* GRPCClientTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 6312AE4D1B1BF49B00341DEE /* GRPCClientTests.m */; };
 		63423F4A1B150A5F006CF63C /* libTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 635697C71B14FC11007A7283 /* libTests.a */; };
@@ -110,10 +110,10 @@
 		51A275E86C141416ED63FF76 /* Pods-InteropTestsLocalCleartext.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-InteropTestsLocalCleartext.release.xcconfig"; path = "Pods/Target Support Files/Pods-InteropTestsLocalCleartext/Pods-InteropTestsLocalCleartext.release.xcconfig"; sourceTree = "<group>"; };
 		553BBBED24E4162D1F769D65 /* Pods-InteropTestsLocalSSL.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-InteropTestsLocalSSL.debug.xcconfig"; path = "Pods/Target Support Files/Pods-InteropTestsLocalSSL/Pods-InteropTestsLocalSSL.debug.xcconfig"; sourceTree = "<group>"; };
 		5761E98978DDDF136A58CB7E /* Pods-AllTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AllTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-AllTests/Pods-AllTests.release.xcconfig"; sourceTree = "<group>"; };
+		5E1BD3B01D3D583900A47325 /* h2_ssl_cronet.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = h2_ssl_cronet.h; sourceTree = "<group>"; };
+		5E1BD3B11D3D583900A47325 /* h2_ssl_cronet.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = h2_ssl_cronet.m; sourceTree = "<group>"; };
 		5E8A5DA41D3840B4000F8BC4 /* CoreCronetEnd2EndTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CoreCronetEnd2EndTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5E8A5DA61D3840B4000F8BC4 /* CoreCronetEnd2EndTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CoreCronetEnd2EndTests.m; sourceTree = "<group>"; };
-		5E8A5DAF1D3849F1000F8BC4 /* h2_ssl.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = h2_ssl.m; sourceTree = "<group>"; };
-		5ED3173E1D397C7500C613BD /* h2_ssl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = h2_ssl.h; sourceTree = "<group>"; };
 		6312AE4D1B1BF49B00341DEE /* GRPCClientTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GRPCClientTests.m; sourceTree = "<group>"; };
 		63423F441B150A5F006CF63C /* AllTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AllTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		63423F501B151B77006CF63C /* RxLibraryUnitTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RxLibraryUnitTests.m; sourceTree = "<group>"; };
@@ -252,8 +252,8 @@
 		5E8A5DA51D3840B4000F8BC4 /* CoreCronetEnd2EndTests */ = {
 			isa = PBXGroup;
 			children = (
-				5E8A5DAF1D3849F1000F8BC4 /* h2_ssl.m */,
-				5ED3173E1D397C7500C613BD /* h2_ssl.h */,
+				5E1BD3B01D3D583900A47325 /* h2_ssl_cronet.h */,
+				5E1BD3B11D3D583900A47325 /* h2_ssl_cronet.m */,
 				5E8A5DA61D3840B4000F8BC4 /* CoreCronetEnd2EndTests.m */,
 			);
 			path = CoreCronetEnd2EndTests;
@@ -867,8 +867,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5E8A5DB01D3849F1000F8BC4 /* h2_ssl.m in Sources */,
 				5E8A5DA71D3840B4000F8BC4 /* CoreCronetEnd2EndTests.m in Sources */,
+				5E1BD3B21D3D583900A47325 /* h2_ssl_cronet.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
