@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2016, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,42 +31,24 @@
  *
  */
 
-#ifndef GRPC_TEST_CPP_INTEROP_SERVER_HELPER_H
-#define GRPC_TEST_CPP_INTEROP_SERVER_HELPER_H
+#include <signal.h>
+#include <unistd.h>
 
-#include <memory>
+#include "test/cpp/interop/server_helper.h"
+#include "test/cpp/util/test_config.h"
 
-#include <grpc++/security/server_credentials.h>
-#include <grpc++/server_context.h>
-#include <grpc/compression.h>
+bool grpc::testing::interop::g_got_sigint = false;
 
-namespace grpc {
-namespace testing {
+static void sigint_handler(int x) {
+  grpc::testing::interop::g_got_sigint = true;
+}
 
-std::shared_ptr<ServerCredentials> CreateInteropServerCredentials();
+int main(int argc, char** argv) {
+  grpc::testing::InitTest(&argc, &argv, true);
+  signal(SIGINT, sigint_handler);
 
-class InteropServerContextInspector {
- public:
-  InteropServerContextInspector(const ::grpc::ServerContext& context);
+  grpc::testing::interop::RunServer(
+      grpc::testing::CreateInteropServerCredentials());
 
-  // Inspector methods, able to peek inside ServerContext, follow.
-  std::shared_ptr<const AuthContext> GetAuthContext() const;
-  bool IsCancelled() const;
-  grpc_compression_algorithm GetCallCompressionAlgorithm() const;
-  uint32_t GetEncodingsAcceptedByClient() const;
-  uint32_t GetMessageFlags() const;
-
- private:
-  const ::grpc::ServerContext& context_;
-};
-
-namespace interop {
-
-extern bool g_got_sigint;
-void RunServer(std::shared_ptr<ServerCredentials> creds);
-
-}  // namespace interop
-}  // namespace testing
-}  // namespace grpc
-
-#endif  // GRPC_TEST_CPP_INTEROP_SERVER_HELPER_H
+  return 0;
+}

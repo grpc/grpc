@@ -31,7 +31,6 @@
  *
  */
 
-#include <signal.h>
 #include <unistd.h>
 
 #include <fstream>
@@ -311,7 +310,9 @@ class TestServiceImpl : public TestService::Service {
   }
 };
 
-void RunServer() {
+void grpc::testing::interop::RunServer(
+    std::shared_ptr<ServerCredentials> creds) {
+  GPR_ASSERT(FLAGS_port != 0);
   std::ostringstream server_address;
   server_address << "0.0.0.0:" << FLAGS_port;
   TestServiceImpl service;
@@ -321,24 +322,10 @@ void RunServer() {
 
   ServerBuilder builder;
   builder.RegisterService(&service);
-  std::shared_ptr<ServerCredentials> creds =
-      grpc::testing::CreateInteropServerCredentials();
   builder.AddListeningPort(server_address.str(), creds);
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.str().c_str());
   while (!got_sigint) {
     sleep(5);
   }
-}
-
-static void sigint_handler(int x) { got_sigint = true; }
-
-int main(int argc, char** argv) {
-  grpc::testing::InitTest(&argc, &argv, true);
-  signal(SIGINT, sigint_handler);
-
-  GPR_ASSERT(FLAGS_port != 0);
-  RunServer();
-
-  return 0;
 }
