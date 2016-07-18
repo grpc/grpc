@@ -32,9 +32,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\compiler\cpp_generator.h">
       <Filter>src\compiler</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\compiler\cpp_generator_helpers.h">
-      <Filter>src\compiler</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\compiler\csharp_generator.h">
       <Filter>src\compiler</Filter>
     </ClInclude>
@@ -57,6 +54,9 @@
       <Filter>src\compiler</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\compiler\python_generator.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\compiler\python_generator_helpers.h">
       <Filter>src\compiler</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\compiler\ruby_generator.h">
