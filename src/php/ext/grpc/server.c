@@ -222,7 +222,9 @@ static zend_function_entry server_methods[] = {
     PHP_ME(Server, requestCall, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Server, addHttp2Port, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Server, addSecureHttp2Port, NULL, ZEND_ACC_PUBLIC)
-    PHP_ME(Server, start, NULL, ZEND_ACC_PUBLIC) PHP_FE_END};
+    PHP_ME(Server, start, NULL, ZEND_ACC_PUBLIC)
+    PHP_FE_END
+};
 
 void grpc_init_server(TSRMLS_D) {
   zend_class_entry ce;
