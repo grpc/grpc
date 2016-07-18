@@ -47,10 +47,10 @@ from setuptools.command import egg_info
 egg_info.manifest_maker.template = 'PYTHON-MANIFEST.in'
 
 PY3 = sys.version_info.major == 3
-PYTHON_STEM = './src/python/grpcio'
-CORE_INCLUDE = ('./include', '.',)
-BORINGSSL_INCLUDE = ('./third_party/boringssl/include',)
-ZLIB_INCLUDE = ('./third_party/zlib',)
+PYTHON_STEM = os.path.join('src', 'python', 'grpcio')
+CORE_INCLUDE = ('include', '.',)
+BORINGSSL_INCLUDE = (os.path.join('third_party', 'boringssl', 'include'),)
+ZLIB_INCLUDE = (os.path.join('third_party', 'zlib'),)
 
 # Ensure we're in the proper directory whether or not we're being used by pip.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -62,8 +62,8 @@ import commands
 import grpc_core_dependencies
 import grpc_version
 
-# TODO(atash) make this conditional on being on a mingw32 build
-_unixccompiler_patch.monkeypatch_unix_compiler()
+if 'win32' in sys.platform:
+  _unixccompiler_patch.monkeypatch_unix_compiler()
 
 
 LICENSE = '3-clause BSD'
@@ -105,7 +105,9 @@ if not "win32" in sys.platform:
 if "win32" in sys.platform:
   EXTENSION_LIBRARIES += ('ws2_32',)
 
-DEFINE_MACROS = (('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600), ('GPR_BACKWARDS_COMPATIBILITY_MODE', 1),)
+DEFINE_MACROS = (
+    ('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600),
+    ('GPR_BACKWARDS_COMPATIBILITY_MODE', 1),)
 if "win32" in sys.platform:
   DEFINE_MACROS += (('OPENSSL_WINDOWS', 1), ('WIN32_LEAN_AND_MEAN', 1),)
   if '64bit' in platform.architecture()[0]:
@@ -200,12 +202,13 @@ COMMAND_CLASS = {
 }
 
 # Ensure that package data is copied over before any commands have been run:
-credentials_dir = os.path.join(PYTHON_STEM, 'grpc/_cython/_credentials')
+credentials_dir = os.path.join(PYTHON_STEM, 'grpc', '_cython', '_credentials')
 try:
   os.mkdir(credentials_dir)
 except OSError:
   pass
-shutil.copyfile('etc/roots.pem', os.path.join(credentials_dir, 'roots.pem'))
+shutil.copyfile(os.path.join('etc', 'roots.pem'),
+                os.path.join(credentials_dir, 'roots.pem'))
 
 PACKAGE_DATA = {
     # Binaries that may or may not be present in the final installation, but are
