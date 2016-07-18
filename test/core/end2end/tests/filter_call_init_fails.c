@@ -33,6 +33,7 @@
 
 #include "test/core/end2end/end2end_tests.h"
 
+#include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -246,7 +247,7 @@ static bool maybe_add_filter(grpc_channel_stack_builder *builder, void *arg) {
 }
 
 static void init_plugin(void) {
-  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, MAX_INT,
+  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
                                    maybe_add_filter, NULL);
 }
 
