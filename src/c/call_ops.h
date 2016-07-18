@@ -32,8 +32,8 @@
  */
 
 
-#ifndef TEST_GRPC_C_CALL_OPS_H
-#define TEST_GRPC_C_CALL_OPS_H
+#ifndef GRPC_C_CALL_OPS_H
+#define GRPC_C_CALL_OPS_H
 
 #include <grpc_c/grpc_c.h>
 #include "message.h"
@@ -97,4 +97,4 @@ extern const grpc_op_manager grpc_op_recv_object;
 extern const grpc_op_manager grpc_op_send_close;
 extern const grpc_op_manager grpc_op_recv_status;
 
-#endif //TEST_GRPC_C_CALL_OPS_H
+#endif /* GRPC_C_CALL_OPS_H */

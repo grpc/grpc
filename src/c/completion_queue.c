@@ -31,6 +31,9 @@
  *
  */
 
+/**
+ * Wraps the grpc_completion_queue type.
+ */
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
@@ -77,6 +80,11 @@ GRPC_completion_queue_operation_status GRPC_completion_queue_next_deadline(GRPC_
         // run post-processing for async operations
         bool status = grpc_finish_op_from_call_set(set, set->context);
 
+        // run user-defined cleanup
+        if (set->async_cleanup.callback) {
+          set->async_cleanup.callback(set->async_cleanup.arg);
+        }
+
         if (set->hide_from_user) {
           // don't touch user supplied pointers
           continue;
@@ -84,11 +92,6 @@ GRPC_completion_queue_operation_status GRPC_completion_queue_next_deadline(GRPC_
 
         *tag = set->user_tag;
         *ok = (ev.success != 0) && status;
-
-        // run user-defined cleanup
-        if (set->async_cleanup.callback) {
-          set->async_cleanup.callback(set->async_cleanup.arg);
-        }
 
         return GRPC_COMPLETION_QUEUE_GOT_EVENT;
     }

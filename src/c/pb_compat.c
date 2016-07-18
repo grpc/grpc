@@ -38,6 +38,10 @@
 #include <third_party/nanopb/pb_encode.h>
 #include "alloc.h"
 
+/**
+ * This file implements a Nanopb stream used to collect deserialized data from Nanopb.
+ */
+
 typedef struct GRPC_pb_dynamic_array_state {
   void *data;
   size_t size;
