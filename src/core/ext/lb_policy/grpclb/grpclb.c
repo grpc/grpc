@@ -135,7 +135,6 @@ typedef struct wrapped_rr_closure_arg {
 static void wrapped_rr_closure(grpc_exec_ctx *exec_ctx, void *arg,
                                grpc_error *error) {
   wrapped_rr_closure_arg *wc_arg = arg;
-
   if (wc_arg->rr_policy != NULL) {
     if (grpc_lb_glb_trace) {
       gpr_log(GPR_INFO, "Unreffing RR (0x%" PRIxPTR ")",
@@ -143,10 +142,8 @@ static void wrapped_rr_closure(grpc_exec_ctx *exec_ctx, void *arg,
     }
     GRPC_LB_POLICY_UNREF(exec_ctx, wc_arg->rr_policy, "wrapped_rr_closure");
   }
-
-  if (wc_arg->wrapped_closure != NULL) {
-    grpc_exec_ctx_sched(exec_ctx, wc_arg->wrapped_closure, error, NULL);
-  }
+  GPR_ASSERT(wc_arg->wrapped_closure != NULL);
+  grpc_exec_ctx_sched(exec_ctx, wc_arg->wrapped_closure, error, NULL);
   gpr_free(wc_arg->owning_pending_node);
 }
 
@@ -842,7 +839,7 @@ static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
       gpr_log(GPR_INFO, "about to PICK from 0x%" PRIxPTR "",
               (intptr_t)p->rr_policy);
     }
-    GRPC_LB_POLICY_REF(p->rr_policy, "rr_pick");
+    GRPC_LB_POLICY_REF(p->rr_policy, "glb_pick");
     memset(&p->wc_arg, 0, sizeof(wrapped_rr_closure_arg));
     p->wc_arg.rr_policy = p->rr_policy;
     p->wc_arg.wrapped_closure = on_complete;
@@ -851,10 +848,15 @@ static int glb_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
                             initial_metadata_flags, target,
                             &p->wrapped_on_complete);
     if (r != 0) {
-      /* the call to grpc_lb_policy_pick has been sychronous. Invoke a neutered
-       * wrapped closure: it'll only take care of unreffing the RR policy */
+      /* the call to grpc_lb_policy_pick has been sychronous. Unreffing the RR
+       * policy and notify the original callback */
       p->wc_arg.wrapped_closure = NULL;
-      grpc_exec_ctx_sched(exec_ctx, &p->wrapped_on_complete, GRPC_ERROR_NONE,
+      if (grpc_lb_glb_trace) {
+        gpr_log(GPR_INFO, "Unreffing RR (0x%" PRIxPTR ")",
+                (intptr_t)p->wc_arg.rr_policy);
+      }
+      GRPC_LB_POLICY_UNREF(exec_ctx, p->wc_arg.rr_policy, "glb_pick");
+      grpc_exec_ctx_sched(exec_ctx, p->wc_arg.wrapped_closure, GRPC_ERROR_NONE,
                           NULL);
     }
   } else {
