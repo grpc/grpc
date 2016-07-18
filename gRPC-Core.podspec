@@ -44,7 +44,7 @@ Pod::Spec.new do |s|
 
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
-    :tag => "release-#{version.gsub(/\./, '_')}-objectivec-#{version}",
+    :tag => "v#{version}",
     # TODO(jcanizales): Depend explicitly on the nanopb pod, and disable submodules.
     :submodules => true,
   }
