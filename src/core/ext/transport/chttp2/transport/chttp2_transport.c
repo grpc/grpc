@@ -1019,6 +1019,12 @@ static void perform_stream_op_locked(grpc_exec_ctx *exec_ctx, void *stream_op,
   grpc_chttp2_transport_global *transport_global = &t->global;
   grpc_chttp2_stream_global *stream_global = &s->global;
 
+  if (grpc_http_trace) {
+    char *str = grpc_transport_stream_op_string(op);
+    gpr_log(GPR_DEBUG, "perform_stream_op_locked: %s", str);
+    gpr_free(str);
+  }
+
   grpc_closure *on_complete = op->on_complete;
   if (on_complete == NULL) {
     on_complete = grpc_closure_create(do_nothing, NULL);
@@ -1821,6 +1827,10 @@ static void end_all_the_calls(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
 
 static void drop_connection(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                             grpc_error *error) {
+  if (!grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, NULL)) {
+    error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
+                               GRPC_STATUS_UNAVAILABLE);
+  }
   close_transport_locked(exec_ctx, t, GRPC_ERROR_REF(error));
   end_all_the_calls(exec_ctx, t, error);
 }
@@ -2015,10 +2025,6 @@ static void post_reading_action_locked(grpc_exec_ctx *exec_ctx, void *arg,
     error = GRPC_ERROR_CREATE("Transport closed");
   }
   if (error != GRPC_ERROR_NONE) {
-    if (!grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, NULL)) {
-      error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
-                                 GRPC_STATUS_UNAVAILABLE);
-    }
     drop_connection(exec_ctx, t, GRPC_ERROR_REF(error));
     t->endpoint_reading = 0;
     if (grpc_http_write_state_trace) {

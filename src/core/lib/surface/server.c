@@ -446,7 +446,12 @@ static void destroy_channel(grpc_exec_ctx *exec_ctx, channel_data *chand,
                            grpc_channel_get_channel_stack(chand->channel), 0),
                        op);
 
-  GRPC_LOG_IF_ERROR("disconnecting client", error);
+  if (error != GRPC_ERROR_NONE) {
+    const char *msg = grpc_error_string(error);
+    gpr_log(GPR_INFO, "Disconnected client: %s", msg);
+    grpc_error_free_string(msg);
+  }
+  GRPC_ERROR_UNREF(error);
 }
 
 static void cpstr(char **dest, size_t *capacity, grpc_mdstr *value) {
