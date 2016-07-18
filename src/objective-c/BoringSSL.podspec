@@ -67,8 +67,11 @@ Pod::Spec.new do |s|
   # "The name and email addresses of the library maintainers, not the Podspec maintainer."
   s.authors  = 'Adam Langley', 'David Benjamin', 'Matt Braithwaite'
 
-  s.source = { :git => 'https://boringssl.googlesource.com/boringssl',
-               :tag => "version_for_cocoapods_#{version}" }
+  s.source = {
+    :git => 'https://boringssl.googlesource.com/boringssl',
+    # :tag => "version_for_cocoapods_#{version}",
+    :commit => '8d343b44bbab829d1a28fdef650ca95f7db4412e',
+  }
 
   name = 'openssl'
 
