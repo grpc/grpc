@@ -35,6 +35,10 @@
 #include <grpc_c/grpc_c.h>
 #include "id_serialization.h"
 
+/**
+ * Serialization interface that does not transform data. Base implementation of GRPC_serialization_impl.
+ */
+
 grpc_message GRPC_id_serialize(const grpc_message input) {
   void *tmp = malloc(input.length);
   memcpy(tmp, input.data, input.length);

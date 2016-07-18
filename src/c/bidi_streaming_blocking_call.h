@@ -44,4 +44,4 @@ typedef struct grpc_client_reader_writer {
   grpc_completion_queue *cq;
 } grpc_client_reader_writer;
 
-#endif // GRPC_C_BIDI_STREAMING_BLOCKING_CALL_H
+#endif /* GRPC_C_BIDI_STREAMING_BLOCKING_CALL_H */

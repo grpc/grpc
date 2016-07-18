@@ -45,7 +45,7 @@ grpc_client_context *GRPC_client_context_create(grpc_channel *chan) {
       .channel = chan,
       .serialization_impl = {
         .serialize = GRPC_id_serialize,
-        .deserialize = GRPC_id_deserialize,
+        .deserialize = GRPC_id_deserialize
       },
       .status = {
         .ok = true
