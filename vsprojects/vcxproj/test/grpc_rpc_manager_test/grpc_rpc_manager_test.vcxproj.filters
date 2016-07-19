@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(SolutionDir)\..\test\cpp\rpcmanager\grpc_rpc_manager_test.cc">
+      <Filter>test\cpp\rpcmanager</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\test\cpp\rpcmanager\grpc_rpc_manager_test.h">
+      <Filter>test\cpp\rpcmanager</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{9da529f7-8064-34c0-54da-0fade27184ad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp">
+      <UniqueIdentifier>{b6e53cff-22ab-1194-866d-57caa3551fd2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\rpcmanager">
+      <UniqueIdentifier>{c63d7236-e7c6-d7b7-e3d8-f25853e358e6}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

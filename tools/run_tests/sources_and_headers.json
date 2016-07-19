@@ -2214,6 +2214,25 @@
   }, 
   {
     "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_config"
+    ], 
+    "headers": [
+      "test/cpp/rpcmanager/grpc_rpc_manager_test.h"
+    ], 
+    "language": "c++", 
+    "name": "grpc_rpc_manager_test", 
+    "src": [
+      "test/cpp/rpcmanager/grpc_rpc_manager_test.cc", 
+      "test/cpp/rpcmanager/grpc_rpc_manager_test.h"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
       "grpc_plugin_support"
     ], 
     "headers": [], 

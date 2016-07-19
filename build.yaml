@@ -2713,6 +2713,18 @@ targets:
   secure: false
   vs_config_type: Application
   vs_project_guid: '{DF52D501-A6CF-4E6F-BA38-6EBE2E8DAFB2}'
+- name: grpc_rpc_manager_test
+  build: test
+  language: c++
+  headers:
+  - test/cpp/rpcmanager/grpc_rpc_manager_test.h
+  src:
+  - test/cpp/rpcmanager/grpc_rpc_manager_test.cc
+  deps:
+  - grpc++
+  - grpc
+  - gpr
+  - grpc++_test_config
 - name: grpc_ruby_plugin
   build: protoc
   language: c++
