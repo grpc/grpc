@@ -4360,7 +4360,6 @@
   {
     "deps": [
       "grpc++", 
-      "grpc++_codegen_proto", 
       "grpc++_reflection_proto"
     ], 
     "headers": [
@@ -6760,7 +6759,9 @@
     "type": "filegroup"
   }, 
   {
-    "deps": [], 
+    "deps": [
+      "grpc++_codegen_proto"
+    ], 
     "headers": [
       "include/grpc++/ext/reflection.grpc.pb.h", 
       "include/grpc++/ext/reflection.pb.h"

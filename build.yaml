@@ -776,6 +776,8 @@ filegroups:
   src:
   - src/cpp/ext/reflection.grpc.pb.cc
   - src/cpp/ext/reflection.pb.cc
+  uses:
+  - grpc++_codegen_proto
 libs:
 - name: gpr
   build: all
@@ -977,7 +979,6 @@ libs:
   - grpc++
   filegroups:
   - grpc++_reflection_proto
-  - grpc++_codegen_proto
 - name: grpc++_reflection_codegen
   build: private
   language: c++
