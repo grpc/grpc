@@ -39,6 +39,8 @@
 #include <pb_decode.h>
 
 #include <stdio.h>
+#include <time.h>
+#include <stdlib.h>
 
 /**
  * Nanopb callbacks for string encoding/decoding.
@@ -53,6 +55,10 @@ static bool write_string_from_arg(pb_ostream_t *stream, const pb_field_t *field,
   return pb_encode_string(stream, (uint8_t*)str, strlen(str));
 }
 
+/**
+ * This callback function reads a string from Nanopb stream and copies it into the callback args.
+ * Users need to free the string after use.
+ */
 static bool read_string_store_in_arg(pb_istream_t *stream, const pb_field_t *field, void **arg) {
   size_t len = stream->bytes_left;
   char *str = malloc(len + 1);
@@ -168,11 +174,137 @@ void list_features(GRPC_channel *chan) {
 }
 
 void record_route(GRPC_channel *chan) {
+  routeguide_Point point;
+  routeguide_RouteSummary stats;
+  GRPC_client_context *context = GRPC_client_context_create(chan);
+  const int kPoints = 10;
 
+  srand(time(NULL));
+
+  GRPC_client_writer *writer = routeguide_RouteGuide_RecordRoute(context, &stats);
+
+  int i;
+  for (i = 0; i < kPoints; i++) {
+    const route_feature db_feature = route_guide_database[rand() % num_route_features_in_database];
+    const routeguide_Feature f = {
+      .name = {
+        .arg = (void *) db_feature.name,
+        .funcs.encode = write_string_from_arg
+      },
+      .has_location = true,
+      .location = {
+        .has_latitude = true,
+        .latitude = db_feature.location.latitude,
+        .has_longitude = true,
+        .longitude = db_feature.location.longitude
+      }
+    };
+    printf("Visiting point %.6f, %.6f\n",
+           f.location.latitude / kCoordFactor,
+           f.location.longitude / kCoordFactor);
+    if (!routeguide_RouteGuide_RecordRoute_Write(writer, f.location)) {
+      // Broken stream.
+      break;
+    }
+    usleep((500 + rand() % 1000) * 1000);
+  }
+  GRPC_status status = routeguide_RouteGuide_RecordRoute_Terminate(writer);
+  if (status.ok) {
+    printf("Finished trip with %d points\nPassed %d features\nTravelled %d meters\nIt took %d seconds\n",
+           stats.point_count,
+           stats.feature_count,
+           stats.distance,
+           stats.elapsed_time);
+  } else {
+    printf("RecordRoute rpc failed.\n");
+  }
+}
+
+void route_chat_thread(GRPC_client_reader_writer *reader_writer) {
+  routeguide_RouteNote notes[] = {
+    {
+      .has_location = true,
+      .location = {
+        .has_latitude = false,
+        .latitude = 0,
+        .has_longitude = false,
+        .longitude = 0
+      },
+      .message = {
+        .arg = (void *) "First message",
+        .funcs.encode = write_string_from_arg
+      }
+    }, {
+      .has_location = true,
+      .location = {
+        .has_latitude = false,
+        .latitude = 0,
+        .has_longitude = true,
+        .longitude = 1
+      },
+      .message = {
+        .arg = (void *) "Second message",
+        .funcs.encode = write_string_from_arg
+      }
+    }, {
+      .has_location = true,
+      .location = {
+        .has_latitude = true,
+        .latitude = 1,
+        .has_longitude = false,
+        .longitude = 0
+      },
+      .message = {
+        .arg = (void *) "Third message",
+        .funcs.encode = write_string_from_arg
+      }
+    },  {
+      .has_location = true,
+      .location = {
+        .has_latitude = false,
+        .latitude = 0,
+        .has_longitude = false,
+        .longitude = 0
+      },
+      .message = {
+        .arg = (void *) "Fourth message",
+        .funcs.encode = write_string_from_arg
+      }
+    }
+  };
+
+  int i;
+  for (i = 0; i < 4; i++) {
+    printf("Sending message %s at %d, %d\n",
+           (char *) notes[i].message.arg,
+           notes[i].location.latitude,
+           notes[i].location.longitude);
+    routeguide_RouteGuide_RouteChat_Write(reader_writer, notes[i]);
+  }
+  routeguide_RouteGuide_RouteChat_Writes_Done(reader_writer);
 }
 
 void route_chat(GRPC_channel *chan) {
+  GRPC_client_context *context = GRPC_client_context_create(chan);
 
+  GRPC_client_reader_writer *reader_writer = routeguide_RouteGuide_RouteChat(context);
+
+  pthread_t tid;
+  pthread_create(&tid, NULL, route_chat_thread, reader_writer);
+
+  routeguide_RouteNote server_note;
+  server_note.message.funcs.decode = read_string_store_in_arg;
+  while (routeguide_RouteGuide_RouteChat_Read(reader_writer, &server_note)) {
+    printf("Got message %s at %d, %d\n",
+           (char *) server_note.message.arg,
+           server_note.location.latitude,
+           server_note.location.longitude);
+  }
+  pthread_join(tid, NULL);
+  GRPC_status status = routeguide_RouteGuide_RouteChat_Terminate(reader_writer);
+  if (!status.ok) {
+    printf("RouteChat rpc failed.\n");
+  }
 }
 
 int main(int argc, char** argv) {
