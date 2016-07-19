@@ -31,6 +31,18 @@
  *
  */
 
+/*
+ * This test file is derived from fixture h2_ssl.c in core end2end test
+ * (test/core/end2end/fixture/h2_ssl.c). The structure of the fixture is
+ * preserved as much as possible
+ *
+ * This fixture creates a server full stack using chttp2 and a client
+ * full stack using Cronet. End-to-end tests are run against this
+ * configuration
+ *
+ */
+
+
 #import <XCTest/XCTest.h>
 #include "test/core/end2end/end2end_tests.h"
 
@@ -166,6 +178,7 @@ static grpc_end2end_test_config configs[] = {
 
 
 
+char *roots_filename;
 
 @interface CoreCronetEnd2EndTests : XCTestCase
 
@@ -173,7 +186,6 @@ static grpc_end2end_test_config configs[] = {
 
 @implementation CoreCronetEnd2EndTests
 
-char *roots_filename;
 
 // The setUp() function is run before the test cases run and only run once
 + (void)setUp {
@@ -217,6 +229,8 @@ char *roots_filename;
   }
 }
 
+// TODO(mxyan): Use NSStringFromSelector(_cmd) to acquire test name from the
+// test case method name, so that bodies of test cases can stay identical 
 - (void)testBadHostname {
   [self testIndividualCase:"bad_hostname"];
 }
