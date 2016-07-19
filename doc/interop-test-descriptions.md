@@ -30,8 +30,7 @@ Clients should accept these arguments:
       [ca.pem](https://github.com/grpc/grpc/blob/master/src/core/lib/tsi/test_creds/ca.pem)
       as the CA root
 * --default_service_account=ACCOUNT_EMAIL
-    * Email of the GCE default service account. Only applicable
-      for compute_engine_creds test.
+    * Email of the GCE default service account.
 * --oauth_scope=SCOPE
     * OAuth scope. For example, "https://www.googleapis.com/auth/xapi.zoo"
 * --service_account_key_file=PATH
@@ -968,8 +967,8 @@ request payload bodies received.
 [StreamingOutputCall]: #streamingoutputcall
 
 Server implements StreamingOutputCall by replying, in order, with one
-StreamingOutputCallResponses for each ResponseParameters in
-StreamingOutputCallRequest. Each StreamingOutputCallResponses should have a
+StreamingOutputCallResponse for each ResponseParameters in
+StreamingOutputCallRequest. Each StreamingOutputCallResponse should have a
 payload body of size ResponseParameters.size bytes, as specified by its
 respective ResponseParameters. After sending all responses, it closes with OK.
 
@@ -977,8 +976,8 @@ respective ResponseParameters. After sending all responses, it closes with OK.
 [FullDuplexCall]: #fullduplexcall
 
 Server implements FullDuplexCall by replying, in order, with one
-StreamingOutputCallResponses for each ResponseParameters in each
-StreamingOutputCallRequest. Each StreamingOutputCallResponses should have a
+StreamingOutputCallResponse for each ResponseParameters in each
+StreamingOutputCallRequest. Each StreamingOutputCallResponse should have a
 payload body of size ResponseParameters.size bytes, as specified by its
 respective ResponseParameters. After receiving half close and sending all
 responses, it closes with OK.

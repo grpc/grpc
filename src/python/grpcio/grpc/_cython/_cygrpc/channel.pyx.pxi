@@ -32,9 +32,8 @@ cimport cpython
 
 cdef class Channel:
 
-  def __cinit__(self, target, ChannelArgs arguments=None,
+  def __cinit__(self, bytes target, ChannelArgs arguments=None,
                 ChannelCredentials channel_credentials=None):
-    target = str_to_bytes(target)
     cdef grpc_channel_args *c_arguments = NULL
     cdef char *c_target = NULL
     self.c_channel = NULL
@@ -57,8 +56,6 @@ cdef class Channel:
   def create_call(self, Call parent, int flags,
                   CompletionQueue queue not None,
                   method, host, Timespec deadline not None):
-    method = str_to_bytes(method)
-    host = str_to_bytes(host)
     if queue.is_shutting_down:
       raise ValueError("queue must not be shutting down or shutdown")
     cdef char *method_c_string = method
@@ -105,5 +102,4 @@ cdef class Channel:
 
   def __dealloc__(self):
     if self.c_channel != NULL:
-      with nogil:
-        grpc_channel_destroy(self.c_channel)
+      grpc_channel_destroy(self.c_channel)

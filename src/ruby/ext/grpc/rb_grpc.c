@@ -46,10 +46,10 @@
 #include "rb_call_credentials.h"
 #include "rb_channel.h"
 #include "rb_channel_credentials.h"
-#include "rb_completion_queue.h"
 #include "rb_loader.h"
 #include "rb_server.h"
 #include "rb_server_credentials.h"
+#include "rb_compression_options.h"
 
 static VALUE grpc_rb_cTimeVal = Qnil;
 
@@ -85,7 +85,7 @@ VALUE grpc_rb_cannot_init(VALUE self) {
 VALUE grpc_rb_cannot_init_copy(VALUE copy, VALUE self) {
   (void)self;
   rb_raise(rb_eTypeError,
-           "initialization of %s only allowed from the gRPC native layer",
+           "Copy initialization of %s is not supported",
            rb_obj_classname(copy));
   return Qnil;
 }
@@ -221,7 +221,7 @@ static VALUE grpc_rb_time_val_to_time(VALUE self) {
                        time_const);
   real_time = gpr_convert_clock_type(*time_const, GPR_CLOCK_REALTIME);
   return rb_funcall(rb_cTime, id_at, 2, INT2NUM(real_time.tv_sec),
-                    INT2NUM(real_time.tv_nsec));
+                    INT2NUM(real_time.tv_nsec / 1000));
 }
 
 /* Invokes inspect on the ctime version of the time val. */
@@ -318,7 +318,7 @@ void Init_grpc_c() {
   grpc_rb_mGrpcCore = rb_define_module_under(grpc_rb_mGRPC, "Core");
   grpc_rb_sNewServerRpc =
       rb_struct_define("NewServerRpc", "method", "host",
-                       "deadline", "metadata", "call", "cq", NULL);
+                       "deadline", "metadata", "call", NULL);
   grpc_rb_sStatus =
       rb_struct_define("Status", "code", "details", "metadata", NULL);
   sym_code = ID2SYM(rb_intern("code"));
@@ -326,7 +326,6 @@ void Init_grpc_c() {
   sym_metadata = ID2SYM(rb_intern("metadata"));
 
   Init_grpc_channel();
-  Init_grpc_completion_queue();
   Init_grpc_call();
   Init_grpc_call_credentials();
   Init_grpc_channel_credentials();
@@ -334,4 +333,5 @@ void Init_grpc_c() {
   Init_grpc_server_credentials();
   Init_grpc_status_codes();
   Init_grpc_time_consts();
+  Init_grpc_compression_options();
 }

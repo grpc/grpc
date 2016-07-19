@@ -29,6 +29,8 @@
 
 """Run a group of subprocesses and then finish."""
 
+from __future__ import print_function
+
 import multiprocessing
 import os
 import platform
@@ -46,6 +48,12 @@ measure_cpu_costs = False
 
 _DEFAULT_MAX_JOBS = 16 * multiprocessing.cpu_count()
 _MAX_RESULT_SIZE = 8192
+
+def sanitized_environment(env):
+  sanitized = {}
+  for key, value in env.items():
+    sanitized[str(key).encode()] = str(value).encode()
+  return sanitized
 
 def platform_string():
   if platform.system() == 'Windows':
@@ -117,8 +125,8 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
   try:
     if platform_string() == 'windows' or not sys.stdout.isatty():
       if explanatory_text:
-        print explanatory_text
-      print '%s: %s' % (tag, msg)
+        print(explanatory_text)
+      print('%s: %s' % (tag, msg))
       return
     sys.stdout.write('%s%s%s\x1b[%d;%dm%s\x1b[0m: %s%s' % (
         _BEGINNING_OF_LINE,
@@ -219,6 +227,7 @@ class Job(object):
     env = dict(os.environ)
     env.update(self._spec.environ)
     env.update(self._add_env)
+    env = sanitized_environment(env)
     self._start = time.time()
     cmdline = self._spec.cmdline
     if measure_cpu_costs:
@@ -361,7 +370,7 @@ class Jobset(object):
               self._travis,
               self._add_env)
     self._running.add(job)
-    if not self.resultset.has_key(job.GetSpec().shortname):
+    if job.GetSpec().shortname not in self.resultset:
       self.resultset[job.GetSpec().shortname] = []
     return True
 

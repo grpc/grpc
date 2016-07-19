@@ -168,11 +168,9 @@ describe Grpc::Health::Checker do
     CheckerStub = Grpc::Health::Checker.rpc_stub_class
 
     before(:each) do
-      @server_queue = GRPC::Core::CompletionQueue.new
       server_host = '0.0.0.0:0'
       @client_opts = { channel_override: @ch }
       server_opts = {
-        completion_queue_override: @server_queue,
         poll_period: 1
       }
       @srv = RpcServer.new(**server_opts)

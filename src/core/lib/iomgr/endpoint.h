@@ -51,6 +51,7 @@ struct grpc_endpoint_vtable {
                gpr_slice_buffer *slices, grpc_closure *cb);
   void (*write)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                 gpr_slice_buffer *slices, grpc_closure *cb);
+  grpc_workqueue *(*get_workqueue)(grpc_endpoint *ep);
   void (*add_to_pollset)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                          grpc_pollset *pollset);
   void (*add_to_pollset_set)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
@@ -68,6 +69,9 @@ void grpc_endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                         gpr_slice_buffer *slices, grpc_closure *cb);
 
 char *grpc_endpoint_get_peer(grpc_endpoint *ep);
+
+/* Retrieve a reference to the workqueue associated with this endpoint */
+grpc_workqueue *grpc_endpoint_get_workqueue(grpc_endpoint *ep);
 
 /* Write slices out to the socket.
 

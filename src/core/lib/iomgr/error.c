@@ -37,6 +37,7 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/avl.h>
 #include <grpc/support/log.h>
@@ -117,6 +118,8 @@ static const char *error_int_name(grpc_error_ints key) {
       return "wsa_error";
     case GRPC_ERROR_INT_HTTP_STATUS:
       return "http_status";
+    case GRPC_ERROR_INT_LIMIT:
+      return "limit";
   }
   GPR_UNREACHABLE_CODE(return "unknown");
 }
@@ -171,8 +174,8 @@ static bool is_special(grpc_error *err) {
 grpc_error *grpc_error_ref(grpc_error *err, const char *file, int line,
                            const char *func) {
   if (is_special(err)) return err;
-  gpr_log(GPR_DEBUG, "%p: %d -> %d [%s:%d %s]", err, err->refs.count,
-          err->refs.count + 1, file, line, func);
+  gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d %s]", err,
+          err->refs.count, err->refs.count + 1, file, line, func);
   gpr_ref(&err->refs);
   return err;
 }
@@ -197,8 +200,8 @@ static void error_destroy(grpc_error *err) {
 void grpc_error_unref(grpc_error *err, const char *file, int line,
                       const char *func) {
   if (is_special(err)) return;
-  gpr_log(GPR_DEBUG, "%p: %d -> %d [%s:%d %s]", err, err->refs.count,
-          err->refs.count - 1, file, line, func);
+  gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d %s]", err,
+          err->refs.count, err->refs.count - 1, file, line, func);
   if (gpr_unref(&err->refs)) {
     error_destroy(err);
   }
@@ -249,10 +252,16 @@ static grpc_error *copy_error_and_unref(grpc_error *in) {
   GPR_TIMER_BEGIN("copy_error_and_unref", 0);
   grpc_error *out;
   if (is_special(in)) {
-    if (in == GRPC_ERROR_NONE) return GRPC_ERROR_CREATE("no error");
-    if (in == GRPC_ERROR_OOM) return GRPC_ERROR_CREATE("oom");
-    if (in == GRPC_ERROR_CANCELLED) return GRPC_ERROR_CREATE("cancelled");
-    out = GRPC_ERROR_CREATE("unknown");
+    if (in == GRPC_ERROR_NONE)
+      out = GRPC_ERROR_CREATE("no error");
+    else if (in == GRPC_ERROR_OOM)
+      out = GRPC_ERROR_CREATE("oom");
+    else if (in == GRPC_ERROR_CANCELLED)
+      out =
+          grpc_error_set_int(GRPC_ERROR_CREATE("cancelled"),
+                             GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_CANCELLED);
+    else
+      out = GRPC_ERROR_CREATE("unknown");
   } else {
     out = gpr_malloc(sizeof(*out));
 #ifdef GRPC_ERROR_REFCOUNT_DEBUG
@@ -280,8 +289,17 @@ grpc_error *grpc_error_set_int(grpc_error *src, grpc_error_ints which,
 }
 
 bool grpc_error_get_int(grpc_error *err, grpc_error_ints which, intptr_t *p) {
-  void *pp;
   GPR_TIMER_BEGIN("grpc_error_get_int", 0);
+  void *pp;
+  if (is_special(err)) {
+    if (err == GRPC_ERROR_CANCELLED && which == GRPC_ERROR_INT_GRPC_STATUS) {
+      *p = GRPC_STATUS_CANCELLED;
+      GPR_TIMER_END("grpc_error_get_int", 0);
+      return true;
+    }
+    GPR_TIMER_END("grpc_error_get_int", 0);
+    return false;
+  }
   if (gpr_avl_maybe_get(err->ints, (void *)(uintptr_t)which, &pp)) {
     if (p != NULL) *p = (intptr_t)pp;
     GPR_TIMER_END("grpc_error_get_int", 0);
@@ -299,6 +317,11 @@ grpc_error *grpc_error_set_str(grpc_error *src, grpc_error_strs which,
       gpr_avl_add(new->strs, (void *)(uintptr_t)which, gpr_strdup(value));
   GPR_TIMER_END("grpc_error_set_str", 0);
   return new;
+}
+
+const char *grpc_error_get_str(grpc_error *err, grpc_error_strs which) {
+  if (is_special(err)) return NULL;
+  return gpr_avl_get(err->strs, (void *)(uintptr_t)which);
 }
 
 grpc_error *grpc_error_add_child(grpc_error *src, grpc_error *child) {

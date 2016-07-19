@@ -7,7 +7,7 @@ settings:
   '#3': Use "-preN" suffixes to identify pre-release versions
   '#4': Per-language overrides are possible with (eg) ruby_version tag here
   '#5': See the expand_version.py for all the quirks here
-  version: 0.16.0-dev
+  version: 1.1.0-dev
 filegroups:
 - name: census
   public_headers:
@@ -141,11 +141,6 @@ filegroups:
   - include/grpc/impl/codegen/sync_posix.h
   - include/grpc/impl/codegen/sync_windows.h
   - include/grpc/impl/codegen/time.h
-- name: grpc++_codegen_base_src
-  src:
-  - src/cpp/codegen/codegen_init.cc
-  uses:
-  - grpc++_codegen_base
 - name: grpc_base
   public_headers:
   - include/grpc/byte_buffer.h
@@ -226,7 +221,6 @@ filegroups:
   - src/core/lib/surface/init.h
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/server.h
-  - src/core/lib/surface/surface_trace.h
   - src/core/lib/transport/byte_stream.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/metadata.h
@@ -757,6 +751,12 @@ filegroups:
   - include/grpc++/impl/codegen/time.h
   uses:
   - grpc_codegen
+- name: grpc++_codegen_base_src
+  language: c++
+  src:
+  - src/cpp/codegen/codegen_init.cc
+  uses:
+  - grpc++_codegen_base
 - name: grpc++_codegen_proto
   language: c++
   public_headers:
@@ -1242,6 +1242,17 @@ targets:
   - test/core/end2end/fuzzers/api_fuzzer_corpus
   dict: test/core/end2end/fuzzers/api_fuzzer.dictionary
   maxlen: 2048
+- name: bad_server_response_test
+  build: test
+  language: c
+  src:
+  - test/core/end2end/bad_server_response_test.c
+  deps:
+  - test_tcp_server
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: bin_decoder_test
   build: test
   language: c
@@ -1724,10 +1735,9 @@ targets:
   src:
   - test/core/security/create_jwt.c
   deps:
-  - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
+  secure: true
 - name: grpc_credentials_test
   build: test
   language: c
@@ -1739,7 +1749,8 @@ targets:
   - gpr_test_util
   - gpr
 - name: grpc_fetch_oauth2
-  build: tool
+  build: test
+  run: false
   language: c
   src:
   - test/core/security/fetch_oauth2.c
@@ -1788,9 +1799,7 @@ targets:
   src:
   - test/core/security/print_google_default_creds_token.c
   deps:
-  - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: grpc_security_connector_test
   build: test
@@ -1808,9 +1817,7 @@ targets:
   src:
   - test/core/security/verify_jwt.c
   deps:
-  - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: hpack_parser_fuzzer_test
   build: fuzzer
@@ -2423,20 +2430,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: workqueue_test
-  build: test
-  language: c
-  src:
-  - test/core/iomgr/workqueue_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - mac
-  - linux
-  - posix
 - name: alarm_cpp_test
   gtest: true
   build: test

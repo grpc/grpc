@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 0.16.0-dev
+PROJECT_NUMBER         = 1.1.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -861,7 +861,6 @@ src/core/lib/surface/event_string.h \
 src/core/lib/surface/init.h \
 src/core/lib/surface/lame_client.h \
 src/core/lib/surface/server.h \
-src/core/lib/surface/surface_trace.h \
 src/core/lib/transport/byte_stream.h \
 src/core/lib/transport/connectivity_state.h \
 src/core/lib/transport/metadata.h \

@@ -176,7 +176,7 @@ static void send_security_metadata(grpc_exec_ctx *exec_ctx,
     calld->creds = grpc_composite_call_credentials_create(channel_call_creds,
                                                           ctx->creds, NULL);
     if (calld->creds == NULL) {
-      bubble_up_error(exec_ctx, elem, GRPC_STATUS_INTERNAL,
+      bubble_up_error(exec_ctx, elem, GRPC_STATUS_UNAUTHENTICATED,
                       "Incompatible credentials set on channel and call.");
       return;
     }
@@ -205,7 +205,7 @@ static void on_host_checked(grpc_exec_ctx *exec_ctx, void *user_data,
     char *error_msg;
     gpr_asprintf(&error_msg, "Invalid host %s set in :authority metadata.",
                  grpc_mdstr_as_c_string(calld->host));
-    bubble_up_error(exec_ctx, elem, GRPC_STATUS_INTERNAL, error_msg);
+    bubble_up_error(exec_ctx, elem, GRPC_STATUS_UNAUTHENTICATED, error_msg);
     gpr_free(error_msg);
   }
 }
@@ -224,8 +224,7 @@ static void auth_start_transport_op(grpc_exec_ctx *exec_ctx,
   grpc_linked_mdelem *l;
   grpc_client_security_context *sec_ctx = NULL;
 
-  if (calld->security_context_set == 0 &&
-      op->cancel_with_status == GRPC_STATUS_OK) {
+  if (calld->security_context_set == 0 && op->cancel_error == GRPC_ERROR_NONE) {
     calld->security_context_set = 1;
     GPR_ASSERT(op->context);
     if (op->context[GRPC_CONTEXT_SECURITY].value == NULL) {

@@ -79,7 +79,8 @@ class _FaceServicerContext(face.ServicerContext):
     return _ServerProtocolContext(self._servicer_context)
 
   def invocation_metadata(self):
-    return self._servicer_context.invocation_metadata()
+    return _common.cygrpc_metadata(
+        self._servicer_context.invocation_metadata())
 
   def initial_metadata(self, initial_metadata):
     self._servicer_context.send_initial_metadata(initial_metadata)
@@ -370,4 +371,5 @@ def server(
         _DEFAULT_POOL_SIZE if thread_pool_size is None else thread_pool_size)
   else:
     effective_thread_pool = thread_pool
-  return _Server(grpc.server((generic_rpc_handler,), effective_thread_pool))
+  return _Server(
+      grpc.server(effective_thread_pool, handlers=(generic_rpc_handler,)))
