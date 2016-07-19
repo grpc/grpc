@@ -344,6 +344,31 @@ TEST_P(AsyncEnd2endTest, SequentialRpcs) {
   SendRpc(10);
 }
 
+// We do not need to protect notify because the use is synchronized.
+void ServerWait(Server* server, int* notify) {
+  server->Wait();
+  *notify = 1;
+}
+TEST_P(AsyncEnd2endTest, WaitAndShutdownTest) {
+  int notify = 0;
+  std::thread* wait_thread =
+      new std::thread(&ServerWait, server_.get(), &notify);
+  ResetStub();
+  SendRpc(1);
+  EXPECT_EQ(0, notify);
+  server_->Shutdown();
+  wait_thread->join();
+  EXPECT_EQ(1, notify);
+  delete wait_thread;
+}
+
+TEST_P(AsyncEnd2endTest, ShutdownThenWait) {
+  ResetStub();
+  SendRpc(1);
+  server_->Shutdown();
+  server_->Wait();
+}
+
 // Test a simple RPC using the async version of Next
 TEST_P(AsyncEnd2endTest, AsyncNextRpc) {
   ResetStub();
