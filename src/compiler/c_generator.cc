@@ -351,7 +351,7 @@ GRPC_status $CPrefix$$Service$_$Method$(
   const GRPC_message request_msg = { &request, sizeof(request) };
   GRPC_client_context_set_serialization_impl(context,
         (grpc_serialization_impl) { $CPrefix$$Request$_serializer, $CPrefix$$Response$_deserializer });
-  GRPC_unary_blocking_call(GRPC_method_$CPrefix$$Service$_$Method$, context, request_msg, response);
+  return GRPC_unary_blocking_call(GRPC_method_$CPrefix$$Service$_$Method$, context, request_msg, response);
 }
 )");
     printer->Print(
@@ -392,7 +392,7 @@ bool $CPrefix$$Service$_$Method$_Write(
         GRPC_client_writer *writer,
         $CPrefix$$Request$ request) {
   const GRPC_message request_msg = { &request, sizeof(request) };
-  GRPC_client_streaming_blocking_write(writer, request_msg);
+  return GRPC_client_streaming_blocking_write(writer, request_msg);
 }
 )");
 
