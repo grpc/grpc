@@ -84,7 +84,7 @@
  * Once a RR policy instance is in place (and getting updated as described),
  * calls to for a pick, a ping or a cancellation will be serviced right away by
  * forwarding them to the RR instance. Any time there's no RR policy available
- * (ie, right after the creation of the gRRPCLB policy, if an empty serverlist
+ * (ie, right after the creation of the gRPCLB policy, if an empty serverlist
  * is received, etc), pick/ping requests are added to a list of pending
  * picks/pings to be flushed and serviced as part of \a rr_handover() the moment
  * the RR policy instance becomes available.
