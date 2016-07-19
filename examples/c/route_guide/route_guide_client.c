@@ -33,14 +33,114 @@
 
 #include "route_guide_client.h"
 #include "route_guide.grpc.pbc.h"
+#include "route_guide_db.h"
 
 #include <pb_encode.h>
 #include <pb_decode.h>
 
+#include <stdio.h>
+
+/**
+ * Nanopb callbacks for string encoding/decoding.
+ */
+
+static bool write_string_from_arg(pb_ostream_t *stream, const pb_field_t *field, void * const *arg)
+{
+  const char *str = *arg;
+  if (!pb_encode_tag_for_field(stream, field))
+    return false;
+
+  return pb_encode_string(stream, (uint8_t*)str, strlen(str));
+}
+
+static bool read_string_store_in_arg(pb_istream_t *stream, const pb_field_t *field, void **arg) {
+  size_t len = stream->bytes_left;
+  char *str = malloc(len + 1);
+  if (!pb_read(stream, str, len)) return false;
+  str[len] = '\0';
+  *arg = str;
+  return true;
+}
+
+static const float kCoordFactor = 10000000.0;
+
+bool get_one_feature(GRPC_channel *channel, routeguide_Point point, routeguide_Feature *feature) {
+  GRPC_client_context *context = GRPC_client_context_create(channel);
+  feature->name.funcs.decode = read_string_store_in_arg;
+  feature->name.arg = NULL;
+  GRPC_status status = routeguide_RouteGuide_GetFeature(context, point, feature);
+  if (!status.ok) {
+    if (status.details_length > 0 && status.details != NULL) {
+      printf("GetFeature rpc failed. Code = %d. Details: %s\n", status.code, status.details);
+    } else {
+      printf("GetFeature rpc failed. Code = %d.\n", status.code);
+    }
+    GRPC_client_context_destroy(&context);
+    return false;
+  }
+  if (!feature->has_location) {
+    printf("Server returns incomplete feature.\n");
+    GRPC_client_context_destroy(&context);
+    return false;
+  }
+  if (feature->name.arg == NULL || strcmp(feature->name.arg, "") == 0) {
+    printf("Found no feature at %.6f, %.6f\n",
+           feature->location.latitude / kCoordFactor,
+           feature->location.longitude / kCoordFactor);
+  } else {
+    printf("Found feature called %s at %.6f, %.6f\n",
+           (char *) feature->name.arg,
+           feature->location.latitude / kCoordFactor,
+           feature->location.longitude / kCoordFactor);
+  }
+  GRPC_client_context_destroy(&context);
+  return true;
+}
+
+void get_feature(GRPC_channel *chan) {
+  routeguide_Point point = { true, 409146138, true, -746188906 };
+  routeguide_Feature feature;
+  get_one_feature(chan, point, &feature);
+
+  /* free name string */
+  if (feature.name.arg != NULL) {
+    free(feature.name.arg);
+    feature.name.arg = NULL;
+  }
+
+  point = (routeguide_Point) { false, 0, false, 0 };
+  get_one_feature(chan, point, &feature);
+
+  /* free name string */
+  if (feature.name.arg != NULL) {
+    free(feature.name.arg);
+    feature.name.arg = NULL;
+  }
+}
+
+void list_features(GRPC_channel *chan) {
+
+}
+
+void record_route(GRPC_channel *chan) {
+
+}
+
+void route_chat(GRPC_channel *chan) {
+
+}
+
 int main(int argc, char** argv) {
   GRPC_channel *chan = GRPC_channel_create("0.0.0.0:50051");
 
-
+  printf("-------------- GetFeature --------------\n");
+  get_feature(chan);
+  printf("-------------- ListFeatures --------------\n");
+  list_features(chan);
+  printf("-------------- RecordRoute --------------\n");
+  record_route(chan);
+  printf("-------------- RouteChat --------------\n");
+  route_chat(chan);
 
   GRPC_channel_destroy(&chan);
   return 0;
