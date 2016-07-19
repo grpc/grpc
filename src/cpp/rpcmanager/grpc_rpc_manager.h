@@ -53,7 +53,6 @@ class GrpcRpcManager {
   virtual void PollForWork(bool& is_work_found, void **tag) = 0;
   virtual void DoWork(void *tag) = 0;
 
-  // Use the following two functions for testing purposes only
   void Wait();
   void ShutdownRpcManager();
 
@@ -64,6 +63,8 @@ class GrpcRpcManager {
   // The Run() function calls GrpcManager::MainWorkLoop() function and once that
   // completes, it marks the GrpcRpcManagerThread completed by calling
   // GrpcRpcManager::MarkAsCompleted()
+  // TODO: sreek - Consider using a separate threadpool rather than implementing
+  // one in this class
   class GrpcRpcManagerThread {
    public:
     GrpcRpcManagerThread(GrpcRpcManager* rpc_mgr);

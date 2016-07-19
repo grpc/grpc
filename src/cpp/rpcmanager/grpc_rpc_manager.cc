@@ -65,24 +65,20 @@ GrpcRpcManager::GrpcRpcManager(int min_pollers, int max_pollers,
 
 GrpcRpcManager::~GrpcRpcManager() {
   std::unique_lock<grpc::mutex> lock(mu_);
-
-  shutdown_ = true;
-  while (num_threads_ != 0) {
-    shutdown_cv_.wait(lock);
-  }
+  // ShutdownRpcManager() and Wait() must be called before destroying the object
+  GPR_ASSERT(shutdown_);
+  GPR_ASSERT(num_threads_ == 0);
 
   CleanupCompletedThreads();
 }
 
-// For testing only
 void GrpcRpcManager::Wait() {
   std::unique_lock<grpc::mutex> lock(mu_);
-  while (!shutdown_) {
+  while (num_threads_ != 0) {
     shutdown_cv_.wait(lock);
   }
 }
 
-// For testing only
 void GrpcRpcManager::ShutdownRpcManager() {
   std::unique_lock<grpc::mutex> lock(mu_);
   shutdown_ = true;
@@ -120,7 +116,8 @@ bool GrpcRpcManager::MaybeContinueAsPoller() {
 
 void GrpcRpcManager::MaybeCreatePoller() {
   grpc::unique_lock<grpc::mutex> lock(mu_);
-  if (num_pollers_ < min_pollers_ && num_threads_ < max_threads_) {
+  if (!shutdown_ && num_pollers_ < min_pollers_ &&
+      num_threads_ < max_threads_) {
     num_pollers_++;
     num_threads_++;
 
@@ -131,7 +128,7 @@ void GrpcRpcManager::MaybeCreatePoller() {
 
 void GrpcRpcManager::MainWorkLoop() {
   bool is_work_found = false;
-  void *tag;
+  void* tag;
 
   do {
     PollForWork(is_work_found, &tag);
@@ -159,7 +156,7 @@ void GrpcRpcManager::MainWorkLoop() {
     grpc::unique_lock<grpc::mutex> lock(mu_);
     num_threads_--;
     if (num_threads_ == 0) {
-      shutdown_cv_.notify_all();
+      shutdown_cv_.notify_one();
     }
   }
 

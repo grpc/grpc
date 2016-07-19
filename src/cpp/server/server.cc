@@ -278,7 +278,8 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
 static internal::GrpcLibraryInitializer g_gli_initializer;
 Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
                int max_message_size, ChannelArguments* args)
-    : max_message_size_(max_message_size),
+    : GrpcRpcManager(3, 5, 8),
+      max_message_size_(max_message_size),
       started_(false),
       shutdown_(false),
       shutdown_notified_(false),
@@ -314,6 +315,7 @@ Server::~Server() {
       cq_.Shutdown();
     }
   }
+
   void* got_tag;
   bool ok;
   GPR_ASSERT(!cq_.Next(&got_tag, &ok));
@@ -429,7 +431,8 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
       m->Request(server_, cq_.cq());
     }
 
-    ScheduleCallback();
+    GrpcRpcManager::Initialize();
+    // ScheduleCallback();
   }
 
   return true;
@@ -442,6 +445,10 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
     grpc_server_shutdown_and_notify(server_, cq_.cq(), new ShutdownRequest());
     cq_.Shutdown();
     lock.unlock();
+
+    GrpcRpcManager::ShutdownRpcManager();
+    GrpcRpcManager::Wait();
+
     // Spin, eating requests until the completion queue is completely shutdown.
     // If the deadline expires then cancel anything that's pending and keep
     // spinning forever until the work is actually drained.
@@ -587,44 +594,80 @@ Server::UnimplementedAsyncResponse::UnimplementedAsyncResponse(
   request_->stream()->call_.PerformOps(this);
 }
 
+// TODO: sreek - Remove this function
 void Server::ScheduleCallback() {
+  GPR_ASSERT(false);
+  /*
   {
     grpc::unique_lock<grpc::mutex> lock(mu_);
     num_running_cb_++;
   }
   thread_pool_->Add(std::bind(&Server::RunRpc, this));
+  */
 }
 
+// TODO: sreek - Remove this function
 void Server::RunRpc() {
-  // Wait for one more incoming rpc.
-  bool ok;
-  GPR_TIMER_SCOPE("Server::RunRpc", 0);
-  auto* mrd = SyncRequest::Wait(&cq_, &ok);
-  if (mrd) {
-    ScheduleCallback();
-    if (ok) {
-      SyncRequest::CallData cd(this, mrd);
-      {
-        mrd->SetupRequest();
-        grpc::unique_lock<grpc::mutex> lock(mu_);
-        if (!shutdown_) {
-          mrd->Request(server_, cq_.cq());
-        } else {
-          // destroy the structure that was created
-          mrd->TeardownRequest();
+  GPR_ASSERT(false);
+  /*
+    // Wait for one more incoming rpc.
+    bool ok;
+    GPR_TIMER_SCOPE("Server::RunRpc", 0);
+    auto* mrd = SyncRequest::Wait(&cq_, &ok);
+    if (mrd) {
+      ScheduleCallback();
+      if (ok) {
+        SyncRequest::CallData cd(this, mrd);
+        {
+          mrd->SetupRequest();
+          grpc::unique_lock<grpc::mutex> lock(mu_);
+          if (!shutdown_) {
+            mrd->Request(server_, cq_.cq());
+          } else {
+            // destroy the structure that was created
+            mrd->TeardownRequest();
+          }
         }
+        GPR_TIMER_SCOPE("cd.Run()", 0);
+        cd.Run(global_callbacks_);
       }
-      GPR_TIMER_SCOPE("cd.Run()", 0);
-      cd.Run(global_callbacks_);
     }
-  }
 
-  {
-    grpc::unique_lock<grpc::mutex> lock(mu_);
-    num_running_cb_--;
-    if (shutdown_) {
-      callback_cv_.notify_all();
+    {
+      grpc::unique_lock<grpc::mutex> lock(mu_);
+      num_running_cb_--;
+      if (shutdown_) {
+        callback_cv_.notify_all();
+      }
     }
+    */
+}
+
+void Server::PollForWork(bool& is_work_found, void** tag) {
+  is_work_found = true;
+  *tag = nullptr;
+  auto* mrd = SyncRequest::Wait(&cq_, &is_work_found);
+  if (is_work_found) {
+    *tag = mrd;
+  }
+}
+
+void Server::DoWork(void* tag) {
+  auto* mrd = static_cast<SyncRequest*>(tag);
+  if (mrd) {
+    SyncRequest::CallData cd(this, mrd);
+    {
+      mrd->SetupRequest();
+      grpc::unique_lock<grpc::mutex> lock(mu_);
+      if (!shutdown_) {
+        mrd->Request(server_, cq_.cq());
+      } else {
+        // destroy the structure that was created
+        mrd->TeardownRequest();
+      }
+    }
+    GPR_TIMER_SCOPE("cd.Run()", 0);
+    cd.Run(global_callbacks_);
   }
 }
 

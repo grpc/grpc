@@ -50,6 +50,8 @@
 #include <grpc++/support/status.h>
 #include <grpc/compression.h>
 
+#include "src/cpp/rpcmanager/grpc_rpc_manager.h"
+
 struct grpc_server;
 
 namespace grpc {
@@ -64,7 +66,9 @@ class ThreadPoolInterface;
 /// Models a gRPC server.
 ///
 /// Servers are configured and started via \a grpc::ServerBuilder.
-class Server GRPC_FINAL : public ServerInterface, private GrpcLibraryCodegen {
+class Server GRPC_FINAL : public ServerInterface,
+                          private GrpcLibraryCodegen,
+                          public GrpcRpcManager {
  public:
   ~Server();
 
@@ -98,6 +102,10 @@ class Server GRPC_FINAL : public ServerInterface, private GrpcLibraryCodegen {
 
   // Returns a \em raw pointer to the underlying CompletionQueue.
   CompletionQueue* completion_queue();
+
+  /// GRPC RPC Manager functions
+  void PollForWork(bool& is_work_found, void** tag) GRPC_OVERRIDE;
+  void DoWork(void* tag) GRPC_OVERRIDE;
 
  private:
   friend class AsyncGenericService;
