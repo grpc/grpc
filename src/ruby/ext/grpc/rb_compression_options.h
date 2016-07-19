@@ -31,28 +31,14 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_WORKQUEUE_POSIX_H
-#define GRPC_CORE_LIB_IOMGR_WORKQUEUE_POSIX_H
+#ifndef GRPC_RB_COMPRESSION_OPTIONS_H_
+#define GRPC_RB_COMPRESSION_OPTIONS_H_
 
-#include "src/core/lib/iomgr/wakeup_fd_posix.h"
+#include <ruby/ruby.h>
 
-struct grpc_fd;
+#include <grpc/grpc.h>
 
-struct grpc_workqueue {
-  gpr_refcount refs;
+/* Initializes the compression options ruby wrapper. */
+void Init_grpc_compression_options();
 
-  gpr_mu mu;
-  grpc_closure_list closure_list;
-
-  grpc_wakeup_fd wakeup_fd;
-  struct grpc_fd *wakeup_read_fd;
-
-  grpc_closure read_closure;
-};
-
-/** Create a work queue. Returns an error if creation fails. If creation
-    succeeds, sets *workqueue to point to it. */
-grpc_error *grpc_workqueue_create(grpc_exec_ctx *exec_ctx,
-                                  grpc_workqueue **workqueue);
-
-#endif /* GRPC_CORE_LIB_IOMGR_WORKQUEUE_POSIX_H */
+#endif /* GRPC_RB_COMPRESSION_OPTIONS_H_ */

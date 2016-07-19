@@ -148,7 +148,7 @@ Alternatively, you can download `protoc` binaries from [the protocol buffers Git
 You need to install `protoc-gen-php` to generate stub class `.php` files from service definition `.proto` files.
 
 ```sh
-$ cd grpc/src/php/vendor/datto/protobuf-php # if you had run `composer install` in the previous step
+$ cd grpc/src/php/vendor/stanley-cheung/protobuf-php # if you had run `composer install` in the previous step
 
 OR
 
