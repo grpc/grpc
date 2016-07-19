@@ -178,7 +178,7 @@ static grpc_end2end_test_config configs[] = {
 
 
 
-char *roots_filename;
+static char *roots_filename;
 
 @interface CoreCronetEnd2EndTests : XCTestCase
 
