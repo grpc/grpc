@@ -92,6 +92,7 @@ if grpc_config == 'gcov'
 end
 
 $LDFLAGS << ' -Wl,-wrap,memcpy' if RUBY_PLATFORM =~ /linux/
+$LDFLAGS << ' -Wl,--no-undefined'
 $LDFLAGS << ' -static' if windows
 
 $CFLAGS << ' -std=c99 '
