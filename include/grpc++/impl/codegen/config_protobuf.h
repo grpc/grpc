@@ -40,8 +40,13 @@
 #endif
 
 #ifndef GRPC_CUSTOM_MESSAGE
+#ifdef GRPC_USE_PROTO_LITE
+#include <google/protobuf/message_lite.h>
+#define GRPC_CUSTOM_MESSAGE ::google::protobuf::MessageLite
+#else
 #include <google/protobuf/message.h>
 #define GRPC_CUSTOM_MESSAGE ::google::protobuf::Message
+#endif
 #endif
 
 #ifndef GRPC_CUSTOM_DESCRIPTOR
