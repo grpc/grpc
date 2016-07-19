@@ -239,8 +239,15 @@ static const grpc_channel_filter test_filter = {
 
 static bool maybe_add_filter(grpc_channel_stack_builder *builder, void *arg) {
   if (g_enable_filter) {
-    return grpc_channel_stack_builder_append_filter(builder, &test_filter,
-                                                    NULL, NULL);
+    // Want to add the filter as close to the end as possible, to make
+    // sure that all of the filters work well together.  However, we
+    // can't add it at the very end, because the connected channel filter
+    // must be the last one.  So we add it right before the last one.
+    grpc_channel_stack_builder_iterator *it =
+        grpc_channel_stack_builder_create_iterator_at_last(builder);
+    GPR_ASSERT(grpc_channel_stack_builder_move_prev(it));
+    return grpc_channel_stack_builder_add_filter_before(it, &test_filter,
+                                                        NULL, NULL);
   } else {
     return true;
   }
