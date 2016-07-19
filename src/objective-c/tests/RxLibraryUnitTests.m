@@ -84,7 +84,7 @@
   [writeable writesFinishedWithError:nil];
 
   // Then:
-  XCTAssertEqual(handler.timesCalled, 1);
+  XCTAssertEqual(handler.timesCalled, 2);
   XCTAssertEqualObjects(handler.value, anyValue);
   XCTAssertEqualObjects(handler.errorOrNil, nil);
 }
@@ -99,7 +99,7 @@
   [writeable writesFinishedWithError:anyError];
 
   // Then:
-  XCTAssertEqual(handler.timesCalled, 1);
+  XCTAssertEqual(handler.timesCalled, 2);
   XCTAssertEqualObjects(handler.value, nil);
   XCTAssertEqualObjects(handler.errorOrNil, anyError);
 }
@@ -116,7 +116,7 @@
   [writeable writesFinishedWithError:anyError];
 
   // Then:
-  XCTAssertEqual(handler.timesCalled, 1);
+  XCTAssertEqual(handler.timesCalled, 2);
   XCTAssertEqualObjects(handler.value, anyValue);
   XCTAssertEqualObjects(handler.errorOrNil, nil);
 }
@@ -133,7 +133,7 @@
   [writeable writesFinishedWithError:nil];
 
   // Then:
-  XCTAssertEqual(handler.timesCalled, 1);
+  XCTAssertEqual(handler.timesCalled, 2);
   XCTAssertEqualObjects(handler.value, anyValue);
   XCTAssertEqualObjects(handler.errorOrNil, nil);
 }
@@ -147,7 +147,7 @@
   [writeable writesFinishedWithError:nil];
 
   // Then:
-  XCTAssertEqual(handler.timesCalled, 1);
+  XCTAssertEqual(handler.timesCalled, 2);
   XCTAssertEqualObjects(handler.value, nil);
   XCTAssertNotNil(handler.errorOrNil);
 }
@@ -166,7 +166,7 @@
   [pipe writeValue:anyValue];
 
   // Then:
-  XCTAssertEqual(handler.timesCalled, 1);
+  XCTAssertEqual(handler.timesCalled, 2);
   XCTAssertEqualObjects(handler.value, anyValue);
   XCTAssertEqualObjects(handler.errorOrNil, nil);
 }
@@ -183,7 +183,7 @@
   [pipe writesFinishedWithError:anyError];
 
   // Then:
-  XCTAssertEqual(handler.timesCalled, 1);
+  XCTAssertEqual(handler.timesCalled, 2);
   XCTAssertEqualObjects(handler.value, nil);
   XCTAssertEqualObjects(handler.errorOrNil, anyError);
 }
@@ -203,7 +203,7 @@
   [pipe startWithWriteable:writeable];
 
   // Then:
-  XCTAssertEqual(handler.timesCalled, 1);
+  XCTAssertEqual(handler.timesCalled, 2);
   XCTAssertEqualObjects(handler.value, anyValue);
   XCTAssertEqualObjects(handler.errorOrNil, nil);
 }

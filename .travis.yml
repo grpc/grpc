@@ -35,6 +35,8 @@ env:
     - SCHEME="SwiftSample" WORKSPACE="SwiftSample.xcworkspace"
       TEST_PATH="src/objective-c/examples/SwiftSample" BUILD_ONLY="true"
       INTEROP_SERVER="false"
+matrix:
+  fast_finish: true
 before_install:
   # Until Travis upgrades from Cocoapods 0.39, we need to do it here.
   - pod --version
