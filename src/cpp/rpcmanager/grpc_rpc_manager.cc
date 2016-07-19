@@ -83,7 +83,7 @@ void GrpcRpcManager::Wait() {
 }
 
 // For testing only
-void GrpcRpcManager::Shutdown() {
+void GrpcRpcManager::ShutdownRpcManager() {
   std::unique_lock<grpc::mutex> lock(mu_);
   shutdown_ = true;
 }
@@ -131,9 +131,10 @@ void GrpcRpcManager::MaybeCreatePoller() {
 
 void GrpcRpcManager::MainWorkLoop() {
   bool is_work_found = false;
+  void *tag;
 
   do {
-    PollForWork(is_work_found);
+    PollForWork(is_work_found, &tag);
 
     // Decrement num_pollers since this thread is no longer polling
     {
@@ -146,7 +147,7 @@ void GrpcRpcManager::MainWorkLoop() {
       MaybeCreatePoller();
 
       // Do actual work
-      DoWork();
+      DoWork(tag);
     }
 
     // Continue to loop if this thread can continue as a poller
@@ -158,7 +159,7 @@ void GrpcRpcManager::MainWorkLoop() {
     grpc::unique_lock<grpc::mutex> lock(mu_);
     num_threads_--;
     if (num_threads_ == 0) {
-      shutdown_cv_.notify_one();
+      shutdown_cv_.notify_all();
     }
   }
 

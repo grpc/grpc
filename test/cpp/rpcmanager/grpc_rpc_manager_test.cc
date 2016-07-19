@@ -45,14 +45,15 @@ using grpc::testing::GrpcRpcManagerTest;
 
 // TODO: sreek - Rewrite this test. Find a better test case
 
-void GrpcRpcManagerTest::PollForWork(bool& is_work_found) {
+void GrpcRpcManagerTest::PollForWork(bool& is_work_found, void **tag) {
   {
     std::unique_lock<grpc::mutex> lock(mu_);
     std::cout << "Poll: " << std::this_thread::get_id() << std::endl;
   }
   is_work_found = true;
+  *tag = NULL;
 
-  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
   {
     std::unique_lock<grpc::mutex> lock(mu_);
@@ -60,12 +61,12 @@ void GrpcRpcManagerTest::PollForWork(bool& is_work_found) {
     if (num_calls_ > 50) {
       std::cout << "poll: False" << std::endl;
       is_work_found = false;
-      Shutdown();
+      ShutdownRpcManager();
     }
   }
 }
 
-void GrpcRpcManagerTest::DoWork() {
+void GrpcRpcManagerTest::DoWork(void *tag) {
   {
     std::unique_lock<grpc::mutex> lock(mu_);
     std::cout << "Work: " << std::this_thread::get_id() << std::endl;

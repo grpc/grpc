@@ -50,12 +50,12 @@ class GrpcRpcManager {
   // This function MUST be called before using the object
   void Initialize();
 
-  virtual void PollForWork(bool& is_work_found) = 0;
-  virtual void DoWork() = 0;
+  virtual void PollForWork(bool& is_work_found, void **tag) = 0;
+  virtual void DoWork(void *tag) = 0;
 
-  // Use this for testing purposes only
+  // Use the following two functions for testing purposes only
   void Wait();
-  void Shutdown();
+  void ShutdownRpcManager();
 
  private:
   // Helper wrapper class around std::thread. This takes a GrpcRpcManager object

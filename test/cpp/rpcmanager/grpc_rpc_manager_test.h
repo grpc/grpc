@@ -43,8 +43,8 @@ class GrpcRpcManagerTest GRPC_FINAL : public GrpcRpcManager {
   GrpcRpcManagerTest(int min_pollers, int max_pollers, int max_threads)
       : GrpcRpcManager(min_pollers, max_pollers, max_threads), num_calls_(0){};
 
-  void PollForWork(bool &is_work_found) GRPC_OVERRIDE;
-  void DoWork() GRPC_OVERRIDE;
+  void PollForWork(bool &is_work_found, void **tag) GRPC_OVERRIDE;
+  void DoWork(void *tag) GRPC_OVERRIDE;
 
  private:
   grpc::mutex mu_;
