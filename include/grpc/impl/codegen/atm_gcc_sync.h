@@ -89,6 +89,7 @@ static __inline gpr_atm gpr_atm_full_xchg(gpr_atm *p, gpr_atm n) {
   do {
     cur = gpr_atm_acq_load(p);
   } while (!gpr_atm_rel_cas(p, cur, n));
+  return cur;
 }
 
 #endif /* GRPC_IMPL_CODEGEN_ATM_GCC_SYNC_H */
