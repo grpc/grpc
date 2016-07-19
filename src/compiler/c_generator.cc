@@ -179,9 +179,10 @@ GRPC_client_writer *$CPrefix$$Service$_$Method$(
 bool $CPrefix$$Service$_$Method$_Write(
         GRPC_client_writer *writer,
         $CPrefix$$Request$ request);
-/* Call GRPC_client_writer_terminate to close the stream and end the call */
+
+/* Call $CPrefix$$Service$_$Method$_Terminate to close the stream and end the call */
 /* The writer is automatically freed when the request ends */
-#define $CPrefix$$Service$_$Method$_Terminate GRPC_client_writer_terminate
+GRPC_status $CPrefix$$Service$_$Method$_Terminate(GRPC_client_writer *writer);
 )");
 
     printer->Print(
@@ -222,9 +223,9 @@ bool $CPrefix$$Service$_$Method$_Read(
         GRPC_client_reader *reader,
         $CPrefix$$Response$ *response);
 
-/* Call GRPC_client_reader_terminate to close the stream and end the call */
+/* Call $CPrefix$$Service$_$Method$_Terminate to close the stream and end the call */
 /* The reader is automatically freed when the request ends */
-#define $CPrefix$$Service$_$Method$_Terminate GRPC_client_reader_terminate
+GRPC_status $CPrefix$$Service$_$Method$_Terminate(GRPC_client_reader *reader);
 )");
     printer->Print(
       *vars,
@@ -266,10 +267,11 @@ bool $CPrefix$$Service$_$Method$_Write(
         GRPC_client_reader_writer *reader_writer,
         $CPrefix$$Request$ request);
 
-/* Call GRPC_client_reader_writer_writes_done to signal to the server that we are no longer sending request items */
-#define $CPrefix$$Service$_$Method$_Writes_Done GRPC_client_reader_writer_writes_done
-/* Call GRPC_client_reader_writer_terminate to end the call. The reader_writer object is automatically freed */
-#define $CPrefix$$Service$_$Method$_Terminate GRPC_client_reader_writer_terminate
+/* Signals to the server that we are no longer sending request items */
+bool $CPrefix$$Service$_$Method$_Writes_Done(GRPC_client_reader_writer *reader_writer);
+
+/* Ends the call. The reader_writer object is automatically freed */
+GRPC_status $CPrefix$$Service$_$Method$_Terminate(GRPC_client_reader_writer *reader_writer);
 )");
 
     printer->Print(
@@ -402,6 +404,10 @@ bool $CPrefix$$Service$_$Method$_Write(
   const GRPC_message request_msg = { &request, sizeof(request) };
   return GRPC_client_streaming_blocking_write(writer, request_msg);
 }
+
+GRPC_status $CPrefix$$Service$_$Method$_Terminate(GRPC_client_writer *writer) {
+  return GRPC_client_writer_terminate(writer);
+}
 )");
 
     printer->Print(
@@ -427,6 +433,10 @@ bool $CPrefix$$Service$_$Method$_Read(
         GRPC_client_reader *reader,
         $CPrefix$$Response$ *response) {
   return GRPC_server_streaming_blocking_read(reader, response);
+}
+
+GRPC_status $CPrefix$$Service$_$Method$_Terminate(GRPC_client_reader *reader) {
+  return GRPC_client_reader_terminate(reader);
 }
 )");
     printer->Print(
@@ -457,6 +467,14 @@ bool $CPrefix$$Service$_$Method$_Write(
         $CPrefix$$Request$ request) {
   const GRPC_message request_msg = { &request, sizeof(request) };
   return GRPC_bidi_streaming_blocking_write(reader_writer, request_msg);
+}
+
+bool $CPrefix$$Service$_$Method$_Writes_Done(GRPC_client_reader_writer *reader_writer) {
+  return GRPC_bidi_streaming_blocking_writes_done(reader_writer);
+}
+
+GRPC_status $CPrefix$$Service$_$Method$_Terminate(GRPC_client_reader_writer *reader_writer) {
+  return GRPC_client_reader_writer_terminate(reader_writer);
 }
 )");
     printer->Print(
