@@ -44,4 +44,7 @@ typedef struct route_feature {
   const char *name;
 } route_feature;
 
+extern const route_feature route_guide_database[];
+extern const int num_route_features_in_database;
+
 #endif /* GRPC_ROUTE_GUIDE_DB_H */

@@ -636,3 +636,5 @@ const route_feature route_guide_database[] = {
     .name = "3 Hasta Way, Newton, NJ 07860, USA"
   }
 };
+
+const int num_route_features_in_database = sizeof(route_guide_database) / sizeof(route_feature);
