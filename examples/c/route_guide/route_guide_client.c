@@ -119,7 +119,52 @@ void get_feature(GRPC_channel *chan) {
 }
 
 void list_features(GRPC_channel *chan) {
+  routeguide_Rectangle rect = {
+    .has_lo = true,
+    .lo = {
+      .has_latitude = true,
+      .latitude = 400000000,
+      .has_longitude = true,
+      .longitude = -750000000
+    },
+    .has_hi = true,
+    .hi = {
+      .has_latitude = true,
+      .latitude = 420000000,
+      .has_longitude = true,
+      .longitude = -730000000
+    }
+  };
+  routeguide_Feature feature;
+  feature.name.funcs.decode = read_string_store_in_arg;
+  GRPC_client_context *context = GRPC_client_context_create(chan);
 
+  printf("Looking for features between 40, -75 and 42, -73\n");
+
+  GRPC_client_reader *reader = routeguide_RouteGuide_ListFeatures(context, rect);
+
+  while (routeguide_RouteGuide_ListFeatures_Read(reader, &feature)) {
+    char *name = "";
+    if (feature.name.arg) name = feature.name.arg;
+    printf("Found feature called %s at %.6f, %.6f\n",
+           name,
+           feature.location.latitude / kCoordFactor,
+           feature.location.longitude / kCoordFactor);
+
+    /* free name string */
+    if (feature.name.arg != NULL) {
+      free(feature.name.arg);
+      feature.name.arg = NULL;
+    }
+  }
+
+  GRPC_status status = routeguide_RouteGuide_ListFeatures_Terminate(reader);
+  if (status.ok) {
+    printf("ListFeatures rpc succeeded.\n");
+  } else {
+    printf("ListFeatures rpc failed.\n");
+  }
+  GRPC_client_context_destroy(&context);
 }
 
 void record_route(GRPC_channel *chan) {
