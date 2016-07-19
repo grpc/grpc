@@ -161,6 +161,7 @@ void $CPrefix$$Service$_$Method$_Finish(
         $CPrefix$$Response$ *response,
         void *tag);
 /* call GRPC_completion_queue_next on the cq to wait for result */
+
 )");
 
   } else if (method->ClientOnlyStreaming()) {
@@ -202,6 +203,7 @@ void $CPrefix$$Service$_$Method$_Finish(
         void *tag);
 /* Call GRPC_completion_queue_next on the cq to wait for result.   */
 /* The writer object is automatically freed when the request ends. */
+
 )");
 
   } else if (method->ServerOnlyStreaming()) {
@@ -219,6 +221,10 @@ GRPC_client_reader *$CPrefix$$Service$_$Method$(
 bool $CPrefix$$Service$_$Method$_Read(
         GRPC_client_reader *reader,
         $CPrefix$$Response$ *response);
+
+/* Call GRPC_client_reader_terminate to close the stream and end the call */
+/* The reader is automatically freed when the request ends */
+#define $CPrefix$$Service$_$Method$_Terminate GRPC_client_reader_terminate
 )");
     printer->Print(
       *vars,
@@ -239,6 +245,7 @@ void $CPrefix$$Service$_$Method$_Finish(
         void *tag);
 /* call GRPC_completion_queue_next on the cq to wait for result */
 /* the reader object is automatically freed when the request ends */
+
 )");
 
   } else if (method->BidiStreaming()) {
@@ -287,6 +294,7 @@ void $CPrefix$$Service$_$Method$_Finish(
         void *tag);
 /* call GRPC_completion_queue_next on the cq to wait for result */
 /* the reader-writer object is automatically freed when the request ends */
+
 )");
 
   }
