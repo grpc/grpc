@@ -2432,20 +2432,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: workqueue_test
-  build: test
-  language: c
-  src:
-  - test/core/iomgr/workqueue_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  platforms:
-  - mac
-  - linux
-  - posix
 - name: alarm_cpp_test
   gtest: true
   build: test
