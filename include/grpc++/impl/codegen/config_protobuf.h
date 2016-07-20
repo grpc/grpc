@@ -49,7 +49,7 @@
 #include <google/protobuf/descriptor.pb.h>
 #define GRPC_CUSTOM_DESCRIPTOR ::google::protobuf::Descriptor
 #define GRPC_CUSTOM_DESCRIPTORPOOL ::google::protobuf::DescriptorPool
-#define GPRC_CUSTOM_FIELDDESCRIPTOR ::google::protobuf::FieldDescriptor
+#define GRPC_CUSTOM_FIELDDESCRIPTOR ::google::protobuf::FieldDescriptor
 #define GRPC_CUSTOM_FILEDESCRIPTOR ::google::protobuf::FileDescriptor
 #define GRPC_CUSTOM_FILEDESCRIPTORPROTO ::google::protobuf::FileDescriptorProto
 #define GRPC_CUSTOM_METHODDESCRIPTOR ::google::protobuf::MethodDescriptor
@@ -75,7 +75,7 @@ typedef GRPC_CUSTOM_PROTOBUF_INT64 int64;
 
 typedef GRPC_CUSTOM_DESCRIPTOR Descriptor;
 typedef GRPC_CUSTOM_DESCRIPTORPOOL DescriptorPool;
-typedef GPRC_CUSTOM_FIELDDESCRIPTOR FieldDescriptor;
+typedef GRPC_CUSTOM_FIELDDESCRIPTOR FieldDescriptor;
 typedef GRPC_CUSTOM_FILEDESCRIPTOR FileDescriptor;
 typedef GRPC_CUSTOM_FILEDESCRIPTORPROTO FileDescriptorProto;
 typedef GRPC_CUSTOM_METHODDESCRIPTOR MethodDescriptor;
