@@ -100,10 +100,24 @@ grpc_handshake_manager* grpc_handshake_manager_create() {
   return mgr;
 }
 
+static bool is_power_of_2(size_t n) {
+  return (n & (n - 1)) == 0;
+}
+
 void grpc_handshake_manager_add(grpc_handshaker* handshaker,
                                 grpc_handshake_manager* mgr) {
-  mgr->handshakers = gpr_realloc(mgr->handshakers,
-                                 (mgr->count + 1) * sizeof(grpc_handshaker*));
+  // To avoid allocating memory for each handshaker we add, we double
+  // the number of elements every time we need more.
+  size_t realloc_count = 0;
+  if (mgr->count == 0) {
+    realloc_count = 2;
+  } else if (mgr->count >= 2 && is_power_of_2(mgr->count)) {
+    realloc_count = mgr->count * 2;
+  }
+  if (realloc_count > 0) {
+    mgr->handshakers = gpr_realloc(mgr->handshakers,
+                                   realloc_count * sizeof(grpc_handshaker*));
+  }
   mgr->handshakers[mgr->count++] = handshaker;
 }
 
@@ -112,6 +126,7 @@ void grpc_handshake_manager_destroy(grpc_exec_ctx* exec_ctx,
   for (size_t i = 0; i < mgr->count; ++i) {
     grpc_handshaker_destroy(exec_ctx, mgr->handshakers[i]);
   }
+  gpr_free(mgr->handshakers);
   gpr_free(mgr);
 }
 
