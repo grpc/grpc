@@ -40,6 +40,7 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/tcp_server.h"
 
 /// Handshakers are used to perform initial handshakes on a connection
 /// before the client sends the initial request.  Some examples of what
@@ -71,10 +72,12 @@ struct grpc_handshaker_vtable {
 
   /// Performs handshaking.  When finished, calls \a cb with \a user_data.
   /// Takes ownership of \a args.
+  /// \a acceptor will be NULL for client-side handshakers.
   void (*do_handshake)(grpc_exec_ctx* exec_ctx, grpc_handshaker* handshaker,
                        grpc_endpoint* endpoint, grpc_channel_args* args,
-                       gpr_timespec deadline, grpc_handshaker_done_cb cb,
-                       void* user_data);
+                       gpr_timespec deadline,
+                       grpc_tcp_server_acceptor* acceptor,
+                       grpc_handshaker_done_cb cb, void* user_data);
 };
 
 /// Base struct.  To subclass, make this the first member of the
@@ -99,6 +102,7 @@ void grpc_handshaker_do_handshake(grpc_exec_ctx* exec_ctx,
                                   grpc_endpoint* endpoint,
                                   grpc_channel_args* args,
                                   gpr_timespec deadline,
+                                  grpc_tcp_server_acceptor* acceptor,
                                   grpc_handshaker_done_cb cb, void* user_data);
 
 ///
@@ -129,11 +133,13 @@ void grpc_handshake_manager_shutdown(grpc_exec_ctx* exec_ctx,
 /// Invokes handshakers in the order they were added.
 /// Does NOT take ownership of \a args.  Instead, makes a copy before
 /// invoking the first handshaker.
+/// \a acceptor will be NULL for client-side handshakers.
 /// If successful, invokes \a cb with \a user_data after all handshakers
 /// have completed.
 void grpc_handshake_manager_do_handshake(
     grpc_exec_ctx* exec_ctx, grpc_handshake_manager* mgr,
     grpc_endpoint* endpoint, const grpc_channel_args* args,
-    gpr_timespec deadline, grpc_handshaker_done_cb cb, void* user_data);
+    gpr_timespec deadline, grpc_tcp_server_acceptor* acceptor,
+    grpc_handshaker_done_cb cb, void* user_data);
 
 #endif /* GRPC_CORE_LIB_CHANNEL_HANDSHAKER_H */

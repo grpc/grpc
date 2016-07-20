@@ -158,7 +158,7 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *statep, grpc_endpoint *tcp,
   grpc_handshake_manager_do_handshake(
       exec_ctx, state->handshake_mgr, tcp,
       grpc_server_get_channel_args(state->state->server), state->deadline,
-      on_handshake_done, state);
+      acceptor, on_handshake_done, state);
 }
 
 /* Server callback: start listening on our ports */

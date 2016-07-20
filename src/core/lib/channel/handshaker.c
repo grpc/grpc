@@ -63,9 +63,10 @@ void grpc_handshaker_do_handshake(grpc_exec_ctx* exec_ctx,
                                   grpc_endpoint* endpoint,
                                   grpc_channel_args* args,
                                   gpr_timespec deadline,
+                                  grpc_tcp_server_acceptor *acceptor,
                                   grpc_handshaker_done_cb cb, void* user_data) {
   handshaker->vtable->do_handshake(exec_ctx, handshaker, endpoint, args,
-                                   deadline, cb, user_data);
+                                   deadline, acceptor, cb, user_data);
 }
 
 //
@@ -78,6 +79,8 @@ struct grpc_handshaker_state {
   size_t index;
   // The deadline for all handshakers.
   gpr_timespec deadline;
+  // The acceptor to call the handshakers with.
+  grpc_tcp_server_acceptor *acceptor;
   // The final callback and user_data to invoke after the last handshaker.
   grpc_handshaker_done_cb final_cb;
   void* final_user_data;
@@ -142,8 +145,8 @@ static void call_next_handshaker(grpc_exec_ctx* exec_ctx,
   }
   // Invoke handshaker.
   grpc_handshaker_do_handshake(exec_ctx, mgr->handshakers[mgr->state->index],
-                               endpoint, args, mgr->state->deadline, cb,
-                               user_data);
+                               endpoint, args, mgr->state->deadline,
+                               mgr->state->acceptor, cb, user_data);
   ++mgr->state->index;
   // If this is the last handshaker, clean up state.
   if (mgr->state->index == mgr->count) {
@@ -155,7 +158,8 @@ static void call_next_handshaker(grpc_exec_ctx* exec_ctx,
 void grpc_handshake_manager_do_handshake(
     grpc_exec_ctx* exec_ctx, grpc_handshake_manager* mgr,
     grpc_endpoint* endpoint, const grpc_channel_args* args,
-    gpr_timespec deadline, grpc_handshaker_done_cb cb, void* user_data) {
+    gpr_timespec deadline, grpc_tcp_server_acceptor *acceptor,
+    grpc_handshaker_done_cb cb, void* user_data) {
   grpc_channel_args* args_copy = grpc_channel_args_copy(args);
   if (mgr->count == 0) {
     // No handshakers registered, so we just immediately call the done
@@ -166,6 +170,7 @@ void grpc_handshake_manager_do_handshake(
     mgr->state = gpr_malloc(sizeof(struct grpc_handshaker_state));
     memset(mgr->state, 0, sizeof(*mgr->state));
     mgr->state->deadline = deadline;
+    mgr->state->acceptor = acceptor;
     mgr->state->final_cb = cb;
     mgr->state->final_user_data = user_data;
     call_next_handshaker(exec_ctx, endpoint, args_copy, mgr);

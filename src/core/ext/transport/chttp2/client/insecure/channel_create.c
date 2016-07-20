@@ -116,7 +116,7 @@ static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     } else {
       grpc_handshake_manager_do_handshake(
           exec_ctx, c->handshake_mgr, tcp, c->args.channel_args,
-          c->args.deadline, on_handshake_done, c);
+          c->args.deadline, NULL /* acceptor */, on_handshake_done, c);
     }
   } else {
     memset(c->result, 0, sizeof(*c->result));

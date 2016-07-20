@@ -142,7 +142,7 @@ static void on_initial_connect_string_sent(grpc_exec_ctx *exec_ctx, void *arg,
   connector *c = arg;
   grpc_handshake_manager_do_handshake(
       exec_ctx, c->handshake_mgr, c->connecting_endpoint, c->args.channel_args,
-      c->args.deadline, on_handshake_done, c);
+      c->args.deadline, NULL /* acceptor */, on_handshake_done, c);
 }
 
 static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
@@ -164,7 +164,7 @@ static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
     } else {
       grpc_handshake_manager_do_handshake(
           exec_ctx, c->handshake_mgr, tcp, c->args.channel_args,
-          c->args.deadline, on_handshake_done, c);
+          c->args.deadline, NULL /* acceptor */, on_handshake_done, c);
     }
   } else {
     memset(c->result, 0, sizeof(*c->result));
