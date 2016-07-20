@@ -38,6 +38,7 @@
 #include <unordered_set>
 #include <vector>
 
+// GRPC_NO_GENERATED_CODE indicates generated pb files should not be used
 #ifdef GRPC_NO_GENERATED_CODE
 #include "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h"
 #else
