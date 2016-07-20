@@ -561,7 +561,8 @@ static zend_function_entry call_methods[] = {
     PHP_ME(Call, getPeer, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Call, cancel, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Call, setCredentials, NULL, ZEND_ACC_PUBLIC)
-    PHP_FE_END};
+    PHP_FE_END
+};
 
 void grpc_init_call(TSRMLS_D) {
   zend_class_entry ce;

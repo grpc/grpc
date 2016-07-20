@@ -126,7 +126,9 @@ PHP_METHOD(ServerCredentials, createSsl) {
 
 static zend_function_entry server_credentials_methods[] = {
     PHP_ME(ServerCredentials, createSsl, NULL,
-           ZEND_ACC_PUBLIC | ZEND_ACC_STATIC) PHP_FE_END};
+           ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+    PHP_FE_END
+};
 
 void grpc_init_server_credentials(TSRMLS_D) {
   zend_class_entry ce;

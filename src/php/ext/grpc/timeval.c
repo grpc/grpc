@@ -264,7 +264,9 @@ static zend_function_entry timeval_methods[] = {
     PHP_ME(Timeval, similar, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     PHP_ME(Timeval, sleepUntil, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Timeval, subtract, NULL, ZEND_ACC_PUBLIC)
-    PHP_ME(Timeval, zero, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC) PHP_FE_END};
+    PHP_ME(Timeval, zero, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+    PHP_FE_END
+};
 
 void grpc_init_timeval(TSRMLS_D) {
   zend_class_entry ce;

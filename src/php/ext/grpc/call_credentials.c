@@ -229,7 +229,8 @@ static zend_function_entry call_credentials_methods[] = {
          ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
   PHP_ME(CallCredentials, createFromPlugin, NULL,
          ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-  PHP_FE_END};
+  PHP_FE_END
+};
 
 void grpc_init_call_credentials(TSRMLS_D) {
   zend_class_entry ce;

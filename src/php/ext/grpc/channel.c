@@ -258,7 +258,8 @@ static zend_function_entry channel_methods[] = {
     PHP_ME(Channel, getConnectivityState, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Channel, watchConnectivityState, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Channel, close, NULL, ZEND_ACC_PUBLIC)
-    PHP_FE_END};
+    PHP_FE_END
+};
 
 void grpc_init_channel(TSRMLS_D) {
   zend_class_entry ce;
