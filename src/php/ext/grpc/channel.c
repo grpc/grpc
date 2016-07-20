@@ -86,7 +86,8 @@ zend_object_value create_wrapped_grpc_channel(zend_class_entry *class_type
   return retval;
 }
 
-void php_grpc_read_args_array(zval *args_array, grpc_channel_args *args TSRMLS_DC) {
+void php_grpc_read_args_array(zval *args_array,
+                              grpc_channel_args *args TSRMLS_DC) {
   HashTable *array_hash;
   HashPosition array_pointer;
   int args_index;

@@ -96,7 +96,8 @@ zend_object_value create_wrapped_grpc_channel_credentials(
   return retval;
 }
 
-zval *grpc_php_wrap_channel_credentials(grpc_channel_credentials *wrapped TSRMLS_DC) {
+zval *grpc_php_wrap_channel_credentials(grpc_channel_credentials
+                                        *wrapped TSRMLS_DC) {
   zval *credentials_object;
   MAKE_STD_ZVAL(credentials_object);
   object_init_ex(credentials_object, grpc_ce_channel_credentials);

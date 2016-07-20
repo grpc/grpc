@@ -44,7 +44,8 @@ class ChanellCredentialsTest extends PHPUnit_Framework_TestCase
 
     public function testCreateSslWith3Null()
     {
-        $channel_credentials = Grpc\ChannelCredentials::createSsl(null, null, null);
+        $channel_credentials = Grpc\ChannelCredentials::createSsl(null, null,
+                                                                  null);
         $this->assertNotNull($channel_credentials);
     }
 

@@ -93,7 +93,8 @@ class CallTest extends PHPUnit_Framework_TestCase
     {
         $batch = [
             Grpc\OP_SEND_INITIAL_METADATA => ['key1' => ['value1'],
-                                              'key2' => ['value2', 'value3'], ],
+                                              'key2' => ['value2',
+                                                         'value3'], ],
         ];
         $result = $this->call->startBatch($batch);
         $this->assertTrue($result->send_metadata);
@@ -101,7 +102,6 @@ class CallTest extends PHPUnit_Framework_TestCase
 
     public function testGetPeer()
     {
-        $this->assertStringStartsWith('localhost:', $this->call->getPeer());
         $this->assertTrue(is_string($this->call->getPeer()));
     }
 
