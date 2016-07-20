@@ -35,14 +35,14 @@
   A command line tool to talk to a grpc server.
   Example of talking to grpc interop server:
   grpc_cli call localhost:50051 UnaryCall "response_size:10" \
-      --proto_file=src/proto/grpc/testing/test.proto --enable_ssl=false
+      --protofiles=src/proto/grpc/testing/test.proto --enable_ssl=false
 
   Options:
-    1. --proto_file, use this flag to provide a proto file if the server does
+    1. --protofiles, use this flag to provide a proto file if the server does
        does not have the reflection service.
     2. --proto_path, if your proto file is not under current working directory,
        use this flag to provide a search root. It should work similar to the
-       counterpart in protoc. This option is valid only when proto_file is
+       counterpart in protoc. This option is valid only when protofiles is
        provided.
     3. --metadata specifies metadata to be sent to the server, such as:
        --metadata="MyHeaderKey1:Value1:MyHeaderKey2:Value2"
@@ -90,7 +90,8 @@ DEFINE_string(output_binary_file, "",
 DEFINE_string(metadata, "",
               "Metadata to send to server, in the form of key1:val1:key2:val2");
 DEFINE_string(proto_path, ".", "Path to look for the proto file.");
-DEFINE_string(proto_file, "", "Name of the proto file.");
+// TODO(zyc): support a list of input proto files
+DEFINE_string(protofiles, "", "Name of the proto file.");
 
 void ParseMetadataFlag(
     std::multimap<grpc::string, grpc::string>* client_metadata) {
@@ -173,9 +174,9 @@ int main(int argc, char** argv) {
   }
 
   if (!request_text.empty()) {
-    if (!FLAGS_proto_file.empty()) {
+    if (!FLAGS_protofiles.empty()) {
       parser.reset(new grpc::testing::ProtoFileParser(
-          FLAGS_proto_path, FLAGS_proto_file, method_name));
+          FLAGS_proto_path, FLAGS_protofiles, method_name));
     } else {
       parser.reset(new grpc::testing::ProtoFileParser(channel, method_name));
     }

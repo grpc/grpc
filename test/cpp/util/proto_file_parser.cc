@@ -112,7 +112,7 @@ ProtoFileParser::ProtoFileParser(std::shared_ptr<grpc::Channel> channel,
     LogError(
         "Failed to get services from the server, "
         "it may not have the reflection service.\n"
-        "Please try to use the --proto_file option to provide a proto file.");
+        "Please try to use the --protofiles option to provide a proto file.");
   }
   if (has_error_) {
     return;

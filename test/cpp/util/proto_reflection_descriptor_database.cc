@@ -54,8 +54,8 @@ ProtoReflectionDescriptorDatabase::ProtoReflectionDescriptorDatabase(
     : stub_(ServerReflection::NewStub(channel)) {}
 
 ProtoReflectionDescriptorDatabase::~ProtoReflectionDescriptorDatabase() {
-  if (!stream_) {
-    GetStream()->WritesDone();
+  if (stream_) {
+    stream_->WritesDone();
     Status status = stream_->Finish();
     if (!status.ok()) {
       gpr_log(GPR_ERROR,
