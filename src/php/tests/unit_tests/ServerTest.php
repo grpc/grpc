@@ -36,27 +36,145 @@ class ServerTest extends PHPUnit_Framework_TestCase
 {
     public function setUp()
     {
+        $this->server = null;
     }
 
     public function tearDown()
     {
+        unset($this->server);
     }
 
+    public function testConstructorWithNull()
+    {
+        $this->server = new Grpc\Server();
+        $this->assertNotNull($this->server);
+    }
+
+    public function testConstructorWithNullArray()
+    {
+        $this->server = new Grpc\Server([]);
+        $this->assertNotNull($this->server);
+    }
+
+    public function testConstructorWithArray()
+    {
+        // key of array must be string
+         $this->server = new Grpc\Server(['ip' => '127.0.0.1',
+                                          'port' => '8080', ]);
+        $this->assertNotNull($this->server);
+    }
+
+    public function testRequestCall()
+    {
+        $this->server = new Grpc\Server();
+        $port = $this->server->addHttp2Port('0.0.0.0:8888');
+        $this->server->start();
+        $channel = new Grpc\Channel('localhost:8888',
+             ['credentials' => Grpc\ChannelCredentials::createInsecure()]);
+
+        $deadline = Grpc\Timeval::infFuture();
+        $call = new Grpc\Call($channel, 'dummy_method', $deadline);
+
+        $event = $call->startBatch([Grpc\OP_SEND_INITIAL_METADATA => [],
+                                     Grpc\OP_SEND_CLOSE_FROM_CLIENT => true, ]);
+
+        $c = $this->server->requestCall();
+        $this->assertObjectHasAttribute('call', $c);
+        $this->assertObjectHasAttribute('method', $c);
+        $this->assertSame('dummy_method', $c->method);
+        $this->assertObjectHasAttribute('host', $c);
+        $this->assertSame('localhost:8888', $c->host);
+        $this->assertObjectHasAttribute('absolute_deadline', $c);
+        $this->assertObjectHasAttribute('metadata', $c);
+
+        unset($call);
+        unset($channel);
+    }
+
+    private function createSslObj()
+    {
+        $server_credentials = Grpc\ServerCredentials::createSsl(
+             null,
+             file_get_contents(dirname(__FILE__).'/../data/server1.key'),
+             file_get_contents(dirname(__FILE__).'/../data/server1.pem'));
+
+        return $server_credentials;
+    }
+/*
+    //TODO(thinkerou): make cases of addHttp2Port right
+    public function testAddHttp2Port()
+    {
+        $this->server = new Grpc\Server();
+        $port = $this->server->addHttp2Port('127.0.0.1:8080');
+        $this->assertEquals(8080, $port);
+    }
+
+    public function testAddHttp2Port1()
+    {
+        $this->server = new Grpc\Server([]);
+        $port = $this->server->addHttp2Port('127.0.0.1:8080');
+        $this->assertEquals(8080, $port);
+    }
+
+    public function testAddHttp2Port2()
+    {
+        $this->server = new Grpc\Server(['ip' => '127.0.0.1',
+                                          'port' => '8888', ]);
+        $port = $this->server->addHttp2Port('127.0.0.1:8080');
+        $this->assertEquals(8080, $port);
+    }
+
+    public function testAddSecureHttp2Port()
+    {
+        $this->server = new Grpc\Server();
+        $cred = $this->createSslObj();
+        $port = $this->server->addSecureHttp2Port('127.0.0.1:8080', $cred);
+        $this->assertEquals(8080, $port);
+    }
+
+    public function testAddSecureHttp2Port1()
+    {
+        $this->server = new Grpc\Server([]);
+        $cred = $this->createSslObj();
+        $port = $this->server->addSecureHttp2Port('127.0.0.1:8080', $cred);
+        $this->assertEquals(8080, $port);
+    }
+
+    public function testAddSecureHttp2Port2()
+    {
+        $this->server = new Grpc\Server(['ip' => '127.0.0.1',
+                                         'port' => '8888', ]);
+        $cred = $this->createSslObj();
+        $port = $this->server->addSecureHttp2Port('127.0.0.1:8080', $cred);
+        $this->assertEquals(8080, $port);
+    }
+*/
     /**
      * @expectedException InvalidArgumentException
      */
     public function testInvalidConstructor()
     {
-        $server = new Grpc\Server('invalid_host');
+        $this->server = new Grpc\Server('invalid_host');
+        $this->assertNull($this->server);
     }
 
+    /**
+     * @expectedException InvalidArgumentException
+     */
+/*    public function testInvalidConstructor2()
+    {
+        //TODO(thinkerou): it crash when key is long on php7
+        $this->server = new Grpc\server(['0.0.0.0:0']);
+        $this->assertNull($this->server);
+    }
+*/
     /**
      * @expectedException InvalidArgumentException
      */
     public function testInvalidAddHttp2Port()
     {
         $this->server = new Grpc\Server([]);
-        $this->port = $this->server->addHttp2Port(['0.0.0.0:0']);
+        $port = $this->server->addHttp2Port(['0.0.0.0:0']);
     }
 
     /**
@@ -65,6 +183,24 @@ class ServerTest extends PHPUnit_Framework_TestCase
     public function testInvalidAddSecureHttp2Port()
     {
         $this->server = new Grpc\Server([]);
-        $this->port = $this->server->addSecureHttp2Port(['0.0.0.0:0']);
+        $port = $this->server->addSecureHttp2Port(['0.0.0.0:0']);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidAddSecureHttp2Port2()
+    {
+        $this->server = new Grpc\Server();
+        $port = $this->server->addSecureHttp2Port('0.0.0.0:0');
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidAddSecureHttp2Port3()
+    {
+        $this->server = new Grpc\Server();
+        $port = $this->server->addSecureHttp2Port('0.0.0.0:0', 'invalid');
     }
 }
