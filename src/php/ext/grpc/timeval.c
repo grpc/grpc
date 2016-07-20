@@ -166,7 +166,8 @@ PHP_METHOD(Timeval, add) {
   wrapped_grpc_timeval *other =
       (wrapped_grpc_timeval *)zend_object_store_get_object(other_obj TSRMLS_CC);
   zval *sum =
-      grpc_php_wrap_timeval(gpr_time_add(self->wrapped, other->wrapped) TSRMLS_CC);
+      grpc_php_wrap_timeval(gpr_time_add(self->wrapped, other->wrapped)
+                            TSRMLS_CC);
   RETURN_DESTROY_ZVAL(sum);
 #else
   wrapped_grpc_timeval *self = Z_WRAPPED_GRPC_TIMEVAL_P(getThis());
@@ -200,7 +201,8 @@ PHP_METHOD(Timeval, subtract) {
   wrapped_grpc_timeval *other =
       (wrapped_grpc_timeval *)zend_object_store_get_object(other_obj TSRMLS_CC);
   zval *diff =
-      grpc_php_wrap_timeval(gpr_time_sub(self->wrapped, other->wrapped) TSRMLS_CC);
+      grpc_php_wrap_timeval(gpr_time_sub(self->wrapped, other->wrapped)
+                            TSRMLS_CC);
   RETURN_DESTROY_ZVAL(diff);
 #else
   wrapped_grpc_timeval *self = Z_WRAPPED_GRPC_TIMEVAL_P(getThis());

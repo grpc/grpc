@@ -84,7 +84,8 @@ zend_object_value create_wrapped_grpc_server_credentials(
   return retval;
 }
 
-zval *grpc_php_wrap_server_credentials(grpc_server_credentials *wrapped TSRMLS_DC) {
+zval *grpc_php_wrap_server_credentials(grpc_server_credentials
+                                       *wrapped TSRMLS_DC) {
   zval *server_credentials_object;
   MAKE_STD_ZVAL(server_credentials_object);
   object_init_ex(server_credentials_object, grpc_ce_server_credentials);

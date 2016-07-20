@@ -76,7 +76,8 @@ class ServerTest extends PHPUnit_Framework_TestCase
         $call = new Grpc\Call($channel, 'dummy_method', $deadline);
 
         $event = $call->startBatch([Grpc\OP_SEND_INITIAL_METADATA => [],
-                                     Grpc\OP_SEND_CLOSE_FROM_CLIENT => true, ]);
+                                    Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
+                                    ]);
 
         $c = $this->server->requestCall();
         $this->assertObjectHasAttribute('call', $c);
