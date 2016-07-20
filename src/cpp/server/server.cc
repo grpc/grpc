@@ -432,7 +432,6 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
     }
 
     GrpcRpcManager::Initialize();
-    // ScheduleCallback();
   }
 
   return true;

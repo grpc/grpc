@@ -103,6 +103,9 @@ void GrpcRpcManager::Initialize() {
   }
 }
 
+// If the number of pollers (i.e threads currently blocked in PollForWork()) is
+// less than max threshold (i.e max_pollers_) and the total number of threads is
+// below the maximum threshold, we can let the current thread continue as poller
 bool GrpcRpcManager::MaybeContinueAsPoller() {
   std::unique_lock<grpc::mutex> lock(mu_);
   if (shutdown_ || num_pollers_ > max_pollers_ ||
@@ -114,6 +117,9 @@ bool GrpcRpcManager::MaybeContinueAsPoller() {
   return true;
 }
 
+// Create a new poller if the current number of pollers i.e num_pollers_ (i.e
+// threads currently blocked in PollForWork()) is below the threshold (i.e
+// min_pollers_) and the total number of threads is below the maximum threshold
 void GrpcRpcManager::MaybeCreatePoller() {
   grpc::unique_lock<grpc::mutex> lock(mu_);
   if (!shutdown_ && num_pollers_ < min_pollers_ &&
@@ -130,24 +136,26 @@ void GrpcRpcManager::MainWorkLoop() {
   bool is_work_found = false;
   void* tag;
 
+  /*
+   1. Poll for work (i.e PollForWork())
+   2. After returning from PollForWork, reduce the number of pollers by 1
+   3. Since we are short of one poller now, see if a new poller has to be
+      created (i.e see MaybeCreatePoller() for more details)
+   4. Do the actual work (DoWork())
+   5. After doing the work, see it this thread can resume polling work (i.e
+      see MaybeContinueAsPoller() for more details) */
   do {
     PollForWork(is_work_found, &tag);
 
-    // Decrement num_pollers since this thread is no longer polling
     {
       grpc::unique_lock<grpc::mutex> lock(mu_);
       num_pollers_--;
     }
 
     if (is_work_found) {
-      // Start a new poller if needed
       MaybeCreatePoller();
-
-      // Do actual work
       DoWork(tag);
     }
-
-    // Continue to loop if this thread can continue as a poller
   } while (MaybeContinueAsPoller());
 
   // If we are here, it means that the GrpcRpcManager already has enough threads
