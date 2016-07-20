@@ -83,7 +83,7 @@ class ServerTest extends PHPUnit_Framework_TestCase
         $this->assertObjectHasAttribute('method', $c);
         $this->assertSame('dummy_method', $c->method);
         $this->assertObjectHasAttribute('host', $c);
-        $this->assertSame('localhost:8888', $c->host);
+        $this->assertTrue(is_string($c->host));
         $this->assertObjectHasAttribute('absolute_deadline', $c);
         $this->assertObjectHasAttribute('metadata', $c);
 
@@ -100,55 +100,7 @@ class ServerTest extends PHPUnit_Framework_TestCase
 
         return $server_credentials;
     }
-/*
-    //TODO(thinkerou): make cases of addHttp2Port right
-    public function testAddHttp2Port()
-    {
-        $this->server = new Grpc\Server();
-        $port = $this->server->addHttp2Port('127.0.0.1:8080');
-        $this->assertEquals(8080, $port);
-    }
 
-    public function testAddHttp2Port1()
-    {
-        $this->server = new Grpc\Server([]);
-        $port = $this->server->addHttp2Port('127.0.0.1:8080');
-        $this->assertEquals(8080, $port);
-    }
-
-    public function testAddHttp2Port2()
-    {
-        $this->server = new Grpc\Server(['ip' => '127.0.0.1',
-                                          'port' => '8888', ]);
-        $port = $this->server->addHttp2Port('127.0.0.1:8080');
-        $this->assertEquals(8080, $port);
-    }
-
-    public function testAddSecureHttp2Port()
-    {
-        $this->server = new Grpc\Server();
-        $cred = $this->createSslObj();
-        $port = $this->server->addSecureHttp2Port('127.0.0.1:8080', $cred);
-        $this->assertEquals(8080, $port);
-    }
-
-    public function testAddSecureHttp2Port1()
-    {
-        $this->server = new Grpc\Server([]);
-        $cred = $this->createSslObj();
-        $port = $this->server->addSecureHttp2Port('127.0.0.1:8080', $cred);
-        $this->assertEquals(8080, $port);
-    }
-
-    public function testAddSecureHttp2Port2()
-    {
-        $this->server = new Grpc\Server(['ip' => '127.0.0.1',
-                                         'port' => '8888', ]);
-        $cred = $this->createSslObj();
-        $port = $this->server->addSecureHttp2Port('127.0.0.1:8080', $cred);
-        $this->assertEquals(8080, $port);
-    }
-*/
     /**
      * @expectedException InvalidArgumentException
      */
@@ -158,16 +110,6 @@ class ServerTest extends PHPUnit_Framework_TestCase
         $this->assertNull($this->server);
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
-/*    public function testInvalidConstructor2()
-    {
-        //TODO(thinkerou): it crash when key is long on php7
-        $this->server = new Grpc\server(['0.0.0.0:0']);
-        $this->assertNull($this->server);
-    }
-*/
     /**
      * @expectedException InvalidArgumentException
      */

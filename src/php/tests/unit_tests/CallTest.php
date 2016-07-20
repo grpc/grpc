@@ -101,7 +101,6 @@ class CallTest extends PHPUnit_Framework_TestCase
 
     public function testGetPeer()
     {
-        $this->assertStringStartsWith('localhost:', $this->call->getPeer());
         $this->assertTrue(is_string($this->call->getPeer()));
     }
 
