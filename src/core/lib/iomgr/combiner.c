@@ -155,11 +155,12 @@ static bool start_execute_final(grpc_exec_ctx *exec_ctx, grpc_combiner *lock) {
       gpr_log(GPR_DEBUG,
               "C:%p start_execute_final take_async_break_before_final_list=%d",
               lock, lock->take_async_break_before_final_list));
-  if (lock->take_async_break_before_final_list) {
+  if (lock->optional_workqueue != NULL &&
+      lock->take_async_break_before_final_list) {
     grpc_closure_init(&lock->continue_finishing, continue_executing_final,
                       lock);
-    grpc_exec_ctx_sched(exec_ctx, &lock->continue_finishing, GRPC_ERROR_NONE,
-                        GRPC_WORKQUEUE_REF(lock->optional_workqueue, "sched"));
+    grpc_workqueue_enqueue(exec_ctx, lock->optional_workqueue,
+                           &lock->continue_finishing, GRPC_ERROR_NONE);
     GPR_TIMER_END("combiner.start_execute_final", 0);
     return false;
   } else {
