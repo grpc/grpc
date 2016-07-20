@@ -129,8 +129,7 @@ void grpc_handshake_manager_shutdown(grpc_exec_ctx* exec_ctx,
 // handshakers together.
 static void call_next_handshaker(grpc_exec_ctx* exec_ctx,
                                  grpc_endpoint* endpoint,
-                                 grpc_channel_args* args,
-                                 void* user_data) {
+                                 grpc_channel_args* args, void* user_data) {
   grpc_handshake_manager* mgr = user_data;
   GPR_ASSERT(mgr->state != NULL);
   GPR_ASSERT(mgr->state->index < mgr->count);
@@ -153,13 +152,10 @@ static void call_next_handshaker(grpc_exec_ctx* exec_ctx,
   }
 }
 
-void grpc_handshake_manager_do_handshake(grpc_exec_ctx* exec_ctx,
-                                         grpc_handshake_manager* mgr,
-                                         grpc_endpoint* endpoint,
-                                         const grpc_channel_args* args,
-                                         gpr_timespec deadline,
-                                         grpc_handshaker_done_cb cb,
-                                         void* user_data) {
+void grpc_handshake_manager_do_handshake(
+    grpc_exec_ctx* exec_ctx, grpc_handshake_manager* mgr,
+    grpc_endpoint* endpoint, const grpc_channel_args* args,
+    gpr_timespec deadline, grpc_handshaker_done_cb cb, void* user_data) {
   grpc_channel_args* args_copy = grpc_channel_args_copy(args);
   if (mgr->count == 0) {
     // No handshakers registered, so we just immediately call the done

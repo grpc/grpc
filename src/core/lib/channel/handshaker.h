@@ -131,12 +131,9 @@ void grpc_handshake_manager_shutdown(grpc_exec_ctx* exec_ctx,
 /// invoking the first handshaker.
 /// If successful, invokes \a cb with \a user_data after all handshakers
 /// have completed.
-void grpc_handshake_manager_do_handshake(grpc_exec_ctx* exec_ctx,
-                                         grpc_handshake_manager* mgr,
-                                         grpc_endpoint* endpoint,
-                                         const grpc_channel_args* args,
-                                         gpr_timespec deadline,
-                                         grpc_handshaker_done_cb cb,
-                                         void* user_data);
+void grpc_handshake_manager_do_handshake(
+    grpc_exec_ctx* exec_ctx, grpc_handshake_manager* mgr,
+    grpc_endpoint* endpoint, const grpc_channel_args* args,
+    gpr_timespec deadline, grpc_handshaker_done_cb cb, void* user_data);
 
 #endif /* GRPC_CORE_LIB_CHANNEL_HANDSHAKER_H */
