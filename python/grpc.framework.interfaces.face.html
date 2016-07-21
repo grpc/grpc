@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework.interfaces.face package &mdash; grpcio 0.15.0 documentation</title>
+  <title>grpc.framework.interfaces.face package &mdash; grpcio 1.0.0rc1 documentation</title>
   
 
   
@@ -30,9 +30,8 @@
   
 
   
-    <link rel="top" title="grpcio 0.15.0 documentation" href="index.html"/>
+    <link rel="top" title="grpcio 1.0.0rc1 documentation" href="index.html"/>
         <link rel="up" title="grpc.framework.interfaces package" href="grpc.framework.interfaces.html"/>
-        <link rel="next" title="grpc.framework.interfaces.links package" href="grpc.framework.interfaces.links.html"/>
         <link rel="prev" title="grpc.framework.interfaces.base package" href="grpc.framework.interfaces.base.html"/> 
 
   
@@ -62,7 +61,7 @@
             
             
               <div class="version">
-                0.15.0
+                1.0.0rc1
               </div>
             
           
@@ -97,6 +96,7 @@
 <li class="toctree-l2"><a class="reference internal" href="grpc.html#module-grpc">Module contents</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="grpc.html#glossary">Glossary</a></li>
 </ul>
 
             
@@ -245,7 +245,7 @@ details value was received.</p>
 <dl class="exception">
 <dt id="grpc.framework.interfaces.face.face.AbortionError">
 <em class="property">exception </em><code class="descclassname">grpc.framework.interfaces.face.face.</code><code class="descname">AbortionError</code><span class="sig-paren">(</span><em>initial_metadata</em>, <em>terminal_metadata</em>, <em>code</em>, <em>details</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#AbortionError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.AbortionError" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></code></p>
 <p>Common super type for exceptions indicating RPC abortion.</p>
 <dl class="docutils">
 <dt>initial_metadata: The initial metadata from the other side of the RPC or</dt>
@@ -262,7 +262,7 @@ details value was received.</p>
 <dl class="class">
 <dt id="grpc.framework.interfaces.face.face.Call">
 <em class="property">class </em><code class="descclassname">grpc.framework.interfaces.face.face.</code><code class="descname">Call</code><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#Call"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.Call" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.interfaces.face.face.RpcContext" title="grpc.framework.interfaces.face.face.RpcContext"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.interfaces.face.face.RpcContext</span></code></a></p>
 <p>Invocation-side utility object for an RPC.</p>
 <dl class="method">
 <dt id="grpc.framework.interfaces.face.face.Call.code">
@@ -356,7 +356,7 @@ emitted from the service-side of the RPC.</p>
 <dl class="class">
 <dt id="grpc.framework.interfaces.face.face.DynamicStub">
 <em class="property">class </em><code class="descclassname">grpc.framework.interfaces.face.face.</code><code class="descname">DynamicStub</code><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#DynamicStub"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.DynamicStub" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Affords RPC invocation via attributes corresponding to afforded methods.</p>
 <p>Instances of this type may be scoped to a single group so that attribute
 access is unambiguous.</p>
@@ -381,7 +381,7 @@ the attribute will be a StreamStreamMultiCallable with which to invoke an RPC.</
 <dl class="class">
 <dt id="grpc.framework.interfaces.face.face.GenericStub">
 <em class="property">class </em><code class="descclassname">grpc.framework.interfaces.face.face.</code><code class="descname">GenericStub</code><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#GenericStub"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.GenericStub" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Affords RPC invocation via generic methods.</p>
 <dl class="method">
 <dt id="grpc.framework.interfaces.face.face.GenericStub.blocking_stream_unary">
@@ -818,7 +818,7 @@ AbortionError indicating abortion of the RPC.</p>
 <dl class="class">
 <dt id="grpc.framework.interfaces.face.face.MethodImplementation">
 <em class="property">class </em><code class="descclassname">grpc.framework.interfaces.face.face.</code><code class="descname">MethodImplementation</code><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#MethodImplementation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.MethodImplementation" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>A sum type that describes a method implementation.</p>
 <dl class="attribute">
 <dt id="grpc.framework.interfaces.face.face.MethodImplementation.cardinality">
@@ -913,7 +913,7 @@ style.Service.EVENT.</p>
 <dl class="class">
 <dt id="grpc.framework.interfaces.face.face.MultiMethodImplementation">
 <em class="property">class </em><code class="descclassname">grpc.framework.interfaces.face.face.</code><code class="descname">MultiMethodImplementation</code><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#MultiMethodImplementation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.MultiMethodImplementation" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>A general type able to service many methods.</p>
 <dl class="method">
 <dt id="grpc.framework.interfaces.face.face.MultiMethodImplementation.service">
@@ -1001,7 +1001,7 @@ and name for the RPC and is not able to service the RPC.</li>
 <dl class="class">
 <dt id="grpc.framework.interfaces.face.face.ResponseReceiver">
 <em class="property">class </em><code class="descclassname">grpc.framework.interfaces.face.face.</code><code class="descname">ResponseReceiver</code><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#ResponseReceiver"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.ResponseReceiver" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Invocation-side object used to accept the output of an RPC.</p>
 <dl class="method">
 <dt id="grpc.framework.interfaces.face.face.ResponseReceiver.complete">
@@ -1057,7 +1057,7 @@ service-side of the RPC.</td>
 <dl class="class">
 <dt id="grpc.framework.interfaces.face.face.RpcContext">
 <em class="property">class </em><code class="descclassname">grpc.framework.interfaces.face.face.</code><code class="descname">RpcContext</code><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#RpcContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.RpcContext" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Provides RPC-related information and action.</p>
 <dl class="method">
 <dt id="grpc.framework.interfaces.face.face.RpcContext.add_abortion_callback">
@@ -1126,7 +1126,7 @@ out.</td>
 <dl class="class">
 <dt id="grpc.framework.interfaces.face.face.ServicerContext">
 <em class="property">class </em><code class="descclassname">grpc.framework.interfaces.face.face.</code><code class="descname">ServicerContext</code><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#ServicerContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.ServicerContext" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
+<dd><p>Bases: <a class="reference internal" href="#grpc.framework.interfaces.face.face.RpcContext" title="grpc.framework.interfaces.face.face.RpcContext"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.interfaces.face.face.RpcContext</span></code></a></p>
 <p>A context object passed to method implementations.</p>
 <dl class="method">
 <dt id="grpc.framework.interfaces.face.face.ServicerContext.code">
@@ -1221,8 +1221,39 @@ be transmitted to the invocation side of the RPC.</td>
 <dl class="class">
 <dt id="grpc.framework.interfaces.face.face.StreamStreamMultiCallable">
 <em class="property">class </em><code class="descclassname">grpc.framework.interfaces.face.face.</code><code class="descname">StreamStreamMultiCallable</code><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#StreamStreamMultiCallable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.StreamStreamMultiCallable" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Affords invoking a stream-stream RPC in any call style.</p>
+<dl class="method">
+<dt id="grpc.framework.interfaces.face.face.StreamStreamMultiCallable.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout</em>, <em>metadata=None</em>, <em>protocol_options=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#StreamStreamMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.StreamStreamMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Invokes the underlying RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request_iterator</strong> &#8211; An iterator that yields request values for the RPC.</li>
+<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
+<li><strong>metadata</strong> &#8211; A metadata value to be passed to the service-side of
+the RPC.</li>
+<li><strong>protocol_options</strong> &#8211; A value specified by the provider of a Face interface
+implementation affording custom state and behavior.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>An object that is both a Call for the RPC and an iterator of response</dt>
+<dd><p class="first last">values. Drawing response values from the returned iterator may raise
+AbortionError indicating abortion of the RPC.</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 <dl class="method">
 <dt id="grpc.framework.interfaces.face.face.StreamStreamMultiCallable.event">
 <code class="descname">event</code><span class="sig-paren">(</span><em>receiver</em>, <em>abortion_callback</em>, <em>timeout</em>, <em>metadata=None</em>, <em>protocol_options=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#StreamStreamMultiCallable.event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.StreamStreamMultiCallable.event" title="Permalink to this definition">¶</a></dt>
@@ -1260,8 +1291,43 @@ implementation affording custom state and behavior.</li>
 <dl class="class">
 <dt id="grpc.framework.interfaces.face.face.StreamUnaryMultiCallable">
 <em class="property">class </em><code class="descclassname">grpc.framework.interfaces.face.face.</code><code class="descname">StreamUnaryMultiCallable</code><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#StreamUnaryMultiCallable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.StreamUnaryMultiCallable" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Affords invoking a stream-unary RPC in any call style.</p>
+<dl class="method">
+<dt id="grpc.framework.interfaces.face.face.StreamUnaryMultiCallable.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout</em>, <em>metadata=None</em>, <em>with_call=False</em>, <em>protocol_options=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#StreamUnaryMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.StreamUnaryMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Synchronously invokes the underlying RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request_iterator</strong> &#8211; An iterator that yields request values for the RPC.</li>
+<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
+<li><strong>metadata</strong> &#8211; A metadata value to be passed to the service-side of
+the RPC.</li>
+<li><strong>with_call</strong> &#8211; Whether or not to include return a Call for the RPC in addition
+to the response.</li>
+<li><strong>protocol_options</strong> &#8211; A value specified by the provider of a Face interface
+implementation affording custom state and behavior.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>The response value for the RPC, and a Call for the RPC if with_call was</dt>
+<dd><p class="first last">set to True at invocation.</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#grpc.framework.interfaces.face.face.AbortionError" title="grpc.framework.interfaces.face.face.AbortionError"><code class="xref py py-exc docutils literal"><span class="pre">AbortionError</span></code></a> &#8211; Indicating that the RPC was aborted.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 <dl class="method">
 <dt id="grpc.framework.interfaces.face.face.StreamUnaryMultiCallable.event">
 <code class="descname">event</code><span class="sig-paren">(</span><em>receiver</em>, <em>abortion_callback</em>, <em>timeout</em>, <em>metadata=None</em>, <em>protocol_options=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#StreamUnaryMultiCallable.event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.StreamUnaryMultiCallable.event" title="Permalink to this definition">¶</a></dt>
@@ -1331,8 +1397,39 @@ Future&#8217;s exception value will be an AbortionError.</p>
 <dl class="class">
 <dt id="grpc.framework.interfaces.face.face.UnaryStreamMultiCallable">
 <em class="property">class </em><code class="descclassname">grpc.framework.interfaces.face.face.</code><code class="descname">UnaryStreamMultiCallable</code><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#UnaryStreamMultiCallable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.UnaryStreamMultiCallable" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Affords invoking a unary-stream RPC in any call style.</p>
+<dl class="method">
+<dt id="grpc.framework.interfaces.face.face.UnaryStreamMultiCallable.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>request</em>, <em>timeout</em>, <em>metadata=None</em>, <em>protocol_options=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#UnaryStreamMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.UnaryStreamMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Invokes the underlying RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request</strong> &#8211; The request value for the RPC.</li>
+<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
+<li><strong>metadata</strong> &#8211; A metadata value to be passed to the service-side of
+the RPC.</li>
+<li><strong>protocol_options</strong> &#8211; A value specified by the provider of a Face interface
+implementation affording custom state and behavior.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>An object that is both a Call for the RPC and an iterator of response</dt>
+<dd><p class="first last">values. Drawing response values from the returned iterator may raise
+AbortionError indicating abortion of the RPC.</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 <dl class="method">
 <dt id="grpc.framework.interfaces.face.face.UnaryStreamMultiCallable.event">
 <code class="descname">event</code><span class="sig-paren">(</span><em>request</em>, <em>receiver</em>, <em>abortion_callback</em>, <em>timeout</em>, <em>metadata=None</em>, <em>protocol_options=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#UnaryStreamMultiCallable.event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.UnaryStreamMultiCallable.event" title="Permalink to this definition">¶</a></dt>
@@ -1366,8 +1463,43 @@ implementation affording custom state and behavior.</li>
 <dl class="class">
 <dt id="grpc.framework.interfaces.face.face.UnaryUnaryMultiCallable">
 <em class="property">class </em><code class="descclassname">grpc.framework.interfaces.face.face.</code><code class="descname">UnaryUnaryMultiCallable</code><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#UnaryUnaryMultiCallable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.UnaryUnaryMultiCallable" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Affords invoking a unary-unary RPC in any call style.</p>
+<dl class="method">
+<dt id="grpc.framework.interfaces.face.face.UnaryUnaryMultiCallable.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>request</em>, <em>timeout</em>, <em>metadata=None</em>, <em>with_call=False</em>, <em>protocol_options=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#UnaryUnaryMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.UnaryUnaryMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Synchronously invokes the underlying RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request</strong> &#8211; The request value for the RPC.</li>
+<li><strong>timeout</strong> &#8211; A duration of time in seconds to allow for the RPC.</li>
+<li><strong>metadata</strong> &#8211; A metadata value to be passed to the service-side of
+the RPC.</li>
+<li><strong>with_call</strong> &#8211; Whether or not to include return a Call for the RPC in addition
+to the response.</li>
+<li><strong>protocol_options</strong> &#8211; A value specified by the provider of a Face interface
+implementation affording custom state and behavior.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>The response value for the RPC, and a Call for the RPC if with_call was</dt>
+<dd><p class="first last">set to True at invocation.</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#grpc.framework.interfaces.face.face.AbortionError" title="grpc.framework.interfaces.face.face.AbortionError"><code class="xref py py-exc docutils literal"><span class="pre">AbortionError</span></code></a> &#8211; Indicating that the RPC was aborted.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 <dl class="method">
 <dt id="grpc.framework.interfaces.face.face.UnaryUnaryMultiCallable.event">
 <code class="descname">event</code><span class="sig-paren">(</span><em>request</em>, <em>receiver</em>, <em>abortion_callback</em>, <em>timeout</em>, <em>metadata=None</em>, <em>protocol_options=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/interfaces/face/face.html#UnaryUnaryMultiCallable.event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.interfaces.face.face.UnaryUnaryMultiCallable.event" title="Permalink to this definition">¶</a></dt>
@@ -1593,8 +1725,6 @@ returns a response value.</td>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="grpc.framework.interfaces.links.html" class="btn btn-neutral float-right" title="grpc.framework.interfaces.links package" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
       
         <a href="grpc.framework.interfaces.base.html" class="btn btn-neutral" title="grpc.framework.interfaces.base package" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
@@ -1627,7 +1757,7 @@ returns a response value.</td>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.15.0',
+            VERSION:'1.0.0rc1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

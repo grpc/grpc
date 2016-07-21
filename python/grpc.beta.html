@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.beta package &mdash; grpcio 0.15.0 documentation</title>
+  <title>grpc.beta package &mdash; grpcio 1.0.0rc1 documentation</title>
   
 
   
@@ -30,7 +30,7 @@
   
 
   
-    <link rel="top" title="grpcio 0.15.0 documentation" href="index.html"/>
+    <link rel="top" title="grpcio 1.0.0rc1 documentation" href="index.html"/>
         <link rel="up" title="grpc package" href="grpc.html"/>
         <link rel="next" title="grpc.framework package" href="grpc.framework.html"/>
         <link rel="prev" title="grpc package" href="grpc.html"/> 
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.15.0
+                1.0.0rc1
               </div>
             
           
@@ -100,6 +100,7 @@
 <li class="toctree-l2"><a class="reference internal" href="grpc.html#module-grpc">Module contents</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="grpc.html#glossary">Glossary</a></li>
 </ul>
 
             
@@ -440,7 +441,7 @@ other functions.</p>
 <dl class="class">
 <dt id="grpc.beta.interfaces.GRPCInvocationContext">
 <em class="property">class </em><code class="descclassname">grpc.beta.interfaces.</code><code class="descname">GRPCInvocationContext</code><a class="reference internal" href="_modules/grpc/beta/interfaces.html#GRPCInvocationContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.beta.interfaces.GRPCInvocationContext" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Exposes gRPC-specific options and behaviors to code invoking RPCs.</p>
 <dl class="method">
 <dt id="grpc.beta.interfaces.GRPCInvocationContext.disable_next_request_compression">
@@ -453,7 +454,7 @@ other functions.</p>
 <dl class="class">
 <dt id="grpc.beta.interfaces.GRPCServicerContext">
 <em class="property">class </em><code class="descclassname">grpc.beta.interfaces.</code><code class="descname">GRPCServicerContext</code><a class="reference internal" href="_modules/grpc/beta/interfaces.html#GRPCServicerContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.beta.interfaces.GRPCServicerContext" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Exposes gRPC-specific options and behaviors to code servicing RPCs.</p>
 <dl class="method">
 <dt id="grpc.beta.interfaces.GRPCServicerContext.disable_next_response_compression">
@@ -480,7 +481,7 @@ other functions.</p>
 <dl class="class">
 <dt id="grpc.beta.interfaces.Server">
 <em class="property">class </em><code class="descclassname">grpc.beta.interfaces.</code><code class="descname">Server</code><a class="reference internal" href="_modules/grpc/beta/interfaces.html#Server"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.beta.interfaces.Server" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Services RPCs.</p>
 <dl class="method">
 <dt id="grpc.beta.interfaces.Server.add_insecure_port">
@@ -673,7 +674,7 @@ subscription to the given implementations.Channel&#8217;s connectivity.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.15.0',
+            VERSION:'1.0.0rc1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

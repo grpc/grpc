@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.beta.implementations &mdash; grpcio 0.15.0 documentation</title>
+  <title>grpc.beta.implementations &mdash; grpcio 1.0.0rc1 documentation</title>
   
 
   
@@ -30,7 +30,7 @@
   
 
   
-    <link rel="top" title="grpcio 0.15.0 documentation" href="../../../index.html"/>
+    <link rel="top" title="grpcio 1.0.0rc1 documentation" href="../../../index.html"/>
         <link rel="up" title="grpc" href="../../grpc.html"/> 
 
   
@@ -60,7 +60,7 @@
             
             
               <div class="version">
-                0.15.0
+                1.0.0rc1
               </div>
             
           
@@ -83,6 +83,7 @@
             
                 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../grpc.html">grpc package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../grpc.html#glossary">Glossary</a></li>
 </ul>
 
             
@@ -172,13 +173,12 @@
 
 <span class="c1"># cardinality and face are referenced from specification in this module.</span>
 <span class="kn">import</span> <span class="nn">grpc</span>
-<span class="kn">from</span> <span class="nn">grpc</span> <span class="kn">import</span> <span class="n">_auth</span>
-<span class="kn">from</span> <span class="nn">grpc._adapter</span> <span class="kn">import</span> <span class="n">_types</span>
-<span class="kn">from</span> <span class="nn">grpc.beta</span> <span class="kn">import</span> <span class="n">_client_adaptations</span>
-<span class="kn">from</span> <span class="nn">grpc.beta</span> <span class="kn">import</span> <span class="n">_server_adaptations</span>
-<span class="kn">from</span> <span class="nn">grpc.beta</span> <span class="kn">import</span> <span class="n">interfaces</span>
-<span class="kn">from</span> <span class="nn">grpc.framework.common</span> <span class="kn">import</span> <span class="n">cardinality</span>  <span class="c1"># pylint: disable=unused-import</span>
-<span class="kn">from</span> <span class="nn">grpc.framework.interfaces.face</span> <span class="kn">import</span> <span class="n">face</span>  <span class="c1"># pylint: disable=unused-import</span>
+<span class="kn">from</span> <span class="nn">grpc</span> <span class="k">import</span> <span class="n">_auth</span>
+<span class="kn">from</span> <span class="nn">grpc.beta</span> <span class="k">import</span> <span class="n">_client_adaptations</span>
+<span class="kn">from</span> <span class="nn">grpc.beta</span> <span class="k">import</span> <span class="n">_server_adaptations</span>
+<span class="kn">from</span> <span class="nn">grpc.beta</span> <span class="k">import</span> <span class="n">interfaces</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.common</span> <span class="k">import</span> <span class="n">cardinality</span>  <span class="c1"># pylint: disable=unused-import</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.interfaces.face</span> <span class="k">import</span> <span class="n">face</span>  <span class="c1"># pylint: disable=unused-import</span>
 
 
 <span class="n">ChannelCredentials</span> <span class="o">=</span> <span class="n">grpc</span><span class="o">.</span><span class="n">ChannelCredentials</span>
@@ -214,7 +214,7 @@
   <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span> <span class="o">=</span> <span class="n">channel</span>
 
-<div class="viewcode-block" id="Channel.subscribe"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.implementations.Channel.subscribe">[docs]</a>  <span class="k">def</span> <span class="nf">subscribe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">try_to_connect</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Channel.subscribe"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.implementations.Channel.subscribe">[docs]</a>  <span class="k">def</span> <span class="nf">subscribe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">try_to_connect</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Subscribes to this Channel&#39;s connectivity.</span>
 
 <span class="sd">    Args:</span>
@@ -251,7 +251,7 @@
 <span class="sd">    A Channel to the remote host through which RPCs may be conducted.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
   <span class="n">channel</span> <span class="o">=</span> <span class="n">grpc</span><span class="o">.</span><span class="n">insecure_channel</span><span class="p">(</span>
-      <span class="n">host</span> <span class="k">if</span> <span class="n">port</span> <span class="ow">is</span> <span class="bp">None</span> <span class="k">else</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">:</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">))</span>
+      <span class="n">host</span> <span class="k">if</span> <span class="n">port</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">:</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">))</span>
   <span class="k">return</span> <span class="n">Channel</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span></div>
 
 
@@ -268,7 +268,7 @@
 <span class="sd">    A secure Channel to the remote host through which RPCs may be conducted.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
   <span class="n">channel</span> <span class="o">=</span> <span class="n">grpc</span><span class="o">.</span><span class="n">secure_channel</span><span class="p">(</span>
-      <span class="n">host</span> <span class="k">if</span> <span class="n">port</span> <span class="ow">is</span> <span class="bp">None</span> <span class="k">else</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">:</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">),</span> <span class="n">channel_credentials</span><span class="p">)</span>
+      <span class="n">host</span> <span class="k">if</span> <span class="n">port</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">:</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">),</span> <span class="n">channel_credentials</span><span class="p">)</span>
   <span class="k">return</span> <span class="n">Channel</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span></div>
 
 
@@ -291,12 +291,12 @@
     <span class="bp">self</span><span class="o">.</span><span class="n">thread_pool_size</span> <span class="o">=</span> <span class="n">thread_pool_size</span></div>
 
 <span class="n">_EMPTY_STUB_OPTIONS</span> <span class="o">=</span> <span class="n">StubOptions</span><span class="p">(</span>
-    <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+    <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="stub_options"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.implementations.stub_options">[docs]</a><span class="k">def</span> <span class="nf">stub_options</span><span class="p">(</span>
-    <span class="n">host</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">request_serializers</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">response_deserializers</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
-    <span class="n">metadata_transformer</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">thread_pool</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">thread_pool_size</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="n">host</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">request_serializers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">response_deserializers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">metadata_transformer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">thread_pool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">thread_pool_size</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Creates a StubOptions value to be passed at stub creation.</span>
 
 <span class="sd">  All parameters are optional and should always be passed by keyword.</span>
@@ -322,7 +322,7 @@
       <span class="n">metadata_transformer</span><span class="p">,</span> <span class="n">thread_pool</span><span class="p">,</span> <span class="n">thread_pool_size</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="generic_stub"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.implementations.generic_stub">[docs]</a><span class="k">def</span> <span class="nf">generic_stub</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="generic_stub"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.implementations.generic_stub">[docs]</a><span class="k">def</span> <span class="nf">generic_stub</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Creates a face.GenericStub on which RPCs can be made.</span>
 
 <span class="sd">  Args:</span>
@@ -332,7 +332,7 @@
 <span class="sd">  Returns:</span>
 <span class="sd">    A face.GenericStub on which RPCs can be made.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="n">effective_options</span> <span class="o">=</span> <span class="n">_EMPTY_STUB_OPTIONS</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="bp">None</span> <span class="k">else</span> <span class="n">options</span>
+  <span class="n">effective_options</span> <span class="o">=</span> <span class="n">_EMPTY_STUB_OPTIONS</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span>
   <span class="k">return</span> <span class="n">_client_adaptations</span><span class="o">.</span><span class="n">generic_stub</span><span class="p">(</span>
       <span class="n">channel</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span>  <span class="c1"># pylint: disable=protected-access</span>
       <span class="n">effective_options</span><span class="o">.</span><span class="n">host</span><span class="p">,</span> <span class="n">effective_options</span><span class="o">.</span><span class="n">metadata_transformer</span><span class="p">,</span>
@@ -340,7 +340,7 @@
       <span class="n">effective_options</span><span class="o">.</span><span class="n">response_deserializers</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="dynamic_stub"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.implementations.dynamic_stub">[docs]</a><span class="k">def</span> <span class="nf">dynamic_stub</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="n">service</span><span class="p">,</span> <span class="n">cardinalities</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="dynamic_stub"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.implementations.dynamic_stub">[docs]</a><span class="k">def</span> <span class="nf">dynamic_stub</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="n">service</span><span class="p">,</span> <span class="n">cardinalities</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Creates a face.DynamicStub with which RPCs can be invoked.</span>
 
 <span class="sd">  Args:</span>
@@ -354,7 +354,7 @@
 <span class="sd">  Returns:</span>
 <span class="sd">    A face.DynamicStub with which RPCs can be invoked.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="n">effective_options</span> <span class="o">=</span> <span class="n">StubOptions</span><span class="p">()</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="bp">None</span> <span class="k">else</span> <span class="n">options</span>
+  <span class="n">effective_options</span> <span class="o">=</span> <span class="n">StubOptions</span><span class="p">()</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span>
   <span class="k">return</span> <span class="n">_client_adaptations</span><span class="o">.</span><span class="n">dynamic_stub</span><span class="p">(</span>
       <span class="n">channel</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span>  <span class="c1"># pylint: disable=protected-access</span>
       <span class="n">service</span><span class="p">,</span> <span class="n">cardinalities</span><span class="p">,</span> <span class="n">effective_options</span><span class="o">.</span><span class="n">host</span><span class="p">,</span>
@@ -388,13 +388,13 @@
     <span class="bp">self</span><span class="o">.</span><span class="n">maximum_timeout</span> <span class="o">=</span> <span class="n">maximum_timeout</span></div>
 
 <span class="n">_EMPTY_SERVER_OPTIONS</span> <span class="o">=</span> <span class="n">ServerOptions</span><span class="p">(</span>
-    <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+    <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="server_options"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.implementations.server_options">[docs]</a><span class="k">def</span> <span class="nf">server_options</span><span class="p">(</span>
-    <span class="n">multi_method_implementation</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">request_deserializers</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
-    <span class="n">response_serializers</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">thread_pool</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">thread_pool_size</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
-    <span class="n">default_timeout</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">maximum_timeout</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="n">multi_method_implementation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">request_deserializers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">response_serializers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">thread_pool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">thread_pool_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">default_timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">maximum_timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Creates a ServerOptions value to be passed at server creation.</span>
 
 <span class="sd">  All parameters are optional and should always be passed by keyword.</span>
@@ -424,7 +424,7 @@
       <span class="n">thread_pool</span><span class="p">,</span> <span class="n">thread_pool_size</span><span class="p">,</span> <span class="n">default_timeout</span><span class="p">,</span> <span class="n">maximum_timeout</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="server"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.implementations.server">[docs]</a><span class="k">def</span> <span class="nf">server</span><span class="p">(</span><span class="n">service_implementations</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="server"><a class="viewcode-back" href="../../../grpc.beta.html#grpc.beta.implementations.server">[docs]</a><span class="k">def</span> <span class="nf">server</span><span class="p">(</span><span class="n">service_implementations</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Creates an interfaces.Server with which RPCs can be serviced.</span>
 
 <span class="sd">  Args:</span>
@@ -436,7 +436,7 @@
 <span class="sd">  Returns:</span>
 <span class="sd">    An interfaces.Server with which RPCs can be serviced.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
-  <span class="n">effective_options</span> <span class="o">=</span> <span class="n">_EMPTY_SERVER_OPTIONS</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="bp">None</span> <span class="k">else</span> <span class="n">options</span>
+  <span class="n">effective_options</span> <span class="o">=</span> <span class="n">_EMPTY_SERVER_OPTIONS</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span>
   <span class="k">return</span> <span class="n">_server_adaptations</span><span class="o">.</span><span class="n">server</span><span class="p">(</span>
       <span class="n">service_implementations</span><span class="p">,</span> <span class="n">effective_options</span><span class="o">.</span><span class="n">multi_method_implementation</span><span class="p">,</span>
       <span class="n">effective_options</span><span class="o">.</span><span class="n">request_deserializers</span><span class="p">,</span>
@@ -475,7 +475,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../',
-            VERSION:'0.15.0',
+            VERSION:'1.0.0rc1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true
