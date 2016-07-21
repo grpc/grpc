@@ -40,7 +40,6 @@ import multiprocessing
 import os
 import pipes
 import re
-import report_utils
 import subprocess
 import sys
 import tempfile
@@ -55,7 +54,6 @@ os.chdir(_ROOT)
 
 
 _REMOTE_HOST_USERNAME = 'jenkins'
-_REPORT_DIR = 'perf_reports'
 
 
 class QpsWorkerJob:
@@ -105,11 +103,7 @@ def create_scenario_jobspec(scenario_json, workers, remote_host=None,
     cmd += 'BQ_RESULT_TABLE="%s" ' % bq_result_table
   cmd += 'tools/run_tests/performance/run_qps_driver.sh '
   cmd += '--scenarios_json=%s ' % pipes.quote(json.dumps({'scenarios': [scenario_json]}))
-  if not os.path.isdir(_REPORT_DIR):
-    os.makedirs(_REPORT_DIR)
-  report_path = os.path.join(_REPORT_DIR,
-                             '%s-scenario_result.json' % scenario_json['name'])
-  cmd += '--scenario_result_file=%s' % report_path  
+  cmd += '--scenario_result_file=scenario_result.json'
   if remote_host:
     user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, remote_host)
     cmd = 'ssh %s "cd ~/performance_workspace/grpc/ && "%s' % (user_at_host, pipes.quote(cmd))
@@ -442,9 +436,6 @@ try:
   jobset.message('START', 'Running scenarios.', do_newline=True)
   num_failures, _ = jobset.run(
       scenarios, newline_on_success=True, maxjobs=1)
-  
-  report_utils.render_perf_html_report(_REPORT_DIR)
-  
   if num_failures == 0:
     jobset.message('SUCCESS',
                    'All scenarios finished successfully.',
