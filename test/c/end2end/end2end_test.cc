@@ -68,8 +68,14 @@ extern "C" {
  */
 
 namespace grpc {
+namespace testing {
+namespace {
 
-};
+
+
+} // namespace
+} // namespace testing
+} // namespace grpc
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);

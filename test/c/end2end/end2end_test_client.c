@@ -31,7 +31,5 @@
  *
  */
 
-#ifndef GRPC_END2END_TEST_CLIENT_H
-#define GRPC_END2END_TEST_CLIENT_H
+#include "test/c/end2end/end2end_test_client.h"
 
-#endif // GRPC_END2END_TEST_CLIENT_H
