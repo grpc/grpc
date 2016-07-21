@@ -218,7 +218,7 @@ static VALUE grpc_rb_server_request_call(VALUE self) {
       grpc_rb_sNewServerRpc, rb_str_new2(st.details.method),
       rb_str_new2(st.details.host),
       rb_funcall(rb_cTime, id_at, 2, INT2NUM(deadline.tv_sec),
-                 INT2NUM(deadline.tv_nsec)),
+                 INT2NUM(deadline.tv_nsec / 1000)),
       grpc_rb_md_ary_to_h(&st.md_ary), grpc_rb_wrap_call(call, call_queue),
       NULL);
   grpc_request_call_stack_cleanup(&st);

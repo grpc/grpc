@@ -31,56 +31,14 @@
  *
  */
 
-#ifndef NET_GRPC_PHP_GRPC_CHANNEL_CREDENTIALS_H_
-#define NET_GRPC_PHP_GRPC_CHANNEL_CREDENTIALS_H_
+#ifndef GRPC_RB_COMPRESSION_OPTIONS_H_
+#define GRPC_RB_COMPRESSION_OPTIONS_H_
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include <ruby/ruby.h>
 
-#include "php.h"
-#include "php_ini.h"
-#include "ext/standard/info.h"
-#include "php_grpc.h"
+#include <grpc/grpc.h>
 
-#include "grpc/grpc.h"
-#include "grpc/grpc_security.h"
+/* Initializes the compression options ruby wrapper. */
+void Init_grpc_compression_options();
 
-/* Class entry for the ChannelCredentials PHP class */
-extern zend_class_entry *grpc_ce_channel_credentials;
-
-#if PHP_MAJOR_VERSION < 7
-
-/* Wrapper struct for grpc_channel_credentials that can be associated
- * with a PHP object */
-typedef struct wrapped_grpc_channel_credentials {
-  zend_object std;
-  grpc_channel_credentials *wrapped;
-} wrapped_grpc_channel_credentials;
-
-#else
-
-/* Wrapper struct for grpc_channel_credentials that can be associated
- * with a PHP object */
-typedef struct wrapped_grpc_channel_credentials {
-  grpc_channel_credentials *wrapped;
-  zend_object std;
-} wrapped_grpc_channel_credentials;
-
-static inline wrapped_grpc_channel_credentials
-*wrapped_grpc_channel_creds_from_obj(zend_object *obj) {
-  return
-    (wrapped_grpc_channel_credentials *)
-    ((char*)(obj) -
-     XtOffsetOf(wrapped_grpc_channel_credentials, std));
-}
-
-#define Z_WRAPPED_GRPC_CHANNEL_CREDS_P(zv)            \
-  wrapped_grpc_channel_creds_from_obj(Z_OBJ_P((zv)))
-
-#endif /* PHP_MAJOR_VERSION */
-
-/* Initializes the ChannelCredentials PHP class */
-void grpc_init_channel_credentials(TSRMLS_D);
-
-#endif /* NET_GRPC_PHP_GRPC_CHANNEL_CREDENTIALS_H_ */
+#endif /* GRPC_RB_COMPRESSION_OPTIONS_H_ */
