@@ -43,6 +43,7 @@ TIME_FROM_SCOPE_START = object()
 TIME_TO_SCOPE_END = object()
 TIME_FROM_STACK_START = object()
 TIME_TO_STACK_END = object()
+TIME_FROM_LAST_IMPORTANT = object()
 
 
 argp = argparse.ArgumentParser(description='Process output of basic_prof builds')
@@ -78,10 +79,14 @@ class ScopeBuilder(object):
     self.call_stack_builder.lines.append(line_item)
 
   def finish(self, line):
-    assert line['tag'] == self.top_line.tag, 'expected %s, got %s; thread=%s; t0=%f t1=%f' % (self.top_line.tag, line['tag'], line['thd'], self.top_line.start_time, line['t'])
+    assert line['tag'] == self.top_line.tag, (
+        'expected %s, got %s; thread=%s; t0=%f t1=%f' %
+        (self.top_line.tag, line['tag'], line['thd'], self.top_line.start_time,
+         line['t']))
     final_time_stamp = line['t']
     assert self.top_line.end_time is None
     self.top_line.end_time = final_time_stamp
+    self.top_line.important = self.top_line.important or line['imp']
     assert SELF_TIME not in self.top_line.times
     self.top_line.times[SELF_TIME] = final_time_stamp - self.top_line.start_time
     for line in self.call_stack_builder.lines[self.first_child_pos:]:
@@ -101,9 +106,14 @@ class CallStackBuilder(object):
     start_time = self.lines[0].start_time
     end_time = self.lines[0].end_time
     self.signature = self.signature.hexdigest()
+    last_important = start_time
     for line in self.lines:
       line.times[TIME_FROM_STACK_START] = line.start_time - start_time
       line.times[TIME_TO_STACK_END] = end_time - line.end_time
+      line.times[TIME_FROM_LAST_IMPORTANT] = line.start_time - last_important
+      if line.important:
+        last_important = line.end_time
+    last_important = end_time
 
   def add(self, line):
     line_type = line['type']
@@ -113,7 +123,9 @@ class CallStackBuilder(object):
       self.stk.append(ScopeBuilder(self, line))
       return False
     elif line_type == '}':
-      assert self.stk, 'expected non-empty stack for closing %s; thread=%s; t=%f' % (line['tag'], line['thd'], line['t'])
+      assert self.stk, (
+          'expected non-empty stack for closing %s; thread=%s; t=%f' %
+          (line['tag'], line['thd'], line['t']))
       self.stk.pop().finish(line)
       if not self.stk:
         self.finish()
@@ -216,9 +228,16 @@ def time_format(idx):
     return ''
   return ent
 
+BANNER = {
+    'simple': 'Count: %(count)d',
+    'html': '<h1>Count: %(count)d</h1>'
+}
+
 FORMAT = [
   ('TAG', lambda line: '..'*line.indent + tidy_tag(line.tag)),
   ('LOC', lambda line: '%s:%d' % (line.filename[line.filename.rfind('/')+1:], line.fileline)),
+  ('IMP', lambda line: '*' if line.important else ''),
+  ('FROM_IMP', time_format(TIME_FROM_LAST_IMPORTANT)),
   ('FROM_STACK_START', time_format(TIME_FROM_STACK_START)),
   ('SELF', time_format(SELF_TIME)),
   ('TO_STACK_END', time_format(TIME_TO_STACK_END)),
@@ -226,11 +245,6 @@ FORMAT = [
   ('SELF', time_format(SELF_TIME)),
   ('TO_SCOPE_END', time_format(TIME_TO_SCOPE_END)),
 ]
-
-BANNER = {
-    'simple': 'Count: %(count)d',
-    'html': '<h1>Count: %(count)d</h1>'
-}
 
 if args.fmt == 'html':
   print '<html>'
