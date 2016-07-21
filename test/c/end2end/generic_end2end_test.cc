@@ -69,6 +69,7 @@ extern "C" {
 
 /**
  * End-to-end tests for the gRPC C API.
+ * This test calls the codegen layer directly instead of exercising generated code.
  * As of early July 2016, this C API does not support creating servers, so we pull in a server implementation for C++
  * and put this test under the C++ build.
  */
