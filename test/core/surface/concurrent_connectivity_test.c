@@ -113,7 +113,7 @@ void bad_server_thread(void *vargs) {
   socklen_t addr_len = sizeof(addr);
   int port;
   grpc_tcp_server *s;
-  grpc_error *error = grpc_tcp_server_create(NULL, &s);
+  grpc_error *error = grpc_tcp_server_create(NULL, NULL, &s);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   memset(&addr, 0, sizeof(addr));
   addr.ss_family = AF_INET;

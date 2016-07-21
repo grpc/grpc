@@ -149,7 +149,8 @@ int byte_buffer_eq_string(grpc_byte_buffer *bb, const char *str) {
   grpc_byte_buffer *rbb;
   int res;
 
-  grpc_byte_buffer_reader_init(&reader, bb);
+  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, bb) &&
+             "Couldn't init byte buffer reader");
   rbb = grpc_raw_byte_buffer_from_reader(&reader);
   res = byte_buffer_eq_slice(rbb, gpr_slice_from_copied_string(str));
   grpc_byte_buffer_reader_destroy(&reader);

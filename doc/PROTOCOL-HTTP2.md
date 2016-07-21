@@ -38,7 +38,7 @@ Request-Headers are delivered as HTTP2 headers in HEADERS + CONTINUATION frames.
 * **Nanosecond** → "n"
 * **Content-Type** → "content-type" "application/grpc" [("+proto" / "+json" / {_custom_})]
 * **Content-Coding** → "identity" / "gzip" / "deflate" / "snappy" / {_custom_}
-* **Message-Encoding** → "grpc-encoding" Content-Coding
+* <a name="message-encoding"></a>**Message-Encoding** → "grpc-encoding" Content-Coding
 * **Message-Accept-Encoding** → "grpc-accept-encoding" Content-Coding \*("," Content-Coding)
 * **User-Agent** → "user-agent" {_structured user-agent string_}
 * **Message-Type** → "grpc-message-type" {_type name for message schema_}
@@ -83,7 +83,7 @@ binary values' lengths being post-Base64.
 The repeated sequence of **Length-Prefixed-Message** items is delivered in DATA frames
 
 * **Length-Prefixed-Message** → Compressed-Flag Message-Length Message
-* **Compressed-Flag** → 0 / 1   # encoded as 1 byte unsigned integer
+* <a name="compressed-flag"></a>**Compressed-Flag** → 0 / 1   # encoded as 1 byte unsigned integer
 * **Message-Length** → {_length of Message_}  # encoded as 4 byte unsigned integer
 * **Message** → \*{binary octet}
 

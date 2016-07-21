@@ -5,7 +5,7 @@ This directory contains source code for PHP implementation of gRPC layered on sh
 
 #Status
 
-Beta
+GA
 
 ## Environment
 
@@ -43,7 +43,7 @@ $ sudo mv phpunit-old.phar /usr/bin/phpunit
 Install the gRPC PHP extension
 
 ```sh
-sudo pecl install grpc-beta
+sudo pecl install grpc
 ```
 
 This will compile and install the gRPC PHP extension into the standard PHP extension directory. You should be able to run the [unit tests](#unit-tests), with the PHP extension installed.
@@ -58,7 +58,7 @@ To run tests with generated stub code from `.proto` files, you will also need th
 Clone this repository
 
 ```sh
-$ git clone https://github.com/grpc/grpc.git
+$ git clone -b $(curl -L http://grpc.io/release) https://github.com/grpc/grpc
 ```
 
 Build and install the gRPC C core library
@@ -75,7 +75,7 @@ $ sudo make install
 Install the gRPC PHP extension from PECL
 
 ```sh
-$ sudo pecl install grpc-beta
+$ sudo pecl install grpc
 ```
 
 Or, compile from source
@@ -101,7 +101,7 @@ extension=grpc.so
 You will need the source code to run tests
 
 ```sh
-$ git clone https://github.com/grpc/grpc.git
+$ git clone -b $(curl -L http://grpc.io/release) https://github.com/grpc/grpc
 $ cd grpc
 $ git pull --recurse-submodules && git submodule update --init --recursive
 ```
@@ -148,7 +148,7 @@ Alternatively, you can download `protoc` binaries from [the protocol buffers Git
 You need to install `protoc-gen-php` to generate stub class `.php` files from service definition `.proto` files.
 
 ```sh
-$ cd grpc/src/php/vendor/datto/protobuf-php # if you had run `composer install` in the previous step
+$ cd grpc/src/php/vendor/stanley-cheung/protobuf-php # if you had run `composer install` in the previous step
 
 OR
 

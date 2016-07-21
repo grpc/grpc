@@ -32,5 +32,20 @@ FROM golang:1.5
 # Using login shell removes Go from path, so we add it.
 RUN ln -s /usr/local/go/bin/go /usr/local/bin
 
+#====================
+# Python dependencies
+
+# Install dependencies
+
+RUN apt-get update && apt-get install -y \
+    python-all-dev \
+    python3-all-dev \
+    python-pip
+
+# Install Python packages from PyPI
+RUN pip install pip --upgrade
+RUN pip install virtualenv
+RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.0.0a2 six==1.10.0
+
 # Define the default command.
 CMD ["bash"]

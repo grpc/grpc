@@ -67,7 +67,8 @@ static void plugin_md_request_metadata_ready(void *request,
       gpr_log(GPR_ERROR, "Getting metadata from plugin failed with error: %s",
               error_details);
     }
-    r->cb(&exec_ctx, r->user_data, NULL, 0, GRPC_CREDENTIALS_ERROR);
+    r->cb(&exec_ctx, r->user_data, NULL, 0, GRPC_CREDENTIALS_ERROR,
+          error_details);
   } else {
     size_t i;
     grpc_credentials_md *md_array = NULL;
@@ -79,7 +80,7 @@ static void plugin_md_request_metadata_ready(void *request,
             gpr_slice_from_copied_buffer(md[i].value, md[i].value_length);
       }
     }
-    r->cb(&exec_ctx, r->user_data, md_array, num_md, GRPC_CREDENTIALS_OK);
+    r->cb(&exec_ctx, r->user_data, md_array, num_md, GRPC_CREDENTIALS_OK, NULL);
     if (md_array != NULL) {
       for (i = 0; i < num_md; i++) {
         gpr_slice_unref(md_array[i].key);
@@ -107,7 +108,7 @@ static void plugin_get_request_metadata(grpc_exec_ctx *exec_ctx,
     c->plugin.get_metadata(c->plugin.state, context,
                            plugin_md_request_metadata_ready, request);
   } else {
-    cb(exec_ctx, user_data, NULL, 0, GRPC_CREDENTIALS_OK);
+    cb(exec_ctx, user_data, NULL, 0, GRPC_CREDENTIALS_OK, NULL);
   }
 }
 

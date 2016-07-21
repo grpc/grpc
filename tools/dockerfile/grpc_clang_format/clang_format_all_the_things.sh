@@ -31,7 +31,7 @@
 set -e
 
 # directories to run against
-DIRS="src/core/lib src/core/ext src/cpp test/core test/cpp include"
+DIRS="src/core/lib src/core/ext src/cpp test/core test/cpp include src/compiler"
 
 # file matching patterns to check
 GLOB="*.h *.c *.cc"
