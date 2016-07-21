@@ -64,6 +64,9 @@ zval *grpc_php_wrap_call(grpc_call *wrapped, bool owned TSRMLS_DC);
  * call metadata */
 zval *grpc_parse_metadata_array(grpc_metadata_array *metadata_array TSRMLS_DC);
 
+#define Z_WRAPPED_GRPC_CALL_P(zv) \
+  (wrapped_grpc_call *)zend_object_store_get_object(zv TSRMLS_CC)
+
 #else
 
 /* Wrapper struct for grpc_call that can be associated with a PHP object */
