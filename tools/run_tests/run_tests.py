@@ -61,7 +61,9 @@ _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(_ROOT)
 
 
-_FORCE_ENVIRON_FOR_WRAPPERS = {}
+_FORCE_ENVIRON_FOR_WRAPPERS = {
+  'GRPC_VERBOSITY': 'DEBUG',
+}
 
 
 _POLLING_STRATEGIES = {
@@ -162,7 +164,8 @@ class CLanguage(object):
       for polling_strategy in polling_strategies:
         env={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
                  _ROOT + '/src/core/lib/tsi/test_creds/ca.pem',
-             'GRPC_POLL_STRATEGY': polling_strategy}
+             'GRPC_POLL_STRATEGY': polling_strategy,
+             'GRPC_VERBOSITY': 'DEBUG'}
         shortname_ext = '' if polling_strategy=='all' else ' GRPC_POLL_STRATEGY=%s' % polling_strategy
         if self.config.build_config in target['exclude_configs']:
           continue
