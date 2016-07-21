@@ -55,14 +55,6 @@ typedef struct http_connect_handshaker {
   grpc_closure response_read_closure;
 } http_connect_handshaker;
 
-static void http_connect_handshaker_destroy(grpc_exec_ctx* exec_ctx,
-                                            grpc_handshaker* handshaker) {
-}
-
-static void http_connect_handshaker_shutdown(grpc_exec_ctx* exec_ctx,
-                                             grpc_handshaker* handshaker) {
-}
-
 // Callback invoked for reading HTTP CONNECT response.
 static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
                          grpc_error* error) {
@@ -84,13 +76,24 @@ static void on_write_done(grpc_exec_ctx* exec_ctx, void* arg,
                      &h->response_read_closure);
 }
 
-static void http_connect_handshaker_do_handshake(grpc_exec_ctx* exec_ctx,
-                                                 grpc_handshaker* handshaker,
-                                                 grpc_endpoint* endpoint,
-                                                 grpc_channel_args* args,
-                                                 gpr_timespec deadline,
-                                                 grpc_handshaker_done_cb cb,
-                                                 void* user_data) {
+//
+// Public handshaker methods
+//
+
+static void http_connect_handshaker_destroy(grpc_exec_ctx* exec_ctx,
+                                            grpc_handshaker* handshaker) {
+  gpr_free(handshaker);
+}
+
+static void http_connect_handshaker_shutdown(grpc_exec_ctx* exec_ctx,
+                                             grpc_handshaker* handshaker) {
+}
+
+static void http_connect_handshaker_do_handshake(
+    grpc_exec_ctx* exec_ctx, grpc_handshaker* handshaker,
+    grpc_endpoint* endpoint, grpc_channel_args* args, gpr_timespec deadline,
+    grpc_tcp_server_acceptor* acceptor, grpc_handshaker_done_cb cb,
+    void* user_data) {
   http_connect_handshaker* h = (http_connect_handshaker*)handshaker;
   // Save state in the handshaker object.
   h->endpoint = endpoint;
