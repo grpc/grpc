@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><title>Performance Test Result</title></head>
+<body>
+  <h2>Performance Test Result</h2> 
+  <table style="width:50%" border="1">
+  <% sorted_test_cases = sorted(resultset.keys()) %>
+  % for test_case in sorted_test_cases:
+    <tr><td bgcolor="#00BFFF" style="width:30%"><b>${test_case}</b></td>
+    <% result = resultset[test_case] %>
+    <td>
+    % for k, v in result.iteritems():
+      ${k}: ${v}<br>
+    % endfor
+    </td>
+    </tr> 
+  % endfor
+  </table>
+
+</body>
+</html>

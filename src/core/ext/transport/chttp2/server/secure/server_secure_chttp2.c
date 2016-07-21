@@ -74,7 +74,7 @@ typedef struct server_secure_connect {
   // TODO(roth): Remove the following two fields when we eliminate
   // grpc_server_security_connector_do_handshake().
   gpr_timespec deadline;
-  grpc_channel_args* args;
+  grpc_channel_args *args;
 } server_secure_connect;
 
 static void state_ref(server_secure_state *state) { gpr_ref(&state->refcount); }
@@ -129,7 +129,7 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *statep,
 }
 
 static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
-                              grpc_channel_args* args, void *user_data) {
+                              grpc_channel_args *args, void *user_data) {
   server_secure_connect *state = user_data;
   // TODO(roth, jboeuf): Convert security connector handshaking to use new
   // handshake API, and then move the code from on_secure_handshake_done()
@@ -158,7 +158,7 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *statep, grpc_endpoint *tcp,
   grpc_handshake_manager_do_handshake(
       exec_ctx, state->handshake_mgr, tcp,
       grpc_server_get_channel_args(state->state->server), state->deadline,
-      on_handshake_done, state);
+      acceptor, on_handshake_done, state);
 }
 
 /* Server callback: start listening on our ports */

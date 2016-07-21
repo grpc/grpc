@@ -63,9 +63,10 @@ void grpc_handshaker_do_handshake(grpc_exec_ctx* exec_ctx,
                                   grpc_endpoint* endpoint,
                                   grpc_channel_args* args,
                                   gpr_timespec deadline,
+                                  grpc_tcp_server_acceptor* acceptor,
                                   grpc_handshaker_done_cb cb, void* user_data) {
   handshaker->vtable->do_handshake(exec_ctx, handshaker, endpoint, args,
-                                   deadline, cb, user_data);
+                                   deadline, acceptor, cb, user_data);
 }
 
 //
@@ -78,6 +79,8 @@ struct grpc_handshaker_state {
   size_t index;
   // The deadline for all handshakers.
   gpr_timespec deadline;
+  // The acceptor to call the handshakers with.
+  grpc_tcp_server_acceptor* acceptor;
   // The final callback and user_data to invoke after the last handshaker.
   grpc_handshaker_done_cb final_cb;
   void* final_user_data;
@@ -97,10 +100,22 @@ grpc_handshake_manager* grpc_handshake_manager_create() {
   return mgr;
 }
 
+static bool is_power_of_2(size_t n) { return (n & (n - 1)) == 0; }
+
 void grpc_handshake_manager_add(grpc_handshaker* handshaker,
                                 grpc_handshake_manager* mgr) {
-  mgr->handshakers = gpr_realloc(mgr->handshakers,
-                                 (mgr->count + 1) * sizeof(grpc_handshaker*));
+  // To avoid allocating memory for each handshaker we add, we double
+  // the number of elements every time we need more.
+  size_t realloc_count = 0;
+  if (mgr->count == 0) {
+    realloc_count = 2;
+  } else if (mgr->count >= 2 && is_power_of_2(mgr->count)) {
+    realloc_count = mgr->count * 2;
+  }
+  if (realloc_count > 0) {
+    mgr->handshakers =
+        gpr_realloc(mgr->handshakers, realloc_count * sizeof(grpc_handshaker*));
+  }
   mgr->handshakers[mgr->count++] = handshaker;
 }
 
@@ -109,6 +124,7 @@ void grpc_handshake_manager_destroy(grpc_exec_ctx* exec_ctx,
   for (size_t i = 0; i < mgr->count; ++i) {
     grpc_handshaker_destroy(exec_ctx, mgr->handshakers[i]);
   }
+  gpr_free(mgr->handshakers);
   gpr_free(mgr);
 }
 
@@ -129,8 +145,7 @@ void grpc_handshake_manager_shutdown(grpc_exec_ctx* exec_ctx,
 // handshakers together.
 static void call_next_handshaker(grpc_exec_ctx* exec_ctx,
                                  grpc_endpoint* endpoint,
-                                 grpc_channel_args* args,
-                                 void* user_data) {
+                                 grpc_channel_args* args, void* user_data) {
   grpc_handshake_manager* mgr = user_data;
   GPR_ASSERT(mgr->state != NULL);
   GPR_ASSERT(mgr->state->index < mgr->count);
@@ -143,8 +158,8 @@ static void call_next_handshaker(grpc_exec_ctx* exec_ctx,
   }
   // Invoke handshaker.
   grpc_handshaker_do_handshake(exec_ctx, mgr->handshakers[mgr->state->index],
-                               endpoint, args, mgr->state->deadline, cb,
-                               user_data);
+                               endpoint, args, mgr->state->deadline,
+                               mgr->state->acceptor, cb, user_data);
   ++mgr->state->index;
   // If this is the last handshaker, clean up state.
   if (mgr->state->index == mgr->count) {
@@ -153,13 +168,11 @@ static void call_next_handshaker(grpc_exec_ctx* exec_ctx,
   }
 }
 
-void grpc_handshake_manager_do_handshake(grpc_exec_ctx* exec_ctx,
-                                         grpc_handshake_manager* mgr,
-                                         grpc_endpoint* endpoint,
-                                         const grpc_channel_args* args,
-                                         gpr_timespec deadline,
-                                         grpc_handshaker_done_cb cb,
-                                         void* user_data) {
+void grpc_handshake_manager_do_handshake(
+    grpc_exec_ctx* exec_ctx, grpc_handshake_manager* mgr,
+    grpc_endpoint* endpoint, const grpc_channel_args* args,
+    gpr_timespec deadline, grpc_tcp_server_acceptor* acceptor,
+    grpc_handshaker_done_cb cb, void* user_data) {
   grpc_channel_args* args_copy = grpc_channel_args_copy(args);
   if (mgr->count == 0) {
     // No handshakers registered, so we just immediately call the done
@@ -170,6 +183,7 @@ void grpc_handshake_manager_do_handshake(grpc_exec_ctx* exec_ctx,
     mgr->state = gpr_malloc(sizeof(struct grpc_handshaker_state));
     memset(mgr->state, 0, sizeof(*mgr->state));
     mgr->state->deadline = deadline;
+    mgr->state->acceptor = acceptor;
     mgr->state->final_cb = cb;
     mgr->state->final_user_data = user_data;
     call_next_handshaker(exec_ctx, endpoint, args_copy, mgr);

@@ -198,5 +198,15 @@
         "mode": "NULLABLE"
       }
     ]
+  },
+  {
+    "name": "clientSuccess",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "serverSuccess",
+    "type": "STRING",
+    "mode": "NULLABLE"
   }
 ]

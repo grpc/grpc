@@ -55,7 +55,7 @@ typedef struct server_connect_state {
 } server_connect_state;
 
 static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
-                              grpc_channel_args* args, void *user_data) {
+                              grpc_channel_args *args, void *user_data) {
   server_connect_state *state = user_data;
   /*
    * Beware that the call to grpc_create_chttp2_transport() has to happen before
@@ -64,8 +64,8 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
    * (as in server_secure_chttp2.c) needs to add synchronization to avoid this
    * case.
    */
-  grpc_transport *transport = grpc_create_chttp2_transport(
-      exec_ctx, args, endpoint, 0);
+  grpc_transport *transport =
+      grpc_create_chttp2_transport(exec_ctx, args, endpoint, 0);
   grpc_server_setup_transport(exec_ctx, state->server, transport,
                               state->accepting_pollset,
                               grpc_server_get_channel_args(state->server));
@@ -90,7 +90,8 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *server, grpc_endpoint *tcp,
       gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_seconds(120, GPR_TIMESPAN));
   grpc_handshake_manager_do_handshake(exec_ctx, state->handshake_mgr, tcp,
                                       grpc_server_get_channel_args(server),
-                                      deadline, on_handshake_done, state);
+                                      deadline, acceptor, on_handshake_done,
+                                      state);
 }
 
 /* Server callback: start listening on our ports */
