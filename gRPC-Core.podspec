@@ -195,6 +195,7 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'BoringSSL', '~> 4.0'
 
+    # To save you from scrolling, this is the last part of the podspec.
     ss.source_files = 'src/core/lib/profiling/timers.h',
                       'src/core/lib/support/backoff.h',
                       'src/core/lib/support/block_annotate.h',
@@ -760,7 +761,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/census/mlog.h',
                               'src/core/ext/census/rpc_metric_id.h'
   end
-  
+
   s.subspec 'Cronet-Interface' do |ss|
     ss.header_mappings_dir = 'include/grpc'
     ss.source_files = 'include/grpc/grpc_cronet.h'
