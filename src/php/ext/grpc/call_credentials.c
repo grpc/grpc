@@ -53,6 +53,8 @@
 
 zend_class_entry *grpc_ce_call_credentials;
 
+#if PHP_MAJOR_VERSION < 7
+
 /* Frees and destroys an instance of wrapped_grpc_call_credentials */
 void free_wrapped_grpc_call_credentials(void *object TSRMLS_DC) {
   wrapped_grpc_call_credentials *creds =
@@ -60,6 +62,7 @@ void free_wrapped_grpc_call_credentials(void *object TSRMLS_DC) {
   if (creds->wrapped != NULL) {
     grpc_call_credentials_release(creds->wrapped);
   }
+  zend_object_std_dtor(&creds->std TSRMLS_CC);
   efree(creds);
 }
 
@@ -94,6 +97,43 @@ zval *grpc_php_wrap_call_credentials(grpc_call_credentials *wrapped TSRMLS_DC) {
   return credentials_object;
 }
 
+#else
+
+static zend_object_handlers call_credentials_ce_handlers;
+
+/* Frees and destroys an instance of wrapped_grpc_call_credentials */
+static void free_wrapped_grpc_call_credentials(zend_object *object) {
+  wrapped_grpc_call_credentials *creds =
+    wrapped_grpc_call_creds_from_obj(object);
+  if (creds->wrapped != NULL) {
+    grpc_call_credentials_release(creds->wrapped);
+  }
+  zend_object_std_dtor(&creds->std);
+}
+
+/* Initializes an instance of wrapped_grpc_call_credentials to be
+ * associated with an object of a class specified by class_type */
+zend_object *create_wrapped_grpc_call_credentials(zend_class_entry
+                                                  *class_type) {
+  wrapped_grpc_call_credentials *intern;
+  intern = ecalloc(1, sizeof(wrapped_grpc_call_credentials) +
+                   zend_object_properties_size(class_type));
+  zend_object_std_init(&intern->std, class_type);
+  object_properties_init(&intern->std, class_type);
+  intern->std.handlers = &call_credentials_ce_handlers;
+  return &intern->std;
+}
+
+void grpc_php_wrap_call_credentials(grpc_call_credentials *wrapped,
+                                    zval *credentials_object) {
+  object_init_ex(credentials_object, grpc_ce_call_credentials);
+  wrapped_grpc_call_credentials *credentials =
+    Z_WRAPPED_GRPC_CALL_CREDS_P(credentials_object);
+  credentials->wrapped = wrapped;
+}
+
+#endif
+
 /**
  * Create composite credentials from two existing credentials.
  * @param CallCredentials cred1 The first credential
@@ -113,6 +153,7 @@ PHP_METHOD(CallCredentials, createComposite) {
                          1 TSRMLS_CC);
     return;
   }
+#if PHP_MAJOR_VERSION < 7
   wrapped_grpc_call_credentials *cred1 =
       (wrapped_grpc_call_credentials *)zend_object_store_get_object(
           cred1_obj TSRMLS_CC);
@@ -124,6 +165,17 @@ PHP_METHOD(CallCredentials, createComposite) {
                                              NULL);
   zval *creds_object = grpc_php_wrap_call_credentials(creds TSRMLS_CC);
   RETURN_DESTROY_ZVAL(creds_object);
+#else
+  wrapped_grpc_call_credentials *cred1 =
+    Z_WRAPPED_GRPC_CALL_CREDS_P(cred1_obj);
+  wrapped_grpc_call_credentials *cred2 =
+    Z_WRAPPED_GRPC_CALL_CREDS_P(cred2_obj);
+  grpc_call_credentials *creds =
+    grpc_composite_call_credentials_create(cred1->wrapped,
+                                           cred2->wrapped, NULL);
+  grpc_php_wrap_call_credentials(creds, return_value);
+  RETURN_DESTROY_ZVAL(return_value);
+#endif
 }
 
 /**
@@ -141,13 +193,10 @@ PHP_METHOD(CallCredentials, createFromPlugin) {
   memset(fci_cache, 0, sizeof(zend_fcall_info_cache));
 
   /* "f" == 1 function */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "f", fci,
-                            fci_cache,
-                            fci->params,
-                            fci->param_count) == FAILURE) {
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "f*", fci, fci_cache,
+                            fci->params, fci->param_count) == FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "createFromPlugin expects 1 callback",
-                         1 TSRMLS_CC);
+                         "createFromPlugin expects 1 callback", 1 TSRMLS_CC);
     return;
   }
 
@@ -165,10 +214,15 @@ PHP_METHOD(CallCredentials, createFromPlugin) {
   plugin.state = (void *)state;
   plugin.type = "";
 
-  grpc_call_credentials *creds = grpc_metadata_credentials_create_from_plugin(
-      plugin, NULL);
+  grpc_call_credentials *creds =
+    grpc_metadata_credentials_create_from_plugin(plugin, NULL);
+#if PHP_MAJOR_VERSION < 7
   zval *creds_object = grpc_php_wrap_call_credentials(creds TSRMLS_CC);
   RETURN_DESTROY_ZVAL(creds_object);
+#else
+  grpc_php_wrap_call_credentials(creds, return_value);
+  RETURN_DESTROY_ZVAL(return_value);
+#endif
 }
 
 /* Callback function for plugin creds API */
@@ -181,6 +235,7 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
 
   /* prepare to call the user callback function with info from the
    * grpc_auth_metadata_context */
+#if PHP_MAJOR_VERSION < 7
   zval **params[1];
   zval *arg;
   zval *retval;
@@ -192,21 +247,41 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
   state->fci->param_count = 1;
   state->fci->params = params;
   state->fci->retval_ptr_ptr = &retval;
+#else
+  zval arg;
+  zval retval;
+  object_init(&arg);
+  add_property_string(&arg, "service_url", context.service_url);
+  add_property_string(&arg, "method_name", context.method_name);
+  state->fci->param_count = 1;
+  state->fci->params = &arg;
+  state->fci->retval = &retval;
+#endif
 
   /* call the user callback function */
   zend_call_function(state->fci, state->fci_cache TSRMLS_CC);
 
+#if PHP_MAJOR_VERSION < 7
   if (Z_TYPE_P(retval) != IS_ARRAY) {
+#else
+  if (Z_TYPE_P(&retval) != IS_ARRAY) {
+#endif
     zend_throw_exception(spl_ce_InvalidArgumentException,
                          "plugin callback must return metadata array",
                          1 TSRMLS_CC);
+    return;
   }
 
   grpc_metadata_array metadata;
+#if PHP_MAJOR_VERSION < 7
   if (!create_metadata_array(retval, &metadata)) {
+#else
+  if (!create_metadata_array(&retval, &metadata)) {
+#endif
     zend_throw_exception(spl_ce_InvalidArgumentException,
                          "invalid metadata", 1 TSRMLS_CC);
     grpc_metadata_array_destroy(&metadata);
+    return;
   }
 
   /* TODO: handle error */
@@ -229,11 +304,21 @@ static zend_function_entry call_credentials_methods[] = {
          ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
   PHP_ME(CallCredentials, createFromPlugin, NULL,
          ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-  PHP_FE_END};
+  PHP_FE_END
+};
 
 void grpc_init_call_credentials(TSRMLS_D) {
   zend_class_entry ce;
   INIT_CLASS_ENTRY(ce, "Grpc\\CallCredentials", call_credentials_methods);
   ce.create_object = create_wrapped_grpc_call_credentials;
   grpc_ce_call_credentials = zend_register_internal_class(&ce TSRMLS_CC);
+#if PHP_MAJOR_VERSION >= 7
+  memcpy(&call_credentials_ce_handlers,
+         zend_get_std_object_handlers(),
+         sizeof(zend_object_handlers));
+  call_credentials_ce_handlers.offset =
+    XtOffsetOf(wrapped_grpc_call_credentials, std);
+  call_credentials_ce_handlers.free_obj =
+    free_wrapped_grpc_call_credentials;
+#endif
 }
