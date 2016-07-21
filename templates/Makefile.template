@@ -47,6 +47,12 @@
         return filename
       return '$(GENDIR)/' + m.group(1) + '.pb.cc $(GENDIR)/' + m.group(1) + '.grpc.pb.cc'
 
+    def proto_to_nanoc(filename):
+      m = proto_re.match(filename)
+      if not m:
+        return filename
+      return '$(GENDIR)/' + m.group(1) + '.pbc.c $(GENDIR)/' + m.group(1) + '.grpc.pbc.c'
+
     sources_that_need_openssl = set()
     sources_that_don_t_need_openssl = set()
 
@@ -141,6 +147,8 @@
 
   prefix ?= /usr/local
 
+  NANOPB_DIR := $(abspath third_party/nanopb)
+  NANOPB_CORE = $(NANOPB_DIR)/pb_encode.c $(NANOPB_DIR)/pb_decode.c $(NANOPB_DIR)/pb_common.c
   PROTOC ?= protoc
   DTRACE ?= dtrace
   CONFIG ?= opt
@@ -1153,6 +1161,11 @@
   	$(Q) mkdir -p `dirname $@`
   	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
+  $(GENDIR)/${p}.pbc.c: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pbc.c' % q for q in proto_deps.get(p, []))}
+  	$(E) "[PROTOC]  Generating nanopb C file from $<"
+  	$(Q) mkdir -p `dirname $@`
+  	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out=--extension=.pbc:$(GENDIR) $<
+
   $(GENDIR)/${p}.grpc.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc $(GENDIR)/%s.grpc.pb.cc' % (q,q) for q in proto_deps.get(p, []))}
   	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
   	$(Q) mkdir -p `dirname $@`
@@ -1354,12 +1367,20 @@
   % endfor
 
   <%def name="makelib(lib)">
+  # Using nanopb for C files right now
   LIB${lib.name.upper()}_SRC = \\
 
+  % if lib.language == "c++":
   % for src in lib.src:
       ${proto_to_cc(src)} \\
 
   % endfor
+  % else:
+  % for src in lib.src:
+      ${proto_to_nanoc(src)} \\
+
+  % endfor
+  % endif
 
   % if "public_headers" in lib:
   % if lib.language == "c++":
@@ -1570,10 +1591,17 @@
   % if not has_no_sources:
   ${tgt.name.upper()}_SRC = \\
 
+  % if tgt.language == "c++":
   % for src in tgt.src:
       ${proto_to_cc(src)} \\
 
   % endfor
+  % else:
+   % for src in tgt.src:
+      ${proto_to_nanoc(src)} \\
+
+  % endfor
+  % endif
 
   ${tgt.name.upper()}_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(${tgt.name.upper()}_SRC))))
   % endif
