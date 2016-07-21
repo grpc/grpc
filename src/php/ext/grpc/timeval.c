@@ -127,11 +127,10 @@ PHP_METHOD(Timeval, __construct) {
 #if PHP_MAJOR_VERSION < 7
   wrapped_grpc_timeval *timeval =
       (wrapped_grpc_timeval *)zend_object_store_get_object(getThis() TSRMLS_CC);
-  long microseconds;
 #else
   wrapped_grpc_timeval *timeval = Z_WRAPPED_GRPC_TIMEVAL_P(getThis());
-  zend_long microseconds;
 #endif
+  php_grpc_long microseconds;
 
   /* "l" == 1 long */
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &microseconds) ==
