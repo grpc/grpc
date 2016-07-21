@@ -37,7 +37,7 @@
     filegroup `grpc++_reflection_proto`, and GRPC_NO_GENERATED_CODE should not
     be defined.
   - If the server reflection library needs to generate `reflection.grpc.pb.h`
-    from `reflection.proto` at the time of making, the generated header
+    from `reflection.proto` at compile time, the generated header
     `grpc++/ext/reflection.grpc.pb.h` should not be installed. In this case,
     target `grpc++_reflection` should depend on `grpc++_reflection_codegen`, and
     GRPC_NO_GENERATED_CODE should be defined.
