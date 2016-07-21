@@ -1774,6 +1774,22 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: grpc_c_end2end_client_lib
+  build: private
+  language: c
+  headers:
+  - test/c/end2end/end2end_test_client.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - test/c/end2end/end2end_test_client.c
+  deps:
+  - grpc_c
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses:
+  - nanopb
 - name: grpc_channel_args_test
   build: test
   language: c
@@ -2721,6 +2737,21 @@ targets:
   deps:
   - grpc++
   - grpc
+  - gpr
+- name: grpc_c_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/c/end2end/end2end_test.cc
+  deps:
+  - grpc_c_end2end_client_lib
+  - grpc_c
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
   - gpr
 - name: grpc_c_generic_end2end_test
   gtest: true
