@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc package &mdash; grpcio 0.15.0 documentation</title>
+  <title>grpc package &mdash; grpcio 1.0.0rc1 documentation</title>
   
 
   
@@ -30,7 +30,7 @@
   
 
   
-    <link rel="top" title="grpcio 0.15.0 documentation" href="index.html"/>
+    <link rel="top" title="grpcio 1.0.0rc1 documentation" href="index.html"/>
         <link rel="next" title="grpc.beta package" href="grpc.beta.html"/>
         <link rel="prev" title="Welcome to grpcio’s documentation!" href="index.html"/> 
 
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                0.15.0
+                1.0.0rc1
               </div>
             
           
@@ -92,6 +92,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#module-grpc">Module contents</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="#glossary">Glossary</a></li>
 </ul>
 
             
@@ -163,27 +164,12 @@
 <li class="toctree-l4"><a class="reference internal" href="grpc.framework.common.html#module-grpc.framework.common">Module contents</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="grpc.framework.core.html">grpc.framework.core package</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="grpc.framework.core.html#submodules">Submodules</a></li>
-<li class="toctree-l4"><a class="reference internal" href="grpc.framework.core.html#module-grpc.framework.core.implementations">grpc.framework.core.implementations module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="grpc.framework.core.html#module-grpc.framework.core">Module contents</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="grpc.framework.crust.html">grpc.framework.crust package</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="grpc.framework.crust.html#submodules">Submodules</a></li>
-<li class="toctree-l4"><a class="reference internal" href="grpc.framework.crust.html#module-grpc.framework.crust.implementations">grpc.framework.crust.implementations module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="grpc.framework.crust.html#module-grpc.framework.crust">Module contents</a></li>
-</ul>
-</li>
 <li class="toctree-l3"><a class="reference internal" href="grpc.framework.foundation.html">grpc.framework.foundation package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="grpc.framework.foundation.html#submodules">Submodules</a></li>
 <li class="toctree-l4"><a class="reference internal" href="grpc.framework.foundation.html#module-grpc.framework.foundation.abandonment">grpc.framework.foundation.abandonment module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="grpc.framework.foundation.html#module-grpc.framework.foundation.activated">grpc.framework.foundation.activated module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="grpc.framework.foundation.html#module-grpc.framework.foundation.callable_util">grpc.framework.foundation.callable_util module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="grpc.framework.foundation.html#module-grpc.framework.foundation.future">grpc.framework.foundation.future module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="grpc.framework.foundation.html#module-grpc.framework.foundation.later">grpc.framework.foundation.later module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="grpc.framework.foundation.html#module-grpc.framework.foundation.logging_pool">grpc.framework.foundation.logging_pool module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="grpc.framework.foundation.html#module-grpc.framework.foundation.relay">grpc.framework.foundation.relay module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="grpc.framework.foundation.html#module-grpc.framework.foundation.stream">grpc.framework.foundation.stream module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="grpc.framework.foundation.html#module-grpc.framework.foundation.stream_util">grpc.framework.foundation.stream_util module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="grpc.framework.foundation.html#module-grpc.framework.foundation">Module contents</a></li>
@@ -203,13 +189,6 @@
 <li class="toctree-l6"><a class="reference internal" href="grpc.framework.interfaces.face.html#module-grpc.framework.interfaces.face.face">grpc.framework.interfaces.face.face module</a></li>
 <li class="toctree-l6"><a class="reference internal" href="grpc.framework.interfaces.face.html#module-grpc.framework.interfaces.face.utilities">grpc.framework.interfaces.face.utilities module</a></li>
 <li class="toctree-l6"><a class="reference internal" href="grpc.framework.interfaces.face.html#module-grpc.framework.interfaces.face">Module contents</a></li>
-</ul>
-</li>
-<li class="toctree-l5"><a class="reference internal" href="grpc.framework.interfaces.links.html">grpc.framework.interfaces.links package</a><ul>
-<li class="toctree-l6"><a class="reference internal" href="grpc.framework.interfaces.links.html#submodules">Submodules</a></li>
-<li class="toctree-l6"><a class="reference internal" href="grpc.framework.interfaces.links.html#module-grpc.framework.interfaces.links.links">grpc.framework.interfaces.links.links module</a></li>
-<li class="toctree-l6"><a class="reference internal" href="grpc.framework.interfaces.links.html#module-grpc.framework.interfaces.links.utilities">grpc.framework.interfaces.links.utilities module</a></li>
-<li class="toctree-l6"><a class="reference internal" href="grpc.framework.interfaces.links.html#module-grpc.framework.interfaces.links">Module contents</a></li>
 </ul>
 </li>
 </ul>
@@ -245,7 +224,7 @@
 <dl class="class">
 <dt id="grpc.Future">
 <em class="property">class </em><code class="descclassname">grpc.</code><code class="descname">Future</code><a class="reference internal" href="_modules/grpc.html#Future"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Future" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>A representation of a computation in another control flow.</p>
 <p>Computations represented by a Future may be yet to be begun, may be ongoing,
 or may have already completed.</p>
@@ -617,7 +596,7 @@ recover.</p>
 <dl class="class">
 <dt id="grpc.RpcContext">
 <em class="property">class </em><code class="descclassname">grpc.</code><code class="descname">RpcContext</code><a class="reference internal" href="_modules/grpc.html#RpcContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.RpcContext" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Provides RPC-related information and action.</p>
 <dl class="method">
 <dt id="grpc.RpcContext.add_callback">
@@ -674,7 +653,7 @@ out, or None if no deadline was specified for the RPC.</td>
 <dl class="class">
 <dt id="grpc.Call">
 <em class="property">class </em><code class="descclassname">grpc.</code><code class="descname">Call</code><a class="reference internal" href="_modules/grpc.html#Call"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Call" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
+<dd><p>Bases: <a class="reference internal" href="#grpc.RpcContext" title="grpc.RpcContext"><code class="xref py py-class docutils literal"><span class="pre">grpc.RpcContext</span></code></a></p>
 <p>Invocation-side utility object for an RPC.</p>
 <dl class="method">
 <dt id="grpc.Call.code">
@@ -700,7 +679,7 @@ out, or None if no deadline was specified for the RPC.</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The bytes of the details of the RPC.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The details string of the RPC.</td>
 </tr>
 </tbody>
 </table>
@@ -715,7 +694,7 @@ out, or None if no deadline was specified for the RPC.</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The initial metadata as a sequence of pairs of bytes.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The initial <a class="reference internal" href="#term-metadata"><span class="xref std std-term">metadata</span></a>.</td>
 </tr>
 </tbody>
 </table>
@@ -730,7 +709,7 @@ out, or None if no deadline was specified for the RPC.</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The trailing metadata as a sequence of pairs of bytes.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The trailing <a class="reference internal" href="#term-metadata"><span class="xref std std-term">metadata</span></a>.</td>
 </tr>
 </tbody>
 </table>
@@ -761,7 +740,7 @@ instances and its instances exist to be passed to other functions.</p>
 <dl class="class">
 <dt id="grpc.AuthMetadataContext">
 <em class="property">class </em><code class="descclassname">grpc.</code><code class="descname">AuthMetadataContext</code><a class="reference internal" href="_modules/grpc.html#AuthMetadataContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.AuthMetadataContext" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Provides information to call credentials metadata plugins.</p>
 <dl class="attribute">
 <dt id="grpc.AuthMetadataContext.service_url">
@@ -780,15 +759,54 @@ instances and its instances exist to be passed to other functions.</p>
 <dl class="class">
 <dt id="grpc.AuthMetadataPluginCallback">
 <em class="property">class </em><code class="descclassname">grpc.</code><code class="descname">AuthMetadataPluginCallback</code><a class="reference internal" href="_modules/grpc.html#AuthMetadataPluginCallback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.AuthMetadataPluginCallback" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Callback object received by a metadata plugin.</p>
+<dl class="method">
+<dt id="grpc.AuthMetadataPluginCallback.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>metadata</em>, <em>error</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#AuthMetadataPluginCallback.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.AuthMetadataPluginCallback.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inform the gRPC runtime of the metadata to construct a CallCredentials.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>metadata</strong> &#8211; The <a class="reference internal" href="#term-metadata"><span class="xref std std-term">metadata</span></a> used to construct the CallCredentials.</li>
+<li><strong>error</strong> &#8211; An Exception to indicate error or None to indicate success.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
 <dt id="grpc.AuthMetadataPlugin">
 <em class="property">class </em><code class="descclassname">grpc.</code><code class="descname">AuthMetadataPlugin</code><a class="reference internal" href="_modules/grpc.html#AuthMetadataPlugin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.AuthMetadataPlugin" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>A specification for custom authentication.</p>
+<dl class="method">
+<dt id="grpc.AuthMetadataPlugin.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>context</em>, <em>callback</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#AuthMetadataPlugin.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.AuthMetadataPlugin.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implements authentication by passing metadata to a callback.</p>
+<p>Implementations of this method must not block.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>context</strong> &#8211; An AuthMetadataContext providing information on the RPC that the
+plugin is being called to authenticate.</li>
+<li><strong>callback</strong> &#8211; An AuthMetadataPluginCallback to be invoked either synchronously
+or asynchronously.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -803,8 +821,37 @@ instances and its instances exist to be passed to other functions.</p>
 <dl class="class">
 <dt id="grpc.UnaryUnaryMultiCallable">
 <em class="property">class </em><code class="descclassname">grpc.</code><code class="descname">UnaryUnaryMultiCallable</code><a class="reference internal" href="_modules/grpc.html#UnaryUnaryMultiCallable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryUnaryMultiCallable" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Affords invoking a unary-unary RPC.</p>
+<dl class="method">
+<dt id="grpc.UnaryUnaryMultiCallable.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>request</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryUnaryMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryUnaryMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Synchronously invokes the underlying RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request</strong> &#8211; The request value for the RPC.</li>
+<li><strong>timeout</strong> &#8211; An optional duration of time in seconds to allow for the RPC.</li>
+<li><strong>metadata</strong> &#8211; Optional <a class="reference internal" href="#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
+service-side of the RPC.</li>
+<li><strong>credentials</strong> &#8211; An optional CallCredentials for the RPC.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The response value for the RPC.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#grpc.RpcError" title="grpc.RpcError"><code class="xref py py-exc docutils literal"><span class="pre">RpcError</span></code></a> &#8211; Indicating that the RPC terminated with non-OK status. The
+raised RpcError will also be a Call for the RPC affording the RPC&#8217;s
+metadata, status code, and details.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 <dl class="method">
 <dt id="grpc.UnaryUnaryMultiCallable.future">
 <code class="descname">future</code><span class="sig-paren">(</span><em>request</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryUnaryMultiCallable.future"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryUnaryMultiCallable.future" title="Permalink to this definition">¶</a></dt>
@@ -816,7 +863,7 @@ instances and its instances exist to be passed to other functions.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>request</strong> &#8211; The request value for the RPC.</li>
 <li><strong>timeout</strong> &#8211; An optional duration of time in seconds to allow for the RPC.</li>
-<li><strong>metadata</strong> &#8211; An optional sequence of pairs of bytes to be transmitted to the
+<li><strong>metadata</strong> &#8211; Optional <a class="reference internal" href="#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</li>
 <li><strong>credentials</strong> &#8211; An optional CallCredentials for the RPC.</li>
 </ul>
@@ -847,7 +894,7 @@ returned Future&#8217;s exception value will be an RpcError.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>request</strong> &#8211; The request value for the RPC.</li>
 <li><strong>timeout</strong> &#8211; An optional durating of time in seconds to allow for the RPC.</li>
-<li><strong>metadata</strong> &#8211; An optional sequence of pairs of bytes to be transmitted to the
+<li><strong>metadata</strong> &#8211; Optional <a class="reference internal" href="#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</li>
 <li><strong>credentials</strong> &#8211; An optional CallCredentials for the RPC.</li>
 </ul>
@@ -870,15 +917,79 @@ metadata, status code, and details.</p>
 <dl class="class">
 <dt id="grpc.UnaryStreamMultiCallable">
 <em class="property">class </em><code class="descclassname">grpc.</code><code class="descname">UnaryStreamMultiCallable</code><a class="reference internal" href="_modules/grpc.html#UnaryStreamMultiCallable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryStreamMultiCallable" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Affords invoking a unary-stream RPC.</p>
+<dl class="method">
+<dt id="grpc.UnaryStreamMultiCallable.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>request</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryStreamMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryStreamMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Invokes the underlying RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request</strong> &#8211; The request value for the RPC.</li>
+<li><strong>timeout</strong> &#8211; An optional duration of time in seconds to allow for the RPC.</li>
+<li><strong>metadata</strong> &#8211; An optional <a class="reference internal" href="#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
+service-side of the RPC.</li>
+<li><strong>credentials</strong> &#8211; An optional CallCredentials for the RPC.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>An object that is both a Call for the RPC and an iterator of response</dt>
+<dd><p class="first last">values. Drawing response values from the returned iterator may raise
+RpcError indicating termination of the RPC with non-OK status.</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
 <dt id="grpc.StreamUnaryMultiCallable">
 <em class="property">class </em><code class="descclassname">grpc.</code><code class="descname">StreamUnaryMultiCallable</code><a class="reference internal" href="_modules/grpc.html#StreamUnaryMultiCallable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamUnaryMultiCallable" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Affords invoking a stream-unary RPC in any call style.</p>
+<dl class="method">
+<dt id="grpc.StreamUnaryMultiCallable.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamUnaryMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamUnaryMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Synchronously invokes the underlying RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request_iterator</strong> &#8211; An iterator that yields request values for the RPC.</li>
+<li><strong>timeout</strong> &#8211; An optional duration of time in seconds to allow for the RPC.</li>
+<li><strong>metadata</strong> &#8211; Optional <a class="reference internal" href="#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
+service-side of the RPC.</li>
+<li><strong>credentials</strong> &#8211; An optional CallCredentials for the RPC.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>The response value for the RPC, and a Call for the RPC if with_call was</dt>
+<dd><p class="first last">set to True at invocation.</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#grpc.RpcError" title="grpc.RpcError"><code class="xref py py-exc docutils literal"><span class="pre">RpcError</span></code></a> &#8211; Indicating that the RPC terminated with non-OK status. The
+raised RpcError will also be a Call for the RPC affording the RPC&#8217;s
+metadata, status code, and details.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 <dl class="method">
 <dt id="grpc.StreamUnaryMultiCallable.future">
 <code class="descname">future</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamUnaryMultiCallable.future"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamUnaryMultiCallable.future" title="Permalink to this definition">¶</a></dt>
@@ -890,7 +1001,7 @@ metadata, status code, and details.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>request_iterator</strong> &#8211; An iterator that yields request values for the RPC.</li>
 <li><strong>timeout</strong> &#8211; An optional duration of time in seconds to allow for the RPC.</li>
-<li><strong>metadata</strong> &#8211; An optional sequence of pairs of bytes to be transmitted to the
+<li><strong>metadata</strong> &#8211; Optional <a class="reference internal" href="#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</li>
 <li><strong>credentials</strong> &#8211; An optional CallCredentials for the RPC.</li>
 </ul>
@@ -921,7 +1032,7 @@ returned Future&#8217;s exception value will be an RpcError.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>request_iterator</strong> &#8211; An iterator that yields request values for the RPC.</li>
 <li><strong>timeout</strong> &#8211; An optional duration of time in seconds to allow for the RPC.</li>
-<li><strong>metadata</strong> &#8211; An optional sequence of pairs of bytes to be transmitted to the
+<li><strong>metadata</strong> &#8211; Optional <a class="reference internal" href="#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</li>
 <li><strong>credentials</strong> &#8211; An optional CallCredentials for the RPC.</li>
 </ul>
@@ -944,14 +1055,44 @@ metadata, status code, and details.</p>
 <dl class="class">
 <dt id="grpc.StreamStreamMultiCallable">
 <em class="property">class </em><code class="descclassname">grpc.</code><code class="descname">StreamStreamMultiCallable</code><a class="reference internal" href="_modules/grpc.html#StreamStreamMultiCallable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamStreamMultiCallable" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Affords invoking a stream-stream RPC in any call style.</p>
+<dl class="method">
+<dt id="grpc.StreamStreamMultiCallable.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamStreamMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamStreamMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Invokes the underlying RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>request_iterator</strong> &#8211; An iterator that yields request values for the RPC.</li>
+<li><strong>timeout</strong> &#8211; An optional duration of time in seconds to allow for the RPC.</li>
+<li><strong>metadata</strong> &#8211; Optional <a class="reference internal" href="#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
+service-side of the RPC.</li>
+<li><strong>credentials</strong> &#8211; An optional CallCredentials for the RPC.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>An object that is both a Call for the RPC and an iterator of response</dt>
+<dd><p class="first last">values. Drawing response values from the returned iterator may raise
+RpcError indicating termination of the RPC with non-OK status.</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
 <dt id="grpc.Channel">
 <em class="property">class </em><code class="descclassname">grpc.</code><code class="descname">Channel</code><a class="reference internal" href="_modules/grpc.html#Channel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Channel" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Affords RPC invocation via generic methods.</p>
 <dl class="method">
 <dt id="grpc.Channel.stream_stream">
@@ -1061,7 +1202,7 @@ been passed to its &#8220;subscribe&#8221; method.</td>
 <dl class="class">
 <dt id="grpc.ServicerContext">
 <em class="property">class </em><code class="descclassname">grpc.</code><code class="descname">ServicerContext</code><a class="reference internal" href="_modules/grpc.html#ServicerContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
+<dd><p>Bases: <a class="reference internal" href="#grpc.RpcContext" title="grpc.RpcContext"><code class="xref py py-class docutils literal"><span class="pre">grpc.RpcContext</span></code></a></p>
 <p>A context object passed to method implementations.</p>
 <dl class="method">
 <dt id="grpc.ServicerContext.invocation_metadata">
@@ -1071,7 +1212,7 @@ been passed to its &#8220;subscribe&#8221; method.</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The invocation metadata object as a sequence of pairs of bytes.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The invocation <a class="reference internal" href="#term-metadata"><span class="xref std std-term">metadata</span></a>.</td>
 </tr>
 </tbody>
 </table>
@@ -1101,8 +1242,7 @@ service-side initial metadata to transmit.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>initial_metadata</strong> &#8211; The initial metadata of the RPC as a sequence of pairs
-of bytes.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>initial_metadata</strong> &#8211; The initial <a class="reference internal" href="#term-metadata"><span class="xref std std-term">metadata</span></a>.</td>
 </tr>
 </tbody>
 </table>
@@ -1135,7 +1275,7 @@ details to transmit.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>details</strong> &#8211; The details bytes of the RPC to be transmitted to
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>details</strong> &#8211; The details string of the RPC to be transmitted to
 the invocation side of the RPC.</td>
 </tr>
 </tbody>
@@ -1152,8 +1292,7 @@ service-side trailing metadata to transmit.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>trailing_metadata</strong> &#8211; The trailing metadata of the RPC as a sequence of pairs
-of bytes.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>trailing_metadata</strong> &#8211; The trailing <a class="reference internal" href="#term-metadata"><span class="xref std std-term">metadata</span></a>.</td>
 </tr>
 </tbody>
 </table>
@@ -1164,7 +1303,7 @@ of bytes.</td>
 <dl class="class">
 <dt id="grpc.RpcMethodHandler">
 <em class="property">class </em><code class="descclassname">grpc.</code><code class="descname">RpcMethodHandler</code><a class="reference internal" href="_modules/grpc.html#RpcMethodHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.RpcMethodHandler" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>An implementation of a single RPC method.</p>
 <dl class="attribute">
 <dt id="grpc.RpcMethodHandler.request_streaming">
@@ -1239,7 +1378,7 @@ non-None if request_streaming and response_streaming are both True.</p>
 <dl class="class">
 <dt id="grpc.HandlerCallDetails">
 <em class="property">class </em><code class="descclassname">grpc.</code><code class="descname">HandlerCallDetails</code><a class="reference internal" href="_modules/grpc.html#HandlerCallDetails"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.HandlerCallDetails" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Describes an RPC that has just arrived for service.
 .. attribute:: method</p>
 <blockquote>
@@ -1247,7 +1386,7 @@ non-None if request_streaming and response_streaming are both True.</p>
 <dl class="attribute">
 <dt id="grpc.HandlerCallDetails.invocation_metadata">
 <code class="descname">invocation_metadata</code><a class="headerlink" href="#grpc.HandlerCallDetails.invocation_metadata" title="Permalink to this definition">¶</a></dt>
-<dd><p>The metadata from the invocation side of the RPC.</p>
+<dd><p>The <a class="reference internal" href="#term-metadata"><span class="xref std std-term">metadata</span></a> from the invocation side of the RPC.</p>
 </dd></dl>
 
 </dd></dl>
@@ -1255,7 +1394,7 @@ non-None if request_streaming and response_streaming are both True.</p>
 <dl class="class">
 <dt id="grpc.GenericRpcHandler">
 <em class="property">class </em><code class="descclassname">grpc.</code><code class="descname">GenericRpcHandler</code><a class="reference internal" href="_modules/grpc.html#GenericRpcHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.GenericRpcHandler" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>An implementation of arbitrarily many RPC methods.</p>
 <dl class="method">
 <dt id="grpc.GenericRpcHandler.service">
@@ -1282,7 +1421,7 @@ non-None if request_streaming and response_streaming are both True.</p>
 <dl class="class">
 <dt id="grpc.Server">
 <em class="property">class </em><code class="descclassname">grpc.</code><code class="descname">Server</code><a class="reference internal" href="_modules/grpc.html#Server"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Server" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.NewBase</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Services RPCs.</p>
 <dl class="method">
 <dt id="grpc.Server.add_generic_rpc_handlers">
@@ -1596,21 +1735,15 @@ authorization header, ie &#8220;Authorization: Bearer &lt;access_token&gt;&#8221
 
 <dl class="function">
 <dt id="grpc.composite_call_credentials">
-<code class="descclassname">grpc.</code><code class="descname">composite_call_credentials</code><span class="sig-paren">(</span><em>call_credentials</em>, <em>additional_call_credentials</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#composite_call_credentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.composite_call_credentials" title="Permalink to this definition">¶</a></dt>
-<dd><p>Compose two CallCredentials to make a new one.</p>
+<code class="descclassname">grpc.</code><code class="descname">composite_call_credentials</code><span class="sig-paren">(</span><em>*call_credentials</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#composite_call_credentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.composite_call_credentials" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compose multiple CallCredentials to make a new CallCredentials.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>call_credentials</strong> &#8211; A CallCredentials object.</li>
-<li><strong>additional_call_credentials</strong> &#8211; Another CallCredentials object to compose on
-top of call_credentials.</li>
-</ul>
-</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>*call_credentials</strong> &#8211; At least two CallCredentials objects.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A new CallCredentials composed of the two given CallCredentials.</p>
-</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A CallCredentials object composed of the given CallCredentials objects.</td>
 </tr>
 </tbody>
 </table>
@@ -1618,21 +1751,21 @@ top of call_credentials.</li>
 
 <dl class="function">
 <dt id="grpc.composite_channel_credentials">
-<code class="descclassname">grpc.</code><code class="descname">composite_channel_credentials</code><span class="sig-paren">(</span><em>channel_credentials</em>, <em>call_credentials</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#composite_channel_credentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.composite_channel_credentials" title="Permalink to this definition">¶</a></dt>
-<dd><p>Compose a ChannelCredentials and a CallCredentials.</p>
+<code class="descclassname">grpc.</code><code class="descname">composite_channel_credentials</code><span class="sig-paren">(</span><em>channel_credentials</em>, <em>*call_credentials</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#composite_channel_credentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.composite_channel_credentials" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compose a ChannelCredentials and one or more CallCredentials objects.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>channel_credentials</strong> &#8211; A ChannelCredentials.</li>
-<li><strong>call_credentials</strong> &#8211; A CallCredentials.</li>
+<li><strong>*call_credentials</strong> &#8211; One or more CallCredentials objects.</li>
 </ul>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
 <dt>A ChannelCredentials composed of the given ChannelCredentials and</dt>
-<dd><p class="first last">CallCredentials.</p>
+<dd><p class="first last">CallCredentials objects.</p>
 </dd>
 </dl>
 </p>
@@ -1740,21 +1873,20 @@ the created channel.</li>
 
 <dl class="function">
 <dt id="grpc.server">
-<code class="descclassname">grpc.</code><code class="descname">server</code><span class="sig-paren">(</span><em>generic_rpc_handlers</em>, <em>thread_pool</em>, <em>options=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#server"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.server" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">grpc.</code><code class="descname">server</code><span class="sig-paren">(</span><em>thread_pool</em>, <em>handlers=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#server"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.server" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a Server with which RPCs can be serviced.</p>
-<p>The GenericRpcHandlers passed to this function needn&#8217;t be the only
-GenericRpcHandlers that will be used to serve RPCs; others may be added later
-by calling add_generic_rpc_handlers any time before the returned server is
-started.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>generic_rpc_handlers</strong> &#8211; Some number of GenericRpcHandlers that will be used
-to service RPCs after the returned Server is started.</li>
 <li><strong>thread_pool</strong> &#8211; A futures.ThreadPoolExecutor to be used by the returned Server
 to service RPCs.</li>
+<li><strong>handlers</strong> &#8211; An optional sequence of GenericRpcHandlers to be used to service
+RPCs after the returned Server is started. These handlers need not be the
+only handlers the server will use to service RPCs; other handlers may
+later be added by calling add_generic_rpc_handlers any time before the
+returned Server is started.</li>
 </ul>
 </td>
 </tr>
@@ -1766,6 +1898,21 @@ to service RPCs.</li>
 </dd></dl>
 
 </div>
+</div>
+<div class="section" id="glossary">
+<h1>Glossary<a class="headerlink" href="#glossary" title="Permalink to this headline">¶</a></h1>
+<dl class="glossary docutils">
+<dt id="term-metadatum">metadatum</dt>
+<dd>A key-value pair included in the HTTP header.  It is a
+2-tuple where the first entry is the key and the
+second is the value, i.e. (key, value).  The metadata key is an ASCII str,
+and must be a valid HTTP header name.  The metadata value can be
+either a valid HTTP ASCII str, or bytes.  If bytes are provided,
+the key must end with &#8216;-bin&#8217;, i.e.
+<code class="docutils literal"><span class="pre">('binary-metadata-bin',</span> <span class="pre">b'\x00\xFF')</span></code></dd>
+<dt id="term-metadata">metadata</dt>
+<dd>A sequence of metadatum.</dd>
+</dl>
 </div>
 
 
@@ -1809,7 +1956,7 @@ to service RPCs.</li>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.15.0',
+            VERSION:'1.0.0rc1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

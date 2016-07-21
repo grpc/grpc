@@ -12,14 +12,6 @@ grpc.framework.foundation.abandonment module
     :undoc-members:
     :show-inheritance:
 
-grpc.framework.foundation.activated module
-------------------------------------------
-
-.. automodule:: grpc.framework.foundation.activated
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 grpc.framework.foundation.callable_util module
 ----------------------------------------------
 
@@ -36,26 +28,10 @@ grpc.framework.foundation.future module
     :undoc-members:
     :show-inheritance:
 
-grpc.framework.foundation.later module
---------------------------------------
-
-.. automodule:: grpc.framework.foundation.later
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 grpc.framework.foundation.logging_pool module
 ---------------------------------------------
 
 .. automodule:: grpc.framework.foundation.logging_pool
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-grpc.framework.foundation.relay module
---------------------------------------
-
-.. automodule:: grpc.framework.foundation.relay
     :members:
     :undoc-members:
     :show-inheritance:

@@ -7,8 +7,6 @@ Subpackages
 .. toctree::
 
     grpc.framework.common
-    grpc.framework.core
-    grpc.framework.crust
     grpc.framework.foundation
     grpc.framework.interfaces
 
