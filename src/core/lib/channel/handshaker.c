@@ -63,7 +63,7 @@ void grpc_handshaker_do_handshake(grpc_exec_ctx* exec_ctx,
                                   grpc_endpoint* endpoint,
                                   grpc_channel_args* args,
                                   gpr_timespec deadline,
-                                  grpc_tcp_server_acceptor *acceptor,
+                                  grpc_tcp_server_acceptor* acceptor,
                                   grpc_handshaker_done_cb cb, void* user_data) {
   handshaker->vtable->do_handshake(exec_ctx, handshaker, endpoint, args,
                                    deadline, acceptor, cb, user_data);
@@ -80,7 +80,7 @@ struct grpc_handshaker_state {
   // The deadline for all handshakers.
   gpr_timespec deadline;
   // The acceptor to call the handshakers with.
-  grpc_tcp_server_acceptor *acceptor;
+  grpc_tcp_server_acceptor* acceptor;
   // The final callback and user_data to invoke after the last handshaker.
   grpc_handshaker_done_cb final_cb;
   void* final_user_data;
@@ -100,9 +100,7 @@ grpc_handshake_manager* grpc_handshake_manager_create() {
   return mgr;
 }
 
-static bool is_power_of_2(size_t n) {
-  return (n & (n - 1)) == 0;
-}
+static bool is_power_of_2(size_t n) { return (n & (n - 1)) == 0; }
 
 void grpc_handshake_manager_add(grpc_handshaker* handshaker,
                                 grpc_handshake_manager* mgr) {
@@ -115,8 +113,8 @@ void grpc_handshake_manager_add(grpc_handshaker* handshaker,
     realloc_count = mgr->count * 2;
   }
   if (realloc_count > 0) {
-    mgr->handshakers = gpr_realloc(mgr->handshakers,
-                                   realloc_count * sizeof(grpc_handshaker*));
+    mgr->handshakers =
+        gpr_realloc(mgr->handshakers, realloc_count * sizeof(grpc_handshaker*));
   }
   mgr->handshakers[mgr->count++] = handshaker;
 }
@@ -173,7 +171,7 @@ static void call_next_handshaker(grpc_exec_ctx* exec_ctx,
 void grpc_handshake_manager_do_handshake(
     grpc_exec_ctx* exec_ctx, grpc_handshake_manager* mgr,
     grpc_endpoint* endpoint, const grpc_channel_args* args,
-    gpr_timespec deadline, grpc_tcp_server_acceptor *acceptor,
+    gpr_timespec deadline, grpc_tcp_server_acceptor* acceptor,
     grpc_handshaker_done_cb cb, void* user_data) {
   grpc_channel_args* args_copy = grpc_channel_args_copy(args);
   if (mgr->count == 0) {
