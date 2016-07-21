@@ -36,9 +36,25 @@
 #define GRPC_C_STATUS_PUBLIC_H
 
 typedef struct grpc_status {
+  /**
+   * Indicator of success for the entire RPC operation, including network,
+   * serialization, etc.
+   */
   bool ok;
+
+  /**
+   * Status code coming from the remote server.
+   */
   grpc_status_code code;
+
+  /**
+   * Detailed status string from the server.
+   */
   char *details;
+
+  /**
+   * Length of status string.
+   */
   size_t details_length;
 } grpc_status;
 
