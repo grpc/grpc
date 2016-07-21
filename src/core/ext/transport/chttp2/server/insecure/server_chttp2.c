@@ -88,10 +88,9 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *server, grpc_endpoint *tcp,
   // args instead of hard-coding it.
   const gpr_timespec deadline = gpr_time_add(
       gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_seconds(120, GPR_TIMESPAN));
-  grpc_handshake_manager_do_handshake(exec_ctx, state->handshake_mgr, tcp,
-                                      grpc_server_get_channel_args(server),
-                                      deadline, acceptor, on_handshake_done,
-                                      state);
+  grpc_handshake_manager_do_handshake(
+      exec_ctx, state->handshake_mgr, tcp, grpc_server_get_channel_args(server),
+      deadline, acceptor, on_handshake_done, state);
 }
 
 /* Server callback: start listening on our ports */
