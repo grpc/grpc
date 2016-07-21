@@ -43,15 +43,9 @@ PROTOS_PATH = ../../protos
 
 vpath %.proto $(PROTOS_PATH)
 
-all: system-check greeter_client greeter_async_client greeter_async_client2
+all: system-check route_guide_client
 
-greeter_client: helloworld.pbc.o helloworld.grpc.pbc.o greeter_client.o
-	$(CC) $^ $(NANOPB_CORE) $(LDFLAGS) -o $@
-
-greeter_async_client: helloworld.pbc.o helloworld.grpc.pbc.o greeter_async_client.o
-	$(CC) $^ $(NANOPB_CORE) $(LDFLAGS) -o $@
-
-greeter_async_client2: helloworld.pbc.o helloworld.grpc.pbc.o greeter_async_client2.o
+route_guide_client: route_guide.pbc.o route_guide.grpc.pbc.o route_guide_client.o route_guide_db.c
 	$(CC) $^ $(NANOPB_CORE) $(LDFLAGS) -o $@
 
 .PRECIOUS: %.grpc.pbc.c
@@ -63,7 +57,7 @@ greeter_async_client2: helloworld.pbc.o helloworld.grpc.pbc.o greeter_async_clie
 	$(PROTOC) --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb -I $(PROTOS_PATH) --nanopb_out=--extension=.pbc:. $<
 
 clean:
-	rm -f *.o *.pb.c *.pb.h *.pbc.c *.pbc.h greeter_client greeter_async_client greeter_async_client2
+	rm -f *.o *.pb.c *.pb.h *.pbc.c *.pbc.h route_guide_client
 
 
 # The following is to test your system and ensure a smoother experience.
