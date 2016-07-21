@@ -147,7 +147,7 @@ public:
 
   // TODO(yifeit): We're relying on Nanopb right now. After rolling out our own Protobuf-C impl, we should
   // use a different extension e.g. ".pbc.h"
-  grpc::string message_header_ext() const { return ".pb.h"; }
+  grpc::string message_header_ext() const { return ".pbc.h"; }
 
   grpc::string service_header_ext() const { return ".grpc.pbc.h"; }
 
