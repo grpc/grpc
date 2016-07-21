@@ -2720,12 +2720,12 @@ targets:
   - grpc++
   - grpc
   - gpr
-- name: grpc_c_end2end_test
+- name: grpc_c_generic_end2end_test
   gtest: true
   build: test
   language: c++
   src:
-  - test/c/end2end/end2end_test.cc
+  - test/c/end2end/generic_end2end_test.cc
   deps:
   - grpc_c
   - grpc++_test_util
