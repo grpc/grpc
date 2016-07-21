@@ -66,9 +66,9 @@
 
   // Same example call using the generic gRPC client library:
 
-  ProtoMethod *method = [[ProtoMethod alloc] initWithPackage:@"grpc.testing"
-                                                     service:@"TestService"
-                                                      method:@"UnaryCall"];
+  GRPCProtoMethod *method = [[GRPCProtoMethod alloc] initWithPackage:@"grpc.testing"
+                                                             service:@"TestService"
+                                                              method:@"UnaryCall"];
 
   GRXWriter *requestsWriter = [GRXWriter writerWithValue:[request data]];
 

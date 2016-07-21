@@ -38,6 +38,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 
 #ifdef GPR_POSIX_SOCKET
 #include "src/core/lib/iomgr/workqueue_posix.h"
@@ -49,35 +50,45 @@
 
 /* grpc_workqueue is forward declared in exec_ctx.h */
 
-/** Create a work queue */
-grpc_error *grpc_workqueue_create(grpc_exec_ctx *exec_ctx,
-                                  grpc_workqueue **workqueue);
-
+/* Deprecated: do not use.
+   This has *already* been removed in a future commit. */
 void grpc_workqueue_flush(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue);
 
-#define GRPC_WORKQUEUE_REFCOUNT_DEBUG
+/* Reference counting functions. Use the macro's always
+   (GRPC_WORKQUEUE_{REF,UNREF}).
+
+   Pass in a descriptive reason string for reffing/unreffing as the last
+   argument to each macro. When GRPC_WORKQUEUE_REFCOUNT_DEBUG is defined, that
+   string will be printed alongside the refcount. When it is not defined, the
+   string will be discarded at compilation time. */
+
+//#define GRPC_WORKQUEUE_REFCOUNT_DEBUG
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
 #define GRPC_WORKQUEUE_REF(p, r) \
-  grpc_workqueue_ref((p), __FILE__, __LINE__, (r))
-#define GRPC_WORKQUEUE_UNREF(cl, p, r) \
-  grpc_workqueue_unref((cl), (p), __FILE__, __LINE__, (r))
+  (grpc_workqueue_ref((p), __FILE__, __LINE__, (r)), (p))
+#define GRPC_WORKQUEUE_UNREF(exec_ctx, p, r) \
+  grpc_workqueue_unref((exec_ctx), (p), __FILE__, __LINE__, (r))
 void grpc_workqueue_ref(grpc_workqueue *workqueue, const char *file, int line,
                         const char *reason);
 void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
                           const char *file, int line, const char *reason);
 #else
-#define GRPC_WORKQUEUE_REF(p, r) grpc_workqueue_ref((p))
+#define GRPC_WORKQUEUE_REF(p, r) (grpc_workqueue_ref((p)), (p))
 #define GRPC_WORKQUEUE_UNREF(cl, p, r) grpc_workqueue_unref((cl), (p))
 void grpc_workqueue_ref(grpc_workqueue *workqueue);
 void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue);
 #endif
 
-/** Bind this workqueue to a pollset */
-void grpc_workqueue_add_to_pollset(grpc_exec_ctx *exec_ctx,
-                                   grpc_workqueue *workqueue,
-                                   grpc_pollset *pollset);
+/** Add a work item to a workqueue. Items added to a work queue will be started
+    in approximately the order they were enqueued, on some thread that may or
+    may not be the current thread. Successive closures enqueued onto a workqueue
+    MAY be executed concurrently.
 
-/** Add a work item to a workqueue */
+    It is generally more expensive to add a closure to a workqueue than to the
+    execution context, both in terms of CPU work and in execution latency.
+
+    Use work queues when it's important that other threads be given a chance to
+    tackle some workload. */
 void grpc_workqueue_enqueue(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
                             grpc_closure *closure, grpc_error *error);
 

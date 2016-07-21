@@ -33,34 +33,47 @@ set -ex
 cd $(dirname $0)
 
 # Pick up the source dist archive whatever its version is
+SDIST_ARCHIVES=$EXTERNAL_GIT_ROOT/input_artifacts/grpcio-*.tar.gz
 BDIST_ARCHIVES=$EXTERNAL_GIT_ROOT/input_artifacts/grpcio-*.whl
+TOOLS_SDIST_ARCHIVES=$EXTERNAL_GIT_ROOT/input_artifacts/grpcio_tools-*.tar.gz
 TOOLS_BDIST_ARCHIVES=$EXTERNAL_GIT_ROOT/input_artifacts/grpcio_tools-*.whl
 
-if [ ! -f ${SDIST_ARCHIVE} ]
-then
-  echo "Archive ${SDIST_ARCHIVE} does not exist."
-  exit 1
-fi
+function make_virtualenv() {
+  virtualenv $1
+  $1/bin/python -m pip install --upgrade six pip
+  $1/bin/python -m pip install cython
+}
 
-PYTHON=python2
-PIP=pip2
-which $PYTHON || PYTHON=python
-which $PIP || PIP=pip
+function at_least_one_installs() {
+  for file in "$@"; do
+    if python -m pip install $file; then
+      return 0
+    fi
+  done
+  return -1
+}
 
-# TODO(jtattermusch): this shouldn't be required
-# TODO(jtattermusch): run the command twice to workaround docker-on-overlay
-# issue https://github.com/docker/docker/issues/12327
-# (first attempt will fail when using docker with overlayFS)
-${PIP} install --upgrade six pip || ${PIP} install --upgrade six pip
+make_virtualenv bdist_test
+make_virtualenv sdist_test
 
-# At least one of the bdist packages has to succeed (whichever one matches the
-# test machine, anyway).
-for bdist in ${BDIST_ARCHIVES} ${TOOLS_BDIST_ARCHIVES}; do
-  ($PYTHON -m pip install $bdist) || true
-done
+#
+# Install our distributions in order of dependencies
+#
+
+(source bdist_test/bin/activate && at_least_one_installs ${BDIST_ARCHIVES})
+(source bdist_test/bin/activate && at_least_one_installs ${TOOLS_BDIST_ARCHIVES})
+
+(source sdist_test/bin/activate && at_least_one_installs ${SDIST_ARCHIVES})
+(source sdist_test/bin/activate && at_least_one_installs ${TOOLS_SDIST_ARCHIVES})
+
+#
+# Test our distributions
+#
 
 # TODO(jtattermusch): add a .proto file to the distribtest, generate python
 # code from it and then use the generated code from distribtest.py
-$PYTHON -m grpc.tools.protoc
+(source bdist_test/bin/activate && python -m grpc.tools.protoc --help)
+(source sdist_test/bin/activate && python -m grpc.tools.protoc --help)
 
-$PYTHON distribtest.py
+(source bdist_test/bin/activate && python distribtest.py)
+(source sdist_test/bin/activate && python distribtest.py)

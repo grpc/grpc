@@ -77,11 +77,14 @@ static void test_code(void) {
 
   /* endpoint.h */
   grpc_endpoint endpoint;
-  grpc_endpoint_vtable vtable = {
-      grpc_endpoint_read,           grpc_endpoint_write,
-      grpc_endpoint_add_to_pollset, grpc_endpoint_add_to_pollset_set,
-      grpc_endpoint_shutdown,       grpc_endpoint_destroy,
-      grpc_endpoint_get_peer};
+  grpc_endpoint_vtable vtable = {grpc_endpoint_read,
+                                 grpc_endpoint_write,
+                                 grpc_endpoint_get_workqueue,
+                                 grpc_endpoint_add_to_pollset,
+                                 grpc_endpoint_add_to_pollset_set,
+                                 grpc_endpoint_shutdown,
+                                 grpc_endpoint_destroy,
+                                 grpc_endpoint_get_peer};
   endpoint.vtable = &vtable;
 
   grpc_endpoint_read(&exec_ctx, &endpoint, NULL, NULL);
