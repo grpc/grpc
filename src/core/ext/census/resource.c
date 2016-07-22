@@ -61,14 +61,11 @@ void initialize_resources(void) {
   gpr_mu_init(&resource_lock);
   gpr_mu_lock(&resource_lock);
   GPR_ASSERT(resources == NULL && n_resources == 0 && n_defined_resources == 0);
-  // 8 seems like a reasonable size for initial number of resources.
-  n_resources = 8;
-  resources = gpr_malloc(n_resources * sizeof(resource *));
-  memset(resources, 0, n_resources * sizeof(resource *));
   gpr_mu_unlock(&resource_lock);
 }
 
-// Delete a resource given it's ID. Must be called with resource_lock held.
+// Delete a resource given it's ID. The ID must be a valid resource ID. Must be
+// called with resource_lock held.
 static void delete_resource_locked(size_t rid) {
   GPR_ASSERT(resources[rid] != NULL);
   gpr_free(resources[rid]->name);
@@ -222,12 +219,14 @@ size_t allocate_resource(void) {
   size_t id = n_resources;  // resource ID - initialize to invalid value.
   // Expand resources if needed.
   if (n_resources == n_defined_resources) {
-    resource **new_resources = gpr_malloc(n_resources * 2 * sizeof(resource *));
+    size_t new_n_resources = n_resources ? n_resources * 2 : 2;
+    resource **new_resources = gpr_malloc(new_n_resources * sizeof(resource *));
     memcpy(new_resources, resources, n_resources * sizeof(resource *));
-    memset(new_resources + n_resources, 0, n_resources * sizeof(resource *));
+    memset(new_resources + n_resources, 0,
+           (new_n_resources - n_resources) * sizeof(resource *));
     gpr_free(resources);
     resources = new_resources;
-    n_resources *= 2;
+    n_resources = new_n_resources;
     id = n_defined_resources;
   } else {
     GPR_ASSERT(n_defined_resources < n_resources);
@@ -273,11 +272,9 @@ void census_delete_resource(int32_t rid) {
 int32_t census_resource_id(const char *name) {
   gpr_mu_lock(&resource_lock);
   for (int32_t id = 0; (size_t)id < n_resources; id++) {
-    if (resources[id] != NULL) {
-      if (strcmp(resources[id]->name, name) == 0) {
-        gpr_mu_unlock(&resource_lock);
-        return id;
-      }
+    if (resources[id] != NULL && strcmp(resources[id]->name, name) == 0) {
+      gpr_mu_unlock(&resource_lock);
+      return id;
     }
   }
   gpr_mu_unlock(&resource_lock);
