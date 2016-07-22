@@ -170,6 +170,7 @@ static void on_p2s_recv_initial_metadata(void *arg, int success) {
   grpc_op op;
   grpc_call_error err;
 
+  memset(&op, 0, sizeof(op));
   if (!pc->proxy->shutdown) {
     op.op = GRPC_OP_SEND_INITIAL_METADATA;
     op.flags = 0;
@@ -329,6 +330,7 @@ static void on_new_call(void *arg, int success) {
 
   if (success) {
     grpc_op op;
+    memset(&op, 0, sizeof(op));
     proxy_call *pc = gpr_malloc(sizeof(*pc));
     memset(pc, 0, sizeof(*pc));
     pc->proxy = proxy;

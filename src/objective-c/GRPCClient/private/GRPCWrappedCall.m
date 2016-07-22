@@ -72,6 +72,8 @@
     _op.op = GRPC_OP_SEND_INITIAL_METADATA;
     _op.data.send_initial_metadata.count = metadata.count;
     _op.data.send_initial_metadata.metadata = metadata.grpc_metadataArray;
+    _op.data.send_initial_metadata.maybe_compression_level.is_set = false;
+    _op.data.send_initial_metadata.maybe_compression_level.level = 0;
     _handler = handler;
   }
   return self;
@@ -250,7 +252,7 @@
 
     // Each completion queue consumes one thread. There's a trade to be made between creating and
     // consuming too many threads and having contention of multiple calls in a single completion
-    // queue. Currently we favor latency and use one per call.
+    // queue. Currently we use a singleton queue.
     _queue = [GRPCCompletionQueue completionQueue];
 
     _call = [[GRPCHost hostWithAddress:host] unmanagedCallWithPath:path completionQueue:_queue];

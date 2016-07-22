@@ -42,7 +42,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/channel/compress_filter.h"
 #include "src/core/lib/surface/call.h"
 
 namespace grpc {
@@ -196,6 +195,9 @@ bool ServerContext::IsCancelled() const {
 }
 
 void ServerContext::set_compression_level(grpc_compression_level level) {
+  // TODO(dgq): get rid of grpc_call_compression_for_level and propagate the
+  // compression level by adding a new argument to
+  // CallOpSendInitialMetadata::SendInitialMetadata.
   const grpc_compression_algorithm algorithm_for_level =
       grpc_call_compression_for_level(call_, level);
   set_compression_algorithm(algorithm_for_level);
@@ -210,7 +212,7 @@ void ServerContext::set_compression_algorithm(
     abort();
   }
   GPR_ASSERT(algorithm_name != NULL);
-  AddInitialMetadata(GRPC_COMPRESS_REQUEST_ALGORITHM_KEY, algorithm_name);
+  AddInitialMetadata(GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY, algorithm_name);
 }
 
 grpc::string ServerContext::peer() const {

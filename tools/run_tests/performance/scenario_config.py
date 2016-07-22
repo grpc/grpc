@@ -387,45 +387,44 @@ class PythonLanguage:
     return 500
 
   def scenarios(self):
-    # TODO(issue #6522): Empty streaming requests does not work for python
-    #yield _ping_pong_scenario(
-    #    'python_generic_async_streaming_ping_pong', rpc_type='STREAMING',
-    #    client_type='ASYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
-    #    use_generic_payload=True,
-    #    categories=[SMOKETEST])
+    yield _ping_pong_scenario(
+        'python_generic_sync_streaming_ping_pong', rpc_type='STREAMING',
+        client_type='SYNC_CLIENT', server_type='ASYNC_GENERIC_SERVER',
+        use_generic_payload=True,
+        categories=[SMOKETEST])
 
     yield _ping_pong_scenario(
-        'python_protobuf_async_streaming_ping_pong', rpc_type='STREAMING',
-        client_type='ASYNC_CLIENT', server_type='SYNC_SERVER')
+        'python_protobuf_sync_streaming_ping_pong', rpc_type='STREAMING',
+        client_type='SYNC_CLIENT', server_type='ASYNC_SERVER')
 
     yield _ping_pong_scenario(
         'python_protobuf_async_unary_ping_pong', rpc_type='UNARY',
-        client_type='ASYNC_CLIENT', server_type='SYNC_SERVER')
+        client_type='ASYNC_CLIENT', server_type='ASYNC_SERVER')
 
     yield _ping_pong_scenario(
         'python_protobuf_sync_unary_ping_pong', rpc_type='UNARY',
-        client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+        client_type='SYNC_CLIENT', server_type='ASYNC_SERVER',
         categories=[SMOKETEST])
 
     yield _ping_pong_scenario(
         'python_protobuf_sync_unary_qps_unconstrained', rpc_type='UNARY',
-        client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+        client_type='SYNC_CLIENT', server_type='ASYNC_SERVER',
         unconstrained_client='sync')
 
     yield _ping_pong_scenario(
-        'python_protobuf_async_streaming_qps_unconstrained', rpc_type='STREAMING',
-        client_type='ASYNC_CLIENT', server_type='SYNC_SERVER',
-        unconstrained_client='async')
+        'python_protobuf_sync_streaming_qps_unconstrained', rpc_type='STREAMING',
+        client_type='SYNC_CLIENT', server_type='ASYNC_SERVER',
+        unconstrained_client='sync')
 
     yield _ping_pong_scenario(
         'python_to_cpp_protobuf_sync_unary_ping_pong', rpc_type='UNARY',
-        client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+        client_type='SYNC_CLIENT', server_type='ASYNC_SERVER',
         server_language='c++', server_core_limit=1, async_server_threads=1,
         categories=[SMOKETEST])
 
     yield _ping_pong_scenario(
         'python_to_cpp_protobuf_sync_streaming_ping_pong', rpc_type='STREAMING',
-        client_type='SYNC_CLIENT', server_type='SYNC_SERVER',
+        client_type='SYNC_CLIENT', server_type='ASYNC_SERVER',
         server_language='c++', server_core_limit=1, async_server_threads=1)
 
   def __str__(self):

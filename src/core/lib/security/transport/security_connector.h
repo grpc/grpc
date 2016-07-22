@@ -143,7 +143,7 @@ struct grpc_channel_security_connector {
                           grpc_security_call_host_check_cb cb, void *user_data);
   void (*do_handshake)(grpc_exec_ctx *exec_ctx,
                        grpc_channel_security_connector *sc,
-                       grpc_endpoint *nonsecure_endpoint,
+                       grpc_endpoint *nonsecure_endpoint, gpr_timespec deadline,
                        grpc_security_handshake_done_cb cb, void *user_data);
 };
 
@@ -156,8 +156,8 @@ void grpc_channel_security_connector_check_call_host(
 /* Handshake. */
 void grpc_channel_security_connector_do_handshake(
     grpc_exec_ctx *exec_ctx, grpc_channel_security_connector *connector,
-    grpc_endpoint *nonsecure_endpoint, grpc_security_handshake_done_cb cb,
-    void *user_data);
+    grpc_endpoint *nonsecure_endpoint, gpr_timespec deadline,
+    grpc_security_handshake_done_cb cb, void *user_data);
 
 /* --- server_security_connector object. ---
 
@@ -174,14 +174,14 @@ struct grpc_server_security_connector {
   void (*do_handshake)(grpc_exec_ctx *exec_ctx,
                        grpc_server_security_connector *sc,
                        grpc_tcp_server_acceptor *acceptor,
-                       grpc_endpoint *nonsecure_endpoint,
+                       grpc_endpoint *nonsecure_endpoint, gpr_timespec deadline,
                        grpc_security_handshake_done_cb cb, void *user_data);
 };
 
 void grpc_server_security_connector_do_handshake(
     grpc_exec_ctx *exec_ctx, grpc_server_security_connector *sc,
     grpc_tcp_server_acceptor *acceptor, grpc_endpoint *nonsecure_endpoint,
-    grpc_security_handshake_done_cb cb, void *user_data);
+    gpr_timespec deadline, grpc_security_handshake_done_cb cb, void *user_data);
 
 void grpc_server_security_connector_shutdown(
     grpc_exec_ctx *exec_ctx, grpc_server_security_connector *connector);

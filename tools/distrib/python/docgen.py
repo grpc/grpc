@@ -70,7 +70,6 @@ environment.update({
 })
 
 subprocess_arguments_list = [
-    {'args': ['make'], 'cwd': PROJECT_ROOT},
     {'args': ['virtualenv', VIRTUALENV_DIR], 'env': environment},
     {'args': [VIRTUALENV_PIP_PATH, 'install', '-r', REQUIREMENTS_PATH],
      'env': environment},

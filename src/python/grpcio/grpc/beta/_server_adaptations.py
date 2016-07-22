@@ -33,6 +33,7 @@ import collections
 import threading
 
 import grpc
+from grpc import _common
 from grpc.beta import interfaces
 from grpc.framework.common import cardinality
 from grpc.framework.common import style
@@ -78,7 +79,8 @@ class _FaceServicerContext(face.ServicerContext):
     return _ServerProtocolContext(self._servicer_context)
 
   def invocation_metadata(self):
-    return self._servicer_context.invocation_metadata()
+    return _common.cygrpc_metadata(
+        self._servicer_context.invocation_metadata())
 
   def initial_metadata(self, initial_metadata):
     self._servicer_context.send_initial_metadata(initial_metadata)
@@ -160,14 +162,24 @@ class _Callback(stream.Consumer):
           self._condition.wait()
 
 
-def _pipe_requests(request_iterator, request_consumer, servicer_context):
-  for request in request_iterator:
-    if not servicer_context.is_active():
-      return
-    request_consumer.consume(request)
-    if not servicer_context.is_active():
-      return
-  request_consumer.terminate()
+def _run_request_pipe_thread(request_iterator, request_consumer,
+                             servicer_context):
+  thread_joined = threading.Event()
+  def pipe_requests():
+    for request in request_iterator:
+      if not servicer_context.is_active() or thread_joined.is_set():
+        return
+      request_consumer.consume(request)
+      if not servicer_context.is_active() or thread_joined.is_set():
+        return
+    request_consumer.terminate()
+
+  def stop_request_pipe(timeout):
+    thread_joined.set()
+
+  request_pipe_thread = _common.CleanupThread(
+      stop_request_pipe, target=pipe_requests)
+  request_pipe_thread.start()
 
 
 def _adapt_unary_unary_event(unary_unary_event):
@@ -205,10 +217,8 @@ def _adapt_stream_unary_event(stream_unary_event):
       raise abandonment.Abandoned()
     request_consumer = stream_unary_event(
         callback.consume_and_terminate, _FaceServicerContext(servicer_context))
-    request_pipe_thread = threading.Thread(
-        target=_pipe_requests,
-        args=(request_iterator, request_consumer, servicer_context,))
-    request_pipe_thread.start()
+    _run_request_pipe_thread(
+        request_iterator, request_consumer, servicer_context)
     return callback.draw_all_values()[0]
   return adaptation
 
@@ -220,10 +230,8 @@ def _adapt_stream_stream_event(stream_stream_event):
       raise abandonment.Abandoned()
     request_consumer = stream_stream_event(
         callback, _FaceServicerContext(servicer_context))
-    request_pipe_thread = threading.Thread(
-        target=_pipe_requests,
-        args=(request_iterator, request_consumer, servicer_context,))
-    request_pipe_thread.start()
+    _run_request_pipe_thread(
+        request_iterator, request_consumer, servicer_context)
     while True:
       response = callback.draw_one_value()
       if response is None:
@@ -287,36 +295,43 @@ def _simple_method_handler(
           None, _adapt_stream_stream_event(implementation.stream_stream_event))
 
 
+def _flatten_method_pair_map(method_pair_map):
+  method_pair_map = method_pair_map or {}
+  flat_map = {}
+  for method_pair in method_pair_map:
+    method = _common.fully_qualified_method(method_pair[0], method_pair[1])
+    flat_map[method] = method_pair_map[method_pair]
+  return flat_map
+
+
 class _GenericRpcHandler(grpc.GenericRpcHandler):
 
   def __init__(
       self, method_implementations, multi_method_implementation,
       request_deserializers, response_serializers):
-    self._method_implementations = method_implementations
+    self._method_implementations = _flatten_method_pair_map(
+        method_implementations)
+    self._request_deserializers = _flatten_method_pair_map(
+        request_deserializers)
+    self._response_serializers = _flatten_method_pair_map(
+        response_serializers)
     self._multi_method_implementation = multi_method_implementation
-    self._request_deserializers = request_deserializers or {}
-    self._response_serializers = response_serializers or {}
 
   def service(self, handler_call_details):
-    try:
-      group_name, method_name = handler_call_details.method.split(b'/')[1:3]
-    except ValueError:
+    method_implementation = self._method_implementations.get(
+        handler_call_details.method)
+    if method_implementation is not None:
+      return _simple_method_handler(
+          method_implementation,
+          self._request_deserializers.get(handler_call_details.method),
+          self._response_serializers.get(handler_call_details.method))
+    elif self._multi_method_implementation is None:
       return None
     else:
-      method_implementation = self._method_implementations.get(
-          (group_name, method_name,))
-      if method_implementation is not None:
-        return _simple_method_handler(
-            method_implementation,
-            self._request_deserializers.get((group_name, method_name,)),
-            self._response_serializers.get((group_name, method_name,)))
-      elif self._multi_method_implementation is None:
+      try:
+        return None  #TODO(nathaniel): call the multimethod.
+      except face.NoSuchMethodError:
         return None
-      else:
-        try:
-          return None  #TODO(nathaniel): call the multimethod.
-        except face.NoSuchMethodError:
-          return None
 
 
 class _Server(interfaces.Server):
@@ -356,4 +371,5 @@ def server(
         _DEFAULT_POOL_SIZE if thread_pool_size is None else thread_pool_size)
   else:
     effective_thread_pool = thread_pool
-  return _Server(grpc.server((generic_rpc_handler,), effective_thread_pool))
+  return _Server(
+      grpc.server(effective_thread_pool, handlers=(generic_rpc_handler,)))

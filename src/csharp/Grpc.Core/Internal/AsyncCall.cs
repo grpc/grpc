@@ -267,7 +267,7 @@ namespace Grpc.Core.Internal
                     halfcloseRequested = true;
                     return Task.FromResult<object>(null);
                 }
-                call.StartSendCloseFromClient(HandleSendCloseFromClientFinished);
+                call.StartSendCloseFromClient(HandleSendFinished);
 
                 halfcloseRequested = true;
                 streamingWriteTcs = new TaskCompletionSource<object>();

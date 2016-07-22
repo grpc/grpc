@@ -282,6 +282,29 @@
   LDFLAGS += -pthread
   endif
 
+  #
+  # The steps for cross-compiling are as follows:
+  # First, clone and make install of grpc using the native compilers for the host.
+  # Also, install protoc (e.g., from a package like apt-get)
+  # Then clone a fresh grpc for the actual cross-compiled build
+  # Set the environment variable GRPC_CROSS_COMPILE to true
+  # Set CC, CXX, LD, LDXX, AR, and STRIP to the cross-compiling binaries
+  # Also set PROTOBUF_CONFIG_OPTS to indicate cross-compilation to protobuf (e.g.,
+  #  PROTOBUF_CONFIG_OPTS="--host=arm-linux --with-protoc=/usr/local/bin/protoc" )
+  # Set HAS_PKG_CONFIG=false
+  # To build tests, go to third_party/gflags and follow its ccmake instructions
+  # Make sure that you enable building shared libraries and set your prefix to
+  # something useful like /usr/local/cross
+  # You will also need to set GRPC_CROSS_LDOPTS and GRPC_CROSS_AROPTS to hold
+  # additional required arguments for LD and AR (examples below)
+  # Then you can do a make from the cross-compiling fresh clone!
+  #
+  ifeq ($(GRPC_CROSS_COMPILE),true)
+  LDFLAGS += $(GRPC_CROSS_LDOPTS) # e.g. -L/usr/local/lib -L/usr/local/cross/lib
+  AROPTS = $(GRPC_CROSS_AROPTS) # e.g., rc --target=elf32-little
+  USE_BUILT_PROTOC = false
+  endif
+
   GTEST_LIB = -Ithird_party/googletest/include -Ithird_party/googletest third_party/googletest/src/gtest-all.cc
   GTEST_LIB += -lgflags
   ifeq ($(V),1)
@@ -380,7 +403,6 @@
   PROTOC_CHECK_VERSION_CMD = protoc --version | grep -q libprotoc.3
   DTRACE_CHECK_CMD = which dtrace > /dev/null
   SYSTEMTAP_HEADERS_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/systemtap.c $(LDFLAGS)
-  ZOOKEEPER_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/zookeeper.c $(LDFLAGS) -lzookeeper_mt
 
   ifndef REQUIRE_CUSTOM_LIBRARIES_$(CONFIG)
   HAS_SYSTEM_PERFTOOLS ?= $(shell $(PERFTOOLS_CHECK_CMD) 2> /dev/null && echo true || echo false)
@@ -447,8 +469,6 @@
   ifeq ($(HAS_SYSTEMTAP),true)
   CACHE_MK += HAS_SYSTEMTAP = true,
   endif
-
-  HAS_ZOOKEEPER = $(shell $(ZOOKEEPER_CHECK_CMD) 2> /dev/null && echo true || echo false)
 
   # Note that for testing purposes, one can do:
   #   make HAS_EMBEDDED_OPENSSL_ALPN=false
@@ -593,20 +613,21 @@
   PC_LIB = -lgrpc
   GRPC_UNSECURE_PC_FILE := $(PC_TEMPLATE)
 
-  # grpc_zookeeper .pc file
-  PC_NAME = gRPC zookeeper
-  PC_DESCRIPTION = gRPC's zookeeper plugin
-  PC_CFLAGS =
-  PC_REQUIRES_PRIVATE =
-  PC_LIBS_PRIVATE = -lzookeeper_mt
-  GRPC_ZOOKEEPER_PC_FILE := $(PC_TEMPLATE)
-
   PROTOBUF_PKG_CONFIG = false
 
   PC_REQUIRES_GRPCXX =
   PC_LIBS_GRPCXX =
 
   CPPFLAGS := -Ithird_party/googletest/include $(CPPFLAGS)
+
+  PROTOC_PLUGINS_ALL =\
+  % for tgt in targets:
+  % if tgt.build == 'protoc':
+   $(BINDIR)/$(CONFIG)/${tgt.name}\
+  % endif
+  % endfor
+
+  PROTOC_PLUGINS_DIR = $(BINDIR)/$(CONFIG)
 
   ifeq ($(HAS_SYSTEM_PROTOBUF),true)
   ifeq ($(HAS_PKG_CONFIG),true)
@@ -621,13 +642,20 @@
   endif
   else
   PC_LIBS_GRPCXX = -lprotobuf
+  PROTOC_PLUGINS = $(PROTOC_PLUGINS_ALL)
   endif
   else
   ifeq ($(HAS_EMBEDDED_PROTOBUF),true)
   PROTOBUF_DEP = $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a
   CPPFLAGS := -Ithird_party/protobuf/src $(CPPFLAGS)
   LDFLAGS := -L$(LIBDIR)/$(CONFIG)/protobuf $(LDFLAGS)
+  ifneq ($(USE_BUILT_PROTOC),false)
   PROTOC = $(BINDIR)/$(CONFIG)/protobuf/protoc
+  PROTOC_PLUGINS = $(PROTOC_PLUGINS_ALL)
+  else
+  PROTOC_PLUGINS =
+  PROTOC_PLUGINS_DIR = $(prefix)/bin
+  endif
   else
   NO_PROTOBUF = true
   endif
@@ -674,13 +702,6 @@
   endif
 
   .SECONDARY = %.pb.h %.pb.cc
-
-  PROTOC_PLUGINS =\
-  % for tgt in targets:
-  % if tgt.build == 'protoc':
-   $(BINDIR)/$(CONFIG)/${tgt.name}\
-  % endif
-  % endfor
 
   ifeq ($(DEP_MISSING),)
   all: static shared plugins\
@@ -796,7 +817,6 @@
   	$(PERFTOOLS_CHECK_CMD) || true
   	$(PROTOBUF_CHECK_CMD) || true
   	$(PROTOC_CHECK_VERSION_CMD) || true
-  	$(ZOOKEEPER_CHECK_CMD) || true
 
   third_party/protobuf/configure:
   	$(E) "[AUTOGEN] Preparing protobuf"
@@ -804,7 +824,7 @@
 
   $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
   	$(E) "[MAKE]    Building protobuf"
-  	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(PROTOBUF_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(PROTOBUF_CPPFLAGS_EXTRA)" ./configure --disable-shared --enable-static)
+  	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(PROTOBUF_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(PROTOBUF_CPPFLAGS_EXTRA)" ./configure --disable-shared --enable-static $(PROTOBUF_CONFIG_OPTS))
   	$(Q)$(MAKE) -C third_party/protobuf clean
   	$(Q)$(MAKE) -C third_party/protobuf
   	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/protobuf
@@ -815,7 +835,7 @@
 
   static: static_c static_cxx
 
-  static_c: pc_c pc_c_unsecure cache.mk pc_c_zookeeper\
+  static_c: pc_c pc_c_unsecure cache.mk \
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c' and not lib.get('external_deps', None):
@@ -823,7 +843,6 @@
   % endif
   % endif
   % endfor
-   static_zookeeper_libs
 
 
   static_cxx: pc_cxx pc_cxx_unsecure cache.mk \
@@ -838,7 +857,7 @@
 
   shared: shared_c shared_cxx
 
-  shared_c: pc_c pc_c_unsecure cache.mk pc_c_zookeeper\
+  shared_c: pc_c pc_c_unsecure cache.mk\
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c' and not lib.get('external_deps', None):
@@ -846,7 +865,6 @@
   % endif
   % endif
   % endfor
-   shared_zookeeper_libs
 
   shared_cxx: pc_cxx pc_cxx_unsecure cache.mk\
   % for lib in libs:
@@ -867,33 +885,6 @@
   % endif
   % endfor
 
-  ifeq ($(HAS_ZOOKEEPER),true)
-  static_zookeeper_libs:\
-  % for lib in libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
-  % if lib.build == 'all' and lib.language == 'c' and 'zookeeper' in lib.get('external_deps', []):
-   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
-  % endif
-  % endif
-  % endfor
-
-  shared_zookeeper_libs:\
-  % for lib in libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
-  % if lib.build == 'all' and lib.language == 'c' and 'zookeeper' in lib.get('external_deps', []):
-   $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)\
-  % endif
-  % endif
-  % endfor
-
-  else
-
-  static_zookeeper_libs:
-
-  shared_zookeeper_libs:
-
-  endif
-
   grpc_csharp_ext: shared_csharp
 
   plugins: $(PROTOC_PLUGINS)
@@ -913,16 +904,11 @@
 
   pc_c_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc
 
-  ifeq ($(HAS_ZOOKEEPER),true)
-  pc_c_zookeeper: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_zookeeper.pc
-  else
-  pc_c_zookeeper:
-  endif
-
   pc_cxx: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc
 
   pc_cxx_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc
 
+  ifeq ($(EMBED_OPENSSL),true)
   privatelibs_cxx: \
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
@@ -932,23 +918,20 @@
   % endif
   % endfor
 
-
-  ifeq ($(HAS_ZOOKEEPER),true)
-  privatelibs_zookeeper: \
+  else
+  privatelibs_cxx: \
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
-  % if lib.build == 'private' and lib.language == 'c++' and zookeeper in lib.get('external_deps', []):
+  % if lib.build == 'private' and lib.language == 'c++' and not lib.get('external_deps', None) and not lib.boringssl:
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
   % endif
   % endif
   % endfor
 
-  else
-  privatelibs_zookeeper:
   endif
 
 
-  buildtests: buildtests_c buildtests_cxx buildtests_zookeeper
+  buildtests: buildtests_c buildtests_cxx
 
   buildtests_c: privatelibs_c <%text>\</%text>
   % for tgt in targets:
@@ -958,30 +941,28 @@
   % endfor
 
 
-  buildtests_cxx: buildtests_zookeeper privatelibs_cxx <%text>\</%text>
+  ifeq ($(EMBED_OPENSSL),true)
+  buildtests_cxx: privatelibs_cxx <%text>\</%text>
   % for tgt in targets:
   % if tgt.build == 'test' and tgt.language == 'c++' and not tgt.get('external_deps', None):
     $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
   % endif
   % endfor
 
-
-  ifeq ($(HAS_ZOOKEEPER),true)
-  buildtests_zookeeper: privatelibs_zookeeper <%text>\</%text>
+  else
+  buildtests_cxx: privatelibs_cxx <%text>\</%text>
   % for tgt in targets:
-  % if tgt.build == 'test' and tgt.language == 'c++' and 'zookeeper' in tgt.get('external_deps', []):
-   $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
+  % if tgt.build == 'test' and tgt.language == 'c++' and not tgt.get('external_deps', None) and not tgt.boringssl:
+    $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
   % endif
   % endfor
 
-  else
-  buildtests_zookeeper:
   endif
 
 
-  test: test_c test_cxx test_zookeeper
+  test: test_c test_cxx
 
-  flaky_test: flaky_test_c flaky_test_cxx flaky_test_zookeeper
+  flaky_test: flaky_test_c flaky_test_cxx
 
   test_c: buildtests_c
   % for tgt in targets:
@@ -1001,7 +982,7 @@
   % endfor
 
 
-  test_cxx: test_zookeeper buildtests_cxx
+  test_cxx: buildtests_cxx
   % for tgt in targets:
   % if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c++' and not tgt.get('flaky', False) and not tgt.get('external_deps', None):
   	$(E) "[RUN]     Testing ${tgt.name}"
@@ -1017,30 +998,6 @@
   	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
   % endif
   % endfor
-
-
-  ifeq ($(HAS_ZOOKEEPER),true)
-  test_zookeeper: buildtests_zookeeper
-  % for tgt in targets:
-  % if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c++' and not tgt.get('flaky', False) and 'zookeeper' in tgt.get('external_deps', []):
-  	$(E) "[RUN]     Testing ${tgt.name}"
-  	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
-  % endif
-  % endfor
-
-
-  flaky_test_zookeeper: buildtests_zookeeper
-  % for tgt in targets:
-  % if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c++' and tgt.get('flaky', False) and 'zookeeper' in tgt.get('external_deps', []):
-  	$(E) "[RUN]     Testing ${tgt.name}"
-  	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
-  % endif
-  % endfor
-
-  else
-  test_zookeeper:
-  flaky_test_zookeeper:
-  endif
 
 
   test_python: static_c
@@ -1102,20 +1059,6 @@
   % endif
   % endif
   % endfor
-  ifeq ($(HAS_ZOOKEEPER),true)
-  % for lib in libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
-  % if lib.language == "c":
-  % if lib.build == "all":
-  % if 'zookeeper' in lib.get('external_deps', []):
-  	$(E) "[STRIP]   Stripping lib${lib.name}.a"
-  	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
-  % endif
-  % endif
-  % endif
-  % endif
-  % endfor
-  endif
   endif
 
   strip-static_cxx: static_cxx
@@ -1146,20 +1089,6 @@
   % endif
   % endif
   % endfor
-  ifeq ($(HAS_ZOOKEEPER),true)
-  % for lib in libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
-  % if lib.language == "c":
-  % if lib.build == "all":
-  % if 'zookeeper' in lib.get('external_deps', []):
-  	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)"
-  	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)
-  % endif
-  % endif
-  % endif
-  % endif
-  % endfor
-  endif
   endif
 
   strip-shared_cxx: shared_cxx
@@ -1204,11 +1133,6 @@
   	$(Q) mkdir -p $(@D)
   	$(Q) echo "$(GRPC_UNSECURE_PC_FILE)" | tr , '\n' >$@
 
-  $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_zookeeper.pc:
-  	$(E) "[MAKE]    Generating $@"
-  	$(Q) mkdir -p $(@D)
-  	$(Q) echo "$(GRPC_ZOOKEEPER_PC_FILE)" | tr , '\n' >$@
-
   $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc:
   	$(E) "[MAKE]    Generating $@"
   	$(Q) mkdir -p $(@D)
@@ -1227,12 +1151,12 @@
   $(GENDIR)/${p}.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc' % q for q in proto_deps.get(p, []))}
   	$(E) "[PROTOC]  Generating protobuf CC file from $<"
   	$(Q) mkdir -p `dirname $@`
-  	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
+  	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
   $(GENDIR)/${p}.grpc.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) ${' '.join('$(GENDIR)/%s.pb.cc $(GENDIR)/%s.grpc.pb.cc' % (q,q) for q in proto_deps.get(p, []))}
   	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
   	$(Q) mkdir -p `dirname $@`
-  	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
+  	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
   endif
 
   % endfor
@@ -1307,21 +1231,6 @@
   % endif
   % endif
   % endfor
-  ifeq ($(HAS_ZOOKEEPER),true)
-  % for lib in libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
-  % if lib.language == "c":
-  % if lib.build == "all":
-  % if 'zookeeper' in lib.get('external_deps', []):
-  	$(E) "[INSTALL] Installing lib${lib.name}.a"
-  	$(Q) $(INSTALL) -d $(prefix)/lib
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(prefix)/lib/lib${lib.name}.a
-  % endif
-  % endif
-  % endif
-  % endif
-  % endfor
-  endif
 
   install-static_cxx: static_cxx strip-static_cxx install-pkg-config_cxx
   % for lib in libs:
@@ -1356,27 +1265,6 @@
   % endif
   % endif
   % endfor
-  ifeq ($(HAS_ZOOKEEPER),true)
-  % for lib in libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
-  % if lib.language == lang_filter:
-  % if lib.build == "all":
-  % if 'zookeeper' in lib.get('external_deps', []):
-  	$(E) "[INSTALL] Installing $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)"
-  	$(Q) $(INSTALL) -d $(prefix)/lib
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT)
-  ifeq ($(SYSTEM),MINGW32)
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}-imp.a $(prefix)/lib/lib${lib.name}-imp.a
-  else ifneq ($(SYSTEM),Darwin)
-  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.so.${settings.core_version.major}
-  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.so
-  endif
-  % endif
-  % endif
-  % endif
-  % endif
-  % endfor
-  endif
   ifneq ($(SYSTEM),MINGW32)
   ifneq ($(SYSTEM),Darwin)
   	$(Q) ldconfig || true
@@ -1406,14 +1294,11 @@
   % endfor
   endif
 
-  install-pkg-config_c: pc_c pc_c_unsecure pc_c_zookeeper
+  install-pkg-config_c: pc_c pc_c_unsecure
   	$(E) "[INSTALL] Installing C pkg-config files"
   	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
   	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(prefix)/lib/pkgconfig/grpc.pc
   	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(prefix)/lib/pkgconfig/grpc_unsecure.pc
-  ifeq ($(HAS_ZOOKEEPER),true)
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_zookeeper.pc $(prefix)/lib/pkgconfig/grpc_zookeeper.pc
-  endif
 
   install-pkg-config_cxx: pc_cxx pc_cxx_unsecure
   	$(E) "[INSTALL] Installing C++ pkg-config files"
@@ -1563,7 +1448,7 @@
   	$(E) "[AR]      Creating $@"
   	$(Q) mkdir -p `dirname $@`
   	$(Q) rm -f $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
-  	$(Q) $(AR) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS) \
+  	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS) \
   % if lib.get('baselib', False):
    $(LIBGPR_OBJS) \
    $(ZLIB_MERGE_OBJS) \
@@ -1620,9 +1505,6 @@
     else:
       for src in lib.src:
         sources_that_don_t_need_openssl.add(src)
-
-    if 'zookeeper' in lib.get('external_deps', []):
-      libs = libs + ' -lzookeeper_mt'
 
     if lib.get('secure', 'check') == True or lib.get('secure', 'check') == 'check':
       lib_deps = lib_deps + ' $(OPENSSL_DEP)'
@@ -1778,9 +1660,6 @@
   % for dep in tgt.deps:
    $(LIBDIR)/$(CONFIG)/lib${dep}.a\
   % endfor
-  % if 'zookeeper' in tgt.get('external_deps', []):
-   -lzookeeper_mt\
-  % endif
   % if tgt.language == "c++":
   % if tgt.build == 'protoc':
    $(HOST_LDLIBSXX) $(HOST_LDLIBS_PROTOC)\

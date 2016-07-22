@@ -29,8 +29,6 @@
 
 """gRPC's Python API."""
 
-__import__('pkg_resources').declare_namespace(__name__)
-
 import abc
 import enum
 
@@ -212,14 +210,14 @@ class ChannelConnectivity(enum.Enum):
     READY: The channel is ready to conduct RPCs.
     TRANSIENT_FAILURE: The channel has seen a failure from which it expects to
       recover.
-    FATAL_FAILURE: The channel has seen a failure from which it cannot recover.
+    SHUTDOWN: The channel has seen a failure from which it cannot recover.
   """
   IDLE              = (_cygrpc.ConnectivityState.idle, 'idle')
   CONNECTING        = (_cygrpc.ConnectivityState.connecting, 'connecting')
   READY             = (_cygrpc.ConnectivityState.ready, 'ready')
   TRANSIENT_FAILURE = (
       _cygrpc.ConnectivityState.transient_failure, 'transient failure')
-  FATAL_FAILURE     = (_cygrpc.ConnectivityState.fatal_failure, 'fatal failure')
+  SHUTDOWN          = (_cygrpc.ConnectivityState.shutdown, 'shutdown')
 
 
 @enum.unique
@@ -314,7 +312,7 @@ class Call(six.with_metaclass(abc.ABCMeta, RpcContext)):
     This method blocks until the value is available.
 
     Returns:
-      The initial metadata as a sequence of pairs of bytes.
+      The initial :term:`metadata`.
     """
     raise NotImplementedError()
 
@@ -325,7 +323,7 @@ class Call(six.with_metaclass(abc.ABCMeta, RpcContext)):
     This method blocks until the value is available.
 
     Returns:
-      The trailing metadata as a sequence of pairs of bytes.
+      The trailing :term:`metadata`.
     """
     raise NotImplementedError()
 
@@ -396,8 +394,7 @@ class AuthMetadataPluginCallback(six.with_metaclass(abc.ABCMeta)):
     """Inform the gRPC runtime of the metadata to construct a CallCredentials.
 
     Args:
-      metadata: An iterable of 2-sequences (e.g. tuples) of metadata key/value
-        pairs.
+      metadata: The :term:`metadata` used to construct the CallCredentials.
       error: An Exception to indicate error or None to indicate success.
     """
     raise NotImplementedError()
@@ -438,23 +435,39 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
   """Affords invoking a unary-unary RPC."""
 
   @abc.abstractmethod
-  def __call__(
-      self, request, timeout=None, metadata=None, credentials=None,
-      with_call=False):
+  def __call__(self, request, timeout=None, metadata=None, credentials=None):
     """Synchronously invokes the underlying RPC.
 
     Args:
       request: The request value for the RPC.
       timeout: An optional duration of time in seconds to allow for the RPC.
-      metadata: An optional sequence of pairs of bytes to be transmitted to the
+      metadata: Optional :term:`metadata` to be transmitted to the
         service-side of the RPC.
       credentials: An optional CallCredentials for the RPC.
-      with_call: Whether or not to include return a Call for the RPC in addition
-        to the response.
 
     Returns:
-      The response value for the RPC, and a Call for the RPC if with_call was
-        set to True at invocation.
+      The response value for the RPC.
+
+    Raises:
+      RpcError: Indicating that the RPC terminated with non-OK status. The
+        raised RpcError will also be a Call for the RPC affording the RPC's
+        metadata, status code, and details.
+    """
+    raise NotImplementedError()
+
+  @abc.abstractmethod
+  def with_call(self, request, timeout=None, metadata=None, credentials=None):
+    """Synchronously invokes the underlying RPC.
+
+    Args:
+      request: The request value for the RPC.
+      timeout: An optional durating of time in seconds to allow for the RPC.
+      metadata: Optional :term:`metadata` to be transmitted to the
+        service-side of the RPC.
+      credentials: An optional CallCredentials for the RPC.
+
+    Returns:
+      The response value for the RPC and a Call value for the RPC.
 
     Raises:
       RpcError: Indicating that the RPC terminated with non-OK status. The
@@ -470,7 +483,7 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
     Args:
       request: The request value for the RPC.
       timeout: An optional duration of time in seconds to allow for the RPC.
-      metadata: An optional sequence of pairs of bytes to be transmitted to the
+      metadata: Optional :term:`metadata` to be transmitted to the
         service-side of the RPC.
       credentials: An optional CallCredentials for the RPC.
 
@@ -493,7 +506,7 @@ class UnaryStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
     Args:
       request: The request value for the RPC.
       timeout: An optional duration of time in seconds to allow for the RPC.
-      metadata: An optional sequence of pairs of bytes to be transmitted to the
+      metadata: An optional :term:`metadata` to be transmitted to the
         service-side of the RPC.
       credentials: An optional CallCredentials for the RPC.
 
@@ -510,22 +523,41 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
 
   @abc.abstractmethod
   def __call__(
-      self, request_iterator, timeout=None, metadata=None, credentials=None,
-      with_call=False):
+      self, request_iterator, timeout=None, metadata=None, credentials=None):
     """Synchronously invokes the underlying RPC.
 
     Args:
       request_iterator: An iterator that yields request values for the RPC.
       timeout: An optional duration of time in seconds to allow for the RPC.
-      metadata: An optional sequence of pairs of bytes to be transmitted to the
+      metadata: Optional :term:`metadata` to be transmitted to the
         service-side of the RPC.
       credentials: An optional CallCredentials for the RPC.
-      with_call: Whether or not to include return a Call for the RPC in addition
-        to the response.
 
     Returns:
       The response value for the RPC, and a Call for the RPC if with_call was
         set to True at invocation.
+
+    Raises:
+      RpcError: Indicating that the RPC terminated with non-OK status. The
+        raised RpcError will also be a Call for the RPC affording the RPC's
+        metadata, status code, and details.
+    """
+    raise NotImplementedError()
+
+  @abc.abstractmethod
+  def with_call(
+      self, request_iterator, timeout=None, metadata=None, credentials=None):
+    """Synchronously invokes the underlying RPC.
+
+    Args:
+      request_iterator: An iterator that yields request values for the RPC.
+      timeout: An optional duration of time in seconds to allow for the RPC.
+      metadata: Optional :term:`metadata` to be transmitted to the
+        service-side of the RPC.
+      credentials: An optional CallCredentials for the RPC.
+
+    Returns:
+      The response value for the RPC and a Call for the RPC.
 
     Raises:
       RpcError: Indicating that the RPC terminated with non-OK status. The
@@ -542,7 +574,7 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
     Args:
       request_iterator: An iterator that yields request values for the RPC.
       timeout: An optional duration of time in seconds to allow for the RPC.
-      metadata: An optional sequence of pairs of bytes to be transmitted to the
+      metadata: Optional :term:`metadata` to be transmitted to the
         service-side of the RPC.
       credentials: An optional CallCredentials for the RPC.
 
@@ -566,7 +598,7 @@ class StreamStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
     Args:
       request_iterator: An iterator that yields request values for the RPC.
       timeout: An optional duration of time in seconds to allow for the RPC.
-      metadata: An optional sequence of pairs of bytes to be transmitted to the
+      metadata: Optional :term:`metadata` to be transmitted to the
         service-side of the RPC.
       credentials: An optional CallCredentials for the RPC.
 
@@ -674,7 +706,7 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
     """Accesses the metadata from the invocation-side of the RPC.
 
     Returns:
-      The invocation metadata object as a sequence of pairs of bytes.
+      The invocation :term:`metadata`.
     """
     raise NotImplementedError()
 
@@ -695,8 +727,7 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
     service-side initial metadata to transmit.
 
     Args:
-      initial_metadata: The initial metadata of the RPC as a sequence of pairs
-        of bytes.
+      initial_metadata: The initial :term:`metadata`.
     """
     raise NotImplementedError()
 
@@ -708,8 +739,7 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
     service-side trailing metadata to transmit.
 
     Args:
-      trailing_metadata: The trailing metadata of the RPC as a sequence of pairs
-        of bytes.
+      trailing_metadata: The trailing :term:`metadata`.
     """
     raise NotImplementedError()
 
@@ -782,7 +812,7 @@ class HandlerCallDetails(six.with_metaclass(abc.ABCMeta)):
   """Describes an RPC that has just arrived for service.
   Attributes:
     method: The method name of the RPC.
-    invocation_metadata: The metadata from the invocation side of the RPC.
+    invocation_metadata: The :term:`metadata` from the invocation side of the RPC.
   """
 
 
@@ -900,6 +930,102 @@ class Server(six.with_metaclass(abc.ABCMeta)):
 #################################  Functions    ################################
 
 
+def unary_unary_rpc_method_handler(
+    behavior, request_deserializer=None, response_serializer=None):
+  """Creates an RpcMethodHandler for a unary-unary RPC method.
+
+  Args:
+    behavior: The implementation of an RPC method as a callable behavior taking
+      a single request value and returning a single response value.
+    request_deserializer: An optional request deserialization behavior.
+    response_serializer: An optional response serialization behavior.
+
+  Returns:
+    An RpcMethodHandler for a unary-unary RPC method constructed from the given
+      parameters.
+  """
+  from grpc import _utilities
+  return _utilities.RpcMethodHandler(
+      False, False, request_deserializer, response_serializer, behavior, None,
+      None, None)
+
+
+def unary_stream_rpc_method_handler(
+    behavior, request_deserializer=None, response_serializer=None):
+  """Creates an RpcMethodHandler for a unary-stream RPC method.
+
+  Args:
+    behavior: The implementation of an RPC method as a callable behavior taking
+      a single request value and returning an iterator of response values.
+    request_deserializer: An optional request deserialization behavior.
+    response_serializer: An optional response serialization behavior.
+
+  Returns:
+    An RpcMethodHandler for a unary-stream RPC method constructed from the
+      given parameters.
+  """
+  from grpc import _utilities
+  return _utilities.RpcMethodHandler(
+      False, True, request_deserializer, response_serializer, None, behavior,
+      None, None)
+
+
+def stream_unary_rpc_method_handler(
+    behavior, request_deserializer=None, response_serializer=None):
+  """Creates an RpcMethodHandler for a stream-unary RPC method.
+
+  Args:
+    behavior: The implementation of an RPC method as a callable behavior taking
+      an iterator of request values and returning a single response value.
+    request_deserializer: An optional request deserialization behavior.
+    response_serializer: An optional response serialization behavior.
+
+  Returns:
+    An RpcMethodHandler for a stream-unary RPC method constructed from the
+      given parameters.
+  """
+  from grpc import _utilities
+  return _utilities.RpcMethodHandler(
+      True, False, request_deserializer, response_serializer, None, None,
+      behavior, None)
+
+
+def stream_stream_rpc_method_handler(
+        behavior, request_deserializer=None, response_serializer=None):
+  """Creates an RpcMethodHandler for a stream-stream RPC method.
+
+  Args:
+    behavior: The implementation of an RPC method as a callable behavior taking
+      an iterator of request values and returning an iterator of response
+      values.
+    request_deserializer: An optional request deserialization behavior.
+    response_serializer: An optional response serialization behavior.
+
+  Returns:
+    An RpcMethodHandler for a stream-stream RPC method constructed from the
+      given parameters.
+  """
+  from grpc import _utilities
+  return _utilities.RpcMethodHandler(
+      True, True, request_deserializer, response_serializer, None, None, None,
+      behavior)
+
+
+def method_handlers_generic_handler(service, method_handlers):
+  """Creates a grpc.GenericRpcHandler from RpcMethodHandlers.
+
+  Args:
+    service: A service name to be used for the given method handlers.
+    method_handlers: A dictionary from method name to RpcMethodHandler
+      implementing the named method.
+
+  Returns:
+    A GenericRpcHandler constructed from the given parameters.
+  """
+  from grpc import _utilities
+  return _utilities.DictionaryGenericHandler(service, method_handlers)
+
+
 def ssl_channel_credentials(
     root_certificates=None, private_key=None, certificate_chain=None):
   """Creates a ChannelCredentials for use with an SSL-enabled Channel.
@@ -962,37 +1088,41 @@ def access_token_call_credentials(access_token):
       _auth.AccessTokenCallCredentials(access_token))
 
 
-def composite_call_credentials(call_credentials, additional_call_credentials):
-  """Compose two CallCredentials to make a new one.
+def composite_call_credentials(*call_credentials):
+  """Compose multiple CallCredentials to make a new CallCredentials.
 
   Args:
-    call_credentials: A CallCredentials object.
-    additional_call_credentials: Another CallCredentials object to compose on
-      top of call_credentials.
+    *call_credentials: At least two CallCredentials objects.
 
   Returns:
-    A new CallCredentials composed of the two given CallCredentials.
+    A CallCredentials object composed of the given CallCredentials objects.
   """
+  from grpc import _credential_composition
+  cygrpc_call_credentials = tuple(
+      single_call_credentials._credentials
+      for single_call_credentials in call_credentials)
   return CallCredentials(
-      _cygrpc.call_credentials_composite(
-          call_credentials._credentials,
-          additional_call_credentials._credentials))
+      _credential_composition.call(cygrpc_call_credentials))
 
 
-def composite_channel_credentials(channel_credentials, call_credentials):
-  """Compose a ChannelCredentials and a CallCredentials.
+def composite_channel_credentials(channel_credentials, *call_credentials):
+  """Compose a ChannelCredentials and one or more CallCredentials objects.
 
   Args:
     channel_credentials: A ChannelCredentials.
-    call_credentials: A CallCredentials.
+    *call_credentials: One or more CallCredentials objects.
 
   Returns:
     A ChannelCredentials composed of the given ChannelCredentials and
-      CallCredentials.
+      CallCredentials objects.
   """
+  from grpc import _credential_composition
+  cygrpc_call_credentials = tuple(
+      single_call_credentials._credentials
+      for single_call_credentials in call_credentials)
   return ChannelCredentials(
-      _cygrpc.channel_credentials_composite(
-          channel_credentials._credentials, call_credentials._credentials))
+      _credential_composition.channel(
+          channel_credentials._credentials, cygrpc_call_credentials))
 
 
 def ssl_server_credentials(
@@ -1059,7 +1189,7 @@ def insecure_channel(target, options=None):
     A Channel to the target through which RPCs may be conducted.
   """
   from grpc import _channel
-  return _channel.Channel(target, None, options)
+  return _channel.Channel(target, options, None)
 
 
 def secure_channel(target, credentials, options=None):
@@ -1075,25 +1205,69 @@ def secure_channel(target, credentials, options=None):
     A Channel to the target through which RPCs may be conducted.
   """
   from grpc import _channel
-  return _channel.Channel(target, credentials, options)
+  return _channel.Channel(target, options, credentials._credentials)
 
 
-def server(generic_rpc_handlers, thread_pool, options=None):
+def server(thread_pool, handlers=None):
   """Creates a Server with which RPCs can be serviced.
 
-  The GenericRpcHandlers passed to this function needn't be the only
-  GenericRpcHandlers that will be used to serve RPCs; others may be added later
-  by calling add_generic_rpc_handlers any time before the returned server is
-  started.
-
   Args:
-    generic_rpc_handlers: Some number of GenericRpcHandlers that will be used
-      to service RPCs after the returned Server is started.
     thread_pool: A futures.ThreadPoolExecutor to be used by the returned Server
       to service RPCs.
+    handlers: An optional sequence of GenericRpcHandlers to be used to service
+      RPCs after the returned Server is started. These handlers need not be the
+      only handlers the server will use to service RPCs; other handlers may
+      later be added by calling add_generic_rpc_handlers any time before the
+      returned Server is started.
 
   Returns:
     A Server with which RPCs can be serviced.
   """
   from grpc import _server
-  return _server.Server(generic_rpc_handlers, thread_pool)
+  return _server.Server(thread_pool, () if handlers is None else handlers)
+
+
+###################################  __all__  #################################
+
+
+__all__ = (
+    'FutureTimeoutError',
+    'FutureCancelledError',
+    'Future',
+    'ChannelConnectivity',
+    'StatusCode',
+    'RpcError',
+    'RpcContext',
+    'Call',
+    'ChannelCredentials',
+    'CallCredentials',
+    'AuthMetadataContext',
+    'AuthMetadataPluginCallback',
+    'AuthMetadataPlugin',
+    'ServerCredentials',
+    'UnaryUnaryMultiCallable',
+    'UnaryStreamMultiCallable',
+    'StreamUnaryMultiCallable',
+    'StreamStreamMultiCallable',
+    'Channel',
+    'ServicerContext',
+    'RpcMethodHandler',
+    'HandlerCallDetails',
+    'GenericRpcHandler',
+    'Server',
+    'unary_unary_rpc_method_handler',
+    'unary_stream_rpc_method_handler',
+    'stream_unary_rpc_method_handler',
+    'stream_stream_rpc_method_handler',
+    'method_handlers_generic_handler',
+    'ssl_channel_credentials',
+    'metadata_call_credentials',
+    'access_token_call_credentials',
+    'composite_call_credentials',
+    'composite_channel_credentials',
+    'ssl_server_credentials',
+    'channel_ready_future',
+    'insecure_channel',
+    'secure_channel',
+    'server',
+)

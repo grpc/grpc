@@ -81,6 +81,7 @@ typedef struct grpc_winsocket_callback_info {
    is closer to what happens in posix world. */
 typedef struct grpc_winsocket {
   SOCKET socket;
+  bool destroy_called;
 
   grpc_winsocket_callback_info write_info;
   grpc_winsocket_callback_info read_info;
@@ -107,5 +108,17 @@ void grpc_winsocket_shutdown(grpc_winsocket *socket);
 
 /* Destroy a socket. Should only be called if there's no pending operation. */
 void grpc_winsocket_destroy(grpc_winsocket *socket);
+
+void grpc_socket_notify_on_write(grpc_exec_ctx *exec_ctx,
+                                 grpc_winsocket *winsocket,
+                                 grpc_closure *closure);
+
+void grpc_socket_notify_on_read(grpc_exec_ctx *exec_ctx,
+                                grpc_winsocket *winsocket,
+                                grpc_closure *closure);
+
+void grpc_socket_become_ready(grpc_exec_ctx *exec_ctx,
+                              grpc_winsocket *winsocket,
+                              grpc_winsocket_callback_info *ci);
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKET_WINDOWS_H */

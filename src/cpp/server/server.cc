@@ -67,7 +67,7 @@ static std::shared_ptr<Server::GlobalCallbacks> g_callbacks = nullptr;
 static gpr_once g_once_init_callbacks = GPR_ONCE_INIT;
 
 static void InitGlobalCallbacks() {
-  if (g_callbacks == nullptr) {
+  if (!g_callbacks) {
     g_callbacks.reset(new DefaultGlobalCallbacks());
   }
 }
@@ -281,6 +281,7 @@ Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
     : max_message_size_(max_message_size),
       started_(false),
       shutdown_(false),
+      shutdown_notified_(false),
       num_running_cb_(0),
       sync_methods_(new std::list<SyncRequest>),
       has_generic_service_(false),
@@ -324,10 +325,14 @@ Server::~Server() {
 }
 
 void Server::SetGlobalCallbacks(GlobalCallbacks* callbacks) {
-  GPR_ASSERT(g_callbacks == nullptr);
-  GPR_ASSERT(callbacks != nullptr);
+  GPR_ASSERT(!g_callbacks);
+  GPR_ASSERT(callbacks);
   g_callbacks.reset(callbacks);
 }
+
+grpc_server* Server::c_server() { return server_; }
+
+CompletionQueue* Server::completion_queue() { return &cq_; }
 
 static grpc_server_register_method_payload_handling PayloadHandlingForMethod(
     RpcServiceMethod* method) {
@@ -458,13 +463,16 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
     while (num_running_cb_ != 0) {
       callback_cv_.wait(lock);
     }
+
+    shutdown_notified_ = true;
+    shutdown_cv_.notify_all();
   }
 }
 
 void Server::Wait() {
   grpc::unique_lock<grpc::mutex> lock(mu_);
-  while (num_running_cb_ != 0) {
-    callback_cv_.wait(lock);
+  while (started_ && !shutdown_notified_) {
+    shutdown_cv_.wait(lock);
   }
 }
 

@@ -128,6 +128,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
@@ -161,6 +162,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   cq_expect_completion(cqv, tag(101), 1);
   cq_verify(cqv);
 
+  memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
@@ -200,6 +202,12 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
 
   grpc_call_destroy(c);
   grpc_call_destroy(s);
+
+  /* TODO(ctiller): this rate limits the test, and it should be removed when
+                    retry has been implemented; until then cross-thread chatter
+                    may result in some requests needing to be cancelled due to
+                    seqno exhaustion. */
+  cq_verify_empty(cqv);
 
   cq_verifier_destroy(cqv);
 }

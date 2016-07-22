@@ -37,6 +37,7 @@ cdef extern from "grpc/_cython/loader.h":
   ctypedef long int64_t
 
   int pygrpc_load_core(char*)
+  int pygrpc_initialize_core()
 
   void *gpr_malloc(size_t size) nogil
   void gpr_free(void *ptr) nogil
@@ -80,6 +81,12 @@ cdef extern from "grpc/_cython/loader.h":
   gpr_timespec gpr_convert_clock_type(gpr_timespec t,
                                       gpr_clock_type target_clock) nogil
 
+  gpr_timespec gpr_time_from_millis(int64_t ms, gpr_clock_type type) nogil
+
+  gpr_timespec gpr_time_add(gpr_timespec a, gpr_timespec b) nogil
+
+  int gpr_time_cmp(gpr_timespec a, gpr_timespec b) nogil
+  
   ctypedef enum grpc_status_code:
     GRPC_STATUS_OK
     GRPC_STATUS_CANCELLED
@@ -125,8 +132,8 @@ cdef extern from "grpc/_cython/loader.h":
   size_t grpc_byte_buffer_length(grpc_byte_buffer *bb) nogil
   void grpc_byte_buffer_destroy(grpc_byte_buffer *byte_buffer) nogil
 
-  void grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
-                                    grpc_byte_buffer *buffer) nogil
+  int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader *reader,
+                                   grpc_byte_buffer *buffer) nogil
   int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader *reader,
                                    gpr_slice *slice) nogil
   void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader) nogil

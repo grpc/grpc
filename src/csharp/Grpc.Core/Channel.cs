@@ -67,8 +67,19 @@ namespace Grpc.Core
         /// </summary>
         /// <param name="target">Target of the channel.</param>
         /// <param name="credentials">Credentials to secure the channel.</param>
+        public Channel(string target, ChannelCredentials credentials) :
+            this(target, credentials, null)
+        {
+        }
+
+        /// <summary>
+        /// Creates a channel that connects to a specific host.
+        /// Port will default to 80 for an unsecure channel and to 443 for a secure channel.
+        /// </summary>
+        /// <param name="target">Target of the channel.</param>
+        /// <param name="credentials">Credentials to secure the channel.</param>
         /// <param name="options">Channel options.</param>
-        public Channel(string target, ChannelCredentials credentials, IEnumerable<ChannelOption> options = null)
+        public Channel(string target, ChannelCredentials credentials, IEnumerable<ChannelOption> options)
         {
             this.target = GrpcPreconditions.CheckNotNull(target, "target");
             this.options = CreateOptionsDictionary(options);
@@ -97,8 +108,19 @@ namespace Grpc.Core
         /// <param name="host">The name or IP address of the host.</param>
         /// <param name="port">The port.</param>
         /// <param name="credentials">Credentials to secure the channel.</param>
+        public Channel(string host, int port, ChannelCredentials credentials) :
+            this(host, port, credentials, null)
+        {
+        }
+
+        /// <summary>
+        /// Creates a channel that connects to a specific host and port.
+        /// </summary>
+        /// <param name="host">The name or IP address of the host.</param>
+        /// <param name="port">The port.</param>
+        /// <param name="credentials">Credentials to secure the channel.</param>
         /// <param name="options">Channel options.</param>
-        public Channel(string host, int port, ChannelCredentials credentials, IEnumerable<ChannelOption> options = null) :
+        public Channel(string host, int port, ChannelCredentials credentials, IEnumerable<ChannelOption> options) :
             this(string.Format("{0}:{1}", host, port), credentials, options)
         {
         }

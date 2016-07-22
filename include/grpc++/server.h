@@ -93,6 +93,12 @@ class Server GRPC_FINAL : public ServerInterface, private GrpcLibraryCodegen {
   /// until all server objects in the process have been destroyed.
   static void SetGlobalCallbacks(GlobalCallbacks* callbacks);
 
+  // Returns a \em raw pointer to the underlying grpc_server instance.
+  grpc_server* c_server();
+
+  // Returns a \em raw pointer to the underlying CompletionQueue.
+  CompletionQueue* completion_queue();
+
  private:
   friend class AsyncGenericService;
   friend class ServerBuilder;
@@ -173,9 +179,12 @@ class Server GRPC_FINAL : public ServerInterface, private GrpcLibraryCodegen {
   grpc::mutex mu_;
   bool started_;
   bool shutdown_;
+  bool shutdown_notified_;
   // The number of threads which are running callbacks.
   int num_running_cb_;
   grpc::condition_variable callback_cv_;
+
+  grpc::condition_variable shutdown_cv_;
 
   std::shared_ptr<GlobalCallbacks> global_callbacks_;
 

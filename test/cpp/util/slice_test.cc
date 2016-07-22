@@ -68,6 +68,16 @@ TEST_F(SliceTest, Empty) {
   CheckSlice(empty_slice, "");
 }
 
+TEST_F(SliceTest, Cslice) {
+  gpr_slice s = gpr_slice_from_copied_string(kContent);
+  Slice spp(s, Slice::STEAL_REF);
+  CheckSlice(spp, kContent);
+  gpr_slice c_slice = spp.c_slice();
+  EXPECT_EQ(GPR_SLICE_START_PTR(s), GPR_SLICE_START_PTR(c_slice));
+  EXPECT_EQ(GPR_SLICE_END_PTR(s), GPR_SLICE_END_PTR(c_slice));
+  gpr_slice_unref(c_slice);
+}
+
 }  // namespace
 }  // namespace grpc
 

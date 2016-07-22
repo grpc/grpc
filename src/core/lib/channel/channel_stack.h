@@ -48,6 +48,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/transport/transport.h"
 
 typedef struct grpc_channel_element grpc_channel_element;
@@ -59,6 +60,8 @@ typedef struct grpc_call_stack grpc_call_stack;
 typedef struct {
   grpc_channel_stack *channel_stack;
   const grpc_channel_args *channel_args;
+  /** Transport, iff it is known */
+  grpc_transport *optional_transport;
   int is_first;
   int is_last;
 } grpc_channel_element_args;
@@ -109,8 +112,9 @@ typedef struct {
      argument. */
   void (*init_call_elem)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                          grpc_call_element_args *args);
-  void (*set_pollset)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                      grpc_pollset *pollset);
+  void (*set_pollset_or_pollset_set)(grpc_exec_ctx *exec_ctx,
+                                     grpc_call_element *elem,
+                                     grpc_polling_entity *pollent);
   /* Destroy per call data.
      The filter does not need to do any chaining.
      The bottom filter of a stack will be passed a non-NULL pointer to
@@ -196,6 +200,7 @@ void grpc_channel_stack_init(grpc_exec_ctx *exec_ctx, int initial_refs,
                              grpc_iomgr_cb_func destroy, void *destroy_arg,
                              const grpc_channel_filter **filters,
                              size_t filter_count, const grpc_channel_args *args,
+                             grpc_transport *optional_transport,
                              const char *name, grpc_channel_stack *stack);
 /* Destroy a channel stack */
 void grpc_channel_stack_destroy(grpc_exec_ctx *exec_ctx,
@@ -210,10 +215,11 @@ void grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
                           grpc_call_context_element *context,
                           const void *transport_server_data,
                           grpc_call_stack *call_stack);
-/* Set a pollset for a call stack: must occur before the first op is started */
-void grpc_call_stack_set_pollset(grpc_exec_ctx *exec_ctx,
-                                 grpc_call_stack *call_stack,
-                                 grpc_pollset *pollset);
+/* Set a pollset or a pollset_set for a call stack: must occur before the first
+ * op is started */
+void grpc_call_stack_set_pollset_or_pollset_set(grpc_exec_ctx *exec_ctx,
+                                                grpc_call_stack *call_stack,
+                                                grpc_polling_entity *pollent);
 
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
 #define GRPC_CALL_STACK_REF(call_stack, reason) \
@@ -240,11 +246,11 @@ void grpc_call_stack_destroy(grpc_exec_ctx *exec_ctx, grpc_call_stack *stack,
                              const grpc_call_stats *call_stats,
                              void *and_free_memory);
 
-/* Ignore set pollset - used by filters to implement the set_pollset method
-   if they don't care about pollsets at all. Does nothing. */
-void grpc_call_stack_ignore_set_pollset(grpc_exec_ctx *exec_ctx,
-                                        grpc_call_element *elem,
-                                        grpc_pollset *pollset);
+/* Ignore set pollset{_set} - used by filters if they don't care about pollsets
+ * at all. Does nothing. */
+void grpc_call_stack_ignore_set_pollset_or_pollset_set(
+    grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+    grpc_polling_entity *pollent);
 /* Call the next operation in a call stack */
 void grpc_call_next_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                        grpc_transport_stream_op *op);
@@ -266,6 +272,11 @@ void grpc_call_log_op(char *file, int line, gpr_log_severity severity,
 
 void grpc_call_element_send_cancel(grpc_exec_ctx *exec_ctx,
                                    grpc_call_element *cur_elem);
+
+void grpc_call_element_send_cancel_with_message(grpc_exec_ctx *exec_ctx,
+                                                grpc_call_element *cur_elem,
+                                                grpc_status_code status,
+                                                gpr_slice *optional_message);
 
 extern int grpc_trace_channel;
 

@@ -67,11 +67,19 @@ namespace Grpc.Core
         bool startRequested;
         volatile bool shutdownRequested;
 
+
         /// <summary>
-        /// Create a new server.
+        /// Creates a new server.
+        /// </summary>
+        public Server() : this(null)
+        {
+        }
+
+        /// <summary>
+        /// Creates a new server.
         /// </summary>
         /// <param name="options">Channel options.</param>
-        public Server(IEnumerable<ChannelOption> options = null)
+        public Server(IEnumerable<ChannelOption> options)
         {
             this.serviceDefinitions = new ServiceDefinitionCollection(this);
             this.ports = new ServerPortCollection(this);
@@ -132,6 +140,7 @@ namespace Grpc.Core
             lock (myLock)
             {
                 GrpcPreconditions.CheckState(!startRequested);
+                GrpcPreconditions.CheckState(!shutdownRequested);
                 startRequested = true;
                 
                 handle.Start();
@@ -195,7 +204,6 @@ namespace Grpc.Core
         {
             lock (myLock)
             {
-                GrpcPreconditions.CheckState(startRequested);
                 GrpcPreconditions.CheckState(!shutdownRequested);
                 shutdownRequested = true;
             }
@@ -207,7 +215,6 @@ namespace Grpc.Core
             {
                 handle.CancelAllCalls();
             }
-
             await ShutdownCompleteOrEnvironmentDeadAsync().ConfigureAwait(false);
 
             DisposeHandle();

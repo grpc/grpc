@@ -35,6 +35,7 @@
 #define GRPC_CORE_EXT_CLIENT_CONFIG_LB_POLICY_H
 
 #include "src/core/ext/client_config/subchannel.h"
+#include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 /** A load balancing policy: specified by a vtable and a struct (which
@@ -59,7 +60,8 @@ struct grpc_lb_policy_vtable {
 
   /** implement grpc_lb_policy_pick */
   int (*pick)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-              grpc_pollset *pollset, grpc_metadata_batch *initial_metadata,
+              grpc_polling_entity *pollent,
+              grpc_metadata_batch *initial_metadata,
               uint32_t initial_metadata_flags,
               grpc_connected_subchannel **target, grpc_closure *on_complete);
   void (*cancel_pick)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
@@ -75,8 +77,9 @@ struct grpc_lb_policy_vtable {
   void (*exit_idle)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy);
 
   /** check the current connectivity of the lb_policy */
-  grpc_connectivity_state (*check_connectivity)(grpc_exec_ctx *exec_ctx,
-                                                grpc_lb_policy *policy);
+  grpc_connectivity_state (*check_connectivity)(
+      grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
+      grpc_error **connectivity_error);
 
   /** call notify when the connectivity state of a channel changes from *state.
       Updates *state with the new state of the policy */
@@ -124,7 +127,7 @@ void grpc_lb_policy_init(grpc_lb_policy *policy,
     \a target.
     Picking can be asynchronous. Any IO should be done under \a pollset. */
 int grpc_lb_policy_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-                        grpc_pollset *pollset,
+                        grpc_polling_entity *pollent,
                         grpc_metadata_batch *initial_metadata,
                         uint32_t initial_metadata_flags,
                         grpc_connected_subchannel **target,
@@ -152,6 +155,7 @@ void grpc_lb_policy_notify_on_state_change(grpc_exec_ctx *exec_ctx,
                                            grpc_closure *closure);
 
 grpc_connectivity_state grpc_lb_policy_check_connectivity(
-    grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy);
+    grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
+    grpc_error **connectivity_error);
 
 #endif /* GRPC_CORE_EXT_CLIENT_CONFIG_LB_POLICY_H */

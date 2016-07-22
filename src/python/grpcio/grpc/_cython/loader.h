@@ -39,12 +39,19 @@
 /* Additional inclusions not covered by "imports.generated.h" */
 #include <grpc/byte_buffer_reader.h>
 
+/* TODO(atash) remove cruft */
+
 #ifdef __cplusplus
 extern "C" {
 #endif  /* __cpluslus */
 
 /* Attempts to load the core if necessary, and return non-zero upon succes. */
 int pygrpc_load_core(char *path);
+
+/* Initializes grpc and registers grpc_shutdown() to be called right before
+ * interpreter exit.  Returns non-zero upon success.
+ */
+int pygrpc_initialize_core(void);
 
 #ifdef __cplusplus
 }

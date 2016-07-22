@@ -93,10 +93,14 @@ bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx);
 /** Finish any pending work for a grpc_exec_ctx. Must be called before
  *  the instance is destroyed, or work may be lost. */
 void grpc_exec_ctx_finish(grpc_exec_ctx *exec_ctx);
-/** Add a closure to be executed at the next flush/finish point */
-void grpc_exec_ctx_enqueue(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
-                           bool success,
-                           grpc_workqueue *offload_target_or_null);
+/** Add a closure to be executed in the future.
+    If \a offload_target_or_null is NULL, the closure will be executed at the
+    next exec_ctx.{finish,flush} point.
+    If \a offload_target_or_null is non-NULL, the closure will be scheduled
+    against the workqueue, and a reference to the workqueue will be consumed. */
+void grpc_exec_ctx_sched(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
+                         grpc_error *error,
+                         grpc_workqueue *offload_target_or_null);
 /** Returns true if we'd like to leave this execution context as soon as
     possible: useful for deciding whether to do something more or not depending
     on outside context */
