@@ -119,6 +119,7 @@ class PythonArtifact:
       # need to do this manually...
       environ['CFLAGS'] = '-DGPR_MANYLINUX1=1'
       environ['BUILD_HEALTH_CHECKING'] = 'TRUE'
+      environ['BUILD_MANYLINUX_WHEEL'] = 'TRUE'
       return create_docker_jobspec(self.name,
           'tools/dockerfile/grpc_artifact_python_manylinux_%s' % self.arch,
           'tools/run_tests/build_artifact_python.sh',

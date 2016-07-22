@@ -62,13 +62,15 @@ CFLAGS="$CFLAGS -fno-wrapv" ${SETARCH_CMD} \
   ${PYTHON} tools/distrib/python/grpcio_tools/setup.py bdist_wheel
 
 mkdir -p artifacts
-if command -v ${AUDITWHEEL}
+if [ "$BUILD_MANYLINUX_WHEEL" != "" ]
 then
   for wheel in dist/*.whl; do
     ${AUDITWHEEL} repair $wheel -w artifacts/
+    rm $wheel
   done
   for wheel in tools/distrib/python/grpcio_tools/dist/*.whl; do
     ${AUDITWHEEL} repair $wheel -w artifacts/
+    rm $wheel
   done
 fi
 
