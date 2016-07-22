@@ -88,6 +88,7 @@ class ClientStreamingCall extends AbstractCall
 
         $status = $event->status;
         $this->trailing_metadata = $status->metadata;
+
         return [$this->deserializeResponse($event->message), $status];
     }
 }
