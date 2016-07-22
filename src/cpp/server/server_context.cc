@@ -140,7 +140,8 @@ ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata* metadata,
       deadline_(deadline),
       call_(nullptr),
       cq_(nullptr),
-      sent_initial_metadata_(false) {
+      sent_initial_metadata_(false),
+      compression_level_set_(false) {
   for (size_t i = 0; i < metadata_count; i++) {
     client_metadata_.insert(std::pair<grpc::string_ref, grpc::string_ref>(
         metadata[i].key,
