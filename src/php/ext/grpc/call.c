@@ -380,8 +380,6 @@ PHP_METHOD(Call, __construct) {
  */
 PHP_METHOD(Call, startBatch) {
 #if PHP_MAJOR_VERSION < 7
-  wrapped_grpc_call *call =
-      (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
   zval **value;
   zval **inner_value;
   HashPosition array_pointer;
@@ -395,7 +393,6 @@ PHP_METHOD(Call, startBatch) {
   MAKE_STD_ZVAL(result);
   object_init(result);
 #else
-  wrapped_grpc_call *call = Z_WRAPPED_GRPC_CALL_P(getThis());
   zval *value;
   zval *inner_value;
   zval *message_value;
@@ -405,6 +402,7 @@ PHP_METHOD(Call, startBatch) {
   zval recv_status;
   object_init(return_value);
 #endif
+  wrapped_grpc_call *call = Z_WRAPPED_GRPC_CALL_P(getThis());
   
   grpc_op ops[8];
   size_t op_num = 0;
@@ -829,14 +827,8 @@ cleanup:
  * @return string The URI of the endpoint
  */
 PHP_METHOD(Call, getPeer) {
-#if PHP_MAJOR_VERSION < 7
-  wrapped_grpc_call *call =
-      (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
-  RETURN_STRING(grpc_call_get_peer(call->wrapped), 1);
-#else
   wrapped_grpc_call *call = Z_WRAPPED_GRPC_CALL_P(getThis());
-  RETURN_STRING(grpc_call_get_peer(call->wrapped));
-#endif
+  PHP_GRPC_RETURN_STRING(grpc_call_get_peer(call->wrapped), 1);
 }
 
 /**
@@ -844,12 +836,7 @@ PHP_METHOD(Call, getPeer) {
  * has not already ended with another status.
  */
 PHP_METHOD(Call, cancel) {
-#if PHP_MAJOR_VERSION < 7
-  wrapped_grpc_call *call =
-      (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
-#else
   wrapped_grpc_call *call = Z_WRAPPED_GRPC_CALL_P(getThis());
-#endif
   grpc_call_cancel(call->wrapped, NULL);
 }
 
