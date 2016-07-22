@@ -66,7 +66,7 @@ typedef struct {
   /** mutex guarding the rest of the state */
   gpr_mu mu;
   /** are we currently resolving? */
-  int resolving;
+  bool resolving;
   /** which version of resolved_config have we published? */
   int published_version;
   /** which version of resolved_config is current? */
@@ -169,16 +169,17 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_lb_policy *lb_policy;
   gpr_mu_lock(&r->mu);
   GPR_ASSERT(r->resolving);
-  r->resolving = 0;
+  r->resolving = false;
   grpc_resolved_addresses *addresses = r->addresses;
   if (addresses != NULL) {
     grpc_lb_policy_args lb_policy_args;
-    config = grpc_client_config_create();
     memset(&lb_policy_args, 0, sizeof(lb_policy_args));
+    lb_policy_args.server_name = r->name;
     lb_policy_args.addresses = addresses;
     lb_policy_args.client_channel_factory = r->client_channel_factory;
     lb_policy =
         grpc_lb_policy_create(exec_ctx, r->lb_policy_name, &lb_policy_args);
+    config = grpc_client_config_create();
     if (lb_policy != NULL) {
       grpc_client_config_set_lb_policy(config, lb_policy);
       GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "construction");
@@ -218,7 +219,7 @@ static void dns_start_resolving_locked(grpc_exec_ctx *exec_ctx,
                                        dns_resolver *r) {
   GRPC_RESOLVER_REF(&r->base, "dns-resolving");
   GPR_ASSERT(!r->resolving);
-  r->resolving = 1;
+  r->resolving = true;
   r->addresses = NULL;
   grpc_resolve_address(exec_ctx, r->name, r->default_port,
                        grpc_closure_create(dns_on_resolved, r), &r->addresses);

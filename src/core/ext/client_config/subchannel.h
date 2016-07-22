@@ -162,6 +162,8 @@ struct grpc_subchannel_args {
   size_t filter_count;
   /** Channel arguments to be supplied to the newly created channel */
   const grpc_channel_args *args;
+  /** Server name */
+  char *server_name;  // Does not own.
   /** Address to connect to */
   struct sockaddr *addr;
   size_t addr_len;

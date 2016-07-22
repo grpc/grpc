@@ -125,6 +125,7 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
     grpc_client_config *cfg = grpc_client_config_create();
     grpc_lb_policy_args lb_policy_args;
     memset(&lb_policy_args, 0, sizeof(lb_policy_args));
+    lb_policy_args.server_name = "";
     lb_policy_args.addresses = r->addresses;
     lb_policy_args.client_channel_factory = r->client_channel_factory;
     grpc_lb_policy *lb_policy =

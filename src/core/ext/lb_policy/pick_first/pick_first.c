@@ -455,6 +455,7 @@ static grpc_lb_policy *create_pick_first(grpc_exec_ctx *exec_ctx,
   size_t subchannel_idx = 0;
   for (size_t i = 0; i < args->addresses->naddrs; i++) {
     memset(&sc_args, 0, sizeof(grpc_subchannel_args));
+    sc_args.server_name = args->server_name;
     sc_args.addr = (struct sockaddr *)(args->addresses->addrs[i].addr);
     sc_args.addr_len = (size_t)args->addresses->addrs[i].len;
 

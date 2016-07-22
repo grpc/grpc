@@ -46,7 +46,9 @@ typedef struct http_connect_handshaker {
   // Base class.  Must be first.
   grpc_handshaker base;
 
+  // These pointers are borrowed, we don't own them.
   char* proxy_server;
+  char* server_name;
 
   // State saved while performing the handshake.
   grpc_endpoint* endpoint;
@@ -67,7 +69,6 @@ typedef struct http_connect_handshaker {
 static void on_write_done(grpc_exec_ctx* exec_ctx, void* arg,
                           grpc_error* error) {
   http_connect_handshaker* h = arg;
-  // Read HTTP CONNECT response.
   grpc_endpoint_read(exec_ctx, h->endpoint, &h->response_buffer,
                      &h->response_read_closure);
 }
@@ -114,7 +115,6 @@ static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
 static void http_connect_handshaker_destroy(grpc_exec_ctx* exec_ctx,
                                             grpc_handshaker* handshaker) {
   http_connect_handshaker* h = (http_connect_handshaker*)handshaker;
-  gpr_free(h->proxy_server);
   gpr_slice_buffer_destroy(&h->request_buffer);
   gpr_slice_buffer_destroy(&h->response_buffer);
   grpc_http_parser_destroy(&h->http_parser);
@@ -149,8 +149,7 @@ static void http_connect_handshaker_do_handshake(
   memset(&request, 0, sizeof(request));
   request.host = gpr_strdup(h->proxy_server);
   request.http.method = gpr_strdup("CONNECT");
-  // FIXME: get server name from somewhere...
-  request.http.path = gpr_strdup("");
+  request.http.path = gpr_strdup(h->server_name);
   request.handshaker = &grpc_httpcli_plaintext;
   gpr_slice request_slice = grpc_httpcli_format_connect_request(&request);
   gpr_slice_buffer_add(&h->request_buffer, request_slice);
@@ -170,17 +169,19 @@ char* grpc_get_http_connect_proxy_server_from_args(grpc_channel_args* args) {
                 GRPC_ARG_HTTP_CONNECT_PROXY_SERVER);
         break;
       }
-      return gpr_strdup(args->args[i].value.string);
+      return args->args[i].value.string;
     }
   }
   return NULL;
 }
 
-grpc_handshaker* grpc_http_connect_handshaker_create(char* proxy_server) {
+grpc_handshaker* grpc_http_connect_handshaker_create(char* proxy_server,
+                                                     char* server_name) {
   http_connect_handshaker* handshaker =
       gpr_malloc(sizeof(http_connect_handshaker));
   memset(handshaker, 0, sizeof(*handshaker));
   grpc_handshaker_init(&http_connect_handshaker_vtable, &handshaker->base);
   handshaker->proxy_server = proxy_server;
+  handshaker->server_name = server_name;
   return (grpc_handshaker*)handshaker;
 }

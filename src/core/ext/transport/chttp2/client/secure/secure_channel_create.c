@@ -260,7 +260,8 @@ static grpc_subchannel *client_channel_factory_create_subchannel(
   char *proxy_server = grpc_get_http_connect_proxy_server_from_args(final_args);
   if (proxy_server != NULL) {
     grpc_handshake_manager_add(
-        grpc_http_connect_handshaker_create(proxy_server), c->handshake_mgr);
+        grpc_http_connect_handshaker_create(proxy_server, args->server_name),
+        c->handshake_mgr);
   }
   gpr_mu_init(&c->mu);
   gpr_ref_init(&c->refs, 1);
