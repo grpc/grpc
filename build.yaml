@@ -1032,10 +1032,13 @@ libs:
   headers:
   - test/cpp/util/cli_call.h
   - test/cpp/util/proto_file_parser.h
+  - test/cpp/util/proto_reflection_descriptor_database.h
   src:
   - test/cpp/util/cli_call.cc
   - test/cpp/util/proto_file_parser.cc
+  - test/cpp/util/proto_reflection_descriptor_database.cc
   deps:
+  - grpc++_reflection
   - grpc++
   - grpc_plugin_support
 - name: grpc_plugin_support
@@ -2659,6 +2662,7 @@ targets:
   - grpc_cli_libs
   - grpc++_test_util
   - grpc_test_util
+  - grpc++_reflection
   - grpc++
   - grpc
   - gpr_test_util
