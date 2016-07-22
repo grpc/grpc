@@ -129,7 +129,8 @@ ServerContext::ServerContext()
       deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)),
       call_(nullptr),
       cq_(nullptr),
-      sent_initial_metadata_(false) {}
+      sent_initial_metadata_(false),
+      compression_level_set_(false) {}
 
 ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata* metadata,
                              size_t metadata_count)
@@ -192,15 +193,6 @@ bool ServerContext::IsCancelled() const {
     // when using sync API
     return completion_op_ && completion_op_->CheckCancelled(cq_);
   }
-}
-
-void ServerContext::set_compression_level(grpc_compression_level level) {
-  // TODO(dgq): get rid of grpc_call_compression_for_level and propagate the
-  // compression level by adding a new argument to
-  // CallOpSendInitialMetadata::SendInitialMetadata.
-  const grpc_compression_algorithm algorithm_for_level =
-      grpc_call_compression_for_level(call_, level);
-  set_compression_algorithm(algorithm_for_level);
 }
 
 void ServerContext::set_compression_algorithm(
