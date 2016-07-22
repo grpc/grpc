@@ -36,6 +36,10 @@
 
 #include "src/core/lib/channel/handshaker.h"
 
-grpc_handshaker* grpc_http_connect_handshaker_create();
+/// Caller takes ownership of returned string.
+char* grpc_get_http_connect_proxy_server_from_args(grpc_channel_args *args);
+
+/// Takes ownership of \a proxy_server.
+grpc_handshaker* grpc_http_connect_handshaker_create(char* proxy_server);
 
 #endif /* GRPC_CORE_EXT_CLIENT_CONFIG_HTTP_CONNECT_HANDSHAKER_H */

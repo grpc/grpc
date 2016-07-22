@@ -41,6 +41,7 @@
 #include <grpc/support/slice_buffer.h>
 
 #include "src/core/ext/client_config/client_channel.h"
+#include "src/core/ext/client_config/http_connect_handshaker.h"
 #include "src/core/ext/client_config/resolver_registry.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -256,6 +257,11 @@ static grpc_subchannel *client_channel_factory_create_subchannel(
   c->base.vtable = &connector_vtable;
   c->security_connector = f->security_connector;
   c->handshake_mgr = grpc_handshake_manager_create();
+  char *proxy_server = grpc_get_http_connect_proxy_server_from_args(final_args);
+  if (proxy_server != NULL) {
+    grpc_handshake_manager_add(
+        grpc_http_connect_handshaker_create(proxy_server), c->handshake_mgr);
+  }
   gpr_mu_init(&c->mu);
   gpr_ref_init(&c->refs, 1);
   args->args = final_args;

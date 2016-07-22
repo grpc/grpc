@@ -165,6 +165,8 @@ typedef struct {
 #define GRPC_ARG_MAX_METADATA_SIZE "grpc.max_metadata_size"
 /** If non-zero, allow the use of SO_REUSEPORT if it's available (default 1) */
 #define GRPC_ARG_ALLOW_REUSEPORT "grpc.so_reuseport"
+/** HTTP CONNECT proxy server to use from client. */
+#define GRPC_ARG_HTTP_CONNECT_PROXY_SERVER "grpc.http_connect_proxy_server"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a

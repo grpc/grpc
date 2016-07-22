@@ -35,6 +35,8 @@
 
 #include <grpc/impl/codegen/alloc.h>
 #include <grpc/impl/codegen/log.h>
+#include <grpc/impl/codegen/slice_buffer.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/lib/http/format_request.h"
 #include "src/core/lib/http/parser.h"
@@ -44,6 +46,8 @@ typedef struct http_connect_handshaker {
   // Base class.  Must be first.
   grpc_handshaker base;
 
+  char* proxy_server;
+
   // State saved while performing the handshake.
   grpc_endpoint* endpoint;
   grpc_channel_args* args;
@@ -51,9 +55,9 @@ typedef struct http_connect_handshaker {
   void* user_data;
 
   // Objects for processing the HTTP CONNECT request and response.
-  grpc_slice_buffer request_buffer;
+  gpr_slice_buffer request_buffer;
   grpc_closure request_done_closure;
-  grpc_slice_buffer response_buffer;
+  gpr_slice_buffer response_buffer;
   grpc_closure response_read_closure;
   grpc_http_parser http_parser;
   grpc_http_response http_response;
@@ -92,7 +96,7 @@ static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
     // need to fix the HTTP parser to understand when the body is
     // complete (e.g., handling chunked transfer encoding or looking
     // at the Content-Length: header).
-    if (h->http_parser->state != GRPC_HTTP_BODY) {
+    if (h->http_parser.state != GRPC_HTTP_BODY) {
       grpc_endpoint_read(exec_ctx, h->endpoint, &h->response_buffer,
                          &h->response_read_closure);
       return;
@@ -109,11 +113,13 @@ static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
 
 static void http_connect_handshaker_destroy(grpc_exec_ctx* exec_ctx,
                                             grpc_handshaker* handshaker) {
-  grpc_slice_buffer_destroy(&handshaker->request_buffer);
-  grpc_slice_buffer_destroy(&handshaker->response_buffer);
-  grpc_http_parser_destroy(&handshaker->http_parser);
-  grpc_http_response_destroy(&handshaker->http_response);
-  gpr_free(handshaker);
+  http_connect_handshaker* h = (http_connect_handshaker*)handshaker;
+  gpr_free(h->proxy_server);
+  gpr_slice_buffer_destroy(&h->request_buffer);
+  gpr_slice_buffer_destroy(&h->response_buffer);
+  grpc_http_parser_destroy(&h->http_parser);
+  grpc_http_response_destroy(&h->http_response);
+  gpr_free(h);
 }
 
 static void http_connect_handshaker_shutdown(grpc_exec_ctx* exec_ctx,
@@ -141,13 +147,12 @@ static void http_connect_handshaker_do_handshake(
   // Send HTTP CONNECT request.
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(request));
-  // FIXME: get proxy name from somewhere...
-  request.host = gpr_strdup("");
+  request.host = gpr_strdup(h->proxy_server);
   request.http.method = gpr_strdup("CONNECT");
   // FIXME: get server name from somewhere...
   request.http.path = gpr_strdup("");
-  request.handshaker = grpc_httpcli_plaintext;
-  gpr_slice request_slice = grpc_httpcli_format_connect_request(request);
+  request.handshaker = &grpc_httpcli_plaintext;
+  gpr_slice request_slice = grpc_httpcli_format_connect_request(&request);
   gpr_slice_buffer_add(&h->request_buffer, request_slice);
   grpc_endpoint_write(exec_ctx, endpoint, &h->request_buffer,
                       &h->request_done_closure);
@@ -157,10 +162,25 @@ static const struct grpc_handshaker_vtable http_connect_handshaker_vtable = {
     http_connect_handshaker_destroy, http_connect_handshaker_shutdown,
     http_connect_handshaker_do_handshake};
 
-grpc_handshaker* grpc_http_connect_handshaker_create() {
+char* grpc_get_http_connect_proxy_server_from_args(grpc_channel_args* args) {
+  for (size_t i = 0; i < args->num_args; ++i) {
+    if (strcmp(args->args[i].key, GRPC_ARG_HTTP_CONNECT_PROXY_SERVER) == 0) {
+      if (args->args[i].type != GRPC_ARG_STRING) {
+        gpr_log(GPR_ERROR, "%s: must be a string",
+                GRPC_ARG_HTTP_CONNECT_PROXY_SERVER);
+        break;
+      }
+      return gpr_strdup(args->args[i].value.string);
+    }
+  }
+  return NULL;
+}
+
+grpc_handshaker* grpc_http_connect_handshaker_create(char* proxy_server) {
   http_connect_handshaker* handshaker =
       gpr_malloc(sizeof(http_connect_handshaker));
   memset(handshaker, 0, sizeof(*handshaker));
-  grpc_handshaker_init(http_connect_handshaker_vtable, &handshaker->base);
+  grpc_handshaker_init(&http_connect_handshaker_vtable, &handshaker->base);
+  handshaker->proxy_server = proxy_server;
   return (grpc_handshaker*)handshaker;
 }
