@@ -36,6 +36,8 @@
 #include <grpc/impl/codegen/alloc.h>
 #include <grpc/impl/codegen/log.h>
 
+#include "src/core/lib/http/format_request.h"
+#include "src/core/lib/http/parser.h"
 #include "src/core/ext/client_config/http_connect_handshaker.h"
 
 typedef struct http_connect_handshaker {
@@ -53,27 +55,53 @@ typedef struct http_connect_handshaker {
   grpc_closure request_done_closure;
   grpc_slice_buffer response_buffer;
   grpc_closure response_read_closure;
+  grpc_http_parser http_parser;
+  grpc_http_response http_response;
 } http_connect_handshaker;
-
-// Callback invoked for reading HTTP CONNECT response.
-static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
-                         grpc_error* error) {
-  http_connect_handshaker* h = arg;
-// FIXME: process response; on failure, figure out how to abort
-
-  // Invoke handshake-done callback.
-  h->cb(exec_ctx, h->endpoint, h->args, h->user_data);
-}
 
 // Callback invoked when finished writing HTTP CONNECT request.
 static void on_write_done(grpc_exec_ctx* exec_ctx, void* arg,
                           grpc_error* error) {
   http_connect_handshaker* h = arg;
   // Read HTTP CONNECT response.
-  gpr_slice_buffer_init(&h->response_buffer);
-  grpc_closure_init(&h->response_read_closure, on_read_done, h);
   grpc_endpoint_read(exec_ctx, h->endpoint, &h->response_buffer,
                      &h->response_read_closure);
+}
+
+// Callback invoked for reading HTTP CONNECT response.
+static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
+                         grpc_error* error) {
+  http_connect_handshaker* h = arg;
+  if (error == GRPC_ERROR_NONE) {
+    for (size_t i = 0; i < h->response_buffer.count; ++i) {
+      if (GPR_SLICE_LENGTH(h->response_buffer.slices[i]) > 0) {
+        error = grpc_http_parser_parse(
+            &h->http_parser, h->response_buffer.slices[i]);
+        if (error != GRPC_ERROR_NONE)
+          goto done;
+      }
+    }
+    // If we're not done reading the response, read more data.
+    // TODO(roth): In practice, I suspect that the response to a CONNECT
+    // request will never include a body, in which case this check is
+    // sufficient.  However, the language of RFC-2817 doesn't explicitly
+    // forbid the response from including a body.  If there is a body,
+    // it's possible that we might have parsed part but not all of the
+    // body, in which case this check will cause us to fail to parse the
+    // remainder of the body.  If that ever becomes an issue, we may
+    // need to fix the HTTP parser to understand when the body is
+    // complete (e.g., handling chunked transfer encoding or looking
+    // at the Content-Length: header).
+    if (h->http_parser->state != GRPC_HTTP_BODY) {
+      grpc_endpoint_read(exec_ctx, h->endpoint, &h->response_buffer,
+                         &h->response_read_closure);
+      return;
+    }
+  }
+ done:
+  // Invoke handshake-done callback.
+// FIXME: pass error to callback
+  h->cb(exec_ctx, h->endpoint, h->args, h->user_data);
 }
 
 //
@@ -82,6 +110,10 @@ static void on_write_done(grpc_exec_ctx* exec_ctx, void* arg,
 
 static void http_connect_handshaker_destroy(grpc_exec_ctx* exec_ctx,
                                             grpc_handshaker* handshaker) {
+  grpc_slice_buffer_destroy(&handshaker->request_buffer);
+  grpc_slice_buffer_destroy(&handshaker->response_buffer);
+  grpc_http_parser_destroy(&handshaker->http_parser);
+  grpc_http_response_destroy(&handshaker->http_response);
   gpr_free(handshaker);
 }
 
@@ -100,14 +132,24 @@ static void http_connect_handshaker_do_handshake(
   h->args = args;
   h->cb = cb;
   h->user_data = user_data;
-  // Send HTTP CONNECT request.
+  // Initialize fields.
   gpr_slice_buffer_init(&h->request_buffer);
-  gpr_slice_buffer_add(&h->request_buffer, "HTTP CONNECT ");
-// FIXME: get server name from somewhere...
-  gpr_slice_buffer_add(&h->request_buffer, WHEE);
-// FIXME: add headers as needed?
-  gpr_slice_buffer_add(&h->request_buffer, "\n\n");
   grpc_closure_init(&h->request_done_closure, on_write_done, h);
+  gpr_slice_buffer_init(&h->response_buffer);
+  grpc_closure_init(&h->response_read_closure, on_read_done, h);
+  grpc_http_parser_init(&h->http_parser, GRPC_HTTP_RESPONSE,
+                        &h->http_response);
+  // Send HTTP CONNECT request.
+  grpc_httpcli_request request;
+  memset(&request, 0, sizeof(request));
+  // FIXME: get proxy name from somewhere...
+  request.host = gpr_strdup("");
+  request.http.method = gpr_strdup("CONNECT");
+  // FIXME: get server name from somewhere...
+  request.http.path = gpr_strdup("");
+  request.handshaker = grpc_httpcli_plaintext;
+  gpr_slice request_slice = grpc_httpcli_format_connect_request(request);
+  gpr_slice_buffer_add(&h->request_buffer, request_slice);
   grpc_endpoint_write(exec_ctx, endpoint, &h->request_buffer,
                       &h->request_done_closure);
 }

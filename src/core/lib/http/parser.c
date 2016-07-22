@@ -282,20 +282,18 @@ static grpc_error *addbyte(grpc_http_parser *parser, uint8_t byte) {
         if (grpc_http1_trace)
           gpr_log(GPR_ERROR, "HTTP client max line length (%d) exceeded",
                   GRPC_HTTP_PARSER_MAX_HEADER_LENGTH);
-        return 0;
+        return GRPC_ERROR_NONE;
       }
       parser->cur_line[parser->cur_line_length] = byte;
       parser->cur_line_length++;
       if (check_line(parser)) {
         return finish_line(parser);
-      } else {
-        return GRPC_ERROR_NONE;
       }
-      GPR_UNREACHABLE_CODE(return 0);
+      return GRPC_ERROR_NONE;
     case GRPC_HTTP_BODY:
       return addbyte_body(parser, byte);
   }
-  GPR_UNREACHABLE_CODE(return 0);
+  GPR_UNREACHABLE_CODE(return GRPC_ERROR_NONE);
 }
 
 void grpc_http_parser_init(grpc_http_parser *parser, grpc_http_type type,
