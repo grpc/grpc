@@ -55,21 +55,28 @@ typedef struct server_connect_state {
 } server_connect_state;
 
 static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
-                              grpc_channel_args *args, void *user_data) {
+                              grpc_channel_args *args, void *user_data,
+                              grpc_error *error) {
   server_connect_state *state = user_data;
-  /*
-   * Beware that the call to grpc_create_chttp2_transport() has to happen before
-   * grpc_tcp_server_destroy(). This is fine here, but similar code
-   * asynchronously doing a handshake instead of calling grpc_tcp_server_start()
-   * (as in server_secure_chttp2.c) needs to add synchronization to avoid this
-   * case.
-   */
-  grpc_transport *transport =
-      grpc_create_chttp2_transport(exec_ctx, args, endpoint, 0);
-  grpc_server_setup_transport(exec_ctx, state->server, transport,
-                              state->accepting_pollset,
-                              grpc_server_get_channel_args(state->server));
-  grpc_chttp2_transport_start_reading(exec_ctx, transport, NULL, 0);
+  if (error != GRPC_ERROR_NONE) {
+    const char *error_str = grpc_error_string(error);
+    gpr_log(GPR_ERROR, "Handshaking failed: %s", error_str);
+    grpc_error_free_string(error_str);
+    GRPC_ERROR_UNREF(error);
+    grpc_handshake_manager_shutdown(exec_ctx, state->handshake_mgr);
+  } else {
+    // Beware that the call to grpc_create_chttp2_transport() has to happen
+    // before grpc_tcp_server_destroy(). This is fine here, but similar code
+    // asynchronously doing a handshake instead of calling
+    // grpc_tcp_server_start() (as in server_secure_chttp2.c) needs to add
+    // synchronization to avoid this case.
+    grpc_transport *transport =
+        grpc_create_chttp2_transport(exec_ctx, args, endpoint, 0);
+    grpc_server_setup_transport(exec_ctx, state->server, transport,
+                                state->accepting_pollset,
+                                grpc_server_get_channel_args(state->server));
+    grpc_chttp2_transport_start_reading(exec_ctx, transport, NULL, 0);
+  }
   // Clean up.
   grpc_channel_args_destroy(args);
   grpc_handshake_manager_destroy(exec_ctx, state->handshake_mgr);
