@@ -138,7 +138,6 @@ def package_data():
     proto_files.append(relative_target)
   return {GRPC_PYTHON_TOOLS_PACKAGE: proto_files}
 
-<<<<<<< HEAD
 def extension_modules():
   if BUILD_WITH_CYTHON:
     plugin_sources = ['grpc/tools/_protoc_compiler.pyx']
@@ -152,19 +151,6 @@ def extension_modules():
   plugin_ext = extension.Extension(
       name='grpc.tools._protoc_compiler',
       sources=plugin_sources,
-=======
-def protoc_ext_module():
-  plugin_sources = [
-      os.path.join('grpc', 'tools', 'main.cc'),
-      os.path.join('grpc_root', 'src', 'compiler', 'python_generator.cc')] + [
-      os.path.join(CC_INCLUDE, cc_file)
-      for cc_file in CC_FILES]
-  plugin_ext = extension.Extension(
-      name='grpc.tools._protoc_compiler',
-      sources=(
-          [os.path.join('grpc', 'tools', '_protoc_compiler.pyx')] +
-          plugin_sources),
->>>>>>> upstream/v1.0.x
       include_dirs=[
           '.',
           'grpc_root',
