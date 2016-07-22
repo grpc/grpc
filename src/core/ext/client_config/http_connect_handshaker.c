@@ -100,8 +100,7 @@ static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
   }
  done:
   // Invoke handshake-done callback.
-// FIXME: pass error to callback
-  h->cb(exec_ctx, h->endpoint, h->args, h->user_data);
+  h->cb(exec_ctx, h->endpoint, h->args, h->user_data, GRPC_ERROR_REF(error));
 }
 
 //
