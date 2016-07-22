@@ -140,14 +140,14 @@ def package_data():
 
 def extension_modules():
   if BUILD_WITH_CYTHON:
-    plugin_sources = ['grpc/tools/_protoc_compiler.pyx']
+    plugin_sources = [os.path.join('grpc', 'tools', '_protoc_compiler.pyx')]
   else:
-    plugin_sources = ['grpc/tools/_protoc_compiler.cpp']
-  plugin_sources += [
-      'grpc/tools/main.cc',
-      'grpc_root/src/compiler/python_generator.cc'] + [
-      os.path.join(protoc_lib_deps.CC_INCLUDE, cc_file)
-      for cc_file in protoc_lib_deps.CC_FILES]
+    plugin_sources = [os.path.join('grpc', 'tools', '_protoc_compiler.cpp')]
+    plugin_sources += [
+      os.path.join('grpc', 'tools', 'main.cc'),
+      os.path.join('grpc_root', 'src', 'compiler', 'python_generator.cc')] + [
+      os.path.join(CC_INCLUDE, cc_file)
+      for cc_file in CC_FILES]
   plugin_ext = extension.Extension(
       name='grpc.tools._protoc_compiler',
       sources=plugin_sources,

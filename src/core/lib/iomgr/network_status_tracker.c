@@ -65,11 +65,6 @@ void grpc_destroy_network_status_monitor() {
   gpr_mu_destroy(&g_endpoint_mutex);
 }
 
-void grpc_network_status_init(void) {
-  gpr_mu_init(&g_endpoint_mutex);
-  // TODO(makarandd): Install callback with OS to monitor network status.
-}
-
 void grpc_network_status_register_endpoint(grpc_endpoint *ep) {
   gpr_mu_lock(&g_endpoint_mutex);
   if (head == NULL) {
