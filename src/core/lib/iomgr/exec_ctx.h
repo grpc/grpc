@@ -66,6 +66,8 @@ typedef struct grpc_combiner grpc_combiner;
  */
 struct grpc_exec_ctx {
   grpc_closure_list closure_list;
+  grpc_workqueue *stealing_from_workqueue;
+  grpc_closure *stolen_closure;
   /** currently active combiner: updated only via combiner.c */
   grpc_combiner *active_combiner;
   bool cached_ready_to_finish;
@@ -74,7 +76,10 @@ struct grpc_exec_ctx {
 };
 
 #define GRPC_EXEC_CTX_INIT_WITH_FINISH_CHECK(finish_check, finish_check_arg) \
-  { GRPC_CLOSURE_LIST_INIT, NULL, false, finish_check_arg, finish_check }
+  {                                                                          \
+    GRPC_CLOSURE_LIST_INIT, NULL, NULL, NULL, false, finish_check_arg,       \
+        finish_check                                                         \
+  }
 #else
 struct grpc_exec_ctx {
   bool cached_ready_to_finish;

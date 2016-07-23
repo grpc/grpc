@@ -74,6 +74,30 @@ bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
       c = next;
     }
   }
+  if (exec_ctx->stealing_from_workqueue != NULL) {
+    if (grpc_exec_ctx_ready_to_finish(exec_ctx)) {
+      grpc_workqueue_enqueue(exec_ctx, exec_ctx->stealing_from_workqueue,
+                             exec_ctx->stolen_closure,
+                             exec_ctx->stolen_closure->error);
+      GRPC_WORKQUEUE_UNREF(exec_ctx, exec_ctx->stealing_from_workqueue,
+                           "exec_ctx_sched");
+      exec_ctx->stealing_from_workqueue = NULL;
+      exec_ctx->stolen_closure = NULL;
+    } else {
+      grpc_closure *c = exec_ctx->stolen_closure;
+      GRPC_WORKQUEUE_UNREF(exec_ctx, exec_ctx->stealing_from_workqueue,
+                           "exec_ctx_sched");
+      exec_ctx->stealing_from_workqueue = NULL;
+      exec_ctx->stolen_closure = NULL;
+      grpc_error *error = c->error;
+      GPR_TIMER_BEGIN("grpc_exec_ctx_flush.stolen_cb", 0);
+      c->cb(exec_ctx, c->cb_arg, error);
+      GRPC_ERROR_UNREF(error);
+      GPR_TIMER_END("grpc_exec_ctx_flush.stolen_cb", 0);
+      grpc_exec_ctx_flush(exec_ctx);
+      return true;
+    }
+  }
   GPR_TIMER_END("grpc_exec_ctx_flush", 0);
   return did_something;
 }
@@ -88,8 +112,19 @@ void grpc_exec_ctx_sched(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                          grpc_workqueue *offload_target_or_null) {
   if (offload_target_or_null == NULL) {
     grpc_closure_list_append(&exec_ctx->closure_list, closure, error);
-  } else {
+  } else if (exec_ctx->stealing_from_workqueue == NULL) {
+    exec_ctx->stealing_from_workqueue = offload_target_or_null;
+    closure->error = error;
+    exec_ctx->stolen_closure = closure;
+  } else if (exec_ctx->stealing_from_workqueue != offload_target_or_null) {
     grpc_workqueue_enqueue(exec_ctx, offload_target_or_null, closure, error);
+    GRPC_WORKQUEUE_UNREF(exec_ctx, offload_target_or_null, "exec_ctx_sched");
+  } else { /* stealing_from_workqueue == offload_target_or_null */
+    grpc_workqueue_enqueue(exec_ctx, offload_target_or_null,
+                           exec_ctx->stolen_closure,
+                           exec_ctx->stolen_closure->error);
+    closure->error = error;
+    exec_ctx->stolen_closure = closure;
     GRPC_WORKQUEUE_UNREF(exec_ctx, offload_target_or_null, "exec_ctx_sched");
   }
 }
