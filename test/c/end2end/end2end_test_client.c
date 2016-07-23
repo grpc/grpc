@@ -40,6 +40,7 @@
 #include <third_party/nanopb/pb_encode.h>
 #include <third_party/nanopb/pb_decode.h>
 #include <grpc/support/log.h>
+#include <stdio.h>
 
 /**
  * Nanopb callbacks for string encoding/decoding.
@@ -107,7 +108,27 @@ void test_client_send_client_streaming_rpc(GRPC_channel *channel, int repeat) {
 void test_client_send_server_streaming_rpc(GRPC_channel *channel, int repeat) {
   int i;
   for (i = 0; i < repeat; i++) {
+    grpc_testing_EchoRequest request = {.message = {.arg = "gRPC-C", .funcs.encode = write_string_from_arg}};
+    grpc_testing_EchoResponse response = {.message = {.funcs.decode = read_string_store_in_arg}};
 
+    GRPC_client_context *context = GRPC_client_context_create(channel);
+    GRPC_client_reader *reader = grpc_testing_EchoTestService_ResponseStream(context, request);
+    GPR_ASSERT(reader != NULL);
+    int j = 0;
+    while (grpc_testing_EchoTestService_ResponseStream_Read(reader, &response)) {
+      GPR_ASSERT(response.message.arg != NULL);
+      char *buf = malloc(strlen(response.message.arg) + 10);
+      sprintf(buf, "%s%d", "gRPC-C", j);
+      GPR_ASSERT(strcmp(buf, response.message.arg) == 0);
+      free(buf);
+      free(response.message.arg);
+      j++;
+    }
+    GPR_ASSERT(j > 0);
+    GRPC_status status = grpc_testing_EchoTestService_ResponseStream_Terminate(reader);
+    GPR_ASSERT(status.ok);
+    GPR_ASSERT(status.code == GRPC_STATUS_OK);
+    GRPC_client_context_destroy(&context);
   }
 }
 
