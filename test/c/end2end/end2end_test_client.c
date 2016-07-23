@@ -135,7 +135,34 @@ void test_client_send_server_streaming_rpc(GRPC_channel *channel, int repeat) {
 void test_client_send_bidi_streaming_rpc(GRPC_channel *channel, int repeat) {
   int i;
   for (i = 0; i < repeat; i++) {
+    grpc_testing_EchoRequest request = {.message = {.arg = "gRPC-C", .funcs.encode = write_string_from_arg}};
+    grpc_testing_EchoResponse response = {.message = {.funcs.decode = read_string_store_in_arg}};
 
+    GRPC_client_context *context = GRPC_client_context_create(channel);
+    GRPC_client_reader_writer *reader_writer = grpc_testing_EchoTestService_BidiStream(context);
+    GPR_ASSERT(reader_writer != NULL);
+
+    const int kNumRequestToSend = 3;
+
+    int j;
+    for (j = 0; j < kNumRequestToSend; j++) {
+      GPR_ASSERT(grpc_testing_EchoTestService_BidiStream_Write(reader_writer, request));
+    }
+    GPR_ASSERT(grpc_testing_EchoTestService_BidiStream_Writes_Done(reader_writer));
+
+    int count = 0;
+    while (grpc_testing_EchoTestService_BidiStream_Read(reader_writer, &response)) {
+      GPR_ASSERT(response.message.arg != NULL);
+      GPR_ASSERT(strcmp("gRPC-C", response.message.arg) == 0);
+      free(response.message.arg);
+      count++;
+    }
+
+    GPR_ASSERT(kNumRequestToSend == count);
+    GRPC_status status = grpc_testing_EchoTestService_BidiStream_Terminate(reader_writer);
+    GPR_ASSERT(status.ok);
+    GPR_ASSERT(status.code == GRPC_STATUS_OK);
+    GRPC_client_context_destroy(&context);
   }
 }
 
