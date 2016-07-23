@@ -97,21 +97,28 @@ namespace Grpc.Core.Internal
         /// </summary>
         private static UnmanagedLibrary Load()
         {
-            // TODO: allow customizing path to native extension (possibly through exposing a GrpcEnvironment property).
+            string[] paths;
+            string explicitPath = GrpcEnvironment.NativeLibrary;
+            if (explicitPath != null)
+            {
+                paths = new[] { explicitPath };
+            }
+            else
+            {
+                var libraryFlavor = string.Format("{0}_{1}", GetPlatformString(), GetArchitectureString());
 
-            var libraryFlavor = string.Format("{0}_{1}", GetPlatformString(), GetArchitectureString());
+                var assemblyDirectory = Path.GetDirectoryName(GetAssemblyPath());
 
-            var assemblyDirectory = Path.GetDirectoryName(GetAssemblyPath());
+                // With old-style VS projects, the native libraries get copied using a .targets rule to the build output folder
+                // alongside the compiled assembly.
+                var classicPath = Path.Combine(assemblyDirectory, NativeLibrariesDir, libraryFlavor, GetNativeLibraryFilename());
 
-            // With old-style VS projects, the native libraries get copied using a .targets rule to the build output folder
-            // alongside the compiled assembly.
-            var classicPath = Path.Combine(assemblyDirectory, NativeLibrariesDir, libraryFlavor, GetNativeLibraryFilename());
-
-            // DNX-style project.json projects will use Grpc.Core assembly directly in the location where it got restored
-            // by nuget. We locate the native libraries based on known structure of Grpc.Core nuget package.
-            var dnxStylePath = Path.Combine(assemblyDirectory, DnxStyleNativeLibrariesDir, libraryFlavor, GetNativeLibraryFilename());
-
-            return new UnmanagedLibrary(new string[] {classicPath, dnxStylePath});
+                // DNX-style project.json projects will use Grpc.Core assembly directly in the location where it got restored
+                // by nuget. We locate the native libraries based on known structure of Grpc.Core nuget package.
+                var dnxStylePath = Path.Combine(assemblyDirectory, DnxStyleNativeLibrariesDir, libraryFlavor, GetNativeLibraryFilename());
+                paths = new[] { classicPath, dnxStylePath };
+            }
+            return new UnmanagedLibrary(paths);
         }
 
         private static string GetAssemblyPath()
