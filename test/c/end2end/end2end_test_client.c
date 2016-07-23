@@ -31,5 +31,56 @@
  *
  */
 
-#include "test/c/end2end/end2end_test_client.h"
+/**
+ * This file contains the C part of end2end test. It is called by the GoogleTest-based C++ code.
+ */
 
+#include "test/c/end2end/end2end_test_client.h"
+#include "src/proto/grpc/testing/echo.grpc.pbc.h"
+#include <third_party/nanopb/pb_encode.h>
+#include <third_party/nanopb/pb_decode.h>
+
+/**
+ * Nanopb callbacks for string encoding/decoding.
+ */
+static bool write_string_from_arg(pb_ostream_t *stream, const pb_field_t *field, void * const *arg)
+{
+  const char *str = *arg;
+  if (!pb_encode_tag_for_field(stream, field))
+    return false;
+
+  return pb_encode_string(stream, (uint8_t*)str, strlen(str));
+}
+
+/**
+ * This callback function reads a string from Nanopb stream and copies it into the callback args.
+ * Users need to free the string after use.
+ */
+static bool read_string_store_in_arg(pb_istream_t *stream, const pb_field_t *field, void **arg) {
+  size_t len = stream->bytes_left;
+  char *str = malloc(len + 1);
+  if (!pb_read(stream, (uint8_t *) str, len)) return false;
+  str[len] = '\0';
+  *arg = str;
+  return true;
+}
+
+void test_client_send_unary_rpc(GRPC_channel *channel, int repeat) {
+
+}
+
+void test_client_send_client_streaming_rpc(GRPC_channel *channel, int repeat) {
+
+}
+
+void test_client_send_server_streaming_rpc(GRPC_channel *channel, int repeat) {
+
+}
+
+void test_client_send_bidi_streaming_rpc(GRPC_channel *channel, int repeat) {
+
+}
+
+void test_client_send_async_unary_rpc(GRPC_channel *channel, int repeat) {
+
+}

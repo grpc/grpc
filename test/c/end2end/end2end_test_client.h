@@ -34,4 +34,12 @@
 #ifndef GRPC_END2END_TEST_CLIENT_H
 #define GRPC_END2END_TEST_CLIENT_H
 
+#include <grpc_c/grpc_c.h>
+
+void test_client_send_unary_rpc(GRPC_channel *channel, int repeat);
+void test_client_send_client_streaming_rpc(GRPC_channel *channel, int repeat);
+void test_client_send_server_streaming_rpc(GRPC_channel *channel, int repeat);
+void test_client_send_bidi_streaming_rpc(GRPC_channel *channel, int repeat);
+void test_client_send_async_unary_rpc(GRPC_channel *channel, int repeat);
+
 #endif // GRPC_END2END_TEST_CLIENT_H
