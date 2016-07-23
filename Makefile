@@ -257,6 +257,8 @@ DEFINES_gcov = _DEBUG DEBUG GPR_GCOV
 
 prefix ?= /usr/local
 
+NANOPB_DIR := $(abspath third_party/nanopb)
+NANOPB_CORE = $(NANOPB_DIR)/pb_encode.c $(NANOPB_DIR)/pb_decode.c $(NANOPB_DIR)/pb_common.c
 PROTOC ?= protoc
 DTRACE ?= dtrace
 CONFIG ?= opt
@@ -1041,6 +1043,7 @@ end2end_test: $(BINDIR)/$(CONFIG)/end2end_test
 generic_end2end_test: $(BINDIR)/$(CONFIG)/generic_end2end_test
 golden_file_test: $(BINDIR)/$(CONFIG)/golden_file_test
 grpc_c_end2end_test: $(BINDIR)/$(CONFIG)/grpc_c_end2end_test
+grpc_c_generic_end2end_test: $(BINDIR)/$(CONFIG)/grpc_c_generic_end2end_test
 grpc_c_plugin: $(BINDIR)/$(CONFIG)/grpc_c_plugin
 grpc_cli: $(BINDIR)/$(CONFIG)/grpc_cli
 grpc_cpp_plugin: $(BINDIR)/$(CONFIG)/grpc_cpp_plugin
@@ -1170,7 +1173,7 @@ plugins: $(PROTOC_PLUGINS)
 
 privatelibs: privatelibs_c privatelibs_cxx
 
-privatelibs_c:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a
+privatelibs_c:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_c_end2end_client_lib.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a
 pc_c: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc
 
 pc_c_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc
@@ -1366,6 +1369,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/generic_end2end_test \
   $(BINDIR)/$(CONFIG)/golden_file_test \
   $(BINDIR)/$(CONFIG)/grpc_c_end2end_test \
+  $(BINDIR)/$(CONFIG)/grpc_c_generic_end2end_test \
   $(BINDIR)/$(CONFIG)/grpc_cli \
   $(BINDIR)/$(CONFIG)/grpclb_api_test \
   $(BINDIR)/$(CONFIG)/hybrid_end2end_test \
@@ -1413,6 +1417,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/generic_end2end_test \
   $(BINDIR)/$(CONFIG)/golden_file_test \
   $(BINDIR)/$(CONFIG)/grpc_c_end2end_test \
+  $(BINDIR)/$(CONFIG)/grpc_c_generic_end2end_test \
   $(BINDIR)/$(CONFIG)/grpc_cli \
   $(BINDIR)/$(CONFIG)/grpclb_api_test \
   $(BINDIR)/$(CONFIG)/hybrid_end2end_test \
@@ -1702,6 +1707,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/golden_file_test || ( echo test golden_file_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_c_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_c_end2end_test || ( echo test grpc_c_end2end_test failed ; exit 1 )
+	$(E) "[RUN]     Testing grpc_c_generic_end2end_test"
+	$(Q) $(BINDIR)/$(CONFIG)/grpc_c_generic_end2end_test || ( echo test grpc_c_generic_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpclb_api_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpclb_api_test || ( echo test grpclb_api_test failed ; exit 1 )
 	$(E) "[RUN]     Testing hybrid_end2end_test"
@@ -1849,10 +1856,20 @@ $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc: src/proto/grpc/lb/v1/load_ba
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
+$(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pbc.c: src/proto/grpc/lb/v1/load_balancer.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[PROTOC]  Generating nanopb C file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<
+
 $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc: src/proto/grpc/lb/v1/load_balancer.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
+
+$(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pbc.c: src/proto/grpc/lb/v1/load_balancer.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pbc.c 
+	$(E) "[GRPC]    Generating gRPC-C's protobuf service C file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=nanopb_headers_prefix=third_party/nanopb/:$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_c_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1864,10 +1881,20 @@ $(GENDIR)/src/proto/grpc/reflection/v1alpha/reflection.pb.cc: src/proto/grpc/ref
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
+$(GENDIR)/src/proto/grpc/reflection/v1alpha/reflection.pbc.c: src/proto/grpc/reflection/v1alpha/reflection.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[PROTOC]  Generating nanopb C file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<
+
 $(GENDIR)/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc: src/proto/grpc/reflection/v1alpha/reflection.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
+
+$(GENDIR)/src/proto/grpc/reflection/v1alpha/reflection.grpc.pbc.c: src/proto/grpc/reflection/v1alpha/reflection.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/reflection/v1alpha/reflection.pbc.c 
+	$(E) "[GRPC]    Generating gRPC-C's protobuf service C file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=nanopb_headers_prefix=third_party/nanopb/:$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_c_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1879,10 +1906,20 @@ $(GENDIR)/src/proto/grpc/testing/compiler_test.pb.cc: src/proto/grpc/testing/com
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
+$(GENDIR)/src/proto/grpc/testing/compiler_test.pbc.c: src/proto/grpc/testing/compiler_test.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[PROTOC]  Generating nanopb C file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<
+
 $(GENDIR)/src/proto/grpc/testing/compiler_test.grpc.pb.cc: src/proto/grpc/testing/compiler_test.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
+
+$(GENDIR)/src/proto/grpc/testing/compiler_test.grpc.pbc.c: src/proto/grpc/testing/compiler_test.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/compiler_test.pbc.c 
+	$(E) "[GRPC]    Generating gRPC-C's protobuf service C file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=nanopb_headers_prefix=third_party/nanopb/:$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_c_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1894,10 +1931,20 @@ $(GENDIR)/src/proto/grpc/testing/control.pb.cc: src/proto/grpc/testing/control.p
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
+$(GENDIR)/src/proto/grpc/testing/control.pbc.c: src/proto/grpc/testing/control.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/payloads.pbc.c $(GENDIR)/src/proto/grpc/testing/stats.pbc.c
+	$(E) "[PROTOC]  Generating nanopb C file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<
+
 $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc: src/proto/grpc/testing/control.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
+
+$(GENDIR)/src/proto/grpc/testing/control.grpc.pbc.c: src/proto/grpc/testing/control.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/control.pbc.c $(GENDIR)/src/proto/grpc/testing/payloads.pbc.c $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pbc.c $(GENDIR)/src/proto/grpc/testing/stats.pbc.c $(GENDIR)/src/proto/grpc/testing/stats.grpc.pbc.c
+	$(E) "[GRPC]    Generating gRPC-C's protobuf service C file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=nanopb_headers_prefix=third_party/nanopb/:$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_c_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1909,10 +1956,20 @@ $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc: src/proto/grpc/
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
+$(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pbc.c: src/proto/grpc/testing/duplicate/echo_duplicate.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/echo_messages.pbc.c
+	$(E) "[PROTOC]  Generating nanopb C file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<
+
 $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc: src/proto/grpc/testing/duplicate/echo_duplicate.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
+
+$(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pbc.c: src/proto/grpc/testing/duplicate/echo_duplicate.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pbc.c $(GENDIR)/src/proto/grpc/testing/echo_messages.pbc.c $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pbc.c
+	$(E) "[GRPC]    Generating gRPC-C's protobuf service C file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=nanopb_headers_prefix=third_party/nanopb/:$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_c_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1924,10 +1981,20 @@ $(GENDIR)/src/proto/grpc/testing/echo.pb.cc: src/proto/grpc/testing/echo.proto $
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
+$(GENDIR)/src/proto/grpc/testing/echo.pbc.c: src/proto/grpc/testing/echo.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/echo_messages.pbc.c
+	$(E) "[PROTOC]  Generating nanopb C file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<
+
 $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc: src/proto/grpc/testing/echo.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
+
+$(GENDIR)/src/proto/grpc/testing/echo.grpc.pbc.c: src/proto/grpc/testing/echo.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/echo.pbc.c $(GENDIR)/src/proto/grpc/testing/echo_messages.pbc.c $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pbc.c
+	$(E) "[GRPC]    Generating gRPC-C's protobuf service C file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=nanopb_headers_prefix=third_party/nanopb/:$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_c_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1939,10 +2006,20 @@ $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc: src/proto/grpc/testing/ech
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
+$(GENDIR)/src/proto/grpc/testing/echo_messages.pbc.c: src/proto/grpc/testing/echo_messages.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[PROTOC]  Generating nanopb C file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<
+
 $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc: src/proto/grpc/testing/echo_messages.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
+
+$(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pbc.c: src/proto/grpc/testing/echo_messages.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/echo_messages.pbc.c 
+	$(E) "[GRPC]    Generating gRPC-C's protobuf service C file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=nanopb_headers_prefix=third_party/nanopb/:$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_c_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1954,10 +2031,20 @@ $(GENDIR)/src/proto/grpc/testing/empty.pb.cc: src/proto/grpc/testing/empty.proto
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
+$(GENDIR)/src/proto/grpc/testing/empty.pbc.c: src/proto/grpc/testing/empty.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[PROTOC]  Generating nanopb C file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<
+
 $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc: src/proto/grpc/testing/empty.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
+
+$(GENDIR)/src/proto/grpc/testing/empty.grpc.pbc.c: src/proto/grpc/testing/empty.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/empty.pbc.c 
+	$(E) "[GRPC]    Generating gRPC-C's protobuf service C file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=nanopb_headers_prefix=third_party/nanopb/:$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_c_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1969,10 +2056,20 @@ $(GENDIR)/src/proto/grpc/testing/messages.pb.cc: src/proto/grpc/testing/messages
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
+$(GENDIR)/src/proto/grpc/testing/messages.pbc.c: src/proto/grpc/testing/messages.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[PROTOC]  Generating nanopb C file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<
+
 $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc: src/proto/grpc/testing/messages.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
+
+$(GENDIR)/src/proto/grpc/testing/messages.grpc.pbc.c: src/proto/grpc/testing/messages.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/messages.pbc.c 
+	$(E) "[GRPC]    Generating gRPC-C's protobuf service C file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=nanopb_headers_prefix=third_party/nanopb/:$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_c_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1984,10 +2081,20 @@ $(GENDIR)/src/proto/grpc/testing/metrics.pb.cc: src/proto/grpc/testing/metrics.p
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
+$(GENDIR)/src/proto/grpc/testing/metrics.pbc.c: src/proto/grpc/testing/metrics.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[PROTOC]  Generating nanopb C file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<
+
 $(GENDIR)/src/proto/grpc/testing/metrics.grpc.pb.cc: src/proto/grpc/testing/metrics.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
+
+$(GENDIR)/src/proto/grpc/testing/metrics.grpc.pbc.c: src/proto/grpc/testing/metrics.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/metrics.pbc.c 
+	$(E) "[GRPC]    Generating gRPC-C's protobuf service C file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=nanopb_headers_prefix=third_party/nanopb/:$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_c_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1999,10 +2106,20 @@ $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc: src/proto/grpc/testing/payloads
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
+$(GENDIR)/src/proto/grpc/testing/payloads.pbc.c: src/proto/grpc/testing/payloads.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[PROTOC]  Generating nanopb C file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<
+
 $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc: src/proto/grpc/testing/payloads.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
+
+$(GENDIR)/src/proto/grpc/testing/payloads.grpc.pbc.c: src/proto/grpc/testing/payloads.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/payloads.pbc.c 
+	$(E) "[GRPC]    Generating gRPC-C's protobuf service C file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=nanopb_headers_prefix=third_party/nanopb/:$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_c_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -2014,10 +2131,20 @@ $(GENDIR)/src/proto/grpc/testing/services.pb.cc: src/proto/grpc/testing/services
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
+$(GENDIR)/src/proto/grpc/testing/services.pbc.c: src/proto/grpc/testing/services.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/messages.pbc.c $(GENDIR)/src/proto/grpc/testing/control.pbc.c
+	$(E) "[PROTOC]  Generating nanopb C file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<
+
 $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc: src/proto/grpc/testing/services.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
+
+$(GENDIR)/src/proto/grpc/testing/services.grpc.pbc.c: src/proto/grpc/testing/services.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/services.pbc.c $(GENDIR)/src/proto/grpc/testing/messages.pbc.c $(GENDIR)/src/proto/grpc/testing/messages.grpc.pbc.c $(GENDIR)/src/proto/grpc/testing/control.pbc.c $(GENDIR)/src/proto/grpc/testing/control.grpc.pbc.c
+	$(E) "[GRPC]    Generating gRPC-C's protobuf service C file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=nanopb_headers_prefix=third_party/nanopb/:$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_c_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -2029,10 +2156,20 @@ $(GENDIR)/src/proto/grpc/testing/stats.pb.cc: src/proto/grpc/testing/stats.proto
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
+$(GENDIR)/src/proto/grpc/testing/stats.pbc.c: src/proto/grpc/testing/stats.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[PROTOC]  Generating nanopb C file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<
+
 $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc: src/proto/grpc/testing/stats.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
+
+$(GENDIR)/src/proto/grpc/testing/stats.grpc.pbc.c: src/proto/grpc/testing/stats.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/stats.pbc.c 
+	$(E) "[GRPC]    Generating gRPC-C's protobuf service C file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=nanopb_headers_prefix=third_party/nanopb/:$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_c_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -2044,10 +2181,20 @@ $(GENDIR)/src/proto/grpc/testing/test.pb.cc: src/proto/grpc/testing/test.proto $
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
+$(GENDIR)/src/proto/grpc/testing/test.pbc.c: src/proto/grpc/testing/test.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/empty.pbc.c $(GENDIR)/src/proto/grpc/testing/messages.pbc.c
+	$(E) "[PROTOC]  Generating nanopb C file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --plugin=protoc-gen-nanopb=$(NANOPB_DIR)/generator/protoc-gen-nanopb --nanopb_out="--extension=.pbc --library-include-format='#include <third_party/nanopb/%s>'":$(GENDIR) $<
+
 $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc: src/proto/grpc/testing/test.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin $<
+
+$(GENDIR)/src/proto/grpc/testing/test.grpc.pbc.c: src/proto/grpc/testing/test.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/test.pbc.c $(GENDIR)/src/proto/grpc/testing/empty.pbc.c $(GENDIR)/src/proto/grpc/testing/empty.grpc.pbc.c $(GENDIR)/src/proto/grpc/testing/messages.pbc.c $(GENDIR)/src/proto/grpc/testing/messages.grpc.pbc.c
+	$(E) "[GRPC]    Generating gRPC-C's protobuf service C file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=nanopb_headers_prefix=third_party/nanopb/:$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_c_plugin $<
 endif
 
 
@@ -2310,6 +2457,7 @@ clean:
 # The various libraries
 
 
+# Using nanopb for C files right now
 LIBGPR_SRC = \
     src/core/lib/profiling/basic_timers.c \
     src/core/lib/profiling/stap_timers.c \
@@ -2438,6 +2586,7 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
+# Using nanopb for C files right now
 LIBGPR_TEST_UTIL_SRC = \
     test/core/util/test_config.c \
 
@@ -2463,6 +2612,7 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
+# Using nanopb for C files right now
 LIBGRPC_SRC = \
     src/core/lib/surface/init.c \
     src/core/lib/channel/channel_args.c \
@@ -2736,6 +2886,7 @@ endif
 endif
 
 
+# Using nanopb for C files right now
 LIBGRPC_C_SRC = \
     src/c/alloc.c \
     src/c/bidi_streaming_blocking_call.c \
@@ -2821,6 +2972,50 @@ endif
 endif
 
 
+# Using nanopb for C files right now
+LIBGRPC_C_END2END_CLIENT_LIB_SRC = \
+    $(GENDIR)/src/proto/grpc/testing/echo_messages.pbc.c $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pbc.c \
+    $(GENDIR)/src/proto/grpc/testing/echo.pbc.c $(GENDIR)/src/proto/grpc/testing/echo.grpc.pbc.c \
+    test/c/end2end/end2end_test_client.c \
+
+PUBLIC_HEADERS_C += \
+
+LIBGRPC_C_END2END_CLIENT_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_C_END2END_CLIENT_LIB_SRC))))
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure libraries if you don't have OpenSSL.
+
+$(LIBDIR)/$(CONFIG)/libgrpc_c_end2end_client_lib.a: openssl_dep_error
+
+
+else
+
+
+$(LIBDIR)/$(CONFIG)/libgrpc_c_end2end_client_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGRPC_C_END2END_CLIENT_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_c_end2end_client_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc_c_end2end_client_lib.a $(LIBGRPC_C_END2END_CLIENT_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_c_end2end_client_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(LIBGRPC_C_END2END_CLIENT_LIB_OBJS:.o=.dep)
+endif
+endif
+$(OBJDIR)/$(CONFIG)/test/c/end2end/end2end_test_client.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc
+
+
+# Using nanopb for C files right now
 LIBGRPC_CRONET_SRC = \
     src/core/lib/surface/init.c \
     src/core/lib/channel/channel_args.c \
@@ -3071,6 +3266,7 @@ endif
 endif
 
 
+# Using nanopb for C files right now
 LIBGRPC_TEST_UTIL_SRC = \
     test/core/end2end/data/client_certs.c \
     test/core/end2end/data/server1_cert.c \
@@ -3126,6 +3322,7 @@ endif
 endif
 
 
+# Using nanopb for C files right now
 LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     test/core/end2end/cq_verifier.c \
     test/core/end2end/fixtures/proxy.c \
@@ -3162,6 +3359,7 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
+# Using nanopb for C files right now
 LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/init.c \
     src/core/lib/surface/init_unsecure.c \
@@ -3389,6 +3587,7 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
+# Using nanopb for C files right now
 LIBRECONNECT_SERVER_SRC = \
     test/core/util/reconnect_server.c \
 
@@ -3428,6 +3627,7 @@ endif
 endif
 
 
+# Using nanopb for C files right now
 LIBTEST_TCP_SERVER_SRC = \
     test/core/util/test_tcp_server.c \
 
@@ -3467,6 +3667,7 @@ endif
 endif
 
 
+# Using nanopb for C files right now
 LIBGRPC++_SRC = \
     src/cpp/client/secure_credentials.cc \
     src/cpp/common/auth_property_iterator.cc \
@@ -3665,6 +3866,7 @@ endif
 endif
 
 
+# Using nanopb for C files right now
 LIBGRPC++_REFLECTION_SRC = \
     src/cpp/ext/proto_server_reflection.cc \
     src/cpp/ext/proto_server_reflection_plugin.cc \
@@ -3792,6 +3994,7 @@ endif
 endif
 
 
+# Using nanopb for C files right now
 LIBGRPC++_REFLECTION_CODEGEN_SRC = \
     $(GENDIR)/src/proto/grpc/reflection/v1alpha/reflection.pb.cc $(GENDIR)/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc \
 
@@ -3841,6 +4044,7 @@ endif
 endif
 
 
+# Using nanopb for C files right now
 LIBGRPC++_TEST_CONFIG_SRC = \
     test/cpp/util/test_config.cc \
 
@@ -3890,6 +4094,7 @@ endif
 endif
 
 
+# Using nanopb for C files right now
 LIBGRPC++_TEST_UTIL_SRC = \
     $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc \
@@ -4008,6 +4213,7 @@ $(OBJDIR)/$(CONFIG)/test/cpp/util/test_credentials_provider.o: $(GENDIR)/src/pro
 $(OBJDIR)/$(CONFIG)/src/cpp/codegen/codegen_init.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
 
 
+# Using nanopb for C files right now
 LIBGRPC++_UNSECURE_SRC = \
     src/cpp/common/insecure_create_auth_context.cc \
     src/cpp/client/channel.cc \
@@ -4187,6 +4393,7 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
+# Using nanopb for C files right now
 LIBGRPC_CLI_LIBS_SRC = \
     test/cpp/util/cli_call.cc \
     test/cpp/util/proto_file_parser.cc \
@@ -4238,6 +4445,7 @@ endif
 endif
 
 
+# Using nanopb for C files right now
 LIBGRPC_PLUGIN_SUPPORT_SRC = \
     src/compiler/c_generator.cc \
     src/compiler/cpp_generator.cc \
@@ -4281,6 +4489,7 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
+# Using nanopb for C files right now
 LIBINTEROP_CLIENT_HELPER_SRC = \
     $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc \
     test/cpp/interop/client_helper.cc \
@@ -4332,6 +4541,7 @@ endif
 $(OBJDIR)/$(CONFIG)/test/cpp/interop/client_helper.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc
 
 
+# Using nanopb for C files right now
 LIBINTEROP_CLIENT_MAIN_SRC = \
     $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc \
@@ -4387,6 +4597,7 @@ $(OBJDIR)/$(CONFIG)/test/cpp/interop/client.o: $(GENDIR)/src/proto/grpc/testing/
 $(OBJDIR)/$(CONFIG)/test/cpp/interop/interop_client.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
 
 
+# Using nanopb for C files right now
 LIBINTEROP_SERVER_HELPER_SRC = \
     test/cpp/interop/server_helper.cc \
 
@@ -4436,6 +4647,7 @@ endif
 endif
 
 
+# Using nanopb for C files right now
 LIBINTEROP_SERVER_MAIN_SRC = \
     $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc \
@@ -4489,6 +4701,7 @@ endif
 $(OBJDIR)/$(CONFIG)/test/cpp/interop/interop_server.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
 
 
+# Using nanopb for C files right now
 LIBQPS_SRC = \
     $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc \
@@ -4564,6 +4777,7 @@ $(OBJDIR)/$(CONFIG)/test/cpp/qps/usage_timer.o: $(GENDIR)/src/proto/grpc/testing
 $(OBJDIR)/$(CONFIG)/test/cpp/util/benchmark_config.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc
 
 
+# Using nanopb for C files right now
 LIBGRPC_CSHARP_EXT_SRC = \
     src/csharp/ext/grpc_csharp_ext.c \
 
@@ -4621,6 +4835,7 @@ endif
 endif
 
 
+# Using nanopb for C files right now
 LIBBAD_CLIENT_TEST_SRC = \
     test/core/bad_client/bad_client.c \
 
@@ -4660,6 +4875,7 @@ endif
 endif
 
 
+# Using nanopb for C files right now
 LIBBAD_SSL_TEST_SERVER_SRC = \
     test/core/bad_ssl/server_common.c \
 
@@ -4699,6 +4915,7 @@ endif
 endif
 
 
+# Using nanopb for C files right now
 LIBEND2END_TESTS_SRC = \
     test/core/end2end/end2end_tests.c \
     test/core/end2end/tests/bad_hostname.c \
@@ -4778,6 +4995,7 @@ endif
 endif
 
 
+# Using nanopb for C files right now
 LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/end2end_nosec_tests.c \
     test/core/end2end/tests/bad_hostname.c \
@@ -9384,22 +9602,65 @@ $(BINDIR)/$(CONFIG)/grpc_c_end2end_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/grpc_c_end2end_test: $(PROTOBUF_DEP) $(GRPC_C_END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_c.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/grpc_c_end2end_test: $(PROTOBUF_DEP) $(GRPC_C_END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_c_end2end_client_lib.a $(LIBDIR)/$(CONFIG)/libgrpc_c.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(GRPC_C_END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_c.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/grpc_c_end2end_test
+	$(Q) $(LDXX) $(LDFLAGS) $(GRPC_C_END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_c_end2end_client_lib.a $(LIBDIR)/$(CONFIG)/libgrpc_c.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/grpc_c_end2end_test
 
 endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/c/end2end/end2end_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_c.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/c/end2end/end2end_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_c_end2end_client_lib.a $(LIBDIR)/$(CONFIG)/libgrpc_c.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_grpc_c_end2end_test: $(GRPC_C_END2END_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(GRPC_C_END2END_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+GRPC_C_GENERIC_END2END_TEST_SRC = \
+    test/c/end2end/generic_end2end_test.cc \
+
+GRPC_C_GENERIC_END2END_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_C_GENERIC_END2END_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/grpc_c_generic_end2end_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/grpc_c_generic_end2end_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/grpc_c_generic_end2end_test: $(PROTOBUF_DEP) $(GRPC_C_GENERIC_END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_c.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(GRPC_C_GENERIC_END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_c.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/grpc_c_generic_end2end_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/c/end2end/generic_end2end_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_c.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_grpc_c_generic_end2end_test: $(GRPC_C_GENERIC_END2END_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GRPC_C_GENERIC_END2END_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -12337,6 +12598,7 @@ src/cpp/ext/reflection.grpc.pb.cc: $(OPENSSL_DEP)
 src/cpp/ext/reflection.pb.cc: $(OPENSSL_DEP)
 src/cpp/server/secure_server_credentials.cc: $(OPENSSL_DEP)
 src/csharp/ext/grpc_csharp_ext.c: $(OPENSSL_DEP)
+test/c/end2end/end2end_test_client.c: $(OPENSSL_DEP)
 test/core/bad_client/bad_client.c: $(OPENSSL_DEP)
 test/core/bad_ssl/server_common.c: $(OPENSSL_DEP)
 test/core/end2end/data/client_certs.c: $(OPENSSL_DEP)

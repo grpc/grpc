@@ -2135,6 +2135,7 @@
       "grpc++", 
       "grpc++_test_util", 
       "grpc_c", 
+      "grpc_c_end2end_client_lib", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -2142,6 +2143,25 @@
     "name": "grpc_c_end2end_test", 
     "src": [
       "test/c/end2end/end2end_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_c", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "grpc_c_generic_end2end_test", 
+    "src": [
+      "test/c/end2end/generic_end2end_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4311,6 +4331,31 @@
       "src/c/unary_async_call.h", 
       "src/c/unary_blocking_call.c", 
       "src/c/unary_blocking_call.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_c", 
+      "grpc_test_util", 
+      "nanopb"
+    ], 
+    "headers": [
+      "src/proto/grpc/testing/echo.grpc.pb.h", 
+      "src/proto/grpc/testing/echo.pb.h", 
+      "src/proto/grpc/testing/echo_messages.grpc.pb.h", 
+      "src/proto/grpc/testing/echo_messages.pb.h", 
+      "test/c/end2end/end2end_test_client.h"
+    ], 
+    "language": "c", 
+    "name": "grpc_c_end2end_client_lib", 
+    "src": [
+      "test/c/end2end/end2end_test_client.c", 
+      "test/c/end2end/end2end_test_client.h"
     ], 
     "third_party": false, 
     "type": "lib"
