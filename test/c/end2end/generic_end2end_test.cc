@@ -225,6 +225,7 @@ static void SendServerStreamingRpc(GRPC_channel *channel,
       EXPECT_EQ(grpc::string("gRPC-C") + grpc::to_string(count++), grpc::string(response_string));
       free(response_string);
     }
+    EXPECT_TRUE(count > 0);
 
     GRPC_status status = GRPC_client_reader_terminate(reader);
     EXPECT_TRUE(status.ok) << status.details;
