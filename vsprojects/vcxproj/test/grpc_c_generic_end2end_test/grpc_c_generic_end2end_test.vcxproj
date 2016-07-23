@@ -20,7 +20,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{6E4AFD15-76D2-7BD1-98CE-5C20C50AC86A}</ProjectGuid>
+    <ProjectGuid>{BA030408-865D-F9FA-8956-CDB22AD833E0}</ProjectGuid>
     <IgnoreWarnIntDirInTempDetected>true</IgnoreWarnIntDirInTempDetected>
     <IntDir>$(SolutionDir)IntDir\$(MSBuildProjectName)\</IntDir>
   </PropertyGroup>
@@ -62,14 +62,14 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
-    <TargetName>grpc_c_end2end_test</TargetName>
+    <TargetName>grpc_c_generic_end2end_test</TargetName>
     <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
     <Configuration-grpc_dependencies_zlib>Debug</Configuration-grpc_dependencies_zlib>
     <Linkage-grpc_dependencies_openssl>static</Linkage-grpc_dependencies_openssl>
     <Configuration-grpc_dependencies_openssl>Debug</Configuration-grpc_dependencies_openssl>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
-    <TargetName>grpc_c_end2end_test</TargetName>
+    <TargetName>grpc_c_generic_end2end_test</TargetName>
     <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
     <Configuration-grpc_dependencies_zlib>Release</Configuration-grpc_dependencies_zlib>
     <Linkage-grpc_dependencies_openssl>static</Linkage-grpc_dependencies_openssl>
@@ -160,13 +160,10 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
-    <ClCompile Include="$(SolutionDir)\..\test\c\end2end\end2end_test.cc">
+    <ClCompile Include="$(SolutionDir)\..\test\c\end2end\generic_end2end_test.cc">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc_c_end2end_client_lib\grpc_c_end2end_client_lib.vcxproj">
-      <Project>{E5471C90-7EB8-3B1C-6E9E-C85E0B79FFBA}</Project>
-    </ProjectReference>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc_c\grpc_c.vcxproj">
       <Project>{8AC0CB05-6E3C-4A40-B45E-FDA77644F432}</Project>
     </ProjectReference>
