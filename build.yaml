@@ -883,6 +883,23 @@ libs:
   dll: true
   secure: check
   vs_project_guid: '{8AC0CB05-6E3C-4A40-B45E-FDA77644F432}'
+- name: grpc_c_end2end_client_lib
+  build: private
+  language: c
+  headers:
+  - test/c/end2end/end2end_test_client.h
+  src:
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/echo.proto
+  - test/c/end2end/end2end_test_client.c
+  deps:
+  - grpc_c
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses:
+  - nanopb
 - name: grpc_cronet
   build: all
   language: c
@@ -1774,22 +1791,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: grpc_c_end2end_client_lib
-  build: private
-  language: c
-  headers:
-  - test/c/end2end/end2end_test_client.h
-  src:
-  - src/proto/grpc/testing/echo.proto
-  - test/c/end2end/end2end_test_client.c
-  deps:
-  - grpc_c
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  uses:
-  - nanopb
 - name: grpc_channel_args_test
   build: test
   language: c
