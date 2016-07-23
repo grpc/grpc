@@ -41,6 +41,7 @@
 #include <third_party/nanopb/pb_decode.h>
 #include <grpc/support/log.h>
 #include <stdio.h>
+#include <grpc_c/completion_queue.h>
 
 /**
  * Nanopb callbacks for string encoding/decoding.
@@ -77,6 +78,7 @@ void test_client_send_unary_rpc(GRPC_channel *channel, int repeat) {
     GRPC_status status = grpc_testing_EchoTestService_Echo(context, request, &response);
     GPR_ASSERT(status.ok);
     GPR_ASSERT(status.code == GRPC_STATUS_OK);
+    GPR_ASSERT(response.message.arg != NULL);
     GPR_ASSERT(strcmp(response.message.arg, "gRPC-C") == 0);
     free(response.message.arg);
     GRPC_client_context_destroy(&context);
@@ -99,6 +101,7 @@ void test_client_send_client_streaming_rpc(GRPC_channel *channel, int repeat) {
     GRPC_status status = grpc_testing_EchoTestService_RequestStream_Terminate(writer);
     GPR_ASSERT(status.ok);
     GPR_ASSERT(status.code == GRPC_STATUS_OK);
+    GPR_ASSERT(response.message.arg != NULL);
     GPR_ASSERT(strcmp(response.message.arg, "gRPC-CgRPC-CgRPC-C") == 0);
     free(response.message.arg);
     GRPC_client_context_destroy(&context);
@@ -169,6 +172,31 @@ void test_client_send_bidi_streaming_rpc(GRPC_channel *channel, int repeat) {
 void test_client_send_async_unary_rpc(GRPC_channel *channel, int repeat) {
   int i;
   for (i = 0; i < repeat; i++) {
+    grpc_testing_EchoRequest request = {.message = {.arg = "gRPC-C", .funcs.encode = write_string_from_arg}};
+    grpc_testing_EchoResponse response = {.message = {.funcs.decode = read_string_store_in_arg}};
 
+    GRPC_client_context *context = GRPC_client_context_create(channel);
+    GRPC_completion_queue *cq = GRPC_completion_queue_create();
+
+    bool ok;
+    void *tag;
+    GRPC_client_async_response_reader *async_reader = grpc_testing_EchoTestService_Echo_Async(context, cq, request);
+    GPR_ASSERT(async_reader != NULL);
+    grpc_testing_EchoTestService_Echo_Finish(async_reader, &response, (void *) 12345);
+    GRPC_completion_queue_next(cq, &tag, &ok);
+    GPR_ASSERT(ok);
+    GPR_ASSERT(tag == (void*) 12345);
+
+    GRPC_status status = GRPC_get_call_status(context);
+    GPR_ASSERT(status.ok);
+    GPR_ASSERT(status.code == GRPC_STATUS_OK);
+    GPR_ASSERT(response.message.arg != NULL);
+    GPR_ASSERT(strcmp(response.message.arg, "gRPC-C") == 0);
+    free(response.message.arg);
+
+    GRPC_client_context_destroy(&context);
+    GRPC_completion_queue_shutdown(cq);
+    GRPC_completion_queue_shutdown_wait(cq);
+    GRPC_completion_queue_destroy(cq);
   }
 }
