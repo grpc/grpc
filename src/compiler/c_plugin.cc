@@ -185,6 +185,14 @@ public:
     return msgs;
   }
 
+  virtual std::vector<std::unique_ptr<CFile> > dependencies() const {
+    std::vector<std::unique_ptr<CFile> > deps;
+    for (int i = 0; i < file_->dependency_count(); i++) {
+      deps.push_back(std::unique_ptr<CFile>(new ProtoBufCFile(file_->dependency(i))));
+    }
+    return deps;
+  }
+
 private:
   const grpc::protobuf::FileDescriptor *file_;
 };
@@ -201,11 +209,6 @@ public:
                         grpc::protobuf::compiler::GeneratorContext *context,
                         ::grpc::string *error) const {
 
-    if (file->service_count() == 0) {
-      // No services.  Do nothing.
-      return true;
-    }
-
     grpc::string file_name = grpc_generator::StripProto(file->name());
 
     // TODO(yifeit): Add c_prefix option in protobuf, and update descriptor
@@ -220,7 +223,7 @@ public:
       return false;
     }
 
-    grpc_cpp_generator::Parameters generator_parameters;
+    grpc_c_generator::Parameters generator_parameters;
     generator_parameters.use_system_headers = true;
 
     grpc_c_generator::ProtoBufCFile pbfile(file);
@@ -233,8 +236,10 @@ public:
            parameter_string++) {
         std::vector<grpc::string> param =
           grpc_generator::tokenize(*parameter_string, "=");
-        if (param[0] == "services_namespace") {
-          generator_parameters.services_namespace = param[1];
+        if (param[0] == "grpc_search_path") {
+          generator_parameters.grpc_search_path = param[1];
+        } else if (param[0] == "nanopb_headers_prefix") {
+          generator_parameters.nanopb_headers_prefix = param[1];
         } else if (param[0] == "use_system_headers") {
           if (param[1] == "true") {
             generator_parameters.use_system_headers = true;
@@ -244,8 +249,6 @@ public:
             *error = grpc::string("Invalid parameter: ") + *parameter_string;
             return false;
           }
-        } else if (param[0] == "grpc_search_path") {
-          generator_parameters.grpc_search_path = param[1];
         } else {
           *error = grpc::string("Unknown parameter: ") + *parameter_string;
           return false;
