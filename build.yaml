@@ -2738,6 +2738,9 @@ targets:
   - grpc
   - gpr
 - name: grpc_c_end2end_test
+  comments:
+  - '#1': This is a gRPC-C test but temporarily written in C++ for the lack of a C server
+  - '#2': We're using the library grpc_c_end2end_client_lib to process nanopb and interface with generated code
   gtest: true
   build: test
   language: c++
@@ -2753,6 +2756,8 @@ targets:
   - gpr_test_util
   - gpr
 - name: grpc_c_generic_end2end_test
+  comments:
+  - '#1': This is a gRPC-C test but temporarily written in C++ for the lack of a C server
   gtest: true
   build: test
   language: c++

@@ -597,6 +597,7 @@ R"(
     }
     printer->Print(vars, BlockifyComments(filename).c_str());
 
+    printer->Print(vars, "/* Message header */\n");
     printer->Print(vars, "#include \"$filename_base$$message_header_ext$\"\n");
     printer->Print(vars, "/* Other message dependencies */\n");
     // include all other service headers on which this one depends
@@ -606,6 +607,7 @@ R"(
       depvars["service_header_ext"] = depFile->service_header_ext();
       printer->Print(depvars, "#include \"$filename_base$$service_header_ext$\"\n");
     }
+    printer->Print(vars, "/* Service header */\n");
     printer->Print(vars, "#include \"$filename_base$$service_header_ext$\"\n");
 
     printer->Print(vars, file->additional_headers().c_str());
