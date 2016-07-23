@@ -188,7 +188,12 @@ public:
   virtual std::vector<std::unique_ptr<CFile> > dependencies() const {
     std::vector<std::unique_ptr<CFile> > deps;
     for (int i = 0; i < file_->dependency_count(); i++) {
-      deps.push_back(std::unique_ptr<CFile>(new ProtoBufCFile(file_->dependency(i))));
+      std::unique_ptr<CFile> dep(new ProtoBufCFile(file_->dependency(i)));
+      // recursively add dependencies
+      auto child_dependency = dep->dependencies();
+      std::move(child_dependency.begin(), child_dependency.end(), std::back_inserter(deps));
+      // add myself by moving
+      deps.push_back(std::move(dep));
     }
     return deps;
   }
