@@ -100,7 +100,6 @@ using grpc::protobuf::MethodDescriptor;
 using grpc::protobuf::Descriptor;
 using grpc::protobuf::io::StringOutputStream;
 
-using grpc_cpp_generator::Parameters;
 using grpc_cpp_generator::File;
 using grpc_cpp_generator::Method;
 using grpc_cpp_generator::Service;
@@ -525,6 +524,18 @@ grpc::string GetHeaderServices(File *file,
     // TODO(yifeit): hook this up to C prefix
     vars["CPrefix"] = grpc_cpp_generator::DotsToUnderscores(file->package()) + "_";
 
+    // We need to generate a short serialization helper for every message type
+    // This should be handled in protoc but there's nothing we can do at the moment
+    // given we're on nanopb.
+    for (auto& msg : dynamic_cast<CFile*>(file)->messages()) {
+      std::map<grpc::string, grpc::string> vars_msg(vars);
+      vars_msg["msgType"] = msg->name();
+      printer->Print(vars_msg, R"(
+GRPC_message $CPrefix$$msgType$_serializer(const GRPC_message input);
+void $CPrefix$$msgType$_deserializer(const GRPC_message input, void *output);
+)");
+    }
+
     for (int i = 0; i < file->service_count(); ++i) {
       PrintHeaderService(printer.get(), file->service(i).get(), &vars);
       printer->Print("\n");
@@ -587,6 +598,14 @@ R"(
     printer->Print(vars, BlockifyComments(filename).c_str());
 
     printer->Print(vars, "#include \"$filename_base$$message_header_ext$\"\n");
+    printer->Print(vars, "/* Other message dependencies */\n");
+    // include all other service headers on which this one depends
+    for (auto &depFile : dynamic_cast<CFile*>(file)->dependencies()) {
+      std::map<grpc::string, grpc::string> depvars(vars);
+      depvars["filename_base"] = depFile->filename_without_ext();
+      depvars["service_header_ext"] = depFile->service_header_ext();
+      printer->Print(depvars, "#include \"$filename_base$$service_header_ext$\"\n");
+    }
     printer->Print(vars, "#include \"$filename_base$$service_header_ext$\"\n");
 
     printer->Print(vars, file->additional_headers().c_str());
@@ -603,6 +622,9 @@ grpc::string GetSourceIncludes(File *file,
     auto printer = file->CreatePrinter(&output);
     std::map<grpc::string, grpc::string> vars;
 
+    grpc::string nano_encode = params.nanopb_headers_prefix + "pb_encode.h";
+    grpc::string nano_decode = params.nanopb_headers_prefix + "pb_decode.h";
+
     static const char *headers_strs[] = {
       "grpc_c/status_code.h",
       "grpc_c/status.h",
@@ -616,8 +638,8 @@ grpc::string GetSourceIncludes(File *file,
       "grpc_c/client_context.h",
       "grpc_c/codegen/client_context_priv.h",
       // Relying on Nanopb for Protobuf serialization for now
-      "pb_encode.h",
-      "pb_decode.h",
+      nano_encode.c_str(),
+      nano_decode.c_str(),
       "grpc_c/pb_compat.h"
     };
     std::vector<grpc::string> headers(headers_strs, array_end(headers_strs));
@@ -713,6 +735,9 @@ grpc::string GetSourceServices(File *file,
     // TODO(yifeit): hook this up to C prefix
     vars["CPrefix"] = grpc_cpp_generator::DotsToUnderscores(file->package()) + "_";
 
+    // We need to generate a short serialization helper for every message type
+    // This should be handled in protoc but there's nothing we can do at the moment
+    // given we're on nanopb.
     for (auto& msg : dynamic_cast<CFile*>(file)->messages()) {
       std::map<grpc::string, grpc::string> vars_msg(vars);
       vars_msg["msgType"] = msg->name();
