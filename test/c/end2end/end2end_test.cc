@@ -71,7 +71,118 @@ namespace grpc {
 namespace testing {
 namespace {
 
+class End2endTest {
+public:
+  End2endTest()
+    : is_server_started_(false),
+      kMaxMessageSize_(8192),
+      c_channel_(NULL) {
+  }
 
+  ~End2endTest() {
+    GRPC_channel_destroy(&c_channel_);
+  }
+
+  void TearDown() {
+    if (is_server_started_) {
+      server_->Shutdown();
+    }
+  }
+
+  void StartServer(const std::shared_ptr<AuthMetadataProcessor> &processor) {
+    int port = grpc_pick_unused_port_or_die();
+    server_address_ << "127.0.0.1:" << port;
+    // Setup server
+    ServerBuilder builder;
+
+    builder.AddListeningPort(server_address_.str(), InsecureServerCredentials());
+    builder.RegisterService(&service_);
+    builder.SetMaxMessageSize(
+      kMaxMessageSize_);  // For testing max message size.
+    server_ = builder.BuildAndStart();
+    is_server_started_ = true;
+  }
+
+  void ResetChannel() {
+    if (!is_server_started_) {
+      StartServer(std::shared_ptr<AuthMetadataProcessor>());
+    }
+    EXPECT_TRUE(is_server_started_);
+
+    // TODO(yifeit): add credentials
+    if (c_channel_) GRPC_channel_destroy(&c_channel_);
+    c_channel_ = GRPC_channel_create(server_address_.str().c_str());
+  }
+
+  void ResetStub() {
+    ResetChannel();
+  }
+
+  bool is_server_started_;
+
+  std::unique_ptr<Server> server_;
+  std::ostringstream server_address_;
+  const int kMaxMessageSize_;
+  TestServiceImpl service_;
+  grpc::string user_agent_prefix_;
+
+  GRPC_channel *c_channel_;
+};
+
+class UnaryEnd2endTest : public End2endTest {
+protected:
+};
+
+class ClientStreamingEnd2endTest : public End2endTest {
+protected:
+};
+
+class ServerStreamingEnd2endTest : public End2endTest {
+protected:
+};
+
+class BidiStreamingEnd2endTest : public End2endTest {
+protected:
+};
+
+class AsyncUnaryEnd2endTest : public End2endTest {
+protected:
+};
+
+TEST(End2endTest, UnaryRpc) {
+  UnaryEnd2endTest test;
+  test.ResetStub();
+  test_client_send_unary_rpc(test.c_channel_, 3);
+  test.TearDown();
+}
+
+TEST(End2endTest, ClientStreamingRpc) {
+  ClientStreamingEnd2endTest test;
+  test.ResetStub();
+  test_client_send_client_streaming_rpc(test.c_channel_, 3);
+  test.TearDown();
+}
+
+TEST(End2endTest, ServerStreamingRpc) {
+  ServerStreamingEnd2endTest test;
+  test.ResetStub();
+  test_client_send_server_streaming_rpc(test.c_channel_, 3);
+  test.TearDown();
+}
+
+TEST(End2endTest, BidiStreamingRpc) {
+  BidiStreamingEnd2endTest test;
+  test.ResetStub();
+  test_client_send_bidi_streaming_rpc(test.c_channel_, 3);
+  test.TearDown();
+}
+
+TEST(End2endTest, AsyncUnaryRpc) {
+  AsyncUnaryEnd2endTest test;
+  test.ResetStub();
+  test_client_send_async_unary_rpc(test.c_channel_, 3);
+  test.TearDown();
+}
 
 } // namespace
 } // namespace testing
@@ -82,4 +193,3 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
-
