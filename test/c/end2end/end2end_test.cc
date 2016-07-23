@@ -48,6 +48,12 @@
 #include <grpc/support/time.h>
 #include <gtest/gtest.h>
 
+// Import the relevant bits in gRPC-C runtime
+extern "C" {
+#include <grpc_c/grpc_c.h>
+#include <grpc_c/channel.h>
+}
+
 // Import the C client which actually runs the tests
 extern "C" {
 #include "test/c/end2end/end2end_test_client.h"

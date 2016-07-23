@@ -39,6 +39,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pbc.h"
 #include <third_party/nanopb/pb_encode.h>
 #include <third_party/nanopb/pb_decode.h>
+#include <grpc/support/log.h>
 
 /**
  * Nanopb callbacks for string encoding/decoding.
@@ -66,7 +67,15 @@ static bool read_string_store_in_arg(pb_istream_t *stream, const pb_field_t *fie
 }
 
 void test_client_send_unary_rpc(GRPC_channel *channel, int repeat) {
+  grpc_testing_EchoRequest request = { .message = { .arg = "gRPC-C", .funcs.encode = write_string_from_arg } };
+  grpc_testing_EchoResponse response = { .message = { .funcs.decode = read_string_store_in_arg } };
 
+  GRPC_client_context *context = GRPC_client_context_create(channel);
+  GRPC_status status = grpc_testing_EchoTestService_Echo(context, request, &response);
+  GPR_ASSERT(status.ok);
+  GPR_ASSERT(status.code == GRPC_STATUS_OK);
+  GPR_ASSERT(strcmp(response.message.arg, "gRPC-C") == 0);
+  GRPC_client_context_destroy(&context);
 }
 
 void test_client_send_client_streaming_rpc(GRPC_channel *channel, int repeat) {
