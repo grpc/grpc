@@ -38,8 +38,10 @@
 
 #include <google/protobuf/compiler/importer.h>
 #include <google/protobuf/dynamic_message.h>
+#include <grpc++/channel.h>
 
 #include "src/compiler/config.h"
+#include "test/cpp/util/proto_reflection_descriptor_database.h"
 
 namespace grpc {
 namespace testing {
@@ -52,6 +54,9 @@ class ProtoFileParser {
   // proto_path. The method could be a partial string such as Service.Method or
   // even just Method. It will log an error if there is ambiguity.
   ProtoFileParser(const grpc::string& proto_path, const grpc::string& file_name,
+                  const grpc::string& method);
+
+  ProtoFileParser(std::shared_ptr<grpc::Channel> channel,
                   const grpc::string& method);
   ~ProtoFileParser();
 
@@ -68,12 +73,18 @@ class ProtoFileParser {
   void LogError(const grpc::string& error_msg);
 
  private:
+  void InitProtoFileParser(
+      const grpc::string& method,
+      const std::vector<const google::protobuf::ServiceDescriptor*> services);
+
   bool has_error_;
   grpc::string request_text_;
   grpc::string full_method_name_;
   google::protobuf::compiler::DiskSourceTree source_tree_;
   std::unique_ptr<ErrorPrinter> error_printer_;
   std::unique_ptr<google::protobuf::compiler::Importer> importer_;
+  std::unique_ptr<grpc::ProtoReflectionDescriptorDatabase> desc_db_;
+  std::unique_ptr<google::protobuf::DescriptorPool> desc_pool_;
   std::unique_ptr<google::protobuf::DynamicMessageFactory> dynamic_factory_;
   std::unique_ptr<grpc::protobuf::Message> request_prototype_;
   std::unique_ptr<grpc::protobuf::Message> response_prototype_;
