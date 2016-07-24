@@ -29,39 +29,51 @@
 
 FROM debian:jessie
 
+#=================
+# PHP7 dependencies
+
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
   autoconf \
-  autotools-dev \
+  automake \
   build-essential \
-  bzip2 \
   ccache \
   curl \
-  gcc \
-  gcc-multilib \
   git \
-  golang \
-  gyp \
-  lcov \
-  libc6 \
-  libc6-dbg \
-  libc6-dev \
-  libgtest-dev \
+  libcurl4-openssl-dev \
+  libgmp-dev \
+  libgmp3-dev \
+  libssl-dev \
   libtool \
-  make \
-  perl \
-  strace \
-  python-dev \
-  python-setuptools \
-  python-yaml \
-  telnet \
+  libxml2-dev \
+  pkg-config \
+  re2c \
+  time \
   unzip \
   wget \
   zip && apt-get clean
 
-#================
-# Build profiling
-RUN apt-get update && apt-get install -y time && apt-get clean
+# Install other dependencies
+RUN ln -sf /usr/include/x86_64-linux-gnu/gmp.h /usr/include/gmp.h
+RUN wget http://ftp.gnu.org/gnu/bison/bison-2.6.4.tar.gz -O /var/local/bison-2.6.4.tar.gz
+RUN cd /var/local \
+  && tar -zxvf bison-2.6.4.tar.gz \
+  && cd /var/local/bison-2.6.4 \
+  && ./configure \
+  && make \
+  && make install
+
+# Compile PHP7 from source
+RUN git clone https://github.com/php/php-src /var/local/git/php-src
+RUN cd /var/local/git/php-src \
+  && git checkout PHP-7.0.9 \
+  && ./buildconf --force \
+  && ./configure \
+  --with-gmp \
+  --with-openssl \
+  --with-zlib \
+  && make \
+  && make install
 
 #==================
 # Ruby dependencies
@@ -77,14 +89,6 @@ RUN /bin/bash -l -c "echo 'gem: --no-ri --no-rdoc' > ~/.gemrc"
 RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
 RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.1' >> ~/.bashrc"
 RUN /bin/bash -l -c "gem install bundler --no-ri --no-rdoc"
-
-#=================
-# PHP dependencies
-
-# Install dependencies
-
-RUN apt-get update && apt-get install -y \
-    git php5 php5-dev phpunit unzip
 
 # Prepare ccache
 RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
