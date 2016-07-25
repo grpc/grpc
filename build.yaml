@@ -840,7 +840,6 @@ libs:
   - src/c/client_context.h
   - src/c/client_streaming_blocking_call.h
   - src/c/completion_queue.h
-  - src/c/id_serialization.h
   - src/c/init_shutdown.h
   - src/c/message.h
   - src/c/server_streaming_blocking_call.h
@@ -856,7 +855,6 @@ libs:
   - src/c/client_context.c
   - src/c/client_streaming_blocking_call.c
   - src/c/completion_queue.c
-  - src/c/id_serialization.c
   - src/c/init_shutdown.c
   - src/c/message.c
   - src/c/pb_compat.c
@@ -2762,6 +2760,7 @@ targets:
   language: c++
   src:
   - test/c/end2end/generic_end2end_test.cc
+  - test/c/end2end/id_serialization.cc
   deps:
   - grpc_c
   - grpc++_test_util

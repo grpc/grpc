@@ -58,6 +58,7 @@ extern "C" {
 #include <grpc_c/bidi_streaming_blocking_call.h>
 #include <grpc_c/unary_async_call.h>
 #include <grpc_c/status.h>
+#include <grpc_c/codegen/client_context_priv.h>
 }
 
 #include "src/core/lib/security/credentials/credentials.h"
@@ -66,6 +67,7 @@ extern "C" {
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "test/c/end2end/id_serialization.h"
 
 /**
  * End-to-end tests for the gRPC C API.
@@ -144,6 +146,10 @@ static void SendUnaryRpc(GRPC_channel *channel,
   for (int i = 0; i < num_rpcs; ++i) {
     GRPC_method method = { GRPC_method::RpcType::NORMAL_RPC, "/grpc.testing.EchoTestService/Echo" };
     GRPC_client_context *context = GRPC_client_context_create(channel);
+    GRPC_client_context_set_serialization_impl(context, (grpc_serialization_impl) {
+      .serialize = GRPC_id_serialize,
+      .deserialize = GRPC_id_deserialize
+    });
     // hardcoded string for "gRPC-C"
     char str[] = {0x0A, 0x06, 0x67, 0x52, 0x50, 0x43, 0x2D, 0x43};
     GRPC_message msg = {str, sizeof(str)};
@@ -172,6 +178,10 @@ static void SendClientStreamingRpc(GRPC_channel *channel,
   for (int i = 0; i < num_rpcs; ++i) {
     GRPC_method method = { GRPC_method::RpcType::NORMAL_RPC, "/grpc.testing.EchoTestService/RequestStream" };
     GRPC_client_context *context = GRPC_client_context_create(channel);
+    GRPC_client_context_set_serialization_impl(context, (grpc_serialization_impl) {
+      .serialize = GRPC_id_serialize,
+      .deserialize = GRPC_id_deserialize
+    });
     // hardcoded string for "gRPC-C"
     char str[] = {0x0A, 0x06, 0x67, 0x52, 0x50, 0x43, 0x2D, 0x43};
     GRPC_message msg = {str, sizeof(str)};
@@ -206,6 +216,10 @@ static void SendServerStreamingRpc(GRPC_channel *channel,
   for (int i = 0; i < num_rpcs; ++i) {
     GRPC_method method = { GRPC_method::RpcType::NORMAL_RPC, "/grpc.testing.EchoTestService/ResponseStream" };
     GRPC_client_context *context = GRPC_client_context_create(channel);
+    GRPC_client_context_set_serialization_impl(context, (grpc_serialization_impl) {
+      .serialize = GRPC_id_serialize,
+      .deserialize = GRPC_id_deserialize
+    });
     // hardcoded string for "gRPC-C"
     char str[] = {0x0A, 0x06, 0x67, 0x52, 0x50, 0x43, 0x2D, 0x43};
     GRPC_message msg = {str, sizeof(str)};
@@ -240,6 +254,10 @@ static void SendBidiStreamingRpc(GRPC_channel *channel,
   for (int i = 0; i < num_rpcs; ++i) {
     GRPC_method method = { GRPC_method::RpcType::NORMAL_RPC, "/grpc.testing.EchoTestService/BidiStream" };
     GRPC_client_context *context = GRPC_client_context_create(channel);
+    GRPC_client_context_set_serialization_impl(context, (grpc_serialization_impl) {
+      .serialize = GRPC_id_serialize,
+      .deserialize = GRPC_id_deserialize
+    });
     // hardcoded string for "gRPC-C"
     char str[] = {0x0A, 0x06, 0x67, 0x52, 0x50, 0x43, 0x2D, 0x43};
     GRPC_message msg = {str, sizeof(str)};
@@ -281,6 +299,10 @@ static void SendAsyncUnaryRpc(GRPC_channel *channel,
   for (int i = 0; i < num_rpcs; ++i) {
     GRPC_method method = { GRPC_method::RpcType::NORMAL_RPC, "/grpc.testing.EchoTestService/Echo" };
     GRPC_client_context *context = GRPC_client_context_create(channel);
+    GRPC_client_context_set_serialization_impl(context, (grpc_serialization_impl) {
+      .serialize = GRPC_id_serialize,
+      .deserialize = GRPC_id_deserialize
+    });
     GRPC_completion_queue *cq = GRPC_completion_queue_create();
     // hardcoded string for "gRPC-C"
     char str[] = {0x0A, 0x06, 0x67, 0x52, 0x50, 0x43, 0x2D, 0x43};
