@@ -60,8 +60,7 @@ typedef struct grpc_handshaker grpc_handshaker;
 typedef void (*grpc_handshaker_done_cb)(grpc_exec_ctx* exec_ctx,
                                         grpc_endpoint* endpoint,
                                         grpc_channel_args* args,
-                                        void* user_data,
-                                        grpc_error* error);
+                                        void* user_data, grpc_error* error);
 
 struct grpc_handshaker_vtable {
   /// Destroys the handshaker.

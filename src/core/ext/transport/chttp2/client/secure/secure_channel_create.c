@@ -139,10 +139,9 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
     // handshake API, and then move the code from on_secure_handshake_done()
     // into this function.
     c->tmp_args = args;
-    grpc_channel_security_connector_do_handshake(exec_ctx,
-                                                 c->security_connector,
-                                                 endpoint, c->args.deadline,
-                                                 on_secure_handshake_done, c);
+    grpc_channel_security_connector_do_handshake(
+        exec_ctx, c->security_connector, endpoint, c->args.deadline,
+        on_secure_handshake_done, c);
   }
 }
 
