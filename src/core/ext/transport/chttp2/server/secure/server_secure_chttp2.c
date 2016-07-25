@@ -42,6 +42,7 @@
 #include <grpc/support/useful.h>
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/channel/http_server_filter.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -68,6 +69,12 @@ typedef struct server_secure_state {
 typedef struct server_secure_connect {
   server_secure_state *state;
   grpc_pollset *accepting_pollset;
+  grpc_tcp_server_acceptor *acceptor;
+  grpc_handshake_manager *handshake_mgr;
+  // TODO(roth): Remove the following two fields when we eliminate
+  // grpc_server_security_connector_do_handshake().
+  gpr_timespec deadline;
+  grpc_channel_args *args;
 } server_secure_connect;
 
 static void state_ref(server_secure_state *state) { gpr_ref(&state->refcount); }
@@ -97,13 +104,11 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *statep,
         transport = grpc_create_chttp2_transport(
             exec_ctx, grpc_server_get_channel_args(state->state->server),
             secure_endpoint, 0);
-        grpc_channel_args *args_copy;
         grpc_arg args_to_add[2];
         args_to_add[0] = grpc_server_credentials_to_arg(state->state->creds);
         args_to_add[1] = grpc_auth_context_to_arg(auth_context);
-        args_copy = grpc_channel_args_copy_and_add(
-            grpc_server_get_channel_args(state->state->server), args_to_add,
-            GPR_ARRAY_SIZE(args_to_add));
+        grpc_channel_args *args_copy = grpc_channel_args_copy_and_add(
+            state->args, args_to_add, GPR_ARRAY_SIZE(args_to_add));
         grpc_server_setup_transport(exec_ctx, state->state->server, transport,
                                     state->accepting_pollset, args_copy);
         grpc_channel_args_destroy(args_copy);
@@ -118,8 +123,23 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *statep,
   } else {
     gpr_log(GPR_ERROR, "Secure transport failed with error %d", status);
   }
+  grpc_channel_args_destroy(state->args);
   state_unref(state->state);
   gpr_free(state);
+}
+
+static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
+                              grpc_channel_args *args, void *user_data) {
+  server_secure_connect *state = user_data;
+  // TODO(roth, jboeuf): Convert security connector handshaking to use new
+  // handshake API, and then move the code from on_secure_handshake_done()
+  // into this function.
+  grpc_handshake_manager_destroy(exec_ctx, state->handshake_mgr);
+  state->handshake_mgr = NULL;
+  state->args = args;
+  grpc_server_security_connector_do_handshake(
+      exec_ctx, state->state->sc, state->acceptor, endpoint, state->deadline,
+      on_secure_handshake_done, state);
 }
 
 static void on_accept(grpc_exec_ctx *exec_ctx, void *statep, grpc_endpoint *tcp,
@@ -129,11 +149,16 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *statep, grpc_endpoint *tcp,
   state->state = statep;
   state_ref(state->state);
   state->accepting_pollset = accepting_pollset;
-  grpc_server_security_connector_do_handshake(
-      exec_ctx, state->state->sc, acceptor, tcp,
-      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                   gpr_time_from_seconds(120, GPR_TIMESPAN)),
-      on_secure_handshake_done, state);
+  state->acceptor = acceptor;
+  state->handshake_mgr = grpc_handshake_manager_create();
+  // TODO(roth): We should really get this timeout value from channel
+  // args instead of hard-coding it.
+  state->deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                 gpr_time_from_seconds(120, GPR_TIMESPAN));
+  grpc_handshake_manager_do_handshake(
+      exec_ctx, state->handshake_mgr, tcp,
+      grpc_server_get_channel_args(state->state->server), state->deadline,
+      acceptor, on_handshake_done, state);
 }
 
 /* Server callback: start listening on our ports */

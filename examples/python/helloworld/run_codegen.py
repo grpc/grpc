@@ -27,4 +27,16 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+"""Runs protoc with the gRPC plugin to generate messages and gRPC stubs."""
 
+from grpc.tools import protoc
+
+protoc.main(
+    (
+	'',
+	'-I../../protos',
+	'--python_out=.',
+	'--grpc_python_out=.',
+	'../../protos/helloworld.proto',
+    )
+)

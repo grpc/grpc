@@ -29,17 +29,18 @@
 
 """A setup module for the GRPC Python package."""
 
+from distutils import extension as _extension
+from distutils import util
 import os
 import os.path
+import pkg_resources
 import platform
+import re
 import shlex
 import shutil
 import sys
 import sysconfig
 
-from distutils import core as _core
-from distutils import extension as _extension
-import pkg_resources
 import setuptools
 from setuptools.command import egg_info
 
@@ -47,10 +48,10 @@ from setuptools.command import egg_info
 egg_info.manifest_maker.template = 'PYTHON-MANIFEST.in'
 
 PY3 = sys.version_info.major == 3
-PYTHON_STEM = './src/python/grpcio'
-CORE_INCLUDE = ('./include', '.',)
-BORINGSSL_INCLUDE = ('./third_party/boringssl/include',)
-ZLIB_INCLUDE = ('./third_party/zlib',)
+PYTHON_STEM = os.path.join('src', 'python', 'grpcio')
+CORE_INCLUDE = ('include', '.',)
+BORINGSSL_INCLUDE = (os.path.join('third_party', 'boringssl', 'include'),)
+ZLIB_INCLUDE = (os.path.join('third_party', 'zlib'),)
 
 # Ensure we're in the proper directory whether or not we're being used by pip.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -123,10 +124,7 @@ CYTHON_EXTENSION_PACKAGE_NAMES = ()
 
 CYTHON_EXTENSION_MODULE_NAMES = ('grpc._cython.cygrpc',)
 
-CYTHON_HELPER_C_FILES = (
-    os.path.join(PYTHON_STEM, 'grpc/_cython/loader.c'),
-    os.path.join(PYTHON_STEM, 'grpc/_cython/imports.generated.c'),
-)
+CYTHON_HELPER_C_FILES = ()
 
 CORE_C_FILES = tuple(grpc_core_dependencies.CORE_SOURCE_FILES)
 
@@ -141,7 +139,9 @@ if not "win32" in sys.platform:
 if "win32" in sys.platform:
   EXTENSION_LIBRARIES += ('ws2_32',)
 
-DEFINE_MACROS = (('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600), ('GPR_BACKWARDS_COMPATIBILITY_MODE', 1),)
+DEFINE_MACROS = (
+    ('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600),
+    ('GPR_BACKWARDS_COMPATIBILITY_MODE', 1),)
 if "win32" in sys.platform:
   DEFINE_MACROS += (('OPENSSL_WINDOWS', 1), ('WIN32_LEAN_AND_MEAN', 1),)
   if '64bit' in platform.architecture()[0]:
@@ -163,6 +163,10 @@ if 'darwin' in sys.platform and PY3:
   if mac_target and (pkg_resources.parse_version(mac_target) <
                      pkg_resources.parse_version('10.7.0')):
     os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
+    os.environ['_PYTHON_HOST_PLATFORM'] = re.sub(
+        r'macosx-[0-9]+\.[0-9]+-(.+)',
+        r'macosx-10.7-\1',
+        util.get_platform())
 
 
 def cython_extensions():
@@ -242,12 +246,13 @@ COMMAND_CLASS = {
 }
 
 # Ensure that package data is copied over before any commands have been run:
-credentials_dir = os.path.join(PYTHON_STEM, 'grpc/_cython/_credentials')
+credentials_dir = os.path.join(PYTHON_STEM, 'grpc', '_cython', '_credentials')
 try:
   os.mkdir(credentials_dir)
 except OSError:
   pass
-shutil.copyfile('etc/roots.pem', os.path.join(credentials_dir, 'roots.pem'))
+shutil.copyfile(os.path.join('etc', 'roots.pem'),
+                os.path.join(credentials_dir, 'roots.pem'))
 
 PACKAGE_DATA = {
     # Binaries that may or may not be present in the final installation, but are

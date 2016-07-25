@@ -36,7 +36,7 @@ Pod::Spec.new do |s|
   # exclamation mark ensures that other "regular" pods will be able to find it as it'll be installed
   # before them.
   s.name     = '!ProtoCompiler-gRPCPlugin'
-  v = '0.14.0'
+  v = '1.0.0-pre1'
   s.version  = v
   s.summary  = 'The gRPC ProtoC plugin generates Objective-C files from .proto services.'
   s.description = <<-DESC
@@ -82,7 +82,7 @@ Pod::Spec.new do |s|
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
   repo = 'grpc/grpc'
-  release = 'release-0_14_1'
+  release = "objective-c-v#{v}"
   file = "grpc_objective_c_plugin-#{v}-macos-x86_64.zip"
   s.source = {
     :http => "https://github.com/#{repo}/releases/download/#{release}/#{file}",
