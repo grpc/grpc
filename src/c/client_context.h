@@ -36,10 +36,10 @@
 #define TEST_GRPC_C_CLIENT_CONTEXT_H
 
 #include <grpc_c/grpc_c.h>
+#include <grpc_c/status.h>
 #include <grpc_c/codegen/client_context_priv.h>
 #include <grpc_c/serialization.h>
 #include <grpc/grpc.h>
-#include "src/c/status.h"
 #include "src/c/message.h"
 #include "src/c/call_ops.h"
 #include <stdbool.h>

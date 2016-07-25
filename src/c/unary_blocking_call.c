@@ -35,7 +35,6 @@
 #include <grpc_c/grpc_c.h>
 #include "src/c/client_context.h"
 #include "src/c/call_ops.h"
-#include "src/c/tag.h"
 #include "src/c/completion_queue.h"
 #include <stdio.h>
 #include <grpc/support/log.h>
@@ -64,7 +63,7 @@ GRPC_status GRPC_unary_blocking_call(const GRPC_method rpc_method,
       grpc_op_recv_status
     },
     .context = context,
-    .user_tag = TAG(&set)
+    .user_tag = &set
   };
 
   grpc_start_batch_from_op_set(call, &set, context, message, response);
@@ -73,7 +72,7 @@ GRPC_status GRPC_unary_blocking_call(const GRPC_method rpc_method,
     bool ok;
     GRPC_completion_queue_operation_status status = GRPC_completion_queue_next_deadline(cq, context->deadline, &tag, &ok);
     GPR_ASSERT(status == GRPC_COMPLETION_QUEUE_GOT_EVENT);
-    if (tag == TAG(&set)) {
+    if (tag == &set) {
       context->status.ok &= ok;
       break;
     }
