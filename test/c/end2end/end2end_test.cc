@@ -32,7 +32,10 @@
  */
 
 #include <mutex>
+#include <random>
+#include <chrono>
 #include <thread>
+#include <condition_variable>
 
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
@@ -159,6 +162,43 @@ TEST(End2endTest, UnaryRpc) {
   UnaryEnd2endTest test;
   test.ResetStub();
   test_client_send_unary_rpc(test.c_channel_, 3);
+  test.TearDown();
+}
+
+TEST(End2endTest, UnaryRpcRacing) {
+  UnaryEnd2endTest test;
+  test.ResetStub();
+  std::vector<std::thread> threads;
+  const int kNumThreads = 50;
+  std::mutex mu;
+  std::condition_variable cv;
+  bool start_racing = false;
+  for (int i = 0; i < kNumThreads; i++) {
+    threads.push_back(std::move(std::thread([&test, &start_racing, &mu, &cv](int id) {
+      std::default_random_engine generator( std::random_device{}() );
+      std::uniform_int_distribution<> distrib(1, 3);
+      {
+        {
+          std::unique_lock<std::mutex> lock(mu);
+          while (!start_racing) {
+            cv.wait(lock);
+          }
+        }
+        for (int j = 0; j < 5; j++) {
+          std::this_thread::sleep_for(std::chrono::milliseconds(distrib(generator)));
+          test_client_send_unary_rpc(test.c_channel_, 5);
+        }
+      }
+    }, i)));
+  }
+  {
+    std::unique_lock<std::mutex> lock(mu);
+    start_racing = true;
+    cv.notify_all();
+  }
+  for (int i = 0; i < kNumThreads; i++) {
+    threads[i].join();
+  }
   test.TearDown();
 }
 
