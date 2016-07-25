@@ -280,7 +280,6 @@
     <ClInclude Include="$(SolutionDir)\..\src\c\client_context.h" />
     <ClInclude Include="$(SolutionDir)\..\src\c\client_streaming_blocking_call.h" />
     <ClInclude Include="$(SolutionDir)\..\src\c\completion_queue.h" />
-    <ClInclude Include="$(SolutionDir)\..\src\c\id_serialization.h" />
     <ClInclude Include="$(SolutionDir)\..\src\c\init_shutdown.h" />
     <ClInclude Include="$(SolutionDir)\..\src\c\message.h" />
     <ClInclude Include="$(SolutionDir)\..\src\c\server_streaming_blocking_call.h" />
@@ -303,8 +302,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\c\client_streaming_blocking_call.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\c\completion_queue.c">
-    </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\c\id_serialization.c">
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\c\init_shutdown.c">
     </ClCompile>

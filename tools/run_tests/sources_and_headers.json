@@ -2161,7 +2161,8 @@
     "language": "c++", 
     "name": "grpc_c_generic_end2end_test", 
     "src": [
-      "test/c/end2end/generic_end2end_test.cc"
+      "test/c/end2end/generic_end2end_test.cc", 
+      "test/c/end2end/id_serialization.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4275,7 +4276,6 @@
       "src/c/client_context.h", 
       "src/c/client_streaming_blocking_call.h", 
       "src/c/completion_queue.h", 
-      "src/c/id_serialization.h", 
       "src/c/init_shutdown.h", 
       "src/c/message.h", 
       "src/c/server_streaming_blocking_call.h", 
@@ -4314,8 +4314,6 @@
       "src/c/client_streaming_blocking_call.h", 
       "src/c/completion_queue.c", 
       "src/c/completion_queue.h", 
-      "src/c/id_serialization.c", 
-      "src/c/id_serialization.h", 
       "src/c/init_shutdown.c", 
       "src/c/init_shutdown.h", 
       "src/c/message.c", 

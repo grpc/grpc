@@ -2901,7 +2901,6 @@ LIBGRPC_C_SRC = \
     src/c/client_context.c \
     src/c/client_streaming_blocking_call.c \
     src/c/completion_queue.c \
-    src/c/id_serialization.c \
     src/c/init_shutdown.c \
     src/c/message.c \
     src/c/pb_compat.c \
@@ -9951,6 +9950,7 @@ endif
 
 GRPC_C_GENERIC_END2END_TEST_SRC = \
     test/c/end2end/generic_end2end_test.cc \
+    test/c/end2end/id_serialization.cc \
 
 GRPC_C_GENERIC_END2END_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_C_GENERIC_END2END_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -9982,6 +9982,8 @@ endif
 endif
 
 $(OBJDIR)/$(CONFIG)/test/c/end2end/generic_end2end_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_c.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/c/end2end/id_serialization.o:  $(LIBDIR)/$(CONFIG)/libgrpc_c.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_grpc_c_generic_end2end_test: $(GRPC_C_GENERIC_END2END_TEST_OBJS:.o=.dep)
 
@@ -13048,7 +13050,6 @@ src/c/channel.c: $(OPENSSL_DEP)
 src/c/client_context.c: $(OPENSSL_DEP)
 src/c/client_streaming_blocking_call.c: $(OPENSSL_DEP)
 src/c/completion_queue.c: $(OPENSSL_DEP)
-src/c/id_serialization.c: $(OPENSSL_DEP)
 src/c/init_shutdown.c: $(OPENSSL_DEP)
 src/c/message.c: $(OPENSSL_DEP)
 src/c/pb_compat.c: $(OPENSSL_DEP)

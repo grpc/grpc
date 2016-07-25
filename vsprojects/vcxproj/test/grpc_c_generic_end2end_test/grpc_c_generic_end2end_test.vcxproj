@@ -162,6 +162,8 @@
   <ItemGroup>
     <ClCompile Include="$(SolutionDir)\..\test\c\end2end\generic_end2end_test.cc">
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\c\end2end\id_serialization.cc">
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(SolutionDir)\..\vsprojects\vcxproj\.\grpc_c\grpc_c.vcxproj">

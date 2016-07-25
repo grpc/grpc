@@ -22,9 +22,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\c\completion_queue.c">
       <Filter>src\c</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\c\id_serialization.c">
-      <Filter>src\c</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\c\init_shutdown.c">
       <Filter>src\c</Filter>
     </ClCompile>
@@ -105,9 +102,6 @@
       <Filter>src\c</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\c\completion_queue.h">
-      <Filter>src\c</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\c\id_serialization.h">
       <Filter>src\c</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\c\init_shutdown.h">
