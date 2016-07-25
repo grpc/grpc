@@ -32,8 +32,8 @@
  */
 
 
-#ifndef TEST_GRPC_C_CLIENT_CONTEXT_H
-#define TEST_GRPC_C_CLIENT_CONTEXT_H
+#ifndef GRPC_C_CLIENT_CONTEXT_H
+#define GRPC_C_CLIENT_CONTEXT_H
 
 #include <grpc_c/grpc_c.h>
 #include <grpc_c/status.h>
@@ -68,4 +68,4 @@ typedef struct grpc_client_context {
 
 typedef grpc_client_context GRPC_client_context;
 
-#endif //TEST_GRPC_C_CLIENT_CONTEXT_H
+#endif // GRPC_C_CLIENT_CONTEXT_H

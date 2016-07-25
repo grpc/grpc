@@ -31,9 +31,9 @@
  *
  */
 
-#ifndef TEST_GRPC_C_GRPC_INIT_SHUTDOWN_H
-#define TEST_GRPC_C_GRPC_INIT_SHUTDOWN_H
+#ifndef GRPC_C_GRPC_INIT_SHUTDOWN_H
+#define GRPC_C_GRPC_INIT_SHUTDOWN_H
 
 void grpc_ensure_grpc_init();
 
-#endif //TEST_GRPC_C_GRPC_INIT_SHUTDOWN_H
+#endif // GRPC_C_GRPC_INIT_SHUTDOWN_H

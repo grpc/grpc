@@ -32,9 +32,10 @@
  */
 
 #include "src/c/alloc.h"
+#include <include/grpc/support/alloc.h>
 #include <string.h>
 
-void *grpc_memdup(const void *dst, size_t size) {
-  void *p = malloc(size);
+void *GRPC_memdup(const void *dst, size_t size) {
+  void *p = gpr_malloc(size);
   return p ? memcpy(p, dst, size) : NULL;
 }
