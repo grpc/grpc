@@ -31,7 +31,7 @@
  *
  */
 
-#include "init_shutdown.h"
+#include "src/c/init_shutdown.h"
 #include <stdlib.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>

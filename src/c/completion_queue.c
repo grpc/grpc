@@ -38,8 +38,8 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc_c/grpc_c.h>
-#include "completion_queue.h"
-#include "call_ops.h"
+#include "src/c/completion_queue.h"
+#include "src/c/call_ops.h"
 
 GRPC_completion_queue *GRPC_completion_queue_create() {
   return grpc_completion_queue_create(NULL);

@@ -36,7 +36,7 @@
 #include <grpc_c/pb_compat.h>
 #include <third_party/nanopb/pb.h>
 #include <third_party/nanopb/pb_encode.h>
-#include "alloc.h"
+#include "src/c/alloc.h"
 
 /**
  * This file implements a Nanopb stream used to collect deserialized data from Nanopb.

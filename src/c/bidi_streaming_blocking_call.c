@@ -36,8 +36,8 @@
 #include <grpc/support/log.h>
 #include "bidi_streaming_blocking_call.h"
 #include <grpc_c/completion_queue.h>
-#include "alloc.h"
-#include "tag.h"
+#include "src/c/alloc.h"
+#include "src/c/tag.h"
 #include "completion_queue.h"
 
 GRPC_client_reader_writer *GRPC_bidi_streaming_blocking_call(const GRPC_method rpc_method,

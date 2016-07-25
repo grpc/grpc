@@ -31,8 +31,8 @@
  *
  */
 #include <grpc_c/grpc_c.h>
-#include "call_ops.h"
-#include "tag.h"
+#include "src/c/call_ops.h"
+#include "src/c/tag.h"
 #include <grpc/support/log.h>
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 

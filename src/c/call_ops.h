@@ -36,8 +36,8 @@
 #define GRPC_C_CALL_OPS_H
 
 #include <grpc_c/grpc_c.h>
-#include "message.h"
-#include "client_context.h"
+#include "src/c/message.h"
+#include "src/c/client_context.h"
 #include <grpc/grpc.h>
 #include <stdbool.h>
 

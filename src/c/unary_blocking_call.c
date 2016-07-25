@@ -31,12 +31,12 @@
  *
  */
 
-#include "unary_blocking_call.h"
+#include "src/c/unary_blocking_call.h"
 #include <grpc_c/grpc_c.h>
-#include "client_context.h"
-#include "call_ops.h"
-#include "tag.h"
-#include "completion_queue.h"
+#include "src/c/client_context.h"
+#include "src/c/call_ops.h"
+#include "src/c/tag.h"
+#include "src/c/completion_queue.h"
 #include <stdio.h>
 #include <grpc/support/log.h>
 
