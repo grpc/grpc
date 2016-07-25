@@ -1585,9 +1585,15 @@
   % if lib.get('secure', 'check') == True or lib.get('secure', 'check') == 'check':
   endif
   % endif
+
+  # Force compilation of proto files before building code that could potentially depend on them
   % for src in lib.src:
   % if not proto_re.match(src) and any(proto_re.match(src2) for src2 in lib.src):
-  $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: ${' '.join(proto_to_cc(src2) for src2 in lib.src if proto_re.match(src2))}
+  % if lib.language == 'c++':
+    $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: ${' '.join(proto_to_cc(src2) for src2 in lib.src if proto_re.match(src2))}
+  % else:
+    $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: ${' '.join(proto_to_nanoc(src2) for src2 in lib.src if proto_re.match(src2))}
+  % endif
   % endif
   % endfor
   </%def>
@@ -1759,9 +1765,15 @@
   endif
   % endif
   % endif
+
+  # Force compilation of proto files before building code that could potentially depend on them
   % for src in tgt.src:
   % if not proto_re.match(src) and any(proto_re.match(src2) for src2 in tgt.src):
-  $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: ${' '.join(proto_to_cc(src2) for src2 in tgt.src if proto_re.match(src2))}
+  % if tgt.language == 'c++':
+    $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: ${' '.join(proto_to_cc(src2) for src2 in tgt.src if proto_re.match(src2))}
+  % else:
+    $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: ${' '.join(proto_to_nanoc(src2) for src2 in tgt.src if proto_re.match(src2))}
+  % endif
   % endif
   % endfor
   </%def>
