@@ -102,8 +102,8 @@ grpc_handshake_manager* grpc_handshake_manager_create() {
 
 static bool is_power_of_2(size_t n) { return (n & (n - 1)) == 0; }
 
-void grpc_handshake_manager_add(grpc_handshaker* handshaker,
-                                grpc_handshake_manager* mgr) {
+void grpc_handshake_manager_add(grpc_handshake_manager* mgr,
+                                grpc_handshaker* handshaker) {
   // To avoid allocating memory for each handshaker we add, we double
   // the number of elements every time we need more.
   size_t realloc_count = 0;
