@@ -156,6 +156,7 @@ filegroups:
   - src/core/lib/channel/compress_filter.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
+  - src/core/lib/channel/handshaker.h
   - src/core/lib/channel/http_client_filter.h
   - src/core/lib/channel/http_server_filter.h
   - src/core/lib/compression/algorithm_metadata.h
@@ -234,6 +235,7 @@ filegroups:
   - src/core/lib/channel/channel_stack_builder.c
   - src/core/lib/channel/compress_filter.c
   - src/core/lib/channel/connected_channel.c
+  - src/core/lib/channel/handshaker.c
   - src/core/lib/channel/http_client_filter.c
   - src/core/lib/channel/http_server_filter.c
   - src/core/lib/compression/compression.c
@@ -1030,10 +1032,13 @@ libs:
   headers:
   - test/cpp/util/cli_call.h
   - test/cpp/util/proto_file_parser.h
+  - test/cpp/util/proto_reflection_descriptor_database.h
   src:
   - test/cpp/util/cli_call.cc
   - test/cpp/util/proto_file_parser.cc
+  - test/cpp/util/proto_reflection_descriptor_database.cc
   deps:
+  - grpc++_reflection
   - grpc++
   - grpc_plugin_support
 - name: grpc_plugin_support
@@ -2664,6 +2669,7 @@ targets:
   - grpc_cli_libs
   - grpc++_test_util
   - grpc_test_util
+  - grpc++_reflection
   - grpc++
   - grpc
   - gpr_test_util

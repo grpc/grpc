@@ -101,6 +101,8 @@ Pod::Spec.new do |s|
     'ALWAYS_SEARCH_USER_PATHS' => 'NO',
   }
 
+  s.default_subspecs = 'Interface', 'Implementation'
+
   # Like many other C libraries, gRPC-Core has its public headers under `include/<libname>/` and its
   # sources and private headers in other directories outside `include/`. Cocoapods' linter doesn't
   # allow any header to be listed outside the `header_mappings_dir` (even though doing so works in
@@ -256,6 +258,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/compress_filter.h',
                       'src/core/lib/channel/connected_channel.h',
                       'src/core/lib/channel/context.h',
+                      'src/core/lib/channel/handshaker.h',
                       'src/core/lib/channel/http_client_filter.h',
                       'src/core/lib/channel/http_server_filter.h',
                       'src/core/lib/compression/algorithm_metadata.h',
@@ -411,6 +414,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/channel_stack_builder.c',
                       'src/core/lib/channel/compress_filter.c',
                       'src/core/lib/channel/connected_channel.c',
+                      'src/core/lib/channel/handshaker.c',
                       'src/core/lib/channel/http_client_filter.c',
                       'src/core/lib/channel/http_server_filter.c',
                       'src/core/lib/compression/compression.c',
@@ -609,6 +613,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/channel/compress_filter.h',
                               'src/core/lib/channel/connected_channel.h',
                               'src/core/lib/channel/context.h',
+                              'src/core/lib/channel/handshaker.h',
                               'src/core/lib/channel/http_client_filter.h',
                               'src/core/lib/channel/http_server_filter.h',
                               'src/core/lib/compression/algorithm_metadata.h',
@@ -758,5 +763,27 @@ Pod::Spec.new do |s|
                               'src/core/ext/census/grpc_filter.h',
                               'src/core/ext/census/mlog.h',
                               'src/core/ext/census/rpc_metric_id.h'
+  end
+
+  s.subspec 'Cronet-Interface' do |ss|
+    ss.header_mappings_dir = 'include/grpc'
+    ss.source_files = 'include/grpc/grpc_cronet.h'
+  end
+
+  s.subspec 'Cronet-Tests' do |ss|
+    ss.header_mappings_dir = '.'
+
+    ss.source_files = 'src/core/ext/transport/cronet/client/secure/cronet_channel_create.c',
+                      'src/core/ext/transport/cronet/transport/cronet_transport.c',
+                      'test/core/end2end/cq_verifier.{c,h}',
+                      'test/core/end2end/end2end_tests.{c,h}',
+                      'test/core/end2end/tests/*.{c,h}',
+                      'test/core/end2end/data/*.{c,h}',
+                      'test/core/util/test_config.{c,h}',
+                      'test/core/util/port.h',
+                      'test/core/util/port_posix.c',
+                      'test/core/util/port_server_client.{c,h}'
+
+    ss.dependency 'CronetFramework'
   end
 end

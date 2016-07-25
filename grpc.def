@@ -148,6 +148,7 @@ EXPORTS
     gpr_slice_ref
     gpr_slice_unref
     gpr_slice_new
+    gpr_slice_new_with_user_data
     gpr_slice_new_with_len
     gpr_slice_malloc
     gpr_slice_from_copied_string
