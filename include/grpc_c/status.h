@@ -35,7 +35,9 @@
 #ifndef GRPC_C_STATUS_PUBLIC_H
 #define GRPC_C_STATUS_PUBLIC_H
 
-typedef struct grpc_status {
+#include <grpc/impl/codegen/status.h>
+
+typedef struct GRPC_status {
   /**
    * Indicator of success for the entire RPC operation, including network,
    * serialization, etc.

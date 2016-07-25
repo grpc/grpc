@@ -36,7 +36,6 @@
 
 #include "src/compiler/c_generator.h"
 #include "src/compiler/c_generator_helpers.h"
-#include "src/compiler/cpp_generator.h"
 #include "src/compiler/cpp_generator_helpers.h"
 
 /*
@@ -628,7 +627,6 @@ grpc::string GetSourceIncludes(File *file,
     grpc::string nano_decode = params.nanopb_headers_prefix + "pb_decode.h";
 
     static const char *headers_strs[] = {
-      "grpc_c/status_code.h",
       "grpc_c/status.h",
       "grpc_c/grpc_c.h",
       "grpc_c/channel.h",
@@ -708,7 +706,6 @@ grpc::string GetHeaderIncludes(File *file,
     std::map<grpc::string, grpc::string> vars;
 
     static const char *headers_strs[] = {
-      "grpc_c/status_code.h",
       "grpc_c/status.h",
       "grpc_c/grpc_c.h",
       "grpc_c/client_context.h",
