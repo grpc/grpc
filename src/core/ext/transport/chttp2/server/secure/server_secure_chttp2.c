@@ -203,6 +203,7 @@ static void destroy(grpc_exec_ctx *exec_ctx, grpc_server *server, void *statep,
   state->destroy_callback = callback;
   tcp = state->tcp;
   gpr_mu_unlock(&state->mu);
+  grpc_tcp_server_shutdown_listeners(exec_ctx, tcp);
   grpc_tcp_server_unref(exec_ctx, tcp);
 }
 
