@@ -33,16 +33,17 @@
 
 #include "init_shutdown.h"
 #include <stdlib.h>
-#include <stdbool.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
-void grpc_ensure_grpc_init() {
-  static bool initialized = false;
-  if (initialized) return;
+static void perform_grpc_init() {
   grpc_init();
   /* register grpc_shutdown to be called */
   GPR_ASSERT(atexit(grpc_shutdown) == 0);
-  initialized = true;
+}
+
+void grpc_ensure_grpc_init() {
+  static gpr_once once_var = GPR_ONCE_INIT;
+  gpr_once_init(&once_var, perform_grpc_init);
 }
 
