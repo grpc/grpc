@@ -4,6 +4,9 @@
     <ClCompile Include="$(SolutionDir)\..\test\c\end2end\generic_end2end_test.cc">
       <Filter>test\c\end2end</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\test\c\end2end\id_serialization.cc">
+      <Filter>test\c\end2end</Filter>
+    </ClCompile>
   </ItemGroup>
 
   <ItemGroup>
