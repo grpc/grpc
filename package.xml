@@ -47,6 +47,7 @@
     <file baseinstalldir="/" name="src/php/ext/grpc/channel.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/channel_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/completion_queue.h" role="src" />
+    <file baseinstalldir="/" name="src/php/ext/grpc/php7_wrapper.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/php_grpc.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/server.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/server_credentials.h" role="src" />
