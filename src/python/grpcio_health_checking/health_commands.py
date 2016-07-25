@@ -29,16 +29,10 @@
 
 """Provides distutils command classes for the GRPC Python setup process."""
 
-import distutils
-import glob
 import os
-import os.path
 import shutil
-import subprocess
-import sys
 
 import setuptools
-from setuptools.command import build_py
 
 ROOT_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 HEALTH_PROTO = os.path.join(ROOT_DIR, '../../proto/grpc/health/v1/health.proto')
@@ -60,12 +54,25 @@ class CopyProtoModules(setuptools.Command):
     if os.path.isfile(HEALTH_PROTO):
       shutil.copyfile(
           HEALTH_PROTO,
-          os.path.join(ROOT_DIR, 'grpc_health/health/v1/health.proto'))
+          os.path.join(ROOT_DIR, 'grpc/health/v1/health.proto'))
 
 
-class BuildPy(build_py.build_py):
-  """Custom project build command."""
+class BuildPackageProtos(setuptools.Command):
+  """Command to generate project *_pb2.py modules from proto files."""
+
+  description = 'build grpc protobuf modules'
+  user_options = []
+
+  def initialize_options(self):
+    pass
+
+  def finalize_options(self):
+    pass
 
   def run(self):
-    self.run_command('build_proto_modules')
-    build_py.build_py.run(self)
+    # due to limitations of the proto generator, we require that only *one*
+    # directory is provided as an 'include' directory. We assume it's the '' key
+    # to `self.distribution.package_dir` (and get a key error if it's not
+    # there).
+    from grpc.tools import command
+    command.build_package_protos(self.distribution.package_dir[''])
