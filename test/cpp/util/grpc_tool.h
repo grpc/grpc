@@ -31,17 +31,16 @@
  *
  */
 
+#include <grpc++/support/config.h>
 #include <functional>
-#include <string>
-
-#include <gflags/gflags.h>
 
 namespace grpc {
 namespace testing {
 
-typedef std::function<bool(const std::string &)> OutputCallback;
+typedef std::function<bool(const grpc::string &)> GrpcToolOutputCallback;
 
-int GrpcToolMainLib(int argc, const char **argv, OutputCallback callback);
+int GrpcToolMainLib(int argc, const char **argv,
+                    GrpcToolOutputCallback callback);
 
 }  // namespace testing
 }  // namespace grpc

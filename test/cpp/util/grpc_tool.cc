@@ -31,7 +31,7 @@
  *
  */
 
-#include "grpc_tool.h"
+#include "test/cpp/util/grpc_tool.h"
 
 #include <unistd.h>
 #include <fstream>
@@ -47,7 +47,6 @@
 #include <grpc++/security/credentials.h>
 #include <grpc++/support/string_ref.h>
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include "test/cpp/util/cli_call.h"
 
 #include "test/cpp/util/proto_file_parser.h"
@@ -75,8 +74,8 @@ class GrpcTool {
  public:
   explicit GrpcTool();
   virtual ~GrpcTool() {}
-  bool Help(int argc, const char** argv, OutputCallback callback);
-  bool CallMethod(int argc, const char** argv, OutputCallback callback);
+  bool Help(int argc, const char** argv, GrpcToolOutputCallback callback);
+  bool CallMethod(int argc, const char** argv, GrpcToolOutputCallback callback);
   void SetPrintCommandMode(int exit_status) {
     print_command_usage_ = true;
     usage_exit_status_ = exit_status;
@@ -89,8 +88,8 @@ class GrpcTool {
 };
 
 template <typename T>
-std::function<bool(GrpcTool*, int, const char**, OutputCallback)> BindWith4Args(
-    T&& func) {
+std::function<bool(GrpcTool*, int, const char**, GrpcToolOutputCallback)>
+BindWith4Args(T&& func) {
   return std::bind(std::forward<T>(func), std::placeholders::_1,
                    std::placeholders::_2, std::placeholders::_3,
                    std::placeholders::_4);
@@ -143,7 +142,8 @@ void PrintMetadata(const T& m, const grpc::string& message) {
 
 struct Command {
   const char* command;
-  std::function<bool(GrpcTool*, int, const char**, OutputCallback)> function;
+  std::function<bool(GrpcTool*, int, const char**, GrpcToolOutputCallback)>
+      function;
   int min_args;
   int max_args;
 };
@@ -186,7 +186,8 @@ const Command* FindCommand(const grpc::string& name) {
 }
 }  // namespace
 
-int GrpcToolMainLib(int argc, const char** argv, OutputCallback callback) {
+int GrpcToolMainLib(int argc, const char** argv,
+                    GrpcToolOutputCallback callback) {
   if (argc < 2) {
     Usage("No command specified");
   }
@@ -222,7 +223,8 @@ void GrpcTool::CommandUsage(const grpc::string& usage) const {
   }
 }
 
-bool GrpcTool::Help(int argc, const char** argv, OutputCallback callback) {
+bool GrpcTool::Help(int argc, const char** argv,
+                    GrpcToolOutputCallback callback) {
   CommandUsage(
       "Print help\n"
       "  grpc_cli help [subcommand]\n");
@@ -241,7 +243,7 @@ bool GrpcTool::Help(int argc, const char** argv, OutputCallback callback) {
 }
 
 bool GrpcTool::CallMethod(int argc, const char** argv,
-                          OutputCallback callback) {
+                          GrpcToolOutputCallback callback) {
   CommandUsage(
       "Call method\n"
       "  grpc_cli call <address> <service>[.<method>] <request>\n"
