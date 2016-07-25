@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,5 +27,27 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Runs the protoc with gRPC plugin to generate protocol messages and gRPC stubs.
-python -m grpc.tools.protoc -I../../protos --python_out=. --grpc_python_out=. ../../protos/helloworld.proto
+"""Common resources used in the gRPC route guide example."""
+
+import json
+
+import route_guide_pb2
+
+
+def read_route_guide_database():
+  """Reads the route guide database.
+
+  Returns:
+    The full contents of the route guide database as a sequence of
+      route_guide_pb2.Features.
+  """
+  feature_list = []
+  with open("route_guide_db.json") as route_guide_db_file:
+    for item in json.load(route_guide_db_file):
+      feature = route_guide_pb2.Feature(
+          name=item["name"],
+          location=route_guide_pb2.Point(
+              latitude=item["location"]["latitude"],
+              longitude=item["location"]["longitude"]))
+      feature_list.append(feature)
+  return feature_list

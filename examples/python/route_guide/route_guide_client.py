@@ -34,12 +34,10 @@ from __future__ import print_function
 import random
 import time
 
-from grpc.beta import implementations
+import grpc
 
 import route_guide_pb2
 import route_guide_resources
-
-_TIMEOUT_SECONDS = 30
 
 
 def make_route_note(message, latitude, longitude):
@@ -49,7 +47,7 @@ def make_route_note(message, latitude, longitude):
 
 
 def guide_get_one_feature(stub, point):
-  feature = stub.GetFeature(point, _TIMEOUT_SECONDS)
+  feature = stub.GetFeature(point)
   if not feature.location:
     print("Server returned incomplete feature")
     return
@@ -66,14 +64,12 @@ def guide_get_feature(stub):
 
 
 def guide_list_features(stub):
-  rect = route_guide_pb2.Rectangle(
-      lo=route_guide_pb2.Point(
-          latitude=400000000, longitude = -750000000),
-      hi=route_guide_pb2.Point(
-          latitude = 420000000, longitude = -730000000))
+  rectangle = route_guide_pb2.Rectangle(
+      lo=route_guide_pb2.Point(latitude=400000000, longitude=-750000000),
+      hi=route_guide_pb2.Point(latitude=420000000, longitude=-730000000))
   print("Looking for features between 40, -75 and 42, -73")
 
-  features = stub.ListFeatures(rect, _TIMEOUT_SECONDS)
+  features = stub.ListFeatures(rectangle)
 
   for feature in features:
     print("Feature called %s at %s" % (feature.name, feature.location))
@@ -90,8 +86,8 @@ def generate_route(feature_list):
 def guide_record_route(stub):
   feature_list = route_guide_resources.read_route_guide_database()
 
-  route_iter = generate_route(feature_list)
-  route_summary = stub.RecordRoute(route_iter, _TIMEOUT_SECONDS)
+  route_iterator = generate_route(feature_list)
+  route_summary = stub.RecordRoute(route_iterator)
   print("Finished trip with %s points " % route_summary.point_count)
   print("Passed %s features " % route_summary.feature_count)
   print("Travelled %s meters " % route_summary.distance)
@@ -113,14 +109,14 @@ def generate_messages():
 
 
 def guide_route_chat(stub):
-  responses = stub.RouteChat(generate_messages(), _TIMEOUT_SECONDS)
+  responses = stub.RouteChat(generate_messages())
   for response in responses:
     print("Received message %s at %s" % (response.message, response.location))
 
 
 def run():
-  channel = implementations.insecure_channel('localhost', 50051)
-  stub = route_guide_pb2.beta_create_RouteGuide_stub(channel)
+  channel = grpc.insecure_channel('localhost:50051')
+  stub = route_guide_pb2.RouteGuideStub(channel)
   print("-------------- GetFeature --------------")
   guide_get_feature(stub)
   print("-------------- ListFeatures --------------")

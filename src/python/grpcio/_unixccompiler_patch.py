@@ -34,6 +34,7 @@ from distutils import errors
 from distutils import unixccompiler
 import os
 import os.path
+import shlex
 import shutil
 import sys
 import tempfile
@@ -47,6 +48,9 @@ def _unix_commandfile_spawn(self, command):
   Some commands like `gcc` (and friends like `clang`) support command files to
   work around shell command length limits.
   """
+  # Sometimes distutils embeds the executables as full strings including some
+  # hard-coded flags rather than as lists.
+  command = list(shlex.split(command[0])) + list(command[1:])
   command_base = os.path.basename(command[0].strip())
   if command_base == 'ccache':
     command_base = command[:2]

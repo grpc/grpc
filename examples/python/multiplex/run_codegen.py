@@ -1,4 +1,4 @@
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,40 +27,25 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Reference implementation for health checking in gRPC Python."""
+"""Generates protocol messages and gRPC stubs."""
 
-import threading
+from grpc.tools import protoc
 
-from grpc_health.health.v1 import health_pb2
-
-
-class HealthServicer(health_pb2.BetaHealthServicer):
-  """Servicer handling RPCs for service statuses."""
-
-  def __init__(self):
-    self._server_status_lock = threading.Lock()
-    self._server_status = {}
-
-  def Check(self, request, context):
-    with self._server_status_lock:
-      if request.service not in self._server_status:
-        # TODO(atash): once the Python API has a way of setting the server
-        # status, bring us into conformance with the health check spec by
-        # returning the NOT_FOUND status here.
-        raise NotImplementedError()
-      else:
-        return health_pb2.HealthCheckResponse(
-            status=self._server_status[request.service])
-
-  def set(self, service, status):
-    """Sets the status of a service.
-
-    Args:
-        service: string, the name of the service.
-            NOTE, '' must be set.
-        status: HealthCheckResponse.status enum value indicating
-            the status of the service
-    """
-    with self._server_status_lock:
-      self._server_status[service] = status
-
+protoc.main(
+    (
+        '',
+        '-I../../protos',
+        '--python_out=.',
+        '--grpc_python_out=.',
+        '../../protos/helloworld.proto',
+    )
+)
+protoc.main(
+    (
+        '',
+        '-I../../protos',
+        '--python_out=.',
+        '--grpc_python_out=.',
+        '../../protos/route_guide.proto',
+    )
+)
