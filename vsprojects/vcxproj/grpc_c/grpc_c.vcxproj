@@ -270,7 +270,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\serialization.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\server_streaming_blocking_call.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\status.h" />
-    <ClInclude Include="$(SolutionDir)\..\include\grpc_c\status_code.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\unary_async_call.h" />
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\unary_blocking_call.h" />
   </ItemGroup>

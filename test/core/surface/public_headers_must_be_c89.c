@@ -86,7 +86,6 @@
 #include <grpc_c/serialization.h>
 #include <grpc_c/server_streaming_blocking_call.h>
 #include <grpc_c/status.h>
-#include <grpc_c/status_code.h>
 #include <grpc_c/unary_async_call.h>
 #include <grpc_c/unary_blocking_call.h>
 
