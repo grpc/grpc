@@ -32,7 +32,7 @@
  */
 
 
-#include "message.h"
+#include "src/c/message.h"
 #include <stdlib.h>
 
 void GRPC_message_destroy(grpc_message *message) {

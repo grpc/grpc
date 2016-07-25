@@ -34,9 +34,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc_c/grpc_c.h>
 #include <grpc_c/client_context.h>
-#include "client_context.h"
-#include "alloc.h"
-#include "id_serialization.h"
+#include "src/c/client_context.h"
+#include "src/c/alloc.h"
+#include "src/c/id_serialization.h"
 
 grpc_client_context *GRPC_client_context_create(grpc_channel *chan) {
   grpc_client_context *context = GRPC_ALLOC_STRUCT(

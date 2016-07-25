@@ -33,7 +33,7 @@
 
 #include <string.h>
 #include <grpc_c/grpc_c.h>
-#include "id_serialization.h"
+#include "src/c/id_serialization.h"
 
 /**
  * Serialization interface that does not transform data. Base implementation of GRPC_serialization_impl.

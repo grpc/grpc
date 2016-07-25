@@ -34,10 +34,10 @@
 
 #include <grpc_c/grpc_c.h>
 #include <grpc/support/log.h>
-#include "client_streaming_blocking_call.h"
-#include "tag.h"
-#include "completion_queue.h"
-#include "alloc.h"
+#include "src/c/client_streaming_blocking_call.h"
+#include "src/c/tag.h"
+#include "src/c/completion_queue.h"
+#include "src/c/alloc.h"
 
 grpc_client_writer *GRPC_client_streaming_blocking_call(const GRPC_method rpc_method,
                                                         GRPC_client_context *const context,

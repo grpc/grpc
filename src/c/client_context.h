@@ -39,9 +39,9 @@
 #include <grpc_c/codegen/client_context_priv.h>
 #include <grpc_c/serialization.h>
 #include <grpc/grpc.h>
-#include "status.h"
-#include "message.h"
-#include "call_ops.h"
+#include "src/c/status.h"
+#include "src/c/message.h"
+#include "src/c/call_ops.h"
 #include <stdbool.h>
 
 typedef struct grpc_call_op_set grpc_call_op_set;

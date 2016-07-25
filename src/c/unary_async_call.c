@@ -34,10 +34,10 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include "unary_async_call.h"
-#include "alloc.h"
+#include "src/c/unary_async_call.h"
+#include "src/c/alloc.h"
 #include <grpc_c/unary_async_call.h>
-#include "tag.h"
+#include "src/c/tag.h"
 
 static void free_reader_and_call(void *arg) {
   GRPC_client_async_response_reader *reader = arg;

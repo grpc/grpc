@@ -33,7 +33,7 @@
 
 #include <grpc_c/grpc_c.h>
 #include <grpc_c/channel.h>
-#include "init_shutdown.h"
+#include "src/c/init_shutdown.h"
 #include <grpc/grpc.h>
 
 GRPC_channel *GRPC_channel_create(const char * const target) {
