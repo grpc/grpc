@@ -31,6 +31,9 @@
  *
  */
 
+#ifndef GRPC_TEST_CPP_UTIL_GRPC_TOOL_H
+#define GRPC_TEST_CPP_UTIL_GRPC_TOOL_H
+
 #include <grpc++/support/config.h>
 #include <functional>
 
@@ -44,3 +47,5 @@ int GrpcToolMainLib(int argc, const char **argv,
 
 }  // namespace testing
 }  // namespace grpc
+
+#endif  // GRPC_TEST_CPP_UTIL_GRPC_TOOL_H
