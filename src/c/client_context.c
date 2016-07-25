@@ -36,7 +36,6 @@
 #include <grpc_c/client_context.h>
 #include "src/c/client_context.h"
 #include "src/c/alloc.h"
-#include "src/c/id_serialization.h"
 
 grpc_client_context *GRPC_client_context_create(grpc_channel *chan) {
   grpc_client_context *context = GRPC_ALLOC_STRUCT(
@@ -44,8 +43,8 @@ grpc_client_context *GRPC_client_context_create(grpc_channel *chan) {
     .deadline = gpr_inf_future(GPR_CLOCK_REALTIME),
     .channel = chan,
     .serialization_impl = {
-      .serialize = GRPC_id_serialize,
-      .deserialize = GRPC_id_deserialize
+      .serialize = NULL,
+      .deserialize = NULL
     },
     .status = {
       .ok = true
