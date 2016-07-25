@@ -3609,6 +3609,23 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "h2_http_proxy_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_http_proxy.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "h2_loadreporting_test", 
     "src": [
       "test/core/end2end/fixtures/h2_loadreporting.c"
@@ -3867,6 +3884,23 @@
     "name": "h2_full+trace_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_full+trace.c"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_http_proxy_nosec_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_http_proxy.c"
     ], 
     "third_party": false, 
     "type": "target"
