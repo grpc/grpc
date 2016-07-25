@@ -41,16 +41,16 @@
 grpc_client_context *GRPC_client_context_create(grpc_channel *chan) {
   grpc_client_context *context = GRPC_ALLOC_STRUCT(
     grpc_client_context, {
-      .deadline = gpr_inf_future(GPR_CLOCK_REALTIME),
-      .channel = chan,
-      .serialization_impl = {
-        .serialize = GRPC_id_serialize,
-        .deserialize = GRPC_id_deserialize
-      },
-      .status = {
-        .ok = true
-      }
+    .deadline = gpr_inf_future(GPR_CLOCK_REALTIME),
+    .channel = chan,
+    .serialization_impl = {
+      .serialize = GRPC_id_serialize,
+      .deserialize = GRPC_id_deserialize
+    },
+    .status = {
+      .ok = true
     }
+  }
   );
   return context;
 }
@@ -63,7 +63,7 @@ void GRPC_client_context_destroy(GRPC_client_context **context) {
     grpc_call_destroy((*context)->call);
     (*context)->call = NULL;
   }
-  free(*context);
+  gpr_free(*context);
   *context = NULL;
 }
 

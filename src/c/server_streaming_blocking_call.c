@@ -37,6 +37,7 @@
 #include <grpc/support/log.h>
 #include "src/c/server_streaming_blocking_call.h"
 #include <grpc_c/completion_queue.h>
+#include <include/grpc/support/alloc.h>
 #include "src/c/alloc.h"
 #include "src/c/completion_queue.h"
 
@@ -119,6 +120,6 @@ GRPC_status GRPC_client_reader_terminate(GRPC_client_reader *reader) {
   grpc_call_destroy(reader->call);
   reader->context->call = NULL;
   grpc_client_context *context = reader->context;
-  free(reader);
+  gpr_free(reader);
   return context->status;
 }

@@ -32,8 +32,8 @@
  */
 
 
-#ifndef TEST_GRPC_C_MOCK_SERIALIZATION_H
-#define TEST_GRPC_C_MOCK_SERIALIZATION_H
+#ifndef GRPC_C_MOCK_SERIALIZATION_H
+#define GRPC_C_MOCK_SERIALIZATION_H
 
 #include <grpc_c/serialization.h>
 #include "src/c/message.h"
@@ -43,4 +43,4 @@
 grpc_message GRPC_id_serialize(const grpc_message input);
 void GRPC_id_deserialize(const grpc_message input, void *output);
 
-#endif //TEST_GRPC_C_MOCK_SERIALIZATION_H
+#endif // GRPC_C_MOCK_SERIALIZATION_H

@@ -36,6 +36,7 @@
 #include <grpc_c/pb_compat.h>
 #include <third_party/nanopb/pb.h>
 #include <third_party/nanopb/pb_encode.h>
+#include <include/grpc/support/alloc.h>
 #include "src/c/alloc.h"
 
 /**
@@ -69,14 +70,14 @@ GRPC_pb_dynamic_array_state *GRPC_pb_compat_dynamic_array_alloc() {
 }
 
 void GRPC_pb_compat_dynamic_array_free(GRPC_pb_dynamic_array_state *state) {
-  free(state);
+  gpr_free(state);
 }
 
 bool GRPC_pb_compat_dynamic_array_callback(pb_ostream_t *stream, const uint8_t *buf, size_t count) {
   GRPC_pb_dynamic_array_state *state = stream->state;
   if (state->size + count > state->capacity) {
     state->capacity = upper_power_of_two(state->size + count);
-    state->data = realloc(state->data, state->capacity);
+    state->data = gpr_realloc(state->data, state->capacity);
   }
   if (state->data == NULL) return false;
   if (buf) memcpy((char *) state->data + state->size, buf, count);

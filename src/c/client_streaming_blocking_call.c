@@ -34,6 +34,7 @@
 
 #include <grpc_c/grpc_c.h>
 #include <grpc/support/log.h>
+#include <include/grpc/support/alloc.h>
 #include "src/c/client_streaming_blocking_call.h"
 #include "src/c/completion_queue.h"
 #include "src/c/alloc.h"
@@ -106,6 +107,6 @@ GRPC_status GRPC_client_writer_terminate(grpc_client_writer *writer) {
   grpc_call_destroy(writer->call);
   writer->context->call = NULL;
   grpc_client_context *context = writer->context;
-  free(writer);
+  gpr_free(writer);
   return context->status;
 }
