@@ -38,7 +38,8 @@
 #include <stdlib.h>
 
 typedef struct grpc_channel GRPC_channel;
-typedef struct grpc_status GRPC_status;
+/* The GRPC_status type is exposed to the end user */
+typedef struct GRPC_status GRPC_status;
 typedef struct grpc_client_context GRPC_client_context;
 typedef struct grpc_completion_queue GRPC_completion_queue;
 
