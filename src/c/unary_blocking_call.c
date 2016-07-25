@@ -63,7 +63,7 @@ GRPC_status GRPC_unary_blocking_call(const GRPC_method rpc_method,
       grpc_op_send_close,
       grpc_op_recv_status
     },
-    context,
+    .context = context,
     .user_tag = TAG(&set)
   };
 

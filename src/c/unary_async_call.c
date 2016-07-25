@@ -67,7 +67,7 @@ GRPC_client_async_response_reader *GRPC_unary_async_call(GRPC_completion_queue *
         grpc_op_send_object,
         grpc_op_send_close
       },
-      context,
+      .context = context,
       .response = NULL,
       .hide_from_user = true
     },
@@ -75,7 +75,7 @@ GRPC_client_async_response_reader *GRPC_unary_async_call(GRPC_completion_queue *
       {
         grpc_op_recv_metadata
       },
-      context,
+      .context = context,
       .response = NULL
     },
     .finish_buf = {
@@ -84,7 +84,7 @@ GRPC_client_async_response_reader *GRPC_unary_async_call(GRPC_completion_queue *
         grpc_op_recv_object,
         grpc_op_recv_status
       },
-      context,
+      .context = context,
       .response = NULL,
     }
   });
