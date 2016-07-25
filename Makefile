@@ -2585,6 +2585,8 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBGPR_OBJS:.o=.dep)
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 # Using nanopb for C files right now
 LIBGPR_TEST_UTIL_SRC = \
@@ -2610,6 +2612,8 @@ endif
 ifneq ($(NO_DEPS),true)
 -include $(LIBGPR_TEST_UTIL_OBJS:.o=.dep)
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 # Using nanopb for C files right now
@@ -2885,6 +2889,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 # Using nanopb for C files right now
 LIBGRPC_C_SRC = \
@@ -2971,6 +2977,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 # Using nanopb for C files right now
 LIBGRPC_C_END2END_CLIENT_LIB_SRC = \
@@ -3012,7 +3020,9 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBGRPC_C_END2END_CLIENT_LIB_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/c/end2end/end2end_test_client.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc
+
+# Force compilation of proto files before building code that could potentially depend on them
+  $(OBJDIR)/$(CONFIG)/test/c/end2end/end2end_test_client.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pbc.c $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pbc.c $(GENDIR)/src/proto/grpc/testing/echo.pbc.c $(GENDIR)/src/proto/grpc/testing/echo.grpc.pbc.c
 
 
 # Using nanopb for C files right now
@@ -3265,6 +3275,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 # Using nanopb for C files right now
 LIBGRPC_TEST_UTIL_SRC = \
@@ -3321,6 +3333,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 # Using nanopb for C files right now
 LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
@@ -3357,6 +3371,8 @@ endif
 ifneq ($(NO_DEPS),true)
 -include $(LIBGRPC_TEST_UTIL_UNSECURE_OBJS:.o=.dep)
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 # Using nanopb for C files right now
@@ -3586,6 +3602,8 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBGRPC_UNSECURE_OBJS:.o=.dep)
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 # Using nanopb for C files right now
 LIBRECONNECT_SERVER_SRC = \
@@ -3626,6 +3644,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 # Using nanopb for C files right now
 LIBTEST_TCP_SERVER_SRC = \
@@ -3665,6 +3685,8 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBTEST_TCP_SERVER_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 # Using nanopb for C files right now
@@ -3865,6 +3887,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 # Using nanopb for C files right now
 LIBGRPC++_REFLECTION_SRC = \
@@ -3993,6 +4017,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 # Using nanopb for C files right now
 LIBGRPC++_REFLECTION_CODEGEN_SRC = \
@@ -4043,6 +4069,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 # Using nanopb for C files right now
 LIBGRPC++_TEST_CONFIG_SRC = \
@@ -4092,6 +4120,8 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBGRPC++_TEST_CONFIG_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 # Using nanopb for C files right now
@@ -4204,13 +4234,15 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBGRPC++_TEST_UTIL_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/end2end/test_service_impl.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/util/byte_buffer_proto_helper.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/util/create_test_channel.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/util/string_ref_helper.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/util/subprocess.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/util/test_credentials_provider.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/src/cpp/codegen/codegen_init.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
+
+# Force compilation of proto files before building code that could potentially depend on them
+  $(OBJDIR)/$(CONFIG)/test/cpp/end2end/test_service_impl.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
+  $(OBJDIR)/$(CONFIG)/test/cpp/util/byte_buffer_proto_helper.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
+  $(OBJDIR)/$(CONFIG)/test/cpp/util/create_test_channel.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
+  $(OBJDIR)/$(CONFIG)/test/cpp/util/string_ref_helper.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
+  $(OBJDIR)/$(CONFIG)/test/cpp/util/subprocess.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
+  $(OBJDIR)/$(CONFIG)/test/cpp/util/test_credentials_provider.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
+  $(OBJDIR)/$(CONFIG)/src/cpp/codegen/codegen_init.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
 
 
 # Using nanopb for C files right now
@@ -4392,6 +4424,8 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBGRPC++_UNSECURE_OBJS:.o=.dep)
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 # Using nanopb for C files right now
 LIBGRPC_CLI_LIBS_SRC = \
@@ -4444,6 +4478,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 # Using nanopb for C files right now
 LIBGRPC_PLUGIN_SUPPORT_SRC = \
@@ -4487,6 +4523,8 @@ endif
 ifneq ($(NO_DEPS),true)
 -include $(LIBGRPC_PLUGIN_SUPPORT_OBJS:.o=.dep)
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 # Using nanopb for C files right now
@@ -4538,7 +4576,9 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBINTEROP_CLIENT_HELPER_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/interop/client_helper.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc
+
+# Force compilation of proto files before building code that could potentially depend on them
+  $(OBJDIR)/$(CONFIG)/test/cpp/interop/client_helper.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc
 
 
 # Using nanopb for C files right now
@@ -4593,8 +4633,10 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBINTEROP_CLIENT_MAIN_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/interop/client.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/interop/interop_client.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
+
+# Force compilation of proto files before building code that could potentially depend on them
+  $(OBJDIR)/$(CONFIG)/test/cpp/interop/client.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
+  $(OBJDIR)/$(CONFIG)/test/cpp/interop/interop_client.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
 
 
 # Using nanopb for C files right now
@@ -4645,6 +4687,8 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBINTEROP_SERVER_HELPER_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 # Using nanopb for C files right now
@@ -4698,7 +4742,9 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBINTEROP_SERVER_MAIN_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/interop/interop_server.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
+
+# Force compilation of proto files before building code that could potentially depend on them
+  $(OBJDIR)/$(CONFIG)/test/cpp/interop/interop_server.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
 
 
 # Using nanopb for C files right now
@@ -4764,17 +4810,19 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBQPS_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/client_async.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/client_sync.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/driver.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/limit_cores.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/parse_json.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/qps_worker.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/report.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/server_async.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/server_sync.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/usage_timer.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/util/benchmark_config.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc
+
+# Force compilation of proto files before building code that could potentially depend on them
+  $(OBJDIR)/$(CONFIG)/test/cpp/qps/client_async.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc
+  $(OBJDIR)/$(CONFIG)/test/cpp/qps/client_sync.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc
+  $(OBJDIR)/$(CONFIG)/test/cpp/qps/driver.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc
+  $(OBJDIR)/$(CONFIG)/test/cpp/qps/limit_cores.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc
+  $(OBJDIR)/$(CONFIG)/test/cpp/qps/parse_json.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc
+  $(OBJDIR)/$(CONFIG)/test/cpp/qps/qps_worker.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc
+  $(OBJDIR)/$(CONFIG)/test/cpp/qps/report.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc
+  $(OBJDIR)/$(CONFIG)/test/cpp/qps/server_async.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc
+  $(OBJDIR)/$(CONFIG)/test/cpp/qps/server_sync.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc
+  $(OBJDIR)/$(CONFIG)/test/cpp/qps/usage_timer.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc
+  $(OBJDIR)/$(CONFIG)/test/cpp/util/benchmark_config.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc
 
 
 # Using nanopb for C files right now
@@ -4834,6 +4882,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 # Using nanopb for C files right now
 LIBBAD_CLIENT_TEST_SRC = \
@@ -4874,6 +4924,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 # Using nanopb for C files right now
 LIBBAD_SSL_TEST_SERVER_SRC = \
@@ -4913,6 +4965,8 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBBAD_SSL_TEST_SERVER_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 # Using nanopb for C files right now
@@ -4994,6 +5048,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 # Using nanopb for C files right now
 LIBEND2END_NOSEC_TESTS_SRC = \
@@ -5059,6 +5115,8 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_NOSEC_TESTS_OBJS:.o=.dep)
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 
 # All of the test targets, and protoc plugins
@@ -5095,6 +5153,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 ALGORITHM_TEST_SRC = \
     test/core/compression/algorithm_test.c \
@@ -5126,6 +5186,8 @@ ifneq ($(NO_DEPS),true)
 -include $(ALGORITHM_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 ALLOC_TEST_SRC = \
@@ -5159,6 +5221,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 ALPN_TEST_SRC = \
     test/core/transport/chttp2/alpn_test.c \
@@ -5190,6 +5254,8 @@ ifneq ($(NO_DEPS),true)
 -include $(ALPN_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 API_FUZZER_SRC = \
@@ -5223,6 +5289,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 BAD_SERVER_RESPONSE_TEST_SRC = \
     test/core/end2end/bad_server_response_test.c \
@@ -5254,6 +5322,8 @@ ifneq ($(NO_DEPS),true)
 -include $(BAD_SERVER_RESPONSE_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 BIN_DECODER_TEST_SRC = \
@@ -5287,6 +5357,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 BIN_ENCODER_TEST_SRC = \
     test/core/transport/chttp2/bin_encoder_test.c \
@@ -5318,6 +5390,8 @@ ifneq ($(NO_DEPS),true)
 -include $(BIN_ENCODER_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 CENSUS_CONTEXT_TEST_SRC = \
@@ -5351,6 +5425,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 CHANNEL_CREATE_TEST_SRC = \
     test/core/surface/channel_create_test.c \
@@ -5382,6 +5458,8 @@ ifneq ($(NO_DEPS),true)
 -include $(CHANNEL_CREATE_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 CHTTP2_HPACK_ENCODER_TEST_SRC = \
@@ -5415,6 +5493,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 CHTTP2_STATUS_CONVERSION_TEST_SRC = \
     test/core/transport/chttp2/status_conversion_test.c \
@@ -5446,6 +5526,8 @@ ifneq ($(NO_DEPS),true)
 -include $(CHTTP2_STATUS_CONVERSION_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 CHTTP2_STREAM_MAP_TEST_SRC = \
@@ -5479,6 +5561,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 CHTTP2_VARINT_TEST_SRC = \
     test/core/transport/chttp2/varint_test.c \
@@ -5510,6 +5594,8 @@ ifneq ($(NO_DEPS),true)
 -include $(CHTTP2_VARINT_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 CLIENT_FUZZER_SRC = \
@@ -5543,6 +5629,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 COMPRESSION_TEST_SRC = \
     test/core/compression/compression_test.c \
@@ -5574,6 +5662,8 @@ ifneq ($(NO_DEPS),true)
 -include $(COMPRESSION_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 CONCURRENT_CONNECTIVITY_TEST_SRC = \
@@ -5607,6 +5697,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 DNS_RESOLVER_CONNECTIVITY_TEST_SRC = \
     test/core/client_config/resolvers/dns_resolver_connectivity_test.c \
@@ -5638,6 +5730,8 @@ ifneq ($(NO_DEPS),true)
 -include $(DNS_RESOLVER_CONNECTIVITY_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 DNS_RESOLVER_TEST_SRC = \
@@ -5671,6 +5765,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 DUALSTACK_SOCKET_TEST_SRC = \
     test/core/end2end/dualstack_socket_test.c \
@@ -5702,6 +5798,8 @@ ifneq ($(NO_DEPS),true)
 -include $(DUALSTACK_SOCKET_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 ENDPOINT_PAIR_TEST_SRC = \
@@ -5735,6 +5833,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 EV_EPOLL_LINUX_TEST_SRC = \
     test/core/iomgr/ev_epoll_linux_test.c \
@@ -5766,6 +5866,8 @@ ifneq ($(NO_DEPS),true)
 -include $(EV_EPOLL_LINUX_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 FD_CONSERVATION_POSIX_TEST_SRC = \
@@ -5799,6 +5901,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 FD_POSIX_TEST_SRC = \
     test/core/iomgr/fd_posix_test.c \
@@ -5830,6 +5934,8 @@ ifneq ($(NO_DEPS),true)
 -include $(FD_POSIX_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 FLING_CLIENT_SRC = \
@@ -5863,6 +5969,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 FLING_SERVER_SRC = \
     test/core/fling/server.c \
@@ -5894,6 +6002,8 @@ ifneq ($(NO_DEPS),true)
 -include $(FLING_SERVER_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 FLING_STREAM_TEST_SRC = \
@@ -5927,6 +6037,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 FLING_TEST_SRC = \
     test/core/fling/fling_test.c \
@@ -5958,6 +6070,8 @@ ifneq ($(NO_DEPS),true)
 -include $(FLING_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 GEN_HPACK_TABLES_SRC = \
@@ -5991,6 +6105,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 GEN_LEGAL_METADATA_CHARACTERS_SRC = \
     tools/codegen/core/gen_legal_metadata_characters.c \
@@ -6022,6 +6138,8 @@ ifneq ($(NO_DEPS),true)
 -include $(GEN_LEGAL_METADATA_CHARACTERS_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 GOAWAY_SERVER_TEST_SRC = \
@@ -6055,6 +6173,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 GPR_AVL_TEST_SRC = \
     test/core/support/avl_test.c \
@@ -6086,6 +6206,8 @@ ifneq ($(NO_DEPS),true)
 -include $(GPR_AVL_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 GPR_BACKOFF_TEST_SRC = \
@@ -6119,6 +6241,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 GPR_CMDLINE_TEST_SRC = \
     test/core/support/cmdline_test.c \
@@ -6150,6 +6274,8 @@ ifneq ($(NO_DEPS),true)
 -include $(GPR_CMDLINE_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 GPR_CPU_TEST_SRC = \
@@ -6183,6 +6309,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 GPR_ENV_TEST_SRC = \
     test/core/support/env_test.c \
@@ -6214,6 +6342,8 @@ ifneq ($(NO_DEPS),true)
 -include $(GPR_ENV_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 GPR_HISTOGRAM_TEST_SRC = \
@@ -6247,6 +6377,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 GPR_HOST_PORT_TEST_SRC = \
     test/core/support/host_port_test.c \
@@ -6278,6 +6410,8 @@ ifneq ($(NO_DEPS),true)
 -include $(GPR_HOST_PORT_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 GPR_LOG_TEST_SRC = \
@@ -6311,6 +6445,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 GPR_SLICE_BUFFER_TEST_SRC = \
     test/core/support/slice_buffer_test.c \
@@ -6342,6 +6478,8 @@ ifneq ($(NO_DEPS),true)
 -include $(GPR_SLICE_BUFFER_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 GPR_SLICE_TEST_SRC = \
@@ -6375,6 +6513,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 GPR_STACK_LOCKFREE_TEST_SRC = \
     test/core/support/stack_lockfree_test.c \
@@ -6406,6 +6546,8 @@ ifneq ($(NO_DEPS),true)
 -include $(GPR_STACK_LOCKFREE_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 GPR_STRING_TEST_SRC = \
@@ -6439,6 +6581,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 GPR_SYNC_TEST_SRC = \
     test/core/support/sync_test.c \
@@ -6470,6 +6614,8 @@ ifneq ($(NO_DEPS),true)
 -include $(GPR_SYNC_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 GPR_THD_TEST_SRC = \
@@ -6503,6 +6649,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 GPR_TIME_TEST_SRC = \
     test/core/support/time_test.c \
@@ -6534,6 +6682,8 @@ ifneq ($(NO_DEPS),true)
 -include $(GPR_TIME_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 GPR_TLS_TEST_SRC = \
@@ -6567,6 +6717,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 GPR_USEFUL_TEST_SRC = \
     test/core/support/useful_test.c \
@@ -6598,6 +6750,8 @@ ifneq ($(NO_DEPS),true)
 -include $(GPR_USEFUL_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 GRPC_AUTH_CONTEXT_TEST_SRC = \
@@ -6631,6 +6785,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 GRPC_B64_TEST_SRC = \
     test/core/security/b64_test.c \
@@ -6662,6 +6818,8 @@ ifneq ($(NO_DEPS),true)
 -include $(GRPC_B64_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 GRPC_BYTE_BUFFER_READER_TEST_SRC = \
@@ -6695,6 +6853,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 GRPC_CHANNEL_ARGS_TEST_SRC = \
     test/core/channel/channel_args_test.c \
@@ -6726,6 +6886,8 @@ ifneq ($(NO_DEPS),true)
 -include $(GRPC_CHANNEL_ARGS_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 GRPC_CHANNEL_STACK_TEST_SRC = \
@@ -6759,6 +6921,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 GRPC_COMPLETION_QUEUE_TEST_SRC = \
     test/core/surface/completion_queue_test.c \
@@ -6790,6 +6954,8 @@ ifneq ($(NO_DEPS),true)
 -include $(GRPC_COMPLETION_QUEUE_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 GRPC_CREATE_JWT_SRC = \
@@ -6823,6 +6989,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 GRPC_CREDENTIALS_TEST_SRC = \
     test/core/security/credentials_test.c \
@@ -6854,6 +7022,8 @@ ifneq ($(NO_DEPS),true)
 -include $(GRPC_CREDENTIALS_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 GRPC_FETCH_OAUTH2_SRC = \
@@ -6887,6 +7057,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 GRPC_INVALID_CHANNEL_ARGS_TEST_SRC = \
     test/core/surface/invalid_channel_args_test.c \
@@ -6918,6 +7090,8 @@ ifneq ($(NO_DEPS),true)
 -include $(GRPC_INVALID_CHANNEL_ARGS_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 GRPC_JSON_TOKEN_TEST_SRC = \
@@ -6951,6 +7125,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 GRPC_JWT_VERIFIER_TEST_SRC = \
     test/core/security/jwt_verifier_test.c \
@@ -6982,6 +7158,8 @@ ifneq ($(NO_DEPS),true)
 -include $(GRPC_JWT_VERIFIER_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 GRPC_PRINT_GOOGLE_DEFAULT_CREDS_TOKEN_SRC = \
@@ -7015,6 +7193,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 GRPC_SECURITY_CONNECTOR_TEST_SRC = \
     test/core/security/security_connector_test.c \
@@ -7046,6 +7226,8 @@ ifneq ($(NO_DEPS),true)
 -include $(GRPC_SECURITY_CONNECTOR_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 GRPC_VERIFY_JWT_SRC = \
@@ -7079,6 +7261,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 HPACK_PARSER_FUZZER_TEST_SRC = \
     test/core/transport/chttp2/hpack_parser_fuzzer_test.c \
@@ -7110,6 +7294,8 @@ ifneq ($(NO_DEPS),true)
 -include $(HPACK_PARSER_FUZZER_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 HPACK_PARSER_TEST_SRC = \
@@ -7143,6 +7329,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 HPACK_TABLE_TEST_SRC = \
     test/core/transport/chttp2/hpack_table_test.c \
@@ -7174,6 +7362,8 @@ ifneq ($(NO_DEPS),true)
 -include $(HPACK_TABLE_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 HTTP_PARSER_TEST_SRC = \
@@ -7207,6 +7397,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 HTTP_REQUEST_FUZZER_TEST_SRC = \
     test/core/http/request_fuzzer.c \
@@ -7238,6 +7430,8 @@ ifneq ($(NO_DEPS),true)
 -include $(HTTP_REQUEST_FUZZER_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 HTTP_RESPONSE_FUZZER_TEST_SRC = \
@@ -7271,6 +7465,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 HTTPCLI_FORMAT_REQUEST_TEST_SRC = \
     test/core/http/format_request_test.c \
@@ -7302,6 +7498,8 @@ ifneq ($(NO_DEPS),true)
 -include $(HTTPCLI_FORMAT_REQUEST_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 HTTPCLI_TEST_SRC = \
@@ -7335,6 +7533,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 HTTPSCLI_TEST_SRC = \
     test/core/http/httpscli_test.c \
@@ -7366,6 +7566,8 @@ ifneq ($(NO_DEPS),true)
 -include $(HTTPSCLI_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 INIT_TEST_SRC = \
@@ -7399,6 +7601,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 INTERNAL_API_CANARY_IOMGR_TEST_SRC = \
     test/core/internal_api_canaries/iomgr.c \
@@ -7430,6 +7634,8 @@ ifneq ($(NO_DEPS),true)
 -include $(INTERNAL_API_CANARY_IOMGR_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 INTERNAL_API_CANARY_SUPPORT_TEST_SRC = \
@@ -7463,6 +7669,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 INTERNAL_API_CANARY_TRANSPORT_TEST_SRC = \
     test/core/internal_api_canaries/iomgr.c \
@@ -7494,6 +7702,8 @@ ifneq ($(NO_DEPS),true)
 -include $(INTERNAL_API_CANARY_TRANSPORT_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 INVALID_CALL_ARGUMENT_TEST_SRC = \
@@ -7527,6 +7737,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 JSON_FUZZER_TEST_SRC = \
     test/core/json/fuzzer.c \
@@ -7558,6 +7770,8 @@ ifneq ($(NO_DEPS),true)
 -include $(JSON_FUZZER_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 JSON_REWRITE_SRC = \
@@ -7591,6 +7805,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 JSON_REWRITE_TEST_SRC = \
     test/core/json/json_rewrite_test.c \
@@ -7622,6 +7838,8 @@ ifneq ($(NO_DEPS),true)
 -include $(JSON_REWRITE_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 JSON_STREAM_ERROR_TEST_SRC = \
@@ -7655,6 +7873,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 JSON_TEST_SRC = \
     test/core/json/json_test.c \
@@ -7686,6 +7906,8 @@ ifneq ($(NO_DEPS),true)
 -include $(JSON_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 LAME_CLIENT_TEST_SRC = \
@@ -7719,6 +7941,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 LB_POLICIES_TEST_SRC = \
     test/core/client_config/lb_policies_test.c \
@@ -7750,6 +7974,8 @@ ifneq ($(NO_DEPS),true)
 -include $(LB_POLICIES_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 LOAD_FILE_TEST_SRC = \
@@ -7783,6 +8009,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 LOW_LEVEL_PING_PONG_BENCHMARK_SRC = \
     test/core/network_benchmarks/low_level_ping_pong.c \
@@ -7814,6 +8042,8 @@ ifneq ($(NO_DEPS),true)
 -include $(LOW_LEVEL_PING_PONG_BENCHMARK_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 MESSAGE_COMPRESS_TEST_SRC = \
@@ -7847,6 +8077,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 MLOG_TEST_SRC = \
     test/core/census/mlog_test.c \
@@ -7878,6 +8110,8 @@ ifneq ($(NO_DEPS),true)
 -include $(MLOG_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 MULTIPLE_SERVER_QUEUES_TEST_SRC = \
@@ -7911,6 +8145,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 MURMUR_HASH_TEST_SRC = \
     test/core/support/murmur_hash_test.c \
@@ -7942,6 +8178,8 @@ ifneq ($(NO_DEPS),true)
 -include $(MURMUR_HASH_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 NANOPB_FUZZER_RESPONSE_TEST_SRC = \
@@ -7975,6 +8213,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 NANOPB_FUZZER_SERVERLIST_TEST_SRC = \
     test/core/nanopb/fuzzer_serverlist.c \
@@ -8006,6 +8246,8 @@ ifneq ($(NO_DEPS),true)
 -include $(NANOPB_FUZZER_SERVERLIST_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 NO_SERVER_TEST_SRC = \
@@ -8039,6 +8281,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 RESOLVE_ADDRESS_TEST_SRC = \
     test/core/iomgr/resolve_address_test.c \
@@ -8070,6 +8314,8 @@ ifneq ($(NO_DEPS),true)
 -include $(RESOLVE_ADDRESS_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 SECURE_CHANNEL_CREATE_TEST_SRC = \
@@ -8103,6 +8349,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 SECURE_ENDPOINT_TEST_SRC = \
     test/core/security/secure_endpoint_test.c \
@@ -8134,6 +8382,8 @@ ifneq ($(NO_DEPS),true)
 -include $(SECURE_ENDPOINT_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 SEQUENTIAL_CONNECTIVITY_TEST_SRC = \
@@ -8167,6 +8417,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 SERVER_CHTTP2_TEST_SRC = \
     test/core/surface/server_chttp2_test.c \
@@ -8198,6 +8450,8 @@ ifneq ($(NO_DEPS),true)
 -include $(SERVER_CHTTP2_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 SERVER_FUZZER_SRC = \
@@ -8231,6 +8485,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 SERVER_TEST_SRC = \
     test/core/surface/server_test.c \
@@ -8262,6 +8518,8 @@ ifneq ($(NO_DEPS),true)
 -include $(SERVER_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 SET_INITIAL_CONNECT_STRING_TEST_SRC = \
@@ -8295,6 +8553,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 SOCKADDR_RESOLVER_TEST_SRC = \
     test/core/client_config/resolvers/sockaddr_resolver_test.c \
@@ -8326,6 +8586,8 @@ ifneq ($(NO_DEPS),true)
 -include $(SOCKADDR_RESOLVER_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 SOCKADDR_UTILS_TEST_SRC = \
@@ -8359,6 +8621,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 SOCKET_UTILS_TEST_SRC = \
     test/core/iomgr/socket_utils_test.c \
@@ -8390,6 +8654,8 @@ ifneq ($(NO_DEPS),true)
 -include $(SOCKET_UTILS_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 TCP_CLIENT_POSIX_TEST_SRC = \
@@ -8423,6 +8689,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 TCP_POSIX_TEST_SRC = \
     test/core/iomgr/tcp_posix_test.c \
@@ -8454,6 +8722,8 @@ ifneq ($(NO_DEPS),true)
 -include $(TCP_POSIX_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 TCP_SERVER_POSIX_TEST_SRC = \
@@ -8487,6 +8757,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 TIME_AVERAGED_STATS_TEST_SRC = \
     test/core/iomgr/time_averaged_stats_test.c \
@@ -8518,6 +8790,8 @@ ifneq ($(NO_DEPS),true)
 -include $(TIME_AVERAGED_STATS_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 TIMEOUT_ENCODING_TEST_SRC = \
@@ -8551,6 +8825,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 TIMER_HEAP_TEST_SRC = \
     test/core/iomgr/timer_heap_test.c \
@@ -8582,6 +8858,8 @@ ifneq ($(NO_DEPS),true)
 -include $(TIMER_HEAP_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 TIMER_LIST_TEST_SRC = \
@@ -8615,6 +8893,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 TRANSPORT_CONNECTIVITY_STATE_TEST_SRC = \
     test/core/transport/connectivity_state_test.c \
@@ -8646,6 +8926,8 @@ ifneq ($(NO_DEPS),true)
 -include $(TRANSPORT_CONNECTIVITY_STATE_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 TRANSPORT_METADATA_TEST_SRC = \
@@ -8679,6 +8961,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 TRANSPORT_SECURITY_TEST_SRC = \
     test/core/tsi/transport_security_test.c \
@@ -8710,6 +8994,8 @@ ifneq ($(NO_DEPS),true)
 -include $(TRANSPORT_SECURITY_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 UDP_SERVER_TEST_SRC = \
@@ -8743,6 +9029,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 URI_FUZZER_TEST_SRC = \
     test/core/client_config/uri_fuzzer_test.c \
@@ -8775,6 +9063,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 URI_PARSER_TEST_SRC = \
     test/core/client_config/uri_parser_test.c \
@@ -8806,6 +9096,8 @@ ifneq ($(NO_DEPS),true)
 -include $(URI_PARSER_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 ALARM_CPP_TEST_SRC = \
@@ -8850,6 +9142,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 ASYNC_END2END_TEST_SRC = \
     test/cpp/end2end/async_end2end_test.cc \
@@ -8892,6 +9186,8 @@ ifneq ($(NO_DEPS),true)
 -include $(ASYNC_END2END_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 AUTH_PROPERTY_ITERATOR_TEST_SRC = \
@@ -8936,6 +9232,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 CHANNEL_ARGUMENTS_TEST_SRC = \
     test/cpp/common/channel_arguments_test.cc \
@@ -8978,6 +9276,8 @@ ifneq ($(NO_DEPS),true)
 -include $(CHANNEL_ARGUMENTS_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 CLI_CALL_TEST_SRC = \
@@ -9022,6 +9322,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 CLIENT_CRASH_TEST_SRC = \
     test/cpp/end2end/client_crash_test.cc \
@@ -9065,6 +9367,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 CLIENT_CRASH_TEST_SERVER_SRC = \
     test/cpp/end2end/client_crash_test_server.cc \
@@ -9107,6 +9411,8 @@ ifneq ($(NO_DEPS),true)
 -include $(CLIENT_CRASH_TEST_SERVER_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 CODEGEN_TEST_FULL_SRC = \
@@ -9165,7 +9471,9 @@ ifneq ($(NO_DEPS),true)
 -include $(CODEGEN_TEST_FULL_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/codegen/codegen_test_full.o: $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc
+
+# Force compilation of proto files before building code that could potentially depend on them
+  $(OBJDIR)/$(CONFIG)/test/cpp/codegen/codegen_test_full.o: $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc
 
 
 CODEGEN_TEST_MINIMAL_SRC = \
@@ -9227,8 +9535,10 @@ ifneq ($(NO_DEPS),true)
 -include $(CODEGEN_TEST_MINIMAL_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/codegen/codegen_test_minimal.o: $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/src/cpp/codegen/codegen_init.o: $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc
+
+# Force compilation of proto files before building code that could potentially depend on them
+  $(OBJDIR)/$(CONFIG)/test/cpp/codegen/codegen_test_minimal.o: $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc
+  $(OBJDIR)/$(CONFIG)/src/cpp/codegen/codegen_init.o: $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc
 
 
 CREDENTIALS_TEST_SRC = \
@@ -9273,6 +9583,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 CXX_BYTE_BUFFER_TEST_SRC = \
     test/cpp/util/byte_buffer_test.cc \
@@ -9315,6 +9627,8 @@ ifneq ($(NO_DEPS),true)
 -include $(CXX_BYTE_BUFFER_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 CXX_SLICE_TEST_SRC = \
@@ -9359,6 +9673,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 CXX_STRING_REF_TEST_SRC = \
     test/cpp/util/string_ref_test.cc \
@@ -9401,6 +9717,8 @@ ifneq ($(NO_DEPS),true)
 -include $(CXX_STRING_REF_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 CXX_TIME_TEST_SRC = \
@@ -9445,6 +9763,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 END2END_TEST_SRC = \
     test/cpp/end2end/end2end_test.cc \
@@ -9488,6 +9808,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 GENERIC_END2END_TEST_SRC = \
     test/cpp/end2end/generic_end2end_test.cc \
@@ -9530,6 +9852,8 @@ ifneq ($(NO_DEPS),true)
 -include $(GENERIC_END2END_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 GOLDEN_FILE_TEST_SRC = \
@@ -9576,7 +9900,9 @@ ifneq ($(NO_DEPS),true)
 -include $(GOLDEN_FILE_TEST_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/codegen/golden_file_test.o: $(GENDIR)/src/proto/grpc/testing/compiler_test.pb.cc $(GENDIR)/src/proto/grpc/testing/compiler_test.grpc.pb.cc
+
+# Force compilation of proto files before building code that could potentially depend on them
+  $(OBJDIR)/$(CONFIG)/test/cpp/codegen/golden_file_test.o: $(GENDIR)/src/proto/grpc/testing/compiler_test.pb.cc $(GENDIR)/src/proto/grpc/testing/compiler_test.grpc.pb.cc
 
 
 GRPC_C_END2END_TEST_SRC = \
@@ -9621,6 +9947,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 GRPC_C_GENERIC_END2END_TEST_SRC = \
     test/c/end2end/generic_end2end_test.cc \
@@ -9664,6 +9992,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 GRPC_C_PLUGIN_SRC = \
     src/compiler/c_plugin.cc \
@@ -9694,6 +10024,8 @@ deps_grpc_c_plugin: $(GRPC_C_PLUGIN_OBJS:.o=.dep)
 ifneq ($(NO_DEPS),true)
 -include $(GRPC_C_PLUGIN_OBJS:.o=.dep)
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 GRPC_CLI_SRC = \
@@ -9738,6 +10070,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 GRPC_CPP_PLUGIN_SRC = \
     src/compiler/cpp_plugin.cc \
@@ -9768,6 +10102,8 @@ deps_grpc_cpp_plugin: $(GRPC_CPP_PLUGIN_OBJS:.o=.dep)
 ifneq ($(NO_DEPS),true)
 -include $(GRPC_CPP_PLUGIN_OBJS:.o=.dep)
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 GRPC_CSHARP_PLUGIN_SRC = \
@@ -9800,6 +10136,8 @@ ifneq ($(NO_DEPS),true)
 -include $(GRPC_CSHARP_PLUGIN_OBJS:.o=.dep)
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 GRPC_NODE_PLUGIN_SRC = \
     src/compiler/node_plugin.cc \
@@ -9830,6 +10168,8 @@ deps_grpc_node_plugin: $(GRPC_NODE_PLUGIN_OBJS:.o=.dep)
 ifneq ($(NO_DEPS),true)
 -include $(GRPC_NODE_PLUGIN_OBJS:.o=.dep)
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 GRPC_OBJECTIVE_C_PLUGIN_SRC = \
@@ -9862,6 +10202,8 @@ ifneq ($(NO_DEPS),true)
 -include $(GRPC_OBJECTIVE_C_PLUGIN_OBJS:.o=.dep)
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 GRPC_PYTHON_PLUGIN_SRC = \
     src/compiler/python_plugin.cc \
@@ -9893,6 +10235,8 @@ ifneq ($(NO_DEPS),true)
 -include $(GRPC_PYTHON_PLUGIN_OBJS:.o=.dep)
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 GRPC_RUBY_PLUGIN_SRC = \
     src/compiler/ruby_plugin.cc \
@@ -9923,6 +10267,8 @@ deps_grpc_ruby_plugin: $(GRPC_RUBY_PLUGIN_OBJS:.o=.dep)
 ifneq ($(NO_DEPS),true)
 -include $(GRPC_RUBY_PLUGIN_OBJS:.o=.dep)
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 GRPCLB_API_TEST_SRC = \
@@ -9969,7 +10315,9 @@ ifneq ($(NO_DEPS),true)
 -include $(GRPCLB_API_TEST_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/grpclb/grpclb_api_test.o: $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
+
+# Force compilation of proto files before building code that could potentially depend on them
+  $(OBJDIR)/$(CONFIG)/test/cpp/grpclb/grpclb_api_test.o: $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
 
 
 HYBRID_END2END_TEST_SRC = \
@@ -10014,6 +10362,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 ifeq ($(NO_SECURE),true)
 
@@ -10045,6 +10395,8 @@ endif
 
 
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 ifeq ($(NO_SECURE),true)
 
@@ -10075,6 +10427,8 @@ endif
 endif
 
 
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 INTEROP_TEST_SRC = \
@@ -10119,6 +10473,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 JSON_RUN_LOCALHOST_SRC = \
     test/cpp/qps/json_run_localhost.cc \
@@ -10161,6 +10517,8 @@ ifneq ($(NO_DEPS),true)
 -include $(JSON_RUN_LOCALHOST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 METRICS_CLIENT_SRC = \
@@ -10207,7 +10565,9 @@ ifneq ($(NO_DEPS),true)
 -include $(METRICS_CLIENT_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/interop/metrics_client.o: $(GENDIR)/src/proto/grpc/testing/metrics.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.grpc.pb.cc
+
+# Force compilation of proto files before building code that could potentially depend on them
+  $(OBJDIR)/$(CONFIG)/test/cpp/interop/metrics_client.o: $(GENDIR)/src/proto/grpc/testing/metrics.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.grpc.pb.cc
 
 
 MOCK_TEST_SRC = \
@@ -10251,6 +10611,8 @@ ifneq ($(NO_DEPS),true)
 -include $(MOCK_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 PROTO_SERVER_REFLECTION_TEST_SRC = \
@@ -10298,6 +10660,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 QPS_INTERARRIVAL_TEST_SRC = \
     test/cpp/qps/qps_interarrival_test.cc \
@@ -10340,6 +10704,8 @@ ifneq ($(NO_DEPS),true)
 -include $(QPS_INTERARRIVAL_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 QPS_JSON_DRIVER_SRC = \
@@ -10384,6 +10750,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 QPS_OPENLOOP_TEST_SRC = \
     test/cpp/qps/qps_openloop_test.cc \
@@ -10427,6 +10795,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 QPS_WORKER_SRC = \
     test/cpp/qps/worker.cc \
@@ -10469,6 +10839,8 @@ ifneq ($(NO_DEPS),true)
 -include $(QPS_WORKER_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 RECONNECT_INTEROP_CLIENT_SRC = \
@@ -10521,7 +10893,9 @@ ifneq ($(NO_DEPS),true)
 -include $(RECONNECT_INTEROP_CLIENT_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/interop/reconnect_interop_client.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
+
+# Force compilation of proto files before building code that could potentially depend on them
+  $(OBJDIR)/$(CONFIG)/test/cpp/interop/reconnect_interop_client.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
 
 
 RECONNECT_INTEROP_SERVER_SRC = \
@@ -10574,7 +10948,9 @@ ifneq ($(NO_DEPS),true)
 -include $(RECONNECT_INTEROP_SERVER_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/interop/reconnect_interop_server.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
+
+# Force compilation of proto files before building code that could potentially depend on them
+  $(OBJDIR)/$(CONFIG)/test/cpp/interop/reconnect_interop_server.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
 
 
 SECURE_AUTH_CONTEXT_TEST_SRC = \
@@ -10619,6 +10995,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 SECURE_SYNC_UNARY_PING_PONG_TEST_SRC = \
     test/cpp/qps/secure_sync_unary_ping_pong_test.cc \
@@ -10661,6 +11039,8 @@ ifneq ($(NO_DEPS),true)
 -include $(SECURE_SYNC_UNARY_PING_PONG_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 SERVER_BUILDER_PLUGIN_TEST_SRC = \
@@ -10705,6 +11085,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 SERVER_CRASH_TEST_SRC = \
     test/cpp/end2end/server_crash_test.cc \
@@ -10747,6 +11129,8 @@ ifneq ($(NO_DEPS),true)
 -include $(SERVER_CRASH_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 SERVER_CRASH_TEST_CLIENT_SRC = \
@@ -10791,6 +11175,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 SHUTDOWN_TEST_SRC = \
     test/cpp/end2end/shutdown_test.cc \
@@ -10833,6 +11219,8 @@ ifneq ($(NO_DEPS),true)
 -include $(SHUTDOWN_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 STATUS_TEST_SRC = \
@@ -10877,6 +11265,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 STREAMING_THROUGHPUT_TEST_SRC = \
     test/cpp/end2end/streaming_throughput_test.cc \
@@ -10919,6 +11309,8 @@ ifneq ($(NO_DEPS),true)
 -include $(STREAMING_THROUGHPUT_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 STRESS_TEST_SRC = \
@@ -10983,10 +11375,12 @@ ifneq ($(NO_DEPS),true)
 -include $(STRESS_TEST_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/interop/interop_client.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/interop/stress_interop_client.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/interop/stress_test.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/util/metrics_server.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
+
+# Force compilation of proto files before building code that could potentially depend on them
+  $(OBJDIR)/$(CONFIG)/test/cpp/interop/interop_client.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
+  $(OBJDIR)/$(CONFIG)/test/cpp/interop/stress_interop_client.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
+  $(OBJDIR)/$(CONFIG)/test/cpp/interop/stress_test.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
+  $(OBJDIR)/$(CONFIG)/test/cpp/util/metrics_server.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
 
 
 THREAD_STRESS_TEST_SRC = \
@@ -11031,6 +11425,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 PUBLIC_HEADERS_MUST_BE_C89_SRC = \
     test/core/surface/public_headers_must_be_c89.c \
@@ -11067,6 +11463,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 BADREQ_BAD_CLIENT_TEST_SRC = \
     test/core/bad_client/tests/badreq.c \
@@ -11086,6 +11484,8 @@ deps_badreq_bad_client_test: $(BADREQ_BAD_CLIENT_TEST_OBJS:.o=.dep)
 ifneq ($(NO_DEPS),true)
 -include $(BADREQ_BAD_CLIENT_TEST_OBJS:.o=.dep)
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 CONNECTION_PREFIX_BAD_CLIENT_TEST_SRC = \
@@ -11107,6 +11507,8 @@ ifneq ($(NO_DEPS),true)
 -include $(CONNECTION_PREFIX_BAD_CLIENT_TEST_OBJS:.o=.dep)
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 HEAD_OF_LINE_BLOCKING_BAD_CLIENT_TEST_SRC = \
     test/core/bad_client/tests/head_of_line_blocking.c \
@@ -11126,6 +11528,8 @@ deps_head_of_line_blocking_bad_client_test: $(HEAD_OF_LINE_BLOCKING_BAD_CLIENT_T
 ifneq ($(NO_DEPS),true)
 -include $(HEAD_OF_LINE_BLOCKING_BAD_CLIENT_TEST_OBJS:.o=.dep)
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 HEADERS_BAD_CLIENT_TEST_SRC = \
@@ -11147,6 +11551,8 @@ ifneq ($(NO_DEPS),true)
 -include $(HEADERS_BAD_CLIENT_TEST_OBJS:.o=.dep)
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_SRC = \
     test/core/bad_client/tests/initial_settings_frame.c \
@@ -11166,6 +11572,8 @@ deps_initial_settings_frame_bad_client_test: $(INITIAL_SETTINGS_FRAME_BAD_CLIENT
 ifneq ($(NO_DEPS),true)
 -include $(INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_OBJS:.o=.dep)
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 LARGE_METADATA_BAD_CLIENT_TEST_SRC = \
@@ -11187,6 +11595,8 @@ ifneq ($(NO_DEPS),true)
 -include $(LARGE_METADATA_BAD_CLIENT_TEST_OBJS:.o=.dep)
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_SRC = \
     test/core/bad_client/tests/server_registered_method.c \
@@ -11206,6 +11616,8 @@ deps_server_registered_method_bad_client_test: $(SERVER_REGISTERED_METHOD_BAD_CL
 ifneq ($(NO_DEPS),true)
 -include $(SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_OBJS:.o=.dep)
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 SIMPLE_REQUEST_BAD_CLIENT_TEST_SRC = \
@@ -11227,6 +11639,8 @@ ifneq ($(NO_DEPS),true)
 -include $(SIMPLE_REQUEST_BAD_CLIENT_TEST_OBJS:.o=.dep)
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 UNKNOWN_FRAME_BAD_CLIENT_TEST_SRC = \
     test/core/bad_client/tests/unknown_frame.c \
@@ -11247,6 +11661,8 @@ ifneq ($(NO_DEPS),true)
 -include $(UNKNOWN_FRAME_BAD_CLIENT_TEST_OBJS:.o=.dep)
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 WINDOW_OVERFLOW_BAD_CLIENT_TEST_SRC = \
     test/core/bad_client/tests/window_overflow.c \
@@ -11266,6 +11682,8 @@ deps_window_overflow_bad_client_test: $(WINDOW_OVERFLOW_BAD_CLIENT_TEST_OBJS:.o=
 ifneq ($(NO_DEPS),true)
 -include $(WINDOW_OVERFLOW_BAD_CLIENT_TEST_OBJS:.o=.dep)
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 BAD_SSL_ALPN_SERVER_SRC = \
@@ -11299,6 +11717,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 BAD_SSL_CERT_SERVER_SRC = \
     test/core/bad_ssl/servers/cert.c \
@@ -11330,6 +11750,8 @@ ifneq ($(NO_DEPS),true)
 -include $(BAD_SSL_CERT_SERVER_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 BAD_SSL_ALPN_TEST_SRC = \
@@ -11363,6 +11785,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 BAD_SSL_CERT_TEST_SRC = \
     test/core/bad_ssl/bad_ssl_test.c \
@@ -11394,6 +11818,8 @@ ifneq ($(NO_DEPS),true)
 -include $(BAD_SSL_CERT_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 H2_CENSUS_TEST_SRC = \
@@ -11427,6 +11853,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 H2_COMPRESS_TEST_SRC = \
     test/core/end2end/fixtures/h2_compress.c \
@@ -11458,6 +11886,8 @@ ifneq ($(NO_DEPS),true)
 -include $(H2_COMPRESS_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 H2_FAKESEC_TEST_SRC = \
@@ -11491,6 +11921,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 H2_FD_TEST_SRC = \
     test/core/end2end/fixtures/h2_fd.c \
@@ -11522,6 +11954,8 @@ ifneq ($(NO_DEPS),true)
 -include $(H2_FD_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 H2_FULL_TEST_SRC = \
@@ -11555,6 +11989,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 H2_FULL+PIPE_TEST_SRC = \
     test/core/end2end/fixtures/h2_full+pipe.c \
@@ -11586,6 +12022,8 @@ ifneq ($(NO_DEPS),true)
 -include $(H2_FULL+PIPE_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 H2_FULL+TRACE_TEST_SRC = \
@@ -11619,6 +12057,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 H2_LOADREPORTING_TEST_SRC = \
     test/core/end2end/fixtures/h2_loadreporting.c \
@@ -11650,6 +12090,8 @@ ifneq ($(NO_DEPS),true)
 -include $(H2_LOADREPORTING_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 H2_OAUTH2_TEST_SRC = \
@@ -11683,6 +12125,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 H2_PROXY_TEST_SRC = \
     test/core/end2end/fixtures/h2_proxy.c \
@@ -11714,6 +12158,8 @@ ifneq ($(NO_DEPS),true)
 -include $(H2_PROXY_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 H2_SOCKPAIR_TEST_SRC = \
@@ -11747,6 +12193,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 H2_SOCKPAIR+TRACE_TEST_SRC = \
     test/core/end2end/fixtures/h2_sockpair+trace.c \
@@ -11778,6 +12226,8 @@ ifneq ($(NO_DEPS),true)
 -include $(H2_SOCKPAIR+TRACE_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 H2_SOCKPAIR_1BYTE_TEST_SRC = \
@@ -11811,6 +12261,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 H2_SSL_TEST_SRC = \
     test/core/end2end/fixtures/h2_ssl.c \
@@ -11842,6 +12294,8 @@ ifneq ($(NO_DEPS),true)
 -include $(H2_SSL_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 H2_SSL_CERT_TEST_SRC = \
@@ -11875,6 +12329,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 H2_SSL_PROXY_TEST_SRC = \
     test/core/end2end/fixtures/h2_ssl_proxy.c \
@@ -11906,6 +12362,8 @@ ifneq ($(NO_DEPS),true)
 -include $(H2_SSL_PROXY_TEST_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 H2_UDS_TEST_SRC = \
@@ -11939,6 +12397,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 H2_CENSUS_NOSEC_TEST_SRC = \
     test/core/end2end/fixtures/h2_census.c \
@@ -11958,6 +12418,8 @@ deps_h2_census_nosec_test: $(H2_CENSUS_NOSEC_TEST_OBJS:.o=.dep)
 ifneq ($(NO_DEPS),true)
 -include $(H2_CENSUS_NOSEC_TEST_OBJS:.o=.dep)
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 H2_COMPRESS_NOSEC_TEST_SRC = \
@@ -11979,6 +12441,8 @@ ifneq ($(NO_DEPS),true)
 -include $(H2_COMPRESS_NOSEC_TEST_OBJS:.o=.dep)
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 H2_FD_NOSEC_TEST_SRC = \
     test/core/end2end/fixtures/h2_fd.c \
@@ -11998,6 +12462,8 @@ deps_h2_fd_nosec_test: $(H2_FD_NOSEC_TEST_OBJS:.o=.dep)
 ifneq ($(NO_DEPS),true)
 -include $(H2_FD_NOSEC_TEST_OBJS:.o=.dep)
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 H2_FULL_NOSEC_TEST_SRC = \
@@ -12019,6 +12485,8 @@ ifneq ($(NO_DEPS),true)
 -include $(H2_FULL_NOSEC_TEST_OBJS:.o=.dep)
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 H2_FULL+PIPE_NOSEC_TEST_SRC = \
     test/core/end2end/fixtures/h2_full+pipe.c \
@@ -12038,6 +12506,8 @@ deps_h2_full+pipe_nosec_test: $(H2_FULL+PIPE_NOSEC_TEST_OBJS:.o=.dep)
 ifneq ($(NO_DEPS),true)
 -include $(H2_FULL+PIPE_NOSEC_TEST_OBJS:.o=.dep)
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 H2_FULL+TRACE_NOSEC_TEST_SRC = \
@@ -12059,6 +12529,8 @@ ifneq ($(NO_DEPS),true)
 -include $(H2_FULL+TRACE_NOSEC_TEST_OBJS:.o=.dep)
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 H2_LOADREPORTING_NOSEC_TEST_SRC = \
     test/core/end2end/fixtures/h2_loadreporting.c \
@@ -12078,6 +12550,8 @@ deps_h2_loadreporting_nosec_test: $(H2_LOADREPORTING_NOSEC_TEST_OBJS:.o=.dep)
 ifneq ($(NO_DEPS),true)
 -include $(H2_LOADREPORTING_NOSEC_TEST_OBJS:.o=.dep)
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 H2_PROXY_NOSEC_TEST_SRC = \
@@ -12099,6 +12573,8 @@ ifneq ($(NO_DEPS),true)
 -include $(H2_PROXY_NOSEC_TEST_OBJS:.o=.dep)
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 H2_SOCKPAIR_NOSEC_TEST_SRC = \
     test/core/end2end/fixtures/h2_sockpair.c \
@@ -12118,6 +12594,8 @@ deps_h2_sockpair_nosec_test: $(H2_SOCKPAIR_NOSEC_TEST_OBJS:.o=.dep)
 ifneq ($(NO_DEPS),true)
 -include $(H2_SOCKPAIR_NOSEC_TEST_OBJS:.o=.dep)
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 H2_SOCKPAIR+TRACE_NOSEC_TEST_SRC = \
@@ -12139,6 +12617,8 @@ ifneq ($(NO_DEPS),true)
 -include $(H2_SOCKPAIR+TRACE_NOSEC_TEST_OBJS:.o=.dep)
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 H2_SOCKPAIR_1BYTE_NOSEC_TEST_SRC = \
     test/core/end2end/fixtures/h2_sockpair_1byte.c \
@@ -12159,6 +12639,8 @@ ifneq ($(NO_DEPS),true)
 -include $(H2_SOCKPAIR_1BYTE_NOSEC_TEST_OBJS:.o=.dep)
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 H2_UDS_NOSEC_TEST_SRC = \
     test/core/end2end/fixtures/h2_uds.c \
@@ -12178,6 +12660,8 @@ deps_h2_uds_nosec_test: $(H2_UDS_NOSEC_TEST_OBJS:.o=.dep)
 ifneq ($(NO_DEPS),true)
 -include $(H2_UDS_NOSEC_TEST_OBJS:.o=.dep)
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 API_FUZZER_ONE_ENTRY_SRC = \
@@ -12214,6 +12698,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 CLIENT_FUZZER_ONE_ENTRY_SRC = \
     test/core/end2end/fuzzers/client_fuzzer.c \
@@ -12248,6 +12734,8 @@ ifneq ($(NO_DEPS),true)
 -include $(CLIENT_FUZZER_ONE_ENTRY_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 HPACK_PARSER_FUZZER_TEST_ONE_ENTRY_SRC = \
@@ -12284,6 +12772,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 HTTP_REQUEST_FUZZER_TEST_ONE_ENTRY_SRC = \
     test/core/http/request_fuzzer.c \
@@ -12318,6 +12808,8 @@ ifneq ($(NO_DEPS),true)
 -include $(HTTP_REQUEST_FUZZER_TEST_ONE_ENTRY_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 HTTP_RESPONSE_FUZZER_TEST_ONE_ENTRY_SRC = \
@@ -12354,6 +12846,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 JSON_FUZZER_TEST_ONE_ENTRY_SRC = \
     test/core/json/fuzzer.c \
@@ -12388,6 +12882,8 @@ ifneq ($(NO_DEPS),true)
 -include $(JSON_FUZZER_TEST_ONE_ENTRY_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 NANOPB_FUZZER_RESPONSE_TEST_ONE_ENTRY_SRC = \
@@ -12424,6 +12920,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 NANOPB_FUZZER_SERVERLIST_TEST_ONE_ENTRY_SRC = \
     test/core/nanopb/fuzzer_serverlist.c \
@@ -12458,6 +12956,8 @@ ifneq ($(NO_DEPS),true)
 -include $(NANOPB_FUZZER_SERVERLIST_TEST_ONE_ENTRY_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 SERVER_FUZZER_ONE_ENTRY_SRC = \
@@ -12494,6 +12994,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+# Force compilation of proto files before building code that could potentially depend on them
+
 
 URI_FUZZER_TEST_ONE_ENTRY_SRC = \
     test/core/client_config/uri_fuzzer_test.c \
@@ -12528,6 +13030,8 @@ ifneq ($(NO_DEPS),true)
 -include $(URI_FUZZER_TEST_ONE_ENTRY_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
 
 
 
