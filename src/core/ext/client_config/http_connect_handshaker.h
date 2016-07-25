@@ -36,13 +36,8 @@
 
 #include "src/core/lib/channel/handshaker.h"
 
-/// Caller does NOT take ownership of returned string.
-char* grpc_get_http_connect_proxy_server_from_args(grpc_channel_args *args);
-
-/// Borrows references to \a proxy_server or \a server_name.
-/// The caller must ensure that they remain alive until handshaking is
-/// complete.
-grpc_handshaker* grpc_http_connect_handshaker_create(char* proxy_server,
-                                                     char* server_name);
+/// Does NOT take ownership of \a proxy_server or \a server_name.
+grpc_handshaker* grpc_http_connect_handshaker_create(const char* proxy_server,
+                                                     const char* server_name);
 
 #endif /* GRPC_CORE_EXT_CLIENT_CONFIG_HTTP_CONNECT_HANDSHAKER_H */

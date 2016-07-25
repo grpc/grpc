@@ -54,8 +54,10 @@ typedef struct {
   grpc_resolver base;
   /** refcount */
   gpr_refcount refs;
-  /** name to resolve */
-  char *name;
+  /** target name */
+  char *target_name;
+  /** name to resolve (usually the same as target_name) */
+  char *name_to_resolve;
   /** default port to use */
   char *default_port;
   /** subchannel factory */
@@ -174,7 +176,7 @@ static void dns_on_resolved(grpc_exec_ctx *exec_ctx, void *arg,
   if (addresses != NULL) {
     grpc_lb_policy_args lb_policy_args;
     memset(&lb_policy_args, 0, sizeof(lb_policy_args));
-    lb_policy_args.server_name = r->name;
+    lb_policy_args.server_name = r->target_name;
     lb_policy_args.addresses = addresses;
     lb_policy_args.client_channel_factory = r->client_channel_factory;
     lb_policy =
@@ -221,7 +223,7 @@ static void dns_start_resolving_locked(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(!r->resolving);
   r->resolving = true;
   r->addresses = NULL;
-  grpc_resolve_address(exec_ctx, r->name, r->default_port,
+  grpc_resolve_address(exec_ctx, r->name_to_resolve, r->default_port,
                        grpc_closure_create(dns_on_resolved, r), &r->addresses);
 }
 
@@ -246,7 +248,8 @@ static void dns_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
     grpc_client_config_unref(exec_ctx, r->resolved_config);
   }
   grpc_client_channel_factory_unref(exec_ctx, r->client_channel_factory);
-  gpr_free(r->name);
+  gpr_free(r->target_name);
+  gpr_free(r->name_to_resolve);
   gpr_free(r->default_port);
   gpr_free(r->lb_policy_name);
   gpr_free(r);
@@ -255,22 +258,22 @@ static void dns_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
 static grpc_resolver *dns_create(grpc_resolver_args *args,
                                  const char *default_port,
                                  const char *lb_policy_name) {
-  dns_resolver *r;
-  const char *path = args->uri->path;
-
   if (0 != strcmp(args->uri->authority, "")) {
     gpr_log(GPR_ERROR, "authority based dns uri's not supported");
     return NULL;
   }
-
+  // Get name and (optionally) proxy address from args.
+  const char *path = args->uri->path;
   if (path[0] == '/') ++path;
-
-  r = gpr_malloc(sizeof(dns_resolver));
+  const char *proxy_name = grpc_uri_get_query_arg(args->uri, "http_proxy");
+  // Create resolver.
+  dns_resolver *r = gpr_malloc(sizeof(dns_resolver));
   memset(r, 0, sizeof(*r));
   gpr_ref_init(&r->refs, 1);
   gpr_mu_init(&r->mu);
   grpc_resolver_init(&r->base, &dns_resolver_vtable);
-  r->name = gpr_strdup(path);
+  r->target_name = gpr_strdup(path);
+  r->name_to_resolve = gpr_strdup(proxy_name == NULL ? path : proxy_name);
   r->default_port = gpr_strdup(default_port);
   r->client_channel_factory = args->client_channel_factory;
   gpr_backoff_init(&r->backoff_state, BACKOFF_MULTIPLIER, BACKOFF_JITTER,

@@ -118,8 +118,8 @@ static int parse_fragment_or_query(const char *uri_text, size_t *i) {
     const size_t advance = parse_pchar(uri_text, *i); /* pchar */
     switch (advance) {
       case 0: /* uri_text[i] isn't in pchar */
-        /* maybe it's ? or / */
-        if (uri_text[*i] == '?' || uri_text[*i] == '/') {
+        /* maybe it's ? or / or : */
+        if (uri_text[*i] == '?' || uri_text[*i] == '/' || uri_text[*i] == ':') {
           (*i)++;
           break;
         } else {
