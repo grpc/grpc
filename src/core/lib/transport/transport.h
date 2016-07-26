@@ -138,7 +138,7 @@ typedef struct grpc_transport_stream_op {
   /** If != GRPC_ERROR_NONE, cancel this stream */
   grpc_error *cancel_error;
 
-  /** If != GRPC_ERROR, send grpc-status, grpc-message, and close this
+  /** If != GRPC_ERROR_NONE, send grpc-status, grpc-message, and close this
       stream for both reading and writing */
   grpc_error *close_error;
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,6 +27,26 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# Builds PHP interop server and client in a base image.
+set -ex
 
-# Runs the protoc with gRPC plugin to generate protocol messages and gRPC stubs.
-python -m grpc.tools.protoc -I../../protos --python_out=. --grpc_python_out=. ../../protos/helloworld.proto
+mkdir -p /var/local/git
+git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
+
+# copy service account keys if available
+cp -r /var/local/jenkins/service_account $HOME || true
+
+cd /var/local/git/grpc
+rvm --default use ruby-2.1
+
+# gRPC core and protobuf need to be installed
+make install
+
+(cd src/php/ext/grpc && phpize && ./configure && make)
+
+(cd third_party/protobuf && make install)
+
+(cd src/php && composer install)
+
+(cd src/php && protoc-gen-php -i tests/interop/ -o tests/interop/ tests/interop/test.proto)

@@ -29,12 +29,18 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from __future__ import print_function
+
+import errno
+import filecmp
+import glob
 import os
 import os.path
 import shutil
 import subprocess
 import sys
 import traceback
+import uuid
 
 DEPS_FILE_CONTENT="""
 # Copyright 2016, Google Inc.
@@ -124,20 +130,88 @@ def get_deps():
       proto_include=repr(GRPC_PYTHON_PROTOBUF_RELATIVE_ROOT))
   return deps_file_content
 
+def long_path(path):
+  if os.name == 'nt':
+    return '\\\\?\\' + path
+  else:
+    return path
+
+def atomic_file_copy(src, dst):
+  """Based on the lock-free-whack-a-mole algorithm, depending on filesystem
+     renaming being atomic. Described at http://stackoverflow.com/a/28090883.
+  """
+  try:
+    if filecmp.cmp(src, dst):
+      return
+  except:
+    pass
+  dst_dir = os.path.abspath(os.path.dirname(dst))
+  dst_base = os.path.basename(dst)
+  this_id = str(uuid.uuid4()).replace('.', '-')
+  temporary_file = os.path.join(dst_dir, '{}.{}.tmp'.format(dst_base, this_id))
+  mole_file = os.path.join(dst_dir, '{}.{}.mole.tmp'.format(dst_base, this_id))
+  mole_pattern = os.path.join(dst_dir, '{}.*.mole.tmp'.format(dst_base))
+  src = long_path(src)
+  dst = long_path(dst)
+  temporary_file = long_path(temporary_file)
+  mole_file = long_path(mole_file)
+  mole_pattern = long_path(mole_pattern)
+  shutil.copy2(src, temporary_file)
+  try:
+    os.rename(temporary_file, mole_file)
+  except:
+    print('Error moving temporary file {} to {}'.format(temporary_file, mole_file), file=sys.stderr)
+    print('while trying to copy file {} to {}'.format(src, dst), file=sys.stderr)
+    raise
+  for other_file in glob.glob(mole_pattern):
+    other_id = other_file.split('.')[-3]
+    if this_id == other_id:
+      pass
+    elif this_id < other_id:
+      try:
+        os.remove(other_file)
+      except:
+        pass
+    else:
+      try:
+        os.remove(mole_file)
+      except:
+        pass
+      this_id = other_id
+      mole_file = other_file
+  try:
+    if filecmp.cmp(src, dst):
+      try:
+        os.remove(mole_file)
+      except:
+        pass
+      return
+  except:
+    pass
+  try:
+    os.rename(mole_file, dst)
+  except:
+    pass
+
 
 def main():
   os.chdir(GRPC_ROOT)
 
-  for tree in [GRPC_PYTHON_PROTOBUF,
-               GRPC_PYTHON_PROTOC_PLUGINS,
-               GRPC_PYTHON_INCLUDE]:
-    try:
-      shutil.rmtree(tree)
-    except Exception as _:
-      pass
-  shutil.copytree(GRPC_PROTOBUF, GRPC_PYTHON_PROTOBUF)
-  shutil.copytree(GRPC_PROTOC_PLUGINS, GRPC_PYTHON_PROTOC_PLUGINS)
-  shutil.copytree(GRPC_INCLUDE, GRPC_PYTHON_INCLUDE)
+  for source, target in [
+      (GRPC_PROTOBUF, GRPC_PYTHON_PROTOBUF),
+      (GRPC_PROTOC_PLUGINS, GRPC_PYTHON_PROTOC_PLUGINS),
+      (GRPC_INCLUDE, GRPC_PYTHON_INCLUDE)]:
+    for source_dir, _, files in os.walk(source):
+      target_dir = os.path.abspath(os.path.join(target, os.path.relpath(source_dir, source)))
+      try:
+        os.makedirs(target_dir)
+      except OSError as error:
+        if error.errno != errno.EEXIST:
+          raise
+      for relative_file in files:
+        source_file = os.path.abspath(os.path.join(source_dir, relative_file))
+        target_file = os.path.abspath(os.path.join(target_dir, relative_file))
+        atomic_file_copy(source_file, target_file)
 
   try:
     protoc_lib_deps_content = get_deps()

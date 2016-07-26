@@ -741,4 +741,17 @@ void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   }
 }
 
+void grpc_tcp_server_shutdown_listeners(grpc_exec_ctx *exec_ctx,
+                                        grpc_tcp_server *s) {
+  gpr_mu_lock(&s->mu);
+  /* shutdown all fd's */
+  if (s->active_ports) {
+    grpc_tcp_listener *sp;
+    for (sp = s->head; sp; sp = sp->next) {
+      grpc_fd_shutdown(exec_ctx, sp->emfd);
+    }
+  }
+  gpr_mu_unlock(&s->mu);
+}
+
 #endif

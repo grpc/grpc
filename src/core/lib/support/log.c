@@ -79,17 +79,18 @@ void gpr_set_log_verbosity(gpr_log_severity min_severity_to_print) {
 
 void gpr_log_verbosity_init() {
   char *verbosity = gpr_getenv("GRPC_VERBOSITY");
-  if (verbosity == NULL) return;
 
-  gpr_atm min_severity_to_print = GPR_LOG_VERBOSITY_UNSET;
-  if (strcmp(verbosity, "DEBUG") == 0) {
-    min_severity_to_print = (gpr_atm)GPR_LOG_SEVERITY_DEBUG;
-  } else if (strcmp(verbosity, "INFO") == 0) {
-    min_severity_to_print = (gpr_atm)GPR_LOG_SEVERITY_INFO;
-  } else if (strcmp(verbosity, "ERROR") == 0) {
-    min_severity_to_print = (gpr_atm)GPR_LOG_SEVERITY_ERROR;
+  gpr_atm min_severity_to_print = GPR_LOG_SEVERITY_ERROR;
+  if (verbosity != NULL) {
+    if (strcmp(verbosity, "DEBUG") == 0) {
+      min_severity_to_print = (gpr_atm)GPR_LOG_SEVERITY_DEBUG;
+    } else if (strcmp(verbosity, "INFO") == 0) {
+      min_severity_to_print = (gpr_atm)GPR_LOG_SEVERITY_INFO;
+    } else if (strcmp(verbosity, "ERROR") == 0) {
+      min_severity_to_print = (gpr_atm)GPR_LOG_SEVERITY_ERROR;
+    }
+    gpr_free(verbosity);
   }
-  gpr_free(verbosity);
   if ((gpr_atm_no_barrier_load(&g_min_severity_to_print)) ==
       GPR_LOG_VERBOSITY_UNSET) {
     gpr_atm_no_barrier_store(&g_min_severity_to_print, min_severity_to_print);

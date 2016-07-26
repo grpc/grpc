@@ -509,6 +509,9 @@ extern gpr_slice_unref_type gpr_slice_unref_import;
 typedef gpr_slice(*gpr_slice_new_type)(void *p, size_t len, void (*destroy)(void *));
 extern gpr_slice_new_type gpr_slice_new_import;
 #define gpr_slice_new gpr_slice_new_import
+typedef gpr_slice(*gpr_slice_new_with_user_data_type)(void *p, size_t len, void (*destroy)(void *), void *user_data);
+extern gpr_slice_new_with_user_data_type gpr_slice_new_with_user_data_import;
+#define gpr_slice_new_with_user_data gpr_slice_new_with_user_data_import
 typedef gpr_slice(*gpr_slice_new_with_len_type)(void *p, size_t len, void (*destroy)(void *, size_t));
 extern gpr_slice_new_with_len_type gpr_slice_new_with_len_import;
 #define gpr_slice_new_with_len gpr_slice_new_with_len_import

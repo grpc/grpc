@@ -44,26 +44,10 @@ hash xcodebuild 2>/dev/null || {
     exit 1
 }
 
-BINDIR=../../../bins/$CONFIG
-
-if [ ! -f $BINDIR/protobuf/protoc ]; then
-    hash protoc 2>/dev/null || {
-        echo >&2 "Can't find protoc. Make sure run_tests.py is making" \
-                 "grpc_objective_c_plugin before calling this script."
-        exit 1
-    }
-    # When protoc is already installed, make doesn't compile one. Put a link
-    # there so the podspecs can do codegen using that path.
-    mkdir -p $BINDIR/protobuf
-    ln -s `which protoc` $BINDIR/protobuf/protoc
-fi
-
-[ -f $BINDIR/interop_server ] || {
-    echo >&2 "Can't find the test server. Make sure run_tests.py is making" \
-             "interop_server before calling this script. It needs to be done" \
-             "before because pod install of gRPC renames some C gRPC files" \
-             "and not the server's code references to them."
-    exit 1
-}
+# clean the directory
+rm -rf Pods
+rm -rf Tests.xcworkspace
+rm -f Podfile.lock
+rm -f RemoteTestClient/*.{h,m}
 
 pod install

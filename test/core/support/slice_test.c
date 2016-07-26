@@ -85,6 +85,27 @@ static void test_slice_new_returns_something_sensible(void) {
   gpr_slice_unref(slice);
 }
 
+/* destroy function that sets a mark to indicate it was called. */
+static void set_mark(void *p) { *((int *)p) = 1; }
+
+static void test_slice_new_with_user_data(void) {
+  int marker = 0;
+  uint8_t buf[2];
+  gpr_slice slice;
+
+  buf[0] = 0;
+  buf[1] = 1;
+  slice = gpr_slice_new_with_user_data(buf, 2, set_mark, &marker);
+  GPR_ASSERT(marker == 0);
+  GPR_ASSERT(GPR_SLICE_LENGTH(slice) == 2);
+  GPR_ASSERT(GPR_SLICE_START_PTR(slice)[0] == 0);
+  GPR_ASSERT(GPR_SLICE_START_PTR(slice)[1] == 1);
+
+  /* unref should cause destroy function to run. */
+  gpr_slice_unref(slice);
+  GPR_ASSERT(marker == 1);
+}
+
 static int do_nothing_with_len_1_calls = 0;
 
 static void do_nothing_with_len_1(void *ignored, size_t len) {
@@ -232,6 +253,7 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_slice_malloc_returns_something_sensible();
   test_slice_new_returns_something_sensible();
+  test_slice_new_with_user_data();
   test_slice_new_with_len_returns_something_sensible();
   for (length = 0; length < 128; length++) {
     test_slice_sub_works(length);
