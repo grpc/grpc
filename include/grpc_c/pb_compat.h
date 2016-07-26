@@ -36,6 +36,7 @@
 
 #include <grpc_c/grpc_c.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef struct GRPC_pb_dynamic_array_state GRPC_pb_dynamic_array_state;
 typedef struct pb_ostream_s pb_ostream_t;

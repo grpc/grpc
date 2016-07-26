@@ -36,6 +36,7 @@
 #define GRPC_C_BIDI_STREAMING_BLOCKING_CALL_PUBLIC_H
 
 #include <grpc_c/grpc_c.h>
+#include <stdbool.h>
 
 GRPC_client_reader_writer *GRPC_bidi_streaming_blocking_call(const GRPC_method rpc_method,
                                                              GRPC_client_context *const context);

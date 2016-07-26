@@ -36,6 +36,7 @@
 #define GRPC_C_STATUS_PUBLIC_H
 
 #include <grpc/impl/codegen/status.h>
+#include <stdbool.h>
 
 typedef struct GRPC_status {
   /**

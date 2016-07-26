@@ -878,6 +878,7 @@ libs:
   - gpr
   baselib: true
   dll: true
+  do_not_enforce_c89_public_headers: true
   secure: check
   vs_project_guid: '{8AC0CB05-6E3C-4A40-B45E-FDA77644F432}'
 - name: grpc_c_end2end_client_lib
