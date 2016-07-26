@@ -56,6 +56,9 @@ typedef struct wrapped_grpc_channel {
   grpc_channel *wrapped;
 } wrapped_grpc_channel;
 
+#define Z_WRAPPED_GRPC_CHANNEL_P(zv) \
+  (wrapped_grpc_channel *)zend_object_store_get_object(zv TSRMLS_CC)
+
 #else
 
 /* Wrapper struct for grpc_channel that can be associated with a PHP object */
