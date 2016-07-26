@@ -186,7 +186,7 @@ static bool validate_units(pb_istream_t *stream, const pb_field_t *field,
   return true;
 }
 
-// Vlaidate the contents of a Resource proto. `id` is the intended resource id.
+// Validate the contents of a Resource proto. `id` is the intended resource id.
 static bool validate_resource_pb(const uint8_t *resource_pb,
                                  size_t resource_pb_size, size_t id) {
   GPR_ASSERT(id < n_resources);
