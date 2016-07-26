@@ -1766,7 +1766,3 @@ const char *grpc_call_error_to_string(grpc_call_error error) {
   }
   GPR_UNREACHABLE_CODE(return "GRPC_CALL_ERROR_UNKNOW");
 }
-
-grpc_transport_stream_stats* grpc_call_transport_stats(grpc_call *call) {
-  return &call->stats;
-}

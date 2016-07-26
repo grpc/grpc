@@ -110,10 +110,6 @@ uint8_t grpc_call_is_client(grpc_call *call);
 grpc_compression_algorithm grpc_call_compression_for_level(
     grpc_call *call, grpc_compression_level level);
 
-/* Return the transport stream stats for the given call. Valid only after
- * trailing metadata received */
-grpc_transport_stream_stats* grpc_call_transport_stats(grpc_call *call) {
-
 #ifdef __cplusplus
 }
 #endif
