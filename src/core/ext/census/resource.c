@@ -156,9 +156,11 @@ static bool validate_units_helper(pb_istream_t *stream, int *count,
       gpr_free(*bup);
     }
     *bup = new_bup;
-    if (!pb_decode_varint(stream, (uint64_t *)(*bup + *count - 1))) {
+    uint64_t value;
+    if (!pb_decode_varint(stream, &value)) {
       return false;
     }
+    *(*bup + *count - 1) = (google_census_Resource_BasicUnit)value;
   }
   return true;
 }
@@ -290,7 +292,7 @@ int32_t define_resource(const resource *base) {
   resources[id]->name = gpr_malloc(len);
   memcpy(resources[id]->name, base->name, len);
   if (base->description) {
-    len = strlen(base->description);
+    len = strlen(base->description) + 1;
     resources[id]->description = gpr_malloc(len);
     memcpy(resources[id]->description, base->description, len);
   }

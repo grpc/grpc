@@ -66,10 +66,10 @@ static void test_empty_definition() {
 static int32_t define_resource_from_file(const char *file) {
 #define BUF_SIZE 512
   uint8_t buffer[BUF_SIZE];
-  FILE *input = fopen(file, "r");
+  FILE *input = fopen(file, "rb");
   GPR_ASSERT(input != NULL);
   size_t nbytes = fread(buffer, 1, BUF_SIZE, input);
-  GPR_ASSERT(nbytes != 0 && nbytes < BUF_SIZE);
+  GPR_ASSERT(nbytes != 0 && nbytes < BUF_SIZE && feof(input) && !ferror(input));
   int32_t rid = census_define_resource(buffer, nbytes);
   GPR_ASSERT(fclose(input) == 0);
   return rid;
