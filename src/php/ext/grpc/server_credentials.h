@@ -58,6 +58,9 @@ typedef struct wrapped_grpc_server_credentials {
   grpc_server_credentials *wrapped;
 } wrapped_grpc_server_credentials;
 
+#define Z_WRAPPED_GRPC_SERVER_CREDS_P(zv) \
+  (wrapped_grpc_server_credentials *)zend_object_store_get_object(zv TSRMLS_CC)
+
 #else
 
 typedef struct wrapped_grpc_server_credentials {
