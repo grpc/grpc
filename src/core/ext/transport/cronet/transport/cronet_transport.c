@@ -509,7 +509,7 @@ static bool do_write(stream_obj *s) {
   }
 }
 
-static bool init_cronet_stream(stream_obj *s, grpc_transport *gt) {
+static void init_cronet_stream(stream_obj *s, grpc_transport *gt) {
   GPR_ASSERT(s->cbs == NULL);
   grpc_cronet_transport *ct = (grpc_cronet_transport *)gt;
   GPR_ASSERT(ct->engine);
@@ -802,7 +802,6 @@ static void perform_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   if (grpc_cronet_trace) {
     gpr_log(GPR_DEBUG, "Unimplemented method");
   }
-  return NULL;
 }
 
 const grpc_transport_vtable grpc_cronet_vtable = {sizeof(stream_obj),
