@@ -1078,6 +1078,44 @@ streaming_throughput_test: $(BINDIR)/$(CONFIG)/streaming_throughput_test
 stress_test: $(BINDIR)/$(CONFIG)/stress_test
 thread_stress_test: $(BINDIR)/$(CONFIG)/thread_stress_test
 public_headers_must_be_c89: $(BINDIR)/$(CONFIG)/public_headers_must_be_c89
+boringssl_aes_test: $(BINDIR)/$(CONFIG)/boringssl_aes_test
+boringssl_asn1_test: $(BINDIR)/$(CONFIG)/boringssl_asn1_test
+boringssl_base64_test: $(BINDIR)/$(CONFIG)/boringssl_base64_test
+boringssl_bio_test: $(BINDIR)/$(CONFIG)/boringssl_bio_test
+boringssl_bn_test: $(BINDIR)/$(CONFIG)/boringssl_bn_test
+boringssl_bytestring_test: $(BINDIR)/$(CONFIG)/boringssl_bytestring_test
+boringssl_aead_test: $(BINDIR)/$(CONFIG)/boringssl_aead_test
+boringssl_cipher_test: $(BINDIR)/$(CONFIG)/boringssl_cipher_test
+boringssl_cmac_test: $(BINDIR)/$(CONFIG)/boringssl_cmac_test
+boringssl_constant_time_test: $(BINDIR)/$(CONFIG)/boringssl_constant_time_test
+boringssl_ed25519_test: $(BINDIR)/$(CONFIG)/boringssl_ed25519_test
+boringssl_x25519_test: $(BINDIR)/$(CONFIG)/boringssl_x25519_test
+boringssl_dh_test: $(BINDIR)/$(CONFIG)/boringssl_dh_test
+boringssl_digest_test: $(BINDIR)/$(CONFIG)/boringssl_digest_test
+boringssl_dsa_test: $(BINDIR)/$(CONFIG)/boringssl_dsa_test
+boringssl_ec_test: $(BINDIR)/$(CONFIG)/boringssl_ec_test
+boringssl_example_mul: $(BINDIR)/$(CONFIG)/boringssl_example_mul
+boringssl_ecdsa_test: $(BINDIR)/$(CONFIG)/boringssl_ecdsa_test
+boringssl_err_test: $(BINDIR)/$(CONFIG)/boringssl_err_test
+boringssl_evp_extra_test: $(BINDIR)/$(CONFIG)/boringssl_evp_extra_test
+boringssl_evp_test: $(BINDIR)/$(CONFIG)/boringssl_evp_test
+boringssl_pbkdf_test: $(BINDIR)/$(CONFIG)/boringssl_pbkdf_test
+boringssl_hkdf_test: $(BINDIR)/$(CONFIG)/boringssl_hkdf_test
+boringssl_hmac_test: $(BINDIR)/$(CONFIG)/boringssl_hmac_test
+boringssl_lhash_test: $(BINDIR)/$(CONFIG)/boringssl_lhash_test
+boringssl_gcm_test: $(BINDIR)/$(CONFIG)/boringssl_gcm_test
+boringssl_pkcs12_test: $(BINDIR)/$(CONFIG)/boringssl_pkcs12_test
+boringssl_pkcs8_test: $(BINDIR)/$(CONFIG)/boringssl_pkcs8_test
+boringssl_poly1305_test: $(BINDIR)/$(CONFIG)/boringssl_poly1305_test
+boringssl_refcount_test: $(BINDIR)/$(CONFIG)/boringssl_refcount_test
+boringssl_rsa_test: $(BINDIR)/$(CONFIG)/boringssl_rsa_test
+boringssl_thread_test: $(BINDIR)/$(CONFIG)/boringssl_thread_test
+boringssl_pkcs7_test: $(BINDIR)/$(CONFIG)/boringssl_pkcs7_test
+boringssl_x509_test: $(BINDIR)/$(CONFIG)/boringssl_x509_test
+boringssl_tab_test: $(BINDIR)/$(CONFIG)/boringssl_tab_test
+boringssl_v3name_test: $(BINDIR)/$(CONFIG)/boringssl_v3name_test
+boringssl_pqueue_test: $(BINDIR)/$(CONFIG)/boringssl_pqueue_test
+boringssl_ssl_test: $(BINDIR)/$(CONFIG)/boringssl_ssl_test
 badreq_bad_client_test: $(BINDIR)/$(CONFIG)/badreq_bad_client_test
 connection_prefix_bad_client_test: $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test
 head_of_line_blocking_bad_client_test: $(BINDIR)/$(CONFIG)/head_of_line_blocking_bad_client_test
@@ -1173,7 +1211,7 @@ plugins: $(PROTOC_PLUGINS)
 
 privatelibs: privatelibs_c privatelibs_cxx
 
-privatelibs_c:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_c_end2end_client_lib.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a
+privatelibs_c:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_c_end2end_client_lib.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libz.a $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a
 pc_c: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc
 
 pc_c_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc
@@ -1183,7 +1221,7 @@ pc_cxx: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc
 pc_cxx_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc
 
 ifeq ($(EMBED_OPENSSL),true)
-privatelibs_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++_reflection_codegen.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a $(LIBDIR)/$(CONFIG)/libinterop_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a $(LIBDIR)/$(CONFIG)/libinterop_server_main.a $(LIBDIR)/$(CONFIG)/libqps.a
+privatelibs_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++_reflection_codegen.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a $(LIBDIR)/$(CONFIG)/libinterop_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a $(LIBDIR)/$(CONFIG)/libinterop_server_main.a $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a
 else
 privatelibs_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++_reflection_codegen.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a $(LIBDIR)/$(CONFIG)/libinterop_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a $(LIBDIR)/$(CONFIG)/libinterop_server_main.a $(LIBDIR)/$(CONFIG)/libqps.a
 endif
@@ -1396,6 +1434,44 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/streaming_throughput_test \
   $(BINDIR)/$(CONFIG)/stress_test \
   $(BINDIR)/$(CONFIG)/thread_stress_test \
+  $(BINDIR)/$(CONFIG)/boringssl_aes_test \
+  $(BINDIR)/$(CONFIG)/boringssl_asn1_test \
+  $(BINDIR)/$(CONFIG)/boringssl_base64_test \
+  $(BINDIR)/$(CONFIG)/boringssl_bio_test \
+  $(BINDIR)/$(CONFIG)/boringssl_bn_test \
+  $(BINDIR)/$(CONFIG)/boringssl_bytestring_test \
+  $(BINDIR)/$(CONFIG)/boringssl_aead_test \
+  $(BINDIR)/$(CONFIG)/boringssl_cipher_test \
+  $(BINDIR)/$(CONFIG)/boringssl_cmac_test \
+  $(BINDIR)/$(CONFIG)/boringssl_constant_time_test \
+  $(BINDIR)/$(CONFIG)/boringssl_ed25519_test \
+  $(BINDIR)/$(CONFIG)/boringssl_x25519_test \
+  $(BINDIR)/$(CONFIG)/boringssl_dh_test \
+  $(BINDIR)/$(CONFIG)/boringssl_digest_test \
+  $(BINDIR)/$(CONFIG)/boringssl_dsa_test \
+  $(BINDIR)/$(CONFIG)/boringssl_ec_test \
+  $(BINDIR)/$(CONFIG)/boringssl_example_mul \
+  $(BINDIR)/$(CONFIG)/boringssl_ecdsa_test \
+  $(BINDIR)/$(CONFIG)/boringssl_err_test \
+  $(BINDIR)/$(CONFIG)/boringssl_evp_extra_test \
+  $(BINDIR)/$(CONFIG)/boringssl_evp_test \
+  $(BINDIR)/$(CONFIG)/boringssl_pbkdf_test \
+  $(BINDIR)/$(CONFIG)/boringssl_hkdf_test \
+  $(BINDIR)/$(CONFIG)/boringssl_hmac_test \
+  $(BINDIR)/$(CONFIG)/boringssl_lhash_test \
+  $(BINDIR)/$(CONFIG)/boringssl_gcm_test \
+  $(BINDIR)/$(CONFIG)/boringssl_pkcs12_test \
+  $(BINDIR)/$(CONFIG)/boringssl_pkcs8_test \
+  $(BINDIR)/$(CONFIG)/boringssl_poly1305_test \
+  $(BINDIR)/$(CONFIG)/boringssl_refcount_test \
+  $(BINDIR)/$(CONFIG)/boringssl_rsa_test \
+  $(BINDIR)/$(CONFIG)/boringssl_thread_test \
+  $(BINDIR)/$(CONFIG)/boringssl_pkcs7_test \
+  $(BINDIR)/$(CONFIG)/boringssl_x509_test \
+  $(BINDIR)/$(CONFIG)/boringssl_tab_test \
+  $(BINDIR)/$(CONFIG)/boringssl_v3name_test \
+  $(BINDIR)/$(CONFIG)/boringssl_pqueue_test \
+  $(BINDIR)/$(CONFIG)/boringssl_ssl_test \
 
 else
 buildtests_cxx: privatelibs_cxx \
@@ -4878,6 +4954,1844 @@ ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(LIBGRPC_CSHARP_EXT_OBJS:.o=.dep)
 endif
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_SRC = \
+    src/boringssl/err_data.c \
+    third_party/boringssl/crypto/aes/aes.c \
+    third_party/boringssl/crypto/aes/mode_wrappers.c \
+    third_party/boringssl/crypto/asn1/a_bitstr.c \
+    third_party/boringssl/crypto/asn1/a_bool.c \
+    third_party/boringssl/crypto/asn1/a_bytes.c \
+    third_party/boringssl/crypto/asn1/a_d2i_fp.c \
+    third_party/boringssl/crypto/asn1/a_dup.c \
+    third_party/boringssl/crypto/asn1/a_enum.c \
+    third_party/boringssl/crypto/asn1/a_gentm.c \
+    third_party/boringssl/crypto/asn1/a_i2d_fp.c \
+    third_party/boringssl/crypto/asn1/a_int.c \
+    third_party/boringssl/crypto/asn1/a_mbstr.c \
+    third_party/boringssl/crypto/asn1/a_object.c \
+    third_party/boringssl/crypto/asn1/a_octet.c \
+    third_party/boringssl/crypto/asn1/a_print.c \
+    third_party/boringssl/crypto/asn1/a_strnid.c \
+    third_party/boringssl/crypto/asn1/a_time.c \
+    third_party/boringssl/crypto/asn1/a_type.c \
+    third_party/boringssl/crypto/asn1/a_utctm.c \
+    third_party/boringssl/crypto/asn1/a_utf8.c \
+    third_party/boringssl/crypto/asn1/asn1_lib.c \
+    third_party/boringssl/crypto/asn1/asn1_par.c \
+    third_party/boringssl/crypto/asn1/asn_pack.c \
+    third_party/boringssl/crypto/asn1/bio_asn1.c \
+    third_party/boringssl/crypto/asn1/bio_ndef.c \
+    third_party/boringssl/crypto/asn1/f_enum.c \
+    third_party/boringssl/crypto/asn1/f_int.c \
+    third_party/boringssl/crypto/asn1/f_string.c \
+    third_party/boringssl/crypto/asn1/t_bitst.c \
+    third_party/boringssl/crypto/asn1/t_pkey.c \
+    third_party/boringssl/crypto/asn1/tasn_dec.c \
+    third_party/boringssl/crypto/asn1/tasn_enc.c \
+    third_party/boringssl/crypto/asn1/tasn_fre.c \
+    third_party/boringssl/crypto/asn1/tasn_new.c \
+    third_party/boringssl/crypto/asn1/tasn_prn.c \
+    third_party/boringssl/crypto/asn1/tasn_typ.c \
+    third_party/boringssl/crypto/asn1/tasn_utl.c \
+    third_party/boringssl/crypto/asn1/x_bignum.c \
+    third_party/boringssl/crypto/asn1/x_long.c \
+    third_party/boringssl/crypto/base64/base64.c \
+    third_party/boringssl/crypto/bio/bio.c \
+    third_party/boringssl/crypto/bio/bio_mem.c \
+    third_party/boringssl/crypto/bio/buffer.c \
+    third_party/boringssl/crypto/bio/connect.c \
+    third_party/boringssl/crypto/bio/fd.c \
+    third_party/boringssl/crypto/bio/file.c \
+    third_party/boringssl/crypto/bio/hexdump.c \
+    third_party/boringssl/crypto/bio/pair.c \
+    third_party/boringssl/crypto/bio/printf.c \
+    third_party/boringssl/crypto/bio/socket.c \
+    third_party/boringssl/crypto/bio/socket_helper.c \
+    third_party/boringssl/crypto/bn/add.c \
+    third_party/boringssl/crypto/bn/asm/x86_64-gcc.c \
+    third_party/boringssl/crypto/bn/bn.c \
+    third_party/boringssl/crypto/bn/bn_asn1.c \
+    third_party/boringssl/crypto/bn/cmp.c \
+    third_party/boringssl/crypto/bn/convert.c \
+    third_party/boringssl/crypto/bn/ctx.c \
+    third_party/boringssl/crypto/bn/div.c \
+    third_party/boringssl/crypto/bn/exponentiation.c \
+    third_party/boringssl/crypto/bn/gcd.c \
+    third_party/boringssl/crypto/bn/generic.c \
+    third_party/boringssl/crypto/bn/kronecker.c \
+    third_party/boringssl/crypto/bn/montgomery.c \
+    third_party/boringssl/crypto/bn/mul.c \
+    third_party/boringssl/crypto/bn/prime.c \
+    third_party/boringssl/crypto/bn/random.c \
+    third_party/boringssl/crypto/bn/rsaz_exp.c \
+    third_party/boringssl/crypto/bn/shift.c \
+    third_party/boringssl/crypto/bn/sqrt.c \
+    third_party/boringssl/crypto/buf/buf.c \
+    third_party/boringssl/crypto/bytestring/asn1_compat.c \
+    third_party/boringssl/crypto/bytestring/ber.c \
+    third_party/boringssl/crypto/bytestring/cbb.c \
+    third_party/boringssl/crypto/bytestring/cbs.c \
+    third_party/boringssl/crypto/chacha/chacha_generic.c \
+    third_party/boringssl/crypto/chacha/chacha_vec.c \
+    third_party/boringssl/crypto/cipher/aead.c \
+    third_party/boringssl/crypto/cipher/cipher.c \
+    third_party/boringssl/crypto/cipher/derive_key.c \
+    third_party/boringssl/crypto/cipher/e_aes.c \
+    third_party/boringssl/crypto/cipher/e_chacha20poly1305.c \
+    third_party/boringssl/crypto/cipher/e_des.c \
+    third_party/boringssl/crypto/cipher/e_null.c \
+    third_party/boringssl/crypto/cipher/e_rc2.c \
+    third_party/boringssl/crypto/cipher/e_rc4.c \
+    third_party/boringssl/crypto/cipher/e_ssl3.c \
+    third_party/boringssl/crypto/cipher/e_tls.c \
+    third_party/boringssl/crypto/cipher/tls_cbc.c \
+    third_party/boringssl/crypto/cmac/cmac.c \
+    third_party/boringssl/crypto/conf/conf.c \
+    third_party/boringssl/crypto/cpu-arm.c \
+    third_party/boringssl/crypto/cpu-intel.c \
+    third_party/boringssl/crypto/crypto.c \
+    third_party/boringssl/crypto/curve25519/curve25519.c \
+    third_party/boringssl/crypto/curve25519/x25519-x86_64.c \
+    third_party/boringssl/crypto/des/des.c \
+    third_party/boringssl/crypto/dh/check.c \
+    third_party/boringssl/crypto/dh/dh.c \
+    third_party/boringssl/crypto/dh/dh_asn1.c \
+    third_party/boringssl/crypto/dh/params.c \
+    third_party/boringssl/crypto/digest/digest.c \
+    third_party/boringssl/crypto/digest/digests.c \
+    third_party/boringssl/crypto/directory_posix.c \
+    third_party/boringssl/crypto/directory_win.c \
+    third_party/boringssl/crypto/dsa/dsa.c \
+    third_party/boringssl/crypto/dsa/dsa_asn1.c \
+    third_party/boringssl/crypto/ec/ec.c \
+    third_party/boringssl/crypto/ec/ec_asn1.c \
+    third_party/boringssl/crypto/ec/ec_key.c \
+    third_party/boringssl/crypto/ec/ec_montgomery.c \
+    third_party/boringssl/crypto/ec/oct.c \
+    third_party/boringssl/crypto/ec/p224-64.c \
+    third_party/boringssl/crypto/ec/p256-64.c \
+    third_party/boringssl/crypto/ec/p256-x86_64.c \
+    third_party/boringssl/crypto/ec/simple.c \
+    third_party/boringssl/crypto/ec/util-64.c \
+    third_party/boringssl/crypto/ec/wnaf.c \
+    third_party/boringssl/crypto/ecdh/ecdh.c \
+    third_party/boringssl/crypto/ecdsa/ecdsa.c \
+    third_party/boringssl/crypto/ecdsa/ecdsa_asn1.c \
+    third_party/boringssl/crypto/engine/engine.c \
+    third_party/boringssl/crypto/err/err.c \
+    third_party/boringssl/crypto/evp/algorithm.c \
+    third_party/boringssl/crypto/evp/digestsign.c \
+    third_party/boringssl/crypto/evp/evp.c \
+    third_party/boringssl/crypto/evp/evp_asn1.c \
+    third_party/boringssl/crypto/evp/evp_ctx.c \
+    third_party/boringssl/crypto/evp/p_dsa_asn1.c \
+    third_party/boringssl/crypto/evp/p_ec.c \
+    third_party/boringssl/crypto/evp/p_ec_asn1.c \
+    third_party/boringssl/crypto/evp/p_rsa.c \
+    third_party/boringssl/crypto/evp/p_rsa_asn1.c \
+    third_party/boringssl/crypto/evp/pbkdf.c \
+    third_party/boringssl/crypto/evp/sign.c \
+    third_party/boringssl/crypto/ex_data.c \
+    third_party/boringssl/crypto/hkdf/hkdf.c \
+    third_party/boringssl/crypto/hmac/hmac.c \
+    third_party/boringssl/crypto/lhash/lhash.c \
+    third_party/boringssl/crypto/md4/md4.c \
+    third_party/boringssl/crypto/md5/md5.c \
+    third_party/boringssl/crypto/mem.c \
+    third_party/boringssl/crypto/modes/cbc.c \
+    third_party/boringssl/crypto/modes/cfb.c \
+    third_party/boringssl/crypto/modes/ctr.c \
+    third_party/boringssl/crypto/modes/gcm.c \
+    third_party/boringssl/crypto/modes/ofb.c \
+    third_party/boringssl/crypto/obj/obj.c \
+    third_party/boringssl/crypto/obj/obj_xref.c \
+    third_party/boringssl/crypto/pem/pem_all.c \
+    third_party/boringssl/crypto/pem/pem_info.c \
+    third_party/boringssl/crypto/pem/pem_lib.c \
+    third_party/boringssl/crypto/pem/pem_oth.c \
+    third_party/boringssl/crypto/pem/pem_pk8.c \
+    third_party/boringssl/crypto/pem/pem_pkey.c \
+    third_party/boringssl/crypto/pem/pem_x509.c \
+    third_party/boringssl/crypto/pem/pem_xaux.c \
+    third_party/boringssl/crypto/pkcs8/p5_pbe.c \
+    third_party/boringssl/crypto/pkcs8/p5_pbev2.c \
+    third_party/boringssl/crypto/pkcs8/p8_pkey.c \
+    third_party/boringssl/crypto/pkcs8/pkcs8.c \
+    third_party/boringssl/crypto/poly1305/poly1305.c \
+    third_party/boringssl/crypto/poly1305/poly1305_arm.c \
+    third_party/boringssl/crypto/poly1305/poly1305_vec.c \
+    third_party/boringssl/crypto/rand/rand.c \
+    third_party/boringssl/crypto/rand/urandom.c \
+    third_party/boringssl/crypto/rand/windows.c \
+    third_party/boringssl/crypto/rc4/rc4.c \
+    third_party/boringssl/crypto/refcount_c11.c \
+    third_party/boringssl/crypto/refcount_lock.c \
+    third_party/boringssl/crypto/rsa/blinding.c \
+    third_party/boringssl/crypto/rsa/padding.c \
+    third_party/boringssl/crypto/rsa/rsa.c \
+    third_party/boringssl/crypto/rsa/rsa_asn1.c \
+    third_party/boringssl/crypto/rsa/rsa_impl.c \
+    third_party/boringssl/crypto/sha/sha1.c \
+    third_party/boringssl/crypto/sha/sha256.c \
+    third_party/boringssl/crypto/sha/sha512.c \
+    third_party/boringssl/crypto/stack/stack.c \
+    third_party/boringssl/crypto/thread.c \
+    third_party/boringssl/crypto/thread_none.c \
+    third_party/boringssl/crypto/thread_pthread.c \
+    third_party/boringssl/crypto/thread_win.c \
+    third_party/boringssl/crypto/time_support.c \
+    third_party/boringssl/crypto/x509/a_digest.c \
+    third_party/boringssl/crypto/x509/a_sign.c \
+    third_party/boringssl/crypto/x509/a_strex.c \
+    third_party/boringssl/crypto/x509/a_verify.c \
+    third_party/boringssl/crypto/x509/asn1_gen.c \
+    third_party/boringssl/crypto/x509/by_dir.c \
+    third_party/boringssl/crypto/x509/by_file.c \
+    third_party/boringssl/crypto/x509/i2d_pr.c \
+    third_party/boringssl/crypto/x509/pkcs7.c \
+    third_party/boringssl/crypto/x509/t_crl.c \
+    third_party/boringssl/crypto/x509/t_req.c \
+    third_party/boringssl/crypto/x509/t_x509.c \
+    third_party/boringssl/crypto/x509/t_x509a.c \
+    third_party/boringssl/crypto/x509/x509.c \
+    third_party/boringssl/crypto/x509/x509_att.c \
+    third_party/boringssl/crypto/x509/x509_cmp.c \
+    third_party/boringssl/crypto/x509/x509_d2.c \
+    third_party/boringssl/crypto/x509/x509_def.c \
+    third_party/boringssl/crypto/x509/x509_ext.c \
+    third_party/boringssl/crypto/x509/x509_lu.c \
+    third_party/boringssl/crypto/x509/x509_obj.c \
+    third_party/boringssl/crypto/x509/x509_r2x.c \
+    third_party/boringssl/crypto/x509/x509_req.c \
+    third_party/boringssl/crypto/x509/x509_set.c \
+    third_party/boringssl/crypto/x509/x509_trs.c \
+    third_party/boringssl/crypto/x509/x509_txt.c \
+    third_party/boringssl/crypto/x509/x509_v3.c \
+    third_party/boringssl/crypto/x509/x509_vfy.c \
+    third_party/boringssl/crypto/x509/x509_vpm.c \
+    third_party/boringssl/crypto/x509/x509cset.c \
+    third_party/boringssl/crypto/x509/x509name.c \
+    third_party/boringssl/crypto/x509/x509rset.c \
+    third_party/boringssl/crypto/x509/x509spki.c \
+    third_party/boringssl/crypto/x509/x509type.c \
+    third_party/boringssl/crypto/x509/x_algor.c \
+    third_party/boringssl/crypto/x509/x_all.c \
+    third_party/boringssl/crypto/x509/x_attrib.c \
+    third_party/boringssl/crypto/x509/x_crl.c \
+    third_party/boringssl/crypto/x509/x_exten.c \
+    third_party/boringssl/crypto/x509/x_info.c \
+    third_party/boringssl/crypto/x509/x_name.c \
+    third_party/boringssl/crypto/x509/x_pkey.c \
+    third_party/boringssl/crypto/x509/x_pubkey.c \
+    third_party/boringssl/crypto/x509/x_req.c \
+    third_party/boringssl/crypto/x509/x_sig.c \
+    third_party/boringssl/crypto/x509/x_spki.c \
+    third_party/boringssl/crypto/x509/x_val.c \
+    third_party/boringssl/crypto/x509/x_x509.c \
+    third_party/boringssl/crypto/x509/x_x509a.c \
+    third_party/boringssl/crypto/x509v3/pcy_cache.c \
+    third_party/boringssl/crypto/x509v3/pcy_data.c \
+    third_party/boringssl/crypto/x509v3/pcy_lib.c \
+    third_party/boringssl/crypto/x509v3/pcy_map.c \
+    third_party/boringssl/crypto/x509v3/pcy_node.c \
+    third_party/boringssl/crypto/x509v3/pcy_tree.c \
+    third_party/boringssl/crypto/x509v3/v3_akey.c \
+    third_party/boringssl/crypto/x509v3/v3_akeya.c \
+    third_party/boringssl/crypto/x509v3/v3_alt.c \
+    third_party/boringssl/crypto/x509v3/v3_bcons.c \
+    third_party/boringssl/crypto/x509v3/v3_bitst.c \
+    third_party/boringssl/crypto/x509v3/v3_conf.c \
+    third_party/boringssl/crypto/x509v3/v3_cpols.c \
+    third_party/boringssl/crypto/x509v3/v3_crld.c \
+    third_party/boringssl/crypto/x509v3/v3_enum.c \
+    third_party/boringssl/crypto/x509v3/v3_extku.c \
+    third_party/boringssl/crypto/x509v3/v3_genn.c \
+    third_party/boringssl/crypto/x509v3/v3_ia5.c \
+    third_party/boringssl/crypto/x509v3/v3_info.c \
+    third_party/boringssl/crypto/x509v3/v3_int.c \
+    third_party/boringssl/crypto/x509v3/v3_lib.c \
+    third_party/boringssl/crypto/x509v3/v3_ncons.c \
+    third_party/boringssl/crypto/x509v3/v3_pci.c \
+    third_party/boringssl/crypto/x509v3/v3_pcia.c \
+    third_party/boringssl/crypto/x509v3/v3_pcons.c \
+    third_party/boringssl/crypto/x509v3/v3_pku.c \
+    third_party/boringssl/crypto/x509v3/v3_pmaps.c \
+    third_party/boringssl/crypto/x509v3/v3_prn.c \
+    third_party/boringssl/crypto/x509v3/v3_purp.c \
+    third_party/boringssl/crypto/x509v3/v3_skey.c \
+    third_party/boringssl/crypto/x509v3/v3_sxnet.c \
+    third_party/boringssl/crypto/x509v3/v3_utl.c \
+    third_party/boringssl/ssl/custom_extensions.c \
+    third_party/boringssl/ssl/d1_both.c \
+    third_party/boringssl/ssl/d1_clnt.c \
+    third_party/boringssl/ssl/d1_lib.c \
+    third_party/boringssl/ssl/d1_meth.c \
+    third_party/boringssl/ssl/d1_pkt.c \
+    third_party/boringssl/ssl/d1_srtp.c \
+    third_party/boringssl/ssl/d1_srvr.c \
+    third_party/boringssl/ssl/dtls_record.c \
+    third_party/boringssl/ssl/pqueue/pqueue.c \
+    third_party/boringssl/ssl/s3_both.c \
+    third_party/boringssl/ssl/s3_clnt.c \
+    third_party/boringssl/ssl/s3_enc.c \
+    third_party/boringssl/ssl/s3_lib.c \
+    third_party/boringssl/ssl/s3_meth.c \
+    third_party/boringssl/ssl/s3_pkt.c \
+    third_party/boringssl/ssl/s3_srvr.c \
+    third_party/boringssl/ssl/ssl_aead_ctx.c \
+    third_party/boringssl/ssl/ssl_asn1.c \
+    third_party/boringssl/ssl/ssl_buffer.c \
+    third_party/boringssl/ssl/ssl_cert.c \
+    third_party/boringssl/ssl/ssl_cipher.c \
+    third_party/boringssl/ssl/ssl_ecdh.c \
+    third_party/boringssl/ssl/ssl_file.c \
+    third_party/boringssl/ssl/ssl_lib.c \
+    third_party/boringssl/ssl/ssl_rsa.c \
+    third_party/boringssl/ssl/ssl_session.c \
+    third_party/boringssl/ssl/ssl_stat.c \
+    third_party/boringssl/ssl/t1_enc.c \
+    third_party/boringssl/ssl/t1_lib.c \
+    third_party/boringssl/ssl/tls_record.c \
+
+PUBLIC_HEADERS_C += \
+
+LIBBORINGSSL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_SRC))))
+
+$(LIBBORINGSSL_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+$(LIBDIR)/$(CONFIG)/libboringssl.a: $(ZLIB_DEP)  $(LIBBORINGSSL_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl.a $(LIBBORINGSSL_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl.a
+endif
+
+
+
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_TEST_UTIL_SRC = \
+    third_party/boringssl/crypto/test/file_test.cc \
+    third_party/boringssl/crypto/test/malloc.cc \
+    third_party/boringssl/crypto/test/test_util.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_TEST_UTIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_TEST_UTIL_SRC))))
+
+$(LIBBORINGSSL_TEST_UTIL_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_TEST_UTIL_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_test_util.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_test_util.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_TEST_UTIL_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBBORINGSSL_TEST_UTIL_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_TEST_UTIL_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_AES_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/aes/aes_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_AES_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_AES_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_AES_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_AES_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_AES_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a $(LIBBORINGSSL_AES_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_AES_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_ASN1_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/asn1/asn1_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_ASN1_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_ASN1_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_ASN1_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_ASN1_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_ASN1_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a $(LIBBORINGSSL_ASN1_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_ASN1_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_BASE64_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/base64/base64_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_BASE64_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_BASE64_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_BASE64_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_BASE64_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_BASE64_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a $(LIBBORINGSSL_BASE64_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_BASE64_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_BIO_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/bio/bio_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_BIO_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_BIO_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_BIO_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_BIO_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_BIO_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a $(LIBBORINGSSL_BIO_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_BIO_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_BN_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/bn/bn_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_BN_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_BN_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_BN_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_BN_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_BN_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a $(LIBBORINGSSL_BN_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_BN_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_BYTESTRING_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/bytestring/bytestring_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_BYTESTRING_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_BYTESTRING_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_BYTESTRING_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_BYTESTRING_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_BYTESTRING_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a $(LIBBORINGSSL_BYTESTRING_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_BYTESTRING_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_AEAD_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/cipher/aead_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_AEAD_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_AEAD_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_AEAD_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_AEAD_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_AEAD_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a $(LIBBORINGSSL_AEAD_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_AEAD_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_CIPHER_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/cipher/cipher_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_CIPHER_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_CIPHER_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_CIPHER_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_CIPHER_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_CIPHER_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a $(LIBBORINGSSL_CIPHER_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_CIPHER_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_CMAC_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/cmac/cmac_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_CMAC_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_CMAC_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_CMAC_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_CMAC_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_CMAC_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a $(LIBBORINGSSL_CMAC_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_CMAC_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/constant_time_test.c \
+
+PUBLIC_HEADERS_C += \
+
+LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+$(LIBDIR)/$(CONFIG)/libboringssl_constant_time_test_lib.a: $(ZLIB_DEP)  $(LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_constant_time_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_constant_time_test_lib.a $(LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_constant_time_test_lib.a
+endif
+
+
+
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_ED25519_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/curve25519/ed25519_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_ED25519_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_ED25519_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_ED25519_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_ED25519_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_ED25519_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a $(LIBBORINGSSL_ED25519_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_ED25519_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_X25519_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/curve25519/x25519_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_X25519_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_X25519_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_X25519_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_X25519_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_X25519_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a $(LIBBORINGSSL_X25519_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_X25519_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_DH_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/dh/dh_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_DH_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_DH_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_DH_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_DH_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_DH_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a $(LIBBORINGSSL_DH_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_DH_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_DIGEST_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/digest/digest_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_DIGEST_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_DIGEST_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_DIGEST_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_DIGEST_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_DIGEST_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a $(LIBBORINGSSL_DIGEST_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_DIGEST_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_DSA_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/dsa/dsa_test.c \
+
+PUBLIC_HEADERS_C += \
+
+LIBBORINGSSL_DSA_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_DSA_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_DSA_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_DSA_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+$(LIBDIR)/$(CONFIG)/libboringssl_dsa_test_lib.a: $(ZLIB_DEP)  $(LIBBORINGSSL_DSA_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_dsa_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_dsa_test_lib.a $(LIBBORINGSSL_DSA_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_dsa_test_lib.a
+endif
+
+
+
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_DSA_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_EC_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/ec/ec_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_EC_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_EC_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_EC_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_EC_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_EC_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a $(LIBBORINGSSL_EC_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_EC_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_EXAMPLE_MUL_LIB_SRC = \
+    third_party/boringssl/crypto/ec/example_mul.c \
+
+PUBLIC_HEADERS_C += \
+
+LIBBORINGSSL_EXAMPLE_MUL_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_EXAMPLE_MUL_LIB_SRC))))
+
+$(LIBBORINGSSL_EXAMPLE_MUL_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_EXAMPLE_MUL_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+$(LIBDIR)/$(CONFIG)/libboringssl_example_mul_lib.a: $(ZLIB_DEP)  $(LIBBORINGSSL_EXAMPLE_MUL_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_example_mul_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_example_mul_lib.a $(LIBBORINGSSL_EXAMPLE_MUL_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_example_mul_lib.a
+endif
+
+
+
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_EXAMPLE_MUL_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_ECDSA_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/ecdsa/ecdsa_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_ECDSA_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_ECDSA_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_ECDSA_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_ECDSA_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_ECDSA_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a $(LIBBORINGSSL_ECDSA_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_ECDSA_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_ERR_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/err/err_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_ERR_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_ERR_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_ERR_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_ERR_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_ERR_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a $(LIBBORINGSSL_ERR_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_ERR_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_EVP_EXTRA_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/evp/evp_extra_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_EVP_EXTRA_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_EVP_EXTRA_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_EVP_EXTRA_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_EVP_EXTRA_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_EVP_EXTRA_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a $(LIBBORINGSSL_EVP_EXTRA_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_EVP_EXTRA_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_EVP_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/evp/evp_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_EVP_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_EVP_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_EVP_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_EVP_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_EVP_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a $(LIBBORINGSSL_EVP_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_EVP_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_PBKDF_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/evp/pbkdf_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_PBKDF_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_PBKDF_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_PBKDF_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_PBKDF_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_PBKDF_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a $(LIBBORINGSSL_PBKDF_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_PBKDF_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_HKDF_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/hkdf/hkdf_test.c \
+
+PUBLIC_HEADERS_C += \
+
+LIBBORINGSSL_HKDF_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_HKDF_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_HKDF_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_HKDF_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+$(LIBDIR)/$(CONFIG)/libboringssl_hkdf_test_lib.a: $(ZLIB_DEP)  $(LIBBORINGSSL_HKDF_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_hkdf_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_hkdf_test_lib.a $(LIBBORINGSSL_HKDF_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_hkdf_test_lib.a
+endif
+
+
+
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_HKDF_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_HMAC_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/hmac/hmac_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_HMAC_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_HMAC_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_HMAC_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_HMAC_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_HMAC_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a $(LIBBORINGSSL_HMAC_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_HMAC_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_LHASH_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/lhash/lhash_test.c \
+
+PUBLIC_HEADERS_C += \
+
+LIBBORINGSSL_LHASH_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_LHASH_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_LHASH_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_LHASH_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+$(LIBDIR)/$(CONFIG)/libboringssl_lhash_test_lib.a: $(ZLIB_DEP)  $(LIBBORINGSSL_LHASH_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_lhash_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_lhash_test_lib.a $(LIBBORINGSSL_LHASH_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_lhash_test_lib.a
+endif
+
+
+
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_LHASH_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_GCM_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/modes/gcm_test.c \
+
+PUBLIC_HEADERS_C += \
+
+LIBBORINGSSL_GCM_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_GCM_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_GCM_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_GCM_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+$(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a: $(ZLIB_DEP)  $(LIBBORINGSSL_GCM_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a $(LIBBORINGSSL_GCM_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a
+endif
+
+
+
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_GCM_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_PKCS12_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/pkcs8/pkcs12_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_PKCS12_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_PKCS12_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_PKCS12_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_PKCS12_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_PKCS12_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a $(LIBBORINGSSL_PKCS12_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_PKCS12_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_PKCS8_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/pkcs8/pkcs8_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_PKCS8_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_PKCS8_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_PKCS8_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_PKCS8_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_PKCS8_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a $(LIBBORINGSSL_PKCS8_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_PKCS8_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_POLY1305_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/poly1305/poly1305_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_POLY1305_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_POLY1305_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_POLY1305_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_POLY1305_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_POLY1305_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a $(LIBBORINGSSL_POLY1305_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_POLY1305_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_REFCOUNT_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/refcount_test.c \
+
+PUBLIC_HEADERS_C += \
+
+LIBBORINGSSL_REFCOUNT_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_REFCOUNT_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_REFCOUNT_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_REFCOUNT_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+$(LIBDIR)/$(CONFIG)/libboringssl_refcount_test_lib.a: $(ZLIB_DEP)  $(LIBBORINGSSL_REFCOUNT_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_refcount_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_refcount_test_lib.a $(LIBBORINGSSL_REFCOUNT_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_refcount_test_lib.a
+endif
+
+
+
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_REFCOUNT_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_RSA_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/rsa/rsa_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_RSA_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_RSA_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_RSA_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_RSA_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_RSA_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a $(LIBBORINGSSL_RSA_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_RSA_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_THREAD_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/thread_test.c \
+
+PUBLIC_HEADERS_C += \
+
+LIBBORINGSSL_THREAD_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_THREAD_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_THREAD_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_THREAD_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+$(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a: $(ZLIB_DEP)  $(LIBBORINGSSL_THREAD_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a $(LIBBORINGSSL_THREAD_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a
+endif
+
+
+
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_THREAD_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_PKCS7_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/x509/pkcs7_test.c \
+
+PUBLIC_HEADERS_C += \
+
+LIBBORINGSSL_PKCS7_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_PKCS7_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_PKCS7_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_PKCS7_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+$(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a: $(ZLIB_DEP)  $(LIBBORINGSSL_PKCS7_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a $(LIBBORINGSSL_PKCS7_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a
+endif
+
+
+
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_PKCS7_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_X509_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/x509/x509_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_X509_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_X509_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_X509_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_X509_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_X509_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a $(LIBBORINGSSL_X509_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_X509_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_TAB_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/x509v3/tab_test.c \
+
+PUBLIC_HEADERS_C += \
+
+LIBBORINGSSL_TAB_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_TAB_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_TAB_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_TAB_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+$(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a: $(ZLIB_DEP)  $(LIBBORINGSSL_TAB_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a $(LIBBORINGSSL_TAB_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a
+endif
+
+
+
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_TAB_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_V3NAME_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/x509v3/v3name_test.c \
+
+PUBLIC_HEADERS_C += \
+
+LIBBORINGSSL_V3NAME_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_V3NAME_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_V3NAME_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_V3NAME_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+$(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a: $(ZLIB_DEP)  $(LIBBORINGSSL_V3NAME_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a $(LIBBORINGSSL_V3NAME_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a
+endif
+
+
+
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_V3NAME_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_PQUEUE_TEST_LIB_SRC = \
+    third_party/boringssl/ssl/pqueue/pqueue_test.c \
+
+PUBLIC_HEADERS_C += \
+
+LIBBORINGSSL_PQUEUE_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_PQUEUE_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_PQUEUE_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_PQUEUE_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+$(LIBDIR)/$(CONFIG)/libboringssl_pqueue_test_lib.a: $(ZLIB_DEP)  $(LIBBORINGSSL_PQUEUE_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_pqueue_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_pqueue_test_lib.a $(LIBBORINGSSL_PQUEUE_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_pqueue_test_lib.a
+endif
+
+
+
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_PQUEUE_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBBORINGSSL_SSL_TEST_LIB_SRC = \
+    third_party/boringssl/ssl/ssl_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_SSL_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_SSL_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_SSL_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_SSL_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a: $(ZLIB_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_SSL_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a $(LIBBORINGSSL_SSL_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_SSL_TEST_LIB_OBJS:.o=.dep)
+endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+# Using nanopb for C files right now
+LIBZ_SRC = \
+    third_party/zlib/adler32.c \
+    third_party/zlib/compress.c \
+    third_party/zlib/crc32.c \
+    third_party/zlib/deflate.c \
+    third_party/zlib/gzclose.c \
+    third_party/zlib/gzlib.c \
+    third_party/zlib/gzread.c \
+    third_party/zlib/gzwrite.c \
+    third_party/zlib/infback.c \
+    third_party/zlib/inffast.c \
+    third_party/zlib/inflate.c \
+    third_party/zlib/inftrees.c \
+    third_party/zlib/trees.c \
+    third_party/zlib/uncompr.c \
+    third_party/zlib/zutil.c \
+
+PUBLIC_HEADERS_C += \
+
+LIBZ_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBZ_SRC))))
+
+$(LIBZ_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration $(W_NO_SHIFT_NEGATIVE_VALUE) -fvisibility=hidden
+
+$(LIBDIR)/$(CONFIG)/libz.a:  $(LIBZ_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libz.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libz.a $(LIBZ_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libz.a
+endif
+
+
+
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBZ_OBJS:.o=.dep)
 endif
 
 # Force compilation of proto files before building code that could potentially depend on them
@@ -11463,6 +13377,1108 @@ ifneq ($(NO_DEPS),true)
 -include $(PUBLIC_HEADERS_MUST_BE_C89_OBJS:.o=.dep)
 endif
 endif
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_AES_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_AES_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_AES_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_aes_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_aes_test:  $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_aes_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_ASN1_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_ASN1_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_ASN1_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_asn1_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_asn1_test:  $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_asn1_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_BASE64_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_BASE64_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_BASE64_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_base64_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_base64_test:  $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_base64_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_BIO_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_BIO_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_BIO_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_bio_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_bio_test:  $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_bio_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_BN_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_BN_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_BN_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_bn_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_bn_test:  $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_bn_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_BYTESTRING_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_BYTESTRING_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_BYTESTRING_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_bytestring_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_bytestring_test:  $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_bytestring_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_AEAD_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_AEAD_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_AEAD_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_aead_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_aead_test:  $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_aead_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_CIPHER_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_CIPHER_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_CIPHER_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_cipher_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_cipher_test:  $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_cipher_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_CMAC_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_CMAC_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_CMAC_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_cmac_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_cmac_test:  $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_cmac_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_CONSTANT_TIME_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_CONSTANT_TIME_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_CONSTANT_TIME_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_constant_time_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_constant_time_test:  $(LIBDIR)/$(CONFIG)/libboringssl_constant_time_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_constant_time_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_constant_time_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_ED25519_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_ED25519_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_ED25519_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_ed25519_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_ed25519_test:  $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_ed25519_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_X25519_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_X25519_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_X25519_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_x25519_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_x25519_test:  $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_x25519_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_DH_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_DH_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_DH_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_dh_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_dh_test:  $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_dh_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_DIGEST_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_DIGEST_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_DIGEST_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_digest_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_digest_test:  $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_digest_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_DSA_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_DSA_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_DSA_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_dsa_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_dsa_test:  $(LIBDIR)/$(CONFIG)/libboringssl_dsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_dsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_dsa_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_EC_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_EC_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_EC_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_ec_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_ec_test:  $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_ec_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_EXAMPLE_MUL_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_EXAMPLE_MUL_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_EXAMPLE_MUL_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_example_mul: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_example_mul:  $(LIBDIR)/$(CONFIG)/libboringssl_example_mul_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_example_mul_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_example_mul
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_ECDSA_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_ECDSA_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_ECDSA_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_ecdsa_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_ecdsa_test:  $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_ecdsa_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_ERR_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_ERR_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_ERR_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_err_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_err_test:  $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_err_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_EVP_EXTRA_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_EVP_EXTRA_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_EVP_EXTRA_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_evp_extra_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_evp_extra_test:  $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_evp_extra_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_EVP_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_EVP_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_EVP_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_evp_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_evp_test:  $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_evp_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_PBKDF_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_PBKDF_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_PBKDF_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_pbkdf_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_pbkdf_test:  $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_pbkdf_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_HKDF_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_HKDF_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_HKDF_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_hkdf_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_hkdf_test:  $(LIBDIR)/$(CONFIG)/libboringssl_hkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_hkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_hkdf_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_HMAC_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_HMAC_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_HMAC_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_hmac_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_hmac_test:  $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_hmac_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_LHASH_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_LHASH_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_LHASH_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_lhash_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_lhash_test:  $(LIBDIR)/$(CONFIG)/libboringssl_lhash_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_lhash_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_lhash_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_GCM_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_GCM_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_GCM_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_gcm_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_gcm_test:  $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_gcm_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_PKCS12_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_PKCS12_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_PKCS12_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_pkcs12_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_pkcs12_test:  $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_pkcs12_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_PKCS8_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_PKCS8_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_PKCS8_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_pkcs8_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_pkcs8_test:  $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_pkcs8_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_POLY1305_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_POLY1305_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_POLY1305_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_poly1305_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_poly1305_test:  $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_poly1305_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_REFCOUNT_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_REFCOUNT_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_REFCOUNT_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_refcount_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_refcount_test:  $(LIBDIR)/$(CONFIG)/libboringssl_refcount_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_refcount_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_refcount_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_RSA_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_RSA_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_RSA_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_rsa_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_rsa_test:  $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_rsa_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_THREAD_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_THREAD_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_THREAD_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_thread_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_thread_test:  $(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_thread_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_PKCS7_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_PKCS7_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_PKCS7_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_pkcs7_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_pkcs7_test:  $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_pkcs7_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_X509_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_X509_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_X509_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_x509_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_x509_test:  $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_x509_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_TAB_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_TAB_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_TAB_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_tab_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_tab_test:  $(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_tab_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_V3NAME_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_V3NAME_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_V3NAME_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_v3name_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_v3name_test:  $(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_v3name_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_PQUEUE_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_PQUEUE_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_PQUEUE_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_pqueue_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_pqueue_test:  $(LIBDIR)/$(CONFIG)/libboringssl_pqueue_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_pqueue_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_pqueue_test
+
+endif
+
+
+
+# Force compilation of proto files before building code that could potentially depend on them
+
+
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_SSL_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_SSL_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_SSL_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_ssl_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_ssl_test:  $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_ssl_test
+
+endif
+
+
 
 # Force compilation of proto files before building code that could potentially depend on them
 
