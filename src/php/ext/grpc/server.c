@@ -129,12 +129,7 @@ zend_object *create_wrapped_grpc_server(zend_class_entry *class_type) {
  * @param array $args The arguments to pass to the server (optional)
  */
 PHP_METHOD(Server, __construct) {
-#if PHP_MAJOR_VERSION < 7
-  wrapped_grpc_server *server =
-      (wrapped_grpc_server *)zend_object_store_get_object(getThis() TSRMLS_CC);
-#else
   wrapped_grpc_server *server = Z_WRAPPED_GRPC_SERVER_P(getThis());
-#endif
   zval *args_array = NULL;
   grpc_channel_args args;
 
@@ -172,14 +167,12 @@ PHP_METHOD(Server, requestCall) {
   grpc_metadata_array metadata;
   grpc_event event;
 
+  wrapped_grpc_server *server = Z_WRAPPED_GRPC_SERVER_P(getThis());
 #if PHP_MAJOR_VERSION < 7
-  wrapped_grpc_server *server =
-      (wrapped_grpc_server *)zend_object_store_get_object(getThis() TSRMLS_CC);
   zval *result;
   MAKE_STD_ZVAL(result);
   object_init(result);
 #else
-  wrapped_grpc_server *server = Z_WRAPPED_GRPC_SERVER_P(getThis());
   object_init(return_value);
 #endif
 
@@ -245,14 +238,8 @@ cleanup:
  */
 PHP_METHOD(Server, addHttp2Port) {
   const char *addr;
-#if PHP_MAJOR_VERSION < 7
-  int addr_len;
-  wrapped_grpc_server *server =
-      (wrapped_grpc_server *)zend_object_store_get_object(getThis() TSRMLS_CC);
-#else
-  size_t addr_len;
+  php_grpc_int addr_len;
   wrapped_grpc_server *server = Z_WRAPPED_GRPC_SERVER_P(getThis());
-#endif
 
   /* "s" == 1 string */
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &addr, &addr_len)
@@ -266,15 +253,9 @@ PHP_METHOD(Server, addHttp2Port) {
 
 PHP_METHOD(Server, addSecureHttp2Port) {
   const char *addr;
+  php_grpc_int addr_len;
   zval *creds_obj;
-#if PHP_MAJOR_VERSION < 7
-  int addr_len;
-  wrapped_grpc_server *server =
-      (wrapped_grpc_server *)zend_object_store_get_object(getThis() TSRMLS_CC);
-#else
-  size_t addr_len;
   wrapped_grpc_server *server = Z_WRAPPED_GRPC_SERVER_P(getThis());
-#endif
 
   /* "sO" == 1 string, 1 object */
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sO", &addr, &addr_len,
@@ -285,14 +266,8 @@ PHP_METHOD(Server, addSecureHttp2Port) {
         "add_http2_port expects a string and a ServerCredentials", 1 TSRMLS_CC);
     return;
   }
-#if PHP_MAJOR_VERSION < 7
-  wrapped_grpc_server_credentials *creds =
-      (wrapped_grpc_server_credentials *)zend_object_store_get_object(
-          creds_obj TSRMLS_CC);
-#else
   wrapped_grpc_server_credentials *creds =
     Z_WRAPPED_GRPC_SERVER_CREDS_P(creds_obj);
-#endif
   RETURN_LONG(grpc_server_add_secure_http2_port(server->wrapped, addr,
                                                 creds->wrapped));
 }
@@ -302,12 +277,7 @@ PHP_METHOD(Server, addSecureHttp2Port) {
  * @return Void
  */
 PHP_METHOD(Server, start) {
-#if PHP_MAJOR_VERSION < 7
-  wrapped_grpc_server *server =
-      (wrapped_grpc_server *)zend_object_store_get_object(getThis() TSRMLS_CC);
-#else
   wrapped_grpc_server *server = Z_WRAPPED_GRPC_SERVER_P(getThis());
-#endif
   grpc_server_start(server->wrapped);
 }
 

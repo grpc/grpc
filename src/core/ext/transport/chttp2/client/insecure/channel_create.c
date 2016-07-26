@@ -88,7 +88,8 @@ static void on_initial_connect_string_sent(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
-                              grpc_channel_args *args, void *user_data) {
+                              grpc_channel_args *args, void *user_data,
+                              grpc_error *error) {
   connector *c = user_data;
   c->result->transport =
       grpc_create_chttp2_transport(exec_ctx, args, endpoint, 1);
@@ -97,7 +98,7 @@ static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
   c->result->channel_args = args;
   grpc_closure *notify = c->notify;
   c->notify = NULL;
-  grpc_exec_ctx_sched(exec_ctx, notify, GRPC_ERROR_NONE, NULL);
+  grpc_exec_ctx_sched(exec_ctx, notify, error, NULL);
 }
 
 static void connected(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {

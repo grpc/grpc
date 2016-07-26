@@ -341,18 +341,11 @@ bool create_metadata_array(zval *array, grpc_metadata_array *metadata) {
 PHP_METHOD(Call, __construct) {
   zval *channel_obj;
   char *method;
+  php_grpc_int method_len;
   zval *deadline_obj;
   char *host_override = NULL;
-#if PHP_MAJOR_VERSION < 7
-  int method_len;
-  int host_override_len = 0;
-  wrapped_grpc_call *call =
-      (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
-#else
-  size_t method_len;
-  size_t host_override_len = 0;
+  php_grpc_int host_override_len = 0;
   wrapped_grpc_call *call = Z_WRAPPED_GRPC_CALL_P(getThis());
-#endif
 
   /* "OsO|s" == 1 Object, 1 string, 1 Object, 1 optional string */
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "OsO|s", &channel_obj,
@@ -364,13 +357,7 @@ PHP_METHOD(Call, __construct) {
                          "an optional String", 1 TSRMLS_CC);
     return;
   }
-#if PHP_MAJOR_VERSION < 7
-  wrapped_grpc_channel *channel =
-      (wrapped_grpc_channel *)zend_object_store_get_object(
-          channel_obj TSRMLS_CC);
-#else
   wrapped_grpc_channel *channel = Z_WRAPPED_GRPC_CHANNEL_P(channel_obj);
-#endif
   if (channel->wrapped == NULL) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
                          "Call cannot be constructed from a closed Channel",
@@ -378,13 +365,7 @@ PHP_METHOD(Call, __construct) {
     return;
   }
   add_property_zval(getThis(), "channel", channel_obj);
-#if PHP_MAJOR_VERSION < 7
-  wrapped_grpc_timeval *deadline =
-      (wrapped_grpc_timeval *)zend_object_store_get_object(
-          deadline_obj TSRMLS_CC);
-#else
   wrapped_grpc_timeval *deadline = Z_WRAPPED_GRPC_TIMEVAL_P(deadline_obj);
-#endif
   call->wrapped =
     grpc_channel_create_call(channel->wrapped, NULL, GRPC_PROPAGATE_DEFAULTS,
                              completion_queue, method, host_override,
@@ -399,8 +380,6 @@ PHP_METHOD(Call, __construct) {
  */
 PHP_METHOD(Call, startBatch) {
 #if PHP_MAJOR_VERSION < 7
-  wrapped_grpc_call *call =
-      (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
   zval **value;
   zval **inner_value;
   HashPosition array_pointer;
@@ -414,7 +393,6 @@ PHP_METHOD(Call, startBatch) {
   MAKE_STD_ZVAL(result);
   object_init(result);
 #else
-  wrapped_grpc_call *call = Z_WRAPPED_GRPC_CALL_P(getThis());
   zval *value;
   zval *inner_value;
   zval *message_value;
@@ -424,6 +402,7 @@ PHP_METHOD(Call, startBatch) {
   zval recv_status;
   object_init(return_value);
 #endif
+  wrapped_grpc_call *call = Z_WRAPPED_GRPC_CALL_P(getThis());
   
   grpc_op ops[8];
   size_t op_num = 0;
@@ -848,14 +827,8 @@ cleanup:
  * @return string The URI of the endpoint
  */
 PHP_METHOD(Call, getPeer) {
-#if PHP_MAJOR_VERSION < 7
-  wrapped_grpc_call *call =
-      (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
-  RETURN_STRING(grpc_call_get_peer(call->wrapped), 1);
-#else
   wrapped_grpc_call *call = Z_WRAPPED_GRPC_CALL_P(getThis());
-  RETURN_STRING(grpc_call_get_peer(call->wrapped));
-#endif
+  PHP_GRPC_RETURN_STRING(grpc_call_get_peer(call->wrapped), 1);
 }
 
 /**
@@ -863,12 +836,7 @@ PHP_METHOD(Call, getPeer) {
  * has not already ended with another status.
  */
 PHP_METHOD(Call, cancel) {
-#if PHP_MAJOR_VERSION < 7
-  wrapped_grpc_call *call =
-      (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
-#else
   wrapped_grpc_call *call = Z_WRAPPED_GRPC_CALL_P(getThis());
-#endif
   grpc_call_cancel(call->wrapped, NULL);
 }
 
@@ -889,17 +857,9 @@ PHP_METHOD(Call, setCredentials) {
     return;
   }
 
-#if PHP_MAJOR_VERSION < 7
-  wrapped_grpc_call_credentials *creds =
-      (wrapped_grpc_call_credentials *)zend_object_store_get_object(
-          creds_obj TSRMLS_CC);
-  wrapped_grpc_call *call =
-      (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
-#else
   wrapped_grpc_call_credentials *creds =
     Z_WRAPPED_GRPC_CALL_CREDS_P(creds_obj);
   wrapped_grpc_call *call = Z_WRAPPED_GRPC_CALL_P(getThis());
-#endif
 
   grpc_call_error error = GRPC_CALL_ERROR;
   error = grpc_call_set_credentials(call->wrapped, creds->wrapped);
