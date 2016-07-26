@@ -59,7 +59,7 @@ typedef struct server_secure_state {
   grpc_tcp_server *tcp;
   grpc_server_security_connector *sc;
   grpc_server_credentials *creds;
-  int is_shutdown;
+  bool is_shutdown;
   gpr_mu mu;
   gpr_refcount refcount;
   grpc_closure destroy_closure;
@@ -96,12 +96,11 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *statep,
                                      grpc_endpoint *secure_endpoint,
                                      grpc_auth_context *auth_context) {
   server_secure_connect *state = statep;
-  grpc_transport *transport;
   if (status == GRPC_SECURITY_OK) {
     if (secure_endpoint) {
       gpr_mu_lock(&state->state->mu);
       if (!state->state->is_shutdown) {
-        transport = grpc_create_chttp2_transport(
+        grpc_transport *transport = grpc_create_chttp2_transport(
             exec_ctx, grpc_server_get_channel_args(state->state->server),
             secure_endpoint, 0);
         grpc_arg args_to_add[2];
@@ -129,13 +128,26 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *statep,
 }
 
 static void on_handshake_done(grpc_exec_ctx *exec_ctx, grpc_endpoint *endpoint,
-                              grpc_channel_args *args, void *user_data) {
+                              grpc_channel_args *args, void *user_data,
+                              grpc_error *error) {
   server_secure_connect *state = user_data;
+  if (error != GRPC_ERROR_NONE) {
+    const char *error_str = grpc_error_string(error);
+    gpr_log(GPR_ERROR, "Handshaking failed: %s", error_str);
+    grpc_error_free_string(error_str);
+    GRPC_ERROR_UNREF(error);
+    grpc_handshake_manager_shutdown(exec_ctx, state->handshake_mgr);
+    grpc_handshake_manager_destroy(exec_ctx, state->handshake_mgr);
+    grpc_channel_args_destroy(args);
+    state_unref(state->state);
+    gpr_free(state);
+    return;
+  }
+  grpc_handshake_manager_destroy(exec_ctx, state->handshake_mgr);
+  state->handshake_mgr = NULL;
   // TODO(roth, jboeuf): Convert security connector handshaking to use new
   // handshake API, and then move the code from on_secure_handshake_done()
   // into this function.
-  grpc_handshake_manager_destroy(exec_ctx, state->handshake_mgr);
-  state->handshake_mgr = NULL;
   state->args = args;
   grpc_server_security_connector_do_handshake(
       exec_ctx, state->state->sc, state->acceptor, endpoint, state->deadline,
@@ -187,7 +199,7 @@ static void destroy(grpc_exec_ctx *exec_ctx, grpc_server *server, void *statep,
   server_secure_state *state = statep;
   grpc_tcp_server *tcp;
   gpr_mu_lock(&state->mu);
-  state->is_shutdown = 1;
+  state->is_shutdown = true;
   state->destroy_callback = callback;
   tcp = state->tcp;
   gpr_mu_unlock(&state->mu);
@@ -252,7 +264,7 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   state->tcp = tcp;
   state->sc = sc;
   state->creds = grpc_server_credentials_ref(creds);
-  state->is_shutdown = 0;
+  state->is_shutdown = false;
   gpr_mu_init(&state->mu);
   gpr_ref_init(&state->refcount, 1);
 
