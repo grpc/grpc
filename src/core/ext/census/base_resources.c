@@ -30,7 +30,7 @@
  *
  */
 
-#include "base_resources.h"
+#include "src/core/ext/census/base_resources.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -38,7 +38,7 @@
 #include <grpc/census.h>
 #include <grpc/support/log.h>
 
-#include "resource.h"
+#include "src/core/ext/census/resource.h"
 
 // Add base RPC resource definitions for use by RPC runtime.
 //

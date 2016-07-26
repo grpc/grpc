@@ -36,7 +36,7 @@
 #define GRPC_CORE_EXT_CENSUS_RESOURCE_H
 
 #include <grpc/grpc.h>
-#include "gen/census.pb.h"
+#include "src/core/ext/census/gen/census.pb.h"
 
 /* Internal representation of a resource. */
 typedef struct {

@@ -32,8 +32,8 @@
  */
 
 #include <grpc/census.h>
-#include "base_resources.h"
-#include "resource.h"
+#include "src/core/ext/census/base_resources.h"
+#include "src/core/ext/census/resource.h"
 
 static int features_enabled = CENSUS_FEATURE_NONE;
 
