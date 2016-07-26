@@ -79,29 +79,25 @@ class GrpcToolTest : public ::testing::Test {
  protected:
   GrpcToolTest() {}
 
-  void SetUp() GRPC_OVERRIDE {
+  // SetUpServer cannot be used with EXPECT_EXIT. grpc_pick_unused_port_or_die()
+  // uses atexit() to free chosen ports, and it will spawn a new thread in
+  // resolve_address_posix.c:192 at exit time.
+  const grpc::string SetUpServer() {
+    std::ostringstream server_address;
     int port = grpc_pick_unused_port_or_die();
-    server_address_ << "localhost:" << port;
+    server_address << "localhost:" << port;
     // Setup server
     ServerBuilder builder;
-    builder.AddListeningPort(server_address_.str(),
+    builder.AddListeningPort(server_address.str(),
                              InsecureServerCredentials());
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
+    return server_address.str();
   }
 
-  void TearDown() GRPC_OVERRIDE { server_->Shutdown(); }
+  void ShutdownServer() { server_->Shutdown(); }
 
-  void ResetStub() {
-    channel_ =
-        CreateChannel(server_address_.str(), InsecureChannelCredentials());
-    stub_ = grpc::testing::EchoTestService::NewStub(channel_);
-  }
-
-  std::shared_ptr<Channel> channel_;
-  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<Server> server_;
-  std::ostringstream server_address_;
   TestServiceImpl service_;
   reflection::ProtoServerReflectionPlugin plugin_;
 };
@@ -163,7 +159,8 @@ TEST_F(GrpcToolTest, HelpCommand) {
 TEST_F(GrpcToolTest, CallCommand) {
   // Test input "grpc_cli call Echo"
   std::stringstream output_stream;
-  grpc::string server_address = server_address_.str();
+
+  const grpc::string server_address = SetUpServer();
   const char* argv[] = {"grpc_cli", "call", server_address.c_str(), "Echo",
                         "message: 'Hello'"};
 
@@ -173,12 +170,12 @@ TEST_F(GrpcToolTest, CallCommand) {
   // Expected output: "message: \"Hello\""
   EXPECT_TRUE(NULL !=
               strstr(output_stream.str().c_str(), "message: \"Hello\""));
+  ShutdownServer();
 }
 
 TEST_F(GrpcToolTest, TooFewArguments) {
   // Test input "grpc_cli call localhost:<port> Echo "message: 'Hello'"
   std::stringstream output_stream;
-  grpc::string server_address = server_address_.str();
   const char* argv[] = {"grpc_cli", "call", "Echo"};
 
   // Exit with 1
@@ -194,8 +191,7 @@ TEST_F(GrpcToolTest, TooFewArguments) {
 TEST_F(GrpcToolTest, TooManyArguments) {
   // Test input "grpc_cli call localhost:<port> Echo Echo "message: 'Hello'"
   std::stringstream output_stream;
-  grpc::string server_address = server_address_.str();
-  const char* argv[] = {"grpc_cli", "call", server_address.c_str(),
+  const char* argv[] = {"grpc_cli", "call", "localhost:10000",
                         "Echo",     "Echo", "message: 'Hello'"};
 
   // Exit with 1
