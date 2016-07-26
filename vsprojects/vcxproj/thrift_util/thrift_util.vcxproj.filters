@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\thrift_serializer.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\thrift_serializer_inl.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc++\impl\codegen\thrift_utils.h">
+      <Filter>include\grpc++\impl\codegen</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{7db81425-7e5e-4968-6063-489c8b4b4234}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc++">
+      <UniqueIdentifier>{2e982be6-8590-40bf-e268-766f6eba44f5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc++\impl">
+      <UniqueIdentifier>{1c34c30f-a772-ec44-114e-cbe73c50f950}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc++\impl\codegen">
+      <UniqueIdentifier>{9f2dea41-c5fb-f288-5d8d-cc0cfcfa9e1a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

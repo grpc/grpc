@@ -1192,12 +1192,12 @@ static: static_c static_cxx
 
 static_c: pc_c pc_c_unsecure cache.mk  $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgrpc_cronet.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
 
-static_cxx: pc_cxx pc_cxx_unsecure cache.mk  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a
+static_cxx: pc_cxx pc_cxx_unsecure cache.mk  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libthrift_util.a
 
 shared: shared_c shared_cxx
 
 shared_c: pc_c pc_c_unsecure cache.mk $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)gpr$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION).$(SHARED_EXT)
-shared_cxx: pc_cxx pc_cxx_unsecure cache.mk $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT)
+shared_cxx: pc_cxx pc_cxx_unsecure cache.mk $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)thrift_util$(SHARED_VERSION).$(SHARED_EXT)
 
 shared_csharp: shared_c  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION).$(SHARED_EXT)
 grpc_csharp_ext: shared_csharp
@@ -1852,6 +1852,8 @@ ifeq ($(CONFIG),opt)
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc++_reflection.a
 	$(E) "[STRIP]   Stripping libgrpc++_unsecure.a"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a
+	$(E) "[STRIP]   Stripping libthrift_util.a"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libthrift_util.a
 endif
 
 strip-shared_c: shared_c
@@ -1874,6 +1876,8 @@ ifeq ($(CONFIG),opt)
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION).$(SHARED_EXT)
 	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT)"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT)
+	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)thrift_util$(SHARED_VERSION).$(SHARED_EXT)"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)thrift_util$(SHARED_VERSION).$(SHARED_EXT)
 endif
 
 strip-shared_csharp: shared_csharp
@@ -2182,6 +2186,9 @@ install-static_cxx: static_cxx strip-static_cxx install-pkg-config_cxx
 	$(E) "[INSTALL] Installing libgrpc++_unsecure.a"
 	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(prefix)/lib/libgrpc++_unsecure.a
+	$(E) "[INSTALL] Installing libthrift_util.a"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libthrift_util.a $(prefix)/lib/libthrift_util.a
 
 
 
@@ -2256,6 +2263,15 @@ ifeq ($(SYSTEM),MINGW32)
 else ifneq ($(SYSTEM),Darwin)
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc++_unsecure.so.1
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libgrpc++_unsecure.so
+endif
+	$(E) "[INSTALL] Installing $(SHARED_PREFIX)thrift_util$(SHARED_VERSION).$(SHARED_EXT)"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)thrift_util$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/$(SHARED_PREFIX)thrift_util$(SHARED_VERSION).$(SHARED_EXT)
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libthrift_util-imp.a $(prefix)/lib/libthrift_util-imp.a
+else ifneq ($(SYSTEM),Darwin)
+	$(Q) ln -sf $(SHARED_PREFIX)thrift_util$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libthrift_util.so.1
+	$(Q) ln -sf $(SHARED_PREFIX)thrift_util$(SHARED_VERSION).$(SHARED_EXT) $(prefix)/lib/libthrift_util.so
 endif
 ifneq ($(SYSTEM),MINGW32)
 ifneq ($(SYSTEM),Darwin)
@@ -4464,6 +4480,76 @@ $(OBJDIR)/$(CONFIG)/test/cpp/qps/server_async.o: $(GENDIR)/src/proto/grpc/testin
 $(OBJDIR)/$(CONFIG)/test/cpp/qps/server_sync.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc
 $(OBJDIR)/$(CONFIG)/test/cpp/qps/usage_timer.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc
 $(OBJDIR)/$(CONFIG)/test/cpp/util/benchmark_config.o: $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.pb.cc $(GENDIR)/src/proto/grpc/testing/payloads.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc
+
+
+LIBTHRIFT_UTIL_SRC = \
+
+PUBLIC_HEADERS_CXX += \
+    include/grpc++/impl/codegen/thrift_serializer.h \
+    include/grpc++/impl/codegen/thrift_serializer_inl.h \
+    include/grpc++/impl/codegen/thrift_utils.h \
+
+LIBTHRIFT_UTIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBTHRIFT_UTIL_SRC))))
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure libraries if you don't have OpenSSL.
+
+$(LIBDIR)/$(CONFIG)/libthrift_util.a: openssl_dep_error
+
+$(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)thrift_util$(SHARED_VERSION).$(SHARED_EXT): openssl_dep_error
+
+else
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libthrift_util.a: protobuf_dep_error
+
+$(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)thrift_util$(SHARED_VERSION).$(SHARED_EXT): protobuf_dep_error
+
+else
+
+$(LIBDIR)/$(CONFIG)/libthrift_util.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(PROTOBUF_DEP) $(LIBTHRIFT_UTIL_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libthrift_util.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libthrift_util.a $(LIBTHRIFT_UTIL_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libthrift_util.a
+endif
+
+
+
+ifeq ($(SYSTEM),MINGW32)
+$(LIBDIR)/$(CONFIG)/thrift_util$(SHARED_VERSION).$(SHARED_EXT): $(LIBTHRIFT_UTIL_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(OPENSSL_DEP)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared thrift_util.def -Wl,--output-def=$(LIBDIR)/$(CONFIG)/thrift_util$(SHARED_VERSION).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libthrift_util$(SHARED_VERSION)-dll.a -o $(LIBDIR)/$(CONFIG)/thrift_util$(SHARED_VERSION).$(SHARED_EXT) $(LIBTHRIFT_UTIL_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF)
+else
+$(LIBDIR)/$(CONFIG)/libthrift_util$(SHARED_VERSION).$(SHARED_EXT): $(LIBTHRIFT_UTIL_OBJS)  $(ZLIB_DEP) $(PROTOBUF_DEP) $(OPENSSL_DEP)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+ifeq ($(SYSTEM),Darwin)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)thrift_util$(SHARED_VERSION).$(SHARED_EXT) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libthrift_util$(SHARED_VERSION).$(SHARED_EXT) $(LIBTHRIFT_UTIL_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF)
+else
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libthrift_util.so.1 -o $(LIBDIR)/$(CONFIG)/libthrift_util$(SHARED_VERSION).$(SHARED_EXT) $(LIBTHRIFT_UTIL_OBJS) $(LDLIBS) $(ZLIB_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF)
+	$(Q) ln -sf $(SHARED_PREFIX)thrift_util$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libthrift_util$(SHARED_VERSION).so.1
+	$(Q) ln -sf $(SHARED_PREFIX)thrift_util$(SHARED_VERSION).$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libthrift_util$(SHARED_VERSION).so
+endif
+endif
+
+endif
+
+endif
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(LIBTHRIFT_UTIL_OBJS:.o=.dep)
+endif
+endif
 
 
 LIBGRPC_CSHARP_EXT_SRC = \
