@@ -51,6 +51,7 @@ struct grpc_endpoint_vtable {
                gpr_slice_buffer *slices, grpc_closure *cb);
   void (*write)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                 gpr_slice_buffer *slices, grpc_closure *cb);
+  grpc_workqueue *(*get_workqueue)(grpc_endpoint *ep);
   void (*add_to_pollset)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                          grpc_pollset *pollset);
   void (*add_to_pollset_set)(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
@@ -69,6 +70,9 @@ void grpc_endpoint_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 
 char *grpc_endpoint_get_peer(grpc_endpoint *ep);
 
+/* Retrieve a reference to the workqueue associated with this endpoint */
+grpc_workqueue *grpc_endpoint_get_workqueue(grpc_endpoint *ep);
+
 /* Write slices out to the socket.
 
    If the connection is ready for more data after the end of the call, it
@@ -82,7 +86,7 @@ char *grpc_endpoint_get_peer(grpc_endpoint *ep);
 void grpc_endpoint_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
                          gpr_slice_buffer *slices, grpc_closure *cb);
 
-/* Causes any pending read/write callbacks to run immediately with
+/* Causes any pending and future read/write callbacks to run immediately with
    success==0 */
 void grpc_endpoint_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep);
 void grpc_endpoint_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep);

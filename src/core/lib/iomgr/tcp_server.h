@@ -34,6 +34,8 @@
 #ifndef GRPC_CORE_LIB_IOMGR_TCP_SERVER_H
 #define GRPC_CORE_LIB_IOMGR_TCP_SERVER_H
 
+#include <grpc/grpc.h>
+
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 
@@ -58,7 +60,9 @@ typedef void (*grpc_tcp_server_cb)(grpc_exec_ctx *exec_ctx, void *arg,
 /* Create a server, initially not bound to any ports. The caller owns one ref.
    If shutdown_complete is not NULL, it will be used by
    grpc_tcp_server_unref() when the ref count reaches zero. */
-grpc_tcp_server *grpc_tcp_server_create(grpc_closure *shutdown_complete);
+grpc_error *grpc_tcp_server_create(grpc_closure *shutdown_complete,
+                                   const grpc_channel_args *args,
+                                   grpc_tcp_server **server);
 
 /* Start listening to bound ports */
 void grpc_tcp_server_start(grpc_exec_ctx *exec_ctx, grpc_tcp_server *server,
@@ -74,8 +78,8 @@ void grpc_tcp_server_start(grpc_exec_ctx *exec_ctx, grpc_tcp_server *server,
    but not dualstack sockets. */
 /* TODO(ctiller): deprecate this, and make grpc_tcp_server_add_ports to handle
                   all of the multiple socket port matching logic in one place */
-int grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
-                             size_t addr_len);
+grpc_error *grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
+                                     size_t addr_len, int *out_port);
 
 /* Number of fds at the given port_index, or 0 if port_index is out of
    bounds. */
@@ -100,5 +104,9 @@ void grpc_tcp_server_shutdown_starting_add(grpc_tcp_server *s,
 /* If the refcount drops to zero, delete s, and call (exec_ctx==NULL) or enqueue
    a call (exec_ctx!=NULL) to shutdown_complete. */
 void grpc_tcp_server_unref(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s);
+
+/* Shutdown the fds of listeners. */
+void grpc_tcp_server_shutdown_listeners(grpc_exec_ctx *exec_ctx,
+                                        grpc_tcp_server *s);
 
 #endif /* GRPC_CORE_LIB_IOMGR_TCP_SERVER_H */

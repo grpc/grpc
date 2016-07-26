@@ -31,7 +31,7 @@
 // of unary/streaming requests/responses.
 syntax = "proto3";
 
-import "empty.proto";
+import "google/protobuf/empty.proto";
 import "messages.proto";
 
 package grpc.testing;
@@ -42,7 +42,7 @@ option objc_class_prefix = "RMT";
 // performance with various types of payload.
 service TestService {
   // One empty request followed by one empty response.
-  rpc EmptyCall(grpc.testing.Empty) returns (grpc.testing.Empty);
+  rpc EmptyCall(google.protobuf.Empty) returns (google.protobuf.Empty);
 
   // One request followed by one response.
   rpc UnaryCall(SimpleRequest) returns (SimpleResponse);

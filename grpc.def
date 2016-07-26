@@ -90,6 +90,7 @@ EXPORTS
     grpc_call_error_to_string
     grpc_insecure_channel_create_from_fd
     grpc_server_add_insecure_channel_from_fd
+    grpc_use_signal
     grpc_auth_property_iterator_next
     grpc_auth_context_property_iterator
     grpc_auth_context_peer_identity
@@ -147,6 +148,7 @@ EXPORTS
     gpr_slice_ref
     gpr_slice_unref
     gpr_slice_new
+    gpr_slice_new_with_user_data
     gpr_slice_new_with_len
     gpr_slice_malloc
     gpr_slice_from_copied_string
@@ -222,6 +224,8 @@ EXPORTS
     gpr_avl_add
     gpr_avl_remove
     gpr_avl_get
+    gpr_avl_maybe_get
+    gpr_avl_is_empty
     gpr_cmdline_create
     gpr_cmdline_add_int
     gpr_cmdline_add_flag

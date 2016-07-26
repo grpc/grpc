@@ -46,6 +46,8 @@ var client = require('./src/client.js');
 
 var server = require('./src/server.js');
 
+var common = require('./src/common.js');
+
 var Metadata = require('./src/metadata.js');
 
 var grpc = require('./src/grpc_extension');
@@ -122,6 +124,42 @@ exports.load = function load(filename, format, options) {
   return loadObject(builder.ns, options);
 };
 
+var log_template = _.template(
+    '{severity} {timestamp}\t{file}:{line}]\t{message}',
+    {interpolate: /{([\s\S]+?)}/g});
+
+/**
+ * Sets the logger function for the gRPC module. For debugging purposes, the C
+ * core will log synchronously directly to stdout unless this function is
+ * called. Note: the output format here is intended to be informational, and
+ * is not guaranteed to stay the same in the future.
+ * Logs will be directed to logger.error.
+ * @param {Console} logger A Console-like object.
+ */
+exports.setLogger = function setLogger(logger) {
+  common.logger = logger;
+  grpc.setDefaultLoggerCallback(function(file, line, severity,
+                                         message, timestamp) {
+    logger.error(log_template({
+      file: path.basename(file),
+      line: line,
+      severity: severity,
+      message: message,
+      timestamp: timestamp.toISOString()
+    }));
+  });
+};
+
+/**
+ * Sets the logger verbosity for gRPC module logging. The options are members
+ * of the grpc.logVerbosity map.
+ * @param {Number} verbosity The minimum severity to log
+ */
+exports.setLogVerbosity = function setLogVerbosity(verbosity) {
+  common.logVerbosity = verbosity;
+  grpc.setLogVerbosity(verbosity);
+};
+
 /**
  * @see module:src/server.Server
  */
@@ -151,6 +189,11 @@ exports.callError = grpc.callError;
  * Write flag name to code number mapping
  */
 exports.writeFlags = grpc.writeFlags;
+
+/**
+ * Log verbosity setting name to code number mapping
+ */
+exports.logVerbosity = grpc.logVerbosity;
 
 /**
  * Credentials factories

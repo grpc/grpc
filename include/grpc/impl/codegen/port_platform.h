@@ -119,7 +119,7 @@
 // libraries; it should be integrated with the `__linux__` definitions below.
 #define GPR_PLATFORM_STRING "manylinux"
 #define GPR_POSIX_CRASH_HANDLER 1
-#define GPR_CPU_LINUX 1
+#define GPR_CPU_POSIX 1
 #define GPR_GCC_ATOMIC 1
 #define GPR_GCC_TLS 1
 #define GPR_LINUX 1
@@ -150,7 +150,11 @@
 #elif defined(ANDROID) || defined(__ANDROID__)
 #define GPR_PLATFORM_STRING "android"
 #define GPR_ANDROID 1
+#ifdef _LP64
+#define GPR_ARCH_64 1
+#else /* _LP64 */
 #define GPR_ARCH_32 1
+#endif /* _LP64 */
 #define GPR_CPU_LINUX 1
 #define GPR_GCC_SYNC 1
 #define GPR_GCC_TLS 1
@@ -203,6 +207,7 @@
 #ifdef __GLIBC_PREREQ
 #if __GLIBC_PREREQ(2, 9)
 #define GPR_LINUX_EVENTFD 1
+#define GPR_LINUX_EPOLL 1
 #endif
 #if __GLIBC_PREREQ(2, 10)
 #define GPR_LINUX_SOCKETUTILS 1
@@ -433,6 +438,15 @@ typedef unsigned __int64 uint64_t;
 #define GRPC_MUST_USE_RESULT
 #endif
 #endif
+
+#ifndef GPRC_PRINT_FORMAT_CHECK
+#ifdef __GNUC__
+#define GPRC_PRINT_FORMAT_CHECK(FORMAT_STR, ARGS) \
+  __attribute__((format(printf, FORMAT_STR, ARGS)))
+#else
+#define GPRC_PRINT_FORMAT_CHECK(FORMAT_STR, ARGS)
+#endif
+#endif /* GPRC_PRINT_FORMAT_CHECK */
 
 #if GPR_FORBID_UNREACHABLE_CODE
 #define GPR_UNREACHABLE_CODE(STATEMENT)

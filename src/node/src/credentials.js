@@ -69,6 +69,8 @@ var ChannelCredentials = grpc.ChannelCredentials;
 
 var Metadata = require('./metadata.js');
 
+var common = require('./common.js');
+
 /**
  * Create an SSL Credentials object. If using a client-side certificate, both
  * the second and third arguments must be passed.
@@ -120,7 +122,7 @@ exports.createFromGoogleCredential = function(google_credential) {
     var service_url = auth_context.service_url;
     google_credential.getRequestMetadata(service_url, function(err, header) {
       if (err) {
-        console.log('Auth error:', err);
+        common.log(grpc.logVerbosity.INFO, 'Auth error:' + err);
         callback(err);
         return;
       }

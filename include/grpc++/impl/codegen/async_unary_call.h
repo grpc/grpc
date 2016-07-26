@@ -65,7 +65,7 @@ class ClientAsyncResponseReader GRPC_FINAL
                             const W& request)
       : context_(context),
         call_(channel->CreateCall(method, context, cq)),
-        collection_(new CallOpSetCollection) {
+        collection_(std::make_shared<CallOpSetCollection>()) {
     collection_->init_buf_.SetCollection(collection_);
     collection_->init_buf_.SendInitialMetadata(
         context->send_initial_metadata_, context->initial_metadata_flags());

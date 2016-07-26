@@ -1,9 +1,7 @@
 source 'https://github.com/CocoaPods/Specs.git'
 platform :ios, '8.0'
 
-pod 'Protobuf', :path => "../../../third_party/protobuf"
-pod 'BoringSSL', :podspec => "../../../src/objective-c"
-pod 'gRPC', :path => "../../.."
+install! 'cocoapods', :deterministic_uuids => false
 
 target 'AuthSample' do
   # Depend on the generated AuthTestService library.

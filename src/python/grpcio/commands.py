@@ -58,8 +58,29 @@ CONF_PY_ADDENDUM = """
 extensions.append('sphinx.ext.napoleon')
 napoleon_google_docstring = True
 napoleon_numpy_docstring = True
+napoleon_include_special_with_doc = True
 
 html_theme = 'sphinx_rtd_theme'
+"""
+
+API_GLOSSARY = """
+
+Glossary
+================
+
+.. glossary::
+
+  metadatum
+    A key-value pair included in the HTTP header.  It is a 
+    2-tuple where the first entry is the key and the
+    second is the value, i.e. (key, value).  The metadata key is an ASCII str,
+    and must be a valid HTTP header name.  The metadata value can be
+    either a valid HTTP ASCII str, or bytes.  If bytes are provided,
+    the key must end with '-bin', i.e.
+    ``('binary-metadata-bin', b'\\x00\\xFF')``
+
+  metadata
+    A sequence of metadatum.
 """
 
 
@@ -131,74 +152,10 @@ class SphinxDocumentation(setuptools.Command):
     conf_filepath = os.path.join('doc', 'src', 'conf.py')
     with open(conf_filepath, 'a') as conf_file:
       conf_file.write(CONF_PY_ADDENDUM)
+    glossary_filepath = os.path.join('doc', 'src', 'grpc.rst')
+    with open(glossary_filepath, 'a') as glossary_filepath:
+      glossary_filepath.write(API_GLOSSARY)
     sphinx.main(['', os.path.join('doc', 'src'), os.path.join('doc', 'build')])
-
-
-class BuildProtoModules(setuptools.Command):
-  """Command to generate project *_pb2.py modules from proto files."""
-
-  description = 'build protobuf modules'
-  user_options = [
-    ('include=', None, 'path patterns to include in protobuf generation'),
-    ('exclude=', None, 'path patterns to exclude from protobuf generation')
-  ]
-
-  def initialize_options(self):
-    self.exclude = None
-    self.include = r'.*\.proto$'
-    self.protoc_command = None
-    self.grpc_python_plugin_command = None
-
-  def finalize_options(self):
-    self.protoc_command = distutils.spawn.find_executable('protoc')
-    self.grpc_python_plugin_command = distutils.spawn.find_executable(
-        'grpc_python_plugin')
-
-  def run(self):
-    if not self.protoc_command:
-      raise CommandError('could not find protoc')
-    if not self.grpc_python_plugin_command:
-      raise CommandError('could not find grpc_python_plugin '
-                         '(protoc plugin for GRPC Python)')
-
-    if not os.path.exists(PROTO_GEN_STEM):
-      os.makedirs(PROTO_GEN_STEM)
-
-    include_regex = re.compile(self.include)
-    exclude_regex = re.compile(self.exclude) if self.exclude else None
-    paths = []
-    for walk_root, directories, filenames in os.walk(PROTO_STEM):
-      for filename in filenames:
-        path = os.path.join(walk_root, filename)
-        if include_regex.match(path) and not (
-            exclude_regex and exclude_regex.match(path)):
-          paths.append(path)
-
-    # TODO(kpayson): It would be nice to do this in a batch command,
-    # but we currently have name conflicts in src/proto
-    for path in paths:
-      command = [
-          self.protoc_command,
-          '--plugin=protoc-gen-python-grpc={}'.format(
-              self.grpc_python_plugin_command),
-          '-I {}'.format(GRPC_STEM),
-          '--python_out={}'.format(PROTO_GEN_STEM),
-          '--python-grpc_out={}'.format(PROTO_GEN_STEM),
-      ] + [path]
-      try:
-        subprocess.check_output(' '.join(command), cwd=PYTHON_STEM, shell=True,
-                                stderr=subprocess.STDOUT)
-      except subprocess.CalledProcessError as e:
-        sys.stderr.write(
-            'warning: Command:\n{}\nMessage:\n{}\nOutput:\n{}'.format(
-                command, e.message, e.output))
-
-    # Generated proto directories dont include __init__.py, but
-    # these are needed for python package resolution
-    for walk_root, _, _ in os.walk(PROTO_GEN_STEM):
-      if walk_root != PROTO_GEN_STEM:
-        path = os.path.join(walk_root, '__init__.py')
-        open(path, 'a').close()
 
 
 class BuildProjectMetadata(setuptools.Command):
@@ -223,12 +180,73 @@ class BuildPy(build_py.build_py):
   """Custom project build command."""
 
   def run(self):
-    try:
-      self.run_command('build_proto_modules')
-    except CommandError as error:
-      sys.stderr.write('warning: %s\n' % error.message)
     self.run_command('build_project_metadata')
     build_py.build_py.run(self)
+
+
+def _poison_extensions(extensions, message):
+  """Includes a file that will always fail to compile in all extensions."""
+  poison_filename = os.path.join(PYTHON_STEM, 'poison.c')
+  with open(poison_filename, 'w') as poison:
+    poison.write('#error {}'.format(message))
+  for extension in extensions:
+    extension.sources = [poison_filename]
+
+def check_and_update_cythonization(extensions):
+  """Replace .pyx files with their generated counterparts and return whether or
+     not cythonization still needs to occur."""
+  for extension in extensions:
+    generated_pyx_sources = []
+    other_sources = []
+    for source in extension.sources:
+      base, file_ext = os.path.splitext(source)
+      if file_ext == '.pyx':
+        generated_pyx_source = next(
+            (base + gen_ext for gen_ext in ('.c', '.cpp',)
+             if os.path.isfile(base + gen_ext)), None)
+        if generated_pyx_source:
+          generated_pyx_sources.append(generated_pyx_source)
+        else:
+          sys.stderr.write('Cython-generated files are missing...\n')
+          return False
+      else:
+        other_sources.append(source)
+    extension.sources = generated_pyx_sources + other_sources
+  sys.stderr.write('Found cython-generated files...\n')
+  return True
+
+def try_cythonize(extensions, linetracing=False, mandatory=True):
+  """Attempt to cythonize the extensions.
+
+  Args:
+    extensions: A list of `distutils.extension.Extension`.
+    linetracing: A bool indicating whether or not to enable linetracing.
+    mandatory: Whether or not having Cython-generated files is mandatory. If it
+      is, extensions will be poisoned when they can't be fully generated.
+  """
+  try:
+    # Break import style to ensure we have access to Cython post-setup_requires
+    import Cython.Build
+  except ImportError:
+    if mandatory:
+      sys.stderr.write(
+          "This package needs to generate C files with Cython but it cannot. "
+          "Poisoning extension sources to disallow extension commands...")
+      _poison_extensions(
+          extensions,
+          "Extensions have been poisoned due to missing Cython-generated code.")
+    return extensions
+  cython_compiler_directives = {}
+  if linetracing:
+    additional_define_macros = [('CYTHON_TRACE_NOGIL', '1')]
+    cython_compiler_directives['linetrace'] = True
+  return Cython.Build.cythonize(
+    extensions,
+    include_path=[
+      include_dir for extension in extensions for include_dir in extension.include_dirs
+    ],
+    compiler_directives=cython_compiler_directives
+  )
 
 
 class BuildExt(build_ext.build_ext):
@@ -248,6 +266,8 @@ class BuildExt(build_ext.build_ext):
     if compiler in BuildExt.LINK_OPTIONS:
       for extension in self.extensions:
         extension.extra_link_args += list(BuildExt.LINK_OPTIONS[compiler])
+    if not check_and_update_cythonization(self.extensions):
+      self.extensions = try_cythonize(self.extensions)
     try:
       build_ext.build_ext.build_extensions(self)
     except Exception as error:
@@ -279,76 +299,3 @@ class Gather(setuptools.Command):
       self.distribution.fetch_build_eggs(self.distribution.install_requires)
     if self.test and self.distribution.tests_require:
       self.distribution.fetch_build_eggs(self.distribution.tests_require)
-
-
-class TestLite(setuptools.Command):
-  """Command to run tests without fetching or building anything."""
-
-  description = 'run tests without fetching or building anything.'
-  user_options = []
-
-  def initialize_options(self):
-    pass
-
-  def finalize_options(self):
-    # distutils requires this override.
-    pass
-
-  def run(self):
-    self._add_eggs_to_path()
-
-    import tests
-    loader = tests.Loader()
-    loader.loadTestsFromNames(['tests'])
-    runner = tests.Runner()
-    result = runner.run(loader.suite)
-    if not result.wasSuccessful():
-      sys.exit('Test failure')
-
-  def _add_eggs_to_path(self):
-    """Fetch install and test requirements"""
-    self.distribution.fetch_build_eggs(self.distribution.install_requires)
-    self.distribution.fetch_build_eggs(self.distribution.tests_require)
-
-
-class RunInterop(test.test):
-
-  description = 'run interop test client/server'
-  user_options = [
-    ('args=', 'a', 'pass-thru arguments for the client/server'),
-    ('client', 'c', 'flag indicating to run the client'),
-    ('server', 's', 'flag indicating to run the server')
-  ]
-
-  def initialize_options(self):
-    self.args = ''
-    self.client = False
-    self.server = False
-
-  def finalize_options(self):
-    if self.client and self.server:
-      raise DistutilsOptionError('you may only specify one of client or server')
-
-  def run(self):
-    if self.distribution.install_requires:
-      self.distribution.fetch_build_eggs(self.distribution.install_requires)
-    if self.distribution.tests_require:
-      self.distribution.fetch_build_eggs(self.distribution.tests_require)
-    if self.client:
-      self.run_client()
-    elif self.server:
-      self.run_server()
-
-  def run_server(self):
-    # We import here to ensure that our setuptools parent has had a chance to
-    # edit the Python system path.
-    from tests.interop import server
-    sys.argv[1:] = self.args.split()
-    server.serve()
-
-  def run_client(self):
-    # We import here to ensure that our setuptools parent has had a chance to
-    # edit the Python system path.
-    from tests.interop import client
-    sys.argv[1:] = self.args.split()
-    client.test_interoperability()

@@ -34,17 +34,24 @@ syntax = "proto3";
 
 package grpc.testing;
 
+// TODO(dgq): Go back to using well-known types once
+// https://github.com/grpc/grpc/issues/6980 has been fixed.
+// import "google/protobuf/wrappers.proto";
+message BoolValue {
+  // The bool value.
+  bool value = 1;
+}
+
+// DEPRECATED, don't use. To be removed shortly.
 // The type of payload that should be returned.
 enum PayloadType {
   // Compressable text format.
   COMPRESSABLE = 0;
-
-  // Uncompressable binary format.
-  UNCOMPRESSABLE = 1;
 }
 
 // A block of data, to simply increase gRPC message size.
 message Payload {
+  // DEPRECATED, don't use. To be removed shortly.
   // The type of data in body.
   PayloadType type = 1;
   // Primary contents of payload.
@@ -60,12 +67,12 @@ message EchoStatus {
 
 // Unary request.
 message SimpleRequest {
+  // DEPRECATED, don't use. To be removed shortly.
   // Desired payload type in the response from the server.
   // If response_type is RANDOM, server randomly chooses one from other formats.
   PayloadType response_type = 1;
 
   // Desired payload size in the response from the server.
-  // If response_type is COMPRESSABLE, this denotes the size before compression.
   int32 response_size = 2;
 
   // Optional input payload sent along with the request.
@@ -77,11 +84,17 @@ message SimpleRequest {
   // Whether SimpleResponse should include OAuth scope.
   bool fill_oauth_scope = 5;
 
-  // Whether to request the server to compress the response.
-  bool request_compressed_response = 6;
+  // Whether to request the server to compress the response. This field is
+  // "nullable" in order to interoperate seamlessly with clients not able to
+  // implement the full compression tests by introspecting the call to verify
+  // the response's compression status.
+  BoolValue response_compressed = 6;
 
   // Whether server should return a given status
   EchoStatus response_status = 7;
+
+  // Whether the server should expect this request to be compressed.
+  BoolValue expect_compressed = 8;
 }
 
 // Unary response, as configured by the request.
@@ -100,6 +113,12 @@ message StreamingInputCallRequest {
   // Optional input payload sent along with the request.
   Payload payload = 1;
 
+  // Whether the server should expect this request to be compressed. This field
+  // is "nullable" in order to interoperate seamlessly with servers not able to
+  // implement the full compression tests by introspecting the call to verify
+  // the request's compression status.
+  BoolValue expect_compressed = 2;
+
   // Not expecting any payload from the response.
 }
 
@@ -112,16 +131,22 @@ message StreamingInputCallResponse {
 // Configuration for a particular response.
 message ResponseParameters {
   // Desired payload sizes in responses from the server.
-  // If response_type is COMPRESSABLE, this denotes the size before compression.
   int32 size = 1;
 
   // Desired interval between consecutive responses in the response stream in
   // microseconds.
   int32 interval_us = 2;
+
+  // Whether to request the server to compress the response. This field is
+  // "nullable" in order to interoperate seamlessly with clients not able to
+  // implement the full compression tests by introspecting the call to verify
+  // the response's compression status.
+  BoolValue compressed = 3;
 }
 
 // Server-streaming request.
 message StreamingOutputCallRequest {
+  // DEPRECATED, don't use. To be removed shortly.
   // Desired payload type in the response from the server.
   // If response_type is RANDOM, the payload from each response in the stream
   // might be of different types. This is to simulate a mixed type of payload
@@ -133,9 +158,6 @@ message StreamingOutputCallRequest {
 
   // Optional input payload sent along with the request.
   Payload payload = 3;
-
-  // Whether to request the server to compress the response.
-  bool request_compressed_response = 6;
 
   // Whether server should return a given status
   EchoStatus response_status = 7;

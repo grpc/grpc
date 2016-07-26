@@ -248,7 +248,7 @@ namespace Grpc.Core.Internal
         }
 
         /// <summary>
-        /// Handles send completion.
+        /// Handles send completion (including SendCloseFromClient).
         /// </summary>
         protected void HandleSendFinished(bool success)
         {
@@ -264,31 +264,6 @@ namespace Grpc.Core.Internal
             if (!success)
             {
                 origTcs.SetException(new InvalidOperationException("Send failed"));
-            }
-            else
-            {
-                origTcs.SetResult(null);
-            }
-        }
-
-        /// <summary>
-        /// Handles halfclose (send close from client) completion.
-        /// </summary>
-        protected void HandleSendCloseFromClientFinished(bool success)
-        {
-            TaskCompletionSource<object> origTcs = null;
-            lock (myLock)
-            {
-                origTcs = streamingWriteTcs;
-                streamingWriteTcs = null;
-
-                ReleaseResourcesIfPossible();
-            }
-
-            if (!success)
-            {
-                // TODO(jtattermusch): this method is same as HandleSendFinished (only the error message differs).
-                origTcs.SetException(new InvalidOperationException("Sending close from client has failed."));
             }
             else
             {

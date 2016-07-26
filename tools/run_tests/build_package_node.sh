@@ -58,8 +58,10 @@ tools_version=$(npm list | grep -oP '(?<=grpc-tools@)\S+')
 output_dir=$artifacts/grpc-precompiled-binaries/node/grpc-tools/v$tools_version
 mkdir -p $output_dir
 
+well_known_protos=( any api compiler/plugin descriptor duration empty field_mask source_context struct timestamp type wrappers )
+
 for arch in {x86,x64}; do
-  case arch in
+  case $arch in
     x86)
       node_arch=ia32
       ;;
@@ -68,7 +70,7 @@ for arch in {x86,x64}; do
       ;;
   esac
   for plat in {windows,linux,macos}; do
-    case plat in
+    case $plat in
       windows)
         node_plat=win32
         ;;
@@ -79,10 +81,15 @@ for arch in {x86,x64}; do
         node_plat=$plat
         ;;
     esac
-    rm bin/*
+    rm -r bin/*
     input_dir="$EXTERNAL_GIT_ROOT/architecture=$arch,language=protoc,platform=$plat/artifacts"
     cp $input_dir/protoc* bin/
     cp $input_dir/grpc_node_plugin* bin/
+    mkdir -p bin/google/protobuf
+    mkdir -p bin/google/protobuf/compiler  # needed for plugin.proto
+    for proto in "${well_known_protos[@]}"; do
+      cp $base/third_party/protobuf/src/google/protobuf/$proto.proto bin/google/protobuf/$proto.proto
+    done
     tar -czf $output_dir/$node_plat-$node_arch.tar.gz bin/
   done
 done

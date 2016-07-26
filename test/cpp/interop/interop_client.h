@@ -45,9 +45,9 @@ namespace grpc {
 namespace testing {
 
 // Function pointer for custom checks.
-using CheckerFn =
-    std::function<void(const InteropClientContextInspector&,
-                       const SimpleRequest*, const SimpleResponse*)>;
+typedef std::function<void(const InteropClientContextInspector&,
+                           const SimpleRequest*, const SimpleResponse*)>
+    CheckerFn;
 
 class InteropClient {
  public:
@@ -64,12 +64,14 @@ class InteropClient {
 
   bool DoEmpty();
   bool DoLargeUnary();
-  bool DoLargeCompressedUnary();
+  bool DoServerCompressedUnary();
+  bool DoClientCompressedUnary();
   bool DoPingPong();
   bool DoHalfDuplex();
   bool DoRequestStreaming();
   bool DoResponseStreaming();
-  bool DoResponseCompressedStreaming();
+  bool DoServerCompressedStreaming();
+  bool DoClientCompressedStreaming();
   bool DoResponseStreamingWithSlowConsumer();
   bool DoCancelAfterBegin();
   bool DoCancelAfterFirstResponse();

@@ -168,17 +168,22 @@ namespace Grpc.Testing {
     /// <summary>Client for TestService</summary>
     public class TestServiceClient : ClientBase<TestServiceClient>
     {
+      /// <summary>Creates a new client for TestService</summary>
+      /// <param name="channel">The channel to use to make remote calls.</param>
       public TestServiceClient(Channel channel) : base(channel)
       {
       }
+      /// <summary>Creates a new client for TestService that uses a custom <c>CallInvoker</c>.</summary>
+      /// <param name="callInvoker">The callInvoker to use to make remote calls.</param>
       public TestServiceClient(CallInvoker callInvoker) : base(callInvoker)
       {
       }
-      ///<summary>Protected parameterless constructor to allow creation of test doubles.</summary>
+      /// <summary>Protected parameterless constructor to allow creation of test doubles.</summary>
       protected TestServiceClient() : base()
       {
       }
-      ///<summary>Protected constructor to allow creation of configured clients.</summary>
+      /// <summary>Protected constructor to allow creation of configured clients.</summary>
+      /// <param name="configuration">The client configuration.</param>
       protected TestServiceClient(ClientBaseConfiguration configuration) : base(configuration)
       {
       }
@@ -315,12 +320,6 @@ namespace Grpc.Testing {
       }
     }
 
-    /// <summary>Creates a new client for TestService</summary>
-    public static TestServiceClient NewClient(Channel channel)
-    {
-      return new TestServiceClient(channel);
-    }
-
     /// <summary>Creates service definition that can be registered with a server</summary>
     public static ServerServiceDefinition BindService(TestServiceBase serviceImpl)
     {
@@ -373,17 +372,22 @@ namespace Grpc.Testing {
     /// <summary>Client for UnimplementedService</summary>
     public class UnimplementedServiceClient : ClientBase<UnimplementedServiceClient>
     {
+      /// <summary>Creates a new client for UnimplementedService</summary>
+      /// <param name="channel">The channel to use to make remote calls.</param>
       public UnimplementedServiceClient(Channel channel) : base(channel)
       {
       }
+      /// <summary>Creates a new client for UnimplementedService that uses a custom <c>CallInvoker</c>.</summary>
+      /// <param name="callInvoker">The callInvoker to use to make remote calls.</param>
       public UnimplementedServiceClient(CallInvoker callInvoker) : base(callInvoker)
       {
       }
-      ///<summary>Protected parameterless constructor to allow creation of test doubles.</summary>
+      /// <summary>Protected parameterless constructor to allow creation of test doubles.</summary>
       protected UnimplementedServiceClient() : base()
       {
       }
-      ///<summary>Protected constructor to allow creation of configured clients.</summary>
+      /// <summary>Protected constructor to allow creation of configured clients.</summary>
+      /// <param name="configuration">The client configuration.</param>
       protected UnimplementedServiceClient(ClientBaseConfiguration configuration) : base(configuration)
       {
       }
@@ -420,12 +424,6 @@ namespace Grpc.Testing {
       {
         return new UnimplementedServiceClient(configuration);
       }
-    }
-
-    /// <summary>Creates a new client for UnimplementedService</summary>
-    public static UnimplementedServiceClient NewClient(Channel channel)
-    {
-      return new UnimplementedServiceClient(channel);
     }
 
     /// <summary>Creates service definition that can be registered with a server</summary>
@@ -485,17 +483,22 @@ namespace Grpc.Testing {
     /// <summary>Client for ReconnectService</summary>
     public class ReconnectServiceClient : ClientBase<ReconnectServiceClient>
     {
+      /// <summary>Creates a new client for ReconnectService</summary>
+      /// <param name="channel">The channel to use to make remote calls.</param>
       public ReconnectServiceClient(Channel channel) : base(channel)
       {
       }
+      /// <summary>Creates a new client for ReconnectService that uses a custom <c>CallInvoker</c>.</summary>
+      /// <param name="callInvoker">The callInvoker to use to make remote calls.</param>
       public ReconnectServiceClient(CallInvoker callInvoker) : base(callInvoker)
       {
       }
-      ///<summary>Protected parameterless constructor to allow creation of test doubles.</summary>
+      /// <summary>Protected parameterless constructor to allow creation of test doubles.</summary>
       protected ReconnectServiceClient() : base()
       {
       }
-      ///<summary>Protected constructor to allow creation of configured clients.</summary>
+      /// <summary>Protected constructor to allow creation of configured clients.</summary>
+      /// <param name="configuration">The client configuration.</param>
       protected ReconnectServiceClient(ClientBaseConfiguration configuration) : base(configuration)
       {
       }
@@ -536,12 +539,6 @@ namespace Grpc.Testing {
       {
         return new ReconnectServiceClient(configuration);
       }
-    }
-
-    /// <summary>Creates a new client for ReconnectService</summary>
-    public static ReconnectServiceClient NewClient(Channel channel)
-    {
-      return new ReconnectServiceClient(channel);
     }
 
     /// <summary>Creates service definition that can be registered with a server</summary>

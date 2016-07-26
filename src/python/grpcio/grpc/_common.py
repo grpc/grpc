@@ -30,6 +30,8 @@
 """Shared implementation."""
 
 import logging
+import threading
+import time
 
 import six
 
@@ -44,8 +46,8 @@ CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY = {
     cygrpc.ConnectivityState.ready: grpc.ChannelConnectivity.READY,
     cygrpc.ConnectivityState.transient_failure:
         grpc.ChannelConnectivity.TRANSIENT_FAILURE,
-    cygrpc.ConnectivityState.fatal_failure:
-        grpc.ChannelConnectivity.FATAL_FAILURE,
+    cygrpc.ConnectivityState.shutdown:
+        grpc.ChannelConnectivity.SHUTDOWN,
 }
 
 CYGRPC_STATUS_CODE_TO_STATUS_CODE = {
@@ -74,9 +76,37 @@ STATUS_CODE_TO_CYGRPC_STATUS_CODE = {
 }
 
 
-def metadata(application_metadata):
+def encode(s):
+  if isinstance(s, bytes):
+    return s
+  else:
+    return s.encode('ascii')
+
+
+def decode(b):
+  if isinstance(b, str):
+    return b
+  else:
+    try:
+      return b.decode('utf8')
+    except UnicodeDecodeError:
+      logging.exception('Invalid encoding on {}'.format(b))
+      return b.decode('latin1')
+
+
+def cygrpc_metadata(application_metadata):
   return _EMPTY_METADATA if application_metadata is None else cygrpc.Metadata(
-      cygrpc.Metadatum(key, value) for key, value in application_metadata)
+      cygrpc.Metadatum(encode(key), encode(value))
+      for key, value in application_metadata)
+
+
+def application_metadata(cygrpc_metadata):
+  if cygrpc_metadata is None:
+    return ()
+  else:
+    return tuple(
+        (decode(key), value if key[-4:] == b'-bin' else decode(value))
+        for key, value in cygrpc_metadata)
 
 
 def _transform(message, transformer, exception_message):
@@ -97,3 +127,47 @@ def serialize(message, serializer):
 def deserialize(serialized_message, deserializer):
   return _transform(serialized_message, deserializer,
                     'Exception deserializing message!')
+
+
+def fully_qualified_method(group, method):
+  return '/{}/{}'.format(group, method)
+
+
+class CleanupThread(threading.Thread):
+  """A threading.Thread subclass supporting custom behavior on join().
+
+  On Python Interpreter exit, Python will attempt to join outstanding threads
+  prior to garbage collection.  We may need to do additional cleanup, and
+  we accomplish this by overriding the join() method.
+  """
+
+  def __init__(self, behavior, group=None, target=None, name=None,
+               args=(), kwargs={}):
+    """Constructor.
+
+    Args:
+      behavior (function): Function called on join() with a single
+          argument, timeout, indicating the maximum duration of
+          `behavior`, or None indicating `behavior` has no deadline.
+          `behavior` must be idempotent.
+      group (None): should be None.  Reseved for future extensions
+          when ThreadGroup is implemented.
+      target (function): The function to invoke when this thread is
+          run.  Defaults to None.
+      name (str): The name of this thread.  Defaults to None.
+        args (tuple[object]): A tuple of arguments to pass to `target`.
+      kwargs (dict[str,object]): A dictionary of keyword arguments to
+           pass to `target`.
+    """
+    super(CleanupThread, self).__init__(group=group, target=target,
+                                        name=name, args=args, kwargs=kwargs)
+    self._behavior = behavior
+
+  def join(self, timeout=None):
+    start_time = time.time()
+    self._behavior(timeout)
+    end_time = time.time()
+    if timeout is not None:
+      timeout -= end_time - start_time
+      timeout = max(timeout, 0)
+    super(CleanupThread, self).join(timeout)

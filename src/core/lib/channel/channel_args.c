@@ -149,6 +149,7 @@ grpc_channel_args *grpc_channel_args_normalize(const grpc_channel_args *a) {
 
 void grpc_channel_args_destroy(grpc_channel_args *a) {
   size_t i;
+  if (!a) return;
   for (i = 0; i < a->num_args; i++) {
     switch (a->args[i].type) {
       case GRPC_ARG_STRING:
@@ -212,7 +213,7 @@ static int find_compression_algorithm_states_bitset(const grpc_channel_args *a,
 
 grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
     grpc_channel_args **a, grpc_compression_algorithm algorithm, int state) {
-  int *states_arg;
+  int *states_arg = NULL;
   grpc_channel_args *result = *a;
   const int states_arg_found =
       find_compression_algorithm_states_bitset(*a, &states_arg);
