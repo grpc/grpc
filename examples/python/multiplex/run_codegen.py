@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2015, Google Inc.
+# Copyright 2016, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,5 +27,25 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Runs the protoc with gRPC plugin to generate protocol messages and gRPC stubs.
-python -m grpc.tools.protoc -I../../protos --python_out=. --grpc_python_out=. ../../protos/route_guide.proto
+"""Generates protocol messages and gRPC stubs."""
+
+from grpc.tools import protoc
+
+protoc.main(
+    (
+        '',
+        '-I../../protos',
+        '--python_out=.',
+        '--grpc_python_out=.',
+        '../../protos/helloworld.proto',
+    )
+)
+protoc.main(
+    (
+        '',
+        '-I../../protos',
+        '--python_out=.',
+        '--grpc_python_out=.',
+        '../../protos/route_guide.proto',
+    )
+)

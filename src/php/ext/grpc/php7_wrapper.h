@@ -31,22 +31,22 @@
  *
  */
 
-#include <Python.h>
-#include "loader.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif  /* __cpluslus  */
+#ifndef PHP7_WRAPPER_GRPC_H
+#define PHP7_WRAPPER_GRPC_H
 
-int pygrpc_load_core(char *path) { return 1; }
+#if PHP_MAJOR_VERSION < 7
 
-// Cython doesn't have Py_AtExit bindings, so we call the C_API directly
-int pygrpc_initialize_core(void) {
-  grpc_init();
-  return Py_AtExit(grpc_shutdown) < 0 ? 0 : 1;
-}
+#define php_grpc_int int
+#define php_grpc_long long
+#define PHP_GRPC_RETURN_STRING(val, dup) RETURN_STRING(val, dup)
 
-#ifdef __cplusplus
-}
-#endif  /* __cpluslus */
+#else
 
+#define php_grpc_int size_t
+#define php_grpc_long zend_long
+#define PHP_GRPC_RETURN_STRING(val, dup) RETURN_STRING(val)
+
+#endif /* PHP_MAJOR_VERSION */
+
+#endif /* PHP7_WRAPPER_GRPC_H */

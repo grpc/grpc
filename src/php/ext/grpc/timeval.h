@@ -57,6 +57,9 @@ typedef struct wrapped_grpc_timeval {
   gpr_timespec wrapped;
 } wrapped_grpc_timeval;
 
+#define Z_WRAPPED_GRPC_TIMEVAL_P(zv) \
+  (wrapped_grpc_timeval *)zend_object_store_get_object(zv TSRMLS_CC)
+
 #else
 
 typedef struct wrapped_grpc_timeval {

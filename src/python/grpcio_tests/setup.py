@@ -75,7 +75,7 @@ COMMAND_CLASS = {
     # Run `preprocess` *before* doing any packaging!
     'preprocess': commands.GatherProto,
 
-    'build_proto_modules': grpc.tools.command.BuildProtoModules,
+    'build_package_protos': grpc.tools.command.BuildPackageProtos,
     'build_py': commands.BuildPy,
     'run_interop': commands.RunInterop,
     'test_lite': commands.TestLite
