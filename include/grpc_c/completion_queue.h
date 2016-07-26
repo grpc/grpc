@@ -36,6 +36,7 @@
 #define GRPC_C_COMPLETION_QUEUE_PUBLIC_H
 
 #include <grpc_c/grpc_c.h>
+#include <stdbool.h>
 
 typedef struct gpr_timespec GRPC_timespec;
 

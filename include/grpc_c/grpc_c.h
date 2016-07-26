@@ -63,18 +63,6 @@ typedef struct grpc_method {
 
 typedef struct grpc_method GRPC_method;
 
-/* For C compilers without bool support */
-#ifndef __cplusplus
-#if defined(__STDC__) && __STDC_VERSION__ >= 199901L
-#include <stdbool.h>
-#else
-#ifndef bool
-typedef enum _bool { false, true };
-typedef enum _bool bool;
-#endif
-#endif
-#endif
-
 #include <grpc_c/message.h>
 
 #endif /* GRPC_C_PUBLIC_H */
