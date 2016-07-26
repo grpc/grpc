@@ -152,13 +152,6 @@ void ThriftSerializer<Dummy, P>::setSerializeVersion(bool value) {
 }
 
 template <typename Dummy, typename P>
-void ThriftSerializer<Dummy, P>::setVersion(int8_t version) {
-  version_ = version;
-  setVersion_ = true;
-}
-
-
-template <typename Dummy, typename P>
 void
 ThriftSerializer<Dummy, P>::prepare()
 {
@@ -167,7 +160,6 @@ ThriftSerializer<Dummy, P>::prepare()
 
   // create a protocol for the memory buffer transport
   protocol_.reset(new Protocol(buffer_));
-  //prepareProtocol(protocol_);
 
   prepared_ = true;
 }
