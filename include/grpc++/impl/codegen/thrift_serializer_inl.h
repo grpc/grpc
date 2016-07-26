@@ -40,7 +40,7 @@
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/impl/codegen/slice_buffer.h>
-#include <thrift/lib/cpp/protocol/TProtocolException.h>
+#include <thrift/protocol/TProtocolException.h>
 
 namespace apache {
 namespace thrift {
@@ -86,8 +86,8 @@ template <typename Dummy, typename P>
 template <typename T>
 void ThriftSerializer<Dummy, P>::serialize(const T& fields, grpc_byte_buffer** bp) {
 
-  uint8_t* byteBuffer;
-  uint32_t byteBufferSize;
+  const uint8_t* byteBuffer;
+  size_t byteBufferSize;
   serialize(fields, &byteBuffer, &byteBufferSize);
 
   gpr_slice slice = gpr_slice_from_copied_buffer((char*)byteBuffer,byteBufferSize);
