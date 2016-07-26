@@ -17,3 +17,6 @@
 [submodule "third_party/nanopb"]
 	path = third_party/nanopb
 	url = https://github.com/nanopb/nanopb.git
+[submodule "tools/thrift"]
+	path = tools/thrift
+	url = https://github.com/chedeti/thrift.git
