@@ -88,8 +88,7 @@ class GrpcToolTest : public ::testing::Test {
     server_address << "localhost:" << port;
     // Setup server
     ServerBuilder builder;
-    builder.AddListeningPort(server_address.str(),
-                             InsecureServerCredentials());
+    builder.AddListeningPort(server_address.str(), InsecureServerCredentials());
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
     return server_address.str();
