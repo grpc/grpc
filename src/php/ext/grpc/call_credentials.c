@@ -86,17 +86,6 @@ zend_object_value create_wrapped_grpc_call_credentials(
   return retval;
 }
 
-zval *grpc_php_wrap_call_credentials(grpc_call_credentials *wrapped TSRMLS_DC) {
-  zval *credentials_object;
-  MAKE_STD_ZVAL(credentials_object);
-  object_init_ex(credentials_object, grpc_ce_call_credentials);
-  wrapped_grpc_call_credentials *credentials =
-      (wrapped_grpc_call_credentials *)zend_object_store_get_object(
-          credentials_object TSRMLS_CC);
-  credentials->wrapped = wrapped;
-  return credentials_object;
-}
-
 #else
 
 static zend_object_handlers call_credentials_ce_handlers;
@@ -124,15 +113,18 @@ zend_object *create_wrapped_grpc_call_credentials(zend_class_entry
   return &intern->std;
 }
 
-void grpc_php_wrap_call_credentials(grpc_call_credentials *wrapped,
-                                    zval *credentials_object) {
+#endif
+
+zval *grpc_php_wrap_call_credentials(grpc_call_credentials
+                                     *wrapped TSRMLS_DC) {
+  zval *credentials_object;
+  PHP_GRPC_MAKE_STD_ZVAL(credentials_object);
   object_init_ex(credentials_object, grpc_ce_call_credentials);
   wrapped_grpc_call_credentials *credentials =
     Z_WRAPPED_GRPC_CALL_CREDS_P(credentials_object);
   credentials->wrapped = wrapped;
+  return credentials_object;
 }
-
-#endif
 
 /**
  * Create composite credentials from two existing credentials.
@@ -160,13 +152,10 @@ PHP_METHOD(CallCredentials, createComposite) {
   grpc_call_credentials *creds =
       grpc_composite_call_credentials_create(cred1->wrapped, cred2->wrapped,
                                              NULL);
-#if PHP_MAJOR_VERSION < 7
-  zval *creds_object = grpc_php_wrap_call_credentials(creds TSRMLS_CC);
+  zval *creds_object;
+  PHP_GRPC_MAKE_STD_ZVAL(creds_object);
+  creds_object = grpc_php_wrap_call_credentials(creds TSRMLS_CC);
   RETURN_DESTROY_ZVAL(creds_object);
-#else
-  grpc_php_wrap_call_credentials(creds, return_value);
-  RETURN_DESTROY_ZVAL(return_value);
-#endif
 }
 
 /**
@@ -207,13 +196,10 @@ PHP_METHOD(CallCredentials, createFromPlugin) {
 
   grpc_call_credentials *creds =
     grpc_metadata_credentials_create_from_plugin(plugin, NULL);
-#if PHP_MAJOR_VERSION < 7
-  zval *creds_object = grpc_php_wrap_call_credentials(creds TSRMLS_CC);
+  zval *creds_object;
+  PHP_GRPC_MAKE_STD_ZVAL(creds_object);
+  creds_object = grpc_php_wrap_call_credentials(creds TSRMLS_CC);
   RETURN_DESTROY_ZVAL(creds_object);
-#else
-  grpc_php_wrap_call_credentials(creds, return_value);
-  RETURN_DESTROY_ZVAL(return_value);
-#endif
 }
 
 /* Callback function for plugin creds API */
@@ -226,37 +212,28 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
 
   /* prepare to call the user callback function with info from the
    * grpc_auth_metadata_context */
+  zval *arg;
+  PHP_GRPC_MAKE_STD_ZVAL(arg);
+  object_init(arg);
+  php_grpc_add_property_string(arg, "service_url", context.service_url, true);
+  php_grpc_add_property_string(arg, "method_name", context.method_name, true);
+  zval *retval;
+  PHP_GRPC_MAKE_STD_ZVAL(retval);
 #if PHP_MAJOR_VERSION < 7
   zval **params[1];
-  zval *arg;
-  zval *retval;
-  MAKE_STD_ZVAL(arg);
-  object_init(arg);
-  add_property_string(arg, "service_url", context.service_url, true);
-  add_property_string(arg, "method_name", context.method_name, true);
   params[0] = &arg;
-  state->fci->param_count = 1;
   state->fci->params = params;
   state->fci->retval_ptr_ptr = &retval;
 #else
-  zval arg;
-  zval retval;
-  object_init(&arg);
-  add_property_string(&arg, "service_url", context.service_url);
-  add_property_string(&arg, "method_name", context.method_name);
-  state->fci->param_count = 1;
-  state->fci->params = &arg;
-  state->fci->retval = &retval;
+  state->fci->params = arg;
+  state->fci->retval = retval;
 #endif
+  state->fci->param_count = 1;
 
   /* call the user callback function */
   zend_call_function(state->fci, state->fci_cache TSRMLS_CC);
 
-#if PHP_MAJOR_VERSION < 7
   if (Z_TYPE_P(retval) != IS_ARRAY) {
-#else
-  if (Z_TYPE_P(&retval) != IS_ARRAY) {
-#endif
     zend_throw_exception(spl_ce_InvalidArgumentException,
                          "plugin callback must return metadata array",
                          1 TSRMLS_CC);
@@ -264,11 +241,7 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
   }
 
   grpc_metadata_array metadata;
-#if PHP_MAJOR_VERSION < 7
   if (!create_metadata_array(retval, &metadata)) {
-#else
-  if (!create_metadata_array(&retval, &metadata)) {
-#endif
     zend_throw_exception(spl_ce_InvalidArgumentException,
                          "invalid metadata", 1 TSRMLS_CC);
     grpc_metadata_array_destroy(&metadata);

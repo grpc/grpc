@@ -78,17 +78,6 @@ zend_object_value create_wrapped_grpc_timeval(zend_class_entry *class_type
   return retval;
 }
 
-zval *grpc_php_wrap_timeval(gpr_timespec wrapped TSRMLS_DC) {
-  zval *timeval_object;
-  MAKE_STD_ZVAL(timeval_object);
-  object_init_ex(timeval_object, grpc_ce_timeval);
-  wrapped_grpc_timeval *timeval =
-      (wrapped_grpc_timeval *)zend_object_store_get_object(
-          timeval_object TSRMLS_CC);
-  memcpy(&timeval->wrapped, &wrapped, sizeof(gpr_timespec));
-  return timeval_object;
-}
-
 #else
 
 static zend_object_handlers timeval_ce_handlers;
@@ -111,13 +100,16 @@ zend_object *create_wrapped_grpc_timeval(zend_class_entry *class_type) {
   return &intern->std;
 }
 
-void grpc_php_wrap_timeval(gpr_timespec wrapped, zval *timeval_object) {
+#endif
+
+zval *grpc_php_wrap_timeval(gpr_timespec wrapped TSRMLS_DC) {
+  zval *timeval_object;
+  PHP_GRPC_MAKE_STD_ZVAL(timeval_object);
   object_init_ex(timeval_object, grpc_ce_timeval);
   wrapped_grpc_timeval *timeval = Z_WRAPPED_GRPC_TIMEVAL_P(timeval_object);
   memcpy(&timeval->wrapped, &wrapped, sizeof(gpr_timespec));
+  return timeval_object;
 }
-
-#endif
 
 /**
  * Constructs a new instance of the Timeval class
@@ -156,16 +148,12 @@ PHP_METHOD(Timeval, add) {
   }
   wrapped_grpc_timeval *self = Z_WRAPPED_GRPC_TIMEVAL_P(getThis());
   wrapped_grpc_timeval *other = Z_WRAPPED_GRPC_TIMEVAL_P(other_obj);
-#if PHP_MAJOR_VERSION < 7
-  zval *sum =
+  zval *sum;
+  PHP_GRPC_MAKE_STD_ZVAL(sum);
+  sum =
       grpc_php_wrap_timeval(gpr_time_add(self->wrapped, other->wrapped)
                             TSRMLS_CC);
   RETURN_DESTROY_ZVAL(sum);
-#else
-  grpc_php_wrap_timeval(gpr_time_add(self->wrapped, other->wrapped),
-                        return_value);
-  RETURN_DESTROY_ZVAL(return_value);
-#endif
 }
 
 /**
@@ -186,16 +174,12 @@ PHP_METHOD(Timeval, subtract) {
   }
   wrapped_grpc_timeval *self = Z_WRAPPED_GRPC_TIMEVAL_P(getThis());
   wrapped_grpc_timeval *other = Z_WRAPPED_GRPC_TIMEVAL_P(other_obj);
-#if PHP_MAJOR_VERSION < 7
-  zval *diff =
+  zval *diff;
+  PHP_GRPC_MAKE_STD_ZVAL(diff);
+  diff =
       grpc_php_wrap_timeval(gpr_time_sub(self->wrapped, other->wrapped)
                             TSRMLS_CC);
   RETURN_DESTROY_ZVAL(diff);
-#else
-  grpc_php_wrap_timeval(gpr_time_sub(self->wrapped, other->wrapped),
-                        return_value);
-  RETURN_DESTROY_ZVAL(return_value);
-#endif
 }
 
 /**
@@ -255,13 +239,10 @@ PHP_METHOD(Timeval, similar) {
  * @return Timeval The current time
  */
 PHP_METHOD(Timeval, now) {
-#if PHP_MAJOR_VERSION < 7
-  zval *now = grpc_php_wrap_timeval(gpr_now(GPR_CLOCK_REALTIME) TSRMLS_CC);
+  zval *now;
+  PHP_GRPC_MAKE_STD_ZVAL(now);
+  now = grpc_php_wrap_timeval(gpr_now(GPR_CLOCK_REALTIME) TSRMLS_CC);
   RETURN_DESTROY_ZVAL(now);
-#else
-  grpc_php_wrap_timeval(gpr_now(GPR_CLOCK_REALTIME), return_value);
-  RETURN_DESTROY_ZVAL(return_value);
-#endif
 }
 
 /**
@@ -269,18 +250,13 @@ PHP_METHOD(Timeval, now) {
  * @return Timeval Zero length time interval
  */
 PHP_METHOD(Timeval, zero) {
-#if PHP_MAJOR_VERSION < 7
-  zval *grpc_php_timeval_zero =
+  zval *grpc_php_timeval_zero;
+  PHP_GRPC_MAKE_STD_ZVAL(grpc_php_timeval_zero);
+  grpc_php_timeval_zero =
       grpc_php_wrap_timeval(gpr_time_0(GPR_CLOCK_REALTIME) TSRMLS_CC);
   RETURN_ZVAL(grpc_php_timeval_zero,
               false, /* Copy original before returning? */
               true /* Destroy original before returning */);
-#else
-  grpc_php_wrap_timeval(gpr_time_0(GPR_CLOCK_REALTIME), return_value);
-  RETURN_ZVAL(return_value,
-              false, /* Copy original before returning? */
-              true /* Destroy original before returning */);
-#endif
 }
 
 /**
@@ -288,14 +264,11 @@ PHP_METHOD(Timeval, zero) {
  * @return Timeval Infinite future time value
  */
 PHP_METHOD(Timeval, infFuture) {
-#if PHP_MAJOR_VERSION < 7
-  zval *grpc_php_timeval_inf_future =
+  zval *grpc_php_timeval_inf_future;
+  PHP_GRPC_MAKE_STD_ZVAL(grpc_php_timeval_inf_future);
+  grpc_php_timeval_inf_future =
       grpc_php_wrap_timeval(gpr_inf_future(GPR_CLOCK_REALTIME) TSRMLS_CC);
   RETURN_DESTROY_ZVAL(grpc_php_timeval_inf_future);
-#else
-  grpc_php_wrap_timeval(gpr_inf_future(GPR_CLOCK_REALTIME), return_value);
-  RETURN_DESTROY_ZVAL(return_value);
-#endif
 }
 
 /**
@@ -303,14 +276,11 @@ PHP_METHOD(Timeval, infFuture) {
  * @return Timeval Infinite past time value
  */
 PHP_METHOD(Timeval, infPast) {
-#if PHP_MAJOR_VERSION < 7
-  zval *grpc_php_timeval_inf_past =
+  zval *grpc_php_timeval_inf_past;
+  PHP_GRPC_MAKE_STD_ZVAL(grpc_php_timeval_inf_past);
+  grpc_php_timeval_inf_past =
       grpc_php_wrap_timeval(gpr_inf_past(GPR_CLOCK_REALTIME) TSRMLS_CC);
   RETURN_DESTROY_ZVAL(grpc_php_timeval_inf_past);
-#else
-  grpc_php_wrap_timeval(gpr_inf_past(GPR_CLOCK_REALTIME), return_value);
-  RETURN_DESTROY_ZVAL(return_value);
-#endif
 }
 
 /**
