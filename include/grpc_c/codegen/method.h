@@ -31,20 +31,19 @@
  *
  */
 
+#ifndef GRPC_C_CODEGEN_METHOD_PUBLIC_H
+#define GRPC_C_CODEGEN_METHOD_PUBLIC_H
 
-#ifndef GRPC_C_SERVER_STREAMING_BLOCKING_CALL_PUBLIC_H
-#define GRPC_C_SERVER_STREAMING_BLOCKING_CALL_PUBLIC_H
+typedef struct grpc_method {
+  enum RpcType {
+    NORMAL_RPC = 0,
+    CLIENT_STREAMING,  /* request streaming */
+      SERVER_STREAMING,  /* response streaming */
+      BIDI_STREAMING
+  } type;
+  const char* name;
+} grpc_method;
 
-#include <grpc_c/grpc_c.h>
-#include <stdbool.h>
+typedef struct grpc_method GRPC_method;
 
-GRPC_client_reader *GRPC_server_streaming_blocking_call(const GRPC_method rpc_method,
-                                                        GRPC_client_context *const context,
-                                                        const GRPC_message request);
-
-bool GRPC_server_streaming_blocking_read(GRPC_client_reader *reader, void *response);
-
-/* Terminating the writer takes care of ending the call, freeing the writer. */
-GRPC_status GRPC_client_reader_terminate(GRPC_client_reader *reader);
-
-#endif /* GRPC_C_SERVER_STREAMING_BLOCKING_CALL_PUBLIC_H */
+#endif /* GRPC_C_CODEGEN_METHOD_PUBLIC_H */

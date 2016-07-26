@@ -2985,20 +2985,21 @@ LIBGRPC_C_SRC = \
     src/c/unary_blocking_call.c \
 
 PUBLIC_HEADERS_C += \
-    include/grpc_c/bidi_streaming_blocking_call.h \
     include/grpc_c/channel.h \
     include/grpc_c/client_context.h \
-    include/grpc_c/client_streaming_blocking_call.h \
-    include/grpc_c/codegen/client_context_priv.h \
+    include/grpc_c/codegen/bidi_streaming_blocking_call.h \
+    include/grpc_c/codegen/client_context.h \
+    include/grpc_c/codegen/client_streaming_blocking_call.h \
+    include/grpc_c/codegen/message.h \
+    include/grpc_c/codegen/method.h \
+    include/grpc_c/codegen/pb_compat.h \
+    include/grpc_c/codegen/serialization.h \
+    include/grpc_c/codegen/server_streaming_blocking_call.h \
+    include/grpc_c/codegen/unary_async_call.h \
+    include/grpc_c/codegen/unary_blocking_call.h \
     include/grpc_c/completion_queue.h \
     include/grpc_c/grpc_c.h \
-    include/grpc_c/message.h \
-    include/grpc_c/pb_compat.h \
-    include/grpc_c/serialization.h \
-    include/grpc_c/server_streaming_blocking_call.h \
     include/grpc_c/status.h \
-    include/grpc_c/unary_async_call.h \
-    include/grpc_c/unary_blocking_call.h \
 
 LIBGRPC_C_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_C_SRC))))
 

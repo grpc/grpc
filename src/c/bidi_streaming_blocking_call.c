@@ -33,12 +33,13 @@
 
 
 #include <grpc_c/grpc_c.h>
+#include <grpc_c/status.h>
 #include <grpc/support/log.h>
-#include "bidi_streaming_blocking_call.h"
+#include "src/c/bidi_streaming_blocking_call.h"
 #include <grpc_c/completion_queue.h>
-#include <include/grpc/support/alloc.h>
+#include <grpc/support/alloc.h>
 #include "src/c/alloc.h"
-#include "completion_queue.h"
+#include "src/c/completion_queue.h"
 
 GRPC_client_reader_writer *GRPC_bidi_streaming_blocking_call(const GRPC_method rpc_method,
                                                              GRPC_client_context *const context) {

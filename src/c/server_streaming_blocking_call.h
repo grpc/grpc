@@ -36,7 +36,7 @@
 #define GRPC_C_SERVER_STREAMING_BLOCKING_CALL_H
 
 #include "src/c/call_ops.h"
-#include <grpc_c/server_streaming_blocking_call.h>
+#include <grpc_c/codegen/server_streaming_blocking_call.h>
 
 typedef struct grpc_client_reader {
   grpc_client_context *context;

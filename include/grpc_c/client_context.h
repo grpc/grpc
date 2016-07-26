@@ -31,7 +31,6 @@
  *
  */
 
-
 #ifndef GRPC_C_CONTEXT_PUBLIC_H
 #define GRPC_C_CONTEXT_PUBLIC_H
 

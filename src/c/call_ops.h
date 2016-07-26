@@ -36,6 +36,7 @@
 #define GRPC_C_CALL_OPS_H
 
 #include <grpc_c/grpc_c.h>
+#include <grpc_c/codegen/method.h>
 #include "src/c/message.h"
 #include "src/c/client_context.h"
 #include <grpc/grpc.h>

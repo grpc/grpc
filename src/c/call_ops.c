@@ -30,6 +30,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+
 #include <grpc_c/grpc_c.h>
 #include "src/c/call_ops.h"
 #include <grpc/support/log.h>

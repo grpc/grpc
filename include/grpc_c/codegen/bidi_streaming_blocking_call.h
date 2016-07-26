@@ -31,13 +31,25 @@
  *
  */
 
-
-#ifndef GRPC_C_SERIALIZATION_PUBLIC_H
-#define GRPC_C_SERIALIZATION_PUBLIC_H
+#ifndef GRPC_C_CODEGEN_BIDI_STREAMING_BLOCKING_CALL_PUBLIC_H
+#define GRPC_C_CODEGEN_BIDI_STREAMING_BLOCKING_CALL_PUBLIC_H
 
 #include <grpc_c/grpc_c.h>
+#include <grpc_c/codegen/method.h>
+#include <grpc_c/codegen/message.h>
+#include <stdbool.h>
 
-typedef GRPC_message (*GRPC_serializer)(const GRPC_message input);
-typedef void (*GRPC_deserializer)(const GRPC_message input, void *output);
+GRPC_client_reader_writer *GRPC_bidi_streaming_blocking_call(const GRPC_method rpc_method,
+                                                             GRPC_client_context *const context);
 
-#endif /* GRPC_C_SERIALIZATION_PUBLIC_H */
+bool GRPC_bidi_streaming_blocking_read(GRPC_client_reader_writer *reader, void *response);
+
+bool GRPC_bidi_streaming_blocking_write(GRPC_client_reader_writer *reader_writer, const GRPC_message request);
+
+/* Marks the end of client stream. Useful for bidi-calls where     */
+/* the server needs all data from the client to produce a response */
+bool GRPC_bidi_streaming_blocking_writes_done(GRPC_client_reader_writer *reader_writer);
+
+GRPC_status GRPC_client_reader_writer_terminate(GRPC_client_reader_writer *reader_writer);
+
+#endif /* GRPC_C_CODEGEN_BIDI_STREAMING_BLOCKING_CALL_PUBLIC_H */

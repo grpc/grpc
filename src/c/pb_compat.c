@@ -32,11 +32,10 @@
  */
 
 #include <stddef.h>
-#include <grpc_c/grpc_c.h>
-#include <grpc_c/pb_compat.h>
+#include <grpc_c/codegen/pb_compat.h>
 #include <third_party/nanopb/pb.h>
 #include <third_party/nanopb/pb_encode.h>
-#include <include/grpc/support/alloc.h>
+#include <grpc/support/alloc.h>
 #include "src/c/alloc.h"
 
 /**

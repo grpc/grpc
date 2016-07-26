@@ -31,32 +31,23 @@
  *
  */
 
-#ifndef GRPC_C_COMPLETION_QUEUE_PUBLIC_H
-#define GRPC_C_COMPLETION_QUEUE_PUBLIC_H
+
+#ifndef GRPC_C_CODEGEN_CLIENT_STREAMING_BLOCKING_CALL_PUBLIC_H
+#define GRPC_C_CODEGEN_CLIENT_STREAMING_BLOCKING_CALL_PUBLIC_H
 
 #include <grpc_c/grpc_c.h>
+#include <grpc_c/codegen/method.h>
+#include <grpc_c/codegen/message.h>
 #include <stdbool.h>
 
-typedef struct gpr_timespec GRPC_timespec;
+GRPC_client_writer *GRPC_client_streaming_blocking_call(const GRPC_method rpc_method,
+                                                        GRPC_client_context *const context,
+                                                        void *response);
 
-/* Tri-state return for GRPC_commit_ops_and_wait */
-typedef enum GRPC_completion_queue_next_status {
-  GRPC_COMPLETION_QUEUE_SHUTDOWN,   /* The completion queue has been shutdown. */
-  GRPC_COMPLETION_QUEUE_GOT_EVENT,  /* Got a new event; \a tag will be filled in with its */
-                                    /* associated value; \a ok indicating its success. */
-  GRPC_COMPLETION_QUEUE_TIMEOUT     /* deadline was reached. */
-} GRPC_completion_queue_operation_status;
+bool GRPC_client_streaming_blocking_write(GRPC_client_writer *writer, const GRPC_message request);
 
-GRPC_completion_queue *GRPC_completion_queue_create();
-void GRPC_completion_queue_shutdown(GRPC_completion_queue *cq);
-void GRPC_completion_queue_destroy(GRPC_completion_queue *cq);
+/* Terminating the writer takes care of ending the call, freeing the writer. */
+/* Returns call status in the context object. */
+GRPC_status GRPC_client_writer_terminate(GRPC_client_writer *writer);
 
-/* Swallows events and blocks until it sees the shutdown event */
-void GRPC_completion_queue_shutdown_wait(GRPC_completion_queue *cq);
-
-GRPC_completion_queue_operation_status GRPC_completion_queue_next(GRPC_completion_queue *cq, void **tag, bool *ok);
-GRPC_completion_queue_operation_status GRPC_completion_queue_next_deadline(GRPC_completion_queue *cq,
-                                                                         GRPC_timespec deadline,
-                                                                         void **tag, bool *ok);
-
-#endif /* GRPC_C_COMPLETION_QUEUE_PUBLIC_H */
+#endif /* GRPC_C_CODEGEN_CLIENT_STREAMING_BLOCKING_CALL_PUBLIC_H */

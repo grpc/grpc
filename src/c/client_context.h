@@ -37,8 +37,8 @@
 
 #include <grpc_c/grpc_c.h>
 #include <grpc_c/status.h>
-#include <grpc_c/codegen/client_context_priv.h>
-#include <grpc_c/serialization.h>
+#include <grpc_c/codegen/client_context.h>
+#include <grpc_c/codegen/serialization.h>
 #include <grpc/grpc.h>
 #include "src/c/message.h"
 #include "src/c/call_ops.h"
@@ -57,7 +57,7 @@ typedef struct grpc_client_context {
   grpc_serialization_impl serialization_impl;
 
   // status of the call
-  grpc_status status;
+  GRPC_status status;
 
   // state tracking
   bool initial_metadata_received;

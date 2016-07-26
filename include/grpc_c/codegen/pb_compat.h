@@ -31,24 +31,19 @@
  *
  */
 
-
-#ifndef GRPC_C_BIDI_STREAMING_BLOCKING_CALL_PUBLIC_H
-#define GRPC_C_BIDI_STREAMING_BLOCKING_CALL_PUBLIC_H
+#ifndef GRPC_C_CODEGEN_PB_COMPAT_PUBLIC_H
+#define GRPC_C_CODEGEN_PB_COMPAT_PUBLIC_H
 
 #include <grpc_c/grpc_c.h>
+#include <stdint.h>
 #include <stdbool.h>
 
-GRPC_client_reader_writer *GRPC_bidi_streaming_blocking_call(const GRPC_method rpc_method,
-                                                             GRPC_client_context *const context);
+typedef struct GRPC_pb_dynamic_array_state GRPC_pb_dynamic_array_state;
+typedef struct pb_ostream_s pb_ostream_t;
 
-bool GRPC_bidi_streaming_blocking_read(GRPC_client_reader_writer *reader, void *response);
+bool GRPC_pb_compat_dynamic_array_callback(pb_ostream_t *stream, const uint8_t *buf, size_t count);
+GRPC_pb_dynamic_array_state *GRPC_pb_compat_dynamic_array_alloc();
+void *GRPC_pb_compat_dynamic_array_get_content(GRPC_pb_dynamic_array_state *state);
+void GRPC_pb_compat_dynamic_array_free(GRPC_pb_dynamic_array_state *state);
 
-bool GRPC_bidi_streaming_blocking_write(GRPC_client_reader_writer *reader_writer, const GRPC_message request);
-
-/* Marks the end of client stream. Useful for bidi-calls where     */
-/* the server needs all data from the client to produce a response */
-bool GRPC_bidi_streaming_blocking_writes_done(GRPC_client_reader_writer *reader_writer);
-
-GRPC_status GRPC_client_reader_writer_terminate(GRPC_client_reader_writer *reader_writer);
-
-#endif /* GRPC_C_BIDI_STREAMING_BLOCKING_CALL_PUBLIC_H */
+#endif /* GRPC_C_CODEGEN_PB_COMPAT_PUBLIC_H */

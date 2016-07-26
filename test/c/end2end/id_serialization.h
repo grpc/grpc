@@ -35,7 +35,7 @@
 #ifndef GRPC_C_MOCK_SERIALIZATION_H
 #define GRPC_C_MOCK_SERIALIZATION_H
 
-#include <grpc_c/serialization.h>
+#include <include/grpc_c/codegen/serialization.h>
 #include "src/c/message.h"
 
 /* Serialization functions that doesn't do anything except duplicating the buffer */

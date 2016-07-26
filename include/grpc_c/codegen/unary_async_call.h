@@ -31,19 +31,21 @@
  *
  */
 
-#ifndef GRPC_C_PB_COMPAT_H
-#define GRPC_C_PB_COMPAT_H
+#ifndef GRPC_C_CODEGEN_CLIENT_ASYNC_READER_PUBLIC_H
+#define GRPC_C_CODEGEN_CLIENT_ASYNC_READER_PUBLIC_H
 
 #include <grpc_c/grpc_c.h>
-#include <stdint.h>
-#include <stdbool.h>
+#include <grpc_c/codegen/method.h>
+#include <grpc_c/codegen/message.h>
+#include <grpc_c/completion_queue.h>
 
-typedef struct GRPC_pb_dynamic_array_state GRPC_pb_dynamic_array_state;
-typedef struct pb_ostream_s pb_ostream_t;
+GRPC_client_async_response_reader *GRPC_unary_async_call(GRPC_completion_queue *cq,
+                                                         const GRPC_method rpc_method,
+                                                         const GRPC_message request,
+                                                         GRPC_client_context *const context);
 
-bool GRPC_pb_compat_dynamic_array_callback(pb_ostream_t *stream, const uint8_t *buf, size_t count);
-GRPC_pb_dynamic_array_state *GRPC_pb_compat_dynamic_array_alloc();
-void *GRPC_pb_compat_dynamic_array_get_content(GRPC_pb_dynamic_array_state *state);
-void GRPC_pb_compat_dynamic_array_free(GRPC_pb_dynamic_array_state *state);
+void GRPC_client_async_finish(GRPC_client_async_response_reader *reader, void *response, void *tag);
 
-#endif /* GRPC_C_PB_COMPAT_H */
+void GRPC_client_async_read_metadata(GRPC_client_async_response_reader *reader, void *tag);
+
+#endif /* GRPC_C_CODEGEN_CLIENT_ASYNC_READER_PUBLIC_H */

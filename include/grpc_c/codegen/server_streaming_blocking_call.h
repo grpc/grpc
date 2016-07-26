@@ -31,17 +31,21 @@
  *
  */
 
+#ifndef GRPC_C_CODEGEN_SERVER_STREAMING_BLOCKING_CALL_PUBLIC_H
+#define GRPC_C_CODEGEN_SERVER_STREAMING_BLOCKING_CALL_PUBLIC_H
 
-#ifndef GRPC_C_MESSAGE_PUBLIC_H
-#define GRPC_C_MESSAGE_PUBLIC_H
+#include <grpc_c/grpc_c.h>
+#include <grpc_c/codegen/method.h>
+#include <grpc_c/codegen/message.h>
+#include <stdbool.h>
 
-#include <stdlib.h>
+GRPC_client_reader *GRPC_server_streaming_blocking_call(const GRPC_method rpc_method,
+                                                        GRPC_client_context *const context,
+                                                        const GRPC_message request);
 
-typedef struct GRPC_message {
-  const void * data;
-  const size_t length;
-} GRPC_message;
+bool GRPC_server_streaming_blocking_read(GRPC_client_reader *reader, void *response);
 
-void GRPC_message_destroy(GRPC_message *message);
+/* Terminating the writer takes care of ending the call, freeing the writer. */
+GRPC_status GRPC_client_reader_terminate(GRPC_client_reader *reader);
 
-#endif /* GRPC_C_MESSAGE_PUBLIC_H */
+#endif /* GRPC_C_CODEGEN_SERVER_STREAMING_BLOCKING_CALL_PUBLIC_H */

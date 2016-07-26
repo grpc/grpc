@@ -31,7 +31,6 @@
  *
  */
 
-
 #ifndef GRPC_C_CHANNEL_PUBLIC_H
 #define GRPC_C_CHANNEL_PUBLIC_H
 

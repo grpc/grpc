@@ -526,6 +526,7 @@ grpc::string GetHeaderServices(File *file,
     // We need to generate a short serialization helper for every message type
     // This should be handled in protoc but there's nothing we can do at the moment
     // given we're on nanopb.
+    printer->Print("typedef struct GRPC_message GRPC_message;\n");
     for (auto& msg : dynamic_cast<CFile*>(file)->messages()) {
       std::map<grpc::string, grpc::string> vars_msg(vars);
       vars_msg["msgType"] = msg->name();
@@ -534,6 +535,7 @@ GRPC_message $CPrefix$$msgType$_serializer(const GRPC_message input);
 void $CPrefix$$msgType$_deserializer(const GRPC_message input, void *output);
 )");
     }
+    printer->Print("\n");
 
     for (int i = 0; i < file->service_count(); ++i) {
       PrintHeaderService(printer.get(), file->service(i).get(), &vars);
@@ -630,17 +632,19 @@ grpc::string GetSourceIncludes(File *file,
       "grpc_c/status.h",
       "grpc_c/grpc_c.h",
       "grpc_c/channel.h",
-      "grpc_c/unary_blocking_call.h",
-      "grpc_c/unary_async_call.h",
-      "grpc_c/client_streaming_blocking_call.h",
-      "grpc_c/server_streaming_blocking_call.h",
-      "grpc_c/bidi_streaming_blocking_call.h",
       "grpc_c/client_context.h",
-      "grpc_c/codegen/client_context_priv.h",
+      "grpc_c/codegen/message.h",
+      "grpc_c/codegen/method.h",
+      "grpc_c/codegen/unary_blocking_call.h",
+      "grpc_c/codegen/unary_async_call.h",
+      "grpc_c/codegen/client_streaming_blocking_call.h",
+      "grpc_c/codegen/server_streaming_blocking_call.h",
+      "grpc_c/codegen/bidi_streaming_blocking_call.h",
+      "grpc_c/codegen/client_context.h",
       // Relying on Nanopb for Protobuf serialization for now
       nano_encode.c_str(),
       nano_decode.c_str(),
-      "grpc_c/pb_compat.h"
+      "grpc_c/codegen/pb_compat.h"
     };
     std::vector<grpc::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params);
@@ -706,10 +710,11 @@ grpc::string GetHeaderIncludes(File *file,
     std::map<grpc::string, grpc::string> vars;
 
     static const char *headers_strs[] = {
-      "grpc_c/status.h",
       "grpc_c/grpc_c.h",
+      "grpc_c/status.h",
+      "grpc_c/channel.h",
       "grpc_c/client_context.h",
-      "grpc_c/channel.h"
+      "grpc_c/completion_queue.h"
     };
     std::vector<grpc::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params);

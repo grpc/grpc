@@ -31,10 +31,10 @@
  *
  */
 
-#ifndef GRPC_CLIENT_CONTEXT_PRIV_H
-#define GRPC_CLIENT_CONTEXT_PRIV_H
+#ifndef GRPC_C_CODEGEN_CLIENT_CONTEXT_H
+#define GRPC_C_CODEGEN_CLIENT_CONTEXT_H
 
-#include <grpc_c/serialization.h>
+#include <grpc_c/codegen/serialization.h>
 #include <grpc_c/client_context.h>
 
 typedef struct grpc_serialization_impl {
@@ -46,4 +46,4 @@ void GRPC_client_context_set_serialization_impl(
   GRPC_client_context *context,
   grpc_serialization_impl serialization_impl);
 
-#endif /* GRPC_CLIENT_CONTEXT_PRIV_H */
+#endif /* GRPC_C_CODEGEN_CLIENT_CONTEXT_H */

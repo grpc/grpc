@@ -42,19 +42,40 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc_c\bidi_streaming_blocking_call.h">
-      <Filter>include\grpc_c</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\channel.h">
       <Filter>include\grpc_c</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\client_context.h">
       <Filter>include\grpc_c</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc_c\client_streaming_blocking_call.h">
-      <Filter>include\grpc_c</Filter>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc_c\codegen\bidi_streaming_blocking_call.h">
+      <Filter>include\grpc_c\codegen</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc_c\codegen\client_context_priv.h">
+    <ClInclude Include="$(SolutionDir)\..\include\grpc_c\codegen\client_context.h">
+      <Filter>include\grpc_c\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc_c\codegen\client_streaming_blocking_call.h">
+      <Filter>include\grpc_c\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc_c\codegen\message.h">
+      <Filter>include\grpc_c\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc_c\codegen\method.h">
+      <Filter>include\grpc_c\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc_c\codegen\pb_compat.h">
+      <Filter>include\grpc_c\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc_c\codegen\serialization.h">
+      <Filter>include\grpc_c\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc_c\codegen\server_streaming_blocking_call.h">
+      <Filter>include\grpc_c\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc_c\codegen\unary_async_call.h">
+      <Filter>include\grpc_c\codegen</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\include\grpc_c\codegen\unary_blocking_call.h">
       <Filter>include\grpc_c\codegen</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\completion_queue.h">
@@ -63,25 +84,7 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\grpc_c.h">
       <Filter>include\grpc_c</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc_c\message.h">
-      <Filter>include\grpc_c</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc_c\pb_compat.h">
-      <Filter>include\grpc_c</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc_c\serialization.h">
-      <Filter>include\grpc_c</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc_c\server_streaming_blocking_call.h">
-      <Filter>include\grpc_c</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc_c\status.h">
-      <Filter>include\grpc_c</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc_c\unary_async_call.h">
-      <Filter>include\grpc_c</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc_c\unary_blocking_call.h">
       <Filter>include\grpc_c</Filter>
     </ClInclude>
   </ItemGroup>

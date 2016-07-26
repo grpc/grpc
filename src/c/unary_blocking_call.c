@@ -33,6 +33,8 @@
 
 #include "src/c/unary_blocking_call.h"
 #include <grpc_c/grpc_c.h>
+#include <grpc_c/status.h>
+#include <grpc_c/codegen/method.h>
 #include "src/c/client_context.h"
 #include "src/c/call_ops.h"
 #include "src/c/completion_queue.h"

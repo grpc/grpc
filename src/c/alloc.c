@@ -32,7 +32,7 @@
  */
 
 #include "src/c/alloc.h"
-#include <include/grpc/support/alloc.h>
+#include <grpc/support/alloc.h>
 #include <string.h>
 
 void *GRPC_memdup(const void *dst, size_t size) {

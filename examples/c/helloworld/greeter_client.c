@@ -32,6 +32,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "helloworld.grpc.pbc.h"
 #include <pb_decode.h>

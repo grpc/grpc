@@ -37,10 +37,10 @@
 
 #include <stdio.h>
 #include <assert.h>
+#include <stdlib.h>
 
 #include "helloworld.grpc.pbc.h"
 #include <pb_decode.h>
-#include <grpc_c/completion_queue.h>
 
 typedef struct async_client {
   GRPC_client_context *context;

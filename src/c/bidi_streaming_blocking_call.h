@@ -36,7 +36,7 @@
 #define GRPC_C_BIDI_STREAMING_BLOCKING_CALL_H
 
 #include "src/c/call_ops.h"
-#include <grpc_c/bidi_streaming_blocking_call.h>
+#include <include/grpc_c/codegen/bidi_streaming_blocking_call.h>
 
 typedef struct grpc_client_reader_writer {
   grpc_client_context *context;

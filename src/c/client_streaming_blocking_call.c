@@ -33,8 +33,9 @@
 
 
 #include <grpc_c/grpc_c.h>
+#include <grpc_c/status.h>
 #include <grpc/support/log.h>
-#include <include/grpc/support/alloc.h>
+#include <grpc/support/alloc.h>
 #include "src/c/client_streaming_blocking_call.h"
 #include "src/c/completion_queue.h"
 #include "src/c/alloc.h"

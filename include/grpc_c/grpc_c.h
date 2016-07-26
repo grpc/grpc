@@ -31,11 +31,8 @@
  *
  */
 
-
 #ifndef GRPC_C_PUBLIC_H
 #define GRPC_C_PUBLIC_H
-
-#include <stdlib.h>
 
 typedef struct grpc_channel GRPC_channel;
 /* The GRPC_status type is exposed to the end user */
@@ -50,19 +47,5 @@ typedef struct grpc_client_async_reader_writer GRPC_client_async_reader_writer;
 typedef struct grpc_client_async_reader GRPC_client_async_reader;
 typedef struct grpc_client_async_writer GRPC_client_async_writer;
 typedef struct grpc_client_async_response_reader GRPC_client_async_response_reader;
-
-typedef struct grpc_method {
-  enum RpcType {
-    NORMAL_RPC = 0,
-    CLIENT_STREAMING,  /* request streaming */
-    SERVER_STREAMING,  /* response streaming */
-    BIDI_STREAMING
-  } type;
-  const char* name;
-} grpc_method;
-
-typedef struct grpc_method GRPC_method;
-
-#include <grpc_c/message.h>
 
 #endif /* GRPC_C_PUBLIC_H */
