@@ -4164,7 +4164,6 @@ LIBGRPC_CLI_LIBS_SRC = \
     test/cpp/util/grpc_tool.cc \
     test/cpp/util/proto_file_parser.cc \
     test/cpp/util/proto_reflection_descriptor_database.cc \
-    test/cpp/util/string_ref_helper.cc \
 
 PUBLIC_HEADERS_CXX += \
 

@@ -51,7 +51,6 @@
 
 #include "test/cpp/util/proto_file_parser.h"
 #include "test/cpp/util/proto_reflection_descriptor_database.h"
-#include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_config.h"
 
 DEFINE_bool(enable_ssl, false, "Whether to use ssl/tls.");
