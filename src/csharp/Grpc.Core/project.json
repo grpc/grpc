@@ -31,7 +31,7 @@
     "xmlDoc": true
   },
   "dependencies": {
-    "System.Interactive.Async": "3.0.0"
+    "Ix-Async": "1.2.5"
   },
   "frameworks": {
     "net45": { },
