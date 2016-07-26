@@ -31,8 +31,8 @@
  *
  */
 
- #ifndef THRIFT_SERIALIZATION_H
- #define THRIFT_SERIALIZATION_H
+ #ifndef GRPCXX_IMPL_CODEGEN_THRIFT_SERIALIZER_H
+ #define GRPCXX_IMPL_CODEGEN_THRIFT_SERIALIZER_H
 
 #include <memory>
 #include <string>
