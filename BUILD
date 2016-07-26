@@ -1655,6 +1655,25 @@ cc_library(
 
 
 cc_library(
+  name = "thrift_util",
+  srcs = [
+  ],
+  hdrs = [
+    "include/grpc++/impl/codegen/thrift_serializer.h",
+    "include/grpc++/impl/codegen/thrift_serializer_inl.h",
+    "include/grpc++/impl/codegen/thrift_utils.h",
+  ],
+  includes = [
+    "include",
+    ".",
+  ],
+  deps = [
+  ],
+)
+
+
+
+cc_library(
   name = "grpc_csharp_ext",
   srcs = [
     "src/csharp/ext/grpc_csharp_ext.c",

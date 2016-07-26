@@ -1184,6 +1184,13 @@ libs:
   - grpc_test_util
   - grpc++_test_util
   - grpc++
+- name: thrift_util
+  build: all
+  language: c++
+  public_headers:
+  - include/grpc++/impl/codegen/thrift_serializer.h
+  - include/grpc++/impl/codegen/thrift_serializer_inl.h
+  - include/grpc++/impl/codegen/thrift_utils.h
 - name: grpc_csharp_ext
   build: all
   language: csharp
