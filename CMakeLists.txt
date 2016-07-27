@@ -839,20 +839,6 @@ target_link_libraries(grpc_plugin_support
 )
 
   
-add_library(thrift_util
-)
-
-target_include_directories(thrift_util
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${BORINGSSL_ROOT_DIR}/include
-  PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
-)
-
-
-  
 add_library(grpc_csharp_ext
   src/csharp/ext/grpc_csharp_ext.c
 )
