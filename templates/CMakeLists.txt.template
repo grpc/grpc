@@ -102,6 +102,7 @@
     if(TARGET ZLIB::ZLIB)
       set(_gRPC_ZLIB_LIBRARIES ZLIB::ZLIB)
     endif()
+    set(_gRPC_FIND_ZLIB "if(NOT ZLIB_FOUND) find_package(ZLIB) endif()")
   endif()
 
   if("<%text>${gRPC_PROTOBUF_PROVIDER}</%text>" STREQUAL "module")
@@ -134,8 +135,10 @@
       if(TARGET protobuf::libprotoc)
         set(_gRPC_PROTOBUF_PROTOC_LIBRARIES protobuf::libprotoc)
       endif()
+      set(_gRPC_FIND_PROTOBUF "if(NOT protobuf_FOUND) find_package(protobuf CONFIG) endif()")
     else()
       find_package(Protobuf MODULE)
+      set(_gRPC_FIND_PROTOBUF "if(NOT Protobuf_FOUND) find_package(Protobuf) endif()")
     endif()
   endif()
 
@@ -156,6 +159,7 @@
     if(TARGET OpenSSL::SSL)
       set(_gRPC_SSL_LIBRARIES OpenSSL::SSL)
     endif()
+    set(_gRPC_FIND_SSL "if(NOT OpenSSL_FOUND) find_package(OpenSSL) endif()")
   endif()
 
   if(NOT MSVC)
@@ -167,15 +171,22 @@
     set(_gRPC_BASELIB_LIBRARIES wsock32 ws2_32)
   endif()
 
+  include(GNUInstallDirs)
+  if(NOT DEFINED CMAKE_INSTALL_CMAKEDIR)
+    set(CMAKE_INSTALL_CMAKEDIR "<%text>${CMAKE_INSTALL_LIBDIR}</%text>/cmake/gRPC")
+  endif()
+
   % for lib in libs:
   % if lib.build in ["all", "protoc", "tool"]:
     ${cc_library(lib)}
+    ${cc_install(lib)}
   % endif
   % endfor
 
   % for tgt in targets:
   % if tgt.build in ["all", "protoc", "tool"]:
   ${cc_binary(tgt)}
+  ${cc_install(tgt)}
   % endif
   % endfor
 
@@ -201,6 +212,20 @@
     ${dep}
   % endfor
   )
+  % endif
+
+  % if len(lib.get('public_headers', [])) > 0:
+  foreach(_hdr
+  % for hdr in lib.get('public_headers', []):
+    ${hdr}
+  % endfor
+  )
+    string(REPLACE "include/" "" _path <%text>${_hdr}</%text>)
+    get_filename_component(_path <%text>${_path}</%text> PATH)
+    install(FILES <%text>${_hdr}</%text>
+      DESTINATION "<%text>${CMAKE_INSTALL_INCLUDEDIR}/${_path}</%text>"
+    )
+  endforeach()
   % endif
   </%def>
 
@@ -229,3 +254,23 @@
   % endif
   </%def>
 
+  <%def name="cc_install(tgt)">
+  install(TARGETS ${tgt.name} EXPORT gRPCTargets
+    RUNTIME DESTINATION <%text>${CMAKE_INSTALL_BINDIR}</%text>
+    LIBRARY DESTINATION <%text>${CMAKE_INSTALL_LIBDIR}</%text>
+    ARCHIVE DESTINATION <%text>${CMAKE_INSTALL_LIBDIR}</%text>
+  )
+  </%def>
+
+  install(EXPORT gRPCTargets
+    DESTINATION <%text>${CMAKE_INSTALL_CMAKEDIR}</%text>
+    NAMESPACE gRPC::
+  )
+
+  foreach(_config gRPCConfig gRPCConfigVersion)
+    configure_file(tools/cmake/<%text>${_config}</%text>.cmake.in
+      <%text>${_config}</%text>.cmake @ONLY)
+    install(FILES <%text>${CMAKE_CURRENT_BINARY_DIR}/${_config}</%text>.cmake
+      DESTINATION <%text>${CMAKE_INSTALL_CMAKEDIR}</%text>
+    )
+  endforeach()
