@@ -39,13 +39,45 @@
 
 #define php_grpc_int int
 #define php_grpc_long long
+#define php_grpc_ulong ulong
+#define php_grpc_add_property_string(arg, name, context, b) \
+  add_property_string(arg, name, context, b)
+#define php_grpc_add_property_stringl(res, name, str, len, b) \
+  add_property_stringl(res, name, str, len, b)
+#define php_grpc_add_next_index_stringl(data, str, len, b) \
+  add_next_index_stringl(data, str, len, b)
+
 #define PHP_GRPC_RETURN_STRING(val, dup) RETURN_STRING(val, dup)
+#define PHP_GRPC_MAKE_STD_ZVAL(pzv) MAKE_STD_ZVAL(pzv)
+
+#define PHP_GRPC_WRAP_OBJECT_START(name) \
+  typedef struct name { \
+    zend_object std;
+#define PHP_GRPC_WRAP_OBJECT_END(name) \
+  } name;
 
 #else
 
 #define php_grpc_int size_t
 #define php_grpc_long zend_long
+#define php_grpc_ulong zend_ulong
+#define php_grpc_add_property_string(arg, name, context, b) \
+  add_property_string(arg, name, context)
+#define php_grpc_add_property_stringl(res, name, str, len, b) \
+  add_property_stringl(res, name, str, len)
+#define php_grpc_add_next_index_stringl(data, str, len, b) \
+  add_next_index_stringl(data, str, len)
+
 #define PHP_GRPC_RETURN_STRING(val, dup) RETURN_STRING(val)
+#define PHP_GRPC_MAKE_STD_ZVAL(pzv) \
+  zval _stack_zval_##pzv; \
+  pzv = &(_stack_zval_##pzv)
+
+#define PHP_GRPC_WRAP_OBJECT_START(name) \
+  typedef struct name {
+#define PHP_GRPC_WRAP_OBJECT_END(name) \
+    zend_object std; \
+  } name;
 
 #endif /* PHP_MAJOR_VERSION */
 

@@ -168,13 +168,9 @@ PHP_METHOD(Server, requestCall) {
   grpc_event event;
 
   wrapped_grpc_server *server = Z_WRAPPED_GRPC_SERVER_P(getThis());
-#if PHP_MAJOR_VERSION < 7
   zval *result;
-  MAKE_STD_ZVAL(result);
+  PHP_GRPC_MAKE_STD_ZVAL(result);
   object_init(result);
-#else
-  object_init(return_value);
-#endif
 
   grpc_call_details_init(&details);
   grpc_metadata_array_init(&metadata);
@@ -195,40 +191,32 @@ PHP_METHOD(Server, requestCall) {
                          1 TSRMLS_CC);
     goto cleanup;
   }
+  php_grpc_add_property_string(result, "method", details.method, true);
+  php_grpc_add_property_string(result, "host", details.host, true);
 #if PHP_MAJOR_VERSION < 7
   add_property_zval(result, "call", grpc_php_wrap_call(call, true TSRMLS_CC));
-  add_property_string(result, "method", details.method, true);
-  add_property_string(result, "host", details.host, true);
   add_property_zval(result, "absolute_deadline",
                     grpc_php_wrap_timeval(details.deadline TSRMLS_CC));
   add_property_zval(result, "metadata", grpc_parse_metadata_array(&metadata
                                                                   TSRMLS_CC));
- 
-cleanup:
-  grpc_call_details_destroy(&details);
-  grpc_metadata_array_destroy(&metadata);
-  RETURN_DESTROY_ZVAL(result);
-
 #else
-
   zval zv_call;
   zval zv_timeval;
   zval zv_md;
-  grpc_php_wrap_call(call, true, &zv_call);
-  grpc_php_wrap_timeval(details.deadline, &zv_timeval);
-  grpc_parse_metadata_array(&metadata, &zv_md);
+  //TODO(thinkerou): why use zval* to unit test error?
+  zv_call = *grpc_php_wrap_call(call, true);
+  zv_timeval = *grpc_php_wrap_timeval(details.deadline);
+  zv_md = *grpc_parse_metadata_array(&metadata);
 
-  add_property_zval(return_value, "call", &zv_call);
-  add_property_string(return_value, "method", details.method);
-  add_property_string(return_value, "host", details.host);
-  add_property_zval(return_value, "absolute_deadline", &zv_timeval);
-  add_property_zval(return_value, "metadata", &zv_md);
+  add_property_zval(result, "call", &zv_call);
+  add_property_zval(result, "absolute_deadline", &zv_timeval);
+  add_property_zval(result, "metadata", &zv_md);
+#endif
 
  cleanup:
   grpc_call_details_destroy(&details);
   grpc_metadata_array_destroy(&metadata);
-  RETURN_DESTROY_ZVAL(return_value);
-#endif
+  RETURN_DESTROY_ZVAL(result);
 }
 
 /**
