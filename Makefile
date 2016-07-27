@@ -16168,8 +16168,8 @@ printvars:
 	@$(foreach V,$(sort $(.VARIABLES)),                 	  $(if $(filter-out environment% default automatic, 	  $(origin $V)),$(warning $V=$($V) ($(value $V)))))
 
 # Build Nanopb before using it
-$(NANOPB_DIR)/generator/proto/nanopb_pb2.py:
-	$(E) "[NANOPB]  Preparing Nanopb"
-	$(Q) PATH=`dirname $(PROTOC)`:$$(dirname `command -v protoc || echo .`):$$PATH $(MAKE) -C $(NANOPB_DIR)/generator/proto
 
 $(NANOPB_DIR)/generator/proto/plugin_pb2.py: $(NANOPB_DIR)/generator/proto/nanopb_pb2.py
+
+%_pb2.py: %.proto
+	$(PROTOC) --python_out=$(dir $<) $<
