@@ -150,11 +150,11 @@ bool create_metadata_array(zval *array, grpc_metadata_array *metadata) {
   grpc_metadata_array_init(metadata);
   array_hash = Z_ARRVAL_P(array);
 
-  char *key = NULL;
+  char *key;
   int key_type;
   PHP_GRPC_HASH_FOREACH_STR_KEY_VAL_START(array_hash, key, key_type,
                                           inner_array)
-    if (key_type != HASH_KEY_IS_STRING) {
+    if (key_type != HASH_KEY_IS_STRING || key == NULL) {
       return false;
     }
     if (Z_TYPE_P(inner_array) != IS_ARRAY) {
@@ -291,7 +291,8 @@ PHP_METHOD(Call, startBatch) {
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &array) ==
       FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "start_batch expects an array", 1 TSRMLS_CC); goto cleanup;
+                         "start_batch expects an array", 1 TSRMLS_CC);
+    goto cleanup;
   }
 
   array_hash = Z_ARRVAL_P(array);
@@ -300,7 +301,7 @@ PHP_METHOD(Call, startBatch) {
   int key_type;
   PHP_GRPC_HASH_FOREACH_LONG_KEY_VAL_START(array_hash, key, key_type, index,
                                           value)
-    if (key_type != HASH_KEY_IS_LONG) {
+    if (key_type != HASH_KEY_IS_LONG || key != NULL) {
       zend_throw_exception(spl_ce_InvalidArgumentException,
                            "batch keys must be integers", 1 TSRMLS_CC);
       goto cleanup;
