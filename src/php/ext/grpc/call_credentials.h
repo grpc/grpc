@@ -63,7 +63,7 @@ PHP_GRPC_WRAP_OBJECT_END(wrapped_grpc_call_credentials)
 #else
 
 static inline wrapped_grpc_call_credentials
-*wrapped_grpc_call_creds_from_obj(zend_object *obj) {
+*wrapped_grpc_call_credentials_from_obj(zend_object *obj) {
   return
     (wrapped_grpc_call_credentials*)((char*)(obj) -
                                      XtOffsetOf(wrapped_grpc_call_credentials,
@@ -71,7 +71,7 @@ static inline wrapped_grpc_call_credentials
 }
 
 #define Z_WRAPPED_GRPC_CALL_CREDS_P(zv) \
-  wrapped_grpc_call_creds_from_obj(Z_OBJ_P((zv)))
+  wrapped_grpc_call_credentials_from_obj(Z_OBJ_P((zv)))
 
 #endif /* PHP_MAJOR_VERSION */
 

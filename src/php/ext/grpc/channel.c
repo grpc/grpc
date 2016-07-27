@@ -57,17 +57,14 @@
 
 zend_class_entry *grpc_ce_channel;
 
-#if PHP_MAJOR_VERSION < 7
-
 /* Frees and destroys an instance of wrapped_grpc_channel */
-void free_wrapped_grpc_channel(void *object TSRMLS_DC) {
-  wrapped_grpc_channel *channel = (wrapped_grpc_channel *)object;
-  if (channel->wrapped != NULL) {
-    grpc_channel_destroy(channel->wrapped);
+PHP_GRPC_FREE_WRAPPED_FUNC_START(wrapped_grpc_channel)
+  if (p->wrapped != NULL) {
+    grpc_channel_destroy(p->wrapped);
   }
-  zend_object_std_dtor(&channel->std TSRMLS_CC);
-  efree(channel);
-}
+PHP_GRPC_FREE_WRAPPED_FUNC_END()
+
+#if PHP_MAJOR_VERSION < 7
 
 /* Initializes an instance of wrapped_grpc_channel to be associated with an
  * object of a class specified by class_type */
@@ -89,15 +86,6 @@ zend_object_value create_wrapped_grpc_channel(zend_class_entry *class_type
 #else
 
 static zend_object_handlers channel_ce_handlers;
-
-/* Frees and destroys an instance of wrapped_grpc_channel */
-static void free_wrapped_grpc_channel(zend_object *object) {
-  wrapped_grpc_channel *channel = wrapped_grpc_channel_from_obj(object);
-  if (channel->wrapped != NULL) {
-    grpc_channel_destroy(channel->wrapped);
-  }
-  zend_object_std_dtor(&channel->std);
-}
 
 /* Initializes an instance of wrapped_grpc_channel to be associated with an
  * object of a class specified by class_type */

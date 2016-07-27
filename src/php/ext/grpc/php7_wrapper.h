@@ -56,6 +56,14 @@
 #define PHP_GRPC_WRAP_OBJECT_END(name) \
   } name;
 
+#define PHP_GRPC_FREE_WRAPPED_FUNC_START(klass) \
+  void free_##klass(void *object TSRMLS_DC) { \
+    klass *p = (klass *)object;
+#define PHP_GRPC_FREE_WRAPPED_FUNC_END() \
+    zend_object_std_dtor(&p->std TSRMLS_CC); \
+    efree(p); \
+  }
+
 #else
 
 #define php_grpc_int size_t
@@ -78,6 +86,16 @@
 #define PHP_GRPC_WRAP_OBJECT_END(name) \
     zend_object std; \
   } name;
+
+#define WRAPPED_OBJECT_FROM_OBJ(klass, obj) \
+          klass##_from_obj(obj);
+
+#define PHP_GRPC_FREE_WRAPPED_FUNC_START(klass) \
+  static void free_##klass(zend_object *object) { \
+    klass *p = WRAPPED_OBJECT_FROM_OBJ(klass, object)
+#define PHP_GRPC_FREE_WRAPPED_FUNC_END() \
+    zend_object_std_dtor(&p->std); \
+  }
 
 #endif /* PHP_MAJOR_VERSION */
 
