@@ -48,35 +48,105 @@ set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
 project(${PACKAGE_NAME} C CXX)
 
-if(NOT BORINGSSL_ROOT_DIR)
-  set(BORINGSSL_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/boringssl)
-endif()
-if(NOT PROTOBUF_ROOT_DIR)
-  set(PROTOBUF_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protobuf)
-endif()
-if(NOT ZLIB_ROOT_DIR)
-  set(ZLIB_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/zlib)
-endif()
+set(gRPC_ZLIB_PROVIDER "module" CACHE STRING "Provider of zlib library")
+set_property(CACHE gRPC_ZLIB_PROVIDER PROPERTY STRINGS "module" "package")
 
-# Building the protobuf tests require gmock what is not part of a standard protobuf checkout.
-# Disable them unless they are explicitly requested from the cmake command line (when we assume
-# gmock is downloaded to the right location inside protobuf).
-if(NOT protobuf_BUILD_TESTS)
-  set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests")
-endif()
+set(gRPC_SSL_PROVIDER "module" CACHE STRING "Provider of ssl library")
+set_property(CACHE gRPC_SSL_PROVIDER PROPERTY STRINGS "module" "package")
 
-add_subdirectory(${BORINGSSL_ROOT_DIR} third_party/boringssl)
-add_subdirectory(${PROTOBUF_ROOT_DIR}/cmake third_party/protobuf)
-add_subdirectory(${ZLIB_ROOT_DIR} third_party/zlib)
+set(gRPC_PROTOBUF_PROVIDER "module" CACHE STRING "Provider of protobuf library")
+set_property(CACHE gRPC_PROTOBUF_PROVIDER PROPERTY STRINGS "module" "package")
 
-set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -std=c11")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(gRPC_USE_PROTO_LITE OFF CACHE BOOL "Use the protobuf-lite library")
 
-if (GRPC_USE_PROTO_LITE)
-  set(PROTOBUF_LIBRARY_NAME "libprotobuf-lite")
+if (gRPC_USE_PROTO_LITE)
+  set(_gRPC_PROTOBUF_LIBRARY_NAME "libprotobuf-lite")
   add_definitions("-DGRPC_USE_PROTO_LITE")
 else()
-  set(PROTOBUF_LIBRARY_NAME "libprotobuf")
+  set(_gRPC_PROTOBUF_LIBRARY_NAME "libprotobuf")
+endif()
+
+if("${gRPC_ZLIB_PROVIDER}" STREQUAL "module")
+  if(NOT ZLIB_ROOT_DIR)
+    set(ZLIB_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/zlib)
+  endif()
+  set(ZLIB_INCLUDE_DIR "${ZLIB_ROOT_DIR}")
+  if(EXISTS "${ZLIB_ROOT_DIR}/CMakeLists.txt")
+      add_subdirectory(${ZLIB_ROOT_DIR} third_party/zlib)
+      if(TARGET zlibstatic)
+          set(_gRPC_ZLIB_LIBRARIES zlibstatic)
+      endif()
+  else()
+      message(WARNING "gRPC_ZLIB_PROVIDER is \"module\" but ZLIB_ROOT_DIR is wrong")
+  endif()
+elseif("${gRPC_ZLIB_PROVIDER}" STREQUAL "package")
+  find_package(ZLIB)
+  if(TARGET ZLIB::ZLIB)
+    set(_gRPC_ZLIB_LIBRARIES ZLIB::ZLIB)
+  endif()
+endif()
+
+if("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "module")
+  # Building the protobuf tests require gmock what is not part of a standard protobuf checkout.
+  # Disable them unless they are explicitly requested from the cmake command line (when we assume
+  # gmock is downloaded to the right location inside protobuf).
+  if(NOT protobuf_BUILD_TESTS)
+    set(protobuf_BUILD_TESTS OFF CACHE BOOL "Build protobuf tests")
+  endif()
+  if(NOT PROTOBUF_ROOT_DIR)
+    set(PROTOBUF_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protobuf)
+  endif()
+  if(EXISTS "${PROTOBUF_ROOT_DIR}/cmake/CMakeLists.txt")
+    add_subdirectory(${PROTOBUF_ROOT_DIR}/cmake third_party/protobuf)
+    if(TARGET ${_gRPC_PROTOBUF_LIBRARY_NAME})
+      set(_gRPC_PROTOBUF_LIBRARIES ${_gRPC_PROTOBUF_LIBRARY_NAME})
+    endif()
+    if(TARGET libprotoc)
+      set(_gRPC_PROTOBUF_PROTOC_LIBRARIES libprotoc)
+    endif()
+  else()
+      message(WARNING "gRPC_PROTOBUF_PROVIDER is \"module\" but PROTOBUF_ROOT_DIR is wrong")
+  endif()
+elseif("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "package")
+  find_package(protobuf CONFIG)
+  if(protobuf_FOUND)
+    if(TARGET protobuf::${_gRPC_PROTOBUF_LIBRARY_NAME})
+      set(_gRPC_PROTOBUF_LIBRARIES protobuf::${_gRPC_PROTOBUF_LIBRARY_NAME})
+    endif()
+    if(TARGET protobuf::libprotoc)
+      set(_gRPC_PROTOBUF_PROTOC_LIBRARIES protobuf::libprotoc)
+    endif()
+  else()
+    find_package(Protobuf MODULE)
+  endif()
+endif()
+
+if("${gRPC_SSL_PROVIDER}" STREQUAL "module")
+  if(NOT BORINGSSL_ROOT_DIR)
+    set(BORINGSSL_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/boringssl)
+  endif()
+  if(EXISTS "${BORINGSSL_ROOT_DIR}/CMakeLists.txt")
+    add_subdirectory(${BORINGSSL_ROOT_DIR} third_party/boringssl)
+    if(TARGET ssl)
+      set(_gRPC_SSL_LIBRARIES ssl)
+    endif()
+  else()
+      message(WARNING "gRPC_SSL_PROVIDER is \"module\" but BORINGSSL_ROOT_DIR is wrong")
+  endif()
+elseif("${gRPC_SSL_PROVIDER}" STREQUAL "package")
+  find_package(OpenSSL)
+  if(TARGET OpenSSL::SSL)
+    set(_gRPC_SSL_LIBRARIES OpenSSL::SSL)
+  endif()
+endif()
+
+if(NOT MSVC)
+  set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -std=c11")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+endif()
+
+if(WIN32 AND MSVC)
+  set(_gRPC_BASELIB_LIBRARIES wsock32 ws2_32)
 endif()
 
   
@@ -133,7 +203,7 @@ target_include_directories(gpr
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
 )
 
@@ -334,13 +404,14 @@ target_include_directories(grpc
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
 )
 
 target_link_libraries(grpc
-  ssl
-  zlibstatic
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
   gpr
 )
 
@@ -517,12 +588,13 @@ target_include_directories(grpc_cronet
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
 )
 
 target_link_libraries(grpc_cronet
-  ssl
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_SSL_LIBRARIES}
   gpr
 )
 
@@ -693,11 +765,12 @@ target_include_directories(grpc_unsecure
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
 )
 
 target_link_libraries(grpc_unsecure
+  ${_gRPC_BASELIB_LIBRARIES}
   gpr
 )
 
@@ -743,13 +816,14 @@ target_include_directories(grpc++
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
 )
 
 target_link_libraries(grpc++
-  ssl
-  ${PROTOBUF_LIBRARY_NAME}
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc
 )
 
@@ -766,7 +840,7 @@ target_include_directories(grpc++_reflection
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
 )
 
@@ -811,12 +885,13 @@ target_include_directories(grpc++_unsecure
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
 )
 
 target_link_libraries(grpc++_unsecure
-  ${PROTOBUF_LIBRARY_NAME}
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
   gpr
   grpc_unsecure
   grpc
@@ -837,12 +912,12 @@ target_include_directories(grpc_plugin_support
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
 )
 
 target_link_libraries(grpc_plugin_support
-  libprotoc
+  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
 )
 
   
@@ -855,7 +930,7 @@ target_include_directories(grpc_csharp_ext
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${BORINGSSL_ROOT_DIR}/include
   PRIVATE ${PROTOBUF_ROOT_DIR}/src
-  PRIVATE ${ZLIB_ROOT_DIR}
+  PRIVATE ${ZLIB_INCLUDE_DIR}
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib
 )
 
@@ -914,7 +989,7 @@ target_include_directories(grpc_create_jwt
 )
 
 target_link_libraries(grpc_create_jwt
-  ssl
+  ${_gRPC_SSL_LIBRARIES}
   grpc
   gpr
 )
@@ -972,7 +1047,7 @@ target_include_directories(grpc_cpp_plugin
 )
 
 target_link_libraries(grpc_cpp_plugin
-  libprotoc
+  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_plugin_support
 )
 
@@ -991,7 +1066,7 @@ target_include_directories(grpc_csharp_plugin
 )
 
 target_link_libraries(grpc_csharp_plugin
-  libprotoc
+  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_plugin_support
 )
 
@@ -1010,7 +1085,7 @@ target_include_directories(grpc_node_plugin
 )
 
 target_link_libraries(grpc_node_plugin
-  libprotoc
+  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_plugin_support
 )
 
@@ -1029,7 +1104,7 @@ target_include_directories(grpc_objective_c_plugin
 )
 
 target_link_libraries(grpc_objective_c_plugin
-  libprotoc
+  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_plugin_support
 )
 
@@ -1048,7 +1123,7 @@ target_include_directories(grpc_python_plugin
 )
 
 target_link_libraries(grpc_python_plugin
-  libprotoc
+  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_plugin_support
 )
 
@@ -1067,7 +1142,7 @@ target_include_directories(grpc_ruby_plugin
 )
 
 target_link_libraries(grpc_ruby_plugin
-  libprotoc
+  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_plugin_support
 )
 
