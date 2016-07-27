@@ -51,47 +51,40 @@
 #include <grpc/support/time.h>
 
 zend_class_entry *grpc_ce_timeval;
+#if PHP_MAJOR_VERSION >= 7
+static zend_object_handlers timeval_ce_handlers;
+#endif
 
 /* Frees and destroys an instance of wrapped_grpc_call */
 PHP_GRPC_FREE_WRAPPED_FUNC_START(wrapped_grpc_timeval)
 PHP_GRPC_FREE_WRAPPED_FUNC_END()
 
-#if PHP_MAJOR_VERSION < 7
-
 /* Initializes an instance of wrapped_grpc_timeval to be associated with an
  * object of a class specified by class_type */
-zend_object_value create_wrapped_grpc_timeval(zend_class_entry *class_type
-                                                  TSRMLS_DC) {
-  zend_object_value retval;
+php_grpc_zend_object create_wrapped_grpc_timeval(zend_class_entry *class_type
+                                                 TSRMLS_DC) {
   wrapped_grpc_timeval *intern;
+#if PHP_MAJOR_VERSION < 7
+  zend_object_value retval;
   intern = (wrapped_grpc_timeval *)emalloc(sizeof(wrapped_grpc_timeval));
   memset(intern, 0, sizeof(wrapped_grpc_timeval));
+#else
+  intern = ecalloc(1, sizeof(wrapped_grpc_timeval) +
+                   zend_object_properties_size(class_type));
+#endif
   zend_object_std_init(&intern->std, class_type TSRMLS_CC);
   object_properties_init(&intern->std, class_type);
+#if PHP_MAJOR_VERSION < 7
   retval.handle = zend_objects_store_put(
       intern, (zend_objects_store_dtor_t)zend_objects_destroy_object,
       free_wrapped_grpc_timeval, NULL TSRMLS_CC);
   retval.handlers = zend_get_std_object_handlers();
   return retval;
-}
-
 #else
-
-static zend_object_handlers timeval_ce_handlers;
-
-/* Initializes an instance of wrapped_grpc_timeval to be associated with an
- * object of a class specified by class_type */
-zend_object *create_wrapped_grpc_timeval(zend_class_entry *class_type) {
-  wrapped_grpc_timeval *intern;
-  intern = ecalloc(1, sizeof(wrapped_grpc_timeval) +
-                   zend_object_properties_size(class_type));
-  zend_object_std_init(&intern->std, class_type);
-  object_properties_init(&intern->std, class_type);
   intern->std.handlers = &timeval_ce_handlers;
   return &intern->std;
-}
-
 #endif
+}
 
 zval *grpc_php_wrap_timeval(gpr_timespec wrapped TSRMLS_DC) {
   zval *timeval_object;

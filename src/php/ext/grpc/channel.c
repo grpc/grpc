@@ -56,6 +56,9 @@
 #include "timeval.h"
 
 zend_class_entry *grpc_ce_channel;
+#if PHP_MAJOR_VERSION >= 7
+static zend_object_handlers channel_ce_handlers;
+#endif
 
 /* Frees and destroys an instance of wrapped_grpc_channel */
 PHP_GRPC_FREE_WRAPPED_FUNC_START(wrapped_grpc_channel)
@@ -64,42 +67,32 @@ PHP_GRPC_FREE_WRAPPED_FUNC_START(wrapped_grpc_channel)
   }
 PHP_GRPC_FREE_WRAPPED_FUNC_END()
 
-#if PHP_MAJOR_VERSION < 7
-
 /* Initializes an instance of wrapped_grpc_channel to be associated with an
  * object of a class specified by class_type */
-zend_object_value create_wrapped_grpc_channel(zend_class_entry *class_type
-                                                  TSRMLS_DC) {
-  zend_object_value retval;
+php_grpc_zend_object create_wrapped_grpc_channel(zend_class_entry *class_type
+                                                 TSRMLS_DC) {
   wrapped_grpc_channel *intern;
+#if PHP_MAJOR_VERSION < 7
+  zend_object_value retval;
   intern = (wrapped_grpc_channel *)emalloc(sizeof(wrapped_grpc_channel));
   memset(intern, 0, sizeof(wrapped_grpc_channel));
+#else
+  intern = ecalloc(1, sizeof(wrapped_grpc_channel) +
+                   zend_object_properties_size(class_type));
+#endif
   zend_object_std_init(&intern->std, class_type TSRMLS_CC);
   object_properties_init(&intern->std, class_type);
+#if PHP_MAJOR_VERSION < 7
   retval.handle = zend_objects_store_put(
       intern, (zend_objects_store_dtor_t)zend_objects_destroy_object,
       free_wrapped_grpc_channel, NULL TSRMLS_CC);
   retval.handlers = zend_get_std_object_handlers();
   return retval;
-}
-
 #else
-
-static zend_object_handlers channel_ce_handlers;
-
-/* Initializes an instance of wrapped_grpc_channel to be associated with an
- * object of a class specified by class_type */
-zend_object *create_wrapped_grpc_channel(zend_class_entry *class_type) {
-  wrapped_grpc_channel *intern;
-  intern = ecalloc(1, sizeof(wrapped_grpc_channel) +
-                   zend_object_properties_size(class_type));
-  zend_object_std_init(&intern->std, class_type);
-  object_properties_init(&intern->std, class_type);
   intern->std.handlers = &channel_ce_handlers;
   return &intern->std;
-}
-
 #endif
+}
 
 void php_grpc_read_args_array(zval *args_array,
                               grpc_channel_args *args TSRMLS_DC) {
