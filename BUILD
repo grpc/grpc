@@ -38,6 +38,61 @@ licenses(["notice"])  # 3-clause BSD
 
 package(default_visibility = ["//visibility:public"])
 
+load("@protobuf_git//:protobuf.bzl", "cc_proto_library")
+
+cc_proto_library(
+  name = "testing_messages_proto",
+  srcs = [
+    "src/proto/grpc/testing/messages.proto",
+  ],
+  use_grpc_plugin = True,
+  protoc = "//external:protoc",
+  default_runtime = "//external:protobuf",
+)
+
+cc_proto_library(
+  name = "interop_proto",
+  srcs = [
+    "src/proto/grpc/testing/empty.proto",
+    "src/proto/grpc/testing/test.proto",
+  ],
+  deps = [
+    ":testing_messages_proto",
+  ],
+  use_grpc_plugin = True,
+  protoc = "//external:protoc",
+  default_runtime = "//external:protobuf",
+)
+
+cc_proto_library(
+  name = "qps_proto",
+  srcs = [
+    "src/proto/grpc/testing/payloads.proto",
+    "src/proto/grpc/testing/stats.proto",
+    "src/proto/grpc/testing/control.proto",
+    "src/proto/grpc/testing/services.proto",
+  ],
+  deps = [
+    ":testing_messages_proto",
+  ],
+  use_grpc_plugin = True,
+  protoc = "//external:protoc",
+  default_runtime = "//external:protobuf",
+)
+
+cc_proto_library(
+  name = "test_util_proto",
+  srcs = [
+    "src/proto/grpc/testing/echo_messages.proto",
+    "src/proto/grpc/testing/echo.proto",
+    "src/proto/grpc/testing/duplicate/echo_duplicate.proto",
+  ],
+  use_grpc_plugin = True,
+  protoc = "//external:protoc",
+  default_runtime = "//external:protobuf",
+)
+
+
 
 
 
@@ -148,9 +203,26 @@ cc_library(
   ],
   includes = [
     "include",
-    ".",
   ],
   deps = [
+  ],
+)
+
+
+
+cc_library(
+  name = "gpr_test_util",
+  srcs = [
+    "test/core/util/test_config.h",
+    "test/core/util/test_config.c",
+  ],
+  hdrs = [
+  ],
+  includes = [
+    "include",
+  ],
+  deps = [
+    ":gpr",
   ],
 )
 
@@ -530,7 +602,6 @@ cc_library(
   ],
   includes = [
     "include",
-    ".",
   ],
   deps = [
     "//external:libssl",
@@ -889,11 +960,120 @@ cc_library(
   ],
   includes = [
     "include",
-    ".",
   ],
   deps = [
     "//external:libssl",
     ":gpr",
+  ],
+)
+
+
+
+cc_library(
+  name = "grpc_dll",
+  srcs = [
+  ],
+  hdrs = [
+  ],
+  includes = [
+    "include",
+  ],
+  deps = [
+    ":gpr",
+    ":grpc",
+  ],
+)
+
+
+
+cc_library(
+  name = "grpc_test_util",
+  srcs = [
+    "test/core/end2end/data/ssl_test_data.h",
+    "test/core/security/oauth2_utils.h",
+    "test/core/end2end/cq_verifier.h",
+    "test/core/end2end/fixtures/proxy.h",
+    "test/core/iomgr/endpoint_tests.h",
+    "test/core/util/grpc_profiler.h",
+    "test/core/util/memory_counters.h",
+    "test/core/util/mock_endpoint.h",
+    "test/core/util/parse_hexstring.h",
+    "test/core/util/passthru_endpoint.h",
+    "test/core/util/port.h",
+    "test/core/util/port_server_client.h",
+    "test/core/util/slice_splitter.h",
+    "test/core/end2end/data/client_certs.c",
+    "test/core/end2end/data/server1_cert.c",
+    "test/core/end2end/data/server1_key.c",
+    "test/core/end2end/data/test_root_cert.c",
+    "test/core/security/oauth2_utils.c",
+    "test/core/end2end/cq_verifier.c",
+    "test/core/end2end/fixtures/proxy.c",
+    "test/core/iomgr/endpoint_tests.c",
+    "test/core/util/grpc_profiler.c",
+    "test/core/util/memory_counters.c",
+    "test/core/util/mock_endpoint.c",
+    "test/core/util/parse_hexstring.c",
+    "test/core/util/passthru_endpoint.c",
+    "test/core/util/port_posix.c",
+    "test/core/util/port_server_client.c",
+    "test/core/util/port_windows.c",
+    "test/core/util/slice_splitter.c",
+  ],
+  hdrs = [
+  ],
+  includes = [
+    "include",
+  ],
+  deps = [
+    ":gpr_test_util",
+    ":gpr",
+    ":grpc",
+  ],
+  copts = [
+    "-std=gnu99",
+  ],
+)
+
+
+
+cc_library(
+  name = "grpc_test_util_unsecure",
+  srcs = [
+    "test/core/end2end/cq_verifier.h",
+    "test/core/end2end/fixtures/proxy.h",
+    "test/core/iomgr/endpoint_tests.h",
+    "test/core/util/grpc_profiler.h",
+    "test/core/util/memory_counters.h",
+    "test/core/util/mock_endpoint.h",
+    "test/core/util/parse_hexstring.h",
+    "test/core/util/passthru_endpoint.h",
+    "test/core/util/port.h",
+    "test/core/util/port_server_client.h",
+    "test/core/util/slice_splitter.h",
+    "test/core/end2end/cq_verifier.c",
+    "test/core/end2end/fixtures/proxy.c",
+    "test/core/iomgr/endpoint_tests.c",
+    "test/core/util/grpc_profiler.c",
+    "test/core/util/memory_counters.c",
+    "test/core/util/mock_endpoint.c",
+    "test/core/util/parse_hexstring.c",
+    "test/core/util/passthru_endpoint.c",
+    "test/core/util/port_posix.c",
+    "test/core/util/port_server_client.c",
+    "test/core/util/port_windows.c",
+    "test/core/util/slice_splitter.c",
+  ],
+  hdrs = [
+  ],
+  includes = [
+    "include",
+  ],
+  deps = [
+    ":gpr",
+    ":gpr_test_util",
+    ":grpc_unsecure",
+    ":grpc",
   ],
 )
 
@@ -1218,7 +1398,6 @@ cc_library(
   ],
   includes = [
     "include",
-    ".",
   ],
   deps = [
     ":gpr",
@@ -1226,6 +1405,49 @@ cc_library(
   ],
   copts = [
     "-std=gnu99",
+  ],
+)
+
+
+
+cc_library(
+  name = "reconnect_server",
+  srcs = [
+    "test/core/util/reconnect_server.h",
+    "test/core/util/reconnect_server.c",
+  ],
+  hdrs = [
+  ],
+  includes = [
+    "include",
+  ],
+  deps = [
+    ":test_tcp_server",
+    ":grpc_test_util",
+    ":grpc",
+    ":gpr_test_util",
+    ":gpr",
+  ],
+)
+
+
+
+cc_library(
+  name = "test_tcp_server",
+  srcs = [
+    "test/core/util/test_tcp_server.h",
+    "test/core/util/test_tcp_server.c",
+  ],
+  hdrs = [
+  ],
+  includes = [
+    "include",
+  ],
+  deps = [
+    ":grpc_test_util",
+    ":grpc",
+    ":gpr_test_util",
+    ":gpr",
   ],
 )
 
@@ -1377,7 +1599,6 @@ cc_library(
   ],
   includes = [
     "include",
-    ".",
   ],
   deps = [
     "//external:libssl",
@@ -1457,10 +1678,127 @@ cc_library(
   ],
   includes = [
     "include",
-    ".",
   ],
   deps = [
     ":grpc++",
+  ],
+)
+
+
+
+cc_library(
+  name = "grpc++_reflection_codegen",
+  srcs = [
+  ],
+  hdrs = [
+  ],
+  includes = [
+    "include",
+  ],
+  deps = [
+  ],
+)
+
+
+
+cc_library(
+  name = "grpc++_test_config",
+  srcs = [
+    "test/cpp/util/test_config.h",
+    "test/cpp/util/test_config.cc",
+  ],
+  hdrs = [
+  ],
+  includes = [
+    "include",
+  ],
+  deps = [
+    "//external:gflags",
+  ],
+)
+
+
+
+cc_library(
+  name = "grpc++_test_util",
+  srcs = [
+    "test/cpp/end2end/test_service_impl.h",
+    "test/cpp/util/byte_buffer_proto_helper.h",
+    "test/cpp/util/create_test_channel.h",
+    "test/cpp/util/string_ref_helper.h",
+    "test/cpp/util/subprocess.h",
+    "test/cpp/util/test_credentials_provider.h",
+    "test/cpp/end2end/test_service_impl.cc",
+    "test/cpp/util/byte_buffer_proto_helper.cc",
+    "test/cpp/util/create_test_channel.cc",
+    "test/cpp/util/string_ref_helper.cc",
+    "test/cpp/util/subprocess.cc",
+    "test/cpp/util/test_credentials_provider.cc",
+    "src/cpp/codegen/codegen_init.cc",
+  ],
+  hdrs = [
+    "include/grpc++/impl/codegen/async_stream.h",
+    "include/grpc++/impl/codegen/async_unary_call.h",
+    "include/grpc++/impl/codegen/call.h",
+    "include/grpc++/impl/codegen/call_hook.h",
+    "include/grpc++/impl/codegen/channel_interface.h",
+    "include/grpc++/impl/codegen/client_context.h",
+    "include/grpc++/impl/codegen/client_unary_call.h",
+    "include/grpc++/impl/codegen/completion_queue.h",
+    "include/grpc++/impl/codegen/completion_queue_tag.h",
+    "include/grpc++/impl/codegen/config.h",
+    "include/grpc++/impl/codegen/core_codegen_interface.h",
+    "include/grpc++/impl/codegen/create_auth_context.h",
+    "include/grpc++/impl/codegen/grpc_library.h",
+    "include/grpc++/impl/codegen/method_handler_impl.h",
+    "include/grpc++/impl/codegen/rpc_method.h",
+    "include/grpc++/impl/codegen/rpc_service_method.h",
+    "include/grpc++/impl/codegen/security/auth_context.h",
+    "include/grpc++/impl/codegen/serialization_traits.h",
+    "include/grpc++/impl/codegen/server_context.h",
+    "include/grpc++/impl/codegen/server_interface.h",
+    "include/grpc++/impl/codegen/service_type.h",
+    "include/grpc++/impl/codegen/status.h",
+    "include/grpc++/impl/codegen/status_code_enum.h",
+    "include/grpc++/impl/codegen/string_ref.h",
+    "include/grpc++/impl/codegen/stub_options.h",
+    "include/grpc++/impl/codegen/sync.h",
+    "include/grpc++/impl/codegen/sync_cxx11.h",
+    "include/grpc++/impl/codegen/sync_no_cxx11.h",
+    "include/grpc++/impl/codegen/sync_stream.h",
+    "include/grpc++/impl/codegen/time.h",
+    "include/grpc/impl/codegen/byte_buffer.h",
+    "include/grpc/impl/codegen/byte_buffer_reader.h",
+    "include/grpc/impl/codegen/compression_types.h",
+    "include/grpc/impl/codegen/connectivity_state.h",
+    "include/grpc/impl/codegen/grpc_types.h",
+    "include/grpc/impl/codegen/propagation_bits.h",
+    "include/grpc/impl/codegen/status.h",
+    "include/grpc/impl/codegen/alloc.h",
+    "include/grpc/impl/codegen/atm.h",
+    "include/grpc/impl/codegen/atm_gcc_atomic.h",
+    "include/grpc/impl/codegen/atm_gcc_sync.h",
+    "include/grpc/impl/codegen/atm_windows.h",
+    "include/grpc/impl/codegen/log.h",
+    "include/grpc/impl/codegen/port_platform.h",
+    "include/grpc/impl/codegen/slice.h",
+    "include/grpc/impl/codegen/slice_buffer.h",
+    "include/grpc/impl/codegen/sync.h",
+    "include/grpc/impl/codegen/sync_generic.h",
+    "include/grpc/impl/codegen/sync_posix.h",
+    "include/grpc/impl/codegen/sync_windows.h",
+    "include/grpc/impl/codegen/time.h",
+    "include/grpc++/impl/codegen/proto_utils.h",
+    "include/grpc++/impl/codegen/config_protobuf.h",
+  ],
+  includes = [
+    "include",
+  ],
+  deps = [
+    ":test_util_proto",
+    "//external:googletest",
+    ":grpc++",
+    ":grpc_test_util",
   ],
 )
 
@@ -1603,13 +1941,36 @@ cc_library(
   ],
   includes = [
     "include",
-    ".",
   ],
   deps = [
     "//external:protobuf_clib",
     ":gpr",
     ":grpc_unsecure",
     ":grpc",
+  ],
+)
+
+
+
+cc_library(
+  name = "grpc_cli_libs",
+  srcs = [
+    "test/cpp/util/cli_call.h",
+    "test/cpp/util/proto_file_parser.h",
+    "test/cpp/util/proto_reflection_descriptor_database.h",
+    "test/cpp/util/cli_call.cc",
+    "test/cpp/util/proto_file_parser.cc",
+    "test/cpp/util/proto_reflection_descriptor_database.cc",
+  ],
+  hdrs = [
+  ],
+  includes = [
+    "include",
+  ],
+  deps = [
+    ":grpc++_reflection",
+    ":grpc++",
+    ":grpc_plugin_support",
   ],
 )
 
@@ -1645,10 +2006,153 @@ cc_library(
   ],
   includes = [
     "include",
-    ".",
   ],
   deps = [
     "//external:protobuf_compiler",
+  ],
+)
+
+
+
+cc_library(
+  name = "interop_client_helper",
+  srcs = [
+    "test/cpp/interop/client_helper.h",
+    "test/cpp/interop/client_helper.cc",
+  ],
+  hdrs = [
+  ],
+  includes = [
+    "include",
+  ],
+  deps = [
+    ":interop_proto",
+    "//external:gflags",
+    ":grpc++_test_util",
+    ":grpc_test_util",
+    ":grpc++",
+    ":grpc",
+    ":gpr",
+  ],
+)
+
+
+
+cc_library(
+  name = "interop_client_main",
+  srcs = [
+    "test/cpp/interop/interop_client.h",
+    "test/cpp/interop/client.cc",
+    "test/cpp/interop/interop_client.cc",
+  ],
+  hdrs = [
+  ],
+  includes = [
+    "include",
+  ],
+  deps = [
+    ":interop_proto",
+    "//external:gflags",
+    ":interop_client_helper",
+    ":grpc++_test_util",
+    ":grpc_test_util",
+    ":grpc++",
+    ":grpc",
+    ":gpr_test_util",
+    ":gpr",
+    ":grpc++_test_config",
+  ],
+)
+
+
+
+cc_library(
+  name = "interop_server_helper",
+  srcs = [
+    "test/cpp/interop/server_helper.h",
+    "test/cpp/interop/server_helper.cc",
+  ],
+  hdrs = [
+  ],
+  includes = [
+    "include",
+  ],
+  deps = [
+    ":interop_proto",
+    "//external:gflags",
+    ":grpc_test_util",
+    ":grpc++",
+    ":grpc",
+    ":gpr",
+  ],
+)
+
+
+
+cc_library(
+  name = "interop_server_main",
+  srcs = [
+    "test/cpp/interop/interop_server.cc",
+  ],
+  hdrs = [
+  ],
+  includes = [
+    "include",
+  ],
+  deps = [
+    ":interop_proto",
+    "//external:gflags",
+    ":interop_server_helper",
+    ":grpc++_test_util",
+    ":grpc_test_util",
+    ":grpc++",
+    ":grpc",
+    ":gpr_test_util",
+    ":gpr",
+    ":grpc++_test_config",
+  ],
+)
+
+
+
+cc_library(
+  name = "qps",
+  srcs = [
+    "test/cpp/qps/client.h",
+    "test/cpp/qps/driver.h",
+    "test/cpp/qps/histogram.h",
+    "test/cpp/qps/interarrival.h",
+    "test/cpp/qps/limit_cores.h",
+    "test/cpp/qps/parse_json.h",
+    "test/cpp/qps/qps_worker.h",
+    "test/cpp/qps/report.h",
+    "test/cpp/qps/server.h",
+    "test/cpp/qps/stats.h",
+    "test/cpp/qps/usage_timer.h",
+    "test/cpp/util/benchmark_config.h",
+    "test/cpp/qps/client_async.cc",
+    "test/cpp/qps/client_sync.cc",
+    "test/cpp/qps/driver.cc",
+    "test/cpp/qps/limit_cores.cc",
+    "test/cpp/qps/parse_json.cc",
+    "test/cpp/qps/qps_worker.cc",
+    "test/cpp/qps/report.cc",
+    "test/cpp/qps/server_async.cc",
+    "test/cpp/qps/server_sync.cc",
+    "test/cpp/qps/usage_timer.cc",
+    "test/cpp/util/benchmark_config.cc",
+  ],
+  hdrs = [
+  ],
+  includes = [
+    "include",
+  ],
+  deps = [
+    ":qps_proto",
+    "//external:gflags",
+    ":grpc_test_util",
+    ":grpc++_test_util",
+    ":grpc++",
   ],
 )
 
@@ -1663,10 +2167,175 @@ cc_library(
   ],
   includes = [
     "include",
-    ".",
   ],
   deps = [
     ":grpc",
+    ":gpr",
+  ],
+)
+
+
+
+cc_library(
+  name = "bad_client_test",
+  srcs = [
+    "test/core/bad_client/bad_client.h",
+    "test/core/bad_client/bad_client.c",
+  ],
+  hdrs = [
+  ],
+  includes = [
+    "include",
+  ],
+  deps = [
+    ":grpc_test_util_unsecure",
+    ":grpc_unsecure",
+    ":gpr_test_util",
+    ":gpr",
+  ],
+)
+
+
+
+cc_library(
+  name = "bad_ssl_test_server",
+  srcs = [
+    "test/core/bad_ssl/server_common.h",
+    "test/core/bad_ssl/server_common.c",
+  ],
+  hdrs = [
+  ],
+  includes = [
+    "include",
+  ],
+  deps = [
+    ":grpc_test_util",
+    ":grpc",
+    ":gpr_test_util",
+    ":gpr",
+  ],
+)
+
+
+
+cc_library(
+  name = "end2end_tests",
+  srcs = [
+    "test/core/end2end/tests/cancel_test_helpers.h",
+    "test/core/end2end/end2end_tests.h",
+    "test/core/end2end/end2end_tests.c",
+    "test/core/end2end/tests/bad_hostname.c",
+    "test/core/end2end/tests/binary_metadata.c",
+    "test/core/end2end/tests/call_creds.c",
+    "test/core/end2end/tests/cancel_after_accept.c",
+    "test/core/end2end/tests/cancel_after_client_done.c",
+    "test/core/end2end/tests/cancel_after_invoke.c",
+    "test/core/end2end/tests/cancel_before_invoke.c",
+    "test/core/end2end/tests/cancel_in_a_vacuum.c",
+    "test/core/end2end/tests/cancel_with_status.c",
+    "test/core/end2end/tests/compressed_payload.c",
+    "test/core/end2end/tests/connectivity.c",
+    "test/core/end2end/tests/default_host.c",
+    "test/core/end2end/tests/disappearing_server.c",
+    "test/core/end2end/tests/empty_batch.c",
+    "test/core/end2end/tests/filter_causes_close.c",
+    "test/core/end2end/tests/graceful_server_shutdown.c",
+    "test/core/end2end/tests/high_initial_seqno.c",
+    "test/core/end2end/tests/hpack_size.c",
+    "test/core/end2end/tests/idempotent_request.c",
+    "test/core/end2end/tests/invoke_large_request.c",
+    "test/core/end2end/tests/large_metadata.c",
+    "test/core/end2end/tests/max_concurrent_streams.c",
+    "test/core/end2end/tests/max_message_length.c",
+    "test/core/end2end/tests/negative_deadline.c",
+    "test/core/end2end/tests/network_status_change.c",
+    "test/core/end2end/tests/no_op.c",
+    "test/core/end2end/tests/payload.c",
+    "test/core/end2end/tests/ping.c",
+    "test/core/end2end/tests/ping_pong_streaming.c",
+    "test/core/end2end/tests/registered_call.c",
+    "test/core/end2end/tests/request_with_flags.c",
+    "test/core/end2end/tests/request_with_payload.c",
+    "test/core/end2end/tests/server_finishes_request.c",
+    "test/core/end2end/tests/shutdown_finishes_calls.c",
+    "test/core/end2end/tests/shutdown_finishes_tags.c",
+    "test/core/end2end/tests/simple_delayed_request.c",
+    "test/core/end2end/tests/simple_metadata.c",
+    "test/core/end2end/tests/simple_request.c",
+    "test/core/end2end/tests/streaming_error_response.c",
+    "test/core/end2end/tests/trailing_metadata.c",
+  ],
+  hdrs = [
+  ],
+  includes = [
+    "include",
+  ],
+  deps = [
+    "//external:libssl",
+    ":grpc_test_util",
+    ":grpc",
+    ":gpr_test_util",
+    ":gpr",
+  ],
+)
+
+
+
+cc_library(
+  name = "end2end_nosec_tests",
+  srcs = [
+    "test/core/end2end/tests/cancel_test_helpers.h",
+    "test/core/end2end/end2end_tests.h",
+    "test/core/end2end/end2end_nosec_tests.c",
+    "test/core/end2end/tests/bad_hostname.c",
+    "test/core/end2end/tests/binary_metadata.c",
+    "test/core/end2end/tests/cancel_after_accept.c",
+    "test/core/end2end/tests/cancel_after_client_done.c",
+    "test/core/end2end/tests/cancel_after_invoke.c",
+    "test/core/end2end/tests/cancel_before_invoke.c",
+    "test/core/end2end/tests/cancel_in_a_vacuum.c",
+    "test/core/end2end/tests/cancel_with_status.c",
+    "test/core/end2end/tests/compressed_payload.c",
+    "test/core/end2end/tests/connectivity.c",
+    "test/core/end2end/tests/default_host.c",
+    "test/core/end2end/tests/disappearing_server.c",
+    "test/core/end2end/tests/empty_batch.c",
+    "test/core/end2end/tests/filter_causes_close.c",
+    "test/core/end2end/tests/graceful_server_shutdown.c",
+    "test/core/end2end/tests/high_initial_seqno.c",
+    "test/core/end2end/tests/hpack_size.c",
+    "test/core/end2end/tests/idempotent_request.c",
+    "test/core/end2end/tests/invoke_large_request.c",
+    "test/core/end2end/tests/large_metadata.c",
+    "test/core/end2end/tests/max_concurrent_streams.c",
+    "test/core/end2end/tests/max_message_length.c",
+    "test/core/end2end/tests/negative_deadline.c",
+    "test/core/end2end/tests/network_status_change.c",
+    "test/core/end2end/tests/no_op.c",
+    "test/core/end2end/tests/payload.c",
+    "test/core/end2end/tests/ping.c",
+    "test/core/end2end/tests/ping_pong_streaming.c",
+    "test/core/end2end/tests/registered_call.c",
+    "test/core/end2end/tests/request_with_flags.c",
+    "test/core/end2end/tests/request_with_payload.c",
+    "test/core/end2end/tests/server_finishes_request.c",
+    "test/core/end2end/tests/shutdown_finishes_calls.c",
+    "test/core/end2end/tests/shutdown_finishes_tags.c",
+    "test/core/end2end/tests/simple_delayed_request.c",
+    "test/core/end2end/tests/simple_metadata.c",
+    "test/core/end2end/tests/simple_request.c",
+    "test/core/end2end/tests/streaming_error_response.c",
+    "test/core/end2end/tests/trailing_metadata.c",
+  ],
+  hdrs = [
+  ],
+  includes = [
+    "include",
+  ],
+  deps = [
+    ":grpc_test_util_unsecure",
+    ":grpc_unsecure",
+    ":gpr_test_util",
     ":gpr",
   ],
 )
@@ -1780,7 +2449,6 @@ objc_library(
   ],
   includes = [
     "include",
-    ".",
   ],
   deps = [
   ],
@@ -2162,7 +2830,6 @@ objc_library(
   ],
   includes = [
     "include",
-    ".",
   ],
   deps = [
     ":gpr_objc",
