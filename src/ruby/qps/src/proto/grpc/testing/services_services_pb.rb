@@ -34,7 +34,7 @@
 # of unary/streaming requests/responses.
 
 require 'grpc'
-require 'src/proto/grpc/testing/services'
+require 'src/proto/grpc/testing/services_pb'
 
 module Grpc
   module Testing

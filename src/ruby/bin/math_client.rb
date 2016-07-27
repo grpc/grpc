@@ -40,7 +40,7 @@ $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
 $LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
 
 require 'grpc'
-require 'math_services'
+require 'math_services_pb'
 require 'optparse'
 
 include GRPC::Core::TimeConsts

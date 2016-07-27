@@ -52,9 +52,9 @@ require_relative '../../lib/grpc'
 require 'googleauth'
 require 'google/protobuf'
 
-require_relative 'proto/empty'
-require_relative 'proto/messages'
-require_relative 'proto/test_services'
+require_relative '../src/proto/grpc/testing/empty_pb'
+require_relative '../src/proto/grpc/testing/messages_pb'
+require_relative '../src/proto/grpc/testing/test_services_pb'
 
 AUTH_ENV = Google::Auth::CredentialsLoader::ENV_VAR
 
