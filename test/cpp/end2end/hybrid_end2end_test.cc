@@ -426,7 +426,9 @@ public:
   Status FCEcho(ServerContext* context, FCUnary<EchoRequest,EchoResponse>* fc_unary) GRPC_OVERRIDE {
     EchoRequest req;
     EchoResponse resp;
-    gpr_log(GPR_INFO, "FC Unary Next Message Size is %u", fc_unary->NextMessageSize());
+    uint32_t next_msg_sz;
+    fc_unary->NextMessageSize(&next_msg_sz);
+    gpr_log(GPR_INFO, "FC Unary Next Message Size is %u", next_msg_sz);
     GPR_ASSERT(fc_unary->Read(&req));
     resp.set_message(req.message() + "_dup");
     GPR_ASSERT(fc_unary->Write(resp));

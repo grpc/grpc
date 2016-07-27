@@ -71,7 +71,7 @@ class ReaderInterface {
   virtual ~ReaderInterface() {}
 
   /// Upper bound on the next message size available for reading on this stream
-  virtual uint32_t NextMessageSize() = 0;
+  virtual bool NextMessageSize(uint32_t *sz) = 0;
 
   /// Blocking read a message and parse to \a msg. Returns \a true on success.
   /// This is thread-safe with respect to \a Write or \WritesDone methods on
@@ -151,7 +151,10 @@ class ClientReader GRPC_FINAL : public ClientReaderInterface<R> {
     cq_.Pluck(&ops);  /// status ignored
   }
 
-  uint32_t NextMessageSize() GRPC_OVERRIDE {return call_.max_message_size();}
+  bool NextMessageSize(uint32_t *sz) GRPC_OVERRIDE {
+    *sz = call_.max_message_size();
+    return true;
+  }
 
   bool Read(R* msg) GRPC_OVERRIDE {
     CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>> ops;
@@ -298,7 +301,10 @@ class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
     cq_.Pluck(&ops);  // status ignored
   }
 
-  uint32_t NextMessageSize() GRPC_OVERRIDE {return call_.max_message_size();}
+  bool NextMessageSize(uint32_t *sz) GRPC_OVERRIDE {
+    *sz = call_.max_message_size();
+    return true;
+  }
 
   bool Read(R* msg) GRPC_OVERRIDE {
     CallOpSet<CallOpRecvInitialMetadata, CallOpRecvMessage<R>> ops;
@@ -359,7 +365,10 @@ class ServerReader GRPC_FINAL : public ReaderInterface<R> {
     call_->cq()->Pluck(&ops);
   }
 
-  uint32_t NextMessageSize() GRPC_OVERRIDE {return call_->max_message_size();}
+  bool NextMessageSize(uint32_t *sz) GRPC_OVERRIDE {
+    *sz = call_->max_message_size();
+    return true;
+  }
 
   bool Read(R* msg) GRPC_OVERRIDE {
     CallOpSet<CallOpRecvMessage<R>> ops;
@@ -427,7 +436,10 @@ class ServerReaderWriter GRPC_FINAL : public WriterInterface<W>,
     call_->cq()->Pluck(&ops);
   }
 
-  uint32_t NextMessageSize() GRPC_OVERRIDE {return call_->max_message_size();}
+  bool NextMessageSize(uint32_t *sz) GRPC_OVERRIDE {
+    *sz = call_->max_message_size();
+    return true;
+  }
 
   bool Read(R* msg) GRPC_OVERRIDE {
     CallOpSet<CallOpRecvMessage<R>> ops;

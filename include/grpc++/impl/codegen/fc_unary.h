@@ -56,7 +56,10 @@ template <class RequestType, class ResponseType>
  public:
  FCUnary(Call* call, ServerContext* ctx): call_(call), ctx_(ctx), read_done_(false), write_done_(false) {}
   ~FCUnary() {}
-  uint32_t NextMessageSize() {return call_->max_message_size();}
+  bool NextMessageSize(uint32_t *sz) {
+    *sz = call_->max_message_size();
+    return true;
+  }
   bool Read(RequestType *request) {
     if (read_done_) {
       return false;      
