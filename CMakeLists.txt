@@ -72,6 +72,13 @@ add_subdirectory(${ZLIB_ROOT_DIR} third_party/zlib)
 set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -std=c11")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
+if (GRPC_USE_PROTO_LITE)
+  set(PROTOBUF_LIBRARY_NAME "libprotobuf-lite")
+  add_definitions("-DGRPC_USE_PROTO_LITE")
+else()
+  set(PROTOBUF_LIBRARY_NAME "libprotobuf")
+endif()
+
   
 add_library(gpr
   src/core/lib/profiling/basic_timers.c
@@ -742,7 +749,7 @@ target_include_directories(grpc++
 
 target_link_libraries(grpc++
   ssl
-  libprotobuf
+  ${PROTOBUF_LIBRARY_NAME}
   grpc
 )
 
@@ -809,7 +816,7 @@ target_include_directories(grpc++_unsecure
 )
 
 target_link_libraries(grpc++_unsecure
-  libprotobuf
+  ${PROTOBUF_LIBRARY_NAME}
   gpr
   grpc_unsecure
   grpc
