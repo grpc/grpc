@@ -103,6 +103,7 @@ static void on_read_done(grpc_exec_ctx* exec_ctx, void* arg,
     // complete (e.g., handling chunked transfer encoding or looking
     // at the Content-Length: header).
     if (h->http_parser.state != GRPC_HTTP_BODY) {
+      gpr_slice_buffer_reset_and_unref(&h->response_buffer);
       grpc_endpoint_read(exec_ctx, h->endpoint, &h->response_buffer,
                          &h->response_read_closure);
       return;
