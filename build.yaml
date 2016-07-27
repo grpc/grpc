@@ -127,7 +127,6 @@ filegroups:
   - gpr_codegen
 - name: gpr_codegen
   public_headers:
-  - include/grpc/impl/codegen/alloc.h
   - include/grpc/impl/codegen/atm.h
   - include/grpc/impl/codegen/atm_gcc_atomic.h
   - include/grpc/impl/codegen/atm_gcc_sync.h

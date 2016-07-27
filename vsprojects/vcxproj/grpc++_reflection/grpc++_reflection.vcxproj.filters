@@ -138,9 +138,6 @@
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\status.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\alloc.h">
-      <Filter>include\grpc\impl\codegen</Filter>
-    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\include\grpc\impl\codegen\atm.h">
       <Filter>include\grpc\impl\codegen</Filter>
     </ClInclude>

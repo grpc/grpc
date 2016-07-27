@@ -5653,7 +5653,6 @@
   {
     "deps": [], 
     "headers": [
-      "include/grpc/impl/codegen/alloc.h", 
       "include/grpc/impl/codegen/atm.h", 
       "include/grpc/impl/codegen/atm_gcc_atomic.h", 
       "include/grpc/impl/codegen/atm_gcc_sync.h", 
@@ -5671,7 +5670,6 @@
     "language": "c", 
     "name": "gpr_codegen", 
     "src": [
-      "include/grpc/impl/codegen/alloc.h", 
       "include/grpc/impl/codegen/atm.h", 
       "include/grpc/impl/codegen/atm_gcc_atomic.h", 
       "include/grpc/impl/codegen/atm_gcc_sync.h", 

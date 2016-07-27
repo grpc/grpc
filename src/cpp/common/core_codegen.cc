@@ -39,9 +39,9 @@
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/alloc.h>
 #include <grpc/impl/codegen/byte_buffer.h>
 #include <grpc/impl/codegen/log.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/slice.h>
 #include <grpc/support/slice_buffer.h>

@@ -123,13 +123,6 @@ EXPORTS
     grpc_server_add_secure_http2_port
     grpc_call_set_credentials
     grpc_server_credentials_set_auth_metadata_processor
-    gpr_malloc
-    gpr_free
-    gpr_realloc
-    gpr_malloc_aligned
-    gpr_free_aligned
-    gpr_set_allocation_functions
-    gpr_get_allocation_functions
     grpc_raw_byte_buffer_create
     grpc_raw_compressed_byte_buffer_create
     grpc_byte_buffer_copy
@@ -218,6 +211,13 @@ EXPORTS
     gpr_time_similar
     gpr_sleep_until
     gpr_timespec_to_micros
+    gpr_malloc
+    gpr_free
+    gpr_realloc
+    gpr_malloc_aligned
+    gpr_free_aligned
+    gpr_set_allocation_functions
+    gpr_get_allocation_functions
     gpr_avl_create
     gpr_avl_ref
     gpr_avl_unref

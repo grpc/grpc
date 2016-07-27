@@ -844,7 +844,6 @@ include/grpc/impl/codegen/connectivity_state.h \
 include/grpc/impl/codegen/grpc_types.h \
 include/grpc/impl/codegen/propagation_bits.h \
 include/grpc/impl/codegen/status.h \
-include/grpc/impl/codegen/alloc.h \
 include/grpc/impl/codegen/atm.h \
 include/grpc/impl/codegen/atm_gcc_atomic.h \
 include/grpc/impl/codegen/atm_gcc_sync.h \

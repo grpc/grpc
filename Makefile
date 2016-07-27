@@ -2438,7 +2438,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/tls_msvc.h \
     include/grpc/support/tls_pthread.h \
     include/grpc/support/useful.h \
-    include/grpc/impl/codegen/alloc.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
@@ -2718,7 +2717,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/status.h \
-    include/grpc/impl/codegen/alloc.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
@@ -2968,7 +2966,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/status.h \
-    include/grpc/impl/codegen/alloc.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
@@ -3303,7 +3300,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/status.h \
-    include/grpc/impl/codegen/alloc.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
@@ -3554,7 +3550,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/status.h \
-    include/grpc/impl/codegen/alloc.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
@@ -3680,7 +3675,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/status.h \
-    include/grpc/impl/codegen/alloc.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
@@ -3907,7 +3901,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/status.h \
-    include/grpc/impl/codegen/alloc.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
@@ -4090,7 +4083,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/status.h \
-    include/grpc/impl/codegen/alloc.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \

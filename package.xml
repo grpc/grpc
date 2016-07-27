@@ -79,7 +79,6 @@
     <file baseinstalldir="/" name="include/grpc/support/tls_msvc.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/tls_pthread.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/useful.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/impl/codegen/alloc.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_atomic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_sync.h" role="src" />
@@ -162,7 +161,6 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/grpc_types.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/propagation_bits.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/status.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/impl/codegen/alloc.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_atomic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_sync.h" role="src" />
