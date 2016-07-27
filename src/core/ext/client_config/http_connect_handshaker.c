@@ -142,6 +142,7 @@ static void http_connect_handshaker_shutdown(grpc_exec_ctx* exec_ctx,
                                              grpc_handshaker* handshaker) {
 }
 
+// FIXME BEFORE MERGING: apply deadline
 static void http_connect_handshaker_do_handshake(
     grpc_exec_ctx* exec_ctx, grpc_handshaker* handshaker,
     grpc_endpoint* endpoint, grpc_channel_args* args, gpr_timespec deadline,
