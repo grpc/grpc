@@ -47,7 +47,7 @@
     if target_dict.get('secure', False):
       deps = ["ssl"]
     if target_dict['name'] in ['grpc++', 'grpc++_unsecure', 'grpc++_codegen_lib']:
-      deps.append("libprotobuf")
+      deps.append("${PROTOBUF_LIBRARY_NAME}")
     elif target_dict['name'] in ['grpc']:
       deps.append("zlibstatic")
     for d in target_dict.get('deps', []):
@@ -87,6 +87,13 @@
 
   set(CMAKE_C_FLAGS   "<%text>${CMAKE_C_FLAGS}</%text>   -std=c11")
   set(CMAKE_CXX_FLAGS "<%text>${CMAKE_CXX_FLAGS}</%text> -std=c++11")
+
+  if (GRPC_USE_PROTO_LITE)
+    set(PROTOBUF_LIBRARY_NAME "libprotobuf-lite")
+    add_definitions("-DGRPC_USE_PROTO_LITE")
+  else()
+    set(PROTOBUF_LIBRARY_NAME "libprotobuf")
+  endif()
 
   % for lib in libs:
   % if lib.build in ["all", "protoc", "tool"]:

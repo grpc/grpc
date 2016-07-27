@@ -90,122 +90,6 @@ zend_object_value create_wrapped_grpc_call(zend_class_entry *class_type
   return retval;
 }
 
-/* Wraps a grpc_call struct in a PHP object. Owned indicates whether the struct
-   should be destroyed at the end of the object's lifecycle */
-zval *grpc_php_wrap_call(grpc_call *wrapped, bool owned TSRMLS_DC) {
-  zval *call_object;
-  MAKE_STD_ZVAL(call_object);
-  object_init_ex(call_object, grpc_ce_call);
-  wrapped_grpc_call *call =
-      (wrapped_grpc_call *)zend_object_store_get_object(call_object TSRMLS_CC);
-  call->wrapped = wrapped;
-  call->owned = owned;
-  return call_object;
-}
-
-/* Creates and returns a PHP array object with the data in a
- * grpc_metadata_array. Returns NULL on failure */
-zval *grpc_parse_metadata_array(grpc_metadata_array *metadata_array TSRMLS_DC) {
-  int count = metadata_array->count;
-  grpc_metadata *elements = metadata_array->metadata;
-  int i;
-  zval *array;
-  zval **data = NULL;
-  HashTable *array_hash;
-  zval *inner_array;
-  char *str_key;
-  char *str_val;
-  size_t key_len;
-  MAKE_STD_ZVAL(array);
-  array_init(array);
-  array_hash = Z_ARRVAL_P(array);
-  grpc_metadata *elem;
-  for (i = 0; i < count; i++) {
-    elem = &elements[i];
-    key_len = strlen(elem->key);
-    str_key = ecalloc(key_len + 1, sizeof(char));
-    memcpy(str_key, elem->key, key_len);
-    str_val = ecalloc(elem->value_length + 1, sizeof(char));
-    memcpy(str_val, elem->value, elem->value_length);
-    if (zend_hash_find(array_hash, str_key, key_len, (void **)data) ==
-        SUCCESS) {
-      if (Z_TYPE_P(*data) != IS_ARRAY) {
-        zend_throw_exception(zend_exception_get_default(TSRMLS_C),
-                             "Metadata hash somehow contains wrong types.",
-                             1 TSRMLS_CC);
-        efree(str_key);
-        efree(str_val);
-        return NULL;
-      }
-      add_next_index_stringl(*data, str_val, elem->value_length, false);
-    } else {
-      MAKE_STD_ZVAL(inner_array);
-      array_init(inner_array);
-      add_next_index_stringl(inner_array, str_val, elem->value_length, false);
-      add_assoc_zval(array, str_key, inner_array);
-    }
-  }
-  return array;
-}
-
-/* Populates a grpc_metadata_array with the data in a PHP array object.
-   Returns true on success and false on failure */
-bool create_metadata_array(zval *array, grpc_metadata_array *metadata) {
-  zval **inner_array;
-  zval **value;
-  HashTable *array_hash;
-  HashPosition array_pointer;
-  HashTable *inner_array_hash;
-  HashPosition inner_array_pointer;
-  char *key;
-  uint key_len;
-  ulong index;
-  if (Z_TYPE_P(array) != IS_ARRAY) {
-    return false;
-  }
-  grpc_metadata_array_init(metadata);
-  array_hash = Z_ARRVAL_P(array);
-  for (zend_hash_internal_pointer_reset_ex(array_hash, &array_pointer);
-       zend_hash_get_current_data_ex(array_hash, (void**)&inner_array,
-                                     &array_pointer) == SUCCESS;
-       zend_hash_move_forward_ex(array_hash, &array_pointer)) {
-    if (zend_hash_get_current_key_ex(array_hash, &key, &key_len, &index, 0,
-                                     &array_pointer) != HASH_KEY_IS_STRING) {
-      return false;
-    }
-    if (Z_TYPE_P(*inner_array) != IS_ARRAY) {
-      return false;
-    }
-    inner_array_hash = Z_ARRVAL_P(*inner_array);
-    metadata->capacity += zend_hash_num_elements(inner_array_hash);
-  }
-  metadata->metadata = gpr_malloc(metadata->capacity * sizeof(grpc_metadata));
-  for (zend_hash_internal_pointer_reset_ex(array_hash, &array_pointer);
-       zend_hash_get_current_data_ex(array_hash, (void**)&inner_array,
-                                     &array_pointer) == SUCCESS;
-       zend_hash_move_forward_ex(array_hash, &array_pointer)) {
-    if (zend_hash_get_current_key_ex(array_hash, &key, &key_len, &index, 0,
-                                     &array_pointer) != HASH_KEY_IS_STRING) {
-      return false;
-    }
-    inner_array_hash = Z_ARRVAL_P(*inner_array);
-    for (zend_hash_internal_pointer_reset_ex(inner_array_hash,
-                                             &inner_array_pointer);
-         zend_hash_get_current_data_ex(inner_array_hash, (void**)&value,
-                                       &inner_array_pointer) == SUCCESS;
-         zend_hash_move_forward_ex(inner_array_hash, &inner_array_pointer)) {
-      if (Z_TYPE_P(*value) != IS_STRING) {
-        return false;
-      }
-      metadata->metadata[metadata->count].key = key;
-      metadata->metadata[metadata->count].value = Z_STRVAL_P(*value);
-      metadata->metadata[metadata->count].value_length = Z_STRLEN_P(*value);
-      metadata->count += 1;
-    }
-  }
-  return true;
-}
-
 #else
 
 static zend_object_handlers call_ce_handlers;
@@ -231,31 +115,30 @@ zend_object *create_wrapped_grpc_call(zend_class_entry *class_type) {
   return &intern->std;
 }
 
-/* Wraps a grpc_call struct in a PHP object. Owned indicates whether the
-   struct should be destroyed at the end of the object's lifecycle */
-void grpc_php_wrap_call(grpc_call *wrapped, bool owned, zval *call_object) {
-  object_init_ex(call_object, grpc_ce_call);
-  wrapped_grpc_call *call = Z_WRAPPED_GRPC_CALL_P(call_object);
-  call->wrapped = wrapped;
-  call->owned = owned;
-}
+#endif
 
 /* Creates and returns a PHP array object with the data in a
  * grpc_metadata_array. Returns NULL on failure */
-void grpc_parse_metadata_array(grpc_metadata_array *metadata_array,
-                               zval *array) {
+zval *grpc_parse_metadata_array(grpc_metadata_array
+                                *metadata_array TSRMLS_DC) {
   int count = metadata_array->count;
   grpc_metadata *elements = metadata_array->metadata;
+  zval *array;
+  PHP_GRPC_MAKE_STD_ZVAL(array);
+  array_init(array);
   int i;
-  zval *data;
   HashTable *array_hash;
-  zval inner_array;
+  zval *inner_array;
   char *str_key;
   char *str_val;
   size_t key_len;
+#if PHP_MAJOR_VERSION < 7
+  zval **data = NULL;
+#else
+ zval *data;
+#endif
 
-  array_init(array);
-  array_hash = HASH_OF(array);
+  array_hash = Z_ARRVAL_P(array);
   grpc_metadata *elem;
   for (i = 0; i < count; i++) {
     elem = &elements[i];
@@ -264,38 +147,78 @@ void grpc_parse_metadata_array(grpc_metadata_array *metadata_array,
     memcpy(str_key, elem->key, key_len);
     str_val = ecalloc(elem->value_length + 1, sizeof(char));
     memcpy(str_val, elem->value, elem->value_length);
+#if PHP_MAJOR_VERSION < 7
+    if (zend_hash_find(array_hash, str_key, key_len, (void **)data) ==
+        SUCCESS) {
+      if (Z_TYPE_P(*data) != IS_ARRAY) {
+#else
     if ((data = zend_hash_str_find(array_hash, str_key, key_len)) != NULL) {
       if (Z_TYPE_P(data) != IS_ARRAY) {
-        zend_throw_exception(zend_exception_get_default(),
+#endif
+        zend_throw_exception(zend_exception_get_default(TSRMLS_C),
                              "Metadata hash somehow contains wrong types.",
-                             1);
+                             1 TSRMLS_CC);
         efree(str_key);
         efree(str_val);
-        return;
+        return NULL;
       }
-      add_next_index_stringl(data, str_val, elem->value_length);
+#if PHP_MAJOR_VERSION < 7
+      php_grpc_add_next_index_stringl(*data, str_val, elem->value_length,
+                                      false);
+#else
+      php_grpc_add_next_index_stringl(data, str_val, elem->value_length,
+                                      false);
+#endif
     } else {
-      array_init(&inner_array);
-      add_next_index_stringl(&inner_array, str_val, elem->value_length);
-      add_assoc_zval(array, str_key, &inner_array);
+      PHP_GRPC_MAKE_STD_ZVAL(inner_array);
+      array_init(inner_array);
+      php_grpc_add_next_index_stringl(inner_array, str_val,
+                                      elem->value_length, false);
+      add_assoc_zval(array, str_key, inner_array);
     }
   }
+  return array;
 }
 
 /* Populates a grpc_metadata_array with the data in a PHP array object.
    Returns true on success and false on failure */
 bool create_metadata_array(zval *array, grpc_metadata_array *metadata) {
-  zval *inner_array;
-  zval *value;
   HashTable *array_hash;
   HashTable *inner_array_hash;
+#if PHP_MAJOR_VERSION < 7
+  zval **inner_array;
+  zval **value;
+  HashPosition array_pointer;
+  HashPosition inner_array_pointer;
+  char *key;
+  uint key_len;
+  ulong index;
+#else
+  zval *inner_array;
+  zval *value;
   zend_string *key;
+#endif
   if (Z_TYPE_P(array) != IS_ARRAY) {
     return false;
   }
   grpc_metadata_array_init(metadata);
-  array_hash = HASH_OF(array);
-
+  array_hash = Z_ARRVAL_P(array);
+#if PHP_MAJOR_VERSION < 7
+  for (zend_hash_internal_pointer_reset_ex(array_hash, &array_pointer);
+       zend_hash_get_current_data_ex(array_hash, (void**)&inner_array,
+                                     &array_pointer) == SUCCESS;
+       zend_hash_move_forward_ex(array_hash, &array_pointer)) {
+    if (zend_hash_get_current_key_ex(array_hash, &key, &key_len, &index, 0,
+                                     &array_pointer) != HASH_KEY_IS_STRING) {
+      return false;
+    }
+    if (Z_TYPE_P(*inner_array) != IS_ARRAY) {
+      return false;
+    }
+    inner_array_hash = Z_ARRVAL_P(*inner_array);
+    metadata->capacity += zend_hash_num_elements(inner_array_hash);
+  }
+#else
   ZEND_HASH_FOREACH_STR_KEY_VAL(array_hash, key, inner_array) {
     if (key == NULL) {
       return false;
@@ -305,11 +228,36 @@ bool create_metadata_array(zval *array, grpc_metadata_array *metadata) {
     }
     inner_array_hash = HASH_OF(inner_array);
     metadata->capacity += zend_hash_num_elements(inner_array_hash);
-  }
-  ZEND_HASH_FOREACH_END();
+  } ZEND_HASH_FOREACH_END();
+#endif
 
   metadata->metadata = gpr_malloc(metadata->capacity * sizeof(grpc_metadata));
 
+#if PHP_MAJOR_VERSION < 7
+  for (zend_hash_internal_pointer_reset_ex(array_hash, &array_pointer);
+       zend_hash_get_current_data_ex(array_hash, (void**)&inner_array,
+                                     &array_pointer) == SUCCESS;
+       zend_hash_move_forward_ex(array_hash, &array_pointer)) {
+    if (zend_hash_get_current_key_ex(array_hash, &key, &key_len, &index, 0,
+                                     &array_pointer) != HASH_KEY_IS_STRING) {
+      return false;
+    }
+    inner_array_hash = Z_ARRVAL_P(*inner_array);
+    for (zend_hash_internal_pointer_reset_ex(inner_array_hash,
+                                             &inner_array_pointer);
+         zend_hash_get_current_data_ex(inner_array_hash, (void**)&value,
+                                       &inner_array_pointer) == SUCCESS;
+         zend_hash_move_forward_ex(inner_array_hash, &inner_array_pointer)) {
+      if (Z_TYPE_P(*value) != IS_STRING) {
+        return false;
+      }
+      metadata->metadata[metadata->count].key = key;
+      metadata->metadata[metadata->count].value = Z_STRVAL_P(*value);
+      metadata->metadata[metadata->count].value_length = Z_STRLEN_P(*value);
+      metadata->count += 1;
+    }
+  }
+#else
   ZEND_HASH_FOREACH_STR_KEY_VAL(array_hash, key, inner_array) {
     if (key == NULL) {
       return false;
@@ -326,10 +274,21 @@ bool create_metadata_array(zval *array, grpc_metadata_array *metadata) {
       metadata->count += 1;
     } ZEND_HASH_FOREACH_END();
   } ZEND_HASH_FOREACH_END();
+#endif
   return true;
 }
 
-#endif
+/* Wraps a grpc_call struct in a PHP object. Owned indicates whether the
+   struct should be destroyed at the end of the object's lifecycle */
+zval *grpc_php_wrap_call(grpc_call *wrapped, bool owned TSRMLS_DC) {
+  zval *call_object;
+  PHP_GRPC_MAKE_STD_ZVAL(call_object);
+  object_init_ex(call_object, grpc_ce_call);
+  wrapped_grpc_call *call = Z_WRAPPED_GRPC_CALL_P(call_object);
+  call->wrapped = wrapped;
+  call->owned = owned;
+  return call_object;
+}
 
 /**
  * Constructs a new instance of the Call class.
@@ -379,6 +338,10 @@ PHP_METHOD(Call, __construct) {
  * @return object Object with results of all actions
  */
 PHP_METHOD(Call, startBatch) {
+  zval *result;
+  PHP_GRPC_MAKE_STD_ZVAL(result);
+  object_init(result);
+  php_grpc_ulong index;
 #if PHP_MAJOR_VERSION < 7
   zval **value;
   zval **inner_value;
@@ -387,20 +350,14 @@ PHP_METHOD(Call, startBatch) {
   zval **message_flags;
   char *key;
   uint key_len;
-  ulong index;
-  zval *result;
   zval *recv_status;
-  MAKE_STD_ZVAL(result);
-  object_init(result);
 #else
   zval *value;
   zval *inner_value;
   zval *message_value;
   zval *message_flags;
   zend_string *key;
-  zend_ulong index;
   zval recv_status;
-  object_init(return_value);
 #endif
   wrapped_grpc_call *call = Z_WRAPPED_GRPC_CALL_P(getThis());
   
@@ -574,7 +531,7 @@ PHP_METHOD(Call, startBatch) {
 
 #else
 
-array_hash = HASH_OF(array);
+  array_hash = HASH_OF(array);
   ZEND_HASH_FOREACH_KEY_VAL(array_hash, index, key, value) {
     if (key) {
       zend_throw_exception(spl_ce_InvalidArgumentException,
@@ -692,8 +649,7 @@ array_hash = HASH_OF(array);
     ops[op_num].flags = 0;
     ops[op_num].reserved = NULL;
     op_num++;
-  }
-  ZEND_HASH_FOREACH_END();
+  } ZEND_HASH_FOREACH_END();
 
 #endif
 
@@ -755,43 +711,44 @@ array_hash = HASH_OF(array);
     }
   }
 #else
+  zval recv_md;
   for (int i = 0; i < op_num; i++) {
     switch(ops[i].op) {
     case GRPC_OP_SEND_INITIAL_METADATA:
-      add_property_bool(return_value, "send_metadata", true);
+      add_property_bool(result, "send_metadata", true);
       break;
     case GRPC_OP_SEND_MESSAGE:
-      add_property_bool(return_value, "send_message", true);
+      add_property_bool(result, "send_message", true);
       break;
     case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
-      add_property_bool(return_value, "send_close", true);
+      add_property_bool(result, "send_close", true);
       break;
     case GRPC_OP_SEND_STATUS_FROM_SERVER:
-      add_property_bool(return_value, "send_status", true);
+      add_property_bool(result, "send_status", true);
       break;
     case GRPC_OP_RECV_INITIAL_METADATA:
-      grpc_parse_metadata_array(&recv_metadata, array);
-      add_property_zval(return_value, "metadata", array);
+      recv_md = *grpc_parse_metadata_array(&recv_metadata);
+      add_property_zval(result, "metadata", &recv_md);
       break;
     case GRPC_OP_RECV_MESSAGE:
       byte_buffer_to_string(message, &message_str, &message_len);
       if (message_str == NULL) {
-        add_property_null(return_value, "message");
+        add_property_null(result, "message");
       } else {
-        add_property_stringl(return_value, "message", message_str,
+        add_property_stringl(result, "message", message_str,
                              message_len);
       }
       break;
     case GRPC_OP_RECV_STATUS_ON_CLIENT:
       object_init(&recv_status);
-      grpc_parse_metadata_array(&recv_trailing_metadata, array);
-      add_property_zval(&recv_status, "metadata", array);
+      recv_md = *grpc_parse_metadata_array(&recv_trailing_metadata);
+      add_property_zval(&recv_status, "metadata", &recv_md);
       add_property_long(&recv_status, "code", status);
       add_property_string(&recv_status, "details", status_details);
-      add_property_zval(return_value, "status", &recv_status);
+      add_property_zval(result, "status", &recv_status);
       break;
     case GRPC_OP_RECV_CLOSE_ON_SERVER:
-      add_property_bool(return_value, "cancelled", cancelled);
+      add_property_bool(result, "cancelled", cancelled);
       break;
     default:
       break;
@@ -815,11 +772,7 @@ cleanup:
       grpc_byte_buffer_destroy(message);
     }
   }
-#if PHP_MAJOR_VERSION < 7
   RETURN_DESTROY_ZVAL(result);
-#else
-  RETURN_DESTROY_ZVAL(return_value);
-#endif
 }
 
 /**
