@@ -1,0 +1,94 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements. See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership. The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License. You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied. See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+# build Apache Thrift on AppVeyor - https://ci.appveyor.com
+
+shallow_clone: true
+clone_depth: 10
+
+version: '{build}'
+os:
+# - Windows Server 2012 R2
+- Visual Studio 2015
+
+environment:
+  BOOST_ROOT: C:\Libraries\boost_1_59_0
+  BOOST_LIBRARYDIR: C:\Libraries\boost_1_59_0\lib64-msvc-14.0
+  # Unfurtunately, these versions need manual update because old versions are quickly deleted.
+  ANT_VERSION: 1.9.7
+  OPENSSL_VERSION: 1_0_2h
+
+install:
+- '"C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x64'
+- cd \
+  # Zlib
+- appveyor DownloadFile https://github.com/madler/zlib/archive/v1.2.8.tar.gz
+- 7z x v1.2.8.tar.gz -so | 7z x -si -ttar > nul
+- cd zlib-1.2.8
+- cmake -G "Visual Studio 14 2015 Win64" .
+- cmake --build . --config release
+- cd ..
+  # OpenSSL
+- appveyor DownloadFile https://slproweb.com/download/Win64OpenSSL-%OPENSSL_VERSION%.exe
+- ps: Start-Process "Win64OpenSSL-${env:OPENSSL_VERSION}.exe" -ArgumentList "/silent /verysilent /sp- /suppressmsgboxes" -Wait
+  # Libevent
+- appveyor DownloadFile https://github.com/libevent/libevent/releases/download/release-2.0.22-stable/libevent-2.0.22-stable.tar.gz
+- 7z x libevent-2.0.22-stable.tar.gz -so | 7z x -si -ttar > nul
+- cd libevent-2.0.22-stable
+- nmake -f Makefile.nmake
+- mkdir lib
+- move *.lib lib\
+- move WIN32-Code\event2\* include\event2\
+- move *.h include\
+- cd ..
+- cinst winflexbison
+- appveyor DownloadFile http://www.us.apache.org/dist/ant/binaries/apache-ant-%ANT_VERSION%-bin.zip
+- 7z x apache-ant-%ANT_VERSION%-bin.zip > nul
+- cd %APPVEYOR_BUILD_FOLDER%
+# TODO: Enable Haskell build
+# - cinst HaskellPlatform -version 2014.2.0.0
+
+
+build_script:
+- set PATH=C:\ProgramData\chocolatey\bin;C:\apache-ant-%ANT_VERSION%\bin;%PATH%
+- set JAVA_HOME=C:\Program Files\Java\jdk1.7.0
+- set PATH=%JAVA_HOME%\bin;%PATH%
+# - set PATH=%PATH%;C:\Program Files (x86)\Haskell Platform\2014.2.0.0\bin
+# - set PATH=%PATH%;C:\Program Files (x86)\Haskell Platform\2014.2.0.0\lib\extralibs\bin
+- set PATH=C:\Python27-x64\scripts;C:\Python27-x64;%PATH%
+- mkdir cmake-build
+- cd cmake-build
+- cmake -G "Visual Studio 14 2015 Win64" -DWITH_SHARED_LIB=OFF -DLIBEVENT_ROOT=C:\libevent-2.0.22-stable -DZLIB_INCLUDE_DIR=C:\zlib-1.2.8 -DZLIB_LIBRARY=C:\zlib-1.2.8\release\zlibstatic.lib -DBOOST_ROOT="%BOOST_ROOT%" -DBOOST_LIBRARYDIR="%BOOST_LIBRARYDIR%" ..
+- findstr /b /e BUILD_COMPILER:BOOL=ON CMakeCache.txt
+- findstr /b /e BUILD_CPP:BOOL=ON CMakeCache.txt
+- findstr /b /e BUILD_JAVA:BOOL=ON CMakeCache.txt
+- findstr /b /e BUILD_PYTHON:BOOL=ON CMakeCache.txt
+# - findstr /b /e BUILD_C_GLIB:BOOL=ON CMakeCache.txt
+# - findstr /b /e BUILD_HASKELL:BOOL=ON CMakeCache.txt
+- findstr /b /e BUILD_TESTING:BOOL=ON CMakeCache.txt
+# - cmake --build .
+- cmake --build . --config Release
+# TODO: Fix cpack
+# - cpack
+# TODO: Run more tests
+# CTest fails to invoke ant seemingly due to "ant.bat" v.s. "ant" (shell script) conflict.
+# Currently, everything that involves OpenSSL seems to hang forever on our Appveyor setup.
+# Also a few C++ tests hang (on Appveyor or on Windows in general).
+- ctest -C Release --timeout 600 -VV -E "(concurrency_test|processor_test|TInterruptTest|StressTestNonBlocking|OpenSSLManualInitTest|SecurityTest|PythonTestSSLSocket|python_test$|^Java)"
+
+#TODO make it perfect ;-r

@@ -1,0 +1,200 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements. See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership. The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License. You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied. See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+# build Apache Thrift on Travis CI - https://travis-ci.org/
+
+sudo: required
+dist: trusty
+
+services:
+  - docker
+
+install:
+  - cp -r ./build/docker/scripts/*.sh ./build/docker/$DISTRO/scripts/
+  - travis_retry travis_wait docker build -q -t thrift-build build/docker/$DISTRO
+
+script:
+  - docker run --net=host -e BUILD_LIBS="$BUILD_LIBS" $BUILD_ENV -v $(pwd):/thrift/src -it thrift-build $BUILD_CMD $BUILD_ARG
+
+env:
+  global:
+    - TEST_NAME=""
+    - BUILD_CMD="none"
+    - BUILD_ARG=""
+    - BUILD_ENV="-e CC=clang -e CXX=clang++"
+    - DISTRO=ubuntu
+    - BUILD_LIBS="CPP C_GLIB HASKELL JAVA PYTHON TESTING TUTORIALS"  # only meaningful for CMake builds
+
+  matrix:
+    # TODO: Break up by protocol types to avoid 50min limit
+    - TEST_NAME="Cross Language Tests"
+      BUILD_CMD="../cross-test.sh"
+      BUILD_ARG="--enable-tutorial=no"
+      BUILD_ENV="-e CC=clang -e CXX=clang++ -e THRIFT_CROSSTEST_CONCURRENCY=4"
+
+    - TEST_NAME="Cross Language Tests (Debian)"
+      BUILD_CMD="../cross-test.sh"
+      BUILD_ARG="--enable-tutorial=no"
+      BUILD_ENV="-e CC=clang -e CXX=clang++ -e THRIFT_CROSSTEST_CONCURRENCY=4"
+      DISTRO=debian
+
+    # TODO: Remove them once migrated to CMake
+    # Autotools builds
+    - TEST_NAME="C C++ C# D Erlang Haxe Go (automake)"
+      BUILD_CMD="../autotools.sh"
+      BUILD_ARG="--without-dart --without-haskell --without-java --without-lua --without-nodejs --without-perl --without-php --without-php_extension --without-python --without-ruby"
+
+    - TEST_NAME="C C++ - GCC (automake)"
+      BUILD_CMD="../autotools.sh"
+      BUILD_ARG="--without-csharp --without-java --without-erlang --without-nodejs --without-lua --without-python --without-perl --without-php --without-php_extension --without-dart --without-ruby --without-haskell --without-go --without-haxe --without-d"
+      BUILD_ENV="-e CC=gcc -e CXX=g++"
+
+    - TEST_NAME="Java Lua PHP Ruby Dart (automake)"
+      BUILD_CMD="../autotools.sh"
+      BUILD_ARG="--without-cpp --without-haskell --without-c_glib --without-csharp --without-d --without-erlang --without-go --without-haxe --without-nodejs --without-python --without-perl"
+
+    # These are flaky (due to cabal and npm network/server failures) and also have lengthy output
+    - TEST_NAME="Haskell Node.js Python Perl (automake)"
+      BUILD_CMD="../autotools.sh"
+      BUILD_ARG="--without-cpp --without-c_glib --without-csharp --without-d --without-dart --without-erlang --without-go --without-haxe --without-java --without-lua --without-php --without-php_extension --without-ruby"
+
+    # CMake build
+    - TEST_NAME="All"
+      BUILD_CMD="../cmake.sh"
+
+    - TEST_NAME="All (Debian)"
+      BUILD_CMD="../cmake.sh"
+      DISTRO=debian
+
+    - TEST_NAME="C C++ - GCC"
+      BUILD_CMD="../cmake.sh"
+      BUILD_LIBS="CPP C_GLIB TESTING TUTORIALS"
+      BUILD_ARG="-DWITH_PYTHON=OFF -DWITH_JAVA=OFF -DWITH_HASKELL=OFF"
+      BUILD_ENV="-e CC=gcc -e CXX=g++"
+
+    - TEST_NAME="C++ (Boost Thread)"
+      BUILD_CMD="../cmake.sh"
+      BUILD_LIBS="CPP TESTING TUTORIALS"
+      BUILD_ARG="-DWITH_BOOSTTHREADS=ON -DWITH_PYTHON=OFF -DWITH_C_GLIB=OFF -DWITH_JAVA=OFF -DWITH_HASKELL=OFF"
+
+    - TEST_NAME="C++ (Boost Thread - GCC)"
+      BUILD_CMD="../cmake.sh"
+      BUILD_LIBS="CPP TESTING TUTORIALS"
+      BUILD_ARG="-DWITH_BOOSTTHREADS=ON -DWITH_PYTHON=OFF -DWITH_C_GLIB=OFF -DWITH_JAVA=OFF -DWITH_HASKELL=OFF"
+      BUILD_ENV="-e CC=gcc -e CXX=g++"
+
+    - TEST_NAME="C++ (Std Thread)"
+      BUILD_CMD="../cmake.sh"
+      BUILD_LIBS="CPP TESTING TUTORIALS"
+      BUILD_ARG="-DWITH_STDTHREADS=ON -DCMAKE_CXX_FLAGS='-std=c++11' -DWITH_PYTHON=OFF -DWITH_C_GLIB=OFF -DWITH_JAVA=OFF -DWITH_HASKELL=OFF"
+
+    - TEST_NAME="C++ (Std Thread - GCC)"
+      BUILD_CMD="../cmake.sh"
+      BUILD_LIBS="CPP TESTING TUTORIALS"
+      BUILD_ARG="-DWITH_STDTHREADS=ON -DCMAKE_CXX_FLAGS='-std=c++11' -DWITH_PYTHON=OFF -DWITH_C_GLIB=OFF -DWITH_JAVA=OFF -DWITH_HASKELL=OFF"
+      BUILD_ENV="-e CC=gcc -e CXX=g++"
+
+    - TEST_NAME="Compiler (mingw)"
+      BUILD_CMD="../cmake.sh"
+      BUILD_LIBS=""
+      BUILD_ARG="-DCMAKE_TOOLCHAIN_FILE=../build/cmake/mingw32-toolchain.cmake -DBUILD_COMPILER=ON -DBUILD_LIBRARIES=OFF -DBUILD_TESTING=OFF -DBUILD_EXAMPLES=OFF"
+      BUILD_ENV=""
+
+    - TEST_NAME="All - GCC (CentOS)"
+      BUILD_CMD="../cmake.sh"
+      BUILD_ENV="-e CC=gcc -e CXX=g++"
+      DISTRO=centos
+
+    - TEST_NAME="C C++ - Clang (CentOS)"
+      BUILD_CMD="../cmake.sh"
+      BUILD_LIBS="CPP C_GLIB TESTING TUTORIALS"
+      BUILD_ARG="-DWITH_PYTHON=OFF -DWITH_JAVA=OFF -DWITH_HASKELL=OFF"
+      DISTRO=centos
+
+    - TEST_NAME="Python 2.6 (CentOS 6)"
+      BUILD_CMD="../cmake.sh"
+      BUILD_LIBS="PYTHON TESTING TUTORIALS"
+      BUILD_ARG="-DWITH_PYTHON=ON -DWITH_CPP=OFF -DWITH_JAVA=OFF -DWITH_HASKELL=OFF"
+      BUILD_ENV="-e CC=gcc -e CXX=g++"
+      DISTRO=centos6
+
+    # Distribution
+    - TEST_NAME="make dist"
+      BUILD_CMD="../make-dist.sh"
+      BUILD_ENV="-e CC=gcc -e CXX=g++"
+
+    - TEST_NAME="Debian Packages"
+      BUILD_CMD="../dpkg.sh"
+      BUILD_ENV="-e CC=gcc -e CXX=g++"
+
+    - TEST_NAME="make dist (Debian)"
+      BUILD_CMD="../make-dist.sh"
+      BUILD_ENV="-e CC=gcc -e CXX=g++"
+      DISTRO=debian
+
+    - TEST_NAME="Debian Packages (Debian)"
+      BUILD_CMD="../dpkg.sh"
+      BUILD_ENV="-e CC=gcc -e CXX=g++"
+      DISTRO=debian
+
+matrix:
+  include:
+    # QA jobs for code analytics and metrics
+    #
+    # C/C++ static code analysis with cppcheck
+    # add --error-exitcode=1 to --enable=all as soon as everything is fixed
+    #
+    # Python code style check with flake8
+    #
+    # search for TODO etc within source tree
+    # some statistics about the code base
+    # some info about the build machine
+    - env: TEST_NAME="cppcheck, flake8, TODO FIXME HACK, LoC and system info"
+      install:
+        - travis_retry sudo apt-get update
+        - travis_retry sudo apt-get install -ym cppcheck sloccount python-flake8
+      script:
+        # Compiler cppcheck (All)
+        - cppcheck --force --quiet --inline-suppr --enable=all -j2 compiler/cpp/src
+        # C++ cppcheck (All)
+        - cppcheck --force --quiet --inline-suppr --enable=all -j2 lib/cpp/src lib/cpp/test test/cpp tutorial/cpp
+        # C Glib cppcheck (All)
+        - cppcheck --force --quiet --inline-suppr --enable=all -j2 lib/c_glib/src lib/c_glib/test test/c_glib/src tutorial/c_glib
+        # Silent error checks
+        - cppcheck --force --quiet --inline-suppr --error-exitcode=1 -j2 compiler/cpp/src
+        - cppcheck --force --quiet --inline-suppr --error-exitcode=1 -j2 lib/cpp/src lib/cpp/test test/cpp tutorial/cpp
+        - cppcheck --force --quiet --inline-suppr --error-exitcode=1 -j2 lib/c_glib/src lib/c_glib/test test/c_glib/src tutorial/c_glib
+        # Python code style
+        - flake8 --ignore=E501 lib/py
+        - flake8 tutorial/py
+        - flake8 --ignore=E501 test/py
+        - flake8 test/py.twisted
+        - flake8 test/py.tornado
+        - flake8 --ignore=E501 test/test.py
+        - flake8 --ignore=E501 test/crossrunner
+        - flake8 test/features
+        # TODO etc
+        - grep -r TODO *
+        - grep -r FIXME *
+        - grep -r HACK *
+        # LoC
+        - sloccount .
+        # System Info
+        - dpkg -l
+        - uname -a
